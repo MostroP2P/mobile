@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mostro_mobile/features/home/home.dart';
 import 'core/theme/app_theme.dart';
 
 void main() {
@@ -11,9 +12,9 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Tu Aplicación',
+      title: 'MostroP2P',
       theme: AppTheme.darkTheme,
-      home: HomeScreen(), // Tu pantalla de inicio
+      home: const HomeScreen(), // Tu pantalla de inicio
     );
   }
 }

@@ -21,4 +21,11 @@ class AppTextStyles {
     color: Colors.white,
     fontWeight: FontWeight.bold,
   );
+
+  static TextStyle appBarTitle = const TextStyle(
+    fontFamily: fontFamily,
+    color: Colors.white,
+    fontSize: 20,
+    fontWeight: FontWeight.bold,
+  );
 }

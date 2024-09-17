@@ -4,16 +4,21 @@ import 'app_text_styles.dart';
 
 class AppTheme {
   static ThemeData get darkTheme {
+    const ColorScheme colorScheme = ColorScheme.dark(
+      primary: AppColors.mostroGreen,
+      secondary: AppColors.yellow,
+      surface: AppColors.dark2,
+      error: AppColors.red1,
+    );
+
     return ThemeData(
       brightness: Brightness.dark,
+      colorScheme: colorScheme,
       primaryColor: AppColors.mostroGreen,
       scaffoldBackgroundColor: AppColors.dark1,
       appBarTheme: AppBarTheme(
         color: AppColors.dark2,
-        titleTextStyle: AppTextStyles.bodyLarge.copyWith(
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-        ),
+        titleTextStyle: AppTextStyles.appBarTitle,
       ),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: AppColors.dark2,
@@ -23,9 +28,10 @@ class AppTheme {
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.mostroGreen,
+          foregroundColor: Colors.white,
+          textStyle: AppTextStyles.buttonText,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-          textStyle: AppTextStyles.buttonText,
         ),
       ),
       textTheme: TextTheme(
@@ -40,8 +46,6 @@ class AppTheme {
           borderSide: BorderSide.none,
         ),
       ),
-      colorScheme:
-          ColorScheme.fromSwatch().copyWith(secondary: AppColors.yellow),
     );
   }
 }
