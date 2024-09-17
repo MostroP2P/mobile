@@ -39,6 +39,7 @@ dependencies:
   dart_nostr: ^8.2.0
   bloc: ^8.1.4
   flutter_bloc: ^8.1.6
+  flutter_secure_storage: ^9.2.2
 
 dev_dependencies:
   flutter_test:

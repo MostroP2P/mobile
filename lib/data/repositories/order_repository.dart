@@ -1,84 +1,62 @@
-import 'dart:async';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:dart_nostr/dart_nostr.dart';
 import '../models/order_model.dart';
 
 class OrderRepository {
-  final String _baseUrl =
-      'https://api.mostro.network'; // Asume que esta es tu URL base
+  final Nostr _nostr = Nostr.instance;
 
-  Future<List<OrderModel>> getOrders() async {
-    try {
-      final response = await http.get(Uri.parse('$_baseUrl/orders'));
-
-      if (response.statusCode == 200) {
-        final List<dynamic> ordersJson = json.decode(response.body);
-        return ordersJson.map((json) => OrderModel.fromJson(json)).toList();
-      } else {
-        throw Exception('Failed to load orders');
-      }
-    } catch (e) {
-      throw Exception('Failed to connect to the server: $e');
-    }
+  Future<List<Order>> getOrders() async {
+    const filter = NostrFilter(
+      kinds: [38383],
+      limit: 100,
+    );
+    final request = NostrRequest(filters: const [filter]);
+    final events = await _nostr.relaysService
+        .startEventsSubscriptionAsync(request: request);
+    return events.map((e) => Order.fromNostrEvent(e)).toList();
   }
 
-  Future<OrderModel> createOrder(OrderModel order) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl/orders'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(order.toJson()),
-      );
-
-      if (response.statusCode == 201) {
-        return OrderModel.fromJson(json.decode(response.body));
-      } else {
-        throw Exception('Failed to create order');
-      }
-    } catch (e) {
-      throw Exception('Failed to connect to the server: $e');
-    }
+  Future<void> createOrder(Order order) async {
+    final pubkey = await _nostr.keysService.getPublicKey();
+    final event = order.toNostrEvent(pubkey);
+    await _nostr.relaysService.sendEventToRelays(event);
   }
 
-  Future<OrderModel> getOrderById(String id) async {
-    try {
-      final response = await http.get(Uri.parse('$_baseUrl/orders/$id'));
-
-      if (response.statusCode == 200) {
-        return OrderModel.fromJson(json.decode(response.body));
-      } else {
-        throw Exception('Failed to load order');
-      }
-    } catch (e) {
-      throw Exception('Failed to connect to the server: $e');
-    }
+  Future<void> completeOrder(String orderId) async {
+    await _sendOrderAction(orderId, 'release');
   }
 
-  Future<void> updateOrder(OrderModel order) async {
-    try {
-      final response = await http.put(
-        Uri.parse('$_baseUrl/orders/${order.id}'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(order.toJson()),
-      );
-
-      if (response.statusCode != 200) {
-        throw Exception('Failed to update order');
-      }
-    } catch (e) {
-      throw Exception('Failed to connect to the server: $e');
-    }
+  Future<void> cancelOrder(String orderId) async {
+    await _sendOrderAction(orderId, 'cancel');
   }
 
-  Future<void> deleteOrder(String id) async {
-    try {
-      final response = await http.delete(Uri.parse('$_baseUrl/orders/$id'));
-
-      if (response.statusCode != 200) {
-        throw Exception('Failed to delete order');
+  Future<void> _sendOrderAction(String orderId, String action) async {
+    final pubkey = await _nostr.keysService.getPublicKey();
+    final content = {
+      'order': {
+        'version': 1,
+        'id': orderId,
+        'pubkey': pubkey,
+        'action': action,
+        'content': null,
       }
-    } catch (e) {
-      throw Exception('Failed to connect to the server: $e');
-    }
+    };
+    final event = NostrEvent.fromPartialData(
+      kind: 4,
+      content: content.toString(),
+      tags: [
+        ['p', pubkey]
+      ],
+    );
+    await _nostr.relaysService.sendEventToRelays(event);
+  }
+
+  Stream<Order> listenToOrderUpdates() {
+    const filter = NostrFilter(kinds: [38383, 4]);
+    final request = NostrRequest(filters: const [filter]);
+    return _nostr.relaysService
+        .startEventsSubscription(request: request)
+        .stream
+        .where((event) => event.kind == 38383)
+        .map((event) => Order.fromNostrEvent(event));
   }
 }
