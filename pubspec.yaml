@@ -40,6 +40,7 @@ dependencies:
   bloc: ^8.1.4
   flutter_bloc: ^8.1.6
   flutter_secure_storage: ^9.2.2
+  qr_flutter: ^4.0.0
 
 dev_dependencies:
   flutter_test:
