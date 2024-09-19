@@ -17,7 +17,7 @@ class HomeScreen extends StatelessWidget {
       backgroundColor: const Color(0xFF1D212C),
       appBar: const CustomAppBar(),
       body: Container(
-        margin: const EdgeInsets.fromLTRB(16, 16, 16, 16), // Añadido margen
+        margin: const EdgeInsets.fromLTRB(16, 16, 16, 16),
         decoration: BoxDecoration(
           color: const Color(0xFF303544),
           borderRadius: BorderRadius.circular(20),
@@ -50,10 +50,12 @@ class HomeScreen extends StatelessWidget {
           child: Row(
             children: [
               Expanded(
-                child: _buildTab("BUY BTC", state.orderType == OrderType.buy),
+                child: _buildTab("BUY BTC", state.orderType == OrderType.buy,
+                    OrderType.buy, context),
               ),
               Expanded(
-                child: _buildTab("SELL BTC", state.orderType == OrderType.sell),
+                child: _buildTab("SELL BTC", state.orderType == OrderType.sell,
+                    OrderType.sell, context),
               ),
             ],
           ),
@@ -62,11 +64,11 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTab(String text, bool isActive) {
+  Widget _buildTab(
+      String text, bool isActive, OrderType type, BuildContext context) {
     return GestureDetector(
       onTap: () {
-        // Aquí debes agregar la lógica para cambiar el tipo de orden
-        // context.read<HomeBloc>().add(ChangeOrderType(isActive ? OrderType.buy : OrderType.sell));
+        context.read<HomeBloc>().add(ChangeOrderType(type));
       },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
@@ -107,9 +109,13 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          const Text(
-            "3 offers",
-            style: TextStyle(color: Colors.white),
+          BlocBuilder<HomeBloc, HomeState>(
+            builder: (context, state) {
+              return Text(
+                "${state.filteredOrders.length} offers",
+                style: const TextStyle(color: Colors.white),
+              );
+            },
           ),
         ],
       ),
@@ -122,9 +128,19 @@ class HomeScreen extends StatelessWidget {
         if (state.status == HomeStatus.loading) {
           return const Center(child: CircularProgressIndicator());
         } else if (state.status == HomeStatus.loaded) {
+          if (state.filteredOrders.isEmpty) {
+            return const Center(
+              child: Text(
+                'No orders available for this type',
+                style: TextStyle(color: Colors.white),
+              ),
+            );
+          }
           return OrderList(orders: state.filteredOrders);
         } else {
-          return const Center(child: Text('Error loading orders'));
+          return const Center(
+              child: Text('Error loading orders',
+                  style: TextStyle(color: Colors.white)));
         }
       },
     );

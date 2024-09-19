@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:heroicons/heroicons.dart';
+import 'package:mostro_mobile/features/order/screens/add_order_screen.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   const CustomAppBar({super.key});
@@ -21,7 +22,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           icon: const HeroIcon(HeroIcons.plus,
               style: HeroIconStyle.outline, color: Colors.white),
           onPressed: () {
-            // TODO: Implement new order creation
+            Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => const AddOrderScreen()));
           },
         ),
         IconButton(
