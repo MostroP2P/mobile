@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.example.mostro_mobile.app-mergeDebugResources-24:/values-night-v8/values-night-v8.xml",
+            "outputFile": "com.example.mostro_mobile.app-mergeDebugResources-25:/values-night-v8/values-night-v8.xml",
             "map": [
                 {
                     "source": "/home/andrea/Documentos/mostro/mobile/android/app/src/main/res/values-night/styles.xml",

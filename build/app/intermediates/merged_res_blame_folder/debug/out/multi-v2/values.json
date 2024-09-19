@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.example.mostro_mobile.app-mergeDebugResources-24:/values/values.xml",
+            "outputFile": "com.example.mostro_mobile.app-mergeDebugResources-25:/values/values.xml",
             "map": [
                 {
                     "source": "/home/andrea/.gradle/caches/transforms-3/3e108fe9d597d03770ae82acaebb5b63/transformed/jetified-window-1.2.0/res/values/values.xml",

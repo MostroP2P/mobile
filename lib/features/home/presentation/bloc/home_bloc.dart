@@ -1,32 +1,30 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mostro_mobile/data/repositories/order_repository.dart';
+
 import 'home_event.dart';
 import 'home_state.dart';
-import '../../../../data/repositories/order_repository.dart';
 
 class HomeBloc extends Bloc<HomeEvent, HomeState> {
-  final OrderRepository _orderRepository = OrderRepository();
+  final OrderRepository _orderRepository;
 
-  HomeBloc() : super(HomeState.initial()) {
+  HomeBloc({required OrderRepository orderRepository})
+      : _orderRepository = orderRepository,
+        super(const HomeState()) {
     on<LoadOrders>(_onLoadOrders);
-    on<ToggleBuySell>(_onToggleBuySell);
-    on<SelectOrder>(_onSelectOrder);
+    on<ChangeOrderType>(_onChangeOrderType);
   }
 
-  void _onLoadOrders(LoadOrders event, Emitter<HomeState> emit) async {
-    emit(state.copyWith(isLoading: true));
+  Future<void> _onLoadOrders(LoadOrders event, Emitter<HomeState> emit) async {
+    emit(state.copyWith(status: HomeStatus.loading));
     try {
       final orders = await _orderRepository.getOrders();
-      emit(state.copyWith(orders: orders, isLoading: false));
-    } catch (e) {
-      emit(state.copyWith(error: e.toString(), isLoading: false));
+      emit(state.copyWith(status: HomeStatus.loaded, orders: orders));
+    } catch (_) {
+      emit(state.copyWith(status: HomeStatus.error));
     }
   }
 
-  void _onToggleBuySell(ToggleBuySell event, Emitter<HomeState> emit) {
-    emit(state.copyWith(isBuySelected: event.isBuySelected));
-  }
-
-  void _onSelectOrder(SelectOrder event, Emitter<HomeState> emit) {
-    emit(state.copyWith(selectedOrder: event.order));
+  void _onChangeOrderType(ChangeOrderType event, Emitter<HomeState> emit) {
+    emit(state.copyWith(orderType: event.orderType));
   }
 }

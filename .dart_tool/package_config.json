@@ -2,6 +2,12 @@
   "configVersion": 2,
   "packages": [
     {
+      "name": "args",
+      "rootUri": "file:///home/andrea/.pub-cache/hosted/pub.dev/args-2.5.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
       "name": "async",
       "rootUri": "file:///home/andrea/.pub-cache/hosted/pub.dev/async-2.11.0",
       "packageUri": "lib/",
@@ -78,6 +84,12 @@
       "rootUri": "file:///home/andrea/.pub-cache/hosted/pub.dev/crypto-3.0.5",
       "packageUri": "lib/",
       "languageVersion": "3.4"
+    },
+    {
+      "name": "cryptography",
+      "rootUri": "file:///home/andrea/.pub-cache/hosted/pub.dev/cryptography-2.7.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.1"
     },
     {
       "name": "cupertino_icons",
@@ -164,6 +176,12 @@
       "languageVersion": "2.12"
     },
     {
+      "name": "flutter_svg",
+      "rootUri": "file:///home/andrea/.pub-cache/hosted/pub.dev/flutter_svg-2.0.10+1",
+      "packageUri": "lib/",
+      "languageVersion": "2.19"
+    },
+    {
       "name": "flutter_test",
       "rootUri": "file:///home/andrea/snap/flutter/common/flutter/packages/flutter_test",
       "packageUri": "lib/",
@@ -176,8 +194,26 @@
       "languageVersion": "3.2"
     },
     {
+      "name": "heroicons",
+      "rootUri": "file:///home/andrea/.pub-cache/hosted/pub.dev/heroicons-0.10.0",
+      "packageUri": "lib/",
+      "languageVersion": "2.17"
+    },
+    {
       "name": "hex",
       "rootUri": "file:///home/andrea/.pub-cache/hosted/pub.dev/hex-0.2.0",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
+      "name": "hive",
+      "rootUri": "file:///home/andrea/.pub-cache/hosted/pub.dev/hive-2.2.3",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
+      "name": "hive_flutter",
+      "rootUri": "file:///home/andrea/.pub-cache/hosted/pub.dev/hive_flutter-1.1.0",
       "packageUri": "lib/",
       "languageVersion": "2.12"
     },
@@ -254,6 +290,12 @@
       "languageVersion": "3.0"
     },
     {
+      "name": "path_parsing",
+      "rootUri": "file:///home/andrea/.pub-cache/hosted/pub.dev/path_parsing-1.0.1",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
       "name": "path_provider",
       "rootUri": "file:///home/andrea/.pub-cache/hosted/pub.dev/path_provider-2.1.4",
       "packageUri": "lib/",
@@ -286,6 +328,12 @@
     {
       "name": "path_provider_windows",
       "rootUri": "file:///home/andrea/.pub-cache/hosted/pub.dev/path_provider_windows-2.3.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
+      "name": "petitparser",
+      "rootUri": "file:///home/andrea/.pub-cache/hosted/pub.dev/petitparser-6.0.2",
       "packageUri": "lib/",
       "languageVersion": "3.2"
     },
@@ -374,6 +422,24 @@
       "languageVersion": "2.17"
     },
     {
+      "name": "vector_graphics",
+      "rootUri": "file:///home/andrea/.pub-cache/hosted/pub.dev/vector_graphics-1.1.11+1",
+      "packageUri": "lib/",
+      "languageVersion": "2.17"
+    },
+    {
+      "name": "vector_graphics_codec",
+      "rootUri": "file:///home/andrea/.pub-cache/hosted/pub.dev/vector_graphics_codec-1.1.11+1",
+      "packageUri": "lib/",
+      "languageVersion": "2.17"
+    },
+    {
+      "name": "vector_graphics_compiler",
+      "rootUri": "file:///home/andrea/.pub-cache/hosted/pub.dev/vector_graphics_compiler-1.1.11+1",
+      "packageUri": "lib/",
+      "languageVersion": "2.19"
+    },
+    {
       "name": "vector_math",
       "rootUri": "file:///home/andrea/.pub-cache/hosted/pub.dev/vector_math-2.1.4",
       "packageUri": "lib/",
@@ -410,13 +476,19 @@
       "languageVersion": "3.0"
     },
     {
+      "name": "xml",
+      "rootUri": "file:///home/andrea/.pub-cache/hosted/pub.dev/xml-6.5.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
       "name": "mostro_mobile",
       "rootUri": "../",
       "packageUri": "lib/",
       "languageVersion": "3.5"
     }
   ],
-  "generated": "2024-09-17T14:26:10.856415Z",
+  "generated": "2024-09-19T11:50:44.295324Z",
   "generator": "pub",
   "generatorVersion": "3.5.3",
   "flutterRoot": "file:///home/andrea/snap/flutter/common/flutter",

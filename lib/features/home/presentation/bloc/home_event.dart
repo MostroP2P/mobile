@@ -1,5 +1,4 @@
 import 'package:equatable/equatable.dart';
-import '../../../../data/models/order_model.dart';
 
 abstract class HomeEvent extends Equatable {
   const HomeEvent();
@@ -10,20 +9,13 @@ abstract class HomeEvent extends Equatable {
 
 class LoadOrders extends HomeEvent {}
 
-class ToggleBuySell extends HomeEvent {
-  final bool isBuySelected;
+class ChangeOrderType extends HomeEvent {
+  final OrderType orderType;
 
-  const ToggleBuySell(this.isBuySelected);
-
-  @override
-  List<Object> get props => [isBuySelected];
-}
-
-class SelectOrder extends HomeEvent {
-  final OrderModel order;
-
-  const SelectOrder(this.order);
+  const ChangeOrderType(this.orderType);
 
   @override
-  List<Object> get props => [order];
+  List<Object> get props => [orderType];
 }
+
+enum OrderType { buy, sell }

@@ -1,46 +1,39 @@
 import 'package:equatable/equatable.dart';
-import '../../../../data/models/order_model.dart';
+import '../../data/models/order_model.dart';
+import 'home_event.dart';
+
+enum HomeStatus { initial, loading, loaded, error }
 
 class HomeState extends Equatable {
+  final HomeStatus status;
   final List<OrderModel> orders;
-  final bool isLoading;
-  final String? error;
-  final bool isBuySelected;
-  final OrderModel? selectedOrder;
+  final OrderType orderType;
 
   const HomeState({
-    required this.orders,
-    required this.isLoading,
-    this.error,
-    required this.isBuySelected,
-    this.selectedOrder,
+    this.status = HomeStatus.initial,
+    this.orders = const [],
+    this.orderType = OrderType.buy,
   });
 
-  factory HomeState.initial() {
-    return const HomeState(
-      orders: [],
-      isLoading: false,
-      isBuySelected: true,
+  HomeState copyWith({
+    HomeStatus? status,
+    List<OrderModel>? orders,
+    OrderType? orderType,
+  }) {
+    return HomeState(
+      status: status ?? this.status,
+      orders: orders ?? this.orders,
+      orderType: orderType ?? this.orderType,
     );
   }
 
-  HomeState copyWith({
-    List<OrderModel>? orders,
-    bool? isLoading,
-    String? error,
-    bool? isBuySelected,
-    OrderModel? selectedOrder,
-  }) {
-    return HomeState(
-      orders: orders ?? this.orders,
-      isLoading: isLoading ?? this.isLoading,
-      error: error ?? this.error,
-      isBuySelected: isBuySelected ?? this.isBuySelected,
-      selectedOrder: selectedOrder ?? this.selectedOrder,
-    );
+  List<OrderModel> get filteredOrders {
+    return orders
+        .where((order) =>
+            order.type == (orderType == OrderType.buy ? 'buy' : 'sell'))
+        .toList();
   }
 
   @override
-  List<Object?> get props =>
-      [orders, isLoading, error, isBuySelected, selectedOrder];
+  List<Object> get props => [status, orders, orderType];
 }
