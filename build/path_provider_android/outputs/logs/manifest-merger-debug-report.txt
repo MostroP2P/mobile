@@ -1,0 +1,17 @@
+-- Merging decision tree log ---
+manifest
+ADDED from /home/andrea/.pub-cache/hosted/pub.dev/path_provider_android-2.2.10/android/src/main/AndroidManifest.xml:1:1-3:12
+INJECTED from /home/andrea/.pub-cache/hosted/pub.dev/path_provider_android-2.2.10/android/src/main/AndroidManifest.xml:1:1-3:12
+	package
+		ADDED from /home/andrea/.pub-cache/hosted/pub.dev/path_provider_android-2.2.10/android/src/main/AndroidManifest.xml:2:3-44
+		INJECTED from /home/andrea/.pub-cache/hosted/pub.dev/path_provider_android-2.2.10/android/src/main/AndroidManifest.xml
+	xmlns:android
+		ADDED from /home/andrea/.pub-cache/hosted/pub.dev/path_provider_android-2.2.10/android/src/main/AndroidManifest.xml:1:11-69
+uses-sdk
+INJECTED from /home/andrea/.pub-cache/hosted/pub.dev/path_provider_android-2.2.10/android/src/main/AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from /home/andrea/.pub-cache/hosted/pub.dev/path_provider_android-2.2.10/android/src/main/AndroidManifest.xml
+INJECTED from /home/andrea/.pub-cache/hosted/pub.dev/path_provider_android-2.2.10/android/src/main/AndroidManifest.xml
+	android:targetSdkVersion
+		INJECTED from /home/andrea/.pub-cache/hosted/pub.dev/path_provider_android-2.2.10/android/src/main/AndroidManifest.xml
+	android:minSdkVersion
+		INJECTED from /home/andrea/.pub-cache/hosted/pub.dev/path_provider_android-2.2.10/android/src/main/AndroidManifest.xml
