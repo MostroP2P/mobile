@@ -15,15 +15,17 @@ class OrderRepository {
 
       // Suscribirse a eventos que coincidan con el filtro
       final subscription = Nostr.instance.relaysService.startEventsSubscription(
-          request: NostrRequest(filters: const [filter]));
+        request: NostrRequest(filters: const [filter]),
+      );
 
       await for (final event in subscription.stream) {
         // Procesar cada evento recibido
-        final tags = event.tags;
+        final tags = event.tags ??
+            []; // Manejar caso nulo con un valor por defecto vacío
         final order = OrderModel(
-          id: event.id,
+          id: event.id ?? '', // Manejar caso nulo de 'id'
           type: _getTagValue(tags, 'k'), // 'sell' o 'buy'
-          user: event.pubkey,
+          user: event.pubkey ?? '', // Manejar caso nulo de 'pubkey'
           rating:
               5.0, // Valor simulado, puedes actualizarlo según sea necesario
           ratingCount: 1, // Simulado

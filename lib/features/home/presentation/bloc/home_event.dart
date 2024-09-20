@@ -1,12 +1,12 @@
+// home_event.dart
 import 'package:equatable/equatable.dart';
-
-enum OrderType { buy, sell }
+import 'package:mostro_mobile/features/home/presentation/bloc/home_state.dart';
 
 abstract class HomeEvent extends Equatable {
   const HomeEvent();
 
   @override
-  List<Object> get props => [];
+  List<Object?> get props => [];
 }
 
 class LoadOrders extends HomeEvent {}
@@ -17,5 +17,5 @@ class ChangeOrderType extends HomeEvent {
   const ChangeOrderType(this.orderType);
 
   @override
-  List<Object> get props => [orderType];
+  List<Object?> get props => [orderType];
 }

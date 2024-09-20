@@ -1,8 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/features/home/presentation/bloc/home_bloc.dart';
 import 'package:mostro_mobile/features/home/presentation/bloc/home_event.dart';
+import 'package:mostro_mobile/features/home/presentation/bloc/home_state.dart';
 import 'package:mostro_mobile/features/home/presentation/widgets/bottom_nav_bar.dart';
 import 'package:mostro_mobile/features/home/presentation/widgets/custom_app_bar.dart';
 import 'package:mostro_mobile/services/nostr_service.dart'; // Importar NostrService

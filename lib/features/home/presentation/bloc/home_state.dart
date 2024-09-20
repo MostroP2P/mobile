@@ -1,3 +1,4 @@
+// home_state.dart
 import 'package:equatable/equatable.dart';
 import 'package:mostro_mobile/features/home/data/models/order_model.dart';
 
@@ -23,7 +24,7 @@ class HomeState extends Equatable {
       status: HomeStatus.initial,
       allOrders: [],
       filteredOrders: [],
-      orderType: OrderType.buy,
+      orderType: OrderType.buy, // Valor inicial
     );
   }
 

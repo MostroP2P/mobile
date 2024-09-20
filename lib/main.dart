@@ -12,7 +12,6 @@ import 'package:mostro_mobile/features/home/presentation/bloc/home_bloc.dart';
 import 'package:mostro_mobile/data/repositories/order_repository.dart';
 import 'package:mostro_mobile/features/welcome/screens/welcome_screen.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
-// ... otras importaciones
 
 void main() async {
   await Hive.initFlutter();
@@ -23,7 +22,7 @@ void main() async {
 }
 
 class MyApp extends StatelessWidget {
-  final dynamic nostrService;
+  final NostrService nostrService;
 
   const MyApp({super.key, required this.nostrService});
 
@@ -38,9 +37,8 @@ class MyApp extends StatelessWidget {
           ),
         ),
         BlocProvider<HomeBloc>(
-          create: (context) => HomeBloc(
-            orderRepository: OrderRepository(),
-          )..add(LoadOrders()),
+          // Aquí pasamos OrderRepository como argumento posicional
+          create: (context) => HomeBloc(OrderRepository())..add(LoadOrders()),
         ),
       ],
       child: MaterialApp(

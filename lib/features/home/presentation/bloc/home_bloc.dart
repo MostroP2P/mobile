@@ -1,8 +1,10 @@
+// home_bloc.dart
+
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mostro_mobile/data/repositories/order_repository.dart';
 import 'package:mostro_mobile/features/home/data/models/order_model.dart';
-import 'package:mostro_mobile/features/home/data/repositories/order_repository.dart';
-import 'home_event.dart';
-import 'home_state.dart';
+import 'package:mostro_mobile/features/home/presentation/bloc/home_event.dart';
+import 'package:mostro_mobile/features/home/presentation/bloc/home_state.dart';
 
 class HomeBloc extends Bloc<HomeEvent, HomeState> {
   final OrderRepository orderRepository;
