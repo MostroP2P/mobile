@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+enum OrderType { buy, sell }
+
 abstract class HomeEvent extends Equatable {
   const HomeEvent();
 
@@ -17,5 +19,3 @@ class ChangeOrderType extends HomeEvent {
   @override
   List<Object> get props => [orderType];
 }
-
-enum OrderType { buy, sell }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mostro_mobile/core/utils/auth_utils.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
@@ -136,13 +137,16 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  void _onLogin() {
-    if (_formKey.currentState!.validate()) {
+  void _onLogin() async {
+    final savedPassword = await AuthUtils.getPassword();
+
+    if (_passwordController.text == savedPassword) {
+      // Autenticación exitosa, navega a la pantalla principal
+      Navigator.pushReplacementNamed(context, '/home');
+    } else {
       setState(() {
-        _isProcessing = true;
-        _errorMessage = null;
+        _errorMessage = 'Incorrect password';
       });
-      context.read<AuthBloc>().add(LoginRequested(_passwordController.text));
     }
   }
 }

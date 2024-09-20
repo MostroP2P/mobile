@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.example.mostro_mobile.app-mergeDebugResources-25:/values-zu/values-zu.xml",
+            "outputFile": "com.example.mostro_mobile.app-mergeDebugResources-27:/values-zu/values-zu.xml",
             "map": [
                 {
                     "source": "/home/andrea/.gradle/caches/transforms-3/c666c258fca39b3353b46678a6b928ab/transformed/core-1.13.1/res/values-zu/values-zu.xml",

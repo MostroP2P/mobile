@@ -12,6 +12,15 @@ class OrderModel {
   final String timeAgo;
   final String premium;
 
+  final double satsAmount;
+  final String sellerName;
+  final double sellerRating;
+  final int sellerReviewCount;
+  final String sellerAvatar;
+  final double exchangeRate;
+  final double buyerSatsAmount;
+  final double buyerFiatAmount;
+
   OrderModel({
     required this.id,
     required this.type,
@@ -25,10 +34,17 @@ class OrderModel {
     required this.paymentMethod,
     required this.timeAgo,
     required this.premium,
+    required this.satsAmount,
+    required this.sellerName,
+    required this.sellerRating,
+    required this.sellerReviewCount,
+    required this.sellerAvatar,
+    required this.exchangeRate,
+    required this.buyerSatsAmount,
+    required this.buyerFiatAmount,
   });
 
-  // Si necesitas crear una instancia de OrderModel desde un mapa (por ejemplo, al recibir datos de una API),
-  // puedes usar un método factory como este:
+  // Método para crear una instancia de OrderModel desde un JSON
   factory OrderModel.fromJson(Map<String, dynamic> json) {
     return OrderModel(
       id: json['id'],
@@ -43,11 +59,18 @@ class OrderModel {
       paymentMethod: json['paymentMethod'],
       timeAgo: json['timeAgo'],
       premium: json['premium'],
+      satsAmount: json['satsAmount'].toDouble(),
+      sellerName: json['sellerName'],
+      sellerRating: json['sellerRating'].toDouble(),
+      sellerReviewCount: json['sellerReviewCount'],
+      sellerAvatar: json['sellerAvatar'],
+      exchangeRate: json['exchangeRate'].toDouble(),
+      buyerSatsAmount: json['buyerSatsAmount'].toDouble(),
+      buyerFiatAmount: json['buyerFiatAmount'].toDouble(),
     );
   }
 
-  // Si necesitas convertir la instancia de OrderModel a un mapa (por ejemplo, para enviar datos a una API),
-  // puedes usar un método como este:
+  // Método para convertir una instancia de OrderModel a JSON
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -62,6 +85,14 @@ class OrderModel {
       'paymentMethod': paymentMethod,
       'timeAgo': timeAgo,
       'premium': premium,
+      'satsAmount': satsAmount,
+      'sellerName': sellerName,
+      'sellerRating': sellerRating,
+      'sellerReviewCount': sellerReviewCount,
+      'sellerAvatar': sellerAvatar,
+      'exchangeRate': exchangeRate,
+      'buyerSatsAmount': buyerSatsAmount,
+      'buyerFiatAmount': buyerFiatAmount,
     };
   }
 }

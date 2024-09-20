@@ -1,4 +1,9 @@
-import 'package:dart_nostr/dart_nostr.dart';
+import 'package:mostro_mobile/core/utils/nostr_utils.dart';
+import 'package:mostro_mobile/data/models/nostr_event.dart'
+    as nostr_event; // Usa el modelo correcto
+import 'package:dart_nostr/dart_nostr.dart'; // Este es necesario para las funcionalidades de Nostr
+import 'package:convert/convert.dart'; // Importar hex
+import 'package:pointycastle/pointycastle.dart'; // Importar correctamente las claves
 
 class NostrService {
   static final NostrService _instance = NostrService._internal();
@@ -9,14 +14,14 @@ class NostrService {
 
   NostrService._internal();
 
-  String? _privateKey;
+  ECPrivateKey? _privateKey;
+
   final List<String> _relays = [
-    'ws://localhost:7000',
+    'wss://localhost:7000',
   ];
 
   Future<void> init() async {
     try {
-      // Initialize connection to relays
       await Nostr.instance.relaysService.init(relaysUrl: _relays);
       print('Nostr initialized successfully');
     } catch (e) {
@@ -24,7 +29,7 @@ class NostrService {
     }
   }
 
-  void setPrivateKey(String? privateKey) {
+  void setPrivateKey(ECPrivateKey privateKey) {
     _privateKey = privateKey;
   }
 
@@ -34,29 +39,41 @@ class NostrService {
       throw Exception('Private key not set');
     }
 
-    // Create an event and publish it
-    // final event = NostrEvent.fromPartialData(
-    //   kind: kind,
-    //   content: content,
-    //   keyPair: KeyPair.fromPrivateKey(
-    //       _privateKey!), // Assuming KeyPair handling is required
-    //   tags: tags ?? [],
-    // );
+    try {
+      // Crear el evento
+      final keyPair = NostrUtils.generateKeyPair();
+      final publicKey = keyPair.publicKey as ECPublicKey;
+      final pubkeyHex = hex.encode(publicKey.Q!.getEncoded(false));
 
-    // try {
-    //   await Nostr.instance.relaysService.sendEventToRelays(event);
-    //   print('Event published: ${event.id}');
-    // } catch (e) {
-    //   print('Failed to publish event: $e');
-    // }
+      // Aquí usamos la clase NostrEvent de tu proyecto
+      final event = nostr_event.NostrEvent(
+        id: '',
+        kind: kind,
+        pubkey: pubkeyHex,
+        content: content,
+        createdAt: DateTime.now(),
+        tags: tags,
+        sig: '',
+      );
+
+      // Generar ID y firmar el evento
+      event.id = event.generateId();
+      event.sig = event.signEvent(_privateKey!);
+
+      // Enviar el evento a los relays
+      await Nostr.instance.relaysService.sendEventToRelays(event as NostrEvent);
+
+      print('Event published: ${event.id}');
+    } catch (e) {
+      print('Failed to publish event: $e');
+    }
   }
 
   Stream<NostrEvent> subscribeToEvents(NostrFilter filter) {
     final request = NostrRequest(filters: [filter]);
+
     return Nostr.instance.relaysService
-        .startEventsSubscription(
-          request: request,
-        )
+        .startEventsSubscription(request: request)
         .stream;
   }
 

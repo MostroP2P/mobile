@@ -13,6 +13,9 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Cargar las órdenes cuando se inicia la pantalla
+    context.read<HomeBloc>().add(LoadOrders());
+
     return Scaffold(
       backgroundColor: const Color(0xFF1D212C),
       appBar: const CustomAppBar(),

@@ -3,9 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/features/home/presentation/bloc/home_bloc.dart';
 import 'package:mostro_mobile/features/home/presentation/bloc/home_event.dart';
-import 'package:mostro_mobile/features/home/presentation/bloc/home_state.dart';
 import 'package:mostro_mobile/features/home/presentation/widgets/bottom_nav_bar.dart';
 import 'package:mostro_mobile/features/home/presentation/widgets/custom_app_bar.dart';
+import 'package:mostro_mobile/services/nostr_service.dart'; // Importar NostrService
 
 class AddOrderScreen extends StatefulWidget {
   const AddOrderScreen({super.key});
@@ -16,6 +16,10 @@ class AddOrderScreen extends StatefulWidget {
 
 class _AddOrderScreenState extends State<AddOrderScreen> {
   OrderType _currentType = OrderType.sell;
+  final _fiatCodeController = TextEditingController();
+  final _fiatAmountController = TextEditingController();
+  final _satsAmountController = TextEditingController();
+  final _paymentMethodController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -110,15 +114,13 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
           const Text('Make sure your order is below 20K sats',
               style: TextStyle(color: Colors.grey)),
           const SizedBox(height: 16),
-          _buildDropdownField('Fiat code'),
+          _buildTextField('Fiat code', _fiatCodeController),
           const SizedBox(height: 16),
-          _buildTextField('Fiat amount'),
+          _buildTextField('Fiat amount', _fiatAmountController),
           const SizedBox(height: 16),
-          _buildSwitchField('Fixed'),
+          _buildTextField('Sats amount', _satsAmountController),
           const SizedBox(height: 16),
-          _buildTextField('Sats amount'),
-          const SizedBox(height: 16),
-          _buildDropdownField('Payment method'),
+          _buildTextField('Payment method', _paymentMethodController),
           const SizedBox(height: 32),
           _buildActionButtons(),
         ],
@@ -135,17 +137,13 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
           const Text('Make sure your order is below 20K sats',
               style: TextStyle(color: Colors.grey)),
           const SizedBox(height: 16),
-          _buildDropdownField('Fiat code'),
+          _buildTextField('Fiat code', _fiatCodeController),
           const SizedBox(height: 16),
-          _buildTextField('Fiat amount'),
+          _buildTextField('Fiat amount', _fiatAmountController),
           const SizedBox(height: 16),
-          _buildSwitchField('Fixed'),
+          _buildTextField('Sats amount', _satsAmountController),
           const SizedBox(height: 16),
-          _buildTextField('Sats amount'),
-          const SizedBox(height: 16),
-          _buildTextField('Lightning Invoice without an amount'),
-          const SizedBox(height: 16),
-          _buildDropdownField('Payment method'),
+          _buildTextField('Payment method', _paymentMethodController),
           const SizedBox(height: 32),
           _buildActionButtons(),
         ],
@@ -153,24 +151,7 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
     );
   }
 
-  Widget _buildDropdownField(String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1D212C),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: const TextStyle(color: Colors.white)),
-          const Icon(Icons.arrow_drop_down, color: Colors.white),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTextField(String label) {
+  Widget _buildTextField(String label, TextEditingController controller) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
@@ -178,6 +159,7 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
         borderRadius: BorderRadius.circular(8),
       ),
       child: TextField(
+        controller: controller,
         style: const TextStyle(color: Colors.white),
         decoration: InputDecoration(
           border: InputBorder.none,
@@ -185,20 +167,6 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
           labelStyle: const TextStyle(color: Colors.grey),
         ),
       ),
-    );
-  }
-
-  Widget _buildSwitchField(String label) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(label, style: const TextStyle(color: Colors.white)),
-        Switch(
-          value: false,
-          onChanged: (value) {},
-          activeColor: const Color(0xFF8CC541),
-        ),
-      ],
     );
   }
 
@@ -214,14 +182,85 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
         ),
         const SizedBox(width: 16),
         ElevatedButton(
-          onPressed: () {
-            // Implement submit logic
-          },
+          onPressed: _submitOrder,
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF8CC541),
           ),
           child: const Text('SUBMIT'),
         ),
+      ],
+    );
+  }
+
+  void _submitOrder() async {
+    final fiatCode = _fiatCodeController.text;
+    final fiatAmount = double.tryParse(_fiatAmountController.text) ?? 0;
+    final satsAmount = int.tryParse(_satsAmountController.text) ?? 0;
+    final paymentMethod = _paymentMethodController.text;
+
+    if (_currentType == OrderType.sell) {
+      await _createSellOrder(fiatCode, fiatAmount, satsAmount, paymentMethod);
+    } else {
+      await _createBuyOrder(fiatCode, fiatAmount, satsAmount, paymentMethod);
+    }
+
+    Navigator.of(context).pop();
+  }
+
+  Future<void> _createSellOrder(String fiatCode, double fiatAmount,
+      int satsAmount, String paymentMethod) async {
+    final nostrService = NostrService();
+    await nostrService.publishEvent(
+      1059, // Tipo de evento para órdenes nuevas
+      jsonEncode({
+        'order': {
+          'version': 1,
+          'action': 'new-order',
+          'content': {
+            'order': {
+              'kind': 'sell',
+              'status': 'pending',
+              'amount': satsAmount,
+              'fiat_code': fiatCode,
+              'fiat_amount': fiatAmount,
+              'payment_method': paymentMethod,
+              'premium': 1,
+              'created_at': 0, // Mostro reemplazará por el timestamp correcto
+            }
+          }
+        }
+      }),
+      tags: [
+        ['p', 'mostro_pubkey'], // Reemplazar por la clave pública de Mostro
+      ],
+    );
+  }
+
+  Future<void> _createBuyOrder(String fiatCode, double fiatAmount,
+      int satsAmount, String paymentMethod) async {
+    final nostrService = NostrService();
+    await nostrService.publishEvent(
+      1059, // Tipo de evento para órdenes nuevas
+      jsonEncode({
+        'order': {
+          'version': 1,
+          'action': 'new-order',
+          'content': {
+            'order': {
+              'kind': 'buy',
+              'status': 'pending',
+              'amount': satsAmount,
+              'fiat_code': fiatCode,
+              'fiat_amount': fiatAmount,
+              'payment_method': paymentMethod,
+              'premium': 1,
+              'created_at': 0, // Mostro reemplazará por el timestamp correcto
+            }
+          }
+        }
+      }),
+      tags: [
+        ['p', 'mostro_pubkey'], // Reemplazar por la clave pública de Mostro
       ],
     );
   }

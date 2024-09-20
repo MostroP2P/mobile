@@ -1,39 +1,46 @@
 import 'package:equatable/equatable.dart';
-import '../../data/models/order_model.dart';
-import 'home_event.dart';
+import 'package:mostro_mobile/features/home/data/models/order_model.dart';
 
 enum HomeStatus { initial, loading, loaded, error }
 
+enum OrderType { buy, sell }
+
 class HomeState extends Equatable {
   final HomeStatus status;
-  final List<OrderModel> orders;
+  final List<OrderModel> allOrders;
+  final List<OrderModel> filteredOrders;
   final OrderType orderType;
 
   const HomeState({
-    this.status = HomeStatus.initial,
-    this.orders = const [],
-    this.orderType = OrderType.buy,
+    required this.status,
+    required this.allOrders,
+    required this.filteredOrders,
+    required this.orderType,
   });
+
+  factory HomeState.initial() {
+    return const HomeState(
+      status: HomeStatus.initial,
+      allOrders: [],
+      filteredOrders: [],
+      orderType: OrderType.buy,
+    );
+  }
 
   HomeState copyWith({
     HomeStatus? status,
-    List<OrderModel>? orders,
+    List<OrderModel>? allOrders,
+    List<OrderModel>? filteredOrders,
     OrderType? orderType,
   }) {
     return HomeState(
       status: status ?? this.status,
-      orders: orders ?? this.orders,
+      allOrders: allOrders ?? this.allOrders,
+      filteredOrders: filteredOrders ?? this.filteredOrders,
       orderType: orderType ?? this.orderType,
     );
   }
 
-  List<OrderModel> get filteredOrders {
-    return orders
-        .where((order) =>
-            order.type == (orderType == OrderType.buy ? 'buy' : 'sell'))
-        .toList();
-  }
-
   @override
-  List<Object> get props => [status, orders, orderType];
+  List<Object> get props => [status, allOrders, filteredOrders, orderType];
 }

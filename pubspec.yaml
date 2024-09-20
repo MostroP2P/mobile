@@ -46,6 +46,9 @@ dependencies:
   hive: ^2.2.3
   crypto: ^3.0.5
   hive_flutter: ^1.1.0
+  pointycastle: ^3.9.1
+  convert: ^3.1.1
+  shared_preferences: ^2.3.2
 
 dev_dependencies:
   flutter_test:

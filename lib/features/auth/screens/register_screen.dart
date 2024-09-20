@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mostro_mobile/core/utils/auth_utils.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
@@ -199,6 +200,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _isProcessing = true;
         _errorMessage = null;
       });
+
+      // Guardar la contraseña localmente
+      AuthUtils.savePassword(_password);
+
       context
           .read<AuthBloc>()
           .add(RegisterRequested(_nsecController.text, _password));

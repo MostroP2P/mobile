@@ -1,53 +1,65 @@
+import 'package:dart_nostr/dart_nostr.dart';
 import '../../features/home/data/models/order_model.dart';
+import 'package:convert/convert.dart';
 
 class OrderRepository {
-  Future<List<OrderModel>> getOrders() async {
-    // TODO: Implement actual nostr call to get orders
-    await Future.delayed(
-        const Duration(seconds: 1)); // Simulating network delay
-    return [
-      OrderModel(
-        id: '1',
-        type: 'buy',
-        user: 'anon 5/5',
-        rating: 5.0,
-        ratingCount: 2,
-        amount: 1200000,
-        currency: 'sats',
-        fiatAmount: 31.08,
-        fiatCurrency: 'VES',
-        paymentMethod: 'Wire transfer',
-        timeAgo: '1 week ago',
-        premium: '+3%',
-      ),
-      OrderModel(
-        id: '2',
-        type: 'sell',
-        user: 'anon 3.9/5',
-        rating: 3.9,
-        ratingCount: 5,
-        amount: 390000,
-        currency: 'sats',
-        fiatAmount: 3231,
-        fiatCurrency: 'MXN',
-        paymentMethod: 'Transferencia bancaria',
-        timeAgo: '2 weeks ago',
-        premium: '+0%',
-      ),
-      OrderModel(
-        id: '3',
-        type: 'sell',
-        user: 'Pedro9734 5/5',
-        rating: 5.0,
-        ratingCount: 19,
-        amount: 390000,
-        currency: 'sats',
-        fiatAmount: 3483,
-        fiatCurrency: 'MXN',
-        paymentMethod: 'Revolut',
-        timeAgo: '2 weeks ago',
-        premium: '+1%',
-      ),
-    ];
+  Future<List<OrderModel>> getOrdersFromNostr() async {
+    List<OrderModel> orders = [];
+
+    try {
+      // Crear el filtro para obtener eventos con kind 38383 (órdenes)
+      const filter = NostrFilter(
+        kinds: [38383],
+        // Aquí puedes agregar más filtros como autor o estado (s) si es necesario
+      );
+
+      // Suscribirse a eventos que coincidan con el filtro
+      final subscription = Nostr.instance.relaysService.startEventsSubscription(
+          request: NostrRequest(filters: const [filter]));
+
+      await for (final event in subscription.stream) {
+        // Procesar cada evento recibido
+        final tags = event.tags;
+        final order = OrderModel(
+          id: event.id,
+          type: _getTagValue(tags, 'k'), // 'sell' o 'buy'
+          user: event.pubkey,
+          rating:
+              5.0, // Valor simulado, puedes actualizarlo según sea necesario
+          ratingCount: 1, // Simulado
+          amount: int.parse(_getTagValue(tags, 'amt')),
+          currency: 'sats',
+          fiatAmount: double.parse(_getTagValue(tags, 'fa')),
+          fiatCurrency: _getTagValue(tags, 'f'),
+          paymentMethod: _getTagValue(tags, 'pm'),
+          timeAgo: 'Pending', // Simulación
+          premium: _getTagValue(tags, 'premium'),
+          satsAmount: double.parse(_getTagValue(tags, 'amt')),
+          sellerName: 'Nostr User', // Simulado
+          sellerRating: 5.0, // Simulado
+          sellerReviewCount: 10, // Simulado
+          sellerAvatar: '', // Simulado
+          exchangeRate: 40000.0, // Simulado
+          buyerSatsAmount: 0, // Simulado
+          buyerFiatAmount: 0, // Simulado
+        );
+
+        orders.add(order);
+      }
+    } catch (e) {
+      print('Error al obtener órdenes: $e');
+    }
+
+    return orders;
+  }
+
+  // Función para extraer el valor de una etiqueta
+  String _getTagValue(List<List<String>> tags, String key) {
+    for (var tag in tags) {
+      if (tag.isNotEmpty && tag[0] == key) {
+        return tag[1];
+      }
+    }
+    return '';
   }
 }
