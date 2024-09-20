@@ -1,4 +1,4 @@
-# Mostro mobile client
+# Mostro Mobile Client
 
 Super early version of a mobile client for the [Mostro](https://github.com/MostroP2P/mostro) P2P platform.
 
@@ -6,33 +6,84 @@ This project is a mobile interface that facilitates peer-to-peer bitcoin trading
 
 ## Prerequisites
 
-- Install [Android studio](https://developer.android.com/studio): Capacitor 6 requires a minimum of Android Studio 2023.1.1, detailed info [here](https://capacitorjs.com/docs/getting-started/environment-setup)
-- Install [node.js](https://nodejs.org): Minimum version 20.x.0
-- Install [ionic](https://ionicframework.com/)
-  - `npm i -g @ionic/cli`
+### For the Mobile Client
+- Install [Flutter](https://flutter.dev/docs/get-started/install): Follow the official guide for your operating system.
+- Install [Android Studio](https://developer.android.com/studio) or [Xcode](https://developer.apple.com/xcode/) (for iOS development)
+- Install [VS Code](https://code.visualstudio.com/) (optional but recommended)
 
-## Install
+### For Mostro Daemon
+- Install [Rust](https://www.rust-lang.org/tools/install)
+- Install [Docker](https://docs.docker.com/get-docker/)
 
+### For Testing Environment
+- Install [Polar](https://lightningpolar.com/): For simulating Lightning Network nodes
+
+## Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/MostroP2P/mobile.git
+   cd mobile
+   ```
+
+2. Install Flutter dependencies:
+   ```bash
+   flutter pub get
+   ```
+
+## Running the App
+
+### On Emulator/Simulator
 ```bash
-git clone https://github.com/MostroP2P/mobile.git
-cd mobile
-npm install
+flutter run
 ```
 
-## Run the app in the browser:
-
+### On Physical Device
+Connect your device and run:
 ```bash
-ionic serve
+flutter run
 ```
 
-## Run the app in your mobile device:
+## Setting up Mostro Daemon
 
-```bash
-ionic build
-ionic cap sync
-ionic cap open android
-```
+1. Clone the Mostro repository:
+   ```bash
+   git clone https://github.com/MostroP2P/mostro.git
+   cd mostro
+   ```
 
-## Start building
+2. Set up the configuration:
+   ```bash
+   cp settings.tpl.toml settings.toml
+   ```
+   Edit `settings.toml` with your specific configurations.
 
-Please give a look to our issues section :smile:
+3. Initialize the database:
+   ```bash
+   ./init_db.sh
+   ```
+
+4. Run the Mostro daemon:
+   ```bash
+   cargo run
+   ```
+
+## Setting up Polar for Testing
+
+1. Launch Polar and create a new Lightning Network.
+2. Configure at least one node (e.g., "alice").
+3. Copy the necessary connection details (cert file, macaroon file) to your Mostro `settings.toml`.
+
+## Development Workflow
+
+1. Ensure Polar is running with your test Lightning Network.
+2. Start the Mostro daemon.
+3. Run the Flutter app and connect it to your local Mostro instance.
+
+## Contributing
+
+Please take a look at our issues section for areas where you can contribute. We welcome all contributions, big or small! 😊
+
+## License
+
+This project is licensed under the MIT License. See the `LICENSE` file for details.
