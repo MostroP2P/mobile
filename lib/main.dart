@@ -14,10 +14,12 @@ import 'package:mostro_mobile/features/welcome/screens/welcome_screen.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
 
   final nostrService = NostrService();
   await nostrService.init();
+
   runApp(MyApp(nostrService: nostrService));
 }
 
@@ -37,7 +39,6 @@ class MyApp extends StatelessWidget {
           ),
         ),
         BlocProvider<HomeBloc>(
-          // Aquí pasamos OrderRepository como argumento posicional
           create: (context) => HomeBloc(OrderRepository())..add(LoadOrders()),
         ),
       ],
