@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../data/models/order_model.dart';
+import '../../../../data/models/order_model.dart';
 import 'order_list_item.dart';
 
 class OrderList extends StatelessWidget {

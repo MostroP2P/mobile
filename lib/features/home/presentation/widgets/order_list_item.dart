@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:heroicons/heroicons.dart';
-import '../../data/models/order_model.dart';
+import '../../../../data/models/order_model.dart';
 
 class OrderListItem extends StatelessWidget {
   final OrderModel order;

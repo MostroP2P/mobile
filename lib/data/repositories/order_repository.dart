@@ -1,6 +1,5 @@
 import 'package:dart_nostr/dart_nostr.dart';
-import '../../features/home/data/models/order_model.dart';
-import 'package:convert/convert.dart';
+import '../models/order_model.dart';
 
 class OrderRepository {
   Future<List<OrderModel>> getOrdersFromNostr() async {

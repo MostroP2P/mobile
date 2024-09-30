@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:heroicons/heroicons.dart';
-import 'package:mostro_mobile/features/home/data/models/order_model.dart';
+import 'package:mostro_mobile/data/models/order_model.dart';
 import 'package:mostro_mobile/features/home/presentation/widgets/bottom_nav_bar.dart';
 
 class OrderDetailsScreen extends StatelessWidget {

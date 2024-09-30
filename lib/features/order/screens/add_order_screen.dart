@@ -1,14 +1,11 @@
 import 'dart:convert';
-
+import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:heroicons/heroicons.dart';
-import 'package:mostro_mobile/features/home/presentation/bloc/home_bloc.dart';
-import 'package:mostro_mobile/features/home/presentation/bloc/home_event.dart';
 import 'package:mostro_mobile/features/home/presentation/bloc/home_state.dart';
 import 'package:mostro_mobile/features/home/presentation/widgets/bottom_nav_bar.dart';
 import 'package:mostro_mobile/features/home/presentation/widgets/custom_app_bar.dart';
-import 'package:mostro_mobile/services/nostr_service.dart'; // Importar NostrService
+import 'package:mostro_mobile/services/nostr_service.dart'; // Importa el servicio NostrService
+import 'package:mostro_mobile/data/models/nostr_event.dart'; // Importa NostrEvent
 
 class AddOrderScreen extends StatefulWidget {
   const AddOrderScreen({super.key});
@@ -23,6 +20,18 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
   final _fiatAmountController = TextEditingController();
   final _satsAmountController = TextEditingController();
   final _paymentMethodController = TextEditingController();
+  final NostrService nostrService =
+      NostrService(); // Instancia del servicio Nostr
+
+  @override
+  void initState() {
+    super.initState();
+    initNostr();
+  }
+
+  Future<void> initNostr() async {
+    await nostrService.init(); // Asegura la inicialización de Nostr al comenzar
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -196,75 +205,58 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
   }
 
   void _submitOrder() async {
-    final fiatCode = _fiatCodeController.text;
-    final fiatAmount = double.tryParse(_fiatAmountController.text) ?? 0;
-    final satsAmount = int.tryParse(_satsAmountController.text) ?? 0;
-    final paymentMethod = _paymentMethodController.text;
+    final fiatCode = _fiatCodeController.text.trim();
+    final fiatAmount = double.tryParse(_fiatAmountController.text.trim()) ?? 0;
+    final satsAmount = int.tryParse(_satsAmountController.text.trim()) ?? 0;
+    final paymentMethod = _paymentMethodController.text.trim();
 
-    if (_currentType == OrderType.sell) {
-      await _createSellOrder(fiatCode, fiatAmount, satsAmount, paymentMethod);
-    } else {
-      await _createBuyOrder(fiatCode, fiatAmount, satsAmount, paymentMethod);
+    if (fiatCode.isEmpty || fiatAmount <= 0 || paymentMethod.isEmpty) {
+      _showErrorDialog('Please fill all fields correctly.');
+      return;
     }
 
-    Navigator.of(context).pop();
+    // Crear y configurar un nuevo NostrEvent
+    var event = P2POrderEvent.create(
+        privateKey: 'your_private_key_here',
+        createdAt: DateTime.now().millisecondsSinceEpoch,
+        tags: [
+          [
+            'p',
+            'npub1n5yrh6lkvc0l3lcmcfwake4r3ex7jrm0e6lumsc22d8ylf7jwk0qack9tq'
+          ],
+          ['k', _currentType == OrderType.sell ? 'sell' : 'buy'],
+          ['f', fiatCode],
+          ['amt', satsAmount.toString()],
+          ['fa', fiatAmount.toString()],
+          ['pm', paymentMethod]
+        ],
+        content: jsonEncode({'message': 'Creating new order'}));
+
+    // Asegúrate de que NostrService esté inicializado antes de usarlo
+    if (!nostrService.isInitialized) {
+      await nostrService.init();
+    }
+    await nostrService.publishEvent(
+        event as NostrEvent); // Usar el método de publicación adecuado
   }
 
-  Future<void> _createSellOrder(String fiatCode, double fiatAmount,
-      int satsAmount, String paymentMethod) async {
-    final nostrService = NostrService();
-    await nostrService.publishEvent(
-      1059, // Tipo de evento para órdenes nuevas
-      jsonEncode({
-        'order': {
-          'version': 1,
-          'action': 'new-order',
-          'content': {
-            'order': {
-              'kind': 'sell',
-              'status': 'pending',
-              'amount': satsAmount,
-              'fiat_code': fiatCode,
-              'fiat_amount': fiatAmount,
-              'payment_method': paymentMethod,
-              'premium': 1,
-              'created_at': 0, // Mostro reemplazará por el timestamp correcto
-            }
-          }
-        }
-      }),
-      tags: [
-        ['p', 'mostro_pubkey'], // Reemplazar por la clave pública de Mostro
-      ],
-    );
-  }
-
-  Future<void> _createBuyOrder(String fiatCode, double fiatAmount,
-      int satsAmount, String paymentMethod) async {
-    final nostrService = NostrService();
-    await nostrService.publishEvent(
-      1059, // Tipo de evento para órdenes nuevas
-      jsonEncode({
-        'order': {
-          'version': 1,
-          'action': 'new-order',
-          'content': {
-            'order': {
-              'kind': 'buy',
-              'status': 'pending',
-              'amount': satsAmount,
-              'fiat_code': fiatCode,
-              'fiat_amount': fiatAmount,
-              'payment_method': paymentMethod,
-              'premium': 1,
-              'created_at': 0, // Mostro reemplazará por el timestamp correcto
-            }
-          }
-        }
-      }),
-      tags: [
-        ['p', 'mostro_pubkey'], // Reemplazar por la clave pública de Mostro
-      ],
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Error'),
+          content: Text(message),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 }

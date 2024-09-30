@@ -1,6 +1,6 @@
 // home_state.dart
 import 'package:equatable/equatable.dart';
-import 'package:mostro_mobile/features/home/data/models/order_model.dart';
+import 'package:mostro_mobile/data/models/order_model.dart';
 
 enum HomeStatus { initial, loading, loaded, error }
 

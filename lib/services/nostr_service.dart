@@ -1,5 +1,5 @@
 import 'package:dart_nostr/dart_nostr.dart';
-import 'package:mostro_mobile/core/utils/nostr_utils.dart';
+import 'package:mostro_mobile/core/config.dart';
 
 class NostrService {
   static final NostrService _instance = NostrService._internal();
@@ -7,72 +7,82 @@ class NostrService {
   NostrService._internal();
 
   late Nostr _nostr;
-  KeyPair? _keyPair;
-
-  final List<String> _relays = [
-    'ws://localhost:7000',
-  ];
+  bool _isInitialized = false;
 
   Future<void> init() async {
-    _nostr = Nostr();
+    if (_isInitialized) return;
+
+    _nostr = Nostr.instance;
     try {
       await _nostr.relaysService.init(
-        relaysUrl: _relays,
+        relaysUrl: Config.nostrRelays,
+        connectionTimeout: Config.nostrConnectionTimeout,
+        onRelayListening: (relay, url, channel) {
+          print('Connected to relay: $url');
+        },
+        onRelayConnectionError: (relay, error, channel) {
+          print('Failed to connect to relay $relay: $error');
+        },
       );
+      _isInitialized = true;
       print('Nostr initialized successfully');
     } catch (e) {
       print('Failed to initialize Nostr: $e');
+      rethrow;
     }
   }
 
-  void setPrivateKey(String privateKey) {
-    try {
-      _keyPair =
-          _nostr.keysService.generateKeyPairFromExistingPrivateKey(privateKey);
-      print('Private key set successfully');
-    } catch (e) {
-      print('Failed to set private key: $e');
-    }
-  }
-
-  Future<void> publishEvent(int kind, String content,
-      {List<List<String>>? tags}) async {
-    if (_keyPair == null) {
-      throw Exception('Private key not set');
+  Future<void> publishEvent(NostrEvent event) async {
+    if (!_isInitialized) {
+      throw Exception('Nostr is not initialized. Call init() first.');
     }
 
     try {
-      final event = NostrEvent.fromPartialData(
-        kind: kind,
-        content: content,
-        keyPairs: _keyPair!,
-        tags: tags ?? [],
-      );
-
-      await _nostr.relaysService.sendEventToRelays(event);
-      print('Event published: ${event.id}');
+      await _nostr.relaysService.sendEventToRelaysAsync(event,
+          timeout: Config.nostrConnectionTimeout);
+      print('Event published successfully');
     } catch (e) {
       print('Failed to publish event: $e');
+      rethrow;
     }
   }
 
   Stream<NostrEvent> subscribeToEvents(NostrFilter filter) {
+    if (!_isInitialized) {
+      throw Exception('Nostr is not initialized. Call init() first.');
+    }
+
     final request = NostrRequest(filters: [filter]);
-    return _nostr.relaysService
-        .startEventsSubscription(request: request)
-        .stream;
+    final subscription =
+        _nostr.relaysService.startEventsSubscription(request: request);
+
+    return subscription.stream;
   }
 
-  Future<void> disconnect() async {
+  Future<void> disconnectFromRelays() async {
+    if (!_isInitialized) return;
+
     await _nostr.relaysService.disconnectFromRelays();
-    print('Disconnected from all relays');
+    _isInitialized = false;
   }
 
-  KeyPair generateKeyPair() {
-    return NostrUtils.generateKeyPair();
+  bool get isInitialized => _isInitialized;
+
+  NostrKeyPairs generateKeyPair() {
+    return _nostr.keysService.generateKeyPair();
   }
 
-  String generatePrivateKey() {
-    return NostrUtils.generatePrivateKey();
+  String signMessage(String message, String privateKey) {
+    return _nostr.keysService.sign(privateKey: privateKey, message: message);
+  }
+
+  bool verifySignature(String signature, String message, String publicKey) {
+    return _nostr.keysService
+        .verify(publicKey: publicKey, message: message, signature: signature);
+  }
+
+  // Nuevo método para obtener la clave pública de Mostro
+  String getMostroPubKey() {
+    return Config.mostroPubKey;
   }
 }
