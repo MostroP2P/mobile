@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 class Config {
   // Configuración de Nostr
   static const List<String> nostrRelays = [
-    'ws://10.0.2.2:7000',
+    //'ws://10.0.2.2:7000',
     'wss://relay.damus.io',
     // Agrega más relays aquí si es necesario
   ];

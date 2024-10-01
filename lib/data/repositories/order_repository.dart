@@ -1,66 +1,73 @@
 import 'package:dart_nostr/dart_nostr.dart';
 import '../models/order_model.dart';
+import '../../services/nostr_service.dart';
 
 class OrderRepository {
+  final NostrService nostrService;
+
+  OrderRepository(this.nostrService);
+
   Future<List<OrderModel>> getOrdersFromNostr() async {
     List<OrderModel> orders = [];
 
     try {
-      // Crear el filtro para obtener eventos con kind 38383 (órdenes)
-      const filter = NostrFilter(
-        kinds: [38383],
-        // Aquí puedes agregar más filtros como autor o estado (s) si es necesario
-      );
+      const filter = NostrFilter(kinds: [38383]);
+      final eventStream = nostrService.subscribeToEvents(filter);
 
-      // Suscribirse a eventos que coincidan con el filtro
-      final subscription = Nostr.instance.relaysService.startEventsSubscription(
-        request: NostrRequest(filters: const [filter]),
-      );
-
-      await for (final event in subscription.stream) {
-        // Procesar cada evento recibido
-        final tags = event.tags ??
-            []; // Manejar caso nulo con un valor por defecto vacío
-        final order = OrderModel(
-          id: event.id ?? '', // Manejar caso nulo de 'id'
-          type: _getTagValue(tags, 'k'), // 'sell' o 'buy'
-          user: event.pubkey ?? '', // Manejar caso nulo de 'pubkey'
-          rating:
-              5.0, // Valor simulado, puedes actualizarlo según sea necesario
-          ratingCount: 1, // Simulado
-          amount: int.parse(_getTagValue(tags, 'amt')),
-          currency: 'sats',
-          fiatAmount: double.parse(_getTagValue(tags, 'fa')),
-          fiatCurrency: _getTagValue(tags, 'f'),
-          paymentMethod: _getTagValue(tags, 'pm'),
-          timeAgo: 'Pending', // Simulación
-          premium: _getTagValue(tags, 'premium'),
-          satsAmount: double.parse(_getTagValue(tags, 'amt')),
-          sellerName: 'Nostr User', // Simulado
-          sellerRating: 5.0, // Simulado
-          sellerReviewCount: 10, // Simulado
-          sellerAvatar: '', // Simulado
-          exchangeRate: 40000.0, // Simulado
-          buyerSatsAmount: 0, // Simulado
-          buyerFiatAmount: 0, // Simulado
-        );
-
-        orders.add(order);
+      await for (final event in eventStream) {
+        final order = _parseEventToOrder(event);
+        if (order != null) {
+          orders.add(order);
+          print('Order added: ${order.id}');
+        }
       }
     } catch (e) {
       print('Error al obtener órdenes: $e');
     }
 
+    print('Total orders fetched: ${orders.length}');
     return orders;
   }
 
-  // Función para extraer el valor de una etiqueta
-  String _getTagValue(List<List<String>> tags, String key) {
-    for (var tag in tags) {
-      if (tag.isNotEmpty && tag[0] == key) {
-        return tag[1];
-      }
+  OrderModel? _parseEventToOrder(NostrEvent event) {
+    try {
+      final tags = Map.fromEntries(event.tags!.map((t) => MapEntry(t[0], t.sublist(1))));
+
+      final id = tags['d']?.first ?? '';
+      final type = tags['k']?.first.toLowerCase() ?? '';
+      final fiatCurrency = tags['f']?.first ?? '';
+      final status = tags['s']?.first ?? '';
+      final amount = int.tryParse(tags['amt']?.first ?? '0') ?? 0;
+      final fiatAmount = double.tryParse(tags['fa']?.first ?? '0') ?? 0.0;
+      final paymentMethod = tags['pm']?.join(', ') ?? '';
+      final premium = tags['premium']?.first ?? '0';
+
+      return OrderModel(
+        id: id,
+        type: type,
+        user: event.pubkey ?? '',
+        rating: 0.0,
+        ratingCount: 0,
+        amount: amount,
+        currency: 'sats',
+        fiatAmount: fiatAmount,
+        fiatCurrency: fiatCurrency,
+        paymentMethod: paymentMethod,
+        timeAgo: 'Recently',
+        premium: premium,
+        satsAmount: amount.toDouble(),
+        sellerName: 'Unknown',
+        sellerRating: 0.0,
+        sellerReviewCount: 0,
+        sellerAvatar: '',
+        exchangeRate: amount > 0 ? fiatAmount / amount : 0,
+        buyerSatsAmount: 0,
+        buyerFiatAmount: 0,
+        status: status
+      );
+    } catch (e) {
+      print('Error parsing event to order: $e');
+      return null;
     }
-    return '';
   }
 }

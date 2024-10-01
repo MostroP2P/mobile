@@ -11,7 +11,6 @@ class OrderModel {
   final String paymentMethod;
   final String timeAgo;
   final String premium;
-
   final double satsAmount;
   final String sellerName;
   final double sellerRating;
@@ -20,6 +19,7 @@ class OrderModel {
   final double exchangeRate;
   final double buyerSatsAmount;
   final double buyerFiatAmount;
+  final String status;
 
   OrderModel({
     required this.id,
@@ -42,9 +42,9 @@ class OrderModel {
     required this.exchangeRate,
     required this.buyerSatsAmount,
     required this.buyerFiatAmount,
+    required this.status,
   });
 
-  // Método para crear una instancia de OrderModel desde un JSON
   factory OrderModel.fromJson(Map<String, dynamic> json) {
     return OrderModel(
       id: json['id'],
@@ -67,10 +67,10 @@ class OrderModel {
       exchangeRate: json['exchangeRate'].toDouble(),
       buyerSatsAmount: json['buyerSatsAmount'].toDouble(),
       buyerFiatAmount: json['buyerFiatAmount'].toDouble(),
+      status: json['status'],
     );
   }
 
-  // Método para convertir una instancia de OrderModel a JSON
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -93,6 +93,7 @@ class OrderModel {
       'exchangeRate': exchangeRate,
       'buyerSatsAmount': buyerSatsAmount,
       'buyerFiatAmount': buyerFiatAmount,
+      'status': status,
     };
   }
 }

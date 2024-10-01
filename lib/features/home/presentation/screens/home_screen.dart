@@ -13,62 +13,72 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Cargar las órdenes cuando se inicia la pantalla
-    context.read<HomeBloc>().add(LoadOrders());
-
     return Scaffold(
       backgroundColor: const Color(0xFF1D212C),
       appBar: const CustomAppBar(),
-      body: Container(
-        margin: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-        decoration: BoxDecoration(
-          color: const Color(0xFF303544),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Column(
-          children: [
-            _buildTabs(),
-            _buildFilterButton(),
-            Expanded(
-              child: _buildOrderList(),
-            ),
-            const BottomNavBar(),
-          ],
-        ),
+      body: BlocBuilder<HomeBloc, HomeState>(
+        builder: (context, state) {
+          if (state.status == HomeStatus.initial) {
+            context.read<HomeBloc>().add(LoadOrders());
+            return const Center(child: CircularProgressIndicator());
+          } else if (state.status == HomeStatus.loading) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (state.status == HomeStatus.loaded) {
+            return _buildContent(context, state);
+          } else if (state.status == HomeStatus.error) {
+            return const Center(child: Text('Error loading orders', style: TextStyle(color: Colors.white)));
+          }
+          return const SizedBox.shrink();
+        },
       ),
     );
   }
 
-  Widget _buildTabs() {
-    return BlocBuilder<HomeBloc, HomeState>(
-      builder: (context, state) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: Color(0xFF1D212C),
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(20),
-              topRight: Radius.circular(20),
-            ),
+  Widget _buildContent(BuildContext context, HomeState state) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF303544),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        children: [
+          _buildTabs(context, state),
+          _buildFilterButton(state),
+          Expanded(
+            child: state.filteredOrders.isEmpty
+                ? const Center(child: Text('No orders available', style: TextStyle(color: Colors.white)))
+                : OrderList(orders: state.filteredOrders),
           ),
-          child: Row(
-            children: [
-              Expanded(
-                child: _buildTab("BUY BTC", state.orderType == OrderType.buy,
-                    OrderType.buy, context),
-              ),
-              Expanded(
-                child: _buildTab("SELL BTC", state.orderType == OrderType.sell,
-                    OrderType.sell, context),
-              ),
-            ],
-          ),
-        );
-      },
+          const BottomNavBar(),
+        ],
+      ),
     );
   }
 
-  Widget _buildTab(
-      String text, bool isActive, OrderType type, BuildContext context) {
+  Widget _buildTabs(BuildContext context, HomeState state) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFF1D212C),
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildTab("BUY BTC", state.orderType == OrderType.buy, OrderType.buy, context),
+          ),
+          Expanded(
+            child: _buildTab("SELL BTC", state.orderType == OrderType.sell, OrderType.sell, context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTab(String text, bool isActive, OrderType type, BuildContext context) {
     return GestureDetector(
       onTap: () {
         context.read<HomeBloc>().add(ChangeOrderType(type));
@@ -94,15 +104,14 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFilterButton() {
+  Widget _buildFilterButton(HomeState state) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
           OutlinedButton.icon(
             onPressed: () {},
-            icon: const HeroIcon(HeroIcons.funnel,
-                style: HeroIconStyle.outline, color: Colors.white),
+            icon: const HeroIcon(HeroIcons.funnel, style: HeroIconStyle.outline, color: Colors.white),
             label: const Text("FILTER", style: TextStyle(color: Colors.white)),
             style: OutlinedButton.styleFrom(
               side: const BorderSide(color: Colors.white),
@@ -112,40 +121,12 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          BlocBuilder<HomeBloc, HomeState>(
-            builder: (context, state) {
-              return Text(
-                "${state.filteredOrders.length} offers",
-                style: const TextStyle(color: Colors.white),
-              );
-            },
+          Text(
+            "${state.filteredOrders.length} offers",
+            style: const TextStyle(color: Colors.white),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildOrderList() {
-    return BlocBuilder<HomeBloc, HomeState>(
-      builder: (context, state) {
-        if (state.status == HomeStatus.loading) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (state.status == HomeStatus.loaded) {
-          if (state.filteredOrders.isEmpty) {
-            return const Center(
-              child: Text(
-                'No orders available for this type',
-                style: TextStyle(color: Colors.white),
-              ),
-            );
-          }
-          return OrderList(orders: state.filteredOrders);
-        } else {
-          return const Center(
-              child: Text('Error loading orders',
-                  style: TextStyle(color: Colors.white)));
-        }
-      },
     );
   }
 }

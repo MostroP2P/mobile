@@ -20,8 +20,7 @@ void main() async {
   await nostrService.init();
 
   final authRepository = AuthRepository();
-  final orderRepository =
-      OrderRepository(); // Asegúrate de que esto esté correctamente inicializado
+  final orderRepository = OrderRepository(nostrService);
 
   final prefs = await SharedPreferences.getInstance();
   final isFirstLaunch = prefs.getBool('isFirstLaunch') ?? true;
@@ -29,7 +28,7 @@ void main() async {
   runApp(MyApp(
     nostrService: nostrService,
     authRepository: authRepository,
-    orderRepository: orderRepository, // Paso la dependencia a MyApp
+    orderRepository: orderRepository,
     isFirstLaunch: isFirstLaunch,
   ));
 }
@@ -37,14 +36,14 @@ void main() async {
 class MyApp extends StatelessWidget {
   final NostrService nostrService;
   final AuthRepository authRepository;
-  final OrderRepository orderRepository; // Añadido para pasar a HomeBloc
+  final OrderRepository orderRepository;
   final bool isFirstLaunch;
 
   const MyApp({
     super.key,
     required this.nostrService,
     required this.authRepository,
-    required this.orderRepository, // Añadido para pasar a HomeBloc
+    required this.orderRepository,
     required this.isFirstLaunch,
   });
 
@@ -56,8 +55,7 @@ class MyApp extends StatelessWidget {
           create: (context) => AuthBloc(authRepository: authRepository),
         ),
         BlocProvider<HomeBloc>(
-          create: (context) =>
-              HomeBloc(orderRepository), // Proporcionando HomeBloc
+          create: (context) => HomeBloc(orderRepository),
         ),
       ],
       child: MaterialApp(

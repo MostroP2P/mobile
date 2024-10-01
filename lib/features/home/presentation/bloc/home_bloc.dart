@@ -1,5 +1,3 @@
-// home_bloc.dart
-
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mostro_mobile/data/repositories/order_repository.dart';
 import 'package:mostro_mobile/data/models/order_model.dart';
@@ -18,12 +16,14 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     emit(state.copyWith(status: HomeStatus.loading));
     try {
       final orders = await orderRepository.getOrdersFromNostr();
+      print('Loaded ${orders.length} orders'); // Debug print
       emit(state.copyWith(
         status: HomeStatus.loaded,
         allOrders: orders,
         filteredOrders: _filterOrdersByType(orders, state.orderType),
       ));
     } catch (e) {
+      print('Error loading orders: $e');
       emit(state.copyWith(status: HomeStatus.error));
     }
   }
@@ -35,10 +35,9 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     ));
   }
 
-  List<OrderModel> _filterOrdersByType(
-      List<OrderModel> orders, OrderType type) {
+  List<OrderModel> _filterOrdersByType(List<OrderModel> orders, OrderType type) {
     return orders
-        .where((order) => order.type == type.toString().toLowerCase())
+        .where((order) => order.type.toLowerCase() == type.toString().split('.').last.toLowerCase())
         .toList();
   }
 }

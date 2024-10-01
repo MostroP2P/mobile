@@ -35,7 +35,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         if (isAuthenticated) {
           emit(AuthAuthenticated());
         } else {
-          emit(AuthFailure('Invalid password'));
+          emit(const AuthFailure('Invalid password'));
         }
       } catch (e) {
         emit(AuthFailure(e.toString()));

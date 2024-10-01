@@ -53,8 +53,7 @@ class NostrService {
     }
 
     final request = NostrRequest(filters: [filter]);
-    final subscription =
-        _nostr.relaysService.startEventsSubscription(request: request);
+    final subscription = _nostr.relaysService.startEventsSubscription(request: request);
 
     return subscription.stream;
   }
@@ -81,7 +80,6 @@ class NostrService {
         .verify(publicKey: publicKey, message: message, signature: signature);
   }
 
-  // Nuevo método para obtener la clave pública de Mostro
   String getMostroPubKey() {
     return Config.mostroPubKey;
   }
