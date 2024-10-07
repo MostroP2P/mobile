@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mostro_mobile/features/welcome/screens/welcome_screen.dart';
+import 'package:mostro_mobile/presentation/welcome/screens/welcome_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mostro_mobile/data/repositories/auth_repository.dart';
 import 'package:mostro_mobile/data/repositories/order_repository.dart';
-import 'package:mostro_mobile/features/auth/bloc/auth_bloc.dart';
-import 'package:mostro_mobile/features/auth/bloc/auth_event.dart';
-import 'package:mostro_mobile/features/auth/bloc/auth_state.dart';
-import 'package:mostro_mobile/features/auth/screens/login_screen.dart';
-import 'package:mostro_mobile/features/auth/screens/register_screen.dart';
-import 'package:mostro_mobile/features/home/presentation/bloc/home_bloc.dart';
-import 'package:mostro_mobile/features/home/presentation/screens/home_screen.dart';
+import 'package:mostro_mobile/presentation/auth/bloc/auth_bloc.dart';
+import 'package:mostro_mobile/presentation/auth/bloc/auth_event.dart';
+import 'package:mostro_mobile/presentation/auth/bloc/auth_state.dart';
+import 'package:mostro_mobile/presentation/auth/screens/login_screen.dart';
+import 'package:mostro_mobile/presentation/auth/screens/register_screen.dart';
+import 'package:mostro_mobile/presentation/home/bloc/home_bloc.dart';
+import 'package:mostro_mobile/presentation/home/screens/home_screen.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
 
 void main() async {

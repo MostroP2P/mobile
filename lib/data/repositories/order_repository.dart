@@ -11,7 +11,10 @@ class OrderRepository {
     List<OrderModel> orders = [];
 
     try {
-      const filter = NostrFilter(kinds: [38383]);
+      const filter = NostrFilter(
+        kinds: [38383],
+      );
+
       final eventStream = nostrService.subscribeToEvents(filter);
 
       await for (final event in eventStream) {
@@ -24,14 +27,14 @@ class OrderRepository {
     } catch (e) {
       print('Error al obtener órdenes: $e');
     }
-
     print('Total orders fetched: ${orders.length}');
     return orders;
   }
 
   OrderModel? _parseEventToOrder(NostrEvent event) {
     try {
-      final tags = Map.fromEntries(event.tags!.map((t) => MapEntry(t[0], t.sublist(1))));
+      final tags =
+          Map.fromEntries(event.tags!.map((t) => MapEntry(t[0], t.sublist(1))));
 
       final id = tags['d']?.first ?? '';
       final type = tags['k']?.first.toLowerCase() ?? '';
@@ -43,28 +46,27 @@ class OrderRepository {
       final premium = tags['premium']?.first ?? '0';
 
       return OrderModel(
-        id: id,
-        type: type,
-        user: event.pubkey ?? '',
-        rating: 0.0,
-        ratingCount: 0,
-        amount: amount,
-        currency: 'sats',
-        fiatAmount: fiatAmount,
-        fiatCurrency: fiatCurrency,
-        paymentMethod: paymentMethod,
-        timeAgo: 'Recently',
-        premium: premium,
-        satsAmount: amount.toDouble(),
-        sellerName: 'Unknown',
-        sellerRating: 0.0,
-        sellerReviewCount: 0,
-        sellerAvatar: '',
-        exchangeRate: amount > 0 ? fiatAmount / amount : 0,
-        buyerSatsAmount: 0,
-        buyerFiatAmount: 0,
-        status: status
-      );
+          id: id,
+          type: type,
+          user: event.pubkey ?? '',
+          rating: 0.0,
+          ratingCount: 0,
+          amount: amount,
+          currency: 'sats',
+          fiatAmount: fiatAmount,
+          fiatCurrency: fiatCurrency,
+          paymentMethod: paymentMethod,
+          timeAgo: 'Recently',
+          premium: premium,
+          satsAmount: amount.toDouble(),
+          sellerName: 'Unknown',
+          sellerRating: 0.0,
+          sellerReviewCount: 0,
+          sellerAvatar: '',
+          exchangeRate: amount > 0 ? fiatAmount / amount : 0,
+          buyerSatsAmount: 0,
+          buyerFiatAmount: 0,
+          status: status);
     } catch (e) {
       print('Error parsing event to order: $e');
       return null;
