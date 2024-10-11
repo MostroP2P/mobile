@@ -1,4 +1,3 @@
-// home_event.dart
 import 'package:equatable/equatable.dart';
 import 'package:mostro_mobile/presentation/home/bloc/home_state.dart';
 

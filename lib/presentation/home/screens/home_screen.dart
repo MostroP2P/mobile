@@ -8,8 +8,6 @@ import 'package:mostro_mobile/presentation/widgets/custom_app_bar.dart';
 import 'package:mostro_mobile/presentation/widgets/order_list.dart';
 import '../bloc/home_bloc.dart';
 
-
-
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 

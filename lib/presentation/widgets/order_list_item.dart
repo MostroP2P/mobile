@@ -5,24 +5,18 @@ import '../../data/models/order_model.dart';
 class OrderListItem extends StatelessWidget {
   final OrderModel order;
 
-  const OrderListItem({super.key, required this.order});
+  const OrderListItem({Key? key, required this.order}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1D212C), // Color del fondo general
+        color: const Color(0xFF1D212C), // Color del fondo de la app
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Container(
+      child: Padding(
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          border: Border.all(
-              color: const Color(0xFF303544),
-              width: 1), // Borde del color del contenedor más claro
-          borderRadius: BorderRadius.circular(12),
-        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -30,40 +24,27 @@ class OrderListItem extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  "${order.user} ${order.rating}/5 (${order.ratingCount})",
+                  '${order.user} ${order.rating} (${order.ratingCount})',
                   style: const TextStyle(color: Colors.white),
                 ),
-                Text(
-                  order.timeAgo,
-                  style: TextStyle(color: Colors.grey[400]),
-                ),
+                Text(order.timeAgo, style: const TextStyle(color: Colors.grey)),
               ],
             ),
             const SizedBox(height: 8),
+            Text('offering ${order.amount} ${order.currency}',
+                style: const TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.bold)),
             Text(
-              "offering ${order.amount} ${order.currency}",
-              style: const TextStyle(
-                  color: Colors.white, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              "for ${order.fiatAmount} ${order.fiatCurrency} (${order.premium})",
-              style: const TextStyle(color: Colors.white),
-            ),
+                'for ${order.fiatAmount} ${order.fiatCurrency} ${order.premium}',
+                style: const TextStyle(color: Colors.white)),
             const SizedBox(height: 8),
             Row(
               children: [
-                HeroIcon(
-                  _getPaymentMethodIcon(order.paymentMethod),
-                  style: HeroIconStyle.outline,
-                  color: Colors.white,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  order.paymentMethod,
-                  style: const TextStyle(color: Colors.white),
-                ),
+                HeroIcon(_getPaymentMethodIcon(order.paymentMethod),
+                    style: HeroIconStyle.outline, color: Colors.grey, size: 16),
+                const SizedBox(width: 4),
+                Text(order.paymentMethod,
+                    style: const TextStyle(color: Colors.grey)),
               ],
             ),
           ],
