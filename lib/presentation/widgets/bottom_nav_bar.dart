@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/presentation/home/screens/home_screen.dart';
 import 'package:mostro_mobile/presentation/chat_list/screens/chat_list_screen.dart';
+import 'package:mostro_mobile/presentation/profile/screens/profile_screen.dart';
 
 class BottomNavBar extends StatelessWidget {
   const BottomNavBar({super.key});
@@ -72,7 +73,10 @@ class BottomNavBar extends StatelessWidget {
         );
         break;
       case 2:
-        // TODO: Implementar pantalla de perfil
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => ProfileScreen()),
+        );
         break;
     }
   }
