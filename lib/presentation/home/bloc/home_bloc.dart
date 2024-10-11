@@ -26,6 +26,14 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         premium: '+3%',
         paymentMethod: 'Wire transfer',
         type: 'buy',
+        sellerAvatar: 'https://example.com/avatar.jpg', // Placeholder
+        sellerName: 'Anon Seller',
+        sellerRating: '5',
+        sellerReviewCount: 2,
+        satsAmount: '1200000',
+        exchangeRate: '30000',
+        buyerSatsAmount: '1200000',
+        buyerFiatAmount: '31806',
       ),
       OrderModel(
         user: 'anon',
@@ -39,6 +47,14 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         premium: '+0%',
         paymentMethod: 'Transferencia bancaria',
         type: 'buy',
+        sellerAvatar: 'https://example.com/avatar2.jpg', // Placeholder
+        sellerName: 'Another Seller',
+        sellerRating: '3',
+        sellerReviewCount: 5,
+        satsAmount: '390000',
+        exchangeRate: '29000',
+        buyerSatsAmount: '390000',
+        buyerFiatAmount: '3231',
       ),
       OrderModel(
         user: 'Pedro9734',
@@ -52,6 +68,14 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         premium: '+1%',
         paymentMethod: 'Revolut',
         type: 'buy',
+        sellerAvatar: 'https://example.com/avatar3.jpg', // Placeholder
+        sellerName: 'Pedro9734',
+        sellerRating: '5',
+        sellerReviewCount: 19,
+        satsAmount: '390000',
+        exchangeRate: '31000',
+        buyerSatsAmount: '390000',
+        buyerFiatAmount: '3483',
       ),
     ];
 

@@ -10,6 +10,15 @@ class OrderModel {
   final String premium;
   final String paymentMethod;
   final String type;
+  // Nuevas propiedades
+  final String sellerAvatar;
+  final String sellerName;
+  final String sellerRating;
+  final int sellerReviewCount;
+  final String satsAmount;
+  final String exchangeRate;
+  final String buyerSatsAmount;
+  final String buyerFiatAmount;
 
   OrderModel({
     required this.user,
@@ -23,5 +32,14 @@ class OrderModel {
     required this.premium,
     required this.paymentMethod,
     required this.type,
+    // Inicialización de las nuevas propiedades
+    required this.sellerAvatar,
+    required this.sellerName,
+    required this.sellerRating,
+    required this.sellerReviewCount,
+    required this.satsAmount,
+    required this.exchangeRate,
+    required this.buyerSatsAmount,
+    required this.buyerFiatAmount,
   });
 }

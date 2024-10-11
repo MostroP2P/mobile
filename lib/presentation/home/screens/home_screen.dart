@@ -19,21 +19,27 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFF1D212C),
       appBar: const CustomAppBar(),
-      body: Container(
-        margin: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-        decoration: BoxDecoration(
-          color: const Color(0xFF303544),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Column(
-          children: [
-            _buildTabs(),
-            _buildFilterButton(),
-            Expanded(
-              child: _buildOrderList(),
-            ),
-            const BottomNavBar(),
-          ],
+      body: RefreshIndicator(
+        onRefresh: () async {
+          context.read<HomeBloc>().add(LoadOrders());
+          await Future.delayed(const Duration(seconds: 1));
+        },
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF303544),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            children: [
+              _buildTabs(),
+              _buildFilterButton(),
+              Expanded(
+                child: _buildOrderList(),
+              ),
+              const BottomNavBar(),
+            ],
+          ),
         ),
       ),
     );
