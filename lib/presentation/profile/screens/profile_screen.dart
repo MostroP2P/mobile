@@ -28,83 +28,17 @@ class ProfileScreen extends StatelessWidget {
               Expanded(
                 child: BlocBuilder<ProfileBloc, ProfileState>(
                   builder: (context, state) {
-                    if (state.status == ProfileStatus.loading) {
-                      return const Center(child: CircularProgressIndicator());
-                    } else if (state.status == ProfileStatus.loaded) {
-                      return SingleChildScrollView(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Center(
-                              child: CircleAvatar(
-                                radius: 50,
-                                backgroundColor: Colors.grey,
-                                child: Text(
-                                  state.username[0].toUpperCase(),
-                                  style: const TextStyle(
-                                      fontSize: 40, color: Colors.white),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            Center(
-                              child: Text(
-                                state.username,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Center(
-                              child: Text(
-                                '${state.rating}/5 (${state.completedTrades} trades)',
-                                style:
-                                    const TextStyle(color: Color(0xFF8CC541)),
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-                            const Text(
-                              'Public Key',
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(height: 8),
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF1D212C),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      state.pubkey,
-                                      style:
-                                          const TextStyle(color: Colors.white),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  IconButton(
-                                    icon: const HeroIcon(HeroIcons.clipboard,
-                                        color: Colors.white),
-                                    onPressed: () {
-                                      // TODO: Implementar copia al portapapeles
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    } else {
-                      return Center(child: Text(state.errorMessage));
+                    print('Current profile state: ${state.status}');
+                    switch (state.status) {
+                      case ProfileStatus.initial:
+                        return const Center(child: Text('Initializing...'));
+                      case ProfileStatus.loading:
+                        return const Center(child: CircularProgressIndicator());
+                      case ProfileStatus.loaded:
+                        return _buildProfileContent(state);
+                      case ProfileStatus.error:
+                        return Center(
+                            child: Text('Error: ${state.errorMessage}'));
                     }
                   },
                 ),
@@ -113,6 +47,76 @@ class ProfileScreen extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildProfileContent(ProfileState state) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: CircleAvatar(
+              radius: 50,
+              backgroundColor: Colors.grey,
+              child: Text(
+                state.username[0].toUpperCase(),
+                style: const TextStyle(fontSize: 40, color: Colors.white),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Center(
+            child: Text(
+              state.username,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Center(
+            child: Text(
+              '${state.rating}/5 (${state.completedTrades} trades)',
+              style: const TextStyle(color: Color(0xFF8CC541)),
+            ),
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'Public Key',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1D212C),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    state.pubkey,
+                    style: const TextStyle(color: Colors.white),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                IconButton(
+                  icon:
+                      const HeroIcon(HeroIcons.clipboard, color: Colors.white),
+                  onPressed: () {
+                    // TODO: Implementar copia al portapapeles
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

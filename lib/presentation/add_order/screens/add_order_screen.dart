@@ -6,7 +6,6 @@ import 'package:mostro_mobile/presentation/add_order/bloc/add_order_state.dart';
 import 'package:mostro_mobile/presentation/home/bloc/home_state.dart';
 import 'package:mostro_mobile/presentation/widgets/bottom_nav_bar.dart';
 import 'package:mostro_mobile/presentation/widgets/custom_app_bar.dart';
-import 'package:mostro_mobile/services/nostr_service.dart';
 
 class AddOrderScreen extends StatelessWidget {
   AddOrderScreen({Key? key}) : super(key: key);
