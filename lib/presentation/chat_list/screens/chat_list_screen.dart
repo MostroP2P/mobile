@@ -8,7 +8,7 @@ import 'package:mostro_mobile/presentation/widgets/bottom_nav_bar.dart';
 import 'package:mostro_mobile/presentation/widgets/custom_app_bar.dart';
 
 class ChatListScreen extends StatelessWidget {
-  const ChatListScreen({Key? key}) : super(key: key);
+  const ChatListScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -25,8 +25,8 @@ class ChatListScreen extends StatelessWidget {
           ),
           child: Column(
             children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
+              const Padding(
+                padding: EdgeInsets.all(16.0),
                 child: Text(
                   'Chats',
                   style: TextStyle(
@@ -40,7 +40,7 @@ class ChatListScreen extends StatelessWidget {
                 child: BlocBuilder<ChatListBloc, ChatListState>(
                   builder: (context, state) {
                     if (state.status == ChatListStatus.loading) {
-                      return Center(child: CircularProgressIndicator());
+                      return const Center(child: CircularProgressIndicator());
                     } else if (state.status == ChatListStatus.loaded) {
                       return ListView.builder(
                         itemCount: state.chats.length,
@@ -53,7 +53,7 @@ class ChatListScreen extends StatelessWidget {
                           child:
                               Text(state.errorMessage ?? 'An error occurred'));
                     } else {
-                      return Center(child: Text('No chats available'));
+                      return const Center(child: Text('No chats available'));
                     }
                   },
                 ),
@@ -70,7 +70,7 @@ class ChatListScreen extends StatelessWidget {
 class ChatListItem extends StatelessWidget {
   final ChatModel chat;
 
-  const ChatListItem({Key? key, required this.chat}) : super(key: key);
+  const ChatListItem({super.key, required this.chat});
 
   @override
   Widget build(BuildContext context) {
@@ -88,10 +88,10 @@ class ChatListItem extends StatelessWidget {
               backgroundColor: Colors.grey,
               child: Text(
                 chat.username[0],
-                style: TextStyle(color: Colors.white),
+                style: const TextStyle(color: Colors.white),
               ),
             ),
-            SizedBox(width: 16),
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -101,21 +101,21 @@ class ChatListItem extends StatelessWidget {
                     children: [
                       Text(
                         chat.username,
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       Text(
                         chat.timeAgo,
-                        style: TextStyle(color: Colors.grey),
+                        style: const TextStyle(color: Colors.grey),
                       ),
                     ],
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
                     chat.lastMessage,
-                    style: TextStyle(color: Colors.grey),
+                    style: const TextStyle(color: Colors.grey),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -126,7 +126,7 @@ class ChatListItem extends StatelessWidget {
               Container(
                 width: 10,
                 height: 10,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: Color(0xFF8CC541),
                   shape: BoxShape.circle,
                 ),

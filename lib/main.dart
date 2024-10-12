@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mostro_mobile/presentation/welcome/screens/welcome_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:mostro_mobile/core/routes/app_routes.dart';
 import 'package:mostro_mobile/presentation/home/bloc/home_bloc.dart';
-import 'package:mostro_mobile/presentation/home/screens/home_screen.dart';
+import 'package:mostro_mobile/presentation/chat_list/bloc/chat_list_bloc.dart';
+import 'package:mostro_mobile/presentation/profile/bloc/profile_bloc.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,6 +30,12 @@ class MyApp extends StatelessWidget {
         BlocProvider<HomeBloc>(
           create: (context) => HomeBloc(),
         ),
+        BlocProvider<ChatListBloc>(
+          create: (context) => ChatListBloc(),
+        ),
+        BlocProvider<ProfileBloc>(
+          create: (context) => ProfileBloc(),
+        ),
       ],
       child: MaterialApp(
         title: 'Mostro',
@@ -36,10 +43,9 @@ class MyApp extends StatelessWidget {
           primarySwatch: Colors.blue,
           scaffoldBackgroundColor: const Color(0xFF1D212C),
         ),
-        home: isFirstLaunch ? const WelcomeScreen() : const HomeScreen(),
-        routes: {
-          '/home': (context) => const HomeScreen(),
-        },
+        initialRoute: isFirstLaunch ? AppRoutes.welcome : AppRoutes.home,
+        routes: AppRoutes.routes,
+        onGenerateRoute: AppRoutes.onGenerateRoute,
       ),
     );
   }

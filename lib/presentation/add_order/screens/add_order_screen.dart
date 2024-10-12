@@ -8,7 +8,7 @@ import 'package:mostro_mobile/presentation/widgets/bottom_nav_bar.dart';
 import 'package:mostro_mobile/presentation/widgets/custom_app_bar.dart';
 
 class AddOrderScreen extends StatelessWidget {
-  AddOrderScreen({Key? key}) : super(key: key);
+  AddOrderScreen({super.key});
 
   final _fiatCodeController = TextEditingController();
   final _fiatAmountController = TextEditingController();

@@ -5,7 +5,7 @@ import 'order_list_item.dart';
 class OrderList extends StatelessWidget {
   final List<OrderModel> orders;
 
-  const OrderList({Key? key, required this.orders}) : super(key: key);
+  const OrderList({super.key, required this.orders});
 
   @override
   Widget build(BuildContext context) {

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:heroicons/heroicons.dart';
-import 'package:mostro_mobile/presentation/home/screens/home_screen.dart';
-import 'package:mostro_mobile/presentation/chat_list/screens/chat_list_screen.dart';
-import 'package:mostro_mobile/presentation/profile/screens/profile_screen.dart';
+import 'package:mostro_mobile/core/routes/app_routes.dart';
 
 class BottomNavBar extends StatelessWidget {
   const BottomNavBar({super.key});
@@ -45,7 +43,7 @@ class BottomNavBar extends StatelessWidget {
         child: HeroIcon(
           icon,
           style: HeroIconStyle.outline,
-          color: isActive ? Colors.white : Colors.black,
+          color: Colors.black,
           size: 24,
         ),
       ),
@@ -53,31 +51,39 @@ class BottomNavBar extends StatelessWidget {
   }
 
   bool _isActive(BuildContext context, int index) {
-    if (index == 0 && context.widget is HomeScreen) return true;
-    if (index == 1 && context.widget is ChatListScreen) return true;
-    return false;
+    final currentRoute = ModalRoute.of(context)?.settings.name;
+    switch (index) {
+      case 0:
+        return currentRoute == AppRoutes.home;
+      case 1:
+        return currentRoute == AppRoutes.chatList;
+      case 2:
+        return currentRoute == AppRoutes.profile;
+      default:
+        return false;
+    }
   }
 
   void _onItemTapped(BuildContext context, int index) {
+    final currentRoute = ModalRoute.of(context)?.settings.name;
+    String nextRoute;
+
     switch (index) {
       case 0:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => HomeScreen()),
-        );
+        nextRoute = AppRoutes.home;
         break;
       case 1:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => ChatListScreen()),
-        );
+        nextRoute = AppRoutes.chatList;
         break;
       case 2:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => ProfileScreen()),
-        );
+        nextRoute = AppRoutes.profile;
         break;
+      default:
+        return;
+    }
+
+    if (currentRoute != nextRoute) {
+      Navigator.pushReplacementNamed(context, nextRoute);
     }
   }
 }
