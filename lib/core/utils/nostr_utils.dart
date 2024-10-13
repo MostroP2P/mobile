@@ -1,7 +1,8 @@
 import 'dart:convert';
-
+import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
 import 'package:dart_nostr/dart_nostr.dart';
+import 'package:encrypt/encrypt.dart' as encrypt;
 
 class NostrUtils {
   static final Nostr _instance = Nostr.instance;
@@ -38,7 +39,6 @@ class NostrUtils {
   }
 
   // Operaciones con claves
-
   static String derivePublicKey(String privateKey) {
     return _instance.keysService.derivePublicKey(privateKey: privateKey);
   }
@@ -108,5 +108,98 @@ class NostrUtils {
     final digest = sha256.convert(bytes);
 
     return digest.toString(); // Devuelve el ID como una cadena hex
+  }
+
+  // NIP-59 y NIP-44 funciones
+  static NostrEvent createNIP59Event(
+      String content, String recipientPubKey, String senderPrivateKey) {
+    final senderKeyPair = generateKeyPairFromPrivateKey(senderPrivateKey);
+    final sharedSecret =
+        _calculateSharedSecret(senderPrivateKey, recipientPubKey);
+
+    final encryptedContent = _encryptNIP44(content, sharedSecret);
+
+    final createdAt = DateTime.now();
+    final rumorEvent = NostrEvent(
+      kind: 1059,
+      pubkey: senderKeyPair.public,
+      content: encryptedContent,
+      tags: [
+        ["p", recipientPubKey]
+      ],
+      createdAt: createdAt,
+      id: '', // Se generará después
+      sig: '', // Se generará después
+    );
+
+    // Generar ID y firma
+    final id = generateId({
+      'pubkey': rumorEvent.pubkey,
+      'created_at': rumorEvent.createdAt!.millisecondsSinceEpoch ~/ 1000,
+      'kind': rumorEvent.kind,
+      'tags': rumorEvent.tags,
+      'content': rumorEvent.content,
+    });
+    signMessage(id, senderPrivateKey);
+
+    final wrapperKeyPair = generateKeyPair();
+    final wrappedContent = _encryptNIP44(jsonEncode(rumorEvent.toMap()),
+        _calculateSharedSecret(wrapperKeyPair.private, recipientPubKey));
+
+    return NostrEvent(
+      kind: 1059,
+      pubkey: wrapperKeyPair.public,
+      content: wrappedContent,
+      tags: [
+        ["p", recipientPubKey]
+      ],
+      createdAt: DateTime.now(),
+      id: generateId({
+        'pubkey': wrapperKeyPair.public,
+        'created_at': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+        'kind': 1059,
+        'tags': [
+          ["p", recipientPubKey]
+        ],
+        'content': wrappedContent,
+      }),
+      sig: '', // Se generará automáticamente al publicar el evento
+    );
+  }
+
+  static String decryptNIP59Event(NostrEvent event, String privateKey) {
+    final sharedSecret = _calculateSharedSecret(privateKey, event.pubkey);
+    final decryptedContent = _decryptNIP44(event.content ?? '', sharedSecret);
+
+    final rumorEvent = NostrEvent.deserialized(decryptedContent);
+    final rumorSharedSecret =
+        _calculateSharedSecret(privateKey, rumorEvent.pubkey);
+    final finalDecryptedContent =
+        _decryptNIP44(rumorEvent.content ?? '', rumorSharedSecret);
+
+    return finalDecryptedContent;
+  }
+
+  static Uint8List _calculateSharedSecret(String privateKey, String publicKey) {
+    // Nota: Esta implementación puede necesitar ajustes dependiendo de cómo
+    // dart_nostr maneje la generación de secretos compartidos.
+    // Posiblemente necesites usar una biblioteca de criptografía adicional aquí.
+    final sharedPoint = generateKeyPairFromPrivateKey(privateKey).public;
+    return Uint8List.fromList(sha256.convert(utf8.encode(sharedPoint)).bytes);
+  }
+
+  static String _encryptNIP44(String content, Uint8List key) {
+    final iv = encrypt.IV.fromSecureRandom(16);
+    final encrypter = encrypt.Encrypter(encrypt.AES(encrypt.Key(key)));
+    final encrypted = encrypter.encrypt(content, iv: iv);
+    return base64Encode(iv.bytes + encrypted.bytes);
+  }
+
+  static String _decryptNIP44(String encryptedContent, Uint8List key) {
+    final decoded = base64Decode(encryptedContent);
+    final iv = encrypt.IV(decoded.sublist(0, 16));
+    final encryptedBytes = decoded.sublist(16);
+    final encrypter = encrypt.Encrypter(encrypt.AES(encrypt.Key(key)));
+    return encrypter.decrypt64(base64Encode(encryptedBytes), iv: iv);
   }
 }

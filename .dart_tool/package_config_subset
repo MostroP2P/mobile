@@ -2,6 +2,10 @@ args
 3.0
 file:///home/user/.pub-cache/hosted/pub.dev/args-2.5.0/
 file:///home/user/.pub-cache/hosted/pub.dev/args-2.5.0/lib/
+asn1lib
+3.0
+file:///home/user/.pub-cache/hosted/pub.dev/asn1lib-1.5.5/
+file:///home/user/.pub-cache/hosted/pub.dev/asn1lib-1.5.5/lib/
 async
 2.18
 file:///home/user/.pub-cache/hosted/pub.dev/async-2.11.0/
@@ -66,6 +70,10 @@ dart_nostr
 3.0
 file:///home/user/.pub-cache/hosted/pub.dev/dart_nostr-8.2.0/
 file:///home/user/.pub-cache/hosted/pub.dev/dart_nostr-8.2.0/lib/
+encrypt
+2.18
+file:///home/user/.pub-cache/hosted/pub.dev/encrypt-5.0.3/
+file:///home/user/.pub-cache/hosted/pub.dev/encrypt-5.0.3/lib/
 equatable
 2.12
 file:///home/user/.pub-cache/hosted/pub.dev/equatable-2.0.5/
@@ -162,6 +170,10 @@ lints
 3.1
 file:///home/user/.pub-cache/hosted/pub.dev/lints-4.0.0/
 file:///home/user/.pub-cache/hosted/pub.dev/lints-4.0.0/lib/
+logging
+2.19
+file:///home/user/.pub-cache/hosted/pub.dev/logging-1.2.0/
+file:///home/user/.pub-cache/hosted/pub.dev/logging-1.2.0/lib/
 matcher
 3.0
 file:///home/user/.pub-cache/hosted/pub.dev/matcher-0.12.16+1/

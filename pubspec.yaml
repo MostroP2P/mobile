@@ -51,6 +51,8 @@ dependencies:
   shared_preferences: ^2.3.2
   web_socket_channel: ^2.4.0
   equatable: ^2.0.5
+  encrypt: ^5.0.3
+  logging: ^1.2.0
 
 dev_dependencies:
   flutter_test:

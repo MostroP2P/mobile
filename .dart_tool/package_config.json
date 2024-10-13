@@ -8,6 +8,12 @@
       "languageVersion": "3.0"
     },
     {
+      "name": "asn1lib",
+      "rootUri": "file:///home/user/.pub-cache/hosted/pub.dev/asn1lib-1.5.5",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
       "name": "async",
       "rootUri": "file:///home/user/.pub-cache/hosted/pub.dev/async-2.11.0",
       "packageUri": "lib/",
@@ -102,6 +108,12 @@
       "rootUri": "file:///home/user/.pub-cache/hosted/pub.dev/dart_nostr-8.2.0",
       "packageUri": "lib/",
       "languageVersion": "3.0"
+    },
+    {
+      "name": "encrypt",
+      "rootUri": "file:///home/user/.pub-cache/hosted/pub.dev/encrypt-5.0.3",
+      "packageUri": "lib/",
+      "languageVersion": "2.18"
     },
     {
       "name": "equatable",
@@ -264,6 +276,12 @@
       "rootUri": "file:///home/user/.pub-cache/hosted/pub.dev/lints-4.0.0",
       "packageUri": "lib/",
       "languageVersion": "3.1"
+    },
+    {
+      "name": "logging",
+      "rootUri": "file:///home/user/.pub-cache/hosted/pub.dev/logging-1.2.0",
+      "packageUri": "lib/",
+      "languageVersion": "2.19"
     },
     {
       "name": "matcher",
@@ -536,7 +554,7 @@
       "languageVersion": "3.5"
     }
   ],
-  "generated": "2024-10-07T20:09:50.750095Z",
+  "generated": "2024-10-13T16:42:41.198288Z",
   "generator": "pub",
   "generatorVersion": "3.5.3",
   "flutterRoot": "file:///home/user/flutter",
