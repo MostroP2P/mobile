@@ -14,24 +14,17 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _passwordController = TextEditingController();
-  bool _obscurePassword = true;
-
-  @override
-  void dispose() {
-    _passwordController.dispose();
-    super.dispose();
-  }
+  final _pinController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1D212C),
       appBar: AppBar(
         title: const Text('Login', style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
+      backgroundColor: const Color(0xFF1D212C),
       body: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthAuthenticated) {
@@ -50,61 +43,28 @@ class _LoginScreenState extends State<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 TextFormField(
-                  controller: _passwordController,
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                    labelStyle: const TextStyle(color: Colors.white),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility
-                            : Icons.visibility_off,
-                        color: Colors.white,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _obscurePassword = !_obscurePassword;
-                        });
-                      },
+                  controller: _pinController,
+                  decoration: const InputDecoration(
+                    labelText: 'PIN',
+                    labelStyle: TextStyle(color: Colors.white70),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white70),
                     ),
                   ),
                   style: const TextStyle(color: Colors.white),
-                  obscureText: _obscurePassword,
+                  keyboardType: TextInputType.number,
+                  obscureText: true,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter your password';
+                      return 'Please enter your PIN';
                     }
                     return null;
                   },
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
                 CustomButton(
                   text: 'Login',
                   onPressed: _onLogin,
-                ),
-                const SizedBox(height: 20),
-                TextButton(
-                  child: const Text(
-                    'Don\'t have an account? Register',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  onPressed: () {
-                    Navigator.of(context).pushReplacementNamed('/register');
-                  },
-                ),
-                const SizedBox(height: 20),
-                TextButton(
-                  child: const Text(
-                    'Skip for now',
-                    style: TextStyle(
-                      color: Colors.white,
-                      decoration: TextDecoration.underline,
-                      fontSize: 14,
-                    ),
-                  ),
-                  onPressed: () {
-                    Navigator.pushReplacementNamed(context, '/home');
-                  },
                 ),
               ],
             ),
@@ -116,9 +76,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _onLogin() {
     if (_formKey.currentState!.validate()) {
-      context
-          .read<AuthBloc>()
-          .add(AuthLoginRequested(_passwordController.text));
+      context.read<AuthBloc>().add(AuthLoginRequested(_pinController.text));
     }
   }
 }

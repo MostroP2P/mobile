@@ -6,7 +6,7 @@ import '../bloc/payment_confirmation_state.dart';
 import '../../widgets/bottom_nav_bar.dart';
 
 class PaymentConfirmationScreen extends StatelessWidget {
-  const PaymentConfirmationScreen({Key? key}) : super(key: key);
+  const PaymentConfirmationScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -17,23 +17,23 @@ class PaymentConfirmationScreen extends StatelessWidget {
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
-          title: Text('PAYMENT', style: TextStyle(color: Colors.white)),
+          title: const Text('PAYMENT', style: TextStyle(color: Colors.white)),
           leading: IconButton(
-            icon: Icon(Icons.arrow_back, color: Colors.white),
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.of(context).pop(),
           ),
         ),
         body: BlocBuilder<PaymentConfirmationBloc, PaymentConfirmationState>(
           builder: (context, state) {
             if (state is PaymentConfirmationLoading) {
-              return Center(child: CircularProgressIndicator());
+              return const Center(child: CircularProgressIndicator());
             } else if (state is PaymentConfirmationLoaded) {
               return Center(
                 child: Container(
-                  margin: EdgeInsets.all(16),
-                  padding: EdgeInsets.all(24),
+                  margin: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: Color(0xFF303544),
+                    color: const Color(0xFF303544),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Column(
@@ -42,46 +42,46 @@ class PaymentConfirmationScreen extends StatelessWidget {
                       Container(
                         width: 80,
                         height: 80,
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           shape: BoxShape.circle,
                           color: Color(0xFF8CC541),
                         ),
-                        child: Icon(
+                        child: const Icon(
                           Icons.check,
                           size: 50,
                           color: Colors.white,
                         ),
                       ),
-                      SizedBox(height: 24),
+                      const SizedBox(height: 24),
                       Text(
                         '${state.satoshisReceived} satoshis',
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      Text(
+                      const Text(
                         'received',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 18,
                         ),
                       ),
-                      SizedBox(height: 24),
+                      const SizedBox(height: 24),
                       ElevatedButton(
-                        child: Text('CONTINUE'),
                         style: ElevatedButton.styleFrom(
-                          primary: Color(0xFF8CC541),
+                          backgroundColor: Color(0xFF8CC541),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20),
                           ),
-                          minimumSize: Size(double.infinity, 50),
+                          minimumSize: const Size(double.infinity, 50),
                         ),
                         onPressed: () {
                           context.read<PaymentConfirmationBloc>().add(ContinueAfterConfirmation());
                           // Aquí puedes navegar a la siguiente pantalla o realizar la acción necesaria
                         },
+                        child: Text('CONTINUE'),
                       ),
                     ],
                   ),
@@ -91,11 +91,11 @@ class PaymentConfirmationScreen extends StatelessWidget {
               return Center(
                 child: Text(
                   'Error: ${state.error}',
-                  style: TextStyle(color: Colors.white),
+                  style: const TextStyle(color: Colors.white),
                 ),
               );
             } else {
-              return Center(
+              return const Center(
                 child: Text(
                   'Unexpected state',
                   style: TextStyle(color: Colors.white),
@@ -104,7 +104,7 @@ class PaymentConfirmationScreen extends StatelessWidget {
             }
           },
         ),
-        bottomNavigationBar: BottomNavBar(),
+        bottomNavigationBar: const BottomNavBar(),
       ),
     );
   }

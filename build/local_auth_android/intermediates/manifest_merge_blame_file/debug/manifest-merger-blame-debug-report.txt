@@ -1,0 +1,11 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="io.flutter.plugins.localauth" >
+4
+5    <uses-sdk android:minSdkVersion="19" />
+6
+7    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+7-->/home/user/.pub-cache/hosted/pub.dev/local_auth_android-1.0.46/android/src/main/AndroidManifest.xml:3:5-72
+7-->/home/user/.pub-cache/hosted/pub.dev/local_auth_android-1.0.46/android/src/main/AndroidManifest.xml:3:22-69
+8
+9</manifest>

@@ -1,0 +1,10 @@
+R_DEF: Internal format may change without notice
+local
+color black_text
+color grey_text
+dimen huge_text_size
+dimen medium_text_size
+id fingerprint_required
+id go_to_setting_description
+layout go_to_setting
+style AlertDialogCustom

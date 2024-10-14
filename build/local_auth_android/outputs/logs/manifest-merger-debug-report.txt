@@ -1,0 +1,21 @@
+-- Merging decision tree log ---
+manifest
+ADDED from /home/user/.pub-cache/hosted/pub.dev/local_auth_android-1.0.46/android/src/main/AndroidManifest.xml:1:1-4:12
+INJECTED from /home/user/.pub-cache/hosted/pub.dev/local_auth_android-1.0.46/android/src/main/AndroidManifest.xml:1:1-4:12
+	package
+		ADDED from /home/user/.pub-cache/hosted/pub.dev/local_auth_android-1.0.46/android/src/main/AndroidManifest.xml:2:3-41
+		INJECTED from /home/user/.pub-cache/hosted/pub.dev/local_auth_android-1.0.46/android/src/main/AndroidManifest.xml
+	xmlns:android
+		ADDED from /home/user/.pub-cache/hosted/pub.dev/local_auth_android-1.0.46/android/src/main/AndroidManifest.xml:1:11-69
+uses-permission#android.permission.USE_BIOMETRIC
+ADDED from /home/user/.pub-cache/hosted/pub.dev/local_auth_android-1.0.46/android/src/main/AndroidManifest.xml:3:5-72
+	android:name
+		ADDED from /home/user/.pub-cache/hosted/pub.dev/local_auth_android-1.0.46/android/src/main/AndroidManifest.xml:3:22-69
+uses-sdk
+INJECTED from /home/user/.pub-cache/hosted/pub.dev/local_auth_android-1.0.46/android/src/main/AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from /home/user/.pub-cache/hosted/pub.dev/local_auth_android-1.0.46/android/src/main/AndroidManifest.xml
+INJECTED from /home/user/.pub-cache/hosted/pub.dev/local_auth_android-1.0.46/android/src/main/AndroidManifest.xml
+	android:targetSdkVersion
+		INJECTED from /home/user/.pub-cache/hosted/pub.dev/local_auth_android-1.0.46/android/src/main/AndroidManifest.xml
+	android:minSdkVersion
+		INJECTED from /home/user/.pub-cache/hosted/pub.dev/local_auth_android-1.0.46/android/src/main/AndroidManifest.xml

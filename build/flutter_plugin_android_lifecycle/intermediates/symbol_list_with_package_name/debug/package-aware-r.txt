@@ -1,0 +1,1 @@
+io.flutter.plugins.flutter_plugin_android_lifecycle

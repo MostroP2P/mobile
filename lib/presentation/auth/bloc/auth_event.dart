@@ -12,11 +12,12 @@ class AuthCheckRequested extends AuthEvent {}
 class AuthRegisterRequested extends AuthEvent {
   final String privateKey;
   final String password;
+  final bool useBiometrics;
 
-  const AuthRegisterRequested(this.privateKey, this.password);
+  const AuthRegisterRequested(this.privateKey, this.password, this.useBiometrics);
 
   @override
-  List<Object> get props => [privateKey, password];
+  List<Object> get props => [privateKey, password, useBiometrics];
 }
 
 class AuthLoginRequested extends AuthEvent {
@@ -31,3 +32,5 @@ class AuthLoginRequested extends AuthEvent {
 class AuthLogoutRequested extends AuthEvent {}
 
 class AuthGenerateKeyRequested extends AuthEvent {}
+
+class AuthCheckBiometricsRequested extends AuthEvent {}

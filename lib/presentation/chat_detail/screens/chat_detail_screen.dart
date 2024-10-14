@@ -8,7 +8,7 @@ import '../../widgets/bottom_nav_bar.dart';
 class ChatDetailScreen extends StatelessWidget {
   final String chatId;
 
-  const ChatDetailScreen({Key? key, required this.chatId}) : super(key: key);
+  const ChatDetailScreen({super.key, required this.chatId});
 
   @override
   Widget build(BuildContext context) {
@@ -19,16 +19,16 @@ class ChatDetailScreen extends StatelessWidget {
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
-          title: Text('JACK FOOTSEY'),
+          title: const Text('JACK FOOTSEY'),
           leading: IconButton(
-            icon: Icon(Icons.arrow_back),
+            icon: const Icon(Icons.arrow_back),
             onPressed: () => Navigator.of(context).pop(),
           ),
         ),
         body: BlocBuilder<ChatDetailBloc, ChatDetailState>(
           builder: (context, state) {
             if (state is ChatDetailLoading) {
-              return Center(child: CircularProgressIndicator());
+              return const Center(child: CircularProgressIndicator());
             } else if (state is ChatDetailLoaded) {
               return Column(
                 children: [
@@ -47,62 +47,62 @@ class ChatDetailScreen extends StatelessWidget {
             } else if (state is ChatDetailError) {
               return Center(child: Text(state.error));
             } else {
-              return Center(child: Text('Something went wrong'));
+              return const Center(child: Text('Something went wrong'));
             }
           },
         ),
-        bottomNavigationBar: BottomNavBar(),
+        bottomNavigationBar: const BottomNavBar(),
       ),
     );
   }
 
   Widget _buildMessageBubble(ChatMessage message) {
     return Container(
-      padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       alignment: message.sender == 'Mostro' ? Alignment.centerLeft : Alignment.centerRight,
       child: Container(
-        padding: EdgeInsets.all(12),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: message.sender == 'Mostro' ? Color(0xFF303544) : Color(0xFF8CC541),
+          color: message.sender == 'Mostro' ? const Color(0xFF303544) : const Color(0xFF8CC541),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
           message.content,
-          style: TextStyle(color: Colors.white),
+          style: const TextStyle(color: Colors.white),
         ),
       ),
     );
   }
 
   Widget _buildMessageInput(BuildContext context) {
-    final TextEditingController _controller = TextEditingController();
+    final TextEditingController controller = TextEditingController();
     return Container(
-      padding: EdgeInsets.all(8),
-      color: Color(0xFF303544),
+      padding: const EdgeInsets.all(8),
+      color: const Color(0xFF303544),
       child: Row(
         children: [
           Expanded(
             child: TextField(
-              controller: _controller,
-              style: TextStyle(color: Colors.white),
+              controller: controller,
+              style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 hintText: 'Type a message...',
-                hintStyle: TextStyle(color: Colors.grey),
+                hintStyle: const TextStyle(color: Colors.grey),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20),
                   borderSide: BorderSide.none,
                 ),
                 filled: true,
-                fillColor: Color(0xFF1D212C),
+                fillColor: const Color(0xFF1D212C),
               ),
             ),
           ),
           IconButton(
-            icon: Icon(Icons.send, color: Color(0xFF8CC541)),
+            icon: const Icon(Icons.send, color: Color(0xFF8CC541)),
             onPressed: () {
-              if (_controller.text.isNotEmpty) {
-                context.read<ChatDetailBloc>().add(SendMessage(_controller.text));
-                _controller.clear();
+              if (controller.text.isNotEmpty) {
+                context.read<ChatDetailBloc>().add(SendMessage(controller.text));
+                controller.clear();
               }
             },
           ),

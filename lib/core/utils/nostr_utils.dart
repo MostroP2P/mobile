@@ -38,6 +38,13 @@ class NostrUtils {
     return _instance.keysService.decodeNpubKeyToPublicKey(npub);
   }
 
+  static String nsecToHex(String nsec) {
+    if (nsec.startsWith('nsec')) {
+      return decodeNsecKeyToPrivateKey(nsec);
+    }
+    return nsec; // Si ya es hex, devolverlo tal cual
+  }
+
   // Operaciones con claves
   static String derivePublicKey(String privateKey) {
     return _instance.keysService.derivePublicKey(privateKey: privateKey);

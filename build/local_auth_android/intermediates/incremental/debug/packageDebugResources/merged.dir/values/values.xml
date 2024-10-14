@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black_text">#212121</color>
+    <color name="grey_text">#757575</color>
+    <dimen name="huge_text_size">20sp</dimen>
+    <dimen name="medium_text_size">16sp</dimen>
+    <style name="AlertDialogCustom" parent="@android:style/Theme.Material.Dialog.Alert">
+    <item name="android:background">#FFFFFFFF</item>
+    <item name="android:textStyle">bold</item>
+    <item name="android:textSize">14sp</item>
+    <item name="android:colorAccent">#FF009688</item>
+  </style>
+</resources>

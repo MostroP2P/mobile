@@ -34,3 +34,14 @@ class AuthFailure extends AuthState {
   @override
   List<Object> get props => [error];
 }
+
+class AuthBiometricsAvailability extends AuthState {
+  final bool isAvailable;
+
+  const AuthBiometricsAvailability(this.isAvailable);
+
+  @override
+  List<Object> get props => [isAvailable];
+}
+
+class AuthRegistrationSuccess extends AuthState {}

@@ -7,7 +7,7 @@ import '../bloc/payment_qr_state.dart';
 import '../../widgets/bottom_nav_bar.dart';
 
 class PaymentQrScreen extends StatelessWidget {
-  const PaymentQrScreen({Key? key}) : super(key: key);
+  const PaymentQrScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -18,41 +18,40 @@ class PaymentQrScreen extends StatelessWidget {
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
-          title: Text('PAYMENT'),
+          title: const Text('PAYMENT'),
           leading: IconButton(
-            icon: Icon(Icons.arrow_back),
+            icon: const Icon(Icons.arrow_back),
             onPressed: () => Navigator.of(context).pop(),
           ),
         ),
         body: BlocBuilder<PaymentQrBloc, PaymentQrState>(
           builder: (context, state) {
             if (state is PaymentQrLoading) {
-              return Center(child: CircularProgressIndicator());
+              return const Center(child: CircularProgressIndicator());
             } else if (state is PaymentQrLoaded) {
               return Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
+                  const Text(
                     'Pay this invoice to continue the exchange',
                     style: TextStyle(color: Colors.white),
                   ),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                   QrImage(
                     data: state.qrData,
                     version: QrVersions.auto,
                     size: 200.0,
                     foregroundColor: Colors.white,
                   ),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                   Text(
                     'Expires in: ${state.expiresIn}',
-                    style: TextStyle(color: Colors.white),
+                    style: const TextStyle(color: Colors.white),
                   ),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                   ElevatedButton(
-                    child: Text('OPEN WALLET'),
                     style: ElevatedButton.styleFrom(
-                      primary: Color(0xFF8CC541),
+                      backgroundColor: Color(0xFF8CC541),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                       ),
@@ -60,11 +59,12 @@ class PaymentQrScreen extends StatelessWidget {
                     onPressed: () {
                       context.read<PaymentQrBloc>().add(OpenWallet());
                     },
+                    child: Text('OPEN WALLET'),
                   ),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                   TextButton(
                     child:
-                        Text('CANCEL', style: TextStyle(color: Colors.white)),
+                        const Text('CANCEL', style: TextStyle(color: Colors.white)),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
@@ -72,11 +72,11 @@ class PaymentQrScreen extends StatelessWidget {
             } else if (state is PaymentQrError) {
               return Center(child: Text(state.error));
             } else {
-              return Center(child: Text('Something went wrong'));
+              return const Center(child: Text('Something went wrong'));
             }
           },
         ),
-        bottomNavigationBar: BottomNavBar(),
+        bottomNavigationBar: const BottomNavBar(),
       ),
     );
   }

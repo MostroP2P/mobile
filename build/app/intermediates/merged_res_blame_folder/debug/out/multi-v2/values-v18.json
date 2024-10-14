@@ -1,0 +1,19 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.example.mostro_mobile.app-mergeDebugResources-30:/values-v18/values-v18.xml",
+            "map": [
+                {
+                    "source": "/home/user/.gradle/caches/transforms-3/0d9cf90d33b0d2fb6bcd318d06e7b982/transformed/appcompat-1.2.0/res/values-v18/values-v18.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "48",
+                        "endOffsets": "99"
+                    }
+                }
+            ]
+        }
+    ]
+}

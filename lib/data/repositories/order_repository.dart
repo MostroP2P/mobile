@@ -1,75 +1,38 @@
-import 'package:dart_nostr/dart_nostr.dart';
-import '../models/order_model.dart';
-import '../../services/nostr_service.dart';
+// lib/data/repositories/order_repository.dart
+
+import 'package:mostro_mobile/data/models/order_model.dart';
+import 'package:mostro_mobile/services/mostro_service.dart';
 
 class OrderRepository {
-  final NostrService nostrService;
+  final MostroService _mostroService;
 
-  OrderRepository(this.nostrService);
+  OrderRepository(this._mostroService);
 
-  Future<List<OrderModel>> getOrdersFromNostr() async {
-    List<OrderModel> orders = [];
-
-    try {
-      const filter = NostrFilter(
-        kinds: [38383],
-      );
-
-      final eventStream = nostrService.subscribeToEvents(filter);
-
-      await for (final event in eventStream) {
-        final order = _parseEventToOrder(event);
-        if (order != null) {
-          orders.add(order);
-          print('Order added: ${order.id}');
-        }
-      }
-    } catch (e) {
-      print('Error al obtener órdenes: $e');
-    }
-    print('Total orders fetched: ${orders.length}');
-    return orders;
+  Future<void> createOrder(OrderModel order) async {
+    await _mostroService.publishOrder(order);
   }
 
-  OrderModel? _parseEventToOrder(NostrEvent event) {
-    try {
-      final tags =
-          Map.fromEntries(event.tags!.map((t) => MapEntry(t[0], t.sublist(1))));
+  Future<void> cancelOrder(String orderId) async {
+    await _mostroService.cancelOrder(orderId);
+  }
 
-      final id = tags['d']?.first ?? '';
-      final type = tags['k']?.first.toLowerCase() ?? '';
-      final fiatCurrency = tags['f']?.first ?? '';
-      final status = tags['s']?.first ?? '';
-      final amount = int.tryParse(tags['amt']?.first ?? '0') ?? 0;
-      final fiatAmount = double.tryParse(tags['fa']?.first ?? '0') ?? 0.0;
-      final paymentMethod = tags['pm']?.join(', ') ?? '';
-      final premium = tags['premium']?.first ?? '0';
+  Future<void> takeSellOrder(String orderId, {int? amount}) async {
+    await _mostroService.takeSellOrder(orderId, amount: amount);
+  }
 
-      return OrderModel(
-          id: id,
-          type: type,
-          user: event.pubkey ?? '',
-          rating: 0.0,
-          ratingCount: 0,
-          amount: amount,
-          currency: 'sats',
-          fiatAmount: fiatAmount,
-          fiatCurrency: fiatCurrency,
-          paymentMethod: paymentMethod,
-          timeAgo: 'Recently',
-          premium: premium,
-          satsAmount: amount.toDouble(),
-          sellerName: 'Unknown',
-          sellerRating: 0.0,
-          sellerReviewCount: 0,
-          sellerAvatar: '',
-          exchangeRate: amount > 0 ? fiatAmount / amount : 0,
-          buyerSatsAmount: 0,
-          buyerFiatAmount: 0,
-          status: status);
-    } catch (e) {
-      print('Error parsing event to order: $e');
-      return null;
-    }
+  Future<void> takeBuyOrder(String orderId, {int? amount}) async {
+    await _mostroService.takeBuyOrder(orderId, amount: amount);
+  }
+
+  Stream<OrderModel> getPendingOrders() {
+    return _mostroService.subscribeToOrders().where((order) => order.status == 'pending');
+  }
+
+  Future<void> sendFiatSent(String orderId) async {
+    await _mostroService.sendFiatSent(orderId);
+  }
+
+  Future<void> releaseOrder(String orderId) async {
+    await _mostroService.releaseOrder(orderId);
   }
 }

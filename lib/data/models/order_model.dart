@@ -1,45 +1,65 @@
+// lib/data/models/order_model.dart
+
 class OrderModel {
-  final String user;
-  final String rating;
-  final int ratingCount;
-  final String timeAgo;
-  final String amount;
-  final String currency;
-  final String fiatAmount;
-  final String fiatCurrency;
-  final String premium;
+  final String id;
+  final String kind; // 'sell' or 'buy'
+  final String status;
+  final int amount; // in sats
+  final String fiatCode;
+  final double fiatAmount;
+  final String? minAmount; // for range orders
+  final String? maxAmount; // for range orders
   final String paymentMethod;
-  final String type;
-  // Nuevas propiedades
-  final String sellerAvatar;
-  final String sellerName;
-  final String sellerRating;
-  final int sellerReviewCount;
-  final String satsAmount;
-  final String exchangeRate;
-  final String buyerSatsAmount;
-  final String buyerFiatAmount;
+  final double premium;
+  final String createdAt;
+  final String pubkey;
 
   OrderModel({
-    required this.user,
-    required this.rating,
-    required this.ratingCount,
-    required this.timeAgo,
+    required this.id,
+    required this.kind,
+    required this.status,
     required this.amount,
-    required this.currency,
+    required this.fiatCode,
     required this.fiatAmount,
-    required this.fiatCurrency,
-    required this.premium,
+    this.minAmount,
+    this.maxAmount,
     required this.paymentMethod,
-    required this.type,
-    // Inicialización de las nuevas propiedades
-    required this.sellerAvatar,
-    required this.sellerName,
-    required this.sellerRating,
-    required this.sellerReviewCount,
-    required this.satsAmount,
-    required this.exchangeRate,
-    required this.buyerSatsAmount,
-    required this.buyerFiatAmount,
+    required this.premium,
+    required this.createdAt,
+    required this.pubkey,
   });
+
+  factory OrderModel.fromJson(Map<String, dynamic> json) {
+    return OrderModel(
+      id: json['id'],
+      kind: json['kind'],
+      status: json['status'],
+      amount: json['amount'],
+      fiatCode: json['fiat_code'],
+      fiatAmount: json['fiat_amount'],
+      minAmount: json['min_amount'],
+      maxAmount: json['max_amount'],
+      paymentMethod: json['payment_method'],
+      premium: json['premium'],
+      createdAt: json['created_at'],
+      pubkey: json['pubkey'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'kind': kind,
+      'status': status,
+      'amount': amount,
+      'fiat_code': fiatCode,
+      'fiat_amount': fiatAmount,
+      'min_amount': minAmount,
+      'max_amount': maxAmount,
+      'payment_method': paymentMethod,
+      'premium': premium,
+      'created_at': createdAt,
+      'pubkey': pubkey,
+    };
+  }
 }
