@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mostro_mobile/data/repositories/order_repository.dart';
+import 'package:mostro_mobile/data/repositories/mostro_order_repository.dart';
+import 'package:mostro_mobile/data/repositories/order_repository_interface.dart';
 import 'package:mostro_mobile/presentation/auth/bloc/auth_state.dart';
 import 'package:mostro_mobile/services/mostro_service.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
@@ -21,7 +22,7 @@ void main() async {
 
   final mostroService = MostroService(nostrService);
 
-  final orderRepository = OrderRepository(mostroService);
+  final orderRepository = MostroOrderRepository(mostroService);
 
   final prefs = await SharedPreferences.getInstance();
   final isFirstLaunch = prefs.getBool('isFirstLaunch') ?? true;

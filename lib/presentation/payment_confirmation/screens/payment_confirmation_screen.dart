@@ -71,7 +71,7 @@ class PaymentConfirmationScreen extends StatelessWidget {
                       const SizedBox(height: 24),
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Color(0xFF8CC541),
+                          backgroundColor: const Color(0xFF8CC541),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20),
                           ),
@@ -81,7 +81,7 @@ class PaymentConfirmationScreen extends StatelessWidget {
                           context.read<PaymentConfirmationBloc>().add(ContinueAfterConfirmation());
                           // Aquí puedes navegar a la siguiente pantalla o realizar la acción necesaria
                         },
-                        child: Text('CONTINUE'),
+                        child: const Text('CONTINUE'),
                       ),
                     ],
                   ),

@@ -51,7 +51,7 @@ class PaymentQrScreen extends StatelessWidget {
                   const SizedBox(height: 20),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFF8CC541),
+                      backgroundColor: const Color(0xFF8CC541),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                       ),
@@ -59,7 +59,7 @@ class PaymentQrScreen extends StatelessWidget {
                     onPressed: () {
                       context.read<PaymentQrBloc>().add(OpenWallet());
                     },
-                    child: Text('OPEN WALLET'),
+                    child: const Text('OPEN WALLET'),
                   ),
                   const SizedBox(height: 20),
                   TextButton(

@@ -67,7 +67,6 @@ class MostroService {
   Stream<OrderModel> subscribeToOrders() {
     const filter = NostrFilter(
       kinds: [38383],
-      authors: [Config.mostroPubKey],
     );
     return _nostrService.subscribeToEvents(filter).map((event) {
       // Convertir el evento Nostr a OrderModel
