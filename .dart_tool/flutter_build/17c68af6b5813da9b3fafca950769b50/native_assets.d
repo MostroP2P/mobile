@@ -1,1 +1,0 @@
- /home/andrea/Documentos/mostro/mobile/.dart_tool/flutter_build/17c68af6b5813da9b3fafca950769b50/native_assets.yaml: 
