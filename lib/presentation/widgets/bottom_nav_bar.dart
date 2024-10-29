@@ -21,7 +21,7 @@ class BottomNavBar extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _buildNavItem(context, HeroIcons.bookOpen, 0),
-              _buildNavItem(context, HeroIcons.chatBubbleOvalLeft, 1),
+              _buildNavItem(context, HeroIcons.chatBubbleLeftRight, 1),
               _buildNavItem(context, HeroIcons.user, 2),
             ],
           ),

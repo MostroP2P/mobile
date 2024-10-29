@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class OrderModel {
   final String id;
   final String type;
@@ -98,4 +100,85 @@ class OrderModel {
       'buyerFiatAmount': buyerFiatAmount,
     };
   }
+
+  // Método para crear una instancia de OrderModel desde las Tags de un Event
+  factory OrderModel.fromEventTags(List<List<String>> tags) {
+    final Map<String, dynamic> tagMap = {};
+
+    for (var tag in tags) {
+      if (tag.length >= 2) {
+        final key = tag[0];
+        final value = tag.sublist(1);
+
+        if (tagMap.containsKey(key)) {
+          if (tagMap[key] is List) {
+            tagMap[key].addAll(value);
+          } else {
+            tagMap[key] = [tagMap[key], ...value];
+          }
+        } else {
+          tagMap[key] = value.length == 1 ? value.first : value;
+        }
+      }
+    }
+
+    String getString(String key) {
+      if (!tagMap.containsKey(key)) return '';
+      final value = tagMap[key];
+      if (value is String) return value;
+      if (value is List<String>) return value.join(', ');
+      return '';
+    }
+
+    int getInt(String key, [int defaultValue = 0]) {
+      final value = getString(key);
+      return int.tryParse(value) ?? defaultValue;
+    }
+
+    double getDouble(String key, [double defaultValue = 0.0]) {
+      final value = getString(key);
+      return double.tryParse(value) ?? defaultValue;
+    }
+
+    double parseRating(String ratingJson) {
+      if (ratingJson.isEmpty) return 0.0;
+      try {
+        final Map<String, dynamic> ratingMap = json.decode(ratingJson);
+        return (ratingMap['total_rating'] as num?)?.toDouble() ?? 0.0;
+      } catch (e) {
+        print('Error parsing rating JSON: $e');
+        return 0.0;
+      }
+    }
+
+    try {
+      return OrderModel(
+        id: getString('d'),
+        type: getString('k'),
+        user: getString('name'),
+        rating: parseRating(getString('rating')),
+        ratingCount: getInt('ratingCount'),
+        amount: getInt('amt'),
+        currency: getString('f'),
+        fiatAmount: getDouble('fa'),
+        fiatCurrency: getString('f'),
+        paymentMethod: getString('pm'),
+        timeAgo: getString('expiration'),
+        premium: getString('premium'),
+        status: getString('s'),
+        satsAmount: getDouble('satsAmount'),
+        sellerName: getString('sellerName'),
+        sellerRating: getDouble('sellerRating'),
+        sellerReviewCount: getInt('sellerReviewCount'),
+        sellerAvatar: getString('sellerAvatar'),
+        exchangeRate: getDouble('exchangeRate'),
+        buyerSatsAmount: getDouble('buyerSatsAmount'),
+        buyerFiatAmount: getDouble('buyerFiatAmount'),
+      );
+    } catch (e) {
+      print('Error creating OrderModel from tags: $e');
+      throw const FormatException('Invalid tags format for OrderModel');
+    }
+  }
+
 }

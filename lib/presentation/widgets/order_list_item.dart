@@ -33,32 +33,100 @@ class OrderListItem extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    '${order.user} ${order.rating} (${order.ratingCount})',
+                    '${order.user} ${order.rating}/5 (${order.ratingCount})',
                     style: const TextStyle(color: Colors.white),
                   ),
-                  Text(order.timeAgo,
-                      style: const TextStyle(color: Colors.grey)),
+                  Text(
+                    'Time: ${order.timeAgo}',
+                    style: const TextStyle(color: Colors.white),
+                  ),
                 ],
               ),
-              const SizedBox(height: 8),
-              Text('offering ${order.amount} ${order.currency}',
-                  style: const TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.bold)),
-              Text(
-                  'for ${order.fiatAmount} ${order.fiatCurrency} ${order.premium}',
-                  style: const TextStyle(color: Colors.white)),
               const SizedBox(height: 8),
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  HeroIcon(_getPaymentMethodIcon(order.paymentMethod),
-                      style: HeroIconStyle.outline,
-                      color: Colors.grey,
-                      size: 16),
-                  const SizedBox(width: 4),
-                  Text(order.paymentMethod,
-                      style: const TextStyle(color: Colors.grey)),
+                  Expanded(
+                    flex: 3,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text.rich(
+                          TextSpan(
+                            children: [
+                              buildStyledTextSpan(
+                                'offering ',
+                                '${order.amount}',
+                                isValue: true,
+                                isBold: true,
+                              ),
+                              const TextSpan(
+                                text: "sats",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.normal,
+                                  fontSize: 16.0,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 8.0),
+                        Text.rich(
+                          TextSpan(
+                            children: [
+                              buildStyledTextSpan(
+                                'for ',
+                                '${order.fiatAmount}',
+                                isValue: true,
+                                isBold: true,
+                              ),
+                              TextSpan(
+                                text: '${order.fiatCurrency} ',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16.0,
+                                ),
+                              ),
+                              TextSpan(
+                                text: '(${order.premium}%)',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16.0,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    flex: 4,
+                    child: Row(
+                      children: [
+                        HeroIcon(
+                          _getPaymentMethodIcon(order.paymentMethod),
+                          style: HeroIconStyle.outline,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          order.paymentMethod,
+                          style: const TextStyle(color: Colors.white),
+                          overflow: TextOverflow.visible,
+                          softWrap: true,
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
+
+              const SizedBox(height: 8), // Optional spacer after the row
             ],
           ),
         ),
@@ -77,5 +145,28 @@ class OrderListItem extends StatelessWidget {
       default:
         return HeroIcons.banknotes;
     }
+  }
+
+  TextSpan buildStyledTextSpan(String label, String value,
+      {bool isValue = false, bool isBold = false}) {
+    return TextSpan(
+      text: label,
+      style: TextStyle(
+        color: Colors.white,
+        fontWeight: !isBold ? FontWeight.bold : FontWeight.normal,
+        fontSize: isValue ? 16.0 : 24.0,
+      ),
+      children: isValue
+          ? [
+              TextSpan(
+                text: '$value ',
+                style: TextStyle(
+                  fontSize: 24.0,
+                  fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+            ]
+          : [],
+    );
   }
 }

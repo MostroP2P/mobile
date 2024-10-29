@@ -71,7 +71,7 @@ class MostroService {
     return _nostrService.subscribeToEvents(filter).map((event) {
       // Convertir el evento Nostr a OrderModel
       // Implementar la lógica de conversión aquí
-      return OrderModel.fromJson(jsonDecode(event.content!));
+      return OrderModel.fromEventTags(event.tags!);
     });
   }
 

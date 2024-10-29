@@ -10,12 +10,14 @@ class HomeState extends Equatable {
   final List<OrderModel> allOrders;
   final List<OrderModel> filteredOrders;
   final OrderType orderType;
+  final String errorMessage;
 
   const HomeState({
     required this.status,
     required this.allOrders,
     required this.filteredOrders,
     required this.orderType,
+    required this.errorMessage,
   });
 
   factory HomeState.initial() {
@@ -23,7 +25,8 @@ class HomeState extends Equatable {
       status: HomeStatus.initial,
       allOrders: [],
       filteredOrders: [],
-      orderType: OrderType.buy, // Valor inicial
+      orderType: OrderType.buy,
+      errorMessage: "",
     );
   }
 
@@ -32,15 +35,17 @@ class HomeState extends Equatable {
     List<OrderModel>? allOrders,
     List<OrderModel>? filteredOrders,
     OrderType? orderType,
+    String? errorMessage,
   }) {
     return HomeState(
       status: status ?? this.status,
       allOrders: allOrders ?? this.allOrders,
       filteredOrders: filteredOrders ?? this.filteredOrders,
       orderType: orderType ?? this.orderType,
+      errorMessage: errorMessage ?? this.errorMessage,
     );
   }
 
   @override
-  List<Object> get props => [status, allOrders, filteredOrders, orderType];
+  List<Object> get props => [status, allOrders, filteredOrders, orderType, errorMessage];
 }
