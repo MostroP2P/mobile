@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/presentation/order/screens/order_details_screen.dart';
 import '../../data/models/order_model.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class OrderListItem extends StatelessWidget {
   final OrderModel order;
@@ -42,7 +43,7 @@ class OrderListItem extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -114,11 +115,13 @@ class OrderListItem extends StatelessWidget {
                           size: 16,
                         ),
                         const SizedBox(width: 4),
-                        Text(
-                          order.paymentMethod,
-                          style: const TextStyle(color: Colors.white),
-                          overflow: TextOverflow.visible,
-                          softWrap: true,
+                        Flexible(
+                          child: Text(
+                            order.paymentMethod,
+                            style: const TextStyle(color: Colors.grey),
+                            overflow: TextOverflow.visible,
+                            softWrap: true,
+                          ),
                         ),
                       ],
                     ),
@@ -153,16 +156,17 @@ class OrderListItem extends StatelessWidget {
       text: label,
       style: TextStyle(
         color: Colors.white,
-        fontWeight: !isBold ? FontWeight.bold : FontWeight.normal,
+        fontWeight: FontWeight.normal,
         fontSize: isValue ? 16.0 : 24.0,
+        fontFamily: GoogleFonts.robotoCondensed().fontFamily,
       ),
       children: isValue
           ? [
               TextSpan(
                 text: '$value ',
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 24.0,
-                  fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+                  fontWeight: FontWeight.normal,
                 ),
               ),
             ]
