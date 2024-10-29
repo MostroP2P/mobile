@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mostro_mobile/data/repositories/order_repository.dart';
 import 'package:mostro_mobile/presentation/auth/bloc/auth_state.dart';
+import 'package:mostro_mobile/services/mostro_service.dart';
+import 'package:mostro_mobile/services/nostr_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mostro_mobile/core/routes/app_routes.dart';
 import 'package:mostro_mobile/presentation/home/bloc/home_bloc.dart';
@@ -13,22 +16,33 @@ import 'package:mostro_mobile/core/utils/biometrics_helper.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  final nostrService = NostrService();
+  await nostrService.init();
+
+  final mostroService = MostroService(nostrService);
+
+  final orderRepository = OrderRepository(mostroService);
+
   final prefs = await SharedPreferences.getInstance();
   final isFirstLaunch = prefs.getBool('isFirstLaunch') ?? true;
 
   final biometricsHelper = BiometricsHelper();
 
-  runApp(
-      MyApp(isFirstLaunch: isFirstLaunch, biometricsHelper: biometricsHelper));
+  runApp(MyApp(
+      isFirstLaunch: isFirstLaunch,
+      orderRepository: orderRepository,
+      biometricsHelper: biometricsHelper));
 }
 
 class MyApp extends StatelessWidget {
   final bool isFirstLaunch;
   final BiometricsHelper biometricsHelper;
+  final OrderRepository orderRepository;
 
   const MyApp({
     super.key,
     required this.isFirstLaunch,
+    required this.orderRepository,
     required this.biometricsHelper,
   });
 
@@ -44,7 +58,7 @@ class MyApp extends StatelessWidget {
           ),
         ),
         BlocProvider<HomeBloc>(
-          create: (context) => HomeBloc(),
+          create: (context) => HomeBloc(orderRepository),
         ),
         BlocProvider<ChatListBloc>(
           create: (context) => ChatListBloc(),

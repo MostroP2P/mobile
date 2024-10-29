@@ -1,6 +1,7 @@
 // lib/services/mostro_service.dart
 
 import 'dart:convert';
+import 'package:dart_nostr/nostr/model/request/filter.dart';
 import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/order_model.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
@@ -64,14 +65,14 @@ class MostroService {
   }
 
   Stream<OrderModel> subscribeToOrders() {
-    final filter = NostrFilter(
+    const filter = NostrFilter(
       kinds: [38383],
       authors: [Config.mostroPubKey],
     );
     return _nostrService.subscribeToEvents(filter).map((event) {
       // Convertir el evento Nostr a OrderModel
       // Implementar la lógica de conversión aquí
-      return OrderModel.fromJson(jsonDecode(event.content));
+      return OrderModel.fromJson(jsonDecode(event.content!));
     });
   }
 

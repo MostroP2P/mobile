@@ -1,65 +1,101 @@
-// lib/data/models/order_model.dart
-
 class OrderModel {
   final String id;
-  final String kind; // 'sell' or 'buy'
-  final String status;
-  final int amount; // in sats
-  final String fiatCode;
+  final String type;
+  final String user;
+  final double rating;
+  final int ratingCount;
+  final int amount;
+  final String currency;
   final double fiatAmount;
-  final String? minAmount; // for range orders
-  final String? maxAmount; // for range orders
+  final String fiatCurrency;
   final String paymentMethod;
-  final double premium;
-  final String createdAt;
-  final String pubkey;
+  final String timeAgo;
+  final String premium;
+  final String status;
+  final double satsAmount;
+  final String sellerName;
+  final double sellerRating;
+  final int sellerReviewCount;
+  final String sellerAvatar;
+  final double exchangeRate;
+  final double buyerSatsAmount;
+  final double buyerFiatAmount;
 
   OrderModel({
     required this.id,
-    required this.kind,
-    required this.status,
+    required this.type,
+    required this.user,
+    required this.rating,
+    required this.ratingCount,
     required this.amount,
-    required this.fiatCode,
+    required this.currency,
     required this.fiatAmount,
-    this.minAmount,
-    this.maxAmount,
+    required this.fiatCurrency,
     required this.paymentMethod,
+    required this.timeAgo,
     required this.premium,
-    required this.createdAt,
-    required this.pubkey,
+    required this.status,
+    required this.satsAmount,
+    required this.sellerName,
+    required this.sellerRating,
+    required this.sellerReviewCount,
+    required this.sellerAvatar,
+    required this.exchangeRate,
+    required this.buyerSatsAmount,
+    required this.buyerFiatAmount,
   });
 
+  // Método para crear una instancia de OrderModel desde un JSON
   factory OrderModel.fromJson(Map<String, dynamic> json) {
     return OrderModel(
       id: json['id'],
-      kind: json['kind'],
-      status: json['status'],
+      type: json['type'],
+      user: json['user'],
+      rating: json['rating'].toDouble(),
+      ratingCount: json['ratingCount'],
       amount: json['amount'],
-      fiatCode: json['fiat_code'],
-      fiatAmount: json['fiat_amount'],
-      minAmount: json['min_amount'],
-      maxAmount: json['max_amount'],
-      paymentMethod: json['payment_method'],
+      currency: json['currency'],
+      fiatAmount: json['fiatAmount'].toDouble(),
+      fiatCurrency: json['fiatCurrency'],
+      paymentMethod: json['paymentMethod'],
+      timeAgo: json['timeAgo'],
       premium: json['premium'],
-      createdAt: json['created_at'],
-      pubkey: json['pubkey'],
+      status: json['status'],
+      satsAmount: json['satsAmount'].toDouble(),
+      sellerName: json['sellerName'],
+      sellerRating: json['sellerRating'].toDouble(),
+      sellerReviewCount: json['sellerReviewCount'],
+      sellerAvatar: json['sellerAvatar'],
+      exchangeRate: json['exchangeRate'].toDouble(),
+      buyerSatsAmount: json['buyerSatsAmount'].toDouble(),
+      buyerFiatAmount: json['buyerFiatAmount'].toDouble(),
     );
   }
 
+  // Método para convertir una instancia de OrderModel a JSON
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'kind': kind,
-      'status': status,
+      'type': type,
+      'user': user,
+      'rating': rating,
+      'ratingCount': ratingCount,
       'amount': amount,
-      'fiat_code': fiatCode,
-      'fiat_amount': fiatAmount,
-      'min_amount': minAmount,
-      'max_amount': maxAmount,
-      'payment_method': paymentMethod,
+      'currency': currency,
+      'fiatAmount': fiatAmount,
+      'fiatCurrency': fiatCurrency,
+      'paymentMethod': paymentMethod,
+      'timeAgo': timeAgo,
       'premium': premium,
-      'created_at': createdAt,
-      'pubkey': pubkey,
+      'status': status,
+      'satsAmount': satsAmount,
+      'sellerName': sellerName,
+      'sellerRating': sellerRating,
+      'sellerReviewCount': sellerReviewCount,
+      'sellerAvatar': sellerAvatar,
+      'exchangeRate': exchangeRate,
+      'buyerSatsAmount': buyerSatsAmount,
+      'buyerFiatAmount': buyerFiatAmount,
     };
   }
 }
