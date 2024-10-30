@@ -33,7 +33,7 @@ ios/.dart_tool/
 
 # Android
 android/.gradle/
-android/app/proguard-rules.pro
+#android/app/proguard-rules.pro
 android/local.properties
 android/*.keystore
 

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/presentation/order/screens/order_details_screen.dart';
-import '../../data/models/order_model.dart';
+import 'package:mostro_mobile/data/models/order_model.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class OrderListItem extends StatelessWidget {

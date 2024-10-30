@@ -34,6 +34,7 @@ class HomeScreen extends StatelessWidget {
             children: [
               _buildTabs(),
               _buildFilterButton(),
+              const SizedBox(height: 6.0),
               Expanded(
                 child: _buildOrderList(),
               ),
