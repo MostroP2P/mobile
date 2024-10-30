@@ -1,5 +1,3 @@
-// lib/services/mostro_service.dart
-
 import 'dart:convert';
 import 'package:dart_nostr/nostr/model/request/filter.dart';
 import 'package:mostro_mobile/core/config.dart';
@@ -65,8 +63,11 @@ class MostroService {
   }
 
   Stream<OrderModel> subscribeToOrders() {
-    const filter = NostrFilter(
-      kinds: [38383],
+    DateTime filterTime = DateTime.now().subtract(Duration(hours: 24));
+    
+    var filter = NostrFilter(
+      kinds: const [38383],
+      since: filterTime,
     );
     return _nostrService.subscribeToEvents(filter).map((event) {
       // Convertir el evento Nostr a OrderModel
