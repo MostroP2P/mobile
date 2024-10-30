@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:timeago/timeago.dart' as timeago;
 
 class OrderModel {
   final String id;
@@ -151,11 +152,15 @@ class OrderModel {
       }
     }
 
+    final int expirationTimestamp = getInt('expiration');
+    final String timeAgoStr = _timeAgo(expirationTimestamp);
+    final String name = getString('name').isEmpty ? "anon" : getString('name');
+
     try {
       return OrderModel(
         id: getString('d'),
         type: getString('k'),
-        user: getString('name'),
+        user: name,
         rating: parseRating(getString('rating')),
         ratingCount: getInt('ratingCount'),
         amount: getInt('amt'),
@@ -163,7 +168,7 @@ class OrderModel {
         fiatAmount: getDouble('fa'),
         fiatCurrency: getString('f'),
         paymentMethod: getString('pm'),
-        timeAgo: getString('expiration'),
+        timeAgo: timeAgoStr,
         premium: getString('premium'),
         status: getString('s'),
         satsAmount: getDouble('satsAmount'),
@@ -180,5 +185,11 @@ class OrderModel {
       throw const FormatException('Invalid tags format for OrderModel');
     }
   }
+}
 
+String _timeAgo(int timestamp) {
+  final DateTime eventTime =
+      DateTime.fromMillisecondsSinceEpoch(timestamp * 1000)
+          .subtract(Duration(hours: 24));
+  return timeago.format(eventTime, allowFromNow: true);
 }
