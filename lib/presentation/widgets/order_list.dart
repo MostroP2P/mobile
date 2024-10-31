@@ -1,9 +1,9 @@
+import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter/material.dart';
-import '../../data/models/order_model.dart';
 import 'order_list_item.dart';
 
 class OrderList extends StatelessWidget {
-  final List<OrderModel> orders;
+  final List<NostrEvent> orders;
 
   const OrderList({super.key, required this.orders});
 

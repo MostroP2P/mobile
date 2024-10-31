@@ -1,5 +1,5 @@
+import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:equatable/equatable.dart';
-import 'package:mostro_mobile/data/models/order_model.dart';
 
 abstract class OrderDetailsEvent extends Equatable {
   const OrderDetailsEvent();
@@ -9,7 +9,7 @@ abstract class OrderDetailsEvent extends Equatable {
 }
 
 class LoadOrderDetails extends OrderDetailsEvent {
-  final OrderModel order;
+  final NostrEvent order;
 
   const LoadOrderDetails(this.order);
 
@@ -19,4 +19,11 @@ class LoadOrderDetails extends OrderDetailsEvent {
 
 class CancelOrder extends OrderDetailsEvent {}
 
-class ContinueOrder extends OrderDetailsEvent {}
+class ContinueOrder extends OrderDetailsEvent {
+  final NostrEvent order;
+
+  const ContinueOrder(this.order);
+
+  @override
+  List<Object> get props => [order];
+}

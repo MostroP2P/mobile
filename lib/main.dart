@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mostro_mobile/data/repositories/mostro_order_repository.dart';
-import 'package:mostro_mobile/data/repositories/order_repository_interface.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mostro_mobile/core/theme/app_theme.dart';
 import 'package:mostro_mobile/presentation/auth/bloc/auth_state.dart';
-import 'package:mostro_mobile/services/mostro_service.dart';
+import 'package:mostro_mobile/providers/riverpod_providers.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mostro_mobile/core/routes/app_routes.dart';
@@ -20,35 +20,29 @@ void main() async {
   final nostrService = NostrService();
   await nostrService.init();
 
-  final mostroService = MostroService(nostrService);
-
-  final orderRepository = MostroOrderRepository(mostroService);
-
   final prefs = await SharedPreferences.getInstance();
   final isFirstLaunch = prefs.getBool('isFirstLaunch') ?? true;
 
   final biometricsHelper = BiometricsHelper();
 
-  runApp(MyApp(
-      isFirstLaunch: isFirstLaunch,
-      orderRepository: orderRepository,
-      biometricsHelper: biometricsHelper));
+  runApp(ProviderScope(
+      child: MyApp(
+          isFirstLaunch: isFirstLaunch, biometricsHelper: biometricsHelper)));
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   final bool isFirstLaunch;
   final BiometricsHelper biometricsHelper;
-  final OrderRepository orderRepository;
 
   const MyApp({
     super.key,
     required this.isFirstLaunch,
-    required this.orderRepository,
     required this.biometricsHelper,
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final homeBloc = ref.watch(homeBlocProvider);
     return MultiBlocProvider(
       providers: [
         BlocProvider<AuthBloc>(
@@ -59,7 +53,7 @@ class MyApp extends StatelessWidget {
           ),
         ),
         BlocProvider<HomeBloc>(
-          create: (context) => HomeBloc(orderRepository),
+          create: (context) => homeBloc,
         ),
         BlocProvider<ChatListBloc>(
           create: (context) => ChatListBloc(),
@@ -81,7 +75,7 @@ class MyApp extends StatelessWidget {
           title: 'Mostro',
           theme: ThemeData(
             primarySwatch: Colors.blue,
-            scaffoldBackgroundColor: const Color(0xFF1D212C),
+            scaffoldBackgroundColor: AppTheme.dark1,
           ),
           initialRoute: isFirstLaunch ? AppRoutes.welcome : AppRoutes.home,
           routes: AppRoutes.routes,

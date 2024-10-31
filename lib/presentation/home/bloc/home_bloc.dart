@@ -1,16 +1,14 @@
 import 'dart:async';
-
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/order_model.dart';
-import 'package:mostro_mobile/data/repositories/order_repository_interface.dart';
 import 'package:mostro_mobile/presentation/home/bloc/home_event.dart';
 import 'package:mostro_mobile/presentation/home/bloc/home_state.dart';
 
 class HomeBloc extends Bloc<HomeEvent, HomeState> {
-  final OrderRepository orderRepository;
   StreamSubscription<OrderModel>? ordersSubscription;
 
-  HomeBloc(this.orderRepository) : super(HomeState.initial()) {
+  HomeBloc() : super(HomeState.initial()) {
     on<LoadOrders>(_onLoadOrders);
     on<ChangeOrderType>(_onChangeOrderType);
     on<OrderReceived>(_onOrderReceived);
@@ -18,21 +16,6 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   }
 
   Future<void> _onLoadOrders(LoadOrders event, Emitter<HomeState> emit) async {
-    emit(state.copyWith(status: HomeStatus.loading));
-
-    await ordersSubscription?.cancel();
-
-    ordersSubscription = orderRepository.getPendingOrders().listen(
-      (order) {
-        add(OrderReceived(order));
-      },
-      onError: (error) {
-        add(OrdersError(error.toString()));
-      },
-      onDone: () {
-        // EOSE
-      },
-    );
   }
 
   void _onOrderReceived(OrderReceived event, Emitter<HomeState> emit) {

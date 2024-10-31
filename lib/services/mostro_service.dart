@@ -1,104 +1,182 @@
+import 'dart:collection';
 import 'dart:convert';
+import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:dart_nostr/nostr/model/request/filter.dart';
 import 'package:mostro_mobile/core/config.dart';
-import 'package:mostro_mobile/data/models/order_model.dart';
+import 'package:mostro_mobile/data/models/mostro_message.dart';
+import 'package:mostro_mobile/data/models/order.dart';
+import 'package:mostro_mobile/data/models/enums/action.dart';
+import 'package:mostro_mobile/data/models/session.dart';
+import 'package:mostro_mobile/data/repositories/mostro_repository.dart';
+import 'package:mostro_mobile/data/repositories/secure_storage_manager.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
+
+const int mostroVersion = 1;
 
 class MostroService {
   final NostrService _nostrService;
+  final SecureStorageManager _secureStorageManager;
+  final _mostroRepository = MostroRepository();
 
-  MostroService(this._nostrService);
+  final _orders = HashMap<String, MostroMessage>();
+  final _sessions = HashMap<String, Session>();
 
-  Future<void> publishOrder(OrderModel order) async {
-    final content = jsonEncode({
-      'order': {
-        'version': 1,
-        'action': 'new-order',
-        'content': {
-          'order': order.toJson(),
-        },
-      },
-    });
-    final event = await _nostrService.createNIP59Event(content, Config.mostroPubKey);
-    await _nostrService.publishEvent(event);
+  MostroService(this._nostrService, this._secureStorageManager);
+
+  Stream<NostrEvent> subscribeToOrders(NostrFilter filter) {
+    return _nostrService.subscribeToEvents(filter);
   }
 
-  Future<void> cancelOrder(String orderId) async {
+  Future<void> publishOrder(Order order) async {
+    final session = await _secureStorageManager.newSession();
+
     final content = jsonEncode({
       'order': {
-        'version': 1,
-        'id': orderId,
-        'action': 'cancel',
-        'content': null,
+        'version': mostroVersion,
+        'action': Action.newOrder.value,
+        'content': order.toJson(),
       },
     });
-    final event = await _nostrService.createNIP59Event(content, Config.mostroPubKey);
+
+    final event = await _nostrService.createNIP59Event(
+        content, Config.mostroPubKey, session.privateKey);
+
     await _nostrService.publishEvent(event);
+
+    final filter = NostrFilter(p: [session.publicKey]);
+
+    subscribeToOrders(filter).listen((event) async {
+      final response =
+          await _nostrService.decryptNIP59Event(event, session.privateKey);
+
+      final orderResponse = MostroMessage.deserialized(response.content!);
+
+      if (orderResponse.requestId != null) {
+        _orders[orderResponse.requestId!] = orderResponse;
+        _sessions[orderResponse.requestId!] = session;
+        session.eventId = orderResponse.requestId;
+      }
+    });
   }
 
   Future<void> takeSellOrder(String orderId, {int? amount}) async {
+    final session = await _secureStorageManager.newSession();
+    session.eventId = orderId;
+
     final content = jsonEncode({
       'order': {
-        'version': 1,
+        'version': mostroVersion,
         'id': orderId,
-        'action': 'take-sell',
+        'action': Action.takeSell.value,
         'content': amount != null ? {'amount': amount} : null,
       },
     });
-    final event = await _nostrService.createNIP59Event(content, Config.mostroPubKey);
+    final event = await _nostrService.createNIP59Event(
+        content, Config.mostroPubKey, session.privateKey);
+
     await _nostrService.publishEvent(event);
+
+    final filter = NostrFilter(p: [session.publicKey]);
+
+    subscribeToOrders(filter).listen((event) async {
+      final response =
+          await _nostrService.decryptNIP59Event(event, session.privateKey);
+
+      final orderResponse = MostroMessage.deserialized(response.content!);
+
+      print(response);
+    });
   }
 
   Future<void> takeBuyOrder(String orderId, {int? amount}) async {
+    final session = await _secureStorageManager.newSession();
+    session.eventId = orderId;
+
     final content = jsonEncode({
       'order': {
-        'version': 1,
+        'version': mostroVersion,
         'id': orderId,
-        'action': 'take-buy',
+        'action': Action.takeBuy.value,
         'content': amount != null ? {'amount': amount} : null,
       },
     });
-    final event = await _nostrService.createNIP59Event(content, Config.mostroPubKey);
+    final event = await _nostrService.createNIP59Event(
+        content, Config.mostroPubKey, session.privateKey);
     await _nostrService.publishEvent(event);
-  }
+    final filter = NostrFilter(p: [session.publicKey]);
 
-  Stream<OrderModel> subscribeToOrders() {
-    DateTime filterTime = DateTime.now().subtract(Duration(hours: 24));
-    
-    var filter = NostrFilter(
-      kinds: const [38383],
-      since: filterTime,
-    );
-    return _nostrService.subscribeToEvents(filter).map((event) {
-      // Convertir el evento Nostr a OrderModel
-      // Implementar la lógica de conversión aquí
-      return OrderModel.fromEventTags(event.tags!);
+    subscribeToOrders(filter).listen((event) async {
+      final response =
+          await _nostrService.decryptNIP59Event(event, session.privateKey);
+
+      final orderResponse = MostroMessage.deserialized(response.content!);
+
+      print(response);
     });
   }
 
-  Future<void> sendFiatSent(String orderId) async {
+  Future<void> cancelOrder(String orderId) async {
+    final order = _mostroRepository.getOrder(orderId);
+
+    final session = await _secureStorageManager.loadSession(order!.requestId!);
+
+    if (session == null) {
+      // TODO: throw error
+      return;
+    }
+
     final content = jsonEncode({
       'order': {
-        'version': 1,
+        'version': mostroVersion,
         'id': orderId,
-        'action': 'fiat-sent',
+        'action': Action.cancel,
         'content': null,
       },
     });
-    final event = await _nostrService.createNIP59Event(content, Config.mostroPubKey);
+    final event = await _nostrService.createNIP59Event(
+        content, Config.mostroPubKey, session.privateKey);
+    await _nostrService.publishEvent(event);
+  }
+
+  Future<void> sendFiatSent(String orderId) async {
+    final session = await _secureStorageManager.loadSession(orderId);
+
+    if (session == null) {
+      // TODO: throw error
+      return;
+    }
+
+    final content = jsonEncode({
+      'order': {
+        'version': mostroVersion,
+        'id': orderId,
+        'action': Action.fiatSent.value,
+        'content': null,
+      },
+    });
+    final event = await _nostrService.createNIP59Event(
+        content, Config.mostroPubKey, session.privateKey);
     await _nostrService.publishEvent(event);
   }
 
   Future<void> releaseOrder(String orderId) async {
+    final session = await _secureStorageManager.loadSession(orderId);
+
+    if (session == null) {
+      // TODO: throw error
+      return;
+    }
+
     final content = jsonEncode({
       'order': {
-        'version': 1,
+        'version': mostroVersion,
         'id': orderId,
-        'action': 'release',
+        'action': Action.release.value,
         'content': null,
       },
     });
-    final event = await _nostrService.createNIP59Event(content, Config.mostroPubKey);
+    final event = await _nostrService.createNIP59Event(
+        content, Config.mostroPubKey, session.privateKey);
     await _nostrService.publishEvent(event);
   }
 }

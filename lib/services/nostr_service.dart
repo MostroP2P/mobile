@@ -80,37 +80,23 @@ class NostrService {
     return keyPair;
   }
 
-  Future<String?> getPrivateKey() async {
-    return await AuthUtils.getPrivateKey();
-  }
-
   String getMostroPubKey() {
     return Config.mostroPubKey;
   }
 
   Future<NostrEvent> createNIP59Event(
-      String content, String recipientPubKey) async {
+      String content, String recipientPubKey, String senderPrivateKey) async {
     if (!_isInitialized) {
       throw Exception('Nostr is not initialized. Call init() first.');
-    }
-
-    final senderPrivateKey = await getPrivateKey();
-    if (senderPrivateKey == null) {
-      throw Exception('No private key found. Generate a key pair first.');
     }
 
     return NostrUtils.createNIP59Event(
         content, recipientPubKey, senderPrivateKey);
   }
 
-  Future<String> decryptNIP59Event(NostrEvent event) async {
+  Future<NostrEvent> decryptNIP59Event(NostrEvent event, String privateKey) async {
     if (!_isInitialized) {
       throw Exception('Nostr is not initialized. Call init() first.');
-    }
-
-    final privateKey = await getPrivateKey();
-    if (privateKey == null) {
-      throw Exception('No private key found. Generate a key pair first.');
     }
 
     return NostrUtils.decryptNIP59Event(event, privateKey);

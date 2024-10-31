@@ -1,11 +1,13 @@
+import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter/material.dart';
 import 'package:heroicons/heroicons.dart';
+import 'package:mostro_mobile/core/theme/app_theme.dart';
+import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/presentation/order/screens/order_details_screen.dart';
-import 'package:mostro_mobile/data/models/order_model.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class OrderListItem extends StatelessWidget {
-  final OrderModel order;
+  final NostrEvent order;
 
   const OrderListItem({super.key, required this.order});
 
@@ -34,11 +36,11 @@ class OrderListItem extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    '${order.user} ${order.rating}/5 (${order.ratingCount})',
+                    '${order.name} ${order.rating}/5 (_)',
                     style: const TextStyle(color: Colors.white),
                   ),
                   Text(
-                    'Time: ${order.timeAgo}',
+                    'Time: ${order.expiration}',
                     style: const TextStyle(color: Colors.white),
                   ),
                 ],
@@ -56,7 +58,7 @@ class OrderListItem extends StatelessWidget {
                         Text.rich(
                           TextSpan(
                             children: [
-                              buildStyledTextSpan(
+                              _buildStyledTextSpan(
                                 'offering ',
                                 '${order.amount}',
                                 isValue: true,
@@ -77,14 +79,14 @@ class OrderListItem extends StatelessWidget {
                         Text.rich(
                           TextSpan(
                             children: [
-                              buildStyledTextSpan(
+                              _buildStyledTextSpan(
                                 'for ',
                                 '${order.fiatAmount}',
                                 isValue: true,
                                 isBold: true,
                               ),
                               TextSpan(
-                                text: '${order.fiatCurrency} ',
+                                text: '${order.currency} ',
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 16.0,
@@ -109,7 +111,7 @@ class OrderListItem extends StatelessWidget {
                     child: Row(
                       children: [
                         HeroIcon(
-                          _getPaymentMethodIcon(order.paymentMethod),
+                          _getPaymentMethodIcon(order.paymentMethods[0]),
                           style: HeroIconStyle.outline,
                           color: Colors.white,
                           size: 16,
@@ -117,7 +119,7 @@ class OrderListItem extends StatelessWidget {
                         const SizedBox(width: 4),
                         Flexible(
                           child: Text(
-                            order.paymentMethod,
+                            order.paymentMethods[0],
                             style: const TextStyle(color: Colors.grey),
                             overflow: TextOverflow.visible,
                             softWrap: true,
@@ -150,12 +152,12 @@ class OrderListItem extends StatelessWidget {
     }
   }
 
-  TextSpan buildStyledTextSpan(String label, String value,
+  TextSpan _buildStyledTextSpan(String label, String value,
       {bool isValue = false, bool isBold = false}) {
     return TextSpan(
       text: label,
       style: TextStyle(
-        color: Colors.white,
+        color: AppTheme.cream1,
         fontWeight: FontWeight.normal,
         fontSize: isValue ? 16.0 : 24.0,
         fontFamily: GoogleFonts.robotoCondensed().fontFamily,
