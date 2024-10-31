@@ -1,84 +1,118 @@
+import 'package:dart_nostr/dart_nostr.dart';
+import 'package:mostro_mobile/core/config.dart';
+import 'package:logging/logging.dart';
+import 'package:mostro_mobile/core/utils/auth_utils.dart';
 import 'package:mostro_mobile/core/utils/nostr_utils.dart';
-import 'package:mostro_mobile/data/models/nostr_event.dart'
-    as nostr_event; // Usa el modelo correcto
-import 'package:dart_nostr/dart_nostr.dart'; // Este es necesario para las funcionalidades de Nostr
-import 'package:convert/convert.dart'; // Importar hex
-import 'package:pointycastle/pointycastle.dart'; // Importar correctamente las claves
 
 class NostrService {
   static final NostrService _instance = NostrService._internal();
-
-  factory NostrService() {
-    return _instance;
-  }
-
+  factory NostrService() => _instance;
   NostrService._internal();
 
-  ECPrivateKey? _privateKey;
-
-  final List<String> _relays = [
-    'wss://localhost:7000',
-  ];
+  final Logger _logger = Logger('NostrService');
+  late Nostr _nostr;
+  bool _isInitialized = false;
 
   Future<void> init() async {
+    if (_isInitialized) return;
+
+    _nostr = Nostr.instance;
     try {
-      await Nostr.instance.relaysService.init(relaysUrl: _relays);
-      print('Nostr initialized successfully');
-    } catch (e) {
-      print('Failed to initialize Nostr: $e');
-    }
-  }
-
-  void setPrivateKey(ECPrivateKey privateKey) {
-    _privateKey = privateKey;
-  }
-
-  Future<void> publishEvent(int kind, String content,
-      {List<List<String>>? tags}) async {
-    if (_privateKey == null) {
-      throw Exception('Private key not set');
-    }
-
-    try {
-      // Crear el evento
-      final keyPair = NostrUtils.generateKeyPair();
-      final publicKey = keyPair.publicKey as ECPublicKey;
-      final pubkeyHex = hex.encode(publicKey.Q!.getEncoded(false));
-
-      // Aquí usamos la clase NostrEvent de tu proyecto
-      final event = nostr_event.NostrEvent(
-        id: '',
-        kind: kind,
-        pubkey: pubkeyHex,
-        content: content,
-        createdAt: DateTime.now(),
-        tags: tags,
-        sig: '',
+      await _nostr.relaysService.init(
+        relaysUrl: Config.nostrRelays,
+        connectionTimeout: Config.nostrConnectionTimeout,
+        onRelayListening: (relay, url, channel) {
+          _logger.info('Connected to relay: $url');
+        },
+        onRelayConnectionError: (relay, error, channel) {
+          _logger.warning('Failed to connect to relay $relay: $error');
+        },
       );
-
-      // Generar ID y firmar el evento
-      event.id = event.generateId();
-      event.sig = event.signEvent(_privateKey!);
-
-      // Enviar el evento a los relays
-      await Nostr.instance.relaysService.sendEventToRelays(event as NostrEvent);
-
-      print('Event published: ${event.id}');
+      _isInitialized = true;
+      _logger.info('Nostr initialized successfully');
     } catch (e) {
-      print('Failed to publish event: $e');
+      _logger.severe('Failed to initialize Nostr: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> publishEvent(NostrEvent event) async {
+    if (!_isInitialized) {
+      throw Exception('Nostr is not initialized. Call init() first.');
+    }
+
+    try {
+      await _nostr.relaysService.sendEventToRelaysAsync(event,
+          timeout: Config.nostrConnectionTimeout);
+      _logger.info('Event published successfully');
+    } catch (e) {
+      _logger.warning('Failed to publish event: $e');
+      rethrow;
     }
   }
 
   Stream<NostrEvent> subscribeToEvents(NostrFilter filter) {
-    final request = NostrRequest(filters: [filter]);
+    if (!_isInitialized) {
+      throw Exception('Nostr is not initialized. Call init() first.');
+    }
 
-    return Nostr.instance.relaysService
-        .startEventsSubscription(request: request)
-        .stream;
+    final request = NostrRequest(filters: [filter]);
+    final subscription =
+        _nostr.relaysService.startEventsSubscription(request: request);
+
+    return subscription.stream;
   }
 
-  Future<void> disconnect() async {
-    await Nostr.instance.relaysService.disconnectFromRelays();
-    print('Disconnected from all relays');
+  Future<void> disconnectFromRelays() async {
+    if (!_isInitialized) return;
+
+    await _nostr.relaysService.disconnectFromRelays();
+    _isInitialized = false;
+    _logger.info('Disconnected from all relays');
+  }
+
+  bool get isInitialized => _isInitialized;
+
+  Future<NostrKeyPairs> generateKeyPair() async {
+    final keyPair = NostrUtils.generateKeyPair();
+    await AuthUtils.savePrivateKeyAndPin(
+        keyPair.private, ''); // Consider adding a password parameter
+    return keyPair;
+  }
+
+  Future<String?> getPrivateKey() async {
+    return await AuthUtils.getPrivateKey();
+  }
+
+  String getMostroPubKey() {
+    return Config.mostroPubKey;
+  }
+
+  Future<NostrEvent> createNIP59Event(
+      String content, String recipientPubKey) async {
+    if (!_isInitialized) {
+      throw Exception('Nostr is not initialized. Call init() first.');
+    }
+
+    final senderPrivateKey = await getPrivateKey();
+    if (senderPrivateKey == null) {
+      throw Exception('No private key found. Generate a key pair first.');
+    }
+
+    return NostrUtils.createNIP59Event(
+        content, recipientPubKey, senderPrivateKey);
+  }
+
+  Future<String> decryptNIP59Event(NostrEvent event) async {
+    if (!_isInitialized) {
+      throw Exception('Nostr is not initialized. Call init() first.');
+    }
+
+    final privateKey = await getPrivateKey();
+    if (privateKey == null) {
+      throw Exception('No private key found. Generate a key pair first.');
+    }
+
+    return NostrUtils.decryptNIP59Event(event, privateKey);
   }
 }

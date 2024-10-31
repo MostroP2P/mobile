@@ -1,5 +1,5 @@
 name: mostro_mobile
-description: "A new Flutter project."
+description: "Mobile/Desktop Client for Mostro."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -49,6 +49,13 @@ dependencies:
   pointycastle: ^3.9.1
   convert: ^3.1.1
   shared_preferences: ^2.3.2
+  web_socket_channel: ^2.4.0
+  equatable: ^2.0.5
+  encrypt: ^5.0.3
+  logging: ^1.2.0
+  local_auth: ^2.3.0
+  google_fonts: ^6.2.1
+  timeago: ^3.7.0
 
 dev_dependencies:
   flutter_test:
@@ -59,7 +66,7 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^4.0.0
+  flutter_lints: ^5.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
