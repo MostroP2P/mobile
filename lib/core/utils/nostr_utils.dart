@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:typed_data';
+import 'dart:math';
 import 'package:crypto/crypto.dart';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:elliptic/elliptic.dart';
@@ -10,10 +10,7 @@ class NostrUtils {
 
   // Generación de claves
   static NostrKeyPairs generateKeyPair() {
-    var ec = getS256();
-    var priv = ec.generatePrivateKey();
-
-    return NostrKeyPairs(private: priv.toHex());
+    return NostrKeyPairs(private: generatePrivateKey());
   }
 
   static NostrKeyPairs generateKeyPairFromPrivateKey(String privateKey) {
@@ -22,7 +19,7 @@ class NostrUtils {
   }
 
   static String generatePrivateKey() {
-    return _instance.keysService.generatePrivateKey();
+    return getS256().generatePrivateKey().toHex();
   }
 
   // Codificación y decodificación de claves
@@ -121,6 +118,13 @@ class NostrUtils {
     return digest.toString(); // Devuelve el ID como una cadena hex
   }
 
+  static DateTime randomNow() {
+    final now = DateTime.now();
+    final randomSeconds =
+        Random().nextInt(2 * 24 * 60 * 60);
+    return now.subtract(Duration(seconds: randomSeconds));
+  }
+
   // NIP-59 y NIP-44 funciones
   static Future<NostrEvent> createNIP59Event(
       String content, String recipientPubKey, String senderPrivateKey) async {
@@ -137,15 +141,13 @@ class NostrUtils {
       ],
     );
 
-    randomNow() => DateTime(createdAt.millisecondsSinceEpoch ~/ 1000);
-
-    final encryptedContent = _encryptNIP44(
+    final encryptedContent = await _encryptNIP44(
         jsonEncode(rumorEvent.toMap()), senderPrivateKey, '02$recipientPubKey');
 
     final sealEvent = NostrEvent.fromPartialData(
       kind: 13,
       keyPairs: senderKeyPair,
-      content: await encryptedContent,
+      content: encryptedContent,
       createdAt: randomNow(),
     );
 
@@ -180,10 +182,6 @@ class NostrUtils {
     final finalDecryptedContent = await _decryptNIP44(
         rumorEvent.content ?? '', privateKey, rumorEvent.pubkey);
 
-    print(finalDecryptedContent);
-    print(
-        NostrEvent.canBeDeserialized('["EVENT", "", $finalDecryptedContent]'));
-
     final wrap = jsonDecode(finalDecryptedContent) as Map<String, dynamic>;
 
     return NostrEvent(
@@ -207,17 +205,9 @@ class NostrUtils {
             .toList(),
       ),
       subscriptionId: '',
-
     );
   }
 
-  static Uint8List _calculateSharedSecret(String privateKey, String publicKey) {
-    // Nota: Esta implementación puede necesitar ajustes dependiendo de cómo
-    // dart_nostr maneje la generación de secretos compartidos.
-    // Posiblemente necesites usar una biblioteca de criptografía adicional aquí.
-    final sharedPoint = generateKeyPairFromPrivateKey(privateKey).public;
-    return Uint8List.fromList(sha256.convert(utf8.encode(sharedPoint)).bytes);
-  }
 
   static Future<String> _encryptNIP44(
       String content, String privkey, String pubkey) async {

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:dart_nostr/nostr/model/request/filter.dart';
 import 'package:mostro_mobile/core/config.dart';
+import 'package:mostro_mobile/data/models/content.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
@@ -27,7 +28,8 @@ class MostroService {
     return _nostrService.subscribeToEvents(filter);
   }
 
-  Future<void> publishOrder(Order order) async {
+  Future<MostroMessage> publishOrder(
+      Order order) async {
     final session = await _secureStorageManager.newSession();
 
     final content = jsonEncode({
@@ -45,18 +47,11 @@ class MostroService {
 
     final filter = NostrFilter(p: [session.publicKey]);
 
-    subscribeToOrders(filter).listen((event) async {
-      final response =
-          await _nostrService.decryptNIP59Event(event, session.privateKey);
-
-      final orderResponse = MostroMessage.deserialized(response.content!);
-
-      if (orderResponse.requestId != null) {
-        _orders[orderResponse.requestId!] = orderResponse;
-        _sessions[orderResponse.requestId!] = session;
-        session.eventId = orderResponse.requestId;
-      }
-    });
+    return await subscribeToOrders(filter).asyncMap((event) async {
+      return await _nostrService.decryptNIP59Event(event, session.privateKey);
+	}).map((event) {
+		return MostroMessage.deserialized(event.content!);
+	}).first;
   }
 
   Future<void> takeSellOrder(String orderId, {int? amount}) async {
@@ -88,7 +83,7 @@ class MostroService {
     });
   }
 
-  Future<void> takeBuyOrder(String orderId, {int? amount}) async {
+  Future<MostroMessage<Content>> takeBuyOrder(String orderId, {int? amount}) async {
     final session = await _secureStorageManager.newSession();
     session.eventId = orderId;
 
@@ -105,14 +100,11 @@ class MostroService {
     await _nostrService.publishEvent(event);
     final filter = NostrFilter(p: [session.publicKey]);
 
-    subscribeToOrders(filter).listen((event) async {
-      final response =
-          await _nostrService.decryptNIP59Event(event, session.privateKey);
-
-      final orderResponse = MostroMessage.deserialized(response.content!);
-
-      print(response);
-    });
+    return await subscribeToOrders(filter).asyncMap((event) async {
+      return await _nostrService.decryptNIP59Event(event, session.privateKey);
+	}).map((event) {
+		return MostroMessage.deserialized(event.content!);
+	}).first;
   }
 
   Future<void> cancelOrder(String orderId) async {
