@@ -16,31 +16,36 @@ class PaymentRequest implements Content {
       throw ArgumentError('At least one parameter must be provided');
     }
   }
-  
+
   @override
   Map<String, dynamic> toJson() {
     final typeKey = type;
     final List<dynamic> values = [];
-    
+
     values.add(order?.toJson());
     values.add(lnInvoice);
-    
+
     if (amount != null) {
       values.add(amount);
     }
-    
-    final result = {
-      typeKey: values
-    };
+
+    final result = {typeKey: values};
 
     return result;
   }
 
   factory PaymentRequest.fromJson(List<dynamic> json) {
+    if (json.length < 2) {
+      throw FormatException('Invalid JSON format: insufficient elements');
+    }
+    final orderJson = json[0];
+    final Order? order = orderJson != null ? Order.fromJson(orderJson) : null;
+    final amount = json.length > 2 ? json[2] as int? : null;
     return PaymentRequest(
-        order: json[0] ?? Order.fromJson(json[0]),
-        lnInvoice: json[1],
-        amount: json[2]);
+      order: order,
+      lnInvoice: json[1],
+      amount: amount,
+    );
   }
 
   @override
