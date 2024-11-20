@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:heroicons/heroicons.dart';
+import 'package:mostro_mobile/core/theme/app_theme.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/presentation/order/bloc/order_details_bloc.dart';
 import 'package:mostro_mobile/presentation/order/bloc/order_details_event.dart';
@@ -16,7 +17,7 @@ import 'package:mostro_mobile/providers/riverpod_providers.dart';
 class OrderDetailsScreen extends ConsumerWidget {
   final NostrEvent initialOrder;
 
-  final _satsAmountController = TextEditingController();
+  final TextEditingController _satsAmountController = TextEditingController();
 
   OrderDetailsScreen({super.key, required this.initialOrder});
 
@@ -26,21 +27,61 @@ class OrderDetailsScreen extends ConsumerWidget {
     return BlocProvider(
       create: (context) =>
           OrderDetailsBloc(mostroService)..add(LoadOrderDetails(initialOrder)),
-      child: BlocBuilder<OrderDetailsBloc, OrderDetailsState>(
-        builder: (context, state) {
-          if (state.status == OrderDetailsStatus.loading) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (state.status == OrderDetailsStatus.error) {
-            return Center(
-                child: Text(state.errorMessage ?? 'An error occurred'));
-          } else if (state.status == OrderDetailsStatus.loaded) {
-            return _buildContent(context, ref, state.order!);
-          } else if (state.status == OrderDetailsStatus.cancelled ||
-              state.status == OrderDetailsStatus.done) {
-            return _buildCompletionMessage(context, state);
+      child: BlocConsumer<OrderDetailsBloc, OrderDetailsState>(
+        listener: (context, state) {
+          if (state.status == OrderDetailsStatus.done) {
+            Navigator.of(context).pop();
           }
-          return const Center(child: Text('Order not found'));
         },
+        builder: (context, state) {
+          switch (state.status) {
+            case OrderDetailsStatus.loading:
+              return const Center(child: CircularProgressIndicator());
+            case OrderDetailsStatus.error:
+              return _buildErrorScreen(state.errorMessage, context);
+            case OrderDetailsStatus.cancelled:
+            case OrderDetailsStatus.done:
+              return _buildCompletionMessage(context, state);
+            case OrderDetailsStatus.loaded:
+              return _buildContent(context, ref, state.order!);
+            default:
+              return const Center(child: Text('Order not found'));
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildErrorScreen(String? errorMessage, BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppTheme.dark1,
+      appBar: _buildAppBar('Error', context),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                errorMessage ?? 'An unexpected error occurred.',
+                style: const TextStyle(
+                  color: Colors.red,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.cream1,
+                ),
+                child: const Text('Return to Main Screen'),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -49,24 +90,11 @@ class OrderDetailsScreen extends ConsumerWidget {
       BuildContext context, OrderDetailsState state) {
     final message = state.status == OrderDetailsStatus.cancelled
         ? 'Order has been cancelled.'
-        : 'Order has been completed!';
+        : state.errorMessage ??
+            'Order has been completed successfully!'; // Handles custom errors or success messages
     return Scaffold(
-      backgroundColor: const Color(0xFF1D212C),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const HeroIcon(HeroIcons.arrowLeft, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Text(
-          message,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-          ),
-        ),
-      ),
+      backgroundColor: AppTheme.dark1,
+      appBar: _buildAppBar('Completion', context),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -76,7 +104,7 @@ class OrderDetailsScreen extends ConsumerWidget {
               Text(
                 message,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: AppTheme.cream1,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
@@ -85,16 +113,14 @@ class OrderDetailsScreen extends ConsumerWidget {
               const SizedBox(height: 16),
               const Text(
                 'Thank you for using our service!',
-                style: TextStyle(color: Colors.grey),
+                style: TextStyle(color: AppTheme.grey2),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
               ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
+                onPressed: () => Navigator.of(context).pop(),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF8CC541),
+                  backgroundColor: AppTheme.mostroGreen,
                 ),
                 child: const Text('Return to Main Screen'),
               ),
@@ -107,67 +133,55 @@ class OrderDetailsScreen extends ConsumerWidget {
 
   Widget _buildContent(BuildContext context, WidgetRef ref, NostrEvent order) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1D212C),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const HeroIcon(HeroIcons.arrowLeft, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
+      backgroundColor: AppTheme.dark1,
+      appBar: _buildAppBar('${order.orderType?.value.toUpperCase()} BITCOIN', context),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              _buildSellerInfo(order),
+              const SizedBox(height: 16),
+              _buildSellerAmount(order, ref),
+              const SizedBox(height: 16),
+              ExchangeRateWidget(currency: order.currency!),
+              const SizedBox(height: 16),
+              _buildBuyerInfo(order),
+              const SizedBox(height: 16),
+              _buildBuyerAmount(order),
+              const SizedBox(height: 24),
+              _buildActionButtons(context),
+            ],
+          ),
         ),
-        title: Text('${order.orderType?.toUpperCase()} BITCOIN',
-            style: TextStyle(
-                color: Colors.white,
-                fontFamily: GoogleFonts.robotoCondensed().fontFamily)),
       ),
-      body: BlocConsumer<OrderDetailsBloc, OrderDetailsState>(
-          listener: (context, state) {
-        if (state.status == OrderDetailsStatus.cancelled ||
-            state.status == OrderDetailsStatus.done) {
-          Navigator.of(context).pop();
-        }
-      }, builder: (context, state) {
-        return Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: [
-                      _buildSellerInfo(order),
-                      const SizedBox(height: 16),
-                      _buildSellerAmount(order, ref),
-                      const SizedBox(height: 16),
-                      ExchangeRateWidget(currency: order.currency!),
-                      const SizedBox(height: 16),
-                      _buildBuyerInfo(order),
-                      const SizedBox(height: 16),
-                      _buildBuyerAmount(order),
-                      const SizedBox(height: 24),
-                      _buildActionButtons(context),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        );
-      }),
+    );
+  }
+
+  PreferredSizeWidget? _buildAppBar(String title, BuildContext context) {
+    return AppBar(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      leading: IconButton(
+        icon: const HeroIcon(HeroIcons.arrowLeft, color: Colors.white),
+        onPressed: () => Navigator.of(context).pop(),
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: Colors.white,
+          fontFamily: GoogleFonts.robotoCondensed().fontFamily,
+        ),
+      ),
     );
   }
 
   Widget _buildSellerInfo(NostrEvent order) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF303544),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
+    return _infoContainer(
+      Row(
         children: [
-          CircleAvatar(
-            backgroundColor: Colors.grey,
+          const CircleAvatar(
+            backgroundColor: AppTheme.grey2,
             child: Text('S', style: TextStyle(color: Colors.white)),
           ),
           const SizedBox(width: 12),
@@ -178,17 +192,19 @@ class OrderDetailsScreen extends ConsumerWidget {
                 Text(order.name!,
                     style: const TextStyle(
                         color: Colors.white, fontWeight: FontWeight.bold)),
-                Text('${order.rating}/5 (_)',
-                    style: const TextStyle(color: Color(0xFF8CC541))),
+                Text(
+                  '${order.rating?.totalRating}/${order.rating?.maxRate} (${order.rating?.totalReviews})',
+                  style: const TextStyle(color: AppTheme.mostroGreen),
+                ),
               ],
             ),
           ),
           TextButton(
             onPressed: () {
-              // Implementar lógica para leer reseñas
+              // Implement review logic
             },
             child: const Text('Read reviews',
-                style: TextStyle(color: Color(0xFF8CC541))),
+                style: TextStyle(color: AppTheme.mostroGreen)),
           ),
         ],
       ),
@@ -202,40 +218,17 @@ class OrderDetailsScreen extends ConsumerWidget {
       loading: () => const CircularProgressIndicator(),
       error: (error, _) => Text('Error: $error'),
       data: (exchangeRate) {
-        return Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFF303544),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
+        return _infoContainer(
+          Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('${order.fiatAmount} ${order.currency} (${order.premium}%)',
                   style: const TextStyle(
-                      color: Colors.white,
+                      color: AppTheme.cream1,
                       fontSize: 18,
                       fontWeight: FontWeight.bold)),
               Text('${order.amount} sats',
-                  style: const TextStyle(color: Colors.grey)),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  const HeroIcon(HeroIcons.creditCard,
-                      style: HeroIconStyle.outline,
-                      color: Colors.white,
-                      size: 16),
-                  const SizedBox(width: 8),
-                  Flexible(
-                    child: Text(
-                      order.paymentMethods[0],
-                      style: const TextStyle(color: Colors.grey),
-                      overflow: TextOverflow.visible,
-                      softWrap: true,
-                    ),
-                  ),
-                ],
-              ),
+                  style: const TextStyle(color: AppTheme.grey2)),
             ],
           ),
         );
@@ -244,16 +237,11 @@ class OrderDetailsScreen extends ConsumerWidget {
   }
 
   Widget _buildBuyerInfo(NostrEvent order) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF303544),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: const Row(
+    return _infoContainer(
+      const Row(
         children: [
           CircleAvatar(
-            backgroundColor: Colors.grey,
+            backgroundColor: AppTheme.grey2,
             child: Text('A', style: TextStyle(color: Colors.white)),
           ),
           SizedBox(width: 12),
@@ -264,41 +252,34 @@ class OrderDetailsScreen extends ConsumerWidget {
                 Text('Anon (you)',
                     style: TextStyle(
                         color: Colors.white, fontWeight: FontWeight.bold)),
-                Text('0/5 (0)', style: TextStyle(color: Colors.grey)),
               ],
             ),
           ),
-          HeroIcon(HeroIcons.bolt,
-              style: HeroIconStyle.solid, color: Color(0xFF8CC541)),
         ],
       ),
     );
   }
 
-  Widget _buildBuyerAmount(NostrEvent order) {
+  Widget _infoContainer(Widget child) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF303544),
+        color: AppTheme.dark2,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Column(
+      child: child,
+    );
+  }
+
+  Widget _buildBuyerAmount(NostrEvent order) {
+    return _infoContainer(
+      Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CurrencyTextField(controller: _satsAmountController, label: 'sats'),
+          CurrencyTextField(controller: _satsAmountController, label: 'Sats'),
           const SizedBox(height: 8),
           Text('\$ ${order.amount}',
-              style: const TextStyle(color: Colors.grey)),
-          const SizedBox(height: 8),
-          const Row(
-            children: [
-              HeroIcon(HeroIcons.bolt,
-                  style: HeroIconStyle.solid, color: Colors.white, size: 16),
-              SizedBox(width: 8),
-              Text('Bitcoin Lightning Network',
-                  style: TextStyle(color: Colors.white)),
-            ],
-          ),
+              style: const TextStyle(color: AppTheme.grey2)),
         ],
       ),
     );
@@ -314,8 +295,6 @@ class OrderDetailsScreen extends ConsumerWidget {
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
             ),
             child: const Text('CANCEL'),
           ),
@@ -327,9 +306,7 @@ class OrderDetailsScreen extends ConsumerWidget {
               context.read<OrderDetailsBloc>().add(ContinueOrder(initialOrder));
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF8CC541),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
+              backgroundColor: AppTheme.mostroGreen,
             ),
             child: const Text('CONTINUE'),
           ),

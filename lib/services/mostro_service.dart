@@ -28,8 +28,7 @@ class MostroService {
     return _nostrService.subscribeToEvents(filter);
   }
 
-  Future<MostroMessage> publishOrder(
-      Order order) async {
+  Future<MostroMessage> publishOrder(Order order) async {
     final session = await _secureStorageManager.newSession();
 
     final content = jsonEncode({
@@ -49,12 +48,12 @@ class MostroService {
 
     return await subscribeToOrders(filter).asyncMap((event) async {
       return await _nostrService.decryptNIP59Event(event, session.privateKey);
-	}).map((event) {
-		return MostroMessage.deserialized(event.content!);
-	}).first;
+    }).map((event) {
+      return MostroMessage.deserialized(event.content!);
+    }).first;
   }
 
-  Future<void> takeSellOrder(String orderId, {int? amount}) async {
+  Future<MostroMessage> takeSellOrder(String orderId, {int? amount}) async {
     final session = await _secureStorageManager.newSession();
     session.eventId = orderId;
 
@@ -73,17 +72,15 @@ class MostroService {
 
     final filter = NostrFilter(p: [session.publicKey]);
 
-    subscribeToOrders(filter).listen((event) async {
-      final response =
-          await _nostrService.decryptNIP59Event(event, session.privateKey);
-
-      final orderResponse = MostroMessage.deserialized(response.content!);
-
-      print(response);
-    });
+    return await subscribeToOrders(filter).asyncMap((event) async {
+      return await _nostrService.decryptNIP59Event(event, session.privateKey);
+    }).map((event) {
+      return MostroMessage.deserialized(event.content!);
+    }).first;
   }
 
-  Future<MostroMessage<Content>> takeBuyOrder(String orderId, {int? amount}) async {
+  Future<MostroMessage<Content>> takeBuyOrder(String orderId,
+      {int? amount}) async {
     final session = await _secureStorageManager.newSession();
     session.eventId = orderId;
 
@@ -102,19 +99,22 @@ class MostroService {
 
     return await subscribeToOrders(filter).asyncMap((event) async {
       return await _nostrService.decryptNIP59Event(event, session.privateKey);
-	}).map((event) {
-		return MostroMessage.deserialized(event.content!);
-	}).first;
+    }).map((event) {
+      return MostroMessage.deserialized(event.content!);
+    }).first;
   }
 
   Future<void> cancelOrder(String orderId) async {
     final order = _mostroRepository.getOrder(orderId);
 
+    if (order == null) {
+      throw Exception('Order not found for order ID: $orderId');
+    }
+
     final session = await _secureStorageManager.loadSession(order!.requestId!);
 
     if (session == null) {
-      // TODO: throw error
-      return;
+      throw Exception('Session not found for order ID: $orderId');
     }
 
     final content = jsonEncode({
@@ -134,8 +134,7 @@ class MostroService {
     final session = await _secureStorageManager.loadSession(orderId);
 
     if (session == null) {
-      // TODO: throw error
-      return;
+      throw Exception('Session not found for order ID: $orderId');
     }
 
     final content = jsonEncode({
@@ -155,8 +154,7 @@ class MostroService {
     final session = await _secureStorageManager.loadSession(orderId);
 
     if (session == null) {
-      // TODO: throw error
-      return;
+      throw Exception('Session not found for order ID: $orderId');
     }
 
     final content = jsonEncode({

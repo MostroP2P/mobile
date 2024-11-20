@@ -13,7 +13,7 @@ class CurrencyDropdown extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currencyCodesAsync = ref.watch(currencyCodesProvider);
-    final selectedFiatCode = ref.watch(selectedFiatCodeProvider);
+    final selectedFiatCode = ref.watch(selectedFiatCodeProvider) ?? '';
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -24,12 +24,19 @@ class CurrencyDropdown extends ConsumerWidget {
       child: currencyCodesAsync.when(
         loading: () => const Center(
           child: SizedBox(
-            height: 24,
-            width: 24,
+            height: double.infinity,
             child: CircularProgressIndicator(),
           ),
         ),
-        error: (error, stackTrace) => Text('Error: $error'),
+        error: (error, stackTrace) => Row(
+          children: [
+            Text('Failed to load currencies'),
+            TextButton(
+              onPressed: () => ref.refresh(currencyCodesProvider),
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
         data: (currencyCodes) {
           final items = currencyCodes.keys.map((code) {
             return DropdownMenuItem<String>(
@@ -45,12 +52,18 @@ class CurrencyDropdown extends ConsumerWidget {
             decoration: InputDecoration(
               border: InputBorder.none,
               labelText: label,
-              labelStyle: const TextStyle(color: Colors.grey),
+              labelStyle: Theme.of(context).inputDecorationTheme.labelStyle,
             ),
-            dropdownColor: const Color(0xFF1D212C),
-            style: const TextStyle(color: Colors.white),
+            dropdownColor: Theme.of(context).colorScheme.surface,
+            style: Theme.of(context).textTheme.bodyMedium,
             items: items,
             value: selectedFiatCode,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please select a currency';
+              }
+              return null;
+            },
             onChanged: (value) =>
                 ref.read(selectedFiatCodeProvider.notifier).state = value,
           );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/theme/app_theme.dart';
 import 'package:mostro_mobile/presentation/auth/bloc/auth_state.dart';
@@ -13,6 +14,7 @@ import 'package:mostro_mobile/presentation/profile/bloc/profile_bloc.dart';
 import 'package:mostro_mobile/presentation/auth/bloc/auth_bloc.dart';
 import 'package:mostro_mobile/data/repositories/auth_repository.dart';
 import 'package:mostro_mobile/core/utils/biometrics_helper.dart';
+import 'generated/l10n.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -80,6 +82,13 @@ class MyApp extends ConsumerWidget {
           initialRoute: isFirstLaunch ? AppRoutes.welcome : AppRoutes.home,
           routes: AppRoutes.routes,
           onGenerateRoute: AppRoutes.onGenerateRoute,
+          localizationsDelegates: const [
+            S.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: S.delegate.supportedLocales,
         ),
       ),
     );

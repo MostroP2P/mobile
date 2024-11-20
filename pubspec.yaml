@@ -55,7 +55,10 @@ dependencies:
     git:
       url: https://github.com/chebizarro/dart-nip44.git
       ref: master
+  intl: ^0.19.0
 
+  flutter_localizations:
+    sdk: flutter
 
 dev_dependencies:
   flutter_test:
@@ -71,12 +74,13 @@ dev_dependencies:
   mockito: ^5.4.4
   integration_test:
     sdk: flutter
+  flutter_intl: ^0.0.1
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
-
 # The following section is specific to Flutter packages.
 flutter:
+  generate: true
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
@@ -90,10 +94,8 @@ flutter:
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
-
   # For details regarding adding assets from package dependencies, see
   # https://flutter.dev/to/asset-from-package
-
   # To add custom fonts to your application, add a fonts section here,
   # in this "flutter" section. Each entry in this list should have a
   # "family" key with the font family name, and a "fonts" key with a
@@ -107,7 +109,8 @@ flutter:
         - asset: assets/fonts/RobotoCondensed-Medium.ttf
           weight: 500
         - asset: assets/fonts/RobotoCondensed-Regular.ttf
-          weight: 400    
-  #
+          weight: 400
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+flutter_intl:
+  enabled: true

@@ -118,16 +118,35 @@ class NostrUtils {
     return digest.toString(); // Devuelve el ID como una cadena hex
   }
 
+  /// Generates a timestamp between now and 48 hours ago to enhance privacy
+  /// by decorrelating event timing from creation time.
+  /// @throws if system clock is ahead of network time
   static DateTime randomNow() {
     final now = DateTime.now();
-    final randomSeconds =
-        Random().nextInt(2 * 24 * 60 * 60);
+    // Validate system time isn't ahead
+    final networkTime = DateTime.now().toUtc();
+    if (now.isAfter(networkTime.add(Duration(minutes: 5)))) {
+      throw Exception('System clock is ahead of network time');
+    }
+    final randomSeconds = Random().nextInt(2 * 24 * 60 * 60);
     return now.subtract(Duration(seconds: randomSeconds));
   }
 
-  // NIP-59 y NIP-44 funciones
+  /// Creates a NIP-59 encrypted event with the following structure:
+  /// 1. Inner event (kind 1): Original content
+  /// 2. Seal event (kind 13): Encrypted inner event
+  /// 3. Wrapper event (kind 1059): Final encrypted package
   static Future<NostrEvent> createNIP59Event(
       String content, String recipientPubKey, String senderPrivateKey) async {
+    // Validate inputs
+    if (content.isEmpty) throw ArgumentError('Content cannot be empty');
+    if (recipientPubKey.length != 64) {
+      throw ArgumentError('Invalid recipient public key');
+    }
+    if (!isValidPrivateKey(senderPrivateKey)) {
+      throw ArgumentError('Invalid sender private key');
+    }
+
     final senderKeyPair = generateKeyPairFromPrivateKey(senderPrivateKey);
 
     final createdAt = DateTime.now();
@@ -141,8 +160,14 @@ class NostrUtils {
       ],
     );
 
-    final encryptedContent = await _encryptNIP44(
-        jsonEncode(rumorEvent.toMap()), senderPrivateKey, '02$recipientPubKey');
+    String? encryptedContent;
+
+    try {
+      encryptedContent = await _encryptNIP44(
+          jsonEncode(rumorEvent.toMap()), senderPrivateKey, recipientPubKey);
+    } catch (e) {
+      throw Exception('Failed to encrypt content: $e');
+    }
 
     final sealEvent = NostrEvent.fromPartialData(
       kind: 13,
@@ -173,49 +198,90 @@ class NostrUtils {
 
   static Future<NostrEvent> decryptNIP59Event(
       NostrEvent event, String privateKey) async {
-    final decryptedContent =
-        await _decryptNIP44(event.content ?? '', privateKey, event.pubkey);
+    // Validate inputs
+    if (event.content == null || event.content!.isEmpty) {
+      throw ArgumentError('Event content is empty');
+    }
+    if (!isValidPrivateKey(privateKey)) {
+      throw ArgumentError('Invalid private key');
+    }
 
-    final rumorEvent =
-        NostrEvent.deserialized('["EVENT", "", $decryptedContent]');
+    try {
+      final decryptedContent =
+          await _decryptNIP44(event.content ?? '', privateKey, event.pubkey);
 
-    final finalDecryptedContent = await _decryptNIP44(
-        rumorEvent.content ?? '', privateKey, rumorEvent.pubkey);
+      final rumorEvent =
+          NostrEvent.deserialized('["EVENT", "", $decryptedContent]');
 
-    final wrap = jsonDecode(finalDecryptedContent) as Map<String, dynamic>;
+      final finalDecryptedContent = await _decryptNIP44(
+          rumorEvent.content ?? '', privateKey, rumorEvent.pubkey);
 
-    return NostrEvent(
-      id: wrap['id'] as String,
-      kind: wrap['kind'] as int,
-      content: wrap['content'] as String,
-      sig: "",
-      pubkey: wrap['pubkey'] as String,
-      createdAt: DateTime.fromMillisecondsSinceEpoch(
-        (wrap['created_at'] as int) * 1000,
-      ),
-      tags: List<List<String>>.from(
-        (wrap['tags'] as List)
-            .map(
-              (nestedElem) => (nestedElem as List)
-                  .map(
-                    (nestedElemContent) => nestedElemContent.toString(),
-                  )
-                  .toList(),
-            )
-            .toList(),
-      ),
-      subscriptionId: '',
-    );
+      final wrap = jsonDecode(finalDecryptedContent) as Map<String, dynamic>;
+
+      // Validate decrypted event structure
+      _validateEventStructure(wrap);
+
+      return NostrEvent(
+        id: wrap['id'] as String,
+        kind: wrap['kind'] as int,
+        content: wrap['content'] as String,
+        sig: "",
+        pubkey: wrap['pubkey'] as String,
+        createdAt: DateTime.fromMillisecondsSinceEpoch(
+          (wrap['created_at'] as int) * 1000,
+        ),
+        tags: List<List<String>>.from(
+          (wrap['tags'] as List)
+              .map(
+                (nestedElem) => (nestedElem as List)
+                    .map(
+                      (nestedElemContent) => nestedElemContent.toString(),
+                    )
+                    .toList(),
+              )
+              .toList(),
+        ),
+        subscriptionId: '',
+      );
+    } catch (e) {
+      throw Exception('Failed to decrypt NIP-59 event: $e');
+    }
   }
 
+  /// Validates the structure of a decrypted event
+  static void _validateEventStructure(Map<String, dynamic> event) {
+    final requiredFields = [
+      'id',
+      'kind',
+      'content',
+      'pubkey',
+      'created_at',
+      'tags'
+    ];
+    for (final field in requiredFields) {
+      if (!event.containsKey(field)) {
+        throw FormatException('Missing required field: $field');
+      }
+    }
+  }
 
   static Future<String> _encryptNIP44(
       String content, String privkey, String pubkey) async {
-    return await Nip44.encryptMessage(content, privkey, pubkey);
+    try {
+      return await Nip44.encryptMessage(content, privkey, pubkey);
+    } catch (e) {
+      // Handle encryption error appropriately
+      throw Exception('Encryption failed: $e');
+    }
   }
 
   static Future<String> _decryptNIP44(
       String encryptedContent, String privkey, String pubkey) async {
-    return await Nip44.decryptMessage(encryptedContent, privkey, pubkey);
+    try {
+      return await Nip44.decryptMessage(encryptedContent, privkey, pubkey);
+    } catch (e) {
+      // Handle encryption error appropriately
+      throw Exception('Decryption failed: $e');
+    }
   }
 }

@@ -164,7 +164,7 @@ class HomeScreen extends ConsumerWidget {
               }
               return OrderList(
                   orders: events
-                      .where((evt) => evt.orderType == state.orderType.value)
+                      .where((evt) => evt.orderType == state.orderType)
                       .toList());
             },
           );

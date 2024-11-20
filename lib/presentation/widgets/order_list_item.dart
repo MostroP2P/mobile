@@ -36,7 +36,7 @@ class OrderListItem extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    '${order.name} ${order.rating}/5 (_)',
+                    '${order.name} ${order.rating?.totalRating}/${order.rating?.maxRate} (${order.rating?.totalReviews})',
                     style: const TextStyle(color: Colors.white),
                   ),
                   Text(

@@ -1,5 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
+import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/presentation/order/bloc/order_details_event.dart';
 import 'package:mostro_mobile/presentation/order/bloc/order_details_state.dart';
@@ -12,6 +14,7 @@ class OrderDetailsBloc extends Bloc<OrderDetailsEvent, OrderDetailsState> {
     on<LoadOrderDetails>(_onLoadOrderDetails);
     on<CancelOrder>(_onCancelOrder);
     on<ContinueOrder>(_onContinueOrder);
+    on<OrderUpdateReceived>(_onOrderUpdateReceived);
   }
 
   void _onLoadOrderDetails(
@@ -28,12 +31,31 @@ class OrderDetailsBloc extends Bloc<OrderDetailsEvent, OrderDetailsState> {
       ContinueOrder event, Emitter<OrderDetailsState> emit) async {
     emit(state.copyWith(status: OrderDetailsStatus.loading));
 
+    late MostroMessage order;
+
     if (event.order.orderType == OrderType.buy.value) {
-      await mostroService.takeBuyOrder(event.order.orderId!);
+      order = await mostroService.takeBuyOrder(event.order.orderId!);
     } else {
-      await mostroService.takeSellOrder(event.order.orderId!);
+      order = await mostroService.takeSellOrder(event.order.orderId!);
     }
 
-    emit(state.copyWith(status: OrderDetailsStatus.done));
+    add(OrderUpdateReceived(order));
+  }
+
+  void _onOrderUpdateReceived(
+      OrderUpdateReceived event, Emitter<OrderDetailsState> emit) {
+    switch (event.order.action) {
+      case Action.addInvoice:
+      case Action.payInvoice:
+      case Action.waitingSellerToPay:
+        emit(state.copyWith(status: OrderDetailsStatus.done));
+        break;
+      case Action.notAllowedByStatus:
+        emit(state.copyWith(
+            status: OrderDetailsStatus.error, errorMessage: "Not allowed by status"));
+        break;
+      default:
+        break;
+    }
   }
 }

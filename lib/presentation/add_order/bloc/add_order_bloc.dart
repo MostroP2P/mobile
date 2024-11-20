@@ -21,20 +21,25 @@ class AddOrderBloc extends Bloc<AddOrderEvent, AddOrderState> {
       SubmitOrder event, Emitter<AddOrderState> emit) async {
     emit(state.copyWith(status: AddOrderStatus.submitting));
 
-    final order = await mostroService.publishOrder(event.order);
-    add(OrderUpdateReceived(order));
+    try {
+      final order = await mostroService.publishOrder(event.order);
+      add(OrderUpdateReceived(order));
+    } catch (e) {
+      emit(state.copyWith(
+        status: AddOrderStatus.failure,
+        errorMessage: e.toString(),
+      ));
+    }
   }
 
   void _onOrderUpdateReceived(
       OrderUpdateReceived event, Emitter<AddOrderState> emit) {
     switch (event.order.action) {
       case Action.newOrder:
-        print(event.order.content!.toJson());
         emit(state.copyWith(status: AddOrderStatus.submitted));
         break;
       case Action.outOfRangeSatsAmount:
       case Action.outOfRangeFiatAmount:
-        print("Error! ${event.order.action.value}");
         emit(state.copyWith(
             status: AddOrderStatus.failure, errorMessage: "Invalid amount"));
         break;

@@ -7,6 +7,8 @@ import 'package:mostro_mobile/core/utils/nostr_utils.dart';
 class SecureStorageManager {
   Timer? _cleanupTimer;
   final int sessionExpirationHours = 48;
+  static const cleanupIntervalMinutes = 30;
+  static const maxBatchSize = 100;
 
   SecureStorageManager() {
     _initializeCleanup();
@@ -44,24 +46,40 @@ class SecureStorageManager {
   }
 
   Future<void> clearExpiredSessions() async {
-    final prefs = await SharedPreferences.getInstance();
-    final now = DateTime.now();
-    final allKeys = prefs.getKeys();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final now = DateTime.now();
+      final allKeys = prefs.getKeys();
+      int processedCount = 0;
 
-    for (var key in allKeys) {
-      final sessionJson = prefs.getString(key);
-      if (sessionJson != null) {
-        final session = Session.fromJson(jsonDecode(sessionJson));
-        if (now.difference(session.startTime).inHours >= sessionExpirationHours) {
-          await prefs.remove(key);
+      for (var key in allKeys) {
+        if (processedCount >= maxBatchSize) {
+          // Schedule remaining cleanup for next run
+          break;
+        }
+        final sessionJson = prefs.getString(key);
+        if (sessionJson != null) {
+          try {
+            final session = Session.fromJson(jsonDecode(sessionJson));
+            if (now.difference(session.startTime).inHours >= sessionExpirationHours) {
+              await prefs.remove(key);
+              processedCount++;
+            }
+          } catch (e) {
+            print('Error processing session $key: $e');
+            await prefs.remove(key);
+            processedCount++;
+          }
         }
       }
+    } catch (e) {
+      print('Error during session cleanup: $e');
     }
   }
 
   void _initializeCleanup() {
     clearExpiredSessions();
-    _cleanupTimer = Timer.periodic(Duration(minutes: 30), (timer) {
+    _cleanupTimer = Timer.periodic(Duration(minutes: cleanupIntervalMinutes), (timer) {
       clearExpiredSessions();
     });
   }

@@ -17,7 +17,8 @@ final sessionManagerProvider = Provider<SecureStorageManager>((ref) {
 });
 
 final mostroServiceProvider = Provider<MostroService>((ref) {
-  final sessionStorage = ref.read(sessionManagerProvider);
-  final nostrService = ref.read(nostrServicerProvider);
+  final sessionStorage = ref.watch(sessionManagerProvider);
+  final nostrService = ref.watch(nostrServicerProvider);
   return MostroService(nostrService, sessionStorage);
 });
+

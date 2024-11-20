@@ -76,31 +76,48 @@ class Order implements Content {
   }
 
   factory Order.fromJson(Map<String, dynamic> json) {
+    // Validate required fields
+    void validateField(String field) {
+      if (!json.containsKey(field)) {
+        throw FormatException('Missing required field: $field');
+      }
+    }
+
+    // Validate required fields
+    ['kind', 'status', 'fiat_code', 'fiat_amount', 'payment_method', 'premium']
+        .forEach(validateField);
+
+    // Safe type casting
+    T? safeCast<T>(String key, T Function(dynamic) converter) {
+      final value = json[key];
+      return value == null ? null : converter(value);
+    }
+
     return Order(
-      id: json['id'] as String?,
-      kind: OrderType.fromString(json['kind'] as String),
-      status: Status.fromString(json['status'] as String),
-      amount: json['amount'] as int,
-      fiatCode: json['fiat_code'] as String,
-      minAmount: json['min_amount'] as int?,
-      maxAmount: json['max_amount'] as int?,
-      fiatAmount: json['fiat_amount'] as int,
-      paymentMethod: json['payment_method'] as String,
-      premium: json['premium'] as int,
-      masterBuyerPubkey: json['master_buyer_pubkey'] as String?,
-      masterSellerPubkey: json['master_seller_pubkey'] as String?,
-      buyerInvoice: json['buyer_invoice'] as String?,
-      createdAt: json['created_at'] as int?,
-      expiresAt: json['expires_at'] as int?,
-      buyerToken: json['buyer_token'] as int?,
-      sellerToken: json['seller_token'] as int?,
+      id: safeCast<String>('id', (v) => v.toString()),
+      kind: OrderType.fromString(json['kind'].toString()),
+      status: Status.fromString(json['status']),
+      amount: json['amount'],
+      fiatCode: json['fiat_code'],
+      minAmount: json['min_amount'],
+      maxAmount: json['max_amount'],
+      fiatAmount: json['fiat_amount'],
+      paymentMethod: json['payment_method'],
+      premium: json['premium'],
+      masterBuyerPubkey: json['master_buyer_pubkey'],
+      masterSellerPubkey: json['master_seller_pubkey'],
+      buyerInvoice: json['buyer_invoice'],
+      createdAt: json['created_at'],
+      expiresAt: json['expires_at'],
+      buyerToken: json['buyer_token'],
+      sellerToken: json['seller_token'],
     );
   }
 
   factory Order.fromEvent(NostrEvent event) {
     return Order(
       id: event.orderId,
-      kind: OrderType.fromString(event.orderType!),
+      kind: event.orderType!,
       status: Status.fromString(event.status!),
       amount: event.amount as int,
       fiatCode: event.currency!,

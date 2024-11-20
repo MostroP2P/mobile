@@ -7,9 +7,13 @@ enum OrderType {
   const OrderType(this.value);
 
   static OrderType fromString(String value) {
-    return OrderType.values.firstWhere(
-      (k) => k.value == value,
-      orElse: () => throw ArgumentError('Invalid Kind: $value'),
-    );
+    switch (value) {
+      case 'buy':
+        return OrderType.buy;
+      case 'sell':
+        return OrderType.sell;
+      default:
+        throw ArgumentError('Invalid OrderType: $value');
+    }
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:mostro_mobile/providers/exchange_service_provider.dart';
 
 class ExchangeRateWidget extends ConsumerWidget {
@@ -19,7 +20,6 @@ class ExchangeRateWidget extends ConsumerWidget {
       loading: () => const CircularProgressIndicator(),
       error: (error, _) => Text('Error: $error'),
       data: (exchangeRate) {
-
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -30,7 +30,10 @@ class ExchangeRateWidget extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                '1 BTC = ${exchangeRate.toStringAsFixed(2)} $currency',
+                '1 BTC = ${NumberFormat.currency(
+                  symbol: '',
+                  decimalDigits: 2,
+                ).format(exchangeRate)} $currency',
                 style: const TextStyle(color: Colors.white),
               ),
               Row(
@@ -41,6 +44,12 @@ class ExchangeRateWidget extends ConsumerWidget {
                   GestureDetector(
                     onTap: () {
                       // Trigger refresh for this specific currency
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Refreshing exchange rate...'),
+                          duration: Duration(seconds: 1),
+                        ),
+                      );
                       ref
                           .read(exchangeRateProvider(currency).notifier)
                           .fetchExchangeRate(currency);

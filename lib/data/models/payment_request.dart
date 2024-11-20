@@ -6,20 +6,41 @@ class PaymentRequest implements Content {
   final String? lnInvoice;
   final int? amount;
 
-  PaymentRequest(
-      {required this.order, required this.lnInvoice, required this.amount});
-
+  PaymentRequest({
+    this.order,
+    this.lnInvoice,
+    this.amount,
+  }) {
+    // At least one parameter should be non-null
+    if (order == null && lnInvoice == null && amount == null) {
+      throw ArgumentError('At least one parameter must be provided');
+    }
+  }
+  
   @override
   Map<String, dynamic> toJson() {
+    final typeKey = type;
+    final List<dynamic> values = [];
+    
+    values.add(order?.toJson());
+    values.add(lnInvoice);
+    
+    if (amount != null) {
+      values.add(amount);
+    }
+    
     final result = {
-      type: [order?.toJson(), lnInvoice]
+      typeKey: values
     };
 
-    if (amount != null) {
-      result[type]!.add(amount);
-    }
-
     return result;
+  }
+
+  factory PaymentRequest.fromJson(List<dynamic> json) {
+    return PaymentRequest(
+        order: json[0] ?? Order.fromJson(json[0]),
+        lnInvoice: json[1],
+        amount: json[2]);
   }
 
   @override

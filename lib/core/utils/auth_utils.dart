@@ -7,14 +7,16 @@ class AuthUtils {
   }
 
   static Future<bool> verifyPin(String inputPin) async {
-    return true;
+    throw UnimplementedError('verifyPin is not implemented yet');
   }
 
-  static Future<void> deleteCredentials() async {}
+  static Future<void> deleteCredentials() async {
+    throw UnimplementedError('deleteCredentials is not implemented yet');
+  }
 
   static Future<void> enableBiometrics() async {}
 
   static Future<bool> isBiometricsEnabled() async {
-    return true;
+    throw UnimplementedError('isBiometricsEnabled is not implemented yet');
   }
 }

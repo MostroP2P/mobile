@@ -13,11 +13,15 @@ final orderRepositoryProvider = Provider((ref) {
   return OpenOrdersRepository(nostrService);
 });
 
+/// Event kind 38383 represents order events in the Nostr protocol as per NIP-69
+const orderEventKind = 38383;
+const orderFilterDurationHours = 24;
+
 final orderEventsProvider = StreamProvider<List<NostrEvent>>((ref) {
   final orderRepository = ref.watch(orderRepositoryProvider);
-  DateTime filterTime = DateTime.now().subtract(Duration(hours: 24));
+  DateTime filterTime = DateTime.now().subtract(Duration(hours: orderFilterDurationHours));
   var filter = NostrFilter(
-    kinds: const [38383],
+    kinds: const [orderEventKind],
     since: filterTime,
   );
   orderRepository.subscribe(filter);

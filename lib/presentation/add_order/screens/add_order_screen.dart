@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/core/theme/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/presentation/add_order/bloc/add_order_bloc.dart';
 import 'package:mostro_mobile/presentation/add_order/bloc/add_order_event.dart';
 import 'package:mostro_mobile/presentation/add_order/bloc/add_order_state.dart';
@@ -80,8 +81,7 @@ class AddOrderScreen extends ConsumerWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text(
-              'Your offer has been published! Please wait until another user picks your order. It will be available for expiration_hours hours. You can cancel this order before another user picks it up by executing: cancel.',
+            Text(S.of(context).new_order('24'),
               style: TextStyle(fontSize: 18, color: AppTheme.cream1),
               textAlign: TextAlign.center,
             ),

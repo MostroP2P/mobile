@@ -15,6 +15,7 @@ final exchangeRateProvider = StateNotifierProvider.family<ExchangeRateNotifier, 
 
 final currencyCodesProvider = FutureProvider<Map<String, String>>((ref) async {
   final exchangeService = ref.read(exchangeServiceProvider);
+  
   return await exchangeService.getCurrencyCodes();
 });
 

@@ -27,7 +27,7 @@ class ChatListScreen extends StatelessWidget {
           child: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: EdgeInsets.all(16.0),
                 child: Text(
                   'Chats',
                   style: TextStyle(

@@ -24,8 +24,30 @@ class MostroMessage<T extends Content> {
   }
 
   factory MostroMessage.deserialized(String data) {
-    final decoded = jsonDecode(data);
-    final event = decoded as Map<String, dynamic>;
-    return MostroMessage(action: Action.fromString(event['order']['action']), requestId: event['order']['id']);
+    try {
+      final decoded = jsonDecode(data);
+      final event = decoded as Map<String, dynamic>;
+      final order = event['order'] != null
+          ? event['order'] as Map<String, dynamic>
+          : throw FormatException('Missing order object');
+
+      final action = order['action'] != null
+          ? Action.fromString(order['action'])
+          : throw FormatException('Missing action field');
+
+      final id = order['id'] != null
+          ? order['id'] as String?
+          : throw FormatException('Missing id field');
+
+      final content = order['content'] ?? Content.fromJson(event['order']['content']) as T;
+
+      return MostroMessage<T>(
+        action: action,
+        requestId: id,
+        content: content,
+      );
+    } catch (e) {
+      throw FormatException('Failed to deserialize MostroMessage: $e');
+    }
   }
 }

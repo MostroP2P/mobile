@@ -8,22 +8,40 @@ class YadioExchangeService extends ExchangeService {
     String fromCurrency,
     String toCurrency,
   ) async {
-    final endpoint = 'rate/$fromCurrency/$toCurrency';
-    final data = await getRequest(endpoint);
+    if (fromCurrency.isEmpty || toCurrency.isEmpty) {
+      throw ArgumentError('Currency codes cannot be empty');
+    }
 
-    if (data.containsKey('rate')) {
-      return (data['rate'] as num).toDouble();
-    } else {
-      throw Exception('Exchange rate not found in response');
+    final endpoint = 'rate/$fromCurrency/$toCurrency';
+    try {
+      final data = await getRequest(endpoint);
+
+      final rate = data['rate'];
+      if (rate == null) {
+        throw Exception('Rate not found for $fromCurrency to $toCurrency');
+      }
+
+      if (rate is! num) {
+        throw Exception('Invalid rate format received from API');
+      }
+      return rate.toDouble();
+    } catch (e) {
+      throw Exception('Failed to fetch exchange rate: $e');
     }
   }
 
   @override
   Future<Map<String, String>> getCurrencyCodes() async {
     final endpoint = 'currencies';
-    final data = await getRequest(endpoint);
-    
-    return data.map((key, value) => MapEntry(key, value.toString()));
-    
+    try {
+      final data = await getRequest(endpoint);
+      return Map.fromEntries(
+        data.entries.map((entry) {
+          return MapEntry(entry.key, entry.value?.toString() ?? '');
+        }),
+      );
+    } catch (e) {
+      throw Exception('Failed to fetch currency codes: $e');
+    }
   }
 }

@@ -15,15 +15,31 @@ class OpenOrdersRepository implements OrderRepository {
 
   OpenOrdersRepository(this._nostrService);
 
+  StreamSubscription<NostrEvent>? _subscription;
+
+  /// Subscribes to events matching the given filter.
+  ///
+  /// @param filter The filter criteria for events.
+  /// @throws ArgumentError if filter is null
   void subscribe(NostrFilter filter) {
-    _nostrService.subscribeToEvents(filter).listen((event) {
+    ArgumentError.checkNotNull(filter, 'filter');
+
+    // Cancel existing subscription if any
+    _subscription?.cancel();
+
+    _subscription = _nostrService.subscribeToEvents(filter).listen((event) {
       final key = '${event.kind}-${event.pubkey}-${event.orderId}';
       _events[key] = event;
       _eventStreamController.add(_events.values.toList());
+    }, onError: (error) {
+      // Log error and optionally notify listeners
+      print('Error in order subscription: $error');
     });
   }
 
   void dispose() {
+    _subscription?.cancel();
     _eventStreamController.close();
+    _events.clear();
   }
 }
