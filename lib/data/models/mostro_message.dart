@@ -39,7 +39,7 @@ class MostroMessage<T extends Content> {
           ? order['id'] as String?
           : throw FormatException('Missing id field');
 
-      final content = order['content'] ?? Content.fromJson(event['order']['content']) as T;
+      final content = order['content'] != null ? Content.fromJson(event['order']['content']) as T : null;
 
       return MostroMessage<T>(
         action: action,

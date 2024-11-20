@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mostro_mobile/core/theme/app_theme.dart';
 import 'package:mostro_mobile/providers/exchange_service_provider.dart';
 
 class CurrencyDropdown extends ConsumerWidget {
@@ -13,18 +14,19 @@ class CurrencyDropdown extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currencyCodesAsync = ref.watch(currencyCodesProvider);
-    final selectedFiatCode = ref.watch(selectedFiatCodeProvider) ?? '';
+    final selectedFiatCode = ref.watch(selectedFiatCodeProvider);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFF1D212C),
+        color: AppTheme.dark1,
         borderRadius: BorderRadius.circular(8),
       ),
       child: currencyCodesAsync.when(
         loading: () => const Center(
           child: SizedBox(
-            height: double.infinity,
+            height: 24,
+            width: 24,
             child: CircularProgressIndicator(),
           ),
         ),
@@ -43,7 +45,7 @@ class CurrencyDropdown extends ConsumerWidget {
               value: code,
               child: Text(
                 '$code - ${currencyCodes[code]}',
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: AppTheme.cream1),
               ),
             );
           }).toList();
@@ -52,18 +54,12 @@ class CurrencyDropdown extends ConsumerWidget {
             decoration: InputDecoration(
               border: InputBorder.none,
               labelText: label,
-              labelStyle: Theme.of(context).inputDecorationTheme.labelStyle,
+              labelStyle: const TextStyle(color: AppTheme.grey2),
             ),
-            dropdownColor: Theme.of(context).colorScheme.surface,
-            style: Theme.of(context).textTheme.bodyMedium,
+            dropdownColor: AppTheme.dark1,
+            style: TextStyle(color: AppTheme.cream1),
             items: items,
             value: selectedFiatCode,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please select a currency';
-              }
-              return null;
-            },
             onChanged: (value) =>
                 ref.read(selectedFiatCodeProvider.notifier).state = value,
           );

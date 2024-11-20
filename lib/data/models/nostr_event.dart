@@ -9,7 +9,7 @@ extension NostrEventExtensions on NostrEvent {
   // Getters para acceder fácilmente a los tags específicos
   String? get recipient => _getTagValue('p');
   String? get orderId => _getTagValue('d');
-  OrderType? get orderType => OrderType.fromString(_getTagValue('k')!);
+  OrderType? get orderType => _getTagValue('k') != null ? OrderType.fromString(_getTagValue('k')!) : null;
   String? get currency => _getTagValue('f');
   String? get status => _getTagValue('s');
   String? get amount => _getTagValue('amt');
