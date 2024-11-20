@@ -19,7 +19,6 @@ class OrderDetailsBloc extends Bloc<OrderDetailsEvent, OrderDetailsState> {
 
   void _onLoadOrderDetails(
       LoadOrderDetails event, Emitter<OrderDetailsState> emit) {
-    emit(state.copyWith(status: OrderDetailsStatus.loading));
     emit(state.copyWith(status: OrderDetailsStatus.loaded, order: event.order));
   }
 
@@ -33,7 +32,7 @@ class OrderDetailsBloc extends Bloc<OrderDetailsEvent, OrderDetailsState> {
 
     late MostroMessage order;
 
-    if (event.order.orderType == OrderType.buy.value) {
+    if (event.order.orderType == OrderType.buy) {
       order = await mostroService.takeBuyOrder(event.order.orderId!);
     } else {
       order = await mostroService.takeSellOrder(event.order.orderId!);
