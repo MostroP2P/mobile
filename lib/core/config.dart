@@ -21,5 +21,4 @@ class Config {
   // Modo de depuración
   static bool get isDebug => !kReleaseMode;
 
-  // Puedes agregar más configuraciones específicas de Mostro aquí si las necesitas en el futuro
 }

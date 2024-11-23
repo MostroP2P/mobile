@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
-import 'package:mostro_mobile/data/models/nostr_event.dart';
-import 'package:mostro_mobile/presentation/home/bloc/home_bloc.dart';
-import 'package:mostro_mobile/presentation/home/bloc/home_event.dart';
+import 'package:mostro_mobile/presentation/home/bloc/home_notifier.dart';
 import 'package:mostro_mobile/presentation/home/bloc/home_state.dart';
 import 'package:mostro_mobile/presentation/widgets/bottom_nav_bar.dart';
 import 'package:mostro_mobile/presentation/widgets/custom_app_bar.dart';
@@ -18,14 +15,17 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Cargar las órdenes cuando se inicia la pantalla
-    context.read<HomeBloc>().add(LoadOrders());
+    final homeState = ref.watch(homeNotifierProvider);
+    final homeNotifier = ref.read(homeNotifierProvider.notifier);
+
     return Scaffold(
       backgroundColor: const Color(0xFF1D212C),
       appBar: const CustomAppBar(),
       body: RefreshIndicator(
         onRefresh: () async {
-          context.read<HomeBloc>().add(LoadOrders());
+          // Simulate loading orders
+          final allOrders = ref.read(orderEventsProvider).asData?.value ?? [];
+          homeNotifier.loadOrders(allOrders);
           await Future.delayed(const Duration(seconds: 1));
         },
         child: Container(
@@ -36,11 +36,11 @@ class HomeScreen extends ConsumerWidget {
           ),
           child: Column(
             children: [
-              _buildTabs(),
-              _buildFilterButton(context),
+              _buildTabs(ref, homeState, homeNotifier),
+              _buildFilterButton(context, homeState),
               const SizedBox(height: 6.0),
               Expanded(
-                child: _buildOrderList(ref),
+                child: _buildOrderList(ref, homeState),
               ),
               const BottomNavBar(),
             ],
@@ -50,40 +50,38 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildTabs() {
-    return BlocBuilder<HomeBloc, HomeState>(
-      builder: (context, state) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: Color(0xFF1D212C),
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(20),
-              topRight: Radius.circular(20),
-            ),
+  Widget _buildTabs(
+      WidgetRef ref, HomeState homeState, HomeNotifier homeNotifier) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFF1D212C),
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildTab(
+                "BUY BTC", homeState.orderType == OrderType.buy, () {
+              homeNotifier.changeOrderType(OrderType.buy);
+            }),
           ),
-          child: Row(
-            children: [
-              Expanded(
-                child: _buildTab("BUY BTC", state.orderType == OrderType.buy,
-                    OrderType.buy, context),
-              ),
-              Expanded(
-                child: _buildTab("SELL BTC", state.orderType == OrderType.sell,
-                    OrderType.sell, context),
-              ),
-            ],
+          Expanded(
+            child: _buildTab(
+                "SELL BTC", homeState.orderType == OrderType.sell, () {
+              homeNotifier.changeOrderType(OrderType.sell);
+            }),
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 
-  Widget _buildTab(
-      String text, bool isActive, OrderType type, BuildContext context) {
+  Widget _buildTab(String text, bool isActive, VoidCallback onTap) {
     return GestureDetector(
-      onTap: () {
-        context.read<HomeBloc>().add(ChangeOrderType(type));
-      },
+      onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
@@ -105,7 +103,7 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildFilterButton(BuildContext context) {
+  Widget _buildFilterButton(BuildContext context, HomeState homeState) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
@@ -116,8 +114,8 @@ class HomeScreen extends ConsumerWidget {
                 context: context,
                 backgroundColor: Colors.transparent,
                 builder: (BuildContext context) {
-                  return Padding(
-                    padding: const EdgeInsets.all(16.0),
+                  return const Padding(
+                    padding: EdgeInsets.all(16.0),
                     child: OrderFilter(),
                   );
                 },
@@ -134,42 +132,33 @@ class HomeScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(width: 8),
-          BlocBuilder<HomeBloc, HomeState>(
-            builder: (context, state) {
-              return Text(
-                "${state.filteredOrders.length} offers",
-                style: const TextStyle(color: Colors.white),
-              );
-            },
+          Text(
+            "${homeState.filteredOrders.length} offers",
+            style: const TextStyle(color: Colors.white),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildOrderList(WidgetRef ref) {
+  Widget _buildOrderList(WidgetRef ref, HomeState homeState) {
     final orderEventsAsync = ref.watch(orderEventsProvider);
 
     return orderEventsAsync.when(
-        data: (events) {
-          return BlocBuilder<HomeBloc, HomeState>(
-            builder: (context, state) {
-              if (events.isEmpty) {
-                return const Center(
-                  child: Text(
-                    'No orders available for this type',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                );
-              }
-              return OrderList(
-                  orders: events
-                      .where((evt) => evt.orderType == state.orderType)
-                      .toList());
-            },
+      data: (events) {
+        if (events.isEmpty) {
+          return const Center(
+            child: Text(
+              'No orders available for this type',
+              style: TextStyle(color: Colors.white),
+            ),
           );
-        },
-        loading: () => Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(child: Text('Error: $error')));
+        }
+        return OrderList(orders: events);
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) => Center(child: Text('Error: $error')),
+    );
   }
 }
+

@@ -1,19 +1,16 @@
 import 'package:bitcoin_icons/bitcoin_icons.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/core/theme/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
-import 'package:mostro_mobile/presentation/add_order/bloc/add_order_bloc.dart';
-import 'package:mostro_mobile/presentation/add_order/bloc/add_order_event.dart';
 import 'package:mostro_mobile/presentation/add_order/bloc/add_order_state.dart';
 import 'package:mostro_mobile/presentation/widgets/currency_dropdown.dart';
 import 'package:mostro_mobile/presentation/widgets/currency_text_field.dart';
+import 'package:mostro_mobile/providers/event_store_providers.dart';
 import 'package:mostro_mobile/providers/exchange_service_provider.dart';
-import 'package:mostro_mobile/providers/riverpod_providers.dart';
 
 class AddOrderScreen extends ConsumerWidget {
   final _formKey = GlobalKey<FormState>();
@@ -27,68 +24,60 @@ class AddOrderScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final orderRepo = ref.watch(mostroServiceProvider);
+    final state = ref.watch(addOrderNotifierProvider);
 
-    return BlocProvider(
-      create: (context) => AddOrderBloc(orderRepo),
-      child: BlocBuilder<AddOrderBloc, AddOrderState>(
-        builder: (context, state) {
-          return Scaffold(
-            backgroundColor: AppTheme.dark1,
-            appBar: AppBar(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              leading: IconButton(
-                icon:
-                    const HeroIcon(HeroIcons.arrowLeft, color: AppTheme.cream1),
-                onPressed: () => Navigator.of(context).pop(),
+    return Scaffold(
+      backgroundColor: AppTheme.dark1,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const HeroIcon(HeroIcons.arrowLeft, color: AppTheme.cream1),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: Text(
+          'NEW ORDER',
+          style: TextStyle(
+            color: AppTheme.cream1,
+            fontFamily: GoogleFonts.robotoCondensed().fontFamily,
+          ),
+        ),
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: Container(
+              margin: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppTheme.dark2,
+                borderRadius: BorderRadius.circular(20),
               ),
-              title: Text(
-                'NEW ORDER',
-                style: TextStyle(
-                  color: AppTheme.cream1,
-                  fontFamily: GoogleFonts.robotoCondensed().fontFamily,
-                ),
-              ),
+              child: _buildContent(context, ref, state),
             ),
-            body: Column(
-              children: [
-                Expanded(
-                  child: Container(
-                    margin: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppTheme.dark2,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: _buildContent(context, state, ref),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildContent(
-      BuildContext context, AddOrderState state, WidgetRef ref) {
+      BuildContext context, WidgetRef ref, AddOrderState state) {
     if (state.status == AddOrderStatus.submitting) {
-      return Center(child: CircularProgressIndicator());
+      return const Center(child: CircularProgressIndicator());
     } else if (state.status == AddOrderStatus.submitted) {
       return Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(S.of(context).new_order('24'),
-              style: TextStyle(fontSize: 18, color: AppTheme.cream1),
+            Text(
+              S.of(context).new_order('24'),
+              style: const TextStyle(fontSize: 18, color: AppTheme.cream1),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () =>
-                  Navigator.of(context).pop(),
+              onPressed: () => Navigator.of(context).pop(),
               child: const Text('Back to Home'),
             ),
           ],
@@ -107,8 +96,7 @@ class AddOrderScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () =>
-                  Navigator.of(context).pop(),
+              onPressed: () => Navigator.of(context).pop(),
               child: const Text('Back to Home'),
             ),
           ],
@@ -119,7 +107,7 @@ class AddOrderScreen extends ConsumerWidget {
         key: _formKey,
         child: Column(
           children: [
-            _buildTabs(context, state),
+            _buildTabs(context, ref, state),
             Expanded(
               child: state.currentType == OrderType.sell
                   ? _buildSellForm(context, ref)
@@ -131,7 +119,7 @@ class AddOrderScreen extends ConsumerWidget {
     }
   }
 
-  Widget _buildTabs(BuildContext context, AddOrderState state) {
+  Widget _buildTabs(BuildContext context, WidgetRef ref, AddOrderState state) {
     return Container(
       decoration: const BoxDecoration(
         color: AppTheme.dark1,
@@ -143,23 +131,23 @@ class AddOrderScreen extends ConsumerWidget {
       child: Row(
         children: [
           Expanded(
-            child: _buildTab(context, "SELL",
+            child: _buildTab(context, ref, "SELL",
                 state.currentType == OrderType.sell, OrderType.sell),
           ),
           Expanded(
-            child: _buildTab(context, "BUY", state.currentType == OrderType.buy,
-                OrderType.buy),
+            child: _buildTab(context, ref, "BUY",
+                state.currentType == OrderType.buy, OrderType.buy),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildTab(
-      BuildContext context, String text, bool isActive, OrderType type) {
+  Widget _buildTab(BuildContext context, WidgetRef ref, String text,
+      bool isActive, OrderType type) {
     return GestureDetector(
       onTap: () {
-        context.read<AddOrderBloc>().add(ChangeOrderType(type));
+        ref.read(addOrderNotifierProvider.notifier).changeOrderType(type);
       },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
@@ -239,6 +227,7 @@ class AddOrderScreen extends ConsumerWidget {
     );
   }
 
+
   Widget _buildTextField(String label, TextEditingController controller,
       {IconData? suffix}) {
     return Container(
@@ -295,7 +284,7 @@ class AddOrderScreen extends ConsumerWidget {
         ElevatedButton(
           onPressed: () {
             if (_formKey.currentState?.validate() ?? false) {
-              _submitOrder(context, ref, orderType);
+              _submitOrder(ref, orderType);
             }
           },
           style: ElevatedButton.styleFrom(
@@ -307,17 +296,17 @@ class AddOrderScreen extends ConsumerWidget {
     );
   }
 
-  void _submitOrder(BuildContext context, WidgetRef ref, OrderType orderType) {
+  void _submitOrder(WidgetRef ref, OrderType orderType) {
     final selectedFiatCode = ref.read(selectedFiatCodeProvider);
 
     if (_formKey.currentState?.validate() ?? false) {
-      context.read<AddOrderBloc>().add(SubmitOrder(
-            fiatCode: selectedFiatCode ?? '', // Use selected fiat code
-            fiatAmount: int.tryParse(_fiatAmountController.text) ?? 0,
-            satsAmount: int.tryParse(_satsAmountController.text) ?? 0,
-            paymentMethod: _paymentMethodController.text,
-            orderType: orderType,
-          ));
+      ref.read(addOrderNotifierProvider.notifier).submitOrder(
+            selectedFiatCode ?? '', // Use selected fiat code
+            int.tryParse(_fiatAmountController.text) ?? 0,
+            int.tryParse(_satsAmountController.text) ?? 0,
+            _paymentMethodController.text,
+            orderType,
+          );
     }
   }
 }

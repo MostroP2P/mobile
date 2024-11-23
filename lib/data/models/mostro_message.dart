@@ -4,6 +4,9 @@ import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/content.dart';
 import 'package:mostro_mobile/services/mostro_service.dart';
 
+// Versión de Mostro
+const int mostroVersion = 1;
+
 class MostroMessage<T extends Content> {
   final int version = mostroVersion;
   final String? requestId;
@@ -35,15 +38,13 @@ class MostroMessage<T extends Content> {
           ? Action.fromString(order['action'])
           : throw FormatException('Missing action field');
 
-      final id = order['id'] != null
-          ? order['id'] as String?
-          : throw FormatException('Missing id field');
-
-      final content = order['content'] != null ? Content.fromJson(event['order']['content']) as T : null;
+      final content = order['content'] != null
+          ? Content.fromJson(event['order']['content']) as T
+          : null;
 
       return MostroMessage<T>(
         action: action,
-        requestId: id,
+        requestId: order['id'],
         content: content,
       );
     } catch (e) {

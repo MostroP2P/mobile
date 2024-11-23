@@ -14,12 +14,23 @@ extension NostrEventExtensions on NostrEvent {
   String? get status => _getTagValue('s');
   String? get amount => _getTagValue('amt');
   String? get fiatAmount => _getTagValue('fa');
-  List<String> get paymentMethods => _getTagValue('pm')?.split(',') ?? [];
+  List<String> get paymentMethods {
+    final value = _getTagValue('pm');
+    if (value == null || value.isEmpty) return [];
+    return value.split(',').where((method) => method.isNotEmpty).toList();
+  }
   String? get premium => _getTagValue('premium');
   String? get source => _getTagValue('source');
-  Rating? get rating => _getTagValue('rating') != null
-      ? Rating.deserialized(_getTagValue('rating')!)
-      : null;
+  Rating? get rating {
+    final value = _getTagValue('rating');
+    if (value == null) return null;
+    try {
+      return Rating.deserialized(value);
+    } catch (e) {
+      print('Error deserializing rating: $e');
+      return null;
+    }
+  }
   String? get network => _getTagValue('network');
   String? get layer => _getTagValue('layer');
   String? get name => _getTagValue('name') ?? 'Anon';

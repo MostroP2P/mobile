@@ -6,52 +6,38 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/core/theme/app_theme.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
-import 'package:mostro_mobile/presentation/order/bloc/order_details_bloc.dart';
-import 'package:mostro_mobile/presentation/order/bloc/order_details_event.dart';
+import 'package:mostro_mobile/presentation/order/bloc/order_details_notifier.dart';
 import 'package:mostro_mobile/presentation/order/bloc/order_details_state.dart';
 import 'package:mostro_mobile/presentation/widgets/currency_text_field.dart';
 import 'package:mostro_mobile/presentation/widgets/exchange_rate_widget.dart';
 import 'package:mostro_mobile/providers/exchange_service_provider.dart';
-import 'package:mostro_mobile/providers/riverpod_providers.dart';
 
 class OrderDetailsScreen extends ConsumerWidget {
   final NostrEvent initialOrder;
-
   final TextEditingController _satsAmountController = TextEditingController();
 
   OrderDetailsScreen({super.key, required this.initialOrder});
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final mostroService = ref.watch(mostroServiceProvider);
-    return BlocProvider(
-      create: (context) =>
-          OrderDetailsBloc(mostroService)..add(LoadOrderDetails(initialOrder)),
-      child: BlocConsumer<OrderDetailsBloc, OrderDetailsState>(
-        listener: (context, state) {
-          if (state.status == OrderDetailsStatus.done) {
-            Navigator.of(context).pop();
-          }
-        },
-        builder: (context, state) {
-          switch (state.status) {
-            case OrderDetailsStatus.loading:
-              return const Center(child: CircularProgressIndicator());
-            case OrderDetailsStatus.error:
-              return _buildErrorScreen(state.errorMessage, context);
-            case OrderDetailsStatus.cancelled:
-            case OrderDetailsStatus.done:
-              return _buildCompletionMessage(context, state);
-            case OrderDetailsStatus.loaded:
-              return _buildContent(context, ref, state.order!);
-            default:
-              return const Center(child: Text('Order not found'));
-          }
-        },
-      ),
-    );
-  }
+@override
+Widget build(BuildContext context, WidgetRef ref) {
+  final orderDetailsState = ref.watch(orderDetailsNotifierProvider(initialOrder));
 
+  switch (orderDetailsState.status) {
+    case OrderDetailsStatus.loading:
+      return const Center(child: CircularProgressIndicator());
+    case OrderDetailsStatus.error:
+      return _buildErrorScreen(orderDetailsState.errorMessage, context);
+    case OrderDetailsStatus.cancelled:
+      return _buildCompletionMessage(context, orderDetailsState);
+    case OrderDetailsStatus.done:
+      return _buildCompletionMessage(context, orderDetailsState);
+    case OrderDetailsStatus.loaded:
+      return _buildContent(context, ref, orderDetailsState.order!);
+    case OrderDetailsStatus.initial:
+    default:
+      return const Center(child: Text('Order not found'));
+  }
+}
   Widget _buildErrorScreen(String? errorMessage, BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.dark1,
@@ -90,8 +76,7 @@ class OrderDetailsScreen extends ConsumerWidget {
       BuildContext context, OrderDetailsState state) {
     final message = state.status == OrderDetailsStatus.cancelled
         ? 'Order has been cancelled.'
-        : state.errorMessage ??
-            'Order has been completed successfully!'; // Handles custom errors or success messages
+        : state.errorMessage ?? 'Order has been completed successfully!';
     return Scaffold(
       backgroundColor: AppTheme.dark1,
       appBar: _buildAppBar('Completion', context),
@@ -150,7 +135,7 @@ class OrderDetailsScreen extends ConsumerWidget {
               const SizedBox(height: 16),
               _buildBuyerAmount(order),
               const SizedBox(height: 24),
-              _buildActionButtons(context),
+              _buildActionButtons(context, ref),
             ],
           ),
         ),
@@ -285,14 +270,15 @@ class OrderDetailsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildActionButtons(BuildContext context) {
+  Widget _buildActionButtons(BuildContext context, WidgetRef ref) {
+    final orderDetailsNotifier =
+        ref.read(orderDetailsNotifierProvider(initialOrder).notifier);
+
     return Row(
       children: [
         Expanded(
           child: ElevatedButton(
-            onPressed: () {
-              context.read<OrderDetailsBloc>().add(CancelOrder());
-            },
+            onPressed: () => orderDetailsNotifier.cancelOrder(),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
             ),
@@ -302,9 +288,7 @@ class OrderDetailsScreen extends ConsumerWidget {
         const SizedBox(width: 16),
         Expanded(
           child: ElevatedButton(
-            onPressed: () {
-              context.read<OrderDetailsBloc>().add(ContinueOrder(initialOrder));
-            },
+            onPressed: () => orderDetailsNotifier.continueOrder(initialOrder),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.mostroGreen,
             ),

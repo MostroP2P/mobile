@@ -1,24 +1,26 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mostro_mobile/data/repositories/secure_storage_manager.dart';
-import 'package:mostro_mobile/presentation/home/bloc/home_bloc.dart';
-import 'package:mostro_mobile/services/mostro_service.dart';
-import 'package:mostro_mobile/services/nostr_service.dart';
+import 'package:mostro_mobile/core/utils/biometrics_helper.dart';
+import 'package:mostro_mobile/data/repositories/auth_repository.dart';
+import 'package:mostro_mobile/presentation/auth/bloc/auth_notifier.dart';
+import 'package:mostro_mobile/presentation/auth/bloc/auth_state.dart';
 
-final nostrServicerProvider = Provider<NostrService>((ref) {
-  return NostrService()..init();
+
+final authRepositoryProvider = Provider<AuthRepository>(
+  (ref) => AuthRepository(
+    biometricsHelper: ref.read(biometricsHelperProvider),
+  ),
+);
+
+final authNotifierProvider = StateNotifierProvider<AuthNotifier, AuthState>(
+  (ref) => AuthNotifier(ref.read(authRepositoryProvider)),
+);
+
+final isFirstLaunchProvider = Provider<bool>((ref) => false);
+
+final biometricsHelperProvider = Provider<BiometricsHelper>((ref) {
+  throw UnimplementedError();
 });
 
-final homeBlocProvider = Provider<HomeBloc>((ref) {
-  return HomeBloc();
-});
-
-final sessionManagerProvider = Provider<SecureStorageManager>((ref) {
-  return SecureStorageManager();
-});
-
-final mostroServiceProvider = Provider<MostroService>((ref) {
-  final sessionStorage = ref.watch(sessionManagerProvider);
-  final nostrService = ref.watch(nostrServicerProvider);
-  return MostroService(nostrService, sessionStorage);
-});
-
+final navigatorKeyProvider =
+    Provider<GlobalKey<NavigatorState>>((ref) => GlobalKey<NavigatorState>());

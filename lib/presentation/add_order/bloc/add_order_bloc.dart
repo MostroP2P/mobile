@@ -21,9 +21,11 @@ class AddOrderBloc extends Bloc<AddOrderEvent, AddOrderState> {
       SubmitOrder event, Emitter<AddOrderState> emit) async {
     emit(state.copyWith(status: AddOrderStatus.submitting));
 
+    
+
     try {
-      final order = await mostroService.publishOrder(event.order);
-      add(OrderUpdateReceived(order));
+      //final order = await mostroService.publishOrder(event.order);
+      //add(OrderUpdateReceived(order));
     } catch (e) {
       emit(state.copyWith(
         status: AddOrderStatus.failure,

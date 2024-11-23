@@ -21,7 +21,8 @@ class NostrService {
       await _nostr.relaysService.init(
         relaysUrl: Config.nostrRelays,
         connectionTimeout: Config.nostrConnectionTimeout,
-        onRelayListening: (relay, url, channel) {
+        onRelayListening: (relay, url, 
+        channel) {
           _logger.info('Connected to relay: $url');
         },
         onRelayConnectionError: (relay, error, channel) {

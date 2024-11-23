@@ -111,7 +111,9 @@ class OrderListItem extends StatelessWidget {
                     child: Row(
                       children: [
                         HeroIcon(
-                          _getPaymentMethodIcon(order.paymentMethods[0]),
+                          _getPaymentMethodIcon(order.paymentMethods.isNotEmpty 
+                              ? order.paymentMethods[0] 
+                              : ''),
                           style: HeroIconStyle.outline,
                           color: Colors.white,
                           size: 16,
@@ -119,7 +121,9 @@ class OrderListItem extends StatelessWidget {
                         const SizedBox(width: 4),
                         Flexible(
                           child: Text(
-                            order.paymentMethods[0],
+                            order.paymentMethods.isNotEmpty 
+                                ? order.paymentMethods[0] 
+                                : 'No payment method',
                             style: const TextStyle(color: Colors.grey),
                             overflow: TextOverflow.visible,
                             softWrap: true,

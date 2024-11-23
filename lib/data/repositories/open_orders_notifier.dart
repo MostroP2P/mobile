@@ -1,19 +1,17 @@
 import 'dart:async';
 import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:dart_nostr/nostr/model/request/filter.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/repositories/order_repository_interface.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
 
-class OpenOrdersRepository implements OrderRepository {
+class OpenOrdersNotifier extends StateNotifier<List<NostrEvent>> implements OrderRepository {
   final NostrService _nostrService;
-  final StreamController<List<NostrEvent>> _eventStreamController =
-      StreamController.broadcast();
   final Map<String, NostrEvent> _events = {};
 
-  Stream<List<NostrEvent>> get eventsStream => _eventStreamController.stream;
-
-  OpenOrdersRepository(this._nostrService);
+  OpenOrdersNotifier(this._nostrService) : super([]);
 
   StreamSubscription<NostrEvent>? _subscription;
 
@@ -30,17 +28,44 @@ class OpenOrdersRepository implements OrderRepository {
     _subscription = _nostrService.subscribeToEvents(filter).listen((event) {
       final key = '${event.kind}-${event.pubkey}-${event.orderId}';
       _events[key] = event;
-      _eventStreamController.add(_events.values.toList());
+
+      // Update state with a list of current events
+      state = _events.values.toList();
     }, onError: (error) {
-      // Log error and optionally notify listeners
+      // Log error
       print('Error in order subscription: $error');
     });
   }
 
+  /// Cleans up expired orders from the `_events` map.
+  void cleanupExpiredOrders(Duration expirationDuration) {
+    final now = DateTime.now();
+    final expiredKeys = _events.entries
+        .where((entry) =>
+            entry.value.createdAt != null &&
+            now.difference(entry.value.createdAt!).compareTo(expirationDuration) > 0)
+        .map((entry) => entry.key)
+        .toList();
+
+    // Remove expired events
+    for (final key in expiredKeys) {
+      _events.remove(key);
+    }
+
+    // Update state after cleanup
+    state = _events.values.toList();
+  }
+
+  void updateOrders(List<NostrEvent> newOrders) {
+    debugPrint('Updating orders: $newOrders');
+    state = newOrders;
+  }
+
+
   @override
   void dispose() {
     _subscription?.cancel();
-    _eventStreamController.close();
     _events.clear();
+    super.dispose();
   }
 }
