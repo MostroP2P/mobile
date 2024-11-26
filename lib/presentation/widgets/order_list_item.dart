@@ -2,6 +2,7 @@ import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter/material.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/core/theme/app_theme.dart';
+import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/presentation/order/screens/order_details_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -36,10 +37,9 @@ class OrderListItem extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    '${order.name} ${order.rating?.totalRating ?? 0}/${order.rating?.maxRate ?? 5} (${order.rating?.totalReviews ?? 0})',  
-                    style: const TextStyle(color: Colors.white),  
-                  ),  
-
+                    '${order.name} ${order.rating?.totalRating ?? 0}/${order.rating?.maxRate ?? 5} (${order.rating?.totalReviews ?? 0})',
+                    style: const TextStyle(color: Colors.white),
+                  ),
                   Text(
                     'Time: ${order.expiration}',
                     style: const TextStyle(color: Colors.white),
@@ -51,83 +51,29 @@ class OrderListItem extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    flex: 3,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text.rich(
-                          TextSpan(
-                            children: [
-                              _buildStyledTextSpan(
-                                'offering ',
-                                '${order.amount}',
-                                isValue: true,
-                                isBold: true,
-                              ),
-                              const TextSpan(
-                                text: "sats",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.normal,
-                                  fontSize: 16.0,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 8.0),
-                        Text.rich(
-                          TextSpan(
-                            children: [
-                              _buildStyledTextSpan(
-                                'for ',
-                                '${order.fiatAmount}',
-                                isValue: true,
-                                isBold: true,
-                              ),
-                              TextSpan(
-                                text: '${order.currency} ',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16.0,
-                                ),
-                              ),
-                              TextSpan(
-                                text: '(${order.premium}%)',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16.0,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  _getOrder(order),
                   const SizedBox(width: 16),
                   Expanded(
                     flex: 4,
                     child: Row(
                       children: [
                         HeroIcon(
-                          _getPaymentMethodIcon(order.paymentMethods.isNotEmpty 
-                              ? order.paymentMethods[0] 
-                              : ''),  
-                          style: HeroIconStyle.outline,  
-                          color: Colors.white,  
-                          size: 16,  
-                        ),  
-                        const SizedBox(width: 4),  
-                        Flexible(  
-                          child: Text(  
-                            order.paymentMethods.isNotEmpty 
-                                ? order.paymentMethods[0] 
-                                : 'No payment method',  
-                            style: const TextStyle(color: Colors.grey),  
-                            overflow: TextOverflow.visible,  
-                            softWrap: true,  
+                          _getPaymentMethodIcon(order.paymentMethods.isNotEmpty
+                              ? order.paymentMethods[0]
+                              : ''),
+                          style: HeroIconStyle.outline,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            order.paymentMethods.isNotEmpty
+                                ? order.paymentMethods[0]
+                                : 'No payment method',
+                            style: const TextStyle(color: Colors.grey),
+                            overflow: TextOverflow.visible,
+                            softWrap: true,
                           ),
                         ),
                       ],
@@ -135,11 +81,75 @@ class OrderListItem extends StatelessWidget {
                   ),
                 ],
               ),
-
-              const SizedBox(height: 8), // Optional spacer after the row
+              const SizedBox(height: 8),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Expanded _getOrder(NostrEvent order) {
+    String offering;
+    if (order.orderType == OrderType.buy) {
+      offering = 'Buying';
+    } else {
+      offering = 'Selling';
+    }
+
+    return Expanded(
+      flex: 3,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text.rich(
+            TextSpan(
+              children: [
+                _buildStyledTextSpan(
+                  offering,
+                  (order.amount != null && order.amount != '0') ? ' ${order.amount!}' : '',
+                  isValue: true,
+                  isBold: true,
+                ),
+                const TextSpan(
+                  text: "sats",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.normal,
+                    fontSize: 16.0,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8.0),
+          Text.rich(
+            TextSpan(
+              children: [
+                _buildStyledTextSpan(
+                  'for ',
+                  '${order.fiatAmount}',
+                  isValue: true,
+                  isBold: true,
+                ),
+                TextSpan(
+                  text: '${order.currency} ',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16.0,
+                  ),
+                ),
+                TextSpan(
+                  text: '(${order.premium}%)',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16.0,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

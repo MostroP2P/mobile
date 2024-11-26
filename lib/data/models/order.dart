@@ -121,7 +121,7 @@ class Order implements Content {
       status: Status.fromString(event.status!),
       amount: event.amount as int,
       fiatCode: event.currency!,
-      fiatAmount: int.parse(event.fiatAmount!),
+      fiatAmount: event.fiatAmount.minimum,
       paymentMethod: event.paymentMethods.join(','),
       premium: event.premium as int,
       createdAt: event.createdAt as int,

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/core/theme/app_theme.dart';
-import 'package:mostro_mobile/presentation/widgets/group_box.dart';
 
 class OrderFilter extends StatelessWidget {
   const OrderFilter({super.key});
@@ -51,55 +50,34 @@ class OrderFilter extends StatelessWidget {
             ],
           ),
           SizedBox(height: 20),
-          buildDropdownSection(context, 'Fiat currencies', ''),
-          buildDropdownSection(context, 'Payment methods', ''),
-          buildDropdownSection(context, 'Countries', ''),
-          buildDropdownSection(context, 'Rating', ''),
+          buildDropdownSection(context, 'Fiat currencies', []),
+          buildDropdownSection(context, 'Payment methods', []),
+          buildDropdownSection(context, 'Countries', []),
+          buildDropdownSection(context, 'Rating', []),
         ],
       ),
     );
   }
 
   Widget buildDropdownSection(
-      BuildContext context, String title, String value) {
+      BuildContext context, String title, List<DropdownMenuItem<String>> items) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(height: 4),
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppTheme.grey),
+          DropdownButtonFormField<String>(
+            decoration: InputDecoration(
+              border: InputBorder.none,
+              labelText: title,
+              labelStyle: const TextStyle(color: AppTheme.mostroGreen),
             ),
-            child: GroupBox(
-                title: title,
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: value,
-                    onChanged: (String? newValue) {},
-                    items: <String>[value]
-                        .map<DropdownMenuItem<String>>((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(
-                          value,
-                          style: TextStyle(
-                            color: AppTheme.dark1,
-                            fontSize: 14,
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                    icon: Icon(
-                      Icons.arrow_drop_down,
-                      color: AppTheme.dark1,
-                    ),
-                  ),
-                )),
+            dropdownColor: AppTheme.dark1,
+            style: TextStyle(color: AppTheme.cream1),
+            items: items,
+            value: '', onChanged: (String? value) {  },
           ),
+          SizedBox(height: 4),
         ],
       ),
     );

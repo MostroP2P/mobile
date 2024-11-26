@@ -134,7 +134,8 @@ class OrderDetailsScreen extends ConsumerWidget {
   Widget _buildContent(BuildContext context, WidgetRef ref, NostrEvent order) {
     return Scaffold(
       backgroundColor: AppTheme.dark1,
-      appBar: _buildAppBar('${order.orderType?.value.toUpperCase()} BITCOIN', context),
+      appBar: _buildAppBar(
+          '${order.orderType?.value.toUpperCase()} BITCOIN', context),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -291,7 +292,7 @@ class OrderDetailsScreen extends ConsumerWidget {
         Expanded(
           child: ElevatedButton(
             onPressed: () {
-              context.read<OrderDetailsBloc>().add(CancelOrder());
+              Navigator.of(context).pop();
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,

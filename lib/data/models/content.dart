@@ -5,7 +5,7 @@ abstract class Content {
   String get type;
   Map<String, dynamic> toJson();
 
-  factory Content.fromJson(Map<String, dynamic> json) {fromJson
+  factory Content.fromJson(Map<String, dynamic> json) {
     if (json.containsKey('order')) {
       return Order.fromJson(json['order']);
     } else if (json.containsKey('payment_request')) {
