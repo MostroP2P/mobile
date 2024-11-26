@@ -63,14 +63,14 @@ class HomeScreen extends ConsumerWidget {
       child: Row(
         children: [
           Expanded(
-            child: _buildTab(
-                "BUY BTC", homeState.orderType == OrderType.buy, () {
+            child:
+                _buildTab("BUY BTC", homeState.orderType == OrderType.buy, () {
               homeNotifier.changeOrderType(OrderType.buy);
             }),
           ),
           Expanded(
-            child: _buildTab(
-                "SELL BTC", homeState.orderType == OrderType.sell, () {
+            child: _buildTab("SELL BTC", homeState.orderType == OrderType.sell,
+                () {
               homeNotifier.changeOrderType(OrderType.sell);
             }),
           ),
@@ -142,23 +142,21 @@ class HomeScreen extends ConsumerWidget {
   }
 
   Widget _buildOrderList(WidgetRef ref, HomeState homeState) {
-    final orderEventsAsync = ref.watch(orderEventsProvider);
+    final openOrders = ref.watch(openOrdersNotifierProvider);
 
-    return orderEventsAsync.when(
-      data: (events) {
-        if (events.isEmpty) {
-          return const Center(
-            child: Text(
-              'No orders available for this type',
-              style: TextStyle(color: Colors.white),
-            ),
-          );
-        }
-        return OrderList(orders: events);
-      },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stack) => Center(child: Text('Error: $error')),
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(homeNotifierProvider.notifier).loadOrders(openOrders);
+    });
+
+    if (homeState.filteredOrders.isEmpty) {
+      return const Center(
+        child: Text(
+          'No orders available for this type',
+          style: TextStyle(color: Colors.white),
+        ),
+      );
+    }
+
+    return OrderList(orders: homeState.filteredOrders);
   }
 }
-

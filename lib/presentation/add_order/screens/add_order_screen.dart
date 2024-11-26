@@ -25,7 +25,6 @@ class AddOrderScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(addOrderNotifierProvider);
-
     return Scaffold(
       backgroundColor: AppTheme.dark1,
       appBar: AppBar(
@@ -33,7 +32,10 @@ class AddOrderScreen extends ConsumerWidget {
         elevation: 0,
         leading: IconButton(
           icon: const HeroIcon(HeroIcons.arrowLeft, color: AppTheme.cream1),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () {
+            ref.read(addOrderNotifierProvider.notifier).reset();
+            Navigator.of(context).pop();
+          },
         ),
         title: Text(
           'NEW ORDER',
@@ -226,7 +228,6 @@ class AddOrderScreen extends ConsumerWidget {
       ),
     );
   }
-
 
   Widget _buildTextField(String label, TextEditingController controller,
       {IconData? suffix}) {

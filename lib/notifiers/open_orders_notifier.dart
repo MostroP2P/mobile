@@ -7,7 +7,8 @@ import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/repositories/order_repository_interface.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
 
-class OpenOrdersNotifier extends StateNotifier<List<NostrEvent>> implements OrderRepository {
+class OpenOrdersNotifier extends StateNotifier<List<NostrEvent>>
+    implements OrderRepository {
   final NostrService _nostrService;
   final Map<String, NostrEvent> _events = {};
 
@@ -28,7 +29,6 @@ class OpenOrdersNotifier extends StateNotifier<List<NostrEvent>> implements Orde
     _subscription = _nostrService.subscribeToEvents(filter).listen((event) {
       final key = '${event.kind}-${event.pubkey}-${event.orderId}';
       _events[key] = event;
-
       // Update state with a list of current events
       state = _events.values.toList();
     }, onError: (error) {
@@ -43,7 +43,10 @@ class OpenOrdersNotifier extends StateNotifier<List<NostrEvent>> implements Orde
     final expiredKeys = _events.entries
         .where((entry) =>
             entry.value.createdAt != null &&
-            now.difference(entry.value.createdAt!).compareTo(expirationDuration) > 0)
+            now
+                    .difference(entry.value.createdAt!)
+                    .compareTo(expirationDuration) >
+                0)
         .map((entry) => entry.key)
         .toList();
 
@@ -60,7 +63,6 @@ class OpenOrdersNotifier extends StateNotifier<List<NostrEvent>> implements Orde
     debugPrint('Updating orders: $newOrders');
     state = newOrders;
   }
-
 
   @override
   void dispose() {

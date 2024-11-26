@@ -1,9 +1,8 @@
 import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:dart_nostr/nostr/model/request/filter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/data/repositories/mostro_repository.dart';
-import 'package:mostro_mobile/data/repositories/open_orders_notifier.dart';
+import 'package:mostro_mobile/notifiers/open_orders_notifier.dart';
 import 'package:mostro_mobile/data/repositories/open_orders_repository.dart';
 import 'package:mostro_mobile/data/repositories/secure_storage_manager.dart';
 import 'package:mostro_mobile/notifiers/global_notification_notifier.dart';
@@ -57,8 +56,7 @@ final openOrdersNotifierProvider =
 
 final homeNotifierProvider = StateNotifierProvider<HomeNotifier, HomeState>(
   (ref) {
-    final openOrdersNotifier = ref.read(orderEventsProvider);
-    return HomeNotifier(openOrdersNotifier);
+    return HomeNotifier();
   },
 );
 

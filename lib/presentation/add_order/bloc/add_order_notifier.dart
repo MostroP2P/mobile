@@ -14,6 +14,10 @@ class AddOrderNotifier extends StateNotifier<AddOrderState> {
     state = state.copyWith(currentType: orderType);
   }
 
+  void reset() {
+    state = state.copyWith(status: AddOrderStatus.initial);
+  }
+
   Future<void> submitOrder(
     String fiatCode,
     int fiatAmount,
@@ -32,7 +36,6 @@ class AddOrderNotifier extends StateNotifier<AddOrderState> {
         kind: orderType,
         premium: 0,
       ));
-
     } catch (e) {
       state = state.copyWith(
         status: AddOrderStatus.failure,
