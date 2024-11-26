@@ -10,7 +10,15 @@ class NostrUtils {
 
   // Generación de claves
   static NostrKeyPairs generateKeyPair() {
-    return NostrKeyPairs(private: generatePrivateKey());
+    try {
+      final privateKey = generatePrivateKey();
+      if (!isValidPrivateKey(privateKey)) {
+        throw Exception('Generated invalid private key');
+      }
+      return NostrKeyPairs(private: privateKey);
+    } catch (e) {
+      throw Exception('Failed to generate key pair: $e');
+    }
   }
 
   static NostrKeyPairs generateKeyPairFromPrivateKey(String privateKey) {
@@ -19,7 +27,11 @@ class NostrUtils {
   }
 
   static String generatePrivateKey() {
-    return getS256().generatePrivateKey().toHex();
+    try {
+      return getS256().generatePrivateKey().toHex();
+    } catch (e) {
+      throw Exception('Failed to generate private key: $e');
+    }
   }
 
   // Codificación y decodificación de claves
@@ -180,12 +192,17 @@ class NostrUtils {
 
     final pk = wrapperKeyPair.private;
 
-    final sealedContent =
-        _encryptNIP44(jsonEncode(sealEvent.toMap()), pk, '02$recipientPubKey');
+    String sealedContent;
+    try {
+      sealedContent = await _encryptNIP44(
+          jsonEncode(sealEvent.toMap()), pk, '02$recipientPubKey');
+    } catch (e) {
+      throw Exception('Failed to encrypt seal event: $e');
+    }
 
     final wrapEvent = NostrEvent.fromPartialData(
       kind: 1059,
-      content: await sealedContent,
+      content: sealedContent,
       keyPairs: wrapperKeyPair,
       tags: [
         ["p", recipientPubKey]
@@ -265,23 +282,28 @@ class NostrUtils {
     }
   }
 
-  static Future<String> _encryptNIP44(
-      String content, String privkey, String pubkey) async {
-    try {
-      return await Nip44.encryptMessage(content, privkey, pubkey);
-    } catch (e) {
-      // Handle encryption error appropriately
-      throw Exception('Encryption failed: $e');
-    }
-  }
+  static Future<String> _encryptNIP44(  
+      String content, String privkey, String pubkey) async {  
+    if (content.isEmpty) throw ArgumentError('Content cannot be empty');  
+    if (privkey.length != 64) throw ArgumentError('Invalid private key length');  
+    if (!pubkey.startsWith('02')) throw ArgumentError('Invalid public key format');  
+    try {  
+      return await Nip44.encryptMessage(content, privkey, pubkey);  
+    } catch (e) {  
+      // Handle encryption error appropriately  
+      throw Exception('Encryption failed: $e');  
+    }  
+  }  
 
-  static Future<String> _decryptNIP44(
-      String encryptedContent, String privkey, String pubkey) async {
-    try {
-      return await Nip44.decryptMessage(encryptedContent, privkey, pubkey);
-    } catch (e) {
-      // Handle encryption error appropriately
-      throw Exception('Decryption failed: $e');
-    }
-  }
+  static Future<String> _decryptNIP44(  
+      String encryptedContent, String privkey, String pubkey) async {  
+    if (encryptedContent.isEmpty) throw ArgumentError('Encrypted content cannot be empty');  
+    if (privkey.length != 64) throw ArgumentError('Invalid private key length');  
+    if (!pubkey.startsWith('02')) throw ArgumentError('Invalid public key format');  
+    try {  
+      return await Nip44.decryptMessage(encryptedContent, privkey, pubkey);  
+    } catch (e) {  
+      // Handle encryption error appropriately  
+      throw Exception('Decryption failed: $e');  
+    }  
 }

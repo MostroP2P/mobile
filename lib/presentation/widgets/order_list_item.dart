@@ -36,9 +36,10 @@ class OrderListItem extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    '${order.name} ${order.rating?.totalRating}/${order.rating?.maxRate} (${order.rating?.totalReviews})',
-                    style: const TextStyle(color: Colors.white),
-                  ),
+                    '${order.name} ${order.rating?.totalRating ?? 0}/${order.rating?.maxRate ?? 5} (${order.rating?.totalReviews ?? 0})',  
+                    style: const TextStyle(color: Colors.white),  
+                  ),  
+
                   Text(
                     'Time: ${order.expiration}',
                     style: const TextStyle(color: Colors.white),
@@ -111,18 +112,22 @@ class OrderListItem extends StatelessWidget {
                     child: Row(
                       children: [
                         HeroIcon(
-                          _getPaymentMethodIcon(order.paymentMethods[0]),
-                          style: HeroIconStyle.outline,
-                          color: Colors.white,
-                          size: 16,
-                        ),
-                        const SizedBox(width: 4),
-                        Flexible(
-                          child: Text(
-                            order.paymentMethods[0],
-                            style: const TextStyle(color: Colors.grey),
-                            overflow: TextOverflow.visible,
-                            softWrap: true,
+                          _getPaymentMethodIcon(order.paymentMethods.isNotEmpty 
+                              ? order.paymentMethods[0] 
+                              : ''),  
+                          style: HeroIconStyle.outline,  
+                          color: Colors.white,  
+                          size: 16,  
+                        ),  
+                        const SizedBox(width: 4),  
+                        Flexible(  
+                          child: Text(  
+                            order.paymentMethods.isNotEmpty 
+                                ? order.paymentMethods[0] 
+                                : 'No payment method',  
+                            style: const TextStyle(color: Colors.grey),  
+                            overflow: TextOverflow.visible,  
+                            softWrap: true,  
                           ),
                         ),
                       ],
