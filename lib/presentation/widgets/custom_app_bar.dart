@@ -19,6 +19,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       ),
       actions: [
         IconButton(
+          key: Key('createOrderButton'),
           icon: const HeroIcon(HeroIcons.plus,
               style: HeroIconStyle.outline, color: Colors.white),
           onPressed: () {

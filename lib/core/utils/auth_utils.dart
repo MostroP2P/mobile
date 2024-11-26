@@ -1,33 +1,30 @@
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-
 class AuthUtils {
-  static const _storage = FlutterSecureStorage();
+  /// Temporary implementation for alpha preview.
+  /// WARNING: This is not secure and should not be used in production.
+  /// TODO: Implement secure storage for credentials
+  static Future<void> savePrivateKeyAndPin(
+      String privateKey, String pin) async {}
 
-  static Future<void> savePrivateKeyAndPin(String privateKey, String pin) async {
-    await _storage.write(key: 'user_private_key', value: privateKey);
-    await _storage.write(key: 'user_pin', value: pin);
-  }
-
+  /// Temporary implementation for alpha preview.
+  /// WARNING: This always returns null and should not be used in production.
+  /// TODO: Implement secure key retrieval
   static Future<String?> getPrivateKey() async {
-    return await _storage.read(key: 'user_private_key');
+    return null;
   }
 
   static Future<bool> verifyPin(String inputPin) async {
-    final storedPin = await _storage.read(key: 'user_pin');
-    return storedPin == inputPin;
+    throw UnimplementedError('verifyPin is not implemented yet');
   }
 
   static Future<void> deleteCredentials() async {
-    await _storage.delete(key: 'user_private_key');
-    await _storage.delete(key: 'user_pin');
-    await _storage.delete(key: 'use_biometrics');
+    throw UnimplementedError('deleteCredentials is not implemented yet');
   }
 
   static Future<void> enableBiometrics() async {
-    await _storage.write(key: 'use_biometrics', value: 'true');
+    throw UnimplementedError('enableBiometrics is not implemented yet');    
   }
 
   static Future<bool> isBiometricsEnabled() async {
-    return await _storage.read(key: 'use_biometrics') == 'true';
+    throw UnimplementedError('isBiometricsEnabled is not implemented yet');
   }
 }

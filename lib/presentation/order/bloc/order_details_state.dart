@@ -1,11 +1,11 @@
+import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:equatable/equatable.dart';
-import 'package:mostro_mobile/data/models/order_model.dart';
 
-enum OrderDetailsStatus { initial, loading, loaded, error }
+enum OrderDetailsStatus { initial, loading, loaded, error, cancelled, done }
 
 class OrderDetailsState extends Equatable {
   final OrderDetailsStatus status;
-  final OrderModel? order;
+  final NostrEvent? order;
   final String? errorMessage;
 
   const OrderDetailsState({
@@ -16,7 +16,7 @@ class OrderDetailsState extends Equatable {
 
   OrderDetailsState copyWith({
     OrderDetailsStatus? status,
-    OrderModel? order,
+    NostrEvent? order,
     String? errorMessage,
   }) {
     return OrderDetailsState(

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import '../bloc/payment_qr_bloc.dart';
 import '../bloc/payment_qr_event.dart';
 import '../bloc/payment_qr_state.dart';
@@ -37,12 +36,6 @@ class PaymentQrScreen extends StatelessWidget {
                     style: TextStyle(color: Colors.white),
                   ),
                   const SizedBox(height: 20),
-                  QrImage(
-                    data: state.qrData,
-                    version: QrVersions.auto,
-                    size: 200.0,
-                    foregroundColor: Colors.white,
-                  ),
                   const SizedBox(height: 20),
                   Text(
                     'Expires in: ${state.expiresIn}',

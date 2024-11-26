@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
-import 'package:mostro_mobile/presentation/home/bloc/home_state.dart';
+import 'package:mostro_mobile/data/models/enums/order_type.dart';
+import 'package:mostro_mobile/data/models/mostro_message.dart';
+import 'package:mostro_mobile/data/models/order.dart';
 
 abstract class AddOrderEvent extends Equatable {
   const AddOrderEvent();
@@ -19,7 +21,7 @@ class ChangeOrderType extends AddOrderEvent {
 
 class SubmitOrder extends AddOrderEvent {
   final String fiatCode;
-  final double fiatAmount;
+  final int fiatAmount;
   final int satsAmount;
   final String paymentMethod;
   final OrderType orderType;
@@ -32,6 +34,21 @@ class SubmitOrder extends AddOrderEvent {
     required this.orderType,
   });
 
+  Order get order => Order(
+      kind: orderType,
+      fiatCode: fiatCode,
+      fiatAmount: fiatAmount,
+      paymentMethod: paymentMethod,
+      premium: 0);
+
   @override
-  List<Object> get props => [fiatCode, fiatAmount, satsAmount, paymentMethod, orderType];
+  List<Object> get props =>
+      [fiatCode, fiatAmount, satsAmount, paymentMethod, orderType];
 }
+
+class OrderUpdateReceived extends AddOrderEvent {
+  final MostroMessage order;
+
+  const OrderUpdateReceived(this.order);
+}
+

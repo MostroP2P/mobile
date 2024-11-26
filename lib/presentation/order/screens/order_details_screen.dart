@@ -1,212 +1,248 @@
+import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:heroicons/heroicons.dart';
-import 'package:mostro_mobile/data/models/order_model.dart';
+import 'package:mostro_mobile/core/theme/app_theme.dart';
+import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/presentation/order/bloc/order_details_bloc.dart';
 import 'package:mostro_mobile/presentation/order/bloc/order_details_event.dart';
 import 'package:mostro_mobile/presentation/order/bloc/order_details_state.dart';
-import 'package:mostro_mobile/presentation/widgets/bottom_nav_bar.dart';
+import 'package:mostro_mobile/presentation/widgets/currency_text_field.dart';
+import 'package:mostro_mobile/presentation/widgets/exchange_rate_widget.dart';
+import 'package:mostro_mobile/providers/exchange_service_provider.dart';
+import 'package:mostro_mobile/providers/riverpod_providers.dart';
 
-class OrderDetailsScreen extends StatelessWidget {
-  final OrderModel initialOrder;
+class OrderDetailsScreen extends ConsumerWidget {
+  final NostrEvent initialOrder;
 
-  const OrderDetailsScreen({super.key, required this.initialOrder});
+  final TextEditingController _satsAmountController = TextEditingController();
+
+  OrderDetailsScreen({super.key, required this.initialOrder});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final mostroService = ref.watch(mostroServiceProvider);
     return BlocProvider(
       create: (context) =>
-          OrderDetailsBloc()..add(LoadOrderDetails(initialOrder)),
-      child: BlocBuilder<OrderDetailsBloc, OrderDetailsState>(
+          OrderDetailsBloc(mostroService)..add(LoadOrderDetails(initialOrder)),
+      child: BlocConsumer<OrderDetailsBloc, OrderDetailsState>(
+        listener: (context, state) {
+          if (state.status == OrderDetailsStatus.done) {
+            Navigator.of(context).pop();
+          }
+        },
         builder: (context, state) {
-          if (state.status == OrderDetailsStatus.loading) {
-            return const Center(child: CircularProgressIndicator());
+          switch (state.status) {
+            case OrderDetailsStatus.loading:
+              return const Center(child: CircularProgressIndicator());
+            case OrderDetailsStatus.error:
+              return _buildErrorScreen(state.errorMessage, context);
+            case OrderDetailsStatus.cancelled:
+            case OrderDetailsStatus.done:
+              return _buildCompletionMessage(context, state);
+            case OrderDetailsStatus.loaded:
+              return _buildContent(context, ref, state.order!);
+            default:
+              return const Center(child: Text('Order not found'));
           }
-          if (state.status == OrderDetailsStatus.error) {
-            return Center(
-                child: Text(state.errorMessage ?? 'An error occurred'));
-          }
-          if (state.order == null) {
-            return const Center(child: Text('Order not found'));
-          }
-          return _buildContent(context, state.order!);
         },
       ),
     );
   }
 
-  Widget _buildContent(BuildContext context, OrderModel order) {
+  Widget _buildErrorScreen(String? errorMessage, BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1D212C),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const HeroIcon(HeroIcons.arrowLeft, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title:
-            const Text('ORDER DETAILS', style: TextStyle(color: Colors.white)),
-        actions: [
-          IconButton(
-            icon: const HeroIcon(HeroIcons.plus, color: Colors.white),
-            onPressed: () {
-              // Implementar lógica para añadir
-            },
-          ),
-          IconButton(
-            icon: const HeroIcon(HeroIcons.bolt,
-                style: HeroIconStyle.solid, color: Color(0xFF8CC541)),
-            onPressed: () {
-              // Implementar lógica para acción de rayo
-            },
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    _buildSellerInfo(order),
-                    const SizedBox(height: 16),
-                    _buildSellerAmount(order),
-                    const SizedBox(height: 16),
-                    _buildExchangeRate(order),
-                    const SizedBox(height: 16),
-                    _buildBuyerInfo(order),
-                    const SizedBox(height: 16),
-                    _buildBuyerAmount(order),
-                    const SizedBox(height: 24),
-                    _buildActionButtons(context),
-                  ],
+      backgroundColor: AppTheme.dark1,
+      appBar: _buildAppBar('Error', context),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                errorMessage ?? 'An unexpected error occurred.',
+                style: const TextStyle(
+                  color: Colors.red,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                 ),
+                textAlign: TextAlign.center,
               ),
-            ),
+              const SizedBox(height: 32),
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.cream1,
+                ),
+                child: const Text('Return to Main Screen'),
+              ),
+            ],
           ),
-          const BottomNavBar(),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildSellerInfo(OrderModel order) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF303544),
-        borderRadius: BorderRadius.circular(12),
+  Widget _buildCompletionMessage(
+      BuildContext context, OrderDetailsState state) {
+    final message = state.status == OrderDetailsStatus.cancelled
+        ? 'Order has been cancelled.'
+        : state.errorMessage ??
+            'Order has been completed successfully!'; // Handles custom errors or success messages
+    return Scaffold(
+      backgroundColor: AppTheme.dark1,
+      appBar: _buildAppBar('Completion', context),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                message,
+                style: const TextStyle(
+                  color: AppTheme.cream1,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Thank you for using our service!',
+                style: TextStyle(color: AppTheme.grey2),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.mostroGreen,
+                ),
+                child: const Text('Return to Main Screen'),
+              ),
+            ],
+          ),
+        ),
       ),
-      child: Row(
+    );
+  }
+
+  Widget _buildContent(BuildContext context, WidgetRef ref, NostrEvent order) {
+    return Scaffold(
+      backgroundColor: AppTheme.dark1,
+      appBar: _buildAppBar(
+          '${order.orderType?.value.toUpperCase()} BITCOIN', context),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              _buildSellerInfo(order),
+              const SizedBox(height: 16),
+              _buildSellerAmount(order, ref),
+              const SizedBox(height: 16),
+              ExchangeRateWidget(currency: order.currency!),
+              const SizedBox(height: 16),
+              _buildBuyerInfo(order),
+              const SizedBox(height: 16),
+              _buildBuyerAmount(order),
+              const SizedBox(height: 24),
+              _buildActionButtons(context),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  PreferredSizeWidget? _buildAppBar(String title, BuildContext context) {
+    return AppBar(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      leading: IconButton(
+        icon: const HeroIcon(HeroIcons.arrowLeft, color: Colors.white),
+        onPressed: () => Navigator.of(context).pop(),
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: Colors.white,
+          fontFamily: GoogleFonts.robotoCondensed().fontFamily,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSellerInfo(NostrEvent order) {
+    return _infoContainer(
+      Row(
         children: [
-          CircleAvatar(
-            backgroundImage: NetworkImage(order.sellerAvatar),
+          const CircleAvatar(
+            backgroundColor: AppTheme.grey2,
+            child: Text('S', style: TextStyle(color: Colors.white)),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(order.sellerName,
+                Text(order.name!,
                     style: const TextStyle(
                         color: Colors.white, fontWeight: FontWeight.bold)),
-                Text('${order.sellerRating}/5 (${order.sellerReviewCount})',
-                    style: const TextStyle(color: Color(0xFF8CC541))),
+                Text(
+                  '${order.rating?.totalRating}/${order.rating?.maxRate} (${order.rating?.totalReviews})',
+                  style: const TextStyle(color: AppTheme.mostroGreen),
+                ),
               ],
             ),
           ),
           TextButton(
             onPressed: () {
-              // Implementar lógica para leer reseñas
+              // Implement review logic
             },
             child: const Text('Read reviews',
-                style: TextStyle(color: Color(0xFF8CC541))),
+                style: TextStyle(color: AppTheme.mostroGreen)),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSellerAmount(OrderModel order) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF303544),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('${order.fiatAmount} ${order.fiatCurrency} (${order.premium})',
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold)),
-          Text('${order.satsAmount} sats',
-              style: const TextStyle(color: Colors.grey)),
-          const SizedBox(height: 8),
-          Row(
+  Widget _buildSellerAmount(NostrEvent order, WidgetRef ref) {
+    final exchangeRateAsyncValue =
+        ref.watch(exchangeRateProvider(order.currency!));
+    return exchangeRateAsyncValue.when(
+      loading: () => const CircularProgressIndicator(),
+      error: (error, _) => Text('Error: $error'),
+      data: (exchangeRate) {
+        return _infoContainer(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const HeroIcon(HeroIcons.creditCard,
-                  style: HeroIconStyle.outline, color: Colors.white, size: 16),
-              const SizedBox(width: 8),
-              Text(order.paymentMethod,
-                  style: const TextStyle(color: Colors.white)),
+              Text('${order.fiatAmount} ${order.currency} (${order.premium}%)',
+                  style: const TextStyle(
+                      color: AppTheme.cream1,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold)),
+              Text('${order.amount} sats',
+                  style: const TextStyle(color: AppTheme.grey2)),
             ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildExchangeRate(OrderModel order) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF303544),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text('1 BTC = \$ ${order.exchangeRate}',
-              style: const TextStyle(color: Colors.white)),
-          Row(
-            children: [
-              const Text('price yado.io', style: TextStyle(color: Colors.grey)),
-              const SizedBox(width: 4),
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: Colors.grey.withOpacity(0.3),
-                  shape: BoxShape.circle,
-                ),
-                child: const HeroIcon(HeroIcons.arrowsUpDown,
-                    style: HeroIconStyle.outline,
-                    color: Colors.white,
-                    size: 12),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBuyerInfo(OrderModel order) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF303544),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: const Row(
+  Widget _buildBuyerInfo(NostrEvent order) {
+    return _infoContainer(
+      const Row(
         children: [
           CircleAvatar(
-            backgroundColor: Colors.grey,
+            backgroundColor: AppTheme.grey2,
             child: Text('A', style: TextStyle(color: Colors.white)),
           ),
           SizedBox(width: 12),
@@ -217,44 +253,34 @@ class OrderDetailsScreen extends StatelessWidget {
                 Text('Anon (you)',
                     style: TextStyle(
                         color: Colors.white, fontWeight: FontWeight.bold)),
-                Text('0/5 (0)', style: TextStyle(color: Colors.grey)),
               ],
             ),
           ),
-          HeroIcon(HeroIcons.bolt,
-              style: HeroIconStyle.solid, color: Color(0xFF8CC541)),
         ],
       ),
     );
   }
 
-  Widget _buildBuyerAmount(OrderModel order) {
+  Widget _infoContainer(Widget child) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF303544),
+        color: AppTheme.dark2,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Column(
+      child: child,
+    );
+  }
+
+  Widget _buildBuyerAmount(NostrEvent order) {
+    return _infoContainer(
+      Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('${order.buyerSatsAmount} sats',
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold)),
-          Text('\$ ${order.buyerFiatAmount}',
-              style: const TextStyle(color: Colors.grey)),
+          CurrencyTextField(controller: _satsAmountController, label: 'Sats'),
           const SizedBox(height: 8),
-          const Row(
-            children: [
-              HeroIcon(HeroIcons.bolt,
-                  style: HeroIconStyle.solid, color: Colors.white, size: 16),
-              SizedBox(width: 8),
-              Text('Bitcoin Lightning Network',
-                  style: TextStyle(color: Colors.white)),
-            ],
-          ),
+          Text('\$ ${order.amount}',
+              style: const TextStyle(color: AppTheme.grey2)),
         ],
       ),
     );
@@ -266,12 +292,10 @@ class OrderDetailsScreen extends StatelessWidget {
         Expanded(
           child: ElevatedButton(
             onPressed: () {
-              context.read<OrderDetailsBloc>().add(CancelOrder());
+              Navigator.of(context).pop();
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
             ),
             child: const Text('CANCEL'),
           ),
@@ -280,12 +304,10 @@ class OrderDetailsScreen extends StatelessWidget {
         Expanded(
           child: ElevatedButton(
             onPressed: () {
-              context.read<OrderDetailsBloc>().add(ContinueOrder());
+              context.read<OrderDetailsBloc>().add(ContinueOrder(initialOrder));
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF8CC541),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
+              backgroundColor: AppTheme.mostroGreen,
             ),
             child: const Text('CONTINUE'),
           ),

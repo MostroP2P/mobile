@@ -71,3 +71,4 @@ chrome/.packages
 *.log
 *.lock
 .pdm
+bfg-1.14.0.jar

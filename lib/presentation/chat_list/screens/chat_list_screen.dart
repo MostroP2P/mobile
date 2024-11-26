@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:mostro_mobile/data/models/chat_model.dart';
 import 'package:mostro_mobile/presentation/chat_list/bloc/chat_list_bloc.dart';
 import 'package:mostro_mobile/presentation/chat_list/bloc/chat_list_event.dart';
@@ -25,7 +26,7 @@ class ChatListScreen extends StatelessWidget {
           ),
           child: Column(
             children: [
-              const Padding(
+              Padding(
                 padding: EdgeInsets.all(16.0),
                 child: Text(
                   'Chats',
@@ -33,6 +34,7 @@ class ChatListScreen extends StatelessWidget {
                     color: Colors.white,
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
+                    fontFamily: GoogleFonts.robotoCondensed().fontFamily,
                   ),
                 ),
               ),

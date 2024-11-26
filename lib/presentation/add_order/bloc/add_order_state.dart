@@ -1,17 +1,19 @@
 import 'package:equatable/equatable.dart';
-import 'package:mostro_mobile/presentation/home/bloc/home_state.dart';
+import 'package:mostro_mobile/data/models/enums/order_type.dart';
 
-enum AddOrderStatus { initial, loading, success, failure }
+enum AddOrderStatus { initial, loading, success, submitting, submitted, failure }
 
 class AddOrderState extends Equatable {
   final OrderType currentType;
   final AddOrderStatus status;
   final String? errorMessage;
+  final String? currency;
 
   const AddOrderState({
     this.currentType = OrderType.sell,
     this.status = AddOrderStatus.initial,
     this.errorMessage,
+    this.currency,
   });
 
   AddOrderState copyWith({
@@ -27,5 +29,5 @@ class AddOrderState extends Equatable {
   }
 
   @override
-  List<Object?> get props => [currentType, status, errorMessage];
+  List<Object?> get props => [currentType, status, errorMessage, currency];
 }
