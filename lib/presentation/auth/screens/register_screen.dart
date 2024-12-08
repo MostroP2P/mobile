@@ -4,8 +4,8 @@ import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
 import '../../widgets/custom_button.dart';
-import '../../../core/utils/nostr_utils.dart';
-import '../../../core/routes/app_routes.dart';
+import '../../../shared/utils/nostr_utils.dart';
+import '../../../app/app_routes.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mostro_mobile/core/theme/app_theme.dart';
+import 'package:mostro_mobile/app/app_theme.dart';
 import 'package:mostro_mobile/presentation/auth/bloc/auth_state.dart';
 import 'package:mostro_mobile/providers/riverpod_providers.dart';
-import 'package:mostro_mobile/core/routes/app_routes.dart';
+import 'package:mostro_mobile/app/app_routes.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
-import 'package:mostro_mobile/core/utils/biometrics_helper.dart';
+import 'package:mostro_mobile/shared/utils/biometrics_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'generated/l10n.dart';
 import 'package:mostro_mobile/presentation/widgets/notification_listener_widget.dart';

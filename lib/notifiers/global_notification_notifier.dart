@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class NotificationMessage {
   final String message;
-  final VoidCallback onTap; // Action to perform when tapped.
+  final VoidCallback onTap;
 
   NotificationMessage({required this.message, required this.onTap});
 }

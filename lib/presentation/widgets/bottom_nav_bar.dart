@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:heroicons/heroicons.dart';
-import 'package:mostro_mobile/core/routes/app_routes.dart';
+import 'package:mostro_mobile/app/app_routes.dart';
 
 class BottomNavBar extends StatelessWidget {
   const BottomNavBar({super.key});

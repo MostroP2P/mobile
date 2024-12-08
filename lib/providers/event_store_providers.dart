@@ -1,15 +1,13 @@
 import 'package:dart_nostr/nostr/model/event/event.dart';
-import 'package:dart_nostr/nostr/model/request/filter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/repositories/mostro_repository.dart';
 import 'package:mostro_mobile/notifiers/open_orders_notifier.dart';
 import 'package:mostro_mobile/data/repositories/open_orders_repository.dart';
 import 'package:mostro_mobile/data/repositories/secure_storage_manager.dart';
 import 'package:mostro_mobile/notifiers/global_notification_notifier.dart';
-import 'package:mostro_mobile/presentation/add_order/bloc/add_order_notifier.dart';
-import 'package:mostro_mobile/presentation/add_order/bloc/add_order_state.dart';
-import 'package:mostro_mobile/presentation/home/bloc/home_notifier.dart';
-import 'package:mostro_mobile/presentation/home/bloc/home_state.dart';
+import 'package:mostro_mobile/features/add_order/notifiers/add_order_notifier.dart';
+import 'package:mostro_mobile/features/add_order/notifiers/add_order_state.dart';
+import 'package:mostro_mobile/notifiers/open_orders_repository_notifier.dart';
 import 'package:mostro_mobile/services/mostro_service.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
 
@@ -28,13 +26,7 @@ const orderFilterDurationHours = 48;
 
 final orderEventsProvider = StreamProvider<List<NostrEvent>>((ref) {
   final orderRepository = ref.watch(orderRepositoryProvider);
-  DateTime filterTime =
-      DateTime.now().subtract(Duration(hours: orderFilterDurationHours));
-  var filter = NostrFilter(
-    kinds: const [orderEventKind],
-    since: filterTime,
-  );
-  orderRepository.subscribeToOrders(filter);
+  orderRepository.subscribeToOrders();
 
   return orderRepository.eventsStream;
 });
@@ -54,24 +46,23 @@ final openOrdersNotifierProvider =
   (ref) => OpenOrdersNotifier(ref.watch(nostrServicerProvider)),
 );
 
-final homeNotifierProvider = StateNotifierProvider<HomeNotifier, HomeState>(
-  (ref) {
-    return HomeNotifier();
-  },
+final openOrdersRepositoryProvider =
+    AsyncNotifierProvider<OpenOrdersRepositoryNotifier, OpenOrdersRepository>(
+  OpenOrdersRepositoryNotifier.new,
 );
 
 final sessionManagerProvider = Provider<SecureStorageManager>((ref) {
   return SecureStorageManager();
 });
 
-final mostrorRepositoryProvider = Provider<MostroRepository>((ref) {
-  final nostrService = ref.watch(nostrServicerProvider);
-  return MostroRepository(nostrService);
-});
-
 final mostroServiceProvider = Provider<MostroService>((ref) {
   final sessionStorage = ref.watch(sessionManagerProvider);
   final nostrService = ref.watch(nostrServicerProvider);
-  final mostroRepository = ref.watch(mostrorRepositoryProvider);
-  return MostroService(nostrService, sessionStorage, mostroRepository, ref);
+  return MostroService(nostrService, sessionStorage);
+});
+
+final mostrorRepositoryProvider = Provider<MostroRepository>((ref) {
+  final mostroService = ref.watch(mostroServiceProvider);
+  final openOrdersRepository = ref.watch(openOrdersRepositoryProvider).value;
+  return MostroRepository(mostroService, openOrdersRepository!);
 });

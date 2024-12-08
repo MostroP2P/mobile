@@ -12,7 +12,7 @@ class MostroOrdersNotifier extends StateNotifier<List<Order>> {
   }
 
   Future<void> cleanupExpiredOrders(DateTime now) async {
-    _repository.cleanupExpiredOrders(now);
+    //_repository.cleanupExpiredOrders(now);
     state = await _repository.ordersStream.first;
   }
 }

@@ -60,12 +60,8 @@ class Order implements Content {
     if (id != null) data[type]['id'] = id;
     if (minAmount != null) data[type]['min_amount'] = minAmount;
     if (maxAmount != null) data[type]['max_amount'] = maxAmount;
-    if (masterBuyerPubkey != null) {
-      data[type]['master_buyer_pubkey'] = masterBuyerPubkey;
-    }
-    if (masterSellerPubkey != null) {
-      data[type]['master_seller_pubkey'] = masterSellerPubkey;
-    }
+    if (masterBuyerPubkey != null) data[type]['master_buyer_pubkey'] = masterBuyerPubkey;
+    if (masterSellerPubkey != null) data[type]['master_seller_pubkey'] = masterSellerPubkey;
     if (buyerInvoice != null) data[type]['buyer_invoice'] = buyerInvoice;
     if (createdAt != null) data[type]['created_at'] = createdAt;
     if (expiresAt != null) data[type]['expires_at'] = expiresAt;
@@ -119,13 +115,13 @@ class Order implements Content {
       id: event.orderId,
       kind: event.orderType!,
       status: Status.fromString(event.status!),
-      amount: event.amount as int,
+      amount: int.parse(event.amount!),
       fiatCode: event.currency!,
       fiatAmount: int.parse(event.fiatAmount!),
       paymentMethod: event.paymentMethods.join(','),
-      premium: event.premium as int,
-      createdAt: event.createdAt as int,
-      expiresAt: event.expiration as int?,
+      premium: int.parse(event.premium!),
+      createdAt: event.createdAt?.millisecondsSinceEpoch,
+      expiresAt: int.tryParse(event.expiration!),
     );
   }
 

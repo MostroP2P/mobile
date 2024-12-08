@@ -2,7 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/services/mostro_service.dart';
 import 'add_order_event.dart';
-import 'add_order_state.dart';
+import '../../../features/add_order/notifiers/add_order_state.dart';
 
 class AddOrderBloc extends Bloc<AddOrderEvent, AddOrderState> {
   final MostroService mostroService;

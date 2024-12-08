@@ -1,14 +1,11 @@
 import 'dart:convert';
 
+import 'package:mostro_mobile/app/config.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/content.dart';
-import 'package:mostro_mobile/services/mostro_service.dart';
 
-// Versión de Mostro
-const int mostroVersion = 1;
 
 class MostroMessage<T extends Content> {
-  final int version = mostroVersion;
   final String? requestId;
   final Action action;
   T? content;
@@ -18,7 +15,7 @@ class MostroMessage<T extends Content> {
   Map<String, dynamic> toJson() {
     return {
       'order': {
-        'version': mostroVersion,
+        'version': Config.mostroVersion,
         'id': requestId,
         'action': action.value,
         'content': content?.toJson(),
