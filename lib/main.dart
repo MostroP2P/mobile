@@ -51,10 +51,7 @@ class MyApp extends ConsumerWidget {
     return NotificationListenerWidget(
       child: MaterialApp(
         title: 'Mostro',
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-          scaffoldBackgroundColor: AppTheme.dark1,
-        ),
+        theme: AppTheme.theme,
         initialRoute: isFirstLaunch ? AppRoutes.welcome : AppRoutes.home,
         routes: AppRoutes.routes,
         onGenerateRoute: AppRoutes.onGenerateRoute,

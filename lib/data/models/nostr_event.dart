@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:mostro_mobile/data/models/amount.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/rating.dart';
 import 'package:timeago/timeago.dart' as timeago;
@@ -9,28 +10,19 @@ extension NostrEventExtensions on NostrEvent {
   // Getters para acceder fácilmente a los tags específicos
   String? get recipient => _getTagValue('p');
   String? get orderId => _getTagValue('d');
-  OrderType? get orderType => _getTagValue('k') != null ? OrderType.fromString(_getTagValue('k')!) : null;
+  OrderType? get orderType => _getTagValue('k') != null
+      ? OrderType.fromString(_getTagValue('k')!)
+      : null;
   String? get currency => _getTagValue('f');
   String? get status => _getTagValue('s');
   String? get amount => _getTagValue('amt');
-  String? get fiatAmount => _getTagValue('fa');
-  List<String> get paymentMethods {
-    final value = _getTagValue('pm');
-    if (value == null || value.isEmpty) return [];
-    return value.split(',').where((method) => method.isNotEmpty).toList();
-  }
+  Amount get fiatAmount => _getAmount('fa');
+  List<String> get paymentMethods => _getTagValue('pm')?.split(',') ?? [];
   String? get premium => _getTagValue('premium');
   String? get source => _getTagValue('source');
-  Rating? get rating {
-    final value = _getTagValue('rating');
-    if (value == null) return null;
-    try {
-      return Rating.deserialized(value);
-    } catch (e) {
-      print('Error deserializing rating: $e');
-      return null;
-    }
-  }
+  Rating? get rating => _getTagValue('rating') != null
+      ? Rating.deserialized(_getTagValue('rating')!)
+      : null;
   String? get network => _getTagValue('network');
   String? get layer => _getTagValue('layer');
   String? get name => _getTagValue('name') ?? 'Anon';
@@ -49,6 +41,11 @@ extension NostrEventExtensions on NostrEvent {
   String? _getTagValue(String key) {
     final tag = tags?.firstWhere((t) => t[0] == key, orElse: () => []);
     return (tag != null && tag.length > 1) ? tag[1] : null;
+  }
+
+  Amount _getAmount(String key) {
+    final tag = tags?.firstWhere((t) => t[0] == key, orElse: () => []);
+    return (tag != null && tag.length> 1) ? Amount.fromList(tag) : Amount.empty();
   }
 
   String _timeAgo(String? ts) {

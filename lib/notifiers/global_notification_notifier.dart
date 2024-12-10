@@ -1,21 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mostro_mobile/data/models/mostro_message.dart';
 
-class NotificationMessage {
-  final String message;
-  final VoidCallback onTap;
+class NotificationState {
+  final MostroMessage? message;
+  final VoidCallback? cancel;
+  final VoidCallback? ok;
 
-  NotificationMessage({required this.message, required this.onTap});
+  NotificationState({this.message, this.cancel, this.ok});
 }
 
-class GlobalNotificationNotifier extends StateNotifier<NotificationMessage?> {
-  GlobalNotificationNotifier() : super(null);
+class GlobalNotificationNotifier extends StateNotifier<NotificationState> {
+  GlobalNotificationNotifier() : super(NotificationState());
 
-  void showNotification(String message, VoidCallback onTap) {
-    state = NotificationMessage(message: message, onTap: onTap);
+  void showDialog(
+      MostroMessage message, VoidCallback cancel, VoidCallback ok) {}
+
+  void showNotification(MostroMessage message, VoidCallback onTap) {
+    state = NotificationState(message: message, ok: onTap);
   }
 
   void clearNotification() {
-    state = null;
+    state = NotificationState();
   }
 }

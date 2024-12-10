@@ -2,15 +2,15 @@ import 'dart:convert';
 
 import 'package:mostro_mobile/app/config.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
-import 'package:mostro_mobile/data/models/content.dart';
+import 'package:mostro_mobile/data/models/payload.dart';
 
-
-class MostroMessage<T extends Content> {
-  final String? requestId;
+class MostroMessage<T extends Payload> {
+  String? requestId;
   final Action action;
-  T? content;
+  T? _payload;
 
-  MostroMessage({required this.action, required this.requestId, this.content});
+  MostroMessage({required this.action, this.requestId, T? payload})
+      : _payload = payload;
 
   Map<String, dynamic> toJson() {
     return {
@@ -18,7 +18,7 @@ class MostroMessage<T extends Content> {
         'version': Config.mostroVersion,
         'id': requestId,
         'action': action.value,
-        'content': content?.toJson(),
+        'content': _payload?.toJson(),
       },
     };
   }
@@ -36,16 +36,22 @@ class MostroMessage<T extends Content> {
           : throw FormatException('Missing action field');
 
       final content = order['content'] != null
-          ? Content.fromJson(event['order']['content']) as T
+          ? Payload.fromJson(event['order']['content']) as T
           : null;
 
       return MostroMessage<T>(
         action: action,
         requestId: order['id'],
-        content: content,
+        payload: content,
       );
     } catch (e) {
       throw FormatException('Failed to deserialize MostroMessage: $e');
     }
+  }
+
+  T? get payload => _payload;
+
+  T? getPayload() {
+    return _payload as T;
   }
 }

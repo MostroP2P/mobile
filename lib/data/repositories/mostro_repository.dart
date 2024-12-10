@@ -48,6 +48,11 @@ class MostroRepository implements OrderRepository {
     await _mostroService.sendInvoice(orderId, invoice);
   }
 
+  Future<Stream<MostroMessage>> publishOrder(MostroMessage order) async {
+    final session = await _mostroService.publishOrder(order);
+    return _subscribe(session);
+  }
+
   @override
   void dispose() {
     for (final subscription in _subscriptions.values) {

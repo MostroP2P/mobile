@@ -94,8 +94,7 @@ class MostroService {
     await _nostrService.publishEvent(event);
   }
 
-  Future<Session> takeBuyOrder(String orderId,
-      int? amount) async {
+  Future<Session> takeBuyOrder(String orderId, int? amount) async {
     final session = await _secureStorageManager.newSession();
     session.eventId = orderId;
 
@@ -113,29 +112,16 @@ class MostroService {
     return session;
   }
 
-  Future<MostroMessage> publishOrder(Order order) async {
+  Future<Session> publishOrder(MostroMessage order) async {
     final session = await _secureStorageManager.newSession();
 
-    final content = jsonEncode({
-      'order': {
-        'version': Config.mostroVersion,
-        'action': Action.newOrder.value,
-        'content': order.toJson(),
-      },
-    });
+    final content = jsonEncode(order.toJson());
 
     final event = await _nostrService.createNIP59Event(
         content, Config.mostroPubKey, session.privateKey);
 
     await _nostrService.publishEvent(event);
-
-    final filter = NostrFilter(p: [session.publicKey]);
-
-    return await subscribeToOrders(filter).asyncMap((event) async {
-      return await _nostrService.decryptNIP59Event(event, session.privateKey);
-    }).map((event) {
-      return MostroMessage.deserialized(event.content!);
-    }).first;
+    return session;
   }
 
   Future<void> cancelOrder(Order order) async {

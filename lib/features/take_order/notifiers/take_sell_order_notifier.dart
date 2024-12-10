@@ -9,9 +9,10 @@ import 'package:mostro_mobile/features/take_order/notifiers/take_sell_order_stat
 class TakeSellOrderNotifier extends StateNotifier<TakeSellOrderState> {
   final MostroRepository _orderRepository;
   final String orderId;
+  final Ref ref;
   StreamSubscription<MostroMessage>? _orderSubscription;
 
-  TakeSellOrderNotifier(this._orderRepository, this.orderId)
+  TakeSellOrderNotifier(this._orderRepository, this.orderId, this.ref)
       : super(TakeSellOrderState());
 
   void takeSellOrder(String orderId, int? amount, String? lnAddress) async {
@@ -37,7 +38,7 @@ class TakeSellOrderNotifier extends StateNotifier<TakeSellOrderState> {
   void _handleOrderUpdate(MostroMessage msg) {
     switch (msg.action) {
       case Action.addInvoice:
-        final order = msg.content as Order;
+        final order = msg.payload as Order;
         state = state.copyWith(
             status: TakeSellOrderStatus.addInvoice,
             invoiceAmount: order.amount);
@@ -56,6 +57,7 @@ class TakeSellOrderNotifier extends StateNotifier<TakeSellOrderState> {
 
   void cancelOrder() {
     state = state.copyWith(status: TakeSellOrderStatus.cancelled);
+    dispose();
   }
 
   @override

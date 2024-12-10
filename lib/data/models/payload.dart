@@ -1,11 +1,11 @@
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/data/models/payment_request.dart';
 
-abstract class Content {
+abstract class Payload {
   String get type;
   Map<String, dynamic> toJson();
 
-  factory Content.fromJson(Map<String, dynamic> json) {
+  factory Payload.fromJson(Map<String, dynamic> json) {
     if (json.containsKey('order')) {
       return Order.fromJson(json['order']);
     } else if (json.containsKey('payment_request')) {

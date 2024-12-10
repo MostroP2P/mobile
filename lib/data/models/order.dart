@@ -1,10 +1,10 @@
 import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/enums/status.dart';
-import 'package:mostro_mobile/data/models/content.dart';
+import 'package:mostro_mobile/data/models/payload.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 
-class Order implements Content {
+class Order implements Payload {
   final String? id;
   final OrderType kind;
   final Status status;
@@ -33,11 +33,11 @@ class Order implements Content {
     this.maxAmount,
     required this.fiatAmount,
     required this.paymentMethod,
-    required this.premium,
+    this.premium = 1,
     this.masterBuyerPubkey,
     this.masterSellerPubkey,
     this.buyerInvoice,
-    this.createdAt,
+    this.createdAt = 0,
     this.expiresAt,
     this.buyerToken,
     this.sellerToken,
@@ -60,8 +60,12 @@ class Order implements Content {
     if (id != null) data[type]['id'] = id;
     if (minAmount != null) data[type]['min_amount'] = minAmount;
     if (maxAmount != null) data[type]['max_amount'] = maxAmount;
-    if (masterBuyerPubkey != null) data[type]['master_buyer_pubkey'] = masterBuyerPubkey;
-    if (masterSellerPubkey != null) data[type]['master_seller_pubkey'] = masterSellerPubkey;
+    if (masterBuyerPubkey != null) {
+      data[type]['master_buyer_pubkey'] = masterBuyerPubkey;
+    }
+    if (masterSellerPubkey != null) {
+      data[type]['master_seller_pubkey'] = masterSellerPubkey;
+    }
     if (buyerInvoice != null) data[type]['buyer_invoice'] = buyerInvoice;
     if (createdAt != null) data[type]['created_at'] = createdAt;
     if (expiresAt != null) data[type]['expires_at'] = expiresAt;
@@ -115,13 +119,13 @@ class Order implements Content {
       id: event.orderId,
       kind: event.orderType!,
       status: Status.fromString(event.status!),
-      amount: int.parse(event.amount!),
+      amount: event.amount as int,
       fiatCode: event.currency!,
-      fiatAmount: int.parse(event.fiatAmount!),
+      fiatAmount: event.fiatAmount.minimum,
       paymentMethod: event.paymentMethods.join(','),
-      premium: int.parse(event.premium!),
-      createdAt: event.createdAt?.millisecondsSinceEpoch,
-      expiresAt: int.tryParse(event.expiration!),
+      premium: event.premium as int,
+      createdAt: event.createdAt as int,
+      expiresAt: event.expiration as int?,
     );
   }
 

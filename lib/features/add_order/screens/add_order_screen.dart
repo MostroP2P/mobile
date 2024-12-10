@@ -5,8 +5,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/app/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
-import 'package:mostro_mobile/generated/l10n.dart';
-import 'package:mostro_mobile/features/add_order/notifiers/add_order_state.dart';
 import 'package:mostro_mobile/presentation/widgets/currency_dropdown.dart';
 import 'package:mostro_mobile/presentation/widgets/currency_text_field.dart';
 import 'package:mostro_mobile/providers/event_store_providers.dart';
@@ -24,7 +22,7 @@ class AddOrderScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(addOrderNotifierProvider);
+    final state = ref.watch(addOrderNotifierProvider.notifier);
     return Scaffold(
       backgroundColor: AppTheme.dark1,
       appBar: AppBar(
@@ -33,7 +31,6 @@ class AddOrderScreen extends ConsumerWidget {
         leading: IconButton(
           icon: const HeroIcon(HeroIcons.arrowLeft, color: AppTheme.cream1),
           onPressed: () {
-            ref.read(addOrderNotifierProvider.notifier).reset();
             Navigator.of(context).pop();
           },
         ),
@@ -54,7 +51,7 @@ class AddOrderScreen extends ConsumerWidget {
                 color: AppTheme.dark2,
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: _buildContent(context, ref, state),
+              child: _buildContent(context, ref, state.orderType),
             ),
           ),
         ],
@@ -63,65 +60,23 @@ class AddOrderScreen extends ConsumerWidget {
   }
 
   Widget _buildContent(
-      BuildContext context, WidgetRef ref, AddOrderState state) {
-    if (state.status == AddOrderStatus.submitting) {
-      return const Center(child: CircularProgressIndicator());
-    } else if (state.status == AddOrderStatus.submitted) {
-      return Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              S.of(context).new_order('24'),
-              style: const TextStyle(fontSize: 18, color: AppTheme.cream1),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Back to Home'),
-            ),
-          ],
-        ),
-      );
-    } else if (state.status == AddOrderStatus.failure) {
-      return Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Order failed: ${state.errorMessage}',
-              style: const TextStyle(fontSize: 18, color: Colors.redAccent),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Back to Home'),
-            ),
-          ],
-        ),
-      );
-    } else {
-      return Form(
-        key: _formKey,
-        child: Column(
-          children: [
-            _buildTabs(context, ref, state),
-            Expanded(
-              child: state.currentType == OrderType.sell
-                  ? _buildSellForm(context, ref)
-                  : _buildBuyForm(context, ref),
-            ),
-          ],
-        ),
-      );
-    }
+      BuildContext context, WidgetRef ref, OrderType orderType) {
+    return Form(
+      key: _formKey,
+      child: Column(
+        children: [
+          _buildTabs(context, ref, orderType),
+          Expanded(
+            child: orderType == OrderType.sell
+                ? _buildSellForm(context, ref)
+                : _buildBuyForm(context, ref),
+          ),
+        ],
+      ),
+    );
   }
 
-  Widget _buildTabs(BuildContext context, WidgetRef ref, AddOrderState state) {
+  Widget _buildTabs(BuildContext context, WidgetRef ref, OrderType orderType) {
     return Container(
       decoration: const BoxDecoration(
         color: AppTheme.dark1,
@@ -133,12 +88,12 @@ class AddOrderScreen extends ConsumerWidget {
       child: Row(
         children: [
           Expanded(
-            child: _buildTab(context, ref, "SELL",
-                state.currentType == OrderType.sell, OrderType.sell),
+            child: _buildTab(context, ref, "SELL", orderType == OrderType.sell,
+                OrderType.sell),
           ),
           Expanded(
-            child: _buildTab(context, ref, "BUY",
-                state.currentType == OrderType.buy, OrderType.buy),
+            child: _buildTab(
+                context, ref, "BUY", orderType == OrderType.buy, OrderType.buy),
           ),
         ],
       ),
@@ -264,8 +219,7 @@ class AddOrderScreen extends ConsumerWidget {
         const SizedBox(width: 8),
         Switch(
           value: false,
-          onChanged: (value) {
-          },
+          onChanged: (value) {},
         ),
       ],
     );

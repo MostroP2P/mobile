@@ -1,23 +1,20 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/order.dart';
-import 'package:mostro_mobile/features/add_order/notifiers/add_order_state.dart';
-import 'package:mostro_mobile/services/mostro_service.dart';
+import 'package:mostro_mobile/data/repositories/mostro_repository.dart';
+import 'package:mostro_mobile/providers/event_store_providers.dart';
 
-class AddOrderNotifier extends StateNotifier<AddOrderState> {
-  final MostroService _mostroService;
+class AddOrderNotifier extends StateNotifier<MostroMessage> {
+  final MostroRepository _orderRepository;
+  final Ref ref;
+  OrderType orderType = OrderType.buy;
+  StreamSubscription<MostroMessage>? _orderSubscription;
 
-  AddOrderNotifier(this._mostroService) : super(const AddOrderState());
-
-  void changeOrderType(OrderType orderType) {
-    state = state.copyWith(currentType: orderType);
-  }
-
-  void reset() {
-    state = state.copyWith(status: AddOrderStatus.initial);
-  }
+  AddOrderNotifier(this._orderRepository, this.ref)
+      : super(MostroMessage<Order>(action: Action.newOrder));
 
   Future<void> submitOrder(
     String fiatCode,
@@ -25,41 +22,56 @@ class AddOrderNotifier extends StateNotifier<AddOrderState> {
     int satsAmount,
     String paymentMethod,
     OrderType orderType,
+    {String? lnAddress}
   ) async {
-    state = state.copyWith(status: AddOrderStatus.submitting);
+    final order = Order(
+      fiatAmount: fiatAmount,
+      fiatCode: fiatCode,
+      kind: orderType,
+      paymentMethod: paymentMethod,
+      buyerInvoice: lnAddress,
+    );
+    final message = MostroMessage<Order>(
+        action: Action.newOrder, requestId: null, payload: order);
 
     try {
-      await _mostroService.publishOrder(Order(
-        fiatCode: fiatCode,
-        fiatAmount: fiatAmount,
-        amount: satsAmount,
-        paymentMethod: paymentMethod,
-        kind: orderType,
-        premium: 0,
-      ));
+      final stream = await _orderRepository.publishOrder(message);
+      _orderSubscription = stream.listen((order) {
+        state = order;
+        _handleOrderUpdate();
+      });
     } catch (e) {
-      state = state.copyWith(
-        status: AddOrderStatus.failure,
-        errorMessage: e.toString(),
-      );
+      _handleError(e);
     }
   }
 
-  void _handleOrderUpdate(MostroMessage order) {
-    switch (order.action) {
+  void changeOrderType(OrderType orderType) {
+    this.orderType = orderType;
+  }
+
+  void _handleError(Object err) {
+    print(err);
+  }
+
+  void _handleOrderUpdate() {
+    final notificationProvider = ref.read(globalNotificationProvider.notifier);
+
+    switch (state.action) {
       case Action.newOrder:
-        state = state.copyWith(status: AddOrderStatus.submitted);
+        notificationProvider.showNotification(state, (){});
         break;
       case Action.outOfRangeSatsAmount:
       case Action.outOfRangeFiatAmount:
-        state = state.copyWith(
-          status: AddOrderStatus.failure,
-          errorMessage: "Invalid amount",
-        );
         break;
       default:
         // Handle other actions if necessary
         break;
     }
+  }
+
+  @override
+  void dispose() {
+    _orderSubscription?.cancel();
+    super.dispose();
   }
 }

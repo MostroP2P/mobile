@@ -9,16 +9,16 @@ import 'package:mostro_mobile/features/take_order/notifiers/take_buy_order_state
 class TakeBuyOrderNotifier extends StateNotifier<TakeBuyOrderState> {
   final MostroRepository _orderRepository;
   final String orderId;
+  final Ref ref;
   StreamSubscription<MostroMessage>? _orderSubscription;
 
-  TakeBuyOrderNotifier(this._orderRepository, this.orderId)
+  TakeBuyOrderNotifier(this._orderRepository, this.orderId, this.ref)
       : super(TakeBuyOrderState());
 
   void takeBuyOrder(String orderId, int? amount) async {
     try {
       state = state.copyWith(status: TakeBuyOrderStatus.loading);
-      final stream =
-          await _orderRepository.takeBuyOrder(orderId, amount);
+      final stream = await _orderRepository.takeBuyOrder(orderId, amount);
       _orderSubscription = stream.listen((order) {
         _handleOrderUpdate(order);
       });
@@ -33,13 +33,14 @@ class TakeBuyOrderNotifier extends StateNotifier<TakeBuyOrderState> {
   void _handleOrderUpdate(MostroMessage msg) {
     switch (msg.action) {
       case Action.payInvoice:
-        final order = msg.content as PaymentRequest;
+        final order = msg.payload as PaymentRequest;
         state = state.copyWith(
             status: TakeBuyOrderStatus.payInvoice, invoiceAmount: order.amount);
         break;
       case Action.waitingBuyerInvoice:
         state = state.copyWith(status: TakeBuyOrderStatus.done);
         break;
+
       default:
         state = state.copyWith(
           status: TakeBuyOrderStatus.error,
