@@ -10,20 +10,15 @@ import 'package:mostro_mobile/providers/event_store_providers.dart';
 class AddOrderNotifier extends StateNotifier<MostroMessage> {
   final MostroRepository _orderRepository;
   final Ref ref;
-  OrderType orderType = OrderType.buy;
+  final String uuid;
   StreamSubscription<MostroMessage>? _orderSubscription;
 
-  AddOrderNotifier(this._orderRepository, this.ref)
+  AddOrderNotifier(this._orderRepository, this.uuid, this.ref)
       : super(MostroMessage<Order>(action: Action.newOrder));
 
-  Future<void> submitOrder(
-    String fiatCode,
-    int fiatAmount,
-    int satsAmount,
-    String paymentMethod,
-    OrderType orderType,
-    {String? lnAddress}
-  ) async {
+  Future<void> submitOrder(String fiatCode, int fiatAmount, int satsAmount,
+      String paymentMethod, OrderType orderType,
+      {String? lnAddress}) async {
     final order = Order(
       fiatAmount: fiatAmount,
       fiatCode: fiatCode,
@@ -45,10 +40,6 @@ class AddOrderNotifier extends StateNotifier<MostroMessage> {
     }
   }
 
-  void changeOrderType(OrderType orderType) {
-    this.orderType = orderType;
-  }
-
   void _handleError(Object err) {
     print(err);
   }
@@ -58,7 +49,7 @@ class AddOrderNotifier extends StateNotifier<MostroMessage> {
 
     switch (state.action) {
       case Action.newOrder:
-        notificationProvider.showNotification(state, (){});
+        notificationProvider.showNotification(state, () {});
         break;
       case Action.outOfRangeSatsAmount:
       case Action.outOfRangeFiatAmount:

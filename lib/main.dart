@@ -22,13 +22,15 @@ void main() async {
 
   final biometricsHelper = BiometricsHelper();
 
-  runApp(ProviderScope(
-    overrides: [
-      isFirstLaunchProvider.overrideWithValue(isFirstLaunch),
-      biometricsHelperProvider.overrideWithValue(biometricsHelper),
-    ],
-    child: const MyApp(),
-  ));
+  runApp(
+    ProviderScope(
+      overrides: [
+        isFirstLaunchProvider.overrideWithValue(isFirstLaunch),
+        biometricsHelperProvider.overrideWithValue(biometricsHelper),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends ConsumerWidget {
@@ -36,33 +38,39 @@ class MyApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Listen to authentication state
+    // Listen to authentication state changes
     ref.listen<AuthState>(authNotifierProvider, (previous, state) {
-      if (state is AuthAuthenticated || state is AuthRegistrationSuccess) {
-        Navigator.of(context).pushReplacementNamed(AppRoutes.home);
-      } else if (state is AuthUnregistered || state is AuthUnauthenticated) {
-        Navigator.of(context).pushReplacementNamed(AppRoutes.welcome);
-      }
+      // Schedule navigation after the current frame is rendered
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) return;
+        if (state is AuthAuthenticated || state is AuthRegistrationSuccess) {
+          Navigator.of(context).pushReplacementNamed(AppRoutes.home);
+        } else if (state is AuthUnregistered || state is AuthUnauthenticated) {
+          Navigator.of(context).pushReplacementNamed(AppRoutes.welcome);
+        }
+      });
     });
 
-    // Watch if this is the first launch
     final isFirstLaunch = ref.watch(isFirstLaunchProvider);
+    final navigatorKey = GlobalKey<NavigatorState>();
 
-    return NotificationListenerWidget(
-      child: MaterialApp(
-        title: 'Mostro',
-        theme: AppTheme.theme,
-        initialRoute: isFirstLaunch ? AppRoutes.welcome : AppRoutes.home,
-        routes: AppRoutes.routes,
-        onGenerateRoute: AppRoutes.onGenerateRoute,
-        localizationsDelegates: const [
-          S.delegate,
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        supportedLocales: S.delegate.supportedLocales,
-      ),
+    return MaterialApp(
+      title: 'Mostro',
+      theme: AppTheme.theme,
+      initialRoute: isFirstLaunch ? AppRoutes.welcome : AppRoutes.home,
+      navigatorKey: navigatorKey,
+      routes: AppRoutes.routes,
+      onGenerateRoute: AppRoutes.onGenerateRoute,
+      localizationsDelegates: const [
+        S.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: S.delegate.supportedLocales,
+      builder: (context, child) {
+        return NotificationListenerWidget(navigator: navigatorKey, child: child!);
+      },
     );
   }
 }

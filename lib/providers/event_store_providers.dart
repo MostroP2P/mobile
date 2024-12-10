@@ -1,13 +1,10 @@
 import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/repositories/mostro_repository.dart';
 import 'package:mostro_mobile/notifiers/open_orders_notifier.dart';
 import 'package:mostro_mobile/data/repositories/open_orders_repository.dart';
 import 'package:mostro_mobile/data/repositories/secure_storage_manager.dart';
 import 'package:mostro_mobile/notifiers/global_notification_notifier.dart';
-import 'package:mostro_mobile/features/add_order/notifiers/add_order_notifier.dart';
-import 'package:mostro_mobile/features/add_order/notifiers/add_order_state.dart';
 import 'package:mostro_mobile/notifiers/open_orders_repository_notifier.dart';
 import 'package:mostro_mobile/services/mostro_service.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
@@ -30,12 +27,6 @@ final orderEventsProvider = StreamProvider<List<NostrEvent>>((ref) {
   orderRepository.subscribeToOrders();
 
   return orderRepository.eventsStream;
-});
-
-final addOrderNotifierProvider =
-    StateNotifierProvider<AddOrderNotifier, MostroMessage?>((ref) {
-  final mostroService = ref.watch(mostrorRepositoryProvider);
-  return AddOrderNotifier(mostroService, ref);
 });
 
 final globalNotificationProvider =

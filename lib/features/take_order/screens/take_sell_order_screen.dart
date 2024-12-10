@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/app/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
+import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
+import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/features/take_order/notifiers/take_sell_order_state.dart';
 import 'package:mostro_mobile/features/take_order/providers/order_notifier_providers.dart';
 import 'package:mostro_mobile/features/take_order/screens/error_screen.dart';
@@ -15,6 +17,7 @@ import 'package:mostro_mobile/presentation/widgets/currency_text_field.dart';
 import 'package:mostro_mobile/presentation/widgets/exchange_rate_widget.dart';
 import 'package:mostro_mobile/providers/exchange_service_provider.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
+import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
 
 class TakeSellOrderScreen extends ConsumerWidget {
   final NostrEvent initialOrder;
@@ -27,29 +30,20 @@ class TakeSellOrderScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final orderDetailsState =
         ref.watch(takeSellOrderNotifierProvider(initialOrder.orderId!));
-    switch (orderDetailsState.status) {
-      case TakeSellOrderStatus.loading:
-        return const Center(child: CircularProgressIndicator());
-      case TakeSellOrderStatus.error:
-        return ErrorScreen(errorMessage: orderDetailsState.errorMessage!);
-      case TakeSellOrderStatus.cancelled:
-        return _buildCompletionMessage(context, orderDetailsState);
-      case TakeSellOrderStatus.done:
-        return _buildCompletionMessage(context, orderDetailsState);
-      case TakeSellOrderStatus.initial:
+    switch (orderDetailsState.action) {
+      case actions.Action.takeSell:
         return _buildContent(context, ref);
-      case TakeSellOrderStatus.addInvoice:
+      case actions.Action.addInvoice:
         return _buildLightningInvoiceInput(context, orderDetailsState, ref);
+      case actions.Action.waitingSellerToPay:
+        return _buildCompletionMessage();
       default:
         return const Center(child: Text('Order not found'));
     }
   }
 
-  Widget _buildCompletionMessage(
-      BuildContext context, TakeSellOrderState state) {
-    final message = state.status == TakeSellOrderStatus.cancelled
-        ? 'Order has been cancelled.'
-        : state.errorMessage ?? 'Order has been completed successfully!';
+  Widget _buildCompletionMessage() {
+    final message = 'Order has been completed successfully!';
     return CompletionMessage(message: message);
   }
 
@@ -120,13 +114,14 @@ class TakeSellOrderScreen extends ConsumerWidget {
   }
 
   Widget _buildLightningInvoiceInput(
-      BuildContext context, TakeSellOrderState state, WidgetRef ref) {
+      BuildContext context, MostroMessage state, WidgetRef ref) {
     final orderId = initialOrder.orderId!;
     final orderDetailsNotifier =
         ref.read(takeSellOrderNotifierProvider(orderId).notifier);
+    final order = (state.payload is Order) ? state.payload as Order : null;
 
     final TextEditingController invoiceController = TextEditingController();
-    final int val = state.invoiceAmount!;
+    final int val = order!.amount;
     return CustomCard(
       padding: const EdgeInsets.all(16),
       child: Material(

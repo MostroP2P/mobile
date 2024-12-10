@@ -1,16 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/features/take_order/notifiers/take_buy_order_notifier.dart';
-import 'package:mostro_mobile/features/take_order/notifiers/take_buy_order_state.dart';
 import 'package:mostro_mobile/features/take_order/notifiers/take_sell_order_notifier.dart';
-import 'package:mostro_mobile/features/take_order/notifiers/take_sell_order_state.dart';
 import 'package:mostro_mobile/providers/event_store_providers.dart';
 
-final takeSellOrderNotifierProvider = StateNotifierProvider.family<TakeSellOrderNotifier, TakeSellOrderState, String>((ref, orderId) {
+final takeSellOrderNotifierProvider = StateNotifierProvider.family<TakeSellOrderNotifier, MostroMessage, String>((ref, orderId) {
   final repository = ref.watch(mostrorRepositoryProvider);
   return TakeSellOrderNotifier(repository, orderId, ref);
 });
 
-final takeBuyOrderNotifierProvider = StateNotifierProvider.family<TakeBuyOrderNotifier, TakeBuyOrderState, String>((ref, orderId) {
+final takeBuyOrderNotifierProvider = StateNotifierProvider.family<TakeBuyOrderNotifier, MostroMessage, String>((ref, orderId) {
   final repository = ref.watch(mostrorRepositoryProvider);
   return TakeBuyOrderNotifier(repository, orderId, ref);
 });

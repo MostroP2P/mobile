@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:mostro_mobile/data/models/amount.dart';
+import 'package:mostro_mobile/data/models/range_amount.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/rating.dart';
 import 'package:timeago/timeago.dart' as timeago;
@@ -16,7 +16,7 @@ extension NostrEventExtensions on NostrEvent {
   String? get currency => _getTagValue('f');
   String? get status => _getTagValue('s');
   String? get amount => _getTagValue('amt');
-  Amount get fiatAmount => _getAmount('fa');
+  RangeAmount get fiatAmount => _getAmount('fa');
   List<String> get paymentMethods => _getTagValue('pm')?.split(',') ?? [];
   String? get premium => _getTagValue('premium');
   String? get source => _getTagValue('source');
@@ -43,9 +43,11 @@ extension NostrEventExtensions on NostrEvent {
     return (tag != null && tag.length > 1) ? tag[1] : null;
   }
 
-  Amount _getAmount(String key) {
+  RangeAmount _getAmount(String key) {
     final tag = tags?.firstWhere((t) => t[0] == key, orElse: () => []);
-    return (tag != null && tag.length> 1) ? Amount.fromList(tag) : Amount.empty();
+    return (tag != null && tag.length > 1)
+        ? RangeAmount.fromList(tag)
+        : RangeAmount.empty();
   }
 
   String _timeAgo(String? ts) {

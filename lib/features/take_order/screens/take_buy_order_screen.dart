@@ -6,7 +6,6 @@ import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/features/take_order/notifiers/take_buy_order_state.dart';
 import 'package:mostro_mobile/features/take_order/providers/order_notifier_providers.dart';
-import 'package:mostro_mobile/features/take_order/screens/error_screen.dart';
 import 'package:mostro_mobile/features/take_order/widgets/lightning_invoice.dart';
 import 'package:mostro_mobile/features/take_order/widgets/order_app_bar.dart';
 import 'package:mostro_mobile/features/take_order/widgets/buyer_info.dart';
@@ -16,6 +15,7 @@ import 'package:mostro_mobile/presentation/widgets/currency_text_field.dart';
 import 'package:mostro_mobile/presentation/widgets/exchange_rate_widget.dart';
 import 'package:mostro_mobile/providers/exchange_service_provider.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
+import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
 
 class TakeBuyOrderScreen extends ConsumerWidget {
   final NostrEvent initialOrder;
@@ -28,19 +28,13 @@ class TakeBuyOrderScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final orderDetailsState =
         ref.watch(takeBuyOrderNotifierProvider(initialOrder.orderId!));
-    switch (orderDetailsState.status) {
-      case TakeBuyOrderStatus.loading:
-        return const Center(child: CircularProgressIndicator());
-      case TakeBuyOrderStatus.error:
-        return ErrorScreen(errorMessage: orderDetailsState.errorMessage!);
-      case TakeBuyOrderStatus.cancelled:
-        return _buildCompletionMessage(context, orderDetailsState);
-      case TakeBuyOrderStatus.done:
-        return _buildCompletionMessage(context, orderDetailsState);
-      case TakeBuyOrderStatus.initial:
+
+    switch (orderDetailsState.action) {
+
+      case actions.Action.takeBuy:
         return _buildContent(context, ref);
-      case TakeBuyOrderStatus.payInvoice:
-        return _buildLightningInvoice(context, orderDetailsState, ref);
+      case actions.Action.payInvoice:
+        //return _buildLightningInvoice(context, orderDetailsState, ref);
       default:
         return const Center(child: Text('Order not found'));
     }
