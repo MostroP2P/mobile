@@ -40,7 +40,7 @@ dependencies:
   heroicons: ^0.10.0
   crypto: ^3.0.5
   convert: ^3.1.1
-  shared_preferences: ^2.3.2
+  shared_preferences: ^2.3.3
   equatable: ^2.0.5
   logging: ^1.2.0
   local_auth: ^2.3.0
@@ -60,6 +60,13 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   uuid: ^4.5.1
+
+  # temporary fork until main package is updated
+  flutter_secure_storage:
+    git:
+        url: https://github.com/chebizarro/flutter_secure_storage.git
+        path: flutter_secure_storage
+        ref: develop
 
 dev_dependencies:
   flutter_test:
