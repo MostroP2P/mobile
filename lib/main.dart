@@ -9,7 +9,7 @@ import 'package:mostro_mobile/services/nostr_service.dart';
 import 'package:mostro_mobile/shared/utils/biometrics_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'generated/l10n.dart';
-import 'package:mostro_mobile/presentation/widgets/notification_listener_widget.dart';
+import 'package:mostro_mobile/features/take_order/widgets/notification_listener_widget.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

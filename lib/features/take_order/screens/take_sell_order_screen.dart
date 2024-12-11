@@ -6,9 +6,7 @@ import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/models/order.dart';
-import 'package:mostro_mobile/features/take_order/notifiers/take_sell_order_state.dart';
 import 'package:mostro_mobile/features/take_order/providers/order_notifier_providers.dart';
-import 'package:mostro_mobile/features/take_order/screens/error_screen.dart';
 import 'package:mostro_mobile/features/take_order/widgets/order_app_bar.dart';
 import 'package:mostro_mobile/features/take_order/widgets/buyer_info.dart';
 import 'package:mostro_mobile/features/take_order/widgets/completion_message.dart';
@@ -240,28 +238,25 @@ class TakeSellOrderScreen extends ConsumerWidget {
         ref.read(takeSellOrderNotifierProvider(initialOrder.orderId!).notifier);
 
     return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        Expanded(
-          child: ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.red1,
-            ),
-            child: const Text('CANCEL'),
+        ElevatedButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppTheme.red1,
           ),
+          child: const Text('CANCEL', style: TextStyle(color: AppTheme.red2)),
         ),
         const SizedBox(width: 16),
-        Expanded(
-          child: ElevatedButton(
-            onPressed: () => orderDetailsNotifier.takeSellOrder(
-                initialOrder.orderId!, null, null),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.mostroGreen,
-            ),
-            child: const Text('CONTINUE'),
+        ElevatedButton(
+          onPressed: () => orderDetailsNotifier.takeSellOrder(
+              initialOrder.orderId!, null, null),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppTheme.mostroGreen,
           ),
+          child: const Text('CONTINUE'),
         ),
       ],
     );

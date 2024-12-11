@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/data/models/order.dart';
-import 'package:mostro_mobile/features/add_order/screens/order_confirmation_screen.dart';
-import 'package:mostro_mobile/features/take_order/screens/add_lightning_invoice_screen.dart';
 import 'package:mostro_mobile/notifiers/global_notification_notifier.dart';
 import 'package:mostro_mobile/providers/event_store_providers.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
@@ -12,23 +10,21 @@ class NotificationListenerWidget extends ConsumerWidget {
   final Widget child;
   final GlobalKey<NavigatorState> navigator;
 
-  const NotificationListenerWidget({super.key, required this.child, required this.navigator});
+  const NotificationListenerWidget(
+      {super.key, required this.child, required this.navigator});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     ref.listen<NotificationState>(globalNotificationProvider, (previous, next) {
+      navigator.currentState!.push(
+        MaterialPageRoute(
+          builder: next.widgetBuilder!,
+        ),
+      );
+
       final event = next.message;
 
       switch (event?.action) {
-        // New Sell/Buy Order
-        case actions.Action.newOrder:
-          navigator.currentState!.push(
-            MaterialPageRoute(
-              builder: (context) =>
-                  OrderConfirmationScreen(orderId: event!.requestId!),
-            ),
-          );
-          break;
 
         case actions.Action.addInvoice:
           if (event?.payload != null && event?.payload is Order) {
@@ -38,13 +34,6 @@ class NotificationListenerWidget extends ConsumerWidget {
               // Take Buy Order
               // Notify User
             } else {
-              // Take Sell Order
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => AddLightningInvoiceScreen(
-                      event!.requestId!, order.amount),
-                ),
-              );
             }
           }
           break;
@@ -63,12 +52,6 @@ class NotificationListenerWidget extends ConsumerWidget {
         case actions.Action.payInvoice:
           // Go to payment screen
           // Take Buy Order
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) =>
-                  OrderConfirmationScreen(orderId: event!.requestId!),
-            ),
-          );
           break;
 
         case actions.Action.buyerTookOrder:

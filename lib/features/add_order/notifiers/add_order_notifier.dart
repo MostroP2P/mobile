@@ -5,6 +5,7 @@ import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/data/repositories/mostro_repository.dart';
+import 'package:mostro_mobile/features/add_order/screens/order_confirmation_screen.dart';
 import 'package:mostro_mobile/providers/event_store_providers.dart';
 
 class AddOrderNotifier extends StateNotifier<MostroMessage> {
@@ -49,7 +50,9 @@ class AddOrderNotifier extends StateNotifier<MostroMessage> {
 
     switch (state.action) {
       case Action.newOrder:
-        notificationProvider.showNotification(state, () {});
+        notificationProvider.showScreen((context) {
+          return OrderConfirmationScreen(orderId: state.requestId!);
+        });
         break;
       case Action.outOfRangeSatsAmount:
       case Action.outOfRangeFiatAmount:

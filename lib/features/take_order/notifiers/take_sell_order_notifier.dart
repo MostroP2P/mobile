@@ -4,6 +4,9 @@ import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/data/repositories/mostro_repository.dart';
+import 'package:mostro_mobile/features/take_order/screens/add_lightning_invoice_screen.dart';
+import 'package:mostro_mobile/features/take_order/widgets/completion_message.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/providers/event_store_providers.dart';
 
 class TakeSellOrderNotifier extends StateNotifier<MostroMessage> {
@@ -39,12 +42,19 @@ class TakeSellOrderNotifier extends StateNotifier<MostroMessage> {
 
     switch (state.action) {
       case Action.addInvoice:
+        var amount =
+            (state.payload is Order) ? (state.payload as Order).amount : 0;
+        notificationProvider.showScreen(
+            (context) => AddLightningInvoiceScreen(state.requestId!, amount));
+        break;
       case Action.waitingSellerToPay:
-	  case Action.outOfRangeFiatAmount:
-	  case Action.outOfRangeSatsAmount:
+        notificationProvider.showScreen((context) => CompletionMessage(
+            message:
+                S.of(context).waiting_seller_to_pay(state.requestId!, '')));
+      case Action.outOfRangeFiatAmount:
+      case Action.outOfRangeSatsAmount:
         break;
       default:
-        notificationProvider.showNotification(state, () {});
         break;
     }
   }

@@ -4,12 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/app/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
-import 'package:mostro_mobile/features/take_order/notifiers/take_buy_order_state.dart';
 import 'package:mostro_mobile/features/take_order/providers/order_notifier_providers.dart';
-import 'package:mostro_mobile/features/take_order/widgets/lightning_invoice.dart';
 import 'package:mostro_mobile/features/take_order/widgets/order_app_bar.dart';
 import 'package:mostro_mobile/features/take_order/widgets/buyer_info.dart';
-import 'package:mostro_mobile/features/take_order/widgets/completion_message.dart';
 import 'package:mostro_mobile/features/take_order/widgets/seller_info.dart';
 import 'package:mostro_mobile/presentation/widgets/currency_text_field.dart';
 import 'package:mostro_mobile/presentation/widgets/exchange_rate_widget.dart';
@@ -38,14 +35,6 @@ class TakeBuyOrderScreen extends ConsumerWidget {
       default:
         return const Center(child: Text('Order not found'));
     }
-  }
-
-  Widget _buildCompletionMessage(
-      BuildContext context, TakeBuyOrderState state) {
-    final message = state.status == TakeBuyOrderStatus.cancelled
-        ? 'Order has been cancelled.'
-        : state.errorMessage ?? 'Order has been completed successfully!';
-    return CompletionMessage(message: message);
   }
 
   Widget _buildContent(BuildContext context, WidgetRef ref) {
@@ -114,19 +103,6 @@ class TakeBuyOrderScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildLightningInvoice(
-      BuildContext context, TakeBuyOrderState state, WidgetRef ref) {
-    final orderId = initialOrder.orderId!;
-    final orderDetailsNotifier =
-        ref.read(takeSellOrderNotifierProvider(orderId).notifier);
-
-    final TextEditingController invoiceController = TextEditingController();
-    final int val = state.invoiceAmount!;
-    return CustomCard(
-      padding: const EdgeInsets.all(16),
-      child: LightningInvoice(state: state),
-    );
-  }
 
   Widget _buildBuyerAmount() {
     return CustomCard(
@@ -179,12 +155,12 @@ class TakeBuyOrderScreen extends ConsumerWidget {
 
   Widget _buildActionButtons(BuildContext context, WidgetRef ref) {
     final orderDetailsNotifier =
-        ref.read(takeSellOrderNotifierProvider(initialOrder.orderId!).notifier);
+        ref.read(takeBuyOrderNotifierProvider(initialOrder.orderId!).notifier);
 
     return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        Expanded(
-          child: ElevatedButton(
+          ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
             },
@@ -193,18 +169,15 @@ class TakeBuyOrderScreen extends ConsumerWidget {
             ),
             child: const Text('CANCEL'),
           ),
-        ),
         const SizedBox(width: 16),
-        Expanded(
-          child: ElevatedButton(
-            onPressed: () => orderDetailsNotifier.takeSellOrder(
-                initialOrder.orderId!, null, null),
+        ElevatedButton(
+            onPressed: () => orderDetailsNotifier.takeBuyOrder(
+                initialOrder.orderId!, null),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.mostroGreen,
             ),
             child: const Text('CONTINUE'),
           ),
-        ),
       ],
     );
   }

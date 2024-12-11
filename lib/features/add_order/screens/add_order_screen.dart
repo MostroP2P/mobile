@@ -59,7 +59,8 @@ class AddOrderScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildContent(BuildContext context, WidgetRef ref, OrderType orderType) {
+  Widget _buildContent(
+      BuildContext context, WidgetRef ref, OrderType orderType) {
     return Form(
       key: _formKey,
       child: Column(
@@ -87,18 +88,20 @@ class AddOrderScreen extends ConsumerWidget {
       child: Row(
         children: [
           Expanded(
-            child: _buildTab(context, ref, "SELL", orderType == OrderType.sell, OrderType.sell),
+            child: _buildTab(context, ref, "SELL", orderType == OrderType.sell,
+                OrderType.sell),
           ),
           Expanded(
-            child: _buildTab(context, ref, "BUY", orderType == OrderType.buy, OrderType.buy),
+            child: _buildTab(
+                context, ref, "BUY", orderType == OrderType.buy, OrderType.buy),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildTab(
-      BuildContext context, WidgetRef ref, String text, bool isActive, OrderType type) {
+  Widget _buildTab(BuildContext context, WidgetRef ref, String text,
+      bool isActive, OrderType type) {
     return GestureDetector(
       onTap: () {
         // Update the local orderType state
@@ -131,15 +134,18 @@ class AddOrderScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Make sure your order is below 20K sats', style: TextStyle(color: AppTheme.grey2)),
+          const Text('Make sure your order is below 20K sats',
+              style: TextStyle(color: AppTheme.grey2)),
           const SizedBox(height: 16),
           CurrencyDropdown(label: 'Fiat code'),
           const SizedBox(height: 16),
-          CurrencyTextField(controller: _fiatAmountController, label: 'Fiat amount'),
+          CurrencyTextField(
+              controller: _fiatAmountController, label: 'Fiat amount'),
           const SizedBox(height: 16),
           _buildFixedToggle(),
           const SizedBox(height: 16),
-          _buildTextField('Sats amount', _satsAmountController, suffix: Icon(BitcoinIcons.satoshi_v1_outline).icon),
+          _buildTextField('Sats amount', _satsAmountController,
+              suffix: Icon(BitcoinIcons.satoshi_v1_outline).icon),
           const SizedBox(height: 16),
           _buildTextField('Payment method', _paymentMethodController),
           const SizedBox(height: 32),
@@ -155,17 +161,21 @@ class AddOrderScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Make sure your order is below 20K sats', style: TextStyle(color: AppTheme.grey2)),
+          const Text('Make sure your order is below 20K sats',
+              style: TextStyle(color: AppTheme.grey2)),
           const SizedBox(height: 16),
           CurrencyDropdown(label: 'Fiat code'),
           const SizedBox(height: 16),
-          CurrencyTextField(controller: _fiatAmountController, label: 'Fiat amount'),
+          CurrencyTextField(
+              controller: _fiatAmountController, label: 'Fiat amount'),
           const SizedBox(height: 16),
           _buildFixedToggle(),
           const SizedBox(height: 16),
-          _buildTextField('Sats amount', _satsAmountController, suffix: Icon(BitcoinIcons.satoshi_v1_outline).icon),
+          _buildTextField('Sats amount', _satsAmountController,
+              suffix: Icon(BitcoinIcons.satoshi_v1_outline).icon),
           const SizedBox(height: 16),
-          _buildTextField('Lightning Invoice without an amount', _lightningInvoiceController),
+          _buildTextField('Lightning Invoice without an amount',
+              _lightningInvoiceController),
           const SizedBox(height: 16),
           _buildTextField('Payment method', _paymentMethodController),
           const SizedBox(height: 32),
@@ -175,7 +185,8 @@ class AddOrderScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller, {IconData? suffix}) {
+  Widget _buildTextField(String label, TextEditingController controller,
+      {IconData? suffix}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
@@ -189,7 +200,8 @@ class AddOrderScreen extends ConsumerWidget {
           border: InputBorder.none,
           labelText: label,
           labelStyle: const TextStyle(color: AppTheme.grey2),
-          suffixIcon: suffix != null ? Icon(suffix, color: AppTheme.grey2) : null,
+          suffixIcon:
+              suffix != null ? Icon(suffix, color: AppTheme.grey2) : null,
         ),
         validator: (value) {
           if (value == null || value.isEmpty) {
@@ -214,7 +226,8 @@ class AddOrderScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildActionButtons(BuildContext context, WidgetRef ref, OrderType orderType) {
+  Widget _buildActionButtons(
+      BuildContext context, WidgetRef ref, OrderType orderType) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
