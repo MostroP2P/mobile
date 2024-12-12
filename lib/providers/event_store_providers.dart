@@ -4,7 +4,7 @@ import 'package:mostro_mobile/data/repositories/mostro_repository.dart';
 import 'package:mostro_mobile/notifiers/open_orders_notifier.dart';
 import 'package:mostro_mobile/data/repositories/open_orders_repository.dart';
 import 'package:mostro_mobile/data/repositories/secure_storage_manager.dart';
-import 'package:mostro_mobile/notifiers/global_notification_notifier.dart';
+import 'package:mostro_mobile/shared/notifiers/notification_notifier.dart';
 import 'package:mostro_mobile/notifiers/open_orders_repository_notifier.dart';
 import 'package:mostro_mobile/services/mostro_service.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
@@ -29,9 +29,6 @@ final orderEventsProvider = StreamProvider<List<NostrEvent>>((ref) {
   return orderRepository.eventsStream;
 });
 
-final globalNotificationProvider =
-    StateNotifierProvider<GlobalNotificationNotifier, NotificationState>(
-        (ref) => GlobalNotificationNotifier());
 
 final openOrdersNotifierProvider =
     StateNotifierProvider<OpenOrdersNotifier, List<NostrEvent>>(

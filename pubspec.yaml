@@ -50,16 +50,16 @@ dependencies:
   bitcoin_icons: ^0.0.4
   collection: ^1.18.0
   elliptic: ^0.3.11
+  intl: ^0.19.0
+  uuid: ^4.5.1
+
+  flutter_localizations:
+    sdk: flutter
 
   nip44:
     git:
       url: https://github.com/chebizarro/dart-nip44.git
       ref: master
-  intl: ^0.19.0
-
-  flutter_localizations:
-    sdk: flutter
-  uuid: ^4.5.1
 
   # temporary fork until main package is updated
   flutter_secure_storage:

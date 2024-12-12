@@ -7,9 +7,10 @@ import 'package:mostro_mobile/providers/riverpod_providers.dart';
 import 'package:mostro_mobile/app/app_routes.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
 import 'package:mostro_mobile/shared/utils/biometrics_helper.dart';
+import 'package:mostro_mobile/shared/widgets/navigation_listener_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'generated/l10n.dart';
-import 'package:mostro_mobile/features/take_order/widgets/notification_listener_widget.dart';
+import 'package:mostro_mobile/shared/widgets/notification_listener_widget.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -69,7 +70,10 @@ class MyApp extends ConsumerWidget {
       ],
       supportedLocales: S.delegate.supportedLocales,
       builder: (context, child) {
-        return NotificationListenerWidget(navigator: navigatorKey, child: child!);
+        return NotificationListenerWidget(
+            navigator: navigatorKey,
+            child: NavigationListenerWidget(
+                navigator: navigatorKey, child: child!));
       },
     );
   }

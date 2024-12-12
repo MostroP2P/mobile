@@ -8,6 +8,7 @@ import 'package:mostro_mobile/features/take_order/screens/add_lightning_invoice_
 import 'package:mostro_mobile/features/take_order/widgets/completion_message.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/providers/event_store_providers.dart';
+import 'package:mostro_mobile/shared/providers/navigation_notifier_provider.dart';
 
 class TakeSellOrderNotifier extends StateNotifier<MostroMessage> {
   final MostroRepository _orderRepository;
@@ -38,17 +39,17 @@ class TakeSellOrderNotifier extends StateNotifier<MostroMessage> {
   }
 
   void _handleOrderUpdate() {
-    final notificationProvider = ref.read(globalNotificationProvider.notifier);
+    final navProvider = ref.read(navigationProvider.notifier);
 
     switch (state.action) {
       case Action.addInvoice:
         var amount =
             (state.payload is Order) ? (state.payload as Order).amount : 0;
-        notificationProvider.showScreen(
+        navProvider.navigate(
             (context) => AddLightningInvoiceScreen(state.requestId!, amount));
         break;
       case Action.waitingSellerToPay:
-        notificationProvider.showScreen((context) => CompletionMessage(
+        navProvider.navigate((context) => CompletionMessage(
             message:
                 S.of(context).waiting_seller_to_pay(state.requestId!, '')));
       case Action.outOfRangeFiatAmount:
