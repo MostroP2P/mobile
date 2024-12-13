@@ -1,15 +1,24 @@
 import 'dart:convert';
-import 'dart:typed_data';
+import 'dart:math';
 import 'package:crypto/crypto.dart';
 import 'package:dart_nostr/dart_nostr.dart';
-import 'package:encrypt/encrypt.dart' as encrypt;
+import 'package:elliptic/elliptic.dart';
+import 'package:nip44/nip44.dart';
 
 class NostrUtils {
   static final Nostr _instance = Nostr.instance;
 
   // Generación de claves
   static NostrKeyPairs generateKeyPair() {
-    return _instance.keysService.generateKeyPair();
+    try {
+      final privateKey = generatePrivateKey();
+      if (!isValidPrivateKey(privateKey)) {
+        throw Exception('Generated invalid private key');
+      }
+      return NostrKeyPairs(private: privateKey);
+    } catch (e) {
+      throw Exception('Failed to generate key pair: $e');
+    }
   }
 
   static NostrKeyPairs generateKeyPairFromPrivateKey(String privateKey) {
@@ -18,7 +27,11 @@ class NostrUtils {
   }
 
   static String generatePrivateKey() {
-    return _instance.keysService.generatePrivateKey();
+    try {
+      return getS256().generatePrivateKey().toHex();
+    } catch (e) {
+      throw Exception('Failed to generate private key: $e');
+    }
   }
 
   // Codificación y decodificación de claves
@@ -117,96 +130,175 @@ class NostrUtils {
     return digest.toString(); // Devuelve el ID como una cadena hex
   }
 
-  // NIP-59 y NIP-44 funciones
-  static NostrEvent createNIP59Event(
-      String content, String recipientPubKey, String senderPrivateKey) {
-    final senderKeyPair = generateKeyPairFromPrivateKey(senderPrivateKey);
-    final sharedSecret =
-        _calculateSharedSecret(senderPrivateKey, recipientPubKey);
+  /// Generates a timestamp between now and 48 hours ago to enhance privacy
+  /// by decorrelating event timing from creation time.
+  /// @throws if system clock is ahead of network time
+  static DateTime randomNow() {
+    final now = DateTime.now();
+    // Validate system time isn't ahead
+    final networkTime = DateTime.now().toUtc();
+    if (now.isAfter(networkTime.add(Duration(minutes: 5)))) {
+      throw Exception('System clock is ahead of network time');
+    }
+    final randomSeconds = Random().nextInt(2 * 24 * 60 * 60);
+    return now.subtract(Duration(seconds: randomSeconds));
+  }
 
-    final encryptedContent = _encryptNIP44(content, sharedSecret);
+  /// Creates a NIP-59 encrypted event with the following structure:
+  /// 1. Inner event (kind 1): Original content
+  /// 2. Seal event (kind 13): Encrypted inner event
+  /// 3. Wrapper event (kind 1059): Final encrypted package
+  static Future<NostrEvent> createNIP59Event(
+      String content, String recipientPubKey, String senderPrivateKey) async {
+    // Validate inputs
+    if (content.isEmpty) throw ArgumentError('Content cannot be empty');
+    if (recipientPubKey.length != 64) {
+      throw ArgumentError('Invalid recipient public key');
+    }
+    if (!isValidPrivateKey(senderPrivateKey)) {
+      throw ArgumentError('Invalid sender private key');
+    }
+
+    final senderKeyPair = generateKeyPairFromPrivateKey(senderPrivateKey);
 
     final createdAt = DateTime.now();
-    final rumorEvent = NostrEvent(
-      kind: 1059,
-      pubkey: senderKeyPair.public,
+    final rumorEvent = NostrEvent.fromPartialData(
+      kind: 1,
+      keyPairs: senderKeyPair,
+      content: content,
+      createdAt: createdAt,
+      tags: [
+        ["p", recipientPubKey]
+      ],
+    );
+
+    String? encryptedContent;
+
+    try {
+      encryptedContent = await _encryptNIP44(
+          jsonEncode(rumorEvent.toMap()), senderPrivateKey, recipientPubKey);
+    } catch (e) {
+      throw Exception('Failed to encrypt content: $e');
+    }
+
+    final sealEvent = NostrEvent.fromPartialData(
+      kind: 13,
+      keyPairs: senderKeyPair,
       content: encryptedContent,
+      createdAt: randomNow(),
+    );
+
+    final wrapperKeyPair = generateKeyPair();
+
+    final pk = wrapperKeyPair.private;
+
+    String sealedContent;
+    try {
+      sealedContent = await _encryptNIP44(
+          jsonEncode(sealEvent.toMap()), pk, '02$recipientPubKey');
+    } catch (e) {
+      throw Exception('Failed to encrypt seal event: $e');
+    }
+
+    final wrapEvent = NostrEvent.fromPartialData(
+      kind: 1059,
+      content: sealedContent,
+      keyPairs: wrapperKeyPair,
       tags: [
         ["p", recipientPubKey]
       ],
       createdAt: createdAt,
-      id: '', // Se generará después
-      sig: '', // Se generará después
     );
 
-    // Generar ID y firma
-    final id = generateId({
-      'pubkey': rumorEvent.pubkey,
-      'created_at': rumorEvent.createdAt!.millisecondsSinceEpoch ~/ 1000,
-      'kind': rumorEvent.kind,
-      'tags': rumorEvent.tags,
-      'content': rumorEvent.content,
-    });
-    signMessage(id, senderPrivateKey);
-
-    final wrapperKeyPair = generateKeyPair();
-    final wrappedContent = _encryptNIP44(jsonEncode(rumorEvent.toMap()),
-        _calculateSharedSecret(wrapperKeyPair.private, recipientPubKey));
-
-    return NostrEvent(
-      kind: 1059,
-      pubkey: wrapperKeyPair.public,
-      content: wrappedContent,
-      tags: [
-        ["p", recipientPubKey]
-      ],
-      createdAt: DateTime.now(),
-      id: generateId({
-        'pubkey': wrapperKeyPair.public,
-        'created_at': DateTime.now().millisecondsSinceEpoch ~/ 1000,
-        'kind': 1059,
-        'tags': [
-          ["p", recipientPubKey]
-        ],
-        'content': wrappedContent,
-      }),
-      sig: '', // Se generará automáticamente al publicar el evento
-    );
+    return wrapEvent;
   }
 
-  static String decryptNIP59Event(NostrEvent event, String privateKey) {
-    final sharedSecret = _calculateSharedSecret(privateKey, event.pubkey);
-    final decryptedContent = _decryptNIP44(event.content ?? '', sharedSecret);
+  static Future<NostrEvent> decryptNIP59Event(
+      NostrEvent event, String privateKey) async {
+    // Validate inputs
+    if (event.content == null || event.content!.isEmpty) {
+      throw ArgumentError('Event content is empty');
+    }
+    if (!isValidPrivateKey(privateKey)) {
+      throw ArgumentError('Invalid private key');
+    }
 
-    final rumorEvent = NostrEvent.deserialized(decryptedContent);
-    final rumorSharedSecret =
-        _calculateSharedSecret(privateKey, rumorEvent.pubkey);
-    final finalDecryptedContent =
-        _decryptNIP44(rumorEvent.content ?? '', rumorSharedSecret);
+    try {
+      final decryptedContent =
+          await _decryptNIP44(event.content ?? '', privateKey, event.pubkey);
 
-    return finalDecryptedContent;
+      final rumorEvent =
+          NostrEvent.deserialized('["EVENT", "", $decryptedContent]');
+
+      final finalDecryptedContent = await _decryptNIP44(
+          rumorEvent.content ?? '', privateKey, rumorEvent.pubkey);
+
+      final wrap = jsonDecode(finalDecryptedContent) as Map<String, dynamic>;
+
+      // Validate decrypted event structure
+      _validateEventStructure(wrap);
+
+      return NostrEvent(
+        id: wrap['id'] as String,
+        kind: wrap['kind'] as int,
+        content: wrap['content'] as String,
+        sig: "",
+        pubkey: wrap['pubkey'] as String,
+        createdAt: DateTime.fromMillisecondsSinceEpoch(
+          (wrap['created_at'] as int) * 1000,
+        ),
+        tags: List<List<String>>.from(
+          (wrap['tags'] as List)
+              .map(
+                (nestedElem) => (nestedElem as List)
+                    .map(
+                      (nestedElemContent) => nestedElemContent.toString(),
+                    )
+                    .toList(),
+              )
+              .toList(),
+        ),
+        subscriptionId: '',
+      );
+    } catch (e) {
+      throw Exception('Failed to decrypt NIP-59 event: $e');
+    }
   }
 
-  static Uint8List _calculateSharedSecret(String privateKey, String publicKey) {
-    // Nota: Esta implementación puede necesitar ajustes dependiendo de cómo
-    // dart_nostr maneje la generación de secretos compartidos.
-    // Posiblemente necesites usar una biblioteca de criptografía adicional aquí.
-    final sharedPoint = generateKeyPairFromPrivateKey(privateKey).public;
-    return Uint8List.fromList(sha256.convert(utf8.encode(sharedPoint)).bytes);
+  /// Validates the structure of a decrypted event
+  static void _validateEventStructure(Map<String, dynamic> event) {
+    final requiredFields = [
+      'id',
+      'kind',
+      'content',
+      'pubkey',
+      'created_at',
+      'tags'
+    ];
+    for (final field in requiredFields) {
+      if (!event.containsKey(field)) {
+        throw FormatException('Missing required field: $field');
+      }
+    }
   }
 
-  static String _encryptNIP44(String content, Uint8List key) {
-    final iv = encrypt.IV.fromSecureRandom(16);
-    final encrypter = encrypt.Encrypter(encrypt.AES(encrypt.Key(key)));
-    final encrypted = encrypter.encrypt(content, iv: iv);
-    return base64Encode(iv.bytes + encrypted.bytes);
+  static Future<String> _encryptNIP44(
+      String content, String privkey, String pubkey) async {
+    try {
+      return await Nip44.encryptMessage(content, privkey, pubkey);
+    } catch (e) {
+      // Handle encryption error appropriately
+      throw Exception('Encryption failed: $e');
+    }
   }
 
-  static String _decryptNIP44(String encryptedContent, Uint8List key) {
-    final decoded = base64Decode(encryptedContent);
-    final iv = encrypt.IV(decoded.sublist(0, 16));
-    final encryptedBytes = decoded.sublist(16);
-    final encrypter = encrypt.Encrypter(encrypt.AES(encrypt.Key(key)));
-    return encrypter.decrypt64(base64Encode(encryptedBytes), iv: iv);
+  static Future<String> _decryptNIP44(
+      String encryptedContent, String privkey, String pubkey) async {
+    try {
+      return await Nip44.decryptMessage(encryptedContent, privkey, pubkey);
+    } catch (e) {
+      // Handle encryption error appropriately
+      throw Exception('Decryption failed: $e');
+    }
   }
 }

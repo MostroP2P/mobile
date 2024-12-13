@@ -1,9 +1,8 @@
 import 'package:equatable/equatable.dart';
+import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/order_model.dart';
 
 enum HomeStatus { initial, loading, loaded, error }
-
-enum OrderType { buy, sell }
 
 class HomeState extends Equatable {
   final HomeStatus status;
@@ -47,5 +46,6 @@ class HomeState extends Equatable {
   }
 
   @override
-  List<Object> get props => [status, allOrders, filteredOrders, orderType, errorMessage];
+  List<Object> get props =>
+      [status, allOrders, filteredOrders, orderType, errorMessage];
 }

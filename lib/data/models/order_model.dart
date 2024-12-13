@@ -161,7 +161,7 @@ class OrderModel {
         id: getString('d'),
         type: getString('k'),
         user: name,
-        rating: parseRating(getString('rating')),
+        rating: 0,
         ratingCount: getInt('rating_count'),
         amount: getInt('amt'),
         currency: getString('f'),
@@ -181,7 +181,6 @@ class OrderModel {
         buyerFiatAmount: getDouble('buyer_fiat_amount'),
       );
     } catch (e) {
-      print('Error creating OrderModel from tags: $e');
       throw const FormatException('Invalid tags format for OrderModel');
     }
   }

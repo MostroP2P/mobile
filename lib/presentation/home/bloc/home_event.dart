@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
+import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/order_model.dart';
-import 'package:mostro_mobile/presentation/home/bloc/home_state.dart';
 
 abstract class HomeEvent extends Equatable {
   const HomeEvent();

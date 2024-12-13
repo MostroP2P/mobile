@@ -1,20 +1,19 @@
-// lib/core/config.dart
-
 import 'package:flutter/foundation.dart';
 
 class Config {
   // Configuración de Nostr
   static const List<String> nostrRelays = [
+    'ws://127.0.0.1:7000',
     //'ws://10.0.2.2:7000',
-    'wss://relay.damus.io',
-    'wss://relay.mostro.network',
-    'wss://relay.nostr.net',
+    //'wss://relay.damus.io',
+    //'wss://relay.mostro.network',
+    //'wss://relay.nostr.net',
     // Agrega más relays aquí si es necesario
   ];
 
-  // Npub de Mostro
+  // hexkey de Mostro
   static const String mostroPubKey =
-      'npub1n5yrh6lkvc0l3lcmcfwake4r3ex7jrm0e6lumsc22d8ylf7jwk0qack9tql;';
+      '9d9d0455a96871f2dc4289b8312429db2e925f167b37c77bf7b28014be235980';
 
   // Tiempo de espera para conexiones a relays
   static const Duration nostrConnectionTimeout = Duration(seconds: 30);
