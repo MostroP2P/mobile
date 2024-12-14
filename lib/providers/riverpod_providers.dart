@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/shared/utils/biometrics_helper.dart';
 import 'package:mostro_mobile/data/repositories/auth_repository.dart';
-import 'package:mostro_mobile/presentation/auth/bloc/auth_notifier.dart';
-import 'package:mostro_mobile/presentation/auth/bloc/auth_state.dart';
+import 'package:mostro_mobile/features/auth/notifiers/auth_notifier.dart';
+import 'package:mostro_mobile/features/auth/notifiers/auth_state.dart';
 
 
 final authRepositoryProvider = Provider<AuthRepository>(
@@ -12,9 +12,6 @@ final authRepositoryProvider = Provider<AuthRepository>(
   ),
 );
 
-final authNotifierProvider = StateNotifierProvider<AuthNotifier, AuthState>(
-  (ref) => AuthNotifier(ref.read(authRepositoryProvider)),
-);
 
 final isFirstLaunchProvider = Provider<bool>((ref) => false);
 

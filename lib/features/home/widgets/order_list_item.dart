@@ -4,7 +4,6 @@ import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/app/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
-import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/features/take_order/screens/take_buy_order_screen.dart';
 import 'package:mostro_mobile/features/take_order/screens/take_sell_order_screen.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';

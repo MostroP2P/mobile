@@ -6,7 +6,7 @@ import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/data/repositories/mostro_repository.dart';
 import 'package:mostro_mobile/features/add_order/screens/order_confirmation_screen.dart';
-import 'package:mostro_mobile/providers/event_store_providers.dart';
+import 'package:mostro_mobile/features/take_order/screens/pay_lightning_invoice_screen.dart';
 import 'package:mostro_mobile/shared/providers/navigation_notifier_provider.dart';
 
 class AddOrderNotifier extends StateNotifier<MostroMessage> {
@@ -49,10 +49,17 @@ class AddOrderNotifier extends StateNotifier<MostroMessage> {
   void _handleOrderUpdate() {
     final navProvider = ref.read(navigationProvider.notifier);
 
+    print(state.action);
+
     switch (state.action) {
       case Action.newOrder:
         navProvider.navigate((context) {
           return OrderConfirmationScreen(orderId: state.requestId!);
+        });
+        break;
+      case Action.payInvoice:
+        navProvider.navigate((context) {
+          return PayLightningInvoiceScreen(event: state);
         });
         break;
       case Action.outOfRangeSatsAmount:
@@ -67,6 +74,7 @@ class AddOrderNotifier extends StateNotifier<MostroMessage> {
   @override
   void dispose() {
     _orderSubscription?.cancel();
+    print('Disposed!');
     super.dispose();
   }
 }

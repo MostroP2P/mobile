@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../app/app_theme.dart';
-import '../../widgets/custom_button.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mostro_mobile/app/app_theme.dart';
+import 'package:mostro_mobile/presentation/widgets/custom_button.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -42,7 +43,7 @@ class WelcomeScreen extends StatelessWidget {
               CustomButton(
                 text: 'REGISTER',
                 onPressed: () {
-                  Navigator.pushNamed(context, '/register');
+                  context.push('/register');
                 },
               ),
               const SizedBox(height: 16),
@@ -56,7 +57,7 @@ class WelcomeScreen extends StatelessWidget {
                   ),
                 ),
                 onPressed: () {
-                  Navigator.pushReplacementNamed(context, '/');
+                  context.push('/');
                 },
               ),
               const Spacer(),

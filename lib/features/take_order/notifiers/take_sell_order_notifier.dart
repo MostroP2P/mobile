@@ -7,7 +7,6 @@ import 'package:mostro_mobile/data/repositories/mostro_repository.dart';
 import 'package:mostro_mobile/features/take_order/screens/add_lightning_invoice_screen.dart';
 import 'package:mostro_mobile/features/take_order/widgets/completion_message.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
-import 'package:mostro_mobile/providers/event_store_providers.dart';
 import 'package:mostro_mobile/shared/providers/navigation_notifier_provider.dart';
 
 class TakeSellOrderNotifier extends StateNotifier<MostroMessage> {

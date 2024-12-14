@@ -4,6 +4,8 @@ import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/repositories/mostro_repository.dart';
 import 'package:mostro_mobile/features/take_order/screens/pay_lightning_invoice_screen.dart';
+import 'package:mostro_mobile/features/take_order/widgets/completion_message.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/providers/navigation_notifier_provider.dart';
 
 class TakeBuyOrderNotifier extends StateNotifier<MostroMessage> {
@@ -27,18 +29,20 @@ class TakeBuyOrderNotifier extends StateNotifier<MostroMessage> {
     }
   }
 
-  void _handleError(Object err) {
-
-  }
+  void _handleError(Object err) {}
 
   void _handleOrderUpdate() {
-
     switch (state.action) {
       case Action.payInvoice:
-        ref.read(navigationProvider.notifier)
+        ref
+            .read(navigationProvider.notifier)
             .navigate((context) => PayLightningInvoiceScreen(event: state));
         break;
-      case Action.waitingBuyerInvoice:
+      case Action.waitingSellerToPay:
+        ref.read(navigationProvider.notifier).navigate((context) =>
+            CompletionMessage(
+                message:
+                    S.of(context).waiting_seller_to_pay(state.requestId!, '')));
         break;
       default:
         break;

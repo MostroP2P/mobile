@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:heroicons/heroicons.dart';
-import 'package:mostro_mobile/app/app_routes.dart';
 
 class BottomNavBar extends StatelessWidget {
   const BottomNavBar({super.key});
@@ -51,39 +51,38 @@ class BottomNavBar extends StatelessWidget {
   }
 
   bool _isActive(BuildContext context, int index) {
-    final currentRoute = ModalRoute.of(context)?.settings.name;
+    final currentLocation =  GoRouterState.of(context).uri.toString();
     switch (index) {
       case 0:
-        return currentRoute == AppRoutes.home;
+        return currentLocation == '/'; 
       case 1:
-        return currentRoute == AppRoutes.chatList;
+        return currentLocation == '/chat_list';
       case 2:
-        return currentRoute == AppRoutes.profile;
+        return currentLocation == '/profile';
       default:
         return false;
     }
   }
 
   void _onItemTapped(BuildContext context, int index) {
-    final currentRoute = ModalRoute.of(context)?.settings.name;
     String nextRoute;
-
     switch (index) {
       case 0:
-        nextRoute = AppRoutes.home;
+        nextRoute = '/';
         break;
       case 1:
-        nextRoute = AppRoutes.chatList;
+        nextRoute = '/chat_list';
         break;
       case 2:
-        nextRoute = AppRoutes.profile;
+        nextRoute = '/profile';
         break;
       default:
         return;
     }
 
-    if (currentRoute != nextRoute) {
-      Navigator.pushReplacementNamed(context, nextRoute);
+    final currentLocation =  GoRouterState.of(context).uri.toString();
+    if (currentLocation != nextRoute) {
+      context.go(nextRoute);
     }
   }
 }

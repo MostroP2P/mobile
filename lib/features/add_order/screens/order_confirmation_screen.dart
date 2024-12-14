@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mostro_mobile/app/app_routes.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/app/app_theme.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
@@ -24,7 +24,7 @@ class OrderConfirmationScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () => Navigator.of(context).popUntil(ModalRoute.withName(AppRoutes.home)),
+              onPressed: () => context.go('/'),
               child: const Text('Back to Home'),
             ),
           ],
