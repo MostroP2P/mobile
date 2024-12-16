@@ -20,7 +20,9 @@ class AuthUtils {
     throw UnimplementedError('deleteCredentials is not implemented yet');
   }
 
-  static Future<void> enableBiometrics() async {}
+  static Future<void> enableBiometrics() async {
+    throw UnimplementedError('enableBiometrics is not implemented yet');    
+  }
 
   static Future<bool> isBiometricsEnabled() async {
     throw UnimplementedError('isBiometricsEnabled is not implemented yet');

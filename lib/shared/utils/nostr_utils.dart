@@ -12,7 +12,15 @@ class NostrUtils {
 
   // Generación de claves
   static NostrKeyPairs generateKeyPair() {
-    return NostrKeyPairs(private: generatePrivateKey());
+    try {
+      final privateKey = generatePrivateKey();
+      if (!isValidPrivateKey(privateKey)) {
+        throw Exception('Generated invalid private key');
+      }
+      return NostrKeyPairs(private: privateKey);
+    } catch (e) {
+      throw Exception('Failed to generate key pair: $e');
+    }
   }
 
   static NostrKeyPairs generateKeyPairFromPrivateKey(String privateKey) {
@@ -21,7 +29,11 @@ class NostrUtils {
   }
 
   static String generatePrivateKey() {
-    return getS256().generatePrivateKey().toHex();
+    try {
+      return getS256().generatePrivateKey().toHex();
+    } catch (e) {
+      throw Exception('Failed to generate private key: $e');
+    }
   }
 
   // Codificación y decodificación de claves
@@ -182,12 +194,17 @@ class NostrUtils {
 
     final pk = wrapperKeyPair.private;
 
-    final sealedContent =
-        _encryptNIP44(jsonEncode(sealEvent.toMap()), pk, '02$recipientPubKey');
+    String sealedContent;
+    try {
+      sealedContent = await _encryptNIP44(
+          jsonEncode(sealEvent.toMap()), pk, '02$recipientPubKey');
+    } catch (e) {
+      throw Exception('Failed to encrypt seal event: $e');
+    }
 
     final wrapEvent = NostrEvent.fromPartialData(
       kind: 1059,
-      content: await sealedContent,
+      content: sealedContent,
       keyPairs: wrapperKeyPair,
       tags: [
         ["p", recipientPubKey]

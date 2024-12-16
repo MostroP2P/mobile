@@ -40,10 +40,14 @@ class PaymentRequest implements Payload {
     }
     final orderJson = json[0];
     final Order? order = orderJson != null ? Order.fromJson(orderJson) : null;
+    final lnInvoice = json[1];
+    if (lnInvoice != null && lnInvoice is! String) {
+      throw FormatException('Invalid type for lnInvoice: expected String');
+    }
     final amount = json.length > 2 ? json[2] as int? : null;
     return PaymentRequest(
       order: order,
-      lnInvoice: json[1],
+      lnInvoice: lnInvoice as String?,
       amount: amount,
     );
   }
