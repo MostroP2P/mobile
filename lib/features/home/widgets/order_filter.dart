@@ -54,10 +54,6 @@ class OrderFilter extends StatelessWidget {
           buildDropdownSection(context, 'Payment methods', []),
           buildDropdownSection(context, 'Countries', []),
           buildDropdownSection(context, 'Rating', []),
-          buildDropdownSection(context, 'Fiat currencies', []),
-          buildDropdownSection(context, 'Payment methods', []),
-          buildDropdownSection(context, 'Countries', []),
-          buildDropdownSection(context, 'Rating', []),
         ],
       ),
     );
@@ -65,24 +61,11 @@ class OrderFilter extends StatelessWidget {
 
   Widget buildDropdownSection(
       BuildContext context, String title, List<DropdownMenuItem<String>> items) {
-      BuildContext context, String title, List<DropdownMenuItem<String>> items) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          DropdownButtonFormField<String>(
-            decoration: InputDecoration(
-              border: InputBorder.none,
-              labelText: title,
-              labelStyle: const TextStyle(color: AppTheme.mostroGreen),
-            ),
-            dropdownColor: AppTheme.dark1,
-            style: TextStyle(color: AppTheme.cream1),
-            items: items,
-            value: '', onChanged: (String? value) {  },
-          ),
-          SizedBox(height: 4),
           DropdownButtonFormField<String>(
             decoration: InputDecoration(
               border: InputBorder.none,

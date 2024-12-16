@@ -13,9 +13,6 @@ extension NostrEventExtensions on NostrEvent {
   OrderType? get orderType => _getTagValue('k') != null
       ? OrderType.fromString(_getTagValue('k')!)
       : null;
-  OrderType? get orderType => _getTagValue('k') != null
-      ? OrderType.fromString(_getTagValue('k')!)
-      : null;
   String? get currency => _getTagValue('f');
   String? get status => _getTagValue('s');
   String? get amount => _getTagValue('amt');
