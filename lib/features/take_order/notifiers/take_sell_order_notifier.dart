@@ -67,6 +67,7 @@ class TakeSellOrderNotifier extends StateNotifier<MostroMessage> {
       case Action.disputeInitiatedByPeer:
       case Action.adminSettled:
       default:
+        notifProvider.showInformation(state.action.toString());
         break;
     }
   }

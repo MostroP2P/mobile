@@ -4,7 +4,6 @@ import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:dart_nostr/nostr/model/request/filter.dart';
 import 'package:mostro_mobile/app/config.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
-import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/data/repositories/secure_storage_manager.dart';
@@ -15,7 +14,6 @@ class MostroService {
   //final MostroInstance _instance;
   final SecureStorageManager _secureStorageManager;
 
-  final _orders = HashMap<String, List<String>>();
   final _sessions = HashMap<String, Session>();
 
   MostroService(this._nostrService, this._secureStorageManager);
@@ -27,6 +25,7 @@ class MostroService {
         final decryptedEvent =
             await _nostrService.decryptNIP59Event(event, session.privateKey);
         final msg = MostroMessage.deserialized(decryptedEvent.content!);
+        session.eventId = msg.requestId;
         return msg;
       } catch (e) {
         print('Error processing event: $e');
@@ -42,6 +41,7 @@ class MostroService {
   Future<Session> takeSellOrder(
       String orderId, int? amount, String? lnAddress) async {
     final session = await _secureStorageManager.newSession();
+    session.eventId = orderId;
     _sessions[orderId] = session;
 
     final order = lnAddress != null
@@ -98,6 +98,7 @@ class MostroService {
   Future<Session> takeBuyOrder(String orderId, int? amount) async {
     final session = await _secureStorageManager.newSession();
     session.eventId = orderId;
+    _sessions[orderId] = session;
 
     final content = jsonEncode({
       'order': {
@@ -125,18 +126,18 @@ class MostroService {
     return session;
   }
 
-  Future<void> cancelOrder(Order order) async {
-    final session = await _secureStorageManager.loadSession(order.id!);
+  Future<void> cancelOrder(String orderId) async {
+    final session = _sessions[orderId];
 
     if (session == null) {
-      throw Exception('Session not found for order ID: ${order.id}');
+      throw Exception('Session not found for order ID: $orderId');
     }
 
     final content = jsonEncode({
       'order': {
         'version': Config.mostroVersion,
-        'id': order.id,
-        'action': Action.cancel,
+        'id': orderId,
+        'action': Action.cancel.value,
         'content': null,
       },
     });

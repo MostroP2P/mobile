@@ -13,7 +13,6 @@ import 'package:mostro_mobile/presentation/widgets/exchange_rate_widget.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
-import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
 
 class TakeBuyOrderScreen extends ConsumerWidget {
   final String orderId;
@@ -24,19 +23,6 @@ class TakeBuyOrderScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final orderDetailsState = ref.watch(takeBuyOrderNotifierProvider(orderId));
-
-    switch (orderDetailsState.action) {
-      case actions.Action.takeBuy:
-        return _buildContent(context, ref);
-      case actions.Action.payInvoice:
-      //return _buildLightningInvoice(context, orderDetailsState, ref);
-      default:
-        return const Center(child: Text('Order not found'));
-    }
-  }
-
-  Widget _buildContent(BuildContext context, WidgetRef ref) {
     final initialOrder = ref.read(eventProvider(orderId));
 
     return Scaffold(

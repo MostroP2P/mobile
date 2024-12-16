@@ -32,16 +32,24 @@ class TakeBuyOrderNotifier extends StateNotifier<MostroMessage> {
   }
 
   void _handleOrderUpdate() {
+    final notifProvider = ref.read(notificationProvider.notifier);
+
     switch (state.action) {
       case Action.payInvoice:
         ref
             .read(navigationProvider.notifier)
             .go('/pay_invoice/${state.requestId!}');
         break;
-      case Action.waitingSellerToPay:
-        ref.read(notificationProvider.notifier).showInformation('Waiting for Seller to pay');
+      case Action.waitingBuyerInvoice:
+        notifProvider.showInformation('Waiting Buy Invoice');
         break;
+      case Action.waitingSellerToPay:
+        notifProvider.showInformation('Waiting for Seller to pay');
+        break;
+      case Action.rate:
+      case Action.rateReceived:
       default:
+        notifProvider.showInformation(state.action.toString());
         break;
     }
   }

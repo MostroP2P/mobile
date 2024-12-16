@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/app/app_theme.dart';
 import 'package:mostro_mobile/data/models/order.dart';
-import 'package:mostro_mobile/features/take_order/providers/order_notifier_providers.dart';
 import 'package:mostro_mobile/features/take_order/widgets/order_app_bar.dart';
+import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 
 class AddLightningInvoiceScreen extends ConsumerWidget {
@@ -14,13 +14,14 @@ class AddLightningInvoiceScreen extends ConsumerWidget {
   const AddLightningInvoiceScreen({super.key, required this.orderId});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final orderDetailsNotifier =
-        ref.read(takeSellOrderNotifierProvider(orderId).notifier);
-    final state = ref.read(takeSellOrderNotifierProvider(orderId));
+    final mostroRepo = ref.read(mostroRepositoryProvider);
+    final message = mostroRepo.getOrderById(orderId);
+    final order = message?.getPayload<Order>();
 
-    var amount = (state.payload is Order) ? (state.payload as Order).amount : 0;
+    final amount = order?.amount;
 
     final TextEditingController invoiceController = TextEditingController();
+
     return Scaffold(
       backgroundColor: AppTheme.dark1,
       appBar: OrderAppBar(title: 'Add Lightning Invoice'),
@@ -57,6 +58,7 @@ class AddLightningInvoiceScreen extends ConsumerWidget {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
+                        mostroRepo.cancelOrder(orderId);
                         context.go('/');
                       },
                       style: ElevatedButton.styleFrom(
@@ -71,8 +73,7 @@ class AddLightningInvoiceScreen extends ConsumerWidget {
                       onPressed: () {
                         final invoice = invoiceController.text.trim();
                         if (invoice.isNotEmpty) {
-                          orderDetailsNotifier.sendInvoice(
-                              orderId, invoice, sats);
+                          mostroRepo.sendInvoice(orderId, invoice);
                         }
                       },
                       style: ElevatedButton.styleFrom(

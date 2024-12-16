@@ -79,9 +79,8 @@ class AddOrderNotifier extends StateNotifier<MostroMessage> {
       case Action.cooperativeCancelInitiatedByYou:
       case Action.disputeInitiatedByYou:
       case Action.adminSettled:
-      
       default:
-        // Handle other actions if necessary
+        notifProvider.showInformation(state.action.toString());
         break;
     }
   }

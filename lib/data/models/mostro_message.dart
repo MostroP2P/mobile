@@ -51,7 +51,10 @@ class MostroMessage<T extends Payload> {
 
   T? get payload => _payload;
 
-  T? getPayload() {
-    return _payload as T;
+  R? getPayload<R>() {
+    if (payload is R) {
+      return payload as R;
+    }
+    return null;
   }
 }
