@@ -3,10 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/repositories/mostro_repository.dart';
-import 'package:mostro_mobile/features/take_order/screens/pay_lightning_invoice_screen.dart';
-import 'package:mostro_mobile/features/take_order/widgets/completion_message.dart';
-import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/providers/navigation_notifier_provider.dart';
+import 'package:mostro_mobile/shared/providers/notification_notifier_provider.dart';
 
 class TakeBuyOrderNotifier extends StateNotifier<MostroMessage> {
   final MostroRepository _orderRepository;
@@ -29,20 +27,19 @@ class TakeBuyOrderNotifier extends StateNotifier<MostroMessage> {
     }
   }
 
-  void _handleError(Object err) {}
+  void _handleError(Object err) {
+    ref.read(notificationProvider.notifier).showInformation(err.toString());
+  }
 
   void _handleOrderUpdate() {
     switch (state.action) {
       case Action.payInvoice:
         ref
             .read(navigationProvider.notifier)
-            .navigate((context) => PayLightningInvoiceScreen(event: state));
+            .go('/pay_invoice/${state.requestId!}');
         break;
       case Action.waitingSellerToPay:
-        ref.read(navigationProvider.notifier).navigate((context) =>
-            CompletionMessage(
-                message:
-                    S.of(context).waiting_seller_to_pay(state.requestId!, '')));
+        ref.read(notificationProvider.notifier).showInformation('Waiting for Seller to pay');
         break;
       default:
         break;

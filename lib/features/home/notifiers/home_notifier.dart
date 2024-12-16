@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/repositories/open_orders_repository.dart';
-import 'package:mostro_mobile/providers/event_store_providers.dart';
+import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'home_state.dart';
 
 class HomeNotifier extends AsyncNotifier<HomeState> {
@@ -15,7 +15,7 @@ class HomeNotifier extends AsyncNotifier<HomeState> {
   Future<HomeState> build() async {
     state = const AsyncLoading();
 
-    _repository = await ref.watch(openOrdersRepositoryProvider.future);
+    _repository = ref.watch(orderRepositoryProvider);
 
     _repository!.subscribeToOrders();
 

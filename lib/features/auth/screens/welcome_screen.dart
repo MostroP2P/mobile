@@ -43,7 +43,7 @@ class WelcomeScreen extends StatelessWidget {
               CustomButton(
                 text: 'REGISTER',
                 onPressed: () {
-                  context.push('/register');
+                  context.go('/register');
                 },
               ),
               const SizedBox(height: 16),
@@ -57,7 +57,7 @@ class WelcomeScreen extends StatelessWidget {
                   ),
                 ),
                 onPressed: () {
-                  context.push('/');
+                  context.go('/');
                 },
               ),
               const Spacer(),

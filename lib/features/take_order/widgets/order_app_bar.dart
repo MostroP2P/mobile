@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/app/app_theme.dart';
@@ -15,7 +16,7 @@ class OrderAppBar extends StatelessWidget implements PreferredSizeWidget {
       elevation: 0,
       leading: IconButton(
         icon: const HeroIcon(HeroIcons.arrowLeft, color: AppTheme.cream1),
-        onPressed: () => Navigator.of(context).pop(),
+        onPressed: () => context.go('/'),
       ),
       title: Text(
         title,

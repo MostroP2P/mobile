@@ -1,6 +1,7 @@
 import 'package:bitcoin_icons/bitcoin_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/app/app_theme.dart';
@@ -8,7 +9,7 @@ import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/features/add_order/providers/add_order_notifier_provider.dart';
 import 'package:mostro_mobile/presentation/widgets/currency_dropdown.dart';
 import 'package:mostro_mobile/presentation/widgets/currency_text_field.dart';
-import 'package:mostro_mobile/providers/exchange_service_provider.dart';
+import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
 import 'package:uuid/uuid.dart';
 
 class AddOrderScreen extends ConsumerWidget {
@@ -32,7 +33,7 @@ class AddOrderScreen extends ConsumerWidget {
         elevation: 0,
         leading: IconButton(
           icon: const HeroIcon(HeroIcons.arrowLeft, color: AppTheme.cream1),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => context.go('/'),
         ),
         title: Text(
           'NEW ORDER',
@@ -232,7 +233,7 @@ class AddOrderScreen extends ConsumerWidget {
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
         TextButton(
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => context.go('/'),
           child: const Text('CANCEL', style: TextStyle(color: AppTheme.red2)),
         ),
         const SizedBox(width: 16),
@@ -267,14 +268,6 @@ class AddOrderScreen extends ConsumerWidget {
         _paymentMethodController.text,
         orderType,
       );
-
-      // Optionally show feedback to the user
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Order submitted!')),
-      );
-
-      // Close the screen or navigate as needed
-      Navigator.of(context).pop();
     }
   }
 }

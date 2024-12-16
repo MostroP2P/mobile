@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:dart_nostr/nostr/model/request/filter.dart';
 import 'package:mostro_mobile/app/config.dart';
-import 'package:mostro_mobile/data/models/mostro_instance.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';

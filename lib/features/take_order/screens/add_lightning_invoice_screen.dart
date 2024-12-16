@@ -1,18 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/app/app_theme.dart';
+import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/features/take_order/providers/order_notifier_providers.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 
 class AddLightningInvoiceScreen extends ConsumerWidget {
   final String orderId;
-  final int sats;
+  final int sats = 0;
 
-  const AddLightningInvoiceScreen(this.orderId, this.sats, {super.key});
+  const AddLightningInvoiceScreen({super.key, required this.orderId});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final orderDetailsNotifier =
         ref.read(takeSellOrderNotifierProvider(orderId).notifier);
+    final state =
+        ref.read(takeSellOrderNotifierProvider(orderId));
+
+    var amount =
+        (state.payload is Order) ? (state.payload as Order).amount : 0;
 
     final TextEditingController invoiceController = TextEditingController();
     return CustomCard(
@@ -23,7 +30,7 @@ class AddLightningInvoiceScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Please enter a Lightning Invoice for $sats sats:",
+              "Please enter a Lightning Invoice for $amount sats:",
               style: TextStyle(color: AppTheme.cream1, fontSize: 16),
             ),
             const SizedBox(height: 8),
@@ -48,7 +55,7 @@ class AddLightningInvoiceScreen extends ConsumerWidget {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () {
-                      Navigator.of(context).pop();
+                      context.go('/');
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,

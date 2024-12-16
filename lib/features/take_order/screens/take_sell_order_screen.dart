@@ -1,9 +1,8 @@
-import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/app/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
-import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/features/take_order/providers/order_notifier_providers.dart';
@@ -13,26 +12,26 @@ import 'package:mostro_mobile/features/take_order/widgets/completion_message.dar
 import 'package:mostro_mobile/features/take_order/widgets/seller_info.dart';
 import 'package:mostro_mobile/presentation/widgets/currency_text_field.dart';
 import 'package:mostro_mobile/presentation/widgets/exchange_rate_widget.dart';
-import 'package:mostro_mobile/providers/exchange_service_provider.dart';
+import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
+import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
 
 class TakeSellOrderScreen extends ConsumerWidget {
-  final NostrEvent initialOrder;
+  final String orderId;
   final TextEditingController _satsAmountController = TextEditingController();
   final TextEditingController _lndAdrress = TextEditingController();
 
-  TakeSellOrderScreen({super.key, required this.initialOrder});
+  TakeSellOrderScreen({super.key, required this.orderId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final orderDetailsState =
-        ref.watch(takeSellOrderNotifierProvider(initialOrder.orderId!));
+    final orderDetailsState = ref.watch(takeSellOrderNotifierProvider(orderId));
     switch (orderDetailsState.action) {
       case actions.Action.takeSell:
         return _buildContent(context, ref);
       case actions.Action.addInvoice:
-        return _buildLightningInvoiceInput(context, orderDetailsState, ref);
+        return _buildLightningInvoiceInput(context, ref);
       case actions.Action.waitingSellerToPay:
         return _buildCompletionMessage();
       default:
@@ -46,11 +45,12 @@ class TakeSellOrderScreen extends ConsumerWidget {
   }
 
   Widget _buildContent(BuildContext context, WidgetRef ref) {
+    final initialOrder = ref.read(eventProvider(orderId));
     return Scaffold(
       backgroundColor: AppTheme.dark1,
       appBar: OrderAppBar(
           title:
-              '${initialOrder.orderType == OrderType.buy ? "SELL" : "BUY"} BITCOIN'),
+              '${initialOrder?.orderType == OrderType.buy ? "SELL" : "BUY"} BITCOIN'),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -58,7 +58,7 @@ class TakeSellOrderScreen extends ConsumerWidget {
             children: [
               CustomCard(
                   padding: EdgeInsets.all(16),
-                  child: SellerInfo(order: initialOrder)),
+                  child: SellerInfo(order: initialOrder!)),
               const SizedBox(height: 16),
               _buildSellerAmount(ref),
               const SizedBox(height: 16),
@@ -68,7 +68,7 @@ class TakeSellOrderScreen extends ConsumerWidget {
                   padding: const EdgeInsets.all(16),
                   child: BuyerInfo(order: initialOrder)),
               const SizedBox(height: 16),
-              _buildBuyerAmount(),
+              _buildBuyerAmount(initialOrder.amount!),
               const SizedBox(height: 16),
               _buildLnAddress(),
               const SizedBox(height: 16),
@@ -81,8 +81,9 @@ class TakeSellOrderScreen extends ConsumerWidget {
   }
 
   Widget _buildSellerAmount(WidgetRef ref) {
+    final initialOrder = ref.read(eventProvider(orderId));
     final exchangeRateAsyncValue =
-        ref.watch(exchangeRateProvider(initialOrder.currency!));
+        ref.watch(exchangeRateProvider(initialOrder!.currency!));
     return exchangeRateAsyncValue.when(
       loading: () => const CircularProgressIndicator(),
       error: (error, _) => Text('Error: $error'),
@@ -111,16 +112,20 @@ class TakeSellOrderScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildLightningInvoiceInput(
-      BuildContext context, MostroMessage state, WidgetRef ref) {
-    final orderId = initialOrder.orderId!;
+  Widget _buildLightningInvoiceInput(BuildContext context, WidgetRef ref) {
     final orderDetailsNotifier =
         ref.read(takeSellOrderNotifierProvider(orderId).notifier);
+    final state = ref.watch(takeSellOrderNotifierProvider(orderId));
     final order = (state.payload is Order) ? state.payload as Order : null;
 
     final TextEditingController invoiceController = TextEditingController();
     final int val = order!.amount;
-    return CustomCard(
+    return Scaffold(
+      backgroundColor: AppTheme.dark1,
+      appBar: OrderAppBar(
+          title:
+              'Add a Lightning Invoice'),
+      body: CustomCard(
       padding: const EdgeInsets.all(16),
       child: Material(
         color: Colors.transparent,
@@ -153,7 +158,7 @@ class TakeSellOrderScreen extends ConsumerWidget {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () {
-                      Navigator.of(context).pop();
+                      context.go('/');
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,
@@ -181,10 +186,10 @@ class TakeSellOrderScreen extends ConsumerWidget {
           ],
         ),
       ),
-    );
+    ),);
   }
 
-  Widget _buildBuyerAmount() {
+  Widget _buildBuyerAmount(String amount) {
     return CustomCard(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -192,8 +197,7 @@ class TakeSellOrderScreen extends ConsumerWidget {
         children: [
           CurrencyTextField(controller: _satsAmountController, label: 'Sats'),
           const SizedBox(height: 8),
-          Text('\$ ${initialOrder.amount}',
-              style: const TextStyle(color: AppTheme.grey2)),
+          Text('\$ $amount', style: const TextStyle(color: AppTheme.grey2)),
           const SizedBox(height: 24),
         ],
       ),
@@ -235,14 +239,14 @@ class TakeSellOrderScreen extends ConsumerWidget {
 
   Widget _buildActionButtons(BuildContext context, WidgetRef ref) {
     final orderDetailsNotifier =
-        ref.read(takeSellOrderNotifierProvider(initialOrder.orderId!).notifier);
+        ref.read(takeSellOrderNotifierProvider(orderId).notifier);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
         ElevatedButton(
           onPressed: () {
-            Navigator.of(context).pop();
+            context.go('/');
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: AppTheme.red1,
@@ -251,8 +255,8 @@ class TakeSellOrderScreen extends ConsumerWidget {
         ),
         const SizedBox(width: 16),
         ElevatedButton(
-          onPressed: () => orderDetailsNotifier.takeSellOrder(
-              initialOrder.orderId!, null, null),
+          onPressed: () =>
+              orderDetailsNotifier.takeSellOrder(orderId, null, null),
           style: ElevatedButton.styleFrom(
             backgroundColor: AppTheme.mostroGreen,
           ),

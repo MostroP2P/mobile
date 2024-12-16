@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:mostro_mobile/data/models/mostro_message.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 class PayLightningInvoiceScreen extends StatelessWidget {
-  final MostroMessage event;
+  final String orderId;
 
-  const PayLightningInvoiceScreen({super.key, required this.event});
+  const PayLightningInvoiceScreen({super.key, required this.orderId});
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +46,7 @@ class PayLightningInvoiceScreen extends StatelessWidget {
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
-                Navigator.of(context).pop();
+                context.go('/');
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/app/app_theme.dart';
 import 'package:mostro_mobile/features/take_order/widgets/order_app_bar.dart';
 
@@ -35,7 +36,7 @@ class CompletionMessage extends StatelessWidget {
               ),
               const SizedBox(height: 32),
               ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () => context.go('/'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.mostroGreen,
                 ),

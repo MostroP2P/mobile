@@ -26,8 +26,6 @@ class MostroApp extends ConsumerWidget {
       });
     });
 
-    final navigatorKey = GlobalKey<NavigatorState>();
-
     return MaterialApp.router(
       title: 'Mostro',
       theme: AppTheme.theme,
@@ -39,12 +37,6 @@ class MostroApp extends ConsumerWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: S.delegate.supportedLocales,
-      builder: (context, child) {
-        return NotificationListenerWidget(
-            navigator: navigatorKey,
-            child: NavigationListenerWidget(
-                navigator: navigatorKey, child: child!));
-      },
     );
   }
 }

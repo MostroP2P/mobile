@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../bloc/payment_confirmation_bloc.dart';
 import '../bloc/payment_confirmation_event.dart';
 import '../bloc/payment_confirmation_state.dart';
@@ -11,7 +12,8 @@ class PaymentConfirmationScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => PaymentConfirmationBloc()..add(LoadPaymentConfirmation()),
+      create: (context) =>
+          PaymentConfirmationBloc()..add(LoadPaymentConfirmation()),
       child: Scaffold(
         backgroundColor: const Color(0xFF1D212C),
         appBar: AppBar(
@@ -20,7 +22,7 @@ class PaymentConfirmationScreen extends StatelessWidget {
           title: const Text('PAYMENT', style: TextStyle(color: Colors.white)),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => context.go('/'),
           ),
         ),
         body: BlocBuilder<PaymentConfirmationBloc, PaymentConfirmationState>(
@@ -78,7 +80,9 @@ class PaymentConfirmationScreen extends StatelessWidget {
                           minimumSize: const Size(double.infinity, 50),
                         ),
                         onPressed: () {
-                          context.read<PaymentConfirmationBloc>().add(ContinueAfterConfirmation());
+                          context
+                              .read<PaymentConfirmationBloc>()
+                              .add(ContinueAfterConfirmation());
                           // Aquí puedes navegar a la siguiente pantalla o realizar la acción necesaria
                         },
                         child: const Text('CONTINUE'),

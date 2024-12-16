@@ -5,7 +5,7 @@ import 'package:mostro_mobile/notifiers/nostr_service_notifier.dart';
 class OpenOrdersRepositoryNotifier extends AsyncNotifier<OpenOrdersRepository> {
   @override
   Future<OpenOrdersRepository> build() async {
-    final nostrService = await ref.watch(nostrServiceProvider.future);
+    final nostrService = ref.watch(nostrServiceProvider);
     return OpenOrdersRepository(nostrService);
   }
 }

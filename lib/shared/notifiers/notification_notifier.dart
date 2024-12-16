@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mostro_mobile/data/models/mostro_message.dart';
 
 class NotificationState {
-  final MostroMessage? message;
+  final String? message;
   final WidgetBuilder? widgetBuilder;
   final bool informational;
   final bool actionRequired;
@@ -17,6 +16,10 @@ class NotificationState {
 
 class NotificationNotifier extends StateNotifier<NotificationState> {
   NotificationNotifier() : super(NotificationState());
+
+  void showInformation(String message) {
+    state = NotificationState(message: message, informational: true);
+  }
 
   void clearNotification() {
     state = NotificationState();

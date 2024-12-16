@@ -5,9 +5,8 @@ import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/data/repositories/mostro_repository.dart';
-import 'package:mostro_mobile/features/add_order/screens/order_confirmation_screen.dart';
-import 'package:mostro_mobile/features/take_order/screens/pay_lightning_invoice_screen.dart';
 import 'package:mostro_mobile/shared/providers/navigation_notifier_provider.dart';
+import 'package:mostro_mobile/shared/providers/notification_notifier_provider.dart';
 
 class AddOrderNotifier extends StateNotifier<MostroMessage> {
   final MostroRepository _orderRepository;
@@ -43,26 +42,23 @@ class AddOrderNotifier extends StateNotifier<MostroMessage> {
   }
 
   void _handleError(Object err) {
-    print(err);
+    ref.read(notificationProvider.notifier).showInformation(err.toString());
   }
 
   void _handleOrderUpdate() {
     final navProvider = ref.read(navigationProvider.notifier);
-
-    print(state.action);
+    final notifProvider = ref.read(notificationProvider.notifier);
 
     switch (state.action) {
       case Action.newOrder:
-        navProvider.navigate((context) {
-          return OrderConfirmationScreen(orderId: state.requestId!);
-        });
+        navProvider.go('/order_confirmed/${state.requestId!}');
         break;
       case Action.payInvoice:
-        navProvider.navigate((context) {
-          return PayLightningInvoiceScreen(event: state);
-        });
+        navProvider.go('/pay_invoice/${state.requestId!}');
         break;
       case Action.outOfRangeSatsAmount:
+        notifProvider.showInformation('Sats out of range');
+        break;
       case Action.outOfRangeFiatAmount:
         break;
       default:

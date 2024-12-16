@@ -16,7 +16,7 @@ class LoginScreen extends HookConsumerWidget {
 
     ref.listen<AuthState>(authNotifierProvider, (previous, state) {
       if (state is AuthAuthenticated) {
-        context.go('/home');
+        context.go('/');
       } else if (state is AuthFailure) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(state.error)),

@@ -1,6 +1,7 @@
 import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/app/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
@@ -10,39 +11,40 @@ import 'package:mostro_mobile/features/take_order/widgets/buyer_info.dart';
 import 'package:mostro_mobile/features/take_order/widgets/seller_info.dart';
 import 'package:mostro_mobile/presentation/widgets/currency_text_field.dart';
 import 'package:mostro_mobile/presentation/widgets/exchange_rate_widget.dart';
-import 'package:mostro_mobile/providers/exchange_service_provider.dart';
+import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
+import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
 
 class TakeBuyOrderScreen extends ConsumerWidget {
-  final NostrEvent initialOrder;
+  final String orderId;
   final TextEditingController _satsAmountController = TextEditingController();
   final TextEditingController _lndAdrress = TextEditingController();
 
-  TakeBuyOrderScreen({super.key, required this.initialOrder});
+  TakeBuyOrderScreen({super.key, required this.orderId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final orderDetailsState =
-        ref.watch(takeBuyOrderNotifierProvider(initialOrder.orderId!));
+    final orderDetailsState = ref.watch(takeBuyOrderNotifierProvider(orderId));
 
     switch (orderDetailsState.action) {
-
       case actions.Action.takeBuy:
         return _buildContent(context, ref);
       case actions.Action.payInvoice:
-        //return _buildLightningInvoice(context, orderDetailsState, ref);
+      //return _buildLightningInvoice(context, orderDetailsState, ref);
       default:
         return const Center(child: Text('Order not found'));
     }
   }
 
   Widget _buildContent(BuildContext context, WidgetRef ref) {
+    final initialOrder = ref.read(eventProvider(orderId));
+
     return Scaffold(
       backgroundColor: AppTheme.dark1,
       appBar: OrderAppBar(
           title:
-              '${initialOrder.orderType == OrderType.buy ? "SELL" : "BUY"} BITCOIN'),
+              '${initialOrder?.orderType == OrderType.buy ? "SELL" : "BUY"} BITCOIN'),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -50,7 +52,7 @@ class TakeBuyOrderScreen extends ConsumerWidget {
             children: [
               CustomCard(
                   padding: EdgeInsets.all(16),
-                  child: SellerInfo(order: initialOrder)),
+                  child: SellerInfo(order: initialOrder!)),
               const SizedBox(height: 16),
               _buildSellerAmount(ref),
               const SizedBox(height: 16),
@@ -60,7 +62,7 @@ class TakeBuyOrderScreen extends ConsumerWidget {
                   padding: const EdgeInsets.all(16),
                   child: BuyerInfo(order: initialOrder)),
               const SizedBox(height: 16),
-              _buildBuyerAmount(),
+              _buildBuyerAmount(initialOrder.amount!),
               const SizedBox(height: 16),
               _buildLnAddress(),
               const SizedBox(height: 16),
@@ -73,8 +75,9 @@ class TakeBuyOrderScreen extends ConsumerWidget {
   }
 
   Widget _buildSellerAmount(WidgetRef ref) {
+    final initialOrder = ref.read(eventProvider(orderId));
     final exchangeRateAsyncValue =
-        ref.watch(exchangeRateProvider(initialOrder.currency!));
+        ref.watch(exchangeRateProvider(initialOrder!.currency!));
     return exchangeRateAsyncValue.when(
       loading: () => const CircularProgressIndicator(),
       error: (error, _) => Text('Error: $error'),
@@ -103,8 +106,7 @@ class TakeBuyOrderScreen extends ConsumerWidget {
     );
   }
 
-
-  Widget _buildBuyerAmount() {
+  Widget _buildBuyerAmount(String amount) {
     return CustomCard(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -112,8 +114,7 @@ class TakeBuyOrderScreen extends ConsumerWidget {
         children: [
           CurrencyTextField(controller: _satsAmountController, label: 'Sats'),
           const SizedBox(height: 8),
-          Text('\$ ${initialOrder.amount}',
-              style: const TextStyle(color: AppTheme.grey2)),
+          Text('\$ $amount', style: const TextStyle(color: AppTheme.grey2)),
           const SizedBox(height: 24),
         ],
       ),
@@ -155,29 +156,28 @@ class TakeBuyOrderScreen extends ConsumerWidget {
 
   Widget _buildActionButtons(BuildContext context, WidgetRef ref) {
     final orderDetailsNotifier =
-        ref.read(takeBuyOrderNotifierProvider(initialOrder.orderId!).notifier);
+        ref.read(takeBuyOrderNotifierProvider(orderId).notifier);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.red1,
-            ),
-            child: const Text('CANCEL'),
+        ElevatedButton(
+          onPressed: () {
+            context.go('/');
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppTheme.red1,
           ),
+          child: const Text('CANCEL'),
+        ),
         const SizedBox(width: 16),
         ElevatedButton(
-            onPressed: () => orderDetailsNotifier.takeBuyOrder(
-                initialOrder.orderId!, null),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.mostroGreen,
-            ),
-            child: const Text('CONTINUE'),
+          onPressed: () => orderDetailsNotifier.takeBuyOrder(orderId, null),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppTheme.mostroGreen,
           ),
+          child: const Text('CONTINUE'),
+        ),
       ],
     );
   }

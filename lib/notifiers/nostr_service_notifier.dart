@@ -10,7 +10,6 @@ class NostrServiceNotifier extends AsyncNotifier<NostrService> {
   }
 }
 
-final nostrServiceProvider =
-    AsyncNotifierProvider<NostrServiceNotifier, NostrService>(
-  NostrServiceNotifier.new,
-);
+final nostrServiceProvider = Provider<NostrService>((ref) {
+  return NostrService()..init();
+});

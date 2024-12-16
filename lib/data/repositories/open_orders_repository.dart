@@ -29,8 +29,7 @@ class OpenOrdersRepository implements OrderRepository {
     );
 
     _subscription = _nostrService.subscribeToEvents(filter).listen((event) {
-      final key = '${event.kind}-${event.pubkey}-${event.orderId}';
-      _events[key] = event;
+      _events[event.orderId!] = event;
       _eventStreamController.add(_events.values.toList());
     }, onError: (error) {
       // Log error and optionally notify listeners
@@ -43,6 +42,10 @@ class OpenOrdersRepository implements OrderRepository {
     _subscription?.cancel();
     _eventStreamController.close();
     _events.clear();
+  }
+
+  NostrEvent? getOrderById(String orderId) {
+    return _events[orderId];
   }
 
   Stream<List<NostrEvent>> get eventsStream => _eventStreamController.stream;

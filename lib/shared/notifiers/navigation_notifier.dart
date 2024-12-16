@@ -1,17 +1,15 @@
-import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class NavigationState {
-  final WidgetBuilder? widgetBuilder;
+  final String path;
 
-  NavigationState({required this.widgetBuilder});
+  NavigationState(this.path);
 }
 
 class NavigationNotifier extends StateNotifier<NavigationState> {
-  NavigationNotifier()
-      : super(NavigationState(widgetBuilder: null));
+  NavigationNotifier() : super(NavigationState('/'));
 
-  void navigate(WidgetBuilder builder) {
-    state = NavigationState(widgetBuilder: builder);
+  void go(String path) {
+    state = NavigationState(path);
   }
 }

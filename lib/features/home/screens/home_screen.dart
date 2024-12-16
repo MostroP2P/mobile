@@ -4,12 +4,12 @@ import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/app/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/features/home/notifiers/home_notifier.dart';
+import 'package:mostro_mobile/features/home/providers/home_notifer_provider.dart';
 import 'package:mostro_mobile/features/home/notifiers/home_state.dart';
 import 'package:mostro_mobile/presentation/widgets/bottom_nav_bar.dart';
 import 'package:mostro_mobile/presentation/widgets/custom_app_bar.dart';
 import 'package:mostro_mobile/features/home/widgets/order_filter.dart';
 import 'package:mostro_mobile/features/home/widgets/order_list.dart';
-import 'package:mostro_mobile/providers/nostr_service_provider.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});

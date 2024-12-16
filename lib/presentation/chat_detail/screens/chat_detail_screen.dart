@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../bloc/chat_detail_bloc.dart';
 import '../bloc/chat_detail_event.dart';
 import '../bloc/chat_detail_state.dart';
@@ -22,7 +23,7 @@ class ChatDetailScreen extends StatelessWidget {
           title: const Text('JACK FOOTSEY'),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => context.go('/'),
           ),
         ),
         body: BlocBuilder<ChatDetailBloc, ChatDetailState>(
@@ -59,11 +60,15 @@ class ChatDetailScreen extends StatelessWidget {
   Widget _buildMessageBubble(ChatMessage message) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      alignment: message.sender == 'Mostro' ? Alignment.centerLeft : Alignment.centerRight,
+      alignment: message.sender == 'Mostro'
+          ? Alignment.centerLeft
+          : Alignment.centerRight,
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: message.sender == 'Mostro' ? const Color(0xFF303544) : const Color(0xFF8CC541),
+          color: message.sender == 'Mostro'
+              ? const Color(0xFF303544)
+              : const Color(0xFF8CC541),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
@@ -101,7 +106,9 @@ class ChatDetailScreen extends StatelessWidget {
             icon: const Icon(Icons.send, color: Color(0xFF8CC541)),
             onPressed: () {
               if (controller.text.isNotEmpty) {
-                context.read<ChatDetailBloc>().add(SendMessage(controller.text));
+                context
+                    .read<ChatDetailBloc>()
+                    .add(SendMessage(controller.text));
                 controller.clear();
               }
             },

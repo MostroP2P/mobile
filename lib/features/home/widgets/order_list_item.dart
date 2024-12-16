@@ -1,11 +1,10 @@
 import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/app/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
-import 'package:mostro_mobile/features/take_order/screens/take_buy_order_screen.dart';
-import 'package:mostro_mobile/features/take_order/screens/take_sell_order_screen.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 
 class OrderListItem extends StatelessWidget {
@@ -17,11 +16,9 @@ class OrderListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => order.orderType == OrderType.buy ? TakeBuyOrderScreen(initialOrder: order) : TakeSellOrderScreen(initialOrder: order),
-          ),
-        );
+        order.orderType == OrderType.buy
+            ? context.go('/take_buy/${order.orderId}')
+            : context.go('/take_sell/${order.orderId}');
       },
       child: CustomCard(
         color: AppTheme.dark1,
