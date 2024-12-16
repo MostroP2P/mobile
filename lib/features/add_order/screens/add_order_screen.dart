@@ -24,8 +24,6 @@ class AddOrderScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final orderType = ref.watch(orderTypeProvider);
-
     return Scaffold(
       backgroundColor: AppTheme.dark1,
       appBar: AppBar(
@@ -52,7 +50,7 @@ class AddOrderScreen extends ConsumerWidget {
                 color: AppTheme.dark2,
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: _buildContent(context, ref, orderType),
+              child: _buildContent(context, ref),
             ),
           ),
         ],
@@ -61,7 +59,8 @@ class AddOrderScreen extends ConsumerWidget {
   }
 
   Widget _buildContent(
-      BuildContext context, WidgetRef ref, OrderType orderType) {
+      BuildContext context, WidgetRef ref) {
+    final orderType = ref.watch(orderTypeProvider);
     return Form(
       key: _formKey,
       child: Column(

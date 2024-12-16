@@ -60,7 +60,26 @@ class AddOrderNotifier extends StateNotifier<MostroMessage> {
         notifProvider.showInformation('Sats out of range');
         break;
       case Action.outOfRangeFiatAmount:
+        notifProvider.showInformation('Fiant amount out of range');
         break;
+      case Action.waitingSellerToPay:
+        notifProvider.showInformation('Waiting Seller to pay');
+        break;
+      case Action.waitingBuyerInvoice:
+        notifProvider.showInformation('Waiting Buy Invoice');
+        break;
+      case Action.buyerTookOrder:
+        notifProvider.showInformation('Buyer took order');
+        break;
+      case Action.fiatSentOk:
+      case Action.holdInvoicePaymentSettled:
+      case Action.rate:
+      case Action.rateReceived:
+      case Action.canceled:
+      case Action.cooperativeCancelInitiatedByYou:
+      case Action.disputeInitiatedByYou:
+      case Action.adminSettled:
+      
       default:
         // Handle other actions if necessary
         break;

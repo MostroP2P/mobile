@@ -4,6 +4,7 @@ import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/data/repositories/mostro_repository.dart';
+import 'package:mostro_mobile/shared/providers/navigation_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/notification_notifier_provider.dart';
 
 class TakeSellOrderNotifier extends StateNotifier<MostroMessage> {
@@ -37,22 +38,34 @@ class TakeSellOrderNotifier extends StateNotifier<MostroMessage> {
   }
 
   void _handleOrderUpdate() {
-    //final navProvider = ref.read(navigationProvider.notifier);
-
+    final navProvider = ref.read(navigationProvider.notifier);
+    final notifProvider = ref.read(notificationProvider.notifier);
     switch (state.action) {
       case Action.addInvoice:
-        //navProvider.go('/add_invoice/$orderId');
+        navProvider.go('/add_invoice/$orderId');
         break;
       case Action.waitingSellerToPay:
-        ref.read(notificationProvider.notifier).showInformation('Waiting for Seller to pay');
+        navProvider.go('/');
+        notifProvider.showInformation('Waiting for Seller to pay');
       case Action.incorrectInvoiceAmount:
-        ref
-            .read(notificationProvider.notifier)
-            .showInformation('Incorrect Invoice Amount');
+        notifProvider.showInformation('Incorrect Invoice Amount');
         break;
       case Action.outOfRangeFiatAmount:
       case Action.outOfRangeSatsAmount:
         break;
+      case Action.holdInvoicePaymentAccepted:
+        break;
+      case Action.fiatSentOk:
+        break;
+      case Action.released:
+        break;
+      case Action.purchaseCompleted:
+        break;
+      case Action.rate:
+        break;
+      case Action.cooperativeCancelInitiatedByPeer:
+      case Action.disputeInitiatedByPeer:
+      case Action.adminSettled:
       default:
         break;
     }
