@@ -89,9 +89,9 @@ Please take a look at our issues section for areas where you can contribute. We 
 This project is licensed under the MIT License. See the `LICENSE` file for details.
 
 ## Progress Overview
-- [ ] Displays order list
-- [ ] Take orders (Buy & Sell)
-- [ ] Posts Orders (Buy & Sell)
+- [x] Displays order list
+- [x] Take orders (Buy & Sell)
+- [x] Posts Orders (Buy & Sell)
 - [ ] Direct message with peers (use nip-17)
 - [ ] Fiat sent
 - [ ] Release
