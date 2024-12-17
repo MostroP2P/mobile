@@ -40,7 +40,7 @@ dependencies:
   heroicons: ^0.10.0
   crypto: ^3.0.5
   convert: ^3.1.1
-  shared_preferences: ^2.3.2
+  shared_preferences: ^2.3.3
   equatable: ^2.0.5
   logging: ^1.2.0
   local_auth: ^2.3.0
@@ -50,15 +50,29 @@ dependencies:
   bitcoin_icons: ^0.0.4
   collection: ^1.18.0
   elliptic: ^0.3.11
+  intl: ^0.19.0
+  uuid: ^4.5.1
+
+  flutter_localizations:
+    sdk: flutter
 
   nip44:
     git:
       url: https://github.com/chebizarro/dart-nip44.git
       ref: master
-  intl: ^0.19.0
 
-  flutter_localizations:
-    sdk: flutter
+  # temporary fork until main package is updated
+  flutter_secure_storage:
+    git:
+        url: https://github.com/chebizarro/flutter_secure_storage.git
+        path: flutter_secure_storage
+        ref: develop
+  go_router: ^14.6.2
+  bip32_bip44: ^1.0.0
+  bip39: ^1.0.6
+  flutter_hooks: ^0.20.5
+  hooks_riverpod: ^2.6.1
+  flutter_launcher_icons: ^0.14.2
 
 dev_dependencies:
   flutter_test:
@@ -114,3 +128,9 @@ flutter:
   # see https://flutter.dev/to/font-from-package
 flutter_intl:
   enabled: true
+
+flutter_icons:
+  android: true 
+  ios: true
+  image_path: "assets/images/launcher-icon.png"
+  remove_alpha_ios: true

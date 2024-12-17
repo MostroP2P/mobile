@@ -1,7 +1,7 @@
-import 'package:mostro_mobile/data/models/content.dart';
+import 'package:mostro_mobile/data/models/payload.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 
-class PaymentRequest implements Content {
+class PaymentRequest implements Payload {
   final Order? order;
   final String? lnInvoice;
   final int? amount;

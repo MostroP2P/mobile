@@ -51,12 +51,12 @@ enum Action {
   const Action(this.value);
 
   /// Converts a string value to its corresponding Action enum value.
-  /// 
+  ///
   /// Throws an ArgumentError if the string doesn't match any Action value.
   static final _valueMap = {
     for (var action in Action.values) action.value: action
   };
-  
+
   static Action fromString(String value) {
     final action = _valueMap[value];
     if (action == null) {
@@ -65,4 +65,8 @@ enum Action {
     return action;
   }
 
+  @override
+  String toString() {
+    return value;
+  }
 }

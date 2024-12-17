@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../bloc/payment_qr_bloc.dart';
 import '../bloc/payment_qr_event.dart';
 import '../bloc/payment_qr_state.dart';
@@ -20,7 +21,7 @@ class PaymentQrScreen extends StatelessWidget {
           title: const Text('PAYMENT'),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => context.go('/'),
           ),
         ),
         body: BlocBuilder<PaymentQrBloc, PaymentQrState>(
@@ -56,9 +57,9 @@ class PaymentQrScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   TextButton(
-                    child:
-                        const Text('CANCEL', style: TextStyle(color: Colors.white)),
-                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('CANCEL',
+                        style: TextStyle(color: Colors.white)),
+                    onPressed: () => context.go('/'),
                   ),
                 ],
               );

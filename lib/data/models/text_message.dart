@@ -1,6 +1,6 @@
-import 'package:mostro_mobile/data/models/content.dart';
+import 'package:mostro_mobile/data/models/payload.dart';
 
-class TextMessage implements Content {
+class TextMessage implements Payload {
   final String message;
 
   TextMessage({required this.message});

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:mostro_mobile/providers/exchange_service_provider.dart';
+import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
 
 class ExchangeRateWidget extends ConsumerWidget {
   final String currency;

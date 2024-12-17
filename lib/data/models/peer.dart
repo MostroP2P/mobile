@@ -1,6 +1,6 @@
-import 'package:mostro_mobile/data/models/content.dart';
+import 'package:mostro_mobile/data/models/payload.dart';
 
-class Peer implements Content {
+class Peer implements Payload {
   final String publicKey;
 
   Peer({required this.publicKey});
@@ -14,7 +14,7 @@ class Peer implements Content {
       publicKey: pubkey,
     );
   }
-  
+
   @override
   Map<String, dynamic> toJson() {
     return {

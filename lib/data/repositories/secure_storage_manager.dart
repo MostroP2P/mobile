@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mostro_mobile/data/models/session.dart';
-import 'package:mostro_mobile/core/utils/nostr_utils.dart';
+import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
 class SecureStorageManager {
   Timer? _cleanupTimer;

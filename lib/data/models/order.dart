@@ -1,10 +1,10 @@
 import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/enums/status.dart';
-import 'package:mostro_mobile/data/models/content.dart';
+import 'package:mostro_mobile/data/models/payload.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 
-class Order implements Content {
+class Order implements Payload {
   final String? id;
   final OrderType kind;
   final Status status;
@@ -33,11 +33,11 @@ class Order implements Content {
     this.maxAmount,
     required this.fiatAmount,
     required this.paymentMethod,
-    required this.premium,
+    this.premium = 1,
     this.masterBuyerPubkey,
     this.masterSellerPubkey,
     this.buyerInvoice,
-    this.createdAt,
+    this.createdAt = 0,
     this.expiresAt,
     this.buyerToken,
     this.sellerToken,

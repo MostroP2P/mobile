@@ -1,6 +1,6 @@
-import '../../core/utils/auth_utils.dart';
-import '../../core/utils/nostr_utils.dart';
-import '../../core/utils/biometrics_helper.dart';
+import '../../shared/utils/auth_utils.dart';
+import '../../shared/utils/nostr_utils.dart';
+import '../../shared/utils/biometrics_helper.dart';
 
 class AuthRepository {
   final BiometricsHelper _biometricsHelper;

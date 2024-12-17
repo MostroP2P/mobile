@@ -5,31 +5,31 @@ import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/repositories/order_repository_interface.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
 
+const orderEventKind = 38383;
+const orderFilterDurationHours = 48;
+
 class OpenOrdersRepository implements OrderRepository {
   final NostrService _nostrService;
   final StreamController<List<NostrEvent>> _eventStreamController =
       StreamController.broadcast();
   final Map<String, NostrEvent> _events = {};
-
-  Stream<List<NostrEvent>> get eventsStream => _eventStreamController.stream;
+  StreamSubscription<NostrEvent>? _subscription;
 
   OpenOrdersRepository(this._nostrService);
 
-  StreamSubscription<NostrEvent>? _subscription;
-
   /// Subscribes to events matching the given filter.
-  ///
-  /// @param filter The filter criteria for events.
-  /// @throws ArgumentError if filter is null
-  void subscribe(NostrFilter filter) {
-    ArgumentError.checkNotNull(filter, 'filter');
-
-    // Cancel existing subscription if any
+  void subscribeToOrders() {
     _subscription?.cancel();
 
+    final filterTime =
+        DateTime.now().subtract(Duration(hours: orderFilterDurationHours));
+    var filter = NostrFilter(
+      kinds: const [orderEventKind],
+      since: filterTime,
+    );
+
     _subscription = _nostrService.subscribeToEvents(filter).listen((event) {
-      final key = '${event.kind}-${event.pubkey}-${event.orderId}';
-      _events[key] = event;
+      _events[event.orderId!] = event;
       _eventStreamController.add(_events.values.toList());
     }, onError: (error) {
       // Log error and optionally notify listeners
@@ -37,9 +37,18 @@ class OpenOrdersRepository implements OrderRepository {
     });
   }
 
+  @override
   void dispose() {
     _subscription?.cancel();
     _eventStreamController.close();
     _events.clear();
   }
+
+  NostrEvent? getOrderById(String orderId) {
+    return _events[orderId];
+  }
+
+  Stream<List<NostrEvent>> get eventsStream => _eventStreamController.stream;
+
+  List<NostrEvent> get currentEvents => _events.values.toList();
 }
