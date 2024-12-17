@@ -4,10 +4,9 @@ class Config {
   // Configuración de Nostr
   static const List<String> nostrRelays = [
     'ws://127.0.0.1:7000',
-    'ws://192.168.1.144:7000',
+    'wss://relay.mostro.network',
     //'ws://10.0.2.2:7000',
     //'wss://relay.damus.io',
-    //'wss://relay.mostro.network',
     //'wss://relay.nostr.net',
     // Agrega más relays aquí si es necesario
   ];
