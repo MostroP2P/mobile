@@ -12,6 +12,7 @@ class AddLightningInvoiceScreen extends ConsumerWidget {
   final int sats = 0;
 
   const AddLightningInvoiceScreen({super.key, required this.orderId});
+  
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final mostroRepo = ref.read(mostroRepositoryProvider);

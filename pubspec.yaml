@@ -72,6 +72,7 @@ dependencies:
   bip39: ^1.0.6
   flutter_hooks: ^0.20.5
   hooks_riverpod: ^2.6.1
+  flutter_launcher_icons: ^0.14.2
 
 dev_dependencies:
   flutter_test:
@@ -127,3 +128,9 @@ flutter:
   # see https://flutter.dev/to/font-from-package
 flutter_intl:
   enabled: true
+
+flutter_icons:
+  android: true 
+  ios: true
+  image_path: "assets/images/launcher-icon.png"
+  remove_alpha_ios: true

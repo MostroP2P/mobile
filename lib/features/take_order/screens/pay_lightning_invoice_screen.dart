@@ -91,7 +91,6 @@ class PayLightningInvoiceScreen extends ConsumerWidget {
                         ),
                       ),
                       onPressed: () {
-                        // Implement wallet opening logic or deep linking if supported
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content:

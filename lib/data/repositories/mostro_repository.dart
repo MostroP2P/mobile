@@ -24,12 +24,9 @@ class MostroRepository implements OrderRepository {
   }
 
   Stream<MostroMessage> _subscribe(Session session) {
-    final listener = _mostroService.subscribe(session);
-    final subscription = listener.listen((m) {
+    return _mostroService.subscribe(session)..listen((m) {
       _messages[m.requestId!] = m;
     });
-    _subscriptions[session.eventId!] = subscription;
-    return listener;
   }
 
   Future<Stream<MostroMessage>> takeSellOrder(
