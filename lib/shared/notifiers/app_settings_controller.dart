@@ -10,8 +10,8 @@ class AppSettingsController extends StateNotifier<AppSettings> {
   Future<void> loadSettings() async {
     final prefs = ref.read(sharedPreferencesProvider);
 
-    final isFirstLaunch = await prefs.getBool('isFirstLaunch') ?? true;
+    final fullPrivacyMode = await prefs.getBool('full_privacy_mode') ?? true;
 
-    state = state.copyWith(isFirstLaunch: isFirstLaunch);
+    state = state.copyWith(fullPrivacyMode: fullPrivacyMode);
   }
 }

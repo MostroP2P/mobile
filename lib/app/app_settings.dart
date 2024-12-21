@@ -1,11 +1,12 @@
 class AppSettings {
-  final bool isFirstLaunch;
+  final bool fullPrivacyMode;
 
-  AppSettings(this.isFirstLaunch);
+  AppSettings({required this.fullPrivacyMode});
 
-  factory AppSettings.intial() => AppSettings(true);
+  factory AppSettings.intial() => AppSettings(fullPrivacyMode: false);
 
-  AppSettings copyWith({bool isFirstLaunch = false}) {
-    return AppSettings(isFirstLaunch);
+  AppSettings copyWith({required bool fullPrivacyMode}) {
+    return AppSettings(fullPrivacyMode: fullPrivacyMode);
   }
+  
 }
