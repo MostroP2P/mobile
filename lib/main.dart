@@ -4,7 +4,9 @@ import 'package:mostro_mobile/app/app.dart';
 import 'package:mostro_mobile/features/auth/providers/auth_notifier_provider.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
+import 'package:mostro_mobile/shared/providers/storage_providers.dart';
 import 'package:mostro_mobile/shared/utils/biometrics_helper.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,12 +14,14 @@ void main() async {
   final nostrService = NostrService();
   await nostrService.init();
   final biometricsHelper = BiometricsHelper();
+  final sharedPreferences = SharedPreferencesAsync();
 
   runApp(
     ProviderScope(
       overrides: [
         nostrServicerProvider.overrideWithValue(nostrService),
         biometricsHelperProvider.overrideWithValue(biometricsHelper),
+        sharedPreferencesProvider.overrideWithValue(sharedPreferences),
       ],
       child: const MostroApp(),
     ),

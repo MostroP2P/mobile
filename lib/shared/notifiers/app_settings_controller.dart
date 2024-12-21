@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/app/app_settings.dart';
-import 'package:mostro_mobile/shared/providers/shared_preferences_provider.dart';
+import 'package:mostro_mobile/shared/providers/storage_providers.dart';
 
 class AppSettingsController extends StateNotifier<AppSettings> {
   final Ref ref;
