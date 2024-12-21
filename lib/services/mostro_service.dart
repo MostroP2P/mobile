@@ -6,13 +6,13 @@ import 'package:mostro_mobile/app/config.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/session.dart';
-import 'package:mostro_mobile/data/repositories/secure_storage_manager.dart';
+import 'package:mostro_mobile/data/repositories/session_manager.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
 
 class MostroService {
   final NostrService _nostrService;
   //final MostroInstance _instance;
-  final SecureStorageManager _secureStorageManager;
+  final SessionManager _secureStorageManager;
 
   final _sessions = HashMap<String, Session>();
 

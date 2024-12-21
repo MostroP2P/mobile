@@ -8,10 +8,7 @@ import 'package:mostro_mobile/services/mostro_service.dart';
 class MostroRepository implements OrderRepository {
   final MostroService _mostroService;
   final Map<String, MostroMessage> _messages = {};
-
   final Map<String, StreamSubscription<MostroMessage>> _subscriptions = {};
-
-  final Map<String, DateTime> _orderExpirations = {};
   final StreamController<List<Order>> _streamController =
       StreamController<List<Order>>.broadcast();
 
@@ -19,9 +16,7 @@ class MostroRepository implements OrderRepository {
 
   Stream<List<Order>> get ordersStream => _streamController.stream;
 
-  MostroMessage? getOrderById(String orderId) {
-    return _messages[orderId];
-  }
+  MostroMessage? getOrderById(String orderId) => _messages[orderId];
 
   Stream<MostroMessage> _subscribe(Session session) {
     return _mostroService.subscribe(session)..listen((m) {
@@ -61,7 +56,6 @@ class MostroRepository implements OrderRepository {
       subscription.cancel();
     }
     _subscriptions.clear();
-    _orderExpirations.clear();
     _streamController.close();
   }
 }

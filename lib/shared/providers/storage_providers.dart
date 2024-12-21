@@ -7,5 +7,5 @@ final secureStorageProvider = Provider<FlutterSecureStorage>((ref) {
 });
 
 final sharedPreferencesProvider = Provider<SharedPreferencesAsync>((ref) {
-  return SharedPreferencesAsync();
+  throw UnimplementedError(); // Overridden in main
 });

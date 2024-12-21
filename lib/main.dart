@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mostro_mobile/app/app.dart';
 import 'package:mostro_mobile/features/auth/providers/auth_notifier_provider.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
@@ -15,6 +16,7 @@ void main() async {
   await nostrService.init();
   final biometricsHelper = BiometricsHelper();
   final sharedPreferences = SharedPreferencesAsync();
+  final secureStorage = const FlutterSecureStorage();
 
   runApp(
     ProviderScope(
@@ -22,6 +24,7 @@ void main() async {
         nostrServicerProvider.overrideWithValue(nostrService),
         biometricsHelperProvider.overrideWithValue(biometricsHelper),
         sharedPreferencesProvider.overrideWithValue(sharedPreferences),
+        secureStorageProvider.overrideWithValue(secureStorage),
       ],
       child: const MostroApp(),
     ),

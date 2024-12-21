@@ -19,7 +19,6 @@ final goRouter = GoRouter(
   routes: [
     ShellRoute(
       builder: (BuildContext context, GoRouterState state, Widget child) {
-        // Wrap the Navigator with your listener widgets
         return NotificationListenerWidget(
           child: NavigationListenerWidget(
             child: child,

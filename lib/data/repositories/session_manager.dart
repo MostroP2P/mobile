@@ -4,13 +4,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
-class SecureStorageManager {
+class SessionManager {
   Timer? _cleanupTimer;
   final int sessionExpirationHours = 48;
   static const cleanupIntervalMinutes = 30;
   static const maxBatchSize = 100;
 
-  SecureStorageManager() {
+  SessionManager() {
     _initializeCleanup();
   }
 
@@ -61,7 +61,8 @@ class SecureStorageManager {
         if (sessionJson != null) {
           try {
             final session = Session.fromJson(jsonDecode(sessionJson));
-            if (now.difference(session.startTime).inHours >= sessionExpirationHours) {
+            if (now.difference(session.startTime).inHours >=
+                sessionExpirationHours) {
               await prefs.remove(key);
               processedCount++;
             }
@@ -79,7 +80,8 @@ class SecureStorageManager {
 
   void _initializeCleanup() {
     clearExpiredSessions();
-    _cleanupTimer = Timer.periodic(Duration(minutes: cleanupIntervalMinutes), (timer) {
+    _cleanupTimer =
+        Timer.periodic(Duration(minutes: cleanupIntervalMinutes), (timer) {
       clearExpiredSessions();
     });
   }

@@ -23,14 +23,17 @@ class Session {
         'sessionId': sessionId,
         'startTime': startTime.toIso8601String(),
         'privateKey': keyPair.private,
-        'eventId' : eventId,
+        'publicKey': keyPair.public,
+        'eventId': eventId,
       };
 
   factory Session.fromJson(Map<String, dynamic> json) {
     return Session(
       sessionId: json['sessionId'],
       startTime: DateTime.parse(json['startTime']),
-      keyPair: NostrKeyPairs(private: json['privateKey']),
+      keyPair: NostrKeyPairs(
+        private: json['privateKey'],
+      ),
       eventId: json['eventId'],
     );
   }

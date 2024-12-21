@@ -1,12 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/repositories/mostro_repository.dart';
-import 'package:mostro_mobile/data/repositories/secure_storage_manager.dart';
 import 'package:mostro_mobile/services/mostro_service.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
-
-final sessionManagerProvider = Provider<SecureStorageManager>((ref) {
-  return SecureStorageManager();
-});
+import 'package:mostro_mobile/shared/providers/session_manager_provider.dart';
 
 final mostroServiceProvider = Provider<MostroService>((ref) {
   final sessionStorage = ref.watch(sessionManagerProvider);
