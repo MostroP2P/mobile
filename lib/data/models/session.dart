@@ -3,41 +3,41 @@ import 'package:dart_nostr/dart_nostr.dart';
 /// Represents a User session
 ///
 /// This class is used to store details of a user session
-/// which is connected to a single Buy/Sell order and is
-/// persisted for a maximum of 48hrs or until the order is
-/// completed
 class Session {
-  final String sessionId;
+  final NostrKeyPairs masterKey;
+  final NostrKeyPairs tradeKey;
+  final int keyIndex;
+  final bool fullPrivacy;
   final DateTime startTime;
-  final NostrKeyPairs keyPair;
-  String? eventId;
+  String? orderId;
 
-  Session({
-    required this.sessionId,
-    required this.startTime,
-    required this.keyPair,
-    this.eventId,
-  });
+  Session(
+      {required this.masterKey,
+      required this.tradeKey,
+      required this.keyIndex,
+      required this.startTime,
+      required this.fullPrivacy,
+      this.orderId});
 
   Map<String, dynamic> toJson() => {
-        'sessionId': sessionId,
         'startTime': startTime.toIso8601String(),
-        'privateKey': keyPair.private,
-        'publicKey': keyPair.public,
-        'eventId': eventId,
+        'masterKey': masterKey.private,
+        'tradeKey': tradeKey.private,
+        'eventId': orderId,
+        'keyIndex': keyIndex,
+        'fullPrivacy': fullPrivacy,
       };
 
   factory Session.fromJson(Map<String, dynamic> json) {
     return Session(
-      sessionId: json['sessionId'],
       startTime: DateTime.parse(json['startTime']),
-      keyPair: NostrKeyPairs(
-        private: json['privateKey'],
+      masterKey: NostrKeyPairs(
+        private: json['masterKey'],
       ),
-      eventId: json['eventId'],
+      orderId: json['eventId'],
+      keyIndex: int.parse(json['keyIndex']),
+      tradeKey: NostrKeyPairs(private: json['tradeKey']),
+      fullPrivacy: json['fullPrivacy'],
     );
   }
-
-  String get privateKey => keyPair.private;
-  String get publicKey => keyPair.public;
 }

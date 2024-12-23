@@ -8,7 +8,9 @@ import 'package:mostro_mobile/services/mostro_service.dart';
 class MostroRepository implements OrderRepository {
   final MostroService _mostroService;
   final Map<String, MostroMessage> _messages = {};
+
   final Map<String, StreamSubscription<MostroMessage>> _subscriptions = {};
+  
   final StreamController<List<Order>> _streamController =
       StreamController<List<Order>>.broadcast();
 

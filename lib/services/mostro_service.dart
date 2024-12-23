@@ -1,6 +1,4 @@
-import 'dart:collection';
 import 'dart:convert';
-import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:dart_nostr/nostr/model/request/filter.dart';
 import 'package:mostro_mobile/app/config.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
@@ -11,38 +9,27 @@ import 'package:mostro_mobile/services/nostr_service.dart';
 
 class MostroService {
   final NostrService _nostrService;
-  //final MostroInstance _instance;
-  final SessionManager _secureStorageManager;
+  final SessionManager _sessionManager;
 
-  final _sessions = HashMap<String, Session>();
-
-  MostroService(this._nostrService, this._secureStorageManager);
+  MostroService(this._nostrService, this._sessionManager);
 
   Stream<MostroMessage> subscribe(Session session) {
-    final filter = NostrFilter(p: [session.publicKey]);
+    final filter = NostrFilter(p: [session.masterKey.public]);
     return _nostrService.subscribeToEvents(filter).asyncMap((event) async {
-      try {
-        final decryptedEvent =
-            await _nostrService.decryptNIP59Event(event, session.privateKey);
-        final msg = MostroMessage.deserialized(decryptedEvent.content!);
-        session.eventId = msg.requestId;
-        return msg;
-      } catch (e) {
-        print('Error processing event: $e');
-        return MostroMessage(action: Action.canceled, requestId: "");
+      final decryptedEvent = await _nostrService.decryptNIP59Event(
+          event, session.masterKey.private);
+      final msg = MostroMessage.deserialized(decryptedEvent.content!);
+      if (session.orderId == null && msg.requestId != null) {
+        session.orderId = msg.requestId;
+        await _sessionManager.saveSession(session);
       }
+      return msg;
     });
-  }
-
-  Stream<NostrEvent> subscribeToOrders(NostrFilter filter) {
-    return _nostrService.subscribeToEvents(filter);
   }
 
   Future<Session> takeSellOrder(
       String orderId, int? amount, String? lnAddress) async {
-    final session = await _secureStorageManager.newSession();
-    session.eventId = orderId;
-    _sessions[orderId] = session;
+    final session = await _sessionManager.newSession(orderId: orderId);
 
     final order = lnAddress != null
         ? {
@@ -62,21 +49,15 @@ class MostroService {
     });
 
     final event = await _nostrService.createNIP59Event(
-        content, Config.mostroPubKey, session.privateKey);
+        content, Config.mostroPubKey, session.masterKey.private);
     await _nostrService.publishEvent(event);
     return session;
   }
 
   Future<void> sendInvoice(String orderId, String invoice) async {
-    final session = _sessions[orderId];
-
-    if (session == null) {
-      throw Exception('Session not found for order ID: $orderId');
-    }
-
-    final content = jsonEncode({
+    final content = {
       'order': {
-        'version': Config.mostroVersion.toInt(),
+        'version': Config.mostroVersion,
         'id': orderId,
         'action': Action.addInvoice.value,
         'content': {
@@ -87,18 +68,21 @@ class MostroService {
           ]
         },
       },
-    });
+    };
 
-    final event = await _nostrService.createNIP59Event(
-        content, Config.mostroPubKey, session.privateKey);
+    try {
+      final session = _sessionManager.getSessionByOrderId(orderId);
+      final event = await _nostrService.createNIP59Event(
+          jsonEncode(content), Config.mostroPubKey, session.masterKey.private);
 
-    await _nostrService.publishEvent(event);
+      await _nostrService.publishEvent(event);
+    } catch (e) {
+      // check and log error kinds
+    }
   }
 
   Future<Session> takeBuyOrder(String orderId, int? amount) async {
-    final session = await _secureStorageManager.newSession();
-    session.eventId = orderId;
-    _sessions[orderId] = session;
+    final session = await _sessionManager.newSession(orderId: orderId);
 
     final content = jsonEncode({
       'order': {
@@ -109,30 +93,24 @@ class MostroService {
       },
     });
     final event = await _nostrService.createNIP59Event(
-        content, Config.mostroPubKey, session.privateKey);
+        content, Config.mostroPubKey, session.masterKey.private);
     await _nostrService.publishEvent(event);
     return session;
   }
 
   Future<Session> publishOrder(MostroMessage order) async {
-    final session = await _secureStorageManager.newSession();
+    final session = await _sessionManager.newSession();
 
     final content = jsonEncode(order.toJson());
 
     final event = await _nostrService.createNIP59Event(
-        content, Config.mostroPubKey, session.privateKey);
+        content, Config.mostroPubKey, session.masterKey.private);
 
     await _nostrService.publishEvent(event);
     return session;
   }
 
   Future<void> cancelOrder(String orderId) async {
-    final session = _sessions[orderId];
-
-    if (session == null) {
-      throw Exception('Session not found for order ID: $orderId');
-    }
-
     final content = jsonEncode({
       'order': {
         'version': Config.mostroVersion,
@@ -141,18 +119,18 @@ class MostroService {
         'content': null,
       },
     });
-    final event = await _nostrService.createNIP59Event(
-        content, Config.mostroPubKey, session.privateKey);
-    await _nostrService.publishEvent(event);
+
+    try {
+      final session = _sessionManager.getSessionByOrderId(orderId);
+      final event = await _nostrService.createNIP59Event(
+          content, Config.mostroPubKey, session.masterKey.private);
+      await _nostrService.publishEvent(event);
+    } catch (e) {
+      // catch and throw!
+    }
   }
 
   Future<void> sendFiatSent(String orderId) async {
-    final session = await _secureStorageManager.loadSession(orderId);
-
-    if (session == null) {
-      throw Exception('Session not found for order ID: $orderId');
-    }
-
     final content = jsonEncode({
       'order': {
         'version': Config.mostroVersion,
@@ -161,18 +139,18 @@ class MostroService {
         'content': null,
       },
     });
-    final event = await _nostrService.createNIP59Event(
-        content, Config.mostroPubKey, session.privateKey);
-    await _nostrService.publishEvent(event);
+
+    try {
+      final session = _sessionManager.getSessionByOrderId(orderId);
+      final event = await _nostrService.createNIP59Event(
+          content, Config.mostroPubKey, session.masterKey.private);
+      await _nostrService.publishEvent(event);
+    } catch (e) {
+      // catch and throw and log and stuff
+    }
   }
 
   Future<void> releaseOrder(String orderId) async {
-    final session = await _secureStorageManager.loadSession(orderId);
-
-    if (session == null) {
-      throw Exception('Session not found for order ID: $orderId');
-    }
-
     final content = jsonEncode({
       'order': {
         'version': Config.mostroVersion,
@@ -181,8 +159,13 @@ class MostroService {
         'content': null,
       },
     });
-    final event = await _nostrService.createNIP59Event(
-        content, Config.mostroPubKey, session.privateKey);
-    await _nostrService.publishEvent(event);
+    try {
+      final session = _sessionManager.getSessionByOrderId(orderId);
+      final event = await _nostrService.createNIP59Event(
+          content, Config.mostroPubKey, session.masterKey.private);
+      await _nostrService.publishEvent(event);
+    } catch (e) {
+      // catch and throw and log and stuff
+    }
   }
 }

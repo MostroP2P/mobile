@@ -2,8 +2,6 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:crypto/crypto.dart';
 import 'package:dart_nostr/dart_nostr.dart';
-import 'package:bip32_bip44/dart_bip32_bip44.dart' as bip32_bip44;
-import 'package:bip39/bip39.dart' as bip39;
 import 'package:elliptic/elliptic.dart';
 import 'package:nip44/nip44.dart';
 
@@ -304,21 +302,4 @@ class NostrUtils {
     }
   }
 
-  static String getPrivateKeyFromMnemonic(String mnemonic, int index) {
-    final seed = bip39.mnemonicToSeedHex(mnemonic);
-    final chain = bip32_bip44.Chain.seed(seed);
-
-    final key = chain.forPath("m/44'/1237'/38383'/0/0")
-        as bip32_bip44.ExtendedPrivateKey;
-    final childKey = bip32_bip44.deriveExtendedPrivateChildKey(key, index);
-    return (childKey.key != null) ? childKey.key!.toRadixString(16) : '';
-  }
-
-  static bool isMnemonicValid(String text) {
-    return bip39.validateMnemonic(text);
-  }
-
-  static String getMnemonic() {
-    return bip39.generateMnemonic();
-  }
 }
