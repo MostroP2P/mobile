@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:crypto/crypto.dart';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:mostro_mobile/app/config.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
@@ -29,7 +30,6 @@ class MostroService {
 
   Future<Session> takeSellOrder(
       String orderId, int? amount, String? lnAddress) async {
-
     final session = await _sessionManager.newSession(orderId: orderId);
     final order = lnAddress != null
         ? {
@@ -102,11 +102,17 @@ class MostroService {
       Map<String, dynamic> content) async {
     try {
       final session = _sessionManager.getSessionByOrderId(orderId);
+      String finalContent;
       if (session.fullPrivacy) {
-        content['order']?['trade_index'] = session.tradeKey;
+        content['order']?['trade_index'] = session.keyIndex;
+        final sha256Digest = sha256.convert(utf8.encode(jsonEncode(content)));
+        final signature = session.tradeKey.sign(sha256Digest.toString());
+        finalContent = jsonEncode([content, signature]);
+      } else {
+        finalContent = jsonEncode(content);
       }
       final event =
-          await createNIP59Event(jsonEncode(content), receiverPubkey, session);
+          await createNIP59Event(finalContent, receiverPubkey, session);
       await _nostrService.publishEvent(event);
     } catch (e) {
       // catch and throw and log and stuff

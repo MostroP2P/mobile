@@ -3,6 +3,7 @@ import 'package:bip39/bip39.dart' as bip39;
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mostro_mobile/constants/storage_keys.dart';
+import 'package:mostro_mobile/services/key_manager_errors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class KeyManager {
@@ -45,9 +46,10 @@ class KeyManager {
     final mnemonic = bip39.generateMnemonic();
     final key = getPrivateKeyFromMnemonic(mnemonic);
     await secureStorage.write(
-        key: SecureStorageKeys.menemoic.toString(), value: mnemonic);
+        key: SecureStorageKeys.mnemonic.toString(), value: mnemonic);
     await secureStorage.write(
         key: SecureStorageKeys.masterKey.toString(), value: key);
+    await sharedPreferences.setInt(SharedPreferencesKeys.keyIndex.value, 1);
   }
 
   /// Derives a new trade key based on the current key index.
@@ -57,7 +59,7 @@ class KeyManager {
         0;
     final masterKey = await getMasterKey();
     if (masterKey == null) {
-      throw Exception('Master key not found.');
+      throw MasterKeyNotFoundException('Master key not found.');
     }
     final chain = Chain.import(masterKey.private);
     final key = chain.forPath("m/44'/1237'/38383'/0/0") as ExtendedPrivateKey;
@@ -73,7 +75,7 @@ class KeyManager {
   Future<NostrKeyPairs> deriveTradeKeyFromIndex(int index) async {
     final masterKey = await getMasterKey();
     if (masterKey == null) {
-      throw Exception('Master key not found.');
+      throw MasterKeyNotFoundException('Master key not found.');
     }
     final chain = Chain.import(masterKey.private);
     final key = chain.forPath("m/44'/1237'/38383'/0/0") as ExtendedPrivateKey;
@@ -86,6 +88,6 @@ class KeyManager {
   Future<int> getCurrentKeyIndex() async {
     return await sharedPreferences
             .getInt(SharedPreferencesKeys.keyIndex.toString()) ??
-        0;
+        1;
   }
 }
