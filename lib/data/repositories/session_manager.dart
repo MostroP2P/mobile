@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:mostro_mobile/constants/storage_keys.dart';
 import 'package:mostro_mobile/services/key_manager.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 
@@ -16,6 +17,17 @@ class SessionManager {
 
   SessionManager(this._keyManager, this._flutterSecureStorage) {
     _initializeCleanup();
+  }
+
+  Future<void> init() async {
+    final allKeys = await _flutterSecureStorage.readAll();
+
+    for (var e in allKeys.entries) {
+      if (e.key.startsWith(SecureStorageKeys.sessionKey.value)) {
+        final session = Session.fromJson(jsonDecode(e.value));
+        _sessions[session.keyIndex] = session;
+      }
+    }
   }
 
   Future<Session> newSession({String? orderId}) async {
@@ -38,7 +50,8 @@ class SessionManager {
   Future<void> saveSession(Session session) async {
     String sessionJson = jsonEncode(session.toJson());
     await _flutterSecureStorage.write(
-        key: session.keyIndex.toString(), value: sessionJson);
+        key: '${SecureStorageKeys.sessionKey}${session.keyIndex}',
+        value: sessionJson);
   }
 
   Future<Session?> getSession(int sessionId) async {
@@ -53,8 +66,7 @@ class SessionManager {
   }
 
   Future<Session?> loadSession(int sessionId) async {
-    String? sessionJson =
-        await _flutterSecureStorage.read(key: sessionId.toString());
+    String? sessionJson = await _flutterSecureStorage.read(key: '${SecureStorageKeys.sessionKey}$sessionId');
     if (sessionJson != null) {
       return Session.fromJson(jsonDecode(sessionJson));
     }
@@ -63,7 +75,7 @@ class SessionManager {
 
   Future<void> deleteSession(int sessionId) async {
     _sessions.remove(sessionId);
-    await _flutterSecureStorage.delete(key: sessionId.toString());
+    await _flutterSecureStorage.delete(key: '${SecureStorageKeys.sessionKey}$sessionId');
   }
 
   Future<void> clearExpiredSessions() async {

@@ -144,6 +144,58 @@ class NostrUtils {
     return now.subtract(Duration(seconds: randomSeconds));
   }
 
+  static Future<String> createRumor(String content, String recipientPubKey,
+      NostrKeyPairs senderPrivateKey) async {
+    final rumorEvent = NostrEvent.fromPartialData(
+      kind: 1,
+      keyPairs: senderPrivateKey,
+      content: content,
+      createdAt: DateTime.now(),
+      tags: [
+        ["p", recipientPubKey]
+      ],
+    );
+
+    try {
+      return await _encryptNIP44(jsonEncode(rumorEvent.toMap()),
+          senderPrivateKey.private, recipientPubKey);
+    } catch (e) {
+      throw Exception('Failed to encrypt content: $e');
+    }
+  }
+
+  static Future<String> createSeal(NostrKeyPairs senderKeyPair,
+      String recipientPubKey, String encryptedContent) async {
+    final sealEvent = NostrEvent.fromPartialData(
+      kind: 13,
+      keyPairs: senderKeyPair,
+      content: encryptedContent,
+      createdAt: randomNow(),
+    );
+
+    final wrapperKeyPair = generateKeyPair();
+
+    final pk = wrapperKeyPair.private;
+
+    return await _encryptNIP44(
+        jsonEncode(sealEvent.toMap()), pk, recipientPubKey);
+  }
+
+  static Future<NostrEvent> createWrap(NostrKeyPairs wrapperKeyPair,
+      String sealedContent, String recipientPubKey) async {
+    final wrapEvent = NostrEvent.fromPartialData(
+      kind: 1059,
+      content: sealedContent,
+      keyPairs: wrapperKeyPair,
+      tags: [
+        ["p", recipientPubKey]
+      ],
+      createdAt: DateTime.now(),
+    );
+
+    return wrapEvent;
+  }
+
   /// Creates a NIP-59 encrypted event with the following structure:
   /// 1. Inner event (kind 1): Original content
   /// 2. Seal event (kind 13): Encrypted inner event
@@ -301,5 +353,4 @@ class NostrUtils {
       throw Exception('Decryption failed: $e');
     }
   }
-
 }

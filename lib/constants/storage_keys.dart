@@ -26,7 +26,8 @@ enum SharedPreferencesKeys {
 
 enum SecureStorageKeys {
   masterKey('master_key'),
-  menemoic('mnemonic');
+  menemoic('mnemonic'),
+  sessionKey('session-');
 
   final String value;
 
