@@ -164,8 +164,11 @@ class NostrUtils {
     }
   }
 
-  static Future<String> createSeal(NostrKeyPairs senderKeyPair,
-      String recipientPubKey, String encryptedContent) async {
+  static Future<String> createSeal(
+      NostrKeyPairs senderKeyPair,
+      String wrapperKey,
+      String recipientPubKey,
+      String encryptedContent) async {
     final sealEvent = NostrEvent.fromPartialData(
       kind: 13,
       keyPairs: senderKeyPair,
@@ -173,12 +176,8 @@ class NostrUtils {
       createdAt: randomNow(),
     );
 
-    final wrapperKeyPair = generateKeyPair();
-
-    final pk = wrapperKeyPair.private;
-
     return await _encryptNIP44(
-        jsonEncode(sealEvent.toMap()), pk, recipientPubKey);
+        jsonEncode(sealEvent.toMap()), wrapperKey, recipientPubKey);
   }
 
   static Future<NostrEvent> createWrap(NostrKeyPairs wrapperKeyPair,
@@ -213,54 +212,16 @@ class NostrUtils {
 
     final senderKeyPair = generateKeyPairFromPrivateKey(senderPrivateKey);
 
-    final createdAt = DateTime.now();
-    final rumorEvent = NostrEvent.fromPartialData(
-      kind: 1,
-      keyPairs: senderKeyPair,
-      content: content,
-      createdAt: createdAt,
-      tags: [
-        ["p", recipientPubKey]
-      ],
-    );
-
-    String? encryptedContent;
-
-    try {
-      encryptedContent = await _encryptNIP44(
-          jsonEncode(rumorEvent.toMap()), senderPrivateKey, recipientPubKey);
-    } catch (e) {
-      throw Exception('Failed to encrypt content: $e');
-    }
-
-    final sealEvent = NostrEvent.fromPartialData(
-      kind: 13,
-      keyPairs: senderKeyPair,
-      content: encryptedContent,
-      createdAt: randomNow(),
-    );
+    String encryptedContent =
+        await createRumor(content, recipientPubKey, senderKeyPair);
 
     final wrapperKeyPair = generateKeyPair();
 
-    final pk = wrapperKeyPair.private;
+    String sealedContent =
+        await createSeal(senderKeyPair, wrapperKeyPair.private, recipientPubKey, encryptedContent);
 
-    String sealedContent;
-    try {
-      sealedContent = await _encryptNIP44(
-          jsonEncode(sealEvent.toMap()), pk, '02$recipientPubKey');
-    } catch (e) {
-      throw Exception('Failed to encrypt seal event: $e');
-    }
-
-    final wrapEvent = NostrEvent.fromPartialData(
-      kind: 1059,
-      content: sealedContent,
-      keyPairs: wrapperKeyPair,
-      tags: [
-        ["p", recipientPubKey]
-      ],
-      createdAt: createdAt,
-    );
+    final wrapEvent =
+        await createWrap(wrapperKeyPair, sealedContent, recipientPubKey);
 
     return wrapEvent;
   }

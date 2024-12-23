@@ -7,13 +7,15 @@ import 'package:mostro_mobile/data/models/payload.dart';
 class MostroMessage<T extends Payload> {
   String? requestId;
   final Action action;
+  int? tradeIndex;
   T? _payload;
 
-  MostroMessage({required this.action, this.requestId, T? payload})
+  MostroMessage(
+      {required this.action, this.requestId, T? payload, this.tradeIndex})
       : _payload = payload;
 
   Map<String, dynamic> toJson() {
-    return {
+    final jMap = {
       'order': {
         'version': Config.mostroVersion,
         'id': requestId,
@@ -21,6 +23,10 @@ class MostroMessage<T extends Payload> {
         'content': _payload?.toJson(),
       },
     };
+    if (tradeIndex != null) {
+      jMap['order']?['trade_index'] = tradeIndex;
+    }
+    return jMap;
   }
 
   factory MostroMessage.deserialized(String data) {
@@ -39,10 +45,14 @@ class MostroMessage<T extends Payload> {
           ? Payload.fromJson(event['order']['content']) as T
           : null;
 
+      final tradeIndex =
+          order['trade_index'] != null ? int.parse(order['trade_index']) : null;
+
       return MostroMessage<T>(
         action: action,
         requestId: order['id'],
         payload: content,
+        tradeIndex: tradeIndex,
       );
     } catch (e) {
       throw FormatException('Failed to deserialize MostroMessage: $e');

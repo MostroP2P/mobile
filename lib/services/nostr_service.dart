@@ -21,8 +21,7 @@ class NostrService {
       await _nostr.relaysService.init(
         relaysUrl: Config.nostrRelays,
         connectionTimeout: Config.nostrConnectionTimeout,
-        onRelayListening: (relay, url, 
-        channel) {
+        onRelayListening: (relay, url, channel) {
           _logger.info('Connected to relay: $url');
         },
         onRelayConnectionError: (relay, error, channel) {
@@ -76,9 +75,13 @@ class NostrService {
 
   Future<NostrKeyPairs> generateKeyPair() async {
     final keyPair = NostrUtils.generateKeyPair();
-    await AuthUtils.savePrivateKeyAndPin(
-        keyPair.private, ''); // Consider adding a password parameter
+    //await AuthUtils.savePrivateKeyAndPin(
+    //    keyPair.private, ''); // Consider adding a password parameter
     return keyPair;
+  }
+
+  NostrKeyPairs generateKeyPairFromPrivateKey(String privateKey) {
+    return NostrUtils.generateKeyPairFromPrivateKey(privateKey);
   }
 
   String getMostroPubKey() {
@@ -95,11 +98,29 @@ class NostrService {
         content, recipientPubKey, senderPrivateKey);
   }
 
-  Future<NostrEvent> decryptNIP59Event(NostrEvent event, String privateKey) async {
+  Future<NostrEvent> decryptNIP59Event(
+      NostrEvent event, String privateKey) async {
     if (!_isInitialized) {
       throw Exception('Nostr is not initialized. Call init() first.');
     }
 
     return NostrUtils.decryptNIP59Event(event, privateKey);
+  }
+
+  Future<String> createRumor(String content, String recipientPubKey,
+      NostrKeyPairs senderPrivateKey) async {
+    return NostrUtils.createRumor(content, recipientPubKey, senderPrivateKey);
+  }
+
+  Future<String> createSeal(NostrKeyPairs senderKeyPair, String wrapperKey,
+      String recipientPubKey, String encryptedContent) async {
+    return NostrUtils.createSeal(
+        senderKeyPair, wrapperKey, recipientPubKey, encryptedContent);
+  }
+
+  Future<NostrEvent> createWrap(NostrKeyPairs wrapperKeyPair,
+      String sealedContent, String recipientPubKey) async {
+    return NostrUtils.createWrap(
+        wrapperKeyPair, sealedContent, recipientPubKey);
   }
 }
