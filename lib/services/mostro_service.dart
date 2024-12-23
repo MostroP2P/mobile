@@ -103,7 +103,7 @@ class MostroService {
     try {
       final session = _sessionManager.getSessionByOrderId(orderId);
       String finalContent;
-      if (session.fullPrivacy) {
+      if (session!.fullPrivacy) {
         content['order']?['trade_index'] = session.keyIndex;
         final sha256Digest = sha256.convert(utf8.encode(jsonEncode(content)));
         final signature = session.tradeKey.sign(sha256Digest.toString());

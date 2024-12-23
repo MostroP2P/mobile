@@ -61,12 +61,17 @@ class SessionManager {
     return await loadSession(sessionId);
   }
 
-  Session getSessionByOrderId(String orderId) {
-    return _sessions.values.firstWhere((s) => s.orderId == orderId);
+  Session? getSessionByOrderId(String orderId) {
+    try {
+      return _sessions.values.firstWhere((s) => s.orderId == orderId);
+    } on StateError {
+      return null;
+    }
   }
 
   Future<Session?> loadSession(int sessionId) async {
-    String? sessionJson = await _flutterSecureStorage.read(key: '${SecureStorageKeys.sessionKey}$sessionId');
+    String? sessionJson = await _flutterSecureStorage.read(
+        key: '${SecureStorageKeys.sessionKey}$sessionId');
     if (sessionJson != null) {
       return Session.fromJson(jsonDecode(sessionJson));
     }
@@ -75,34 +80,38 @@ class SessionManager {
 
   Future<void> deleteSession(int sessionId) async {
     _sessions.remove(sessionId);
-    await _flutterSecureStorage.delete(key: '${SecureStorageKeys.sessionKey}$sessionId');
+    await _flutterSecureStorage.delete(
+        key: '${SecureStorageKeys.sessionKey}$sessionId');
   }
 
   Future<void> clearExpiredSessions() async {
     try {
       final now = DateTime.now();
       final allKeys = await _flutterSecureStorage.readAll();
-      int processedCount = 0;
+      final entries = allKeys.entries
+          .where((e) => e.key.startsWith(SecureStorageKeys.sessionKey.value))
+          .toList();
 
-      allKeys.forEach((key, value) async {
-        if (processedCount >= maxBatchSize) {
-          // Schedule remaining cleanup for next run
-          return;
-        }
-        final sessionJson = value;
+      int processedCount = 0;
+      for (final entry in entries) {
+        if (processedCount >= maxBatchSize) break;
+        final key = entry.key;
+        final value = entry.value;
         try {
-          final session = Session.fromJson(jsonDecode(sessionJson));
+          final session = Session.fromJson(jsonDecode(value));
           if (now.difference(session.startTime).inHours >=
               sessionExpirationHours) {
             await _flutterSecureStorage.delete(key: key);
+            _sessions.remove(session.keyIndex);
             processedCount++;
           }
         } catch (e) {
           print('Error processing session $key: $e');
           await _flutterSecureStorage.delete(key: key);
+          _sessions.removeWhere((_, s) => 'session_${s.keyIndex}' == key);
           processedCount++;
         }
-      });
+      }
     } catch (e) {
       print('Error during session cleanup: $e');
     }

@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:mostro_mobile/app/config.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/payload.dart';
@@ -25,6 +24,7 @@ class MostroMessage<T extends Payload> {
     };
     if (tradeIndex != null) {
       jMap['order']?['trade_index'] = tradeIndex;
+      jMap['order']?['content'] = [jMap['order']?['content']];
     }
     return jMap;
   }
