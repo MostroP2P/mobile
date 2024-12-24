@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:mostro_mobile/constants/storage_keys.dart';
-import 'package:mostro_mobile/services/key_manager.dart';
+import 'package:mostro_mobile/data/models/enums/storage_keys.dart';
+import 'package:mostro_mobile/features/key_manager/key_manager.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 
 class SessionManager {
@@ -36,7 +36,7 @@ class SessionManager {
     final tradeKey = await _keyManager.deriveTradeKey();
     final session = Session(
       startTime: DateTime.now(),
-      masterKey: keys!,
+      masterKey: keys,
       keyIndex: keyIndex,
       tradeKey: tradeKey,
       fullPrivacy: false,

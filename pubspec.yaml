@@ -68,11 +68,11 @@ dependencies:
         path: flutter_secure_storage
         ref: develop
   go_router: ^14.6.2
-  bip32_bip44: ^1.0.0
   bip39: ^1.0.6
   flutter_hooks: ^0.20.5
   hooks_riverpod: ^2.6.1
   flutter_launcher_icons: ^0.14.2
+  bip32: ^2.0.0
 
 dev_dependencies:
   flutter_test:

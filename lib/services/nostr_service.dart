@@ -1,7 +1,6 @@
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:mostro_mobile/app/config.dart';
 import 'package:logging/logging.dart';
-import 'package:mostro_mobile/shared/utils/auth_utils.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
 class NostrService {

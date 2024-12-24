@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/app/app_settings.dart';
-import 'package:mostro_mobile/constants/storage_keys.dart';
+import 'package:mostro_mobile/data/models/enums/storage_keys.dart';
 import 'package:mostro_mobile/shared/providers/storage_providers.dart';
 
 class AppSettingsController extends StateNotifier<AppSettings> {
