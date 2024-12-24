@@ -126,7 +126,7 @@ class MostroService {
 
     final wrapperKeyPair = await _nostrService.generateKeyPair();
 
-    final keySet = session.fullPrivacy ? session.tradeKey : session.masterKey;
+    final keySet = session.fullPrivacy ? session.masterKey : session.tradeKey;
 
     String sealedContent = await _nostrService.createSeal(
         keySet, wrapperKeyPair.private, recipientPubKey, encryptedContent);

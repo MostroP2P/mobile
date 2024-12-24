@@ -17,7 +17,7 @@ class KeyManager {
   /// Generate a new mnemonic, derive the master key, and store both
   Future<void> generateAndStoreMasterKey() async {
     final mnemonic = _derivator.generateMnemonic();
-    final masterKeyHex = _derivator.masterPrivateKeyFromMnemonic(mnemonic);
+    final masterKeyHex = _derivator.extendedKeyFromMnemonic(mnemonic);
 
     await _storage.storeMnemonic(mnemonic);
     await _storage.storeMasterKey(masterKeyHex);
@@ -32,7 +32,8 @@ class KeyManager {
     if (masterKeyHex == null) {
       throw MasterKeyNotFoundException('No master key found in secure storage');
     }
-    return NostrKeyPairs(private: masterKeyHex);
+    final privKey = _derivator.derivePrivateKey(masterKeyHex, 0);
+    return NostrKeyPairs(private: privKey);
   }
 
   /// Return the stored mnemonic, or null if none
@@ -48,7 +49,7 @@ class KeyManager {
     final currentIndex = await _storage.readTradeKeyIndex();
 
     final tradePrivateHex =
-        _derivator.derivePrivateKey(masterKeyHex, currentIndex!);
+        _derivator.derivePrivateKey(masterKeyHex, currentIndex);
 
     // increment index
     await _storage.storeTradeKeyIndex(currentIndex + 1);
