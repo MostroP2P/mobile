@@ -28,6 +28,11 @@ class MostroService {
     });
   }
 
+  Session? getSessionByOrderId(String orderId) {
+    final session = _sessionManager.getSessionByOrderId(orderId);
+    return session;
+  }
+
   Future<Session> takeSellOrder(
       String orderId, int? amount, String? lnAddress) async {
     final session = await _sessionManager.newSession(orderId: orderId);

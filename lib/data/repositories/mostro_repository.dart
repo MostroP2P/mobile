@@ -9,23 +9,36 @@ import 'package:mostro_mobile/services/mostro_service.dart';
 
 class MostroRepository implements OrderRepository {
   final MostroService _mostroService;
-  final FlutterSecureStorage _flutterSecureStorage;
+  final FlutterSecureStorage _secureStorage;
   final Map<String, MostroMessage> _messages = {};
 
   final Map<int, StreamSubscription<MostroMessage>> _subscriptions = {};
 
-  MostroRepository(this._mostroService, this._flutterSecureStorage);
+  MostroRepository(this._mostroService, this._secureStorage);
 
   MostroMessage? getOrderById(String orderId) => _messages[orderId];
+  List<MostroMessage> get allMessages => _messages.values.toList();
 
   Stream<MostroMessage> _subscribe(Session session) {
     final stream = _mostroService.subscribe(session);
-    final subscription = stream.listen((m) async {
-      _messages[m.requestId!] = m;
-      await saveMessage(m);
-    });
+    final subscription = stream.listen(
+      (msg) async {
+        _messages[msg.requestId!] = msg;
+        await saveMessage(msg);
+      },
+      onError: (error) {
+        // Log or handle subscription errors
+        print('Error in subscription for session ${session.keyIndex}: $error');
+      },
+      cancelOnError: false,
+    );
     _subscriptions[session.keyIndex] = subscription;
     return stream;
+  }
+
+  Stream<MostroMessage> resubscribeOrder(String orderId) {
+    final session = _mostroService.getSessionByOrderId(orderId);
+    return _subscribe(session!);
   }
 
   Future<Stream<MostroMessage>> takeSellOrder(
@@ -56,29 +69,33 @@ class MostroRepository implements OrderRepository {
 
   Future<void> saveMessages() async {
     for (var m in _messages.values.toList()) {
-      await _flutterSecureStorage.write(
+      await _secureStorage.write(
           key: '${SecureStorageKeys.message}-${m.requestId}',
           value: jsonEncode(m.toJson()));
     }
   }
 
   Future<void> saveMessage(MostroMessage message) async {
-    await _flutterSecureStorage.write(
+    await _secureStorage.write(
         key: '${SecureStorageKeys.message}-${message.requestId}',
         value: jsonEncode(message.toJson()));
   }
 
   Future<void> deleteMessage(String messageId) async {
-    await _flutterSecureStorage.delete(
-        key: '${SecureStorageKeys.message}-$messageId');
+    _messages.remove(messageId);
+    await _secureStorage.delete(key: '${SecureStorageKeys.message}-$messageId');
   }
 
   Future<void> loadMessages() async {
-    final allKeys = await _flutterSecureStorage.readAll();
-    for (var e in allKeys.entries) {
-      if (e.key.startsWith(SecureStorageKeys.message.value)) {
-        final message = MostroMessage.deserialized(e.value);
-        _messages[message.requestId!] = message;
+    final allEntries = await _secureStorage.readAll();
+    for (final entry in allEntries.entries) {
+      if (entry.key.startsWith(SecureStorageKeys.message.value)) {
+        try {
+          final msg = MostroMessage.deserialized(entry.value);
+          _messages[msg.requestId!] = msg;
+        } catch (e) {
+          print('Error deserializing message for key ${entry.key}: $e');
+        }
       }
     }
   }

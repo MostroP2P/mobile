@@ -7,35 +7,41 @@ import 'package:mostro_mobile/data/models/session.dart';
 
 class SessionManager {
   final KeyManager _keyManager;
-  final FlutterSecureStorage _flutterSecureStorage;
+  final FlutterSecureStorage _secureStorage;
   final Map<int, Session> _sessions = {};
+
   Timer? _cleanupTimer;
   final int sessionExpirationHours = 48;
   static const cleanupIntervalMinutes = 30;
   static const maxBatchSize = 100;
 
-  SessionManager(this._keyManager, this._flutterSecureStorage) {
-    _init();
+  SessionManager(this._keyManager, this._secureStorage) {
     _initializeCleanup();
   }
 
-  Future<void> _init() async {
-    final allKeys = await _flutterSecureStorage.readAll();
-    for (var e in allKeys.entries) {
-      if (e.key.startsWith(SecureStorageKeys.sessionKey.value)) {
-        final session = await sessionJsonDecode(e.value);
-        _sessions[session.keyIndex] = session;
+  /// Call this after app startup to load sessions from storage
+  Future<void> init() async {
+    final allEntries = await _secureStorage.readAll();
+    for (final entry in allEntries.entries) {
+      if (entry.key.startsWith(SecureStorageKeys.sessionKey.value)) {
+        try {
+          final session = await _decodeSession(entry.value);
+          _sessions[session.keyIndex] = session;
+        } catch (e) {
+          print('Error decoding session for key ${entry.key}: $e');
+          // Decide if you want to remove the corrupted entry
+        }
       }
     }
   }
 
   Future<Session> newSession({String? orderId}) async {
-    final keys = await _keyManager.getMasterKey();
+    final masterKey = await _keyManager.getMasterKey();
     final keyIndex = await _keyManager.getCurrentKeyIndex();
     final tradeKey = await _keyManager.deriveTradeKey();
     final session = Session(
       startTime: DateTime.now(),
-      masterKey: keys,
+      masterKey: masterKey,
       keyIndex: keyIndex,
       tradeKey: tradeKey,
       fullPrivacy: false,
@@ -48,16 +54,9 @@ class SessionManager {
 
   Future<void> saveSession(Session session) async {
     String sessionJson = jsonEncode(session.toJson());
-    await _flutterSecureStorage.write(
+    await _secureStorage.write(
         key: '${SecureStorageKeys.sessionKey}${session.keyIndex}',
         value: sessionJson);
-  }
-
-  Future<Session?> getSession(int sessionId) async {
-    if (_sessions.containsKey(sessionId)) {
-      return _sessions[sessionId];
-    }
-    return await loadSession('${SecureStorageKeys.sessionKey}$sessionId');
   }
 
   Session? getSessionByOrderId(String orderId) {
@@ -68,53 +67,64 @@ class SessionManager {
     }
   }
 
-  Future<Session?> loadSession(String sessionId) async {
-    String? sessionJson = await _flutterSecureStorage.read(key: sessionId);
-    if (sessionJson != null) {
-      return sessionJsonDecode(sessionJson);
+  Future<Session?> loadSession(int keyIndex) async {
+    if (_sessions.containsKey(keyIndex)) {
+      return _sessions[keyIndex];
+    }
+    final storedJson = await _secureStorage.read(
+        key: '${SecureStorageKeys.sessionKey}$keyIndex');
+    if (storedJson != null) {
+      try {
+        final session = await _decodeSession(storedJson);
+        _sessions[keyIndex] = session;
+        return session;
+      } catch (e) {
+        print('Error decoding session index $keyIndex: $e');
+      }
     }
     return null;
   }
 
-  Future<Session> sessionJsonDecode(String sessionJson) async {
-    final session = jsonDecode(sessionJson) as Map<String, dynamic>;
-    int index = session['key_index'];
-    session['master_key'] = await _keyManager.getMasterKey();
-    session['trade_key'] = await _keyManager.deriveTradeKeyFromIndex(index);
-    return Session.fromJson(session);
+  Future<Session> _decodeSession(String jsonData) async {
+    final map = jsonDecode(jsonData) as Map<String, dynamic>;
+    final index = map['key_index'] as int;
+    final tradeKey = await _keyManager.deriveTradeKeyFromIndex(index);
+    final masterKey = await _keyManager.getMasterKey();
+    map['trade_key'] = tradeKey;
+    map['master_key'] = masterKey;
+    return Session.fromJson(map);
   }
 
   Future<void> deleteSession(int sessionId) async {
     _sessions.remove(sessionId);
-    await _flutterSecureStorage.delete(
+    await _secureStorage.delete(
         key: '${SecureStorageKeys.sessionKey}$sessionId');
   }
 
   Future<void> clearExpiredSessions() async {
     try {
       final now = DateTime.now();
-      final allKeys = await _flutterSecureStorage.readAll();
-      final entries = allKeys.entries
+      final allEntries = await _secureStorage.readAll();
+      final entries = allEntries.entries
           .where((e) => e.key.startsWith(SecureStorageKeys.sessionKey.value))
           .toList();
 
       int processedCount = 0;
       for (final entry in entries) {
         if (processedCount >= maxBatchSize) break;
-        final key = entry.key;
-        final value = entry.value;
         try {
-          final session = Session.fromJson(jsonDecode(value));
-          if (now.difference(session.startTime).inHours >=
-              sessionExpirationHours) {
-            await _flutterSecureStorage.delete(key: key);
-            _sessions.remove(session.keyIndex);
+          final sessionMap = jsonDecode(entry.value) as Map<String, dynamic>;
+          final startTime = DateTime.parse(sessionMap['startTime'] as String);
+          final index = sessionMap['key_index'] as int;
+          if (now.difference(startTime).inHours >= sessionExpirationHours) {
+            await _secureStorage.delete(key: entry.key);
+            _sessions.remove(index);
             processedCount++;
           }
         } catch (e) {
-          print('Error processing session $key: $e');
-          await _flutterSecureStorage.delete(key: key);
-          _sessions.removeWhere((_, s) => 'session_${s.keyIndex}' == key);
+          print('Error processing session ${entry.key}: $e');
+          // Possibly remove corrupted entry
+          await _secureStorage.delete(key: entry.key);
           processedCount++;
         }
       }
@@ -124,6 +134,7 @@ class SessionManager {
   }
 
   void _initializeCleanup() {
+    _cleanupTimer?.cancel();
     clearExpiredSessions();
     _cleanupTimer =
         Timer.periodic(Duration(minutes: cleanupIntervalMinutes), (timer) {
