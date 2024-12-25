@@ -35,7 +35,9 @@ class MostroMessage<T extends Payload> {
       final event = decoded as Map<String, dynamic>;
       final order = event['order'] != null
           ? event['order'] as Map<String, dynamic>
-          : throw FormatException('Missing order object');
+          : event['cant-do'] != null
+              ? event['cant-do'] as Map<String, dynamic>
+              : throw FormatException('Missing order object');
 
       final action = order['action'] != null
           ? Action.fromString(order['action'])
