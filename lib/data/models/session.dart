@@ -19,25 +19,24 @@ class Session {
       required this.fullPrivacy,
       this.orderId});
 
+  // We don't store the keys in the session files
   Map<String, dynamic> toJson() => {
-        'startTime': startTime.toIso8601String(),
-        'masterKey': masterKey.private,
-        'tradeKey': tradeKey.private,
-        'eventId': orderId,
-        'keyIndex': keyIndex,
-        'fullPrivacy': fullPrivacy,
+        'start_time': startTime.toIso8601String(),
+        'event_id': orderId,
+        'key_index': keyIndex,
+        'full_privacy': fullPrivacy,
       };
 
   factory Session.fromJson(Map<String, dynamic> json) {
     return Session(
-      startTime: DateTime.parse(json['startTime']),
+      startTime: DateTime.parse(json['start_time']),
       masterKey: NostrKeyPairs(
-        private: json['masterKey'],
+        private: json['master_key'],
       ),
-      orderId: json['eventId'],
-      keyIndex: int.parse(json['keyIndex']),
-      tradeKey: NostrKeyPairs(private: json['tradeKey']),
-      fullPrivacy: json['fullPrivacy'],
+      orderId: json['event_id'],
+      keyIndex: int.parse(json['key_index']),
+      tradeKey: NostrKeyPairs(private: json['trade_key']),
+      fullPrivacy: json['full_privacy'],
     );
   }
 }

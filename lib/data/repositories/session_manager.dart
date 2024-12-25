@@ -9,22 +9,21 @@ class SessionManager {
   final KeyManager _keyManager;
   final FlutterSecureStorage _flutterSecureStorage;
   final Map<int, Session> _sessions = {};
-
   Timer? _cleanupTimer;
   final int sessionExpirationHours = 48;
   static const cleanupIntervalMinutes = 30;
   static const maxBatchSize = 100;
 
   SessionManager(this._keyManager, this._flutterSecureStorage) {
+    _init();
     _initializeCleanup();
   }
 
-  Future<void> init() async {
+  Future<void> _init() async {
     final allKeys = await _flutterSecureStorage.readAll();
-
     for (var e in allKeys.entries) {
       if (e.key.startsWith(SecureStorageKeys.sessionKey.value)) {
-        final session = Session.fromJson(jsonDecode(e.value));
+        final session = await sessionJsonDecode(e.value);
         _sessions[session.keyIndex] = session;
       }
     }
@@ -58,7 +57,7 @@ class SessionManager {
     if (_sessions.containsKey(sessionId)) {
       return _sessions[sessionId];
     }
-    return await loadSession(sessionId);
+    return await loadSession('${SecureStorageKeys.sessionKey}$sessionId');
   }
 
   Session? getSessionByOrderId(String orderId) {
@@ -69,13 +68,20 @@ class SessionManager {
     }
   }
 
-  Future<Session?> loadSession(int sessionId) async {
-    String? sessionJson = await _flutterSecureStorage.read(
-        key: '${SecureStorageKeys.sessionKey}$sessionId');
+  Future<Session?> loadSession(String sessionId) async {
+    String? sessionJson = await _flutterSecureStorage.read(key: sessionId);
     if (sessionJson != null) {
-      return Session.fromJson(jsonDecode(sessionJson));
+      return sessionJsonDecode(sessionJson);
     }
     return null;
+  }
+
+  Future<Session> sessionJsonDecode(String sessionJson) async {
+    final session = jsonDecode(sessionJson) as Map<String, dynamic>;
+    int index = session['key_index'];
+    session['master_key'] = await _keyManager.getMasterKey();
+    session['trade_key'] = await _keyManager.deriveTradeKeyFromIndex(index);
+    return Session.fromJson(session);
   }
 
   Future<void> deleteSession(int sessionId) async {
@@ -128,4 +134,6 @@ class SessionManager {
   void dispose() {
     _cleanupTimer?.cancel();
   }
+
+  List<Session> get sessions => _sessions.values.toList();
 }
