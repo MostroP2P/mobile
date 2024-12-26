@@ -30,12 +30,10 @@ class Session {
   factory Session.fromJson(Map<String, dynamic> json) {
     return Session(
       startTime: DateTime.parse(json['start_time']),
-      masterKey: NostrKeyPairs(
-        private: json['master_key'],
-      ),
+      masterKey: json['master_key'],
       orderId: json['event_id'],
-      keyIndex: int.parse(json['key_index']),
-      tradeKey: NostrKeyPairs(private: json['trade_key']),
+      keyIndex: json['key_index'],
+      tradeKey: json['trade_key'],
       fullPrivacy: json['full_privacy'],
     );
   }

@@ -24,7 +24,6 @@ class MostroMessage<T extends Payload> {
     };
     if (tradeIndex != null) {
       jMap['order']?['trade_index'] = tradeIndex;
-      jMap['order']?['payload'] = [jMap['order']?['payload']];
     }
     return jMap;
   }

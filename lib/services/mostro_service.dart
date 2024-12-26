@@ -70,7 +70,10 @@ class MostroService {
 
   Future<Session> publishOrder(MostroMessage order) async {
     final session = await _sessionManager.newSession();
-    final content = jsonEncode(order.toJson());
+    final message = order.toJson();
+    final sha256Digest = sha256.convert(utf8.encode(jsonEncode(message)));
+    final signature = session.tradeKey.sign(sha256Digest.toString());
+    final content = jsonEncode([message, signature]);
     final event = await createNIP59Event(content, Config.mostroPubKey, session);
     await _nostrService.publishEvent(event);
     return session;
@@ -108,13 +111,13 @@ class MostroService {
     try {
       final session = _sessionManager.getSessionByOrderId(orderId);
       String finalContent;
-      if (session!.fullPrivacy) {
+      if (!session!.fullPrivacy) {
         content['order']?['trade_index'] = session.keyIndex;
         final sha256Digest = sha256.convert(utf8.encode(jsonEncode(content)));
         final signature = session.tradeKey.sign(sha256Digest.toString());
         finalContent = jsonEncode([content, signature]);
       } else {
-        finalContent = jsonEncode(content);
+        finalContent = jsonEncode([content, null]);
       }
       final event =
           await createNIP59Event(finalContent, receiverPubkey, session);
