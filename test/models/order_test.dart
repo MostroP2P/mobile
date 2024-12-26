@@ -35,7 +35,7 @@ void main() {
       final jsonData = await loadJson('test/examples/new_sell_order.json');
 
       // Parse JSON to model
-      final orderData = jsonData['order']['order']['content']['order'];
+      final orderData = jsonData['order']['order']['payload']['order'];
       final order = Order.fromJson(orderData);
 
       // Validate model properties

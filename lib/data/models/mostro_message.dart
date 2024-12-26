@@ -19,12 +19,12 @@ class MostroMessage<T extends Payload> {
         'version': Config.mostroVersion,
         'id': requestId,
         'action': action.value,
-        'content': _payload?.toJson(),
+        'payload': _payload?.toJson(),
       },
     };
     if (tradeIndex != null) {
       jMap['order']?['trade_index'] = tradeIndex;
-      jMap['order']?['content'] = [jMap['order']?['content']];
+      jMap['order']?['payload'] = [jMap['order']?['payload']];
     }
     return jMap;
   }
@@ -43,8 +43,8 @@ class MostroMessage<T extends Payload> {
           ? Action.fromString(order['action'])
           : throw FormatException('Missing action field');
 
-      final content = order['content'] != null
-          ? Payload.fromJson(event['order']['content']) as T
+      final payload = order['payload'] != null
+          ? Payload.fromJson(event['order']['payload']) as T
           : null;
 
       final tradeIndex =
@@ -53,7 +53,7 @@ class MostroMessage<T extends Payload> {
       return MostroMessage<T>(
         action: action,
         requestId: order['id'],
-        payload: content,
+        payload: payload,
         tradeIndex: tradeIndex,
       );
     } catch (e) {

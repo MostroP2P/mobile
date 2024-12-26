@@ -44,13 +44,13 @@ class MostroService {
             ? {'amount': amount}
             : null;
 
-    final content = newMessage(Action.takeSell, orderId, content: order);
+    final content = newMessage(Action.takeSell, orderId, payload: order);
     await sendMessage(orderId, Config.mostroPubKey, content);
     return session;
   }
 
   Future<void> sendInvoice(String orderId, String invoice) async {
-    final content = newMessage(Action.addInvoice, orderId, content: {
+    final content = newMessage(Action.addInvoice, orderId, payload: {
       'payment_request': [
         null,
         invoice,
@@ -63,7 +63,7 @@ class MostroService {
   Future<Session> takeBuyOrder(String orderId, int? amount) async {
     final session = await _sessionManager.newSession(orderId: orderId);
     final amt = amount != null ? {'amount': amount} : null;
-    final content = newMessage(Action.takeBuy, orderId, content: amt);
+    final content = newMessage(Action.takeBuy, orderId, payload: amt);
     await sendMessage(orderId, Config.mostroPubKey, content);
     return session;
   }
@@ -92,13 +92,13 @@ class MostroService {
   }
 
   Map<String, dynamic> newMessage(Action actionType, String orderId,
-      {Object? content}) {
+      {Object? payload}) {
     return {
       'order': {
         'version': Config.mostroVersion,
         'id': orderId,
         'action': actionType.value,
-        'content': content,
+        'payload': payload,
       },
     };
   }
