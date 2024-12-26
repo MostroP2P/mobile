@@ -24,13 +24,10 @@ class OrderNotifier extends StateNotifier<MostroMessage> {
   Future<void> subscribe() async {
     final existingMessage = orderRepository.getOrderById(orderId);
     if (existingMessage == null) {
-      // Possibly load from secure storage or handle error
       print('Order $orderId not found in repository; subscription aborted.');
       return;
     }
-    // If you have a direct stream from the repository for this order, set up:
-    // For example, if your repository has a method like `resubscribeOrder(orderId) => Stream<MostroMessage>`
-    final stream = await orderRepository.resubscribeOrder(orderId);
+    final stream = orderRepository.resubscribeOrder(orderId);
     _orderSubscription = stream.listen((msg) {
       state = msg;
       _handleOrderUpdate();

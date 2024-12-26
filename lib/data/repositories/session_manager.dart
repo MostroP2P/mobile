@@ -114,7 +114,7 @@ class SessionManager {
         if (processedCount >= maxBatchSize) break;
         try {
           final sessionMap = jsonDecode(entry.value) as Map<String, dynamic>;
-          final startTime = DateTime.parse(sessionMap['startTime'] as String);
+          final startTime = DateTime.parse(sessionMap['start_time'] as String);
           final index = sessionMap['key_index'] as int;
           if (now.difference(startTime).inHours >= sessionExpirationHours) {
             await _secureStorage.delete(key: entry.key);

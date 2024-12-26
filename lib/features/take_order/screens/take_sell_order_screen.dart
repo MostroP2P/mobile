@@ -119,7 +119,7 @@ class TakeSellOrderScreen extends ConsumerWidget {
     final order = (state.payload is Order) ? state.payload as Order : null;
 
     final TextEditingController invoiceController = TextEditingController();
-    final int val = order!.amount;
+    final val = order?.amount;
     return Scaffold(
       backgroundColor: AppTheme.dark1,
       appBar: OrderAppBar(

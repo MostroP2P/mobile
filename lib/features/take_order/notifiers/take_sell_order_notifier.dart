@@ -33,7 +33,7 @@ class TakeSellOrderNotifier extends StateNotifier<MostroMessage> {
     ref.read(notificationProvider.notifier).showInformation(err.toString());
   }
 
-  void sendInvoice(String orderId, String invoice, int amount) async {
+  void sendInvoice(String orderId, String invoice, int? amount) async {
     await _orderRepository.sendInvoice(orderId, invoice);
   }
 

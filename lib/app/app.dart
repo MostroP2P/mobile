@@ -7,7 +7,7 @@ import 'package:mostro_mobile/app/app_theme.dart';
 import 'package:mostro_mobile/features/auth/providers/auth_notifier_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/features/auth/notifiers/auth_state.dart';
-import 'package:mostro_mobile/shared/providers/init_provider.dart';
+import 'package:mostro_mobile/shared/providers/app_init_provider.dart';
 
 class MostroApp extends ConsumerWidget {
   const MostroApp({super.key});
