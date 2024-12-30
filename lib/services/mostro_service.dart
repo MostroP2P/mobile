@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:mostro_mobile/app/config.dart';
@@ -70,10 +71,20 @@ class MostroService {
 
   Future<Session> publishOrder(MostroMessage order) async {
     final session = await _sessionManager.newSession();
-    final message = order.toJson();
-    final sha256Digest = sha256.convert(utf8.encode(jsonEncode(message)));
-    final signature = session.tradeKey.sign(sha256Digest.toString());
-    final content = jsonEncode([message, signature]);
+    String content;
+    if (!session.fullPrivacy) {
+      order.tradeIndex = session.keyIndex;
+      final message = order.toJson();
+
+      final serializedEvent = jsonEncode(message);
+      final bytes = utf8.encode(serializedEvent);
+      final digest = sha256.convert(bytes);
+      final hash = hex.encode(digest.bytes);
+      final signature = session.tradeKey.sign(hash);
+      content = jsonEncode([message, signature]);
+    } else {
+      content = jsonEncode([order.toJson(), null]);
+    }
     final event = await createNIP59Event(content, Config.mostroPubKey, session);
     await _nostrService.publishEvent(event);
     return session;
@@ -113,8 +124,11 @@ class MostroService {
       String finalContent;
       if (!session!.fullPrivacy) {
         content['order']?['trade_index'] = session.keyIndex;
-        final sha256Digest = sha256.convert(utf8.encode(jsonEncode(content)));
-        final signature = session.tradeKey.sign(sha256Digest.toString());
+        final sha256Digest =
+            sha256.convert(utf8.encode(jsonEncode(content))).bytes;
+        final hashHex = base64.encode(sha256Digest);
+        final signature = session.tradeKey.sign(hashHex);
+        print(signature.codeUnits);
         finalContent = jsonEncode([content, signature]);
       } else {
         finalContent = jsonEncode([content, null]);
@@ -129,12 +143,12 @@ class MostroService {
 
   Future<NostrEvent> createNIP59Event(
       String content, String recipientPubKey, Session session) async {
-    final encryptedContent = await _nostrService.createRumor(
-        content, recipientPubKey, session.tradeKey);
+    final keySet = session.fullPrivacy ? session.tradeKey : session.masterKey;
+
+    final encryptedContent =
+        await _nostrService.createRumor(content, recipientPubKey, keySet);
 
     final wrapperKeyPair = await _nostrService.generateKeyPair();
-
-    final keySet = session.fullPrivacy ? session.masterKey : session.tradeKey;
 
     String sealedContent = await _nostrService.createSeal(
         keySet, wrapperKeyPair.private, recipientPubKey, encryptedContent);
