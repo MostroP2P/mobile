@@ -14,24 +14,21 @@ class MostroMessage<T extends Payload> {
       : _payload = payload;
 
   Map<String, dynamic> toJson() {
-    final jMap = {
+    return {
       'order': {
         'version': Config.mostroVersion,
-        'id': requestId,
+        'request_id': requestId,
+        'trade_index': tradeIndex,
         'action': action.value,
         'payload': _payload?.toJson(),
       },
     };
-    if (tradeIndex != null) {
-      jMap['order']?['trade_index'] = tradeIndex;
-    }
-    return jMap;
   }
 
   factory MostroMessage.deserialized(String data) {
     try {
       final decoded = jsonDecode(data);
-      final event = decoded as Map<String, dynamic>;
+      final event = decoded[0] as Map<String, dynamic>;
       final order = event['order'] != null
           ? event['order'] as Map<String, dynamic>
           : event['cant-do'] != null
@@ -43,7 +40,7 @@ class MostroMessage<T extends Payload> {
           : throw FormatException('Missing action field');
 
       final payload = order['payload'] != null
-          ? Payload.fromJson(event['order']['payload']) as T
+          ? Payload.fromJson(order['payload']) as T
           : null;
 
       final tradeIndex =
@@ -51,7 +48,7 @@ class MostroMessage<T extends Payload> {
 
       return MostroMessage<T>(
         action: action,
-        requestId: order['id'],
+        requestId: order['request_id'],
         payload: payload,
         tradeIndex: tradeIndex,
       );

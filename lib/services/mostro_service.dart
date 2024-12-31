@@ -76,11 +76,14 @@ class MostroService {
       order.tradeIndex = session.keyIndex;
       final message = order.toJson();
 
-      final serializedEvent = jsonEncode(message);
+      final serializedEvent = jsonEncode(message['order']);
       final bytes = utf8.encode(serializedEvent);
       final digest = sha256.convert(bytes);
       final hash = hex.encode(digest.bytes);
       final signature = session.tradeKey.sign(hash);
+      print(signature);
+      print(hash);
+      print(serializedEvent);
       content = jsonEncode([message, signature]);
     } else {
       content = jsonEncode([order.toJson(), null]);
@@ -143,7 +146,7 @@ class MostroService {
 
   Future<NostrEvent> createNIP59Event(
       String content, String recipientPubKey, Session session) async {
-    final keySet = session.fullPrivacy ? session.tradeKey : session.masterKey;
+    final keySet = session.fullPrivacy ? session.tradeKey : session.tradeKey;
 
     final encryptedContent =
         await _nostrService.createRumor(content, recipientPubKey, keySet);

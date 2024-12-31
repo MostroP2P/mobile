@@ -51,15 +51,19 @@ class Order implements Payload {
         'status': status.value,
         'amount': amount,
         'fiat_code': fiatCode,
+        'min_amount': minAmount,
+        'max_amount': maxAmount,
         'fiat_amount': fiatAmount,
         'payment_method': paymentMethod,
         'premium': premium,
+        'created_at': createdAt,
+        'expires_at': expiresAt,
+        'buyer_token': buyerToken,
+        'seller_token': sellerToken,
       }
     };
 
     if (id != null) data[type]['id'] = id;
-    if (minAmount != null) data[type]['min_amount'] = minAmount;
-    if (maxAmount != null) data[type]['max_amount'] = maxAmount;
     if (masterBuyerPubkey != null) {
       data[type]['master_buyer_pubkey'] = masterBuyerPubkey;
     }
@@ -67,11 +71,6 @@ class Order implements Payload {
       data[type]['master_seller_pubkey'] = masterSellerPubkey;
     }
     if (buyerInvoice != null) data[type]['buyer_invoice'] = buyerInvoice;
-    if (createdAt != null) data[type]['created_at'] = createdAt;
-    if (expiresAt != null) data[type]['expires_at'] = expiresAt;
-    if (buyerToken != null) data[type]['buyer_token'] = buyerToken;
-    if (sellerToken != null) data[type]['seller_token'] = sellerToken;
-
     return data;
   }
 
