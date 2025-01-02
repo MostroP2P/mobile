@@ -33,7 +33,7 @@ class Order implements Payload {
     this.maxAmount,
     required this.fiatAmount,
     required this.paymentMethod,
-    this.premium = 1,
+    this.premium = 0,
     this.masterBuyerPubkey,
     this.masterSellerPubkey,
     this.buyerInvoice,

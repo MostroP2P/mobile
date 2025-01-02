@@ -17,7 +17,7 @@ class OrderNotifier extends StateNotifier<MostroMessage> {
     required this.orderId,
     required this.ref,
   }) : super(orderRepository.getOrderById(orderId) ??
-            MostroMessage(action: Action.notFound, requestId: orderId)) {
+            MostroMessage(action: Action.notFound, id: orderId)) {
     subscribe();
   }
 
@@ -46,10 +46,10 @@ class OrderNotifier extends StateNotifier<MostroMessage> {
 
     switch (state.action) {
       case Action.newOrder:
-        navProvider.go('/order_confirmed/${state.requestId!}');
+        navProvider.go('/order_confirmed/${state.id!}');
         break;
       case Action.payInvoice:
-        navProvider.go('/pay_invoice/${state.requestId!}');
+        navProvider.go('/pay_invoice/${state.id!}');
         break;
       case Action.outOfRangeSatsAmount:
         notifProvider.showInformation('Sats out of range');

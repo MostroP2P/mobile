@@ -21,8 +21,8 @@ class MostroService {
       final decryptedEvent = await _nostrService.decryptNIP59Event(
           event, session.tradeKey.private);
       final msg = MostroMessage.deserialized(decryptedEvent.content!);
-      if (session.orderId == null && msg.requestId != null) {
-        session.orderId = msg.requestId;
+      if (session.orderId == null && msg.id != null) {
+        session.orderId = msg.id;
         await _sessionManager.saveSession(session);
       }
       return msg;
@@ -81,9 +81,6 @@ class MostroService {
       final digest = sha256.convert(bytes);
       final hash = hex.encode(digest.bytes);
       final signature = session.tradeKey.sign(hash);
-      print(signature);
-      print(hash);
-      print(serializedEvent);
       content = jsonEncode([message, signature]);
     } else {
       content = jsonEncode([order.toJson(), null]);
@@ -113,6 +110,8 @@ class MostroService {
     return {
       'order': {
         'version': Config.mostroVersion,
+        'request_id': null,
+        'trade_index': null,
         'id': orderId,
         'action': actionType.value,
         'payload': payload,
@@ -128,10 +127,9 @@ class MostroService {
       if (!session!.fullPrivacy) {
         content['order']?['trade_index'] = session.keyIndex;
         final sha256Digest =
-            sha256.convert(utf8.encode(jsonEncode(content))).bytes;
-        final hashHex = base64.encode(sha256Digest);
+            sha256.convert(utf8.encode(jsonEncode(content['order'])));
+        final hashHex = hex.encode(sha256Digest.bytes);
         final signature = session.tradeKey.sign(hashHex);
-        print(signature.codeUnits);
         finalContent = jsonEncode([content, signature]);
       } else {
         finalContent = jsonEncode([content, null]);
@@ -141,15 +139,16 @@ class MostroService {
       await _nostrService.publishEvent(event);
     } catch (e) {
       // catch and throw and log and stuff
+      print(e);
     }
   }
 
   Future<NostrEvent> createNIP59Event(
       String content, String recipientPubKey, Session session) async {
-    final keySet = session.fullPrivacy ? session.tradeKey : session.tradeKey;
+    final keySet = session.fullPrivacy ? session.tradeKey : session.masterKey;
 
-    final encryptedContent =
-        await _nostrService.createRumor(content, recipientPubKey, keySet);
+    final encryptedContent = await _nostrService.createRumor(
+        session.tradeKey, keySet.private, recipientPubKey, content);
 
     final wrapperKeyPair = await _nostrService.generateKeyPair();
 

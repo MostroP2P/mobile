@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mostro_mobile/data/models/enums/storage_keys.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
+import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/data/repositories/order_repository_interface.dart';
 import 'package:mostro_mobile/services/mostro_service.dart';
@@ -23,8 +24,11 @@ class MostroRepository implements OrderRepository {
     final stream = _mostroService.subscribe(session);
     final subscription = stream.listen(
       (msg) async {
-        _messages[msg.requestId!] = msg;
-        await saveMessage(msg);
+        // TODO: handle other message payloads
+        if (msg.payload is Order) {
+          _messages[msg.id!] = msg;
+          await saveMessage(msg);
+        }
       },
       onError: (error) {
         // Log or handle subscription errors
@@ -70,14 +74,14 @@ class MostroRepository implements OrderRepository {
   Future<void> saveMessages() async {
     for (var m in _messages.values.toList()) {
       await _secureStorage.write(
-          key: '${SecureStorageKeys.message}-${m.requestId}',
+          key: '${SecureStorageKeys.message}-${m.id}',
           value: jsonEncode(m.toJson()));
     }
   }
 
   Future<void> saveMessage(MostroMessage message) async {
     await _secureStorage.write(
-        key: '${SecureStorageKeys.message}-${message.requestId}',
+        key: '${SecureStorageKeys.message}-${message.id}',
         value: jsonEncode(message.toJson()));
   }
 
@@ -92,7 +96,7 @@ class MostroRepository implements OrderRepository {
       if (entry.key.startsWith(SecureStorageKeys.message.value)) {
         try {
           final msg = MostroMessage.deserialized(entry.value);
-          _messages[msg.requestId!] = msg;
+          _messages[msg.id!] = msg;
         } catch (e) {
           print('Error deserializing message for key ${entry.key}: $e');
         }

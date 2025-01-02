@@ -4,20 +4,19 @@ import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/payload.dart';
 
 class MostroMessage<T extends Payload> {
-  String? requestId;
+  String? id;
   final Action action;
   int? tradeIndex;
   T? _payload;
 
-  MostroMessage(
-      {required this.action, this.requestId, T? payload, this.tradeIndex})
+  MostroMessage({required this.action, this.id, T? payload, this.tradeIndex})
       : _payload = payload;
 
   Map<String, dynamic> toJson() {
     return {
       'order': {
         'version': Config.mostroVersion,
-        'request_id': requestId,
+        'request_id': id,
         'trade_index': tradeIndex,
         'action': action.value,
         'payload': _payload?.toJson(),
@@ -43,12 +42,11 @@ class MostroMessage<T extends Payload> {
           ? Payload.fromJson(order['payload']) as T
           : null;
 
-      final tradeIndex =
-          order['trade_index'] != null ? int.parse(order['trade_index']) : null;
+      final tradeIndex = order['trade_index'];
 
       return MostroMessage<T>(
         action: action,
-        requestId: order['request_id'],
+        id: order['id'],
         payload: payload,
         tradeIndex: tradeIndex,
       );

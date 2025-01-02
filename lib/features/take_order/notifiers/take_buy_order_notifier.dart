@@ -36,9 +36,7 @@ class TakeBuyOrderNotifier extends StateNotifier<MostroMessage> {
 
     switch (state.action) {
       case Action.payInvoice:
-        ref
-            .read(navigationProvider.notifier)
-            .go('/pay_invoice/${state.requestId!}');
+        ref.read(navigationProvider.notifier).go('/pay_invoice/${state.id!}');
         break;
       case Action.waitingBuyerInvoice:
         notifProvider.showInformation('Waiting Buy Invoice');

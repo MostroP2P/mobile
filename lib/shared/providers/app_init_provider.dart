@@ -16,7 +16,7 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
   await mostroRepository.loadMessages();
 
   for (final msg in mostroRepository.allMessages) {
-    final orderId = msg.requestId!;
+    final orderId = msg.id!;
     ref.read(orderNotifierProvider(orderId).notifier);
   }
 });

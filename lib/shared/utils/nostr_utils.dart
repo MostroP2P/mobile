@@ -144,11 +144,11 @@ class NostrUtils {
     return now.subtract(Duration(seconds: randomSeconds));
   }
 
-  static Future<String> createRumor(String content, String recipientPubKey,
-      NostrKeyPairs senderPrivateKey) async {
+  static Future<String> createRumor(NostrKeyPairs senderKeyPair,
+      String wrapperKey, String recipientPubKey, String content) async {
     final rumorEvent = NostrEvent.fromPartialData(
       kind: 1,
-      keyPairs: senderPrivateKey,
+      keyPairs: senderKeyPair,
       content: content,
       createdAt: DateTime.now(),
       tags: [
@@ -157,8 +157,8 @@ class NostrUtils {
     );
 
     try {
-      return await _encryptNIP44(jsonEncode(rumorEvent.toMap()),
-          senderPrivateKey.private, recipientPubKey);
+      return await _encryptNIP44(
+          jsonEncode(rumorEvent.toMap()), wrapperKey, recipientPubKey);
     } catch (e) {
       throw Exception('Failed to encrypt content: $e');
     }
@@ -213,12 +213,12 @@ class NostrUtils {
     final senderKeyPair = generateKeyPairFromPrivateKey(senderPrivateKey);
 
     String encryptedContent =
-        await createRumor(content, recipientPubKey, senderKeyPair);
+        await createRumor(senderKeyPair, senderKeyPair.private, recipientPubKey, content);
 
     final wrapperKeyPair = generateKeyPair();
 
-    String sealedContent =
-        await createSeal(senderKeyPair, wrapperKeyPair.private, recipientPubKey, encryptedContent);
+    String sealedContent = await createSeal(senderKeyPair,
+        wrapperKeyPair.private, recipientPubKey, encryptedContent);
 
     final wrapEvent =
         await createWrap(wrapperKeyPair, sealedContent, recipientPubKey);

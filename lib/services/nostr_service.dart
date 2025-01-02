@@ -106,9 +106,10 @@ class NostrService {
     return NostrUtils.decryptNIP59Event(event, privateKey);
   }
 
-  Future<String> createRumor(String content, String recipientPubKey,
-      NostrKeyPairs senderPrivateKey) async {
-    return NostrUtils.createRumor(content, recipientPubKey, senderPrivateKey);
+  Future<String> createRumor(NostrKeyPairs senderKeyPair, String wrapperKey,
+      String recipientPubKey, String content) async {
+    return NostrUtils.createRumor(
+        senderKeyPair, wrapperKey, recipientPubKey, content);
   }
 
   Future<String> createSeal(NostrKeyPairs senderKeyPair, String wrapperKey,
