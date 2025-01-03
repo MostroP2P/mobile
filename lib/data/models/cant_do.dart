@@ -17,5 +17,5 @@ class CantDo implements Payload {
 
   @override
   // TODO: implement type
-  String get type => 'can_do';
+  String get type => 'cant_do';
 }
