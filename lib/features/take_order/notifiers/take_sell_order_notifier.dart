@@ -73,7 +73,6 @@ class TakeSellOrderNotifier extends StateNotifier<MostroMessage> {
   }
 
   void cancelOrder() {
-    //state = state.copyWith(status: TakeSellOrderStatus.cancelled);
     dispose();
   }
 

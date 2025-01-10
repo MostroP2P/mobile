@@ -3,22 +3,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/app/app_theme.dart';
 import 'package:mostro_mobile/data/models/order.dart';
+import 'package:mostro_mobile/features/take_order/providers/order_notifier_providers.dart';
 import 'package:mostro_mobile/features/take_order/widgets/order_app_bar.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
+import 'package:mostro_mobile/data/models/enums/action.dart' as action;
 
 class AddLightningInvoiceScreen extends ConsumerWidget {
   final String orderId;
   final int sats = 0;
 
   const AddLightningInvoiceScreen({super.key, required this.orderId});
-  
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final mostroRepo = ref.read(mostroRepositoryProvider);
     final message = mostroRepo.getOrderById(orderId);
     final order = message?.getPayload<Order>();
-
     final amount = order?.amount;
 
     final TextEditingController invoiceController = TextEditingController();
@@ -60,6 +61,15 @@ class AddLightningInvoiceScreen extends ConsumerWidget {
                     child: ElevatedButton(
                       onPressed: () {
                         mostroRepo.cancelOrder(orderId);
+                        if (message?.action == action.Action.takeBuy) {
+                          final controller = ref.read(
+                              takeBuyOrderNotifierProvider(orderId).notifier);
+                          controller.dispose();
+                        } else if (message?.action == action.Action.takeSell) {
+                          final controller = ref.read(
+                              takeSellOrderNotifierProvider(orderId).notifier);
+                          controller.dispose();
+                        }
                         context.go('/');
                       },
                       style: ElevatedButton.styleFrom(
