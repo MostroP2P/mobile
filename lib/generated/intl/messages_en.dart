@@ -108,56 +108,55 @@ class MessageLookup extends MessageLookupByLibrary {
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
-        "add_invoice": m0,
-        "admin_add_solver": m1,
-        "admin_canceled_admin": m2,
-        "admin_canceled_users": m3,
-        "admin_settled_admin": m4,
-        "admin_settled_users": m5,
-        "admin_took_dispute_admin": m6,
-        "admin_took_dispute_users": m7,
-        "buyer_invoice_accepted": MessageLookupByLibrary.simpleMessage(
+        "addInvoice": m0,
+        "adminAddSolver": m1,
+        "adminCanceledAdmin": m2,
+        "adminCanceledUsers": m3,
+        "adminSettledAdmin": m4,
+        "adminSettledUsers": m5,
+        "adminTookDisputeAdmin": m6,
+        "adminTookDisputeUsers": m7,
+        "buyerInvoiceAccepted": MessageLookupByLibrary.simpleMessage(
             "Invoice has been successfully saved!"),
-        "buyer_took_order": m8,
+        "buyerTookOrder": m8,
         "canceled": m9,
-        "cant_do": m10,
-        "cooperative_cancel_accepted": m11,
-        "cooperative_cancel_initiated_by_peer": m12,
-        "cooperative_cancel_initiated_by_you": m13,
-        "dispute_initiated_by_peer": m14,
-        "dispute_initiated_by_you": m15,
-        "fiat_sent_ok_buyer": m16,
-        "fiat_sent_ok_seller": m17,
-        "hold_invoice_payment_accepted": m18,
-        "hold_invoice_payment_canceled": MessageLookupByLibrary.simpleMessage(
+        "cantDo": m10,
+        "cooperativeCancelAccepted": m11,
+        "cooperativeCancelInitiatedByPeer": m12,
+        "cooperativeCancelInitiatedByYou": m13,
+        "disputeInitiatedByPeer": m14,
+        "disputeInitiatedByYou": m15,
+        "fiatSentOkBuyer": m16,
+        "fiatSentOkSeller": m17,
+        "holdInvoicePaymentAccepted": m18,
+        "holdInvoicePaymentCanceled": MessageLookupByLibrary.simpleMessage(
             "The invoice was cancelled; your Sats will be available in your wallet again."),
-        "hold_invoice_payment_settled": m19,
-        "incorrect_invoice_amount_buyer_add_invoice": m20,
-        "incorrect_invoice_amount_buyer_new_order":
-            MessageLookupByLibrary.simpleMessage(
-                "An invoice with non-zero amount was received for the new order. Please send an invoice with a zero amount or no invoice at all."),
-        "invalid_sats_amount": MessageLookupByLibrary.simpleMessage(
+        "holdInvoicePaymentSettled": m19,
+        "incorrectInvoiceAmountBuyerAddInvoice": m20,
+        "incorrectInvoiceAmountBuyerNewOrder": MessageLookupByLibrary.simpleMessage(
+            "An invoice with non-zero amount was received for the new order. Please send an invoice with a zero amount or no invoice at all."),
+        "invalidSatsAmount": MessageLookupByLibrary.simpleMessage(
             "The specified Sats amount is invalid."),
-        "invoice_updated": MessageLookupByLibrary.simpleMessage(
+        "invoiceUpdated": MessageLookupByLibrary.simpleMessage(
             "Invoice has been successfully updated!"),
-        "is_not_your_dispute": MessageLookupByLibrary.simpleMessage(
+        "isNotYourDispute": MessageLookupByLibrary.simpleMessage(
             "This dispute was not assigned to you!"),
-        "is_not_your_order": m21,
-        "new_order": m22,
-        "not_allowed_by_status": m23,
-        "not_found": MessageLookupByLibrary.simpleMessage("Dispute not found."),
-        "out_of_range_fiat_amount": m24,
-        "out_of_range_sats_amount": m25,
-        "pay_invoice": m26,
-        "payment_failed": m27,
-        "purchase_completed": MessageLookupByLibrary.simpleMessage(
+        "isNotYourOrder": m21,
+        "newOrder": m22,
+        "notAllowedByStatus": m23,
+        "notFound": MessageLookupByLibrary.simpleMessage("Dispute not found."),
+        "outOfRangeFiatAmount": m24,
+        "outOfRangeSatsAmount": m25,
+        "payInvoice": m26,
+        "paymentFailed": m27,
+        "purchaseCompleted": MessageLookupByLibrary.simpleMessage(
             "Your satoshis purchase has been completed successfully. I have paid your invoice, enjoy sound money!"),
         "rate": MessageLookupByLibrary.simpleMessage(
             "Please rate your counterparty"),
-        "rate_received":
+        "rateReceived":
             MessageLookupByLibrary.simpleMessage("Rating successfully saved!"),
         "released": m28,
-        "waiting_buyer_invoice": m29,
-        "waiting_seller_to_pay": m30
+        "waitingBuyerInvoice": m29,
+        "waitingSellerToPay": m30
       };
 }
