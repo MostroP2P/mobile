@@ -61,14 +61,33 @@ class AddLightningInvoiceScreen extends ConsumerWidget {
                     child: ElevatedButton(
                       onPressed: () {
                         mostroRepo.cancelOrder(orderId);
-                        if (message?.action == action.Action.takeBuy) {
-                          final controller = ref.read(
-                              takeBuyOrderNotifierProvider(orderId).notifier);
-                          controller.dispose();
-                        } else if (message?.action == action.Action.takeSell) {
-                          final controller = ref.read(
-                              takeSellOrderNotifierProvider(orderId).notifier);
-                          controller.dispose();
+                        try {
+                          if (message == null) {
+                            context.go('/');
+                            return;
+                          }
+                          
+                          // Dispose notifier first
+                          switch (message.action) {
+                            case action.Action.takeBuy:
+                              ref.read(takeBuyOrderNotifierProvider(orderId).notifier).dispose();
+                              break;
+                            case action.Action.takeSell:
+                              ref.read(takeSellOrderNotifierProvider(orderId).notifier).dispose();
+                              break;
+                            default:
+                              // Log unexpected action type
+                              break;
+                          }
+                          
+                          // Then cancel order
+                          mostroRepo.cancelOrder(orderId);
+                          context.go('/');
+                        } catch (e) {
+                          // Show error to user
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Failed to cancel order: ${e.toString()}')),
+                          );
                         }
                         context.go('/');
                       },
