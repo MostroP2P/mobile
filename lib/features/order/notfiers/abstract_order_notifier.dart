@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
+import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/data/repositories/mostro_repository.dart';
 import 'package:mostro_mobile/shared/providers/navigation_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/notification_notifier_provider.dart';
@@ -12,18 +13,15 @@ class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
   final String orderId;
   StreamSubscription<MostroMessage>? _orderSubscription;
 
-  AbstractOrderNotifier({
-    required this.orderRepository,
-    required this.orderId,
-    required this.ref,
-  }) : super(orderRepository.getOrderById(orderId) ??
-            MostroMessage(action: Action.notFound, id: orderId)) {
-    subscribe();
-  }
+  AbstractOrderNotifier(
+    this.orderRepository,
+    this.orderId,
+    this.ref,
+  ) : super(orderRepository.getOrderById(orderId) ??
+            MostroMessage(action: Action.notFound, id: orderId));
 
-  Future<void> subscribe(MostroMessage message) async {
+  Future<void> subscribe(Stream<MostroMessage> stream) async {
     try {
-      final stream = await orderRepository.publishOrder(message);
       _orderSubscription = stream.listen((order) {
         state = order;
         handleOrderUpdate();
@@ -34,7 +32,7 @@ class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
   }
 
   void handleError(Object err) {
-    ref.read(notificationProvider.notifier).showInformation(err.toString());
+    //ref.read(notificationProvider.notifier).showInformation(err.toString());
   }
 
   void handleOrderUpdate() {
@@ -49,19 +47,21 @@ class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
         navProvider.go('/pay_invoice/${state.id!}');
         break;
       case Action.outOfRangeSatsAmount:
-        notifProvider.showInformation('Sats out of range');
-        break;
       case Action.outOfRangeFiatAmount:
-        notifProvider.showInformation('Fiant amount out of range');
+        final order = state.payload! as Order;
+        notifProvider.showInformation(state.action, values: {
+          'min_order_amount': order.minAmount,
+          'max_order_amount': order.maxAmount
+        });
         break;
       case Action.waitingSellerToPay:
-        notifProvider.showInformation('Waiting Seller to pay');
+        notifProvider.showInformation(state.action, values: {'id': state.id});
         break;
       case Action.waitingBuyerInvoice:
-        notifProvider.showInformation('Waiting Buy Invoice');
+        notifProvider.showInformation(state.action);
         break;
       case Action.buyerTookOrder:
-        notifProvider.showInformation('Buyer took order');
+        notifProvider.showInformation(state.action);
         break;
       case Action.fiatSentOk:
       case Action.holdInvoicePaymentSettled:
@@ -72,7 +72,7 @@ class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
       case Action.disputeInitiatedByYou:
       case Action.adminSettled:
       default:
-        notifProvider.showInformation(state.action.toString());
+        notifProvider.showInformation(state.action);
         break;
     }
   }

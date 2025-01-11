@@ -25,7 +25,7 @@ class OrderConfirmationScreen extends ConsumerWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              S.of(context).new_order('24'),
+              S.of(context).newOrder('24'),
               style: TextStyle(fontSize: 18, color: AppTheme.cream1),
               textAlign: TextAlign.center,
             ),

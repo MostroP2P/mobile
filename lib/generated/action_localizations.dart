@@ -68,13 +68,25 @@ extension ActionLocalizationX on S {
       case Action.cantDo:
         return cantDo(placeholders['action']);
       case Action.adminCanceled:
-        return this.adminCanceled;
+        if (placeholders['admin']) {
+          return adminCanceledAdmin(placeholders['id']);
+        } else {
+          return adminCanceledUsers(placeholders['id']);
+        }
       case Action.adminSettled:
-        return this.adminSettled;
+        if (placeholders['admin']) {
+          return adminSettledAdmin(placeholders['id']);
+        } else {
+          return adminSettledUsers(placeholders['id']);
+        }
       case Action.adminAddSolver:
         return adminAddSolver(placeholders['npub']);
       case Action.adminTookDispute:
-        return this.adminTookDispute;
+        if (placeholders['details']) {
+          return adminTookDisputeAdmin(placeholders['details']);
+        } else {
+          return adminTookDisputeUsers(placeholders['admin_npub']);
+        }
       case Action.isNotYourOrder:
         return isNotYourOrder(placeholders['action']);
       case Action.notAllowedByStatus:
@@ -88,7 +100,11 @@ extension ActionLocalizationX on S {
       case Action.notFound:
         return notFound;
       case Action.incorrectInvoiceAmount:
-        return this.incorrectInvoiceAmount;
+        if (placeholders['amount']) {
+          return incorrectInvoiceAmountBuyerAddInvoice(placeholders['amount']);
+        } else {
+          return incorrectInvoiceAmountBuyerNewOrder;
+        }
       case Action.invalidSatsAmount:
         return invalidSatsAmount;
       case Action.outOfRangeSatsAmount:
@@ -99,6 +115,8 @@ extension ActionLocalizationX on S {
             placeholders['payment_retries_interval']);
       case Action.invoiceUpdated:
         return invoiceUpdated;
+      default:
+        return 'Localization for Action $action not found';
     }
   }
 }
