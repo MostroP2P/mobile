@@ -48,10 +48,10 @@ class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
         break;
       case Action.outOfRangeSatsAmount:
       case Action.outOfRangeFiatAmount:
-        final order = state.payload! as Order;
+        final order = state.getPayload<Order>();
         notifProvider.showInformation(state.action, values: {
-          'min_order_amount': order.minAmount,
-          'max_order_amount': order.maxAmount
+          'min_order_amount': order?.minAmount,
+          'max_order_amount': order?.maxAmount
         });
         break;
       case Action.waitingSellerToPay:
@@ -71,6 +71,8 @@ class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
       case Action.cooperativeCancelInitiatedByYou:
       case Action.disputeInitiatedByYou:
       case Action.adminSettled:
+        notifProvider.showInformation(state.action);
+        break;
       default:
         notifProvider.showInformation(state.action);
         break;

@@ -26,6 +26,12 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
         action: action, placeholders: values, informational: true);
   }
 
+  void showActionable(actions.Action action,
+      {Map<String, dynamic> values = const {}}) {
+    state = NotificationState(
+        action: action, placeholders: values, actionRequired: true);
+  }
+
   void clearNotification() {
     state = NotificationState();
   }
