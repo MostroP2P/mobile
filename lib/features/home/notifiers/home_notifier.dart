@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/repositories/open_orders_repository.dart';
+import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'home_state.dart';
 
@@ -21,8 +22,7 @@ class HomeNotifier extends AsyncNotifier<HomeState> {
 
     _subscription = _repository!.eventsStream.listen((orders) {
       final orderType = state.value?.orderType ?? OrderType.sell;
-      final filteredOrders =
-          _filterOrders(orders, orderType);
+      final filteredOrders = _filterOrders(orders, orderType);
       state = AsyncData(
         HomeState(
           orderType: orderType,
@@ -52,7 +52,9 @@ class HomeNotifier extends AsyncNotifier<HomeState> {
   List<NostrEvent> _filterOrders(List<NostrEvent> orders, OrderType type) {
     final currentState = state.value;
     if (currentState == null) return [];
+    final mostroRepository = ref.watch(mostroRepositoryProvider);
     return orders
+        .where((order) => mostroRepository.getOrderById(order.orderId!) == null)
         .where((order) => type == OrderType.buy
             ? order.orderType == OrderType.buy
             : order.orderType == OrderType.sell)

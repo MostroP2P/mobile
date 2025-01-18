@@ -21,8 +21,9 @@ class BottomNavBar extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _buildNavItem(context, HeroIcons.bookOpen, 0),
-              _buildNavItem(context, HeroIcons.chatBubbleLeftRight, 1),
-              _buildNavItem(context, HeroIcons.user, 2),
+              _buildNavItem(context, HeroIcons.bookmarkSquare, 1),
+              _buildNavItem(context, HeroIcons.chatBubbleLeftRight, 2),
+              _buildNavItem(context, HeroIcons.bolt, 3),
             ],
           ),
         ),
@@ -51,13 +52,15 @@ class BottomNavBar extends StatelessWidget {
   }
 
   bool _isActive(BuildContext context, int index) {
-    final currentLocation =  GoRouterState.of(context).uri.toString();
+    final currentLocation = GoRouterState.of(context).uri.toString();
     switch (index) {
       case 0:
-        return currentLocation == '/'; 
+        return currentLocation == '/';
       case 1:
-        return currentLocation == '/chat_list';
+        return currentLocation == '/my_trades';
       case 2:
+        return currentLocation == '/chat_list';
+      case 3:
         return currentLocation == '/profile';
       default:
         return false;
@@ -71,16 +74,19 @@ class BottomNavBar extends StatelessWidget {
         nextRoute = '/';
         break;
       case 1:
-        nextRoute = '/chat_list';
+        nextRoute = '/my_trades';
         break;
       case 2:
+        nextRoute = '/chat_list';
+        break;
+      case 3:
         nextRoute = '/profile';
         break;
       default:
         return;
     }
 
-    final currentLocation =  GoRouterState.of(context).uri.toString();
+    final currentLocation = GoRouterState.of(context).uri.toString();
     if (currentLocation != nextRoute) {
       context.go(nextRoute);
     }

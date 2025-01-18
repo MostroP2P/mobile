@@ -7,23 +7,35 @@ import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/app/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/features/add_order/providers/add_order_notifier_provider.dart';
+import 'package:mostro_mobile/features/add_order/widgets/fixed_switch_widget.dart';
 import 'package:mostro_mobile/presentation/widgets/currency_dropdown.dart';
 import 'package:mostro_mobile/presentation/widgets/currency_text_field.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
 import 'package:uuid/uuid.dart';
 
-class AddOrderScreen extends ConsumerWidget {
-  final _formKey = GlobalKey<FormState>();
+class AddOrderScreen extends ConsumerStatefulWidget {
+  const AddOrderScreen({super.key});
 
-  AddOrderScreen({super.key});
+  @override
+  ConsumerState<AddOrderScreen> createState() => _AddOrderScreenState();
+}
+
+class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
+  final _formKey = GlobalKey<FormState>();
 
   final _fiatAmountController = TextEditingController();
   final _satsAmountController = TextEditingController();
   final _paymentMethodController = TextEditingController();
   final _lightningInvoiceController = TextEditingController();
 
+  bool _marketRate = false; // false => Fixed, true => Market
+  double _premiumValue = 0.0; // slider for -10..10
+  bool _isEnabled = false; // controls enabled or not
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
+    final orderType = ref.watch(orderTypeProvider);
+
     return Scaffold(
       backgroundColor: AppTheme.dark1,
       appBar: AppBar(
@@ -50,7 +62,7 @@ class AddOrderScreen extends ConsumerWidget {
                 color: AppTheme.dark2,
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: _buildContent(context, ref),
+              child: _buildContent(context, ref, orderType),
             ),
           ),
         ],
@@ -59,8 +71,7 @@ class AddOrderScreen extends ConsumerWidget {
   }
 
   Widget _buildContent(
-      BuildContext context, WidgetRef ref) {
-    final orderType = ref.watch(orderTypeProvider);
+      BuildContext context, WidgetRef ref, OrderType orderType) {
     return Form(
       key: _formKey,
       child: Column(
@@ -128,6 +139,9 @@ class AddOrderScreen extends ConsumerWidget {
     );
   }
 
+  ///
+  /// SELL FORM
+  ///
   Widget _buildSellForm(BuildContext context, WidgetRef ref) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
@@ -137,24 +151,77 @@ class AddOrderScreen extends ConsumerWidget {
           const Text('Make sure your order is below 20K sats',
               style: TextStyle(color: AppTheme.grey2)),
           const SizedBox(height: 16),
-          CurrencyDropdown(label: 'Fiat code'),
+
+          // 1) Currency dropdown always enabled
+          CurrencyDropdown(
+            label: 'Fiat code',
+            onSelected: (String fiatCode) {
+              // Once a fiat code is selected, enable the other fields
+              setState(() {
+                _isEnabled = true;
+              });
+            },
+          ),
+
           const SizedBox(height: 16),
-          CurrencyTextField(
-              controller: _fiatAmountController, label: 'Fiat amount'),
+
+          // 2) fiat amount
+          _buildDisabledWrapper(
+            enabled: _isEnabled,
+            child: CurrencyTextField(
+              controller: _fiatAmountController,
+              label: 'Fiat amount',
+            ),
+          ),
+
           const SizedBox(height: 16),
-          _buildFixedToggle(),
+
+          // 3) fixed/market toggle
+          _buildDisabledWrapper(
+            enabled: _isEnabled,
+            child: FixedSwitch(
+              initialValue: _marketRate,
+              onChanged: (value) {
+                setState(() {
+                  _marketRate = value;
+                });
+              },
+            ),
+          ),
+
           const SizedBox(height: 16),
-          _buildTextField('Sats amount', _satsAmountController,
-              suffix: Icon(BitcoinIcons.satoshi_v1_outline).icon),
+
+          // 4) either a text field for sats or a slider for premium
+          _marketRate
+              ? _buildDisabledWrapper(
+                  enabled: _isEnabled,
+                  child: _buildPremiumSlider(),
+                )
+              : _buildDisabledWrapper(
+                  enabled: _isEnabled,
+                  child: _buildTextField('Sats amount', _satsAmountController,
+                      suffix: Icon(BitcoinIcons.satoshi_v1_outline).icon),
+                ),
+
           const SizedBox(height: 16),
-          _buildTextField('Payment method', _paymentMethodController),
+
+          // 5) Payment method
+          _buildDisabledWrapper(
+            enabled: _isEnabled,
+            child: _buildTextField('Payment method', _paymentMethodController),
+          ),
+
           const SizedBox(height: 32),
+
           _buildActionButtons(context, ref, OrderType.sell),
         ],
       ),
     );
   }
 
+  ///
+  /// BUY FORM
+  ///
   Widget _buildBuyForm(BuildContext context, WidgetRef ref) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
@@ -164,27 +231,90 @@ class AddOrderScreen extends ConsumerWidget {
           const Text('Make sure your order is below 20K sats',
               style: TextStyle(color: AppTheme.grey2)),
           const SizedBox(height: 16),
-          CurrencyDropdown(label: 'Fiat code'),
+
+          // 1) Currency dropdown always enabled
+          CurrencyDropdown(
+            label: 'Fiat code',
+            onSelected: (String fiatCode) {
+              setState(() {
+                _isEnabled = true;
+              });
+            },
+          ),
+
           const SizedBox(height: 16),
-          CurrencyTextField(
-              controller: _fiatAmountController, label: 'Fiat amount'),
+
+          // 2) fiat amount
+          _buildDisabledWrapper(
+            enabled: _isEnabled,
+            child: CurrencyTextField(
+              controller: _fiatAmountController,
+              label: 'Fiat amount',
+            ),
+          ),
+
           const SizedBox(height: 16),
-          _buildFixedToggle(),
+
+          // 3) fixed/market toggle
+          _buildDisabledWrapper(
+            enabled: _isEnabled,
+            child: FixedSwitch(
+              initialValue: _marketRate,
+              onChanged: (value) {
+                setState(() {
+                  _marketRate = value;
+                });
+              },
+            ),
+          ),
+
           const SizedBox(height: 16),
-          _buildTextField('Sats amount', _satsAmountController,
-              suffix: Icon(BitcoinIcons.satoshi_v1_outline).icon),
+
+          // 4) either text for sats or a slider for premium
+          if (_marketRate)
+            // MARKET: Show only premium slider
+            _buildDisabledWrapper(
+              enabled: _isEnabled,
+              child: _buildPremiumSlider(),
+            )
+          else
+            // FIXED: Show Sats amount + LN Invoice fields
+            Column(
+              children: [
+                _buildDisabledWrapper(
+                  enabled: _isEnabled,
+                  child: _buildTextField('Sats amount', _satsAmountController,
+                      suffix: Icon(BitcoinIcons.satoshi_v1_outline).icon),
+                ),
+                const SizedBox(height: 16),
+                _buildDisabledWrapper(
+                  enabled: _isEnabled,
+                  child: _buildTextField(
+                    'Lightning Invoice without an amount',
+                    _lightningInvoiceController,
+                  ),
+                ),
+              ],
+            ),
           const SizedBox(height: 16),
-          _buildTextField('Lightning Invoice without an amount',
-              _lightningInvoiceController),
-          const SizedBox(height: 16),
-          _buildTextField('Payment method', _paymentMethodController),
+
+          // 6) Payment method
+          _buildDisabledWrapper(
+            enabled: _isEnabled,
+            child: _buildTextField('Payment method', _paymentMethodController),
+          ),
+
           const SizedBox(height: 32),
+
           _buildActionButtons(context, ref, OrderType.buy),
         ],
       ),
     );
   }
 
+  ///
+  /// REUSABLE TEXT FIELD
+  ///
   Widget _buildTextField(String label, TextEditingController controller,
       {IconData? suffix}) {
     return Container(
@@ -213,19 +343,49 @@ class AddOrderScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildFixedToggle() {
-    return Row(
+  ///
+  /// DISABLED WRAPPER
+  ///
+  /// If [enabled] is false, we show a grey overlay to indicate
+  /// it's disabled and the child can't be interacted with.
+  Widget _buildDisabledWrapper({required bool enabled, required Widget child}) {
+    return IgnorePointer(
+      ignoring: !enabled,
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 300),
+        opacity: enabled ? 1.0 : 0.4,
+        child: child,
+      ),
+    );
+  }
+
+  ///
+  /// PREMIUM SLIDER for -10..10
+  ///
+  Widget _buildPremiumSlider() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Fixed', style: TextStyle(color: AppTheme.cream1)),
-        const SizedBox(width: 8),
-        Switch(
-          value: false,
-          onChanged: (value) {},
+        const Text('Premium (%)', style: TextStyle(color: AppTheme.cream1)),
+        Slider(
+          value: _premiumValue,
+          min: -10,
+          max: 10,
+          divisions: 20,
+          label: _premiumValue.toStringAsFixed(1),
+          onChanged: (val) {
+            setState(() {
+              _premiumValue = val;
+            });
+          },
         ),
       ],
     );
   }
 
+  ///
+  /// ACTION BUTTONS
+  ///
   Widget _buildActionButtons(
       BuildContext context, WidgetRef ref, OrderType orderType) {
     return Row(
@@ -251,6 +411,9 @@ class AddOrderScreen extends ConsumerWidget {
     );
   }
 
+  ///
+  /// SUBMIT ORDER
+  ///
   void _submitOrder(BuildContext context, WidgetRef ref, OrderType orderType) {
     final selectedFiatCode = ref.read(selectedFiatCodeProvider);
 
@@ -260,12 +423,17 @@ class AddOrderScreen extends ConsumerWidget {
       final tempOrderId = uuid.v4();
       final notifier = ref.read(addOrderNotifierProvider(tempOrderId).notifier);
 
+      final fiatAmount = int.tryParse(_fiatAmountController.text) ?? 0;
+      final satsAmount = int.tryParse(_satsAmountController.text) ?? 0;
+      final paymentMethod = _paymentMethodController.text;
+
       notifier.submitOrder(
-        selectedFiatCode ?? '', // Use selected fiat code
-        int.tryParse(_fiatAmountController.text) ?? 0,
-        int.tryParse(_satsAmountController.text) ?? 0,
-        _paymentMethodController.text,
+        selectedFiatCode ?? '',
+        fiatAmount,
+        _marketRate ? 0 : satsAmount, // if market => pass 0 or ignore
+        paymentMethod,
         orderType,
+        lnAddress: _lightningInvoiceController.text,
       );
     }
   }

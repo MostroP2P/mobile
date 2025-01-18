@@ -5,10 +5,12 @@ import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
 
 class CurrencyDropdown extends ConsumerWidget {
   final String label;
+  final ValueChanged<String>? onSelected;
 
   const CurrencyDropdown({
     super.key,
     required this.label,
+    this.onSelected,
   });
 
   @override
@@ -32,7 +34,7 @@ class CurrencyDropdown extends ConsumerWidget {
         ),
         error: (error, stackTrace) => Row(
           children: [
-            Text('Failed to load currencies'),
+            const Text('Failed to load currencies'),
             TextButton(
               onPressed: () => ref.refresh(currencyCodesProvider),
               child: const Text('Retry'),
@@ -57,11 +59,17 @@ class CurrencyDropdown extends ConsumerWidget {
               labelStyle: const TextStyle(color: AppTheme.grey2),
             ),
             dropdownColor: AppTheme.dark1,
-            style: TextStyle(color: AppTheme.cream1),
+            style: const TextStyle(color: AppTheme.cream1),
             items: items,
             value: selectedFiatCode,
-            onChanged: (value) =>
-                ref.read(selectedFiatCodeProvider.notifier).state = value,
+            onChanged: (value) {
+              if (value != null) {
+                // Update Riverpod state
+                ref.read(selectedFiatCodeProvider.notifier).state = value;
+                // Notify parent via callback if provided
+                onSelected?.call(value);
+              }
+            },
           );
         },
       ),
