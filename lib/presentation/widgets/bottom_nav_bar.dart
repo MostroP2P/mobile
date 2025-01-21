@@ -57,7 +57,7 @@ class BottomNavBar extends StatelessWidget {
       case 0:
         return currentLocation == '/';
       case 1:
-        return currentLocation == '/my_trades';
+        return currentLocation == '/order_book';
       case 2:
         return currentLocation == '/chat_list';
       case 3:
@@ -74,7 +74,7 @@ class BottomNavBar extends StatelessWidget {
         nextRoute = '/';
         break;
       case 1:
-        nextRoute = '/my_trades';
+        nextRoute = '/order_book';
         break;
       case 2:
         nextRoute = '/chat_list';
