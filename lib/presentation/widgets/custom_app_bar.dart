@@ -14,7 +14,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         icon: const HeroIcon(HeroIcons.bars3,
             style: HeroIconStyle.outline, color: Colors.white),
         onPressed: () {
-          // TODO: Implement drawer opening
+          Scaffold.of(context).openDrawer();
         },
       ),
       actions: [

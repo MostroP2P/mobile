@@ -24,6 +24,31 @@ class HomeScreen extends ConsumerWidget {
         return Scaffold(
           backgroundColor: AppTheme.dark1,
           appBar: const CustomAppBar(),
+          drawer: Drawer(
+            // Add a ListView to the drawer. This ensures the user can scroll
+            // through the options in the drawer if there isn't enough vertical
+            // space to fit everything.
+            child: ListView(
+              // Important: Remove any padding from the ListView.
+              padding: EdgeInsets.zero,
+              children: [
+                ListTile(
+                  title: const Text('Item 1'),
+                  onTap: () {
+                    // Update the state of the app.
+                    // ...
+                  },
+                ),
+                ListTile(
+                  title: const Text('Item 2'),
+                  onTap: () {
+                    // Update the state of the app.
+                    // ...
+                  },
+                ),
+              ],
+            ),
+          ),
           body: RefreshIndicator(
             onRefresh: () async {
               await homeNotifier.refresh();
@@ -78,12 +103,14 @@ class HomeScreen extends ConsumerWidget {
       child: Row(
         children: [
           Expanded(
-            child: _buildTab("BUY BTC", homeState.orderType == OrderType.sell, () {
+            child:
+                _buildTab("BUY BTC", homeState.orderType == OrderType.sell, () {
               homeNotifier.changeOrderType(OrderType.sell);
             }),
           ),
           Expanded(
-            child: _buildTab("SELL BTC", homeState.orderType == OrderType.buy, () {
+            child:
+                _buildTab("SELL BTC", homeState.orderType == OrderType.buy, () {
               homeNotifier.changeOrderType(OrderType.buy);
             }),
           ),
