@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/features/add_order/screens/add_order_screen.dart';
 import 'package:mostro_mobile/features/add_order/screens/order_confirmation_screen.dart';
 import 'package:mostro_mobile/features/auth/screens/welcome_screen.dart';
@@ -8,8 +9,7 @@ import 'package:mostro_mobile/features/home/screens/home_screen.dart';
 import 'package:mostro_mobile/features/order_book/screens/order_book_screen.dart';
 import 'package:mostro_mobile/features/take_order/screens/add_lightning_invoice_screen.dart';
 import 'package:mostro_mobile/features/take_order/screens/pay_lightning_invoice_screen.dart';
-import 'package:mostro_mobile/features/take_order/screens/take_buy_order_screen.dart';
-import 'package:mostro_mobile/features/take_order/screens/take_sell_order_screen.dart';
+import 'package:mostro_mobile/features/take_order/screens/take_order_screen.dart';
 import 'package:mostro_mobile/presentation/profile/screens/profile_screen.dart';
 import 'package:mostro_mobile/features/auth/screens/register_screen.dart';
 import 'package:mostro_mobile/shared/widgets/navigation_listener_widget.dart';
@@ -57,13 +57,17 @@ final goRouter = GoRouter(
         ),
         GoRoute(
           path: '/take_sell/:orderId',
-          builder: (context, state) =>
-              TakeSellOrderScreen(orderId: state.pathParameters['orderId']!),
+          builder: (context, state) => TakeOrderScreen(
+            orderId: state.pathParameters['orderId']!,
+            orderType: OrderType.sell,
+          ),
         ),
         GoRoute(
           path: '/take_buy/:orderId',
-          builder: (context, state) =>
-              TakeBuyOrderScreen(orderId: state.pathParameters['orderId']!),
+          builder: (context, state) => TakeOrderScreen(
+            orderId: state.pathParameters['orderId']!,
+            orderType: OrderType.buy,
+          ),
         ),
         GoRoute(
           path: '/order_confirmed/:orderId',

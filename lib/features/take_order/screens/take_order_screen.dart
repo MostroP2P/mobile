@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/app/app_theme.dart';
+import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
-import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/features/take_order/widgets/order_app_bar.dart';
 import 'package:mostro_mobile/features/take_order/widgets/buyer_info.dart';
 import 'package:mostro_mobile/features/take_order/widgets/seller_info.dart';
@@ -13,17 +13,15 @@ import 'package:mostro_mobile/presentation/widgets/exchange_rate_widget.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
-
 import 'package:mostro_mobile/features/take_order/providers/order_notifier_providers.dart';
 
-class TakeBuyOrderScreen extends ConsumerWidget {
+class TakeOrderScreen extends ConsumerWidget {
   final String orderId;
-
-  // Keep text controllers here
+  final OrderType orderType;
   final TextEditingController _satsAmountController = TextEditingController();
   final TextEditingController _lndAddressController = TextEditingController();
 
-  TakeBuyOrderScreen({super.key, required this.orderId});
+  TakeOrderScreen({super.key, required this.orderId, required this.orderType});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -32,7 +30,8 @@ class TakeBuyOrderScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppTheme.dark1,
-      appBar: OrderAppBar(title: 'TAKE BUY ORDER'),
+      appBar: OrderAppBar(
+          title: '${orderType == OrderType.buy ? "SELL" : "BUY"} BITCOIN'),
       body: orderAsyncValue.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(child: Text('Error: $error')),
@@ -77,7 +76,8 @@ class TakeBuyOrderScreen extends ConsumerWidget {
   }
 
   Widget _buildSellerAmount(WidgetRef ref, NostrEvent order) {
-    final exchangeRateAsyncValue = ref.watch(exchangeRateProvider(order.currency!));
+    final exchangeRateAsyncValue =
+        ref.watch(exchangeRateProvider(order.currency!));
     return exchangeRateAsyncValue.when(
       loading: () => const CircularProgressIndicator(),
       error: (error, _) => Text('Exchange rate error: $error'),
@@ -150,12 +150,14 @@ class TakeBuyOrderScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildActionButtons(BuildContext context, WidgetRef ref, String? orderId) {
+  Widget _buildActionButtons(
+      BuildContext context, WidgetRef ref, String? orderId) {
     // If there's no orderId, hide the button or handle it
     final realOrderId = orderId ?? '';
 
-    final orderDetailsNotifier =
-        ref.read(takeBuyOrderNotifierProvider(realOrderId).notifier);
+    final orderDetailsNotifier = orderType == OrderType.sell ?
+    ref.read(takeSellOrderNotifierProvider(realOrderId).notifier):
+    ref.read(takeBuyOrderNotifierProvider(realOrderId).notifier);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
@@ -174,12 +176,15 @@ class TakeBuyOrderScreen extends ConsumerWidget {
           onPressed: () {
             // Possibly pass the LN address or sats from the text fields
             final satsText = _satsAmountController.text;
-            final lndAddress = _lndAddressController.text.trim();
             // Convert satsText to int if needed
             final satsAmount = int.tryParse(satsText);
-
-            orderDetailsNotifier.takeBuyOrder(realOrderId, satsAmount);
-            // Could also pass the LN address if your method expects it
+            if (orderType == OrderType.buy) {
+              orderDetailsNotifier.takeBuyOrder(realOrderId, satsAmount);
+            } else {
+              final lndAddress = _lndAddressController.text.trim();
+              orderDetailsNotifier.takeSellOrder(
+                  realOrderId, satsAmount, lndAddress);
+            } // Could also pass the LN address if your method expects it
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: AppTheme.mostroGreen,
