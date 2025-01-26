@@ -18,8 +18,7 @@ class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
     this.orderId,
     this.ref,
     Action action,
-  ) : super(orderRepository.getOrderById(orderId) ??
-            MostroMessage(action: action, id: orderId));
+  ) : super(MostroMessage(action: action, id: orderId));
 
   Future<void> subscribe(Stream<MostroMessage> stream) async {
     try {

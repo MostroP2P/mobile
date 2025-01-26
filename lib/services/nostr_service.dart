@@ -1,6 +1,6 @@
 import 'package:dart_nostr/dart_nostr.dart';
+import 'package:logger/logger.dart';
 import 'package:mostro_mobile/app/config.dart';
-import 'package:logging/logging.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
 class NostrService {
@@ -8,7 +8,7 @@ class NostrService {
   factory NostrService() => _instance;
   NostrService._internal();
 
-  final Logger _logger = Logger('NostrService');
+  final Logger _logger = Logger();
   late Nostr _nostr;
   bool _isInitialized = false;
 
@@ -21,16 +21,16 @@ class NostrService {
         relaysUrl: Config.nostrRelays,
         connectionTimeout: Config.nostrConnectionTimeout,
         onRelayListening: (relay, url, channel) {
-          _logger.info('Connected to relay: $url');
+          _logger.i('Connected to relay: $url');
         },
         onRelayConnectionError: (relay, error, channel) {
-          _logger.warning('Failed to connect to relay $relay: $error');
+          _logger.w('Failed to connect to relay $relay: $error');
         },
       );
       _isInitialized = true;
-      _logger.info('Nostr initialized successfully');
+      _logger.i('Nostr initialized successfully');
     } catch (e) {
-      _logger.severe('Failed to initialize Nostr: $e');
+      _logger.e('Failed to initialize Nostr: $e');
       rethrow;
     }
   }
@@ -43,9 +43,9 @@ class NostrService {
     try {
       await _nostr.relaysService.sendEventToRelaysAsync(event,
           timeout: Config.nostrConnectionTimeout);
-      _logger.info('Event published successfully');
+      _logger.i('Event published successfully');
     } catch (e) {
-      _logger.warning('Failed to publish event: $e');
+      _logger.w('Failed to publish event: $e');
       rethrow;
     }
   }
@@ -67,7 +67,7 @@ class NostrService {
 
     await _nostr.relaysService.disconnectFromRelays();
     _isInitialized = false;
-    _logger.info('Disconnected from all relays');
+    _logger.i('Disconnected from all relays');
   }
 
   bool get isInitialized => _isInitialized;

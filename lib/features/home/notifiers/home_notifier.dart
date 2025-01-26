@@ -54,7 +54,6 @@ class HomeNotifier extends AsyncNotifier<HomeState> {
     if (currentState == null) return [];
     final mostroRepository = ref.watch(mostroRepositoryProvider);
     return orders
-        .where((order) => mostroRepository.getOrderById(order.orderId!) == null)
         .where((order) => type == OrderType.buy
             ? order.orderType == OrderType.buy
             : order.orderType == OrderType.sell)

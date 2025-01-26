@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:dart_nostr/nostr/model/request/filter.dart';
+import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/repositories/order_repository_interface.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
@@ -8,11 +9,12 @@ import 'package:mostro_mobile/services/nostr_service.dart';
 const orderEventKind = 38383;
 const orderFilterDurationHours = 48;
 
-class OpenOrdersRepository implements OrderRepository {
+class OpenOrdersRepository implements OrderRepository<NostrEvent> {
   final NostrService _nostrService;
   final StreamController<List<NostrEvent>> _eventStreamController =
       StreamController.broadcast();
   final Map<String, NostrEvent> _events = {};
+  final _logger = Logger();
   StreamSubscription<NostrEvent>? _subscription;
 
   OpenOrdersRepository(this._nostrService);
@@ -32,8 +34,7 @@ class OpenOrdersRepository implements OrderRepository {
       _events[event.orderId!] = event;
       _eventStreamController.add(_events.values.toList());
     }, onError: (error) {
-      // Log error and optionally notify listeners
-      print('Error in order subscription: $error');
+      _logger.e('Error in order subscription: $error');
     });
   }
 
@@ -44,11 +45,36 @@ class OpenOrdersRepository implements OrderRepository {
     _events.clear();
   }
 
-  NostrEvent? getOrderById(String orderId) {
-    return _events[orderId];
+  @override
+  Future<NostrEvent?> getOrderById(String orderId) {
+    return Future.value(_events[orderId]);
   }
 
   Stream<List<NostrEvent>> get eventsStream => _eventStreamController.stream;
 
   List<NostrEvent> get currentEvents => _events.values.toList();
+
+  @override
+  Future<void> addOrder(NostrEvent order) {
+    // TODO: implement addOrder
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> deleteOrder(String orderId) {
+    // TODO: implement deleteOrder
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<List<NostrEvent>> getAllOrders() {
+    // TODO: implement getAllOrders
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> updateOrder(NostrEvent order) {
+    // TODO: implement updateOrder
+    throw UnimplementedError();
+  }
 }

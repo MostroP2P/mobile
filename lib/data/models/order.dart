@@ -128,6 +128,55 @@ class Order implements Payload {
     );
   }
 
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'kind': kind.value, // from OrderType
+      'status': status.value, // from Status
+      'amount': amount,
+      'fiatCode': fiatCode,
+      'minAmount': minAmount,
+      'maxAmount': maxAmount,
+      'fiatAmount': fiatAmount,
+      'paymentMethod': paymentMethod,
+      'premium': premium,
+      'masterBuyerPubkey': masterBuyerPubkey,
+      'masterSellerPubkey': masterSellerPubkey,
+      'buyerInvoice': buyerInvoice,
+      'createdAt': createdAt,
+      'expiresAt': expiresAt,
+      'buyerToken': buyerToken,
+      'sellerToken': sellerToken,
+    };
+  }
+
+  // Construct from a Map (row in DB)
+  factory Order.fromMap(Map<String, dynamic> map) {
+    return Order(
+      id: map['id'] as String?,
+      kind: OrderType.fromString(map['kind'] as String),
+      status: Status.fromString(map['status'] as String),
+      amount: map['amount'] as int,
+      fiatCode: map['fiatCode'] as String,
+      minAmount: map['minAmount'] as int?,
+      maxAmount: map['maxAmount'] as int?,
+      fiatAmount: map['fiatAmount'] as int,
+      paymentMethod: map['paymentMethod'] as String,
+      premium: map['premium'] as int,
+      masterBuyerPubkey: map['masterBuyerPubkey'] as String?,
+      masterSellerPubkey: map['masterSellerPubkey'] as String?,
+      buyerInvoice: map['buyerInvoice'] as String?,
+      createdAt: map['createdAt'] as int?,
+      expiresAt: map['expiresAt'] as int?,
+      buyerToken: map['buyerToken'] as int?,
+      sellerToken: map['sellerToken'] as int?,
+    );
+  }
+
   @override
   String get type => 'order';
+
+  copyWith({required String buyerInvoice}) {
+    
+  }
 }

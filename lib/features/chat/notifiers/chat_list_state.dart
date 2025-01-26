@@ -1,22 +1,22 @@
-import 'package:equatable/equatable.dart';
-import 'package:mostro_mobile/data/models/chat_model.dart';
+import 'package:dart_nostr/nostr/model/event/event.dart';
 
-enum ChatListStatus { initial, loading, loaded, error }
+enum ChatListStatus { loading, loaded, error, empty }
 
-class ChatListState extends Equatable {
+class ChatListState {
   final ChatListStatus status;
-  final List<ChatModel> chats;
+  final List<NostrEvent> chats;
   final String? errorMessage;
 
   const ChatListState({
-    this.status = ChatListStatus.initial,
+    this.status = ChatListStatus.loading,
     this.chats = const [],
     this.errorMessage,
   });
 
+  // A copyWith for convenience
   ChatListState copyWith({
     ChatListStatus? status,
-    List<ChatModel>? chats,
+    List<NostrEvent>? chats,
     String? errorMessage,
   }) {
     return ChatListState(
@@ -25,7 +25,4 @@ class ChatListState extends Equatable {
       errorMessage: errorMessage ?? this.errorMessage,
     );
   }
-
-  @override
-  List<Object?> get props => [status, chats, errorMessage];
 }

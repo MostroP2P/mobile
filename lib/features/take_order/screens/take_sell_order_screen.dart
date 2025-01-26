@@ -1,3 +1,4 @@
+import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -45,45 +46,52 @@ class TakeSellOrderScreen extends ConsumerWidget {
   }
 
   Widget _buildContent(BuildContext context, WidgetRef ref) {
-    final initialOrder = ref.read(eventProvider(orderId));
+    final orderAsyncValue = ref.read(eventProvider(orderId));
     return Scaffold(
       backgroundColor: AppTheme.dark1,
-      appBar: OrderAppBar(
-          title:
-              '${initialOrder?.orderType == OrderType.buy ? "SELL" : "BUY"} BITCOIN'),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              CustomCard(
-                  padding: EdgeInsets.all(16),
-                  child: SellerInfo(order: initialOrder!)),
-              const SizedBox(height: 16),
-              _buildSellerAmount(ref),
-              const SizedBox(height: 16),
-              ExchangeRateWidget(currency: initialOrder.currency!),
-              const SizedBox(height: 16),
-              CustomCard(
-                  padding: const EdgeInsets.all(16),
-                  child: BuyerInfo(order: initialOrder)),
-              const SizedBox(height: 16),
-              _buildBuyerAmount(initialOrder.amount!),
-              const SizedBox(height: 16),
-              _buildLnAddress(),
-              const SizedBox(height: 16),
-              _buildActionButtons(context, ref),
-            ],
-          ),
-        ),
+      appBar: OrderAppBar(title: 'SELL BITCOIN'),
+      body: orderAsyncValue.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) => Center(child: Text('Error: $error')),
+        data: (initialOrder) {
+          // If order is null => show "Order not found"
+          if (initialOrder == null) {
+            return const Center(child: Text('Order not found'));
+          }
+          return SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  CustomCard(
+                      padding: EdgeInsets.all(16),
+                      child: SellerInfo(order: initialOrder)),
+                  const SizedBox(height: 16),
+                  _buildSellerAmount(ref, initialOrder),
+                  const SizedBox(height: 16),
+                  ExchangeRateWidget(currency: initialOrder.currency!),
+                  const SizedBox(height: 16),
+                  CustomCard(
+                      padding: const EdgeInsets.all(16),
+                      child: BuyerInfo(order: initialOrder)),
+                  const SizedBox(height: 16),
+                  _buildBuyerAmount(initialOrder.amount!),
+                  const SizedBox(height: 16),
+                  _buildLnAddress(),
+                  const SizedBox(height: 16),
+                  _buildActionButtons(context, ref),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildSellerAmount(WidgetRef ref) {
-    final initialOrder = ref.read(eventProvider(orderId));
+  Widget _buildSellerAmount(WidgetRef ref, NostrEvent initialOrder) {
     final exchangeRateAsyncValue =
-        ref.watch(exchangeRateProvider(initialOrder!.currency!));
+        ref.watch(exchangeRateProvider(initialOrder.currency!));
     return exchangeRateAsyncValue.when(
       loading: () => const CircularProgressIndicator(),
       error: (error, _) => Text('Error: $error'),
@@ -122,71 +130,71 @@ class TakeSellOrderScreen extends ConsumerWidget {
     final val = order?.amount;
     return Scaffold(
       backgroundColor: AppTheme.dark1,
-      appBar: OrderAppBar(
-          title:
-              'Add a Lightning Invoice'),
+      appBar: OrderAppBar(title: 'Add a Lightning Invoice'),
       body: CustomCard(
-      padding: const EdgeInsets.all(16),
-      child: Material(
-        color: Colors.transparent,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "Please enter a Lightning Invoice for $val sats:",
-              style: TextStyle(color: AppTheme.cream1, fontSize: 16),
-            ),
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: invoiceController,
-              style: const TextStyle(color: AppTheme.cream1),
-              decoration: InputDecoration(
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                labelText: "Lightning Invoice",
-                labelStyle: const TextStyle(color: AppTheme.grey2),
-                hintText: "Enter invoice here",
-                hintStyle: const TextStyle(color: AppTheme.grey2),
-                filled: true,
-                fillColor: AppTheme.dark1,
+        padding: const EdgeInsets.all(16),
+        child: Material(
+          color: Colors.transparent,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Please enter a Lightning Invoice for $val sats:",
+                style: TextStyle(color: AppTheme.cream1, fontSize: 16),
               ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      context.go('/');
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                    ),
-                    child: const Text('CANCEL'),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: invoiceController,
+                style: const TextStyle(color: AppTheme.cream1),
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
                   ),
+                  labelText: "Lightning Invoice",
+                  labelStyle: const TextStyle(color: AppTheme.grey2),
+                  hintText: "Enter invoice here",
+                  hintStyle: const TextStyle(color: AppTheme.grey2),
+                  filled: true,
+                  fillColor: AppTheme.dark1,
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      final invoice = invoiceController.text.trim();
-                      if (invoice.isNotEmpty) {
-                        orderDetailsNotifier.sendInvoice(orderId, invoice, val);
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.mostroGreen,
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        context.go('/');
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                      ),
+                      child: const Text('CANCEL'),
                     ),
-                    child: const Text('SUBMIT'),
                   ),
-                ),
-              ],
-            ),
-          ],
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        final invoice = invoiceController.text.trim();
+                        if (invoice.isNotEmpty) {
+                          orderDetailsNotifier.sendInvoice(
+                              orderId, invoice, val);
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.mostroGreen,
+                      ),
+                      child: const Text('SUBMIT'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
-    ),);
+    );
   }
 
   Widget _buildBuyerAmount(String amount) {

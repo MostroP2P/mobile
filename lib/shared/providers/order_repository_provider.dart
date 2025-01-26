@@ -15,7 +15,7 @@ final orderEventsProvider = StreamProvider<List<NostrEvent>>((ref) {
   return orderRepository.eventsStream;
 });
 
-final eventProvider = Provider.family<NostrEvent?, String>((ref, orderId) {
+final eventProvider = FutureProvider.family<NostrEvent?, String>((ref, orderId) {
   final repository = ref.watch(orderRepositoryProvider);
   return repository.getOrderById(orderId);
 });

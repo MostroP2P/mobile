@@ -1,14 +1,16 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/models/enums/storage_keys.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/order.dart';
+import 'package:mostro_mobile/data/models/payload.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/data/repositories/order_repository_interface.dart';
 import 'package:mostro_mobile/services/mostro_service.dart';
 
-class MostroRepository implements OrderRepository {
+class MostroRepository implements OrderRepository<MostroMessage> {
   final MostroService _mostroService;
   final FlutterSecureStorage _secureStorage;
   final Map<String, MostroMessage> _messages = {};
@@ -17,7 +19,11 @@ class MostroRepository implements OrderRepository {
 
   MostroRepository(this._mostroService, this._secureStorage);
 
-  MostroMessage? getOrderById(String orderId) => _messages[orderId];
+  final _logger = Logger();
+
+  @override
+  Future<MostroMessage?> getOrderById(String orderId) => Future.value(_messages[orderId]);
+
   List<MostroMessage> get allMessages => _messages.values.toList();
 
   Stream<MostroMessage> _subscribe(Session session) {
@@ -32,7 +38,7 @@ class MostroRepository implements OrderRepository {
       },
       onError: (error) {
         // Log or handle subscription errors
-        print('Error in subscription for session ${session.keyIndex}: $error');
+        _logger.e('Error in subscription for session ${session.keyIndex}: $error');
       },
       cancelOnError: false,
     );
@@ -63,7 +69,7 @@ class MostroRepository implements OrderRepository {
   }
 
   Future<Stream<MostroMessage>> publishOrder(MostroMessage order) async {
-    print(order);
+    _logger.i(order);
     final session = await _mostroService.publishOrder(order);
     return _subscribe(session);
   }
@@ -99,7 +105,7 @@ class MostroRepository implements OrderRepository {
           final msg = MostroMessage.deserialized(entry.value);
           _messages[msg.id!] = msg;
         } catch (e) {
-          print('Error deserializing message for key ${entry.key}: $e');
+          _logger.e('Error deserializing message for key ${entry.key}: $e');
         }
       }
     }
@@ -111,5 +117,29 @@ class MostroRepository implements OrderRepository {
       subscription.cancel();
     }
     _subscriptions.clear();
+  }
+
+  @override
+  Future<void> addOrder(MostroMessage<Payload> order) {
+    // TODO: implement addOrder
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> deleteOrder(String orderId) {
+    // TODO: implement deleteOrder
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<List<MostroMessage<Payload>>> getAllOrders() {
+    // TODO: implement getAllOrders
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> updateOrder(MostroMessage<Payload> order) {
+    // TODO: implement updateOrder
+    throw UnimplementedError();
   }
 }
