@@ -63,6 +63,7 @@ class MostroRepository implements OrderRepository {
   }
 
   Future<Stream<MostroMessage>> publishOrder(MostroMessage order) async {
+    print(order);
     final session = await _mostroService.publishOrder(order);
     return _subscribe(session);
   }

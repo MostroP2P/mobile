@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/app/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
+import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/features/add_order/providers/add_order_notifier_provider.dart';
 import 'package:mostro_mobile/features/add_order/widgets/fixed_switch_widget.dart';
 import 'package:mostro_mobile/presentation/widgets/currency_dropdown.dart';
@@ -22,6 +23,8 @@ class AddOrderScreen extends ConsumerStatefulWidget {
 
 class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
   final _formKey = GlobalKey<FormState>();
+  final GlobalKey<CurrencyTextFieldState> _rangeKey =
+      GlobalKey<CurrencyTextFieldState>();
 
   final _fiatAmountController = TextEditingController();
   final _satsAmountController = TextEditingController();
@@ -169,6 +172,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
           _buildDisabledWrapper(
             enabled: _isEnabled,
             child: CurrencyTextField(
+              key: _rangeKey,
               controller: _fiatAmountController,
               label: 'Fiat amount',
             ),
@@ -248,6 +252,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
           _buildDisabledWrapper(
             enabled: _isEnabled,
             child: CurrencyTextField(
+              key: _rangeKey,
               controller: _fiatAmountController,
               label: 'Fiat amount',
             ),
@@ -287,17 +292,16 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
                       suffix: Icon(BitcoinIcons.satoshi_v1_outline).icon),
                 ),
                 const SizedBox(height: 16),
-                _buildDisabledWrapper(
-                  enabled: _isEnabled,
-                  child: _buildTextField(
-                    'Lightning Invoice without an amount',
-                    _lightningInvoiceController,
-                  ),
-                ),
               ],
             ),
+          _buildDisabledWrapper(
+            enabled: _isEnabled,
+            child: _buildTextField(
+              'Lightning Invoice or Lightning Address',
+              _lightningInvoiceController,
+            ),
+          ),
           const SizedBox(height: 16),
-
           // 6) Payment method
           _buildDisabledWrapper(
             enabled: _isEnabled,
@@ -423,18 +427,35 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
       final tempOrderId = uuid.v4();
       final notifier = ref.read(addOrderNotifierProvider(tempOrderId).notifier);
 
-      final fiatAmount = int.tryParse(_fiatAmountController.text) ?? 0;
+      final currencyFieldState = _rangeKey.currentState;
+      final fiatAmount = currencyFieldState?.maxAmount != null
+          ? 0
+          : currencyFieldState?.minAmount;
+      final minAmount = currencyFieldState?.maxAmount != null
+          ? currencyFieldState?.minAmount
+          : null;
+      final maxAmount = currencyFieldState?.maxAmount;
+
       final satsAmount = int.tryParse(_satsAmountController.text) ?? 0;
       final paymentMethod = _paymentMethodController.text;
 
-      notifier.submitOrder(
-        selectedFiatCode ?? '',
-        fiatAmount,
-        _marketRate ? 0 : satsAmount, // if market => pass 0 or ignore
-        paymentMethod,
-        orderType,
-        lnAddress: _lightningInvoiceController.text,
+      final buyerInvoice = _lightningInvoiceController.text.isEmpty
+          ? null
+          : _lightningInvoiceController.text;
+
+      final order = Order(
+        kind: orderType,
+        fiatCode: selectedFiatCode!,
+        fiatAmount: fiatAmount!,
+        minAmount: minAmount,
+        maxAmount: maxAmount,
+        paymentMethod: paymentMethod,
+        amount: _marketRate ? 0 : satsAmount,
+        premium: _marketRate ? _premiumValue.toInt() : 0,
+        buyerInvoice: buyerInvoice,
       );
+
+      notifier.submitOrder(order);
     }
   }
 }

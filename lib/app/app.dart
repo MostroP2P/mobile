@@ -24,7 +24,7 @@ class MostroApp extends ConsumerWidget {
             if (state is AuthAuthenticated || state is AuthRegistrationSuccess) {
               context.go('/');
             } else if (state is AuthUnregistered || state is AuthUnauthenticated) {
-              context.go('/welcome');
+              context.go('/');
             }
           });
         });

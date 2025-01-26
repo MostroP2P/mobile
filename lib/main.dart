@@ -17,7 +17,7 @@ void main() async {
   final biometricsHelper = BiometricsHelper();
   final sharedPreferences = SharedPreferencesAsync();
   final secureStorage = const FlutterSecureStorage();
-  
+
   runApp(
     ProviderScope(
       overrides: [

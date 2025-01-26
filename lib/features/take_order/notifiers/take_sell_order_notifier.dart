@@ -1,7 +1,7 @@
 import 'package:mostro_mobile/features/order/notfiers/abstract_order_notifier.dart';
 
 class TakeSellOrderNotifier extends AbstractOrderNotifier {
-  TakeSellOrderNotifier(super.orderRepository, super.orderId, super.ref);
+  TakeSellOrderNotifier(super.orderRepository, super.orderId, super.ref, super.action);
 
   void takeSellOrder(String orderId, int? amount, String? lnAddress) async {
     final stream =

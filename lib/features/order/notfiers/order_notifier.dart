@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:mostro_mobile/features/order/notfiers/abstract_order_notifier.dart';
 
 class OrderNotifier extends AbstractOrderNotifier {
-  OrderNotifier(super.orderRepository, super.orderId, super.ref) {
+  OrderNotifier(super.orderRepository, super.orderId, super.ref, super.action) {
     _reSubscribe();
   }
 

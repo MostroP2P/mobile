@@ -44,7 +44,7 @@ class SessionManager {
       masterKey: masterKey,
       keyIndex: keyIndex,
       tradeKey: tradeKey,
-      fullPrivacy: false,
+      fullPrivacy: true,
       orderId: orderId,
     );
     _sessions[keyIndex] = session;

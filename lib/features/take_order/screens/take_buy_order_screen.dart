@@ -23,7 +23,7 @@ class TakeBuyOrderScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final initialOrder = ref.read(eventProvider(orderId));
+    final initialOrder = ref.watch(eventProvider(orderId));
 
     return Scaffold(
       backgroundColor: AppTheme.dark1,
