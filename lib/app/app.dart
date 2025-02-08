@@ -12,6 +12,9 @@ import 'package:mostro_mobile/shared/providers/app_init_provider.dart';
 class MostroApp extends ConsumerWidget {
   const MostroApp({super.key});
 
+  static final GlobalKey<NavigatorState> navigatorKey =
+      GlobalKey<NavigatorState>();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final initAsyncValue = ref.watch(appInitializerProvider);

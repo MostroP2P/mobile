@@ -7,9 +7,9 @@ class OrderNotifier extends AbstractOrderNotifier {
   }
 
   Future<void> _reSubscribe() async {
-    final existingMessage = orderRepository.getOrderById(orderId);
+    final existingMessage = await orderRepository.getOrderById(orderId);
     if (existingMessage == null) {
-      print('Order $orderId not found in repository; subscription aborted.');
+      logger.e('Order $orderId not found in repository; subscription aborted.');
       return;
     }
     final stream = orderRepository.resubscribeOrder(orderId);

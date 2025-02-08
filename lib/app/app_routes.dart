@@ -10,7 +10,6 @@ import 'package:mostro_mobile/features/order_book/screens/order_book_screen.dart
 import 'package:mostro_mobile/features/take_order/screens/add_lightning_invoice_screen.dart';
 import 'package:mostro_mobile/features/take_order/screens/pay_lightning_invoice_screen.dart';
 import 'package:mostro_mobile/features/take_order/screens/take_order_screen.dart';
-import 'package:mostro_mobile/presentation/profile/screens/profile_screen.dart';
 import 'package:mostro_mobile/features/auth/screens/register_screen.dart';
 import 'package:mostro_mobile/shared/widgets/navigation_listener_widget.dart';
 import 'package:mostro_mobile/shared/widgets/notification_listener_widget.dart';
@@ -42,10 +41,6 @@ final goRouter = GoRouter(
         GoRoute(
           path: '/chat_list',
           builder: (context, state) => const ChatListScreen(),
-        ),
-        GoRoute(
-          path: '/profile',
-          builder: (context, state) => const ProfileScreen(),
         ),
         GoRoute(
           path: '/register',

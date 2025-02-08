@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:dart_nostr/dart_nostr.dart';
+import 'package:logger/logger.dart';
 import 'package:mostro_mobile/app/config.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
@@ -12,6 +13,7 @@ import 'package:mostro_mobile/services/nostr_service.dart';
 class MostroService {
   final NostrService _nostrService;
   final SessionManager _sessionManager;
+  final _logger = Logger();
 
   MostroService(this._nostrService, this._sessionManager);
 
@@ -46,6 +48,7 @@ class MostroService {
             : null;
 
     final content = newMessage(Action.takeSell, orderId, payload: order);
+    _logger.i(content);
     await sendMessage(orderId, Config.mostroPubKey, content);
     return session;
   }
@@ -65,6 +68,7 @@ class MostroService {
     final session = await _sessionManager.newSession(orderId: orderId);
     final amt = amount != null ? {'amount': amount} : null;
     final content = newMessage(Action.takeBuy, orderId, payload: amt);
+    _logger.i(content);
     await sendMessage(orderId, Config.mostroPubKey, content);
     return session;
   }
@@ -110,9 +114,9 @@ class MostroService {
     return {
       'order': {
         'version': Config.mostroVersion,
-        'request_id': null,
+        'request_id': orderId,
         'trade_index': null,
-        'id': orderId,
+        'id': null,
         'action': actionType.value,
         'payload': payload,
       },
@@ -137,9 +141,10 @@ class MostroService {
       final event =
           await createNIP59Event(finalContent, receiverPubkey, session);
       await _nostrService.publishEvent(event);
+      _logger.i(finalContent);
     } catch (e) {
       // catch and throw and log and stuff
-      print(e);
+      _logger.e(e);
     }
   }
 

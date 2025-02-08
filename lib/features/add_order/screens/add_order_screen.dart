@@ -9,8 +9,8 @@ import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/features/add_order/providers/add_order_notifier_provider.dart';
 import 'package:mostro_mobile/features/add_order/widgets/fixed_switch_widget.dart';
-import 'package:mostro_mobile/presentation/widgets/currency_dropdown.dart';
-import 'package:mostro_mobile/presentation/widgets/currency_text_field.dart';
+import 'package:mostro_mobile/shared/widgets/currency_dropdown.dart';
+import 'package:mostro_mobile/shared/widgets/currency_text_field.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
 import 'package:uuid/uuid.dart';
 

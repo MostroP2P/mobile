@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/models/enums/storage_keys.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager.dart';
 import 'package:mostro_mobile/data/models/session.dart';
@@ -9,6 +10,7 @@ class SessionManager {
   final KeyManager _keyManager;
   final FlutterSecureStorage _secureStorage;
   final Map<int, Session> _sessions = {};
+  final _logger = Logger();
 
   Timer? _cleanupTimer;
   final int sessionExpirationHours = 48;
@@ -28,7 +30,7 @@ class SessionManager {
           final session = await _decodeSession(entry.value);
           _sessions[session.keyIndex] = session;
         } catch (e) {
-          print('Error decoding session for key ${entry.key}: $e');
+          _logger.e('Error decoding session for key ${entry.key}: $e');
           // Decide if you want to remove the corrupted entry
         }
       }
@@ -79,7 +81,7 @@ class SessionManager {
         _sessions[keyIndex] = session;
         return session;
       } catch (e) {
-        print('Error decoding session index $keyIndex: $e');
+        _logger.e('Error decoding session index $keyIndex: $e');
       }
     }
     return null;
@@ -122,14 +124,14 @@ class SessionManager {
             processedCount++;
           }
         } catch (e) {
-          print('Error processing session ${entry.key}: $e');
+          _logger.e('Error processing session ${entry.key}: $e');
           // Possibly remove corrupted entry
           await _secureStorage.delete(key: entry.key);
           processedCount++;
         }
       }
     } catch (e) {
-      print('Error during session cleanup: $e');
+      _logger.e('Error during session cleanup: $e');
     }
   }
 

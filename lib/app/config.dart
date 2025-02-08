@@ -3,9 +3,9 @@ import 'package:flutter/foundation.dart';
 class Config {
   // Configuración de Nostr
   static const List<String> nostrRelays = [
-    //'ws://127.0.0.1:7000',
+    'ws://127.0.0.1:7000',
     //'ws://10.0.2.2:7000', // mobile emulator
-    'ws://192.168.1.148:7000',
+    //'ws://192.168.1.148:7000',
     //'wss://relay.mostro.network',
   ];
 

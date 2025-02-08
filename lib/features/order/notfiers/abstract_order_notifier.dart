@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/order.dart';
@@ -12,6 +13,7 @@ class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
   final Ref ref;
   final String orderId;
   StreamSubscription<MostroMessage>? _orderSubscription;
+  final logger = Logger();
 
   AbstractOrderNotifier(
     this.orderRepository,
@@ -32,7 +34,7 @@ class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
   }
 
   void handleError(Object err) {
-    //ref.read(notificationProvider.notifier).showInformation(err.toString());
+    logger.e(err);
   }
 
   void handleOrderUpdate() {
@@ -47,11 +49,17 @@ class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
         navProvider.go('/pay_invoice/${state.id!}');
         break;
       case Action.outOfRangeSatsAmount:
-      case Action.outOfRangeFiatAmount:
         final order = state.getPayload<Order>();
         notifProvider.showInformation(state.action, values: {
           'min_order_amount': order?.minAmount,
           'max_order_amount': order?.maxAmount
+        });
+        break;
+      case Action.outOfRangeFiatAmount:
+        final order = state.getPayload<Order>();
+        notifProvider.showInformation(state.action, values: {
+          'min_amount': order?.minAmount,
+          'max_amount': order?.maxAmount
         });
         break;
       case Action.waitingSellerToPay:

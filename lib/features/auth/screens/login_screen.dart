@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:mostro_mobile/features/auth/notifiers/auth_state.dart';
 import 'package:mostro_mobile/features/auth/providers/auth_notifier_provider.dart';
-import 'package:mostro_mobile/presentation/widgets/custom_button.dart';
+import 'package:mostro_mobile/shared/widgets/custom_button.dart';
 
 class LoginScreen extends HookConsumerWidget {
   const LoginScreen({super.key});

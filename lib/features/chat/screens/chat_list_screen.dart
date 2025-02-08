@@ -2,11 +2,10 @@ import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:mostro_mobile/data/models/chat_model.dart';
 import 'package:mostro_mobile/features/chat/notifiers/chat_list_state.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_list_provider.dart';
-import 'package:mostro_mobile/presentation/widgets/bottom_nav_bar.dart';
-import 'package:mostro_mobile/presentation/widgets/custom_app_bar.dart';
+import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
+import 'package:mostro_mobile/shared/widgets/custom_app_bar.dart';
 
 class ChatListScreen extends ConsumerWidget {
   const ChatListScreen({super.key});

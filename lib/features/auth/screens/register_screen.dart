@@ -4,7 +4,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:mostro_mobile/features/auth/notifiers/auth_state.dart';
 import 'package:mostro_mobile/features/auth/providers/auth_notifier_provider.dart';
-import 'package:mostro_mobile/presentation/widgets/custom_button.dart';
+import 'package:mostro_mobile/shared/widgets/custom_button.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
 class RegisterScreen extends HookConsumerWidget {

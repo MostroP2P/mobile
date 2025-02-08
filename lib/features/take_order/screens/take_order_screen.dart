@@ -8,8 +8,8 @@ import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/features/take_order/widgets/order_app_bar.dart';
 import 'package:mostro_mobile/features/take_order/widgets/buyer_info.dart';
 import 'package:mostro_mobile/features/take_order/widgets/seller_info.dart';
-import 'package:mostro_mobile/presentation/widgets/currency_text_field.dart';
-import 'package:mostro_mobile/presentation/widgets/exchange_rate_widget.dart';
+import 'package:mostro_mobile/shared/widgets/currency_text_field.dart';
+import 'package:mostro_mobile/shared/widgets/exchange_rate_widget.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
@@ -66,7 +66,7 @@ class TakeOrderScreen extends ConsumerWidget {
                 const SizedBox(height: 16),
                 _buildLnAddress(),
                 const SizedBox(height: 16),
-                _buildActionButtons(context, ref, order.id),
+                _buildActionButtons(context, ref, order.orderId),
               ],
             ),
           );
@@ -155,9 +155,9 @@ class TakeOrderScreen extends ConsumerWidget {
     // If there's no orderId, hide the button or handle it
     final realOrderId = orderId ?? '';
 
-    final orderDetailsNotifier = orderType == OrderType.sell ?
-    ref.read(takeSellOrderNotifierProvider(realOrderId).notifier):
-    ref.read(takeBuyOrderNotifierProvider(realOrderId).notifier);
+    final orderDetailsNotifier = orderType == OrderType.sell
+        ? ref.read(takeSellOrderNotifierProvider(realOrderId).notifier)
+        : ref.read(takeBuyOrderNotifierProvider(realOrderId).notifier);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,

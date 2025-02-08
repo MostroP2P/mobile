@@ -5,8 +5,8 @@ import 'package:mostro_mobile/app/app_theme.dart';
 import 'package:mostro_mobile/features/order_book/notifiers/order_book_state.dart';
 import 'package:mostro_mobile/features/order_book/providers/order_book_notifier.dart';
 import 'package:mostro_mobile/features/order_book/widgets/order_book_list.dart';
-import 'package:mostro_mobile/presentation/widgets/bottom_nav_bar.dart';
-import 'package:mostro_mobile/presentation/widgets/custom_app_bar.dart';
+import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
+import 'package:mostro_mobile/shared/widgets/custom_app_bar.dart';
 
 class OrderBookScreen extends ConsumerWidget {
   const OrderBookScreen({super.key});

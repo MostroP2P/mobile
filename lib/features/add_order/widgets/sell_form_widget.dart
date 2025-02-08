@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:mostro_mobile/app/app_theme.dart';
-import 'package:mostro_mobile/presentation/widgets/currency_dropdown.dart';
-import 'package:mostro_mobile/presentation/widgets/currency_text_field.dart';
+import 'package:mostro_mobile/shared/widgets/currency_dropdown.dart';
+import 'package:mostro_mobile/shared/widgets/currency_text_field.dart';
 
 class SellFormWidget extends HookConsumerWidget {
   const SellFormWidget({super.key});

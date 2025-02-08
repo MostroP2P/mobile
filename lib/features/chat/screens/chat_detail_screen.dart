@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/features/chat/notifiers/chat_detail_state.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_list_provider.dart';
-import 'package:mostro_mobile/presentation/widgets/bottom_nav_bar.dart';
+import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
 
 class ChatDetailScreen extends ConsumerStatefulWidget {
   final String chatId;
