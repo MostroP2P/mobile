@@ -3,8 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/shared/providers/app_init_provider.dart';
 
-class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
-  const CustomAppBar({super.key});
+class MostroAppBar extends StatelessWidget implements PreferredSizeWidget {
+  const MostroAppBar({super.key});
 
   @override
   Widget build(BuildContext context) {

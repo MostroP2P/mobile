@@ -61,7 +61,7 @@ class BottomNavBar extends StatelessWidget {
       case 2:
         return currentLocation == '/chat_list';
       case 3:
-        return currentLocation == '/profile';
+        return currentLocation == '/mostro';
       default:
         return false;
     }
@@ -80,7 +80,7 @@ class BottomNavBar extends StatelessWidget {
         nextRoute = '/chat_list';
         break;
       case 3:
-        nextRoute = '/profile';
+        nextRoute = '/mostro';
         break;
       default:
         return;

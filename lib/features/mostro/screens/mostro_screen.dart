@@ -9,8 +9,8 @@ import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_app_bar.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_app_drawer.dart';
 
-class OrderBookScreen extends ConsumerWidget {
-  const OrderBookScreen({super.key});
+class MostroScreen extends ConsumerWidget {
+  const MostroScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -37,7 +37,7 @@ class OrderBookScreen extends ConsumerWidget {
                   Padding(
                     padding: EdgeInsets.all(16.0),
                     child: Text(
-                      'Order Book',
+                      'Mostro',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 24,

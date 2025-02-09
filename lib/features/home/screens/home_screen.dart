@@ -7,9 +7,10 @@ import 'package:mostro_mobile/features/home/notifiers/home_notifier.dart';
 import 'package:mostro_mobile/features/home/providers/home_notifer_provider.dart';
 import 'package:mostro_mobile/features/home/notifiers/home_state.dart';
 import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
-import 'package:mostro_mobile/shared/widgets/custom_app_bar.dart';
+import 'package:mostro_mobile/shared/widgets/mostro_app_bar.dart';
 import 'package:mostro_mobile/features/home/widgets/order_filter.dart';
 import 'package:mostro_mobile/features/home/widgets/order_list.dart';
+import 'package:mostro_mobile/shared/widgets/mostro_app_drawer.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -23,32 +24,8 @@ class HomeScreen extends ConsumerWidget {
       data: (homeState) {
         return Scaffold(
           backgroundColor: AppTheme.dark1,
-          appBar: const CustomAppBar(),
-          drawer: Drawer(
-            // Add a ListView to the drawer. This ensures the user can scroll
-            // through the options in the drawer if there isn't enough vertical
-            // space to fit everything.
-            child: ListView(
-              // Important: Remove any padding from the ListView.
-              padding: EdgeInsets.zero,
-              children: [
-                ListTile(
-                  title: const Text('Item 1'),
-                  onTap: () {
-                    // Update the state of the app.
-                    // ...
-                  },
-                ),
-                ListTile(
-                  title: const Text('Item 2'),
-                  onTap: () {
-                    // Update the state of the app.
-                    // ...
-                  },
-                ),
-              ],
-            ),
-          ),
+          appBar: const MostroAppBar(),
+          drawer: const MostroAppDrawer(),
           body: RefreshIndicator(
             onRefresh: () async {
               await homeNotifier.refresh();

@@ -6,7 +6,10 @@ import 'package:mostro_mobile/features/add_order/screens/order_confirmation_scre
 import 'package:mostro_mobile/features/auth/screens/welcome_screen.dart';
 import 'package:mostro_mobile/features/chat/screens/chat_list_screen.dart';
 import 'package:mostro_mobile/features/home/screens/home_screen.dart';
+import 'package:mostro_mobile/features/key_manager/key_management_screen.dart';
+import 'package:mostro_mobile/features/mostro/screens/mostro_screen.dart';
 import 'package:mostro_mobile/features/order_book/screens/order_book_screen.dart';
+import 'package:mostro_mobile/features/relays/relays_screen.dart';
 import 'package:mostro_mobile/features/take_order/screens/add_lightning_invoice_screen.dart';
 import 'package:mostro_mobile/features/take_order/screens/pay_lightning_invoice_screen.dart';
 import 'package:mostro_mobile/features/take_order/screens/take_order_screen.dart';
@@ -27,12 +30,12 @@ final goRouter = GoRouter(
       },
       routes: [
         GoRoute(
-          path: '/welcome',
-          builder: (context, state) => const WelcomeScreen(),
-        ),
-        GoRoute(
           path: '/',
           builder: (context, state) => const HomeScreen(),
+        ),
+        GoRoute(
+          path: '/welcome',
+          builder: (context, state) => const WelcomeScreen(),
         ),
         GoRoute(
           path: '/order_book',
@@ -45,6 +48,18 @@ final goRouter = GoRouter(
         GoRoute(
           path: '/register',
           builder: (context, state) => const RegisterScreen(),
+        ),
+        GoRoute(
+          path: '/mostro',
+          builder: (context, state) => const MostroScreen(),
+        ),
+        GoRoute(
+          path: '/relays',
+          builder: (context, state) => const RelaysScreen(),
+        ),
+        GoRoute(
+          path: '/key_management',
+          builder: (context, state) => const KeyManagementScreen(),
         ),
         GoRoute(
           path: '/add_order',

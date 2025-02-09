@@ -5,7 +5,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:mostro_mobile/features/chat/notifiers/chat_list_state.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_list_provider.dart';
 import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
-import 'package:mostro_mobile/shared/widgets/custom_app_bar.dart';
+import 'package:mostro_mobile/shared/widgets/mostro_app_bar.dart';
+import 'package:mostro_mobile/shared/widgets/mostro_app_drawer.dart';
 
 class ChatListScreen extends ConsumerWidget {
   const ChatListScreen({super.key});
@@ -17,7 +18,8 @@ class ChatListScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFF1D212C),
-      appBar: const CustomAppBar(),
+      appBar: const MostroAppBar(),
+      drawer: const MostroAppDrawer(),
       body: Container(
         margin: const EdgeInsets.fromLTRB(16, 16, 16, 16),
         decoration: BoxDecoration(
@@ -29,7 +31,7 @@ class ChatListScreen extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Text(
-                'Chats',
+                'Chat',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 24,

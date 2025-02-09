@@ -31,6 +31,22 @@ class AppTheme {
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
+      dialogTheme: DialogTheme(
+        backgroundColor: dark2,
+        titleTextStyle: GoogleFonts.robotoCondensed(
+          fontWeight: FontWeight.bold,
+          fontSize: 20.0,
+          color: cream1,
+        ),
+        contentTextStyle: GoogleFonts.robotoCondensed(
+          fontWeight: FontWeight.w400,
+          fontSize: 16.0,
+          color: grey,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
       textTheme: _buildTextTheme(),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(

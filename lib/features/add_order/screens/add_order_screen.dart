@@ -247,6 +247,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
 
           // 1) Currency dropdown always enabled
           CurrencyDropdown(
+            key: const Key('fiatCodeDropdown'),
             label: 'Fiat code',
             onSelected: (String fiatCode) {
               setState(() {
