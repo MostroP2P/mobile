@@ -1,23 +1,16 @@
-// integration_test/add_order_screen_test.dart
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:mostro_mobile/features/add_order/screens/order_confirmation_screen.dart';
 import 'package:mostro_mobile/main.dart' as app;
 import 'package:flutter/material.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  setUpAll(() async {
-    app.main();
-    // Wait for the app to settle after launch.
-    await Future.delayed(const Duration(seconds: 3));
-  });
-
   group('Create New Sell Order', () {
     testWidgets('User creates a new SELL order with VES=100 and premium=1',
         (tester) async {
-
+      app.main();
       await tester.pumpAndSettle();
 
       // Navigate to the “Add Order” screen
@@ -98,7 +91,7 @@ void main() {
       expect(submitButton, findsOneWidget,
           reason: 'A SUBMIT button is expected');
       await tester.tap(submitButton);
-      await tester.pumpAndSettle();
+      await tester.pumpAndSettle(const Duration(seconds: 3));
 
       // The app sends a Nostr “Gift wrap” event with the following content:
       //      {
@@ -120,11 +113,19 @@ void main() {
       //      }
       //    We expect a confirmation => UI shows “pending” or success message
 
+      // Verify that the Order Confirmation screen is now displayed.
+      expect(find.byType(OrderConfirmationScreen), findsOneWidget);
+
+      final homeButton = find.byKey(const Key('homeButton'));
+      expect(homeButton, findsOneWidget, reason: 'A home button is expected');
+      await tester.tap(homeButton);
+      await tester.pumpAndSettle();
     });
 
-    testWidgets('User creates a new SELL range order with VES=10-20 and premium=1',
+    testWidgets(
+        'User creates a new SELL range order with VES=10-20 and premium=1',
         (tester) async {
-
+      app.main();
       await tester.pumpAndSettle();
 
       // Navigate to the “Add Order” screen
@@ -206,6 +207,7 @@ void main() {
           reason: 'A SUBMIT button is expected');
       await tester.tap(submitButton);
       await tester.pumpAndSettle();
+      await tester.pumpAndSettle(const Duration(seconds: 3));
 
       // The app sends a Nostr “Gift wrap” event with the following content:
       //      {
@@ -229,8 +231,13 @@ void main() {
       //      }
       //    We expect a confirmation => UI shows “pending” or success message
 
-      // Verify success or "pending"
-    });
+      // Verify that the Order Confirmation screen is now displayed.
+      expect(find.byType(OrderConfirmationScreen), findsOneWidget);
 
+      final homeButton = find.byKey(const Key('homeButton'));
+      expect(homeButton, findsOneWidget, reason: 'A home button is expected');
+      await tester.tap(homeButton);
+      await tester.pumpAndSettle();
+    });
   });
 }

@@ -261,9 +261,15 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
           _buildDisabledWrapper(
             enabled: _isEnabled,
             child: CurrencyTextField(
-              key: const Key('fiatAmountField'),
+              key: const ValueKey('fiatAmountField'),
               controller: _fiatAmountController,
               label: 'Fiat amount',
+              onChanged: (parsed) {
+                setState(() {
+                  _minFiatAmount = parsed.$1;
+                  _maxFiatAmount = parsed.$2;
+                });
+              },
             ),
           ),
 
@@ -310,6 +316,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
               'Lightning Invoice or Lightning Address',
               const Key('lightningInvoiceField'),
               _lightningInvoiceController,
+              nullable: true,
             ),
           ),
           const SizedBox(height: 16),
@@ -332,8 +339,8 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
   /// REUSABLE TEXT FIELD
   ///
   Widget _buildTextField(
-      String label, Key key, TextEditingController controller,
-      {IconData? suffix}) {
+      String label, Key key, TextEditingController controller, {bool nullable = false,
+      IconData? suffix}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
@@ -351,7 +358,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
           suffixIcon:
               suffix != null ? Icon(suffix, color: AppTheme.grey2) : null,
         ),
-        validator: (value) {
+        validator: nullable ? null : (value) {
           if (value == null || value.isEmpty) {
             return 'Please enter a value';
           }

@@ -31,6 +31,7 @@ class OrderConfirmationScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
             ElevatedButton(
+              key: const Key('homeButton'),
               onPressed: () => context.go('/'),
               child: const Text('Back to Home'),
             ),
