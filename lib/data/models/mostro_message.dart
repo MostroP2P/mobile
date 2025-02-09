@@ -24,6 +24,15 @@ class MostroMessage<T extends Payload> {
     };
   }
 
+  factory MostroMessage.fromJson(Map<String, dynamic> json) {
+    return MostroMessage(
+      action: Action.fromString(json['order']['action']),
+      id: json['order']['id'],
+      tradeIndex: json['order']['trade_index'],
+      payload: json['order']['payload'] != null ? Payload.fromJson(json['order']['payload']) as T? : null,
+    );
+  }
+
   factory MostroMessage.deserialized(String data) {
     try {
       final decoded = jsonDecode(data);

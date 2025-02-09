@@ -23,9 +23,6 @@ class AddOrderScreen extends ConsumerStatefulWidget {
 
 class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
   final _formKey = GlobalKey<FormState>();
-  final GlobalKey<CurrencyTextFieldState> _rangeKey =
-      GlobalKey<CurrencyTextFieldState>();
-
   final _fiatAmountController = TextEditingController();
   final _satsAmountController = TextEditingController();
   final _paymentMethodController = TextEditingController();
@@ -34,6 +31,9 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
   bool _marketRate = false; // false => Fixed, true => Market
   double _premiumValue = 0.0; // slider for -10..10
   bool _isEnabled = false; // controls enabled or not
+
+  int? _minFiatAmount;
+  int? _maxFiatAmount;
 
   @override
   Widget build(BuildContext context) {
@@ -157,6 +157,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
 
           // 1) Currency dropdown always enabled
           CurrencyDropdown(
+            key: const Key("fiatCodeDropdown"),
             label: 'Fiat code',
             onSelected: (String fiatCode) {
               // Once a fiat code is selected, enable the other fields
@@ -172,9 +173,15 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
           _buildDisabledWrapper(
             enabled: _isEnabled,
             child: CurrencyTextField(
-              key: _rangeKey,
+              key: const ValueKey('fiatAmountField'),
               controller: _fiatAmountController,
               label: 'Fiat amount',
+              onChanged: (parsed) {
+                setState(() {
+                  _minFiatAmount = parsed.$1;
+                  _maxFiatAmount = parsed.$2;
+                });
+              },
             ),
           ),
 
@@ -203,7 +210,8 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
                 )
               : _buildDisabledWrapper(
                   enabled: _isEnabled,
-                  child: _buildTextField('Sats amount', _satsAmountController,
+                  child: _buildTextField('Sats amount',
+                      const Key('satsAmountField'), _satsAmountController,
                       suffix: Icon(BitcoinIcons.satoshi_v1_outline).icon),
                 ),
 
@@ -212,7 +220,8 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
           // 5) Payment method
           _buildDisabledWrapper(
             enabled: _isEnabled,
-            child: _buildTextField('Payment method', _paymentMethodController),
+            child: _buildTextField('Payment method',
+                const Key('paymentMethodField'), _paymentMethodController),
           ),
 
           const SizedBox(height: 32),
@@ -252,7 +261,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
           _buildDisabledWrapper(
             enabled: _isEnabled,
             child: CurrencyTextField(
-              key: _rangeKey,
+              key: const Key('fiatAmountField'),
               controller: _fiatAmountController,
               label: 'Fiat amount',
             ),
@@ -288,7 +297,8 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
               children: [
                 _buildDisabledWrapper(
                   enabled: _isEnabled,
-                  child: _buildTextField('Sats amount', _satsAmountController,
+                  child: _buildTextField('Sats amount',
+                      const Key('satsAmountField'), _satsAmountController,
                       suffix: Icon(BitcoinIcons.satoshi_v1_outline).icon),
                 ),
                 const SizedBox(height: 16),
@@ -298,6 +308,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
             enabled: _isEnabled,
             child: _buildTextField(
               'Lightning Invoice or Lightning Address',
+              const Key('lightningInvoiceField'),
               _lightningInvoiceController,
             ),
           ),
@@ -305,7 +316,8 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
           // 6) Payment method
           _buildDisabledWrapper(
             enabled: _isEnabled,
-            child: _buildTextField('Payment method', _paymentMethodController),
+            child: _buildTextField('Payment method',
+                const Key('paymentMethodField'), _paymentMethodController),
           ),
 
           const SizedBox(height: 32),
@@ -319,7 +331,8 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
   ///
   /// REUSABLE TEXT FIELD
   ///
-  Widget _buildTextField(String label, TextEditingController controller,
+  Widget _buildTextField(
+      String label, Key key, TextEditingController controller,
       {IconData? suffix}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -328,6 +341,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
         borderRadius: BorderRadius.circular(8),
       ),
       child: TextFormField(
+        key: key,
         controller: controller,
         style: const TextStyle(color: AppTheme.cream1),
         decoration: InputDecoration(
@@ -372,6 +386,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
       children: [
         const Text('Premium (%)', style: TextStyle(color: AppTheme.cream1)),
         Slider(
+          key: const Key('premiumSlider'),
           value: _premiumValue,
           min: -10,
           max: 10,
@@ -427,14 +442,9 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
       final tempOrderId = uuid.v4();
       final notifier = ref.read(addOrderNotifierProvider(tempOrderId).notifier);
 
-      final currencyFieldState = _rangeKey.currentState;
-      final fiatAmount = currencyFieldState?.maxAmount != null
-          ? 0
-          : currencyFieldState?.minAmount;
-      final minAmount = currencyFieldState?.maxAmount != null
-          ? currencyFieldState?.minAmount
-          : null;
-      final maxAmount = currencyFieldState?.maxAmount;
+      final fiatAmount = _maxFiatAmount != null ? 0 : _minFiatAmount;
+      final minAmount = _maxFiatAmount != null ? _minFiatAmount : null;
+      final maxAmount = _maxFiatAmount;
 
       final satsAmount = int.tryParse(_satsAmountController.text) ?? 0;
       final paymentMethod = _paymentMethodController.text;

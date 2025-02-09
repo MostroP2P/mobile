@@ -28,6 +28,7 @@ class _FixedSwitchState extends State<FixedSwitch> {
     return Row(
       children: [
         Switch(
+          key: const Key('fixedSwitch'),
           value: marketRate,
           onChanged: (bool value) {
             setState(() {

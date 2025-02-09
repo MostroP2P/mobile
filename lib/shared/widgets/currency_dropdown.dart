@@ -47,6 +47,7 @@ class CurrencyDropdown extends ConsumerWidget {
               value: code,
               child: Text(
                 '$code - ${currencyCodes[code]}',
+				key: Key('currency_$code'),
                 style: const TextStyle(color: AppTheme.cream1),
               ),
             );

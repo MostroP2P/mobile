@@ -10,7 +10,6 @@ import 'package:mostro_mobile/data/repositories/session_manager.dart';
 import 'package:mostro_mobile/features/key_manager/key_derivator.dart';
 import 'package:mostro_mobile/services/mostro_service.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
-import 'package:crypto/crypto.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
 import 'mostro_service_test.mocks.dart';
@@ -84,7 +83,7 @@ void main() {
       when(mockSessionManager.getSessionByOrderId(orderId)).thenReturn(session);
 
       // Mock NostrService's createRumor, createSeal, createWrap, publishEvent
-      when(mockNostrService.createRumor(any, any, any))
+      when(mockNostrService.createRumor(any, any, any, any))
           .thenAnswer((_) async => 'encryptedRumorContent');
 
       when(mockNostrService.generateKeyPair())
@@ -163,7 +162,7 @@ void main() {
       when(mockSessionManager.getSessionByOrderId(orderId)).thenReturn(session);
 
       // Mock NostrService's createRumor, createSeal, createWrap, publishEvent
-      when(mockNostrService.createRumor(any, any, any))
+      when(mockNostrService.createRumor(any, any, any, any))
           .thenAnswer((_) async => 'encryptedRumorContentInvalid');
 
       when(mockNostrService.generateKeyPair())
@@ -241,7 +240,7 @@ void main() {
       mockServerTradeIndex.userTradeIndices[userPubKey] = 3;
 
       // Mock NostrService's createRumor, createSeal, createWrap, publishEvent
-      when(mockNostrService.createRumor(any, any, any))
+      when(mockNostrService.createRumor(any, any, any, any))
           .thenAnswer((_) async => 'encryptedRumorContentReused');
 
       when(mockNostrService.generateKeyPair())
@@ -317,7 +316,7 @@ void main() {
       when(mockSessionManager.getSessionByOrderId(orderId)).thenReturn(session);
 
       // Mock NostrService's createRumor, createSeal, createWrap, publishEvent
-      when(mockNostrService.createRumor(any, any, any))
+      when(mockNostrService.createRumor(any, any, any, any))
           .thenAnswer((_) async => 'encryptedRumorContentFullPrivacy');
 
       when(mockNostrService.generateKeyPair())

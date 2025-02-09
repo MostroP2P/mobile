@@ -173,16 +173,16 @@ class TakeOrderScreen extends ConsumerWidget {
         ),
         const SizedBox(width: 16),
         ElevatedButton(
-          onPressed: () {
+          onPressed: () async {
             // Possibly pass the LN address or sats from the text fields
             final satsText = _satsAmountController.text;
             // Convert satsText to int if needed
             final satsAmount = int.tryParse(satsText);
             if (orderType == OrderType.buy) {
-              orderDetailsNotifier.takeBuyOrder(realOrderId, satsAmount);
+              await orderDetailsNotifier.takeBuyOrder(realOrderId, satsAmount);
             } else {
               final lndAddress = _lndAddressController.text.trim();
-              orderDetailsNotifier.takeSellOrder(
+              await orderDetailsNotifier.takeSellOrder(
                   realOrderId, satsAmount, lndAddress);
             } // Could also pass the LN address if your method expects it
           },
