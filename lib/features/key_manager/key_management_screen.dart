@@ -11,7 +11,8 @@ class KeyManagementScreen extends ConsumerStatefulWidget {
   const KeyManagementScreen({super.key});
 
   @override
-  ConsumerState<KeyManagementScreen> createState() => _KeyManagementScreenState();
+  ConsumerState<KeyManagementScreen> createState() =>
+      _KeyManagementScreenState();
 }
 
 class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
@@ -67,25 +68,12 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
     await _loadKeys();
   }
 
-  Future<void> _deleteKeys() async {
-    final keyManager = ref.read(keyManagerProvider);
-    // Assume the KeyManager or its storage has a method to clear keys:
-    //await keyManager.clearKeys();
-    await _loadKeys();
-  }
-
   Future<void> _importKey() async {
     final keyManager = ref.read(keyManagerProvider);
     final importValue = _importController.text.trim();
     if (importValue.isNotEmpty) {
       try {
-        // For demonstration, if the input contains spaces, we treat it as a mnemonic;
-        // otherwise, we treat it as a master key.
-        if (importValue.contains(' ')) {
-          //await keyManager.importMnemonic(importValue);
-        } else {
-          //await keyManager.importMasterKey(importValue);
-        }
+        await keyManager.importMnemonic(importValue);
         await _loadKeys();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Key imported successfully')),
@@ -108,11 +96,13 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
           icon: const HeroIcon(HeroIcons.arrowLeft, color: AppTheme.cream1),
           onPressed: () => context.go('/'),
         ),
-        title: Text('KEY MANAGEMENT',
+        title: Text(
+          'KEY MANAGEMENT',
           style: TextStyle(
             color: AppTheme.cream1,
             fontFamily: GoogleFonts.robotoCondensed().fontFamily,
-          ),),
+          ),
+        ),
       ),
       backgroundColor: AppTheme.dark1,
       body: _loading
@@ -161,7 +151,8 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                   // Trade Key Index
                   Text(
                     'Current Trade Key Index: ${_tradeKeyIndex ?? 'N/A'}',
-                    style: const TextStyle(color: AppTheme.cream1, fontSize: 16),
+                    style:
+                        const TextStyle(color: AppTheme.cream1, fontSize: 16),
                   ),
                   const SizedBox(height: 16),
                   // Buttons to generate and delete keys
@@ -171,20 +162,12 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                         onPressed: _generateNewMasterKey,
                         child: const Text('Generate New Master Key'),
                       ),
-                      const SizedBox(width: 16),
-                      ElevatedButton(
-                        onPressed: _deleteKeys,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.red1,
-                        ),
-                        child: const Text('Delete Keys'),
-                      ),
                     ],
                   ),
                   const SizedBox(height: 16),
                   // Import Key
                   const Text(
-                    'Import Key or Mnemonic',
+                    'Import Key from Mnemonic',
                     style: TextStyle(color: AppTheme.cream1, fontSize: 18),
                   ),
                   const SizedBox(height: 8),

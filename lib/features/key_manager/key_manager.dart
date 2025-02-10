@@ -17,12 +17,20 @@ class KeyManager {
   /// Generate a new mnemonic, derive the master key, and store both
   Future<void> generateAndStoreMasterKey() async {
     final mnemonic = _derivator.generateMnemonic();
+    await generateAndStoreMasterKeyFromMnemonic(mnemonic);
+  }
+
+  // Generate a new master key from the supplied mnemonic
+  Future<void> generateAndStoreMasterKeyFromMnemonic(String mnemonic) async {
     final masterKeyHex = _derivator.extendedKeyFromMnemonic(mnemonic);
 
     await _storage.storeMnemonic(mnemonic);
     await _storage.storeMasterKey(masterKeyHex);
-    await _storage
-        .storeTradeKeyIndex(1);
+    await _storage.storeTradeKeyIndex(1);
+  }
+
+  Future<void> importMnemonic(String mnemonic) async {
+    await generateAndStoreMasterKeyFromMnemonic(mnemonic);
   }
 
   /// Retrieve the master key from storage, returning NostrKeyPairs

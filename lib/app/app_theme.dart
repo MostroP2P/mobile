@@ -16,15 +16,18 @@ class AppTheme {
 
   // Padding and Margin Constants
   static const EdgeInsets smallPadding = EdgeInsets.all(8.0);
-  static const EdgeInsets mediumPadding = EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0);
+  static const EdgeInsets mediumPadding =
+      EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0);
   static const EdgeInsets largePadding = EdgeInsets.all(24.0);
 
   static const EdgeInsets smallMargin = EdgeInsets.all(4.0);
-  static const EdgeInsets mediumMargin = EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0);
+  static const EdgeInsets mediumMargin =
+      EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0);
   static const EdgeInsets largeMargin = EdgeInsets.all(20.0);
 
   static ThemeData get theme {
     return ThemeData(
+      hoverColor: dark1,
       primaryColor: mostroGreen,
       scaffoldBackgroundColor: dark1,
       appBarTheme: const AppBarTheme(
@@ -99,6 +102,11 @@ class AppTheme {
         color: cream1,
         size: 24.0,
       ),
+      listTileTheme: ListTileThemeData(
+          titleTextStyle: TextStyle(
+        color: grey,
+        fontFamily: GoogleFonts.robotoCondensed().fontFamily,
+      )),
     );
   }
 

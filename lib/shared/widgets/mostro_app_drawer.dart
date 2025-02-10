@@ -9,12 +9,12 @@ class MostroAppDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      backgroundColor: AppTheme.cream1,
+      backgroundColor: AppTheme.dark2,
       child: ListView(
         children: [
           DrawerHeader(
             decoration: BoxDecoration(
-                color: AppTheme.dark2,
+                color: AppTheme.dark1,
                 image: const DecorationImage(
                     image: AssetImage("assets/images/mostro-icons.png"),
                     fit: BoxFit.scaleDown)),
