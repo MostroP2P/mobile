@@ -2,19 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mostro_mobile/app/app_theme.dart';
-import 'package:mostro_mobile/features/order_book/notifiers/order_book_state.dart';
-import 'package:mostro_mobile/features/order_book/providers/order_book_notifier.dart';
-import 'package:mostro_mobile/features/order_book/widgets/order_book_list.dart';
+import 'package:mostro_mobile/features/trades/notifiers/trades_state.dart';
+import 'package:mostro_mobile/features/trades/providers/trades_notifier.dart';
+import 'package:mostro_mobile/features/trades/widgets/trades_list.dart';
 import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_app_bar.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_app_drawer.dart';
 
-class OrderBookScreen extends ConsumerWidget {
-  const OrderBookScreen({super.key});
+class TradesScreen extends ConsumerWidget {
+  const TradesScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final orderBookStateAsync = ref.watch(orderBookNotifierProvider);
+    final orderBookStateAsync = ref.watch(tradesNotifierProvider);
 
     return orderBookStateAsync.when(
       data: (orderBookState) {
@@ -37,7 +37,7 @@ class OrderBookScreen extends ConsumerWidget {
                   Padding(
                     padding: EdgeInsets.all(16.0),
                     child: Text(
-                      'Order Book',
+                      'My Trades',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 24,
@@ -72,7 +72,7 @@ class OrderBookScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildOrderList(OrderBookState orderBookState) {
+  Widget _buildOrderList(TradesState orderBookState) {
     if (orderBookState.orders.isEmpty) {
       return const Center(
         child: Text(
@@ -82,6 +82,6 @@ class OrderBookScreen extends ConsumerWidget {
       );
     }
 
-    return OrderBookList(orders: orderBookState.orders);
+    return TradesList(orders: orderBookState.orders);
   }
 }

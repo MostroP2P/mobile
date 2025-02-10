@@ -2,25 +2,26 @@ import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mostro_mobile/features/chat/notifiers/chat_detail_state.dart';
-import 'package:mostro_mobile/features/chat/providers/chat_list_provider.dart';
+import 'package:mostro_mobile/features/messages/notifiers/messages_detail_state.dart';
+import 'package:mostro_mobile/features/messages/providers/messages_list_provider.dart';
 import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
 
-class ChatDetailScreen extends ConsumerStatefulWidget {
+class MessagesDetailScreen extends ConsumerStatefulWidget {
   final String chatId;
 
-  const ChatDetailScreen({super.key, required this.chatId});
+  const MessagesDetailScreen({super.key, required this.chatId});
 
   @override
-  ConsumerState<ChatDetailScreen> createState() => _ChatDetailScreenState();
+  ConsumerState<MessagesDetailScreen> createState() => _MessagesDetailScreenState();
 }
 
-class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
+class _MessagesDetailScreenState extends ConsumerState<MessagesDetailScreen> {
   final TextEditingController _textController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
-    final chatDetailState = ref.watch(chatDetailNotifierProvider(widget.chatId));
+    final chatDetailState =
+        ref.watch(messagesDetailNotifierProvider(widget.chatId));
 
     return Scaffold(
       backgroundColor: const Color(0xFF1D212C),
@@ -38,11 +39,11 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
     );
   }
 
-  Widget _buildBody(ChatDetailState state) {
+  Widget _buildBody(MessagesDetailState state) {
     switch (state.status) {
-      case ChatDetailStatus.loading:
+      case MessagesDetailStatus.loading:
         return const Center(child: CircularProgressIndicator());
-      case ChatDetailStatus.loaded:
+      case MessagesDetailStatus.loaded:
         return Column(
           children: [
             Expanded(
@@ -57,7 +58,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
             _buildMessageInput(),
           ],
         );
-      case ChatDetailStatus.error:
+      case MessagesDetailStatus.error:
         return Center(child: Text(state.error ?? 'An error occurred'));
     }
   }
@@ -112,7 +113,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
               final text = _textController.text.trim();
               if (text.isNotEmpty) {
                 ref
-                    .read(chatDetailNotifierProvider(widget.chatId).notifier)
+                    .read(
+                        messagesDetailNotifierProvider(widget.chatId).notifier)
                     .sendMessage(text);
                 _textController.clear();
               }

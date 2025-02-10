@@ -1,16 +1,16 @@
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'chat_list_state.dart';
+import 'messages_list_state.dart';
 
-class ChatListNotifier extends StateNotifier<ChatListState> {
-  ChatListNotifier() : super(const ChatListState()) {
+class MessagesListNotifier extends StateNotifier<MessagesListState> {
+  MessagesListNotifier() : super(const MessagesListState()) {
     loadChats();
   }
 
   Future<void> loadChats() async {
     try {
       // 1) Start loading
-      state = state.copyWith(status: ChatListStatus.loading);
+      state = state.copyWith(status: MessagesListStatus.loading);
 
       // 2) Simulate or fetch real chat data from a repository
       //    For example:
@@ -21,14 +21,14 @@ class ChatListNotifier extends StateNotifier<ChatListState> {
 
       // 3) Loaded
       state = state.copyWith(
-        status: ChatListStatus.loaded,
+        status: MessagesListStatus.loaded,
         chats: chats,
         errorMessage: null,
       );
     } catch (e) {
       // On error
       state = state.copyWith(
-        status: ChatListStatus.error,
+        status: MessagesListStatus.error,
         errorMessage: e.toString(),
       );
     }

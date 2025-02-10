@@ -1,28 +1,28 @@
 import 'package:dart_nostr/nostr/model/event/event.dart';
 
-enum ChatDetailStatus {
+enum MessagesDetailStatus {
   loading,
   loaded,
   error,
 }
 
-class ChatDetailState {
-  final ChatDetailStatus status;
+class MessagesDetailState {
+  final MessagesDetailStatus status;
   final List<NostrEvent> messages;
   final String? error;
 
-  const ChatDetailState({
-    this.status = ChatDetailStatus.loading,
+  const MessagesDetailState({
+    this.status = MessagesDetailStatus.loading,
     this.messages = const [],
     this.error,
   });
 
-  ChatDetailState copyWith({
-    ChatDetailStatus? status,
+  MessagesDetailState copyWith({
+    MessagesDetailStatus? status,
     List<NostrEvent>? messages,
     String? error,
   }) {
-    return ChatDetailState(
+    return MessagesDetailState(
       status: status ?? this.status,
       messages: messages ?? this.messages,
       error: error,

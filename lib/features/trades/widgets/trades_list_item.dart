@@ -5,16 +5,15 @@ import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 
-class OrderBookListItem extends StatelessWidget {
+class TradesListItem extends StatelessWidget {
   final Order order;
 
-  const OrderBookListItem({super.key, required this.order});
+  const TradesListItem({super.key, required this.order});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-      },
+      onTap: () {},
       child: CustomCard(
         color: AppTheme.dark1,
         margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),

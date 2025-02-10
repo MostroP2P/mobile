@@ -1,17 +1,17 @@
 import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'chat_detail_state.dart';
+import 'messages_detail_state.dart';
 
-class ChatDetailNotifier extends StateNotifier<ChatDetailState> {
+class MessagesDetailNotifier extends StateNotifier<MessagesDetailState> {
   final String chatId;
 
-  ChatDetailNotifier(this.chatId) : super(const ChatDetailState()) {
+  MessagesDetailNotifier(this.chatId) : super(const MessagesDetailState()) {
     loadChatDetail();
   }
 
   Future<void> loadChatDetail() async {
     try {
-      state = state.copyWith(status: ChatDetailStatus.loading);
+      state = state.copyWith(status: MessagesDetailStatus.loading);
 
       // Simulate a delay / fetch from repo
       await Future.delayed(const Duration(seconds: 1));
@@ -19,13 +19,13 @@ class ChatDetailNotifier extends StateNotifier<ChatDetailState> {
       final chatMessages = <NostrEvent>[];
 
       state = state.copyWith(
-        status: ChatDetailStatus.loaded,
+        status: MessagesDetailStatus.loaded,
         messages: chatMessages,
         error: null,
       );
     } catch (e) {
       state = state.copyWith(
-        status: ChatDetailStatus.error,
+        status: MessagesDetailStatus.error,
         error: e.toString(),
       );
     }

@@ -57,11 +57,6 @@ class TakeOrderScreen extends ConsumerWidget {
                 if (order.currency != null)
                   ExchangeRateWidget(currency: order.currency!),
                 const SizedBox(height: 16),
-                CustomCard(
-                  padding: const EdgeInsets.all(16),
-                  child: BuyerInfo(order: order),
-                ),
-                const SizedBox(height: 16),
                 _buildBuyerAmount(int.tryParse(order.amount!)),
                 const SizedBox(height: 16),
                 _buildLnAddress(),

@@ -4,11 +4,11 @@ import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/features/add_order/screens/add_order_screen.dart';
 import 'package:mostro_mobile/features/add_order/screens/order_confirmation_screen.dart';
 import 'package:mostro_mobile/features/auth/screens/welcome_screen.dart';
-import 'package:mostro_mobile/features/chat/screens/chat_list_screen.dart';
+import 'package:mostro_mobile/features/messages/screens/messages_list_screen.dart';
 import 'package:mostro_mobile/features/home/screens/home_screen.dart';
 import 'package:mostro_mobile/features/key_manager/key_management_screen.dart';
 import 'package:mostro_mobile/features/mostro/screens/mostro_screen.dart';
-import 'package:mostro_mobile/features/order_book/screens/order_book_screen.dart';
+import 'package:mostro_mobile/features/trades/screens/trades_screen.dart';
 import 'package:mostro_mobile/features/relays/relays_screen.dart';
 import 'package:mostro_mobile/features/take_order/screens/add_lightning_invoice_screen.dart';
 import 'package:mostro_mobile/features/take_order/screens/pay_lightning_invoice_screen.dart';
@@ -39,11 +39,11 @@ final goRouter = GoRouter(
         ),
         GoRoute(
           path: '/order_book',
-          builder: (context, state) => const OrderBookScreen(),
+          builder: (context, state) => const TradesScreen(),
         ),
         GoRoute(
           path: '/chat_list',
-          builder: (context, state) => const ChatListScreen(),
+          builder: (context, state) => const MessagesListScreen(),
         ),
         GoRoute(
           path: '/register',

@@ -2,19 +2,19 @@ import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:mostro_mobile/features/chat/notifiers/chat_list_state.dart';
-import 'package:mostro_mobile/features/chat/providers/chat_list_provider.dart';
+import 'package:mostro_mobile/features/messages/notifiers/messages_list_state.dart';
+import 'package:mostro_mobile/features/messages/providers/messages_list_provider.dart';
 import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_app_bar.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_app_drawer.dart';
 
-class ChatListScreen extends ConsumerWidget {
-  const ChatListScreen({super.key});
+class MessagesListScreen extends ConsumerWidget {
+  const MessagesListScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Watch the state
-    final chatListState = ref.watch(chatListNotifierProvider);
+    final chatListState = ref.watch(messagesListNotifierProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFF1D212C),
@@ -31,7 +31,7 @@ class ChatListScreen extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Text(
-                'Chat',
+                'Messages',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 24,
@@ -50,11 +50,11 @@ class ChatListScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildBody(ChatListState state) {
+  Widget _buildBody(MessagesListState state) {
     switch (state.status) {
-      case ChatListStatus.loading:
+      case MessagesListStatus.loading:
         return const Center(child: CircularProgressIndicator());
-      case ChatListStatus.loaded:
+      case MessagesListStatus.loaded:
         if (state.chats.isEmpty) {
           return const Center(
               child: Text('No chats available',
@@ -66,14 +66,14 @@ class ChatListScreen extends ConsumerWidget {
             return ChatListItem(chat: state.chats[index]);
           },
         );
-      case ChatListStatus.error:
+      case MessagesListStatus.error:
         return Center(
           child: Text(
             state.errorMessage ?? 'An error occurred',
             style: const TextStyle(color: Colors.red),
           ),
         );
-      case ChatListStatus.empty:
+      case MessagesListStatus.empty:
         return const Center(
             child: Text('No chats available',
                 style: TextStyle(color: Colors.white)));

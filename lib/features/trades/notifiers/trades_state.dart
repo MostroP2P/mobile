@@ -1,7 +1,7 @@
 import 'package:mostro_mobile/data/models/order.dart';
 
-class OrderBookState {
+class TradesState {
   final List<Order> orders;
 
-  OrderBookState(this.orders);
+  TradesState(this.orders);
 }
