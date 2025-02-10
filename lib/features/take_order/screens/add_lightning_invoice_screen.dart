@@ -1,8 +1,10 @@
+import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/app/app_theme.dart';
-import 'package:mostro_mobile/data/models/order.dart';
+import 'package:mostro_mobile/data/models/nostr_event.dart';
+import 'package:mostro_mobile/features/home/notifiers/home_notifier.dart';
 import 'package:mostro_mobile/features/take_order/widgets/order_app_bar.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
@@ -21,14 +23,14 @@ class _AddLightningInvoiceScreenState
     extends ConsumerState<AddLightningInvoiceScreen> {
   final TextEditingController invoiceController = TextEditingController();
 
-  Future<Order?>? _orderFuture;
+  Future<NostrEvent?>? _orderFuture;
 
   @override
   void initState() {
     super.initState();
     // Kick off async load from OrderRepository
     final orderRepo = ref.read(orderRepositoryProvider);
-    _orderFuture = orderRepo.getOrderById(widget.orderId) as Future<Order?>?;
+    _orderFuture = orderRepo.getOrderById(widget.orderId);
   }
 
   @override
@@ -36,7 +38,7 @@ class _AddLightningInvoiceScreenState
     return Scaffold(
       backgroundColor: AppTheme.dark1,
       appBar: OrderAppBar(title: 'Add Lightning Invoice'),
-      body: FutureBuilder<Order?>(
+      body: FutureBuilder<NostrEvent?>(
         future: _orderFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -63,7 +65,7 @@ class _AddLightningInvoiceScreenState
             }
 
             // Now we have the order, we can safely reference order.amount, etc.
-            final amount = order.amount;
+            final amount = order.fiatAmount;
 
             return CustomCard(
               padding: const EdgeInsets.all(16),
@@ -133,10 +135,6 @@ class _AddLightningInvoiceScreenState
                                   // or a specialized method orderRepo.sendInvoice
                                   // For this example, let's just do an "update"
 
-                                  final updated = order.copyWith(
-                                    buyerInvoice: invoice,
-                                  );
-                                  await orderRepo.updateOrder(updated);
 
                                   // If you want to navigate away or confirm
                                   if (!mounted) return;

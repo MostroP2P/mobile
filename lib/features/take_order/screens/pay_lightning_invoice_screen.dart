@@ -1,3 +1,4 @@
+import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -21,14 +22,14 @@ class PayLightningInvoiceScreen extends ConsumerStatefulWidget {
 
 class _PayLightningInvoiceScreenState
     extends ConsumerState<PayLightningInvoiceScreen> {
-  Future<Order?>? _orderFuture;
+  Future<NostrEvent?>? _orderFuture;
 
   @override
   void initState() {
     super.initState();
     // Kick off async load from the Encrypted DB
     final orderRepo = ref.read(orderRepositoryProvider);
-    _orderFuture = orderRepo.getOrderById(widget.orderId) as Future<Order?>?;
+    _orderFuture = orderRepo.getOrderById(widget.orderId);
   }
 
   @override
@@ -36,7 +37,7 @@ class _PayLightningInvoiceScreenState
     return Scaffold(
       backgroundColor: AppTheme.dark1,
       appBar: OrderAppBar(title: 'Pay Lightning Invoice'),
-      body: FutureBuilder<Order?>(
+      body: FutureBuilder<NostrEvent?>(
         future: _orderFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -53,7 +54,7 @@ class _PayLightningInvoiceScreenState
           } else {
             final order = snapshot.data;
             // If the order isn't found or buyerInvoice is null/empty
-            if (order == null || order.buyerInvoice == null || order.buyerInvoice!.isEmpty) {
+            if (order == null) {
               return const Center(
                 child: Text(
                   'Invalid payment request.',
@@ -63,7 +64,8 @@ class _PayLightningInvoiceScreenState
             }
 
             // We have a valid LN invoice in order.buyerInvoice
-            final lnInvoice = order.buyerInvoice!;
+            final lnInvoice = '';
+            // order.buyerInvoice!;
 
             return SingleChildScrollView(
               padding: const EdgeInsets.all(16),

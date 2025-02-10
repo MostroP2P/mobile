@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
+import 'package:mostro_mobile/data/models/cant_do.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/order.dart';
@@ -42,6 +43,14 @@ class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
     final notifProvider = ref.read(notificationProvider.notifier);
 
     switch (state.action) {
+      case Action.addInvoice:
+        navProvider.go('/add_invoice/$orderId');
+        break;
+      case Action.cantDo:
+        final cantDo = state.getPayload<CantDo>();
+        notifProvider
+            .showInformation(state.action, values: {'action': cantDo?.cantDo});
+        break;
       case Action.newOrder:
         navProvider.go('/order_confirmed/${state.id!}');
         break;
@@ -63,6 +72,7 @@ class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
         });
         break;
       case Action.waitingSellerToPay:
+        navProvider.go('/');
         notifProvider.showInformation(state.action, values: {'id': state.id});
         break;
       case Action.waitingBuyerInvoice:

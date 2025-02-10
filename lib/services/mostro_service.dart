@@ -79,7 +79,6 @@ class MostroService {
     if (!session.fullPrivacy) {
       order.tradeIndex = session.keyIndex;
       final message = order.toJson();
-
       final serializedEvent = jsonEncode(message['order']);
       final bytes = utf8.encode(serializedEvent);
       final digest = sha256.convert(bytes);
@@ -114,9 +113,8 @@ class MostroService {
     return {
       'order': {
         'version': Config.mostroVersion,
-        'request_id': orderId,
         'trade_index': null,
-        'id': null,
+        'id': orderId,
         'action': actionType.value,
         'payload': payload,
       },

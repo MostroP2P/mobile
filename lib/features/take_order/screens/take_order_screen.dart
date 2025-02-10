@@ -183,7 +183,7 @@ class TakeOrderScreen extends ConsumerWidget {
             } else {
               final lndAddress = _lndAddressController.text.trim();
               await orderDetailsNotifier.takeSellOrder(
-                  realOrderId, satsAmount, lndAddress);
+                  realOrderId, satsAmount, lndAddress.isEmpty ? null : lndAddress);
             } // Could also pass the LN address if your method expects it
           },
           style: ElevatedButton.styleFrom(
