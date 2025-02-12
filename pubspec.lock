@@ -282,10 +282,10 @@ packages:
     dependency: "direct main"
     description:
       name: dart_nostr
-      sha256: "9adb4c34dfdd3ab811af8d7a22570d34c857afc32ee49140729ceb25c4327666"
+      sha256: abcf02ee243a156aea494206a9368640a4cffdd458dfdafb92d2fc2f8d883a8f
       url: "https://pub.dev"
     source: hosted
-    version: "8.2.0"
+    version: "9.0.0"
   dart_style:
     dependency: transitive
     description:
@@ -795,7 +795,7 @@ packages:
     source: hosted
     version: "1.1.0"
   path_provider:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: path_provider
       sha256: "50c5dd5b6e1aaf6fb3a78b33f6aa3afca52bf903a8a5298f53101fdaee55bbcd"
@@ -938,6 +938,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.6.1"
+  sembast:
+    dependency: "direct main"
+    description:
+      name: sembast
+      sha256: "6cf9acde19bd88dba9ea8090d3e50725cdc70fc7cf1c117c26e79c257884b04b"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.8.2"
   shared_preferences:
     dependency: "direct main"
     description:
@@ -1071,22 +1079,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "7.0.0"
-  sqflite_common:
-    dependency: transitive
-    description:
-      name: sqflite_common
-      sha256: "761b9740ecbd4d3e66b8916d784e581861fd3c3553eda85e167bc49fdb68f709"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.5.4+6"
-  sqflite_sqlcipher:
-    dependency: "direct main"
-    description:
-      name: sqflite_sqlcipher
-      sha256: "16033fde6c7d7bd657b71a2bc42332ab02bc8001c3212f502d2e02714e735ec9"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.1.0+1"
   stack_trace:
     dependency: transitive
     description:

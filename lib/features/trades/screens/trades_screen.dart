@@ -2,29 +2,30 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mostro_mobile/app/app_theme.dart';
-import 'package:mostro_mobile/features/trades/notifiers/trades_state.dart';
-import 'package:mostro_mobile/features/trades/providers/trades_notifier.dart';
+import 'package:mostro_mobile/features/trades/providers/trades_provider.dart';
 import 'package:mostro_mobile/features/trades/widgets/trades_list.dart';
 import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_app_bar.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_app_drawer.dart';
+import 'package:mostro_mobile/data/models/session.dart';
 
 class TradesScreen extends ConsumerWidget {
   const TradesScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final orderBookStateAsync = ref.watch(tradesNotifierProvider);
+    final tradesAsync = ref.watch(tradesProvider);
 
-    return orderBookStateAsync.when(
-      data: (orderBookState) {
+    return tradesAsync.when(
+      data: (sessions) {
         return Scaffold(
           backgroundColor: AppTheme.dark1,
           appBar: const MostroAppBar(),
           drawer: const MostroAppDrawer(),
           body: RefreshIndicator(
             onRefresh: () async {
-              //await orderBookNotifier.refresh();
+              // Force a refresh of sessions
+              ref.refresh(tradesProvider);
             },
             child: Container(
               margin: const EdgeInsets.fromLTRB(16, 16, 16, 16),
@@ -35,19 +36,20 @@ class TradesScreen extends ConsumerWidget {
               child: Column(
                 children: [
                   Padding(
-                    padding: EdgeInsets.all(16.0),
+                    padding: const EdgeInsets.all(16.0),
                     child: Text(
                       'My Trades',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        fontFamily: GoogleFonts.robotoCondensed().fontFamily,
+                        fontFamily:
+                            GoogleFonts.robotoCondensed().fontFamily,
                       ),
                     ),
                   ),
                   Expanded(
-                    child: _buildOrderList(orderBookState),
+                    child: _buildOrderList(sessions),
                   ),
                   const BottomNavBar(),
                 ],
@@ -72,16 +74,18 @@ class TradesScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildOrderList(TradesState orderBookState) {
-    if (orderBookState.orders.isEmpty) {
+  /// If your Session contains a full order snapshot, you could convert it.
+  /// Otherwise, update TradesList to accept a List<Session>.
+  Widget _buildOrderList(List<Session> sessions) {
+    if (sessions.isEmpty) {
       return const Center(
         child: Text(
-          'No orders available for this type',
+          'No trades available for this type',
           style: TextStyle(color: Colors.white),
         ),
       );
     }
 
-    return TradesList(orders: orderBookState.orders);
+    return TradesList(sessions: sessions);
   }
 }

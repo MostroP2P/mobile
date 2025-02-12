@@ -1,131 +1,104 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/repositories/order_repository_interface.dart';
-import 'package:path/path.dart';
-import 'package:sqflite_sqlcipher/sqflite.dart';
+import 'package:sembast/sembast.dart';
+import 'package:mostro_mobile/data/models/enums/action.dart';
+import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 
-class OrderRepositoryEncrypted implements OrderRepository<Order> {
-  static const _dbName = 'orders_encrypted.db';
-  static const _dbVersion = 1;
-  static const _tableName = 'orders';
+/// Example (somewhat minimal) repository for storing and retrieving
+/// orders in a Sembast database.
+class OrderRepositoryEncrypted implements OrderRepository<MostroMessage> {
+  final Logger _logger = Logger();
+  final Database _database;
+  final StoreRef<String, Map<String, dynamic>> _ordersStore =
+      stringMapStoreFactory.store('orders');
 
-  final String _dbPassword;
+  OrderRepositoryEncrypted(this._database);
 
-  Database? _database;
-
-  OrderRepositoryEncrypted({required String dbPassword})
-      : _dbPassword = dbPassword;
-
-  /// Return the single instance of Database, opening if needed
-  Future<Database> get database async {
-    if (_database != null) return _database!;
-    _database = await _initDatabase();
-    return _database!;
-  }
-
-  /// Initialize the encrypted database
-  Future<Database> _initDatabase() async {
-    final docDir = await getDatabasesPath();
-    final dbPath = join(docDir, _dbName);
-
-    return await openDatabase(
-      dbPath,
-      password: _dbPassword,
-      version: _dbVersion,
-      onCreate: _onCreate,
-      // onUpgrade: _onUpgrade if needed
-    );
-  }
-
-  Future<void> _onCreate(Database db, int version) async {
-    // Create table with all columns from the Order model
-    // id is primary key, so if you don't expect collisions, use that
-    await db.execute('''
-    CREATE TABLE $_tableName (
-      id TEXT PRIMARY KEY,
-      kind TEXT,
-      status TEXT,
-      amount INTEGER,
-      fiatCode TEXT,
-      minAmount INTEGER,
-      maxAmount INTEGER,
-      fiatAmount INTEGER,
-      paymentMethod TEXT,
-      premium INTEGER,
-      masterBuyerPubkey TEXT,
-      masterSellerPubkey TEXT,
-      buyerInvoice TEXT,
-      createdAt INTEGER,
-      expiresAt INTEGER,
-      buyerToken INTEGER,
-      sellerToken INTEGER
-    )
-    ''');
-  }
-
-  // region: CRUD
-
+  /// Save or update a MostroMessage (with an Order payload) in Sembast
   @override
-  Future<void> addOrder(Order order) async {
-    final db = await database;
-    await db.insert(
-      _tableName,
-      order.toMap(),
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
-  }
-
-  @override
-  Future<List<Order>> getAllOrders() async {
-    final db = await database;
-    final results = await db.query(_tableName);
-    return results.map((map) => Order.fromMap(map)).toList();
-  }
-
-  @override
-  Future<Order?> getOrderById(String orderId) async {
-    final db = await database;
-    final results = await db.query(
-      _tableName,
-      where: 'id = ?',
-      whereArgs: [orderId],
-    );
-    if (results.isNotEmpty) {
-      return Order.fromMap(results.first);
+  Future<void> addOrder(MostroMessage message) async {
+    final orderId = message.id;
+    if (orderId == null) {
+      throw ArgumentError('Cannot save an order with a null message.id');
     }
-    return null;
+    // Convert to JSON so we can store as a Map<String, dynamic>
+    final jsonMap = message.toJson();
+    await _ordersStore.record(orderId).put(_database, jsonMap);
+    _logger.i('Order $orderId saved to Sembast');
   }
 
+  /// Retrieve an order by ID
   @override
-  Future<void> updateOrder(Order order) async {
-    // The order must have a valid id
-    if (order.id == null) {
-      throw ArgumentError('Cannot update an Order with null ID');
+  Future<MostroMessage<Order>?> getOrderById(String orderId) async {
+    final record = await _ordersStore.record(orderId).get(_database);
+    if (record == null) return null;
+    try {
+      final msg = MostroMessage.deserialized(jsonEncode(record));
+      // If the payload is indeed an Order, you can cast or do a check:
+      //   final order = msg.getPayload<Order>();
+      //   ...
+      return msg as MostroMessage<Order>;
+    } catch (e) {
+      _logger.e('Error deserializing order $orderId: $e');
+      return null;
     }
-
-    final db = await database;
-    await db.update(
-      _tableName,
-      order.toMap(),
-      where: 'id = ?',
-      whereArgs: [order.id],
-    );
   }
 
+  /// Return all orders
+  @override
+  Future<List<MostroMessage>> getAllOrders() async {
+    final records = await _ordersStore.find(_database);
+    final results = <MostroMessage<Order>>[];
+    for (final record in records) {
+      try {
+        final msg = MostroMessage.deserialized(jsonEncode(record.value));
+        results.add(msg as MostroMessage<Order>);
+      } catch (e) {
+        _logger.e('Error deserializing order with key ${record.key}: $e');
+      }
+    }
+    return results;
+  }
+
+  /// Delete an order from DB
   @override
   Future<void> deleteOrder(String orderId) async {
-    final db = await database;
-    await db.delete(
-      _tableName,
-      where: 'id = ?',
-      whereArgs: [orderId],
-    );
+    await _ordersStore.record(orderId).delete(_database);
   }
 
-  // endregion
+  /// Delete all orders
+  Future<void> deleteAllOrders() async {
+    await _ordersStore.delete(_database);
+  }
+
+  /// Example usage: you might have a function to update the status or action
+  Future<void> updateAction(String orderId, Action newAction) async {
+    final record = await _ordersStore.record(orderId).get(_database);
+    if (record == null) {
+      // no such order
+      return;
+    }
+    record['order']['action'] = newAction.value;
+    await _ordersStore.record(orderId).put(_database, record);
+  }
 
   @override
   void dispose() {
-    // TODO: implement dispose
+    // If needed
+  }
+
+  @override
+  Future<void> updateOrder(MostroMessage message) async {
+    final orderId = message.id;
+    if (orderId == null) {
+      throw ArgumentError('Cannot save an order with a null message.id');
+    }
+    // Convert to JSON so we can store as a Map<String, dynamic>
+    final jsonMap = message.toJson();
+    await _ordersStore.record(orderId).put(_database, jsonMap);
+    _logger.i('Order $orderId saved to Sembast');
   }
 }

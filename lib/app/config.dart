@@ -14,6 +14,9 @@ class Config {
   static const String mostroPubKey =
       '9d9d0455a96871f2dc4289b8312429db2e925f167b37c77bf7b28014be235980';
 
+  static const String dBName = 'mostro.db';
+  static const String dBPassword = 'mostro';
+
   // Tiempo de espera para conexiones a relays
   static const Duration nostrConnectionTimeout = Duration(seconds: 30);
 

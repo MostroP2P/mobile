@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mostro_mobile/app/app_theme.dart';
-import 'package:mostro_mobile/features/trades/notifiers/trades_state.dart';
-import 'package:mostro_mobile/features/trades/providers/trades_notifier.dart';
-import 'package:mostro_mobile/features/trades/widgets/trades_list.dart';
+import 'package:mostro_mobile/features/trades/providers/trades_provider.dart';
 import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_app_bar.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_app_drawer.dart';
@@ -14,7 +12,7 @@ class MostroScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final orderBookStateAsync = ref.watch(tradesNotifierProvider);
+    final orderBookStateAsync = ref.watch(tradesProvider);
 
     return orderBookStateAsync.when(
       data: (orderBookState) {
@@ -46,9 +44,6 @@ class MostroScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
-                  Expanded(
-                    child: _buildOrderList(orderBookState),
-                  ),
                   const BottomNavBar(),
                 ],
               ),
@@ -72,16 +67,4 @@ class MostroScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildOrderList(TradesState orderBookState) {
-    if (orderBookState.orders.isEmpty) {
-      return const Center(
-        child: Text(
-          'No orders available for this type',
-          style: TextStyle(color: Colors.white),
-        ),
-      );
-    }
-
-    return TradesList(orders: orderBookState.orders);
-  }
 }

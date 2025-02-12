@@ -17,7 +17,7 @@ class NostrService {
 
     _nostr = Nostr.instance;
     try {
-      await _nostr.relaysService.init(
+      await _nostr.services.relays.init(
         relaysUrl: Config.nostrRelays,
         connectionTimeout: Config.nostrConnectionTimeout,
         onRelayListening: (relay, url, channel) {
@@ -41,7 +41,7 @@ class NostrService {
     }
 
     try {
-      await _nostr.relaysService.sendEventToRelaysAsync(event,
+      await _nostr.services.relays.sendEventToRelaysAsync(event,
           timeout: Config.nostrConnectionTimeout);
       _logger.i('Event published successfully');
     } catch (e) {
@@ -57,7 +57,7 @@ class NostrService {
 
     final request = NostrRequest(filters: [filter]);
     final subscription =
-        _nostr.relaysService.startEventsSubscription(request: request);
+        _nostr.services.relays.startEventsSubscription(request: request);
 
     return subscription.stream;
   }
@@ -65,7 +65,7 @@ class NostrService {
   Future<void> disconnectFromRelays() async {
     if (!_isInitialized) return;
 
-    await _nostr.relaysService.disconnectFromRelays();
+    await _nostr.services.relays.disconnectFromRelays();
     _isInitialized = false;
     _logger.i('Disconnected from all relays');
   }

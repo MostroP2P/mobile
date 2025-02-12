@@ -6,7 +6,6 @@ import 'package:mostro_mobile/app/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/features/take_order/widgets/order_app_bar.dart';
-import 'package:mostro_mobile/features/take_order/widgets/buyer_info.dart';
 import 'package:mostro_mobile/features/take_order/widgets/seller_info.dart';
 import 'package:mostro_mobile/shared/widgets/currency_text_field.dart';
 import 'package:mostro_mobile/shared/widgets/exchange_rate_widget.dart';

@@ -22,7 +22,7 @@ class NostrUtils {
   }
 
   static NostrKeyPairs generateKeyPairFromPrivateKey(String privateKey) {
-    return _instance.keysService
+    return _instance.services.keys
         .generateKeyPairFromExistingPrivateKey(privateKey);
   }
 
@@ -36,19 +36,19 @@ class NostrUtils {
 
   // Codificación y decodificación de claves
   static String encodePrivateKeyToNsec(String privateKey) {
-    return _instance.keysService.encodePrivateKeyToNsec(privateKey);
+    return _instance.services.bech32.encodePrivateKeyToNsec(privateKey);
   }
 
   static String decodeNsecKeyToPrivateKey(String nsec) {
-    return _instance.keysService.decodeNsecKeyToPrivateKey(nsec);
+    return _instance.services.bech32.decodeNsecKeyToPrivateKey(nsec);
   }
 
   static String encodePublicKeyToNpub(String publicKey) {
-    return _instance.keysService.encodePublicKeyToNpub(publicKey);
+    return _instance.services.bech32.encodePublicKeyToNpub(publicKey);
   }
 
   static String decodeNpubKeyToPublicKey(String npub) {
-    return _instance.keysService.decodeNpubKeyToPublicKey(npub);
+    return _instance.services.bech32.decodeNpubKeyToPublicKey(npub);
   }
 
   static String nsecToHex(String nsec) {
@@ -60,21 +60,21 @@ class NostrUtils {
 
   // Operaciones con claves
   static String derivePublicKey(String privateKey) {
-    return _instance.keysService.derivePublicKey(privateKey: privateKey);
+    return _instance.services.keys.derivePublicKey(privateKey: privateKey);
   }
 
   static bool isValidPrivateKey(String privateKey) {
-    return _instance.keysService.isValidPrivateKey(privateKey);
+    return _instance.services.keys.isValidPrivateKey(privateKey);
   }
 
   // Firma y verificación
   static String signMessage(String message, String privateKey) {
-    return _instance.keysService.sign(privateKey: privateKey, message: message);
+    return _instance.services.keys.sign(privateKey: privateKey, message: message);
   }
 
   static bool verifySignature(
       String signature, String message, String publicKey) {
-    return _instance.keysService
+    return _instance.services.keys
         .verify(publicKey: publicKey, message: message, signature: signature);
   }
 
@@ -98,17 +98,17 @@ class NostrUtils {
 
   // Utilidades generales
   static String decodeBech32(String bech32String) {
-    final result = _instance.utilsService.decodeBech32(bech32String);
+    final result = _instance.services.bech32.decodeBech32(bech32String);
     return result[1]; // Devuelve solo la parte de datos
   }
 
   static String encodeBech32(String hrp, String data) {
-    return _instance.utilsService.encodeBech32(hrp, data);
+    return _instance.services.bech32.encodeBech32(hrp, data);
   }
 
   static Future<String?> pubKeyFromIdentifierNip05(
       String internetIdentifier) async {
-    return await _instance.utilsService
+    return await _instance.services.utils
         .pubKeyFromIdentifierNip05(internetIdentifier: internetIdentifier);
   }
 

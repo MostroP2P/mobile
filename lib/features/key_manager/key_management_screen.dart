@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/app/app_theme.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
+import 'package:mostro_mobile/shared/widgets/privacy_switch_widget.dart';
 
 class KeyManagementScreen extends ConsumerStatefulWidget {
   const KeyManagementScreen({super.key});
@@ -88,6 +89,8 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
 
   @override
   Widget build(BuildContext context) {
+    bool isFullPrivacy = false;
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -184,6 +187,16 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                   ElevatedButton(
                     onPressed: _importKey,
                     child: const Text('Import Key'),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Privacy',
+                    style: TextStyle(color: AppTheme.cream1, fontSize: 18),
+                  ),
+                  const SizedBox(height: 8),
+                  PrivacySwitch(
+                    initialValue: isFullPrivacy,
+                    onChanged: (newValue) {},
                   ),
                 ],
               ),
