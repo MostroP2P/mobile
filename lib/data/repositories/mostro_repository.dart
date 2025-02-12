@@ -1,28 +1,27 @@
 import 'dart:async';
-import 'dart:convert';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:logger/logger.dart';
-import 'package:mostro_mobile/data/models/enums/storage_keys.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/data/models/payload.dart';
 import 'package:mostro_mobile/data/models/session.dart';
+import 'package:mostro_mobile/data/repositories/mostro_storage.dart';
 import 'package:mostro_mobile/data/repositories/order_repository_interface.dart';
 import 'package:mostro_mobile/services/mostro_service.dart';
 
 class MostroRepository implements OrderRepository<MostroMessage> {
   final MostroService _mostroService;
-  final FlutterSecureStorage _secureStorage;
+  final MostroStorage _messageStorage;
   final Map<String, MostroMessage> _messages = {};
 
   final Map<int, StreamSubscription<MostroMessage>> _subscriptions = {};
 
-  MostroRepository(this._mostroService, this._secureStorage);
+  MostroRepository(this._mostroService, this._messageStorage);
 
   final _logger = Logger();
 
   @override
-  Future<MostroMessage?> getOrderById(String orderId) => Future.value(_messages[orderId]);
+  Future<MostroMessage?> getOrderById(String orderId) =>
+      Future.value(_messages[orderId]);
 
   List<MostroMessage> get allMessages => _messages.values.toList();
 
@@ -38,7 +37,8 @@ class MostroRepository implements OrderRepository<MostroMessage> {
       },
       onError: (error) {
         // Log or handle subscription errors
-        _logger.e('Error in subscription for session ${session.keyIndex}: $error');
+        _logger
+            .e('Error in subscription for session ${session.keyIndex}: $error');
       },
       cancelOnError: false,
     );
@@ -80,34 +80,23 @@ class MostroRepository implements OrderRepository<MostroMessage> {
 
   Future<void> saveMessages() async {
     for (var m in _messages.values.toList()) {
-      await _secureStorage.write(
-          key: '${SecureStorageKeys.message}-${m.id}',
-          value: jsonEncode(m.toJson()));
+      await _messageStorage.addOrder(m);
     }
   }
 
   Future<void> saveMessage(MostroMessage message) async {
-    await _secureStorage.write(
-        key: '${SecureStorageKeys.message}-${message.id}',
-        value: jsonEncode(message.toJson()));
+    await _messageStorage.addOrder(message);
   }
 
   Future<void> deleteMessage(String messageId) async {
     _messages.remove(messageId);
-    await _secureStorage.delete(key: '${SecureStorageKeys.message}-$messageId');
+    await _messageStorage.deleteOrder(messageId);
   }
 
   Future<void> loadMessages() async {
-    final allEntries = await _secureStorage.readAll();
-    for (final entry in allEntries.entries) {
-      if (entry.key.startsWith(SecureStorageKeys.message.value)) {
-        try {
-          final msg = MostroMessage.deserialized(entry.value);
-          _messages[msg.id!] = msg;
-        } catch (e) {
-          _logger.e('Error deserializing message for key ${entry.key}: $e');
-        }
-      }
+    final allEntries = await _messageStorage.getAllOrders();
+    for (final entry in allEntries) {
+      _messages[entry.id!] = entry;
     }
   }
 
@@ -126,9 +115,9 @@ class MostroRepository implements OrderRepository<MostroMessage> {
   }
 
   @override
-  Future<void> deleteOrder(String orderId) {
-    // TODO: implement deleteOrder
-    throw UnimplementedError();
+  Future<void> deleteOrder(String orderId) async {
+    _messages.remove(orderId);
+    _messageStorage.deleteOrder(orderId);
   }
 
   @override

@@ -7,15 +7,13 @@ import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 
-/// Example (somewhat minimal) repository for storing and retrieving
-/// orders in a Sembast database.
-class OrderRepositoryEncrypted implements OrderRepository<MostroMessage> {
+class MostroStorage implements OrderRepository<MostroMessage> {
   final Logger _logger = Logger();
   final Database _database;
   final StoreRef<String, Map<String, dynamic>> _ordersStore =
       stringMapStoreFactory.store('orders');
 
-  OrderRepositoryEncrypted(this._database);
+  MostroStorage(this._database);
 
   /// Save or update a MostroMessage (with an Order payload) in Sembast
   @override
@@ -24,7 +22,6 @@ class OrderRepositoryEncrypted implements OrderRepository<MostroMessage> {
     if (orderId == null) {
       throw ArgumentError('Cannot save an order with a null message.id');
     }
-    // Convert to JSON so we can store as a Map<String, dynamic>
     final jsonMap = message.toJson();
     await _ordersStore.record(orderId).put(_database, jsonMap);
     _logger.i('Order $orderId saved to Sembast');
@@ -74,11 +71,10 @@ class OrderRepositoryEncrypted implements OrderRepository<MostroMessage> {
     await _ordersStore.delete(_database);
   }
 
-  /// Example usage: you might have a function to update the status or action
   Future<void> updateAction(String orderId, Action newAction) async {
     final record = await _ordersStore.record(orderId).get(_database);
     if (record == null) {
-      // no such order
+      _logger.i("No such order $orderId");
       return;
     }
     record['order']['action'] = newAction.value;
