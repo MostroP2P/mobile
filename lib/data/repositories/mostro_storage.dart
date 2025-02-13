@@ -5,7 +5,6 @@ import 'package:mostro_mobile/data/repositories/order_repository_interface.dart'
 import 'package:sembast/sembast.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
-import 'package:mostro_mobile/data/models/order.dart';
 
 class MostroStorage implements OrderRepository<MostroMessage> {
   final Logger _logger = Logger();

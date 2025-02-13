@@ -49,6 +49,10 @@ class MostroService {
         }
         return msg;
       }
+
+      if (msgMap.containsKey('cant-do')) {
+        // throw an error
+      }
       throw FormatException('Result not found ${decryptedEvent.content}');
     });
   }

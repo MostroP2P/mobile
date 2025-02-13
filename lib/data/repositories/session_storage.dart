@@ -2,6 +2,7 @@ import 'package:sembast/sembast.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager.dart';
+import 'package:sembast/utils/value_utils.dart';
 
 class SessionStorage {
   final Database _database;
@@ -61,7 +62,8 @@ class SessionStorage {
 
   /// Finds and deletes sessions considered expired, returning a list of deleted IDs.
   /// (Keeps domain logic here for simplicity; you could also move it into the Manager.)
-  Future<List<int>> deleteExpiredSessions(int sessionExpirationHours, int maxBatchSize) async {
+  Future<List<int>> deleteExpiredSessions(
+      int sessionExpirationHours, int maxBatchSize) async {
     final now = DateTime.now();
     final records = await _store.find(_database);
     final removedIds = <int>[];
@@ -99,9 +101,11 @@ class SessionStorage {
     // Re-get masterKey (potentially from secure storage/caching)
     final masterKey = await _keyManager.getMasterKey();
 
-    map['trade_key'] = tradeKey;
-    map['master_key'] = masterKey;
+    var clone = cloneMap(map);
 
-    return Session.fromJson(map);
+    clone['trade_key'] = tradeKey;
+    clone['master_key'] = masterKey;
+
+    return Session.fromJson(clone);
   }
 }

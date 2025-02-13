@@ -11,7 +11,7 @@ void main() {
     testWidgets('User creates a new BUY order with VES=100 and premium=1',
         (tester) async {
       app.main();
-      await tester.pumpAndSettle();
+      await tester.pumpAndSettle(const Duration(seconds: 1));
 
       // Navigate to the “Add Order” screen
       final createOrderButton = find.byKey(const Key('createOrderButton'));
@@ -91,7 +91,7 @@ void main() {
       expect(submitButton, findsOneWidget,
           reason: 'A SUBMIT button is expected');
       await tester.tap(submitButton);
-      await tester.pumpAndSettle(const Duration(seconds: 3));
+      await tester.pumpAndSettle(const Duration(seconds: 1));
 
       // The app sends a Nostr “Gift wrap” event with the following content:
       //      {
@@ -198,7 +198,7 @@ void main() {
           reason: 'A SUBMIT button is expected');
       await tester.tap(submitButton);
       await tester.pumpAndSettle();
-      await tester.pumpAndSettle(const Duration(seconds: 3));
+      await tester.pumpAndSettle(const Duration(seconds: 1));
 
       // The app sends a Nostr “Gift wrap” event with the following content:
       //      {
@@ -315,7 +315,7 @@ void main() {
           reason: 'A SUBMIT button is expected');
       await tester.tap(submitButton);
       await tester.pumpAndSettle();
-      await tester.pumpAndSettle(const Duration(seconds: 3));
+      await tester.pumpAndSettle(const Duration(seconds: 1));
 
       // The app sends a Nostr “Gift wrap” event with the following content:
       //      {
@@ -438,7 +438,7 @@ void main() {
           reason: 'A SUBMIT button is expected');
       await tester.tap(submitButton);
       await tester.pumpAndSettle();
-      await tester.pumpAndSettle(const Duration(seconds: 3));
+      await tester.pumpAndSettle(const Duration(seconds: 1));
 
       // The app sends a Nostr “Gift wrap” event with the following content:
       //      {
