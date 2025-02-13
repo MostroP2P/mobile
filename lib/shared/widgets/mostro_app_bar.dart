@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/shared/providers/app_init_provider.dart';
+import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
+import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
 
-class MostroAppBar extends StatelessWidget implements PreferredSizeWidget {
+class MostroAppBar extends ConsumerWidget implements PreferredSizeWidget {
   const MostroAppBar({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return AppBar(
       backgroundColor: const Color(0xFF1D212C),
       elevation: 0,
@@ -31,7 +34,8 @@ class MostroAppBar extends StatelessWidget implements PreferredSizeWidget {
           icon: const HeroIcon(HeroIcons.bolt,
               style: HeroIconStyle.solid, color: Color(0xFF8CC541)),
           onPressed: () async {
-            await clearAppData();
+            final mostroStorage = ref.watch(mostroStorageProvider);
+            await clearAppData(mostroStorage);
           },
         ),
       ],

@@ -22,12 +22,34 @@ class MostroService {
     return _nostrService.subscribeToEvents(filter).asyncMap((event) async {
       final decryptedEvent = await _nostrService.decryptNIP59Event(
           event, session.tradeKey.private);
-      final msg = MostroMessage.deserialized(decryptedEvent.content!);
-      if (session.orderId == null && msg.id != null) {
-        session.orderId = msg.id;
-        await _sessionManager.saveSession(session);
+
+      // Check event content is not null
+      if (decryptedEvent.content == null) {
+        _logger.i('Event ${decryptedEvent.id} content is null');
+        throw FormatException('Event ${decryptedEvent.id} content is null');
       }
-      return msg;
+
+      // Deserialize the message content:
+      final result = jsonDecode(decryptedEvent.content!);
+
+      // The result should be an array of two elements, the first being
+      // A MostroMessage or CantDo
+      if (result is! List) {
+        throw FormatException(
+            'Event content ${decryptedEvent.content} should be a List');
+      }
+
+      final msgMap = result[0];
+
+      if (msgMap.containsKey('order')) {
+        final msg = MostroMessage.fromJson(msgMap['order']);
+        if (session.orderId == null && msg.id != null) {
+          session.orderId = msg.id;
+          await _sessionManager.saveSession(session);
+        }
+        return msg;
+      }
+      throw FormatException('Result not found ${decryptedEvent.content}');
     });
   }
 
@@ -78,7 +100,7 @@ class MostroService {
     String content;
     if (!session.fullPrivacy) {
       order.tradeIndex = session.keyIndex;
-      final message = order.toJson();
+      final message = {'order': order.toJson()};
       final serializedEvent = jsonEncode(message['order']);
       final bytes = utf8.encode(serializedEvent);
       final digest = sha256.convert(bytes);
@@ -86,7 +108,10 @@ class MostroService {
       final signature = session.tradeKey.sign(hash);
       content = jsonEncode([message, signature]);
     } else {
-      content = jsonEncode([order.toJson(), null]);
+      content = jsonEncode([
+        {'order': order.toJson()},
+        null
+      ]);
     }
     final event = await createNIP59Event(content, Config.mostroPubKey, session);
     await _nostrService.publishEvent(event);

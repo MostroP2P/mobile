@@ -29,7 +29,7 @@ class MostroStorage implements OrderRepository<MostroMessage> {
 
   /// Retrieve an order by ID
   @override
-  Future<MostroMessage<Order>?> getOrderById(String orderId) async {
+  Future<MostroMessage?> getOrderById(String orderId) async {
     final record = await _ordersStore.record(orderId).get(_database);
     if (record == null) return null;
     try {
@@ -37,7 +37,7 @@ class MostroStorage implements OrderRepository<MostroMessage> {
       // If the payload is indeed an Order, you can cast or do a check:
       //   final order = msg.getPayload<Order>();
       //   ...
-      return msg as MostroMessage<Order>;
+      return msg;
     } catch (e) {
       _logger.e('Error deserializing order $orderId: $e');
       return null;
@@ -48,11 +48,11 @@ class MostroStorage implements OrderRepository<MostroMessage> {
   @override
   Future<List<MostroMessage>> getAllOrders() async {
     final records = await _ordersStore.find(_database);
-    final results = <MostroMessage<Order>>[];
+    final results = <MostroMessage>[];
     for (final record in records) {
       try {
         final msg = MostroMessage.deserialized(jsonEncode(record.value));
-        results.add(msg as MostroMessage<Order>);
+        results.add(msg);
       } catch (e) {
         _logger.e('Error deserializing order with key ${record.key}: $e');
       }

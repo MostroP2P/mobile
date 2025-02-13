@@ -5,43 +5,43 @@ import 'package:mostro_mobile/data/models/payload.dart';
 
 class MostroMessage<T extends Payload> {
   String? id;
+  String? requestId;
   final Action action;
   int? tradeIndex;
   T? _payload;
 
-  MostroMessage({required this.action, this.id, T? payload, this.tradeIndex})
+  MostroMessage({required this.action, this.requestId, this.id, T? payload, this.tradeIndex})
       : _payload = payload;
 
   Map<String, dynamic> toJson() {
     return {
-      'order': {
-        'version': Config.mostroVersion,
-        'request_id': id,
-        'trade_index': tradeIndex,
-        'action': action.value,
-        'payload': _payload?.toJson(),
-      },
+      'version': Config.mostroVersion,
+      'request_id': requestId,
+      'trade_index': tradeIndex,
+      'id': id,
+      'action': action.value,
+      'payload': _payload?.toJson(),
     };
   }
 
   factory MostroMessage.fromJson(Map<String, dynamic> json) {
     return MostroMessage(
-      action: Action.fromString(json['order']['action']),
-      id: json['order']['id'],
-      tradeIndex: json['order']['trade_index'],
-      payload: json['order']['payload'] != null ? Payload.fromJson(json['order']['payload']) as T? : null,
+      action: Action.fromString(json['action']),
+      requestId: json['id'],
+      tradeIndex: json['trade_index'],
+      id: json['id'],
+      payload: json['payload'] != null
+          ? Payload.fromJson(json['payload']) as T?
+          : null,
     );
   }
 
-  factory MostroMessage.deserialized(String data) {
+  factory MostroMessage.deserialized(String json) {
     try {
-      final decoded = jsonDecode(data);
-      final event = decoded[0] as Map<String, dynamic>;
-      final order = event['order'] != null
-          ? event['order'] as Map<String, dynamic>
-          : event['cant-do'] != null
-              ? event['cant-do'] as Map<String, dynamic>
-              : throw FormatException('Missing order object');
+      final data = jsonDecode(json);
+      final order = (data is List)
+          ? data[0] as Map<String, dynamic>
+          : data as Map<String, dynamic>;
 
       final action = order['action'] != null
           ? Action.fromString(order['action'])
@@ -55,6 +55,7 @@ class MostroMessage<T extends Payload> {
 
       return MostroMessage<T>(
         action: action,
+        requestId: order['request_id'],
         id: order['id'],
         payload: payload,
         tradeIndex: tradeIndex,
