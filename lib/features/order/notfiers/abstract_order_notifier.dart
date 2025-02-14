@@ -8,6 +8,8 @@ import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/data/repositories/mostro_repository.dart';
 import 'package:mostro_mobile/shared/providers/navigation_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/notification_notifier_provider.dart';
+import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
+import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 
 class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
   final MostroRepository orderRepository;
@@ -41,6 +43,7 @@ class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
   void handleOrderUpdate() {
     final navProvider = ref.read(navigationProvider.notifier);
     final notifProvider = ref.read(notificationProvider.notifier);
+    final mostroInstance = ref.read(orderRepositoryProvider).mostroInstance;
 
     switch (state.action) {
       case Action.addInvoice:
@@ -73,15 +76,26 @@ class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
         break;
       case Action.waitingSellerToPay:
         navProvider.go('/');
-        notifProvider.showInformation(state.action, values: {'id': state.id});
+        notifProvider.showInformation(state.action, values: {
+          'id': state.id,
+          'expiration_seconds': mostroInstance?.expirationSeconds
+        });
         break;
       case Action.waitingBuyerInvoice:
-        notifProvider.showInformation(state.action);
+        notifProvider.showInformation(state.action,
+            values: {'expiration_seconds': mostroInstance?.expirationSeconds});
         break;
       case Action.buyerTookOrder:
-        notifProvider.showInformation(state.action);
+        final order = state.getPayload<Order>();
+        notifProvider.showInformation(state.action, values: {
+          'buyer_npub': order?.masterBuyerPubkey,
+          'fiat_code': order?.fiatCode,
+          'fiat_amount': order?.fiatAmount,
+          'payment_method': order?.paymentMethod,
+        });
         break;
       case Action.fiatSentOk:
+        
       case Action.holdInvoicePaymentSettled:
       case Action.rate:
       case Action.rateReceived:

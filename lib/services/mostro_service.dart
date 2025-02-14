@@ -4,6 +4,7 @@ import 'package:crypto/crypto.dart';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/app/config.dart';
+import 'package:mostro_mobile/data/models/cant_do.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/session.dart';
@@ -51,7 +52,10 @@ class MostroService {
       }
 
       if (msgMap.containsKey('cant-do')) {
-        // throw an error
+        final msg = MostroMessage.fromJson(msgMap['cant-do']);
+        final cantdo = msg.getPayload<CantDo>();
+        _logger.e('Can\'t Do: ${cantdo?.cantDo}');
+        return msg;
       }
       throw FormatException('Result not found ${decryptedEvent.content}');
     });

@@ -35,11 +35,9 @@ class TakeOrderScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(child: Text('Error: $error')),
         data: (order) {
-          // If order is null => show "Order not found"
           if (order == null) {
-            return const Center(child: Text('Order not found'));
+            return Center(child: Text('Order $orderId not found'));
           }
-
           // Build the main UI with the order
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
@@ -52,12 +50,11 @@ class TakeOrderScreen extends ConsumerWidget {
                 const SizedBox(height: 16),
                 _buildSellerAmount(ref, order),
                 const SizedBox(height: 16),
-                // Exchange rate widget
-                if (order.currency != null)
-                  ExchangeRateWidget(currency: order.currency!),
+                ExchangeRateWidget(currency: order.currency!),
                 const SizedBox(height: 16),
-                _buildBuyerAmount(int.tryParse(order.amount!)),
-                const SizedBox(height: 16),
+                if ((orderType == OrderType.sell && order.amount != '0') ||
+                    order.fiatAmount.maximum != null)
+                  _buildBuyerAmount(int.tryParse(order.amount!)),
                 _buildLnAddress(),
                 const SizedBox(height: 16),
                 _buildActionButtons(context, ref, order.orderId),
@@ -106,19 +103,19 @@ class TakeOrderScreen extends ConsumerWidget {
   }
 
   Widget _buildBuyerAmount(int? amount) {
-    final safeAmount = amount ?? 0;
-    return CustomCard(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          CurrencyTextField(controller: _satsAmountController, label: 'Sats'),
-          const SizedBox(height: 8),
-          Text('\$ $safeAmount', style: const TextStyle(color: AppTheme.grey2)),
-          const SizedBox(height: 24),
-        ],
+    return Column(children: [
+      CustomCard(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CurrencyTextField(controller: _satsAmountController, label: 'Fiat'),
+            const SizedBox(height: 8),
+          ],
+        ),
       ),
-    );
+      const SizedBox(height: 16),
+    ]);
   }
 
   Widget _buildLnAddress() {
@@ -176,8 +173,8 @@ class TakeOrderScreen extends ConsumerWidget {
               await orderDetailsNotifier.takeBuyOrder(realOrderId, satsAmount);
             } else {
               final lndAddress = _lndAddressController.text.trim();
-              await orderDetailsNotifier.takeSellOrder(
-                  realOrderId, satsAmount, lndAddress.isEmpty ? null : lndAddress);
+              await orderDetailsNotifier.takeSellOrder(realOrderId, satsAmount,
+                  lndAddress.isEmpty ? null : lndAddress);
             } // Could also pass the LN address if your method expects it
           },
           style: ElevatedButton.styleFrom(

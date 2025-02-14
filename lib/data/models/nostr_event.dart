@@ -30,13 +30,7 @@ extension NostrEventExtensions on NostrEvent {
   String? get bond => _getTagValue('bond');
   String? get expiration => _timeAgo(_getTagValue('expiration'));
   String? get platform => _getTagValue('y');
-  Order? get document {
-    final jsonString = _getTagValue('z');
-    if (jsonString != null) {
-      return Order.fromJson(jsonDecode(jsonString));
-    }
-    return null;
-  }
+  String get type => _getTagValue('z')!;
 
   String? _getTagValue(String key) {
     final tag = tags?.firstWhere((t) => t[0] == key, orElse: () => []);

@@ -11,11 +11,15 @@ const orderFilterDurationHours = 48;
 
 class OpenOrdersRepository implements OrderRepository<NostrEvent> {
   final NostrService _nostrService;
+  NostrEvent? _mostroInstance;
+
   final StreamController<List<NostrEvent>> _eventStreamController =
       StreamController.broadcast();
   final Map<String, NostrEvent> _events = {};
   final _logger = Logger();
   StreamSubscription<NostrEvent>? _subscription;
+
+  NostrEvent? get mostroInstance => _mostroInstance;
 
   OpenOrdersRepository(this._nostrService);
 
@@ -31,8 +35,12 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
     );
 
     _subscription = _nostrService.subscribeToEvents(filter).listen((event) {
-      _events[event.orderId!] = event;
-      _eventStreamController.add(_events.values.toList());
+      if (event.type == 'order') {
+        _events[event.orderId!] = event;
+        _eventStreamController.add(_events.values.toList());
+      } else if (event.type == 'info') {
+        _mostroInstance = event;
+      }
     }, onError: (error) {
       _logger.e('Error in order subscription: $error');
     });

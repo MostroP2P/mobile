@@ -25,6 +25,7 @@ class Session {
         'event_id': orderId,
         'key_index': keyIndex,
         'full_privacy': fullPrivacy,
+        'trade_key': tradeKey.private,
       };
 
   factory Session.fromJson(Map<String, dynamic> json) {

@@ -16,7 +16,7 @@ class MostroAppDrawer extends StatelessWidget {
             decoration: BoxDecoration(
                 color: AppTheme.dark1,
                 image: const DecorationImage(
-                    image: AssetImage("assets/images/mostro-icons.png"),
+                    image: AssetImage('assets/images/mostro-icons.png'),
                     fit: BoxFit.scaleDown)),
             child: Stack(
               children: [

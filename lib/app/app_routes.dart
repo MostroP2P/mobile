@@ -7,7 +7,7 @@ import 'package:mostro_mobile/features/auth/screens/welcome_screen.dart';
 import 'package:mostro_mobile/features/messages/screens/messages_list_screen.dart';
 import 'package:mostro_mobile/features/home/screens/home_screen.dart';
 import 'package:mostro_mobile/features/key_manager/key_management_screen.dart';
-import 'package:mostro_mobile/features/mostro/screens/mostro_screen.dart';
+import 'package:mostro_mobile/features/mostro/mostro_screen.dart';
 import 'package:mostro_mobile/features/trades/screens/trades_screen.dart';
 import 'package:mostro_mobile/features/relays/relays_screen.dart';
 import 'package:mostro_mobile/features/take_order/screens/add_lightning_invoice_screen.dart';
