@@ -13,5 +13,5 @@ Future<Database> openMostroDatabase() async {
 }
 
 final mostroDatabaseProvider = Provider<Database>((ref) {
-    throw UnimplementedError();
+  throw UnimplementedError();
 });

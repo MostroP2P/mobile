@@ -17,14 +17,13 @@ import 'package:mostro_mobile/features/take_order/providers/order_notifier_provi
 class TakeOrderScreen extends ConsumerWidget {
   final String orderId;
   final OrderType orderType;
-  final TextEditingController _satsAmountController = TextEditingController();
+  final TextEditingController _fiatAmountController = TextEditingController();
   final TextEditingController _lndAddressController = TextEditingController();
 
   TakeOrderScreen({super.key, required this.orderId, required this.orderType});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // 1) Watch asynchronous order fetch
     final orderAsyncValue = ref.watch(eventProvider(orderId));
 
     return Scaffold(
@@ -57,7 +56,7 @@ class TakeOrderScreen extends ConsumerWidget {
                   _buildBuyerAmount(int.tryParse(order.amount!)),
                 _buildLnAddress(),
                 const SizedBox(height: 16),
-                _buildActionButtons(context, ref, order.orderId),
+                _buildActionButtons(context, ref, order.orderId!),
               ],
             ),
           );
@@ -109,7 +108,7 @@ class TakeOrderScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            CurrencyTextField(controller: _satsAmountController, label: 'Fiat'),
+            CurrencyTextField(controller: _fiatAmountController, label: 'Fiat'),
             const SizedBox(height: 8),
           ],
         ),
@@ -142,13 +141,11 @@ class TakeOrderScreen extends ConsumerWidget {
   }
 
   Widget _buildActionButtons(
-      BuildContext context, WidgetRef ref, String? orderId) {
-    // If there's no orderId, hide the button or handle it
-    final realOrderId = orderId ?? '';
+      BuildContext context, WidgetRef ref, String orderId) {
 
-    final orderDetailsNotifier = orderType == OrderType.sell
-        ? ref.read(takeSellOrderNotifierProvider(realOrderId).notifier)
-        : ref.read(takeBuyOrderNotifierProvider(realOrderId).notifier);
+    final orderDetailsNotifier = (orderType == OrderType.sell)
+        ? ref.read(takeSellOrderNotifierProvider(orderId).notifier)
+        : ref.read(takeBuyOrderNotifierProvider(orderId).notifier);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
@@ -165,17 +162,15 @@ class TakeOrderScreen extends ConsumerWidget {
         const SizedBox(width: 16),
         ElevatedButton(
           onPressed: () async {
-            // Possibly pass the LN address or sats from the text fields
-            final satsText = _satsAmountController.text;
-            // Convert satsText to int if needed
-            final satsAmount = int.tryParse(satsText);
+            final fiatAmount = int.tryParse(_fiatAmountController.text.trim());
+
             if (orderType == OrderType.buy) {
-              await orderDetailsNotifier.takeBuyOrder(realOrderId, satsAmount);
+              await orderDetailsNotifier.takeBuyOrder(orderId, fiatAmount);
             } else {
               final lndAddress = _lndAddressController.text.trim();
-              await orderDetailsNotifier.takeSellOrder(realOrderId, satsAmount,
+              await orderDetailsNotifier.takeSellOrder(orderId, fiatAmount,
                   lndAddress.isEmpty ? null : lndAddress);
-            } // Could also pass the LN address if your method expects it
+            }
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: AppTheme.mostroGreen,

@@ -132,7 +132,7 @@ class MostroScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Invoice Expiration Windo: ${instance.invoiceExpirationWindow}',
+              'Invoice Expiration Window: ${instance.invoiceExpirationWindow}',
             ),
             const SizedBox(height: 4),
           ],
