@@ -57,7 +57,7 @@ class ExchangeRateWidget extends ConsumerWidget {
                     child: Container(
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: Colors.grey.withOpacity(0.3),
+                        color: Colors.grey.withValues(alpha: .3),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(

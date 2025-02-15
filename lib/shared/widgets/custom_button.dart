@@ -20,7 +20,7 @@ class CustomButton extends StatelessWidget {
       style: ElevatedButton.styleFrom(
         backgroundColor: isEnabled
             ? AppTheme.mostroGreen
-            : AppTheme.mostroGreen.withOpacity(0.5),
+            : AppTheme.mostroGreen.withValues(alpha: .5),
         foregroundColor: Colors.black,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),

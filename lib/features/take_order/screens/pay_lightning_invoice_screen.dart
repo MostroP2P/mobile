@@ -1,13 +1,10 @@
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/app/app_theme.dart';
 import 'package:mostro_mobile/features/take_order/widgets/order_app_bar.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
-import 'package:mostro_mobile/shared/widgets/custom_card.dart';
-import 'package:qr_flutter/qr_flutter.dart';
+import 'package:mostro_mobile/shared/widgets/pay_lightning_invoice_widget.dart';
 
 class PayLightningInvoiceScreen extends ConsumerStatefulWidget {
   final String orderId;
@@ -66,109 +63,8 @@ class _PayLightningInvoiceScreenState
             final lnInvoice = '';
             // order.buyerInvoice!;
 
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: CustomCard(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      'Pay this invoice to continue the exchange',
-                      style: TextStyle(color: Colors.white, fontSize: 18),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 20),
-                    Container(
-                      padding: const EdgeInsets.all(8.0),
-                      color: Colors.white,
-                      child: QrImageView(
-                        data: lnInvoice,
-                        version: QrVersions.auto,
-                        size: 250.0,
-                        backgroundColor: Colors.white,
-                        errorStateBuilder: (cxt, err) {
-                          return const Center(
-                            child: Text(
-                              'Failed to generate QR code',
-                              textAlign: TextAlign.center,
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        Clipboard.setData(ClipboardData(text: lnInvoice));
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Invoice copied to clipboard!'),
-                            duration: Duration(seconds: 2),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.copy),
-                      label: const Text('Copy Invoice'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF8CC541),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    // Open Wallet Button
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF8CC541),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                      ),
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content:
-                                Text('Open wallet feature not implemented.'),
-                            duration: Duration(seconds: 2),
-                          ),
-                        );
-                      },
-                      child: const Text('OPEN WALLET'),
-                    ),
-                    const SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: () async {
-                        final orderRepo = ref.read(orderRepositoryProvider);
-                        try {
-                          // We assume "cancel order" means deleting from DB
-                          if (order.id != null) {
-                            await orderRepo.deleteOrder(order.id!);
-                          }
-                          if (!mounted) return;
-                          context.go('/');
-                        } catch (e) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                  'Failed to cancel order: ${e.toString()}'),
-                            ),
-                          );
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                      ),
-                      child: const Text('CANCEL'),
-                    ),
-                  ],
-                ),
-              ),
-            );
+            return PayLightningInvoiceWidget(
+                onSubmit: () async {}, onCancel: () async {}, lnInvoice: lnInvoice);
           }
         },
       ),

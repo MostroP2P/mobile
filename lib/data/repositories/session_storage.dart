@@ -1,3 +1,4 @@
+import 'package:dart_nostr/nostr/core/key_pairs.dart';
 import 'package:sembast/sembast.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/models/session.dart';
@@ -94,16 +95,17 @@ class SessionStorage {
 
   /// Rebuilds a [Session] object from the DB record by re-deriving keys.
   Future<Session> _decodeSession(Map<String, dynamic> map) async {
-    final index = map['key_index'] as int;
+    //final index = map['key_index'] as int;
 
     // Re-derive trade key from index
-    final tradeKey = await _keyManager.deriveTradeKeyFromIndex(index);
+    // final tradeKey = await _keyManager.deriveTradeKeyFromIndex(index);
     // Re-get masterKey (potentially from secure storage/caching)
     final masterKey = await _keyManager.getMasterKey();
+    final tradeKey = map['trade_key'];
 
     var clone = cloneMap(map);
 
-    clone['trade_key'] = tradeKey;
+    clone['trade_key'] = NostrKeyPairs(private: tradeKey);
     clone['master_key'] = masterKey;
 
     return Session.fromJson(clone);

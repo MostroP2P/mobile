@@ -1,10 +1,8 @@
-import 'dart:convert';
 import 'package:mostro_mobile/data/models/range_amount.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/rating.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:dart_nostr/dart_nostr.dart';
-import 'package:mostro_mobile/data/models/order.dart';
 
 extension NostrEventExtensions on NostrEvent {
   // Getters para acceder fácilmente a los tags específicos

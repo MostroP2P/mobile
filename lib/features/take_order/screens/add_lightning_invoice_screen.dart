@@ -7,7 +7,7 @@ import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/features/take_order/widgets/order_app_bar.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
-import 'package:mostro_mobile/shared/widgets/lightning_invoice_input.dart';
+import 'package:mostro_mobile/shared/widgets/add_lightning_invoice_widget.dart';
 
 class AddLightningInvoiceScreen extends ConsumerStatefulWidget {
   final String orderId;
@@ -67,7 +67,7 @@ class _AddLightningInvoiceScreenState
                 color: AppTheme.dark1,
                 child: Padding(
                   padding: const EdgeInsets.all(16),
-                  child: LightningInvoiceInput(
+                  child: AddLightningInvoiceWidget(
                     controller: invoiceController,
                     onSubmit: () async {
                       final invoice = invoiceController.text.trim();
@@ -75,12 +75,13 @@ class _AddLightningInvoiceScreenState
                         final orderRepo = ref.read(orderRepositoryProvider);
                         try {
                           // Here you would call your method to send or update the invoice.
-                          
+
                           context.go('/');
                         } catch (e) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('Failed to update invoice: ${e.toString()}'),
+                              content: Text(
+                                  'Failed to update invoice: ${e.toString()}'),
                             ),
                           );
                         }
@@ -95,7 +96,8 @@ class _AddLightningInvoiceScreenState
                       } catch (e) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('Failed to cancel order: ${e.toString()}'),
+                            content:
+                                Text('Failed to cancel order: ${e.toString()}'),
                           ),
                         );
                       }

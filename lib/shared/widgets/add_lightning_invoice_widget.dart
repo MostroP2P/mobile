@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:mostro_mobile/app/app_theme.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
 
-class LightningInvoiceInput extends StatefulWidget {
+class AddLightningInvoiceWidget extends StatefulWidget {
   final TextEditingController controller;
   final VoidCallback onSubmit;
   final VoidCallback onCancel;
 
-  const LightningInvoiceInput({
+  const AddLightningInvoiceWidget({
     super.key,
     required this.controller,
     required this.onSubmit,
@@ -15,62 +14,18 @@ class LightningInvoiceInput extends StatefulWidget {
   });
 
   @override
-  State<LightningInvoiceInput> createState() => _LightningInvoiceInputState();
+  State<AddLightningInvoiceWidget> createState() =>
+      _AddLightningInvoiceWidgetState();
 }
 
-class _LightningInvoiceInputState extends State<LightningInvoiceInput> {
-  final MobileScannerController _controller = MobileScannerController();
+class _AddLightningInvoiceWidgetState extends State<AddLightningInvoiceWidget> {
 
-  final boxFit = BoxFit.contain;
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
-    final scanWindow = Rect.fromCenter(
-      center:
-          MediaQuery.of(context).size.center(Offset.zero).translate(0, -100),
-      width: 300,
-      height: 200,
-    );
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        MobileScanner(
-          controller: _controller,
-          scanWindow: scanWindow,
-          fit: boxFit,
-          onDetect: (barcode) {
-            if (barcode.raw != null) {
-              final String invoice = barcode.barcodes.first.rawValue!;
-              widget.controller.text = invoice;
-              // Once detected, immediately return the scanned invoice
-            }
-          },
-          errorBuilder: (context, error, child) {
-            return Center(
-              child: Text(
-                'Error: $error',
-                style: const TextStyle(color: Colors.red),
-              ),
-            );
-          },
-        ),
-        Positioned.fromRect(
-          rect: scanWindow,
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.greenAccent, width: 2),
-              color: Colors.black.withOpacity(0.1),
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
         Text(
           "Please enter a Lightning Invoice:",
           style: const TextStyle(color: AppTheme.cream1, fontSize: 16),

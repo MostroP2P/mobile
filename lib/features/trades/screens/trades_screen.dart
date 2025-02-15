@@ -75,7 +75,7 @@ class TradesScreen extends ConsumerWidget {
   }
 
   /// If your Session contains a full order snapshot, you could convert it.
-  /// Otherwise, update TradesList to accept a List<Session>.
+  /// Otherwise, update TradesList to accept a List.
   Widget _buildOrderList(List<Session> sessions) {
     if (sessions.isEmpty) {
       return const Center(
