@@ -2,6 +2,7 @@ import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
@@ -9,7 +10,6 @@ import 'package:mostro_mobile/features/order/providers/order_notifier_provider.d
 import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
 import 'package:mostro_mobile/features/order/widgets/seller_info.dart';
 import 'package:mostro_mobile/shared/widgets/currency_text_field.dart';
-import 'package:mostro_mobile/shared/widgets/exchange_rate_widget.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
@@ -49,8 +49,6 @@ class TakeOrderScreen extends ConsumerWidget {
                 const SizedBox(height: 16),
                 _buildSellerAmount(ref, order),
                 const SizedBox(height: 16),
-                ExchangeRateWidget(currency: order.currency!),
-                const SizedBox(height: 16),
                 if ((orderType == OrderType.sell && order.amount != '0') ||
                     order.fiatAmount.maximum != null)
                   _buildBuyerAmount(int.tryParse(order.amount!)),
@@ -72,7 +70,7 @@ class TakeOrderScreen extends ConsumerWidget {
       loading: () => const CircularProgressIndicator(),
       error: (error, _) => Text('Exchange rate error: $error'),
       data: (exchangeRate) {
-        // Example usage: exchangeRate might be a double or something
+        final sats = (100000000 / exchangeRate) * order.fiatAmount.minimum;
         return CustomCard(
           padding: const EdgeInsets.all(16),
           child: Row(
@@ -85,8 +83,18 @@ class TakeOrderScreen extends ConsumerWidget {
                     style: textTheme.displayLarge,
                   ),
                   Text(
-                    '${order.amount} sats',
-                    style: const TextStyle(color: AppTheme.grey2),
+                    '${NumberFormat.currency(
+                      symbol: '',
+                      decimalDigits: 2,
+                    ).format(sats)} sats',
+                    style: const TextStyle(color: AppTheme.cream1),
+                  ),
+                  Text(
+                    '1 BTC = ${NumberFormat.currency(
+                      symbol: '',
+                      decimalDigits: 2,
+                    ).format(exchangeRate)} ${order.currency}',
+                    style: const TextStyle(color: Colors.grey),
                   ),
                 ],
               )
@@ -120,11 +128,7 @@ class TakeOrderScreen extends ConsumerWidget {
         controller: _lndAddressController,
         style: const TextStyle(color: AppTheme.cream1),
         decoration: InputDecoration(
-          border: InputBorder.none,
           labelText: "Enter a Lightning Address",
-          labelStyle: const TextStyle(color: AppTheme.grey2),
-          filled: true,
-          fillColor: AppTheme.dark1,
         ),
         validator: (value) {
           if (value == null || value.isEmpty) {

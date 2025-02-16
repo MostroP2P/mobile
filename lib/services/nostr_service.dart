@@ -2,9 +2,11 @@ import 'package:dart_nostr/dart_nostr.dart';
 import 'package:dart_nostr/nostr/model/relay_informations.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/core/config.dart';
+import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
 class NostrService {
+  Settings? settings;
   static final NostrService _instance = NostrService._internal();
   factory NostrService() => _instance;
   NostrService._internal();
@@ -14,18 +16,20 @@ class NostrService {
   bool _isInitialized = false;
 
   Future<void> init() async {
-    if (_isInitialized) return;
-
+    //if (_isInitialized) return;
     _nostr = Nostr.instance;
     try {
       await _nostr.services.relays.init(
-        relaysUrl: Config.nostrRelays,
+        relaysUrl: settings?.relays ?? Config.nostrRelays,
         connectionTimeout: Config.nostrConnectionTimeout,
         onRelayListening: (relay, url, channel) {
-          _logger.i('Connected to relay: $url');
+          _logger.i('Connected to relay: $relay');
         },
         onRelayConnectionError: (relay, error, channel) {
           _logger.w('Failed to connect to relay $relay: $error');
+        },
+        onRelayConnectionDone: (relay, socket) {
+          _logger.i('Connection to relay: $relay via $socket is done');
         },
         retryOnClose: true,
         retryOnError: true,
@@ -37,6 +41,12 @@ class NostrService {
       _logger.e('Failed to initialize Nostr: $e');
       rethrow;
     }
+  }
+
+  Future<void> updateSettings(Settings settings) async {
+    _logger.i('Updating settings...');
+    this.settings = settings.copyWith();
+    await init();
   }
 
   Future<RelayInformations?> getRelayInfo(String relayUrl) async {

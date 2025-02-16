@@ -33,7 +33,7 @@ class TradeDetailScreen extends ConsumerWidget {
       ),
       title: Text(
         'TRADE DETAIL',
-        style: AppTheme.theme.textTheme.displayLarge,
+        style: AppTheme.theme.textTheme.displaySmall,
       ),
     ),
       body: orderAsyncValue.when(

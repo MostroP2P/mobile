@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mostro_mobile/core/app_theme.dart';
 
 class CurrencyTextField extends StatefulWidget {
   final TextEditingController controller;
@@ -45,6 +46,7 @@ class CurrencyTextFieldState extends State<CurrencyTextField> {
   Widget build(BuildContext context) {
     return TextFormField(
       controller: widget.controller,
+      style: const TextStyle(color: AppTheme.cream1),
       keyboardType: TextInputType.number,
       inputFormatters: [
         FilteringTextInputFormatter.allow(RegExp(r'^[0-9]*-?[0-9]*$')),
@@ -52,6 +54,7 @@ class CurrencyTextFieldState extends State<CurrencyTextField> {
       decoration: InputDecoration(
         border: InputBorder.none,
         labelText: widget.label,
+        labelStyle: const TextStyle(color: AppTheme.grey2),
       ),
       onChanged: (value) {
         final parsed = _parseInput();

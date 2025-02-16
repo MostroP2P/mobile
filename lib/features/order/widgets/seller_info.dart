@@ -14,7 +14,7 @@ class SellerInfo extends StatelessWidget {
       children: [
         const CircleAvatar(
           backgroundColor: AppTheme.grey2,
-          child: Text('S', style: TextStyle(color: AppTheme.cream1)),
+          foregroundImage: AssetImage('assets/images/launcher-icon.png'),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -30,13 +30,6 @@ class SellerInfo extends StatelessWidget {
               ),
             ],
           ),
-        ),
-        TextButton(
-          onPressed: () {
-            // Implement review logic
-          },
-          child: const Text('Read reviews',
-              style: TextStyle(color: AppTheme.mostroGreen)),
         ),
       ],
     );

@@ -4,7 +4,7 @@ class Relay {
 
   Relay({
     required this.url,
-    this.isHealthy = false,
+    this.isHealthy = true,
   });
 
   Relay copyWith({String? url, bool? isHealthy}) {

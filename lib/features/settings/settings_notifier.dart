@@ -10,7 +10,7 @@ class SettingsNotifier extends StateNotifier<Settings> {
   static final String _storageKey = SharedPreferencesKeys.appSettings.value;
 
   SettingsNotifier(this._prefs) : super(_defaultSettings()) {
-    _init();
+    //init();
   }
 
   static Settings _defaultSettings() {
@@ -20,7 +20,7 @@ class SettingsNotifier extends StateNotifier<Settings> {
     );
   }
 
-  Future<void> _init() async {
+  Future<void> init() async {
     final settingsJson = await _prefs.getString(_storageKey);
     if (settingsJson != null) {
       try {

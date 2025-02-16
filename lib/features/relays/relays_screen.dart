@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'relays_provider.dart';
 import 'relay.dart';
 
@@ -11,6 +12,9 @@ class RelaysScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+
+    final settings = ref.watch(settingsProvider);
+
     final relays = ref.watch(relaysProvider);
     return Scaffold(
       appBar: AppBar(
@@ -30,7 +34,7 @@ class RelaysScreen extends ConsumerWidget {
       backgroundColor: AppTheme.dark1,
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: relays.length,
+        itemCount: settings.relays.length,
         itemBuilder: (context, index) {
           final relay = relays[index];
           return Card(
@@ -130,7 +134,7 @@ void _showEditDialog(BuildContext context, Relay relay, WidgetRef ref) {
               final newUrl = controller.text.trim();
               if (newUrl.isNotEmpty && newUrl != relay.url) {
                 final updatedRelay = relay.copyWith(url: newUrl);
-                ref.read(relaysProvider.notifier).updateRelay(updatedRelay);
+                ref.read(relaysProvider.notifier).updateRelay(relay, updatedRelay);
               }
               Navigator.pop(dialogContext);
             },

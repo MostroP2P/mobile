@@ -14,7 +14,7 @@ class BuyerInfo extends StatelessWidget {
       children: [
         const CircleAvatar(
           backgroundColor: AppTheme.grey2,
-          child: Text('S', style: TextStyle(color: AppTheme.cream1)),
+          foregroundImage: AssetImage('assets/images/launcher-icon.png'),
         ),
         const SizedBox(width: 12),
         Expanded(

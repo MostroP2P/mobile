@@ -172,16 +172,23 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
           // 2) fiat amount
           _buildDisabledWrapper(
             enabled: _isEnabled,
-            child: CurrencyTextField(
-              key: const ValueKey('fiatAmountField'),
-              controller: _fiatAmountController,
-              label: 'Fiat amount',
-              onChanged: (parsed) {
-                setState(() {
-                  _minFiatAmount = parsed.$1;
-                  _maxFiatAmount = parsed.$2;
-                });
-              },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppTheme.dark1,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: CurrencyTextField(
+                key: const ValueKey('fiatAmountField'),
+                controller: _fiatAmountController,
+                label: 'Fiat amount',
+                onChanged: (parsed) {
+                  setState(() {
+                    _minFiatAmount = parsed.$1;
+                    _maxFiatAmount = parsed.$2;
+                  });
+                },
+              ),
             ),
           ),
 
@@ -261,16 +268,23 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
           // 2) fiat amount
           _buildDisabledWrapper(
             enabled: _isEnabled,
-            child: CurrencyTextField(
-              key: const ValueKey('fiatAmountField'),
-              controller: _fiatAmountController,
-              label: 'Fiat amount',
-              onChanged: (parsed) {
-                setState(() {
-                  _minFiatAmount = parsed.$1;
-                  _maxFiatAmount = parsed.$2;
-                });
-              },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppTheme.dark1,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: CurrencyTextField(
+                key: const ValueKey('fiatAmountField'),
+                controller: _fiatAmountController,
+                label: 'Fiat amount',
+                onChanged: (parsed) {
+                  setState(() {
+                    _minFiatAmount = parsed.$1;
+                    _maxFiatAmount = parsed.$2;
+                  });
+                },
+              ),
             ),
           ),
 
@@ -340,8 +354,8 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
   /// REUSABLE TEXT FIELD
   ///
   Widget _buildTextField(
-      String label, Key key, TextEditingController controller, {bool nullable = false,
-      IconData? suffix}) {
+      String label, Key key, TextEditingController controller,
+      {bool nullable = false, IconData? suffix}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
@@ -359,12 +373,14 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
           suffixIcon:
               suffix != null ? Icon(suffix, color: AppTheme.grey2) : null,
         ),
-        validator: nullable ? null : (value) {
-          if (value == null || value.isEmpty) {
-            return 'Please enter a value';
-          }
-          return null;
-        },
+        validator: nullable
+            ? null
+            : (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter a value';
+                }
+                return null;
+              },
       ),
     );
   }

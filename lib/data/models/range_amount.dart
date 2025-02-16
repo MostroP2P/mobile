@@ -10,11 +10,7 @@ class RangeAmount {
           'List must have at least two elements: a label and a minimum value.');
     }
 
-    final min = int.tryParse(fa[1]);
-    if (min == null) {
-      throw ArgumentError(
-          'Second element must be a valid integer representing the minimum value.');
-    }
+    final min = int.tryParse(fa[1]) ?? 0;
 
     int? max;
     if (fa.length > 2) {

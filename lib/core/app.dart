@@ -47,6 +47,7 @@ class MostroApp extends ConsumerWidget {
       },
       loading: () => const MaterialApp(
         home: Scaffold(
+          backgroundColor: AppTheme.dark1,
           body: Center(child: CircularProgressIndicator()),
         ),
       ),

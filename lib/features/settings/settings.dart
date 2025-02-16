@@ -19,7 +19,7 @@ class Settings {
   factory Settings.fromJson(Map<String, dynamic> json) {
     return Settings(
       relays: (json['relays'] as List<dynamic>?)?.cast<String>() ?? [],
-      fullPrivacyMode: json[' fullPrivacyMode'] as bool,
+      fullPrivacyMode: json['fullPrivacyMode'] as bool,
     );
   }
 }

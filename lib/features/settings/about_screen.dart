@@ -42,7 +42,6 @@ class AboutScreen extends ConsumerWidget {
             body: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Container(
-                margin: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: AppTheme.dark2,
                   borderRadius: BorderRadius.circular(20),
@@ -81,59 +80,55 @@ class AboutScreen extends ConsumerWidget {
 
     return CustomCard(
         color: AppTheme.dark1,
-        padding: EdgeInsets.all(24),
+        padding: EdgeInsets.all(16),
         child: Column(
-          spacing: 3.0,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'Pubkey: ${instance.pubKey}',
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 3),
             Text(
               'Version: ${instance.mostroVersion}',
             ),
-            const SizedBox(height: 4),
-            Text(
-              'Commit Hash: ${instance.commitHash}',
-            ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 3),
+            // Text('Commit Hash: ${instance.commitHash}',),
+            // const SizedBox(height: 3),
             Text(
               'Max Order Amount: ${formatter.format(instance.maxOrderAmount)}',
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 3),
             Text(
               'Min Order Amount: ${formatter.format(instance.minOrderAmount)}',
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 3),
             Text(
               'Expiration Hours: ${instance.expirationHours}',
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 3),
             Text(
               'Expiration Seconds: ${instance.expirationSeconds}',
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 3),
             Text(
               'Fee: ${instance.fee}',
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 3),
             Text(
               'Proof of Work: ${instance.pow}',
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 3),
             Text(
               'Hold Invoice Expiration Window: ${instance.holdInvoiceExpirationWindow}',
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 3),
             Text(
               'Hold Invoice CLTV Delta: ${instance.holdInvoiceCltvDelta}',
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 3),
             Text(
               'Invoice Expiration Window: ${instance.invoiceExpirationWindow}',
             ),
-            const SizedBox(height: 4),
           ],
         ));
   }
