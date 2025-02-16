@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/order.dart';
-import 'package:mostro_mobile/data/models/payload.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/data/repositories/mostro_storage.dart';
 import 'package:mostro_mobile/data/repositories/order_repository_interface.dart';
@@ -64,8 +63,8 @@ class MostroRepository implements OrderRepository<MostroMessage> {
     return _subscribe(session);
   }
 
-  Future<void> sendInvoice(String orderId, String invoice) async {
-    await _mostroService.sendInvoice(orderId, invoice);
+  Future<void> sendInvoice(String orderId, String invoice, int? amount) async {
+    await _mostroService.sendInvoice(orderId, invoice, amount);
   }
 
   Future<Stream<MostroMessage>> publishOrder(MostroMessage order) async {
@@ -79,9 +78,9 @@ class MostroRepository implements OrderRepository<MostroMessage> {
   }
 
   Future<void> saveMessages() async {
-    for (var m in _messages.values.toList()) {
+    //for (var m in _messages.values.toList()) {
       //await _messageStorage.addOrder(m);
-    }
+    //}
   }
 
   Future<void> saveMessage(MostroMessage message) async {
@@ -109,7 +108,7 @@ class MostroRepository implements OrderRepository<MostroMessage> {
   }
 
   @override
-  Future<void> addOrder(MostroMessage<Payload> order) {
+  Future<void> addOrder(MostroMessage order) {
     // TODO: implement addOrder
     throw UnimplementedError();
   }
@@ -121,13 +120,13 @@ class MostroRepository implements OrderRepository<MostroMessage> {
   }
 
   @override
-  Future<List<MostroMessage<Payload>>> getAllOrders() {
+  Future<List<MostroMessage>> getAllOrders() {
     // TODO: implement getAllOrders
     throw UnimplementedError();
   }
 
   @override
-  Future<void> updateOrder(MostroMessage<Payload> order) {
+  Future<void> updateOrder(MostroMessage order) {
     // TODO: implement updateOrder
     throw UnimplementedError();
   }

@@ -93,12 +93,14 @@ class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
           'payment_method': order?.paymentMethod,
         });
         break;
+      case Action.canceled:
+        navProvider.go('/');
+        notifProvider.showInformation(state.action, values: {'id': orderId});
+        break;
       case Action.fiatSentOk:
-        
       case Action.holdInvoicePaymentSettled:
       case Action.rate:
       case Action.rateReceived:
-      case Action.canceled:
       case Action.cooperativeCancelInitiatedByYou:
       case Action.disputeInitiatedByYou:
       case Action.adminSettled:

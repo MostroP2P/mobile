@@ -23,7 +23,7 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         const Text(
           'Pay this invoice to continue the exchange',
@@ -78,12 +78,12 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
               borderRadius: BorderRadius.circular(20),
             ),
           ),
-          onPressed: widget.onCancel,
+          onPressed: widget.onSubmit,
           child: const Text('OPEN WALLET'),
         ),
         const SizedBox(height: 20),
         ElevatedButton(
-          onPressed: widget.onSubmit,
+          onPressed: widget.onCancel,
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.red,
             shape: RoundedRectangleBorder(

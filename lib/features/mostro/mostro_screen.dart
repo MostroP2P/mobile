@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
-import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
-import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_app_bar.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_app_drawer.dart';
 
@@ -16,10 +13,7 @@ class MostroScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Read the current MostroInstance (here represented by a NostrEvent)
     final nostrEvent = ref.watch(orderRepositoryProvider).mostroInstance;
-
-    // For messages, assume you have a provider that holds a list of MostroMessage objects.
     final mostroMessages = ref.watch(mostroRepositoryProvider).allMessages;
 
     return nostrEvent == null
@@ -71,7 +65,6 @@ class MostroScreen extends ConsumerWidget {
           );
   }
 
-  /// Builds a simple ListTile to display an individual MostroMessage.
   Widget _buildMessageTile(MostroMessage message) {
     return ListTile(
       title: Text(

@@ -30,7 +30,7 @@ class OrderNotifier extends AbstractOrderNotifier {
   }
 
   Future<void> sendInvoice(String orderId, String invoice, int? amount) async {
-    await orderRepository.sendInvoice(orderId, invoice);
+    await orderRepository.sendInvoice(orderId, invoice, amount);
   }
 
   Future<void> cancelOrder() async {

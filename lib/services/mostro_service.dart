@@ -10,6 +10,7 @@ import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/data/repositories/session_manager.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
+import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
 
 class MostroService {
   final NostrService _nostrService;
@@ -44,6 +45,12 @@ class MostroService {
 
       if (msgMap.containsKey('order')) {
         final msg = MostroMessage.fromJson(msgMap['order']);
+
+        if (msg.action == actions.Action.canceled) {
+          await _sessionManager.deleteSession(session.keyIndex);
+          return msg;
+        }
+
         if (session.orderId == null && msg.id != null) {
           session.orderId = msg.id;
           await _sessionManager.saveSession(session);
@@ -83,12 +90,12 @@ class MostroService {
     return session;
   }
 
-  Future<void> sendInvoice(String orderId, String invoice) async {
+  Future<void> sendInvoice(String orderId, String invoice, int? amount) async {
     final content = newMessage(Action.addInvoice, orderId, payload: {
       'payment_request': [
         null,
         invoice,
-        null,
+        amount,
       ]
     });
     await sendMessage(orderId, Config.mostroPubKey, content);

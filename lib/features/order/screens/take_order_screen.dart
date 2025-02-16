@@ -19,7 +19,7 @@ class TakeOrderScreen extends ConsumerWidget {
   final OrderType orderType;
   final TextEditingController _fiatAmountController = TextEditingController();
   final TextEditingController _lndAddressController = TextEditingController();
-
+  final TextTheme textTheme = AppTheme.theme.textTheme;
   TakeOrderScreen({super.key, required this.orderId, required this.orderType});
 
   @override
@@ -82,11 +82,7 @@ class TakeOrderScreen extends ConsumerWidget {
                 children: [
                   Text(
                     '${order.fiatAmount} ${order.currency} (${order.premium}%)',
-                    style: const TextStyle(
-                      color: AppTheme.cream1,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: textTheme.displayLarge,
                   ),
                   Text(
                     '${order.amount} sats',
@@ -158,10 +154,10 @@ class TakeOrderScreen extends ConsumerWidget {
           child: const Text('CANCEL'),
         ),
         const SizedBox(width: 16),
+        // Take Order
         ElevatedButton(
           onPressed: () async {
             final fiatAmount = int.tryParse(_fiatAmountController.text.trim());
-
             if (orderType == OrderType.buy) {
               await orderDetailsNotifier.takeBuyOrder(orderId, fiatAmount);
             } else {
