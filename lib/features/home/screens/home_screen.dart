@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:heroicons/heroicons.dart';
-import 'package:mostro_mobile/app/app_theme.dart';
+import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/features/home/notifiers/home_notifier.dart';
 import 'package:mostro_mobile/features/home/providers/home_notifer_provider.dart';
 import 'package:mostro_mobile/features/home/notifiers/home_state.dart';
 import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_app_bar.dart';
-import 'package:mostro_mobile/features/home/widgets/order_filter.dart';
+import 'package:mostro_mobile/shared/widgets/order_filter.dart';
 import 'package:mostro_mobile/features/home/widgets/order_list.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_app_drawer.dart';
 
@@ -39,6 +39,7 @@ class HomeScreen extends ConsumerWidget {
               child: Column(
                 children: [
                   _buildTabs(ref, homeState, homeNotifier),
+                  const SizedBox(height: 12.0),
                   _buildFilterButton(context, homeState),
                   const SizedBox(height: 6.0),
                   Expanded(

@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mostro_mobile/app/app_theme.dart';
-import 'package:mostro_mobile/features/take_order/widgets/order_app_bar.dart';
+import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
 
-class CompletionMessage extends StatelessWidget {
-  final String message;
+class ErrorScreen extends StatelessWidget {
+  final String errorMessage;
 
-  const CompletionMessage({super.key, required this.message});
+  const ErrorScreen({super.key, required this.errorMessage});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.dark1,
-      appBar: OrderAppBar(title: 'Completion'),
+      appBar: OrderAppBar(title: 'Error'),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -20,25 +20,19 @@ class CompletionMessage extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                message,
+                errorMessage,
                 style: const TextStyle(
-                  color: AppTheme.cream1,
+                  color: Colors.red,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Thank you for using our service!',
-                style: TextStyle(color: AppTheme.grey2),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: () => context.go('/'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.mostroGreen,
+                  backgroundColor: AppTheme.cream1,
                 ),
                 child: const Text('Return to Main Screen'),
               ),

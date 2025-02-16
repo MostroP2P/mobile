@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:heroicons/heroicons.dart';
-import 'package:mostro_mobile/app/app_theme.dart';
+import 'package:mostro_mobile/core/app_theme.dart';
 
 class PrivacySwitch extends StatefulWidget {
   final bool initialValue;

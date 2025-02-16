@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mostro_mobile/app/app_theme.dart';
+import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
 import 'package:mostro_mobile/data/models/mostro_message.dart';
-import 'package:mostro_mobile/features/take_order/widgets/order_app_bar.dart';
-import 'package:mostro_mobile/features/take_order/providers/order_notifier_providers.dart';
+import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
+import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
 
 class TakeOrderScreen extends ConsumerStatefulWidget {
   final String orderId;
@@ -30,9 +30,7 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
     super.initState();
     // Listen to notifier state changes:
     ref.listen<MostroMessage>(
-      widget.orderType == OrderType.buy
-          ? takeBuyOrderNotifierProvider(widget.orderId)
-          : takeSellOrderNotifierProvider(widget.orderId),
+      orderNotifierProvider(widget.orderId),
       (previous, next) {
         // If we’re waiting for a response and the state changes from our initial state,
         // then navigate accordingly.
@@ -79,9 +77,7 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
                 _isLoading = true;
               });
               // Depending on order type, call the appropriate notifier method.
-              final notifier = widget.orderType == OrderType.buy
-                  ? ref.read(takeBuyOrderNotifierProvider(widget.orderId).notifier)
-                  : ref.read(takeSellOrderNotifierProvider(widget.orderId).notifier);
+              final notifier = ref.read(orderNotifierProvider(widget.orderId).notifier);
               // Pass along any required parameters (e.g., fiat amount or LN address) as needed.
               // Here we assume null values for simplicity.
               if (widget.orderType == OrderType.buy) {

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mostro_mobile/app/app_theme.dart';
+import 'package:mostro_mobile/core/app_theme.dart';
 
 class CustomCard extends StatelessWidget {
   final Widget child;

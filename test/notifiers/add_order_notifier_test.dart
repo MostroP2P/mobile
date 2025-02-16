@@ -6,7 +6,7 @@ import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/order.dart';
-import 'package:mostro_mobile/features/add_order/providers/add_order_notifier_provider.dart';
+import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 
@@ -86,13 +86,13 @@ void main() {
       );
 
       final notifier =
-          container.read(addOrderNotifierProvider(testUuid).notifier);
+          container.read(orderNotifierProvider(testUuid).notifier);
 
       // Submit the order
       await notifier.submitOrder(newSellOrder);
 
       // Retrieve the final state
-      final state = container.read(addOrderNotifierProvider(testUuid));
+      final state = container.read(orderNotifierProvider(testUuid));
       expect(state, isNotNull);
 
       final confirmedOrder = state.getPayload<Order>();
@@ -153,10 +153,10 @@ void main() {
       );
 
       final notifier =
-          container.read(addOrderNotifierProvider(testUuid).notifier);
+          container.read(orderNotifierProvider(testUuid).notifier);
       await notifier.submitOrder(newSellRangeOrder);
 
-      final state = container.read(addOrderNotifierProvider(testUuid));
+      final state = container.read(orderNotifierProvider(testUuid));
       expect(state, isNotNull);
 
       final confirmedOrder = state.getPayload<Order>();
@@ -215,10 +215,10 @@ void main() {
       );
 
       final notifier =
-          container.read(addOrderNotifierProvider(testUuid).notifier);
+          container.read(orderNotifierProvider(testUuid).notifier);
       await notifier.submitOrder(newBuyOrder);
 
-      final state = container.read(addOrderNotifierProvider(testUuid));
+      final state = container.read(orderNotifierProvider(testUuid));
       expect(state, isNotNull);
 
       final confirmedOrder = state.getPayload<Order>();
@@ -277,10 +277,10 @@ void main() {
       );
 
       final notifier =
-          container.read(addOrderNotifierProvider(testUuid).notifier);
+          container.read(orderNotifierProvider(testUuid).notifier);
       await notifier.submitOrder(newBuyOrderWithInvoice);
 
-      final state = container.read(addOrderNotifierProvider(testUuid));
+      final state = container.read(orderNotifierProvider(testUuid));
       expect(state, isNotNull);
 
       final confirmedOrder = state.getPayload<Order>();

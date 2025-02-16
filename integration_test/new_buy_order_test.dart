@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-import 'package:mostro_mobile/features/add_order/screens/order_confirmation_screen.dart';
+import 'package:mostro_mobile/features/order/screens/order_confirmation_screen.dart';
 import 'package:mostro_mobile/main.dart' as app;
 import 'package:flutter/material.dart';
 

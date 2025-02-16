@@ -1,4 +1,5 @@
 enum SharedPreferencesKeys {
+  appSettings('mostro_settings'),
   keyIndex('key_index'),
   fullPrivacy('full_privacy');
 

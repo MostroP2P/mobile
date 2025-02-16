@@ -4,11 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:heroicons/heroicons.dart';
-import 'package:mostro_mobile/app/app_theme.dart';
+import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/order.dart';
-import 'package:mostro_mobile/features/add_order/providers/add_order_notifier_provider.dart';
-import 'package:mostro_mobile/features/add_order/widgets/fixed_switch_widget.dart';
+import 'package:mostro_mobile/features/order/widgets/fixed_switch_widget.dart';
+import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/shared/widgets/currency_dropdown.dart';
 import 'package:mostro_mobile/shared/widgets/currency_text_field.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
@@ -448,7 +448,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
       // Generate a unique temporary ID for this new order
       final uuid = Uuid();
       final tempOrderId = uuid.v4();
-      final notifier = ref.read(addOrderNotifierProvider(tempOrderId).notifier);
+      final notifier = ref.read(orderNotifierProvider(tempOrderId).notifier);
 
       final fiatAmount = _maxFiatAmount != null ? 0 : _minFiatAmount;
       final minAmount = _maxFiatAmount != null ? _minFiatAmount : null;

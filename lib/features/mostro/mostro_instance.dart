@@ -1,6 +1,7 @@
 import 'package:dart_nostr/nostr/model/event/event.dart';
 
 class MostroInstance {
+  final String pubKey;
   final String mostroVersion;
   final String commitHash;
   final int maxOrderAmount;
@@ -14,6 +15,7 @@ class MostroInstance {
   final int invoiceExpirationWindow;
 
   MostroInstance(
+    this.pubKey,
     this.mostroVersion,
     this.commitHash,
     this.maxOrderAmount,
@@ -29,6 +31,7 @@ class MostroInstance {
 
   factory MostroInstance.fromEvent(NostrEvent event) {
     return MostroInstance(
+      event.pubKey,
       event.mostroVersion,
       event.commitHash,
       event.maxOrderAmount,

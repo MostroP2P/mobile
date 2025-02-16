@@ -4,7 +4,7 @@ import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
-import 'package:mostro_mobile/app/config.dart';
+import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/data/repositories/session_manager.dart';
 import 'package:mostro_mobile/features/key_manager/key_derivator.dart';

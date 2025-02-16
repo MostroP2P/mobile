@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mostro_mobile/app/app_theme.dart';
+import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
 
 class CurrencyDropdown extends ConsumerWidget {

@@ -80,17 +80,17 @@ class MostroRepository implements OrderRepository<MostroMessage> {
 
   Future<void> saveMessages() async {
     for (var m in _messages.values.toList()) {
-      await _messageStorage.addOrder(m);
+      //await _messageStorage.addOrder(m);
     }
   }
 
   Future<void> saveMessage(MostroMessage message) async {
-    await _messageStorage.addOrder(message);
+    //await _messageStorage.addOrder(message);
   }
 
   Future<void> deleteMessage(String messageId) async {
     _messages.remove(messageId);
-    await _messageStorage.deleteOrder(messageId);
+    //await _messageStorage.deleteOrder(messageId);
   }
 
   Future<void> loadMessages() async {

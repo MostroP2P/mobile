@@ -1,8 +1,8 @@
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mostro_mobile/app/app_theme.dart';
-import 'package:mostro_mobile/features/take_order/widgets/order_app_bar.dart';
+import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/widgets/pay_lightning_invoice_widget.dart';
 

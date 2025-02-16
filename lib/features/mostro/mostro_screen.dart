@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:mostro_mobile/app/app_theme.dart';
+import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
@@ -45,21 +45,14 @@ class MostroScreen extends ConsumerWidget {
                 ),
                 child: Column(
                   children: [
-                    const SizedBox(height: 24),
-                    Center(
-                      child: CircleAvatar(
-                        radius: 50,
-                        backgroundColor: Colors.grey,
-                        foregroundImage:
-                            AssetImage('assets/images/launcher-icon.png'),
-                      ),
-                    ),
-
                     Padding(
                       padding: const EdgeInsets.all(16.0),
-                      child: _buildInstanceDetails(
-                          MostroInstance.fromEvent(nostrEvent)),
+                      child: Text(
+                        'Mostro Messages',
+                        style: AppTheme.theme.textTheme.displayLarge,
+                      ),
                     ),
+                    const SizedBox(height: 24),
                     // List of messages
                     Expanded(
                       child: ListView.builder(
@@ -76,67 +69,6 @@ class MostroScreen extends ConsumerWidget {
               ),
             ),
           );
-  }
-
-  /// Builds the header displaying details from the MostroInstance.
-  Widget _buildInstanceDetails(MostroInstance instance) {
-    return CustomCard(
-        color: AppTheme.dark1,
-        padding: EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Version: ${instance.mostroVersion}',
-              style: GoogleFonts.robotoCondensed(
-                color: AppTheme.cream1,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Commit Hash: ${instance.commitHash}',
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Max Order Amount: ${instance.maxOrderAmount}',
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Min Order Amount: ${instance.minOrderAmount}',
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Expiration Hours: ${instance.expirationHours}',
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Expiration Seconds: ${instance.expirationSeconds}',
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Fee: ${instance.fee}',
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Proof of Work: ${instance.pow}',
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Hold Invoice Expiration Window: ${instance.holdInvoiceExpirationWindow}',
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Hold Invoice CLTV Delta: ${instance.holdInvoiceCltvDelta}',
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Invoice Expiration Window: ${instance.invoiceExpirationWindow}',
-            ),
-            const SizedBox(height: 4),
-          ],
-        ));
   }
 
   /// Builds a simple ListTile to display an individual MostroMessage.

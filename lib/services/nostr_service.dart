@@ -1,6 +1,7 @@
 import 'package:dart_nostr/dart_nostr.dart';
+import 'package:dart_nostr/nostr/model/relay_informations.dart';
 import 'package:logger/logger.dart';
-import 'package:mostro_mobile/app/config.dart';
+import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
 class NostrService {
@@ -26,6 +27,9 @@ class NostrService {
         onRelayConnectionError: (relay, error, channel) {
           _logger.w('Failed to connect to relay $relay: $error');
         },
+        retryOnClose: true,
+        retryOnError: true,
+        shouldReconnectToRelayOnNotice: true,
       );
       _isInitialized = true;
       _logger.i('Nostr initialized successfully');
@@ -33,6 +37,12 @@ class NostrService {
       _logger.e('Failed to initialize Nostr: $e');
       rethrow;
     }
+  }
+
+  Future<RelayInformations?> getRelayInfo(String relayUrl) async {
+    return await Nostr.instance.services.relays.relayInformationsDocumentNip11(
+      relayUrl: relayUrl,
+    );
   }
 
   Future<void> publishEvent(NostrEvent event) async {

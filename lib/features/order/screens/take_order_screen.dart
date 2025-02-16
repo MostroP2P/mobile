@@ -2,17 +2,17 @@ import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mostro_mobile/app/app_theme.dart';
+import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
-import 'package:mostro_mobile/features/take_order/widgets/order_app_bar.dart';
-import 'package:mostro_mobile/features/take_order/widgets/seller_info.dart';
+import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
+import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
+import 'package:mostro_mobile/features/order/widgets/seller_info.dart';
 import 'package:mostro_mobile/shared/widgets/currency_text_field.dart';
 import 'package:mostro_mobile/shared/widgets/exchange_rate_widget.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
-import 'package:mostro_mobile/features/take_order/providers/order_notifier_providers.dart';
 
 class TakeOrderScreen extends ConsumerWidget {
   final String orderId;
@@ -142,10 +142,8 @@ class TakeOrderScreen extends ConsumerWidget {
 
   Widget _buildActionButtons(
       BuildContext context, WidgetRef ref, String orderId) {
-
-    final orderDetailsNotifier = (orderType == OrderType.sell)
-        ? ref.read(takeSellOrderNotifierProvider(orderId).notifier)
-        : ref.read(takeBuyOrderNotifierProvider(orderId).notifier);
+    final orderDetailsNotifier =
+        ref.read(orderNotifierProvider(orderId).notifier);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
@@ -168,8 +166,8 @@ class TakeOrderScreen extends ConsumerWidget {
               await orderDetailsNotifier.takeBuyOrder(orderId, fiatAmount);
             } else {
               final lndAddress = _lndAddressController.text.trim();
-              await orderDetailsNotifier.takeSellOrder(orderId, fiatAmount,
-                  lndAddress.isEmpty ? null : lndAddress);
+              await orderDetailsNotifier.takeSellOrder(
+                  orderId, fiatAmount, lndAddress.isEmpty ? null : lndAddress);
             }
           },
           style: ElevatedButton.styleFrom(

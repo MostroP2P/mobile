@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:mostro_mobile/app/config.dart';
+import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/payload.dart';
 

@@ -5,7 +5,7 @@ import 'package:mockito/mockito.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/order.dart';
-import 'package:mostro_mobile/features/take_order/providers/order_notifier_providers.dart';
+import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 
 import '../mocks.mocks.dart';
@@ -82,13 +82,13 @@ void main() {
 
       // Retrieve the notifier from the provider.
       final takeBuyNotifier =
-          container.read(takeBuyOrderNotifierProvider(testOrderId).notifier);
+          container.read(orderNotifierProvider(testOrderId).notifier);
 
       // Invoke the method to simulate taking a buy order.
       await takeBuyNotifier.takeBuyOrder(testOrderId, 0);
 
       // Check that the state has been updated as expected.
-      final state = container.read(takeBuyOrderNotifierProvider(testOrderId));
+      final state = container.read(orderNotifierProvider(testOrderId));
       expect(state, isNotNull);
       // We expect the confirmation action to be "pay-invoice".
       expect(state.action, equals(Action.payInvoice));
@@ -129,12 +129,12 @@ void main() {
       ]);
 
       final takeSellNotifier =
-          container.read(takeSellOrderNotifierProvider(testOrderId).notifier);
+          container.read(orderNotifierProvider(testOrderId).notifier);
 
       // Simulate taking a sell order (with amount 0).
       await takeSellNotifier.takeSellOrder(testOrderId, 0, null);
 
-      final state = container.read(takeSellOrderNotifierProvider(testOrderId));
+      final state = container.read(orderNotifierProvider(testOrderId));
       expect(state, isNotNull);
       expect(state.action, equals(Action.addInvoice));
       final orderPayload = state.getPayload<Order>();
@@ -183,12 +183,12 @@ void main() {
       ]);
 
       final takeSellNotifier =
-          container.read(takeSellOrderNotifierProvider(testOrderId).notifier);
+          container.read(orderNotifierProvider(testOrderId).notifier);
 
       // Simulate taking a sell order with a fiat range (here amount is irrelevant because the payload carries range info).
       await takeSellNotifier.takeSellOrder(testOrderId, 0, null);
 
-      final state = container.read(takeSellOrderNotifierProvider(testOrderId));
+      final state = container.read(orderNotifierProvider(testOrderId));
       expect(state, isNotNull);
       expect(state.action, equals(Action.addInvoice));
       final orderPayload = state.getPayload<Order>();
@@ -221,12 +221,12 @@ void main() {
       ]);
 
       final takeSellNotifier =
-          container.read(takeSellOrderNotifierProvider(testOrderId).notifier);
+          container.read(orderNotifierProvider(testOrderId).notifier);
 
       // Simulate taking a sell order with a lightning address payload.
       await takeSellNotifier.takeSellOrder(testOrderId, 0, "mostro_p2p@ln.tips");
 
-      final state = container.read(takeSellOrderNotifierProvider(testOrderId));
+      final state = container.read(orderNotifierProvider(testOrderId));
       expect(state, isNotNull);
       expect(state.action, equals(Action.waitingSellerToPay));
 

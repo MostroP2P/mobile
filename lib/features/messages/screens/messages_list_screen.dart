@@ -1,7 +1,7 @@
 import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/messages/notifiers/messages_list_state.dart';
 import 'package:mostro_mobile/features/messages/providers/messages_list_provider.dart';
 import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
@@ -32,12 +32,7 @@ class MessagesListScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(16.0),
               child: Text(
                 'Messages',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: GoogleFonts.robotoCondensed().fontFamily,
-                ),
+                style: AppTheme.theme.textTheme.displayLarge,
               ),
             ),
             Expanded(
@@ -56,9 +51,11 @@ class MessagesListScreen extends ConsumerWidget {
         return const Center(child: CircularProgressIndicator());
       case MessagesListStatus.loaded:
         if (state.chats.isEmpty) {
-          return const Center(
-              child: Text('No chats available',
-                  style: TextStyle(color: Colors.white)));
+          return Center(
+              child: Text(
+            'No messages available',
+            style: AppTheme.theme.textTheme.displaySmall,
+          ));
         }
         return ListView.builder(
           itemCount: state.chats.length,

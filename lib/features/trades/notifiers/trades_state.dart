@@ -1,7 +1,7 @@
-import 'package:mostro_mobile/data/models/order.dart';
+import 'package:dart_nostr/dart_nostr.dart';
 
 class TradesState {
-  final List<Order> orders;
+  final List<NostrEvent> orders;
 
   TradesState(this.orders);
 }

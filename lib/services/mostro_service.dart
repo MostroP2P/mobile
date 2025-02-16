@@ -3,7 +3,7 @@ import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:logger/logger.dart';
-import 'package:mostro_mobile/app/config.dart';
+import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/cant_do.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';

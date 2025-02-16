@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:mostro_mobile/app/app.dart';
+import 'package:mostro_mobile/core/app.dart';
 import 'package:mostro_mobile/features/auth/providers/auth_notifier_provider.dart';
 import 'package:mostro_mobile/features/notifications/notification_controller.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';

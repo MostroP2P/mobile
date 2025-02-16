@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:mostro_mobile/app/app_theme.dart';
+import 'package:heroicons/heroicons.dart';
+import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/shared/widgets/order_filter.dart';
+import 'package:mostro_mobile/features/trades/notifiers/trades_state.dart';
 import 'package:mostro_mobile/features/trades/providers/trades_provider.dart';
 import 'package:mostro_mobile/features/trades/widgets/trades_list.dart';
 import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_app_bar.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_app_drawer.dart';
-import 'package:mostro_mobile/data/models/session.dart';
 
 class TradesScreen extends ConsumerWidget {
   const TradesScreen({super.key});
@@ -17,7 +18,7 @@ class TradesScreen extends ConsumerWidget {
     final tradesAsync = ref.watch(tradesProvider);
 
     return tradesAsync.when(
-      data: (sessions) {
+      data: (state) {
         return Scaffold(
           backgroundColor: AppTheme.dark1,
           appBar: const MostroAppBar(),
@@ -25,7 +26,7 @@ class TradesScreen extends ConsumerWidget {
           body: RefreshIndicator(
             onRefresh: () async {
               // Force a refresh of sessions
-              ref.refresh(tradesProvider);
+              //ref.refresh(tradesProvider);
             },
             child: Container(
               margin: const EdgeInsets.fromLTRB(16, 16, 16, 16),
@@ -39,17 +40,13 @@ class TradesScreen extends ConsumerWidget {
                     padding: const EdgeInsets.all(16.0),
                     child: Text(
                       'My Trades',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        fontFamily:
-                            GoogleFonts.robotoCondensed().fontFamily,
-                      ),
+                      style: AppTheme.theme.textTheme.displayLarge,
                     ),
                   ),
+                  _buildFilterButton(context, state),
+                  const SizedBox(height: 6.0),
                   Expanded(
-                    child: _buildOrderList(sessions),
+                    child: _buildOrderList(state),
                   ),
                   const BottomNavBar(),
                 ],
@@ -74,10 +71,47 @@ class TradesScreen extends ConsumerWidget {
     );
   }
 
-  /// If your Session contains a full order snapshot, you could convert it.
-  /// Otherwise, update TradesList to accept a List.
-  Widget _buildOrderList(List<Session> sessions) {
-    if (sessions.isEmpty) {
+  Widget _buildFilterButton(BuildContext context, TradesState homeState) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          OutlinedButton.icon(
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                backgroundColor: Colors.transparent,
+                builder: (BuildContext context) {
+                  return const Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: OrderFilter(),
+                  );
+                },
+              );
+            },
+            icon: const HeroIcon(HeroIcons.funnel,
+                style: HeroIconStyle.outline, color: Colors.white),
+            label: const Text("FILTER", style: TextStyle(color: Colors.white)),
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: Colors.white),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            "${homeState.orders.length} trades",
+            style: const TextStyle(color: Colors.white),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+  Widget _buildOrderList(TradesState state) {
+    if (state.orders.isEmpty) {
       return const Center(
         child: Text(
           'No trades available for this type',
@@ -86,6 +120,6 @@ class TradesScreen extends ConsumerWidget {
       );
     }
 
-    return TradesList(sessions: sessions);
+    return TradesList(state: state);
   }
 }

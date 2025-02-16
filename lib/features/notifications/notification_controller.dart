@@ -3,7 +3,7 @@ import 'dart:ui';
 
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:flutter/material.dart';
-import 'package:mostro_mobile/app/app.dart';
+import 'package:mostro_mobile/core/app.dart';
 import 'package:http/http.dart' as http;
 
 class NotificationController {
