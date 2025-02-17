@@ -32,7 +32,7 @@ class _AddLightningInvoiceWidgetState extends State<AddLightningInvoiceWidget> {
           amount: '${widget.amount}',
           rightText: ' sats',
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 16),
         TextFormField(
           key: const Key('invoiceTextField'),
           controller: widget.controller,
@@ -47,7 +47,9 @@ class _AddLightningInvoiceWidgetState extends State<AddLightningInvoiceWidget> {
             hintStyle: const TextStyle(color: AppTheme.grey2),
             filled: true,
             fillColor: AppTheme.dark1,
+            alignLabelWithHint: true,
           ),
+          maxLines: 6,
         ),
         const SizedBox(height: 16),
         Row(

@@ -10,11 +10,11 @@ class RangeAmount {
           'List must have at least two elements: a label and a minimum value.');
     }
 
-    final min = int.tryParse(fa[1]) ?? 0;
+    final min = double.tryParse(fa[1])?.toInt() ?? 0;
 
     int? max;
     if (fa.length > 2) {
-      max = int.tryParse(fa[2]);
+      max = double.tryParse(fa[2])?.toInt();
     }
 
     return RangeAmount(min, max);

@@ -19,17 +19,17 @@ class SessionStorage {
     this._keyManager,
   );
 
-  /// Retrieves all sessions from the database (decodes them as well).
   Future<List<Session>> getAllSessions() async {
     final records = await _store.find(_database);
     final sessions = <Session>[];
     for (final record in records) {
       try {
         final session = await _decodeSession(record.value);
+        _logger.i('Decoded session ${session.toJson()}');
         sessions.add(session);
       } catch (e) {
         _logger.e('Error decoding session for key ${record.key}: $e');
-        // Optionally handle or remove corrupted records
+        deleteSession(record.key);
       }
     }
     return sessions;
@@ -62,7 +62,6 @@ class SessionStorage {
   }
 
   /// Finds and deletes sessions considered expired, returning a list of deleted IDs.
-  /// (Keeps domain logic here for simplicity; you could also move it into the Manager.)
   Future<List<int>> deleteExpiredSessions(
       int sessionExpirationHours, int maxBatchSize) async {
     final now = DateTime.now();

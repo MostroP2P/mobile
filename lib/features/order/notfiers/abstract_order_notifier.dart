@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
+import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/cant_do.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
@@ -77,12 +78,15 @@ class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
         navProvider.go('/');
         notifProvider.showInformation(state.action, values: {
           'id': state.id,
-          'expiration_seconds': mostroInstance?.expirationSeconds
+          'expiration_seconds':
+              mostroInstance?.expirationSeconds ?? Config.expirationSeconds,
         });
         break;
       case Action.waitingBuyerInvoice:
-        notifProvider.showInformation(state.action,
-            values: {'expiration_seconds': mostroInstance?.expirationSeconds});
+        notifProvider.showInformation(state.action, values: {
+          'expiration_seconds':
+              mostroInstance?.expirationSeconds ?? Config.expirationSeconds,
+        });
         break;
       case Action.buyerTookOrder:
         final order = state.getPayload<Order>();

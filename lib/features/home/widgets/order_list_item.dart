@@ -139,22 +139,27 @@ class OrderListItem extends StatelessWidget {
         ? order.paymentMethods[0]
         : 'No payment method';
 
+    String methods = order.paymentMethods.join('\n');
+
     return Row(
       children: [
-        HeroIcon(
-          _getPaymentMethodIcon(method),
-          style: HeroIconStyle.outline,
-          color: AppTheme.cream1,
-          size: 16,
+        Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: HeroIcon(
+            _getPaymentMethodIcon(method),
+            style: HeroIconStyle.outline,
+            color: AppTheme.cream1,
+            size: 16,
+          ),
         ),
         const SizedBox(width: 4),
         Flexible(
           child: Text(
-            method,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppTheme.grey2,
-                ),
-            overflow: TextOverflow.ellipsis,
+            methods,
+            style: AppTheme.theme.textTheme.bodyMedium?.copyWith(
+              color: AppTheme.grey2,
+            ),
+            overflow: TextOverflow.fade,
             softWrap: true,
           ),
         ),

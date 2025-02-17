@@ -16,6 +16,7 @@ class TradesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tradesAsync = ref.watch(tradesProvider);
+    final provider = ref.watch(tradesProvider.notifier);
 
     return tradesAsync.when(
       data: (state) {
@@ -25,8 +26,7 @@ class TradesScreen extends ConsumerWidget {
           drawer: const MostroAppDrawer(),
           body: RefreshIndicator(
             onRefresh: () async {
-              // Force a refresh of sessions
-              //ref.refresh(tradesProvider);
+              await provider.refresh();
             },
             child: Container(
               margin: const EdgeInsets.fromLTRB(16, 16, 16, 16),
@@ -108,7 +108,6 @@ class TradesScreen extends ConsumerWidget {
       ),
     );
   }
-
 
   Widget _buildOrderList(TradesState state) {
     if (state.orders.isEmpty) {

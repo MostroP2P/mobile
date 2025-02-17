@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
+import 'package:logger/logger.dart';
+import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 class PayLightningInvoiceWidget extends StatefulWidget {
   final VoidCallback onSubmit;
   final VoidCallback onCancel;
+  final Logger logger = Logger();
   final String lnInvoice;
 
-  const PayLightningInvoiceWidget({
+  PayLightningInvoiceWidget({
     super.key,
     required this.onSubmit,
     required this.onCancel,
@@ -27,18 +31,18 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
       children: [
         const Text(
           'Pay this invoice to continue the exchange',
-          style: TextStyle(color: Colors.white, fontSize: 18),
+          style: TextStyle(color: AppTheme.cream1, fontSize: 18),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 20),
         Container(
           padding: const EdgeInsets.all(8.0),
-          color: Colors.white,
+          color: AppTheme.cream1,
           child: QrImageView(
             data: widget.lnInvoice,
             version: QrVersions.auto,
             size: 250.0,
-            backgroundColor: Colors.white,
+            backgroundColor: AppTheme.cream1,
             errorStateBuilder: (cxt, err) {
               return const Center(
                 child: Text(
@@ -53,6 +57,8 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
         ElevatedButton.icon(
           onPressed: () {
             Clipboard.setData(ClipboardData(text: widget.lnInvoice));
+            widget.logger
+                .i('Copied LN Invoice to clipboard: ${widget.lnInvoice}');
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('Invoice copied to clipboard!'),
@@ -63,7 +69,7 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
           icon: const Icon(Icons.copy),
           label: const Text('Copy Invoice'),
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF8CC541),
+            backgroundColor: AppTheme.mostroGreen,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
             ),
@@ -73,7 +79,7 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
         // Open Wallet Button
         ElevatedButton(
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF8CC541),
+            backgroundColor: AppTheme.mostroGreen,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
             ),
@@ -82,15 +88,33 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
           child: const Text('OPEN WALLET'),
         ),
         const SizedBox(height: 20),
-        ElevatedButton(
-          onPressed: widget.onCancel,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.red,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ElevatedButton(
+              onPressed: widget.onCancel,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+              child: const Text('CANCEL'),
             ),
-          ),
-          child: const Text('CANCEL'),
+            const SizedBox(width: 8),
+            ElevatedButton(
+              onPressed: () {
+                context.go('/');
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.mostroGreen,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+              child: const Text('DONE'),
+            ),
+          ],
         ),
       ],
     );

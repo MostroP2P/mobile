@@ -47,7 +47,7 @@ class PaymentRequest implements Payload {
     final amount = json.length > 2 ? json[2] as int? : null;
     return PaymentRequest(
       order: order,
-      lnInvoice: lnInvoice as String?,
+      lnInvoice: lnInvoice,
       amount: amount,
     );
   }

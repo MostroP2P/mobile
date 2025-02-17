@@ -33,7 +33,7 @@ class _AddLightningInvoiceScreenState
       body: CustomCard(
         padding: const EdgeInsets.all(16),
         child: Material(
-          color: AppTheme.dark1,
+          color: AppTheme.dark2,
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: AddLightningInvoiceWidget(

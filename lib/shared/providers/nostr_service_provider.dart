@@ -8,7 +8,7 @@ final nostrProvider = Provider<NostrService>((ref) {
 });
 
 final nostrServicerProvider = Provider<NostrService>((ref) {
-  final service = ref.watch(nostrProvider);
+  final service = ref.read(nostrProvider);
 
   ref.listen<Settings>(settingsProvider, (previous, next) {
     service.updateSettings(next);
@@ -16,4 +16,3 @@ final nostrServicerProvider = Provider<NostrService>((ref) {
 
   return service;
 });
-

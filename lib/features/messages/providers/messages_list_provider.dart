@@ -13,3 +13,5 @@ final messagesDetailNotifierProvider = StateNotifierProvider.family<
     MessagesDetailNotifier, MessagesDetailState, String>((ref, chatId) {
   return MessagesDetailNotifier(chatId);
 });
+
+

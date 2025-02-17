@@ -52,9 +52,7 @@ class CurrencyTextFieldState extends State<CurrencyTextField> {
         FilteringTextInputFormatter.allow(RegExp(r'^[0-9]*-?[0-9]*$')),
       ],
       decoration: InputDecoration(
-        border: InputBorder.none,
         labelText: widget.label,
-        labelStyle: const TextStyle(color: AppTheme.grey2),
       ),
       onChanged: (value) {
         final parsed = _parseInput();

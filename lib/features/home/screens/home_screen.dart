@@ -18,7 +18,7 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final homeStateAsync = ref.watch(homeNotifierProvider);
-    final homeNotifier = ref.read(homeNotifierProvider.notifier);
+    final homeNotifier = ref.watch(homeNotifierProvider.notifier);
 
     return homeStateAsync.when(
       data: (homeState) {

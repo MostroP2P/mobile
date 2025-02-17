@@ -126,7 +126,7 @@ void main() {
         'User creates a new SELL range order with VES=10-20 and premium=1',
         (tester) async {
       app.main();
-      await tester.pumpAndSettle();
+      await tester.pumpAndSettle(const Duration(seconds: 1));
 
       // Navigate to the “Add Order” screen
       final createOrderButton = find.byKey(const Key('createOrderButton'));

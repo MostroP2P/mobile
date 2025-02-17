@@ -127,7 +127,7 @@ void main() {
         'User creates a new BUY order with EUR=10 and SATS=1500 using a lightning invoice',
         (tester) async {
       app.main();
-      await tester.pumpAndSettle();
+      await tester.pumpAndSettle(const Duration(seconds: 1));
 
       // Navigate to the “Add Order” screen
       final createOrderButton = find.byKey(const Key('createOrderButton'));
@@ -234,7 +234,7 @@ void main() {
         'User creates a new BUY order with EUR=10 at Market rate using a lightning invoice with no amount',
         (tester) async {
       app.main();
-      await tester.pumpAndSettle();
+      await tester.pumpAndSettle(const Duration(seconds: 1));
 
       // Navigate to the “Add Order” screen
       final createOrderButton = find.byKey(const Key('createOrderButton'));
@@ -351,7 +351,7 @@ void main() {
         'User creates a new BUY order with VES=100 and premium=1 using a LN Address',
         (tester) async {
       app.main();
-      await tester.pumpAndSettle();
+      await tester.pumpAndSettle(const Duration(seconds: 1));
 
       // Navigate to the “Add Order” screen
       final createOrderButton = find.byKey(const Key('createOrderButton'));
