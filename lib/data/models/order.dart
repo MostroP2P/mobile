@@ -86,14 +86,8 @@ class Order implements Payload {
     ['kind', 'status', 'fiat_code', 'fiat_amount', 'payment_method', 'premium']
         .forEach(validateField);
 
-    // Safe type casting
-    T? safeCast<T>(String key, T Function(dynamic) converter) {
-      final value = json[key];
-      return value == null ? null : converter(value);
-    }
-
     return Order(
-      id: safeCast<String>('id', (v) => v.toString()),
+      id: json['id'],
       kind: OrderType.fromString(json['kind'].toString()),
       status: Status.fromString(json['status']),
       amount: json['amount'],

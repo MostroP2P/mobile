@@ -4,6 +4,7 @@ import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/repositories/mostro_storage.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
+import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
@@ -11,6 +12,15 @@ import 'package:mostro_mobile/shared/providers/session_manager_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final appInitializerProvider = FutureProvider<void>((ref) async {
+
+  final settings = ref.read(settingsProvider);
+  final service = ref.read(nostrServiceProvider);
+  await service.updateSettings(settings);
+
+  ref.listen<Settings>(settingsProvider, (previous, next) {
+    service.updateSettings(next);
+  });
+
   final keyManager = ref.read(keyManagerProvider);
   bool hasMaster = await keyManager.hasMasterKey();
   if (!hasMaster) {
@@ -20,9 +30,6 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
   final sessionManager = ref.read(sessionManagerProvider);
   await sessionManager.init();
 
-  final settings = ref.read(settingsProvider);
-  final service = ref.read(nostrProvider);
-  service.updateSettings(settings);
 
   final mostroRepository = ref.read(mostroRepositoryProvider);
   await mostroRepository.loadMessages();

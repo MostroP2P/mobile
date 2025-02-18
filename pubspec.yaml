@@ -35,7 +35,7 @@ dependencies:
   http: ^1.2.2
   dart_nostr: ^9.0.0
   qr_flutter: ^4.0.0
-  heroicons: ^0.10.0
+  heroicons: ^0.11.0
   crypto: ^3.0.5
   convert: ^3.1.1
   shared_preferences: ^2.3.3
@@ -59,8 +59,7 @@ dependencies:
   bip32: ^2.0.0
   path: ^1.9.0
   sembast: ^3.8.2
-  path_provider: ^2.1.5
-  mobile_scanner: ^6.0.6
+  sembast_web: ^2.4.1
 
   flutter_localizations:
     sdk: flutter
@@ -70,6 +69,12 @@ dependencies:
       url: https://github.com/chebizarro/dart-nip44.git
       ref: master
 
+  tekartik_app_flutter_sembast:
+    git:
+      url: https://github.com/tekartik/app_flutter_utils.dart
+      ref: dart3a
+      path: app_sembast
+    version: '>=0.1.0'
 
 dev_dependencies:
   flutter_test:

@@ -15,27 +15,9 @@ class HomeNotifier extends AsyncNotifier<HomeState> {
   @override
   Future<HomeState> build() async {
     state = const AsyncLoading();
-
     _repository = ref.watch(orderRepositoryProvider);
 
-    _repository!.subscribeToOrders();
-
-    _subscription = _repository!.eventsStream.listen((orders) {
-      final orderType = state.value?.orderType ?? OrderType.sell;
-      final filteredOrders = _filterOrders(orders, orderType);
-      state = AsyncData(
-        HomeState(
-          orderType: orderType,
-          filteredOrders: filteredOrders,
-        ),
-      );
-    }, onError: (error) {
-      state = AsyncError(error, StackTrace.current);
-    });
-
-    ref.onDispose(() {
-      _subscription?.cancel();
-    });
+    _subscribeToOrderUpdates();
 
     return HomeState(
       orderType: OrderType.sell,
@@ -43,24 +25,49 @@ class HomeNotifier extends AsyncNotifier<HomeState> {
     );
   }
 
-  /// Refreshes the data by re-initializing the notifier.
-  Future<void> refresh() async {
+  void _subscribeToOrderUpdates() {
     _subscription?.cancel();
-    await build();
+    _repository!.subscribeToOrders();
+
+    _subscription = _repository!.eventsStream.listen(
+      (orders) {
+        _updateFilteredOrders(orders);
+      },
+      onError: (error) {
+        state = AsyncError(error, StackTrace.current);
+      },
+    );
+
+    ref.onDispose(() => _subscription?.cancel());
+  }
+
+  /// Refreshes the data by fetching new orders without rebuilding the whole notifier.
+  Future<void> refresh() async {
+    final orders = _repository?.currentEvents;
+    if (orders != null) {
+      _updateFilteredOrders(orders);
+    }
+  }
+
+  void _updateFilteredOrders(List<NostrEvent> orders) {
+    final orderType = state.value?.orderType ?? OrderType.sell;
+    final filteredOrders = _filterOrders(orders, orderType);
+
+    state = AsyncData(
+      HomeState(
+        orderType: orderType,
+        filteredOrders: filteredOrders,
+      ),
+    );
   }
 
   List<NostrEvent> _filterOrders(List<NostrEvent> orders, OrderType type) {
-    final currentState = state.value;
-    if (currentState == null) return [];
-
     final sessionManager = ref.watch(sessionManagerProvider);
-    final orderIds = sessionManager.sessions.map((s) => s.orderId);
+    final orderIds = sessionManager.sessions.map((s) => s.orderId).toSet();
 
     return orders
         .where((order) => !orderIds.contains(order.orderId))
-        .where((order) => type == OrderType.buy
-            ? order.orderType == OrderType.buy
-            : order.orderType == OrderType.sell)
+        .where((order) => order.orderType == type)
         .where((order) => order.status == 'pending')
         .toList();
   }
@@ -69,13 +76,14 @@ class HomeNotifier extends AsyncNotifier<HomeState> {
     final currentState = state.value;
     if (currentState == null || _repository == null) return;
     final allOrders = _repository!.currentEvents;
-    final filteredOrders = _filterOrders(allOrders, type);
 
     state = AsyncData(
       currentState.copyWith(
         orderType: type,
-        filteredOrders: filteredOrders,
       ),
     );
+
+    _updateFilteredOrders(allOrders);
+
   }
 }

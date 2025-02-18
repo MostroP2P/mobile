@@ -4,7 +4,7 @@ import 'package:mostro_mobile/data/repositories/open_orders_repository.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 
 final orderRepositoryProvider = Provider((ref) {
-  final nostrService = ref.read(nostrServicerProvider);
+  final nostrService = ref.read(nostrServiceProvider);
   return OpenOrdersRepository(nostrService);
 });
 
@@ -15,7 +15,8 @@ final orderEventsProvider = StreamProvider<List<NostrEvent>>((ref) {
   return orderRepository.eventsStream;
 });
 
-final eventProvider = FutureProvider.family<NostrEvent?, String>((ref, orderId) {
+final eventProvider =
+    FutureProvider.family<NostrEvent?, String>((ref, orderId) {
   final repository = ref.watch(orderRepositoryProvider);
   return repository.getOrderById(orderId);
 });

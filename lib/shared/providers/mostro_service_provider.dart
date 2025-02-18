@@ -7,7 +7,7 @@ import 'package:mostro_mobile/shared/providers/session_manager_provider.dart';
 
 final mostroServiceProvider = Provider<MostroService>((ref) {
   final sessionStorage = ref.watch(sessionManagerProvider);
-  final nostrService = ref.watch(nostrServicerProvider);
+  final nostrService = ref.watch(nostrServiceProvider);
   return MostroService(nostrService, sessionStorage);
 });
 

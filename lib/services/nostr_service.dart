@@ -20,7 +20,8 @@ class NostrService {
     _nostr = Nostr.instance;
     try {
       await _nostr.services.relays.init(
-        relaysUrl: settings?.relays ?? Config.nostrRelays,
+        ensureToClearRegistriesBeforeStarting: false,
+        relaysUrl: settings!.relays,
         connectionTimeout: Config.nostrConnectionTimeout,
         onRelayListening: (relay, url, channel) {
           _logger.i('Connected to relay: $relay');
@@ -33,7 +34,6 @@ class NostrService {
         },
         retryOnClose: true,
         retryOnError: true,
-        shouldReconnectToRelayOnNotice: true,
       );
       _isInitialized = true;
       _logger.i('Nostr initialized successfully');
