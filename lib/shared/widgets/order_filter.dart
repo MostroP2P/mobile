@@ -52,7 +52,6 @@ class OrderFilter extends StatelessWidget {
           SizedBox(height: 20),
           buildDropdownSection(context, 'Fiat currencies', []),
           buildDropdownSection(context, 'Payment methods', []),
-          buildDropdownSection(context, 'Countries', []),
           buildDropdownSection(context, 'Rating', []),
         ],
       ),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/features/relays/widgets/relay_selector.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/widgets/privacy_switch_widget.dart';
 
@@ -21,35 +22,47 @@ class SettingsScreen extends ConsumerWidget {
           icon: const HeroIcon(HeroIcons.arrowLeft, color: AppTheme.cream1),
           onPressed: () => context.pop(),
         ),
-        title: Text(
-          'APP SETTINGS',
+        title: const Text(
+          'SETTINGS',
           style: TextStyle(
             color: AppTheme.cream1,
           ),
         ),
       ),
-      backgroundColor: AppTheme.dark1,
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            const SizedBox(height: 16),
-            const Text(
-              'Privacy',
-              style: TextStyle(color: AppTheme.cream1, fontSize: 18),
+      body: ListView(
+        padding: const EdgeInsets.all(24),
+        children: [
+          Card(
+            child: ListTile(
+              title: Text('General Settings'),
             ),
-            const SizedBox(height: 8),
-            PrivacySwitch(
-              initialValue: settings.fullPrivacyMode,
-              onChanged: (newValue) {
-                ref
-                    .watch(settingsProvider.notifier)
-                    .updatePrivacyModeSetting(newValue);
-              },
+          ),
+          const SizedBox(height: 16),
+          PrivacySwitch(
+            initialValue: settings.fullPrivacyMode,
+            onChanged: (newValue) {
+              ref
+                  .read(settingsProvider.notifier)
+                  .updatePrivacyModeSetting(newValue);
+            },
+          ),
+          const SizedBox(height: 16),
+          Card(
+            child: ListTile(
+              title: Text('Relays'),
             ),
-            const SizedBox(height: 16),
-          ],
-        ),
+          ),
+          SizedBox(
+            height: 200,
+            child: RelaySelector(),
+          ),
+          const SizedBox(height: 16),
+          Card(
+            child: ListTile(
+              title: Text('Mostro'),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -25,16 +25,26 @@ class Rating {
     }
 
     try {
-      final json = jsonDecode(data) as Map<String, dynamic>;
-      return Rating(
-        totalReviews: _parseInt(json, 'total_reviews'),
-        totalRating: _parseDouble(json, 'total_rating'),
-        lastRating: _parseInt(json, 'last_rating'),
-        maxRate: _parseInt(json, 'max_rate'),
-        minRate: _parseInt(json, 'min_rate'),
-      );
+      final json = jsonDecode(data);
+      if (json is Map<String, dynamic>) {
+        return Rating(
+          totalReviews: _parseInt(json, 'total_reviews'),
+          totalRating: _parseDouble(json, 'total_rating'),
+          lastRating: _parseInt(json, 'last_rating'),
+          maxRate: _parseInt(json, 'max_rate'),
+          minRate: _parseInt(json, 'min_rate'),
+        );
+      } else {
+        return Rating(
+          totalReviews: 0,
+          totalRating: (json as int).toDouble(),
+          lastRating: 0,
+          maxRate: 0,
+          minRate: 0,
+        );
+      }
     } catch (e) {
-      throw FormatException('Failed to parse rating data: $e');
+      return Rating.empty();
     }
   }
 

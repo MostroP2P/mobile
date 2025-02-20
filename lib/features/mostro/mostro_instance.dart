@@ -53,19 +53,19 @@ extension MostroInstanceExtensions on NostrEvent {
     return (tag != null && tag.length > 1) ? tag[1] : 'Tag: $key not found';
   }
 
-  String get pubKey => _getTagValue('d')!;
+  String get pubKey => _getTagValue('d');
   String get mostroVersion => _getTagValue('mostro_version');
   String get commitHash => _getTagValue('mostro_commit_hash');
   int get maxOrderAmount => int.parse(_getTagValue('max_order_amount'));
   int get minOrderAmount => int.parse(_getTagValue('min_order_amount'));
   int get expirationHours => int.parse(_getTagValue('expiration_hours'));
   int get expirationSeconds => int.parse(_getTagValue('expiration_seconds'));
-  double get fee => double.parse(_getTagValue('fee')!);
-  int get pow => int.parse(_getTagValue('pow')!);
+  double get fee => double.parse(_getTagValue('fee'));
+  int get pow => int.parse(_getTagValue('pow'));
   int get holdInvoiceExpirationWindow =>
-      int.parse(_getTagValue('hold_invoice_expiration_window')!);
+      int.parse(_getTagValue('hold_invoice_expiration_window'));
   int get holdInvoiceCltvDelta =>
-      int.parse(_getTagValue('hold_invoice_cltv_delta')!);
+      int.parse(_getTagValue('hold_invoice_cltv_delta'));
   int get invoiceExpirationWindow =>
-      int.parse(_getTagValue('invoice_expiration_window')!);
+      int.parse(_getTagValue('invoice_expiration_window'));
 }

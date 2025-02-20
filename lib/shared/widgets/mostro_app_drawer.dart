@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 
 class MostroAppDrawer extends StatelessWidget {
@@ -16,22 +15,9 @@ class MostroAppDrawer extends StatelessWidget {
             decoration: BoxDecoration(
                 color: AppTheme.dark1,
                 image: const DecorationImage(
-                    image: AssetImage('assets/images/mostro-icons.png'),
+                    image: AssetImage('assets/images/logo.png'),
                     fit: BoxFit.scaleDown)),
             child: Stack(
-              children: [
-                Positioned(
-                  bottom: 8.0,
-                  left: 4.0,
-                  child: Text(
-                    'Mostro',
-                    style: TextStyle(
-                      color: AppTheme.cream1,
-                      fontFamily: GoogleFonts.robotoCondensed().fontFamily,
-                    ),
-                  ),
-                )
-              ],
             ),
           ),
           ListTile(
@@ -47,7 +33,7 @@ class MostroAppDrawer extends StatelessWidget {
             },
           ),
           ListTile(
-            title: const Text('App Settings'),
+            title: const Text('Settings'),
             onTap: () {
               context.push('/settings');
             },

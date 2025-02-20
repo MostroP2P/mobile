@@ -51,7 +51,7 @@ class _PrivacySwitchState extends State<PrivacySwitch> {
         const SizedBox(width: 8),
         // A text label that changes based on the switch value.
         Text(
-          _isFullPrivacy ? 'Full Privacy' : 'Normal',
+          _isFullPrivacy ? 'Full Privacy' : 'Normal Privacy',
           style: const TextStyle(color: Colors.white),
         ),
       ],

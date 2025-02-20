@@ -20,7 +20,6 @@ class NostrService {
     _nostr = Nostr.instance;
     try {
       await _nostr.services.relays.init(
-        ensureToClearRegistriesBeforeStarting: false,
         relaysUrl: settings!.relays,
         connectionTimeout: Config.nostrConnectionTimeout,
         onRelayListening: (relay, url, channel) {

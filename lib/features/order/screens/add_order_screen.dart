@@ -9,7 +9,7 @@ import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/features/order/widgets/fixed_switch_widget.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
-import 'package:mostro_mobile/shared/widgets/currency_dropdown.dart';
+import 'package:mostro_mobile/shared/widgets/currency_combo_box.dart';
 import 'package:mostro_mobile/shared/widgets/currency_text_field.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
 import 'package:uuid/uuid.dart';
@@ -28,7 +28,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
   final _paymentMethodController = TextEditingController();
   final _lightningInvoiceController = TextEditingController();
 
-  bool _marketRate = false; // false => Fixed, true => Market
+  bool _marketRate = true; // false => Fixed, true => Market
   double _premiumValue = 0.0; // slider for -10..10
   bool _isEnabled = false; // controls enabled or not
 
@@ -156,7 +156,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
           const SizedBox(height: 16),
 
           // 1) Currency dropdown always enabled
-          CurrencyDropdown(
+          CurrencyComboBox(
             key: const Key("fiatCodeDropdown"),
             label: 'Fiat code',
             onSelected: (String fiatCode) {
@@ -253,7 +253,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
           const SizedBox(height: 16),
 
           // 1) Currency dropdown always enabled
-          CurrencyDropdown(
+          CurrencyComboBox(
             key: const Key('fiatCodeDropdown'),
             label: 'Fiat code',
             onSelected: (String fiatCode) {
@@ -328,7 +328,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
           _buildDisabledWrapper(
             enabled: _isEnabled,
             child: _buildTextField(
-              'Lightning Invoice or Lightning Address',
+              'Lightning Address or Lightning Invoice without an amount',
               const Key('lightningInvoiceField'),
               _lightningInvoiceController,
               nullable: true,
