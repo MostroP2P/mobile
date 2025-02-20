@@ -32,6 +32,7 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
         DateTime.now().subtract(Duration(hours: orderFilterDurationHours));
     var filter = NostrFilter(
       kinds: const [orderEventKind],
+      authors: [Config.mostroPubKey],
       since: filterTime,
     );
 
