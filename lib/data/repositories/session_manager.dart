@@ -43,7 +43,7 @@ class SessionManager {
       masterKey: masterKey,
       keyIndex: keyIndex,
       tradeKey: tradeKey,
-      fullPrivacy: true,
+      fullPrivacy: false,
       orderId: orderId,
     );
 

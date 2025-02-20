@@ -22,6 +22,8 @@ class MostroService {
   Stream<MostroMessage> subscribe(Session session) {
     final filter = NostrFilter(p: [session.tradeKey.public]);
     return _nostrService.subscribeToEvents(filter).asyncMap((event) async {
+      _logger.i('Event received from Mostro: $event');
+
       final decryptedEvent = await _nostrService.decryptNIP59Event(
           event, session.tradeKey.private);
 
@@ -116,7 +118,7 @@ class MostroService {
     if (!session.fullPrivacy) {
       order.tradeIndex = session.keyIndex;
       final message = {'order': order.toJson()};
-      final serializedEvent = jsonEncode(message['order']);
+      final serializedEvent = jsonEncode(message);
       final bytes = utf8.encode(serializedEvent);
       final digest = sha256.convert(bytes);
       final hash = hex.encode(digest.bytes);
@@ -128,8 +130,10 @@ class MostroService {
         null
       ]);
     }
+    _logger.i('Publishing order: $content');
     final event = await createNIP59Event(content, Config.mostroPubKey, session);
     await _nostrService.publishEvent(event);
+    _logger.i('Publishing order: $event');
     return session;
   }
 

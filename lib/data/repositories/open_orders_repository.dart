@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:dart_nostr/nostr/model/request/filter.dart';
 import 'package:logger/logger.dart';
+import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/repositories/order_repository_interface.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
@@ -38,7 +39,8 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
       if (event.type == 'order') {
         _events[event.orderId!] = event;
         _eventStreamController.add(_events.values.toList());
-      } else if (event.type == 'info') {
+      } else if (event.type == 'info' && event.pubkey == Config.mostroPubKey) {
+        _logger.i('Mostro instance info loaded: $event');
         _mostroInstance = event;
       }
     }, onError: (error) {
