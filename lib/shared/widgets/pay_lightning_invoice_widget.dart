@@ -61,7 +61,7 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
                 .i('Copied LN Invoice to clipboard: ${widget.lnInvoice}');
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Invoice copied to clipboard!'),
+                content: Text('Invoice copied to clipboard'),
                 duration: Duration(seconds: 2),
               ),
             );

@@ -193,6 +193,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.3"
+  circular_countdown:
+    dependency: "direct main"
+    description:
+      name: circular_countdown
+      sha256: "471e6fdcf36f35ce6d1003ca99b009b940195ed63847f67b775ed1a75ed487cf"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.1.0"
   cli_util:
     dependency: transitive
     description:
@@ -456,14 +464,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.0.0"
-  flutter_settings_ui:
-    dependency: "direct main"
-    description:
-      name: flutter_settings_ui
-      sha256: dcc506fab724192594e5c232b6214a941abd6e7b5151626635b89258fadbc17c
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.0.1"
   flutter_svg:
     dependency: transitive
     description:

@@ -5,6 +5,7 @@ import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
+import 'package:mostro_mobile/shared/utils/currency_utils.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 
 class OrderListItem extends StatelessWidget {
@@ -27,55 +28,36 @@ class OrderListItem extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildHeader(context),
-            const SizedBox(height: 16),
-            _buildOrderDetails(context),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(order.orderType == OrderType.buy ? 'buying' : 'selling'),
+                Text('${order.expiration}'),
+              ],
+            ),
             const SizedBox(height: 8),
+            Row(
+              children: [
+                _getOrderOffering(context, order),
+                const SizedBox(width: 16),
+              ],
+            ),
+            const SizedBox(height: 8),
+            _buildPaymentMethod(context),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Text(
+                    '${order.rating?.totalRating ?? 0.0} ${getStars(order.rating?.totalRating ?? 0.0)}'),
+              ],
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          '${order.name} ${order.rating?.totalRating ?? 0}/${order.rating?.maxRate ?? 5} (${order.rating?.totalReviews ?? 0})',
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: AppTheme.cream1,
-              ),
-        ),
-        Text(
-          'Time: ${order.expiration}',
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: AppTheme.cream1,
-              ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildOrderDetails(BuildContext context) {
-    return Row(
-      children: [
-        _getOrderOffering(context, order),
-        const SizedBox(width: 16),
-        Expanded(
-          flex: 4,
-          child: _buildPaymentMethod(context),
-        ),
-      ],
-    );
-  }
-
   Widget _getOrderOffering(BuildContext context, NostrEvent order) {
-    String offering = order.orderType == OrderType.buy ? 'Buying' : 'Selling';
-    String amountText = (order.amount != null && order.amount != '0')
-        ? ' ${order.amount!}'
-        : '';
-
     return Expanded(
       flex: 3,
       child: Column(
@@ -86,34 +68,14 @@ class OrderListItem extends StatelessWidget {
               children: [
                 _buildStyledTextSpan(
                   context,
-                  offering,
-                  amountText,
-                  isValue: true,
-                  isBold: true,
-                ),
-                TextSpan(
-                  text: 'sats',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: AppTheme.cream1,
-                        fontWeight: FontWeight.normal,
-                      ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 8.0),
-          RichText(
-            text: TextSpan(
-              children: [
-                _buildStyledTextSpan(
-                  context,
-                  'for ',
+                  '    ',
                   '${order.fiatAmount}',
                   isValue: true,
                   isBold: true,
                 ),
                 TextSpan(
-                  text: '${order.currency} ',
+                  text:
+                      '${order.currency} ${CurrencyUtils.getFlagFromCurrency(order.currency!)} ',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: AppTheme.cream1,
                         fontSize: 16.0,
@@ -156,9 +118,7 @@ class OrderListItem extends StatelessWidget {
         Flexible(
           child: Text(
             methods,
-            style: AppTheme.theme.textTheme.bodyMedium?.copyWith(
-              color: AppTheme.grey2,
-            ),
+            style: AppTheme.theme.textTheme.bodySmall,
             overflow: TextOverflow.fade,
             softWrap: true,
           ),
@@ -206,5 +166,9 @@ class OrderListItem extends StatelessWidget {
             ]
           : [],
     );
+  }
+
+  String getStars(double count) {
+    return count > 0 ? '⭐' * count.toInt() : '';
   }
 }
