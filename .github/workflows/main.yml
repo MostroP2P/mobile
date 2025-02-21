@@ -55,7 +55,7 @@ jobs:
 
         #8 Upload Artifacts
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: Releases
           path: |
@@ -78,7 +78,6 @@ jobs:
             echo "TAG_EXISTS=true" >> $GITHUB_ENV
           else
             echo "TAG_EXISTS=false" >> $GITHUB_ENV
-          fi
 
         #12 Modify Tag if it Exists
       - name: Modify Tag
@@ -93,5 +92,4 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           artifacts: "build/app/outputs/flutter-apk/app-release.apk,build/app/outputs/bundle/release/app-release.aab,build/ios_build.tar.gz"
-          tag: v${{ github.run_number}}
-          token: ${{ secrets.TOKEN }}
+          tag: v${{ env.VERSION }}
