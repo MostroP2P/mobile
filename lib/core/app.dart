@@ -35,6 +35,7 @@ class MostroApp extends ConsumerWidget {
         return MaterialApp.router(
           title: 'Mostro',
           theme: AppTheme.theme,
+          darkTheme: AppTheme.theme,
           routerConfig: goRouter,
           localizationsDelegates: const [
             S.delegate,
@@ -45,7 +46,9 @@ class MostroApp extends ConsumerWidget {
           supportedLocales: S.delegate.supportedLocales,
         );
       },
-      loading: () => const MaterialApp(
+      loading: () => MaterialApp(
+        theme: AppTheme.theme,
+        darkTheme: AppTheme.theme,
         home: Scaffold(
           backgroundColor: AppTheme.dark1,
           body: Center(child: CircularProgressIndicator()),

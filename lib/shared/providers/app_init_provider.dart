@@ -12,14 +12,9 @@ import 'package:mostro_mobile/shared/providers/session_manager_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final appInitializerProvider = FutureProvider<void>((ref) async {
-
   final settings = ref.read(settingsProvider);
   final service = ref.read(nostrServiceProvider);
   await service.updateSettings(settings);
-
-  ref.listen<Settings>(settingsProvider, (previous, next) {
-    service.updateSettings(next);
-  });
 
   final keyManager = ref.read(keyManagerProvider);
   bool hasMaster = await keyManager.hasMasterKey();
@@ -30,6 +25,10 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
   final sessionManager = ref.read(sessionManagerProvider);
   await sessionManager.init();
 
+  ref.listen<Settings>(settingsProvider, (previous, next) {
+    service.updateSettings(next);
+    sessionManager.fullPrivacyMode = next.fullPrivacyMode;
+  });
 
   final mostroRepository = ref.read(mostroRepositoryProvider);
   await mostroRepository.loadMessages();

@@ -122,7 +122,7 @@ class MostroService {
       final bytes = utf8.encode(serializedEvent);
       final digest = sha256.convert(bytes);
       final hash = hex.encode(digest.bytes);
-      final signature = session.tradeKey.sign(hash);
+      final signature = session.masterKey.sign(hash);
       content = jsonEncode([message, signature]);
     } else {
       content = jsonEncode([

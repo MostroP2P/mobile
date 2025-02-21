@@ -65,7 +65,9 @@ class HomeNotifier extends AsyncNotifier<HomeState> {
     final sessionManager = ref.watch(sessionManagerProvider);
     final orderIds = sessionManager.sessions.map((s) => s.orderId).toSet();
 
-    return orders
+    orders.sort((o1, o2) => o1.expirationDate.compareTo(o2.expirationDate));
+
+    return orders.reversed
         .where((order) => !orderIds.contains(order.orderId))
         .where((order) => order.orderType == type)
         .where((order) => order.status == 'pending')
@@ -84,6 +86,5 @@ class HomeNotifier extends AsyncNotifier<HomeState> {
     );
 
     _updateFilteredOrders(allOrders);
-
   }
 }

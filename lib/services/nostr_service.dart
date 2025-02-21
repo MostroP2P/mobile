@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:dart_nostr/nostr/model/relay_informations.dart';
 import 'package:logger/logger.dart';
@@ -22,6 +23,7 @@ class NostrService {
       await _nostr.services.relays.init(
         relaysUrl: settings!.relays,
         connectionTimeout: Config.nostrConnectionTimeout,
+        shouldReconnectToRelayOnNotice: true,
         onRelayListening: (relay, url, channel) {
           _logger.i('Connected to relay: $relay');
         },
@@ -42,10 +44,13 @@ class NostrService {
     }
   }
 
-  Future<void> updateSettings(Settings settings) async {
-    _logger.i('Updating settings...');
-    this.settings = settings.copyWith();
-    await init();
+  Future<void> updateSettings(Settings newSettings) async {
+    settings = newSettings.copyWith();
+    final relays = Nostr.instance.services.relays.relaysList;
+    if (!ListEquality().equals(relays, settings?.relays) ) {
+      _logger.i('Updating relays...');
+      await init();
+    }
   }
 
   Future<RelayInformations?> getRelayInfo(String relayUrl) async {

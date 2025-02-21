@@ -56,7 +56,7 @@ class RelaySelector extends ConsumerWidget {
     );
   }
 
-  void _showAddDialog(BuildContext context, WidgetRef ref) {
+  static void showAddDialog(BuildContext context, WidgetRef ref) {
     final controller = TextEditingController();
     showDialog(
       useRootNavigator: true,
@@ -78,8 +78,8 @@ class RelaySelector extends ConsumerWidget {
               if (url.isNotEmpty) {
                 final newRelay = Relay(url: url, isHealthy: true);
                 ref.read(relaysProvider.notifier).addRelay(newRelay);
+                Navigator.pop(dialogContext);
               }
-              
             },
             child: const Text('Add'),
           ),

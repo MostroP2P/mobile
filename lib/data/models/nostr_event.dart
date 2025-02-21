@@ -27,6 +27,7 @@ extension NostrEventExtensions on NostrEvent {
   String? get geohash => _getTagValue('g');
   String? get bond => _getTagValue('bond');
   String? get expiration => _timeAgo(_getTagValue('expiration'));
+  DateTime get expirationDate => _getTimeStamp(_getTagValue('expiration')!);
   String? get platform => _getTagValue('y');
   String get type => _getTagValue('z')!;
 
@@ -40,6 +41,12 @@ extension NostrEventExtensions on NostrEvent {
     return (tag != null && tag.length > 1)
         ? RangeAmount.fromList(tag)
         : RangeAmount.empty();
+  }
+
+  DateTime _getTimeStamp(String timestamp) {
+    final ts = int.parse(timestamp);
+    return DateTime.fromMillisecondsSinceEpoch(ts * 1000)
+        .subtract(Duration(hours: 36));
   }
 
   String _timeAgo(String? ts) {

@@ -17,6 +17,7 @@ class SettingsNotifier extends StateNotifier<Settings> {
     return Settings(
       relays: Config.nostrRelays,
       fullPrivacyMode: false,
+      mostroInstance: Config.mostroPubKey,
     );
   }
 
@@ -41,6 +42,11 @@ class SettingsNotifier extends StateNotifier<Settings> {
 
   Future<void> updatePrivacyModeSetting(bool newValue) async {
     state = state.copyWith(privacyModeSetting: newValue);
+    await _saveToPrefs();
+  }
+
+  Future<void> updateMostroInstanceSetting(String newValue) async {
+    state = state.copyWith(mostroInstance: newValue);
     await _saveToPrefs();
   }
 

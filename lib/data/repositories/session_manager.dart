@@ -5,9 +5,11 @@ import 'package:mostro_mobile/data/repositories/session_storage.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager.dart';
 
 class SessionManager {
+  final Logger _logger = Logger();
+
   final KeyManager _keyManager;
   final SessionStorage _sessionStorage;
-  final Logger _logger = Logger();
+  bool fullPrivacyMode = true;
 
   // In-memory session cache
   final Map<int, Session> _sessions = {};
@@ -16,6 +18,9 @@ class SessionManager {
   final int sessionExpirationHours = 48;
   static const cleanupIntervalMinutes = 30;
   static const maxBatchSize = 100;
+
+  /// Returns all in-memory sessions.
+  List<Session> get sessions => _sessions.values.toList();
 
   SessionManager(
     this._keyManager,
@@ -43,7 +48,7 @@ class SessionManager {
       masterKey: masterKey,
       keyIndex: keyIndex,
       tradeKey: tradeKey,
-      fullPrivacy: true,
+      fullPrivacy: fullPrivacyMode,
       orderId: orderId,
     );
 
@@ -119,7 +124,4 @@ class SessionManager {
   void dispose() {
     _cleanupTimer?.cancel();
   }
-
-  /// Returns all in-memory sessions.
-  List<Session> get sessions => _sessions.values.toList();
 }

@@ -75,6 +75,7 @@ dependencies:
       ref: dart3a
       path: app_sembast
     version: '>=0.1.0'
+  flutter_settings_ui: ^3.0.1
 
 dev_dependencies:
   flutter_test:
