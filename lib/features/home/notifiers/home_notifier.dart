@@ -21,7 +21,7 @@ class HomeNotifier extends AsyncNotifier<HomeState> {
 
     return HomeState(
       orderType: OrderType.sell,
-      filteredOrders: [],
+      filteredOrders: state.value?.filteredOrders ?? [],
     );
   }
 

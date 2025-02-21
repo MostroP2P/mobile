@@ -17,14 +17,7 @@ class MostroAppDrawer extends StatelessWidget {
                 image: const DecorationImage(
                     image: AssetImage('assets/images/logo.png'),
                     fit: BoxFit.scaleDown)),
-            child: Stack(
-            ),
-          ),
-          ListTile(
-            title: const Text('Relays'),
-            onTap: () {
-              context.push('/relays');
-            },
+            child: Stack(),
           ),
           ListTile(
             title: const Text('Key Management'),

@@ -53,7 +53,7 @@ class AppTheme {
       textTheme: _buildTextTheme(),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          foregroundColor: Colors.white,
+          foregroundColor: AppTheme.cream1,
           backgroundColor: mostroGreen,
           textStyle: GoogleFonts.robotoCondensed(
             fontWeight: FontWeight.w500,
@@ -133,9 +133,13 @@ class AppTheme {
           fontWeight: FontWeight.w500,
           fontSize: 14.0,
         ), // For secondary text
-        titleLarge: TextStyle(
+        titleMedium: TextStyle(
           fontWeight: FontWeight.w500,
           fontSize: 16.0,
+        ), // For form labels
+        titleLarge: TextStyle(
+          fontWeight: FontWeight.w500,
+          fontSize: 18.0,
         ), // For form labels
         bodyLarge: TextStyle(
           fontWeight: FontWeight.w400,

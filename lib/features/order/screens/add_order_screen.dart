@@ -91,6 +91,12 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
   }
 
   Widget _buildTabs(BuildContext context, WidgetRef ref, OrderType orderType) {
+    final currencyCode = ref.watch(selectedFiatCodeProvider);
+    if (currencyCode != null && currencyCode.isNotEmpty) {
+      _isEnabled = true;
+    } else {
+      _isEnabled = false;
+    }
     return Container(
       decoration: const BoxDecoration(
         color: AppTheme.dark1,

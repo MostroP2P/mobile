@@ -90,10 +90,11 @@ class TradesScreen extends ConsumerWidget {
               );
             },
             icon: const HeroIcon(HeroIcons.funnel,
-                style: HeroIconStyle.outline, color: Colors.white),
-            label: const Text("FILTER", style: TextStyle(color: Colors.white)),
+                style: HeroIconStyle.outline, color: AppTheme.cream1),
+            label:
+                const Text("FILTER", style: TextStyle(color: AppTheme.cream1)),
             style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Colors.white),
+              side: const BorderSide(color: AppTheme.cream1),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
               ),
@@ -102,7 +103,7 @@ class TradesScreen extends ConsumerWidget {
           const SizedBox(width: 8),
           Text(
             "${homeState.orders.length} trades",
-            style: const TextStyle(color: Colors.white),
+            style: const TextStyle(color: AppTheme.cream1),
           ),
         ],
       ),
@@ -114,7 +115,7 @@ class TradesScreen extends ConsumerWidget {
       return const Center(
         child: Text(
           'No trades available for this type',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: AppTheme.cream1),
         ),
       );
     }

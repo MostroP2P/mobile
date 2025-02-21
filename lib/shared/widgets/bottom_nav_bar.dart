@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:heroicons/heroicons.dart';
+import 'package:mostro_mobile/core/app_theme.dart';
 
 class BottomNavBar extends StatelessWidget {
   const BottomNavBar({super.key});
@@ -14,7 +15,7 @@ class BottomNavBar extends StatelessWidget {
           height: 56,
           width: 240,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppTheme.cream1,
             borderRadius: BorderRadius.circular(28),
           ),
           child: Row(

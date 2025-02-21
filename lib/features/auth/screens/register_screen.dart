@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/auth/notifiers/auth_state.dart';
 import 'package:mostro_mobile/features/auth/providers/auth_notifier_provider.dart';
 import 'package:mostro_mobile/shared/widgets/custom_button.dart';
@@ -46,7 +47,7 @@ class RegisterScreen extends HookConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Register', style: TextStyle(color: Colors.white)),
+        title: const Text('Register', style: TextStyle(color: AppTheme.cream1)),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -63,16 +64,16 @@ class RegisterScreen extends HookConsumerWidget {
                 controller: privateKeyController,
                 decoration: InputDecoration(
                   labelText: 'Private Key (nsec or hex)',
-                  labelStyle: const TextStyle(color: Colors.white70),
+                  labelStyle: const TextStyle(color: AppTheme.cream1),
                   enabledBorder: const UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.white70),
+                    borderSide: BorderSide(color: AppTheme.cream1),
                   ),
                   suffixIcon: IconButton(
                     icon: Icon(
                       obscurePrivateKey
                           ? Icons.visibility_off
                           : Icons.visibility,
-                      color: Colors.white70,
+                      color: AppTheme.cream1,
                     ),
                     onPressed: () {
                       ref.read(obscurePrivateKeyProvider.notifier).state =
@@ -80,7 +81,7 @@ class RegisterScreen extends HookConsumerWidget {
                     },
                   ),
                 ),
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: AppTheme.cream1),
                 obscureText: obscurePrivateKey,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -100,21 +101,21 @@ class RegisterScreen extends HookConsumerWidget {
                 controller: pinController,
                 decoration: InputDecoration(
                   labelText: 'PIN',
-                  labelStyle: const TextStyle(color: Colors.white70),
+                  labelStyle: const TextStyle(color: AppTheme.cream1),
                   enabledBorder: const UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.white70),
+                    borderSide: BorderSide(color: AppTheme.cream1),
                   ),
                   suffixIcon: IconButton(
                     icon: Icon(
                       obscurePin ? Icons.visibility_off : Icons.visibility,
-                      color: Colors.white70,
+                      color: AppTheme.cream1,
                     ),
                     onPressed: () {
                       ref.read(obscurePinProvider.notifier).state = !obscurePin;
                     },
                   ),
                 ),
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: AppTheme.cream1),
                 keyboardType: TextInputType.number,
                 obscureText: obscurePin,
                 validator: (value) {
@@ -134,16 +135,16 @@ class RegisterScreen extends HookConsumerWidget {
                 controller: confirmPinController,
                 decoration: InputDecoration(
                   labelText: 'Confirm PIN',
-                  labelStyle: const TextStyle(color: Colors.white70),
+                  labelStyle: const TextStyle(color: AppTheme.cream1),
                   enabledBorder: const UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.white70),
+                    borderSide: BorderSide(color: AppTheme.cream1),
                   ),
                   suffixIcon: IconButton(
                     icon: Icon(
                       obscureConfirmPin
                           ? Icons.visibility_off
                           : Icons.visibility,
-                      color: Colors.white70,
+                      color: AppTheme.cream1,
                     ),
                     onPressed: () {
                       ref.read(obscureConfirmPinProvider.notifier).state =
@@ -151,7 +152,7 @@ class RegisterScreen extends HookConsumerWidget {
                     },
                   ),
                 ),
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: AppTheme.cream1),
                 keyboardType: TextInputType.number,
                 obscureText: obscureConfirmPin,
                 validator: (value) {
@@ -173,7 +174,7 @@ class RegisterScreen extends HookConsumerWidget {
                 return biometricsAvailable
                     ? SwitchListTile(
                         title: const Text('Use Biometrics',
-                            style: TextStyle(color: Colors.white)),
+                            style: TextStyle(color: AppTheme.cream1)),
                         value: useBiometrics,
                         onChanged: (bool value) {
                           ref.read(useBiometricsProvider.notifier).state =

@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mostro_mobile/core/app_theme.dart';
 
 class ClickableAmountText extends StatefulWidget {
   final String leftText;
@@ -49,7 +50,7 @@ class _ClickableAmountTextState extends State<ClickableAmountText> {
       text: TextSpan(
         style: DefaultTextStyle.of(context)
             .style
-            .copyWith(fontSize: 16, color: Colors.white),
+            .copyWith(fontSize: 16, color: AppTheme.cream1),
         children: [
           TextSpan(text: widget.leftText),
           TextSpan(

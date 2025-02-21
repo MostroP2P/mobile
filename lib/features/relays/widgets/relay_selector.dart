@@ -13,46 +13,53 @@ class RelaySelector extends ConsumerWidget {
     final settings = ref.watch(settingsProvider);
     final relays = ref.watch(relaysProvider);
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: settings.relays.length,
-      itemBuilder: (context, index) {
-        final relay = relays[index];
-        return Card(
-          color: AppTheme.dark2,
-          margin: const EdgeInsets.symmetric(vertical: 8),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          child: ListTile(
-            title: Text(
-              relay.url,
-              style: const TextStyle(color: Colors.white),
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      child: ListView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        itemCount: settings.relays.length,
+        itemBuilder: (context, index) {
+          final relay = relays[index];
+          return Card(
+            color: AppTheme.dark2,
+            margin: const EdgeInsets.symmetric(vertical: 8),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
             ),
-            leading: Icon(
-              Icons.circle,
-              color: relay.isHealthy ? Colors.green : Colors.red,
-              size: 16,
+            child: ListTile(
+              title: Text(
+                relay.url,
+                style: const TextStyle(color: AppTheme.cream1),
+              ),
+              leading: Icon(
+                Icons.circle,
+                color: relay.isHealthy ? Colors.green : Colors.red,
+                size: 16,
+              ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.edit, color: AppTheme.cream1),
+                    onPressed: () {
+                      _showEditDialog(context, relay, ref);
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: AppTheme.cream1),
+                    onPressed: () {
+                      ref.read(relaysProvider.notifier).removeRelay(relay.url);
+                    },
+                  ),
+                ],
+              ),
             ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.edit, color: Colors.white),
-                  onPressed: () {
-                    _showEditDialog(context, relay, ref);
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.white),
-                  onPressed: () {
-                    ref.read(relaysProvider.notifier).removeRelay(relay.url);
-                  },
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
@@ -69,7 +76,9 @@ class RelaySelector extends ConsumerWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () {},
+            onPressed: () {
+              Navigator.pop(dialogContext);
+            },
             child: const Text('Cancel'),
           ),
           TextButton(

@@ -26,7 +26,7 @@ class WelcomeScreen extends StatelessWidget {
                 'NO-KYC P2P Lightning\nexchange on top of\nnostr',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: AppTheme.cream1,
                     ),
                 textAlign: TextAlign.center,
               ),
@@ -51,7 +51,7 @@ class WelcomeScreen extends StatelessWidget {
                 child: const Text(
                   'Skip for now',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppTheme.cream1,
                     decoration: TextDecoration.underline,
                     fontSize: 14,
                   ),

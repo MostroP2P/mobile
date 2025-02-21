@@ -2,6 +2,7 @@ import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/messages/notifiers/messages_detail_state.dart';
 import 'package:mostro_mobile/features/messages/providers/messages_list_provider.dart';
 import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
@@ -12,7 +13,8 @@ class MessagesDetailScreen extends ConsumerStatefulWidget {
   const MessagesDetailScreen({super.key, required this.chatId});
 
   @override
-  ConsumerState<MessagesDetailScreen> createState() => _MessagesDetailScreenState();
+  ConsumerState<MessagesDetailScreen> createState() =>
+      _MessagesDetailScreenState();
 }
 
 class _MessagesDetailScreenState extends ConsumerState<MessagesDetailScreen> {
@@ -79,7 +81,7 @@ class _MessagesDetailScreenState extends ConsumerState<MessagesDetailScreen> {
         ),
         child: Text(
           message.content!,
-          style: const TextStyle(color: Colors.white),
+          style: const TextStyle(color: AppTheme.cream1),
         ),
       ),
     );
@@ -94,7 +96,7 @@ class _MessagesDetailScreenState extends ConsumerState<MessagesDetailScreen> {
           Expanded(
             child: TextField(
               controller: _textController,
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(color: AppTheme.cream1),
               decoration: InputDecoration(
                 hintText: 'Type a message...',
                 hintStyle: const TextStyle(color: Colors.grey),

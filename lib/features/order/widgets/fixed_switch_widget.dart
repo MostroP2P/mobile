@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mostro_mobile/core/app_theme.dart';
 
 class FixedSwitch extends StatefulWidget {
   final bool initialValue;
@@ -41,7 +42,7 @@ class _FixedSwitchState extends State<FixedSwitch> {
         const SizedBox(width: 8),
         Text(
           marketRate ? 'Market' : 'Fixed',
-          style: const TextStyle(color: Colors.white),
+          style: const TextStyle(color: AppTheme.cream1),
         ),
       ],
     );

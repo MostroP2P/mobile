@@ -73,7 +73,7 @@ class MessagesListScreen extends ConsumerWidget {
       case MessagesListStatus.empty:
         return const Center(
             child: Text('No chats available',
-                style: TextStyle(color: Colors.white)));
+                style: TextStyle(color: AppTheme.cream1)));
     }
   }
 }
@@ -99,7 +99,7 @@ class ChatListItem extends StatelessWidget {
               backgroundColor: Colors.grey,
               child: Text(
                 chat.pubkey.isNotEmpty ? chat.pubkey[0] : '?',
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: AppTheme.cream1),
               ),
             ),
             const SizedBox(width: 16),
@@ -113,7 +113,7 @@ class ChatListItem extends StatelessWidget {
                       Text(
                         chat.pubkey,
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: AppTheme.cream1,
                           fontWeight: FontWeight.bold,
                         ),
                       ),

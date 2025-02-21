@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/cant_do.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
@@ -24,10 +25,10 @@ class PaymentConfirmationScreen extends ConsumerWidget {
         elevation: 0,
         title: const Text(
           'PAYMENT',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: AppTheme.cream1),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back, color: AppTheme.cream1),
           onPressed: () => context.go('/'),
         ),
       ),
@@ -65,14 +66,14 @@ class PaymentConfirmationScreen extends ConsumerWidget {
                   child: const Icon(
                     Icons.check,
                     size: 50,
-                    color: Colors.white,
+                    color: AppTheme.cream1,
                   ),
                 ),
                 const SizedBox(height: 24),
                 Text(
                   '$satoshis',
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: AppTheme.cream1,
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                   ),
@@ -80,7 +81,7 @@ class PaymentConfirmationScreen extends ConsumerWidget {
                 const Text(
                   'received',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppTheme.cream1,
                     fontSize: 18,
                   ),
                 ),
@@ -111,14 +112,14 @@ class PaymentConfirmationScreen extends ConsumerWidget {
         return Center(
           child: Text(
             'Error: $error',
-            style: const TextStyle(color: Colors.white),
+            style: const TextStyle(color: AppTheme.cream1),
           ),
         );
       default:
         return Center(
           child: Text(
             'Unkown Action: ${state.action}',
-            style: const TextStyle(color: Colors.white),
+            style: const TextStyle(color: AppTheme.cream1),
           ),
         );
     }

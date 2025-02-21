@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
 
 class ExchangeRateWidget extends ConsumerWidget {
@@ -34,12 +35,12 @@ class ExchangeRateWidget extends ConsumerWidget {
                   symbol: '',
                   decimalDigits: 2,
                 ).format(exchangeRate)} $currency',
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: AppTheme.cream1),
               ),
               Row(
                 children: [
                   Text('price in $currency',
-                      style: const TextStyle(color: Colors.grey)),
+                      style: const TextStyle(color: AppTheme.grey)),
                   const SizedBox(width: 4),
                   GestureDetector(
                     onTap: () {
@@ -57,12 +58,12 @@ class ExchangeRateWidget extends ConsumerWidget {
                     child: Container(
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: Colors.grey.withValues(alpha: .3),
+                        color: AppTheme.grey.withValues(alpha: .3),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
                         Icons.sync,
-                        color: Colors.white,
+                        color: AppTheme.cream1,
                         size: 12,
                       ),
                     ),

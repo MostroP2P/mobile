@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
@@ -88,7 +87,7 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
 
   @override
   Widget build(BuildContext context) {
-
+    final textTheme = AppTheme.theme.textTheme;
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -101,7 +100,6 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
           'KEY MANAGEMENT',
           style: TextStyle(
             color: AppTheme.cream1,
-            fontFamily: GoogleFonts.robotoCondensed().fontFamily,
           ),
         ),
       ),
@@ -109,51 +107,45 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: AppTheme.mediumPadding,
+              padding: AppTheme.largePadding,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Master Key
-                  const Text(
-                    'Master Key',
-                    style: TextStyle(color: AppTheme.cream1, fontSize: 18),
-                  ),
+                  Text('Master Key', style: textTheme.titleLarge),
                   const SizedBox(height: 8),
                   SelectableText(
                     _masterKey ?? '',
-                    style: const TextStyle(color: AppTheme.cream1),
                   ),
+                  const SizedBox(height: 8),
                   TextButton(
                     onPressed: _masterKey != null
                         ? () => _copyToClipboard(_masterKey!, 'Master Key')
                         : null,
                     child: const Text('Copy Master Key'),
                   ),
+                  const SizedBox(height: 8),
                   const Divider(color: AppTheme.grey2),
                   const SizedBox(height: 16),
                   // Mnemonic
-                  const Text(
-                    'Mnemonic',
-                    style: TextStyle(color: AppTheme.cream1, fontSize: 18),
-                  ),
+                  Text('Mnemonic', style: textTheme.titleLarge),
                   const SizedBox(height: 8),
                   SelectableText(
                     _mnemonic ?? '',
-                    style: const TextStyle(color: AppTheme.cream1),
                   ),
+                  const SizedBox(height: 8),
                   TextButton(
                     onPressed: _mnemonic != null
                         ? () => _copyToClipboard(_mnemonic!, 'Mnemonic')
                         : null,
                     child: const Text('Copy Mnemonic'),
                   ),
+                  const SizedBox(height: 8),
                   const Divider(color: AppTheme.grey2),
                   const SizedBox(height: 16),
                   // Trade Key Index
                   Text(
                     'Current Trade Key Index: ${_tradeKeyIndex ?? 'N/A'}',
-                    style:
-                        const TextStyle(color: AppTheme.cream1, fontSize: 16),
                   ),
                   const SizedBox(height: 16),
                   // Buttons to generate and delete keys
@@ -167,14 +159,10 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                   ),
                   const SizedBox(height: 16),
                   // Import Key
-                  const Text(
-                    'Import Key from Mnemonic',
-                    style: TextStyle(color: AppTheme.cream1, fontSize: 18),
-                  ),
+                  Text('Import Key from Mnemonic', style: textTheme.titleLarge),
                   const SizedBox(height: 8),
                   TextField(
                     controller: _importController,
-                    style: const TextStyle(color: AppTheme.cream1),
                     decoration: const InputDecoration(
                       labelText: 'Enter key or mnemonic',
                       labelStyle: TextStyle(color: AppTheme.grey2),
