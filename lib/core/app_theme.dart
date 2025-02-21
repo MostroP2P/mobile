@@ -114,7 +114,6 @@ class AppTheme {
     return GoogleFonts.robotoCondensedTextTheme(
       const TextTheme(
         displayLarge: TextStyle(
-          fontWeight: FontWeight.w700,
           fontSize: 24.0,
         ), // For larger titles
         displayMedium: TextStyle(
