@@ -7,6 +7,7 @@ import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
+import 'package:mostro_mobile/shared/utils/currency_utils.dart';
 
 class TradesListItem extends StatelessWidget {
   final NostrEvent trade;
@@ -107,7 +108,7 @@ class TradesListItem extends StatelessWidget {
                 _buildStyledTextSpan(
                   context,
                   'for ',
-                  '${trade.fiatAmount}',
+                  '${trade.fiatAmount} ${CurrencyUtils.getFlagFromCurrency(trade.currency!)}',
                   isValue: true,
                   isBold: true,
                 ),
