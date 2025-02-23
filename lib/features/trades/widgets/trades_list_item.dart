@@ -63,7 +63,7 @@ class TradesListItem extends StatelessWidget {
         _getOrderOffering(context, trade),
         const SizedBox(width: 16),
         Expanded(
-          flex: 4,
+          flex: 3,
           child: _buildPaymentMethod(context),
         ),
       ],
@@ -108,12 +108,13 @@ class TradesListItem extends StatelessWidget {
                 _buildStyledTextSpan(
                   context,
                   'for ',
-                  '${trade.fiatAmount} ${CurrencyUtils.getFlagFromCurrency(trade.currency!)}',
+                  '${trade.fiatAmount}',
                   isValue: true,
                   isBold: true,
                 ),
                 TextSpan(
-                  text: '${trade.currency} ',
+                  text:
+                      '${trade.currency} ${CurrencyUtils.getFlagFromCurrency(trade.currency!)} ',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: AppTheme.cream1,
                         fontSize: 16.0,
