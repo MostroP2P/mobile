@@ -1,9 +1,9 @@
+import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/shared/widgets/order_filter.dart';
-import 'package:mostro_mobile/features/trades/notifiers/trades_state.dart';
 import 'package:mostro_mobile/features/trades/providers/trades_provider.dart';
 import 'package:mostro_mobile/features/trades/widgets/trades_list.dart';
 import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
@@ -15,63 +15,43 @@ class TradesScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final tradesAsync = ref.watch(tradesProvider);
-    final provider = ref.watch(tradesProvider.notifier);
+    final state = ref.watch(filteredTradesProvider);
 
-    return tradesAsync.when(
-      data: (state) {
-        return Scaffold(
-          backgroundColor: AppTheme.dark1,
-          appBar: const MostroAppBar(),
-          drawer: const MostroAppDrawer(),
-          body: RefreshIndicator(
-            onRefresh: () async {
-              await provider.refresh();
-            },
-            child: Container(
-              margin: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-              decoration: BoxDecoration(
-                color: AppTheme.dark2,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Text(
-                      'My Trades',
-                      style: AppTheme.theme.textTheme.displayLarge,
-                    ),
-                  ),
-                  _buildFilterButton(context, state),
-                  const SizedBox(height: 6.0),
-                  Expanded(
-                    child: _buildOrderList(state),
-                  ),
-                  const BottomNavBar(),
-                ],
-              ),
-            ),
+    return Scaffold(
+      backgroundColor: AppTheme.dark1,
+      appBar: const MostroAppBar(),
+      drawer: const MostroAppDrawer(),
+      body: RefreshIndicator(
+        onRefresh: () async {},
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+          decoration: BoxDecoration(
+            color: AppTheme.dark2,
+            borderRadius: BorderRadius.circular(20),
           ),
-        );
-      },
-      loading: () => const Scaffold(
-        backgroundColor: AppTheme.dark1,
-        body: Center(child: CircularProgressIndicator()),
-      ),
-      error: (error, stack) => Scaffold(
-        backgroundColor: AppTheme.dark1,
-        body: Center(
-          child: Text(
-            'Error: $error',
-            style: const TextStyle(color: AppTheme.cream1),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  'My Trades',
+                  style: AppTheme.theme.textTheme.displayLarge,
+                ),
+              ),
+              _buildFilterButton(context, state),
+              const SizedBox(height: 6.0),
+              Expanded(
+                child: _buildOrderList(state),
+              ),
+              const BottomNavBar(),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _buildFilterButton(BuildContext context, TradesState homeState) {
+  Widget _buildFilterButton(BuildContext context, List<NostrEvent> trades) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
@@ -102,7 +82,7 @@ class TradesScreen extends ConsumerWidget {
           ),
           const SizedBox(width: 8),
           Text(
-            "${homeState.orders.length} trades",
+            "${trades.length} trades",
             style: const TextStyle(color: AppTheme.cream1),
           ),
         ],
@@ -110,8 +90,8 @@ class TradesScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildOrderList(TradesState state) {
-    if (state.orders.isEmpty) {
+  Widget _buildOrderList(List<NostrEvent> trades) {
+    if (trades.isEmpty) {
       return const Center(
         child: Text(
           'No trades available for this type',
@@ -120,6 +100,6 @@ class TradesScreen extends ConsumerWidget {
       );
     }
 
-    return TradesList(state: state);
+    return TradesList(trades: trades);
   }
 }

@@ -13,8 +13,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 final appInitializerProvider = FutureProvider<void>((ref) async {
   final settings = ref.read(settingsProvider);
-  final service = ref.read(nostrServiceProvider);
-  await service.updateSettings(settings);
+  final nostrService = ref.read(nostrServiceProvider);
+  await nostrService.updateSettings(settings);
 
   final keyManager = ref.read(keyManagerProvider);
   bool hasMaster = await keyManager.hasMasterKey();
@@ -23,11 +23,12 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
   }
 
   final sessionManager = ref.read(sessionManagerProvider);
+  sessionManager.updateSettings(settings);
   await sessionManager.init();
 
   ref.listen<Settings>(settingsProvider, (previous, next) {
-    service.updateSettings(next);
-    sessionManager.fullPrivacyMode = next.fullPrivacyMode;
+    nostrService.updateSettings(next);
+    sessionManager.updateSettings(next);
   });
 
   final mostroRepository = ref.read(mostroRepositoryProvider);

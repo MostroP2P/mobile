@@ -8,13 +8,20 @@ class OrderNotifier extends AbstractOrderNotifier {
   OrderNotifier(super.orderRepository, super.orderId, super.ref);
 
   Future<void> reSubscribe() async {
-    final existingMessage = await orderRepository.getOrderById(orderId);
-    if (existingMessage == null) {
-      logger.e('Order $orderId not found in repository; subscription aborted.');
-      return;
-    }
     final stream = orderRepository.resubscribeOrder(orderId);
-    await subscribe(stream);
+    Timer? debounceTimer;
+    stream.listen((order) {
+      // Cancel any previously scheduled update.
+      debounceTimer?.cancel();
+      // Schedule a new update after a debounce duration.
+      debounceTimer = Timer(const Duration(milliseconds: 300), () {
+        state = order;
+        debounceTimer?.cancel();
+        subscribe(stream);
+      });
+    }, onDone: () {
+      debounceTimer?.cancel();
+    }, onError: handleError);
   }
 
   Future<void> takeSellOrder(

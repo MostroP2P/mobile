@@ -17,6 +17,8 @@ class Order implements Payload {
   final int premium;
   final String? masterBuyerPubkey;
   final String? masterSellerPubkey;
+  final String? buyerTradePubkey;
+  final String? sellerTradePubkey;
   final String? buyerInvoice;
   final int? createdAt;
   final int? expiresAt;
@@ -36,6 +38,8 @@ class Order implements Payload {
     this.premium = 0,
     this.masterBuyerPubkey,
     this.masterSellerPubkey,
+    this.buyerTradePubkey,
+    this.sellerTradePubkey,
     this.buyerInvoice,
     this.createdAt = 0,
     this.expiresAt,
@@ -99,6 +103,8 @@ class Order implements Payload {
       premium: json['premium'],
       masterBuyerPubkey: json['master_buyer_pubkey'],
       masterSellerPubkey: json['master_seller_pubkey'],
+      buyerTradePubkey: json['buyer_trade_pubkey'],
+      sellerTradePubkey: json['seller_trade_pubkey'],
       buyerInvoice: json['buyer_invoice'],
       createdAt: json['created_at'],
       expiresAt: json['expires_at'],

@@ -3,6 +3,7 @@ import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/data/repositories/session_storage.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager.dart';
+import 'package:mostro_mobile/features/settings/settings.dart';
 
 class SessionManager {
   final Logger _logger = Logger();
@@ -35,6 +36,10 @@ class SessionManager {
     for (final session in allSessions) {
       _sessions[session.keyIndex] = session;
     }
+  }
+
+  void updateSettings(Settings settings) {
+    fullPrivacyMode = settings.fullPrivacyMode;
   }
 
   /// Creates a new session, storing it both in memory and in the database.

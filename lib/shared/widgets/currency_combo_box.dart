@@ -43,7 +43,7 @@ class CurrencyComboBox extends ConsumerWidget {
         ),
         data: (currencyCodes) {
           // Create a list of string labels like "USD - United States Dollar"
-          final entries = currencyCodes.entries.map((e) => '${e.key} - ${e.value}').toList();
+          final entries = currencyCodes.entries.map((e) => '${e.key} - ${e.value.name}').toList();
 
           return Autocomplete<String>(
             optionsBuilder: (TextEditingValue textEditingValue) {
@@ -71,7 +71,7 @@ class CurrencyComboBox extends ConsumerWidget {
               if (selectedFiatCode != null) {
                 final existingLabel = currencyCodes[selectedFiatCode];
                 if (existingLabel != null) {
-                  textEditingController.text = '$selectedFiatCode - $existingLabel';
+                  textEditingController.text = '$selectedFiatCode - ${existingLabel.name}';
                 }
               }
 

@@ -48,7 +48,8 @@ class TakeOrderScreen extends ConsumerWidget {
                 const SizedBox(height: 24),
                 _buildCountDownTime(order.expirationDate),
                 const SizedBox(height: 36),
-                _buildActionButtons(context, ref, order.orderId!),
+                // Pass the full order to the action buttons widget.
+                _buildActionButtons(context, ref, order),
               ],
             ),
           );
@@ -67,8 +68,8 @@ class TakeOrderScreen extends ConsumerWidget {
     final premiumText = premium >= 0
         ? premium == 0
             ? ''
-            : 'with a +{premium}% premium'
-        : 'with a -{premium}% discount';
+            : 'with a +$premium% premium'
+        : 'with a -$premium% discount';
     final method = order.paymentMethods.isNotEmpty
         ? order.paymentMethods[0]
         : 'No payment method';
@@ -107,35 +108,36 @@ class TakeOrderScreen extends ConsumerWidget {
 
   Widget _buildOrderId(BuildContext context) {
     return CustomCard(
-        padding: const EdgeInsets.all(2),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SelectableText(
-              orderId,
-              style: TextStyle(color: AppTheme.mostroGreen),
-            ),
-            const SizedBox(width: 16),
-            IconButton(
-              onPressed: () {
-                Clipboard.setData(ClipboardData(text: orderId));
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Order ID copied to clipboard'),
-                    duration: Duration(seconds: 2),
-                  ),
-                );
-              },
-              icon: const Icon(Icons.copy),
-              style: IconButton.styleFrom(
-                foregroundColor: AppTheme.mostroGreen,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+      padding: const EdgeInsets.all(2),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SelectableText(
+            orderId,
+            style: TextStyle(color: AppTheme.mostroGreen),
+          ),
+          const SizedBox(width: 16),
+          IconButton(
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: orderId));
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Order ID copied to clipboard'),
+                  duration: Duration(seconds: 2),
                 ),
+              );
+            },
+            icon: const Icon(Icons.copy),
+            style: IconButton.styleFrom(
+              foregroundColor: AppTheme.mostroGreen,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
-            )
-          ],
-        ));
+            ),
+          )
+        ],
+      ),
+    );
   }
 
   Widget _buildCountDownTime(DateTime expiration) {
@@ -158,9 +160,9 @@ class TakeOrderScreen extends ConsumerWidget {
   }
 
   Widget _buildActionButtons(
-      BuildContext context, WidgetRef ref, String orderId) {
+      BuildContext context, WidgetRef ref, NostrEvent order) {
     final orderDetailsNotifier =
-        ref.read(orderNotifierProvider(orderId).notifier);
+        ref.read(orderNotifierProvider(order.orderId!).notifier);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -173,16 +175,89 @@ class TakeOrderScreen extends ConsumerWidget {
           child: const Text('CLOSE'),
         ),
         const SizedBox(width: 16),
-        // Take Order
         ElevatedButton(
           onPressed: () async {
-            final fiatAmount = int.tryParse(_fiatAmountController.text.trim());
-            if (orderType == OrderType.buy) {
-              await orderDetailsNotifier.takeBuyOrder(orderId, fiatAmount);
+            // Check if the order is a range order.
+            if (order.fiatAmount.maximum != null) {
+              final enteredAmount = await showDialog<int>(
+                context: context,
+                builder: (BuildContext context) {
+                  String? errorText;
+                  return StatefulBuilder(
+                    builder: (BuildContext context,
+                        void Function(void Function()) setState) {
+                      return AlertDialog(
+                        title: const Text('Enter Amount'),
+                        content: TextField(
+                          controller: _fiatAmountController,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            hintText:
+                                'Enter an amount between ${order.fiatAmount.minimum} and ${order.fiatAmount.maximum}',
+                            errorText: errorText,
+                          ),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(null),
+                            child: const Text('Cancel'),
+                          ),
+                          ElevatedButton(
+                            onPressed: () {
+                              final inputAmount = int.tryParse(
+                                  _fiatAmountController.text.trim());
+                              if (inputAmount == null) {
+                                setState(() {
+                                  errorText = "Please enter a valid number.";
+                                });
+                              } else if (inputAmount <
+                                      order.fiatAmount.minimum ||
+                                  inputAmount > order.fiatAmount.maximum!) {
+                                setState(() {
+                                  errorText =
+                                      "Amount must be between ${order.fiatAmount.minimum} and ${order.fiatAmount.maximum}.";
+                                });
+                              } else {
+                                Navigator.of(context).pop(inputAmount);
+                              }
+                            },
+                            child: const Text('Submit'),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
+              );
+
+              if (enteredAmount != null) {
+                if (orderType == OrderType.buy) {
+                  await orderDetailsNotifier.takeBuyOrder(
+                      order.orderId!, enteredAmount);
+                } else {
+                  final lndAddress = _lndAddressController.text.trim();
+                  await orderDetailsNotifier.takeSellOrder(
+                    order.orderId!,
+                    enteredAmount,
+                    lndAddress.isEmpty ? null : lndAddress,
+                  );
+                }
+              }
             } else {
-              final lndAddress = _lndAddressController.text.trim();
-              await orderDetailsNotifier.takeSellOrder(
-                  orderId, fiatAmount, lndAddress.isEmpty ? null : lndAddress);
+              // Not a range order – use the existing logic.
+              final fiatAmount =
+                  int.tryParse(_fiatAmountController.text.trim());
+              if (orderType == OrderType.buy) {
+                await orderDetailsNotifier.takeBuyOrder(
+                    order.orderId!, fiatAmount);
+              } else {
+                final lndAddress = _lndAddressController.text.trim();
+                await orderDetailsNotifier.takeSellOrder(
+                  order.orderId!,
+                  fiatAmount,
+                  lndAddress.isEmpty ? null : lndAddress,
+                );
+              }
             }
           },
           style: ElevatedButton.styleFrom(
@@ -195,20 +270,13 @@ class TakeOrderScreen extends ConsumerWidget {
   }
 
   String formatDateTime(DateTime dt) {
-    // Format the main parts (e.g. Mon Dec 30 2024 08:16:00)
     final dateFormatter = DateFormat('EEE MMM dd yyyy HH:mm:ss');
     final formattedDate = dateFormatter.format(dt);
-
-    // Get the timezone offset in hours and minutes.
     final offset = dt.timeZoneOffset;
     final sign = offset.isNegative ? '-' : '+';
-    // Absolute values so the sign is handled separately.
     final hours = offset.inHours.abs().toString().padLeft(2, '0');
     final minutes = (offset.inMinutes.abs() % 60).toString().padLeft(2, '0');
-
-    // Get the timezone abbreviation
     final timeZoneName = dt.timeZoneName;
-
     return '$formattedDate GMT $sign$hours$minutes ($timeZoneName)';
   }
 }

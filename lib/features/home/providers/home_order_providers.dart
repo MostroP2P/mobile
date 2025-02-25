@@ -5,16 +5,11 @@ import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_manager_provider.dart';
 
-final allOrdersProvider = StreamProvider<List<NostrEvent>>((ref) {
-  final repository = ref.watch(orderRepositoryProvider);
-  repository.subscribeToOrders();
-  return repository.eventsStream;
-});
 
 final homeOrderTypeProvider = StateProvider((ref) => OrderType.sell);
 
 final filteredOrdersProvider = Provider<List<NostrEvent>>((ref) {
-  final allOrdersAsync = ref.watch(allOrdersProvider);
+  final allOrdersAsync = ref.watch(orderEventsProvider);
   final orderType = ref.watch(homeOrderTypeProvider);
   final sessionManager = ref.watch(sessionManagerProvider);
 

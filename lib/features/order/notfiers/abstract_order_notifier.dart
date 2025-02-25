@@ -16,7 +16,7 @@ class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
   final MostroRepository orderRepository;
   final Ref ref;
   final String orderId;
-  StreamSubscription<MostroMessage>? _orderSubscription;
+  StreamSubscription<MostroMessage>? orderSubscription;
   final logger = Logger();
 
   AbstractOrderNotifier(
@@ -27,7 +27,7 @@ class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
 
   Future<void> subscribe(Stream<MostroMessage> stream) async {
     try {
-      _orderSubscription = stream.listen((order) {
+      orderSubscription = stream.listen((order) {
         state = order;
         handleOrderUpdate();
       });
@@ -91,21 +91,38 @@ class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
       case Action.buyerTookOrder:
         final order = state.getPayload<Order>();
         notifProvider.showInformation(state.action, values: {
-          'buyer_npub': order?.masterBuyerPubkey,
+          'buyer_npub': order?.buyerTradePubkey ?? 'Unknown',
           'fiat_code': order?.fiatCode,
           'fiat_amount': order?.fiatAmount,
           'payment_method': order?.paymentMethod,
         });
+        navProvider.go('/');
         break;
       case Action.canceled:
         navProvider.go('/');
         notifProvider.showInformation(state.action, values: {'id': orderId});
+        break;
+      case Action.holdInvoicePaymentAccepted:
+        final order = state.getPayload<Order>();
+        notifProvider.showInformation(state.action, values: {
+          'seller_npub': order?.sellerTradePubkey ?? 'Unknown',
+          'id': order?.id,
+          'fiat_code': order?.fiatCode,
+          'fiat_amount': order?.fiatAmount,
+          'payment_method': order?.paymentMethod,
+        });
+        navProvider.go('/'); 
         break;
       case Action.fiatSentOk:
       case Action.holdInvoicePaymentSettled:
       case Action.rate:
       case Action.rateReceived:
       case Action.cooperativeCancelInitiatedByYou:
+        notifProvider.showInformation(state.action, values: {
+          'id': state.id,
+        });
+        navProvider.go('/');
+        break;
       case Action.disputeInitiatedByYou:
       case Action.adminSettled:
         notifProvider.showInformation(state.action);
@@ -118,7 +135,7 @@ class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
 
   @override
   void dispose() {
-    _orderSubscription?.cancel();
+    orderSubscription?.cancel();
     super.dispose();
   }
 }
