@@ -82,7 +82,7 @@ jobs:
 
         #12 Modify Tag if it Exists
       - name: Modify Tag
-        if: env.TAG_EXISTS == 'true'
+        if: ${{ env.TAG_EXISTS }} == 'true'
         id: modify_tag
         run: |
           new_version="${{ env.VERSION }}-alpha-${{ github.run_number }}"
