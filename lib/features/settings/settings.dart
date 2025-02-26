@@ -1,15 +1,13 @@
-import 'package:mostro_mobile/core/config.dart';
-
 class Settings {
   final bool fullPrivacyMode;
   final List<String> relays;
-  final String mostroInstance;
+  final String mostroPublicKey;
   final String? defaultFiatCode;
 
   Settings(
       {required this.relays,
       required this.fullPrivacyMode,
-      required this.mostroInstance,
+      required this.mostroPublicKey,
       this.defaultFiatCode});
 
   Settings copyWith(
@@ -20,7 +18,7 @@ class Settings {
     return Settings(
       relays: relays ?? this.relays,
       fullPrivacyMode: privacyModeSetting ?? fullPrivacyMode,
-      mostroInstance: mostroInstance ?? this.mostroInstance,
+      mostroPublicKey: mostroInstance ?? mostroPublicKey,
       defaultFiatCode: defaultFiatCode ?? this.defaultFiatCode,
     );
   }
@@ -28,7 +26,7 @@ class Settings {
   Map<String, dynamic> toJson() => {
         'relays': relays,
         'fullPrivacyMode': fullPrivacyMode,
-        'mostroInstance': mostroInstance,
+        'mostroPublicKey': mostroPublicKey,
         'defaultFiatCode': defaultFiatCode,
       };
 
@@ -36,7 +34,7 @@ class Settings {
     return Settings(
       relays: (json['relays'] as List<dynamic>?)?.cast<String>() ?? [],
       fullPrivacyMode: json['fullPrivacyMode'] as bool,
-      mostroInstance: json['mostroInstance'] ?? Config.mostroPubKey,
+      mostroPublicKey: json['mostroPublicKey'] ?? json['mostroInstance'],
       defaultFiatCode: json['defaultFiatCode'],
     );
   }

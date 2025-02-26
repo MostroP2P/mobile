@@ -15,7 +15,7 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
     final mostroTextContoller =
-        TextEditingController(text: settings.mostroInstance);
+        TextEditingController(text: settings.mostroPublicKey);
     final textTheme = AppTheme.theme.textTheme;
 
     return Scaffold(

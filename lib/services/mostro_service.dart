@@ -17,9 +17,9 @@ class MostroService {
   final NostrService _nostrService;
   final SessionManager _sessionManager;
   final _logger = Logger();
-  String mostroPubKey = Config.mostroPubKey;
+  Settings settings;
 
-  MostroService(this._nostrService, this._sessionManager);
+  MostroService(this._nostrService, this._sessionManager, this.settings);
 
   Stream<MostroMessage> subscribe(Session session) {
     final filter = NostrFilter(p: [session.tradeKey.public]);
@@ -90,7 +90,7 @@ class MostroService {
 
     final content = newMessage(Action.takeSell, orderId, payload: order);
     _logger.i(content);
-    await sendMessage(orderId, mostroPubKey, content);
+    await sendMessage(orderId, settings.mostroPublicKey, content);
     return session;
   }
 
@@ -102,7 +102,7 @@ class MostroService {
         amount,
       ]
     });
-    await sendMessage(orderId, mostroPubKey, content);
+    await sendMessage(orderId, settings.mostroPublicKey, content);
   }
 
   Future<Session> takeBuyOrder(String orderId, int? amount) async {
@@ -110,7 +110,7 @@ class MostroService {
     final amt = amount != null ? {'amount': amount} : null;
     final content = newMessage(Action.takeBuy, orderId, payload: amt);
     _logger.i(content);
-    await sendMessage(orderId, mostroPubKey, content);
+    await sendMessage(orderId, settings.mostroPublicKey, content);
     return session;
   }
 
@@ -133,24 +133,25 @@ class MostroService {
       ]);
     }
     _logger.i('Publishing order: $content');
-    final event = await createNIP59Event(content, mostroPubKey, session);
+    final event =
+        await createNIP59Event(content, settings.mostroPublicKey, session);
     await _nostrService.publishEvent(event);
     return session;
   }
 
   Future<void> cancelOrder(String orderId) async {
     final content = newMessage(Action.cancel, orderId);
-    await sendMessage(orderId, mostroPubKey, content);
+    await sendMessage(orderId, settings.mostroPublicKey, content);
   }
 
   Future<void> sendFiatSent(String orderId) async {
     final content = newMessage(Action.fiatSent, orderId);
-    await sendMessage(orderId, mostroPubKey, content);
+    await sendMessage(orderId, settings.mostroPublicKey, content);
   }
 
   Future<void> releaseOrder(String orderId) async {
     final content = newMessage(Action.release, orderId);
-    await sendMessage(orderId, mostroPubKey, content);
+    await sendMessage(orderId, settings.mostroPublicKey, content);
   }
 
   Map<String, dynamic> newMessage(Action actionType, String orderId,
@@ -210,6 +211,6 @@ class MostroService {
   }
 
   void updateSettings(Settings settings) {
-	mostroPubKey = settings.mostroInstance;
+    this.settings = settings.copyWith();
   }
 }

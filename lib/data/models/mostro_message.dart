@@ -14,14 +14,17 @@ class MostroMessage<T extends Payload> {
       : _payload = payload;
 
   Map<String, dynamic> toJson() {
-    return {
+    final json = {
       'version': Config.mostroVersion,
       'request_id': requestId,
       'trade_index': tradeIndex,
-      'id': id,
       'action': action.value,
       'payload': _payload?.toJson(),
     };
+    if (id != null) {
+      json['id'] = id;
+    }
+    return json;
   }
 
   factory MostroMessage.fromJson(Map<String, dynamic> json) {

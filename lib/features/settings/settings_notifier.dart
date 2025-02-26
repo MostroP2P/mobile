@@ -16,8 +16,8 @@ class SettingsNotifier extends StateNotifier<Settings> {
   static Settings _defaultSettings() {
     return Settings(
       relays: Config.nostrRelays,
-      fullPrivacyMode: false,
-      mostroInstance: Config.mostroPubKey,
+      fullPrivacyMode: Config.fullPrivacyMode,
+      mostroPublicKey: Config.mostroPubKey,
     );
   }
 

@@ -10,7 +10,7 @@ class SessionManager {
 
   final KeyManager _keyManager;
   final SessionStorage _sessionStorage;
-  bool fullPrivacyMode = true;
+  Settings _settings;
 
   // In-memory session cache
   final Map<int, Session> _sessions = {};
@@ -26,6 +26,7 @@ class SessionManager {
   SessionManager(
     this._keyManager,
     this._sessionStorage,
+    this._settings
   ) {
     _initializeCleanup();
   }
@@ -39,7 +40,7 @@ class SessionManager {
   }
 
   void updateSettings(Settings settings) {
-    fullPrivacyMode = settings.fullPrivacyMode;
+    _settings = settings.copyWith();
   }
 
   /// Creates a new session, storing it both in memory and in the database.
@@ -53,7 +54,7 @@ class SessionManager {
       masterKey: masterKey,
       keyIndex: keyIndex,
       tradeKey: tradeKey,
-      fullPrivacy: fullPrivacyMode,
+      fullPrivacy: _settings.fullPrivacyMode,
       orderId: orderId,
     );
 

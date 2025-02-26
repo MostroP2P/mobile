@@ -7,21 +7,18 @@ import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
 class NostrService {
-  Settings? settings;
-  static final NostrService _instance = NostrService._internal();
-  factory NostrService() => _instance;
-  NostrService._internal();
+  Settings settings;
+  final Nostr _nostr = Nostr.instance;
+
+  NostrService(this.settings);
 
   final Logger _logger = Logger();
-  late Nostr _nostr;
   bool _isInitialized = false;
 
   Future<void> init() async {
-    //if (_isInitialized) return;
-    _nostr = Nostr.instance;
     try {
       await _nostr.services.relays.init(
-        relaysUrl: settings!.relays,
+        relaysUrl: settings.relays,
         connectionTimeout: Config.nostrConnectionTimeout,
         shouldReconnectToRelayOnNotice: true,
         onRelayListening: (relay, url, channel) {
@@ -47,7 +44,7 @@ class NostrService {
   Future<void> updateSettings(Settings newSettings) async {
     settings = newSettings.copyWith();
     final relays = Nostr.instance.services.relays.relaysList;
-    if (!ListEquality().equals(relays, settings?.relays) ) {
+    if (!ListEquality().equals(relays, settings.relays) ) {
       _logger.i('Updating relays...');
       await init();
     }

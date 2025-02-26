@@ -11,7 +11,7 @@ final homeOrderTypeProvider = StateProvider((ref) => OrderType.sell);
 final filteredOrdersProvider = Provider<List<NostrEvent>>((ref) {
   final allOrdersAsync = ref.watch(orderEventsProvider);
   final orderType = ref.watch(homeOrderTypeProvider);
-  final sessionManager = ref.watch(sessionManagerProvider);
+  final sessionManager = ref.read(sessionManagerProvider);
 
   return allOrdersAsync.maybeWhen(
     data: (allOrders) {

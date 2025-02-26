@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:dart_nostr/nostr/model/request/filter.dart';
 import 'package:logger/logger.dart';
-import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/repositories/order_repository_interface.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
@@ -14,6 +13,8 @@ const orderFilterDurationHours = 48;
 class OpenOrdersRepository implements OrderRepository<NostrEvent> {
   final NostrService _nostrService;
   NostrEvent? _mostroInstance;
+  Settings _settings;
+  String mostroPubKey = '';
 
   final StreamController<List<NostrEvent>> _eventStreamController =
       StreamController.broadcast();
@@ -21,11 +22,11 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
   final _logger = Logger();
   StreamSubscription<NostrEvent>? _subscription;
 
-  String mostroPubKey = Config.mostroPubKey;
-
   NostrEvent? get mostroInstance => _mostroInstance;
 
-  OpenOrdersRepository(this._nostrService);
+  OpenOrdersRepository(this._nostrService, this._settings) {
+    mostroPubKey = _settings.mostroPublicKey;
+  }
 
   /// Subscribes to events matching the given filter.
   void subscribeToOrders() {
@@ -93,8 +94,13 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
   }
 
   void updateSettings(Settings settings) {
-    mostroPubKey = settings.mostroInstance;
-    _events.clear();
-    subscribeToOrders();
+    if (_settings.mostroPublicKey != settings.mostroPublicKey) {
+      _logger.i('Mostro instance changed, updating...');
+      _settings = settings.copyWith();
+      _events.clear();
+      subscribeToOrders();
+    } else {
+      _settings = settings.copyWith();
+    }
   }
 }

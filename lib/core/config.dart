@@ -20,6 +20,8 @@ class Config {
   // Tiempo de espera para conexiones a relays
   static const Duration nostrConnectionTimeout = Duration(seconds: 30);
 
+  static bool fullPrivacyMode = false;
+
   // Modo de depuración
   static bool get isDebug => !kReleaseMode;
 

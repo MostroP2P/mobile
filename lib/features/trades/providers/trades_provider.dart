@@ -6,7 +6,7 @@ import 'package:mostro_mobile/shared/providers/session_manager_provider.dart';
 
 final filteredTradesProvider = Provider<List<NostrEvent>>((ref) {
   final allOrdersAsync = ref.watch(orderEventsProvider);
-  final sessionManager = ref.watch(sessionManagerProvider);
+  final sessionManager = ref.read(sessionManagerProvider);
 
   return allOrdersAsync.maybeWhen(
     data: (allOrders) {
