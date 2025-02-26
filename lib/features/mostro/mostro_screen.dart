@@ -13,8 +13,8 @@ class MostroScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final nostrEvent = ref.watch(orderRepositoryProvider).mostroInstance;
-    final mostroMessages = ref.watch(mostroRepositoryProvider).allMessages;
+    final nostrEvent = ref.read(orderRepositoryProvider).mostroInstance;
+    final mostroMessages = ref.read(mostroRepositoryProvider).allMessages;
 
     return nostrEvent == null
         ? Scaffold(

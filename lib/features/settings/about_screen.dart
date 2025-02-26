@@ -17,29 +17,25 @@ class AboutScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final nostrEvent = ref.watch(orderRepositoryProvider).mostroInstance;
 
-    return nostrEvent == null
-        ? Scaffold(
-            backgroundColor: AppTheme.dark1,
-            body: const Center(child: CircularProgressIndicator()),
-          )
-        : Scaffold(
-            appBar: AppBar(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              leading: IconButton(
-                icon:
-                    const HeroIcon(HeroIcons.arrowLeft, color: AppTheme.cream1),
-                onPressed: () => context.pop(),
-              ),
-              title: Text(
-                'ABOUT',
-                style: TextStyle(
-                  color: AppTheme.cream1,
-                ),
-              ),
-            ),
-            backgroundColor: AppTheme.dark1,
-            body: Padding(
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const HeroIcon(HeroIcons.arrowLeft, color: AppTheme.cream1),
+          onPressed: () => context.pop(),
+        ),
+        title: Text(
+          'ABOUT',
+          style: TextStyle(
+            color: AppTheme.cream1,
+          ),
+        ),
+      ),
+      backgroundColor: AppTheme.dark1,
+      body: nostrEvent == null
+          ? const Center(child: CircularProgressIndicator())
+          : Padding(
               padding: const EdgeInsets.all(16.0),
               child: Container(
                 decoration: BoxDecoration(
@@ -71,7 +67,7 @@ class AboutScreen extends ConsumerWidget {
                 ),
               ),
             ),
-          );
+    );
   }
 
   /// Builds the header displaying details from the MostroInstance.
@@ -92,8 +88,10 @@ class AboutScreen extends ConsumerWidget {
               'Version: ${instance.mostroVersion}',
             ),
             const SizedBox(height: 3),
-            // Text('Commit Hash: ${instance.commitHash}',),
-            // const SizedBox(height: 3),
+            Text(
+              'Commit Hash: ${instance.commitHash}',
+            ),
+            const SizedBox(height: 3),
             Text(
               'Max Order Amount: ${formatter.format(instance.maxOrderAmount)}',
             ),

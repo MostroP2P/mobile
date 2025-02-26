@@ -27,6 +27,7 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
       order.reSubscribe();
     }
   }
+
 });
 
 Future<void> clearAppData(MostroStorage mostroStorage) async {

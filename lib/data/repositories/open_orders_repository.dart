@@ -14,7 +14,6 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
   final NostrService _nostrService;
   NostrEvent? _mostroInstance;
   Settings _settings;
-  String mostroPubKey = '';
 
   final StreamController<List<NostrEvent>> _eventStreamController =
       StreamController.broadcast();
@@ -24,9 +23,7 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
 
   NostrEvent? get mostroInstance => _mostroInstance;
 
-  OpenOrdersRepository(this._nostrService, this._settings) {
-    mostroPubKey = _settings.mostroPublicKey;
-  }
+  OpenOrdersRepository(this._nostrService, this._settings);
 
   /// Subscribes to events matching the given filter.
   void subscribeToOrders() {
@@ -36,7 +33,7 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
         DateTime.now().subtract(Duration(hours: orderFilterDurationHours));
     var filter = NostrFilter(
       kinds: const [orderEventKind],
-      authors: [mostroPubKey],
+      authors: [_settings.mostroPublicKey],
       since: filterTime,
     );
 
@@ -44,7 +41,7 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
       if (event.type == 'order') {
         _events[event.orderId!] = event;
         _eventStreamController.add(_events.values.toList());
-      } else if (event.type == 'info' && event.pubkey == mostroPubKey) {
+      } else if (event.type == 'info' && event.pubkey == _settings.mostroPublicKey) {
         _logger.i('Mostro instance info loaded: $event');
         _mostroInstance = event;
       }

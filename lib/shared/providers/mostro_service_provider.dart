@@ -8,9 +8,9 @@ import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_manager_provider.dart';
 
 final mostroServiceProvider = Provider<MostroService>((ref) {
-  final sessionStorage = ref.watch(sessionManagerProvider);
-  final nostrService = ref.watch(nostrServiceProvider);
-  final settings = ref.watch(settingsProvider);
+  final sessionStorage = ref.read(sessionManagerProvider);
+  final nostrService = ref.read(nostrServiceProvider);
+  final settings = ref.read(settingsProvider);
   final mostroService = MostroService(nostrService, sessionStorage, settings);
 
   ref.listen<Settings>(settingsProvider, (previous, next) {
@@ -21,8 +21,8 @@ final mostroServiceProvider = Provider<MostroService>((ref) {
 });
 
 final mostroRepositoryProvider = Provider<MostroRepository>((ref) {
-  final mostroService = ref.watch(mostroServiceProvider);
-  final mostroDatabase = ref.watch(mostroStorageProvider);
+  final mostroService = ref.read(mostroServiceProvider);
+  final mostroDatabase = ref.read(mostroStorageProvider);
 
   final mostroRepository = MostroRepository(mostroService, mostroDatabase);
 
