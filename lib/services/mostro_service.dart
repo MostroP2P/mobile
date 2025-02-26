@@ -9,6 +9,7 @@ import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/data/repositories/session_manager.dart';
+import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
 
@@ -16,6 +17,7 @@ class MostroService {
   final NostrService _nostrService;
   final SessionManager _sessionManager;
   final _logger = Logger();
+  String mostroPubKey = Config.mostroPubKey;
 
   MostroService(this._nostrService, this._sessionManager);
 
@@ -88,7 +90,7 @@ class MostroService {
 
     final content = newMessage(Action.takeSell, orderId, payload: order);
     _logger.i(content);
-    await sendMessage(orderId, Config.mostroPubKey, content);
+    await sendMessage(orderId, mostroPubKey, content);
     return session;
   }
 
@@ -100,7 +102,7 @@ class MostroService {
         amount,
       ]
     });
-    await sendMessage(orderId, Config.mostroPubKey, content);
+    await sendMessage(orderId, mostroPubKey, content);
   }
 
   Future<Session> takeBuyOrder(String orderId, int? amount) async {
@@ -108,7 +110,7 @@ class MostroService {
     final amt = amount != null ? {'amount': amount} : null;
     final content = newMessage(Action.takeBuy, orderId, payload: amt);
     _logger.i(content);
-    await sendMessage(orderId, Config.mostroPubKey, content);
+    await sendMessage(orderId, mostroPubKey, content);
     return session;
   }
 
@@ -122,8 +124,8 @@ class MostroService {
       final bytes = utf8.encode(serializedEvent);
       final digest = sha256.convert(bytes);
       final hash = hex.encode(digest.bytes);
-      final signature = session.masterKey.sign(hash);
-      content = jsonEncode([message, signature]);
+      final signature = session.tradeKey.sign(hash);
+      content = jsonEncode([serializedEvent, signature]);
     } else {
       content = jsonEncode([
         {'order': order.toJson()},
@@ -131,25 +133,24 @@ class MostroService {
       ]);
     }
     _logger.i('Publishing order: $content');
-    final event = await createNIP59Event(content, Config.mostroPubKey, session);
+    final event = await createNIP59Event(content, mostroPubKey, session);
     await _nostrService.publishEvent(event);
-    _logger.i('Publishing order: $event');
     return session;
   }
 
   Future<void> cancelOrder(String orderId) async {
     final content = newMessage(Action.cancel, orderId);
-    await sendMessage(orderId, Config.mostroPubKey, content);
+    await sendMessage(orderId, mostroPubKey, content);
   }
 
   Future<void> sendFiatSent(String orderId) async {
     final content = newMessage(Action.fiatSent, orderId);
-    await sendMessage(orderId, Config.mostroPubKey, content);
+    await sendMessage(orderId, mostroPubKey, content);
   }
 
   Future<void> releaseOrder(String orderId) async {
     final content = newMessage(Action.release, orderId);
-    await sendMessage(orderId, Config.mostroPubKey, content);
+    await sendMessage(orderId, mostroPubKey, content);
   }
 
   Map<String, dynamic> newMessage(Action actionType, String orderId,
@@ -206,5 +207,9 @@ class MostroService {
         wrapperKeyPair, sealedContent, recipientPubKey);
 
     return wrapEvent;
+  }
+
+  void updateSettings(Settings settings) {
+	mostroPubKey = settings.mostroInstance;
   }
 }

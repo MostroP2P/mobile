@@ -5,6 +5,7 @@ import 'package:logger/logger.dart';
 import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/repositories/order_repository_interface.dart';
+import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
 
 const orderEventKind = 38383;
@@ -20,6 +21,8 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
   final _logger = Logger();
   StreamSubscription<NostrEvent>? _subscription;
 
+  String mostroPubKey = Config.mostroPubKey;
+
   NostrEvent? get mostroInstance => _mostroInstance;
 
   OpenOrdersRepository(this._nostrService);
@@ -32,7 +35,7 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
         DateTime.now().subtract(Duration(hours: orderFilterDurationHours));
     var filter = NostrFilter(
       kinds: const [orderEventKind],
-      authors: [Config.mostroPubKey],
+      authors: [mostroPubKey],
       since: filterTime,
     );
 
@@ -40,7 +43,7 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
       if (event.type == 'order') {
         _events[event.orderId!] = event;
         _eventStreamController.add(_events.values.toList());
-      } else if (event.type == 'info' && event.pubkey == Config.mostroPubKey) {
+      } else if (event.type == 'info' && event.pubkey == mostroPubKey) {
         _logger.i('Mostro instance info loaded: $event');
         _mostroInstance = event;
       }
@@ -87,5 +90,11 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
   Future<void> updateOrder(NostrEvent order) {
     // TODO: implement updateOrder
     throw UnimplementedError();
+  }
+
+  void updateSettings(Settings settings) {
+    mostroPubKey = settings.mostroInstance;
+    _events.clear();
+    subscribeToOrders();
   }
 }

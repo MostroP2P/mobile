@@ -34,8 +34,6 @@ class MostroAppBar extends ConsumerWidget implements PreferredSizeWidget {
           icon: const HeroIcon(HeroIcons.bolt,
               style: HeroIconStyle.solid, color: AppTheme.yellow),
           onPressed: () async {
-            final mostroStorage = ref.watch(mostroStorageProvider);
-            await clearAppData(mostroStorage);
           },
         ),
       ],

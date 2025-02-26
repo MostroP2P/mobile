@@ -29,13 +29,21 @@ class AddOrderNotifier extends AbstractOrderNotifier {
     final confirmedOrderId = confirmedOrder.id;
     final newNotifier =
         ref.read(orderNotifierProvider(confirmedOrderId!).notifier);
+    handleOrderUpdate();
     newNotifier.reSubscribe();
     dispose();
   }
 
   Future<void> submitOrder(Order order) async {
-    final message =
-        MostroMessage<Order>(action: Action.newOrder, id: null, payload: order);
+    final requestId = BigInt.parse(orderId.replaceAll('-', ''), radix: 16)
+        .toUnsigned(64)
+        .toInt();
+
+    final message = MostroMessage<Order>(
+        action: Action.newOrder,
+        id: null,
+        requestId: requestId,
+        payload: order);
     final stream = await orderRepository.publishOrder(message);
     await subscribe(stream);
   }

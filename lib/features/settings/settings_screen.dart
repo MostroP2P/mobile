@@ -105,6 +105,9 @@ class SettingsScreen extends ConsumerWidget {
                           key: key,
                           controller: mostroTextContoller,
                           style: const TextStyle(color: AppTheme.cream1),
+                          onChanged: (value) => ref
+                              .watch(settingsProvider.notifier)
+                              .updateMostroInstanceSetting(value),
                           decoration: InputDecoration(
                             border: InputBorder.none,
                             labelText: 'Mostro Pubkey',

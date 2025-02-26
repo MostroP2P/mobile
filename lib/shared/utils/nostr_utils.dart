@@ -3,10 +3,13 @@ import 'dart:math';
 import 'package:crypto/crypto.dart';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:elliptic/elliptic.dart';
+import 'package:logger/logger.dart';
 import 'package:nip44/nip44.dart';
 
 class NostrUtils {
   static final Nostr _instance = Nostr.instance;
+
+  static final Logger _logger = Logger();
 
   // Generación de claves
   static NostrKeyPairs generateKeyPair() {
@@ -156,6 +159,8 @@ class NostrUtils {
       ],
     );
 
+    _logger.i('Rumor event: ${rumorEvent.toMap()}');
+
     try {
       return await _encryptNIP44(
           jsonEncode(rumorEvent.toMap()), wrapperKey, recipientPubKey);
@@ -176,6 +181,8 @@ class NostrUtils {
       createdAt: randomNow(),
     );
 
+    _logger.i('Seal event: ${sealEvent.toMap()}');
+
     return await _encryptNIP44(
         jsonEncode(sealEvent.toMap()), wrapperKey, recipientPubKey);
   }
@@ -192,6 +199,8 @@ class NostrUtils {
       createdAt: DateTime.now(),
     );
 
+    _logger.i('Wrap event: ${wrapEvent.toMap()}');
+    
     return wrapEvent;
   }
 

@@ -5,7 +5,7 @@ import 'package:mostro_mobile/data/models/payload.dart';
 
 class MostroMessage<T extends Payload> {
   String? id;
-  String? requestId;
+  int? requestId;
   final Action action;
   int? tradeIndex;
   T? _payload;
@@ -27,7 +27,7 @@ class MostroMessage<T extends Payload> {
   factory MostroMessage.fromJson(Map<String, dynamic> json) {
     return MostroMessage(
       action: Action.fromString(json['action']),
-      requestId: json['id'],
+      requestId: json['request_id'],
       tradeIndex: json['trade_index'],
       id: json['id'],
       payload: json['payload'] != null

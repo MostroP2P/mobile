@@ -8,6 +8,7 @@ import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
+import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_manager_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -26,9 +27,12 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
   sessionManager.updateSettings(settings);
   await sessionManager.init();
 
+
   ref.listen<Settings>(settingsProvider, (previous, next) {
     nostrService.updateSettings(next);
     sessionManager.updateSettings(next);
+    ref.read(orderRepositoryProvider).updateSettings(next);
+    ref.read(mostroServiceProvider).updateSettings(next);
   });
 
   final mostroRepository = ref.read(mostroRepositoryProvider);

@@ -68,7 +68,6 @@ class MostroRepository implements OrderRepository<MostroMessage> {
   }
 
   Future<Stream<MostroMessage>> publishOrder(MostroMessage order) async {
-    _logger.i(order);
     final session = await _mostroService.publishOrder(order);
     return _subscribe(session);
   }
@@ -79,7 +78,7 @@ class MostroRepository implements OrderRepository<MostroMessage> {
 
   Future<void> saveMessages() async {
     //for (var m in _messages.values.toList()) {
-      //await _messageStorage.addOrder(m);
+    //await _messageStorage.addOrder(m);
     //}
   }
 
