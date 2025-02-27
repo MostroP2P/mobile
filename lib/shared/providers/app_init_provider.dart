@@ -23,11 +23,10 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
 
   for (final session in sessionManager.sessions) {
     if (session.orderId != null) {
-      final order = ref.watch(orderNotifierProvider(session.orderId!).notifier);
-      order.reSubscribe();
+      //final order = ref.watch(orderNotifierProvider(session.orderId!).notifier);
+      //order.reSubscribe();
     }
   }
-
 });
 
 Future<void> clearAppData(MostroStorage mostroStorage) async {

@@ -125,12 +125,9 @@ class MostroService {
       final digest = sha256.convert(bytes);
       final hash = hex.encode(digest.bytes);
       final signature = session.tradeKey.sign(hash);
-      content = jsonEncode([serializedEvent, signature]);
+      content = '[$serializedEvent,"$signature"]';
     } else {
-      content = jsonEncode([
-        {'order': order.toJson()},
-        null
-      ]);
+      content = '[{"order":${jsonEncode(order.toJson())}},null]';
     }
     _logger.i('Publishing order: $content');
     final event =
@@ -159,8 +156,8 @@ class MostroService {
     return {
       'order': {
         'version': Config.mostroVersion,
-        'trade_index': null,
         'id': orderId,
+        'trade_index': null,
         'action': actionType.value,
         'payload': payload,
       },
@@ -168,24 +165,25 @@ class MostroService {
   }
 
   Future<void> sendMessage(String orderId, String receiverPubkey,
-      Map<String, dynamic> content) async {
+      Map<String, dynamic> message) async {
     try {
       final session = _sessionManager.getSessionByOrderId(orderId);
-      String finalContent;
+      String content;
       if (!session!.fullPrivacy) {
-        content['order']?['trade_index'] = session.keyIndex;
-        final sha256Digest =
-            sha256.convert(utf8.encode(jsonEncode(content['order'])));
-        final hashHex = hex.encode(sha256Digest.bytes);
-        final signature = session.tradeKey.sign(hashHex);
-        finalContent = jsonEncode([content, signature]);
+        message['order']?['trade_index'] = session.keyIndex;
+        final serializedEvent = jsonEncode(message);
+        final bytes = utf8.encode(serializedEvent);
+        final digest = sha256.convert(bytes);
+        final hash = hex.encode(digest.bytes);
+        final signature = session.tradeKey.sign(hash);
+        content = '[$serializedEvent,"$signature"]';
       } else {
-        finalContent = jsonEncode([content, null]);
+        content = '[${jsonEncode(message)},null]';
       }
+      _logger.i(content);
       final event =
-          await createNIP59Event(finalContent, receiverPubkey, session);
+          await createNIP59Event(content, receiverPubkey, session);
       await _nostrService.publishEvent(event);
-      _logger.i(finalContent);
     } catch (e) {
       // catch and throw and log and stuff
       _logger.e(e);
