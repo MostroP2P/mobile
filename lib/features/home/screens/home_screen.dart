@@ -23,7 +23,9 @@ class HomeScreen extends ConsumerWidget {
       appBar: const MostroAppBar(),
       drawer: const MostroAppDrawer(),
       body: RefreshIndicator(
-        onRefresh: () async {},
+        onRefresh: () async {
+          return ref.refresh(filteredOrdersProvider);
+        },
         child: Container(
           margin: const EdgeInsets.all(16),
           decoration: BoxDecoration(

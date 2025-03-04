@@ -4,9 +4,12 @@ import 'package:crypto/crypto.dart';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/core/config.dart';
+import 'package:mostro_mobile/data/models/amount.dart';
 import 'package:mostro_mobile/data/models/cant_do.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
+import 'package:mostro_mobile/data/models/order.dart';
+import 'package:mostro_mobile/data/models/payment_request.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/data/repositories/session_manager.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
@@ -37,6 +40,8 @@ class MostroService {
 
       // Deserialize the message content:
       final result = jsonDecode(decryptedEvent.content!);
+
+      _logger.i('Decrypted Mostro event content: $result');
 
       // The result should be an array of two elements, the first being
       // A MostroMessage or CantDo
@@ -79,18 +84,15 @@ class MostroService {
 
   Future<Session> takeSellOrder(
       String orderId, int? amount, String? lnAddress) async {
-    final session = await _sessionManager.newSession(orderId: orderId);
-    final order = lnAddress != null
-        ? {
-            'payment_request': [null, lnAddress, amount]
-          }
+    final payload = lnAddress != null
+        ? PaymentRequest(order: null, lnInvoice: lnAddress, amount: amount)
         : amount != null
-            ? {'amount': amount}
+            ? Amount(amount: amount)
             : null;
+    final order = MostroMessage(
+        action: Action.takeSell, id: orderId, payload: payload);
 
-    final content = newMessage(Action.takeSell, orderId, payload: order);
-    _logger.i(content);
-    await sendMessage(orderId, settings.mostroPublicKey, content);
+	final session = await publishOrder(order);
     return session;
   }
 
@@ -156,8 +158,9 @@ class MostroService {
     return {
       'order': {
         'version': Config.mostroVersion,
-        'id': orderId,
+        'request_id': null,
         'trade_index': null,
+        'id': orderId,
         'action': actionType.value,
         'payload': payload,
       },
@@ -181,8 +184,7 @@ class MostroService {
         content = '[${jsonEncode(message)},null]';
       }
       _logger.i(content);
-      final event =
-          await createNIP59Event(content, receiverPubkey, session);
+      final event = await createNIP59Event(content, receiverPubkey, session);
       await _nostrService.publishEvent(event);
     } catch (e) {
       // catch and throw and log and stuff

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/payment_request.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
@@ -37,8 +38,11 @@ class _PayLightningInvoiceScreenState
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 PayLightningInvoiceWidget(
-                    onSubmit: () async {},
+                    onSubmit: () async {
+                      context.go('/');
+                    },
                     onCancel: () async {
+                      context.go('/');
                       await orderNotifier.cancelOrder();
                     },
                     lnInvoice: lnInvoice),
