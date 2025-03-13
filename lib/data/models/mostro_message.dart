@@ -1,4 +1,7 @@
 import 'dart:convert';
+import 'package:convert/convert.dart';
+import 'package:crypto/crypto.dart';
+import 'package:dart_nostr/nostr/core/key_pairs.dart';
 import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/payload.dart';
@@ -10,7 +13,12 @@ class MostroMessage<T extends Payload> {
   int? tradeIndex;
   T? _payload;
 
-  MostroMessage({required this.action, this.requestId, this.id, T? payload, this.tradeIndex})
+  MostroMessage(
+      {required this.action,
+      this.requestId,
+      this.id,
+      T? payload,
+      this.tradeIndex})
       : _payload = payload;
 
   Map<String, dynamic> toJson() {
@@ -23,7 +31,7 @@ class MostroMessage<T extends Payload> {
       json['id'] = id;
     }
     json['action'] = action.value;
-    json['payload']= _payload?.toJson();
+    json['payload'] = _payload?.toJson();
     return json;
   }
 
@@ -75,5 +83,23 @@ class MostroMessage<T extends Payload> {
       return payload as R;
     }
     return null;
+  }
+
+  String sign(NostrKeyPairs keyPair) {
+    final message = {'order': toJson()};
+    final serializedEvent = jsonEncode(message);
+    final bytes = utf8.encode(serializedEvent);
+    final digest = sha256.convert(bytes);
+    final hash = hex.encode(digest.bytes);
+    final signature = keyPair.sign(hash);
+    return signature;
+  }
+
+  String serialize({NostrKeyPairs? keyPair}) {
+    final message = {'order': toJson()};
+    final serializedEvent = jsonEncode(message);
+    final signature = (keyPair != null) ? '"${sign(keyPair)}"' : null;
+    final content = '[$serializedEvent, $signature]';
+    return content;
   }
 }

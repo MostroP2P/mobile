@@ -129,4 +129,12 @@ class MostroRepository implements OrderRepository<MostroMessage> {
     // TODO: implement updateOrder
     throw UnimplementedError();
   }
+
+  Future<void> sendFiatSent(String orderId) async {
+    await _mostroService.sendFiatSent(orderId);
+  }
+
+  Future<void> releaseOrder(String orderId) async {
+    await _mostroService.releaseOrder(orderId);
+  }
 }

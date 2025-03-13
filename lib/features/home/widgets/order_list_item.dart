@@ -1,25 +1,29 @@
 import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
+import 'package:mostro_mobile/shared/providers/time_provider.dart';
 import 'package:mostro_mobile/shared/utils/currency_utils.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 
-class OrderListItem extends StatelessWidget {
+class OrderListItem extends ConsumerWidget {
   final NostrEvent order;
 
   const OrderListItem({super.key, required this.order});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(timeProvider);
+
     return GestureDetector(
       onTap: () {
         order.orderType == OrderType.buy
-            ? context.go('/take_buy/${order.orderId}')
-            : context.go('/take_sell/${order.orderId}');
+            ? context.push('/take_buy/${order.orderId}')
+            : context.push('/take_sell/${order.orderId}');
       },
       child: CustomCard(
         color: AppTheme.dark1,

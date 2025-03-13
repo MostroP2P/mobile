@@ -1,3 +1,4 @@
+import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/data/models/range_amount.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/rating.dart';
@@ -12,7 +13,7 @@ extension NostrEventExtensions on NostrEvent {
       ? OrderType.fromString(_getTagValue('k')!)
       : null;
   String? get currency => _getTagValue('f');
-  String? get status => _getTagValue('s');
+  Status get status => Status.fromString(_getTagValue('s')!);
   String? get amount => _getTagValue('amt');
   RangeAmount get fiatAmount => _getAmount('fa');
   List<String> get paymentMethods => _getTagValue('pm')?.split(',') ?? [];

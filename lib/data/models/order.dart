@@ -117,7 +117,7 @@ class Order implements Payload {
     return Order(
       id: event.orderId,
       kind: event.orderType!,
-      status: Status.fromString(event.status!),
+      status: event.status,
       amount: event.amount as int,
       fiatCode: event.currency!,
       fiatAmount: event.fiatAmount.minimum,

@@ -42,32 +42,66 @@ class AboutScreen extends ConsumerWidget {
                   color: AppTheme.dark2,
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 24),
-                    Center(
-                      child: CircleAvatar(
-                        radius: 50,
-                        backgroundColor: Colors.grey,
-                        foregroundImage:
-                            AssetImage('assets/images/launcher-icon.png'),
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 24),
+                      Center(
+                        child: CircleAvatar(
+                          radius: 36,
+                          backgroundColor: Colors.grey,
+                          foregroundImage:
+                              AssetImage('assets/images/launcher-icon.png'),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Mostro',
-                      style: textTheme.displayLarge,
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: _buildInstanceDetails(
-                          MostroInstance.fromEvent(nostrEvent)),
-                    ),
-                  ],
+                      const SizedBox(height: 16),
+                      Text(
+                        'Mostro Mobile Client',
+                        style: textTheme.displayMedium,
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: _buildClientDetails(),
+                      ),
+                      Text(
+                        'Mostro Daemon',
+                        style: textTheme.displayMedium,
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: _buildInstanceDetails(
+                            MostroInstance.fromEvent(nostrEvent)),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
     );
+  }
+
+  /// Builds the header displaying details from the client.
+  Widget _buildClientDetails() {
+    const String appVersion =
+        String.fromEnvironment('APP_VERSION', defaultValue: 'N/A');
+    const String gitCommit =
+        String.fromEnvironment('GIT_COMMIT', defaultValue: 'N/A');
+
+    return CustomCard(
+        color: AppTheme.dark1,
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Version: $appVersion',
+            ),
+            const SizedBox(height: 3),
+            Text(
+              'Commit Hash: $gitCommit',
+            ),
+          ],
+        ));
   }
 
   /// Builds the header displaying details from the MostroInstance.

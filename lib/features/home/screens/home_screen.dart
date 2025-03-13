@@ -24,7 +24,7 @@ class HomeScreen extends ConsumerWidget {
       drawer: const MostroAppDrawer(),
       body: RefreshIndicator(
         onRefresh: () async {
-          return ref.refresh(filteredOrdersProvider);
+          return await ref.refresh(filteredOrdersProvider);
         },
         child: Container(
           margin: const EdgeInsets.all(16),
@@ -51,7 +51,7 @@ class HomeScreen extends ConsumerWidget {
                         itemBuilder: (context, index) {
                           final order = filteredOrders[index];
                           return OrderListItem(
-                              order: order); // Your custom widget
+                              order: order);
                         },
                       ),
               ),

@@ -7,7 +7,7 @@ import 'package:mostro_mobile/features/order/notfiers/abstract_order_notifier.da
 class OrderNotifier extends AbstractOrderNotifier {
   OrderNotifier(super.orderRepository, super.orderId, super.ref);
 
-  Future<void> reSubscribe() async {
+  Future<void> resubscribe() async {
     final stream = orderRepository.resubscribeOrder(orderId);
     Timer? debounceTimer;
     stream.listen((order) {
@@ -49,5 +49,13 @@ class OrderNotifier extends AbstractOrderNotifier {
         MostroMessage<Order>(action: Action.newOrder, id: null, payload: order);
     final stream = await orderRepository.publishOrder(message);
     await subscribe(stream);
+  }
+
+  Future<void> sendFiatSent() async {
+    await orderRepository.sendFiatSent(orderId);
+  }
+
+  Future<void> releaseOrder() async {
+    await orderRepository.releaseOrder(orderId);
   }
 }

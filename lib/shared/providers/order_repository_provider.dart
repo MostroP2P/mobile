@@ -19,8 +19,6 @@ final orderRepositoryProvider = Provider((ref) {
 
 final orderEventsProvider = StreamProvider<List<NostrEvent>>((ref) {
   final orderRepository = ref.read(orderRepositoryProvider);
-  orderRepository.subscribeToOrders();
-
   return orderRepository.eventsStream;
 });
 

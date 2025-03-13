@@ -73,14 +73,7 @@ class SettingsScreen extends ConsumerWidget {
                         // Relays
                         Text('Relays', style: textTheme.titleLarge),
                         const SizedBox(height: 8),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: AppTheme.dark1,
-                            borderRadius: BorderRadius.circular(24),
-                          ),
-                          child: RelaySelector(),
-                        ),
-                        const SizedBox(height: 12),
+                        RelaySelector(),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [

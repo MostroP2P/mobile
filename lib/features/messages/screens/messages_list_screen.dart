@@ -13,7 +13,6 @@ class MessagesListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Watch the state
     final chatListState = ref.watch(messagesListNotifierProvider);
 
     return Scaffold(

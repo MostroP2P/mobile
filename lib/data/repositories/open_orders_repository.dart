@@ -23,10 +23,12 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
 
   NostrEvent? get mostroInstance => _mostroInstance;
 
-  OpenOrdersRepository(this._nostrService, this._settings);
+  OpenOrdersRepository(this._nostrService, this._settings) {
+    _subscribeToOrders();
+  }
 
   /// Subscribes to events matching the given filter.
-  void subscribeToOrders() {
+  void _subscribeToOrders() {
     _subscription?.cancel();
 
     final filterTime =
@@ -41,7 +43,8 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
       if (event.type == 'order') {
         _events[event.orderId!] = event;
         _eventStreamController.add(_events.values.toList());
-      } else if (event.type == 'info' && event.pubkey == _settings.mostroPublicKey) {
+      } else if (event.type == 'info' &&
+          event.pubkey == _settings.mostroPublicKey) {
         _logger.i('Mostro instance info loaded: $event');
         _mostroInstance = event;
       }
@@ -63,8 +66,6 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
   }
 
   Stream<List<NostrEvent>> get eventsStream => _eventStreamController.stream;
-
-  List<NostrEvent> get currentEvents => _events.values.toList();
 
   @override
   Future<void> addOrder(NostrEvent order) {
@@ -95,7 +96,7 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
       _logger.i('Mostro instance changed, updating...');
       _settings = settings.copyWith();
       _events.clear();
-      subscribeToOrders();
+      _subscribeToOrders();
     } else {
       _settings = settings.copyWith();
     }

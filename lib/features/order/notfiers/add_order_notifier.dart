@@ -30,7 +30,7 @@ class AddOrderNotifier extends AbstractOrderNotifier {
     final newNotifier =
         ref.read(orderNotifierProvider(confirmedOrderId!).notifier);
     handleOrderUpdate();
-    newNotifier.reSubscribe();
+    newNotifier.resubscribe();
     dispose();
   }
 

@@ -46,7 +46,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const HeroIcon(HeroIcons.arrowLeft, color: AppTheme.cream1),
-          onPressed: () => context.go('/'),
+          onPressed: () => context.pop(),
         ),
         title: Text(
           'NEW ORDER',

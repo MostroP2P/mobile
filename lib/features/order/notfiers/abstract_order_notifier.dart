@@ -125,10 +125,10 @@ class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
         break;
       case Action.disputeInitiatedByYou:
       case Action.adminSettled:
-        notifProvider.showInformation(state.action);
+        notifProvider.showInformation(state.action, values: {});
         break;
       default:
-        notifProvider.showInformation(state.action);
+        notifProvider.showInformation(state.action, values: {});
         break;
     }
   }

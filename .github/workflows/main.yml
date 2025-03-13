@@ -38,15 +38,15 @@ jobs:
         
         #5 Building APK
       - name: Build APK
-        run: flutter build apk --release
+        run: flutter build apk --release --dart-define=APP_VERSION=${{ env.VERSION }} --dart-define=GIT_COMMIT=${{ github.sha }}
 
         #6 Building App Bundle (aab)
       - name: Build appBundle
-        run: flutter build appbundle
+        run: flutter build appbundle --release --dart-define=APP_VERSION=${{ env.VERSION }} --dart-define=GIT_COMMIT=${{ github.sha }}
 
         #7 Build IPA ( IOS Build )
       - name: Build IPA
-        run: flutter build ipa --no-codesign
+        run: flutter build ipa --no-codesign --dart-define=APP_VERSION=${{ env.VERSION }} --dart-define=GIT_COMMIT=${{ github.sha }}
 
       - name: Compress Archives and IPAs
         run: |

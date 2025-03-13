@@ -22,7 +22,9 @@ class TradesScreen extends ConsumerWidget {
       appBar: const MostroAppBar(),
       drawer: const MostroAppDrawer(),
       body: RefreshIndicator(
-        onRefresh: () async {},
+        onRefresh: () async {
+          return await ref.refresh(filteredTradesProvider);
+        },
         child: Container(
           margin: const EdgeInsets.fromLTRB(16, 16, 16, 16),
           decoration: BoxDecoration(
@@ -34,8 +36,8 @@ class TradesScreen extends ConsumerWidget {
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Text(
-                  'My Trades',
-                  style: AppTheme.theme.textTheme.displayLarge,
+                  'MY TRADES',
+                  style: TextStyle(color: AppTheme.mostroGreen),
                 ),
               ),
               _buildFilterButton(context, state),

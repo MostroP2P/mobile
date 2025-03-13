@@ -19,13 +19,12 @@ class RelaySelector extends ConsumerWidget {
       child: ListView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16),
         itemCount: settings.relays.length,
         itemBuilder: (context, index) {
           final relay = relays[index];
           return Card(
-            color: AppTheme.dark2,
-            margin: const EdgeInsets.symmetric(vertical: 8),
+            color: AppTheme.dark1,
+            margin: EdgeInsets.only(bottom: 12),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),

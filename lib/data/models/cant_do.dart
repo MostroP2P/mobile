@@ -11,11 +11,13 @@ class CantDo implements Payload {
 
   @override
   Map<String, dynamic> toJson() {
-    // TODO: implement toJson
-    throw UnimplementedError();
+    return {
+      type : {
+        'cant-do' : cantDo,
+      }
+    };
   }
 
   @override
-  // TODO: implement type
   String get type => 'cant_do';
 }
