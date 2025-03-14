@@ -60,21 +60,24 @@ class Order implements Payload {
         'fiat_amount': fiatAmount,
         'payment_method': paymentMethod,
         'premium': premium,
-        'created_at': createdAt,
-        'expires_at': expiresAt,
-        'buyer_token': buyerToken,
-        'seller_token': sellerToken,
       }
     };
 
     if (id != null) data[type]['id'] = id;
+
+    if (buyerInvoice != null) data[type]['buyer_invoice'] = buyerInvoice;
+
+    data[type]['created_at'] = createdAt;
+    data[type]['expires_at'] = expiresAt;
+    data[type]['buyer_token'] = buyerToken;
+    data[type]['seller_token'] = sellerToken;
+
     if (masterBuyerPubkey != null) {
-      data[type]['master_buyer_pubkey'] = masterBuyerPubkey;
+      data[type]['buyer_trade_pubkey'] = masterBuyerPubkey;
     }
     if (masterSellerPubkey != null) {
-      data[type]['master_seller_pubkey'] = masterSellerPubkey;
+      data[type]['seller_trade_pubkey'] = masterSellerPubkey;
     }
-    if (buyerInvoice != null) data[type]['buyer_invoice'] = buyerInvoice;
     return data;
   }
 
@@ -176,7 +179,5 @@ class Order implements Payload {
   @override
   String get type => 'order';
 
-  copyWith({required String buyerInvoice}) {
-    
-  }
+  copyWith({required String buyerInvoice}) {}
 }
