@@ -13,6 +13,14 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     return session;
   }
 
+  Future<void> reset() async {
+    await _manager.reset();
+  }
+
+  void refresh() {
+    state = _manager.sessions;
+  }
+
   Future<void> saveSession(Session session) async {
     await _manager.saveSession(session);
     state = _manager.sessions;

@@ -15,7 +15,7 @@ abstract class Payload {
     } else if (json.containsKey('cant_do')) {
       return CantDo.fromJson(json);
     } else if (json.containsKey('peer')) {
-      return Peer.fromJson(json);
+      return Peer.fromJson(json['peer']);
     }
     throw UnsupportedError('Unknown content type');
   }

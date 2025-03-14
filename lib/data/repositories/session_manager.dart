@@ -23,11 +23,7 @@ class SessionManager {
   /// Returns all in-memory sessions.
   List<Session> get sessions => _sessions.values.toList();
 
-  SessionManager(
-    this._keyManager,
-    this._sessionStorage,
-    this._settings
-  ) {
+  SessionManager(this._keyManager, this._sessionStorage, this._settings) {
     _initializeCleanup();
   }
 
@@ -37,6 +33,11 @@ class SessionManager {
     for (final session in allSessions) {
       _sessions[session.keyIndex] = session;
     }
+  }
+
+  Future<void> reset() async {
+    await _sessionStorage.deleteAllSessions();
+    _sessions.clear();
   }
 
   void updateSettings(Settings settings) {

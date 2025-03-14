@@ -61,6 +61,10 @@ class SessionStorage {
     await _store.record(keyIndex).delete(_database);
   }
 
+  Future<void> deleteAllSessions() async {
+    await _store.delete(_database);
+  }
+
   /// Finds and deletes sessions considered expired, returning a list of deleted IDs.
   Future<List<int>> deleteExpiredSessions(
       int sessionExpirationHours, int maxBatchSize) async {

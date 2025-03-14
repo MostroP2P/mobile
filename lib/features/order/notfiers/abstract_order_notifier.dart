@@ -111,7 +111,7 @@ class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
           'fiat_amount': order?.fiatAmount,
           'payment_method': order?.paymentMethod,
         });
-        navProvider.go('/'); 
+        navProvider.go('/');
         break;
       case Action.fiatSentOk:
       case Action.holdInvoicePaymentSettled:
@@ -127,6 +127,17 @@ class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
       case Action.adminSettled:
         notifProvider.showInformation(state.action, values: {});
         break;
+      case Action.paymentFailed:
+        notifProvider.showInformation(state.action, values: {
+          'payment_attempts': -1,
+          'payment_retries_interval': -1000
+        });
+        break;
+      case Action.released:
+        notifProvider.showInformation(state.action, values: {
+          'seller_npub': null,
+        });
+
       default:
         notifProvider.showInformation(state.action, values: {});
         break;

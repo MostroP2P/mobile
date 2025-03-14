@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
+import 'package:mostro_mobile/shared/providers/session_manager_provider.dart';
 
 class KeyManagementScreen extends ConsumerStatefulWidget {
   const KeyManagementScreen({super.key});
@@ -62,6 +63,8 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
   }
 
   Future<void> _generateNewMasterKey() async {
+    final sessionNotifer = ref.read(sessionNotifierProvider.notifier);
+    await sessionNotifer.reset();
     final keyManager = ref.read(keyManagerProvider);
     await keyManager.generateAndStoreMasterKey();
     await _loadKeys();
