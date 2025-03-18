@@ -33,9 +33,6 @@ class MostroStorage implements OrderRepository<MostroMessage> {
     if (record == null) return null;
     try {
       final msg = MostroMessage.deserialized(jsonEncode(record));
-      // If the payload is indeed an Order, you can cast or do a check:
-      //   final order = msg.getPayload<Order>();
-      //   ...
       return msg;
     } catch (e) {
       _logger.e('Error deserializing order $orderId: $e');

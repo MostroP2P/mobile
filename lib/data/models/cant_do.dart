@@ -1,19 +1,20 @@
+import 'package:mostro_mobile/data/models/enums/cant_do_reason.dart';
 import 'package:mostro_mobile/data/models/payload.dart';
 
 class CantDo implements Payload {
-  final String cantDo;
+  final CantDoReason cantDoReason;
 
   factory CantDo.fromJson(Map<String, dynamic> json) {
-    return CantDo(cantDo: json['cant_do']);
+    return CantDo(cantDoReason: json['cant_do']);
   }
 
-  CantDo({required this.cantDo});
+  CantDo({required this.cantDoReason});
 
   @override
   Map<String, dynamic> toJson() {
     return {
-      type : {
-        'cant-do' : cantDo,
+      type: {
+        'cant-do': cantDoReason.toString(),
       }
     };
   }

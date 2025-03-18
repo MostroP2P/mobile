@@ -4,6 +4,7 @@ import 'package:logger/logger.dart';
 import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/cant_do.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
+import 'package:mostro_mobile/data/models/enums/cant_do_reason.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/data/repositories/mostro_repository.dart';
@@ -38,6 +39,17 @@ class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
 
   void handleError(Object err) {
     logger.e(err);
+    if (state.payload is CantDo) {
+      final cantdo = state.getPayload<CantDo>()!;
+
+      switch (cantdo.cantDoReason) {
+        case CantDoReason.outOfRangeSatsAmount:
+          break;
+        case CantDoReason.outOfRangeFiatAmount:
+          break;
+        default:
+      }
+    }
   }
 
   void handleOrderUpdate() {
@@ -51,28 +63,14 @@ class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
         break;
       case Action.cantDo:
         final cantDo = state.getPayload<CantDo>();
-        notifProvider
-            .showInformation(state.action, values: {'action': cantDo?.cantDo});
+        notifProvider.showInformation(state.action,
+            values: {'action': cantDo?.cantDoReason.toString()});
         break;
       case Action.newOrder:
         navProvider.go('/order_confirmed/${state.id!}');
         break;
       case Action.payInvoice:
         navProvider.go('/pay_invoice/${state.id!}');
-        break;
-      case Action.outOfRangeSatsAmount:
-        final order = state.getPayload<Order>();
-        notifProvider.showInformation(state.action, values: {
-          'min_order_amount': order?.minAmount,
-          'max_order_amount': order?.maxAmount
-        });
-        break;
-      case Action.outOfRangeFiatAmount:
-        final order = state.getPayload<Order>();
-        notifProvider.showInformation(state.action, values: {
-          'min_amount': order?.minAmount,
-          'max_amount': order?.maxAmount
-        });
         break;
       case Action.waitingSellerToPay:
         navProvider.go('/');

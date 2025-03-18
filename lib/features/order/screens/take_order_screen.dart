@@ -146,6 +146,8 @@ class TakeOrderScreen extends ConsumerWidget {
     if (expiration.isAfter(now)) {
       countdown = expiration.difference(now);
     }
+    print(countdown);
+
 
     return Column(
       children: [

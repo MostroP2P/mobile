@@ -8,26 +8,30 @@ import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/data/repositories/session_manager.dart';
 import 'package:mostro_mobile/features/key_manager/key_derivator.dart';
+import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/services/mostro_service.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
+import 'package:mostro_mobile/shared/notifiers/session_notifier.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
 import 'mostro_service_test.mocks.dart';
 import 'mostro_service_helper_functions.dart';
 
-@GenerateMocks([NostrService, SessionManager])
+@GenerateMocks([NostrService, SessionManager, SessionNotifier])
 void main() {
   late MostroService mostroService;
   late KeyDerivator keyDerivator;
   late MockNostrService mockNostrService;
   late MockSessionManager mockSessionManager;
+  late MockSessionNotifier mockSessionNotifier;
 
   final mockServerTradeIndex = MockServerTradeIndex();
 
   setUp(() {
     mockNostrService = MockNostrService();
     mockSessionManager = MockSessionManager();
-    mostroService = MostroService(mockNostrService, mockSessionManager);
+    mostroService = MostroService(mockNostrService, mockSessionNotifier,
+        Settings(relays: [], fullPrivacyMode: true, mostroPublicKey: 'xxx'));
     keyDerivator = KeyDerivator("m/44'/1237'/38383'/0");
   });
 

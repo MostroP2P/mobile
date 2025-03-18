@@ -4,7 +4,7 @@ import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/features/order/screens/add_order_screen.dart';
 import 'package:mostro_mobile/features/order/screens/order_confirmation_screen.dart';
 import 'package:mostro_mobile/features/auth/screens/welcome_screen.dart';
-import 'package:mostro_mobile/features/messages/screens/messages_list_screen.dart';
+import 'package:mostro_mobile/features/messages/screens/chat_rooms_list.dart';
 import 'package:mostro_mobile/features/home/screens/home_screen.dart';
 import 'package:mostro_mobile/features/key_manager/key_management_screen.dart';
 import 'package:mostro_mobile/features/mostro/mostro_screen.dart';
@@ -52,7 +52,7 @@ final goRouter = GoRouter(
         ),
         GoRoute(
           path: '/chat_list',
-          builder: (context, state) => const MessagesListScreen(),
+          builder: (context, state) => const ChatRoomsScreen(),
         ),
         GoRoute(
           path: '/register',

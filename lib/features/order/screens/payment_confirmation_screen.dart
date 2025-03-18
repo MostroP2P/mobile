@@ -39,9 +39,6 @@ class PaymentConfirmationScreen extends ConsumerWidget {
 
   Widget _buildBody(BuildContext context, WidgetRef ref, MostroMessage state) {
     switch (state.action) {
-      case action.Action.notFound:
-        return const Center(child: CircularProgressIndicator());
-
       case action.Action.purchaseCompleted:
         final satoshis = 0;
 
@@ -108,7 +105,7 @@ class PaymentConfirmationScreen extends ConsumerWidget {
         );
 
       case action.Action.cantDo:
-        final error = state.getPayload<CantDo>()?.cantDo;
+        final error = state.getPayload<CantDo>()?.cantDoReason;
         return Center(
           child: Text(
             'Error: $error',

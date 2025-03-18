@@ -46,8 +46,7 @@ extension NostrEventExtensions on NostrEvent {
 
   DateTime _getTimeStamp(String timestamp) {
     final ts = int.parse(timestamp);
-    return DateTime.fromMillisecondsSinceEpoch(ts * 1000)
-        .subtract(Duration(hours: 36));
+    return DateTime.fromMillisecondsSinceEpoch(ts * 1000).subtract(Duration(hours: 12));
   }
 
   String _timeAgo(String? ts) {

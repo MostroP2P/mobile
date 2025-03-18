@@ -87,29 +87,6 @@ extension ActionLocalizationX on S {
         } else {
           return adminTookDisputeUsers(placeholders['admin_npub']);
         }
-      case Action.isNotYourOrder:
-        return isNotYourOrder(placeholders['action']);
-      case Action.notAllowedByStatus:
-        return notAllowedByStatus(placeholders['action'], placeholders['id'],
-            placeholders['order_status']);
-      case Action.outOfRangeFiatAmount:
-        return outOfRangeFiatAmount(
-            placeholders['min_amount'], placeholders['max_amount']);
-      case Action.isNotYourDispute:
-        return isNotYourDispute;
-      case Action.notFound:
-        return notFound;
-      case Action.incorrectInvoiceAmount:
-        if (placeholders['amount']) {
-          return incorrectInvoiceAmountBuyerAddInvoice(placeholders['amount']);
-        } else {
-          return incorrectInvoiceAmountBuyerNewOrder;
-        }
-      case Action.invalidSatsAmount:
-        return invalidSatsAmount;
-      case Action.outOfRangeSatsAmount:
-        return outOfRangeSatsAmount(
-            placeholders['min_order_amount'], placeholders['max_order_amount']);
       case Action.paymentFailed:
         return paymentFailed(placeholders['payment_attempts'],
             placeholders['payment_retries_interval']);

@@ -2,14 +2,14 @@ import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
-import 'package:mostro_mobile/features/messages/notifiers/messages_list_state.dart';
-import 'package:mostro_mobile/features/messages/providers/messages_list_provider.dart';
+import 'package:mostro_mobile/data/models/chat_room.dart';
+import 'package:mostro_mobile/features/messages/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_app_bar.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_app_drawer.dart';
 
-class MessagesListScreen extends ConsumerWidget {
-  const MessagesListScreen({super.key});
+class ChatRoomsScreen extends ConsumerWidget {
+  const ChatRoomsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -30,8 +30,8 @@ class MessagesListScreen extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Text(
-                'Messages',
-                style: AppTheme.theme.textTheme.displayLarge,
+                'MESSAGES',
+                style: TextStyle(color: AppTheme.mostroGreen),
               ),
             ),
             Expanded(
@@ -44,36 +44,20 @@ class MessagesListScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildBody(MessagesListState state) {
-    switch (state.status) {
-      case MessagesListStatus.loading:
-        return const Center(child: CircularProgressIndicator());
-      case MessagesListStatus.loaded:
-        if (state.chats.isEmpty) {
-          return Center(
-              child: Text(
-            'No messages available',
-            style: AppTheme.theme.textTheme.displaySmall,
-          ));
-        }
-        return ListView.builder(
-          itemCount: state.chats.length,
-          itemBuilder: (context, index) {
-            return ChatListItem(chat: state.chats[index]);
-          },
-        );
-      case MessagesListStatus.error:
-        return Center(
+  Widget _buildBody(List<ChatRoom> state) {
+    if (state.isEmpty) {
+      return Center(
           child: Text(
-            state.errorMessage ?? 'An error occurred',
-            style: const TextStyle(color: Colors.red),
-          ),
-        );
-      case MessagesListStatus.empty:
-        return const Center(
-            child: Text('No chats available',
-                style: TextStyle(color: AppTheme.cream1)));
+        'No messages available',
+        style: AppTheme.theme.textTheme.displaySmall,
+      ));
     }
+    return ListView.builder(
+      itemCount: state.length,
+      itemBuilder: (context, index) {
+        return ChatListItem(chat: state[index].messages.first);
+      },
+    );
   }
 }
 

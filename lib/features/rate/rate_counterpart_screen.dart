@@ -16,14 +16,11 @@ class _RateCounterpartScreenState extends State<RateCounterpartScreen> {
   final _logger = Logger();
 
   void _submitRating() {
-    // Here you would typically call a notifier/provider method to persist the rating.
-    // For now, we'll simply print it and navigate back.
     _logger.i('Rating submitted: $_rating');
-    // Optionally, show a confirmation SnackBar:
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Rating submitted!')),
     );
-    // Navigate back (or to a confirmation screen) using GoRouter.
     context.pop();
   }
 

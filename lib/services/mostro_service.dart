@@ -66,7 +66,7 @@ class MostroService {
       if (msgMap.containsKey('cant-do')) {
         final msg = MostroMessage.fromJson(msgMap['cant-do']);
         final cantdo = msg.getPayload<CantDo>();
-        _logger.e('Can\'t Do: ${cantdo?.cantDo}');
+        _logger.e('Can\'t Do: ${cantdo?.cantDoReason}');
         return msg;
       }
       throw FormatException('Result not found ${decryptedEvent.content}');

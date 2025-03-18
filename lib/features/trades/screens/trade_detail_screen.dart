@@ -143,8 +143,9 @@ class TradeDetailScreen extends ConsumerWidget {
     Duration countdown = Duration(hours: 0);
     final now = DateTime.now();
     if (expiration.isAfter(now)) {
-      countdown = expiration.difference(now);
+      countdown = now.difference(expiration);
     }
+	print(countdown);
 
     return Column(
       children: [
@@ -166,7 +167,6 @@ class TradeDetailScreen extends ConsumerWidget {
 
     final showCancel =
         (order.status == Status.pending || order.status == Status.inProgress);
-    print(message.serialize());
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,

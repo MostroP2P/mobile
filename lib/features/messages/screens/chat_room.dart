@@ -3,21 +3,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
-import 'package:mostro_mobile/features/messages/notifiers/messages_detail_state.dart';
-import 'package:mostro_mobile/features/messages/providers/messages_list_provider.dart';
+import 'package:mostro_mobile/data/models/chat_room.dart';
+import 'package:mostro_mobile/features/messages/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
 
-class MessagesDetailScreen extends ConsumerStatefulWidget {
+class ChatRoomScreen extends ConsumerStatefulWidget {
   final String chatId;
 
-  const MessagesDetailScreen({super.key, required this.chatId});
+  const ChatRoomScreen({super.key, required this.chatId});
 
   @override
-  ConsumerState<MessagesDetailScreen> createState() =>
-      _MessagesDetailScreenState();
+  ConsumerState<ChatRoomScreen> createState() => _MessagesDetailScreenState();
 }
 
-class _MessagesDetailScreenState extends ConsumerState<MessagesDetailScreen> {
+class _MessagesDetailScreenState extends ConsumerState<ChatRoomScreen> {
   final TextEditingController _textController = TextEditingController();
 
   @override
@@ -41,28 +40,21 @@ class _MessagesDetailScreenState extends ConsumerState<MessagesDetailScreen> {
     );
   }
 
-  Widget _buildBody(MessagesDetailState state) {
-    switch (state.status) {
-      case MessagesDetailStatus.loading:
-        return const Center(child: CircularProgressIndicator());
-      case MessagesDetailStatus.loaded:
-        return Column(
-          children: [
-            Expanded(
-              child: ListView.builder(
-                itemCount: state.messages.length,
-                itemBuilder: (context, index) {
-                  final message = state.messages[index];
-                  return _buildMessageBubble(message);
-                },
-              ),
-            ),
-            _buildMessageInput(),
-          ],
-        );
-      case MessagesDetailStatus.error:
-        return Center(child: Text(state.error ?? 'An error occurred'));
-    }
+  Widget _buildBody(ChatRoom state) {
+    return Column(
+      children: [
+        Expanded(
+          child: ListView.builder(
+            itemCount: state.messages.length,
+            itemBuilder: (context, index) {
+              final message = state.messages[index];
+              return _buildMessageBubble(message);
+            },
+          ),
+        ),
+        _buildMessageInput(),
+      ],
+    );
   }
 
   Widget _buildMessageBubble(NostrEvent message) {
