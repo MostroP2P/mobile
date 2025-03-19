@@ -1,4 +1,5 @@
 import 'package:mostro_mobile/data/models/cant_do.dart';
+import 'package:mostro_mobile/data/models/dispute.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/data/models/payment_request.dart';
 import 'package:mostro_mobile/data/models/peer.dart';
@@ -16,7 +17,9 @@ abstract class Payload {
       return CantDo.fromJson(json);
     } else if (json.containsKey('peer')) {
       return Peer.fromJson(json['peer']);
+    } else if (json.containsKey('dispute')) {
+      return Dispute.fromJson(json['dispute']);
     }
-    throw UnsupportedError('Unknown content type');
+    throw UnsupportedError('Unknown payload type');
   }
 }

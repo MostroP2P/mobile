@@ -30,6 +30,7 @@ void main() {
   setUp(() {
     mockNostrService = MockNostrService();
     mockSessionManager = MockSessionManager();
+    mockSessionNotifier = MockSessionNotifier();
     mostroService = MostroService(mockNostrService, mockSessionNotifier,
         Settings(relays: [], fullPrivacyMode: true, mostroPublicKey: 'xxx'));
     keyDerivator = KeyDerivator("m/44'/1237'/38383'/0");

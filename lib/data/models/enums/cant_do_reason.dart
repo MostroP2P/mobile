@@ -1,38 +1,44 @@
 enum CantDoReason {
-  invalidSignature('invalid-signature'),
-  invalidTradeIndex('invalid-trade-index'),
-  invalidAmount('invalid-amount'),
-  invalidInvoice('invalid-invoice'),
-  invalidPaymentRequest('invalid-payment-request'),
-  invalidPeer('invalid-peer'),
-  invalidRating('invalid-rating'),
-  invalidTextMessage('invalid-text-message'),
-  invalidOrderKind('invalid-order-kind'),
-  invalidOrderStatus('invalid-order-status'),
-  invalidPubkey('invalid-pubkey'),
-  invalidParameters('invalid-parameters'),
-  orderAlreadyCanceled('order-already-canceled'),
-  cantCreateUser('cant-create-user'),
-  isNotYourOrder('is-not-your-order'),
-  notAllowedByStatus('not-allowed-by-status'),
-  outOfRangeFiatAmount('out-of-range-fiat-amount'),
-  outOfRangeSatsAmount('out-of-range-sats-amount'),
-  isNotYourDispute('is-not-your-dispute'),
-  disputeCreationError('dispute-creation-error'),
-  notFound('not-found'),
-  invalidDisputeStatus('invalid-dispute-status'),
-  invalidAction('invalid-action'),
-  pendingOrderExists('pending-order-exists');
-
-  const CantDoReason(this.value);
+  invalidSignature('invalid_signature'),
+  invalidTradeIndex('invalid_trade_index'),
+  invalidAmount('invalid_amount'),
+  invalidInvoice('invalid_invoice'),
+  invalidPaymentRequest('invalid_payment_request'),
+  invalidPeer('invalid_peer'),
+  invalidRating('invalid_rating'),
+  invalidTextMessage('invalid_text_message'),
+  invalidOrderKind('invalid_order_kind'),
+  invalidOrderStatus('invalid_order_status'),
+  invalidPubkey('invalid_pubkey'),
+  invalidParameters('invalid_parameters'),
+  orderAlreadyCanceled('order_already_canceled'),
+  cantCreateUser('cant_create_user'),
+  isNotYourOrder('is_not_your_order'),
+  notAllowedByStatus('not_allowed_by_status'),
+  outOfRangeFiatAmount('out_of_range_fiat_amount'),
+  outOfRangeSatsAmount('out_of_range_sats_amount'),
+  isNotYourDispute('is_not_your_dispute'),
+  disputeCreationError('dispute_creation_error'),
+  notFound('not_found'),
+  invalidDisputeStatus('invalid_dispute_status'),
+  invalidAction('invalid_action'),
+  pendingOrderExists('pending_order_exists');
+  
   final String value;
 
-  static CantDoReason? fromValue(String value) {
-    return CantDoReason.values
-        .where((e) => e.value == value)
-        .fold(null, (_, e) => e); // or firstWhere + catch
-  }
+  const CantDoReason(this.value);
 
+  static final _valueMap = {
+    for (var cantDo in CantDoReason.values) cantDo.value: cantDo
+  };
+
+  static CantDoReason fromString(String value) {
+    final cantDo = _valueMap[value];
+    if (cantDo == null) {
+      throw ArgumentError('Invalid Can\'t Do Reason: $value');
+    }
+    return cantDo;
+  }
   @override
   String toString() {
     return value;

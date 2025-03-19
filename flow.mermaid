@@ -1,0 +1,113 @@
+graph TD
+
+%% Order Creation
+subgraph Order Creation
+  StartBuy["Buyer creates Buy Order"]
+  StartSell["Seller creates Sell Order"]
+  MostroPublishesOrder["Mostro publishes order (status: pending, kind:38383)"]
+end
+
+%% Order Taken
+subgraph Order Taken
+  SellerTakesBuy["Seller takes Buy Order"]
+  BuyerTakesSell["Buyer takes Sell Order"]
+  MostroWaitingPayment["Mostro: waiting-payment"]
+end
+
+%% Invoice Handling
+subgraph Invoice Handling
+  BuyerInvoice["Buyer provides LN Invoice"]
+  SellerPaysHoldInvoice["Seller pays Hold Invoice"]
+  OrderActive["Order becomes active (status: active)"]
+end
+
+%% Fiat Payment
+subgraph Fiat Payment
+  BuyerSendsFiat["Buyer sends fiat to Seller"]
+  FiatSent["Buyer notifies Mostro (fiat-sent)"]
+  SellerReleases["Seller releases sats"]
+end
+
+%% Order Completion
+subgraph Order Completion
+  MostroPaysBuyer["Mostro pays Buyer's LN Invoice"]
+  OrderSuccess["Order marked as success"]
+end
+
+%% Dispute Handling
+subgraph Dispute
+  InitiateDispute["Dispute initiated (active/fiat-sent orders)"]
+  DisputeInProgress["Dispute status: in-progress"]
+  AdminIntervention["Admin takes action"]
+end
+
+%% User Ratings
+subgraph Rating
+  MostroRequestsRating["Mostro requests user rating"]
+  UsersRateEachOther["Users rate each other"]
+  RatingReceived["Rating received (rate-received)"]
+end
+
+%% Flow connections
+StartBuy -->|new-order|MostroPublishesOrder
+StartSell -->|new-order| MostroPublishesOrder
+MostroPublishesOrder -->|pending| OrderAvailable["Order available for taking"]
+
+OrderAvailable -->|Buyer takes sell| BuyerInvoice
+OrderAvailable -->|Seller takes buy| SellerPaysHoldInvoice
+
+BuyerInvoice --> SellerPaysHoldInvoice
+SellerPaysHoldInvoice --> OrderActive
+
+OrderActive --> BuyerSendsFiat
+BuyerSendsFiat -->|fiat-sent| BuyerConfirmsFiat["Mostro confirms fiat-sent"]
+BuyerSendsFiat --> InitiateDispute
+
+BuyerSendsFiat -->|Seller confirms receipt| SellerReleasesSats["Seller releases sats"]
+
+SellerPaysHoldInvoice -->|Waiting| BuyerInvoice
+SellerPaysHoldInvoice -->|paid| OrderActive
+
+SellerPaysHoldInvoice --> BuyerInvoice
+BuyerInvoice --> OrderActive
+
+BuyerSendsFiat --> BuyerConfirmsFiat["Buyer notifies fiat sent (fiat-sent)"]
+BuyerConfirmsFiat --> OrderActive
+
+OrderActive --> InitiateDispute
+BuyerConfirmsFiat --> InitiateDispute
+
+InitiateDispute --> DisputeInProgress
+DisputeInProgress --> AdminIntervention
+
+BuyerConfirmsFiat --> SellerReleases["Seller confirms fiat received and releases"]
+SellerPaysHoldInvoice --> OrderActive
+
+SellerPaysHoldInvoice -->|waiting-buyer-invoice| BuyerInvoice
+SellerPaysHoldInvoice -->|active| OrderActive
+
+BuyerSendsFiat --> BuyerConfirmsFiat
+BuyerConfirmsFiat -->|fiat-sent| OrderActive
+
+OrderActive --> SellerReleases["Seller confirms fiat received (release)"]
+SellerReleases --> MostroPaysBuyer["Mostro settles hold invoice"]
+SellerReleases -->|settled-hold-invoice| MostroPaysBuyer["Mostro pays Buyer's LN Invoice"]
+
+SellerReleases --> MostroRequestsRating
+MostroRequestsRating -->|payment settled| UsersRateEachOther["Users rate each other (1-5)"]
+SellerReleases -->|payment succeeded| OrderSuccess["Order status: success"]
+
+%% Class Styling
+classDef mostro fill:#FFD966,stroke:#333,stroke-width:1px
+classDef buyer fill:#A9D5E2,stroke:#333,stroke-width:1px
+classDef seller fill:#F7C6C7,stroke:#333,stroke-width:1px
+classDef dispute fill:#FF9999,stroke:#333,stroke-width:1px
+classDef rating fill:#C9DAF8,stroke:#333,stroke-width:1px
+classDef admin fill:#C0C0C0,stroke:#333,stroke-width:1px
+
+class StartBuy,BuyerInvoice,BuyerSendsFiat,BuyerConfirmsFiat buyer
+class StartSell,SellerTakesOrder,SellerPaysHoldInvoice,SellerReleases seller
+class MostroPublishesOrder,OrderAvailable,OrderActive,OrderSuccess mostro
+class InitiateDispute,DisputeInProgress dispute
+class AdminIntervention admin
+class MostroRequestsRating,UsersRateEachOther rating

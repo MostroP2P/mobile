@@ -15,29 +15,28 @@ class OrderConfirmationScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       backgroundColor: AppTheme.dark1,
-      appBar: OrderAppBar(
-          title:
-              'Order Confirmed'),
-      body:CustomCard(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              S.of(context).newOrder('24'),
-              style: TextStyle(fontSize: 18, color: AppTheme.cream1),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              key: const Key('homeButton'),
-              onPressed: () => context.go('/'),
-              child: const Text('Back to Home'),
-            ),
-          ],
+      appBar: OrderAppBar(title: 'Order Confirmed'),
+      body: CustomCard(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                S.of(context)!.newOrder('24'),
+                style: TextStyle(fontSize: 18, color: AppTheme.cream1),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                key: const Key('homeButton'),
+                onPressed: () => context.go('/'),
+                child: const Text('Back to Home'),
+              ),
+            ],
+          ),
         ),
       ),
-    ),);
+    );
   }
 }

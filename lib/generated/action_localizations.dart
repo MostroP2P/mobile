@@ -38,11 +38,11 @@ extension ActionLocalizationX on S {
         return purchaseCompleted;
       case Action.holdInvoicePaymentAccepted:
         return holdInvoicePaymentAccepted(
-            placeholders['seller_npub'],
-            placeholders['id'],
-            placeholders['fiat_code'],
-            placeholders['fiat_amount'],
-            placeholders['payment_method']);
+          placeholders['fiat_amount'],
+          placeholders['fiat_code'],
+          placeholders['payment_method'],
+          placeholders['seller_npub'],
+        );
       case Action.holdInvoicePaymentSettled:
         return holdInvoicePaymentSettled(placeholders['buyer_npub']);
       case Action.holdInvoicePaymentCanceled:

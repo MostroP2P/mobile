@@ -137,4 +137,8 @@ class MostroRepository implements OrderRepository<MostroMessage> {
   Future<void> releaseOrder(String orderId) async {
     await _mostroService.releaseOrder(orderId);
   }
+
+  Future<void> disputeOrder(String orderId) async {
+    await _mostroService.disputeOrder(orderId);
+  }
 }

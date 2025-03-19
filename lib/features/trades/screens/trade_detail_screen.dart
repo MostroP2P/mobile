@@ -12,6 +12,7 @@ import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
+import 'package:mostro_mobile/features/trades/widgets/mostro_message_detail_widget.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/utils/currency_utils.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
@@ -44,11 +45,15 @@ class TradeDetailScreen extends ConsumerWidget {
                 _buildSellerAmount(ref, order),
                 const SizedBox(height: 16),
                 _buildOrderId(context),
+                const SizedBox(height: 16),
+                MostroMessageDetail(order: order),
                 const SizedBox(height: 24),
                 _buildCountDownTime(order.expirationDate),
                 const SizedBox(height: 36),
-                // Pass the full order to the action buttons widget.
-                _buildActionButtons(context, ref, order),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: _buildActionButtons(context, ref, order),
+                ),
               ],
             ),
           );
@@ -143,9 +148,8 @@ class TradeDetailScreen extends ConsumerWidget {
     Duration countdown = Duration(hours: 0);
     final now = DateTime.now();
     if (expiration.isAfter(now)) {
-      countdown = now.difference(expiration);
+      countdown = expiration.difference(now);
     }
-	print(countdown);
 
     return Column(
       children: [
@@ -159,59 +163,137 @@ class TradeDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildActionButtons(
+  Widget _buildCancelButton(WidgetRef ref) {
+    final orderDetailsNotifier =
+        ref.read(orderNotifierProvider(orderId).notifier);
+
+    return ElevatedButton(
+      onPressed: () async {
+        await orderDetailsNotifier.cancelOrder();
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppTheme.red1,
+      ),
+      child: const Text('CANCEL'),
+    );
+  }
+
+  Widget _buildDisputeButton(WidgetRef ref) {
+    final orderDetailsNotifier =
+        ref.read(orderNotifierProvider(orderId).notifier);
+
+    return ElevatedButton(
+      onPressed: () async {
+        await orderDetailsNotifier.disputeOrder();
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppTheme.red1,
+      ),
+      child: const Text('DISPUTE'),
+    );
+  }
+
+  Widget _buildCloseButton(BuildContext context) {
+    return OutlinedButton(
+      onPressed: () {
+        context.pop();
+      },
+      style: AppTheme.theme.outlinedButtonTheme.style,
+      child: const Text('CLOSE'),
+    );
+  }
+
+  Widget _buildRateButton(BuildContext context) {
+    return OutlinedButton(
+      onPressed: () {
+        context.go('/rate_user');
+      },
+      style: AppTheme.theme.outlinedButtonTheme.style,
+      child: const Text('RATE'),
+    );
+  }
+
+  List<Widget> _buildActionButtons(
       BuildContext context, WidgetRef ref, NostrEvent order) {
     final orderDetailsNotifier =
-        ref.read(orderNotifierProvider(order.orderId!).notifier);
-    final message = ref.watch(orderNotifierProvider(order.orderId!));
+        ref.read(orderNotifierProvider(orderId).notifier);
+    final message = ref.watch(orderNotifierProvider(orderId));
 
-    final showCancel =
-        (order.status == Status.pending || order.status == Status.inProgress);
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        OutlinedButton(
-          onPressed: () {
-            context.pop();
-          },
-          style: AppTheme.theme.outlinedButtonTheme.style,
-          child: const Text('CLOSE'),
-        ),
-        const SizedBox(width: 16),
-        if (showCancel)
-          ElevatedButton(
-            onPressed: () async {
-              await orderDetailsNotifier.cancelOrder();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.red1,
-            ),
-            child: const Text('CANCEL'),
+    switch (order.status) {
+      case Status.waitingBuyerInvoice:
+      case Status.settledHoldInvoice:
+      case Status.active:
+        return [
+          _buildCloseButton(
+            context,
           ),
-        const SizedBox(width: 16),
-        if (message.action == actions.Action.holdInvoicePaymentAccepted)
-          ElevatedButton(
-            onPressed: () async {
-              await orderDetailsNotifier.sendFiatSent();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.mostroGreen,
+          if (message.action != actions.Action.disputeInitiatedByYou &&
+              message.action != actions.Action.disputeInitiatedByPeer)
+            _buildDisputeButton(ref),
+          if (message.action == actions.Action.addInvoice)
+            ElevatedButton(
+              onPressed: () async {
+                context.push('/add_invoice/$orderId');
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.mostroGreen,
+              ),
+              child: const Text('FIAT SENT'),
             ),
-            child: const Text('FIAT SENT'),
-          ),
-        if (message.action == actions.Action.buyerTookOrder)
-          ElevatedButton(
-            onPressed: () async {
-              await orderDetailsNotifier.releaseOrder();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.mostroGreen,
+          if (message.action == actions.Action.holdInvoicePaymentAccepted)
+            ElevatedButton(
+              onPressed: () async {
+                await orderDetailsNotifier.sendFiatSent();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.mostroGreen,
+              ),
+              child: const Text('FIAT SENT'),
             ),
-            child: const Text('RELEASE SATS'),
-          ),
-      ],
-    );
+          if (message.action == actions.Action.buyerTookOrder)
+            ElevatedButton(
+              onPressed: () async {
+                await orderDetailsNotifier.releaseOrder();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.mostroGreen,
+              ),
+              child: const Text('RELEASE SATS'),
+            ),
+        ];
+      case Status.fiatSent:
+        return [
+          _buildCloseButton(context),
+          _buildDisputeButton(ref),
+        ];
+      case Status.cooperativelyCanceled:
+        return [
+          _buildCloseButton(context),
+          if (message.action == actions.Action.cooperativeCancelInitiatedByPeer)
+            _buildCancelButton(ref),
+        ];
+      case Status.success:
+        return [
+          _buildCloseButton(context),
+          _buildRateButton(context),
+        ];
+      case Status.pending:
+      case Status.waitingPayment:
+        return [
+          _buildCloseButton(context),
+          _buildCancelButton(ref),
+        ];
+      case Status.expired:
+      case Status.dispute:
+      case Status.completedByAdmin:
+      case Status.canceledByAdmin:
+      case Status.settledByAdmin:
+      case Status.canceled:
+      case Status.inProgress:
+        return [
+          _buildCloseButton(context),
+        ];
+    }
   }
 
   String formatDateTime(DateTime dt) {

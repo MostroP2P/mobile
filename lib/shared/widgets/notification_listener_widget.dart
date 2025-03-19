@@ -18,7 +18,7 @@ class NotificationListenerWidget extends ConsumerWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content: Text(S
-                  .of(context)
+                  .of(context)!
                   .actionLabel(next.action!, placeholders: next.placeholders))),
         );
         // Clear notification after showing to prevent repetition
@@ -29,7 +29,7 @@ class NotificationListenerWidget extends ConsumerWidget {
           builder: (context) => AlertDialog(
             title: Text('Action Required'),
             content: Text(S
-                .of(context)
+                .of(context)!
                 .actionLabel(next.action!, placeholders: next.placeholders)),
             actions: [
               TextButton(

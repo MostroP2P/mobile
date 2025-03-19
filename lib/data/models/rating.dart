@@ -37,7 +37,7 @@ class Rating {
       } else {
         return Rating(
           totalReviews: 0,
-          totalRating: (json as int).toDouble(),
+          totalRating: (json[1]['total_reviews'] as int).toDouble(),
           lastRating: 0,
           maxRate: 0,
           minRate: 0,

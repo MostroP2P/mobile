@@ -133,7 +133,7 @@ class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
         break;
       case Action.released:
         notifProvider.showInformation(state.action, values: {
-          'seller_npub': null,
+          'seller_npub': '',
         });
 
       default:

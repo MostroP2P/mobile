@@ -74,8 +74,7 @@ class MostroService {
   }
 
   Session? getSessionByOrderId(String orderId) {
-    final session = _sessionManager.getSessionByOrderId(orderId);
-    return session;
+    return _sessionManager.getSessionByOrderId(orderId);
   }
 
   Future<Session> takeSellOrder(
@@ -85,27 +84,38 @@ class MostroService {
         : amount != null
             ? Amount(amount: amount)
             : null;
-    final order =
-        MostroMessage(action: Action.takeSell, id: orderId, payload: payload);
 
-    final session = await publishOrder(order);
-    return session;
+    return await publishOrder(
+        MostroMessage(action: Action.takeSell, id: orderId, payload: payload));
   }
 
   Future<void> sendInvoice(String orderId, String invoice, int? amount) async {
     final payload =
         PaymentRequest(order: null, lnInvoice: invoice, amount: amount);
-    final order =
-        MostroMessage(action: Action.addInvoice, id: orderId, payload: payload);
-    await publishOrder(order);
+    await publishOrder(MostroMessage(
+        action: Action.addInvoice, id: orderId, payload: payload));
   }
 
   Future<Session> takeBuyOrder(String orderId, int? amount) async {
     final amt = amount != null ? Amount(amount: amount) : null;
-    final order =
-        MostroMessage(action: Action.takeBuy, id: orderId, payload: amt);
-    final session = await publishOrder(order);
-    return session;
+    return await publishOrder(
+        MostroMessage(action: Action.takeBuy, id: orderId, payload: amt));
+  }
+
+  Future<void> cancelOrder(String orderId) async {
+    await publishOrder(MostroMessage(action: Action.cancel, id: orderId));
+  }
+
+  Future<void> sendFiatSent(String orderId) async {
+    await publishOrder(MostroMessage(action: Action.fiatSent, id: orderId));
+  }
+
+  Future<void> releaseOrder(String orderId) async {
+    await publishOrder(MostroMessage(action: Action.release, id: orderId));
+  }
+
+  Future<void> disputeOrder(String orderId) async {
+    await publishOrder(MostroMessage(action: Action.dispute, id: orderId));
   }
 
   Future<Session> publishOrder(MostroMessage order) async {
@@ -126,21 +136,6 @@ class MostroService {
         await createNIP59Event(content, _settings.mostroPublicKey, session);
     await _nostrService.publishEvent(event);
     return session;
-  }
-
-  Future<void> cancelOrder(String orderId) async {
-    final order = MostroMessage(action: Action.cancel, id: orderId);
-    await publishOrder(order);
-  }
-
-  Future<void> sendFiatSent(String orderId) async {
-    final order = MostroMessage(action: Action.fiatSent, id: orderId);
-    await publishOrder(order);
-  }
-
-  Future<void> releaseOrder(String orderId) async {
-    final order = MostroMessage(action: Action.release, id: orderId);
-    await publishOrder(order);
   }
 
   Future<NostrEvent> createNIP59Event(

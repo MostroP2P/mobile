@@ -58,4 +58,9 @@ class OrderNotifier extends AbstractOrderNotifier {
   Future<void> releaseOrder() async {
     await orderRepository.releaseOrder(orderId);
   }
+
+  Future<void> disputeOrder() async {
+    await orderRepository.disputeOrder(orderId);
+  }
+
 }
