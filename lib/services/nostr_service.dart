@@ -95,8 +95,6 @@ class NostrService {
 
   Future<NostrKeyPairs> generateKeyPair() async {
     final keyPair = NostrUtils.generateKeyPair();
-    //await AuthUtils.savePrivateKeyAndPin(
-    //    keyPair.private, ''); // Consider adding a password parameter
     return keyPair;
   }
 

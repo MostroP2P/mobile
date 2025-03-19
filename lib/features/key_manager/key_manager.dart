@@ -79,4 +79,8 @@ class KeyManager {
   Future<int> getCurrentKeyIndex() async {
     return await _storage.readTradeKeyIndex();
   }
+
+  Future<void> setCurrentKeyIndex(int index) async {
+    await _storage.storeTradeKeyIndex(index);
+  }
 }
