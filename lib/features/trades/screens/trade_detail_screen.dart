@@ -20,11 +20,20 @@ import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 class TradeDetailScreen extends ConsumerWidget {
   final String orderId;
   final TextTheme textTheme = AppTheme.theme.textTheme;
+
   TradeDetailScreen({super.key, required this.orderId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final order = ref.watch(eventProvider(orderId));
+
+    // Make sure we actually have an order from the provider:
+    if (order == null) {
+      return const Scaffold(
+        backgroundColor: AppTheme.dark1,
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return Scaffold(
       backgroundColor: AppTheme.dark1,
@@ -34,10 +43,12 @@ class TradeDetailScreen extends ConsumerWidget {
         child: Column(
           children: [
             const SizedBox(height: 16),
-            _buildSellerAmount(ref, order!),
+            // Display basic info about the trade:
+            _buildSellerAmount(ref, order),
             const SizedBox(height: 16),
             _buildOrderId(context),
             const SizedBox(height: 16),
+            // Detailed info: includes the last Mostro message action text
             MostroMessageDetail(order: order),
             const SizedBox(height: 24),
             _buildCountDownTime(order.expirationDate),
@@ -52,18 +63,26 @@ class TradeDetailScreen extends ConsumerWidget {
     );
   }
 
+  /// Builds a card showing the user is "selling/buying X sats for Y fiat" etc.
   Widget _buildSellerAmount(WidgetRef ref, NostrEvent order) {
     final selling = order.orderType == OrderType.sell ? 'selling' : 'buying';
+
     final amountString =
         '${order.fiatAmount} ${order.currency} ${CurrencyUtils.getFlagFromCurrency(order.currency!)}';
-    final satAmount = order.amount == '0' ? '' : ' ${order.amount}';
-    final price = order.amount != '0' ? '' : 'at market price';
-    final premium = int.parse(order.premium ?? '0');
-    final premiumText = premium >= 0
-        ? premium == 0
-            ? ''
-            : 'with a +$premium% premium'
-        : 'with a -$premium% discount';
+
+    // If `order.amount` is "0", the trade is "at market price"
+    final isZeroAmount = (order.amount == '0');
+    final satText = isZeroAmount ? '' : ' ${order.amount}';
+    final priceText = isZeroAmount ? 'at market price' : '';
+
+    final premium = int.tryParse(order.premium ?? '0') ?? 0;
+    final premiumText = premium == 0
+        ? ''
+        : (premium > 0)
+            ? 'with a +$premium% premium'
+            : 'with a $premium% discount';
+
+    // Payment method can be multiple, we only display the first for brevity:
     final method = order.paymentMethods.isNotEmpty
         ? order.paymentMethods[0]
         : 'No payment method';
@@ -74,11 +93,11 @@ class TradeDetailScreen extends ConsumerWidget {
         children: [
           Expanded(
             child: Column(
-              spacing: 2,
+              // Using Column with spacing = 2 isn’t standard; using SizedBoxes for spacing is fine.
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'You are $selling$satAmount sats for $amountString $price $premiumText',
+                  'You are $selling$satText sats for $amountString $priceText $premiumText',
                   style: AppTheme.theme.textTheme.bodyLarge,
                   softWrap: true,
                 ),
@@ -89,7 +108,7 @@ class TradeDetailScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'The payment method is: $method',
+                  'Payment method: $method',
                   style: textTheme.bodyLarge,
                 ),
               ],
@@ -100,6 +119,7 @@ class TradeDetailScreen extends ConsumerWidget {
     );
   }
 
+  /// Show a card with the order ID that can be copied.
   Widget _buildOrderId(BuildContext context) {
     return CustomCard(
       padding: const EdgeInsets.all(2),
@@ -108,7 +128,7 @@ class TradeDetailScreen extends ConsumerWidget {
         children: [
           SelectableText(
             orderId,
-            style: TextStyle(color: AppTheme.mostroGreen),
+            style: const TextStyle(color: AppTheme.mostroGreen),
           ),
           const SizedBox(width: 16),
           IconButton(
@@ -134,93 +154,63 @@ class TradeDetailScreen extends ConsumerWidget {
     );
   }
 
+  /// Build a circular countdown to show how many hours are left until expiration.
   Widget _buildCountDownTime(DateTime expiration) {
-    Duration countdown = Duration(hours: 0);
+    // If expiration has passed, the difference is negative => zero.
     final now = DateTime.now();
-    if (expiration.isAfter(now)) {
-      countdown = expiration.difference(now);
-    }
+    final Duration difference = expiration.isAfter(now)
+        ? expiration.difference(now)
+        : const Duration();
 
+    // Display hours left
+    final hoursLeft = difference.inHours.clamp(0, 9999);
     return Column(
       children: [
         CircularCountdown(
           countdownTotal: 24,
-          countdownRemaining: countdown.inHours,
+          countdownRemaining: hoursLeft,
         ),
         const SizedBox(height: 16),
-        Text('Time Left: ${countdown.toString().split('.')[0]}'),
+        Text('Time Left: ${difference.toString().split('.').first}'),
       ],
     );
   }
 
-  Widget _buildCancelButton(WidgetRef ref) {
-    final orderDetailsNotifier =
-        ref.read(orderNotifierProvider(orderId).notifier);
-
-    return ElevatedButton(
-      onPressed: () async {
-        await orderDetailsNotifier.cancelOrder();
-      },
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppTheme.red1,
-      ),
-      child: const Text('CANCEL'),
-    );
-  }
-
-  Widget _buildDisputeButton(WidgetRef ref) {
-    final orderDetailsNotifier =
-        ref.read(orderNotifierProvider(orderId).notifier);
-
-    return ElevatedButton(
-      onPressed: () async {
-        await orderDetailsNotifier.disputeOrder();
-      },
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppTheme.red1,
-      ),
-      child: const Text('DISPUTE'),
-    );
-  }
-
-  Widget _buildCloseButton(BuildContext context) {
-    return OutlinedButton(
-      onPressed: () {
-        context.pop();
-      },
-      style: AppTheme.theme.outlinedButtonTheme.style,
-      child: const Text('CLOSE'),
-    );
-  }
-
-  Widget _buildRateButton(BuildContext context) {
-    return OutlinedButton(
-      onPressed: () {
-        context.push('/rate_user/$orderId');
-      },
-      style: AppTheme.theme.outlinedButtonTheme.style,
-      child: const Text('RATE'),
-    );
-  }
-
+  /// Main action button area, switching on `order.status`.
+  /// Additional checks use `message.action` to refine which button to show.
   List<Widget> _buildActionButtons(
       BuildContext context, WidgetRef ref, NostrEvent order) {
     final orderDetailsNotifier =
         ref.read(orderNotifierProvider(orderId).notifier);
     final message = ref.watch(orderNotifierProvider(orderId));
 
+    // The finite-state-machine approach: decide based on the order.status.
+    // Then refine if needed using the last action in `message.action`.
     switch (order.status) {
+      case Status.pending:
+      case Status.waitingPayment:
+        // Usually, a pending or waitingPayment order can be canceled. 
+        // Possibly the user could do more if they’re the buyer vs. seller,
+        // but for simplicity we show CANCEL only.
+        return [
+          _buildCloseButton(context),
+          _buildCancelButton(ref),
+        ];
+
       case Status.waitingBuyerInvoice:
+      // Some code lumps in "settledHoldInvoice" and "active" together, 
+      // but let’s keep them separate for clarity:
       case Status.settledHoldInvoice:
       case Status.active:
         return [
-          _buildCloseButton(
-            context,
-          ),
+          _buildCloseButton(context),
+          // If user has not opened a dispute already
           if (message.action != actions.Action.disputeInitiatedByYou &&
               message.action != actions.Action.disputeInitiatedByPeer &&
               message.action != actions.Action.rate)
             _buildDisputeButton(ref),
+
+          // If the action is "addInvoice" => maybe show a button to push the invoice screen.
           if (message.action == actions.Action.addInvoice)
             ElevatedButton(
               onPressed: () async {
@@ -229,8 +219,10 @@ class TradeDetailScreen extends ConsumerWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.mostroGreen,
               ),
-              child: const Text('FIAT SENT'),
+              child: const Text('ADD INVOICE'),
             ),
+
+          // If the order is waiting for buyer to confirm fiat was sent
           if (message.action == actions.Action.holdInvoicePaymentAccepted)
             ElevatedButton(
               onPressed: () async {
@@ -241,6 +233,8 @@ class TradeDetailScreen extends ConsumerWidget {
               ),
               child: const Text('FIAT SENT'),
             ),
+
+          // If the user is the seller & the buyer is done => show release button
           if (message.action == actions.Action.buyerTookOrder)
             ElevatedButton(
               onPressed: () async {
@@ -251,30 +245,33 @@ class TradeDetailScreen extends ConsumerWidget {
               ),
               child: const Text('RELEASE SATS'),
             ),
+
+          // If the user is ready to rate
           if (message.action == actions.Action.rate) _buildRateButton(context),
         ];
+
       case Status.fiatSent:
+        // Usually the user can open dispute if the other side doesn't confirm,
+        // or just close the screen and wait.
         return [
           _buildCloseButton(context),
           _buildDisputeButton(ref),
         ];
+
       case Status.cooperativelyCanceled:
         return [
           _buildCloseButton(context),
           if (message.action == actions.Action.cooperativeCancelInitiatedByPeer)
             _buildCancelButton(ref),
         ];
+
       case Status.success:
         return [
           _buildCloseButton(context),
           _buildRateButton(context),
         ];
-      case Status.pending:
-      case Status.waitingPayment:
-        return [
-          _buildCloseButton(context),
-          _buildCancelButton(ref),
-        ];
+
+      // For these statuses, we usually just let the user close the screen.
       case Status.expired:
       case Status.dispute:
       case Status.completedByAdmin:
@@ -288,6 +285,55 @@ class TradeDetailScreen extends ConsumerWidget {
     }
   }
 
+  /// CANCEL
+  Widget _buildCancelButton(WidgetRef ref) {
+    final notifier = ref.read(orderNotifierProvider(orderId).notifier);
+    return ElevatedButton(
+      onPressed: () async {
+        await notifier.cancelOrder();
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppTheme.red1,
+      ),
+      child: const Text('CANCEL'),
+    );
+  }
+
+  /// DISPUTE
+  Widget _buildDisputeButton(WidgetRef ref) {
+    final notifier = ref.read(orderNotifierProvider(orderId).notifier);
+    return ElevatedButton(
+      onPressed: () async {
+        await notifier.disputeOrder();
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppTheme.red1,
+      ),
+      child: const Text('DISPUTE'),
+    );
+  }
+
+  /// CLOSE
+  Widget _buildCloseButton(BuildContext context) {
+    return OutlinedButton(
+      onPressed: () => context.pop(),
+      style: AppTheme.theme.outlinedButtonTheme.style,
+      child: const Text('CLOSE'),
+    );
+  }
+
+  /// RATE
+  Widget _buildRateButton(BuildContext context) {
+    return OutlinedButton(
+      onPressed: () {
+        context.push('/rate_user/$orderId');
+      },
+      style: AppTheme.theme.outlinedButtonTheme.style,
+      child: const Text('RATE'),
+    );
+  }
+
+  /// Format the date time to a user-friendly string with UTC offset
   String formatDateTime(DateTime dt) {
     final dateFormatter = DateFormat('EEE MMM dd yyyy HH:mm:ss');
     final formattedDate = dateFormatter.format(dt);

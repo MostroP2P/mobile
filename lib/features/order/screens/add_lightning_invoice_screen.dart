@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
@@ -49,6 +50,7 @@ class _AddLightningInvoiceScreenState
                     try {
                       await orderNotifier.sendInvoice(
                           widget.orderId, invoice, amount);
+                      context.go('/');
                     } catch (e) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
@@ -64,6 +66,7 @@ class _AddLightningInvoiceScreenState
                       ref.read(orderNotifierProvider(widget.orderId).notifier);
                   try {
                     await orderNotifier.cancelOrder();
+                      context.go('/');
                   } catch (e) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
