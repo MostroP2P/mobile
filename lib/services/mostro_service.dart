@@ -6,6 +6,7 @@ import 'package:mostro_mobile/data/models/cant_do.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/payment_request.dart';
+import 'package:mostro_mobile/data/models/rating_user.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
@@ -116,6 +117,13 @@ class MostroService {
 
   Future<void> disputeOrder(String orderId) async {
     await publishOrder(MostroMessage(action: Action.dispute, id: orderId));
+  }
+
+  Future<void> submitRating(String orderId, int rating) async {
+    await publishOrder(MostroMessage(
+        action: Action.rateUser,
+        id: orderId,
+        payload: RatingUser(userRating: rating)));
   }
 
   Future<Session> publishOrder(MostroMessage order) async {

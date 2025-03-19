@@ -1,9 +1,11 @@
+import 'package:collection/collection.dart';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/repositories/open_orders_repository.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
+import 'package:mostro_mobile/data/models/nostr_event.dart';
 
 final orderRepositoryProvider = Provider((ref) {
   final nostrService = ref.read(nostrServiceProvider);
@@ -22,8 +24,13 @@ final orderEventsProvider = StreamProvider<List<NostrEvent>>((ref) {
   return orderRepository.eventsStream;
 });
 
-final eventProvider =
-    FutureProvider.family<NostrEvent?, String>((ref, orderId) {
-  final repository = ref.read(orderRepositoryProvider);
-  return repository.getOrderById(orderId);
+final eventProvider = Provider.family<NostrEvent?, String>((ref, orderId) {
+
+  final allEventsAsync = ref.watch(orderEventsProvider);
+  final allEvents = allEventsAsync.maybeWhen(
+    data: (data) => data,
+    orElse: () => [],
+  );
+  // firstWhereOrNull returns null if no match is found
+  return allEvents.firstWhereOrNull((evt) => (evt as NostrEvent).orderId == orderId);
 });

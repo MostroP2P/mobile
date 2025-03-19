@@ -11,10 +11,10 @@ extension ActionLocalizationX on S {
         return payInvoice(placeholders['amount'], placeholders['fiat_code'],
             placeholders['fiat_amount'], placeholders['expiration_seconds']);
       case Action.fiatSentOk:
-        if (placeholders['seller_npub']) {
+        if (placeholders['seller_npub'] != null) {
           return fiatSentOkBuyer(placeholders['seller_npub']);
         } else {
-          return fiatSentOkSeller(placeholders['buyer_npub']);
+          return fiatSentOkSeller(placeholders['buyer_npub'] ?? '{buyer_npub}');
         }
       case Action.released:
         return released(placeholders['seller_npub']);

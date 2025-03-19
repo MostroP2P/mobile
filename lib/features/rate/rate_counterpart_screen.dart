@@ -1,26 +1,39 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 import 'star_rating.dart';
 
-class RateCounterpartScreen extends StatefulWidget {
-  const RateCounterpartScreen({super.key});
+/// Screen that allows users to rate their counterpart after completing an order.
+/// Takes an [orderId] parameter to identify which order the rating is for.
+class RateCounterpartScreen extends ConsumerStatefulWidget {
+  final String orderId;
+
+  const RateCounterpartScreen({super.key, required this.orderId});
 
   @override
-  State<RateCounterpartScreen> createState() => _RateCounterpartScreenState();
+  ConsumerState<RateCounterpartScreen> createState() =>
+      _RateCounterpartScreenState();
 }
 
-class _RateCounterpartScreenState extends State<RateCounterpartScreen> {
+class _RateCounterpartScreenState extends ConsumerState<RateCounterpartScreen> {
   int _rating = 0;
   final _logger = Logger();
 
-  void _submitRating() {
+  Future<void> _submitRating() async {
     _logger.i('Rating submitted: $_rating');
+    final orderNotifer =
+        ref.watch(orderNotifierProvider(widget.orderId).notifier);
+
+    await orderNotifer.submitRating(_rating);
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Rating submitted!')),
+      SnackBar(content: Text(S.of(context)!.rateReceived)),
     );
+
     context.pop();
   }
 
@@ -44,8 +57,8 @@ class _RateCounterpartScreenState extends State<RateCounterpartScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text(
-                'How would you rate your counterpart?',
+              Text(
+                S.of(context)!.rate,
                 style: TextStyle(color: AppTheme.cream1, fontSize: 20),
                 textAlign: TextAlign.center,
               ),

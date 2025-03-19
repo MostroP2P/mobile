@@ -24,36 +24,26 @@ class TakeOrderScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final orderAsyncValue = ref.watch(eventProvider(orderId));
+    final order = ref.watch(eventProvider(orderId));
 
     return Scaffold(
       backgroundColor: AppTheme.dark1,
       appBar: OrderAppBar(title: 'ORDER DETAILS'),
-      body: orderAsyncValue.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(child: Text('Error: $error')),
-        data: (order) {
-          if (order == null) {
-            return Center(child: Text('Order $orderId not found'));
-          }
-          // Build the main UI with the order
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                const SizedBox(height: 16),
-                _buildSellerAmount(ref, order),
-                const SizedBox(height: 16),
-                _buildOrderId(context),
-                const SizedBox(height: 24),
-                _buildCountDownTime(order.expirationDate),
-                const SizedBox(height: 36),
-                // Pass the full order to the action buttons widget.
-                _buildActionButtons(context, ref, order),
-              ],
-            ),
-          );
-        },
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            const SizedBox(height: 16),
+            _buildSellerAmount(ref, order!),
+            const SizedBox(height: 16),
+            _buildOrderId(context),
+            const SizedBox(height: 24),
+            _buildCountDownTime(order.expirationDate),
+            const SizedBox(height: 36),
+            // Pass the full order to the action buttons widget.
+            _buildActionButtons(context, ref, order),
+          ],
+        ),
       ),
     );
   }

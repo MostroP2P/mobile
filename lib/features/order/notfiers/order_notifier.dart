@@ -63,4 +63,8 @@ class OrderNotifier extends AbstractOrderNotifier {
     await orderRepository.disputeOrder(orderId);
   }
 
+   Future<void> submitRating(int rating) async {
+    await orderRepository.submitRating(orderId, rating);
+   }
+
 }

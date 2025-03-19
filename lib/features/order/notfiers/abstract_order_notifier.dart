@@ -3,10 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/cant_do.dart';
+import 'package:mostro_mobile/data/models/dispute.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/enums/cant_do_reason.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/order.dart';
+import 'package:mostro_mobile/data/models/peer.dart';
 import 'package:mostro_mobile/data/repositories/mostro_repository.dart';
 import 'package:mostro_mobile/shared/providers/navigation_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/notification_notifier_provider.dart';
@@ -94,7 +96,6 @@ class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
           'fiat_amount': order?.fiatAmount,
           'payment_method': order?.paymentMethod,
         });
-        navProvider.go('/');
         break;
       case Action.canceled:
         navProvider.go('/');
@@ -109,9 +110,13 @@ class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
           'fiat_amount': order?.fiatAmount,
           'payment_method': order?.paymentMethod,
         });
-        navProvider.go('/');
         break;
       case Action.fiatSentOk:
+        final peer = state.getPayload<Peer>();
+        notifProvider.showInformation(state.action, values: {
+          'buyer_npub': peer?.publicKey ?? '{buyer_npub}',
+        });
+        break;
       case Action.holdInvoicePaymentSettled:
       case Action.rate:
       case Action.rateReceived:
@@ -119,7 +124,6 @@ class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
         notifProvider.showInformation(state.action, values: {
           'id': state.id,
         });
-        navProvider.go('/');
         break;
       case Action.disputeInitiatedByYou:
       case Action.adminSettled:
@@ -135,7 +139,13 @@ class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
         notifProvider.showInformation(state.action, values: {
           'seller_npub': '',
         });
-
+      case Action.disputeInitiatedByPeer:
+        final dispute = state.getPayload<Dispute>()!;
+        notifProvider.showInformation(state.action, values: {
+          'id': state.id!,
+          'user_token': dispute.disputeId,
+        });
+        break;
       default:
         notifProvider.showInformation(state.action, values: {});
         break;

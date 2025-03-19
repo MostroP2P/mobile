@@ -94,8 +94,7 @@ class MostroMessageDetail extends ConsumerWidget {
         //actionText = S.of(context)!.fiatSentOkSeller;
         break;
       case actions.Action.released:
-        final payload = mostroMessage.getPayload<Order>();
-        actionText = S.of(context)!.released(payload!.sellerTradePubkey!);
+        actionText = S.of(context)!.released('{seller_npub}');
         break;
       case actions.Action.purchaseCompleted:
         actionText = S.of(context)!.purchaseCompleted;

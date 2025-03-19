@@ -24,40 +24,30 @@ class TradeDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final orderAsyncValue = ref.watch(eventProvider(orderId));
+    final order = ref.watch(eventProvider(orderId));
 
     return Scaffold(
       backgroundColor: AppTheme.dark1,
       appBar: OrderAppBar(title: 'ORDER DETAILS'),
-      body: orderAsyncValue.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(child: Text('Error: $error')),
-        data: (order) {
-          if (order == null) {
-            return Center(child: Text('Order $orderId not found'));
-          }
-          // Build the main UI with the order
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                const SizedBox(height: 16),
-                _buildSellerAmount(ref, order),
-                const SizedBox(height: 16),
-                _buildOrderId(context),
-                const SizedBox(height: 16),
-                MostroMessageDetail(order: order),
-                const SizedBox(height: 24),
-                _buildCountDownTime(order.expirationDate),
-                const SizedBox(height: 36),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: _buildActionButtons(context, ref, order),
-                ),
-              ],
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            const SizedBox(height: 16),
+            _buildSellerAmount(ref, order!),
+            const SizedBox(height: 16),
+            _buildOrderId(context),
+            const SizedBox(height: 16),
+            MostroMessageDetail(order: order),
+            const SizedBox(height: 24),
+            _buildCountDownTime(order.expirationDate),
+            const SizedBox(height: 36),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: _buildActionButtons(context, ref, order),
             ),
-          );
-        },
+          ],
+        ),
       ),
     );
   }
@@ -206,7 +196,7 @@ class TradeDetailScreen extends ConsumerWidget {
   Widget _buildRateButton(BuildContext context) {
     return OutlinedButton(
       onPressed: () {
-        context.go('/rate_user');
+        context.push('/rate_user/$orderId');
       },
       style: AppTheme.theme.outlinedButtonTheme.style,
       child: const Text('RATE'),
@@ -228,7 +218,8 @@ class TradeDetailScreen extends ConsumerWidget {
             context,
           ),
           if (message.action != actions.Action.disputeInitiatedByYou &&
-              message.action != actions.Action.disputeInitiatedByPeer)
+              message.action != actions.Action.disputeInitiatedByPeer &&
+              message.action != actions.Action.rate)
             _buildDisputeButton(ref),
           if (message.action == actions.Action.addInvoice)
             ElevatedButton(
@@ -260,6 +251,7 @@ class TradeDetailScreen extends ConsumerWidget {
               ),
               child: const Text('RELEASE SATS'),
             ),
+          if (message.action == actions.Action.rate) _buildRateButton(context),
         ];
       case Status.fiatSent:
         return [

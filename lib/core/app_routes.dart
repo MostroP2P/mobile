@@ -8,6 +8,7 @@ import 'package:mostro_mobile/features/messages/screens/chat_rooms_list.dart';
 import 'package:mostro_mobile/features/home/screens/home_screen.dart';
 import 'package:mostro_mobile/features/key_manager/key_management_screen.dart';
 import 'package:mostro_mobile/features/mostro/mostro_screen.dart';
+import 'package:mostro_mobile/features/rate/rate_counterpart_screen.dart';
 import 'package:mostro_mobile/features/settings/about_screen.dart';
 import 'package:mostro_mobile/features/settings/settings_screen.dart';
 import 'package:mostro_mobile/features/trades/screens/trade_detail_screen.dart';
@@ -81,6 +82,12 @@ final goRouter = GoRouter(
         GoRoute(
           path: '/add_order',
           builder: (context, state) => AddOrderScreen(),
+        ),
+        GoRoute(
+          path: '/rate_user/:orderId',
+          builder: (context, state) => RateCounterpartScreen(
+            orderId: state.pathParameters['orderId']!,
+          ),
         ),
         GoRoute(
           path: '/take_sell/:orderId',
