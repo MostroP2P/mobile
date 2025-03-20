@@ -96,12 +96,8 @@ class SessionManager {
 
   /// Removes a session from memory and the database.
   Future<void> deleteSession(int sessionId) async {
-    final session = _sessions.remove(sessionId);
+    _sessions.remove(sessionId);
     await _sessionStorage.deleteSession(sessionId);
-    final keyIndx = await _keyManager.getCurrentKeyIndex();
-    if (keyIndx == session!.keyIndex + 1) {
-      _keyManager.setCurrentKeyIndex(session.keyIndex);
-    }
   }
 
   /// Periodically clear out expired sessions.
