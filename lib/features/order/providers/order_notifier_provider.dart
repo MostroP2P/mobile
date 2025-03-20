@@ -8,7 +8,7 @@ import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 final orderNotifierProvider =
     StateNotifierProvider.family<OrderNotifier, MostroMessage, String>(
   (ref, orderId,) {
-    final repo = ref.read(mostroRepositoryProvider);
+    final repo = ref.read(mostroServiceProvider);
     return OrderNotifier(
       repo,
       orderId,
@@ -20,7 +20,7 @@ final orderNotifierProvider =
 final addOrderNotifierProvider =
     StateNotifierProvider.family<AddOrderNotifier, MostroMessage, String>(
   (ref, orderId) {
-    final repo = ref.read(mostroRepositoryProvider);
+    final repo = ref.read(mostroServiceProvider);
     return AddOrderNotifier(repo, orderId, ref);
   },
 );

@@ -63,7 +63,6 @@ class SessionManager {
     _sessions[keyIndex] = session;
     // Persist it in the database
     await _sessionStorage.putSession(session);
-
     return session;
   }
 

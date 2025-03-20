@@ -5,9 +5,12 @@ import 'package:mostro_mobile/data/models/amount.dart';
 import 'package:mostro_mobile/data/models/cant_do.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
+import 'package:mostro_mobile/data/models/nostr_event.dart';
+import 'package:mostro_mobile/data/models/payload.dart';
 import 'package:mostro_mobile/data/models/payment_request.dart';
 import 'package:mostro_mobile/data/models/rating_user.dart';
 import 'package:mostro_mobile/data/models/session.dart';
+import 'package:mostro_mobile/data/repositories/mostro_storage.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
@@ -16,18 +19,69 @@ import 'package:mostro_mobile/shared/notifiers/session_notifier.dart';
 class MostroService {
   final NostrService _nostrService;
   final SessionNotifier _sessionManager;
+  final MostroStorage _messageStorage;
   final _logger = Logger();
   Settings _settings;
 
-  MostroService(this._nostrService, this._sessionManager, this._settings);
+  MostroService(this._nostrService, this._sessionManager, this._settings,
+      this._messageStorage);
+
+  Future<MostroMessage?> getOrderById(String orderId) async {
+    return await _messageStorage.getOrderById(orderId);
+  }
+
+  Future<void> sync(Session session) async {
+    final filter = NostrFilter(
+      kinds: [1059],
+      p: [session.tradeKey.public],
+    );
+    final events = await _nostrService.fecthEvents(filter);
+    List<MostroMessage> orders = [];
+
+    for (final event in events) {
+      final decryptedEvent = await event.unWrap(
+        session.tradeKey.private,
+      );
+
+      if (decryptedEvent.content == null) {
+        _logger.i('Event ${decryptedEvent.id} content is null');
+        continue;
+      }
+
+      final result = jsonDecode(decryptedEvent.content!);
+
+      if (result is! List) {
+        _logger.e('Event content ${decryptedEvent.content} should be a List');
+        continue;
+      }
+
+      final msgMap = result[0];
+
+      if (msgMap.containsKey('order')) {
+        final msg = MostroMessage.fromJson(msgMap['order']);
+        orders.add(msg);
+      } else if (msgMap.containsKey('cant-do')) {
+        //final msg = MostroMessage.fromJson(msgMap['cant-do']);
+        //orders.add(msg);
+      } else {
+        _logger.e('Result not found ${decryptedEvent.content}');
+      }
+    }
+
+    _messageStorage.addOrders(orders);
+  }
 
   Stream<MostroMessage> subscribe(Session session) {
-    final filter = NostrFilter(p: [session.tradeKey.public]);
+    final filter = NostrFilter(
+      kinds: [1059],
+      p: [session.tradeKey.public],
+    );
     return _nostrService.subscribeToEvents(filter).asyncMap((event) async {
       _logger.i('Event received from Mostro: $event');
 
-      final decryptedEvent = await _nostrService.decryptNIP59Event(
-          event, session.tradeKey.private);
+      final decryptedEvent = await event.unWrap(
+        session.tradeKey.private,
+      );
 
       // Check event content is not null
       if (decryptedEvent.content == null) {
@@ -61,6 +115,7 @@ class MostroService {
           session.orderId = msg.id;
           await _sessionManager.saveSession(session);
         }
+        await _saveMessage(msg);
         return msg;
       }
 
@@ -74,49 +129,95 @@ class MostroService {
     });
   }
 
+  Future<void> _saveMessage(MostroMessage message) async {
+    await _messageStorage.addOrder(message);
+  }
+
   Session? getSessionByOrderId(String orderId) {
     return _sessionManager.getSessionByOrderId(orderId);
-  }
-
-  Future<Session> takeSellOrder(
-      String orderId, int? amount, String? lnAddress) async {
-    final payload = lnAddress != null
-        ? PaymentRequest(order: null, lnInvoice: lnAddress, amount: amount)
-        : amount != null
-            ? Amount(amount: amount)
-            : null;
-
-    return await publishOrder(
-        MostroMessage(action: Action.takeSell, id: orderId, payload: payload));
-  }
-
-  Future<void> sendInvoice(String orderId, String invoice, int? amount) async {
-    final payload =
-        PaymentRequest(order: null, lnInvoice: invoice, amount: amount);
-    await publishOrder(MostroMessage(
-        action: Action.addInvoice, id: orderId, payload: payload));
   }
 
   Future<Session> takeBuyOrder(String orderId, int? amount) async {
     final amt = amount != null ? Amount(amount: amount) : null;
     return await publishOrder(
-        MostroMessage(action: Action.takeBuy, id: orderId, payload: amt));
+      MostroMessage(
+        action: Action.takeBuy,
+        id: orderId,
+        payload: amt,
+      ),
+    );
+  }
+
+  Future<Session> takeSellOrder(
+      String orderId, int? amount, String? lnAddress) async {
+    final payload = lnAddress != null
+        ? PaymentRequest(
+            order: null,
+            lnInvoice: lnAddress,
+            amount: amount,
+          )
+        : amount != null
+            ? Amount(amount: amount)
+            : null;
+
+    return await publishOrder(
+      MostroMessage(
+        action: Action.takeSell,
+        id: orderId,
+        payload: payload,
+      ),
+    );
+  }
+
+  Future<void> sendInvoice(String orderId, String invoice, int? amount) async {
+    final payload = PaymentRequest(
+      order: null,
+      lnInvoice: invoice,
+      amount: amount,
+    );
+    await publishOrder(
+      MostroMessage(
+        action: Action.addInvoice,
+        id: orderId,
+        payload: payload,
+      ),
+    );
   }
 
   Future<void> cancelOrder(String orderId) async {
-    await publishOrder(MostroMessage(action: Action.cancel, id: orderId));
+    await publishOrder(
+      MostroMessage(
+        action: Action.cancel,
+        id: orderId,
+      ),
+    );
   }
 
   Future<void> sendFiatSent(String orderId) async {
-    await publishOrder(MostroMessage(action: Action.fiatSent, id: orderId));
+    await publishOrder(
+      MostroMessage(
+        action: Action.fiatSent,
+        id: orderId,
+      ),
+    );
   }
 
   Future<void> releaseOrder(String orderId) async {
-    await publishOrder(MostroMessage(action: Action.release, id: orderId));
+    await publishOrder(
+      MostroMessage(
+        action: Action.release,
+        id: orderId,
+      ),
+    );
   }
 
   Future<void> disputeOrder(String orderId) async {
-    await publishOrder(MostroMessage(action: Action.dispute, id: orderId));
+    await publishOrder(
+      MostroMessage(
+        action: Action.dispute,
+        id: orderId,
+      ),
+    );
   }
 
   Future<void> submitRating(String orderId, int rating) async {
@@ -140,8 +241,11 @@ class MostroService {
       content = order.serialize();
     }
     _logger.i('Publishing order: $content');
-    final event =
-        await createNIP59Event(content, _settings.mostroPublicKey, session);
+    final event = await createNIP59Event(
+      content,
+      _settings.mostroPublicKey,
+      session,
+    );
     await _nostrService.publishEvent(event);
     return session;
   }

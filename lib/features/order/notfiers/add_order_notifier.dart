@@ -5,7 +5,7 @@ import 'package:mostro_mobile/features/order/notfiers/abstract_order_notifier.da
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 
 class AddOrderNotifier extends AbstractOrderNotifier {
-  AddOrderNotifier(super.orderRepository, super.orderId, super.ref);
+  AddOrderNotifier(super.mostroService, super.orderId, super.ref);
 
   @override
   Future<void> subscribe(Stream<MostroMessage> stream) async {
@@ -23,7 +23,7 @@ class AddOrderNotifier extends AbstractOrderNotifier {
     }
   }
 
-  // This method would be called when the order is confirmed.
+  // This method is called when the order is confirmed.
   Future<void> confirmOrder(MostroMessage confirmedOrder) async {
     // Extract the confirmed (real) order id.
     final confirmedOrderId = confirmedOrder.id;
@@ -40,11 +40,13 @@ class AddOrderNotifier extends AbstractOrderNotifier {
         .toInt();
 
     final message = MostroMessage<Order>(
-        action: Action.newOrder,
-        id: null,
-        requestId: requestId,
-        payload: order);
-    final stream = await orderRepository.publishOrder(message);
+      action: Action.newOrder,
+      id: null,
+      requestId: requestId,
+      payload: order,
+    );
+    final session = await mostroService.publishOrder(message);
+    final stream = mostroService.subscribe(session);
     await subscribe(stream);
   }
 }

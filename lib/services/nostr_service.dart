@@ -44,7 +44,7 @@ class NostrService {
   Future<void> updateSettings(Settings newSettings) async {
     settings = newSettings.copyWith();
     final relays = Nostr.instance.services.relays.relaysList;
-    if (!ListEquality().equals(relays, settings.relays) ) {
+    if (!ListEquality().equals(relays, settings.relays)) {
       _logger.i('Updating relays...');
       await init();
     }
@@ -62,13 +62,29 @@ class NostrService {
     }
 
     try {
-      await _nostr.services.relays.sendEventToRelaysAsync(event,
-          timeout: Config.nostrConnectionTimeout);
+      await _nostr.services.relays.sendEventToRelaysAsync(
+        event,
+        timeout: Config.nostrConnectionTimeout,
+      );
       _logger.i('Event published successfully');
     } catch (e) {
       _logger.w('Failed to publish event: $e');
       rethrow;
     }
+  }
+
+  Future<List<NostrEvent>> fecthEvents(NostrFilter filter) async {
+    if (!_isInitialized) {
+      throw Exception('Nostr is not initialized. Call init() first.');
+    }
+
+    final request = NostrRequest(filters: [filter]);
+    return
+        await _nostr.services.relays.startEventsSubscriptionAsync(
+      request: request,
+      timeout: Config.nostrConnectionTimeout,
+    );
+
   }
 
   Stream<NostrEvent> subscribeToEvents(NostrFilter filter) {
@@ -113,7 +129,10 @@ class NostrService {
     }
 
     return NostrUtils.createNIP59Event(
-        content, recipientPubKey, senderPrivateKey);
+      content,
+      recipientPubKey,
+      senderPrivateKey,
+    );
   }
 
   Future<NostrEvent> decryptNIP59Event(
@@ -122,24 +141,38 @@ class NostrService {
       throw Exception('Nostr is not initialized. Call init() first.');
     }
 
-    return NostrUtils.decryptNIP59Event(event, privateKey);
+    return NostrUtils.decryptNIP59Event(
+      event,
+      privateKey,
+    );
   }
 
   Future<String> createRumor(NostrKeyPairs senderKeyPair, String wrapperKey,
       String recipientPubKey, String content) async {
     return NostrUtils.createRumor(
-        senderKeyPair, wrapperKey, recipientPubKey, content);
+      senderKeyPair,
+      wrapperKey,
+      recipientPubKey,
+      content,
+    );
   }
 
   Future<String> createSeal(NostrKeyPairs senderKeyPair, String wrapperKey,
       String recipientPubKey, String encryptedContent) async {
     return NostrUtils.createSeal(
-        senderKeyPair, wrapperKey, recipientPubKey, encryptedContent);
+      senderKeyPair,
+      wrapperKey,
+      recipientPubKey,
+      encryptedContent,
+    );
   }
 
   Future<NostrEvent> createWrap(NostrKeyPairs wrapperKeyPair,
       String sealedContent, String recipientPubKey) async {
     return NostrUtils.createWrap(
-        wrapperKeyPair, sealedContent, recipientPubKey);
+      wrapperKeyPair,
+      sealedContent,
+      recipientPubKey,
+    );
   }
 }

@@ -158,9 +158,8 @@ class TradeDetailScreen extends ConsumerWidget {
   Widget _buildCountDownTime(DateTime expiration) {
     // If expiration has passed, the difference is negative => zero.
     final now = DateTime.now();
-    final Duration difference = expiration.isAfter(now)
-        ? expiration.difference(now)
-        : const Duration();
+    final Duration difference =
+        expiration.isAfter(now) ? expiration.difference(now) : const Duration();
 
     // Display hours left
     final hoursLeft = difference.inHours.clamp(0, 9999);
@@ -180,8 +179,6 @@ class TradeDetailScreen extends ConsumerWidget {
   /// Additional checks use `message.action` to refine which button to show.
   List<Widget> _buildActionButtons(
       BuildContext context, WidgetRef ref, NostrEvent order) {
-    final orderDetailsNotifier =
-        ref.read(orderNotifierProvider(orderId).notifier);
     final message = ref.watch(orderNotifierProvider(orderId));
 
     // The finite-state-machine approach: decide based on the order.status.
@@ -189,7 +186,7 @@ class TradeDetailScreen extends ConsumerWidget {
     switch (order.status) {
       case Status.pending:
       case Status.waitingPayment:
-        // Usually, a pending or waitingPayment order can be canceled. 
+        // Usually, a pending or waitingPayment order can be canceled.
         // Possibly the user could do more if they’re the buyer vs. seller,
         // but for simplicity we show CANCEL only.
         return [
@@ -198,8 +195,6 @@ class TradeDetailScreen extends ConsumerWidget {
         ];
 
       case Status.waitingBuyerInvoice:
-      // Some code lumps in "settledHoldInvoice" and "active" together, 
-      // but let’s keep them separate for clarity:
       case Status.settledHoldInvoice:
       case Status.active:
         return [
@@ -212,42 +207,16 @@ class TradeDetailScreen extends ConsumerWidget {
 
           // If the action is "addInvoice" => maybe show a button to push the invoice screen.
           if (message.action == actions.Action.addInvoice)
-            ElevatedButton(
-              onPressed: () async {
-                context.push('/add_invoice/$orderId');
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.mostroGreen,
-              ),
-              child: const Text('ADD INVOICE'),
-            ),
-
+            _buildAddInvoiceButton(context),
           // If the order is waiting for buyer to confirm fiat was sent
           if (message.action == actions.Action.holdInvoicePaymentAccepted)
-            ElevatedButton(
-              onPressed: () async {
-                await orderDetailsNotifier.sendFiatSent();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.mostroGreen,
-              ),
-              child: const Text('FIAT SENT'),
-            ),
-
+            _buildFiatSentButton(ref),
           // If the user is the seller & the buyer is done => show release button
           if (message.action == actions.Action.buyerTookOrder)
-            ElevatedButton(
-              onPressed: () async {
-                await orderDetailsNotifier.releaseOrder();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.mostroGreen,
-              ),
-              child: const Text('RELEASE SATS'),
-            ),
-
+            _buildReleaseButton(ref),
           // If the user is ready to rate
-          if (message.action == actions.Action.rate) _buildRateButton(context),
+          if (message.action == actions.Action.rate)
+            _buildRateButton(context),
         ];
 
       case Status.fiatSent:
@@ -283,6 +252,51 @@ class TradeDetailScreen extends ConsumerWidget {
           _buildCloseButton(context),
         ];
     }
+  }
+
+  /// RELEASE
+  Widget _buildReleaseButton(WidgetRef ref) {
+    final orderDetailsNotifier =
+        ref.read(orderNotifierProvider(orderId).notifier);
+
+    return ElevatedButton(
+      onPressed: () async {
+        await orderDetailsNotifier.releaseOrder();
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppTheme.mostroGreen,
+      ),
+      child: const Text('RELEASE SATS'),
+    );
+  }
+
+  /// FIAT_SENT
+  Widget _buildFiatSentButton(WidgetRef ref) {
+    final orderDetailsNotifier =
+        ref.read(orderNotifierProvider(orderId).notifier);
+
+    return ElevatedButton(
+      onPressed: () async {
+        await orderDetailsNotifier.sendFiatSent();
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppTheme.mostroGreen,
+      ),
+      child: const Text('FIAT SENT'),
+    );
+  }
+
+  /// ADD INVOICE
+  Widget _buildAddInvoiceButton(BuildContext context) {
+    return ElevatedButton(
+      onPressed: () async {
+        context.push('/add_invoice/$orderId');
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppTheme.mostroGreen,
+      ),
+      child: const Text('ADD INVOICE'),
+    );
   }
 
   /// CANCEL

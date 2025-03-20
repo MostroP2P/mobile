@@ -2,6 +2,7 @@ import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/data/models/range_amount.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/rating.dart';
+import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:dart_nostr/dart_nostr.dart';
 
@@ -46,7 +47,8 @@ extension NostrEventExtensions on NostrEvent {
 
   DateTime _getTimeStamp(String timestamp) {
     final ts = int.parse(timestamp);
-    return DateTime.fromMillisecondsSinceEpoch(ts * 1000).subtract(Duration(hours: 12));
+    return DateTime.fromMillisecondsSinceEpoch(ts * 1000)
+        .subtract(Duration(hours: 12));
   }
 
   String _timeAgo(String? ts) {
@@ -61,4 +63,12 @@ extension NostrEventExtensions on NostrEvent {
       return "invalid date";
     }
   }
+
+  Future<NostrEvent> unWrap(String privateKey) async {
+    return await NostrUtils.decryptNIP59Event(
+      this,
+      privateKey,
+    );
+  }
+  
 }

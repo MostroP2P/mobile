@@ -9,21 +9,21 @@ import 'package:mostro_mobile/data/models/enums/cant_do_reason.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/data/models/peer.dart';
-import 'package:mostro_mobile/data/repositories/mostro_repository.dart';
+import 'package:mostro_mobile/services/mostro_service.dart';
 import 'package:mostro_mobile/shared/providers/navigation_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/notification_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 
 class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
-  final MostroRepository orderRepository;
+  final MostroService mostroService;
   final Ref ref;
   final String orderId;
   StreamSubscription<MostroMessage>? orderSubscription;
   final logger = Logger();
 
   AbstractOrderNotifier(
-    this.orderRepository,
+    this.mostroService,
     this.orderId,
     this.ref,
   ) : super(MostroMessage(action: Action.newOrder, id: orderId));

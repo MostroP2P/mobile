@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
-import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_app_bar.dart';
@@ -14,7 +13,7 @@ class MostroScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final nostrEvent = ref.read(orderRepositoryProvider).mostroInstance;
-    final mostroMessages = ref.read(mostroRepositoryProvider).allMessages;
+    final List<MostroMessage> mostroMessages = []; // ref.read(mostroStorageProvider).getAllOrders();
 
     return nostrEvent == null
         ? Scaffold(

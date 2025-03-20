@@ -17,14 +17,14 @@ void main() {
 
   group('AddOrderNotifier - Mockito tests', () {
     late ProviderContainer container;
-    late MockMostroRepository mockRepository;
+    late MockMostroService mockRepository;
     late MockOpenOrdersRepository mockOrdersRepository;
 
     const testUuid = "test_uuid";
 
     setUp(() {
       container = ProviderContainer();
-      mockRepository = MockMostroRepository();
+      mockRepository = MockMostroService();
       mockOrdersRepository = MockOpenOrdersRepository();
     });
 
@@ -70,7 +70,7 @@ void main() {
 
       // Override the repository provider with our mock.
       container = ProviderContainer(overrides: [
-        mostroRepositoryProvider.overrideWithValue(mockRepository),
+        mostroServiceProvider.overrideWithValue(mockRepository),
         orderRepositoryProvider.overrideWithValue(mockOrdersRepository),
       ]);
 

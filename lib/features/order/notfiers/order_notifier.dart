@@ -5,66 +5,78 @@ import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/features/order/notfiers/abstract_order_notifier.dart';
 
 class OrderNotifier extends AbstractOrderNotifier {
-  OrderNotifier(super.orderRepository, super.orderId, super.ref);
+  OrderNotifier(super.mostroService, super.orderId, super.ref);
+
+  Future<void> sync() async {
+    state = await mostroService.getOrderById(orderId) ?? state;
+  }
 
   Future<void> resubscribe() async {
-    final stream = orderRepository.resubscribeOrder(orderId);
-    Timer? debounceTimer;
-    stream.listen((order) {
-      // Cancel any previously scheduled update.
-      debounceTimer?.cancel();
-      // Schedule a new update after a debounce duration.
-      debounceTimer = Timer(const Duration(milliseconds: 300), () {
-        state = order;
-        debounceTimer?.cancel();
-        subscribe(stream);
-      });
-    }, onDone: () {
-      debounceTimer?.cancel();
-    }, onError: handleError);
+    await sync();
+    final session = mostroService.getSessionByOrderId(orderId);
+    final stream = mostroService.subscribe(session!);
+    await subscribe(stream);
+  }
+
+  Future<void> submitOrder(Order order) async {
+    final message = MostroMessage<Order>(
+      action: Action.newOrder,
+      id: null,
+      payload: order,
+    );
+    final session = await mostroService.publishOrder(message);
+    final stream = mostroService.subscribe(session);
+    await subscribe(stream);
   }
 
   Future<void> takeSellOrder(
       String orderId, int? amount, String? lnAddress) async {
-    final stream =
-        await orderRepository.takeSellOrder(orderId, amount, lnAddress);
+    final session = await mostroService.takeSellOrder(
+      orderId,
+      amount,
+      lnAddress,
+    );
+    final stream = mostroService.subscribe(session);
     await subscribe(stream);
   }
 
   Future<void> takeBuyOrder(String orderId, int? amount) async {
-    final stream = await orderRepository.takeBuyOrder(orderId, amount);
+    final session = await mostroService.takeBuyOrder(
+      orderId,
+      amount,
+    );
+    final stream = mostroService.subscribe(session);
     await subscribe(stream);
   }
 
   Future<void> sendInvoice(String orderId, String invoice, int? amount) async {
-    await orderRepository.sendInvoice(orderId, invoice, amount);
+    await mostroService.sendInvoice(
+      orderId,
+      invoice,
+      amount,
+    );
   }
 
   Future<void> cancelOrder() async {
-    await orderRepository.cancelOrder(orderId);
-  }
-
-  Future<void> submitOrder(Order order) async {
-    final message =
-        MostroMessage<Order>(action: Action.newOrder, id: null, payload: order);
-    final stream = await orderRepository.publishOrder(message);
-    await subscribe(stream);
+    await mostroService.cancelOrder(orderId);
   }
 
   Future<void> sendFiatSent() async {
-    await orderRepository.sendFiatSent(orderId);
+    await mostroService.sendFiatSent(orderId);
   }
 
   Future<void> releaseOrder() async {
-    await orderRepository.releaseOrder(orderId);
+    await mostroService.releaseOrder(orderId);
   }
 
   Future<void> disputeOrder() async {
-    await orderRepository.disputeOrder(orderId);
+    await mostroService.disputeOrder(orderId);
   }
 
-   Future<void> submitRating(int rating) async {
-    await orderRepository.submitRating(orderId, rating);
-   }
-
+  Future<void> submitRating(int rating) async {
+    await mostroService.submitRating(
+      orderId,
+      rating,
+    );
+  }
 }

@@ -32,6 +32,7 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
   });
 
   for (final session in sessionManager.sessions) {
+    await mostroService.sync(session);
     if (session.orderId != null) {
       final order = ref.watch(orderNotifierProvider(session.orderId!).notifier);
       order.resubscribe();
