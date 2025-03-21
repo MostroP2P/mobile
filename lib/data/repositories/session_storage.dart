@@ -1,116 +1,75 @@
 import 'package:dart_nostr/nostr/core/key_pairs.dart';
+import 'package:mostro_mobile/data/repositories/base_storage.dart';
 import 'package:sembast/sembast.dart';
-import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager.dart';
 import 'package:sembast/utils/value_utils.dart';
 
-class SessionStorage {
-  final Database _database;
+class SessionStorage extends BaseStorage<Session> {
   final KeyManager _keyManager;
-  final _logger = Logger();
-
-  // Store reference for sessions
-  final StoreRef<int, Map<String, dynamic>> _store =
-      intMapStoreFactory.store('sessions');
 
   SessionStorage(
-    this._database,
-    this._keyManager,
-  );
+    this._keyManager, {
+    required Database db,
+  }) : super(
+          db,
+          stringMapStoreFactory.store('sessions'),
+        );
 
-  Future<List<Session>> getAllSessions() async {
-    final records = await _store.find(_database);
-    final sessions = <Session>[];
-    for (final record in records) {
-      try {
-        final session = await _decodeSession(record.value);
-        _logger.i('Decoded session ${session.toJson()}');
-        sessions.add(session);
-      } catch (e) {
-        _logger.e('Error decoding session for key ${record.key}: $e');
-        deleteSession(record.key);
-      }
-    }
-    return sessions;
+  @override
+  Map<String, dynamic> toDbMap(Session session) {
+    // Convert Session -> JSON
+    return session.toJson();
   }
 
-  /// Retrieves one session by keyIndex.
-  Future<Session?> getSession(int keyIndex) async {
-    final record = await _store.record(keyIndex).get(_database);
-    if (record == null) {
-      return null;
-    }
-    try {
-      return await _decodeSession(record);
-    } catch (e) {
-      _logger.e('Error decoding session index $keyIndex: $e');
-      return null;
-    }
+  @override
+  Session fromDbMap(String key, Map<String, dynamic> jsonMap) {
+    // Re-derive or do any specialized logic
+    return _decodeSession(key, jsonMap);
   }
 
-  /// Saves (inserts or updates) a session in the database.
-  Future<void> putSession(Session session) async {
-    final jsonMap = session.toJson();
-    // Use the session's keyIndex as the DB key
-    await _store.record(session.keyIndex).put(_database, jsonMap);
-  }
+  /// A specialized decode that re-derives keys or changes the map structure
+  Session _decodeSession(String key, Map<String, dynamic> map) {
+    final clone = cloneMap(map);
 
-  /// Deletes a specific session from the database.
-  Future<void> deleteSession(int keyIndex) async {
-    await _store.record(keyIndex).delete(_database);
-  }
+    // Fetch Master Key from KeyManager
+    final masterKey = _keyManager.masterKeyPair;
 
-  Future<void> deleteAllSessions() async {
-    await _store.delete(_database);
-  }
-
-  /// Finds and deletes sessions considered expired, returning a list of deleted IDs.
-  Future<List<int>> deleteExpiredSessions(
-      int sessionExpirationHours, int maxBatchSize) async {
-    final now = DateTime.now();
-    final records = await _store.find(_database);
-    final removedIds = <int>[];
-
-    for (final record in records) {
-      if (removedIds.length >= maxBatchSize) break;
-
-      try {
-        final sessionMap = record.value;
-        final startTimeStr = sessionMap['start_time'] as String?;
-        if (startTimeStr != null) {
-          final startTime = DateTime.parse(startTimeStr);
-          if (now.difference(startTime).inHours >= sessionExpirationHours) {
-            await _store.record(record.key).delete(_database);
-            removedIds.add(record.key);
-          }
-        }
-      } catch (e) {
-        // Possibly remove corrupted record
-        _logger.e('Error processing session ${record.key}: $e');
-        await _store.record(record.key).delete(_database);
-        removedIds.add(record.key);
-      }
-    }
-
-    return removedIds;
-  }
-
-  /// Rebuilds a [Session] object from the DB record by re-deriving keys.
-  Future<Session> _decodeSession(Map<String, dynamic> map) async {
-    //final index = map['key_index'] as int;
-
-    // Re-derive trade key from index
-    // final tradeKey = await _keyManager.deriveTradeKeyFromIndex(index);
-    // Re-get masterKey (potentially from secure storage/caching)
-    final masterKey = await _keyManager.getMasterKey();
+    final keyIndex = map['key_index'];
     final tradeKey = map['trade_key'];
 
-    var clone = cloneMap(map);
-
+    final tradeKeyPair = _keyManager.deriveTradeKeyPair(keyIndex);
+    if (tradeKeyPair.public != tradeKey) {
+      throw ArgumentError('Trade key does not match derived key');
+    }
     clone['trade_key'] = NostrKeyPairs(private: tradeKey);
     clone['master_key'] = masterKey;
 
     return Session.fromJson(clone);
+  }
+
+  Future<void> putSession(Session session) async {
+    if (session.orderId == null) {
+      throw ArgumentError('Cannot store a session with an empty orderId');
+    }
+    await putItem(session.orderId!, session);
+  }
+
+  /// Shortcut to get a single session by its ID.
+  Future<Session?> getSession(String sessionId) => getItem(sessionId);
+
+  /// Shortcut to get all sessions (direct pass-through).
+  Future<List<Session>> getAllSessions() => getAllItems();
+
+  /// Shortcut to remove a specific session by its ID.
+  Future<void> deleteSession(String sessionId) => deleteItem(sessionId);
+
+  Future<List<String>> deleteExpiredSessions(
+      int sessionExpirationHours, int maxBatchSize) {
+    final now = DateTime.now();
+    return deleteWhere((session) {
+      final startTime = session.startTime;
+      return now.difference(startTime).inHours >= sessionExpirationHours;
+    }, maxBatchSize: maxBatchSize);
   }
 }

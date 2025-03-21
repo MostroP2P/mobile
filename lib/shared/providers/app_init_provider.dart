@@ -16,12 +16,9 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
   await nostrService.init();
 
   final keyManager = ref.read(keyManagerProvider);
-  bool hasMaster = await keyManager.hasMasterKey();
-  if (!hasMaster) {
-    await keyManager.generateAndStoreMasterKey();
-  }
+  await keyManager.init();
 
-  final sessionManager = ref.read(sessionManagerProvider);
+  final sessionManager = ref.read(sessionNotifierProvider.notifier);
   await sessionManager.init();
 
   final mostroService = ref.read(mostroServiceProvider);
@@ -32,8 +29,8 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
   });
 
   for (final session in sessionManager.sessions) {
-    await mostroService.sync(session);
     if (session.orderId != null) {
+      await mostroService.sync(session);
       final order = ref.watch(orderNotifierProvider(session.orderId!).notifier);
       order.resubscribe();
     }

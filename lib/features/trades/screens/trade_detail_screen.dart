@@ -7,13 +7,14 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
-import 'package:mostro_mobile/data/models/enums/order_type.dart';
+import 'package:mostro_mobile/data/models/enums/role.dart';
 import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
 import 'package:mostro_mobile/features/trades/widgets/mostro_message_detail_widget.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
+import 'package:mostro_mobile/shared/providers/session_manager_provider.dart';
 import 'package:mostro_mobile/shared/utils/currency_utils.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 
@@ -65,7 +66,9 @@ class TradeDetailScreen extends ConsumerWidget {
 
   /// Builds a card showing the user is "selling/buying X sats for Y fiat" etc.
   Widget _buildSellerAmount(WidgetRef ref, NostrEvent order) {
-    final selling = order.orderType == OrderType.sell ? 'selling' : 'buying';
+    final session = ref.watch(sessionProvider(order.orderId!));
+
+    final selling = session!.role == Role.seller ? 'selling' : 'buying';
 
     final amountString =
         '${order.fiatAmount} ${order.currency} ${CurrencyUtils.getFlagFromCurrency(order.currency!)}';
@@ -180,22 +183,38 @@ class TradeDetailScreen extends ConsumerWidget {
   List<Widget> _buildActionButtons(
       BuildContext context, WidgetRef ref, NostrEvent order) {
     final message = ref.watch(orderNotifierProvider(orderId));
+    final session = ref.watch(sessionProvider(orderId));
 
     // The finite-state-machine approach: decide based on the order.status.
     // Then refine if needed using the last action in `message.action`.
     switch (order.status) {
       case Status.pending:
+        return [
+          _buildCloseButton(context),
+          _buildCancelButton(context, ref),
+          if (message.action == actions.Action.addInvoice)
+            _buildAddInvoiceButton(context),
+        ];
       case Status.waitingPayment:
         // Usually, a pending or waitingPayment order can be canceled.
         // Possibly the user could do more if they’re the buyer vs. seller,
         // but for simplicity we show CANCEL only.
         return [
           _buildCloseButton(context),
-          _buildCancelButton(ref),
+          _buildCancelButton(context, ref),
         ];
 
       case Status.waitingBuyerInvoice:
+        return [
+          _buildCloseButton(context),
+          if (message.action == actions.Action.addInvoice)
+            _buildAddInvoiceButton(context),
+        ];
       case Status.settledHoldInvoice:
+        return [
+          _buildCloseButton(context),
+          if (message.action == actions.Action.rate) _buildRateButton(context),
+        ];
       case Status.active:
         return [
           _buildCloseButton(context),
@@ -205,18 +224,16 @@ class TradeDetailScreen extends ConsumerWidget {
               message.action != actions.Action.rate)
             _buildDisputeButton(ref),
 
-          // If the action is "addInvoice" => maybe show a button to push the invoice screen.
+          // If the action is "addInvoice" => show a button for the invoice screen.
           if (message.action == actions.Action.addInvoice)
             _buildAddInvoiceButton(context),
+
           // If the order is waiting for buyer to confirm fiat was sent
-          if (message.action == actions.Action.holdInvoicePaymentAccepted)
-            _buildFiatSentButton(ref),
+          if (session!.role == Role.buyer) _buildFiatSentButton(ref),
           // If the user is the seller & the buyer is done => show release button
-          if (message.action == actions.Action.buyerTookOrder)
-            _buildReleaseButton(ref),
+          if (session.role == Role.seller) _buildReleaseButton(ref),
           // If the user is ready to rate
-          if (message.action == actions.Action.rate)
-            _buildRateButton(context),
+          if (message.action == actions.Action.rate) _buildRateButton(context),
         ];
 
       case Status.fiatSent:
@@ -224,6 +241,7 @@ class TradeDetailScreen extends ConsumerWidget {
         // or just close the screen and wait.
         return [
           _buildCloseButton(context),
+          if (session!.role == Role.seller) _buildReleaseButton(ref),
           _buildDisputeButton(ref),
         ];
 
@@ -231,16 +249,16 @@ class TradeDetailScreen extends ConsumerWidget {
         return [
           _buildCloseButton(context),
           if (message.action == actions.Action.cooperativeCancelInitiatedByPeer)
-            _buildCancelButton(ref),
+            _buildCancelButton(context, ref),
         ];
 
       case Status.success:
         return [
           _buildCloseButton(context),
-          _buildRateButton(context),
+          if (message.action != actions.Action.rateReceived)
+            _buildRateButton(context),
         ];
 
-      // For these statuses, we usually just let the user close the screen.
       case Status.expired:
       case Status.dispute:
       case Status.completedByAdmin:
@@ -300,11 +318,12 @@ class TradeDetailScreen extends ConsumerWidget {
   }
 
   /// CANCEL
-  Widget _buildCancelButton(WidgetRef ref) {
+  Widget _buildCancelButton(BuildContext context, WidgetRef ref) {
     final notifier = ref.read(orderNotifierProvider(orderId).notifier);
     return ElevatedButton(
       onPressed: () async {
         await notifier.cancelOrder();
+        context.pop();
       },
       style: ElevatedButton.styleFrom(
         backgroundColor: AppTheme.red1,

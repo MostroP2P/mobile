@@ -3,6 +3,7 @@ import 'package:mostro_mobile/data/models/dispute.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/data/models/payment_request.dart';
 import 'package:mostro_mobile/data/models/peer.dart';
+import 'package:mostro_mobile/data/models/rating_user.dart';
 
 abstract class Payload {
   String get type;
@@ -19,7 +20,10 @@ abstract class Payload {
       return Peer.fromJson(json['peer']);
     } else if (json.containsKey('dispute')) {
       return Dispute.fromJson(json['dispute']);
+    } else if (json.containsKey('rating_user')) {
+      return RatingUser.fromJson(json['rating_user']);
+    } else {
+      throw UnsupportedError('Unknown payload type');
     }
-    throw UnsupportedError('Unknown payload type');
   }
 }

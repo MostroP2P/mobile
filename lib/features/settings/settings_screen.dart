@@ -56,7 +56,7 @@ class SettingsScreen extends ConsumerWidget {
                             onChanged: (bool value) {
                               ref
                                   .watch(settingsProvider.notifier)
-                                  .updatePrivacyModeSetting(value);
+                                  .updatePrivacyMode(value);
                             }),
                         const SizedBox(height: 8),
                         CurrencyComboBox(
@@ -64,7 +64,7 @@ class SettingsScreen extends ConsumerWidget {
                           onSelected: (fiatCode) {
                             ref
                                 .watch(settingsProvider.notifier)
-                                .updateDefaultFiatCodeSetting(fiatCode);
+                                .updateDefaultFiatCode(fiatCode);
                           },
                         ),
                         const SizedBox(height: 8),
@@ -100,7 +100,7 @@ class SettingsScreen extends ConsumerWidget {
                           style: const TextStyle(color: AppTheme.cream1),
                           onChanged: (value) => ref
                               .watch(settingsProvider.notifier)
-                              .updateMostroInstanceSetting(value),
+                              .updateMostroInstance(value),
                           decoration: InputDecoration(
                             border: InputBorder.none,
                             labelText: 'Mostro Pubkey',

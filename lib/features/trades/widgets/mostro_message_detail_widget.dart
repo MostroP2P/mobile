@@ -5,6 +5,7 @@ import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/cant_do.dart';
 import 'package:mostro_mobile/data/models/dispute.dart';
 import 'package:mostro_mobile/data/models/enums/cant_do_reason.dart';
+import 'package:mostro_mobile/data/models/enums/role.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/data/models/peer.dart';
@@ -13,6 +14,7 @@ import 'package:mostro_mobile/features/order/providers/order_notifier_provider.d
 import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
+import 'package:mostro_mobile/shared/providers/session_manager_provider.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 
 class MostroMessageDetail extends ConsumerWidget {
@@ -24,7 +26,7 @@ class MostroMessageDetail extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Retrieve the MostroMessage using the order's orderId
     final mostroMessage = ref.watch(orderNotifierProvider(order.orderId!));
-
+    final session = ref.watch(sessionProvider(order.orderId!));
     // Map the action enum to the corresponding i10n string.
     String actionText;
     switch (mostroMessage.action) {
@@ -90,8 +92,9 @@ class MostroMessageDetail extends ConsumerWidget {
         break;
       case actions.Action.fiatSentOk:
         final payload = mostroMessage.getPayload<Peer>();
-        actionText = S.of(context)!.fiatSentOkBuyer(payload!.publicKey);
-        //actionText = S.of(context)!.fiatSentOkSeller;
+        actionText = session!.role == Role.buyer
+            ? S.of(context)!.fiatSentOkBuyer(payload!.publicKey)
+            : S.of(context)!.fiatSentOkSeller(payload!.publicKey);
         break;
       case actions.Action.released:
         actionText = S.of(context)!.released('{seller_npub}');
@@ -100,10 +103,9 @@ class MostroMessageDetail extends ConsumerWidget {
         actionText = S.of(context)!.purchaseCompleted;
         break;
       case actions.Action.holdInvoicePaymentSettled:
-        final payload = mostroMessage.getPayload<Order>();
         actionText = S
             .of(context)!
-            .holdInvoicePaymentSettled(payload!.buyerTradePubkey!);
+            .holdInvoicePaymentSettled('{buyer_npub}');
         break;
       case actions.Action.rate:
         actionText = S.of(context)!.rate;

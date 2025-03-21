@@ -36,8 +36,8 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
       final keyManager = ref.read(keyManagerProvider);
       final hasMaster = await keyManager.hasMasterKey();
       if (hasMaster) {
-        final masterKeyPairs = await keyManager.getMasterKey();
-        _masterKey = masterKeyPairs.private;
+        final masterKeyPairs = keyManager.masterKeyPair;
+        _masterKey = masterKeyPairs?.private;
         _mnemonic = await keyManager.getMnemonic();
         _tradeKeyIndex = await keyManager.getCurrentKeyIndex();
       } else {

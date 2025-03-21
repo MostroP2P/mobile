@@ -4,5 +4,5 @@ import 'package:mostro_mobile/shared/providers/mostro_database_provider.dart';
 
 final mostroStorageProvider = Provider<MostroStorage>((ref) {
   final mostroDatabase = ref.watch(mostroDatabaseProvider);
-  return MostroStorage(mostroDatabase);
+  return MostroStorage(db: mostroDatabase);
 });

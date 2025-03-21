@@ -35,9 +35,10 @@ class AddOrderNotifier extends AbstractOrderNotifier {
   }
 
   Future<void> submitOrder(Order order) async {
-    final requestId = BigInt.parse(orderId.replaceAll('-', ''), radix: 16)
-        .toUnsigned(64)
-        .toInt();
+    final requestId = BigInt.parse(
+      orderId.replaceAll('-', ''),
+      radix: 16,
+    ).toUnsigned(64).toInt();
 
     final message = MostroMessage<Order>(
       action: Action.newOrder,

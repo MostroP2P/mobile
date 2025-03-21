@@ -7,9 +7,25 @@ class KeyManager {
   final KeyStorage _storage;
   final KeyDerivator _derivator;
 
+  NostrKeyPairs? masterKeyPair;
+  String? _masterKeyHex;
+  int? tradeKeyIndex;
+
   KeyManager(this._storage, this._derivator);
 
+  Future<void> init() async {
+    if (!await hasMasterKey()) {
+      await generateAndStoreMasterKey();
+    }
+    masterKeyPair = await _getMasterKey();
+    _masterKeyHex = await _storage.readMasterKey();
+    tradeKeyIndex = await _storage.readTradeKeyIndex();
+  }
+
   Future<bool> hasMasterKey() async {
+    if (masterKeyPair != null) {
+      return true;
+    }
     final masterKeyHex = await _storage.readMasterKey();
     return masterKeyHex != null;
   }
@@ -35,7 +51,7 @@ class KeyManager {
 
   /// Retrieve the master key from storage, returning NostrKeyPairs
   /// or throws a MasterKeyNotFoundException if not found
-  Future<NostrKeyPairs> getMasterKey() async {
+  Future<NostrKeyPairs> _getMasterKey() async {
     final masterKeyHex = await _storage.readMasterKey();
     if (masterKeyHex == null) {
       throw MasterKeyNotFoundException('No master key found in secure storage');
@@ -65,13 +81,25 @@ class KeyManager {
     return NostrKeyPairs(private: tradePrivateHex);
   }
 
+  NostrKeyPairs deriveTradeKeyPair(int index) {
+    final tradePrivateHex =
+        _derivator.derivePrivateKey(_masterKeyHex!, index);
+
+    return NostrKeyPairs(private: tradePrivateHex);
+  }
+
   /// Derive a trade key for a specific index
   Future<NostrKeyPairs> deriveTradeKeyFromIndex(int index) async {
     final masterKeyHex = await _storage.readMasterKey();
     if (masterKeyHex == null) {
-      throw MasterKeyNotFoundException('No master key found in secure storage');
+      throw MasterKeyNotFoundException(
+        'No master key found in secure storage',
+      );
     }
-    final tradePrivateHex = _derivator.derivePrivateKey(masterKeyHex, index);
+    final tradePrivateHex = _derivator.derivePrivateKey(
+      masterKeyHex,
+      index,
+    );
 
     return NostrKeyPairs(private: tradePrivateHex);
   }

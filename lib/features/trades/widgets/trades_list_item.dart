@@ -4,9 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
-import 'package:mostro_mobile/data/models/enums/order_type.dart';
+import 'package:mostro_mobile/data/models/enums/role.dart';
 import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
+import 'package:mostro_mobile/shared/providers/session_manager_provider.dart';
 import 'package:mostro_mobile/shared/providers/time_provider.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 import 'package:mostro_mobile/shared/utils/currency_utils.dart';
@@ -33,7 +34,7 @@ class TradesListItem extends ConsumerWidget {
           children: [
             _buildHeader(context),
             const SizedBox(height: 16),
-            _buildSessionDetails(context),
+            _buildSessionDetails(context, ref),
             const SizedBox(height: 8),
           ],
         ),
@@ -56,10 +57,11 @@ class TradesListItem extends ConsumerWidget {
     );
   }
 
-  Widget _buildSessionDetails(BuildContext context) {
+  Widget _buildSessionDetails(BuildContext context, WidgetRef ref) {
+    final session = ref.watch(sessionProvider(trade.orderId!));
     return Row(
       children: [
-        _getOrderOffering(context, trade),
+        _getOrderOffering(context, trade, session!.role),
         const SizedBox(width: 16),
         Expanded(
           flex: 3,
@@ -69,8 +71,12 @@ class TradesListItem extends ConsumerWidget {
     );
   }
 
-  Widget _getOrderOffering(BuildContext context, NostrEvent trade) {
-    String offering = trade.orderType == OrderType.buy ? 'Buying' : 'Selling';
+  Widget _getOrderOffering(
+    BuildContext context,
+    NostrEvent trade,
+    Role? role,
+  ) {
+    String offering = role == Role.buyer ? 'Buying' : 'Selling';
     String amountText = (trade.amount != null && trade.amount != '0')
         ? ' ${trade.amount!}'
         : '';

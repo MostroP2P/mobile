@@ -3,10 +3,12 @@ import 'package:dart_nostr/dart_nostr.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/models/amount.dart';
 import 'package:mostro_mobile/data/models/cant_do.dart';
+import 'package:mostro_mobile/data/models/enums/order_type.dart';
+import 'package:mostro_mobile/data/models/enums/role.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
-import 'package:mostro_mobile/data/models/payload.dart';
+import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/data/models/payment_request.dart';
 import 'package:mostro_mobile/data/models/rating_user.dart';
 import 'package:mostro_mobile/data/models/session.dart';
@@ -18,12 +20,12 @@ import 'package:mostro_mobile/shared/notifiers/session_notifier.dart';
 
 class MostroService {
   final NostrService _nostrService;
-  final SessionNotifier _sessionManager;
+  final SessionNotifier _sessionNotifier;
   final MostroStorage _messageStorage;
   final _logger = Logger();
   Settings _settings;
 
-  MostroService(this._nostrService, this._sessionManager, this._settings,
+  MostroService(this._nostrService, this._sessionNotifier, this._settings,
       this._messageStorage);
 
   Future<MostroMessage?> getOrderById(String orderId) async {
@@ -37,8 +39,9 @@ class MostroService {
     );
     final events = await _nostrService.fecthEvents(filter);
     List<MostroMessage> orders = [];
+    final eventsCopy = List<NostrEvent>.from(events);
 
-    for (final event in events) {
+    for (final event in eventsCopy) {
       final decryptedEvent = await event.unWrap(
         session.tradeKey.private,
       );
@@ -107,13 +110,13 @@ class MostroService {
         final msg = MostroMessage.fromJson(msgMap['order']);
 
         if (msg.action == actions.Action.canceled) {
-          await _sessionManager.deleteSession(session.keyIndex);
+          await _sessionNotifier.deleteSession(session.orderId!);
           return msg;
         }
 
         if (session.orderId == null && msg.id != null) {
           session.orderId = msg.id;
-          await _sessionManager.saveSession(session);
+          await _sessionNotifier.saveSession(session);
         }
         await _saveMessage(msg);
         return msg;
@@ -134,7 +137,7 @@ class MostroService {
   }
 
   Session? getSessionByOrderId(String orderId) {
-    return _sessionManager.getSessionByOrderId(orderId);
+    return _sessionNotifier.getSessionByOrderId(orderId);
   }
 
   Future<Session> takeBuyOrder(String orderId, int? amount) async {
@@ -222,50 +225,44 @@ class MostroService {
 
   Future<void> submitRating(String orderId, int rating) async {
     await publishOrder(MostroMessage(
-        action: Action.rateUser,
-        id: orderId,
-        payload: RatingUser(userRating: rating)));
+      action: Action.rateUser,
+      id: orderId,
+      payload: RatingUser(userRating: rating),
+    ));
   }
 
   Future<Session> publishOrder(MostroMessage order) async {
-    final session = (order.id != null)
-        ? _sessionManager.getSessionByOrderId(order.id!) ??
-            await _sessionManager.newSession(orderId: order.id)
-        : await _sessionManager.newSession();
-
-    String content;
-    if (!session.fullPrivacy) {
-      order.tradeIndex = session.keyIndex;
-      content = order.serialize(keyPair: session.tradeKey);
-    } else {
-      content = order.serialize();
-    }
-    _logger.i('Publishing order: $content');
-    final event = await createNIP59Event(
-      content,
-      _settings.mostroPublicKey,
-      session,
+    final session = await _getSession(order);
+    final event = await order.wrap(
+      tradeKey: session.tradeKey,
+      recipientPubKey: _settings.mostroPublicKey,
+      masterKey: session.fullPrivacy ? null : session.masterKey,
+      keyIndex: session.fullPrivacy ? null : session.keyIndex,
     );
     await _nostrService.publishEvent(event);
     return session;
   }
 
-  Future<NostrEvent> createNIP59Event(
-      String content, String recipientPubKey, Session session) async {
-    final keySet = session.fullPrivacy ? session.tradeKey : session.masterKey;
+  Role? _getRole(MostroMessage order) {
+    final payload = order.getPayload<Order>();
 
-    final encryptedContent = await _nostrService.createRumor(
-        session.tradeKey, keySet.private, recipientPubKey, content);
+    return order.action == Action.newOrder
+        ? payload?.kind == OrderType.buy
+            ? Role.buyer
+            : Role.seller
+        : order.action == Action.takeBuy
+            ? Role.seller
+            : order.action == Action.takeSell
+                ? Role.buyer
+                : null;
+  }
 
-    final wrapperKeyPair = await _nostrService.generateKeyPair();
-
-    String sealedContent = await _nostrService.createSeal(
-        keySet, wrapperKeyPair.private, recipientPubKey, encryptedContent);
-
-    final wrapEvent = await _nostrService.createWrap(
-        wrapperKeyPair, sealedContent, recipientPubKey);
-
-    return wrapEvent;
+  Future<Session> _getSession(MostroMessage order) async {
+    final role = _getRole(order);
+    return (order.id != null)
+        ? _sessionNotifier.getSessionByOrderId(order.id!) ??
+            await _sessionNotifier.newSession(orderId: order.id, role: role)
+        : await _sessionNotifier.newSession(role: role);
   }
 
   void updateSettings(Settings settings) {

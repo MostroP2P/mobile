@@ -9,9 +9,7 @@ class SettingsNotifier extends StateNotifier<Settings> {
   final SharedPreferencesAsync _prefs;
   static final String _storageKey = SharedPreferencesKeys.appSettings.value;
 
-  SettingsNotifier(this._prefs) : super(_defaultSettings()) {
-    //init();
-  }
+  SettingsNotifier(this._prefs) : super(_defaultSettings());
 
   static Settings _defaultSettings() {
     return Settings(
@@ -40,17 +38,17 @@ class SettingsNotifier extends StateNotifier<Settings> {
     await _saveToPrefs();
   }
 
-  Future<void> updatePrivacyModeSetting(bool newValue) async {
+  Future<void> updatePrivacyMode(bool newValue) async {
     state = state.copyWith(privacyModeSetting: newValue);
     await _saveToPrefs();
   }
 
-  Future<void> updateMostroInstanceSetting(String newValue) async {
+  Future<void> updateMostroInstance(String newValue) async {
     state = state.copyWith(mostroInstance: newValue);
     await _saveToPrefs();
   }
 
-  Future<void> updateDefaultFiatCodeSetting(String newValue) async {
+  Future<void> updateDefaultFiatCode(String newValue) async {
     state = state.copyWith(defaultFiatCode: newValue);
     await _saveToPrefs();
   }

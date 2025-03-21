@@ -4,17 +4,19 @@ class Settings {
   final String mostroPublicKey;
   final String? defaultFiatCode;
 
-  Settings(
-      {required this.relays,
-      required this.fullPrivacyMode,
-      required this.mostroPublicKey,
-      this.defaultFiatCode});
+  Settings({
+    required this.relays,
+    required this.fullPrivacyMode,
+    required this.mostroPublicKey,
+    this.defaultFiatCode,
+  });
 
-  Settings copyWith(
-      {List<String>? relays,
-      bool? privacyModeSetting,
-      String? mostroInstance,
-      String? defaultFiatCode}) {
+  Settings copyWith({
+    List<String>? relays,
+    bool? privacyModeSetting,
+    String? mostroInstance,
+    String? defaultFiatCode,
+  }) {
     return Settings(
       relays: relays ?? this.relays,
       fullPrivacyMode: privacyModeSetting ?? fullPrivacyMode,
@@ -34,7 +36,7 @@ class Settings {
     return Settings(
       relays: (json['relays'] as List<dynamic>?)?.cast<String>() ?? [],
       fullPrivacyMode: json['fullPrivacyMode'] as bool,
-      mostroPublicKey: json['mostroPublicKey'] ?? json['mostroInstance'],
+      mostroPublicKey: json['mostroPublicKey'],
       defaultFiatCode: json['defaultFiatCode'],
     );
   }

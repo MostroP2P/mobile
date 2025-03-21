@@ -5,7 +5,6 @@ import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/cant_do.dart';
 import 'package:mostro_mobile/data/models/dispute.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
-import 'package:mostro_mobile/data/models/enums/cant_do_reason.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/data/models/peer.dart';
@@ -21,6 +20,8 @@ class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
   final String orderId;
   StreamSubscription<MostroMessage>? orderSubscription;
   final logger = Logger();
+  Order? order;
+  Peer? peer;
 
   AbstractOrderNotifier(
     this.mostroService,
@@ -30,8 +31,14 @@ class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
 
   Future<void> subscribe(Stream<MostroMessage> stream) async {
     try {
-      orderSubscription = stream.listen((order) {
-        state = order;
+      orderSubscription = stream.listen((event) {
+        if (event.payload is CantDo) {
+          handleCantDo(event.getPayload<CantDo>());
+          return;
+        }
+        state = event;
+        event.payload is Order ? order = event.getPayload<Order>() : null;
+        event.payload is Peer ? peer = event.getPayload<Peer>() : null;
         handleOrderUpdate();
       });
     } catch (e) {
@@ -41,17 +48,13 @@ class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
 
   void handleError(Object err) {
     logger.e(err);
-    if (state.payload is CantDo) {
-      final cantdo = state.getPayload<CantDo>()!;
+  }
 
-      switch (cantdo.cantDoReason) {
-        case CantDoReason.outOfRangeSatsAmount:
-          break;
-        case CantDoReason.outOfRangeFiatAmount:
-          break;
-        default:
-      }
-    }
+  void handleCantDo(CantDo? cantDo) {
+    final notifProvider = ref.read(notificationProvider.notifier);
+    notifProvider.showInformation(Action.cantDo, values: {
+      'action': cantDo?.cantDoReason.toString(),
+    });
   }
 
   void handleOrderUpdate() {
@@ -118,6 +121,10 @@ class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
         });
         break;
       case Action.holdInvoicePaymentSettled:
+        notifProvider.showInformation(state.action, values: {
+          'buyer_npub': order?.buyerTradePubkey,
+        });
+        break;
       case Action.rate:
       case Action.rateReceived:
       case Action.cooperativeCancelInitiatedByYou:
