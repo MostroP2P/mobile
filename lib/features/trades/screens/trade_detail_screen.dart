@@ -208,6 +208,7 @@ class TradeDetailScreen extends ConsumerWidget {
       case Status.waitingBuyerInvoice:
         return [
           _buildCloseButton(context),
+          _buildCancelButton(context, ref),
           if (message.action == actions.Action.addInvoice)
             _buildAddInvoiceButton(context),
         ];
@@ -219,6 +220,7 @@ class TradeDetailScreen extends ConsumerWidget {
       case Status.active:
         return [
           _buildCloseButton(context),
+          _buildCancelButton(context, ref),
           // If user has not opened a dispute already
           if (message.action != actions.Action.disputeInitiatedByYou &&
               message.action != actions.Action.disputeInitiatedByPeer &&
@@ -259,14 +261,16 @@ class TradeDetailScreen extends ConsumerWidget {
           if (message.action != actions.Action.rateReceived)
             _buildRateButton(context),
         ];
-
+      case Status.inProgress:
+        return [
+          _buildCancelButton(context, ref),
+        ];
       case Status.expired:
       case Status.dispute:
       case Status.completedByAdmin:
       case Status.canceledByAdmin:
       case Status.settledByAdmin:
       case Status.canceled:
-      case Status.inProgress:
         return [
           _buildCloseButton(context),
         ];
