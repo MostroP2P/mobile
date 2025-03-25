@@ -202,6 +202,7 @@ class TradeDetailScreen extends ConsumerWidget {
         return [
           _buildCloseButton(context),
           _buildCancelButton(context, ref),
+          _buildPayInvoiceButton(context),
         ];
 
       case Status.waitingBuyerInvoice:
@@ -309,6 +310,19 @@ class TradeDetailScreen extends ConsumerWidget {
     return ElevatedButton(
       onPressed: () async {
         context.push('/add_invoice/$orderId');
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppTheme.mostroGreen,
+      ),
+      child: const Text('ADD INVOICE'),
+    );
+  }
+
+  /// ADD INVOICE
+  Widget _buildPayInvoiceButton(BuildContext context) {
+    return ElevatedButton(
+      onPressed: () async {
+        context.push('/pay_invoice/$orderId');
       },
       style: ElevatedButton.styleFrom(
         backgroundColor: AppTheme.mostroGreen,
