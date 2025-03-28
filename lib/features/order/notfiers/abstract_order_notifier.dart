@@ -8,11 +8,13 @@ import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/data/models/peer.dart';
+import 'package:mostro_mobile/features/messages/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/services/mostro_service.dart';
 import 'package:mostro_mobile/shared/providers/navigation_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/notification_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
+import 'package:mostro_mobile/shared/providers/session_manager_provider.dart';
 
 class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
   final MostroService mostroService;
@@ -20,8 +22,6 @@ class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
   final String orderId;
   StreamSubscription<MostroMessage>? orderSubscription;
   final logger = Logger();
-  Order? order;
-  Peer? peer;
 
   AbstractOrderNotifier(
     this.mostroService,
@@ -37,8 +37,6 @@ class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
           return;
         }
         state = event;
-        event.payload is Order ? order = event.getPayload<Order>() : null;
-        event.payload is Peer ? peer = event.getPayload<Peer>() : null;
         handleOrderUpdate();
       });
     } catch (e) {
@@ -99,6 +97,14 @@ class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
           'fiat_amount': order?.fiatAmount,
           'payment_method': order?.paymentMethod,
         });
+        // add seller tradekey to session
+        // open chat
+        final sessionProvider = ref.read(sessionNotifierProvider.notifier);
+        final session = sessionProvider.getSessionByOrderId(orderId);
+        session?.peer = Peer(publicKey: order!.buyerTradePubkey!);
+        sessionProvider.saveSession(session!);
+        final chat = ref.read(chatRoomsProvider(orderId).notifier);
+        chat.subscribe();
         break;
       case Action.canceled:
         navProvider.go('/');
@@ -113,6 +119,14 @@ class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
           'fiat_amount': order?.fiatAmount,
           'payment_method': order?.paymentMethod,
         });
+        // add seller tradekey to session
+        // open chat
+        final sessionProvider = ref.read(sessionNotifierProvider.notifier);
+        final session = sessionProvider.getSessionByOrderId(orderId);
+        session?.peer = Peer(publicKey: order!.sellerTradePubkey!);
+        sessionProvider.saveSession(session!);
+        final chat = ref.read(chatRoomsProvider(orderId).notifier);
+        chat.subscribe();
         break;
       case Action.fiatSentOk:
         final peer = state.getPayload<Peer>();
@@ -122,7 +136,7 @@ class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
         break;
       case Action.holdInvoicePaymentSettled:
         notifProvider.showInformation(state.action, values: {
-          'buyer_npub': order?.buyerTradePubkey,
+          'buyer_npub': 'buyerTradePubkey',
         });
         break;
       case Action.rate:

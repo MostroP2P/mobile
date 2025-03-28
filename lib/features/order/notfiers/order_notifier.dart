@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/order.dart';
-import 'package:mostro_mobile/data/models/peer.dart';
 import 'package:mostro_mobile/features/order/notfiers/abstract_order_notifier.dart';
 
 class OrderNotifier extends AbstractOrderNotifier {
@@ -10,8 +9,6 @@ class OrderNotifier extends AbstractOrderNotifier {
 
   Future<void> sync() async {
     state = await mostroService.getOrderById(orderId) ?? state;
-    state.payload is Order ? order = state.getPayload<Order>() : null;
-    state.payload is Peer ? peer = state.getPayload<Peer>() : null;
   }
 
   Future<void> resubscribe() async {

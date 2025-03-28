@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/data/models/range_amount.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
@@ -70,5 +72,65 @@ extension NostrEventExtensions on NostrEvent {
       privateKey,
     );
   }
-  
+
+  Future<NostrEvent> mostroUnWrap(NostrKeyPairs receiver) async {
+    if (kind != 1059) {
+      throw ArgumentError('Wrong kind: $kind');
+    }
+
+    if (content == null || content!.isEmpty) {
+      throw ArgumentError('Event content is empty');
+    }
+
+    final decryptedContent = await NostrUtils.decryptNIP44(
+      content!,
+      receiver.private,
+      pubkey,
+    );
+
+    final rumorEvent = NostrEvent.deserialized(
+      '["EVENT", "", $decryptedContent]',
+    );
+    if (rumorEvent.kind != 1) {
+      throw Exception('Not a Mostro DM: ${rumorEvent.toString()}');
+    }
+    return rumorEvent;
+  }
+
+  Future<NostrEvent> mostroWrap(NostrKeyPairs sharedKey) async {
+    if (kind != 1) {
+      throw ArgumentError('Wrong kind: $kind');
+    }
+
+    if (content == null || content!.isEmpty) {
+      throw ArgumentError('Event content is empty');
+    }
+
+    final wrapperKeyPair = NostrUtils.generateKeyPair();
+
+    final encryptedContent = await NostrUtils.encryptNIP44(
+      jsonEncode(toMap()),
+      wrapperKeyPair.private,
+      sharedKey.public,
+    );
+
+    final event = NostrUtils.createWrap(
+      wrapperKeyPair,
+      encryptedContent,
+      sharedKey.public,
+    );
+    return event;
+  }
+
+  NostrEvent copy() {
+    return NostrEvent(
+      content: content,
+      createdAt: createdAt,
+      id: id,
+      kind: kind,
+      pubkey: pubkey,
+      sig: sig,
+      tags: tags,
+    );
+  }
 }

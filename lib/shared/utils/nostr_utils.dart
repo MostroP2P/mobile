@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
+import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:elliptic/elliptic.dart';
@@ -7,7 +8,6 @@ import 'package:nip44/nip44.dart';
 
 class NostrUtils {
   static final Nostr _instance = Nostr.instance;
-
 
   // Generación de claves
   static NostrKeyPairs generateKeyPair() {
@@ -70,7 +70,8 @@ class NostrUtils {
 
   // Firma y verificación
   static String signMessage(String message, String privateKey) {
-    return _instance.services.keys.sign(privateKey: privateKey, message: message);
+    return _instance.services.keys
+        .sign(privateKey: privateKey, message: message);
   }
 
   static bool verifySignature(
@@ -158,7 +159,7 @@ class NostrUtils {
     );
 
     try {
-      return await _encryptNIP44(
+      return await encryptNIP44(
           jsonEncode(rumorEvent.toMap()), wrapperKey, recipientPubKey);
     } catch (e) {
       throw Exception('Failed to encrypt content: $e');
@@ -177,7 +178,7 @@ class NostrUtils {
       createdAt: randomNow(),
     );
 
-    return await _encryptNIP44(
+    return await encryptNIP44(
         jsonEncode(sealEvent.toMap()), wrapperKey, recipientPubKey);
   }
 
@@ -194,6 +195,12 @@ class NostrUtils {
     );
 
     return wrapEvent;
+  }
+
+  static NostrKeyPairs computeSharedKey(String privateKey, String publicKey) {
+    final sharedKey = Nip44.computeSharedSecret(privateKey, publicKey);
+    final nkey = hex.encode(sharedKey);
+    return NostrKeyPairs(private: nkey);
   }
 
   /// Creates a NIP-59 encrypted event with the following structure:
@@ -213,8 +220,8 @@ class NostrUtils {
 
     final senderKeyPair = generateKeyPairFromPrivateKey(senderPrivateKey);
 
-    String encryptedContent =
-        await createRumor(senderKeyPair, senderKeyPair.private, recipientPubKey, content);
+    String encryptedContent = await createRumor(
+        senderKeyPair, senderKeyPair.private, recipientPubKey, content);
 
     final wrapperKeyPair = generateKeyPair();
 
@@ -229,6 +236,9 @@ class NostrUtils {
 
   static Future<NostrEvent> decryptNIP59Event(
       NostrEvent event, String privateKey) async {
+    if (event.kind != 1059) {
+      throw ArgumentError('Wrong kind: ${event.kind}');
+    }
     // Validate inputs
     if (event.content == null || event.content!.isEmpty) {
       throw ArgumentError('Event content is empty');
@@ -238,14 +248,20 @@ class NostrUtils {
     }
 
     try {
-      final decryptedContent =
-          await _decryptNIP44(event.content ?? '', privateKey, event.pubkey);
+      final decryptedContent = await decryptNIP44(
+        event.content!,
+        privateKey,
+        event.pubkey,
+      );
 
       final rumorEvent =
           NostrEvent.deserialized('["EVENT", "", $decryptedContent]');
 
-      final finalDecryptedContent = await _decryptNIP44(
-          rumorEvent.content ?? '', privateKey, rumorEvent.pubkey);
+      final finalDecryptedContent = await decryptNIP44(
+        rumorEvent.content!,
+        privateKey,
+        rumorEvent.pubkey,
+      );
 
       final wrap = jsonDecode(finalDecryptedContent) as Map<String, dynamic>;
 
@@ -296,7 +312,7 @@ class NostrUtils {
     }
   }
 
-  static Future<String> _encryptNIP44(
+  static Future<String> encryptNIP44(
       String content, String privkey, String pubkey) async {
     try {
       return await Nip44.encryptMessage(content, privkey, pubkey);
@@ -306,7 +322,7 @@ class NostrUtils {
     }
   }
 
-  static Future<String> _decryptNIP44(
+  static Future<String> decryptNIP44(
       String encryptedContent, String privkey, String pubkey) async {
     try {
       return await Nip44.decryptMessage(encryptedContent, privkey, pubkey);

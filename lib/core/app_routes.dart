@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
+import 'package:mostro_mobile/features/messages/screens/chat_room_screen.dart';
 import 'package:mostro_mobile/features/order/screens/add_order_screen.dart';
 import 'package:mostro_mobile/features/order/screens/order_confirmation_screen.dart';
 import 'package:mostro_mobile/features/auth/screens/welcome_screen.dart';
@@ -54,6 +55,12 @@ final goRouter = GoRouter(
         GoRoute(
           path: '/chat_list',
           builder: (context, state) => const ChatRoomsScreen(),
+        ),
+        GoRoute(
+          path: '/chat_room/:orderId',
+          builder: (context, state) => ChatRoomScreen(
+            orderId: state.pathParameters['orderId']!,
+          ),
         ),
         GoRoute(
           path: '/register',

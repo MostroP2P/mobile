@@ -15,7 +15,10 @@ class OrderAppBar extends StatelessWidget implements PreferredSizeWidget {
       backgroundColor: Colors.transparent,
       elevation: 0,
       leading: IconButton(
-        icon: const HeroIcon(HeroIcons.arrowLeft, color: AppTheme.cream1),
+        icon: const HeroIcon(
+          HeroIcons.arrowLeft,
+          color: AppTheme.cream1,
+        ),
         onPressed: () => context.go('/'),
       ),
       title: Text(

@@ -3,6 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/repositories/mostro_storage.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
+import 'package:mostro_mobile/features/messages/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
@@ -31,8 +32,17 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
   for (final session in sessionManager.sessions) {
     if (session.orderId != null) {
       await mostroService.sync(session);
-      final order = ref.watch(orderNotifierProvider(session.orderId!).notifier);
+      final order = ref.watch(
+        orderNotifierProvider(session.orderId!).notifier,
+      );
       order.resubscribe();
+    }
+
+    if (session.peer != null) {
+      final chat = ref.watch(
+        chatRoomsProvider(session.orderId!).notifier,
+      );
+      chat.subscribe();
     }
   }
 });

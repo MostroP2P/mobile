@@ -1,6 +1,7 @@
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:mostro_mobile/data/models/enums/role.dart';
 import 'package:mostro_mobile/data/models/peer.dart';
+import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
 /// Represents a User session
 ///
@@ -13,7 +14,8 @@ class Session {
   final DateTime startTime;
   String? orderId;
   Role? role;
-  Peer? peer;
+  Peer? _peer;
+  NostrKeyPairs? _sharedKey;
 
   Session({
     required this.masterKey,
@@ -23,8 +25,16 @@ class Session {
     required this.startTime,
     this.orderId,
     this.role,
-    this.peer,
-  });
+    Peer? peer,
+  }) {
+    _peer = peer;
+    if (peer != null) {
+      _sharedKey = NostrUtils.computeSharedKey(
+        tradeKey.private,
+        peer.publicKey,
+      );
+    }
+  }
 
   Map<String, dynamic> toJson() => {
         'trade_key': tradeKey.public,
@@ -46,6 +56,18 @@ class Session {
       orderId: json['order_id'],
       role: json['role'] != null ? Role.fromString(json['role']) : null,
       peer: json['peer'] != null ? Peer(publicKey: json['peer']) : null,
+    );
+  }
+
+  NostrKeyPairs? get sharedKey => _sharedKey;
+
+  Peer? get peer => _peer;
+
+  set peer(Peer? newPeer) {
+    _peer = newPeer;
+    _sharedKey = NostrUtils.computeSharedKey(
+      tradeKey.private,
+      newPeer!.publicKey,
     );
   }
 }

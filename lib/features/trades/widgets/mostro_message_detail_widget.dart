@@ -82,13 +82,17 @@ class MostroMessageDetail extends ConsumerWidget {
               payload!.fiatAmount,
               payload.fiatCode,
               payload.paymentMethod,
-              payload.sellerTradePubkey!,
+              payload.sellerTradePubkey ?? session!.peer!.publicKey,
             );
         break;
       case actions.Action.buyerTookOrder:
         final payload = mostroMessage.getPayload<Order>();
-        actionText = S.of(context)!.buyerTookOrder(payload!.buyerTradePubkey!,
-            payload.fiatCode, payload.fiatAmount, payload.paymentMethod);
+        actionText = S.of(context)!.buyerTookOrder(
+              payload!.buyerTradePubkey ?? session!.peer!.publicKey,
+              payload.fiatCode,
+              payload.fiatAmount,
+              payload.paymentMethod,
+            );
         break;
       case actions.Action.fiatSentOk:
         final payload = mostroMessage.getPayload<Peer>();
@@ -103,9 +107,7 @@ class MostroMessageDetail extends ConsumerWidget {
         actionText = S.of(context)!.purchaseCompleted;
         break;
       case actions.Action.holdInvoicePaymentSettled:
-        actionText = S
-            .of(context)!
-            .holdInvoicePaymentSettled('{buyer_npub}');
+        actionText = S.of(context)!.holdInvoicePaymentSettled('{buyer_npub}');
         break;
       case actions.Action.rate:
         actionText = S.of(context)!.rate;

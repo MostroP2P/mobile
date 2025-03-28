@@ -14,7 +14,8 @@ class BottomNavBar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Watch the notification counts.
     final int chatCount = ref.watch(chatCountProvider);
-    final int orderNotificationCount = ref.watch(orderBookNotificationCountProvider);
+    final int orderNotificationCount =
+        ref.watch(orderBookNotificationCountProvider);
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16),
@@ -29,22 +30,28 @@ class BottomNavBar extends ConsumerWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildNavItem(context, HeroIcons.bookOpen, 0),
-              // For order book notifications (index 1)
+              _buildNavItem(
+                context,
+                HeroIcons.bookOpen,
+                0,
+              ),
               _buildNavItem(
                 context,
                 HeroIcons.bookmarkSquare,
                 1,
                 notificationCount: orderNotificationCount,
               ),
-              // For chat messages (index 2)
               _buildNavItem(
                 context,
                 HeroIcons.chatBubbleLeftRight,
                 2,
                 notificationCount: chatCount,
               ),
-              _buildNavItem(context, HeroIcons.bolt, 3),
+              _buildNavItem(
+                context,
+                HeroIcons.bolt,
+                3,
+              ),
             ],
           ),
         ),

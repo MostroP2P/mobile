@@ -54,8 +54,10 @@ class TradeDetailScreen extends ConsumerWidget {
             const SizedBox(height: 24),
             _buildCountDownTime(order.expirationDate),
             const SizedBox(height: 36),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 10,
+              runSpacing: 10,
               children: _buildActionButtons(context, ref, order),
             ),
           ],
@@ -190,24 +192,21 @@ class TradeDetailScreen extends ConsumerWidget {
     switch (order.status) {
       case Status.pending:
         return [
-          _buildCloseButton(context),
+          //_buildCloseButton(context),
           _buildCancelButton(context, ref),
           if (message.action == actions.Action.addInvoice)
             _buildAddInvoiceButton(context),
         ];
       case Status.waitingPayment:
-        // Usually, a pending or waitingPayment order can be canceled.
-        // Possibly the user could do more if they’re the buyer vs. seller,
-        // but for simplicity we show CANCEL only.
         return [
-          _buildCloseButton(context),
+          //_buildCloseButton(context),
           _buildCancelButton(context, ref),
           _buildPayInvoiceButton(context),
         ];
 
       case Status.waitingBuyerInvoice:
         return [
-          _buildCloseButton(context),
+          //_buildCloseButton(context),
           _buildCancelButton(context, ref),
           if (message.action == actions.Action.addInvoice)
             _buildAddInvoiceButton(context),
@@ -219,18 +218,17 @@ class TradeDetailScreen extends ConsumerWidget {
         ];
       case Status.active:
         return [
-          _buildCloseButton(context),
+          //_buildCloseButton(context),
           _buildCancelButton(context, ref),
+          _buildContactButton(context),
           // If user has not opened a dispute already
           if (message.action != actions.Action.disputeInitiatedByYou &&
               message.action != actions.Action.disputeInitiatedByPeer &&
               message.action != actions.Action.rate)
             _buildDisputeButton(ref),
-
           // If the action is "addInvoice" => show a button for the invoice screen.
           if (message.action == actions.Action.addInvoice)
             _buildAddInvoiceButton(context),
-
           // If the order is waiting for buyer to confirm fiat was sent
           if (session!.role == Role.buyer) _buildFiatSentButton(ref),
           // If the user is the seller & the buyer is done => show release button
@@ -243,21 +241,21 @@ class TradeDetailScreen extends ConsumerWidget {
         // Usually the user can open dispute if the other side doesn't confirm,
         // or just close the screen and wait.
         return [
-          _buildCloseButton(context),
+          //_buildCloseButton(context),
           if (session!.role == Role.seller) _buildReleaseButton(ref),
           _buildDisputeButton(ref),
         ];
 
       case Status.cooperativelyCanceled:
         return [
-          _buildCloseButton(context),
+          //_buildCloseButton(context),
           if (message.action == actions.Action.cooperativeCancelInitiatedByPeer)
             _buildCancelButton(context, ref),
         ];
 
       case Status.success:
         return [
-          _buildCloseButton(context),
+          //_buildCloseButton(context),
           if (message.action != actions.Action.rateReceived)
             _buildRateButton(context),
         ];
@@ -275,6 +273,19 @@ class TradeDetailScreen extends ConsumerWidget {
           _buildCloseButton(context),
         ];
     }
+  }
+
+  /// CONTACT
+  Widget _buildContactButton(BuildContext context) {
+    return ElevatedButton(
+      onPressed: () {
+        context.push('/chat_room/$orderId');
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppTheme.mostroGreen,
+      ),
+      child: const Text('CONTACT'),
+    );
   }
 
   /// RELEASE
@@ -341,7 +352,6 @@ class TradeDetailScreen extends ConsumerWidget {
     return ElevatedButton(
       onPressed: () async {
         await notifier.cancelOrder();
-        context.pop();
       },
       style: ElevatedButton.styleFrom(
         backgroundColor: AppTheme.red1,

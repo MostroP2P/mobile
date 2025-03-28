@@ -17,8 +17,11 @@ class MostroScreen extends ConsumerWidget {
 
     return nostrEvent == null
         ? Scaffold(
+            appBar: const MostroAppBar(),
+            drawer: const MostroAppDrawer(),
             backgroundColor: AppTheme.dark1,
             body: const Center(child: CircularProgressIndicator()),
+            bottomNavigationBar: const BottomNavBar(),
           )
         : Scaffold(
             backgroundColor: AppTheme.dark1,

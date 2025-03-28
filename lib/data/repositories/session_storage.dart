@@ -1,4 +1,3 @@
-import 'package:dart_nostr/nostr/core/key_pairs.dart';
 import 'package:mostro_mobile/data/repositories/base_storage.dart';
 import 'package:sembast/sembast.dart';
 import 'package:mostro_mobile/data/models/session.dart';
@@ -18,13 +17,11 @@ class SessionStorage extends BaseStorage<Session> {
 
   @override
   Map<String, dynamic> toDbMap(Session session) {
-    // Convert Session -> JSON
     return session.toJson();
   }
 
   @override
   Session fromDbMap(String key, Map<String, dynamic> jsonMap) {
-    // Re-derive or do any specialized logic
     return _decodeSession(key, jsonMap);
   }
 
@@ -42,7 +39,7 @@ class SessionStorage extends BaseStorage<Session> {
     if (tradeKeyPair.public != tradeKey) {
       throw ArgumentError('Trade key does not match derived key');
     }
-    clone['trade_key'] = NostrKeyPairs(private: tradeKey);
+    clone['trade_key'] = tradeKeyPair;
     clone['master_key'] = masterKey;
 
     return Session.fromJson(clone);
