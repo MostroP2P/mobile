@@ -47,11 +47,6 @@ class BottomNavBar extends ConsumerWidget {
                 2,
                 notificationCount: chatCount,
               ),
-              _buildNavItem(
-                context,
-                HeroIcons.bolt,
-                3,
-              ),
             ],
           ),
         ),
@@ -108,8 +103,6 @@ class BottomNavBar extends ConsumerWidget {
         return currentLocation == '/order_book';
       case 2:
         return currentLocation == '/chat_list';
-      case 3:
-        return currentLocation == '/mostro';
       default:
         return false;
     }
@@ -126,9 +119,6 @@ class BottomNavBar extends ConsumerWidget {
         break;
       case 2:
         nextRoute = '/chat_list';
-        break;
-      case 3:
-        nextRoute = '/mostro';
         break;
       default:
         return;

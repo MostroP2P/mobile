@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/chat_room.dart';
-import 'package:mostro_mobile/features/messages/providers/chat_room_providers.dart';
+import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/shared/providers/avatar_provider.dart';
 import 'package:mostro_mobile/shared/providers/legible_hande_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_manager_provider.dart';
@@ -34,7 +34,7 @@ class ChatRoomsScreen extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Text(
-                'MESSAGES',
+                'CHAT',
                 style: TextStyle(color: AppTheme.mostroGreen),
               ),
             ),

@@ -77,6 +77,7 @@ dependencies:
     version: '>=0.1.0'
   circular_countdown: ^2.1.0
   line_icons: ^2.0.3
+  introduction_screen: ^3.1.17
 
 dev_dependencies:
   flutter_test:

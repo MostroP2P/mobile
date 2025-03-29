@@ -8,7 +8,7 @@ import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/data/models/peer.dart';
-import 'package:mostro_mobile/features/messages/providers/chat_room_providers.dart';
+import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/services/mostro_service.dart';
 import 'package:mostro_mobile/shared/providers/navigation_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/notification_notifier_provider.dart';

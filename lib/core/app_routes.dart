@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
-import 'package:mostro_mobile/features/messages/screens/chat_room_screen.dart';
+import 'package:mostro_mobile/features/chat/screens/chat_room_screen.dart';
 import 'package:mostro_mobile/features/order/screens/add_order_screen.dart';
 import 'package:mostro_mobile/features/order/screens/order_confirmation_screen.dart';
 import 'package:mostro_mobile/features/auth/screens/welcome_screen.dart';
-import 'package:mostro_mobile/features/messages/screens/chat_rooms_list.dart';
+import 'package:mostro_mobile/features/chat/screens/chat_rooms_list.dart';
 import 'package:mostro_mobile/features/home/screens/home_screen.dart';
 import 'package:mostro_mobile/features/key_manager/key_management_screen.dart';
-import 'package:mostro_mobile/features/mostro/mostro_screen.dart';
 import 'package:mostro_mobile/features/rate/rate_counterpart_screen.dart';
 import 'package:mostro_mobile/features/settings/about_screen.dart';
 import 'package:mostro_mobile/features/settings/settings_screen.dart';
@@ -19,6 +18,7 @@ import 'package:mostro_mobile/features/order/screens/add_lightning_invoice_scree
 import 'package:mostro_mobile/features/order/screens/pay_lightning_invoice_screen.dart';
 import 'package:mostro_mobile/features/order/screens/take_order_screen.dart';
 import 'package:mostro_mobile/features/auth/screens/register_screen.dart';
+import 'package:mostro_mobile/features/walkthrough/screens/walkthrough_screen.dart';
 import 'package:mostro_mobile/shared/widgets/navigation_listener_widget.dart';
 import 'package:mostro_mobile/shared/widgets/notification_listener_widget.dart';
 
@@ -67,10 +67,6 @@ final goRouter = GoRouter(
           builder: (context, state) => const RegisterScreen(),
         ),
         GoRoute(
-          path: '/mostro',
-          builder: (context, state) => const MostroScreen(),
-        ),
-        GoRoute(
           path: '/relays',
           builder: (context, state) => const RelaysScreen(),
         ),
@@ -85,6 +81,10 @@ final goRouter = GoRouter(
         GoRoute(
           path: '/about',
           builder: (context, state) => const AboutScreen(),
+        ),
+        GoRoute(
+          path: '/walkthrough',
+          builder: (context, state) => WalkthroughScreen(),
         ),
         GoRoute(
           path: '/add_order',
