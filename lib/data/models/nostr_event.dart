@@ -133,4 +133,28 @@ extension NostrEventExtensions on NostrEvent {
       tags: tags,
     );
   }
+
+  static NostrEvent fromMap(Map<String, dynamic> event) {
+    return NostrEvent(
+      id: event['id'] as String,
+      kind: event['kind'] as int,
+      content: event['content'] == null ? '' : event['content'] as String,
+      sig: event['sig'] as String,
+      pubkey: event['pubkey'] as String,
+      createdAt: DateTime.fromMillisecondsSinceEpoch(
+        (event['created_at'] as int) * 1000,
+      ),
+      tags: List<List<String>>.from(
+        (event['tags'] as List)
+            .map(
+              (nestedElem) => (nestedElem as List)
+                  .map(
+                    (nestedElemContent) => nestedElemContent.toString(),
+                  )
+                  .toList(),
+            )
+            .toList(),
+      ),
+    );
+  }
 }

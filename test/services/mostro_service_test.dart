@@ -6,7 +6,7 @@ import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/session.dart';
-import 'package:mostro_mobile/data/repositories/session_manager.dart';
+import 'package:mostro_mobile/data/repositories/mostro_storage.dart';
 import 'package:mostro_mobile/features/key_manager/key_derivator.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/services/mostro_service.dart';
@@ -17,22 +17,26 @@ import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 import 'mostro_service_test.mocks.dart';
 import 'mostro_service_helper_functions.dart';
 
-@GenerateMocks([NostrService, SessionManager, SessionNotifier])
+@GenerateMocks([NostrService, SessionNotifier, MostroStorage])
 void main() {
   late MostroService mostroService;
   late KeyDerivator keyDerivator;
   late MockNostrService mockNostrService;
-  late MockSessionManager mockSessionManager;
   late MockSessionNotifier mockSessionNotifier;
+  late MockMostroStorage mockSessionStorage;
 
   final mockServerTradeIndex = MockServerTradeIndex();
 
   setUp(() {
     mockNostrService = MockNostrService();
-    mockSessionManager = MockSessionManager();
     mockSessionNotifier = MockSessionNotifier();
-    mostroService = MostroService(mockNostrService, mockSessionNotifier,
-        Settings(relays: [], fullPrivacyMode: true, mostroPublicKey: 'xxx'));
+    mockSessionStorage = MockMostroStorage();
+    mostroService = MostroService(
+      mockNostrService,
+      mockSessionNotifier,
+      Settings(relays: [], fullPrivacyMode: true, mostroPublicKey: 'xxx'),
+      mockSessionStorage,
+    );
     keyDerivator = KeyDerivator("m/44'/1237'/38383'/0");
   });
 
@@ -85,7 +89,8 @@ void main() {
         fullPrivacy: false,
       );
 
-      when(mockSessionManager.getSessionByOrderId(orderId)).thenReturn(session);
+      when(mockSessionNotifier.getSessionByOrderId(orderId))
+          .thenReturn(session);
 
       // Mock NostrService's createRumor, createSeal, createWrap, publishEvent
       when(mockNostrService.createRumor(any, any, any, any))
@@ -113,7 +118,7 @@ void main() {
       when(mockNostrService.publishEvent(any))
           .thenAnswer((_) async => Future.value());
 
-      when(mockSessionManager.newSession(orderId: orderId))
+      when(mockSessionNotifier.newSession(orderId: orderId))
           .thenAnswer((_) async => session);
 
       // Act
@@ -164,7 +169,8 @@ void main() {
         fullPrivacy: false,
       );
 
-      when(mockSessionManager.getSessionByOrderId(orderId)).thenReturn(session);
+      when(mockSessionNotifier.getSessionByOrderId(orderId))
+          .thenReturn(session);
 
       // Mock NostrService's createRumor, createSeal, createWrap, publishEvent
       when(mockNostrService.createRumor(any, any, any, any))
@@ -239,7 +245,8 @@ void main() {
         fullPrivacy: false,
       );
 
-      when(mockSessionManager.getSessionByOrderId(orderId)).thenReturn(session);
+      when(mockSessionNotifier.getSessionByOrderId(orderId))
+          .thenReturn(session);
 
       // Simulate that tradeIndex=3 has already been used
       mockServerTradeIndex.userTradeIndices[userPubKey] = 3;
@@ -318,7 +325,8 @@ void main() {
         fullPrivacy: true,
       );
 
-      when(mockSessionManager.getSessionByOrderId(orderId)).thenReturn(session);
+      when(mockSessionNotifier.getSessionByOrderId(orderId))
+          .thenReturn(session);
 
       // Mock NostrService's createRumor, createSeal, createWrap, publishEvent
       when(mockNostrService.createRumor(any, any, any, any))

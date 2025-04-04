@@ -3,23 +3,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 
-class ClickableAmountText extends StatefulWidget {
+class ClickableText extends StatefulWidget {
   final String leftText;
-  final String amount;
-  final String rightText;
+  final String clickableText;
+  final String? rightText;
 
-  const ClickableAmountText({
+  const ClickableText({
     super.key,
     required this.leftText,
-    required this.amount,
-    required this.rightText,
+    required this.clickableText,
+    this.rightText,
   });
 
   @override
-  State<ClickableAmountText> createState() => _ClickableAmountTextState();
+  State<ClickableText> createState() => _ClickableTextState();
 }
 
-class _ClickableAmountTextState extends State<ClickableAmountText> {
+class _ClickableTextState extends State<ClickableText> {
   late TapGestureRecognizer _tapRecognizer;
 
   @override
@@ -35,13 +35,13 @@ class _ClickableAmountTextState extends State<ClickableAmountText> {
   }
 
   void _handleTap() async {
-    await Clipboard.setData(ClipboardData(text: widget.amount));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Amount ${widget.amount} copied to clipboard'),
+        content: Text('${widget.leftText} ${widget.clickableText} copied to clipboard'),
         duration: const Duration(seconds: 2),
       ),
     );
+    await Clipboard.setData(ClipboardData(text: widget.clickableText));
   }
 
   @override
@@ -52,16 +52,16 @@ class _ClickableAmountTextState extends State<ClickableAmountText> {
             .style
             .copyWith(fontSize: 16, color: AppTheme.cream1),
         children: [
-          TextSpan(text: widget.leftText),
+          TextSpan(text: '${widget.leftText} '),
           TextSpan(
-            text: widget.amount,
+            text: widget.clickableText,
             style: const TextStyle(
               color: Colors.blue,
               decoration: TextDecoration.underline,
             ),
             recognizer: _tapRecognizer,
           ),
-          TextSpan(text: widget.rightText),
+          if (widget.rightText != null) TextSpan(text: widget.rightText),
         ],
       ),
     );

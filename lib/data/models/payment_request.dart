@@ -39,7 +39,9 @@ class PaymentRequest implements Payload {
       throw FormatException('Invalid JSON format: insufficient elements');
     }
     final orderJson = json[0];
-    final Order? order = orderJson != null ? Order.fromJson(orderJson) : null;
+    final Order? order = orderJson != null
+        ? Order.fromJson(orderJson['order'] ?? orderJson)
+        : null;
     final lnInvoice = json[1];
     if (lnInvoice != null && lnInvoice is! String) {
       throw FormatException('Invalid type for lnInvoice: expected String');

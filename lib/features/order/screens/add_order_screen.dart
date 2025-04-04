@@ -37,7 +37,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final orderType = ref.watch(orderTypeProvider);
+    final orderType = ref.watch(orderTypeNotifierProvider);
 
     return Scaffold(
       backgroundColor: AppTheme.dark1,
@@ -125,7 +125,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
     return GestureDetector(
       onTap: () {
         // Update the local orderType state
-        ref.read(orderTypeProvider.notifier).state = type;
+        ref.read(orderTypeNotifierProvider.notifier).set(type);
       },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),

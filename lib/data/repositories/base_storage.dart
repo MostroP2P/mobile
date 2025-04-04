@@ -31,6 +31,11 @@ abstract class BaseStorage<T> {
     return fromDbMap(id, record);
   }
 
+  /// Check if an item exists in the data store by [id].
+  Future<bool> hasItem(String id) async {
+    return await store.record(id).exists(db);
+  }
+
   /// Return all items in the store.
   Future<List<T>> getAllItems() async {
     final records = await store.find(db);

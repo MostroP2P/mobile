@@ -15,7 +15,7 @@ abstract class Payload {
     } else if (json.containsKey('payment_request')) {
       return PaymentRequest.fromJson(json['payment_request']);
     } else if (json.containsKey('cant_do')) {
-      return CantDo.fromJson(json);
+      return CantDo.fromJson(json['cant_do']);
     } else if (json.containsKey('peer')) {
       return Peer.fromJson(json['peer']);
     } else if (json.containsKey('dispute')) {

@@ -7,7 +7,9 @@ import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
+import 'package:mostro_mobile/shared/notifiers/order_action_notifier.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
+import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_manager_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -29,13 +31,20 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
     mostroService.updateSettings(next);
   });
 
+  final mostroStorage = ref.read(mostroStorageProvider);
+
   for (final session in sessionManager.sessions) {
     if (session.orderId != null) {
-      await mostroService.sync(session);
-      final order = ref.watch(
-        orderNotifierProvider(session.orderId!).notifier,
+      final orderList = await mostroStorage.getMessagesForId(session.orderId!);
+      if (orderList.isNotEmpty) {
+        ref.read(orderActionNotifierProvider(session.orderId!).notifier).set(
+              orderList.last.action,
+            );
+      }
+      ref.read(
+        orderNotifierProvider(session.orderId!),
       );
-      order.resubscribe();
+      mostroService.subscribe(session);
     }
 
     if (session.peer != null) {
@@ -60,6 +69,6 @@ Future<void> clearAppData(MostroStorage mostroStorage) async {
   logger.i("Shared Storage Cleared");
 
   // 3) MostroStorage
-  mostroStorage.deleteAllOrders();
+  mostroStorage.deleteAllMessages();
   logger.i("Mostro Message Storage cleared");
 }

@@ -17,14 +17,14 @@ void main() {
 
   group('AddOrderNotifier - Mockito tests', () {
     late ProviderContainer container;
-    late MockMostroService mockRepository;
+    late MockMostroService mockMostroService;
     late MockOpenOrdersRepository mockOrdersRepository;
 
     const testUuid = "test_uuid";
 
     setUp(() {
       container = ProviderContainer();
-      mockRepository = MockMostroService();
+      mockMostroService = MockMostroService();
       mockOrdersRepository = MockOpenOrdersRepository();
     });
 
@@ -36,7 +36,7 @@ void main() {
     /// called, it returns a Stream<MostroMessage> based on `confirmationJson`.
     void configureMockPublishOrder(Map<String, dynamic> confirmationJson) {
       final confirmationMessage = MostroMessage.fromJson(confirmationJson);
-      when(mockRepository.publishOrder(any)).thenAnswer((invocation) async {
+      when(mockMostroService.publishOrder(any)).thenAnswer((invocation) async {
         // Return a stream that emits the confirmation message once.
         return Stream.value(confirmationMessage);
       });
@@ -70,7 +70,7 @@ void main() {
 
       // Override the repository provider with our mock.
       container = ProviderContainer(overrides: [
-        mostroServiceProvider.overrideWithValue(mockRepository),
+        mostroServiceProvider.overrideWithValue(mockMostroService),
         orderRepositoryProvider.overrideWithValue(mockOrdersRepository),
       ]);
 
@@ -107,7 +107,7 @@ void main() {
       expect(confirmedOrder.createdAt, equals(0));
 
       // Optionally verify that publishOrder was called exactly once.
-      verify(mockRepository.publishOrder(any)).called(1);
+      verify(mockMostroService.publishOrder(any)).called(1);
     });
 
     test('New Sell Range Order', () async {
@@ -136,7 +136,7 @@ void main() {
       configureMockPublishOrder(confirmationJsonSellRange);
 
       container = ProviderContainer(overrides: [
-        mostroRepositoryProvider.overrideWithValue(mockRepository),
+        mostroRepositoryProvider.overrideWithValue(mockMostroService),
         orderRepositoryProvider.overrideWithValue(mockOrdersRepository),
       ]);
 
@@ -170,7 +170,7 @@ void main() {
       expect(confirmedOrder.paymentMethod, equals('face to face'));
       expect(confirmedOrder.premium, equals(1));
 
-      verify(mockRepository.publishOrder(any)).called(1);
+      verify(mockMostroService.publishOrder(any)).called(1);
     });
 
     test('New Buy Order', () async {
@@ -200,7 +200,7 @@ void main() {
       configureMockPublishOrder(confirmationJsonBuy);
 
       container = ProviderContainer(overrides: [
-        mostroRepositoryProvider.overrideWithValue(mockRepository),
+        mostroRepositoryProvider.overrideWithValue(mockMostroService),
         orderRepositoryProvider.overrideWithValue(mockOrdersRepository),
       ]);
 
@@ -231,7 +231,7 @@ void main() {
       expect(confirmedOrder.premium, equals(1));
       expect(confirmedOrder.buyerInvoice, isNull);
 
-      verify(mockRepository.publishOrder(any)).called(1);
+      verify(mockMostroService.publishOrder(any)).called(1);
     });
 
     test('New Buy Order with Lightning Address', () async {
@@ -261,7 +261,7 @@ void main() {
       configureMockPublishOrder(confirmationJsonBuyInvoice);
 
       container = ProviderContainer(overrides: [
-        mostroRepositoryProvider.overrideWithValue(mockRepository),
+        mostroRepositoryProvider.overrideWithValue(mockMostroService),
         orderRepositoryProvider.overrideWithValue(mockOrdersRepository),
       ]);
 
@@ -292,7 +292,7 @@ void main() {
       expect(confirmedOrder.premium, equals(1));
       expect(confirmedOrder.buyerInvoice, equals('mostro_p2p@ln.tips'));
 
-      verify(mockRepository.publishOrder(any)).called(1);
+      verify(mockMostroService.publishOrder(any)).called(1);
     });
   });
 }

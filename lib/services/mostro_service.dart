@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:dart_nostr/dart_nostr.dart';
-import 'package:logger/logger.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/models/amount.dart';
-import 'package:mostro_mobile/data/models/cant_do.dart';
+import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/enums/role.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
@@ -12,146 +12,106 @@ import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/data/models/payment_request.dart';
 import 'package:mostro_mobile/data/models/rating_user.dart';
 import 'package:mostro_mobile/data/models/session.dart';
+import 'package:mostro_mobile/data/repositories/event_storage.dart';
 import 'package:mostro_mobile/data/repositories/mostro_storage.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
+import 'package:mostro_mobile/features/settings/settings_provider.dart';
+import 'package:mostro_mobile/services/event_bus.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
-import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
+import 'package:mostro_mobile/shared/notifiers/order_action_notifier.dart';
 import 'package:mostro_mobile/shared/notifiers/session_notifier.dart';
+import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 
 class MostroService {
+  final Ref ref;
   final NostrService _nostrService;
   final SessionNotifier _sessionNotifier;
+  final EventStorage _eventStorage;
   final MostroStorage _messageStorage;
-  final _logger = Logger();
+
+  final EventBus _bus;
+
   Settings _settings;
 
-  MostroService(this._nostrService, this._sessionNotifier, this._settings,
-      this._messageStorage);
+  MostroService(
+    this._sessionNotifier,
+    this._eventStorage,
+    this._bus,
+    this._messageStorage,
+    this.ref,
+  )   : _nostrService = ref.read(nostrServiceProvider),
+        _settings = ref.read(settingsProvider);
 
-  Future<MostroMessage?> getOrderById(String orderId) async {
-    return await _messageStorage.getOrderById(orderId);
-  }
-
-  Future<void> sync(Session session) async {
+  void subscribe(Session session) {
     final filter = NostrFilter(
       kinds: [1059],
       p: [session.tradeKey.public],
     );
-    final events = await _nostrService.fecthEvents(filter);
-    List<MostroMessage> orders = [];
-    final eventsCopy = List<NostrEvent>.from(events);
 
-    for (final event in eventsCopy) {
-      final decryptedEvent = await event.unWrap(
-        session.tradeKey.private,
+    _nostrService.subscribeToEvents(filter).listen((event) async {
+      // The item has already beeen processed
+      if (await _eventStorage.hasItem(event.id!)) return;
+      // Store the event
+      await _eventStorage.putItem(
+        event.id!,
+        event,
       );
-
-      if (decryptedEvent.content == null) {
-        _logger.i('Event ${decryptedEvent.id} content is null');
-        continue;
-      }
-
-      final result = jsonDecode(decryptedEvent.content!);
-
-      if (result is! List) {
-        _logger.e('Event content ${decryptedEvent.content} should be a List');
-        continue;
-      }
-
-      final msgMap = result[0];
-
-      if (msgMap.containsKey('order')) {
-        final msg = MostroMessage.fromJson(msgMap['order']);
-        orders.add(msg);
-      } else if (msgMap.containsKey('cant-do')) {
-        //final msg = MostroMessage.fromJson(msgMap['cant-do']);
-        //orders.add(msg);
-      } else {
-        _logger.e('Result not found ${decryptedEvent.content}');
-      }
-    }
-
-    _messageStorage.addOrders(orders);
-  }
-
-  Stream<MostroMessage> subscribe(Session session) {
-    final filter = NostrFilter(
-      kinds: [1059],
-      p: [session.tradeKey.public],
-    );
-    return _nostrService.subscribeToEvents(filter).asyncMap((event) async {
-      _logger.i('Event received from Mostro: $event');
 
       final decryptedEvent = await event.unWrap(
         session.tradeKey.private,
       );
+      if (decryptedEvent.content == null) return;
 
-      // Check event content is not null
-      if (decryptedEvent.content == null) {
-        _logger.i('Event ${decryptedEvent.id} content is null');
-        throw FormatException('Event ${decryptedEvent.id} content is null');
-      }
-
-      // Deserialize the message content:
       final result = jsonDecode(decryptedEvent.content!);
-
-      _logger.i('Decrypted Mostro event content: $result');
-
-      // The result should be an array of two elements, the first being
-      // A MostroMessage or CantDo
-      if (result is! List) {
-        throw FormatException(
-            'Event content ${decryptedEvent.content} should be a List');
-      }
+      if (result is! List) return;
 
       final msgMap = result[0];
 
-      if (msgMap.containsKey('order')) {
-        final msg = MostroMessage.fromJson(msgMap['order']);
+      final msg = MostroMessage.fromJson(
+        msgMap['order'] ?? msgMap['cant-do'],
+      );
 
-        if (msg.action == actions.Action.canceled) {
-          await _sessionNotifier.deleteSession(session.orderId!);
-          return msg;
-        }
+      ref.read(orderActionNotifierProvider(msg.id!).notifier).set(msg.action,);
 
-        if (session.orderId == null && msg.id != null) {
-          session.orderId = msg.id;
-          await _sessionNotifier.saveSession(session);
-        }
-        await _saveMessage(msg);
-        return msg;
+      if (msg.action == actions.Action.canceled) {
+        await _messageStorage.deleteAllMessagesById(session.orderId!);
+        await _sessionNotifier.deleteSession(session.orderId!);
+        return;
       }
 
-      if (msgMap.containsKey('cant-do')) {
-        final msg = MostroMessage.fromJson(msgMap['cant-do']);
-        final cantdo = msg.getPayload<CantDo>();
-        _logger.e('Can\'t Do: ${cantdo?.cantDoReason}');
-        return msg;
+      await _messageStorage.addMessage(msg);
+
+      if (session.orderId == null && msg.id != null) {
+        session.orderId = msg.id;
+        await _sessionNotifier.saveSession(session);
       }
-      throw FormatException('Result not found ${decryptedEvent.content}');
+
+      _bus.emit(msg);
     });
-  }
-
-  Future<void> _saveMessage(MostroMessage message) async {
-    await _messageStorage.addOrder(message);
   }
 
   Session? getSessionByOrderId(String orderId) {
     return _sessionNotifier.getSessionByOrderId(orderId);
   }
 
-  Future<Session> takeBuyOrder(String orderId, int? amount) async {
+  Future<void> submitOrder(MostroMessage order) async {
+    final session = await publishOrder(order);
+    subscribe(session);
+  }
+
+  Future<void> takeBuyOrder(String orderId, int? amount) async {
     final amt = amount != null ? Amount(amount: amount) : null;
-    return await publishOrder(
+    final session = await publishOrder(
       MostroMessage(
         action: Action.takeBuy,
         id: orderId,
         payload: amt,
       ),
     );
+    subscribe(session);
   }
 
-  Future<Session> takeSellOrder(
+  Future<void> takeSellOrder(
       String orderId, int? amount, String? lnAddress) async {
     final payload = lnAddress != null
         ? PaymentRequest(
@@ -163,13 +123,15 @@ class MostroService {
             ? Amount(amount: amount)
             : null;
 
-    return await publishOrder(
+    final session = await publishOrder(
       MostroMessage(
         action: Action.takeSell,
         id: orderId,
         payload: payload,
       ),
     );
+
+    subscribe(session);
   }
 
   Future<void> sendInvoice(String orderId, String invoice, int? amount) async {

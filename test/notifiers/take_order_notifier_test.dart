@@ -15,12 +15,12 @@ void main() {
 
   group('Take Order Notifiers - Mockito tests', () {
     late ProviderContainer container;
-    late MockMostroRepository mockRepository;
+    late MockMostroService mockMostroService;
     const testOrderId = "test_order_id";
 
     setUp(() {
       // Create a new instance of the mock repository.
-      mockRepository = MockMostroRepository();
+      mockMostroService = MockMostroService();
 
     });
 
@@ -70,14 +70,14 @@ void main() {
       };
 
       // Stub the repository’s takeBuyOrder method.
-      when(mockRepository.takeBuyOrder(any, any)).thenAnswer((_) async {
+      when(mockMostroService.takeBuyOrder(any, any)).thenAnswer((_) async {
         final msg = MostroMessage.fromJson(confirmationJsonTakeBuy);
         return Stream.value(msg);
       });
 
       // Override the repository provider with our mock.
       container = ProviderContainer(overrides: [
-        mostroRepositoryProvider.overrideWithValue(mockRepository),
+        mostroServiceProvider.overrideWithValue(mockMostroService),
       ]);
 
       // Retrieve the notifier from the provider.
@@ -93,7 +93,7 @@ void main() {
       // We expect the confirmation action to be "pay-invoice".
       expect(state.action, equals(Action.payInvoice));
       // Optionally verify that the repository method was called.
-      verify(mockRepository.takeBuyOrder(testOrderId, any)).called(1);
+      verify(mockMostroService.takeBuyOrder(testOrderId, any)).called(1);
     });
 
     test('Taking a Sell Order (fixed) - buyer sends take-sell and receives add-invoice confirmation', () async {
@@ -118,14 +118,14 @@ void main() {
         }
       };
 
-      when(mockRepository.takeSellOrder(any, any, any)).thenAnswer((_) async {
+      when(mockMostroService.takeSellOrder(any, any, any)).thenAnswer((_) async {
         final msg = MostroMessage.fromJson(confirmationJsonTakeSell);
         return Stream.value(msg);
       });
 
       // Override the repository provider with our mock.
       container = ProviderContainer(overrides: [
-        mostroRepositoryProvider.overrideWithValue(mockRepository),
+        mostroServiceProvider.overrideWithValue(mockMostroService),
       ]);
 
       final takeSellNotifier =
@@ -145,7 +145,7 @@ void main() {
       expect(orderPayload.paymentMethod, equals('face to face'));
       expect(orderPayload.premium, equals(1));
 
-      verify(mockRepository.takeSellOrder(testOrderId, any, any)).called(1);
+      verify(mockMostroService.takeSellOrder(testOrderId, any, any)).called(1);
     });
 
     test('Taking a Sell Range Order - buyer sends take-sell with range payload', () async {
@@ -172,14 +172,14 @@ void main() {
         }
       };
 
-      when(mockRepository.takeSellOrder(any, any, any)).thenAnswer((_) async {
+      when(mockMostroService.takeSellOrder(any, any, any)).thenAnswer((_) async {
         final msg = MostroMessage.fromJson(confirmationJsonSellRange);
         return Stream.value(msg);
       });
 
       // Override the repository provider with our mock.
       container = ProviderContainer(overrides: [
-        mostroRepositoryProvider.overrideWithValue(mockRepository),
+        mostroServiceProvider.overrideWithValue(mockMostroService),
       ]);
 
       final takeSellNotifier =
@@ -197,7 +197,7 @@ void main() {
       expect(orderPayload.maxAmount, equals(20));
       expect(orderPayload.fiatAmount, equals(15));
 
-      verify(mockRepository.takeSellOrder(testOrderId, any, any)).called(1);
+      verify(mockMostroService.takeSellOrder(testOrderId, any, any)).called(1);
     });
 
     test('Taking a Sell Order with Lightning Address - buyer sends take-sell with LN address', () async {
@@ -210,14 +210,14 @@ void main() {
         }
       };
 
-      when(mockRepository.takeSellOrder(any, any, any)).thenAnswer((_) async {
+      when(mockMostroService.takeSellOrder(any, any, any)).thenAnswer((_) async {
         final msg = MostroMessage.fromJson(confirmationJsonSellLN);
         return Stream.value(msg);
       });
 
       // Override the repository provider with our mock.
       container = ProviderContainer(overrides: [
-        mostroRepositoryProvider.overrideWithValue(mockRepository),
+        mostroServiceProvider.overrideWithValue(mockMostroService),
       ]);
 
       final takeSellNotifier =
@@ -230,7 +230,7 @@ void main() {
       expect(state, isNotNull);
       expect(state.action, equals(Action.waitingSellerToPay));
 
-      verify(mockRepository.takeSellOrder(testOrderId, any, any)).called(1);
+      verify(mockMostroService.takeSellOrder(testOrderId, any, any)).called(1);
     });
 
   });

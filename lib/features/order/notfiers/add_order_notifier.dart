@@ -1,44 +1,69 @@
+import 'dart:async';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mostro_mobile/data/models/cant_do.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/order.dart';
-import 'package:mostro_mobile/features/order/notfiers/abstract_order_notifier.dart';
+import 'package:mostro_mobile/features/order/notfiers/abstract_mostro_notifier.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
+import 'package:mostro_mobile/services/mostro_service.dart';
+import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
+import 'package:mostro_mobile/shared/providers/notification_notifier_provider.dart';
 
-class AddOrderNotifier extends AbstractOrderNotifier {
-  AddOrderNotifier(super.mostroService, super.orderId, super.ref);
+class AddOrderNotifier extends AbstractMostroNotifier<Order> {
+  late final MostroService mostroService;
+  int? requestId;
+
+  AddOrderNotifier(super.orderId, super.ref) {
+    mostroService = ref.read(mostroServiceProvider);
+  }
 
   @override
-  Future<void> subscribe(Stream<MostroMessage> stream) async {
-    try {
-      orderSubscription = stream.listen((order) {
-        state = order;
-        if (order.action == Action.newOrder) {
-          confirmOrder(order);
-        } else {
-          handleOrderUpdate();
-        }
-      });
-    } catch (e) {
-      handleError(e);
-    }
+  void subscribe() {
+    subscription = ref.listen(addOrderEventsProvider(requestId!), (_, next) {
+      next.when(
+        data: (msg) {
+          if (msg.payload is Order) {
+            state = msg;
+            if (msg.action == Action.newOrder) {
+              confirmOrder(msg);
+            }
+          } else if (msg.payload is CantDo) {
+            _handleCantDo(msg);
+          }
+        },
+        error: (error, stack) => handleError(error, stack),
+        loading: () {},
+      );
+    });
+  }
+
+  void _handleCantDo(MostroMessage message) {
+    final notifProvider = ref.read(notificationProvider.notifier);
+    final cantDo = message.getPayload<CantDo>();
+    notifProvider.showInformation(
+      message.action,
+      values: {
+        'action': cantDo?.cantDoReason.toString(),
+      },
+    );
   }
 
   // This method is called when the order is confirmed.
   Future<void> confirmOrder(MostroMessage confirmedOrder) async {
-    // Extract the confirmed (real) order id.
-    final confirmedOrderId = confirmedOrder.id;
-    final newNotifier =
-        ref.read(orderNotifierProvider(confirmedOrderId!).notifier);
+    final orderNotifier =
+        ref.watch(orderNotifierProvider(confirmedOrder.id!).notifier);
     handleOrderUpdate();
-    newNotifier.resubscribe();
+    orderNotifier.subscribe();
     dispose();
   }
 
   Future<void> submitOrder(Order order) async {
-    final requestId = BigInt.parse(
-      orderId.replaceAll('-', ''),
-      radix: 16,
-    ).toUnsigned(64).toInt();
+    requestId = requestId ??
+        BigInt.parse(
+          orderId.replaceAll('-', ''),
+          radix: 16,
+        ).toUnsigned(64).toInt();
 
     final message = MostroMessage<Order>(
       action: Action.newOrder,
@@ -46,8 +71,7 @@ class AddOrderNotifier extends AbstractOrderNotifier {
       requestId: requestId,
       payload: order,
     );
-    final session = await mostroService.publishOrder(message);
-    final stream = mostroService.subscribe(session);
-    await subscribe(stream);
+    if (subscription == null) subscribe();
+    await mostroService.submitOrder(message);
   }
 }

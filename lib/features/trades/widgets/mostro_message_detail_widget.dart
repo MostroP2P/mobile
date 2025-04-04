@@ -13,6 +13,7 @@ import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
 import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:mostro_mobile/shared/notifiers/order_action_notifier.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_manager_provider.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
@@ -27,9 +28,10 @@ class MostroMessageDetail extends ConsumerWidget {
     // Retrieve the MostroMessage using the order's orderId
     final mostroMessage = ref.watch(orderNotifierProvider(order.orderId!));
     final session = ref.watch(sessionProvider(order.orderId!));
+    final action = ref.watch(orderActionNotifierProvider(order.orderId!));
     // Map the action enum to the corresponding i10n string.
     String actionText;
-    switch (mostroMessage.action) {
+    switch (action) {
       case actions.Action.newOrder:
         final expHrs =
             ref.read(orderRepositoryProvider).mostroInstance?.expiration ??
@@ -95,10 +97,10 @@ class MostroMessageDetail extends ConsumerWidget {
             );
         break;
       case actions.Action.fiatSentOk:
-        final payload = mostroMessage.getPayload<Peer>();
+        final payload = mostroMessage.getPayload<Order>();
         actionText = session!.role == Role.buyer
-            ? S.of(context)!.fiatSentOkBuyer(payload!.publicKey)
-            : S.of(context)!.fiatSentOkSeller(payload!.publicKey);
+            ? S.of(context)!.fiatSentOkBuyer(payload!.sellerTradePubkey!)
+            : S.of(context)!.fiatSentOkSeller(payload!.buyerTradePubkey!);
         break;
       case actions.Action.released:
         actionText = S.of(context)!.released('{seller_npub}');
@@ -266,7 +268,7 @@ class MostroMessageDetail extends ConsumerWidget {
                   style: AppTheme.theme.textTheme.bodyLarge,
                 ),
                 const SizedBox(height: 16),
-                Text('${order.status} - ${mostroMessage.action}'),
+                Text('${order.status} - $action'),
               ],
             ),
           ),

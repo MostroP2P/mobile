@@ -184,7 +184,7 @@ class TradeDetailScreen extends ConsumerWidget {
   /// Additional checks use `message.action` to refine which button to show.
   List<Widget> _buildActionButtons(
       BuildContext context, WidgetRef ref, NostrEvent order) {
-    final message = ref.watch(orderNotifierProvider(orderId));
+	final message = ref.watch(orderNotifierProvider(orderId));
     final session = ref.watch(sessionProvider(orderId));
 
     // The finite-state-machine approach: decide based on the order.status.

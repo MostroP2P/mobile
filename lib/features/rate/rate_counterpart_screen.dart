@@ -25,14 +25,11 @@ class _RateCounterpartScreenState extends ConsumerState<RateCounterpartScreen> {
 
   Future<void> _submitRating() async {
     _logger.i('Rating submitted: $_rating');
-    final orderNotifer =
-        ref.watch(orderNotifierProvider(widget.orderId).notifier);
+    final orderNotifer = ref.watch(
+      orderNotifierProvider(widget.orderId).notifier,
+    );
 
     await orderNotifer.submitRating(_rating);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(S.of(context)!.rateReceived)),
-    );
 
     context.pop();
   }

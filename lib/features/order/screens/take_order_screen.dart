@@ -151,8 +151,9 @@ class TakeOrderScreen extends ConsumerWidget {
 
   Widget _buildActionButtons(
       BuildContext context, WidgetRef ref, NostrEvent order) {
-    final orderDetailsNotifier =
-        ref.read(orderNotifierProvider(order.orderId!).notifier);
+    final orderDetailsNotifier = ref.read(
+      orderNotifierProvider(order.orderId!).notifier,
+    );
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,

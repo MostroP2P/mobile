@@ -22,7 +22,7 @@ class _PayLightningInvoiceScreenState
     extends ConsumerState<PayLightningInvoiceScreen> {
   @override
   Widget build(BuildContext context) {
-    final order = ref.read(orderNotifierProvider(widget.orderId));
+    final order = ref.read(paymentNotifierProvider(widget.orderId));
     final lnInvoice = order.getPayload<PaymentRequest>()?.lnInvoice ?? '';
     final orderNotifier =
         ref.read(orderNotifierProvider(widget.orderId).notifier);

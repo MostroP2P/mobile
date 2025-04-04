@@ -73,8 +73,8 @@ class SessionNotifier extends StateNotifier<List<Session>> {
 
     if (orderId != null) {
       _sessions[orderId] = session;
-    // Persist it to DB
-    await _storage.putSession(session);
+      // Persist it to DB
+      await _storage.putSession(session);
       state = sessions;
     } else {
       state = [...sessions, session];

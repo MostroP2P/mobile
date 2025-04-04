@@ -5,7 +5,7 @@ class CantDo implements Payload {
   final CantDoReason cantDoReason;
 
   factory CantDo.fromJson(Map<String, dynamic> json) {
-    return CantDo(cantDoReason: CantDoReason.fromString(json['cant_do']));
+    return CantDo(cantDoReason: CantDoReason.fromString(json['cant-do']));
   }
 
   CantDo({required this.cantDoReason});

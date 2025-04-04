@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
-import 'package:mostro_mobile/shared/widgets/clickable_amount_widget.dart';
+import 'package:mostro_mobile/shared/widgets/clickable_text_widget.dart';
 
 class AddLightningInvoiceWidget extends StatefulWidget {
   final TextEditingController controller;
@@ -27,9 +27,9 @@ class _AddLightningInvoiceWidgetState extends State<AddLightningInvoiceWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ClickableAmountText(
+        ClickableText(
           leftText: 'Please enter a Lightning Invoice for: ',
-          amount: '${widget.amount}',
+          clickableText: '${widget.amount}',
           rightText: ' sats',
         ),
         const SizedBox(height: 16),

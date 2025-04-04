@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/core/config.dart';
@@ -7,45 +6,54 @@ import 'package:mostro_mobile/data/models/dispute.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/order.dart';
+import 'package:mostro_mobile/data/models/payload.dart';
 import 'package:mostro_mobile/data/models/peer.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
-import 'package:mostro_mobile/services/mostro_service.dart';
+import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
 import 'package:mostro_mobile/shared/providers/navigation_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/notification_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/shared/providers/session_manager_provider.dart';
+import 'package:mostro_mobile/shared/providers/session_providers.dart';
 
-class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
-  final MostroService mostroService;
-  final Ref ref;
+class AbstractMostroNotifier<T extends Payload> extends StateNotifier<MostroMessage> {
   final String orderId;
-  StreamSubscription<MostroMessage>? orderSubscription;
+  final Ref ref;
+
+  ProviderSubscription<AsyncValue<MostroMessage>>? subscription;
   final logger = Logger();
 
-  AbstractOrderNotifier(
-    this.mostroService,
+  AbstractMostroNotifier(
     this.orderId,
     this.ref,
   ) : super(MostroMessage(action: Action.newOrder, id: orderId));
 
-  Future<void> subscribe(Stream<MostroMessage> stream) async {
-    try {
-      orderSubscription = stream.listen((event) {
-        if (event.payload is CantDo) {
-          handleCantDo(event.getPayload<CantDo>());
-          return;
-        }
-        state = event;
-        handleOrderUpdate();
-      });
-    } catch (e) {
-      handleError(e);
-    }
+  Future<void> sync() async {
+    final storage = ref.read(mostroStorageProvider);
+    state = await storage.getMessageById<T>(orderId) ?? state;
   }
 
-  void handleError(Object err) {
+
+  void subscribe() {
+    subscription = ref.listen(sessionMessagesProvider(orderId), (_, next) {
+      next.when(
+        data: (msg) {
+            handleEvent(msg);
+        },
+        error: (error, stack) => handleError(error, stack),
+        loading: () {},
+      );
+    });
+  }
+
+  void handleError(Object err, StackTrace stack) {
     logger.e(err);
+  }
+
+  void handleEvent(MostroMessage event) {
+    state = event;
+    handleOrderUpdate();
   }
 
   void handleCantDo(CantDo? cantDo) {
@@ -175,7 +183,7 @@ class AbstractOrderNotifier extends StateNotifier<MostroMessage> {
 
   @override
   void dispose() {
-    orderSubscription?.cancel();
+    subscription?.close();
     super.dispose();
   }
 }

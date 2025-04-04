@@ -11,6 +11,7 @@ import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/shared/providers/avatar_provider.dart';
 import 'package:mostro_mobile/shared/providers/legible_hande_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_manager_provider.dart';
+import 'package:mostro_mobile/shared/widgets/clickable_text_widget.dart';
 
 class ChatRoomScreen extends ConsumerStatefulWidget {
   final String orderId;
@@ -150,7 +151,7 @@ class _MessagesDetailScreenState extends ConsumerState<ChatRoomScreen> {
   Widget _buildMessageHeader(String peerPubkey, Session session) {
     final handle = ref.read(nickNameProvider(peerPubkey));
     final you = ref.read(nickNameProvider(session.tradeKey.public));
-    final sharedKey = session.sharedKey?.public;
+    final sharedKey = session.sharedKey?.private;
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
@@ -177,7 +178,10 @@ class _MessagesDetailScreenState extends ConsumerState<ChatRoomScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text('Your handle: $you'),
-                  Text('Your shared key: $sharedKey'),
+                  ClickableText(
+                    leftText: 'Your shared key:',
+                    clickableText: sharedKey!,
+                  ),
                 ],
               ),
             ),
