@@ -6,7 +6,7 @@ import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/relays/widgets/relay_selector.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/widgets/currency_combo_box.dart';
-import 'package:mostro_mobile/shared/widgets/privacy_switch_widget.dart';
+import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -27,7 +27,7 @@ class SettingsScreen extends ConsumerWidget {
             onPressed: () => context.pop(),
           ),
           title: const Text(
-            'SETTINGS',
+            'Settings',
             style: TextStyle(
               color: AppTheme.cream1,
             ),
@@ -37,78 +37,133 @@ class SettingsScreen extends ConsumerWidget {
         body: Column(
           children: [
             Expanded(
-              child: Container(
-                margin: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppTheme.dark2,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: SingleChildScrollView(
-                  padding: AppTheme.largePadding,
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // General Settings
-                        Text('General Settings', style: textTheme.titleLarge),
-                        const SizedBox(height: 8),
-                        PrivacySwitch(
-                            initialValue: settings.fullPrivacyMode,
-                            onChanged: (bool value) {
-                              ref
-                                  .watch(settingsProvider.notifier)
-                                  .updatePrivacyMode(value);
-                            }),
-                        const SizedBox(height: 8),
-                        CurrencyComboBox(
-                          label: "Default Fiat Currency",
-                          onSelected: (fiatCode) {
-                            ref
-                                .watch(settingsProvider.notifier)
-                                .updateDefaultFiatCode(fiatCode);
-                          },
-                        ),
-                        const SizedBox(height: 8),
-                        const Divider(color: AppTheme.grey2),
-                        const SizedBox(height: 16),
-                        // Relays
-                        Text('Relays', style: textTheme.titleLarge),
-                        const SizedBox(height: 8),
-                        RelaySelector(),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
+              child: SingleChildScrollView(
+                padding: AppTheme.largePadding,
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: 24,
+                    children: [
+                      // General Settings
+                      CustomCard(
+                        color: AppTheme.dark2,
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          spacing: 16,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            ElevatedButton(
-                              onPressed: () {
-                                RelaySelector.showAddDialog(context, ref);
+                            Row(
+                              spacing: 8,
+                              children: [
+                                const Icon(
+                                  Icons.toll,
+                                  color: AppTheme.mostroGreen,
+                                ),
+                                Text('Currency', style: textTheme.titleLarge),
+                              ],
+                            ),
+                            Text('Set your default fiat currency',
+                                style: textTheme.bodyMedium
+                                    ?.copyWith(color: AppTheme.grey2)),
+                            CurrencyComboBox(
+                              label: "Default Fiat Currency",
+                              onSelected: (fiatCode) {
+                                ref
+                                    .watch(settingsProvider.notifier)
+                                    .updateDefaultFiatCode(fiatCode);
                               },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppTheme.mostroGreen,
-                              ),
-                              child: const Text('Add Relay'),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
-                        // Mostro
-                        const Divider(color: AppTheme.grey2),
-                        const SizedBox(height: 16),
-                        Text('Mostro', style: textTheme.titleLarge),
-                        const SizedBox(height: 8),
-                        TextFormField(
-                          key: key,
-                          controller: mostroTextContoller,
-                          style: const TextStyle(color: AppTheme.cream1),
-                          onChanged: (value) => ref
-                              .watch(settingsProvider.notifier)
-                              .updateMostroInstance(value),
-                          decoration: InputDecoration(
-                            border: InputBorder.none,
-                            labelText: 'Mostro Pubkey',
-                            labelStyle: const TextStyle(color: AppTheme.grey2),
-                          ),
-                        )
-                      ]),
-                ),
+                      ),
+                      CustomCard(
+                        color: AppTheme.dark2,
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          spacing: 16,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              spacing: 8,
+                              children: [
+                                const Icon(
+                                  Icons.sensors,
+                                  color: AppTheme.mostroGreen,
+                                ),
+                                Text('Relays', style: textTheme.titleLarge),
+                              ],
+                            ),
+                            Text('Select the Nostr relays you connect to',
+                                style: textTheme.bodyMedium
+                                    ?.copyWith(color: AppTheme.grey2)),
+                            RelaySelector(),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                ElevatedButton(
+                                  onPressed: () {
+                                    RelaySelector.showAddDialog(context, ref);
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppTheme.mostroGreen,
+                                  ),
+                                  child: const Text('Add Relay'),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      CustomCard(
+                        color: AppTheme.dark2,
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          spacing: 16,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              spacing: 8,
+                              children: [
+                                const Icon(
+                                  Icons.flash_on,
+                                  color: AppTheme.mostroGreen,
+                                ),
+                                Text('Mostro', style: textTheme.titleLarge),
+                              ],
+                            ),
+                            Text(
+                                'Enter the public key of the Mostro you will use',
+                                style: textTheme.bodyMedium
+                                    ?.copyWith(color: AppTheme.grey2)),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: AppTheme.dark1,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: TextFormField(
+                                key: key,
+                                controller: mostroTextContoller,
+                                style: const TextStyle(color: AppTheme.cream1),
+                                onChanged: (value) => ref
+                                    .watch(settingsProvider.notifier)
+                                    .updateMostroInstance(value),
+                                decoration: InputDecoration(
+                                  border: InputBorder.none,
+                                  labelText: 'Mostro Pubkey',
+                                  labelStyle:
+                                      const TextStyle(color: AppTheme.grey2),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ]),
               ),
             ),
           ],

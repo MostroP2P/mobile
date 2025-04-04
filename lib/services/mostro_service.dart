@@ -67,11 +67,17 @@ class MostroService {
 
       final msgMap = result[0];
 
-      final msg = MostroMessage.fromJson(
-        msgMap['order'] ?? msgMap['cant-do'],
-      );
+      final msg = MostroMessage.fromJson(msgMap);
 
-      ref.read(orderActionNotifierProvider(msg.id!).notifier).set(msg.action,);
+      if (msg.id != null) {
+        ref
+            .read(
+              orderActionNotifierProvider(msg.id!).notifier,
+            )
+            .set(
+              msg.action,
+            );
+      }
 
       if (msg.action == actions.Action.canceled) {
         await _messageStorage.deleteAllMessagesById(session.orderId!);

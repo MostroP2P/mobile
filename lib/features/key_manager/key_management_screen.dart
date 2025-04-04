@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
+import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_manager_provider.dart';
+import 'package:mostro_mobile/shared/widgets/custom_card.dart';
+import 'package:mostro_mobile/shared/widgets/privacy_switch_widget.dart';
 
 class KeyManagementScreen extends ConsumerStatefulWidget {
   const KeyManagementScreen({super.key});
@@ -16,7 +18,6 @@ class KeyManagementScreen extends ConsumerStatefulWidget {
 }
 
 class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
-  String? _masterKey;
   String? _mnemonic;
   int? _tradeKeyIndex;
   bool _loading = false;
@@ -36,30 +37,19 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
       final keyManager = ref.read(keyManagerProvider);
       final hasMaster = await keyManager.hasMasterKey();
       if (hasMaster) {
-        final masterKeyPairs = keyManager.masterKeyPair;
-        _masterKey = masterKeyPairs?.private;
         _mnemonic = await keyManager.getMnemonic();
         _tradeKeyIndex = await keyManager.getCurrentKeyIndex();
       } else {
-        _masterKey = 'No master key found';
         _mnemonic = 'No mnemonic found';
         _tradeKeyIndex = 0;
       }
     } catch (e) {
-      _masterKey = 'Error: $e';
       _mnemonic = 'Error: $e';
     } finally {
       setState(() {
         _loading = false;
       });
     }
-  }
-
-  void _copyToClipboard(String text, String label) {
-    Clipboard.setData(ClipboardData(text: text));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$label copied to clipboard')),
-    );
   }
 
   Future<void> _generateNewMasterKey() async {
@@ -90,17 +80,22 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final settings = ref.watch(settingsProvider);
+
     final textTheme = AppTheme.theme.textTheme;
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const HeroIcon(HeroIcons.arrowLeft, color: AppTheme.cream1),
+          icon: const HeroIcon(
+            HeroIcons.arrowLeft,
+            color: AppTheme.cream1,
+          ),
           onPressed: () => context.pop(),
         ),
         title: Text(
-          'KEY MANAGEMENT',
+          'Account',
           style: TextStyle(
             color: AppTheme.cream1,
           ),
@@ -112,70 +107,136 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
           : SingleChildScrollView(
               padding: AppTheme.largePadding,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 24,
                 children: [
-                  // Master Key
-                  Text('Master Key', style: textTheme.titleLarge),
-                  const SizedBox(height: 8),
-                  SelectableText(
-                    _masterKey ?? '',
+                  // Secret Words
+                  CustomCard(
+                    color: AppTheme.dark2,
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      spacing: 16,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          spacing: 8,
+                          children: [
+                            const Icon(
+                              Icons.key,
+                              color: AppTheme.mostroGreen,
+                            ),
+                            Text('Secret Words', style: textTheme.titleLarge),
+                          ],
+                        ),
+                        Text('To restore your account',
+                            style: textTheme.bodyMedium
+                                ?.copyWith(color: AppTheme.grey2)),
+                        SelectableText(
+                          _mnemonic ?? '',
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                  TextButton(
-                    onPressed: _masterKey != null
-                        ? () => _copyToClipboard(_masterKey!, 'Master Key')
-                        : null,
-                    child: const Text('Copy Master Key'),
+                  // Privacy
+                  CustomCard(
+                    color: AppTheme.dark2,
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      spacing: 16,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          spacing: 8,
+                          children: [
+                            const Icon(
+                              Icons.key,
+                              color: AppTheme.mostroGreen,
+                            ),
+                            Text('Privacy', style: textTheme.titleLarge),
+                          ],
+                        ),
+                        Text('Control your privacy settings',
+                            style: textTheme.bodyMedium
+                                ?.copyWith(color: AppTheme.grey2)),
+                        PrivacySwitch(
+                            initialValue: settings.fullPrivacyMode,
+                            onChanged: (bool value) {
+                              ref
+                                  .watch(settingsProvider.notifier)
+                                  .updatePrivacyMode(value);
+                            }),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                  const Divider(color: AppTheme.grey2),
-                  const SizedBox(height: 16),
-                  // Mnemonic
-                  Text('Mnemonic', style: textTheme.titleLarge),
-                  const SizedBox(height: 8),
-                  SelectableText(
-                    _mnemonic ?? '',
-                  ),
-                  const SizedBox(height: 8),
-                  TextButton(
-                    onPressed: _mnemonic != null
-                        ? () => _copyToClipboard(_mnemonic!, 'Mnemonic')
-                        : null,
-                    child: const Text('Copy Mnemonic'),
-                  ),
-                  const SizedBox(height: 8),
-                  const Divider(color: AppTheme.grey2),
-                  const SizedBox(height: 16),
                   // Trade Key Index
-                  Text(
-                    'Current Trade Key Index: ${_tradeKeyIndex ?? 'N/A'}',
+                  CustomCard(
+                    color: AppTheme.dark2,
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      spacing: 16,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          spacing: 8,
+                          children: [
+                            const Icon(
+                              Icons.sync,
+                              color: AppTheme.mostroGreen,
+                            ),
+                            Text('Current Trade Index',
+                                style: textTheme.titleLarge),
+                          ],
+                        ),
+                        Text('Your trade counter',
+                            style: textTheme.bodyMedium
+                                ?.copyWith(color: AppTheme.grey2)),
+                        CustomCard(
+                          color: AppTheme.dark1,
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
+                            children: [
+                              Text(
+                                '${_tradeKeyIndex ?? 'N/A'}',
+                              ),
+                              const SizedBox(width: 24),
+                              Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Text('Increments with each trade',
+                                      style: textTheme.bodyMedium
+                                          ?.copyWith(color: AppTheme.grey2)),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 16),
-                  // Buttons to generate and delete keys
-                  Row(
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       ElevatedButton(
                         onPressed: _generateNewMasterKey,
-                        child: const Text('Generate New Master Key'),
+                        child: Row(
+                          spacing: 8,
+                          children: [
+                            const Icon(Icons.person_2_outlined),
+                            const Text('Generate New User'),
+                          ],
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  // Import Key
-                  Text('Import Key from Mnemonic', style: textTheme.titleLarge),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _importController,
-                    decoration: const InputDecoration(
-                      labelText: 'Enter key or mnemonic',
-                      labelStyle: TextStyle(color: AppTheme.grey2),
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  ElevatedButton(
+                  OutlinedButton(
                     onPressed: _importKey,
-                    child: const Text('Import Key'),
+                    child: Row(
+                      spacing: 8,
+                      children: [
+                        const Icon(Icons.download),
+                        const Text('Import Mostro User'),
+                      ],
+                    ),
                   ),
                 ],
               ),

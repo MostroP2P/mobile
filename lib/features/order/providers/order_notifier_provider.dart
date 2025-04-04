@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/features/order/notfiers/add_order_notifier.dart';
+import 'package:mostro_mobile/features/order/notfiers/dispute_notifier.dart';
 import 'package:mostro_mobile/features/order/notfiers/order_notifier.dart';
 import 'package:mostro_mobile/features/order/notfiers/payment_request_notifier.dart';
 import 'package:mostro_mobile/services/event_bus.dart';
@@ -14,6 +15,7 @@ final orderNotifierProvider =
   (ref, orderId) {
     ref.read(cantDoNotifierProvider(orderId));
     ref.read(paymentNotifierProvider(orderId));
+    ref.read(disputeNotifierProvider(orderId));
     return OrderNotifier(
       orderId,
       ref,
@@ -45,6 +47,12 @@ final paymentNotifierProvider =
   },
 );
 
+final disputeNotifierProvider =
+    StateNotifierProvider.family<DisputeNotifier, MostroMessage, String>(
+  (ref, orderId) {
+    return DisputeNotifier(orderId, ref);
+  },
+);
 
 // This provider tracks the currently selected OrderType tab
 @riverpod

@@ -12,10 +12,10 @@ class Dispute implements Payload {
     };
   }
 
-  factory Dispute.fromJson(List<dynamic> json) {
-    final oid = json[0];
+  factory Dispute.fromJson(Map<String, dynamic> json) {
+    final oid = json['dispute'];
     return Dispute(
-      disputeId: oid,
+      disputeId: oid is List ? oid[0] : oid,
     );
   }
 

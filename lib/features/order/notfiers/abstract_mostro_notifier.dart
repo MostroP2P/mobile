@@ -17,7 +17,8 @@ import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/shared/providers/session_manager_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_providers.dart';
 
-class AbstractMostroNotifier<T extends Payload> extends StateNotifier<MostroMessage> {
+class AbstractMostroNotifier<T extends Payload>
+    extends StateNotifier<MostroMessage> {
   final String orderId;
   final Ref ref;
 
@@ -34,12 +35,11 @@ class AbstractMostroNotifier<T extends Payload> extends StateNotifier<MostroMess
     state = await storage.getMessageById<T>(orderId) ?? state;
   }
 
-
   void subscribe() {
     subscription = ref.listen(sessionMessagesProvider(orderId), (_, next) {
       next.when(
         data: (msg) {
-            handleEvent(msg);
+          handleEvent(msg);
         },
         error: (error, stack) => handleError(error, stack),
         loading: () {},
@@ -154,7 +154,6 @@ class AbstractMostroNotifier<T extends Payload> extends StateNotifier<MostroMess
           'id': state.id,
         });
         break;
-      case Action.disputeInitiatedByYou:
       case Action.adminSettled:
         notifProvider.showInformation(state.action, values: {});
         break;
@@ -175,6 +174,20 @@ class AbstractMostroNotifier<T extends Payload> extends StateNotifier<MostroMess
           'user_token': dispute.disputeId,
         });
         break;
+      case Action.disputeInitiatedByYou:
+        final dispute = state.getPayload<Dispute>()!;
+        notifProvider.showInformation(state.action, values: {
+          'id': state.id!,
+          'user_token': dispute.disputeId,
+        });
+      case Action.cooperativeCancelAccepted:
+        notifProvider.showInformation(state.action, values: {
+          'id': state.id!,
+        });
+      case Action.cooperativeCancelInitiatedByPeer:
+        notifProvider.showInformation(state.action, values: {
+          'id': state.id!,
+        });
       default:
         notifProvider.showInformation(state.action, values: {});
         break;

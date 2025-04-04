@@ -8,7 +8,6 @@ import 'package:mostro_mobile/data/models/enums/cant_do_reason.dart';
 import 'package:mostro_mobile/data/models/enums/role.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/models/order.dart';
-import 'package:mostro_mobile/data/models/peer.dart';
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
@@ -97,10 +96,9 @@ class MostroMessageDetail extends ConsumerWidget {
             );
         break;
       case actions.Action.fiatSentOk:
-        final payload = mostroMessage.getPayload<Order>();
         actionText = session!.role == Role.buyer
-            ? S.of(context)!.fiatSentOkBuyer(payload!.sellerTradePubkey!)
-            : S.of(context)!.fiatSentOkSeller(payload!.buyerTradePubkey!);
+            ? S.of(context)!.fiatSentOkBuyer(session.peer!.publicKey)
+            : S.of(context)!.fiatSentOkSeller(session.peer!.publicKey);
         break;
       case actions.Action.released:
         actionText = S.of(context)!.released('{seller_npub}');
@@ -129,13 +127,14 @@ class MostroMessageDetail extends ConsumerWidget {
         actionText = S.of(context)!.cooperativeCancelAccepted(order.orderId!);
         break;
       case actions.Action.disputeInitiatedByYou:
-        final payload = mostroMessage.getPayload<Dispute>();
+        final payload = ref.read(disputeNotifierProvider(order.orderId!)).getPayload<Dispute>();
         actionText = S
             .of(context)!
             .disputeInitiatedByYou(order.orderId!, payload!.disputeId);
         break;
       case actions.Action.disputeInitiatedByPeer:
-        final payload = mostroMessage.getPayload<Dispute>();
+
+        final payload = ref.read(disputeNotifierProvider(order.orderId!)).getPayload<Dispute>();
         actionText = S
             .of(context)!
             .disputeInitiatedByPeer(order.orderId!, payload!.disputeId);
@@ -162,7 +161,8 @@ class MostroMessageDetail extends ConsumerWidget {
         actionText = S.of(context)!.holdInvoicePaymentCanceled;
         break;
       case actions.Action.cantDo:
-        final cantDo = mostroMessage.getPayload<CantDo>();
+        final msg = ref.read(cantDoNotifierProvider(order.orderId!));
+        final cantDo = msg.getPayload<CantDo>();
         switch (cantDo!.cantDoReason) {
           case CantDoReason.invalidSignature:
             actionText = S.of(context)!.invalidSignature;
