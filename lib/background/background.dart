@@ -15,6 +15,36 @@ bool isAppForeground = false;
 
 @pragma('vm:entry-point')
 Future<void> serviceMain(ServiceInstance service) async {
+  // Map to track active subscriptions
+  final Map<String, Map<String, dynamic>> activeSubscriptions = {};
+
+  // Initialize service
+  service.on('settings-change').listen((event) {
+    // Initialize with settings
+  });
+
+  // Handle subscription creation
+  service.on('create-subscription').listen((event) {
+    if (event == null) return;
+
+    final filter = event['filter'] as Map<String, dynamic>?;
+    final id = event['id'] as String?;
+
+    if (filter != null && id != null) {
+      activeSubscriptions[id] = filter;
+    }
+  });
+
+  // Handle subscription cancellation
+  service.on('cancel-subscription').listen((event) {
+    if (event == null) return;
+
+    final id = event['id'] as String?;
+    if (id != null && activeSubscriptions.containsKey(id)) {
+      activeSubscriptions.remove(id);
+    }
+  });
+
   // If on Android, set up a permanent notification so the OS won't kill it.
   if (service is AndroidServiceInstance) {
     service.setAsForegroundService();
@@ -55,7 +85,14 @@ Future<void> serviceMain(ServiceInstance service) async {
 
   // Listen for commands from the main isolate
   service.on('create-subscription').listen((data) {
-    final filter = NostrFilter.fromJson(data?['filter']);
+    final pList = data!['filter']['#p'];
+    List<String>? p = pList != null ? [pList[0]] : null;
+
+    final filter = NostrFilter(
+      kinds: data['filter']['kinds'],
+      p: p,
+    );
+
     final subscription = nostrService.subscribeToEvents(filter);
     subscription.listen((event) async {
       await backgroundStorage.putItem(

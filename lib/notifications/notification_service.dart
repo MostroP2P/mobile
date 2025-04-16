@@ -18,6 +18,7 @@ Future<void> initializeNotifications() async {
     android: android,
     iOS: ios,
     linux: linux,
+    macOS: ios
   );
   final plugin = FlutterLocalNotificationsPlugin();
   await plugin.initialize(initSettings);

@@ -10,6 +10,10 @@ import 'package:mostro_mobile/shared/providers/mostro_database_provider.dart';
 import 'abstract_background_service.dart';
 
 class DesktopBackgroundService implements BackgroundService {
+  // Similar implementation with subscription tracking
+  final _subscriptions = <String, Map<String, dynamic>>{};
+  Isolate? _serviceIsolate;
+  bool _isRunning = false;
   late SendPort _sendPort;
 
   @override
@@ -22,7 +26,6 @@ class DesktopBackgroundService implements BackgroundService {
       'command': 'settings-change',
       'settings': settings.toJson(),
     });
-
   }
 
   static void _isolateEntry(SendPort mainSendPort) async {
@@ -74,11 +77,12 @@ class DesktopBackgroundService implements BackgroundService {
   }
 
   @override
-  void subscribe(Map<String, dynamic> filter) {
+  Future<bool> subscribe(Map<String, dynamic> filter) async {
     _sendPort.send({
       'command': 'subscribe',
       'filter': filter,
     });
+    return true;
   }
 
   @override
@@ -87,5 +91,23 @@ class DesktopBackgroundService implements BackgroundService {
       'command': 'app-foreground-status',
       'isForeground': isForeground,
     });
+  }
+
+  @override
+  Future<int> getActiveSubscriptionCount() {
+    // TODO: implement getActiveSubscriptionCount
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<bool> unsubscribe(String subscriptionId) {
+    // TODO: implement unsubscribe
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> unsubscribeAll() {
+    // TODO: implement unsubscribeAll
+    throw UnimplementedError();
   }
 }
