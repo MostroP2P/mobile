@@ -7,15 +7,16 @@ import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
 class NostrService {
-  Settings settings;
+  late Settings settings;
   final Nostr _nostr = Nostr.instance;
 
-  NostrService(this.settings);
+  NostrService();
 
   final Logger _logger = Logger();
   bool _isInitialized = false;
 
-  Future<void> init() async {
+  Future<void> init(Settings settings) async {
+    this.settings = settings;
     try {
       await _nostr.services.relays.init(
         relaysUrl: settings.relays,
@@ -42,11 +43,10 @@ class NostrService {
   }
 
   Future<void> updateSettings(Settings newSettings) async {
-    settings = newSettings.copyWith();
     final relays = Nostr.instance.services.relays.relaysList;
-    if (!ListEquality().equals(relays, settings.relays)) {
+    if (!ListEquality().equals(relays, newSettings.relays)) {
       _logger.i('Updating relays...');
-      await init();
+      await init(newSettings);
     }
   }
 
@@ -79,12 +79,10 @@ class NostrService {
     }
 
     final request = NostrRequest(filters: [filter]);
-    return
-        await _nostr.services.relays.startEventsSubscriptionAsync(
+    return await _nostr.services.relays.startEventsSubscriptionAsync(
       request: request,
       timeout: Config.nostrConnectionTimeout,
     );
-
   }
 
   Stream<NostrEvent> subscribeToEvents(NostrFilter filter) {

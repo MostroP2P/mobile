@@ -23,8 +23,7 @@ class SettingsNotifier extends StateNotifier<Settings> {
     final settingsJson = await _prefs.getString(_storageKey);
     if (settingsJson != null) {
       try {
-        final loaded = Settings.fromJson(jsonDecode(settingsJson));
-        state = loaded;
+        state = Settings.fromJson(jsonDecode(settingsJson));
       } catch (_) {
         state = _defaultSettings();
       }
@@ -57,4 +56,6 @@ class SettingsNotifier extends StateNotifier<Settings> {
     final jsonString = jsonEncode(state.toJson());
     await _prefs.setString(_storageKey, jsonString);
   }
+
+  Settings get settings => state.copyWith();
 }

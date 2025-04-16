@@ -16,7 +16,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 final appInitializerProvider = FutureProvider<void>((ref) async {
   final nostrService = ref.read(nostrServiceProvider);
-  await nostrService.init();
+  await nostrService.init(ref.read(settingsProvider));
 
   final keyManager = ref.read(keyManagerProvider);
   await keyManager.init();
@@ -44,6 +44,7 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
       ref.read(
         orderNotifierProvider(session.orderId!),
       );
+      await mostroService.init();
       mostroService.subscribe(session);
     }
 
@@ -51,6 +52,7 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
       final chat = ref.watch(
         chatRoomsProvider(session.orderId!).notifier,
       );
+      await chat.init();
       chat.subscribe();
     }
   }

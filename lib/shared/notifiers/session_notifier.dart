@@ -8,24 +8,19 @@ import 'package:mostro_mobile/features/key_manager/key_manager.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 
 class SessionNotifier extends StateNotifier<List<Session>> {
-  // Dependencies
   final Logger _logger = Logger();
   final KeyManager _keyManager;
   final SessionStorage _storage;
 
-  // Current settings
   Settings _settings;
 
-  // In-memory session cache, keyed by `session.keyIndex`.
   final Map<String, Session> _sessions = {};
 
-  // Cleanup / expiration logic
   Timer? _cleanupTimer;
   static const int sessionExpirationHours = 36;
   static const int cleanupIntervalMinutes = 30;
   static const int maxBatchSize = 100;
 
-  /// Public getter to expose sessions (if needed)
   List<Session> get sessions => _sessions.values.toList();
 
   SessionNotifier(
@@ -37,23 +32,18 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     //_initializeCleanup();
   }
 
-  /// Initialize by loading all sessions from DB into memory, then updating state.
   Future<void> init() async {
     final allSessions = await _storage.getAllSessions();
     for (final session in allSessions) {
       _sessions[session.orderId!] = session;
     }
-    // Update the notifier state with fresh data.
     state = sessions;
   }
 
-  /// Update the application settings if needed.
   void updateSettings(Settings settings) {
     _settings = settings.copyWith();
-    // You might want to refresh or do something else if settings impact sessions.
   }
 
-  /// Creates a new session, storing it both in memory and in the database.
   Future<Session> newSession({String? orderId, Role? role}) async {
     final masterKey = _keyManager.masterKeyPair!;
     final keyIndex = await _keyManager.getCurrentKeyIndex();
@@ -69,11 +59,8 @@ class SessionNotifier extends StateNotifier<List<Session>> {
       role: role,
     );
 
-    // Cache it in memory
-
     if (orderId != null) {
       _sessions[orderId] = session;
-      // Persist it to DB
       await _storage.putSession(session);
       state = sessions;
     } else {
@@ -82,14 +69,12 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     return session;
   }
 
-  /// Updates a session in both memory and database.
   Future<void> saveSession(Session session) async {
     _sessions[session.orderId!] = session;
     await _storage.putSession(session);
     state = sessions;
   }
 
-  /// Retrieve the first session whose `orderId` matches [orderId].
   Session? getSessionByOrderId(String orderId) {
     try {
       return _sessions[orderId];
@@ -98,20 +83,26 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     }
   }
 
-  /// Retrieve a session by its keyIndex (checks memory first, then DB).
-  Future<Session?> loadSession(int keyIndex) async {
+  Future<Session?> getSessionByTradeKey(String tradeKey) async {
     final sessions = await _storage.getAllSessions();
-    return sessions.firstWhere((s) => s.keyIndex == keyIndex);
+    return sessions.firstWhere(
+      (s) => s.tradeKey.public == tradeKey,
+    );
   }
 
-  /// Resets all stored sessions by clearing DB and memory.
+  Future<Session?> loadSession(int keyIndex) async {
+    final sessions = await _storage.getAllSessions();
+    return sessions.firstWhere(
+      (s) => s.keyIndex == keyIndex,
+    );
+  }
+
   Future<void> reset() async {
     await _storage.deleteAllItems();
     _sessions.clear();
     state = [];
   }
 
-  /// Deletes a session from memory and DB.
   Future<void> deleteSession(String sessionId) async {
     _sessions.remove(sessionId);
     await _storage.deleteSession(sessionId);
@@ -126,8 +117,6 @@ class SessionNotifier extends StateNotifier<List<Session>> {
         maxBatchSize,
       );
       for (final id in removedIds) {
-        // If your underlying session keys are strings,
-        // you may have to parse them to int or store them as-is.
         _sessions.remove(id);
       }
       state = sessions;
@@ -148,7 +137,6 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     );
   }
 
-  /// Dispose resources (like timers) when no longer needed.
   @override
   void dispose() {
     _cleanupTimer?.cancel();

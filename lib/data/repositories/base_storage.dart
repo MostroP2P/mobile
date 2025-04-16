@@ -97,6 +97,15 @@ abstract class BaseStorage<T> {
     return toDelete;
   }
 
+  Stream<List<T>> watch() {
+    final store = stringMapStoreFactory.store('events');
+    return store.query().onSnapshots(db).map((snapshot) => snapshot
+        .map(
+          (record) => fromDbMap(record.key, record.value),
+        )
+        .toList());
+  }
+
   /// If needed, close or clean up resources here.
   void dispose() {}
 }

@@ -1,37 +1,26 @@
 import 'dart:convert';
-import 'package:dart_nostr/dart_nostr.dart';
+import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mostro_mobile/data/models/amount.dart';
-import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
-import 'package:mostro_mobile/data/models/enums/order_type.dart';
-import 'package:mostro_mobile/data/models/enums/role.dart';
-import 'package:mostro_mobile/data/models/mostro_message.dart';
-import 'package:mostro_mobile/data/models/enums/action.dart';
-import 'package:mostro_mobile/data/models/nostr_event.dart';
-import 'package:mostro_mobile/data/models/order.dart';
-import 'package:mostro_mobile/data/models/payment_request.dart';
-import 'package:mostro_mobile/data/models/rating_user.dart';
-import 'package:mostro_mobile/data/models/session.dart';
-import 'package:mostro_mobile/data/repositories/event_storage.dart';
-import 'package:mostro_mobile/data/repositories/mostro_storage.dart';
+import 'package:mostro_mobile/background/abstract_background_service.dart';
+import 'package:mostro_mobile/data/models.dart';
+import 'package:mostro_mobile/data/repositories.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/services/event_bus.dart';
-import 'package:mostro_mobile/services/nostr_service.dart';
 import 'package:mostro_mobile/shared/notifiers/order_action_notifier.dart';
 import 'package:mostro_mobile/shared/notifiers/session_notifier.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 
 class MostroService {
   final Ref ref;
-  final NostrService _nostrService;
   final SessionNotifier _sessionNotifier;
   final EventStorage _eventStorage;
   final MostroStorage _messageStorage;
-
   final EventBus _bus;
 
   Settings _settings;
+
+  final BackgroundService backgroundService;
 
   MostroService(
     this._sessionNotifier,
@@ -39,60 +28,48 @@ class MostroService {
     this._bus,
     this._messageStorage,
     this.ref,
-  )   : _nostrService = ref.read(nostrServiceProvider),
-        _settings = ref.read(settingsProvider);
+    this.backgroundService,
+  ) : _settings = ref.read(settingsProvider);
+
+  Future<void> init() async {
+    _eventStorage.watch().listen((data) {
+      data.forEach(_handleIncomingEvent);
+    });
+  }
+
+  void _handleIncomingEvent(NostrEvent event) async {
+
+    final currentSession = getSessionByOrderId(event.subscriptionId!);
+    if (currentSession == null) return;
+
+    // Process event as you currently do:
+    final decryptedEvent = await event.unWrap(currentSession.tradeKey.private);
+    if (decryptedEvent.content == null) return;
+
+    final result = jsonDecode(decryptedEvent.content!);
+    if (result is! List) return;
+
+    final msg = MostroMessage.fromJson(result[0]);
+    if (msg.id != null) {
+      ref.read(orderActionNotifierProvider(msg.id!).notifier).set(msg.action);
+    }
+    if (msg.action == Action.canceled) {
+      await _messageStorage.deleteAllMessagesById(currentSession.orderId!);
+      await _sessionNotifier.deleteSession(currentSession.orderId!);
+      return;
+    }
+    await _messageStorage.addMessage(msg);
+    if (currentSession.orderId == null && msg.id != null) {
+      currentSession.orderId = msg.id;
+      await _sessionNotifier.saveSession(currentSession);
+    }
+    _bus.emit(msg);
+  }
 
   void subscribe(Session session) {
-    final filter = NostrFilter(
-      kinds: [1059],
-      p: [session.tradeKey.public],
-    );
-
-    _nostrService.subscribeToEvents(filter).listen((event) async {
-      // The item has already beeen processed
-      if (await _eventStorage.hasItem(event.id!)) return;
-      // Store the event
-      await _eventStorage.putItem(
-        event.id!,
-        event,
-      );
-
-      final decryptedEvent = await event.unWrap(
-        session.tradeKey.private,
-      );
-      if (decryptedEvent.content == null) return;
-
-      final result = jsonDecode(decryptedEvent.content!);
-      if (result is! List) return;
-
-      final msgMap = result[0];
-
-      final msg = MostroMessage.fromJson(msgMap);
-
-      if (msg.id != null) {
-        ref
-            .read(
-              orderActionNotifierProvider(msg.id!).notifier,
-            )
-            .set(
-              msg.action,
-            );
-      }
-
-      if (msg.action == actions.Action.canceled) {
-        await _messageStorage.deleteAllMessagesById(session.orderId!);
-        await _sessionNotifier.deleteSession(session.orderId!);
-        return;
-      }
-
-      await _messageStorage.addMessage(msg);
-
-      if (session.orderId == null && msg.id != null) {
-        session.orderId = msg.id;
-        await _sessionNotifier.saveSession(session);
-      }
-
-      _bus.emit(msg);
+    backgroundService.subscribe({
+      'kinds': [1059],
+      '#p': [session.tradeKey.public],
     });
   }
 
@@ -207,7 +184,8 @@ class MostroService {
       masterKey: session.fullPrivacy ? null : session.masterKey,
       keyIndex: session.fullPrivacy ? null : session.keyIndex,
     );
-    await _nostrService.publishEvent(event);
+
+    ref.read(nostrServiceProvider).publishEvent(event);
     return session;
   }
 

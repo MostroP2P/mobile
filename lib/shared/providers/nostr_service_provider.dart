@@ -4,8 +4,7 @@ import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
 
 final nostrServiceProvider = Provider<NostrService>((ref) {
-  final settings = ref.read(settingsProvider);
-  final nostrService = NostrService(settings);
+  final nostrService = NostrService();
 
   ref.listen<Settings>(settingsProvider, (previous, next) {
     nostrService.updateSettings(next);

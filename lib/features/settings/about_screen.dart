@@ -26,57 +26,92 @@ class AboutScreen extends ConsumerWidget {
           onPressed: () => context.pop(),
         ),
         title: Text(
-          'ABOUT',
+          'About',
           style: TextStyle(
             color: AppTheme.cream1,
           ),
         ),
       ),
       backgroundColor: AppTheme.dark1,
-      body: nostrEvent == null
-          ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: AppTheme.dark2,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 24),
-                      Center(
-                        child: CircleAvatar(
-                          radius: 36,
-                          backgroundColor: Colors.grey,
-                          foregroundImage:
-                              AssetImage('assets/images/launcher-icon.png'),
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              padding: AppTheme.largePadding,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 24,
+                children: [
+                  CustomCard(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      spacing: 16,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          spacing: 8,
+                          children: [
+                            const Icon(
+                              Icons.content_paste,
+                              color: AppTheme.mostroGreen,
+                            ),
+                            Text('App Information',
+                                style: textTheme.titleLarge),
+                          ],
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Mostro Mobile Client',
-                        style: textTheme.displayMedium,
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: _buildClientDetails(),
-                      ),
-                      Text(
-                        'Mostro Daemon',
-                        style: textTheme.displayMedium,
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: _buildInstanceDetails(
-                            MostroInstance.fromEvent(nostrEvent)),
-                      ),
-                    ],
+                        Row(
+                          spacing: 8,
+                          children: [
+                            Expanded(
+                              child: _buildClientDetails(),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+                  CustomCard(
+                    color: AppTheme.dark2,
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      spacing: 16,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          spacing: 8,
+                          children: [
+                            const Icon(
+                              Icons.content_paste,
+                              color: AppTheme.mostroGreen,
+                            ),
+                            Text('About Mostro Instance',
+                                style: textTheme.titleLarge),
+                          ],
+                        ),
+                        Text('General Info', 
+                            style: textTheme.titleMedium?.copyWith(
+                              color: AppTheme.mostroGreen,
+                            )),
+                        nostrEvent == null
+                            ? const Center(child: CircularProgressIndicator())
+                            : Row(
+                                spacing: 8,
+                                children: [
+                                  Expanded(
+                                    child: _buildInstanceDetails(
+                                        MostroInstance.fromEvent(nostrEvent)),
+                                  ),
+                                ],
+                              ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
+          )
+        ],
+      ),
     );
   }
 
@@ -88,20 +123,32 @@ class AboutScreen extends ConsumerWidget {
         String.fromEnvironment('GIT_COMMIT', defaultValue: 'N/A');
 
     return CustomCard(
-        color: AppTheme.dark1,
-        padding: EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Version',
+        ),
+        Text(
+          appVersion,
+        ),
+        const SizedBox(height: 8),
+        Row(
           children: [
             Text(
-              'Version: $appVersion',
-            ),
-            const SizedBox(height: 3),
-            Text(
-              'Commit Hash: $gitCommit',
+              'GitHub Repository',
             ),
           ],
-        ));
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Commit Hash',
+        ),
+        Text(
+          gitCommit,
+        ),
+      ],
+    ));
   }
 
   /// Builds the header displaying details from the MostroInstance.
@@ -109,7 +156,6 @@ class AboutScreen extends ConsumerWidget {
     final formatter = NumberFormat.decimalPattern(Intl.getCurrentLocale());
 
     return CustomCard(
-        color: AppTheme.dark1,
         padding: EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

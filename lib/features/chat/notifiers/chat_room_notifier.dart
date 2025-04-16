@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/models/chat_room.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
+import 'package:mostro_mobile/shared/providers/background_service_provider.dart';
+import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_manager_provider.dart';
 
@@ -14,32 +16,44 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
   final Ref ref;
   late StreamSubscription<NostrEvent> subscription;
 
-  ChatRoomNotifier(super.state, this.orderId, this.ref);
+  ChatRoomNotifier(
+    super.state,
+    this.orderId,
+    this.ref,
+  );
+
+  Future<void> init() async {
+  final eventStore = ref.read(eventStorageProvider);
+    eventStore.watch().listen((data) {
+      data.forEach(_handleIncomingEvent);
+    });
+  }
+
+  void _handleIncomingEvent(NostrEvent event) async {
+    final session = ref.read(sessionProvider(event.subscriptionId!));
+    if (session == null) return;
+    try {
+      final chat = await event.mostroUnWrap(session.sharedKey!);
+      if (!state.messages.contains(chat)) {
+        state = state.copy(
+          messages: [
+            ...state.messages,
+            chat,
+          ],
+        );
+      }
+    } catch (e) {
+      _logger.e(e);
+    }
+  }
 
   void subscribe() {
+    final backgroundService = ref.read(backgroundServiceProvider);
     final session = ref.read(sessionProvider(orderId));
-    final filter = NostrFilter(
-      kinds: [1059],
-      p: [session!.sharedKey!.public],
-    );
-    subscription =
-        ref.read(nostrServiceProvider).subscribeToEvents(filter).listen(
-      (event) async {
-        try {
-          final chat = await event.mostroUnWrap(session.sharedKey!);
-          if (!state.messages.contains(chat)) {
-            state = state.copy(
-              messages: [
-                ...state.messages,
-                chat,
-              ],
-            );
-          }
-        } catch (e) {
-          _logger.e(e);
-        }
-      },
-    );
+    backgroundService.subscribe({
+      'kinds' : [1059],
+      '#p': [session?.sharedKey!.public],
+    });
   }
 
   Future<void> sendMessage(String text) async {
