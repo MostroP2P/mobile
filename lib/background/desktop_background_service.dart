@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:isolate';
-import 'package:dart_nostr/dart_nostr.dart';
 import 'package:logger/logger.dart';
+import 'package:mostro_mobile/data/models/nostr_filter.dart';
 import 'package:mostro_mobile/data/repositories.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/notifications/notification_service.dart';
@@ -12,7 +12,6 @@ import 'abstract_background_service.dart';
 class DesktopBackgroundService implements BackgroundService {
   // Similar implementation with subscription tracking
   final _subscriptions = <String, Map<String, dynamic>>{};
-  Isolate? _serviceIsolate;
   bool _isRunning = false;
   late SendPort _sendPort;
 
@@ -21,11 +20,6 @@ class DesktopBackgroundService implements BackgroundService {
     final receivePort = ReceivePort();
     await Isolate.spawn(_isolateEntry, receivePort.sendPort);
     _sendPort = await receivePort.first as SendPort;
-
-    _sendPort.send({
-      'command': 'settings-change',
-      'settings': settings.toJson(),
-    });
   }
 
   static void _isolateEntry(SendPort mainSendPort) async {
@@ -44,70 +38,103 @@ class DesktopBackgroundService implements BackgroundService {
       final command = message['command'];
 
       switch (command) {
+        case 'app-foreground-status':
+          isAppForeground = message['isForeground'] ?? false;
+          break;
         case 'settings-change':
-          await nostrService.updateSettings(
-            Settings.fromJson(message['settings']),
-          );
-        case 'subscribe':
-          final pList = message['filter']['#p'];
-          List<String>? p = pList != null ? [pList[0]] : null;
+          if (message['settings'] == null) return;
 
-          final filter = NostrFilter(
-            kinds: message['filter']['kinds'],
-            p: p,
+          await nostrService.updateSettings(
+            Settings.fromJson(
+              message['settings'],
+            ),
+          );
+          break;
+        case 'create-subscription':
+          if (message['filter'] == null) return;
+
+          final filter = NostrFilterX.fromJsonSafe(
+            message['filter'],
           );
 
           final subscription = nostrService.subscribeToEvents(filter);
-
           subscription.listen((event) async {
             await backgroundStorage.putItem(
-              event.subscriptionId!,
+              event.id!,
               event,
             );
             if (!isAppForeground) {
-              await showLocalNotification(event);
+              //await showLocalNotification(event);
             }
           });
-        case 'app-foreground-status':
-          isAppForeground = message['isForeground'];
+          break;
         default:
           logger.i('Unknown command: $command');
+          break;
       }
     });
   }
 
   @override
   Future<bool> subscribe(Map<String, dynamic> filter) async {
-    _sendPort.send({
-      'command': 'subscribe',
-      'filter': filter,
-    });
+    _sendPort.send(
+      {
+        'command': 'create-subscription',
+        'filter': filter,
+      },
+    );
     return true;
   }
 
   @override
   void setForegroundStatus(bool isForeground) {
-    _sendPort.send({
-      'command': 'app-foreground-status',
-      'isForeground': isForeground,
-    });
+    _sendPort.send(
+      {
+        'command': 'app-foreground-status',
+        'isForeground': isForeground,
+      },
+    );
   }
 
   @override
-  Future<int> getActiveSubscriptionCount() {
-    // TODO: implement getActiveSubscriptionCount
-    throw UnimplementedError();
+  Future<int> getActiveSubscriptionCount() async {
+    return _subscriptions.length;
   }
 
   @override
-  Future<bool> unsubscribe(String subscriptionId) {
-    // TODO: implement unsubscribe
-    throw UnimplementedError();
+  Future<bool> unsubscribe(String subscriptionId) async {
+    if (!_subscriptions.containsKey(subscriptionId)) {
+      return false;
+    }
+
+    _subscriptions.remove(subscriptionId);
+    _sendPort.send(
+      {
+        'command': 'cancel-subscription',
+        'id': subscriptionId,
+      },
+    );
+    // If no more subscriptions, stop the service
+    if (_subscriptions.isEmpty && _isRunning) {
+      //await _stopService();
+    }
+    return true;
   }
 
   @override
-  Future<void> unsubscribeAll() {
-    // TODO: implement unsubscribeAll
-    throw UnimplementedError();
+  Future<void> unsubscribeAll() async {
+    for (final id in _subscriptions.keys.toList()) {
+      await unsubscribe(id);
+    }
+  }
+
+  @override
+  void updateSettings(Settings settings) {
+    _sendPort.send(
+      {
+        'command': 'settings-change',
+        'settings': settings.toJson(),
+      },
+    );
   }
 }

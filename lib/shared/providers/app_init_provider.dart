@@ -8,6 +8,7 @@ import 'package:mostro_mobile/features/order/providers/order_notifier_provider.d
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/notifiers/order_action_notifier.dart';
+import 'package:mostro_mobile/shared/providers/background_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
@@ -25,10 +26,15 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
   await sessionManager.init();
 
   final mostroService = ref.read(mostroServiceProvider);
+  mostroService.init();
+
+  final backgroundService = ref.read(backgroundServiceProvider);
+  backgroundService.updateSettings(ref.read(settingsProvider));
 
   ref.listen<Settings>(settingsProvider, (previous, next) {
     sessionManager.updateSettings(next);
     mostroService.updateSettings(next);
+    backgroundService.updateSettings(next);
   });
 
   final mostroStorage = ref.read(mostroStorageProvider);

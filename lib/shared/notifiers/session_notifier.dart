@@ -83,11 +83,14 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     }
   }
 
-  Future<Session?> getSessionByTradeKey(String tradeKey) async {
-    final sessions = await _storage.getAllSessions();
-    return sessions.firstWhere(
-      (s) => s.tradeKey.public == tradeKey,
-    );
+  Session? getSessionByTradeKey(String tradeKey) {
+    try {
+      return _sessions.values.firstWhere(
+        (s) => s.tradeKey.public == tradeKey,
+      );
+    } on StateError {
+      return null;
+    }
   }
 
   Future<Session?> loadSession(int keyIndex) async {

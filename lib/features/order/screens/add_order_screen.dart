@@ -470,7 +470,9 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
       // Generate a unique temporary ID for this new order
       final uuid = Uuid();
       final tempOrderId = uuid.v4();
-      final notifier = ref.read(addOrderNotifierProvider(tempOrderId).notifier);
+      final notifier = ref.read(
+        addOrderNotifierProvider(tempOrderId).notifier,
+      );
 
       final fiatAmount = _maxFiatAmount != null ? 0 : _minFiatAmount;
       final minAmount = _maxFiatAmount != null ? _minFiatAmount : null;

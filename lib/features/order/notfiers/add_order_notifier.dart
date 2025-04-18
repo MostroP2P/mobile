@@ -20,22 +20,25 @@ class AddOrderNotifier extends AbstractMostroNotifier<Order> {
 
   @override
   void subscribe() {
-    subscription = ref.listen(addOrderEventsProvider(requestId!), (_, next) {
-      next.when(
-        data: (msg) {
-          if (msg.payload is Order) {
-            state = msg;
-            if (msg.action == Action.newOrder) {
-              confirmOrder(msg);
+    subscription = ref.listen(
+      addOrderEventsProvider(requestId!),
+      (_, next) {
+        next.when(
+          data: (msg) {
+            if (msg.payload is Order) {
+              state = msg;
+              if (msg.action == Action.newOrder) {
+                confirmOrder(msg);
+              }
+            } else if (msg.payload is CantDo) {
+              _handleCantDo(msg);
             }
-          } else if (msg.payload is CantDo) {
-            _handleCantDo(msg);
-          }
-        },
-        error: (error, stack) => handleError(error, stack),
-        loading: () {},
-      );
-    });
+          },
+          error: (error, stack) => handleError(error, stack),
+          loading: () {},
+        );
+      },
+    );
   }
 
   void _handleCantDo(MostroMessage message) {

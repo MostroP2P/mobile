@@ -50,8 +50,7 @@ Future<void> showLocalNotification(NostrEvent event) async {
     ),
   );
   await notificationsPlugin.show(
-    event.createdAt?.millisecondsSinceEpoch ??
-        DateTime.now().millisecondsSinceEpoch,
+    0,
     'New Mostro Event',
     'Action: ${event.kind}',
     details,

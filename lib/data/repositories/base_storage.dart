@@ -98,7 +98,6 @@ abstract class BaseStorage<T> {
   }
 
   Stream<List<T>> watch() {
-    final store = stringMapStoreFactory.store('events');
     return store.query().onSnapshots(db).map((snapshot) => snapshot
         .map(
           (record) => fromDbMap(record.key, record.value),

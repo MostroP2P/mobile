@@ -4,6 +4,7 @@ abstract class BackgroundService {
   Future<void> initialize(Settings settings);
   Future<bool> subscribe(Map<String, dynamic> filter);
   Future<bool> unsubscribe(String subscriptionId);
+  void updateSettings(Settings settings);
   Future<void> unsubscribeAll();
   Future<int> getActiveSubscriptionCount();
   void setForegroundStatus(bool isForeground);

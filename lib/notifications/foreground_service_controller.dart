@@ -2,7 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
 
 class ForegroundServiceController {
-  static const _channel = MethodChannel('com.example.myapp/foreground_service');
+  static const _channel = MethodChannel('org.mostro.mobile/foreground_service');
   static final _logger = Logger();
 
   static Future<void> startService() async {

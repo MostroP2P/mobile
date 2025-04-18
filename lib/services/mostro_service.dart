@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logger/logger.dart';
 import 'package:mostro_mobile/background/abstract_background_service.dart';
 import 'package:mostro_mobile/data/models.dart';
 import 'package:mostro_mobile/data/repositories.dart';
@@ -18,6 +19,7 @@ class MostroService {
   final MostroStorage _messageStorage;
   final EventBus _bus;
 
+  final _logger = Logger();
   Settings _settings;
 
   final BackgroundService backgroundService;
@@ -38,9 +40,12 @@ class MostroService {
   }
 
   void _handleIncomingEvent(NostrEvent event) async {
-
-    final currentSession = getSessionByOrderId(event.subscriptionId!);
+    final currentSession = await _sessionNotifier.getSessionByTradeKey(
+      event.tags!.firstWhere((t) => t[0] == 'p')[1],
+    );
     if (currentSession == null) return;
+
+    _logger.i(event);
 
     // Process event as you currently do:
     final decryptedEvent = await event.unWrap(currentSession.tradeKey.private);
@@ -185,7 +190,7 @@ class MostroService {
       keyIndex: session.fullPrivacy ? null : session.keyIndex,
     );
 
-    ref.read(nostrServiceProvider).publishEvent(event);
+    await ref.read(nostrServiceProvider).publishEvent(event);
     return session;
   }
 

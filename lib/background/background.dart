@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'dart:ui';
-import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:mostro_mobile/core/config.dart';
+import 'package:mostro_mobile/data/models/nostr_filter.dart';
 import 'package:mostro_mobile/data/repositories/event_storage.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/notifications/notification_service.dart';
@@ -15,36 +15,6 @@ bool isAppForeground = false;
 
 @pragma('vm:entry-point')
 Future<void> serviceMain(ServiceInstance service) async {
-  // Map to track active subscriptions
-  final Map<String, Map<String, dynamic>> activeSubscriptions = {};
-
-  // Initialize service
-  service.on('settings-change').listen((event) {
-    // Initialize with settings
-  });
-
-  // Handle subscription creation
-  service.on('create-subscription').listen((event) {
-    if (event == null) return;
-
-    final filter = event['filter'] as Map<String, dynamic>?;
-    final id = event['id'] as String?;
-
-    if (filter != null && id != null) {
-      activeSubscriptions[id] = filter;
-    }
-  });
-
-  // Handle subscription cancellation
-  service.on('cancel-subscription').listen((event) {
-    if (event == null) return;
-
-    final id = event['id'] as String?;
-    if (id != null && activeSubscriptions.containsKey(id)) {
-      activeSubscriptions.remove(id);
-    }
-  });
-
   // If on Android, set up a permanent notification so the OS won't kill it.
   if (service is AndroidServiceInstance) {
     service.setAsForegroundService();
@@ -69,6 +39,7 @@ Future<void> serviceMain(ServiceInstance service) async {
     );
   }
 
+  final Map<String, Map<String, dynamic>> activeSubscriptions = {};
   final nostrService = NostrService();
   final db = await openMostroDatabase();
   final backgroundStorage = EventStorage(db: db);
@@ -77,32 +48,46 @@ Future<void> serviceMain(ServiceInstance service) async {
     isAppForeground = data?['isForeground'] ?? false;
   });
 
-  service.on('settings-change').listen((data) async {
-    await nostrService.init(
-      Settings.fromJson(data!['settings']),
+  service.on('settings-change').listen((data) {
+    if (data == null) return;
+
+    final settingsMap = data['settings'];
+    if (settingsMap == null) return;
+
+    nostrService.updateSettings(
+      Settings.fromJson(
+        settingsMap,
+      ),
     );
   });
 
-  // Listen for commands from the main isolate
   service.on('create-subscription').listen((data) {
-    final pList = data!['filter']['#p'];
-    List<String>? p = pList != null ? [pList[0]] : null;
+    if (data == null || data['filter'] == null) return;
 
-    final filter = NostrFilter(
-      kinds: data['filter']['kinds'],
-      p: p,
+    final filter = NostrFilterX.fromJsonSafe(
+      data['filter'],
     );
 
     final subscription = nostrService.subscribeToEvents(filter);
     subscription.listen((event) async {
       await backgroundStorage.putItem(
-        event.subscriptionId!,
+        event.id!,
         event,
       );
       if (!isAppForeground) {
         await showLocalNotification(event);
       }
     });
+  });
+
+  // Handle subscription cancellation
+  service.on('cancel-subscription').listen((event) {
+    if (event == null) return;
+
+    final id = event['id'] as String?;
+    if (id != null && activeSubscriptions.containsKey(id)) {
+      activeSubscriptions.remove(id);
+    }
   });
 }
 
