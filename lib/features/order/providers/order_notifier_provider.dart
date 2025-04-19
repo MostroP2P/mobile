@@ -74,7 +74,7 @@ class OrderTypeNotifier extends _$OrderTypeNotifier {
 
 final addOrderEventsProvider = StreamProvider.family<MostroMessage, int>(
   (ref, requestId) {
-    final bus = ref.watch(eventBusProvider);
+    final bus = ref.read(eventBusProvider);
     return bus.stream.where(
       (msg) => msg.requestId == requestId,
     );

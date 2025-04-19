@@ -36,6 +36,12 @@ class MobileBackgroundService implements BackgroundService {
       );
     });
 
+    service.on('event').listen((data) {
+      _eventsController.add(
+        NostrEventExtensions.fromMap(data!),
+      );
+    });
+
     service.startService();
   }
 
@@ -129,4 +135,7 @@ class MobileBackgroundService implements BackgroundService {
 
   @override
   Stream<NostrEvent> get eventsStream => _eventsController.stream;
+  
+  @override
+  bool get isRunning => _isRunning;
 }

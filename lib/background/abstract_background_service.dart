@@ -10,4 +10,5 @@ abstract class BackgroundService {
   Future<int> getActiveSubscriptionCount();
   void setForegroundStatus(bool isForeground);
   Stream<NostrEvent> get eventsStream;
+  bool get isRunning;
 }

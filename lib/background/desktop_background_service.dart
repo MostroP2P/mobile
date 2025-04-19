@@ -177,4 +177,7 @@ class DesktopBackgroundService implements BackgroundService {
 
   @override
   Stream<NostrEvent> get eventsStream => _eventsController.stream;
+  
+  @override
+  bool get isRunning => _isRunning;
 }

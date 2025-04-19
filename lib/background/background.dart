@@ -7,7 +7,6 @@ import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/nostr_filter.dart';
 import 'package:mostro_mobile/data/repositories/event_storage.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
-import 'package:mostro_mobile/notifications/notification_service.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
 import 'package:mostro_mobile/shared/providers/mostro_database_provider.dart';
 import 'package:path/path.dart' as p;
@@ -17,7 +16,6 @@ bool isAppForeground = false;
 
 @pragma('vm:entry-point')
 Future<void> serviceMain(ServiceInstance service) async {
- 
   final dir = await getApplicationSupportDirectory();
   final path = p.join(dir.path, 'mostro', 'databases', 'background.db');
 
@@ -95,6 +93,10 @@ Future<void> serviceMain(ServiceInstance service) async {
     if (id != null && activeSubscriptions.containsKey(id)) {
       activeSubscriptions.remove(id);
     }
+  });
+
+  service.invoke('is-running', {
+    'is-running': true,
   });
 }
 
