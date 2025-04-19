@@ -36,12 +36,6 @@ class MobileBackgroundService implements BackgroundService {
       );
     });
 
-    service.on('event').listen((data) {
-      _eventsController.add(
-        NostrEventExtensions.fromMap(data!),
-      );
-    });
-
     service.startService();
   }
 
