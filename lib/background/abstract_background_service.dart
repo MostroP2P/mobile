@@ -1,3 +1,4 @@
+import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 
 abstract class BackgroundService {
@@ -8,4 +9,5 @@ abstract class BackgroundService {
   Future<void> unsubscribeAll();
   Future<int> getActiveSubscriptionCount();
   void setForegroundStatus(bool isForeground);
+  Stream<NostrEvent> get eventsStream;
 }

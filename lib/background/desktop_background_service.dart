@@ -1,36 +1,63 @@
 import 'dart:async';
 import 'dart:isolate';
+import 'package:dart_nostr/nostr/model/event/event.dart';
+import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
+import 'package:mostro_mobile/data/models.dart';
 import 'package:mostro_mobile/data/models/nostr_filter.dart';
 import 'package:mostro_mobile/data/repositories.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
-import 'package:mostro_mobile/notifications/notification_service.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
 import 'package:mostro_mobile/shared/providers/mostro_database_provider.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'abstract_background_service.dart';
 
 class DesktopBackgroundService implements BackgroundService {
-  // Similar implementation with subscription tracking
+  final _eventsController = StreamController<NostrEvent>.broadcast();
+
   final _subscriptions = <String, Map<String, dynamic>>{};
   bool _isRunning = false;
   late SendPort _sendPort;
 
   @override
   Future<void> initialize(Settings settings) async {
+    final token = ServicesBinding.rootIsolateToken!;
+    final dir = await getApplicationSupportDirectory();
+    final path = p.join(dir.path, 'mostro', 'databases', 'background.db');
+
     final receivePort = ReceivePort();
-    await Isolate.spawn(_isolateEntry, receivePort.sendPort);
-    _sendPort = await receivePort.first as SendPort;
+    await Isolate.spawn(_isolateEntry, [receivePort.sendPort, token, path]);
+
+    receivePort.listen((message) {
+      if (message is SendPort) {
+        _sendPort = message;
+      }
+      if (message is Map && message.containsKey('event')) {
+        final event = NostrEventExtensions.fromMap(message['event']);
+        _eventsController.add(event);
+      }
+      if (message is Map && message.containsKey('is-running')) {
+        _isRunning = message['is-running'];
+      }
+    });
   }
 
-  static void _isolateEntry(SendPort mainSendPort) async {
+  static void _isolateEntry(List<dynamic> args) async {
     final isolateReceivePort = ReceivePort();
+    final mainSendPort = args[0] as SendPort;
+    final token = args[1] as RootIsolateToken;
+    final dbPath = args[2] as String;
+
     mainSendPort.send(isolateReceivePort.sendPort);
 
+    BackgroundIsolateBinaryMessenger.ensureInitialized(token);
+
     final nostrService = NostrService();
-    final db = await openMostroDatabase();
+    final db = await openMostroDatabase(dbPath);
     final backgroundStorage = EventStorage(db: db);
     final logger = Logger();
-    bool isAppForeground = false;
+    bool isAppForeground = true;
 
     isolateReceivePort.listen((message) async {
       if (message is! Map || message['command'] == null) return;
@@ -39,7 +66,7 @@ class DesktopBackgroundService implements BackgroundService {
 
       switch (command) {
         case 'app-foreground-status':
-          isAppForeground = message['isForeground'] ?? false;
+          isAppForeground = message['is-foreground'] ?? isAppForeground;
           break;
         case 'settings-change':
           if (message['settings'] == null) return;
@@ -63,6 +90,9 @@ class DesktopBackgroundService implements BackgroundService {
               event.id!,
               event,
             );
+            mainSendPort.send({
+              'event': event.toMap(),
+            });
             if (!isAppForeground) {
               //await showLocalNotification(event);
             }
@@ -72,6 +102,10 @@ class DesktopBackgroundService implements BackgroundService {
           logger.i('Unknown command: $command');
           break;
       }
+    });
+
+    mainSendPort.send({
+      'is-running': true,
     });
   }
 
@@ -88,10 +122,11 @@ class DesktopBackgroundService implements BackgroundService {
 
   @override
   void setForegroundStatus(bool isForeground) {
+    if (!_isRunning) return;
     _sendPort.send(
       {
         'command': 'app-foreground-status',
-        'isForeground': isForeground,
+        'is-foreground': isForeground,
       },
     );
   }
@@ -123,6 +158,7 @@ class DesktopBackgroundService implements BackgroundService {
 
   @override
   Future<void> unsubscribeAll() async {
+    if (!_isRunning) return;
     for (final id in _subscriptions.keys.toList()) {
       await unsubscribe(id);
     }
@@ -130,6 +166,7 @@ class DesktopBackgroundService implements BackgroundService {
 
   @override
   void updateSettings(Settings settings) {
+    if (!_isRunning) return;
     _sendPort.send(
       {
         'command': 'settings-change',
@@ -137,4 +174,7 @@ class DesktopBackgroundService implements BackgroundService {
       },
     );
   }
+
+  @override
+  Stream<NostrEvent> get eventsStream => _eventsController.stream;
 }

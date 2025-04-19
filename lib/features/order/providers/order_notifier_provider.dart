@@ -36,21 +36,30 @@ final addOrderNotifierProvider =
 final cantDoNotifierProvider =
     StateNotifierProvider.family<CantDoNotifier, MostroMessage, String>(
   (ref, orderId) {
-    return CantDoNotifier(orderId, ref);
+    return CantDoNotifier(
+      orderId,
+      ref,
+    );
   },
 );
 
 final paymentNotifierProvider =
     StateNotifierProvider.family<PaymentRequestNotifier, MostroMessage, String>(
   (ref, orderId) {
-    return PaymentRequestNotifier(orderId, ref);
+    return PaymentRequestNotifier(
+      orderId,
+      ref,
+    );
   },
 );
 
 final disputeNotifierProvider =
     StateNotifierProvider.family<DisputeNotifier, MostroMessage, String>(
   (ref, orderId) {
-    return DisputeNotifier(orderId, ref);
+    return DisputeNotifier(
+      orderId,
+      ref,
+    );
   },
 );
 
@@ -66,6 +75,8 @@ class OrderTypeNotifier extends _$OrderTypeNotifier {
 final addOrderEventsProvider = StreamProvider.family<MostroMessage, int>(
   (ref, requestId) {
     final bus = ref.watch(eventBusProvider);
-    return bus.stream.where((msg) => msg.requestId == requestId);
+    return bus.stream.where(
+      (msg) => msg.requestId == requestId,
+    );
   },
 );

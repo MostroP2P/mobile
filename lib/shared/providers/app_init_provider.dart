@@ -26,7 +26,7 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
   await sessionManager.init();
 
   final mostroService = ref.read(mostroServiceProvider);
-  mostroService.init();
+  await mostroService.init();
 
   final backgroundService = ref.read(backgroundServiceProvider);
   backgroundService.updateSettings(ref.read(settingsProvider));

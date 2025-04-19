@@ -34,18 +34,16 @@ class MostroService {
   ) : _settings = ref.read(settingsProvider);
 
   Future<void> init() async {
-    _eventStorage.watch().listen((data) {
-      data.forEach(_handleIncomingEvent);
+    backgroundService.eventsStream.listen((data) {
+      _handleIncomingEvent(data);
     });
   }
 
   void _handleIncomingEvent(NostrEvent event) async {
-    final currentSession = await _sessionNotifier.getSessionByTradeKey(
+    final currentSession = _sessionNotifier.getSessionByTradeKey(
       event.tags!.firstWhere((t) => t[0] == 'p')[1],
     );
     if (currentSession == null) return;
-
-    _logger.i(event);
 
     // Process event as you currently do:
     final decryptedEvent = await event.unWrap(currentSession.tradeKey.private);

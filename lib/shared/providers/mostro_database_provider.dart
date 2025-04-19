@@ -1,9 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tekartik_app_flutter_sembast/sembast.dart';
+import 'package:sembast/sembast_io.dart';
 
-Future<Database> openMostroDatabase() async {
-  var factory = getDatabaseFactory();
-  final db = await factory.openDatabase('mostro.db');
+Future<Database> openMostroDatabase(String dbName) async {
+  //var factory = getDatabaseFactory(packageName: dbName);
+  //final db = await factory.openDatabase(dbName);
+  final db = await databaseFactoryIo.openDatabase(dbName);
   return db;
 }
 

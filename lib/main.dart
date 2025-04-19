@@ -10,6 +10,8 @@ import 'package:mostro_mobile/notifications/notification_service.dart';
 import 'package:mostro_mobile/shared/providers/background_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/providers.dart';
 import 'package:mostro_mobile/shared/utils/biometrics_helper.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Future<void> main() async {
@@ -18,7 +20,10 @@ Future<void> main() async {
   final biometricsHelper = BiometricsHelper();
   final sharedPreferences = SharedPreferencesAsync();
   final secureStorage = const FlutterSecureStorage();
-  final database = await openMostroDatabase();
+
+  final dir = await getApplicationSupportDirectory();
+  final path = p.join(dir.path, 'mostro', 'databases', 'mostro.db');
+  final database = await openMostroDatabase(path);
 
   final settings = SettingsNotifier(sharedPreferences);
   await settings.init();

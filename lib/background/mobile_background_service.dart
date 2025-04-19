@@ -1,12 +1,16 @@
 import 'dart:async';
 
+import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:mostro_mobile/background/background.dart';
+import 'package:mostro_mobile/data/models.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'abstract_background_service.dart';
 
 class MobileBackgroundService implements BackgroundService {
   final service = FlutterBackgroundService();
+  final _eventsController = StreamController<NostrEvent>.broadcast();
+
   final _subscriptions = <String, Map<String, dynamic>>{};
   bool _isRunning = false;
 
@@ -25,6 +29,12 @@ class MobileBackgroundService implements BackgroundService {
         autoStartOnBoot: true,
       ),
     );
+
+    service.on('event').listen((data) {
+      _eventsController.add(
+        NostrEventExtensions.fromMap(data!),
+      );
+    });
   }
 
   @override
@@ -78,7 +88,7 @@ class MobileBackgroundService implements BackgroundService {
     service.invoke(
       'app-foreground-status',
       {
-        'isForeground': isForeground,
+        'is-foreground': isForeground,
       },
     );
   }
@@ -114,4 +124,7 @@ class MobileBackgroundService implements BackgroundService {
       },
     );
   }
+
+  @override
+  Stream<NostrEvent> get eventsStream => _eventsController.stream;
 }

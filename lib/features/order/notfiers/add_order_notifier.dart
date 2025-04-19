@@ -54,8 +54,9 @@ class AddOrderNotifier extends AbstractMostroNotifier<Order> {
 
   // This method is called when the order is confirmed.
   Future<void> confirmOrder(MostroMessage confirmedOrder) async {
-    final orderNotifier =
-        ref.watch(orderNotifierProvider(confirmedOrder.id!).notifier);
+    final orderNotifier = ref.watch(
+      orderNotifierProvider(confirmedOrder.id!).notifier,
+    );
     handleOrderUpdate();
     orderNotifier.subscribe();
     dispose();

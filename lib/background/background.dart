@@ -10,11 +10,17 @@ import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/notifications/notification_service.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
 import 'package:mostro_mobile/shared/providers/mostro_database_provider.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 bool isAppForeground = false;
 
 @pragma('vm:entry-point')
 Future<void> serviceMain(ServiceInstance service) async {
+ 
+  final dir = await getApplicationSupportDirectory();
+  final path = p.join(dir.path, 'mostro', 'databases', 'background.db');
+
   // If on Android, set up a permanent notification so the OS won't kill it.
   if (service is AndroidServiceInstance) {
     service.setAsForegroundService();
@@ -41,11 +47,12 @@ Future<void> serviceMain(ServiceInstance service) async {
 
   final Map<String, Map<String, dynamic>> activeSubscriptions = {};
   final nostrService = NostrService();
-  final db = await openMostroDatabase();
+
+  final db = await openMostroDatabase(path);
   final backgroundStorage = EventStorage(db: db);
 
   service.on('app-foreground-status').listen((data) {
-    isAppForeground = data?['isForeground'] ?? false;
+    isAppForeground = data?['is-foreground'] ?? isAppForeground;
   });
 
   service.on('settings-change').listen((data) {
@@ -74,13 +81,13 @@ Future<void> serviceMain(ServiceInstance service) async {
         event.id!,
         event,
       );
+      service.invoke('event', event.toMap());
       if (!isAppForeground) {
-        await showLocalNotification(event);
+        //await showLocalNotification(event);
       }
     });
   });
 
-  // Handle subscription cancellation
   service.on('cancel-subscription').listen((event) {
     if (event == null) return;
 

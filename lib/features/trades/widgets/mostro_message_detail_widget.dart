@@ -127,14 +127,17 @@ class MostroMessageDetail extends ConsumerWidget {
         actionText = S.of(context)!.cooperativeCancelAccepted(order.orderId!);
         break;
       case actions.Action.disputeInitiatedByYou:
-        final payload = ref.read(disputeNotifierProvider(order.orderId!)).getPayload<Dispute>();
+        final payload = ref
+            .read(disputeNotifierProvider(order.orderId!))
+            .getPayload<Dispute>();
         actionText = S
             .of(context)!
             .disputeInitiatedByYou(order.orderId!, payload!.disputeId);
         break;
       case actions.Action.disputeInitiatedByPeer:
-
-        final payload = ref.read(disputeNotifierProvider(order.orderId!)).getPayload<Dispute>();
+        final payload = ref
+            .read(disputeNotifierProvider(order.orderId!))
+            .getPayload<Dispute>();
         actionText = S
             .of(context)!
             .disputeInitiatedByPeer(order.orderId!, payload!.disputeId);
@@ -163,7 +166,11 @@ class MostroMessageDetail extends ConsumerWidget {
       case actions.Action.cantDo:
         final msg = ref.read(cantDoNotifierProvider(order.orderId!));
         final cantDo = msg.getPayload<CantDo>();
-        switch (cantDo!.cantDoReason) {
+        if (cantDo == null) {
+          actionText = "Can't Do Message Not Found";
+          break;
+        }
+        switch (cantDo.cantDoReason) {
           case CantDoReason.invalidSignature:
             actionText = S.of(context)!.invalidSignature;
             break;

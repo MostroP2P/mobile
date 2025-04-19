@@ -85,7 +85,7 @@ class SessionNotifier extends StateNotifier<List<Session>> {
 
   Session? getSessionByTradeKey(String tradeKey) {
     try {
-      return _sessions.values.firstWhere(
+      return state.firstWhere(
         (s) => s.tradeKey.public == tradeKey,
       );
     } on StateError {

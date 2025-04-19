@@ -16,10 +16,11 @@ class MostroStorage extends BaseStorage<MostroMessage> {
     try {
       await putItem(id, message);
       _logger.i(
-          'Saved message of type \${message.payload.runtimeType} with id \$id');
+        'Saved message of type ${message.payload.runtimeType} with id $id',
+      );
     } catch (e, stack) {
       _logger.e(
-        'addMessage failed for \$id',
+        'addMessage failed for $id',
         error: e,
         stackTrace: stack,
       );
@@ -43,8 +44,7 @@ class MostroStorage extends BaseStorage<MostroMessage> {
     try {
       return await getItem(id);
     } catch (e, stack) {
-      _logger.e('Error deserializing message \$id',
-          error: e, stackTrace: stack);
+      _logger.e('Error deserializing message $id', error: e, stackTrace: stack);
       return null;
     }
   }
@@ -64,9 +64,9 @@ class MostroStorage extends BaseStorage<MostroMessage> {
     final id = '${T.runtimeType}:$orderId';
     try {
       await deleteItem(id);
-      _logger.i('Message \$id deleted from DB');
+      _logger.i('Message $id deleted from DB');
     } catch (e, stack) {
-      _logger.e('deleteMessage failed for \$id', error: e, stackTrace: stack);
+      _logger.e('deleteMessage failed for $id', error: e, stackTrace: stack);
       rethrow;
     }
   }
@@ -90,9 +90,9 @@ class MostroStorage extends BaseStorage<MostroMessage> {
         final id = messageKey(m);
         try {
           await deleteItem(id);
-          _logger.i('Message \$id deleted from DB');
+          _logger.i('Message $id deleted from DB');
         } catch (e, stack) {
-          _logger.e('deleteMessage failed for \$id',
+          _logger.e('deleteMessage failed for $id',
               error: e, stackTrace: stack);
           rethrow;
         }
