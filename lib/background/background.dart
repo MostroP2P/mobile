@@ -61,7 +61,7 @@ Future<void> serviceMain(ServiceInstance service) async {
     final settingsMap = data['settings'];
     if (settingsMap == null) return;
 
-    nostrService.updateSettings(
+    nostrService.init(
       Settings.fromJson(
         settingsMap,
       ),

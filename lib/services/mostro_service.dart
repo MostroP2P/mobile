@@ -34,12 +34,15 @@ class MostroService {
   ) : _settings = ref.read(settingsProvider);
 
   Future<void> init() async {
-    backgroundService.eventsStream.listen((data) {
-      _handleIncomingEvent(data);
+    backgroundService.eventsStream.listen((data) async {
+      await _handleIncomingEvent(data);
     });
   }
 
-  void _handleIncomingEvent(NostrEvent event) async {
+  Future<void> _handleIncomingEvent(NostrEvent event) async {
+    if (await _eventStorage.hasItem(event.id!)) return;
+    await _eventStorage.putItem(event.id!, event);
+
     final currentSession = _sessionNotifier.getSessionByTradeKey(
       event.tags!.firstWhere((t) => t[0] == 'p')[1],
     );
@@ -54,6 +57,7 @@ class MostroService {
 
     final msg = MostroMessage.fromJson(result[0]);
     if (msg.id != null) {
+      if (await _messageStorage.hasMessage(msg)) return;
       ref.read(orderActionNotifierProvider(msg.id!).notifier).set(msg.action);
     }
     if (msg.action == Action.canceled) {

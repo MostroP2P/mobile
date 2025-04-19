@@ -135,4 +135,10 @@ class MostroStorage extends BaseStorage<MostroMessage> {
     final id = msg.id ?? msg.requestId.toString();
     return '$type:$id';
   }
+
+  Future<bool> hasMessage(MostroMessage msg) async {
+    return hasItem(
+      messageKey(msg),
+    );
+  }
 }

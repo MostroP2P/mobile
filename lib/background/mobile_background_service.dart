@@ -35,6 +35,8 @@ class MobileBackgroundService implements BackgroundService {
         NostrEventExtensions.fromMap(data!),
       );
     });
+
+    service.startService();
   }
 
   @override
