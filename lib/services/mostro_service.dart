@@ -41,7 +41,10 @@ class MostroService {
 
   Future<void> _handleIncomingEvent(NostrEvent event) async {
     if (await _eventStorage.hasItem(event.id!)) return;
-    await _eventStorage.putItem(event.id!, event);
+    await _eventStorage.putItem(
+      event.id!,
+      event,
+    );
 
     final currentSession = _sessionNotifier.getSessionByTradeKey(
       event.tags!.firstWhere((t) => t[0] == 'p')[1],
@@ -49,7 +52,9 @@ class MostroService {
     if (currentSession == null) return;
 
     // Process event as you currently do:
-    final decryptedEvent = await event.unWrap(currentSession.tradeKey.private);
+    final decryptedEvent = await event.unWrap(
+      currentSession.tradeKey.private,
+    );
     if (decryptedEvent.content == null) return;
 
     final result = jsonDecode(decryptedEvent.content!);

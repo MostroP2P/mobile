@@ -16,6 +16,13 @@ class AddOrderNotifier extends AbstractMostroNotifier<Order> {
 
   AddOrderNotifier(super.orderId, super.ref) {
     mostroService = ref.read(mostroServiceProvider);
+
+    requestId = BigInt.parse(
+      orderId.replaceAll('-', ''),
+      radix: 16,
+    ).toUnsigned(64).toInt();
+
+    subscribe();
   }
 
   @override
@@ -63,19 +70,12 @@ class AddOrderNotifier extends AbstractMostroNotifier<Order> {
   }
 
   Future<void> submitOrder(Order order) async {
-    requestId = requestId ??
-        BigInt.parse(
-          orderId.replaceAll('-', ''),
-          radix: 16,
-        ).toUnsigned(64).toInt();
-
     final message = MostroMessage<Order>(
       action: Action.newOrder,
       id: null,
       requestId: requestId,
       payload: order,
     );
-    if (subscription == null) subscribe();
     await mostroService.submitOrder(message);
   }
 }

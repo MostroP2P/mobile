@@ -3,18 +3,18 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i5;
+import 'dart:async' as _i6;
 
-import 'package:dart_nostr/dart_nostr.dart' as _i10;
+import 'package:dart_nostr/nostr/model/event/event.dart' as _i9;
 import 'package:flutter_riverpod/flutter_riverpod.dart' as _i2;
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:mostro_mobile/data/models/mostro_message.dart' as _i6;
-import 'package:mostro_mobile/data/models/payload.dart' as _i7;
-import 'package:mostro_mobile/data/models/session.dart' as _i3;
+import 'package:mostro_mobile/background/abstract_background_service.dart'
+    as _i3;
+import 'package:mostro_mobile/data/models.dart' as _i4;
 import 'package:mostro_mobile/data/repositories/open_orders_repository.dart'
-    as _i9;
-import 'package:mostro_mobile/features/settings/settings.dart' as _i8;
-import 'package:mostro_mobile/services/mostro_service.dart' as _i4;
+    as _i8;
+import 'package:mostro_mobile/features/settings/settings.dart' as _i7;
+import 'package:mostro_mobile/services/mostro_service.dart' as _i5;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -32,215 +32,316 @@ import 'package:mostro_mobile/services/mostro_service.dart' as _i4;
 
 class _FakeRef_0<State extends Object?> extends _i1.SmartFake
     implements _i2.Ref<State> {
-  _FakeRef_0(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
+  _FakeRef_0(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
 }
 
-class _FakeSession_1 extends _i1.SmartFake implements _i3.Session {
-  _FakeSession_1(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
+class _FakeBackgroundService_1 extends _i1.SmartFake
+    implements _i3.BackgroundService {
+  _FakeBackgroundService_1(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
+}
+
+class _FakeSession_2 extends _i1.SmartFake implements _i4.Session {
+  _FakeSession_2(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
 }
 
 /// A class which mocks [MostroService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockMostroService extends _i1.Mock implements _i4.MostroService {
+class MockMostroService extends _i1.Mock implements _i5.MostroService {
   MockMostroService() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i2.Ref<Object?> get ref =>
+  _i2.Ref<Object?> get ref => (super.noSuchMethod(
+        Invocation.getter(#ref),
+        returnValue: _FakeRef_0<Object?>(
+          this,
+          Invocation.getter(#ref),
+        ),
+      ) as _i2.Ref<Object?>);
+
+  @override
+  _i3.BackgroundService get backgroundService => (super.noSuchMethod(
+        Invocation.getter(#backgroundService),
+        returnValue: _FakeBackgroundService_1(
+          this,
+          Invocation.getter(#backgroundService),
+        ),
+      ) as _i3.BackgroundService);
+
+  @override
+  _i6.Future<void> init() => (super.noSuchMethod(
+        Invocation.method(
+          #init,
+          [],
+        ),
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
+
+  @override
+  void subscribe(_i4.Session? session) => super.noSuchMethod(
+        Invocation.method(
+          #subscribe,
+          [session],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  _i4.Session? getSessionByOrderId(String? orderId) =>
+      (super.noSuchMethod(Invocation.method(
+        #getSessionByOrderId,
+        [orderId],
+      )) as _i4.Session?);
+
+  @override
+  _i6.Future<void> submitOrder(_i4.MostroMessage<_i4.Payload>? order) =>
       (super.noSuchMethod(
-            Invocation.getter(#ref),
-            returnValue: _FakeRef_0<Object?>(this, Invocation.getter(#ref)),
-          )
-          as _i2.Ref<Object?>);
+        Invocation.method(
+          #submitOrder,
+          [order],
+        ),
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
 
   @override
-  void subscribe(_i3.Session? session) => super.noSuchMethod(
-    Invocation.method(#subscribe, [session]),
-    returnValueForMissingStub: null,
-  );
-
-  @override
-  _i3.Session? getSessionByOrderId(String? orderId) =>
-      (super.noSuchMethod(Invocation.method(#getSessionByOrderId, [orderId]))
-          as _i3.Session?);
-
-  @override
-  _i5.Future<void> submitOrder(_i6.MostroMessage<_i7.Payload>? order) =>
+  _i6.Future<void> takeBuyOrder(
+    String? orderId,
+    int? amount,
+  ) =>
       (super.noSuchMethod(
-            Invocation.method(#submitOrder, [order]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
-          )
-          as _i5.Future<void>);
+        Invocation.method(
+          #takeBuyOrder,
+          [
+            orderId,
+            amount,
+          ],
+        ),
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
 
   @override
-  _i5.Future<void> takeBuyOrder(String? orderId, int? amount) =>
-      (super.noSuchMethod(
-            Invocation.method(#takeBuyOrder, [orderId, amount]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
-          )
-          as _i5.Future<void>);
-
-  @override
-  _i5.Future<void> takeSellOrder(
+  _i6.Future<void> takeSellOrder(
     String? orderId,
     int? amount,
     String? lnAddress,
   ) =>
       (super.noSuchMethod(
-            Invocation.method(#takeSellOrder, [orderId, amount, lnAddress]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
-          )
-          as _i5.Future<void>);
+        Invocation.method(
+          #takeSellOrder,
+          [
+            orderId,
+            amount,
+            lnAddress,
+          ],
+        ),
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
 
   @override
-  _i5.Future<void> sendInvoice(String? orderId, String? invoice, int? amount) =>
+  _i6.Future<void> sendInvoice(
+    String? orderId,
+    String? invoice,
+    int? amount,
+  ) =>
       (super.noSuchMethod(
-            Invocation.method(#sendInvoice, [orderId, invoice, amount]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
-          )
-          as _i5.Future<void>);
+        Invocation.method(
+          #sendInvoice,
+          [
+            orderId,
+            invoice,
+            amount,
+          ],
+        ),
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
 
   @override
-  _i5.Future<void> cancelOrder(String? orderId) =>
+  _i6.Future<void> cancelOrder(String? orderId) => (super.noSuchMethod(
+        Invocation.method(
+          #cancelOrder,
+          [orderId],
+        ),
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
+
+  @override
+  _i6.Future<void> sendFiatSent(String? orderId) => (super.noSuchMethod(
+        Invocation.method(
+          #sendFiatSent,
+          [orderId],
+        ),
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
+
+  @override
+  _i6.Future<void> releaseOrder(String? orderId) => (super.noSuchMethod(
+        Invocation.method(
+          #releaseOrder,
+          [orderId],
+        ),
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
+
+  @override
+  _i6.Future<void> disputeOrder(String? orderId) => (super.noSuchMethod(
+        Invocation.method(
+          #disputeOrder,
+          [orderId],
+        ),
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
+
+  @override
+  _i6.Future<void> submitRating(
+    String? orderId,
+    int? rating,
+  ) =>
       (super.noSuchMethod(
-            Invocation.method(#cancelOrder, [orderId]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
-          )
-          as _i5.Future<void>);
+        Invocation.method(
+          #submitRating,
+          [
+            orderId,
+            rating,
+          ],
+        ),
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
 
   @override
-  _i5.Future<void> sendFiatSent(String? orderId) =>
+  _i6.Future<_i4.Session> publishOrder(_i4.MostroMessage<_i4.Payload>? order) =>
       (super.noSuchMethod(
-            Invocation.method(#sendFiatSent, [orderId]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
-          )
-          as _i5.Future<void>);
+        Invocation.method(
+          #publishOrder,
+          [order],
+        ),
+        returnValue: _i6.Future<_i4.Session>.value(_FakeSession_2(
+          this,
+          Invocation.method(
+            #publishOrder,
+            [order],
+          ),
+        )),
+      ) as _i6.Future<_i4.Session>);
 
   @override
-  _i5.Future<void> releaseOrder(String? orderId) =>
-      (super.noSuchMethod(
-            Invocation.method(#releaseOrder, [orderId]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
-          )
-          as _i5.Future<void>);
-
-  @override
-  _i5.Future<void> disputeOrder(String? orderId) =>
-      (super.noSuchMethod(
-            Invocation.method(#disputeOrder, [orderId]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
-          )
-          as _i5.Future<void>);
-
-  @override
-  _i5.Future<void> submitRating(String? orderId, int? rating) =>
-      (super.noSuchMethod(
-            Invocation.method(#submitRating, [orderId, rating]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
-          )
-          as _i5.Future<void>);
-
-  @override
-  _i5.Future<_i3.Session> publishOrder(_i6.MostroMessage<_i7.Payload>? order) =>
-      (super.noSuchMethod(
-            Invocation.method(#publishOrder, [order]),
-            returnValue: _i5.Future<_i3.Session>.value(
-              _FakeSession_1(this, Invocation.method(#publishOrder, [order])),
-            ),
-          )
-          as _i5.Future<_i3.Session>);
-
-  @override
-  void updateSettings(_i8.Settings? settings) => super.noSuchMethod(
-    Invocation.method(#updateSettings, [settings]),
-    returnValueForMissingStub: null,
-  );
+  void updateSettings(_i7.Settings? settings) => super.noSuchMethod(
+        Invocation.method(
+          #updateSettings,
+          [settings],
+        ),
+        returnValueForMissingStub: null,
+      );
 }
 
 /// A class which mocks [OpenOrdersRepository].
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockOpenOrdersRepository extends _i1.Mock
-    implements _i9.OpenOrdersRepository {
+    implements _i8.OpenOrdersRepository {
   MockOpenOrdersRepository() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i5.Stream<List<_i10.NostrEvent>> get eventsStream =>
-      (super.noSuchMethod(
-            Invocation.getter(#eventsStream),
-            returnValue: _i5.Stream<List<_i10.NostrEvent>>.empty(),
-          )
-          as _i5.Stream<List<_i10.NostrEvent>>);
+  _i6.Stream<List<_i9.NostrEvent>> get eventsStream => (super.noSuchMethod(
+        Invocation.getter(#eventsStream),
+        returnValue: _i6.Stream<List<_i9.NostrEvent>>.empty(),
+      ) as _i6.Stream<List<_i9.NostrEvent>>);
 
   @override
   void dispose() => super.noSuchMethod(
-    Invocation.method(#dispose, []),
-    returnValueForMissingStub: null,
-  );
+        Invocation.method(
+          #dispose,
+          [],
+        ),
+        returnValueForMissingStub: null,
+      );
 
   @override
-  _i5.Future<_i10.NostrEvent?> getOrderById(String? orderId) =>
+  _i6.Future<_i9.NostrEvent?> getOrderById(String? orderId) =>
       (super.noSuchMethod(
-            Invocation.method(#getOrderById, [orderId]),
-            returnValue: _i5.Future<_i10.NostrEvent?>.value(),
-          )
-          as _i5.Future<_i10.NostrEvent?>);
+        Invocation.method(
+          #getOrderById,
+          [orderId],
+        ),
+        returnValue: _i6.Future<_i9.NostrEvent?>.value(),
+      ) as _i6.Future<_i9.NostrEvent?>);
 
   @override
-  _i5.Future<void> addOrder(_i10.NostrEvent? order) =>
-      (super.noSuchMethod(
-            Invocation.method(#addOrder, [order]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
-          )
-          as _i5.Future<void>);
+  _i6.Future<void> addOrder(_i9.NostrEvent? order) => (super.noSuchMethod(
+        Invocation.method(
+          #addOrder,
+          [order],
+        ),
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
 
   @override
-  _i5.Future<void> deleteOrder(String? orderId) =>
-      (super.noSuchMethod(
-            Invocation.method(#deleteOrder, [orderId]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
-          )
-          as _i5.Future<void>);
+  _i6.Future<void> deleteOrder(String? orderId) => (super.noSuchMethod(
+        Invocation.method(
+          #deleteOrder,
+          [orderId],
+        ),
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
 
   @override
-  _i5.Future<List<_i10.NostrEvent>> getAllOrders() =>
-      (super.noSuchMethod(
-            Invocation.method(#getAllOrders, []),
-            returnValue: _i5.Future<List<_i10.NostrEvent>>.value(
-              <_i10.NostrEvent>[],
-            ),
-          )
-          as _i5.Future<List<_i10.NostrEvent>>);
+  _i6.Future<List<_i9.NostrEvent>> getAllOrders() => (super.noSuchMethod(
+        Invocation.method(
+          #getAllOrders,
+          [],
+        ),
+        returnValue: _i6.Future<List<_i9.NostrEvent>>.value(<_i9.NostrEvent>[]),
+      ) as _i6.Future<List<_i9.NostrEvent>>);
 
   @override
-  _i5.Future<void> updateOrder(_i10.NostrEvent? order) =>
-      (super.noSuchMethod(
-            Invocation.method(#updateOrder, [order]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
-          )
-          as _i5.Future<void>);
+  _i6.Future<void> updateOrder(_i9.NostrEvent? order) => (super.noSuchMethod(
+        Invocation.method(
+          #updateOrder,
+          [order],
+        ),
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
 
   @override
-  void updateSettings(_i8.Settings? settings) => super.noSuchMethod(
-    Invocation.method(#updateSettings, [settings]),
-    returnValueForMissingStub: null,
-  );
+  void updateSettings(_i7.Settings? settings) => super.noSuchMethod(
+        Invocation.method(
+          #updateSettings,
+          [settings],
+        ),
+        returnValueForMissingStub: null,
+      );
 }
