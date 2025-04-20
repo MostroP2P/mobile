@@ -3,7 +3,9 @@ import 'package:dart_nostr/dart_nostr.dart';
 import 'package:dart_nostr/nostr/model/relay_informations.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/core/config.dart';
+import 'package:mostro_mobile/data/repositories/event_storage.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
+import 'package:mostro_mobile/shared/providers/mostro_database_provider.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
 class NostrService {
@@ -22,6 +24,8 @@ class NostrService {
         relaysUrl: settings.relays,
         connectionTimeout: Config.nostrConnectionTimeout,
         shouldReconnectToRelayOnNotice: true,
+        retryOnClose: true,
+        retryOnError: true,
         onRelayListening: (relay, url, channel) {
           _logger.i('Connected to relay: $relay');
         },
@@ -31,8 +35,6 @@ class NostrService {
         onRelayConnectionDone: (relay, socket) {
           _logger.i('Connection to relay: $relay via $socket is done');
         },
-        retryOnClose: true,
-        retryOnError: true,
       );
       _isInitialized = true;
       _logger.i('Nostr initialized successfully');
@@ -117,7 +119,7 @@ class NostrService {
   }
 
   String getMostroPubKey() {
-    return Config.mostroPubKey;
+    return settings.mostroPublicKey;
   }
 
   Future<NostrEvent> createNIP59Event(
@@ -172,5 +174,32 @@ class NostrService {
       sealedContent,
       recipientPubKey,
     );
+  }
+
+// Add method to sync background events
+  Future<void> syncBackgroundEvents() async {
+    // Get the background database
+    final backgroundDb = await openMostroDatabase('background.db');
+    final backgroundStorage = EventStorage(db: backgroundDb);
+
+    // Get all events from background database
+    final events = await backgroundStorage.getAllItems();
+
+    // Process each event
+    for (final event in events) {
+      // Process event through your regular pipeline
+      // This might involve decrypting, parsing, and emitting to event bus
+      await processEvent(event);
+    }
+
+    // Optionally clear background database after syncing
+    // await backgroundStorage.deleteAllItems();
+  }
+
+// Add method to process events (similar to what was in MostroService)
+  Future<void> processEvent(NostrEvent event) async {
+    // Your event processing logic here
+    // This would be similar to what was in MostroService._handleIncomingEvent
+    // but without the duplicate checking
   }
 }

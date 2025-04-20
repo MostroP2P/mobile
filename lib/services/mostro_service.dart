@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:dart_nostr/nostr/model/event/event.dart';
+import 'package:dart_nostr/nostr/model/request/filter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/background/abstract_background_service.dart';
@@ -8,6 +9,7 @@ import 'package:mostro_mobile/data/repositories.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/services/event_bus.dart';
+import 'package:mostro_mobile/services/lifecycle_manager.dart';
 import 'package:mostro_mobile/shared/notifiers/order_action_notifier.dart';
 import 'package:mostro_mobile/shared/notifiers/session_notifier.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
@@ -33,12 +35,25 @@ class MostroService {
     this.backgroundService,
   ) : _settings = ref.read(settingsProvider);
 
-  Future<void> init() async {
-    backgroundService.eventsStream.listen((data) async {
-      await _handleIncomingEvent(data);
-    });
+Future<void> init() async {
+  final sessions = _sessionNotifier.sessions;
+  for (final session in sessions) {
+    subscribe(session);
   }
+}
 
+void subscribe(Session session) {
+  final filter = NostrFilter(
+    kinds: [1059],
+    authors: [session.tradeKey.public],
+  );
+  
+  // Add subscription through lifecycle manager
+  ref.read(lifecycleManagerProvider).addSubscription(filter);
+}
+
+// Remove background service listening code from here
+// It will be handled by the lifecycle manager
   Future<void> _handleIncomingEvent(NostrEvent event) async {
     if (await _eventStorage.hasItem(event.id!)) return;
     await _eventStorage.putItem(
@@ -76,13 +91,6 @@ class MostroService {
       await _sessionNotifier.saveSession(currentSession);
     }
     _bus.emit(msg);
-  }
-
-  void subscribe(Session session) {
-    backgroundService.subscribe({
-      'kinds': [1059],
-      '#p': [session.tradeKey.public],
-    });
   }
 
   Session? getSessionByOrderId(String orderId) {

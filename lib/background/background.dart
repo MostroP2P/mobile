@@ -9,15 +9,11 @@ import 'package:mostro_mobile/data/repositories/event_storage.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
 import 'package:mostro_mobile/shared/providers/mostro_database_provider.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 
 bool isAppForeground = false;
 
 @pragma('vm:entry-point')
 Future<void> serviceMain(ServiceInstance service) async {
-  final dir = await getApplicationSupportDirectory();
-  final path = p.join(dir.path, 'mostro', 'databases', 'background.db');
 
   // If on Android, set up a permanent notification so the OS won't kill it.
   if (service is AndroidServiceInstance) {
@@ -46,7 +42,7 @@ Future<void> serviceMain(ServiceInstance service) async {
   final Map<String, Map<String, dynamic>> activeSubscriptions = {};
   final nostrService = NostrService();
 
-  final db = await openMostroDatabase(path);
+  final db = await openMostroDatabase('background.db');
   final backgroundStorage = EventStorage(db: db);
 
   service.on('app-foreground-status').listen((data) {

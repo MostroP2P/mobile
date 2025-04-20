@@ -9,8 +9,6 @@ import 'package:mostro_mobile/data/repositories.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
 import 'package:mostro_mobile/shared/providers/mostro_database_provider.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 import 'abstract_background_service.dart';
 
 class DesktopBackgroundService implements BackgroundService {
@@ -23,11 +21,9 @@ class DesktopBackgroundService implements BackgroundService {
   @override
   Future<void> initialize(Settings settings) async {
     final token = ServicesBinding.rootIsolateToken!;
-    final dir = await getApplicationSupportDirectory();
-    final path = p.join(dir.path, 'mostro', 'databases', 'background.db');
 
     final receivePort = ReceivePort();
-    await Isolate.spawn(_isolateEntry, [receivePort.sendPort, token, path]);
+    await Isolate.spawn(_isolateEntry, [receivePort.sendPort, token]);
 
     receivePort.listen((message) {
       if (message is SendPort) {
@@ -47,14 +43,13 @@ class DesktopBackgroundService implements BackgroundService {
     final isolateReceivePort = ReceivePort();
     final mainSendPort = args[0] as SendPort;
     final token = args[1] as RootIsolateToken;
-    final dbPath = args[2] as String;
 
     mainSendPort.send(isolateReceivePort.sendPort);
 
     BackgroundIsolateBinaryMessenger.ensureInitialized(token);
 
     final nostrService = NostrService();
-    final db = await openMostroDatabase(dbPath);
+    final db = await openMostroDatabase('background.db');
     final backgroundStorage = EventStorage(db: db);
     final logger = Logger();
     bool isAppForeground = true;

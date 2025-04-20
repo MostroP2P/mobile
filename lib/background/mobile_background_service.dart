@@ -41,12 +41,9 @@ class MobileBackgroundService implements BackgroundService {
 
   @override
   Future<bool> subscribe(Map<String, dynamic> filter) async {
-    service.invoke(
-      'create-subscription',
-      {
-        'filter': filter,
-      },
-    );
+    service.invoke('create-subscription', {
+      'filter': filter,
+    });
 
     return true;
   }
@@ -58,12 +55,9 @@ class MobileBackgroundService implements BackgroundService {
     }
 
     _subscriptions.remove(subscriptionId);
-    service.invoke(
-      'cancel-subscription',
-      {
-        'id': subscriptionId,
-      },
-    );
+    service.invoke('cancel-subscription', {
+      'id': subscriptionId,
+    });
 
     // If no more subscriptions, stop the service
     if (_subscriptions.isEmpty && _isRunning) {
@@ -101,13 +95,10 @@ class MobileBackgroundService implements BackgroundService {
 
     // Re-register all active subscriptions
     for (final entry in _subscriptions.entries) {
-      service.invoke(
-        'create-subscription',
-        {
-          'filter': entry.value,
-          'id': entry.key,
-        },
-      );
+      service.invoke('create-subscription', {
+        'filter': entry.value,
+        'id': entry.key,
+      });
     }
   }
 
@@ -119,17 +110,14 @@ class MobileBackgroundService implements BackgroundService {
 
   @override
   void updateSettings(Settings settings) {
-    service.invoke(
-      'settings-change',
-      {
-        'settings': settings.toJson(),
-      },
-    );
+    service.invoke('settings-change', {
+      'settings': settings.toJson(),
+    });
   }
 
   @override
   Stream<NostrEvent> get eventsStream => _eventsController.stream;
-  
+
   @override
   bool get isRunning => _isRunning;
 }
