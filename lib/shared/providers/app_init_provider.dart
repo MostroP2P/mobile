@@ -38,6 +38,7 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
   });
 
   final mostroStorage = ref.read(mostroStorageProvider);
+  await mostroService.init();
 
   for (final session in sessionManager.sessions) {
     if (session.orderId != null) {
@@ -50,15 +51,12 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
       ref.read(
         orderNotifierProvider(session.orderId!),
       );
-      await mostroService.init();
-      mostroService.subscribe(session);
     }
 
     if (session.peer != null) {
       final chat = ref.watch(
         chatRoomsProvider(session.orderId!).notifier,
       );
-      await chat.init();
       chat.subscribe();
     }
   }

@@ -1,8 +1,6 @@
 import 'dart:convert';
-import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:dart_nostr/nostr/model/request/filter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:logger/logger.dart';
 import 'package:mostro_mobile/background/abstract_background_service.dart';
 import 'package:mostro_mobile/data/models.dart';
 import 'package:mostro_mobile/data/repositories.dart';
@@ -21,7 +19,6 @@ class MostroService {
   final MostroStorage _messageStorage;
   final EventBus _bus;
 
-  final _logger = Logger();
   Settings _settings;
 
   final BackgroundService backgroundService;
@@ -50,25 +47,20 @@ void subscribe(Session session) {
   
   // Add subscription through lifecycle manager
   ref.read(lifecycleManagerProvider).addSubscription(filter);
-}
 
-// Remove background service listening code from here
-// It will be handled by the lifecycle manager
-  Future<void> _handleIncomingEvent(NostrEvent event) async {
+  final nostrService = ref.read(nostrServiceProvider);
+  
+  nostrService.subscribeToEvents(filter).listen((event) async {
+
     if (await _eventStorage.hasItem(event.id!)) return;
     await _eventStorage.putItem(
       event.id!,
       event,
     );
 
-    final currentSession = _sessionNotifier.getSessionByTradeKey(
-      event.tags!.firstWhere((t) => t[0] == 'p')[1],
-    );
-    if (currentSession == null) return;
-
     // Process event as you currently do:
     final decryptedEvent = await event.unWrap(
-      currentSession.tradeKey.private,
+      session.tradeKey.private,
     );
     if (decryptedEvent.content == null) return;
 
@@ -81,16 +73,17 @@ void subscribe(Session session) {
       ref.read(orderActionNotifierProvider(msg.id!).notifier).set(msg.action);
     }
     if (msg.action == Action.canceled) {
-      await _messageStorage.deleteAllMessagesById(currentSession.orderId!);
-      await _sessionNotifier.deleteSession(currentSession.orderId!);
+      await _messageStorage.deleteAllMessagesById(session.orderId!);
+      await _sessionNotifier.deleteSession(session.orderId!);
       return;
     }
     await _messageStorage.addMessage(msg);
-    if (currentSession.orderId == null && msg.id != null) {
-      currentSession.orderId = msg.id;
-      await _sessionNotifier.saveSession(currentSession);
+    if (session.orderId == null && msg.id != null) {
+      session.orderId = msg.id;
+      await _sessionNotifier.saveSession(session);
     }
     _bus.emit(msg);
+  });
   }
 
   Session? getSessionByOrderId(String orderId) {

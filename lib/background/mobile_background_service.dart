@@ -35,8 +35,6 @@ class MobileBackgroundService implements BackgroundService {
         NostrEventExtensions.fromMap(data!),
       );
     });
-
-    service.startService();
   }
 
   @override
@@ -91,7 +89,6 @@ class MobileBackgroundService implements BackgroundService {
 
   Future<void> _startService() async {
     await service.startService();
-    _isRunning = true;
 
     // Re-register all active subscriptions
     for (final entry in _subscriptions.entries) {
