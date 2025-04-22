@@ -62,9 +62,11 @@ class SessionStorage extends BaseStorage<Session> {
   Future<void> deleteSession(String sessionId) => deleteItem(sessionId);
 
   Future<List<String>> deleteExpiredSessions(
-      int sessionExpirationHours, int maxBatchSize) {
+    int sessionExpirationHours,
+    int maxBatchSize,
+  ) async {
     final now = DateTime.now();
-    return deleteWhere((session) {
+    return await deleteWhere((session) {
       final startTime = session.startTime;
       return now.difference(startTime).inHours >= sessionExpirationHours;
     }, maxBatchSize: maxBatchSize);

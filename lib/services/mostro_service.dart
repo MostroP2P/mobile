@@ -1,88 +1,81 @@
 import 'dart:convert';
 import 'package:dart_nostr/nostr/model/request/filter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mostro_mobile/background/abstract_background_service.dart';
 import 'package:mostro_mobile/data/models.dart';
-import 'package:mostro_mobile/data/repositories.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/services/event_bus.dart';
 import 'package:mostro_mobile/services/lifecycle_manager.dart';
 import 'package:mostro_mobile/shared/notifiers/order_action_notifier.dart';
 import 'package:mostro_mobile/shared/notifiers/session_notifier.dart';
+import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
+import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 
 class MostroService {
   final Ref ref;
   final SessionNotifier _sessionNotifier;
-  final EventStorage _eventStorage;
-  final MostroStorage _messageStorage;
-  final EventBus _bus;
 
   Settings _settings;
 
-  final BackgroundService backgroundService;
-
   MostroService(
     this._sessionNotifier,
-    this._eventStorage,
-    this._bus,
-    this._messageStorage,
     this.ref,
-    this.backgroundService,
-  ) : _settings = ref.read(settingsProvider);
+  ) : _settings = ref.read(settingsProvider).copyWith();
 
-Future<void> init() async {
-  final sessions = _sessionNotifier.sessions;
-  for (final session in sessions) {
-    subscribe(session);
+  Future<void> init() async {
+    final sessions = _sessionNotifier.sessions;
+    for (final session in sessions) {
+      subscribe(session);
+    }
   }
-}
 
-void subscribe(Session session) {
-  final filter = NostrFilter(
-    kinds: [1059],
-    p: [session.tradeKey.public],
-  );
-  
-  // Add subscription through lifecycle manager
-  ref.read(lifecycleManagerProvider).addSubscription(filter);
-
-  final nostrService = ref.read(nostrServiceProvider);
-  
-  nostrService.subscribeToEvents(filter).listen((event) async {
-
-    if (await _eventStorage.hasItem(event.id!)) return;
-    await _eventStorage.putItem(
-      event.id!,
-      event,
+  void subscribe(Session session) {
+    final filter = NostrFilter(
+      kinds: [1059],
+      p: [session.tradeKey.public],
     );
 
-    final decryptedEvent = await event.unWrap(
-      session.tradeKey.private,
-    );
-    if (decryptedEvent.content == null) return;
+    ref.read(lifecycleManagerProvider).addSubscription(filter);
 
-    final result = jsonDecode(decryptedEvent.content!);
-    if (result is! List) return;
+    final nostrService = ref.read(nostrServiceProvider);
 
-    final msg = MostroMessage.fromJson(result[0]);
-    if (msg.id != null) {
-      if (await _messageStorage.hasMessage(msg)) return;
-      ref.read(orderActionNotifierProvider(msg.id!).notifier).set(msg.action);
-    }
-    if (msg.action == Action.canceled) {
-      await _messageStorage.deleteAllMessagesById(session.orderId!);
-      await _sessionNotifier.deleteSession(session.orderId!);
-      return;
-    }
-    await _messageStorage.addMessage(msg);
-    if (session.orderId == null && msg.id != null) {
-      session.orderId = msg.id;
-      await _sessionNotifier.saveSession(session);
-    }
-    _bus.emit(msg);
-  });
+    nostrService.subscribeToEvents(filter).listen((event) async {
+      final eventStore = ref.read(eventStorageProvider);
+
+      if (await eventStore.hasItem(event.id!)) return;
+      await eventStore.putItem(
+        event.id!,
+        event,
+      );
+
+      final decryptedEvent = await event.unWrap(
+        session.tradeKey.private,
+      );
+      if (decryptedEvent.content == null) return;
+
+      final result = jsonDecode(decryptedEvent.content!);
+      if (result is! List) return;
+
+      final msg = MostroMessage.fromJson(result[0]);
+      final messageStorage = ref.read(mostroStorageProvider);
+
+      if (msg.id != null) {
+        if (await messageStorage.hasMessage(msg)) return;
+        ref.read(orderActionNotifierProvider(msg.id!).notifier).set(msg.action);
+      }
+      if (msg.action == Action.canceled) {
+        await messageStorage.deleteAllMessagesById(session.orderId!);
+        await _sessionNotifier.deleteSession(session.orderId!);
+        return;
+      }
+      await messageStorage.addMessage(msg);
+      if (session.orderId == null && msg.id != null) {
+        session.orderId = msg.id;
+        await _sessionNotifier.saveSession(session);
+      }
+      ref.read(eventBusProvider).emit(msg);
+    });
   }
 
   Session? getSessionByOrderId(String orderId) {

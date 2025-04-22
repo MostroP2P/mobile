@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:mostro_mobile/background/background.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
@@ -12,13 +11,12 @@ class MobileBackgroundService implements BackgroundService {
   MobileBackgroundService(this._settings);
 
   final service = FlutterBackgroundService();
-  final _eventsController = StreamController<NostrEvent>.broadcast();
 
   final _subscriptions = <String, Map<String, dynamic>>{};
   bool _isRunning = false;
 
   @override
-  Future<void> initialize() async {
+  Future<void> init() async {
     await service.configure(
       iosConfiguration: IosConfiguration(
         autoStart: false,
@@ -105,7 +103,7 @@ class MobileBackgroundService implements BackgroundService {
 
   Future<void> _stopService() async {
     // Use invoke pattern to request the service to stop itself
-    service.invoke('stopService');
+    service.invoke('stop');
     _isRunning = false;
   }
 
@@ -113,9 +111,6 @@ class MobileBackgroundService implements BackgroundService {
   void updateSettings(Settings settings) {
     _settings = settings;
   }
-
-  @override
-  Stream<NostrEvent> get eventsStream => _eventsController.stream;
 
   @override
   bool get isRunning => _isRunning;

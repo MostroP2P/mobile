@@ -42,7 +42,7 @@ Future<void> serviceMain(ServiceInstance service) async {
   final Map<String, Map<String, dynamic>> activeSubscriptions = {};
   final nostrService = NostrService();
 
-  final db = await openMostroDatabase('background.db');
+  final db = await openMostroDatabase('mostro.db');
   final backgroundStorage = EventStorage(db: db);
 
   service.on('app-foreground-status').listen((data) {
@@ -89,8 +89,8 @@ Future<void> serviceMain(ServiceInstance service) async {
     }
   });
 
-  service.invoke('is-running', {
-    'is-running': true,
+  service.on("stop").listen((event) {
+    service.stopSelf();
   });
 }
 

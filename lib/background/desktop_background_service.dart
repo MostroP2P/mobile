@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:isolate';
-import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/models/nostr_filter.dart';
@@ -11,14 +10,12 @@ import 'package:mostro_mobile/shared/providers/mostro_database_provider.dart';
 import 'abstract_background_service.dart';
 
 class DesktopBackgroundService implements BackgroundService {
-  final _eventsController = StreamController<NostrEvent>.broadcast();
-
   final _subscriptions = <String, Map<String, dynamic>>{};
   bool _isRunning = false;
   late SendPort _sendPort;
 
   @override
-  Future<void> initialize() async {}
+  Future<void> init() async {}
 
   static void _isolateEntry(List<dynamic> args) async {
     final isolateReceivePort = ReceivePort();
@@ -154,9 +151,6 @@ class DesktopBackgroundService implements BackgroundService {
       },
     );
   }
-
-  @override
-  Stream<NostrEvent> get eventsStream => _eventsController.stream;
 
   @override
   bool get isRunning => _isRunning;
