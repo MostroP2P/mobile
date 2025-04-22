@@ -3,11 +3,14 @@ import 'dart:async';
 import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:mostro_mobile/background/background.dart';
-import 'package:mostro_mobile/data/models.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'abstract_background_service.dart';
 
 class MobileBackgroundService implements BackgroundService {
+  Settings _settings;
+
+  MobileBackgroundService(this._settings);
+
   final service = FlutterBackgroundService();
   final _eventsController = StreamController<NostrEvent>.broadcast();
 
@@ -15,26 +18,20 @@ class MobileBackgroundService implements BackgroundService {
   bool _isRunning = false;
 
   @override
-  Future<void> initialize(Settings settings) async {
+  Future<void> initialize() async {
     await service.configure(
       iosConfiguration: IosConfiguration(
-        autoStart: true,
+        autoStart: false,
         onForeground: serviceMain,
         onBackground: onIosBackground,
       ),
       androidConfiguration: AndroidConfiguration(
-        autoStart: true,
+        autoStart: false,
         onStart: serviceMain,
         isForegroundMode: false,
         autoStartOnBoot: true,
       ),
     );
-
-    service.on('event').listen((data) {
-      _eventsController.add(
-        NostrEventExtensions.fromMap(data!),
-      );
-    });
   }
 
   @override
@@ -78,17 +75,24 @@ class MobileBackgroundService implements BackgroundService {
   }
 
   @override
-  void setForegroundStatus(bool isForeground) {
-    service.invoke(
-      'app-foreground-status',
-      {
-        'is-foreground': isForeground,
-      },
-    );
+  Future<void> setForegroundStatus(bool isForeground) async {
+    if (isForeground) {
+      await _stopService();
+    } else {
+      await _startService();
+    }
   }
 
   Future<void> _startService() async {
     await service.startService();
+
+    while (!(await service.isRunning())) {
+      await Future.delayed(const Duration(milliseconds: 50));
+    }
+
+    service.invoke('settings-change', {
+      'settings': _settings.toJson(),
+    });
 
     // Re-register all active subscriptions
     for (final entry in _subscriptions.entries) {
@@ -107,9 +111,7 @@ class MobileBackgroundService implements BackgroundService {
 
   @override
   void updateSettings(Settings settings) {
-    service.invoke('settings-change', {
-      'settings': settings.toJson(),
-    });
+    _settings = settings;
   }
 
   @override

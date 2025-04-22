@@ -26,8 +26,8 @@ Future<void> main() async {
 
   await initializeNotifications();
 
-  final backgroundService = createBackgroundService();
-  await backgroundService.initialize(settings.settings);
+  final backgroundService = createBackgroundService(settings.settings);
+  await backgroundService.initialize();
 
   runApp(
     ProviderScope(

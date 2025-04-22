@@ -40,7 +40,7 @@ class LifecycleManager extends WidgetsBindingObserver {
 
     // Stop background service
     final backgroundService = ref.read(backgroundServiceProvider);
-    backgroundService.setForegroundStatus(true);
+    await backgroundService.setForegroundStatus(true);
 
     await ref.read(nostrServiceProvider).syncBackgroundEvents();
 
@@ -56,7 +56,7 @@ class LifecycleManager extends WidgetsBindingObserver {
 
     // Transfer active subscriptions to background service
     final backgroundService = ref.read(backgroundServiceProvider);
-    backgroundService.setForegroundStatus(false);
+    await backgroundService.setForegroundStatus(false);
 
     for (final subscription in _activeSubscriptions) {
       await backgroundService.subscribe(subscription.toMap());
@@ -65,8 +65,8 @@ class LifecycleManager extends WidgetsBindingObserver {
 
   void addSubscription(NostrFilter filter) {
     _activeSubscriptions.add(filter);
-    final nostrService = ref.read(nostrServiceProvider);
-    nostrService.subscribeToEvents(filter);
+    // final nostrService = ref.read(nostrServiceProvider);
+    // nostrService.subscribeToEvents(filter);
   }
 
   void dispose() {

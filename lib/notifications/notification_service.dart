@@ -6,7 +6,7 @@ final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
 
 Future<void> initializeNotifications() async {
   const android = AndroidInitializationSettings(
-    '@mipmap/ic_launcher',
+    '@drawable/ic_stat_notifcations',
   );
   const ios = DarwinInitializationSettings();
 

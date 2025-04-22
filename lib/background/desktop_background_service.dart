@@ -3,7 +3,6 @@ import 'dart:isolate';
 import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
-import 'package:mostro_mobile/data/models.dart';
 import 'package:mostro_mobile/data/models/nostr_filter.dart';
 import 'package:mostro_mobile/data/repositories.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
@@ -19,25 +18,7 @@ class DesktopBackgroundService implements BackgroundService {
   late SendPort _sendPort;
 
   @override
-  Future<void> initialize(Settings settings) async {
-    final token = ServicesBinding.rootIsolateToken!;
-
-    final receivePort = ReceivePort();
-    await Isolate.spawn(_isolateEntry, [receivePort.sendPort, token]);
-
-    receivePort.listen((message) {
-      if (message is SendPort) {
-        _sendPort = message;
-      }
-      if (message is Map && message.containsKey('event')) {
-        final event = NostrEventExtensions.fromMap(message['event']);
-        _eventsController.add(event);
-      }
-      if (message is Map && message.containsKey('is-running')) {
-        _isRunning = message['is-running'];
-      }
-    });
-  }
+  Future<void> initialize() async {}
 
   static void _isolateEntry(List<dynamic> args) async {
     final isolateReceivePort = ReceivePort();
@@ -106,6 +87,8 @@ class DesktopBackgroundService implements BackgroundService {
 
   @override
   Future<bool> subscribe(Map<String, dynamic> filter) async {
+    if (!_isRunning) return false;
+
     _sendPort.send(
       {
         'command': 'create-subscription',
@@ -116,7 +99,7 @@ class DesktopBackgroundService implements BackgroundService {
   }
 
   @override
-  void setForegroundStatus(bool isForeground) {
+  Future<void> setForegroundStatus(bool isForeground) async {
     if (!_isRunning) return;
     _sendPort.send(
       {
@@ -133,6 +116,8 @@ class DesktopBackgroundService implements BackgroundService {
 
   @override
   Future<bool> unsubscribe(String subscriptionId) async {
+    if (!_isRunning) return false;
+
     if (!_subscriptions.containsKey(subscriptionId)) {
       return false;
     }
@@ -172,7 +157,7 @@ class DesktopBackgroundService implements BackgroundService {
 
   @override
   Stream<NostrEvent> get eventsStream => _eventsController.stream;
-  
+
   @override
   bool get isRunning => _isRunning;
 }

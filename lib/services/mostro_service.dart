@@ -42,7 +42,7 @@ Future<void> init() async {
 void subscribe(Session session) {
   final filter = NostrFilter(
     kinds: [1059],
-    authors: [session.tradeKey.public],
+    p: [session.tradeKey.public],
   );
   
   // Add subscription through lifecycle manager
@@ -58,7 +58,6 @@ void subscribe(Session session) {
       event,
     );
 
-    // Process event as you currently do:
     final decryptedEvent = await event.unWrap(
       session.tradeKey.private,
     );

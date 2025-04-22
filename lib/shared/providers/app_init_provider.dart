@@ -28,17 +28,13 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
   final mostroService = ref.read(mostroServiceProvider);
   await mostroService.init();
 
-  final backgroundService = ref.read(backgroundServiceProvider);
-  backgroundService.updateSettings(ref.read(settingsProvider));
-
   ref.listen<Settings>(settingsProvider, (previous, next) {
     sessionManager.updateSettings(next);
     mostroService.updateSettings(next);
-    backgroundService.updateSettings(next);
+    ref.read(backgroundServiceProvider).updateSettings(next);
   });
 
   final mostroStorage = ref.read(mostroStorageProvider);
-  await mostroService.init();
 
   for (final session in sessionManager.sessions) {
     if (session.orderId != null) {
@@ -54,7 +50,7 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
     }
 
     if (session.peer != null) {
-      final chat = ref.watch(
+      final chat = ref.read(
         chatRoomsProvider(session.orderId!).notifier,
       );
       chat.subscribe();

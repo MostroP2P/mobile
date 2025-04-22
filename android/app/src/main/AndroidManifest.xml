@@ -39,6 +39,10 @@
 		<meta-data
 			android:name="flutterEmbedding"
 			android:value="2" />
+		<meta-data
+			android:name="com.google.firebase.messaging.default_notification_icon"
+			android:resource="@drawable/ic_stat_notifcations" />
+
 	</application>
 
 	<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
