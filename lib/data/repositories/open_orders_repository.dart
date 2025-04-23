@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:dart_nostr/nostr/model/request/filter.dart';
+import 'package:dart_nostr/nostr/model/request/request.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/repositories/order_repository_interface.dart';
@@ -39,7 +40,11 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
       since: filterTime,
     );
 
-    _subscription = _nostrService.subscribeToEvents(filter).listen((event) {
+    final request = NostrRequest(
+      filters: [filter],
+    );
+
+    _subscription = _nostrService.subscribeToEvents(request).listen((event) {
       if (event.type == 'order') {
         _events[event.orderId!] = event;
         _eventStreamController.add(_events.values.toList());
@@ -69,26 +74,30 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
 
   @override
   Future<void> addOrder(NostrEvent order) {
-    // TODO: implement addOrder
-    throw UnimplementedError();
+    _events[order.id!] = order;
+    _eventStreamController.add(_events.values.toList());
+    return Future.value();
   }
 
   @override
   Future<void> deleteOrder(String orderId) {
-    // TODO: implement deleteOrder
-    throw UnimplementedError();
+    _events.remove(orderId);
+    _eventStreamController.add(_events.values.toList());
+    return Future.value();
   }
 
   @override
   Future<List<NostrEvent>> getAllOrders() {
-    // TODO: implement getAllOrders
-    throw UnimplementedError();
+    return Future.value(_events.values.toList());
   }
 
   @override
   Future<void> updateOrder(NostrEvent order) {
-    // TODO: implement updateOrder
-    throw UnimplementedError();
+    if (_events.containsKey(order.id)) {
+      _events[order.id!] = order;
+      _eventStreamController.add(_events.values.toList());
+    }
+    return Future.value();
   }
 
   void updateSettings(Settings settings) {

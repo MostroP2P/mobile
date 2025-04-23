@@ -1,8 +1,9 @@
 import 'package:dart_nostr/nostr/model/request/filter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/shared/providers/background_service_provider.dart';
-import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
+import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 
 class LifecycleManager extends WidgetsBindingObserver {
   final Ref ref;
@@ -37,36 +38,28 @@ class LifecycleManager extends WidgetsBindingObserver {
 
   Future<void> _switchToForeground() async {
     _isInBackground = false;
-
     // Stop background service
     final backgroundService = ref.read(backgroundServiceProvider);
     await backgroundService.setForegroundStatus(true);
-
-    await ref.read(nostrServiceProvider).syncBackgroundEvents();
-
-    // Re-establish direct subscriptions
-    final nostrService = ref.read(nostrServiceProvider);
-    for (final subscription in _activeSubscriptions) {
-      nostrService.subscribeToEvents(subscription);
-    }
+    // Reinitialize the mostro service
+    ref.read(mostroServiceProvider).init();
+    // Reinitialize chat rooms
+    final chatRooms = ref.read(chatRoomsNotifierProvider.notifier);
+    await chatRooms.loadChats();
+    // Clear active subscriptions
+    _activeSubscriptions.clear();
   }
 
   Future<void> _switchToBackground() async {
     _isInBackground = true;
-
     // Transfer active subscriptions to background service
     final backgroundService = ref.read(backgroundServiceProvider);
     await backgroundService.setForegroundStatus(false);
-
-    for (final subscription in _activeSubscriptions) {
-      await backgroundService.subscribe(subscription.toMap());
-    }
+    backgroundService.subscribe(_activeSubscriptions);
   }
 
   void addSubscription(NostrFilter filter) {
     _activeSubscriptions.add(filter);
-    // final nostrService = ref.read(nostrServiceProvider);
-    // nostrService.subscribeToEvents(filter);
   }
 
   void dispose() {

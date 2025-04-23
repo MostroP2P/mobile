@@ -26,8 +26,11 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
       kinds: [1059],
       p: [session!.sharedKey!.public],
     );
+    final request = NostrRequest(
+      filters: [filter],
+    );
     subscription =
-        ref.read(nostrServiceProvider).subscribeToEvents(filter).listen(
+        ref.read(nostrServiceProvider).subscribeToEvents(request).listen(
       (event) async {
         try {
           final chat = await event.mostroUnWrap(session.sharedKey!);

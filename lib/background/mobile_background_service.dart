@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:dart_nostr/nostr/model/request/filter.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:mostro_mobile/background/background.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
@@ -33,12 +34,10 @@ class MobileBackgroundService implements BackgroundService {
   }
 
   @override
-  Future<bool> subscribe(Map<String, dynamic> filter) async {
+  void subscribe(List<NostrFilter> filters) {
     service.invoke('create-subscription', {
-      'filter': filter,
+      'filters': filters.map((f) => f.toMap()).toList(),
     });
-
-    return true;
   }
 
   @override
@@ -52,7 +51,6 @@ class MobileBackgroundService implements BackgroundService {
       'id': subscriptionId,
     });
 
-    // If no more subscriptions, stop the service
     if (_subscriptions.isEmpty && _isRunning) {
       await _stopService();
     }
@@ -88,21 +86,12 @@ class MobileBackgroundService implements BackgroundService {
       await Future.delayed(const Duration(milliseconds: 50));
     }
 
-    service.invoke('settings-change', {
+    service.invoke('start', {
       'settings': _settings.toJson(),
     });
-
-    // Re-register all active subscriptions
-    for (final entry in _subscriptions.entries) {
-      service.invoke('create-subscription', {
-        'filter': entry.value,
-        'id': entry.key,
-      });
-    }
   }
 
   Future<void> _stopService() async {
-    // Use invoke pattern to request the service to stop itself
     service.invoke('stop');
     _isRunning = false;
   }

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:dart_nostr/nostr/model/export.dart';
 import 'package:dart_nostr/nostr/model/request/filter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/models.dart';
@@ -21,9 +22,11 @@ class MostroService {
   MostroService(
     this._sessionNotifier,
     this.ref,
-  ) : _settings = ref.read(settingsProvider).copyWith();
+  ) : _settings = ref.read(settingsProvider).copyWith() {
+    init();
+  }
 
-  Future<void> init() async {
+  void init() {
     final sessions = _sessionNotifier.sessions;
     for (final session in sessions) {
       subscribe(session);
@@ -36,11 +39,13 @@ class MostroService {
       p: [session.tradeKey.public],
     );
 
+    final request = NostrRequest(filters: [filter]);
+
     ref.read(lifecycleManagerProvider).addSubscription(filter);
 
     final nostrService = ref.read(nostrServiceProvider);
 
-    nostrService.subscribeToEvents(filter).listen((event) async {
+    nostrService.subscribeToEvents(request).listen((event) async {
       final eventStore = ref.read(eventStorageProvider);
 
       if (await eventStore.hasItem(event.id!)) return;

@@ -14,9 +14,9 @@ EventStorage eventStorage(Ref ref) {
 
 @riverpod
 MostroService mostroService(Ref ref) {
-  final sessionStorage = ref.read(sessionNotifierProvider.notifier);
+  final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
   final mostroService = MostroService(
-    sessionStorage,
+    sessionNotifier,
     ref,
   );
   return mostroService;

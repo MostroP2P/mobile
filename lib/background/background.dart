@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:ui';
+import 'package:dart_nostr/nostr/model/request/request.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -41,41 +42,35 @@ Future<void> serviceMain(ServiceInstance service) async {
 
   final Map<String, Map<String, dynamic>> activeSubscriptions = {};
   final nostrService = NostrService();
-
   final db = await openMostroDatabase('mostro.db');
-  final backgroundStorage = EventStorage(db: db);
+  final eventStore = EventStorage(db: db);
 
   service.on('app-foreground-status').listen((data) {
     isAppForeground = data?['is-foreground'] ?? isAppForeground;
   });
 
-  service.on('settings-change').listen((data) {
+  service.on('start').listen((data) async {
     if (data == null) return;
 
     final settingsMap = data['settings'];
     if (settingsMap == null) return;
 
-    nostrService.init(
-      Settings.fromJson(
-        settingsMap,
-      ),
-    );
+    final settings = Settings.fromJson(settingsMap);
+    await nostrService.init(settings);
   });
 
   service.on('create-subscription').listen((data) {
-    if (data == null || data['filter'] == null) return;
+    if (data == null || data['filters'] == null) return;
 
-    final filter = NostrFilterX.fromJsonSafe(
-      data['filter'],
-    );
+    final filterMap = data['filters'] as List<Map<String, dynamic>>;
 
-    final subscription = nostrService.subscribeToEvents(filter);
+    final filters = filterMap.map((e) => NostrFilterX.fromJsonSafe(e)).toList();
+
+    final request = NostrRequest(filters: filters);
+
+    final subscription = nostrService.subscribeToEvents(request);
     subscription.listen((event) async {
-      await backgroundStorage.putItem(
-        event.id!,
-        event,
-      );
-      service.invoke('event', event.toMap());
+      if (await eventStore.hasItem(event.id!)) return;
       await showLocalNotification(event);
     });
   });
@@ -86,10 +81,13 @@ Future<void> serviceMain(ServiceInstance service) async {
     final id = event['id'] as String?;
     if (id != null && activeSubscriptions.containsKey(id)) {
       activeSubscriptions.remove(id);
+      nostrService.unsubscribe(id);
     }
   });
 
-  service.on("stop").listen((event) {
+  service.on("stop").listen((event) async {
+    nostrService.disconnectFromRelays();
+    await db.close();
     service.stopSelf();
   });
 }

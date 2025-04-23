@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:isolate';
+import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/models/nostr_filter.dart';
@@ -17,7 +18,7 @@ class DesktopBackgroundService implements BackgroundService {
   @override
   Future<void> init() async {}
 
-  static void _isolateEntry(List<dynamic> args) async {
+  static void isolateEntry(List<dynamic> args) async {
     final isolateReceivePort = ReceivePort();
     final mainSendPort = args[0] as SendPort;
     final token = args[1] as RootIsolateToken;
@@ -51,13 +52,18 @@ class DesktopBackgroundService implements BackgroundService {
           );
           break;
         case 'create-subscription':
-          if (message['filter'] == null) return;
+          if (message['filters'] == null) return;
 
-          final filter = NostrFilterX.fromJsonSafe(
-            message['filter'],
+          final filterMap = message['filters'] as List<Map<String, dynamic>>;
+
+          final filters =
+              filterMap.map((e) => NostrFilterX.fromJsonSafe(e)).toList();
+
+          final request = NostrRequest(
+            filters: filters,
           );
 
-          final subscription = nostrService.subscribeToEvents(filter);
+          final subscription = nostrService.subscribeToEvents(request);
           subscription.listen((event) async {
             await backgroundStorage.putItem(
               event.id!,
@@ -83,8 +89,8 @@ class DesktopBackgroundService implements BackgroundService {
   }
 
   @override
-  Future<bool> subscribe(Map<String, dynamic> filter) async {
-    if (!_isRunning) return false;
+  void subscribe(List<NostrFilter> filter) {
+    if (!_isRunning) return;
 
     _sendPort.send(
       {
@@ -92,7 +98,6 @@ class DesktopBackgroundService implements BackgroundService {
         'filter': filter,
       },
     );
-    return true;
   }
 
   @override

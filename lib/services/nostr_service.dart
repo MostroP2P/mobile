@@ -3,9 +3,7 @@ import 'package:dart_nostr/dart_nostr.dart';
 import 'package:dart_nostr/nostr/model/relay_informations.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/core/config.dart';
-import 'package:mostro_mobile/data/repositories/event_storage.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
-import 'package:mostro_mobile/shared/providers/mostro_database_provider.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
 class NostrService {
@@ -87,12 +85,11 @@ class NostrService {
     );
   }
 
-  Stream<NostrEvent> subscribeToEvents(NostrFilter filter) {
+  Stream<NostrEvent> subscribeToEvents(NostrRequest request) {
     if (!_isInitialized) {
       throw Exception('Nostr is not initialized. Call init() first.');
     }
 
-    final request = NostrRequest(filters: [filter]);
     final subscription =
         _nostr.services.relays.startEventsSubscription(request: request);
 
@@ -176,30 +173,11 @@ class NostrService {
     );
   }
 
-// Add method to sync background events
-  Future<void> syncBackgroundEvents() async {
-    // Get the background database
-    final backgroundDb = await openMostroDatabase('background.db');
-    final backgroundStorage = EventStorage(db: backgroundDb);
-
-    // Get all events from background database
-    final events = await backgroundStorage.getAllItems();
-
-    // Process each event
-    for (final event in events) {
-      // Process event through your regular pipeline
-      // This might involve decrypting, parsing, and emitting to event bus
-      await processEvent(event);
+  void unsubscribe(String id) {
+    if (!_isInitialized) {
+      throw Exception('Nostr is not initialized. Call init() first.');
     }
 
-    // Optionally clear background database after syncing
-    // await backgroundStorage.deleteAllItems();
-  }
-
-// Add method to process events (similar to what was in MostroService)
-  Future<void> processEvent(NostrEvent event) async {
-    // Your event processing logic here
-    // This would be similar to what was in MostroService._handleIncomingEvent
-    // but without the duplicate checking
+    _nostr.services.relays.closeEventsSubscription(id);
   }
 }
