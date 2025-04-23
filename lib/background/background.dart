@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:ui';
-import 'package:dart_nostr/nostr/model/request/request.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -18,7 +17,7 @@ bool isAppForeground = false;
 Future<void> serviceMain(ServiceInstance service) async {
   // If on Android, set up a permanent notification so the OS won't kill it.
   if (service is AndroidServiceInstance) {
-    //service.setAsForegroundService();
+    service.setAsForegroundService();
     const androidDetails = AndroidNotificationDetails(
       'mostro_foreground',
       'Mostro Foreground Service',
@@ -62,11 +61,11 @@ Future<void> serviceMain(ServiceInstance service) async {
   service.on('create-subscription').listen((data) {
     if (data == null || data['filters'] == null) return;
 
-    final filterMap = data['filters'] as List<Map<String, dynamic>>;
+    final filterMap = data['filters'];
 
-    final filters = filterMap.map((e) => NostrFilterX.fromJsonSafe(e)).toList();
+    final filters = filterMap.toList();
 
-    final request = NostrRequest(filters: filters);
+    final request = NostrRequestX.fromJson(filters);
 
     final subscription = nostrService.subscribeToEvents(request);
     subscription.listen((event) async {
@@ -89,6 +88,10 @@ Future<void> serviceMain(ServiceInstance service) async {
     nostrService.disconnectFromRelays();
     await db.close();
     service.stopSelf();
+  });
+
+  service.invoke('on-start', {
+    'isRunning': true,
   });
 }
 

@@ -31,10 +31,15 @@ class MobileBackgroundService implements BackgroundService {
         autoStartOnBoot: true,
       ),
     );
+
+    service.on('on-start').listen((data) {
+      _isRunning = true; 
+    });
   }
 
   @override
   void subscribe(List<NostrFilter> filters) {
+
     service.invoke('create-subscription', {
       'filters': filters.map((f) => f.toMap()).toList(),
     });

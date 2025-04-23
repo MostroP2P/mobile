@@ -1,7 +1,21 @@
 import 'package:dart_nostr/dart_nostr.dart';
 
-extension NostrFilterX on NostrFilter {
+extension NostrRequestX on NostrRequest {
+  static NostrRequest fromJson(List<dynamic> json) {
 
+    final filters = json
+        .map(
+          (e) => NostrFilterX.fromJsonSafe(e),
+        )
+        .toList();
+
+    return NostrRequest(
+      filters: filters,
+    );
+  }
+}
+
+extension NostrFilterX on NostrFilter {
   static NostrFilter fromJsonSafe(Map<String, dynamic> json) {
     final additional = <String, dynamic>{};
 
@@ -32,10 +46,12 @@ extension NostrFilterX on NostrFilter {
       t: castList<String>(json['#t']),
       a: castList<String>(json['#a']),
       since: safeCast<int>(json['since']) != null
-          ? DateTime.fromMillisecondsSinceEpoch(safeCast<int>(json['since'])! * 1000)
+          ? DateTime.fromMillisecondsSinceEpoch(
+              safeCast<int>(json['since'])! * 1000)
           : null,
       until: safeCast<int>(json['until']) != null
-          ? DateTime.fromMillisecondsSinceEpoch(safeCast<int>(json['until'])! * 1000)
+          ? DateTime.fromMillisecondsSinceEpoch(
+              safeCast<int>(json['until'])! * 1000)
           : null,
       limit: safeCast<int>(json['limit']),
       search: safeCast<String>(json['search']),

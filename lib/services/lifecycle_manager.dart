@@ -38,6 +38,8 @@ class LifecycleManager extends WidgetsBindingObserver {
 
   Future<void> _switchToForeground() async {
     _isInBackground = false;
+    // Clear active subscriptions
+    _activeSubscriptions.clear();
     // Stop background service
     final backgroundService = ref.read(backgroundServiceProvider);
     await backgroundService.setForegroundStatus(true);
@@ -46,8 +48,6 @@ class LifecycleManager extends WidgetsBindingObserver {
     // Reinitialize chat rooms
     final chatRooms = ref.read(chatRoomsNotifierProvider.notifier);
     await chatRooms.loadChats();
-    // Clear active subscriptions
-    _activeSubscriptions.clear();
   }
 
   Future<void> _switchToBackground() async {

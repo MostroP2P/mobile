@@ -1,5 +1,7 @@
 import 'package:collection/collection.dart';
 import 'package:dart_nostr/dart_nostr.dart';
+import 'package:dart_nostr/nostr/model/ease.dart';
+import 'package:dart_nostr/nostr/model/ok.dart';
 import 'package:dart_nostr/nostr/model/relay_informations.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/core/config.dart';
@@ -24,8 +26,20 @@ class NostrService {
         shouldReconnectToRelayOnNotice: true,
         retryOnClose: true,
         retryOnError: true,
-        onRelayListening: (relay, url, channel) {
-          _logger.i('Connected to relay: $relay');
+        onRelayListening: (relayUrl, receivedData, channel) {
+          if (receivedData is NostrEvent) {
+            _logger.i('Event from $relayUrl: ${receivedData.content}');
+          } else if (receivedData is NostrNotice) {
+            _logger.i('Notice from $relayUrl: ${receivedData.message}');
+          } else if (receivedData is NostrEventOkCommand) {
+            _logger.i(
+                'OK from $relayUrl: ${receivedData.eventId} (accepted: ${receivedData.isEventAccepted})');
+          } else if (receivedData is NostrRequestEoseCommand) {
+            _logger.i(
+                'EOSE from $relayUrl for subscription: ${receivedData.subscriptionId}');
+          } else if (receivedData is NostrCountResponse) {
+            _logger.i('Count from $relayUrl: ${receivedData.count}');
+          }
         },
         onRelayConnectionError: (relay, error, channel) {
           _logger.w('Failed to connect to relay $relay: $error');
