@@ -21,7 +21,7 @@ Future<void> serviceMain(ServiceInstance service) async {
     const androidDetails = AndroidNotificationDetails(
       'mostro_foreground',
       'Mostro Foreground Service',
-      icon: '@drawable/ic_stat_notifcations',
+      icon: '@drawable/ic_bg_service_small',
       priority: Priority.high,
       importance: Importance.max,
     );

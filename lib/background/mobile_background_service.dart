@@ -20,26 +20,28 @@ class MobileBackgroundService implements BackgroundService {
   Future<void> init() async {
     await service.configure(
       iosConfiguration: IosConfiguration(
-        autoStart: false,
+        autoStart: true,
         onForeground: serviceMain,
         onBackground: onIosBackground,
       ),
       androidConfiguration: AndroidConfiguration(
-        autoStart: false,
-        onStart: serviceMain,
-        isForegroundMode: false,
-        autoStartOnBoot: true,
-      ),
+          autoStart: true,
+          onStart: serviceMain,
+          isForegroundMode: false,
+          autoStartOnBoot: true,
+          initialNotificationContent: "Mostro P2P",
+          foregroundServiceTypes: [
+            AndroidForegroundType.dataSync,
+          ]),
     );
 
     service.on('on-start').listen((data) {
-      _isRunning = true; 
+      _isRunning = true;
     });
   }
 
   @override
   void subscribe(List<NostrFilter> filters) {
-
     service.invoke('create-subscription', {
       'filters': filters.map((f) => f.toMap()).toList(),
     });
