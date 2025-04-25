@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/widgets/order_filter.dart';
 import 'package:mostro_mobile/features/trades/providers/trades_provider.dart';
 import 'package:mostro_mobile/features/trades/widgets/trades_list.dart';
@@ -15,15 +16,19 @@ class TradesScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(filteredTradesProvider);
-
+    // Watch the async trades data
+    final tradesAsync = ref.watch(filteredTradesProvider);
+    
     return Scaffold(
       backgroundColor: AppTheme.dark1,
       appBar: const MostroAppBar(),
       drawer: const MostroAppDrawer(),
       body: RefreshIndicator(
         onRefresh: () async {
-          return await ref.refresh(filteredTradesProvider);
+          // Force reload the orders repository first
+          await ref.read(orderRepositoryProvider).reloadData();
+          // Then refresh the filtered trades provider
+          ref.invalidate(filteredTradesProvider);
         },
         child: Container(
           margin: const EdgeInsets.fromLTRB(16, 16, 16, 16),
@@ -40,10 +45,50 @@ class TradesScreen extends ConsumerWidget {
                   style: TextStyle(color: AppTheme.mostroGreen),
                 ),
               ),
-              _buildFilterButton(context, state),
+              // Use the async value pattern to handle different states
+              tradesAsync.when(
+                data: (trades) => _buildFilterButton(context, trades),
+                loading: () => _buildFilterButton(context, []),
+                error: (error, _) => _buildFilterButton(context, []),
+              ),
               const SizedBox(height: 6.0),
               Expanded(
-                child: _buildOrderList(state),
+                child: tradesAsync.when(
+                  data: (trades) => _buildOrderList(trades),
+                  loading: () => const Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                  error: (error, _) => Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          color: Colors.red,
+                          size: 60,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Error loading trades',
+                          style: TextStyle(color: AppTheme.cream1),
+                        ),
+                        Text(
+                          error.toString(),
+                          style: TextStyle(color: AppTheme.cream1, fontSize: 12),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () {
+                            ref.invalidate(orderEventsProvider);
+                            ref.invalidate(filteredTradesProvider);
+                          },
+                          child: const Text('Retry'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
               const BottomNavBar(),
             ],
@@ -57,6 +102,7 @@ class TradesScreen extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           OutlinedButton.icon(
             onPressed: () {
@@ -86,6 +132,17 @@ class TradesScreen extends ConsumerWidget {
           Text(
             "${trades.length} trades",
             style: const TextStyle(color: AppTheme.cream1),
+          ),
+          // Add a manual refresh button
+          IconButton(
+            icon: const Icon(Icons.refresh, color: AppTheme.cream1),
+            onPressed: () {
+              // Get the riverpod context from the widget
+              final container = ProviderScope.containerOf(context, listen: false);
+              // Invalidate providers to force refresh
+              container.invalidate(orderEventsProvider);
+              container.invalidate(filteredTradesProvider);
+            },
           ),
         ],
       ),
