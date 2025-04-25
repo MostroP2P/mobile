@@ -35,6 +35,8 @@ Future<void> serviceMain(ServiceInstance service) async {
 
     final settings = Settings.fromJson(settingsMap);
     await nostrService.init(settings);
+
+    service.invoke('service-ready', {});
   });
 
   service.on('create-subscription').listen((data) {
