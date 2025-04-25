@@ -29,7 +29,8 @@ class MobileBackgroundService implements BackgroundService {
           onStart: serviceMain,
           isForegroundMode: true,
           autoStartOnBoot: true,
-          initialNotificationContent: "Mostro P2P",
+          initialNotificationTitle: "Mostro P2P",
+          initialNotificationContent: "Connected to Mostro service",
           foregroundServiceTypes: [
             AndroidForegroundType.dataSync,
           ]),
@@ -37,6 +38,14 @@ class MobileBackgroundService implements BackgroundService {
 
     service.on('on-start').listen((data) {
       _isRunning = true;
+    });
+
+    service.on('on-stop').listen((event) {
+      _isRunning = false;
+    });
+
+    service.invoke('start', {
+      'settings': _settings.toJson(),
     });
   }
 
@@ -83,23 +92,29 @@ class MobileBackgroundService implements BackgroundService {
 
   @override
   Future<void> setForegroundStatus(bool isForeground) async {
+    // Always inform the service about status change
     service.invoke('app-foreground-status', {
       'is-foreground': isForeground,
     });
 
+    // Check current running state first
+    final isCurrentlyRunning = await service.isRunning();
+
     if (isForeground) {
-      await _stopService();
+      // Only stop if actually running
+      if (isCurrentlyRunning) {
+        await _stopService();
+      }
     } else {
-      await _startService();
+      // Only start if not already running
+      if (!isCurrentlyRunning) {
+        await _startService();
+      }
     }
   }
 
   Future<void> _startService() async {
     await service.startService();
-
-    while (!(await service.isRunning())) {
-      await Future.delayed(const Duration(milliseconds: 50));
-    }
 
     service.invoke('start', {
       'settings': _settings.toJson(),

@@ -2,8 +2,6 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/nostr_filter.dart';
 import 'package:mostro_mobile/data/repositories/event_storage.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
@@ -11,36 +9,13 @@ import 'package:mostro_mobile/notifications/notification_service.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
 import 'package:mostro_mobile/shared/providers/mostro_database_provider.dart';
 
-bool isAppForeground = false;
+bool isAppForeground = true;
 
 @pragma('vm:entry-point')
 Future<void> serviceMain(ServiceInstance service) async {
   // If on Android, set up a permanent notification so the OS won't kill it.
   if (service is AndroidServiceInstance) {
-
-    final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
-
     service.setAsForegroundService();
-    const androidDetails = AndroidNotificationDetails(
-      'mostro_foreground',
-      'Mostro Foreground Service',
-      icon: '@drawable/ic_bg_service_small',
-      priority: Priority.high,
-      importance: Importance.max,
-      ongoing: true,
-      autoCancel: false,
-    );
-
-    const notificationDetails = NotificationDetails(
-      android: androidDetails,
-    );
-
-    await flutterLocalNotificationsPlugin.show(
-      Config.notificationId,
-      'Mostro is running',
-      'Connected to Mostro serivce',
-      notificationDetails,
-    );
   }
 
   final Map<String, Map<String, dynamic>> activeSubscriptions = {};
