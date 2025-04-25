@@ -1,14 +1,18 @@
 import 'package:dart_nostr/nostr/model/request/filter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logger/logger.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
+import 'package:mostro_mobile/features/trades/providers/trades_provider.dart';
 import 'package:mostro_mobile/shared/providers/background_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
+import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 
 class LifecycleManager extends WidgetsBindingObserver {
   final Ref ref;
   bool _isInBackground = false;
   final List<NostrFilter> _activeSubscriptions = [];
+  final _logger = Logger();
 
   LifecycleManager(this.ref) {
     WidgetsBinding.instance.addObserver(this);
@@ -37,25 +41,67 @@ class LifecycleManager extends WidgetsBindingObserver {
   }
 
   Future<void> _switchToForeground() async {
-    _isInBackground = false;
-    // Clear active subscriptions
-    _activeSubscriptions.clear();
-    // Stop background service
-    final backgroundService = ref.read(backgroundServiceProvider);
-    await backgroundService.setForegroundStatus(true);
-    // Reinitialize the mostro service
-    ref.read(mostroServiceProvider).init();
-    // Reinitialize chat rooms
-    final chatRooms = ref.read(chatRoomsNotifierProvider.notifier);
-    await chatRooms.loadChats();
+    try {
+      _isInBackground = false;
+      _logger.i("Switching to foreground");
+      
+      // Clear active subscriptions
+      _activeSubscriptions.clear();
+      
+      // Stop background service
+      final backgroundService = ref.read(backgroundServiceProvider);
+      await backgroundService.setForegroundStatus(true);
+      _logger.i("Background service foreground status set to true");
+      
+      // Add a small delay to ensure the background service has fully transitioned
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      // Reinitialize the mostro service
+      _logger.i("Reinitializing MostroService");
+      ref.read(mostroServiceProvider).init();
+      
+      // Refresh order repository by re-reading it
+      _logger.i("Refreshing order repository");
+      // Force reinitialization by invalidating the provider
+      ref.invalidate(orderRepositoryProvider);
+      // Read it again to trigger reinitialization
+      ref.read(orderRepositoryProvider);
+      
+      // Reinitialize chat rooms
+      _logger.i("Reloading chat rooms");
+      final chatRooms = ref.read(chatRoomsNotifierProvider.notifier);
+      await chatRooms.loadChats();
+      
+      // Force UI update for trades
+      _logger.i("Invalidating providers to refresh UI");
+      ref.invalidate(filteredTradesProvider);
+      
+      _logger.i("Foreground transition complete");
+    } catch (e) {
+      _logger.e("Error during foreground transition: $e");
+    }
   }
 
   Future<void> _switchToBackground() async {
-    _isInBackground = true;
-    // Transfer active subscriptions to background service
-    final backgroundService = ref.read(backgroundServiceProvider);
-    await backgroundService.setForegroundStatus(false);
-    backgroundService.subscribe(_activeSubscriptions);
+    try {
+      _isInBackground = true;
+      _logger.i("Switching to background");
+      
+      // Transfer active subscriptions to background service
+      final backgroundService = ref.read(backgroundServiceProvider);
+      await backgroundService.setForegroundStatus(false);
+      
+      if (_activeSubscriptions.isNotEmpty) {
+        _logger.i("Transferring ${_activeSubscriptions.length} active subscriptions to background service");
+        backgroundService.subscribe(_activeSubscriptions);
+      } else {
+        _logger.w("No active subscriptions to transfer to background service");
+      }
+      
+      _logger.i("Background transition complete");
+    } catch (e) {
+      _logger.e("Error during background transition: $e");
+    }
   }
 
   void addSubscription(NostrFilter filter) {
