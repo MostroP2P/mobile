@@ -62,10 +62,8 @@ class LifecycleManager extends WidgetsBindingObserver {
       
       // Refresh order repository by re-reading it
       _logger.i("Refreshing order repository");
-      // Force reinitialization by invalidating the provider
-      ref.invalidate(orderRepositoryProvider);
-      // Read it again to trigger reinitialization
-      ref.read(orderRepositoryProvider);
+  final orderRepo = ref.read(orderRepositoryProvider);
+    await orderRepo.reloadData();
       
       // Reinitialize chat rooms
       _logger.i("Reloading chat rooms");

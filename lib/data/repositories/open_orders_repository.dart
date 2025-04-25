@@ -110,4 +110,13 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
       _settings = settings.copyWith();
     }
   }
+
+  Future<void> reloadData() async {
+    _logger.i('Reloading repository data');
+    // Clear existing events
+    _events.clear();
+    // Then resubscribe for future updates
+    _subscribeToOrders();
+  }
+
 }
