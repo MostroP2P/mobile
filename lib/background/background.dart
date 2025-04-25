@@ -17,6 +17,9 @@ bool isAppForeground = false;
 Future<void> serviceMain(ServiceInstance service) async {
   // If on Android, set up a permanent notification so the OS won't kill it.
   if (service is AndroidServiceInstance) {
+
+    final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+
     service.setAsForegroundService();
     const androidDetails = AndroidNotificationDetails(
       'mostro_foreground',
@@ -24,13 +27,14 @@ Future<void> serviceMain(ServiceInstance service) async {
       icon: '@drawable/ic_bg_service_small',
       priority: Priority.high,
       importance: Importance.max,
+      ongoing: true,
+      autoCancel: false,
     );
 
     const notificationDetails = NotificationDetails(
       android: androidDetails,
     );
 
-    final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
     await flutterLocalNotificationsPlugin.show(
       Config.notificationId,
       'Mostro is running',

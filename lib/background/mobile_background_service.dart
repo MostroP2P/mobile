@@ -27,7 +27,7 @@ class MobileBackgroundService implements BackgroundService {
       androidConfiguration: AndroidConfiguration(
           autoStart: true,
           onStart: serviceMain,
-          isForegroundMode: false,
+          isForegroundMode: true,
           autoStartOnBoot: true,
           initialNotificationContent: "Mostro P2P",
           foregroundServiceTypes: [
@@ -42,7 +42,11 @@ class MobileBackgroundService implements BackgroundService {
 
   @override
   void subscribe(List<NostrFilter> filters) {
+    final subId = DateTime.now().millisecondsSinceEpoch.toString();
+    _subscriptions[subId] = {'filters': filters};
+
     service.invoke('create-subscription', {
+      'id': subId,
       'filters': filters.map((f) => f.toMap()).toList(),
     });
   }
@@ -79,6 +83,10 @@ class MobileBackgroundService implements BackgroundService {
 
   @override
   Future<void> setForegroundStatus(bool isForeground) async {
+    service.invoke('app-foreground-status', {
+      'is-foreground': isForeground,
+    });
+
     if (isForeground) {
       await _stopService();
     } else {
