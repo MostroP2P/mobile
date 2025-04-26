@@ -25,6 +25,7 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
   NostrEvent? get mostroInstance => _mostroInstance;
 
   OpenOrdersRepository(this._nostrService, this._settings) {
+    // Subscribe to orders and initialize data
     _subscribeToOrders();
   }
 
@@ -118,5 +119,4 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
     // Then resubscribe for future updates
     _subscribeToOrders();
   }
-
 }

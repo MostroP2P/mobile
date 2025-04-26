@@ -21,11 +21,3 @@ final mostroMessageHistoryProvider = StreamProvider.family<List<MostroMessage>, 
     return storage.watchAllMessages(orderId);
   },
 );
-
-// New provider for watching messages by request ID
-final mostroMessagesByRequestIdProvider = StreamProvider.family<MostroMessage?, int>(
-  (ref, requestId) {
-    final storage = ref.read(mostroStorageProvider);
-    return storage.watchMessagesByRequestId(requestId);
-  },
-);

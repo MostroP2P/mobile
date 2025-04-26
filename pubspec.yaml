@@ -83,6 +83,7 @@ dependencies:
   flutter_background_service: ^5.1.0
   system_tray: ^2.0.3
   path_provider: ^2.1.5
+  rxdart: ^0.28.0
 
 dev_dependencies:
   flutter_test:
