@@ -17,6 +17,7 @@ import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_manager_provider.dart';
 import 'package:mostro_mobile/shared/utils/currency_utils.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
+import 'package:mostro_mobile/shared/widgets/nostr_responsive_button.dart';
 
 class TradeDetailScreen extends ConsumerWidget {
   final String orderId;
@@ -58,7 +59,10 @@ class TradeDetailScreen extends ConsumerWidget {
               alignment: WrapAlignment.center,
               spacing: 10,
               runSpacing: 10,
-              children: _buildActionButtons(context, ref, order),
+              children: [
+                _buildCloseButton(context),
+                ..._buildActionButtons(context, ref, order),
+              ],
             ),
           ],
         ),
@@ -182,97 +186,349 @@ class TradeDetailScreen extends ConsumerWidget {
 
   /// Main action button area, switching on `order.status`.
   /// Additional checks use `message.action` to refine which button to show.
+  /// Following the Mostro protocol state machine for order flow.
   List<Widget> _buildActionButtons(
       BuildContext context, WidgetRef ref, NostrEvent order) {
-	final message = ref.watch(orderNotifierProvider(orderId));
+    final message = ref.watch(orderNotifierProvider(orderId));
     final session = ref.watch(sessionProvider(orderId));
+    final userRole = session?.role;
+
+    // State providers for NostrResponsiveButton
+    final completeProvider = StateProvider<bool>((ref) => false);
+    final errorProvider = StateProvider<String?>((ref) => null);
 
     // The finite-state-machine approach: decide based on the order.status.
-    // Then refine if needed using the last action in `message.action`.
+    // Then refine based on the user's role and the last action.
     switch (order.status) {
       case Status.pending:
-        return [
-          //_buildCloseButton(context),
-          _buildCancelButton(context, ref),
-          if (message.action == actions.Action.addInvoice)
-            _buildAddInvoiceButton(context),
-        ];
+        // According to Mostro FSM: Pending state
+        final widgets = <Widget>[];
+
+        // FSM: In pending state, seller can cancel
+        widgets.add(_buildNostrButton(
+          'CANCEL',
+          ref: ref,
+          completeProvider: completeProvider,
+          errorProvider: errorProvider,
+          backgroundColor: AppTheme.red1,
+          onPressed: () =>
+              ref.read(orderNotifierProvider(orderId).notifier).cancelOrder(),
+        ));
+
+        return widgets;
+
       case Status.waitingPayment:
-        return [
-          //_buildCloseButton(context),
-          _buildCancelButton(context, ref),
-          _buildPayInvoiceButton(context),
-        ];
+        // According to Mostro FSM: waiting-payment state
+        final widgets = <Widget>[];
+
+        // FSM: Seller can pay-invoice and cancel
+        if (userRole == Role.seller) {
+          widgets.add(_buildNostrButton(
+            'PAY INVOICE',
+            ref: ref,
+            completeProvider: completeProvider,
+            errorProvider: errorProvider,
+            backgroundColor: AppTheme.mostroGreen,
+            onPressed: () => context.push('/pay_invoice/${orderId}'),
+          ));
+
+          widgets.add(_buildNostrButton(
+            'CANCEL',
+            ref: ref,
+            completeProvider: completeProvider,
+            errorProvider: errorProvider,
+            backgroundColor: AppTheme.red1,
+            onPressed: () =>
+                ref.read(orderNotifierProvider(orderId).notifier).cancelOrder(),
+          ));
+        }
+        // FSM: Buyer can do nothing in waiting-payment state
+        return widgets;
 
       case Status.waitingBuyerInvoice:
-        return [
-          //_buildCloseButton(context),
-          _buildCancelButton(context, ref),
-          if (message.action == actions.Action.addInvoice)
-            _buildAddInvoiceButton(context),
-        ];
+        // According to Mostro FSM: waiting-buyer-invoice state
+        final widgets = <Widget>[];
+
+        // FSM: Buyer can add-invoice and cancel
+        if (userRole == Role.buyer) {
+          widgets.add(_buildNostrButton(
+            'ADD INVOICE',
+            ref: ref,
+            completeProvider: completeProvider,
+            errorProvider: errorProvider,
+            backgroundColor: AppTheme.mostroGreen,
+            onPressed: () => context.push('/add_invoice/${orderId}'),
+          ));
+
+          widgets.add(_buildNostrButton(
+            'CANCEL',
+            ref: ref,
+            completeProvider: completeProvider,
+            errorProvider: errorProvider,
+            backgroundColor: AppTheme.red1,
+            onPressed: () =>
+                ref.read(orderNotifierProvider(orderId).notifier).cancelOrder(),
+          ));
+        }
+        // FSM: Seller can do nothing in waiting-buyer-invoice state
+
+        return widgets;
+
       case Status.settledHoldInvoice:
-        return [
-          _buildCloseButton(context),
-          if (message.action == actions.Action.rate) _buildRateButton(context),
-        ];
+        // According to Mostro FSM: settled-hold-invoice state
+        // Both buyer and seller can only wait
+        final widgets = <Widget>[];
+
+        // Only show rate button if that action is available
+        if (message.action == actions.Action.rate) {
+          widgets.add(_buildNostrButton(
+            'RATE',
+            ref: ref,
+            completeProvider: completeProvider,
+            errorProvider: errorProvider,
+            backgroundColor: AppTheme.mostroGreen,
+            onPressed: () => context.push('/rate_user/${orderId}'),
+          ));
+        }
+
+        return widgets;
+
       case Status.active:
-        return [
-          //_buildCloseButton(context),
-          _buildCancelButton(context, ref),
-          _buildContactButton(context),
-          // If user has not opened a dispute already
+        // According to Mostro FSM: active state
+        final widgets = <Widget>[];
+
+        // Role-specific actions according to FSM
+        if (userRole == Role.buyer) {
+          // FSM: Buyer can fiat-sent
+          if (message.action != actions.Action.fiatSentOk &&
+              message.action != actions.Action.fiatSent) {
+            widgets.add(_buildNostrButton(
+              'FIAT SENT',
+              ref: ref,
+              completeProvider: completeProvider,
+              errorProvider: errorProvider,
+              backgroundColor: AppTheme.mostroGreen,
+              onPressed: () => ref
+                  .read(orderNotifierProvider(orderId).notifier)
+                  .sendFiatSent(),
+            ));
+          }
+
+          // FSM: Buyer can cancel
+          widgets.add(_buildNostrButton(
+            'CANCEL',
+            ref: ref,
+            completeProvider: completeProvider,
+            errorProvider: errorProvider,
+            backgroundColor: AppTheme.red1,
+            onPressed: () =>
+                ref.read(orderNotifierProvider(orderId).notifier).cancelOrder(),
+          ));
+
+          // FSM: Buyer can dispute
           if (message.action != actions.Action.disputeInitiatedByYou &&
               message.action != actions.Action.disputeInitiatedByPeer &&
-              message.action != actions.Action.rate)
-            _buildDisputeButton(ref),
-          // If the action is "addInvoice" => show a button for the invoice screen.
-          if (message.action == actions.Action.addInvoice)
-            _buildAddInvoiceButton(context),
-          // If the order is waiting for buyer to confirm fiat was sent
-          if (session!.role == Role.buyer) _buildFiatSentButton(ref),
-          // If the user is the seller & the buyer is done => show release button
-          if (session.role == Role.seller) _buildReleaseButton(ref),
-          // If the user is ready to rate
-          if (message.action == actions.Action.rate) _buildRateButton(context),
-        ];
+              message.action != actions.Action.dispute) {
+            widgets.add(_buildNostrButton(
+              'DISPUTE',
+              ref: ref,
+              completeProvider: completeProvider,
+              errorProvider: errorProvider,
+              backgroundColor: AppTheme.red1,
+              onPressed: () => ref
+                  .read(orderNotifierProvider(orderId).notifier)
+                  .disputeOrder(),
+            ));
+          }
+        } else if (userRole == Role.seller) {
+          // FSM: Seller can cancel
+          widgets.add(_buildNostrButton(
+            'CANCEL',
+            ref: ref,
+            completeProvider: completeProvider,
+            errorProvider: errorProvider,
+            backgroundColor: AppTheme.red1,
+            onPressed: () =>
+                ref.read(orderNotifierProvider(orderId).notifier).cancelOrder(),
+          ));
+
+          // FSM: Seller can dispute
+          if (message.action != actions.Action.disputeInitiatedByYou &&
+              message.action != actions.Action.disputeInitiatedByPeer &&
+              message.action != actions.Action.dispute) {
+            widgets.add(_buildNostrButton(
+              'DISPUTE',
+              ref: ref,
+              completeProvider: completeProvider,
+              errorProvider: errorProvider,
+              backgroundColor: AppTheme.red1,
+              onPressed: () => ref
+                  .read(orderNotifierProvider(orderId).notifier)
+                  .disputeOrder(),
+            ));
+          }
+        }
+
+        // Rate button if applicable (common for both roles)
+        if (message.action == actions.Action.rate) {
+          widgets.add(_buildNostrButton(
+            'RATE',
+            ref: ref,
+            completeProvider: completeProvider,
+            errorProvider: errorProvider,
+            backgroundColor: AppTheme.mostroGreen,
+            onPressed: () => context.push('/rate_user/${orderId}'),
+          ));
+        }
+
+        return widgets;
 
       case Status.fiatSent:
-        // Usually the user can open dispute if the other side doesn't confirm,
-        // or just close the screen and wait.
-        return [
-          //_buildCloseButton(context),
-          if (session!.role == Role.seller) _buildReleaseButton(ref),
-          _buildDisputeButton(ref),
-        ];
+        // According to Mostro FSM: fiat-sent state
+        final widgets = <Widget>[];
+
+        if (userRole == Role.seller) {
+          // FSM: Seller can release
+          widgets.add(_buildNostrButton(
+            'RELEASE SATS',
+            ref: ref,
+            completeProvider: completeProvider,
+            errorProvider: errorProvider,
+            backgroundColor: AppTheme.mostroGreen,
+            onPressed: () => ref
+                .read(orderNotifierProvider(orderId).notifier)
+                .releaseOrder(),
+          ));
+
+          // FSM: Seller can cancel
+          widgets.add(_buildNostrButton(
+            'CANCEL',
+            ref: ref,
+            completeProvider: completeProvider,
+            errorProvider: errorProvider,
+            backgroundColor: AppTheme.red1,
+            onPressed: () =>
+                ref.read(orderNotifierProvider(orderId).notifier).cancelOrder(),
+          ));
+
+          // FSM: Seller can dispute
+          widgets.add(_buildNostrButton(
+            'DISPUTE',
+            ref: ref,
+            completeProvider: completeProvider,
+            errorProvider: errorProvider,
+            backgroundColor: AppTheme.red1,
+            onPressed: () => ref
+                .read(orderNotifierProvider(orderId).notifier)
+                .disputeOrder(),
+          ));
+        } else if (userRole == Role.buyer) {
+          // FSM: Buyer can only dispute in fiat-sent state
+          widgets.add(_buildNostrButton(
+            'DISPUTE',
+            ref: ref,
+            completeProvider: completeProvider,
+            errorProvider: errorProvider,
+            backgroundColor: AppTheme.red1,
+            onPressed: () => ref
+                .read(orderNotifierProvider(orderId).notifier)
+                .disputeOrder(),
+          ));
+        }
+
+        return widgets;
 
       case Status.cooperativelyCanceled:
-        return [
-          //_buildCloseButton(context),
-          if (message.action == actions.Action.cooperativeCancelInitiatedByPeer)
-            _buildCancelButton(context, ref),
-        ];
+        // According to Mostro FSM: cooperatively-canceled state
+        final widgets = <Widget>[];
+
+        // Add confirm cancel if cooperative cancel was initiated by peer
+        if (message.action == actions.Action.cooperativeCancelInitiatedByPeer) {
+          widgets.add(_buildNostrButton(
+            'CONFIRM CANCEL',
+            ref: ref,
+            completeProvider: completeProvider,
+            errorProvider: errorProvider,
+            backgroundColor: AppTheme.red1,
+            onPressed: () =>
+                ref.read(orderNotifierProvider(orderId).notifier).cancelOrder(),
+          ));
+        }
+
+        return widgets;
 
       case Status.success:
-        return [
-          //_buildCloseButton(context),
-          if (message.action != actions.Action.rateReceived)
-            _buildRateButton(context),
-        ];
+        // According to Mostro FSM: success state
+        // Both buyer and seller can only rate
+        final widgets = <Widget>[];
+
+        // FSM: Both roles can rate counterparty if not already rated
+        if (message.action != actions.Action.rateReceived) {
+          widgets.add(_buildNostrButton(
+            'RATE',
+            ref: ref,
+            completeProvider: completeProvider,
+            errorProvider: errorProvider,
+            backgroundColor: AppTheme.mostroGreen,
+            onPressed: () => context.push('/rate_user/${orderId}'),
+          ));
+        }
+
+        return widgets;
+
       case Status.inProgress:
-        return [
-          _buildCancelButton(context, ref),
-        ];
+        // According to Mostro FSM: in-progress is a transitional state
+        // This is not explicitly in the FSM but we follow cancel rules as active state
+        final widgets = <Widget>[];
+
+        // Both roles can cancel during in-progress state, similar to active
+        widgets.add(_buildNostrButton(
+          'CANCEL',
+          ref: ref,
+          completeProvider: completeProvider,
+          errorProvider: errorProvider,
+          backgroundColor: AppTheme.red1,
+          onPressed: () =>
+              ref.read(orderNotifierProvider(orderId).notifier).cancelOrder(),
+        ));
+
+        return widgets;
+
+      // Terminal states according to Mostro FSM
       case Status.expired:
       case Status.dispute:
       case Status.completedByAdmin:
       case Status.canceledByAdmin:
       case Status.settledByAdmin:
       case Status.canceled:
-        return [
-          _buildCloseButton(context),
-        ];
+        // No actions allowed in these terminal states
+        return [];
     }
+  }
+
+  /// Helper method to build a NostrResponsiveButton with common properties
+  Widget _buildNostrButton(
+    String label, {
+    required WidgetRef ref,
+    required StateProvider<bool> completeProvider,
+    required StateProvider<String?> errorProvider,
+    required VoidCallback onPressed,
+    Color? backgroundColor,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: NostrResponsiveButton(
+        label: label,
+        buttonStyle: ButtonStyleType.raised,
+        width: 180,
+        height: 48,
+        completionProvider: completeProvider,
+        errorProvider: errorProvider,
+        onPressed: onPressed,
+        showSuccessIndicator: true,
+        timeout: const Duration(seconds: 30),
+      ),
+    );
   }
 
   /// CONTACT

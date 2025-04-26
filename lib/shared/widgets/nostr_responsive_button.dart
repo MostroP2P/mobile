@@ -117,9 +117,12 @@ class _NostrResponsiveButtonState extends ConsumerState<NostrResponsiveButton> {
   
   void _showErrorSnackbar(String message) {
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      // Use a post-frame callback to avoid showing the SnackBar during build
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message)),
+        );
+      });
     }
   }
   
@@ -161,18 +164,39 @@ class _NostrResponsiveButtonState extends ConsumerState<NostrResponsiveButton> {
   }
 
   @override
+  void didUpdateWidget(NostrResponsiveButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _checkForStateChanges();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _checkForStateChanges();
+  }
+
+  void _checkForStateChanges() {
+    // Use a post-frame callback to avoid state changes during build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Check for completion
+      final isComplete = ref.read(widget.completionProvider);
+      if (isComplete && _loading && mounted) {
+        _handleCompletion();
+      }
+      
+      // Check for errors
+      final error = ref.read(widget.errorProvider);
+      if (error != null && _loading && mounted) {
+        _handleError(error);
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Listen to completion
-    final isComplete = ref.watch(widget.completionProvider);
-    if (isComplete && _loading) {
-      _handleCompletion();
-    }
-    
-    // Listen to errors
-    final error = ref.watch(widget.errorProvider);
-    if (error != null && _loading) {
-      _handleError(error);
-    }
+    // Just watch the providers to rebuild when they change
+    ref.watch(widget.completionProvider);
+    ref.watch(widget.errorProvider);
 
     Widget childWidget;
     if (_loading) {

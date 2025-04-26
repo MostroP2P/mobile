@@ -24,27 +24,11 @@ Future<void> initializeNotifications() async {
   await plugin.initialize(initSettings);
 }
 
-Future<void> showNotification(
-    int id, String title, String body, String payload) async {
-  await flutterLocalNotificationsPlugin.show(
-    id,
-    title,
-    body,
-    NotificationDetails(
-        android: AndroidNotificationDetails(
-      'mostro_channel',
-      'Mostro Notifications',
-      importance: Importance.max,
-    )),
-    payload: payload,
-  );
-}
-
 Future<void> showLocalNotification(NostrEvent event) async {
   final notificationsPlugin = FlutterLocalNotificationsPlugin();
   const details = NotificationDetails(
     android: AndroidNotificationDetails(
-      'mostro_notifications',
+      'mostro_channel',
       'Mostro Notifications',
       importance: Importance.max,
     ),
@@ -52,7 +36,7 @@ Future<void> showLocalNotification(NostrEvent event) async {
   await notificationsPlugin.show(
     0,
     'New Mostro Event',
-    'Action: ${event.kind}',
+    'You have received a new message from Mostro',
     details,
   );
 }

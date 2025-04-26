@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/data/models/cant_do.dart';
+import 'package:mostro_mobile/data/models/enums/action.dart' as nostr_action;
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/features/order/widgets/fixed_switch_widget.dart';
@@ -12,7 +14,11 @@ import 'package:mostro_mobile/features/order/providers/order_notifier_provider.d
 import 'package:mostro_mobile/shared/widgets/currency_combo_box.dart';
 import 'package:mostro_mobile/shared/widgets/currency_text_field.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
+import 'package:mostro_mobile/shared/widgets/nostr_responsive_button.dart';
 import 'package:uuid/uuid.dart';
+
+final orderSubmissionCompleteProvider = StateProvider<bool>((ref) => false);
+final orderSubmissionErrorProvider = StateProvider<String?>((ref) => null);
 
 class AddOrderScreen extends ConsumerStatefulWidget {
   const AddOrderScreen({super.key});
@@ -435,44 +441,64 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
   ///
   /// ACTION BUTTONS
   ///
-  Widget _buildActionButtons(
-      BuildContext context, WidgetRef ref, OrderType orderType) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        TextButton(
-          onPressed: () => context.go('/'),
-          child: const Text('CANCEL', style: TextStyle(color: AppTheme.red2)),
-        ),
-        const SizedBox(width: 16),
-        ElevatedButton(
-          onPressed: () {
-            if (_formKey.currentState?.validate() ?? false) {
-              _submitOrder(context, ref, orderType);
-            }
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.mostroGreen,
-          ),
-          child: const Text('SUBMIT'),
-        ),
-      ],
-    );
-  }
-
+Widget _buildActionButtons(
+    BuildContext context, WidgetRef ref, OrderType orderType) {
+  return Row(
+    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+    children: [
+      TextButton(
+        onPressed: () {
+          context.pop();
+        },
+        child: const Text('CANCEL'),
+      ),
+      const SizedBox(width: 8.0),
+      NostrResponsiveButton(
+        label: 'SUBMIT',
+        buttonStyle: ButtonStyleType.raised,
+        width: 120,
+        // Reference the state providers we created
+        completionProvider: orderSubmissionCompleteProvider,
+        errorProvider: orderSubmissionErrorProvider,
+        onPressed: () {
+          if (_formKey.currentState?.validate() ?? false) {
+            _submitOrder(context, ref, orderType);
+          }
+        },
+        // Navigate when the operation completes
+        onOperationComplete: () {
+          // Navigate to the orders screen or detail screen
+          context.go('/'); // Or navigate to a more specific page
+        },
+        // Show a success indicator briefly before navigating
+        showSuccessIndicator: true,
+      ),
+    ],
+  );
+}
   ///
   /// SUBMIT ORDER
   ///
   void _submitOrder(BuildContext context, WidgetRef ref, OrderType orderType) {
+    // Reset state providers
+    ref.read(orderSubmissionCompleteProvider.notifier).state = false;
+    ref.read(orderSubmissionErrorProvider.notifier).state = null;
+    
     final selectedFiatCode = ref.read(selectedFiatCodeProvider);
 
-    if (_formKey.currentState?.validate() ?? false) {
+    try {
       // Generate a unique temporary ID for this new order
       final uuid = Uuid();
       final tempOrderId = uuid.v4();
       final notifier = ref.read(
         addOrderNotifierProvider(tempOrderId).notifier,
       );
+
+      // Calculate the request ID the same way AddOrderNotifier does
+      final requestId = BigInt.parse(
+        tempOrderId.replaceAll('-', ''),
+        radix: 16,
+      ).toUnsigned(64).toInt();
 
       final fiatAmount = _maxFiatAmount != null ? 0 : _minFiatAmount;
       final minAmount = _maxFiatAmount != null ? _minFiatAmount : null;
@@ -497,7 +523,44 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
         buyerInvoice: buyerInvoice,
       );
 
+      // Submit the order first
       notifier.submitOrder(order);
+
+      // Then listen for events
+      ref.listen(
+        addOrderEventsProvider(requestId),
+        (previous, next) {
+          next.when(
+            data: (message) {
+              if (message.action == nostr_action.Action.newOrder && message.id != null) {
+                // Order was successfully created
+                ref.read(orderSubmissionCompleteProvider.notifier).state = true;
+              } else if (message.payload is CantDo) {
+                // Order creation failed with a CantDo response
+                final cantDo = message.getPayload<CantDo>();
+                ref.read(orderSubmissionErrorProvider.notifier).state = 
+                    cantDo?.cantDoReason.toString() ?? 'Failed to create order';
+              }
+            },
+            error: (error, stack) {
+              ref.read(orderSubmissionErrorProvider.notifier).state = error.toString();
+            },
+            loading: () {}
+          );
+        },
+      );
+      
+      // Set a timeout for the operation
+      Future.delayed(const Duration(seconds: 20), () {
+        if (!ref.read(orderSubmissionCompleteProvider) && 
+            ref.read(orderSubmissionErrorProvider) == null) {
+          // We can't cancel the listener, but we can update the UI
+          ref.read(orderSubmissionErrorProvider.notifier).state = 'Operation timed out';
+        }
+      });
+    } catch (e) {
+      // If there's an exception, update the error provider
+      ref.read(orderSubmissionErrorProvider.notifier).state = e.toString();
     }
   }
 }
