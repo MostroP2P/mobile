@@ -25,12 +25,12 @@ final orderEventsProvider = StreamProvider<List<NostrEvent>>((ref) {
 });
 
 final eventProvider = Provider.family<NostrEvent?, String>((ref, orderId) {
-
   final allEventsAsync = ref.watch(orderEventsProvider);
   final allEvents = allEventsAsync.maybeWhen(
     data: (data) => data,
     orElse: () => [],
   );
   // firstWhereOrNull returns null if no match is found
-  return allEvents.firstWhereOrNull((evt) => (evt as NostrEvent).orderId == orderId);
+  return allEvents
+      .firstWhereOrNull((evt) => (evt as NostrEvent).orderId == orderId);
 });

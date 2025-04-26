@@ -71,4 +71,43 @@ class SessionStorage extends BaseStorage<Session> {
       return now.difference(startTime).inHours >= sessionExpirationHours;
     }, maxBatchSize: maxBatchSize);
   }
+  
+  /// Watch a session by ID and get a stream of updates
+  Stream<Session?> watchSession(String orderId) {
+    return store
+      .record(orderId)
+      .onSnapshot(db)
+      .map((snapshot) => snapshot != null 
+        ? fromDbMap(snapshot.key, snapshot.value) 
+        : null);
+  }
+  
+  /// Watch all sessions and get a stream of updates
+  Stream<List<Session>> watchAllSessions({Filter? filter}) {
+    final finder = filter != null ? Finder(filter: filter) : null;
+    
+    return store
+      .query(finder: finder)
+      .onSnapshots(db)
+      .map((snapshots) => snapshots
+        .map((snapshot) => fromDbMap(snapshot.key, snapshot.value))
+        .toList());
+  }
+  
+  /// Watch active sessions by comparing with current time
+  Stream<List<Session>> watchActiveSessions(int sessionExpirationHours) {
+    final now = DateTime.now();
+    final expirationTime = now.subtract(Duration(hours: sessionExpirationHours));
+    
+    // Filter for sessions that have startTime newer than expirationTime
+    final filter = Filter.greaterThan('start_time', expirationTime.millisecondsSinceEpoch);
+    final finder = Finder(filter: filter, sortOrders: [SortOrder('start_time', false)]);
+    
+    return store
+      .query(finder: finder)
+      .onSnapshots(db)
+      .map((snapshots) => snapshots
+        .map((snapshot) => fromDbMap(snapshot.key, snapshot.value))
+        .toList());
+  }
 }
