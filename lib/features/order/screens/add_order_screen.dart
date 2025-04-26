@@ -8,6 +8,7 @@ import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/cant_do.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as nostr_action;
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
+import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/features/order/widgets/fixed_switch_widget.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
@@ -16,9 +17,12 @@ import 'package:mostro_mobile/shared/widgets/currency_text_field.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
 import 'package:mostro_mobile/shared/widgets/nostr_responsive_button.dart';
 import 'package:uuid/uuid.dart';
+import 'package:mostro_mobile/data/models/mostro_message.dart';
 
-final orderSubmissionCompleteProvider = StateProvider<bool>((ref) => false);
-final orderSubmissionErrorProvider = StateProvider<String?>((ref) => null);
+// Create a direct state provider tied to the order action/status
+final orderActionStatusProvider = Provider.family<AsyncValue<MostroMessage?>, int>(
+  (ref, requestId) => ref.watch(addOrderEventsProvider(requestId))
+);
 
 class AddOrderScreen extends ConsumerStatefulWidget {
   const AddOrderScreen({super.key});
@@ -441,49 +445,67 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
   ///
   /// ACTION BUTTONS
   ///
-Widget _buildActionButtons(
-    BuildContext context, WidgetRef ref, OrderType orderType) {
-  return Row(
-    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-    children: [
-      TextButton(
-        onPressed: () {
-          context.pop();
-        },
-        child: const Text('CANCEL'),
-      ),
-      const SizedBox(width: 8.0),
-      NostrResponsiveButton(
-        label: 'SUBMIT',
-        buttonStyle: ButtonStyleType.raised,
-        width: 120,
-        // Reference the state providers we created
-        completionProvider: orderSubmissionCompleteProvider,
-        errorProvider: orderSubmissionErrorProvider,
-        onPressed: () {
-          if (_formKey.currentState?.validate() ?? false) {
-            _submitOrder(context, ref, orderType);
-          }
-        },
-        // Navigate when the operation completes
-        onOperationComplete: () {
-          // Navigate to the orders screen or detail screen
-          context.go('/'); // Or navigate to a more specific page
-        },
-        // Show a success indicator briefly before navigating
-        showSuccessIndicator: true,
-      ),
-    ],
-  );
-}
+  // Track the current request ID for the button state providers
+  int? _currentRequestId;
+
+  Widget _buildActionButtons(
+      BuildContext context, WidgetRef ref, OrderType orderType) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        TextButton(
+          onPressed: () {
+            context.pop();
+          },
+          child: const Text('CANCEL'),
+        ),
+        const SizedBox(width: 8.0),
+        NostrResponsiveButton(
+          label: 'SUBMIT',
+          buttonStyle: ButtonStyleType.raised,
+          width: 120,
+          // Use an explicit provider that responds to the latest order message state
+          completionProvider: StateProvider((ref) {
+            final requestId = _currentRequestId; // Track the current request ID
+            if (requestId == null) return false;
+            
+            // Check if we have a completed order message
+            final messageState = ref.watch(addOrderEventsProvider(requestId));
+            return messageState.whenOrNull(
+              data: (msg) => msg?.action == nostr_action.Action.newOrder && msg?.id != null,
+            ) ?? false;
+          }),
+          // Error provider based on order action status
+          errorProvider: StateProvider((ref) {
+            final requestId = _currentRequestId;
+            if (requestId == null) return null;
+            
+            // Check for CantDo response
+            final messageState = ref.watch(addOrderEventsProvider(requestId));
+            return messageState.whenOrNull(
+              data: (msg) => msg?.payload is CantDo 
+                ? (msg?.getPayload<CantDo>()?.cantDoReason.toString() ?? 'Failed to create order')
+                : null,
+            );
+          }),
+          onPressed: () {
+            if (_formKey.currentState?.validate() ?? false) {
+              _submitOrder(context, ref, orderType);
+            }
+          },
+          timeout: const Duration(seconds: 5), // Short timeout for better UX
+          showSuccessIndicator: true,
+        ),
+      ],
+    );
+  }
+
   ///
   /// SUBMIT ORDER
   ///
   void _submitOrder(BuildContext context, WidgetRef ref, OrderType orderType) {
-    // Reset state providers
-    ref.read(orderSubmissionCompleteProvider.notifier).state = false;
-    ref.read(orderSubmissionErrorProvider.notifier).state = null;
-    
+    // No need to reset state providers as they're now derived from the order state
+
     final selectedFiatCode = ref.read(selectedFiatCodeProvider);
 
     try {
@@ -495,10 +517,12 @@ Widget _buildActionButtons(
       );
 
       // Calculate the request ID the same way AddOrderNotifier does
-      final requestId = BigInt.parse(
-        tempOrderId.replaceAll('-', ''),
-        radix: 16,
-      ).toUnsigned(64).toInt();
+      final requestId = notifier.requestId;
+      
+      // Store the current request ID for the button state providers
+      setState(() {
+        _currentRequestId = requestId;
+      });
 
       final fiatAmount = _maxFiatAmount != null ? 0 : _minFiatAmount;
       final minAmount = _maxFiatAmount != null ? _minFiatAmount : null;
@@ -526,43 +550,24 @@ Widget _buildActionButtons(
       // Submit the order first
       notifier.submitOrder(order);
 
-      // Then listen for events
-      ref.listen(
-        addOrderEventsProvider(requestId),
-        (previous, next) {
-          next.when(
-            data: (message) {
-              if (message == null) return;
-              
-              if (message.action == nostr_action.Action.newOrder && message.id != null) {
-                // Order was successfully created
-                ref.read(orderSubmissionCompleteProvider.notifier).state = true;
-              } else if (message.payload is CantDo) {
-                // Order creation failed with a CantDo response
-                final cantDo = message.getPayload<CantDo>();
-                ref.read(orderSubmissionErrorProvider.notifier).state = 
-                    cantDo?.cantDoReason.toString() ?? 'Failed to create order';
-              }
-            },
-            error: (error, stack) {
-              ref.read(orderSubmissionErrorProvider.notifier).state = error.toString();
-            },
-            loading: () {}
-          );
-        },
-      );
-      
-      // Set a timeout for the operation
-      Future.delayed(const Duration(seconds: 20), () {
-        if (!ref.read(orderSubmissionCompleteProvider) && 
-            ref.read(orderSubmissionErrorProvider) == null) {
-          // We can't cancel the listener, but we can update the UI
-          ref.read(orderSubmissionErrorProvider.notifier).state = 'Operation timed out';
-        }
-      });
+      // The timeout is now handled by the NostrResponsiveButton
     } catch (e) {
-      // If there's an exception, update the error provider
-      ref.read(orderSubmissionErrorProvider.notifier).state = e.toString();
+      // If there's an exception, show an error dialog instead of using providers
+      if (context.mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Error'),
+            content: Text(e.toString()),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
     }
   }
 }

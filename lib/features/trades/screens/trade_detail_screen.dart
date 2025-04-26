@@ -192,8 +192,9 @@ class TradeDetailScreen extends ConsumerWidget {
       BuildContext context, WidgetRef ref, NostrEvent order) {
     // Using the new messageStateProvider to ensure we get the latest message state
     final messageState = ref.watch(mostroMessageStreamProvider(orderId));
-    final message = messageState.value ?? ref.watch(orderNotifierProvider(orderId));
-    
+    final message =
+        messageState.value ?? ref.watch(orderNotifierProvider(orderId));
+
     // Default action if message is null
     final currentAction = message?.action;
     final session = ref.watch(sessionProvider(orderId));
@@ -306,7 +307,7 @@ class TradeDetailScreen extends ConsumerWidget {
         // Role-specific actions according to FSM
         if (userRole == Role.buyer) {
           // FSM: Buyer can fiat-sent
-          if (currentAction != actions.Action.fiatSentOk && 
+          if (currentAction != actions.Action.fiatSentOk &&
               currentAction != actions.Action.fiatSent) {
             widgets.add(_buildNostrButton(
               'FIAT SENT',
@@ -386,6 +387,10 @@ class TradeDetailScreen extends ConsumerWidget {
             onPressed: () => context.push('/rate_user/${orderId}'),
           ));
         }
+
+        widgets.add(
+          _buildContactButton(context),
+        );
 
         return widgets;
 

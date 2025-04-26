@@ -78,21 +78,19 @@ class MostroMessageDetail extends ConsumerWidget {
         actionText = S.of(context)!.buyerInvoiceAccepted;
         break;
       case actions.Action.holdInvoicePaymentAccepted:
-        final payload = mostroMessage.getPayload<Order>();
         actionText = S.of(context)!.holdInvoicePaymentAccepted(
-              payload!.fiatAmount,
-              payload.fiatCode,
-              payload.paymentMethod,
-              payload.sellerTradePubkey ?? session!.peer!.publicKey,
+              order.fiatAmount,
+              order.currency!,
+              order.paymentMethods.firstOrNull ?? '',
+              session!.peer?.publicKey ?? '',
             );
         break;
       case actions.Action.buyerTookOrder:
-        final payload = mostroMessage.getPayload<Order>();
         actionText = S.of(context)!.buyerTookOrder(
-              payload!.buyerTradePubkey ?? session!.peer!.publicKey,
-              payload.fiatCode,
-              payload.fiatAmount,
-              payload.paymentMethod,
+              session!.peer?.publicKey ?? '',
+              order.currency!,
+              order.fiatAmount,
+              order.paymentMethods.firstOrNull ?? '',
             );
         break;
       case actions.Action.fiatSentOk:

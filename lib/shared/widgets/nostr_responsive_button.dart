@@ -161,6 +161,17 @@ class _NostrResponsiveButtonState extends ConsumerState<NostrResponsiveButton> {
     } else {
       _showErrorSnackbar(error);
     }
+    
+    // Auto-reset after a delay to allow for retries
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      if (mounted) {
+        // Reset the button's internal state
+        setState(() {
+          _loading = false;
+          _showSuccess = false;
+        });
+      }
+    });
   }
 
   @override

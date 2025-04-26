@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
-import 'package:mostro_mobile/data/models/order.dart';
+import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
+import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/widgets/add_lightning_invoice_widget.dart';
 
 class AddLightningInvoiceScreen extends ConsumerStatefulWidget {
@@ -23,9 +24,10 @@ class _AddLightningInvoiceScreenState
 
   @override
   Widget build(BuildContext context) {
-    final order = ref.read(orderNotifierProvider(widget.orderId));
+    final orderId = widget.orderId;
+    final order = ref.watch(eventProvider(orderId));
 
-    final amount = order.getPayload<Order>()?.amount;
+    final amount = order?.amount;
 
     return Scaffold(
       backgroundColor: AppTheme.dark1,
@@ -49,7 +51,7 @@ class _AddLightningInvoiceScreenState
                         .read(orderNotifierProvider(widget.orderId).notifier);
                     try {
                       await orderNotifier.sendInvoice(
-                          widget.orderId, invoice, amount);
+                          widget.orderId, invoice, int.parse(amount));
                       context.go('/');
                     } catch (e) {
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -76,7 +78,7 @@ class _AddLightningInvoiceScreenState
                     );
                   }
                 },
-                amount: amount!,
+                amount: int.parse(amount!),
               ),
             ),
           ),

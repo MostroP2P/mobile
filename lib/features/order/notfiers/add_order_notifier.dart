@@ -12,15 +12,19 @@ import 'package:mostro_mobile/shared/providers/notification_notifier_provider.da
 
 class AddOrderNotifier extends AbstractMostroNotifier {
   late final MostroService mostroService;
-  int? requestId;
+  late int requestId;
 
   AddOrderNotifier(super.orderId, super.ref) {
     mostroService = ref.read(mostroServiceProvider);
 
-    requestId = BigInt.parse(
-      orderId.replaceAll('-', ''),
-      radix: 16,
-    ).toUnsigned(64).toInt();
+    // Generate a unique requestId from the orderId but with better uniqueness
+    // Take a portion of the UUID and combine with current timestamp to ensure uniqueness
+    final uuid = orderId.replaceAll('-', '');
+    final timestamp = DateTime.now().microsecondsSinceEpoch;
+    
+    // Use only the first 8 chars of UUID combined with current timestamp for uniqueness
+    // This avoids potential collisions from truncation while keeping values in int range
+    requestId = (int.parse(uuid.substring(0, 8), radix: 16) ^ timestamp) & 0x7FFFFFFF;
 
     subscribe();
   }
@@ -28,7 +32,7 @@ class AddOrderNotifier extends AbstractMostroNotifier {
   @override
   void subscribe() {
     subscription = ref.listen(
-      addOrderEventsProvider(requestId!),
+      addOrderEventsProvider(requestId),
       (_, next) {
         next.when(
           data: (msg) {
