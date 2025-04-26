@@ -164,7 +164,6 @@ class MostroStorage extends BaseStorage<MostroMessage> {
   Future<MostroMessage?> getLatestMessageById(String orderId) async {
     final finder = Finder(
       filter: Filter.equals('order_id', orderId),
-      sortOrders: [SortOrder('request_id', false)],
       limit: 1
     );
     
@@ -177,70 +176,29 @@ class MostroStorage extends BaseStorage<MostroMessage> {
   
   /// Stream of the latest message for an order
   Stream<MostroMessage?> watchLatestMessage(String orderId) {
-    // Use try-catch to handle any database errors gracefully
-    try {
-      // Sort by ID (descending) which should correlate to insertion order 
-      final finder = Finder(
-        filter: Filter.equals('order_id', orderId),
-        // ID is always available and unique, so use that for sorting
-        sortOrders: [SortOrder(Field.key, false)],
-        limit: 1
-      );
-      
-      return store
-        .query(finder: finder)
-        .onSnapshots(db)
-        .map((snapshots) => snapshots.isNotEmpty 
-          ? MostroMessage.fromJson(snapshots.first.value)
-          : null);
-    } catch (e) {
-      // Return an empty stream that completes immediately
-      return Stream.value(null);
-    }
+    return watchById(orderId);
   }
   
   /// Stream of all messages for an order
   Stream<List<MostroMessage>> watchAllMessages(String orderId) {
-    try {
-      // Sort by ID (descending) which should correlate to insertion order
-      final finder = Finder(
-        filter: Filter.equals('order_id', orderId),
-        // ID is always available and unique
-        sortOrders: [SortOrder(Field.key, false)]
-      );
-      
-      return store
-        .query(finder: finder)
-        .onSnapshots(db)
-        .map((snapshots) => snapshots
-          .map((snapshot) => MostroMessage.fromJson(snapshot.value))
-          .toList());
-    } catch (e) {
-      // Return an empty list stream that completes immediately
-      return Stream.value([]);
-    }
+    return watchByFieldSorted('id', orderId, 'timestamp', false);
   }
   
   /// Stream of messages filtered by requestId
   /// This method is special purpose - solely for initial exchange tracking
   Stream<MostroMessage?> watchMessagesByRequestId(int requestId) {
-    try {
-      final finder = Finder(
-        filter: Filter.equals('request_id', requestId),
-        limit: 1
-      );
-      
-      return store
-        .query(finder: finder)
-        .onSnapshots(db)
-        .map((snapshots) => snapshots.isNotEmpty 
-          ? MostroMessage.fromJson(snapshots.first.value)
-          : null);
-    } catch (e) {
-      // Return an empty stream that completes immediately
-      return Stream.value(null);
-    }
+    return watchMessageByRequestId(requestId);
   }
-  
 
+  Future<List<MostroMessage>> getAllMessagesForId(String orderId) async {
+    final finder = Finder(
+      filter: Filter.equals('order_id', orderId),
+      sortOrders: [SortOrder(Field.key, false)]
+    );
+    
+    final snapshots = await store.find(db, finder: finder);
+    return snapshots
+      .map((snapshot) => MostroMessage.fromJson(snapshot.value))
+      .toList();
+  }
 }

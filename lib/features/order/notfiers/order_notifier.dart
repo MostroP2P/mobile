@@ -18,10 +18,9 @@ class OrderNotifier extends AbstractMostroNotifier {
 
   @override
   void handleEvent(MostroMessage event) {
-    if (event.payload is Order || event.payload == null) {
-      state = event;
-      handleOrderUpdate();
-    }
+    // Forward all messages so UI reacts to CantDo, Peer, PaymentRequest, etc.
+    state = event;
+    handleOrderUpdate();
   }
 
   Future<void> submitOrder(Order order) async {

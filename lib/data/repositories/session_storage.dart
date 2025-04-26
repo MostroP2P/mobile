@@ -71,4 +71,19 @@ class SessionStorage extends BaseStorage<Session> {
       return now.difference(startTime).inHours >= sessionExpirationHours;
     }, maxBatchSize: maxBatchSize);
   }
+
+  /// Watch a single session by ID with immediate value emission
+  Stream<Session?> watchSession(String sessionId) => watchById(sessionId);
+
+  /// Watch all sessions with immediate value emission
+  Stream<List<Session>> watchAllSessions() => watchAll();
+
+  /// Watch sessions filtered by a specific field with immediate value emission
+  Stream<List<Session>> watchSessionsByField(String field, dynamic value) => 
+      watchByField(field, value);
+
+  /// Watch sessions filtered by a specific field with sorting
+  Stream<List<Session>> watchSessionsByFieldSorted(
+      String field, dynamic value, String sortField, bool descending) =>
+      watchByFieldSorted(field, value, sortField, descending);
 }

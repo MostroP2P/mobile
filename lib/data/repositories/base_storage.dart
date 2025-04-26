@@ -105,28 +105,105 @@ abstract class BaseStorage<T> {
         .toList());
   }
 
-Stream<T?> watchMessageForOrderId(String orderId) {
-  return store
-    .record(orderId)
-    .onSnapshot(db)
-    .map((snapshot) => snapshot?.value != null 
-      ? fromDbMap(orderId, snapshot!.value) 
-      : null);
-}
+  /// Watch a single item by ID with immediate value emission
+  Stream<T?> watchById(String id) async* {
+    // Emit current value immediately
+    yield await getItem(id);
+    
+    try {
+      yield* store
+        .record(id)
+        .onSnapshot(db)
+        .map((snapshot) => snapshot?.value != null 
+          ? fromDbMap(id, snapshot!.value) 
+          : null);
+    } catch (e) {
+      yield* Stream.value(null);
+    }
+  }
 
-Stream<List<T>> watchAllMessagesForOrderId(String orderId) {
-  final finder = Finder(
-    filter: Filter.equals('id', orderId),
-    sortOrders: [SortOrder('timestamp', false)]
-  );
-  
-  return store
-    .query(finder: finder)
-    .onSnapshots(db)
-    .map((snapshots) => snapshots
-      .map((snapshot) => fromDbMap(orderId, snapshot.value))
-      .toList());
-}
+  /// Watch all items with immediate value emission
+  Stream<List<T>> watchAll() async* {
+    // Emit current values immediately
+    yield await getAllItems();
+    
+    try {
+      yield* store.query().onSnapshots(db).map((snapshot) => snapshot
+          .map(
+            (record) => fromDbMap(record.key, record.value),
+          )
+          .toList());
+    } catch (e) {
+      yield* Stream.value([]);
+    }
+  }
+
+  /// Watch items filtered by a specific field with immediate value emission
+  Stream<List<T>> watchByField(String field, dynamic value) async* {
+    // Emit current values immediately
+    final finder = Finder(
+      filter: Filter.equals(field, value),
+    );
+    yield await getAllItems();
+    
+    try {
+      yield* store
+        .query(finder: finder)
+        .onSnapshots(db)
+        .map((snapshots) => snapshots
+          .map((snapshot) => fromDbMap(snapshot.key, snapshot.value))
+          .toList());
+    } catch (e) {
+      yield* Stream.value([]);
+    }
+  }
+
+  /// Watch items filtered by a specific field with sorting
+  Stream<List<T>> watchByFieldSorted(String field, dynamic value, String sortField, bool descending) async* {
+    // Emit current values immediately
+    final finder = Finder(
+      filter: Filter.equals(field, value),
+      sortOrders: [SortOrder(sortField, descending)],
+    );
+    yield await getAllItems();
+    
+    try {
+      yield* store
+        .query(finder: finder)
+        .onSnapshots(db)
+        .map((snapshots) => snapshots
+          .map((snapshot) => fromDbMap(snapshot.key, snapshot.value))
+          .toList());
+    } catch (e) {
+      yield* Stream.value([]);
+    }
+  }
+
+  /// Watch a message by request ID with immediate value emission
+  Stream<T?> watchMessageByRequestId(int requestId) async* {
+    // Emit current value immediately
+    final finder = Finder(
+      filter: Filter.equals('request_id', requestId),
+      limit: 1
+    );
+    final snapshot = await store.findFirst(db, finder: finder);
+    if (snapshot != null) {
+      yield fromDbMap(snapshot.key, snapshot.value);
+    } else {
+      yield null;
+    }
+    
+    try {
+      yield* store
+        .query(finder: finder)
+        .onSnapshots(db)
+        .map((snapshots) => snapshots.isNotEmpty 
+          ? fromDbMap(snapshots.first.key, snapshots.first.value)
+          : null);
+    } catch (e) {
+      yield* Stream.value(null);
+    }
+  }
 
   /// If needed, close or clean up resources here.
   void dispose() {}

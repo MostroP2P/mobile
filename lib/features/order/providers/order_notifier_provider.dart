@@ -75,6 +75,20 @@ class OrderTypeNotifier extends _$OrderTypeNotifier {
 final addOrderEventsProvider = StreamProvider.family<MostroMessage?, int>(
   (ref, requestId) {
     final storage = ref.watch(mostroStorageProvider);
-    return storage.watchMessagesByRequestId(requestId);
+    return storage.watchMessageByRequestId(requestId);
+  },
+);
+
+final orderMessageStreamProvider = StreamProvider.family<MostroMessage?, String>(
+  (ref, orderId) {
+    final storage = ref.watch(mostroStorageProvider);
+    return storage.watchLatestMessage(orderId);
+  },
+);
+
+final orderMessagesStreamProvider = StreamProvider.family<List<MostroMessage>, String>(
+  (ref, orderId) {
+    final storage = ref.watch(mostroStorageProvider);
+    return storage.watchAllMessages(orderId);
   },
 );
