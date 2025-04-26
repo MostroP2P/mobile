@@ -27,6 +27,8 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
   OpenOrdersRepository(this._nostrService, this._settings) {
     // Subscribe to orders and initialize data
     _subscribeToOrders();
+    // Immediately emit current (possibly empty) cache so UI doesn't remain in loading state
+    _eventStreamController.add(_events.values.toList());
   }
 
   /// Subscribes to events matching the given filter.
@@ -57,6 +59,11 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
     }, onError: (error) {
       _logger.e('Error in order subscription: $error');
     });
+
+    // Ensure listeners receive at least one snapshot right after (re)subscription
+    if (!_eventStreamController.isClosed) {
+      _eventStreamController.add(_events.values.toList());
+    }
   }
 
   @override
@@ -71,7 +78,14 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
     return Future.value(_events[orderId]);
   }
 
-  Stream<List<NostrEvent>> get eventsStream => _eventStreamController.stream;
+  // Stream that immediately emits current cache to every new listener before
+  // forwarding live updates.
+  Stream<List<NostrEvent>> get eventsStream async* {
+    // Emit cached events synchronously.
+    yield _events.values.toList();
+    // Forward subsequent updates.
+    yield* _eventStreamController.stream;
+  }
 
   @override
   Future<void> addOrder(NostrEvent order) {
@@ -118,5 +132,9 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
     _events.clear();
     // Then resubscribe for future updates
     _subscribeToOrders();
+    // Emit empty list so UI updates immediately
+    if (!_eventStreamController.isClosed) {
+      _eventStreamController.add([]);
+    }
   }
 }

@@ -6,7 +6,6 @@ import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_manager_provider.dart';
 
-
 final homeOrderTypeProvider = StateProvider((ref) => OrderType.sell);
 
 final filteredOrdersProvider = Provider<List<NostrEvent>>((ref) {
