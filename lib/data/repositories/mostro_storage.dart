@@ -10,13 +10,31 @@ class MostroStorage extends BaseStorage<MostroMessage> {
   MostroStorage({required Database db})
       : super(db, stringMapStoreFactory.store('orders'));
 
+  // Generate a unique key for each message
+  String generateMessageKey(MostroMessage message) {
+    // Use orderId + action + requestId/tradeIndex or current timestamp for uniqueness
+    final uniqueSuffix = message.requestId != null 
+        ? message.requestId.toString() 
+        : message.tradeIndex != null 
+            ? message.tradeIndex.toString() 
+            : DateTime.now().millisecondsSinceEpoch.toString();
+    
+    return '${message.id}_${message.action.name}_$uniqueSuffix';
+  }
+
+
   /// Save or update any MostroMessage
   Future<void> addMessage(MostroMessage message) async {
-    final id = messageKey(message);
+    final id = generateMessageKey(message);
     try {
-      await putItem(id, message);
+      // Add metadata for easier querying
+      final Map<String, dynamic> dbMap = message.toJson();
+      dbMap['payload_type'] = message.payload?.runtimeType.toString();
+      dbMap['order_id'] = message.id;
+      
+      await store.record(id).put(db, dbMap);
       _logger.i(
-        'Saved message of type ${message.payload.runtimeType} with id $id',
+        'Saved message of type ${message.payload?.runtimeType} with id $id',
       );
     } catch (e, stack) {
       _logger.e(
@@ -140,5 +158,67 @@ class MostroStorage extends BaseStorage<MostroMessage> {
     return hasItem(
       messageKey(msg),
     );
+  }
+
+  /// Get the latest message for an order, regardless of type
+  Future<MostroMessage?> getLatestMessageById(String orderId) async {
+    final finder = Finder(
+      filter: Filter.equals('order_id', orderId),
+      sortOrders: [SortOrder('request_id', false)],
+      limit: 1
+    );
+    
+    final snapshot = await store.findFirst(db, finder: finder);
+    if (snapshot != null) {
+      return MostroMessage.fromJson(snapshot.value);
+    }
+    return null;
+  }
+  
+  /// Stream of the latest message for an order
+  Stream<MostroMessage?> watchLatestMessage(String orderId) {
+    final finder = Finder(
+      filter: Filter.equals('order_id', orderId),
+      sortOrders: [SortOrder('request_id', false)],
+      limit: 1
+    );
+    
+    return store
+      .query(finder: finder)
+      .onSnapshots(db)
+      .map((snapshots) => snapshots.isNotEmpty 
+        ? MostroMessage.fromJson(snapshots.first.value)
+        : null);
+  }
+  
+  /// Stream of all messages for an order
+  Stream<List<MostroMessage>> watchAllMessages(String orderId) {
+    final finder = Finder(
+      filter: Filter.equals('order_id', orderId),
+      sortOrders: [SortOrder('request_id', false)]
+    );
+    
+    return store
+      .query(finder: finder)
+      .onSnapshots(db)
+      .map((snapshots) => snapshots
+        .map((snapshot) => MostroMessage.fromJson(snapshot.value))
+        .toList());
+  }
+  
+  /// Stream of messages filtered by requestId
+  Stream<MostroMessage?> watchMessagesByRequestId(int requestId) {
+    final finder = Finder(
+      filter: Filter.equals('request_id', requestId),
+      sortOrders: [SortOrder('timestamp', false)],
+      limit: 1
+    );
+    
+    return store
+      .query(finder: finder)
+      .onSnapshots(db)
+      .map((snapshots) => snapshots.isNotEmpty 
+        ? MostroMessage.fromJson(snapshots.first.value)
+        : null);
   }
 }

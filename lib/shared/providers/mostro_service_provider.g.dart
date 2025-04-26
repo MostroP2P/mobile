@@ -22,7 +22,7 @@ final eventStorageProvider = AutoDisposeProvider<EventStorage>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef EventStorageRef = AutoDisposeProviderRef<EventStorage>;
-String _$mostroServiceHash() => r'26300c32176dcefaeeaae02ec6932998060972fc';
+String _$mostroServiceHash() => r'2a8b4a5218fdb1eff4bdd385d3107475d0295a8b';
 
 /// See also [mostroService].
 @ProviderFor(mostroService)

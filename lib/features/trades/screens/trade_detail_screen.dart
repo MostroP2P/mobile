@@ -13,6 +13,7 @@ import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
 import 'package:mostro_mobile/features/trades/widgets/mostro_message_detail_widget.dart';
+import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_manager_provider.dart';
 import 'package:mostro_mobile/shared/utils/currency_utils.dart';
@@ -189,7 +190,12 @@ class TradeDetailScreen extends ConsumerWidget {
   /// Following the Mostro protocol state machine for order flow.
   List<Widget> _buildActionButtons(
       BuildContext context, WidgetRef ref, NostrEvent order) {
-    final message = ref.watch(orderNotifierProvider(orderId));
+    // Using the new messageStateProvider to ensure we get the latest message state
+    final messageState = ref.watch(mostroMessageStreamProvider(orderId));
+    final message = messageState.value ?? ref.watch(orderNotifierProvider(orderId));
+    
+    // Default action if message is null
+    final currentAction = message?.action;
     final session = ref.watch(sessionProvider(orderId));
     final userRole = session?.role;
 
@@ -280,7 +286,7 @@ class TradeDetailScreen extends ConsumerWidget {
         final widgets = <Widget>[];
 
         // Only show rate button if that action is available
-        if (message.action == actions.Action.rate) {
+        if (currentAction == actions.Action.rate) {
           widgets.add(_buildNostrButton(
             'RATE',
             ref: ref,
@@ -300,8 +306,8 @@ class TradeDetailScreen extends ConsumerWidget {
         // Role-specific actions according to FSM
         if (userRole == Role.buyer) {
           // FSM: Buyer can fiat-sent
-          if (message.action != actions.Action.fiatSentOk &&
-              message.action != actions.Action.fiatSent) {
+          if (currentAction != actions.Action.fiatSentOk && 
+              currentAction != actions.Action.fiatSent) {
             widgets.add(_buildNostrButton(
               'FIAT SENT',
               ref: ref,
@@ -326,9 +332,9 @@ class TradeDetailScreen extends ConsumerWidget {
           ));
 
           // FSM: Buyer can dispute
-          if (message.action != actions.Action.disputeInitiatedByYou &&
-              message.action != actions.Action.disputeInitiatedByPeer &&
-              message.action != actions.Action.dispute) {
+          if (currentAction != actions.Action.disputeInitiatedByYou &&
+              currentAction != actions.Action.disputeInitiatedByPeer &&
+              currentAction != actions.Action.dispute) {
             widgets.add(_buildNostrButton(
               'DISPUTE',
               ref: ref,
@@ -353,9 +359,9 @@ class TradeDetailScreen extends ConsumerWidget {
           ));
 
           // FSM: Seller can dispute
-          if (message.action != actions.Action.disputeInitiatedByYou &&
-              message.action != actions.Action.disputeInitiatedByPeer &&
-              message.action != actions.Action.dispute) {
+          if (currentAction != actions.Action.disputeInitiatedByYou &&
+              currentAction != actions.Action.disputeInitiatedByPeer &&
+              currentAction != actions.Action.dispute) {
             widgets.add(_buildNostrButton(
               'DISPUTE',
               ref: ref,
@@ -370,7 +376,7 @@ class TradeDetailScreen extends ConsumerWidget {
         }
 
         // Rate button if applicable (common for both roles)
-        if (message.action == actions.Action.rate) {
+        if (currentAction == actions.Action.rate) {
           widgets.add(_buildNostrButton(
             'RATE',
             ref: ref,
@@ -443,7 +449,7 @@ class TradeDetailScreen extends ConsumerWidget {
         final widgets = <Widget>[];
 
         // Add confirm cancel if cooperative cancel was initiated by peer
-        if (message.action == actions.Action.cooperativeCancelInitiatedByPeer) {
+        if (currentAction == actions.Action.cooperativeCancelInitiatedByPeer) {
           widgets.add(_buildNostrButton(
             'CONFIRM CANCEL',
             ref: ref,
@@ -463,7 +469,7 @@ class TradeDetailScreen extends ConsumerWidget {
         final widgets = <Widget>[];
 
         // FSM: Both roles can rate counterparty if not already rated
-        if (message.action != actions.Action.rateReceived) {
+        if (currentAction != actions.Action.rateReceived) {
           widgets.add(_buildNostrButton(
             'RATE',
             ref: ref,

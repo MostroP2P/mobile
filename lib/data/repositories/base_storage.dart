@@ -105,6 +105,29 @@ abstract class BaseStorage<T> {
         .toList());
   }
 
+Stream<T?> watchMessageForOrderId(String orderId) {
+  return store
+    .record(orderId)
+    .onSnapshot(db)
+    .map((snapshot) => snapshot?.value != null 
+      ? fromDbMap(orderId, snapshot!.value) 
+      : null);
+}
+
+Stream<List<T>> watchAllMessagesForOrderId(String orderId) {
+  final finder = Finder(
+    filter: Filter.equals('id', orderId),
+    sortOrders: [SortOrder('timestamp', false)]
+  );
+  
+  return store
+    .query(finder: finder)
+    .onSnapshots(db)
+    .map((snapshots) => snapshots
+      .map((snapshot) => fromDbMap(orderId, snapshot.value))
+      .toList());
+}
+
   /// If needed, close or clean up resources here.
   void dispose() {}
 }

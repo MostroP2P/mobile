@@ -6,7 +6,7 @@ import 'package:mostro_mobile/features/order/notfiers/abstract_mostro_notifier.d
 import 'package:mostro_mobile/services/mostro_service.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 
-class OrderNotifier extends AbstractMostroNotifier<Order> {
+class OrderNotifier extends AbstractMostroNotifier {
   late final MostroService mostroService;
 
   OrderNotifier(super.orderId, super.ref) {

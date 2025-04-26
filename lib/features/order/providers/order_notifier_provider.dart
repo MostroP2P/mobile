@@ -5,7 +5,7 @@ import 'package:mostro_mobile/features/order/notfiers/add_order_notifier.dart';
 import 'package:mostro_mobile/features/order/notfiers/dispute_notifier.dart';
 import 'package:mostro_mobile/features/order/notfiers/order_notifier.dart';
 import 'package:mostro_mobile/features/order/notfiers/payment_request_notifier.dart';
-import 'package:mostro_mobile/services/event_bus.dart';
+import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
 import 'package:mostro_mobile/features/order/notfiers/cant_do_notifier.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'order_notifier_provider.g.dart';
@@ -72,11 +72,9 @@ class OrderTypeNotifier extends _$OrderTypeNotifier {
   void set(OrderType value) => state = value;
 }
 
-final addOrderEventsProvider = StreamProvider.family<MostroMessage, int>(
+final addOrderEventsProvider = StreamProvider.family<MostroMessage?, int>(
   (ref, requestId) {
-    final bus = ref.read(eventBusProvider);
-    return bus.stream.where(
-      (msg) => msg.requestId == requestId,
-    );
+    final storage = ref.watch(mostroStorageProvider);
+    return storage.watchMessagesByRequestId(requestId);
   },
 );

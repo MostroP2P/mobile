@@ -191,11 +191,11 @@ class MockNostrService extends _i1.Mock implements _i8.NostrService {
       ) as _i9.Future<List<_i3.NostrEvent>>);
 
   @override
-  _i9.Stream<_i3.NostrEvent> subscribeToEvents(_i3.NostrFilter? filter) =>
+  _i9.Stream<_i3.NostrEvent> subscribeToEvents(_i3.NostrRequest? request) =>
       (super.noSuchMethod(
         Invocation.method(
           #subscribeToEvents,
-          [filter],
+          [request],
         ),
         returnValue: _i9.Stream<_i3.NostrEvent>.empty(),
       ) as _i9.Stream<_i3.NostrEvent>);
@@ -398,6 +398,15 @@ class MockNostrService extends _i1.Mock implements _i8.NostrService {
           ),
         )),
       ) as _i9.Future<_i3.NostrEvent>);
+
+  @override
+  void unsubscribe(String? id) => super.noSuchMethod(
+        Invocation.method(
+          #unsubscribe,
+          [id],
+        ),
+        returnValueForMissingStub: null,
+      );
 }
 
 /// A class which mocks [SessionNotifier].
@@ -638,6 +647,22 @@ class MockMostroStorage extends _i1.Mock implements _i16.MostroStorage {
       ) as _i5.StoreRef<String, Map<String, dynamic>>);
 
   @override
+  String generateMessageKey(_i7.MostroMessage<_i6.Payload>? message) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #generateMessageKey,
+          [message],
+        ),
+        returnValue: _i11.dummyValue<String>(
+          this,
+          Invocation.method(
+            #generateMessageKey,
+            [message],
+          ),
+        ),
+      ) as String);
+
+  @override
   _i9.Future<void> addMessage(_i7.MostroMessage<_i6.Payload>? message) =>
       (super.noSuchMethod(
         Invocation.method(
@@ -798,6 +823,50 @@ class MockMostroStorage extends _i1.Mock implements _i16.MostroStorage {
       ) as _i9.Future<bool>);
 
   @override
+  _i9.Future<_i7.MostroMessage<_i6.Payload>?> getLatestMessageById(
+          String? orderId) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #getLatestMessageById,
+          [orderId],
+        ),
+        returnValue: _i9.Future<_i7.MostroMessage<_i6.Payload>?>.value(),
+      ) as _i9.Future<_i7.MostroMessage<_i6.Payload>?>);
+
+  @override
+  _i9.Stream<_i7.MostroMessage<_i6.Payload>?> watchLatestMessage(
+          String? orderId) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #watchLatestMessage,
+          [orderId],
+        ),
+        returnValue: _i9.Stream<_i7.MostroMessage<_i6.Payload>?>.empty(),
+      ) as _i9.Stream<_i7.MostroMessage<_i6.Payload>?>);
+
+  @override
+  _i9.Stream<List<_i7.MostroMessage<_i6.Payload>>> watchAllMessages(
+          String? orderId) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #watchAllMessages,
+          [orderId],
+        ),
+        returnValue: _i9.Stream<List<_i7.MostroMessage<_i6.Payload>>>.empty(),
+      ) as _i9.Stream<List<_i7.MostroMessage<_i6.Payload>>>);
+
+  @override
+  _i9.Stream<_i7.MostroMessage<_i6.Payload>?> watchMessagesByRequestId(
+          int? requestId) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #watchMessagesByRequestId,
+          [requestId],
+        ),
+        returnValue: _i9.Stream<_i7.MostroMessage<_i6.Payload>?>.empty(),
+      ) as _i9.Stream<_i7.MostroMessage<_i6.Payload>?>);
+
+  @override
   _i9.Future<void> putItem(
     String? id,
     _i7.MostroMessage<_i6.Payload>? item,
@@ -884,6 +953,28 @@ class MockMostroStorage extends _i1.Mock implements _i16.MostroStorage {
         Invocation.method(
           #watch,
           [],
+        ),
+        returnValue: _i9.Stream<List<_i7.MostroMessage<_i6.Payload>>>.empty(),
+      ) as _i9.Stream<List<_i7.MostroMessage<_i6.Payload>>>);
+
+  @override
+  _i9.Stream<_i7.MostroMessage<_i6.Payload>?> watchMessageForOrderId(
+          String? orderId) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #watchMessageForOrderId,
+          [orderId],
+        ),
+        returnValue: _i9.Stream<_i7.MostroMessage<_i6.Payload>?>.empty(),
+      ) as _i9.Stream<_i7.MostroMessage<_i6.Payload>?>);
+
+  @override
+  _i9.Stream<List<_i7.MostroMessage<_i6.Payload>>> watchAllMessagesForOrderId(
+          String? orderId) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #watchAllMessagesForOrderId,
+          [orderId],
         ),
         returnValue: _i9.Stream<List<_i7.MostroMessage<_i6.Payload>>>.empty(),
       ) as _i9.Stream<List<_i7.MostroMessage<_i6.Payload>>>);

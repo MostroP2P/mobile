@@ -2,27 +2,25 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/cant_do.dart';
+
 import 'package:mostro_mobile/data/models/dispute.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/order.dart';
-import 'package:mostro_mobile/data/models/payload.dart';
 import 'package:mostro_mobile/data/models/peer.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
+import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
 import 'package:mostro_mobile/shared/providers/navigation_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/notification_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
-import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/shared/providers/session_manager_provider.dart';
-import 'package:mostro_mobile/shared/providers/session_providers.dart';
 
-class AbstractMostroNotifier<T extends Payload>
-    extends StateNotifier<MostroMessage> {
+class AbstractMostroNotifier extends StateNotifier<MostroMessage> {
   final String orderId;
   final Ref ref;
 
-  ProviderSubscription<AsyncValue<MostroMessage>>? subscription;
+  ProviderSubscription<AsyncValue<MostroMessage?>>? subscription;
   final logger = Logger();
 
   AbstractMostroNotifier(
@@ -32,19 +30,28 @@ class AbstractMostroNotifier<T extends Payload>
 
   Future<void> sync() async {
     final storage = ref.read(mostroStorageProvider);
-    state = await storage.getMessageById<T>(orderId) ?? state;
+    final latestMessage = await storage.getMessageById(orderId);
+    if (latestMessage != null) {
+      state = latestMessage;
+    }
   }
 
   void subscribe() {
-    subscription = ref.listen(sessionMessagesProvider(orderId), (_, next) {
-      next.when(
-        data: (msg) {
-          handleEvent(msg);
-        },
-        error: (error, stack) => handleError(error, stack),
-        loading: () {},
-      );
-    });
+    // Use the mostroMessageStream provider that directly watches Sembast storage changes
+    subscription = ref.listen(
+      mostroMessageStreamProvider(orderId),
+      (_, AsyncValue<MostroMessage?> next) {
+        next.when(
+          data: (MostroMessage? msg) {
+            if (msg != null) {
+              handleEvent(msg);
+            }
+          },
+          error: (error, stack) => handleError(error, stack),
+          loading: () {},
+        );
+      },
+    );
   }
 
   void handleError(Object err, StackTrace stack) {

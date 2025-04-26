@@ -10,7 +10,7 @@ import 'package:mostro_mobile/services/mostro_service.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/notification_notifier_provider.dart';
 
-class AddOrderNotifier extends AbstractMostroNotifier<Order> {
+class AddOrderNotifier extends AbstractMostroNotifier {
   late final MostroService mostroService;
   int? requestId;
 
@@ -32,13 +32,15 @@ class AddOrderNotifier extends AbstractMostroNotifier<Order> {
       (_, next) {
         next.when(
           data: (msg) {
-            if (msg.payload is Order) {
-              state = msg;
-              if (msg.action == Action.newOrder) {
-                confirmOrder(msg);
+            if (msg != null) {
+              if (msg.payload is Order) {
+                state = msg;
+                if (msg.action == Action.newOrder) {
+                  confirmOrder(msg);
+                }
+              } else if (msg.payload is CantDo) {
+                _handleCantDo(msg);
               }
-            } else if (msg.payload is CantDo) {
-              _handleCantDo(msg);
             }
           },
           error: (error, stack) => handleError(error, stack),

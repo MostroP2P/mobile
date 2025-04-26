@@ -532,6 +532,8 @@ Widget _buildActionButtons(
         (previous, next) {
           next.when(
             data: (message) {
+              if (message == null) return;
+              
               if (message.action == nostr_action.Action.newOrder && message.id != null) {
                 // Order was successfully created
                 ref.read(orderSubmissionCompleteProvider.notifier).state = true;

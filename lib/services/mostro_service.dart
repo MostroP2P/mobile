@@ -1,11 +1,9 @@
 import 'dart:convert';
 import 'package:dart_nostr/nostr/model/export.dart';
-import 'package:dart_nostr/nostr/model/request/filter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/models.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
-import 'package:mostro_mobile/services/event_bus.dart';
 import 'package:mostro_mobile/services/lifecycle_manager.dart';
 import 'package:mostro_mobile/shared/notifiers/order_action_notifier.dart';
 import 'package:mostro_mobile/shared/notifiers/session_notifier.dart';
@@ -79,7 +77,6 @@ class MostroService {
         session.orderId = msg.id;
         await _sessionNotifier.saveSession(session);
       }
-      ref.read(eventBusProvider).emit(msg);
     });
   }
 
