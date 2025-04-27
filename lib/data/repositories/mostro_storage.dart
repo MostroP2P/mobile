@@ -166,6 +166,7 @@ class MostroStorage extends BaseStorage<MostroMessage> {
   Stream<List<MostroMessage>> watchAllMessages(String orderId) {
     return watch(
       filter: Filter.equals('id', orderId),
+      sort: [SortOrder('timestamp', true)],
     );
   }
 

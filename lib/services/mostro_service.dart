@@ -60,6 +60,7 @@ class MostroService {
       final result = jsonDecode(decryptedEvent.content!);
       if (result is! List) return;
 
+      result[0]['timestamp'] = decryptedEvent.createdAt;
       final msg = MostroMessage.fromJson(result[0]);
       final messageStorage = ref.read(mostroStorageProvider);
 

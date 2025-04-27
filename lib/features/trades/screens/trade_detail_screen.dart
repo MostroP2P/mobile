@@ -207,9 +207,7 @@ class TradeDetailScreen extends ConsumerWidget {
 
     // Decide using canonical FSM status from provider (falls back to
     // on-chain tag if not yet available).
-    final status = ref
-        .watch(orderStatusProvider(orderId))
-        .maybeWhen(data: (s) => s, orElse: () => order.status);
+    final status = order.status;
 
     switch (status) {
       case Status.pending:
@@ -271,18 +269,16 @@ class TradeDetailScreen extends ConsumerWidget {
             backgroundColor: AppTheme.mostroGreen,
             onPressed: () => context.push('/add_invoice/${orderId}'),
           ));
-
-          widgets.add(_buildNostrButton(
-            'CANCEL',
-            ref: ref,
-            completeProvider: completeProvider,
-            errorProvider: errorProvider,
-            backgroundColor: AppTheme.red1,
-            onPressed: () =>
-                ref.read(orderNotifierProvider(orderId).notifier).cancelOrder(),
-          ));
         }
-        // FSM: Seller can do nothing in waiting-buyer-invoice state
+        widgets.add(_buildNostrButton(
+          'CANCEL',
+          ref: ref,
+          completeProvider: completeProvider,
+          errorProvider: errorProvider,
+          backgroundColor: AppTheme.red1,
+          onPressed: () =>
+              ref.read(orderNotifierProvider(orderId).notifier).cancelOrder(),
+        ));
 
         return widgets;
 

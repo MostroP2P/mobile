@@ -10,7 +10,6 @@ import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
-import 'package:mostro_mobile/features/order/providers/order_status_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/notifiers/order_action_notifier.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
@@ -26,10 +25,7 @@ class MostroMessageDetail extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(sessionProvider(order.orderId!));
     final action = ref.watch(orderActionNotifierProvider(order.orderId!));
-    // Obtain live status from canonical provider to reflect FSM.
-    final status = ref
-        .watch(orderStatusProvider(order.orderId!))
-        .maybeWhen(data: (s) => s, orElse: () => order.status);
+    final status = order.status;
     // Map the action enum to the corresponding i10n string.
     String actionText;
     switch (action) {
