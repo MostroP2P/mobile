@@ -281,9 +281,21 @@ class TradeDetailScreen extends ConsumerWidget {
         return widgets;
 
       case Status.settledHoldInvoice:
-        // According to Mostro FSM: settled-hold-invoice → both parties wait.
-        // No user actions are permitted in this intermediate state.
-        return [];
+        if (currentAction == actions.Action.rate) {
+          return [
+            // Rate button if applicable (common for both roles)
+            _buildNostrButton(
+              'RATE',
+              ref: ref,
+              completeProvider: completeProvider,
+              errorProvider: errorProvider,
+              backgroundColor: AppTheme.mostroGreen,
+              onPressed: () => context.push('/rate_user/${orderId}'),
+            )
+          ];
+        } else {
+          return [];
+        }
 
       case Status.active:
         // According to Mostro FSM: active state

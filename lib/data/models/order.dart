@@ -72,11 +72,11 @@ class Order implements Payload {
     data[type]['buyer_token'] = buyerToken;
     data[type]['seller_token'] = sellerToken;
 
-    if (masterBuyerPubkey != null) {
-      data[type]['buyer_trade_pubkey'] = masterBuyerPubkey;
+    if (buyerTradePubkey != null) {
+      data[type]['buyer_trade_pubkey'] = buyerTradePubkey;
     }
-    if (masterSellerPubkey != null) {
-      data[type]['seller_trade_pubkey'] = masterSellerPubkey;
+    if (sellerTradePubkey != null) {
+      data[type]['seller_trade_pubkey'] = sellerTradePubkey;
     }
     return data;
   }
