@@ -11,6 +11,7 @@ import 'package:mostro_mobile/data/models/enums/role.dart';
 import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
+import 'package:mostro_mobile/features/order/providers/order_status_provider.dart';
 import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
 import 'package:mostro_mobile/features/trades/widgets/mostro_message_detail_widget.dart';
 import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
@@ -204,9 +205,13 @@ class TradeDetailScreen extends ConsumerWidget {
     final completeProvider = StateProvider<bool>((ref) => false);
     final errorProvider = StateProvider<String?>((ref) => null);
 
-    // The finite-state-machine approach: decide based on the order.status.
-    // Then refine based on the user's role and the last action.
-    switch (order.status) {
+    // Decide using canonical FSM status from provider (falls back to
+    // on-chain tag if not yet available).
+    final status = ref
+        .watch(orderStatusProvider(orderId))
+        .maybeWhen(data: (s) => s, orElse: () => order.status);
+
+    switch (status) {
       case Status.pending:
         // According to Mostro FSM: Pending state
         final widgets = <Widget>[];
@@ -282,23 +287,9 @@ class TradeDetailScreen extends ConsumerWidget {
         return widgets;
 
       case Status.settledHoldInvoice:
-        // According to Mostro FSM: settled-hold-invoice state
-        // Both buyer and seller can only wait
-        final widgets = <Widget>[];
-
-        // Only show rate button if that action is available
-        if (currentAction == actions.Action.rate) {
-          widgets.add(_buildNostrButton(
-            'RATE',
-            ref: ref,
-            completeProvider: completeProvider,
-            errorProvider: errorProvider,
-            backgroundColor: AppTheme.mostroGreen,
-            onPressed: () => context.push('/rate_user/${orderId}'),
-          ));
-        }
-
-        return widgets;
+        // According to Mostro FSM: settled-hold-invoice → both parties wait.
+        // No user actions are permitted in this intermediate state.
+        return [];
 
       case Status.active:
         // According to Mostro FSM: active state

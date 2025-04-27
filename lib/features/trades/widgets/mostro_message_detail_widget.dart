@@ -10,6 +10,7 @@ import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
+import 'package:mostro_mobile/features/order/providers/order_status_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/notifiers/order_action_notifier.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
@@ -23,10 +24,12 @@ class MostroMessageDetail extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Retrieve the MostroMessage using the order's orderId
-    final mostroMessage = ref.watch(orderNotifierProvider(order.orderId!));
     final session = ref.watch(sessionProvider(order.orderId!));
     final action = ref.watch(orderActionNotifierProvider(order.orderId!));
+    // Obtain live status from canonical provider to reflect FSM.
+    final status = ref
+        .watch(orderStatusProvider(order.orderId!))
+        .maybeWhen(data: (s) => s, orElse: () => order.status);
     // Map the action enum to the corresponding i10n string.
     String actionText;
     switch (action) {
@@ -214,8 +217,7 @@ class MostroMessageDetail extends ConsumerWidget {
             actionText = S.of(context)!.isNotYourOrder;
             break;
           case CantDoReason.notAllowedByStatus:
-            actionText =
-                S.of(context)!.notAllowedByStatus(order.orderId!, order.status);
+            actionText = S.of(context)!.notAllowedByStatus(order.orderId!, status);
             break;
           case CantDoReason.outOfRangeFiatAmount:
             actionText =
@@ -272,7 +274,7 @@ class MostroMessageDetail extends ConsumerWidget {
                   style: AppTheme.theme.textTheme.bodyLarge,
                 ),
                 const SizedBox(height: 16),
-                Text('${order.status} - $action'),
+                Text('$status - $action'),
               ],
             ),
           ),
