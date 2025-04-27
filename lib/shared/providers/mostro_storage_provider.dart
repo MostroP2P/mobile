@@ -8,12 +8,13 @@ final mostroStorageProvider = Provider<MostroStorage>((ref) {
   return MostroStorage(db: mostroDatabase);
 });
 
-final mostroMessageStreamProvider = StreamProvider.family<MostroMessage?, String>(
-  (ref, orderId) {
-    final storage = ref.read(mostroStorageProvider);
-    return storage.watchLatestMessage(orderId);
-  },
-);
+final mostroMessageStreamProvider = StreamProvider.family<MostroMessage?, String>((ref, orderId) {
+  final storage = ref.read(mostroStorageProvider);
+  // Emit the newest message whenever the history stream updates.
+  return storage
+      .watchAllMessages(orderId)
+      .map((list) => list.isNotEmpty ? list.last : null);
+});
 
 final mostroMessageHistoryProvider = StreamProvider.family<List<MostroMessage>, String>(
   (ref, orderId) {
