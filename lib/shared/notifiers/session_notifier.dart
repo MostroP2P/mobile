@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/models/enums/role.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/data/repositories/session_storage.dart';
@@ -8,7 +7,6 @@ import 'package:mostro_mobile/features/key_manager/key_manager.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 
 class SessionNotifier extends StateNotifier<List<Session>> {
-  final Logger _logger = Logger();
   final KeyManager _keyManager;
   final SessionStorage _storage;
 
@@ -101,7 +99,7 @@ class SessionNotifier extends StateNotifier<List<Session>> {
   }
 
   Future<void> reset() async {
-    await _storage.deleteAllItems();
+    await _storage.deleteAll();
     _sessions.clear();
     state = [];
   }
@@ -110,34 +108,6 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     _sessions.remove(sessionId);
     await _storage.deleteSession(sessionId);
     state = sessions;
-  }
-
-  /// Removes sessions older than [sessionExpirationHours] from both DB and memory.
-  Future<void> clearExpiredSessions() async {
-    try {
-      final removedIds = await _storage.deleteExpiredSessions(
-        sessionExpirationHours,
-        maxBatchSize,
-      );
-      for (final id in removedIds) {
-        _sessions.remove(id);
-      }
-      state = sessions;
-    } catch (e) {
-      _logger.e('Error during session cleanup: $e');
-    }
-  }
-
-  /// Set up an initial cleanup run and a periodic timer.
-  void _initializeCleanup() {
-    _cleanupTimer?.cancel();
-    // Immediately do a cleanup pass
-    clearExpiredSessions();
-    // Schedule periodic cleanup
-    _cleanupTimer = Timer.periodic(
-      const Duration(minutes: cleanupIntervalMinutes),
-      (_) => clearExpiredSessions(),
-    );
   }
 
   @override

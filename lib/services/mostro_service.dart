@@ -64,11 +64,11 @@ class MostroService {
       final messageStorage = ref.read(mostroStorageProvider);
 
       if (msg.id != null) {
-        if (await messageStorage.hasMessage(msg)) return;
+        if (await messageStorage.hasMessageByKey(decryptedEvent.id!)) return;
         ref.read(orderActionNotifierProvider(msg.id!).notifier).set(msg.action);
       }
       if (msg.action == Action.canceled) {
-        await messageStorage.deleteAllMessagesById(session.orderId!);
+        await messageStorage.deleteAllMessagesByOrderId(session.orderId!);
         await _sessionNotifier.deleteSession(session.orderId!);
         return;
       }

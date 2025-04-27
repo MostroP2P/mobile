@@ -708,7 +708,8 @@ class MockMostroStorage extends _i1.Mock implements _i16.MostroStorage {
       ) as _i9.Future<List<_i7.MostroMessage<_i6.Payload>>>);
 
   @override
-  _i9.Future<void> deleteMessage<T extends _i6.Payload>(String? orderId) =>
+  _i9.Future<void> deleteMessageByOrderId<T extends _i6.Payload>(
+          String? orderId) =>
       (super.noSuchMethod(
         Invocation.method(
           #deleteMessage,
@@ -729,7 +730,7 @@ class MockMostroStorage extends _i1.Mock implements _i16.MostroStorage {
       ) as _i9.Future<void>);
 
   @override
-  _i9.Future<void> deleteAllMessagesById(String? orderId) =>
+  _i9.Future<void> deleteAllMessagesByOrderId(String? orderId) =>
       (super.noSuchMethod(
         Invocation.method(
           #deleteAllMessagesById,

@@ -22,9 +22,17 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
 
   void subscribe() {
     final session = ref.read(sessionProvider(orderId));
+    if (session == null) {
+      _logger.e('Session is null');
+      return;
+    }
+    if(session.sharedKey == null) {
+      _logger.e('Shared key is null');
+      return;
+    }
     final filter = NostrFilter(
       kinds: [1059],
-      p: [session!.sharedKey!.public],
+      p: [session.sharedKey!.public],
     );
     final request = NostrRequest(
       filters: [filter],

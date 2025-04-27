@@ -120,18 +120,28 @@ class AbstractMostroNotifier extends StateNotifier<MostroMessage> {
         break;
       case Action.buyerTookOrder:
         final order = state.getPayload<Order>();
+        if (order == null) {
+          logger.e('Buyer took order, but order is null');
+          break;
+        }
         notifProvider.showInformation(state.action, values: {
-          'buyer_npub': order?.buyerTradePubkey ?? 'Unknown',
-          'fiat_code': order?.fiatCode,
-          'fiat_amount': order?.fiatAmount,
-          'payment_method': order?.paymentMethod,
+          'buyer_npub': order.buyerTradePubkey ?? 'Unknown',
+          'fiat_code': order.fiatCode,
+          'fiat_amount': order.fiatAmount,
+          'payment_method': order.paymentMethod,
         });
         // add seller tradekey to session
         // open chat
         final sessionProvider = ref.read(sessionNotifierProvider.notifier);
         final session = sessionProvider.getSessionByOrderId(orderId);
-        session?.peer = Peer(publicKey: order!.buyerTradePubkey!);
-        sessionProvider.saveSession(session!);
+        if (session == null) {
+          logger.e('Session is null for order: $orderId');
+          break;
+        }
+        session.peer = order.buyerTradePubkey != null
+            ? Peer(publicKey: order.buyerTradePubkey!)
+            : null;
+        sessionProvider.saveSession(session);
         final chat = ref.read(chatRoomsProvider(orderId).notifier);
         chat.subscribe();
         break;
