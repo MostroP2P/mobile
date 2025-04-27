@@ -20,7 +20,7 @@ Future<void> serviceMain(ServiceInstance service) async {
 
   final Map<String, Map<String, dynamic>> activeSubscriptions = {};
   final nostrService = NostrService();
-  final db = await openMostroDatabase('mostro.db');
+  final db = await openMostroDatabase('events.db');
   final eventStore = EventStorage(db: db);
 
   service.on('app-foreground-status').listen((data) {

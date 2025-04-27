@@ -28,7 +28,7 @@ class DesktopBackgroundService implements BackgroundService {
     BackgroundIsolateBinaryMessenger.ensureInitialized(token);
 
     final nostrService = NostrService();
-    final db = await openMostroDatabase('background.db');
+    final db = await openMostroDatabase('events.db');
     final backgroundStorage = EventStorage(db: db);
     final logger = Logger();
     bool isAppForeground = true;

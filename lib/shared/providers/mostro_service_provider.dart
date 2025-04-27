@@ -8,7 +8,7 @@ part 'mostro_service_provider.g.dart';
 
 @riverpod
 EventStorage eventStorage(Ref ref) {
-  final db = ref.watch(mostroDatabaseProvider);
+  final db = ref.watch(eventDatabaseProvider);
   return EventStorage(db: db);
 }
 

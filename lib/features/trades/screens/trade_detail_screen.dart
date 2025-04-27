@@ -241,18 +241,16 @@ class TradeDetailScreen extends ConsumerWidget {
             backgroundColor: AppTheme.mostroGreen,
             onPressed: () => context.push('/pay_invoice/${orderId}'),
           ));
-
-          widgets.add(_buildNostrButton(
-            'CANCEL',
-            ref: ref,
-            completeProvider: completeProvider,
-            errorProvider: errorProvider,
-            backgroundColor: AppTheme.red1,
-            onPressed: () =>
-                ref.read(orderNotifierProvider(orderId).notifier).cancelOrder(),
-          ));
         }
-        // FSM: Buyer can do nothing in waiting-payment state
+        widgets.add(_buildNostrButton(
+          'CANCEL',
+          ref: ref,
+          completeProvider: completeProvider,
+          errorProvider: errorProvider,
+          backgroundColor: AppTheme.red1,
+          onPressed: () =>
+              ref.read(orderNotifierProvider(orderId).notifier).cancelOrder(),
+        ));
         return widgets;
 
       case Status.waitingBuyerInvoice:

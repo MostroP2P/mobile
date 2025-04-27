@@ -19,7 +19,9 @@ Future<void> main() async {
   final sharedPreferences = SharedPreferencesAsync();
   final secureStorage = const FlutterSecureStorage();
 
-  final database = await openMostroDatabase('mostro.db');
+  final mostroDatabase = await openMostroDatabase('mostro.db');
+  final eventsDatabase = await openMostroDatabase('events.db');
+
 
   final settings = SettingsNotifier(sharedPreferences);
   await settings.init();
@@ -37,7 +39,8 @@ Future<void> main() async {
         biometricsHelperProvider.overrideWithValue(biometricsHelper),
         sharedPreferencesProvider.overrideWithValue(sharedPreferences),
         secureStorageProvider.overrideWithValue(secureStorage),
-        mostroDatabaseProvider.overrideWithValue(database),
+        mostroDatabaseProvider.overrideWithValue(mostroDatabase),
+        eventDatabaseProvider.overrideWithValue(eventsDatabase),
       ],
       child: const MostroApp(),
     ),

@@ -10,26 +10,13 @@ class MostroStorage extends BaseStorage<MostroMessage> {
   MostroStorage({required Database db})
       : super(db, stringMapStoreFactory.store('orders'));
 
-  // Generate a unique key for each message
-  String generateMessageKey(MostroMessage message) {
-    // Use orderId + action + requestId/tradeIndex or current timestamp for uniqueness
-    final uniqueSuffix = message.requestId != null
-        ? message.requestId.toString()
-        : message.tradeIndex != null
-            ? message.tradeIndex.toString()
-            : DateTime.now().millisecondsSinceEpoch.toString();
-
-    return '${message.id}_${message.action.name}_$uniqueSuffix';
-  }
-
   /// Save or update any MostroMessage
-  Future<void> addMessage(MostroMessage message) async {
-    final id = generateMessageKey(message);
+  Future<void> addMessage(String key, MostroMessage message) async {
+    final id = key;
     try {
       // Add metadata for easier querying
       final Map<String, dynamic> dbMap = message.toJson();
-      dbMap['payload_type'] = message.payload?.runtimeType.toString();
-      dbMap['order_id'] = message.id;
+      dbMap['timestamp'] = message.timestamp;
 
       await store.record(id).put(db, dbMap);
       _logger.i(
@@ -42,13 +29,6 @@ class MostroStorage extends BaseStorage<MostroMessage> {
         stackTrace: stack,
       );
       rethrow;
-    }
-  }
-
-  /// Save or update a list of MostroMessages
-  Future<void> addMessages(List<MostroMessage> messages) async {
-    for (final message in messages) {
-      await addMessage(message);
     }
   }
 
@@ -89,24 +69,9 @@ class MostroStorage extends BaseStorage<MostroMessage> {
 
   /// Delete all messages by Id regardless of type
   Future<void> deleteAllMessagesByOrderId(String orderId) async {
-    try {
-      final messages = await getMessagesForId(orderId);
-      for (var m in messages) {
-        final id = messageKey(m);
-        try {
-          await deleteItem(id);
-          _logger.i('Message $id deleted from DB');
-        } catch (e, stack) {
-          _logger.e('deleteMessage failed for $id',
-              error: e, stackTrace: stack);
-          rethrow;
-        }
-      }
-      _logger.i('All messages for order: $orderId deleted');
-    } catch (e, stack) {
-      _logger.e('deleteAllMessagesForId failed', error: e, stackTrace: stack);
-      rethrow;
-    }
+    await deleteWhere(
+      Filter.equals('id', orderId),
+    );
   }
 
   /// Filter messages by payload type
@@ -134,13 +99,6 @@ class MostroStorage extends BaseStorage<MostroMessage> {
     return item.toJson();
   }
 
-  String messageKey(MostroMessage msg) {
-    final type =
-        msg.payload != null ? msg.payload.runtimeType.toString() : 'Order';
-    final id = msg.id ?? msg.requestId.toString();
-    return '$type:$id';
-  }
-
   Future<bool> hasMessageByKey(String key) async {
     return hasItem(key);
   }
@@ -156,7 +114,6 @@ class MostroStorage extends BaseStorage<MostroMessage> {
     return null;
   }
 
-
   /// Stream of the latest message for an order
   Stream<MostroMessage?> watchLatestMessage(String orderId) {
     return watchById(orderId);
@@ -166,7 +123,7 @@ class MostroStorage extends BaseStorage<MostroMessage> {
   Stream<List<MostroMessage>> watchAllMessages(String orderId) {
     return watch(
       filter: Filter.equals('id', orderId),
-      sort: [SortOrder('timestamp', false)],
+      sort: [SortOrder('timestamp', false, true)],
     );
   }
 

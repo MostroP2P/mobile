@@ -13,7 +13,7 @@ final mostroMessageStreamProvider = StreamProvider.family<MostroMessage?, String
   // Emit the newest message whenever the history stream updates.
   return storage
       .watchAllMessages(orderId)
-      .map((list) => list.isNotEmpty ? list.last : null);
+      .map((list) => list.isNotEmpty ? list.first : null);
 });
 
 final mostroMessageHistoryProvider = StreamProvider.family<List<MostroMessage>, String>(

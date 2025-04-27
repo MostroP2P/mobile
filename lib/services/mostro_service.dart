@@ -60,7 +60,7 @@ class MostroService {
       final result = jsonDecode(decryptedEvent.content!);
       if (result is! List) return;
 
-      result[0]['timestamp'] = decryptedEvent.createdAt;
+      result[0]['timestamp'] = decryptedEvent.createdAt?.millisecondsSinceEpoch;
       final msg = MostroMessage.fromJson(result[0]);
       final messageStorage = ref.read(mostroStorageProvider);
 
@@ -73,7 +73,7 @@ class MostroService {
         await _sessionNotifier.deleteSession(session.orderId!);
         return;
       }
-      await messageStorage.addMessage(msg);
+      await messageStorage.addMessage(decryptedEvent.id!, msg);
       if (session.orderId == null && msg.id != null) {
         session.orderId = msg.id;
         await _sessionNotifier.saveSession(session);
