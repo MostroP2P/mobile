@@ -17,6 +17,8 @@ class Order implements Payload {
   final int premium;
   final String? masterBuyerPubkey;
   final String? masterSellerPubkey;
+  final String? buyerTradePubkey;
+  final String? sellerTradePubkey;
   final String? buyerInvoice;
   final int? createdAt;
   final int? expiresAt;
@@ -33,9 +35,11 @@ class Order implements Payload {
     this.maxAmount,
     required this.fiatAmount,
     required this.paymentMethod,
-    this.premium = 1,
+    this.premium = 0,
     this.masterBuyerPubkey,
     this.masterSellerPubkey,
+    this.buyerTradePubkey,
+    this.sellerTradePubkey,
     this.buyerInvoice,
     this.createdAt = 0,
     this.expiresAt,
@@ -51,6 +55,8 @@ class Order implements Payload {
         'status': status.value,
         'amount': amount,
         'fiat_code': fiatCode,
+        'min_amount': minAmount,
+        'max_amount': maxAmount,
         'fiat_amount': fiatAmount,
         'payment_method': paymentMethod,
         'premium': premium,
@@ -58,20 +64,20 @@ class Order implements Payload {
     };
 
     if (id != null) data[type]['id'] = id;
-    if (minAmount != null) data[type]['min_amount'] = minAmount;
-    if (maxAmount != null) data[type]['max_amount'] = maxAmount;
+
+    if (buyerInvoice != null) data[type]['buyer_invoice'] = buyerInvoice;
+
+    data[type]['created_at'] = createdAt;
+    data[type]['expires_at'] = expiresAt;
+    data[type]['buyer_token'] = buyerToken;
+    data[type]['seller_token'] = sellerToken;
+
     if (masterBuyerPubkey != null) {
-      data[type]['master_buyer_pubkey'] = masterBuyerPubkey;
+      data[type]['buyer_trade_pubkey'] = masterBuyerPubkey;
     }
     if (masterSellerPubkey != null) {
-      data[type]['master_seller_pubkey'] = masterSellerPubkey;
+      data[type]['seller_trade_pubkey'] = masterSellerPubkey;
     }
-    if (buyerInvoice != null) data[type]['buyer_invoice'] = buyerInvoice;
-    if (createdAt != null) data[type]['created_at'] = createdAt;
-    if (expiresAt != null) data[type]['expires_at'] = expiresAt;
-    if (buyerToken != null) data[type]['buyer_token'] = buyerToken;
-    if (sellerToken != null) data[type]['seller_token'] = sellerToken;
-
     return data;
   }
 
@@ -87,14 +93,8 @@ class Order implements Payload {
     ['kind', 'status', 'fiat_code', 'fiat_amount', 'payment_method', 'premium']
         .forEach(validateField);
 
-    // Safe type casting
-    T? safeCast<T>(String key, T Function(dynamic) converter) {
-      final value = json[key];
-      return value == null ? null : converter(value);
-    }
-
     return Order(
-      id: safeCast<String>('id', (v) => v.toString()),
+      id: json['id'],
       kind: OrderType.fromString(json['kind'].toString()),
       status: Status.fromString(json['status']),
       amount: json['amount'],
@@ -106,6 +106,8 @@ class Order implements Payload {
       premium: json['premium'],
       masterBuyerPubkey: json['master_buyer_pubkey'],
       masterSellerPubkey: json['master_seller_pubkey'],
+      buyerTradePubkey: json['buyer_trade_pubkey'],
+      sellerTradePubkey: json['seller_trade_pubkey'],
       buyerInvoice: json['buyer_invoice'],
       createdAt: json['created_at'],
       expiresAt: json['expires_at'],
@@ -118,7 +120,7 @@ class Order implements Payload {
     return Order(
       id: event.orderId,
       kind: event.orderType!,
-      status: Status.fromString(event.status!),
+      status: event.status,
       amount: event.amount as int,
       fiatCode: event.currency!,
       fiatAmount: event.fiatAmount.minimum,
@@ -129,6 +131,53 @@ class Order implements Payload {
     );
   }
 
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'kind': kind.value, // from OrderType
+      'status': status.value, // from Status
+      'amount': amount,
+      'fiatCode': fiatCode,
+      'minAmount': minAmount,
+      'maxAmount': maxAmount,
+      'fiatAmount': fiatAmount,
+      'paymentMethod': paymentMethod,
+      'premium': premium,
+      'masterBuyerPubkey': masterBuyerPubkey,
+      'masterSellerPubkey': masterSellerPubkey,
+      'buyerInvoice': buyerInvoice,
+      'createdAt': createdAt,
+      'expiresAt': expiresAt,
+      'buyerToken': buyerToken,
+      'sellerToken': sellerToken,
+    };
+  }
+
+  // Construct from a Map (row in DB)
+  factory Order.fromMap(Map<String, dynamic> map) {
+    return Order(
+      id: map['id'] as String?,
+      kind: OrderType.fromString(map['kind'] as String),
+      status: Status.fromString(map['status'] as String),
+      amount: map['amount'] as int,
+      fiatCode: map['fiatCode'] as String,
+      minAmount: map['minAmount'] as int?,
+      maxAmount: map['maxAmount'] as int?,
+      fiatAmount: map['fiatAmount'] as int,
+      paymentMethod: map['paymentMethod'] as String,
+      premium: map['premium'] as int,
+      masterBuyerPubkey: map['masterBuyerPubkey'] as String?,
+      masterSellerPubkey: map['masterSellerPubkey'] as String?,
+      buyerInvoice: map['buyerInvoice'] as String?,
+      createdAt: map['createdAt'] as int?,
+      expiresAt: map['expiresAt'] as int?,
+      buyerToken: map['buyerToken'] as int?,
+      sellerToken: map['sellerToken'] as int?,
+    );
+  }
+
   @override
   String get type => 'order';
+
+  copyWith({required String buyerInvoice}) {}
 }

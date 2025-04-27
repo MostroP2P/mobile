@@ -25,5 +25,5 @@ class Peer implements Payload {
   }
 
   @override
-  String get type => 'Peer';
+  String get type => 'peer';
 }

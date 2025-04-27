@@ -35,16 +35,10 @@ enum Action {
   adminAddSolver('admin-add-solver'),
   adminTakeDispute('admin-take-dispute'),
   adminTookDispute('admin-took-dispute'),
-  isNotYourOrder('is-not-your-order'),
-  notAllowedByStatus('not-allowed-by-status'),
-  outOfRangeFiatAmount('out-of-range-fiat-amount'),
-  isNotYourDispute('is-not-your-dispute'),
-  notFound('not-found'),
-  incorrectInvoiceAmount('incorrect-invoice-amount'),
-  invalidSatsAmount('invalid-sats-amount'),
-  outOfRangeSatsAmount('out-of-range-sats-amount'),
   paymentFailed('payment-failed'),
-  invoiceUpdated('invoice-updated');
+  invoiceUpdated('invoice-updated'),
+  sendDm('send-dm'),
+  tradePubkey('trade-pubkey');
 
   final String value;
 

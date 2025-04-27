@@ -1,9 +1,8 @@
 import 'dart:convert';
 import 'dart:math';
+import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:dart_nostr/dart_nostr.dart';
-import 'package:bip32_bip44/dart_bip32_bip44.dart' as bip32_bip44;
-import 'package:bip39/bip39.dart' as bip39;
 import 'package:elliptic/elliptic.dart';
 import 'package:nip44/nip44.dart';
 
@@ -24,7 +23,7 @@ class NostrUtils {
   }
 
   static NostrKeyPairs generateKeyPairFromPrivateKey(String privateKey) {
-    return _instance.keysService
+    return _instance.services.keys
         .generateKeyPairFromExistingPrivateKey(privateKey);
   }
 
@@ -38,19 +37,19 @@ class NostrUtils {
 
   // Codificación y decodificación de claves
   static String encodePrivateKeyToNsec(String privateKey) {
-    return _instance.keysService.encodePrivateKeyToNsec(privateKey);
+    return _instance.services.bech32.encodePrivateKeyToNsec(privateKey);
   }
 
   static String decodeNsecKeyToPrivateKey(String nsec) {
-    return _instance.keysService.decodeNsecKeyToPrivateKey(nsec);
+    return _instance.services.bech32.decodeNsecKeyToPrivateKey(nsec);
   }
 
   static String encodePublicKeyToNpub(String publicKey) {
-    return _instance.keysService.encodePublicKeyToNpub(publicKey);
+    return _instance.services.bech32.encodePublicKeyToNpub(publicKey);
   }
 
   static String decodeNpubKeyToPublicKey(String npub) {
-    return _instance.keysService.decodeNpubKeyToPublicKey(npub);
+    return _instance.services.bech32.decodeNpubKeyToPublicKey(npub);
   }
 
   static String nsecToHex(String nsec) {
@@ -62,21 +61,22 @@ class NostrUtils {
 
   // Operaciones con claves
   static String derivePublicKey(String privateKey) {
-    return _instance.keysService.derivePublicKey(privateKey: privateKey);
+    return _instance.services.keys.derivePublicKey(privateKey: privateKey);
   }
 
   static bool isValidPrivateKey(String privateKey) {
-    return _instance.keysService.isValidPrivateKey(privateKey);
+    return _instance.services.keys.isValidPrivateKey(privateKey);
   }
 
   // Firma y verificación
   static String signMessage(String message, String privateKey) {
-    return _instance.keysService.sign(privateKey: privateKey, message: message);
+    return _instance.services.keys
+        .sign(privateKey: privateKey, message: message);
   }
 
   static bool verifySignature(
       String signature, String message, String publicKey) {
-    return _instance.keysService
+    return _instance.services.keys
         .verify(publicKey: publicKey, message: message, signature: signature);
   }
 
@@ -100,17 +100,17 @@ class NostrUtils {
 
   // Utilidades generales
   static String decodeBech32(String bech32String) {
-    final result = _instance.utilsService.decodeBech32(bech32String);
+    final result = _instance.services.bech32.decodeBech32(bech32String);
     return result[1]; // Devuelve solo la parte de datos
   }
 
   static String encodeBech32(String hrp, String data) {
-    return _instance.utilsService.encodeBech32(hrp, data);
+    return _instance.services.bech32.encodeBech32(hrp, data);
   }
 
   static Future<String?> pubKeyFromIdentifierNip05(
       String internetIdentifier) async {
-    return await _instance.utilsService
+    return await _instance.services.utils
         .pubKeyFromIdentifierNip05(internetIdentifier: internetIdentifier);
   }
 
@@ -146,6 +146,63 @@ class NostrUtils {
     return now.subtract(Duration(seconds: randomSeconds));
   }
 
+  static Future<String> createRumor(NostrKeyPairs senderKeyPair,
+      String wrapperKey, String recipientPubKey, String content) async {
+    final rumorEvent = NostrEvent.fromPartialData(
+      kind: 1,
+      keyPairs: senderKeyPair,
+      content: content,
+      createdAt: DateTime.now(),
+      tags: [
+        ["p", recipientPubKey]
+      ],
+    );
+
+    try {
+      return await encryptNIP44(
+          jsonEncode(rumorEvent.toMap()), wrapperKey, recipientPubKey);
+    } catch (e) {
+      throw Exception('Failed to encrypt content: $e');
+    }
+  }
+
+  static Future<String> createSeal(
+      NostrKeyPairs senderKeyPair,
+      String wrapperKey,
+      String recipientPubKey,
+      String encryptedContent) async {
+    final sealEvent = NostrEvent.fromPartialData(
+      kind: 13,
+      keyPairs: senderKeyPair,
+      content: encryptedContent,
+      createdAt: randomNow(),
+    );
+
+    return await encryptNIP44(
+        jsonEncode(sealEvent.toMap()), wrapperKey, recipientPubKey);
+  }
+
+  static Future<NostrEvent> createWrap(NostrKeyPairs wrapperKeyPair,
+      String sealedContent, String recipientPubKey) async {
+    final wrapEvent = NostrEvent.fromPartialData(
+      kind: 1059,
+      content: sealedContent,
+      keyPairs: wrapperKeyPair,
+      tags: [
+        ["p", recipientPubKey]
+      ],
+      createdAt: DateTime.now(),
+    );
+
+    return wrapEvent;
+  }
+
+  static NostrKeyPairs computeSharedKey(String privateKey, String publicKey) {
+    final sharedKey = Nip44.computeSharedSecret(privateKey, publicKey);
+    final nkey = hex.encode(sharedKey);
+    return NostrKeyPairs(private: nkey);
+  }
+
   /// Creates a NIP-59 encrypted event with the following structure:
   /// 1. Inner event (kind 1): Original content
   /// 2. Seal event (kind 13): Encrypted inner event
@@ -163,60 +220,25 @@ class NostrUtils {
 
     final senderKeyPair = generateKeyPairFromPrivateKey(senderPrivateKey);
 
-    final createdAt = DateTime.now();
-    final rumorEvent = NostrEvent.fromPartialData(
-      kind: 1,
-      keyPairs: senderKeyPair,
-      content: content,
-      createdAt: createdAt,
-      tags: [
-        ["p", recipientPubKey]
-      ],
-    );
-
-    String? encryptedContent;
-
-    try {
-      encryptedContent = await _encryptNIP44(
-          jsonEncode(rumorEvent.toMap()), senderPrivateKey, recipientPubKey);
-    } catch (e) {
-      throw Exception('Failed to encrypt content: $e');
-    }
-
-    final sealEvent = NostrEvent.fromPartialData(
-      kind: 13,
-      keyPairs: senderKeyPair,
-      content: encryptedContent,
-      createdAt: randomNow(),
-    );
+    String encryptedContent = await createRumor(
+        senderKeyPair, senderKeyPair.private, recipientPubKey, content);
 
     final wrapperKeyPair = generateKeyPair();
 
-    final pk = wrapperKeyPair.private;
+    String sealedContent = await createSeal(senderKeyPair,
+        wrapperKeyPair.private, recipientPubKey, encryptedContent);
 
-    String sealedContent;
-    try {
-      sealedContent = await _encryptNIP44(
-          jsonEncode(sealEvent.toMap()), pk, '02$recipientPubKey');
-    } catch (e) {
-      throw Exception('Failed to encrypt seal event: $e');
-    }
-
-    final wrapEvent = NostrEvent.fromPartialData(
-      kind: 1059,
-      content: sealedContent,
-      keyPairs: wrapperKeyPair,
-      tags: [
-        ["p", recipientPubKey]
-      ],
-      createdAt: createdAt,
-    );
+    final wrapEvent =
+        await createWrap(wrapperKeyPair, sealedContent, recipientPubKey);
 
     return wrapEvent;
   }
 
   static Future<NostrEvent> decryptNIP59Event(
       NostrEvent event, String privateKey) async {
+    if (event.kind != 1059) {
+      throw ArgumentError('Wrong kind: ${event.kind}');
+    }
     // Validate inputs
     if (event.content == null || event.content!.isEmpty) {
       throw ArgumentError('Event content is empty');
@@ -226,14 +248,20 @@ class NostrUtils {
     }
 
     try {
-      final decryptedContent =
-          await _decryptNIP44(event.content ?? '', privateKey, event.pubkey);
+      final decryptedContent = await decryptNIP44(
+        event.content!,
+        privateKey,
+        event.pubkey,
+      );
 
       final rumorEvent =
           NostrEvent.deserialized('["EVENT", "", $decryptedContent]');
 
-      final finalDecryptedContent = await _decryptNIP44(
-          rumorEvent.content ?? '', privateKey, rumorEvent.pubkey);
+      final finalDecryptedContent = await decryptNIP44(
+        rumorEvent.content!,
+        privateKey,
+        rumorEvent.pubkey,
+      );
 
       final wrap = jsonDecode(finalDecryptedContent) as Map<String, dynamic>;
 
@@ -284,7 +312,7 @@ class NostrUtils {
     }
   }
 
-  static Future<String> _encryptNIP44(
+  static Future<String> encryptNIP44(
       String content, String privkey, String pubkey) async {
     try {
       return await Nip44.encryptMessage(content, privkey, pubkey);
@@ -294,7 +322,7 @@ class NostrUtils {
     }
   }
 
-  static Future<String> _decryptNIP44(
+  static Future<String> decryptNIP44(
       String encryptedContent, String privkey, String pubkey) async {
     try {
       return await Nip44.decryptMessage(encryptedContent, privkey, pubkey);
@@ -302,23 +330,5 @@ class NostrUtils {
       // Handle encryption error appropriately
       throw Exception('Decryption failed: $e');
     }
-  }
-
-  static String getPrivateKeyFromMnemonic(String mnemonic, int index) {
-    final seed = bip39.mnemonicToSeedHex(mnemonic);
-    final chain = bip32_bip44.Chain.seed(seed);
-
-    final key = chain.forPath("m/44'/1237'/38383'/0/0")
-        as bip32_bip44.ExtendedPrivateKey;
-    final childKey = bip32_bip44.deriveExtendedPrivateChildKey(key, index);
-    return (childKey.key != null) ? childKey.key!.toRadixString(16) : '';
-  }
-
-  static bool isMnemonicValid(String text) {
-    return bip39.validateMnemonic(text);
-  }
-
-  static String getMnemonic() {
-    return bip39.generateMnemonic();
   }
 }

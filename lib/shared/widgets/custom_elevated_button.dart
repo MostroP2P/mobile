@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mostro_mobile/app/app_theme.dart';
+import 'package:mostro_mobile/core/app_theme.dart';
 
 class CustomElevatedButton extends StatelessWidget {
   final VoidCallback onPressed;
@@ -22,10 +22,11 @@ class CustomElevatedButton extends StatelessWidget {
     return ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
-        foregroundColor: foregroundColor ?? Colors.white,
+        foregroundColor: foregroundColor ?? AppTheme.cream1,
         backgroundColor: backgroundColor ?? AppTheme.mostroGreen,
         textStyle: Theme.of(context).textTheme.labelLarge,
-        padding: padding ?? const EdgeInsets.symmetric(vertical: 15, horizontal: 30),
+        padding:
+            padding ?? const EdgeInsets.symmetric(vertical: 15, horizontal: 30),
       ),
       child: Text(text),
     );

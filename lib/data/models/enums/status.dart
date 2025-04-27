@@ -25,5 +25,9 @@ enum Status {
       orElse: () => throw ArgumentError('Invalid Status: $value'),
     );
   }
-
+  
+  @override
+  String toString() {
+    return value;
+  }
 }

@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/auth/notifiers/auth_state.dart';
 import 'package:mostro_mobile/features/auth/providers/auth_notifier_provider.dart';
-import 'package:mostro_mobile/presentation/widgets/custom_button.dart';
+import 'package:mostro_mobile/shared/widgets/custom_button.dart';
 
 class LoginScreen extends HookConsumerWidget {
   const LoginScreen({super.key});
@@ -26,7 +27,7 @@ class LoginScreen extends HookConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Login', style: TextStyle(color: Colors.white)),
+        title: const Text('Login', style: TextStyle(color: AppTheme.cream1)),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -42,12 +43,12 @@ class LoginScreen extends HookConsumerWidget {
                 controller: pinController,
                 decoration: const InputDecoration(
                   labelText: 'PIN',
-                  labelStyle: TextStyle(color: Colors.white70),
+                  labelStyle: TextStyle(color: AppTheme.cream1),
                   enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.white70),
+                    borderSide: BorderSide(color: AppTheme.cream1),
                   ),
                 ),
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: AppTheme.cream1),
                 keyboardType: TextInputType.number,
                 obscureText: true,
                 validator: (value) {

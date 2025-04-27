@@ -1,18 +1,8 @@
-abstract class OrderRepository {
+abstract class OrderRepository<T> {
   void dispose();
-}
-
-enum MessageKind {
-  openOrder(8383),
-  directMessage(1059);
-
-  final int kind;
-  const MessageKind(this.kind);
-}
-
-class OrderFilter {
-  final List<MessageKind> messageKinds;
-
-  OrderFilter({required this.messageKinds});
-  
+  Future<void> addOrder(T order);
+  Future<List<T>> getAllOrders();
+  Future<T?> getOrderById(String orderId);
+  Future<void> updateOrder(T order);
+  Future<void> deleteOrder(String orderId);
 }
