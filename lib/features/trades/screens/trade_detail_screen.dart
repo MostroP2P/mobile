@@ -566,109 +566,12 @@ class TradeDetailScreen extends ConsumerWidget {
     );
   }
 
-  /// RELEASE
-  Widget _buildReleaseButton(WidgetRef ref) {
-    final orderDetailsNotifier =
-        ref.read(orderNotifierProvider(orderId).notifier);
-
-    return ElevatedButton(
-      onPressed: () async {
-        await orderDetailsNotifier.releaseOrder();
-      },
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppTheme.mostroGreen,
-      ),
-      child: const Text('RELEASE SATS'),
-    );
-  }
-
-  /// FIAT_SENT
-  Widget _buildFiatSentButton(WidgetRef ref) {
-    final orderDetailsNotifier =
-        ref.read(orderNotifierProvider(orderId).notifier);
-
-    return ElevatedButton(
-      onPressed: () async {
-        await orderDetailsNotifier.sendFiatSent();
-      },
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppTheme.mostroGreen,
-      ),
-      child: const Text('FIAT SENT'),
-    );
-  }
-
-  /// ADD INVOICE
-  Widget _buildAddInvoiceButton(BuildContext context) {
-    return ElevatedButton(
-      onPressed: () async {
-        context.push('/add_invoice/$orderId');
-      },
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppTheme.mostroGreen,
-      ),
-      child: const Text('ADD INVOICE'),
-    );
-  }
-
-  /// ADD INVOICE
-  Widget _buildPayInvoiceButton(BuildContext context) {
-    return ElevatedButton(
-      onPressed: () async {
-        context.push('/pay_invoice/$orderId');
-      },
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppTheme.mostroGreen,
-      ),
-      child: const Text('ADD INVOICE'),
-    );
-  }
-
-  /// CANCEL
-  Widget _buildCancelButton(BuildContext context, WidgetRef ref) {
-    final notifier = ref.read(orderNotifierProvider(orderId).notifier);
-    return ElevatedButton(
-      onPressed: () async {
-        await notifier.cancelOrder();
-      },
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppTheme.red1,
-      ),
-      child: const Text('CANCEL'),
-    );
-  }
-
-  /// DISPUTE
-  Widget _buildDisputeButton(WidgetRef ref) {
-    final notifier = ref.read(orderNotifierProvider(orderId).notifier);
-    return ElevatedButton(
-      onPressed: () async {
-        await notifier.disputeOrder();
-      },
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppTheme.red1,
-      ),
-      child: const Text('DISPUTE'),
-    );
-  }
-
   /// CLOSE
   Widget _buildCloseButton(BuildContext context) {
     return OutlinedButton(
       onPressed: () => context.pop(),
       style: AppTheme.theme.outlinedButtonTheme.style,
       child: const Text('CLOSE'),
-    );
-  }
-
-  /// RATE
-  Widget _buildRateButton(BuildContext context) {
-    return OutlinedButton(
-      onPressed: () {
-        context.push('/rate_user/$orderId');
-      },
-      style: AppTheme.theme.outlinedButtonTheme.style,
-      child: const Text('RATE'),
     );
   }
 
