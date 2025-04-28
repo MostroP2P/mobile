@@ -1,263 +1,45 @@
-import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mostro_mobile/core/app_theme.dart';
-import 'package:mostro_mobile/data/models/cant_do.dart';
 import 'package:mostro_mobile/data/models/dispute.dart';
-import 'package:mostro_mobile/data/models/enums/cant_do_reason.dart';
 import 'package:mostro_mobile/data/models/enums/role.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
+import 'package:mostro_mobile/features/trades/models/trade_state.dart';
+import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
-import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
 import 'package:mostro_mobile/generated/l10n.dart';
-import 'package:mostro_mobile/shared/notifiers/order_action_notifier.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_manager_provider.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
+import 'package:mostro_mobile/features/trades/providers/trade_state_provider.dart';
+import 'package:mostro_mobile/data/models/enums/cant_do_reason.dart';
 
 class MostroMessageDetail extends ConsumerWidget {
-  final NostrEvent order;
-
-  const MostroMessageDetail({super.key, required this.order});
+  final String orderId;
+  const MostroMessageDetail({super.key, required this.orderId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final session = ref.watch(sessionProvider(order.orderId!));
-    final action = ref.watch(orderActionNotifierProvider(order.orderId!));
-    final status = order.status;
-    // Map the action enum to the corresponding i10n string.
-    String actionText;
-    switch (action) {
-      case actions.Action.newOrder:
-        final expHrs =
-            ref.read(orderRepositoryProvider).mostroInstance?.expiration ??
-                '24';
-        actionText = S.of(context)!.newOrder(int.tryParse(expHrs) ?? 24);
-        break;
-      case actions.Action.canceled:
-        actionText = S.of(context)!.canceled(order.orderId!);
-        break;
-      case actions.Action.payInvoice:
-        final expSecs = ref
-                .read(orderRepositoryProvider)
-                .mostroInstance
-                ?.expirationSeconds ??
-            900;
-        actionText = S.of(context)!.payInvoice(
-            order.amount!, order.currency!, order.fiatAmount.minimum, expSecs);
-        break;
-      case actions.Action.addInvoice:
-        final expSecs = ref
-                .read(orderRepositoryProvider)
-                .mostroInstance
-                ?.expirationSeconds ??
-            900;
-        actionText = S.of(context)!.addInvoice(
-            order.amount!, order.currency!, order.fiatAmount.minimum, expSecs);
-        break;
-      case actions.Action.waitingSellerToPay:
-        final expSecs = ref
-                .read(orderRepositoryProvider)
-                .mostroInstance
-                ?.expirationSeconds ??
-            900;
-        actionText = S.of(context)!.waitingSellerToPay(order.orderId!, expSecs);
-        break;
-      case actions.Action.waitingBuyerInvoice:
-        final expSecs = ref
-                .read(orderRepositoryProvider)
-                .mostroInstance
-                ?.expirationSeconds ??
-            900;
-        actionText = S.of(context)!.waitingBuyerInvoice(expSecs);
-        break;
-      case actions.Action.buyerInvoiceAccepted:
-        actionText = S.of(context)!.buyerInvoiceAccepted;
-        break;
-      case actions.Action.holdInvoicePaymentAccepted:
-        actionText = S.of(context)!.holdInvoicePaymentAccepted(
-              order.fiatAmount,
-              order.currency!,
-              order.paymentMethods.firstOrNull ?? '',
-              session!.peer?.publicKey ?? '',
-            );
-        break;
-      case actions.Action.buyerTookOrder:
-        actionText = S.of(context)!.buyerTookOrder(
-              session!.peer?.publicKey ?? '',
-              order.currency!,
-              order.fiatAmount,
-              order.paymentMethods.firstOrNull ?? '',
-            );
-        break;
-      case actions.Action.fiatSentOk:
-        actionText = session!.role == Role.buyer
-            ? S.of(context)!.fiatSentOkBuyer(session.peer!.publicKey)
-            : S.of(context)!.fiatSentOkSeller(session.peer!.publicKey);
-        break;
-      case actions.Action.released:
-        actionText = S.of(context)!.released('{seller_npub}');
-        break;
-      case actions.Action.purchaseCompleted:
-        actionText = S.of(context)!.purchaseCompleted;
-        break;
-      case actions.Action.holdInvoicePaymentSettled:
-        actionText = S.of(context)!.holdInvoicePaymentSettled('{buyer_npub}');
-        break;
-      case actions.Action.rate:
-        actionText = S.of(context)!.rate;
-        break;
-      case actions.Action.rateReceived:
-        actionText = S.of(context)!.rateReceived;
-        break;
-      case actions.Action.cooperativeCancelInitiatedByYou:
-        actionText =
-            S.of(context)!.cooperativeCancelInitiatedByYou(order.orderId!);
-        break;
-      case actions.Action.cooperativeCancelInitiatedByPeer:
-        actionText =
-            S.of(context)!.cooperativeCancelInitiatedByPeer(order.orderId!);
-        break;
-      case actions.Action.cooperativeCancelAccepted:
-        actionText = S.of(context)!.cooperativeCancelAccepted(order.orderId!);
-        break;
-      case actions.Action.disputeInitiatedByYou:
-        final payload = ref
-            .read(disputeNotifierProvider(order.orderId!))
-            .getPayload<Dispute>();
-        actionText = S
-            .of(context)!
-            .disputeInitiatedByYou(order.orderId!, payload!.disputeId);
-        break;
-      case actions.Action.disputeInitiatedByPeer:
-        final payload = ref
-            .read(disputeNotifierProvider(order.orderId!))
-            .getPayload<Dispute>();
-        actionText = S
-            .of(context)!
-            .disputeInitiatedByPeer(order.orderId!, payload!.disputeId);
-        break;
-      case actions.Action.adminTookDispute:
-        //actionText = S.of(context)!.adminTookDisputeAdmin('');
-        actionText = S.of(context)!.adminTookDisputeUsers('{admin token}');
-        break;
-      case actions.Action.adminCanceled:
-        //actionText = S.of(context)!.adminCanceledAdmin('');
-        actionText = S.of(context)!.adminCanceledUsers(order.orderId!);
-        break;
-      case actions.Action.adminSettled:
-        //actionText = S.of(context)!.adminSettledAdmin;
-        actionText = S.of(context)!.adminSettledUsers(order.orderId!);
-        break;
-      case actions.Action.paymentFailed:
-        actionText = S.of(context)!.paymentFailed('{attempts}', '{retries}');
-        break;
-      case actions.Action.invoiceUpdated:
-        actionText = S.of(context)!.invoiceUpdated;
-        break;
-      case actions.Action.holdInvoicePaymentCanceled:
-        actionText = S.of(context)!.holdInvoicePaymentCanceled;
-        break;
-      case actions.Action.cantDo:
-        final msg = ref.read(cantDoNotifierProvider(order.orderId!));
-        final cantDo = msg.getPayload<CantDo>();
-        if (cantDo == null) {
-          actionText = "Can't Do Message Not Found";
-          break;
-        }
-        switch (cantDo.cantDoReason) {
-          case CantDoReason.invalidSignature:
-            actionText = S.of(context)!.invalidSignature;
-            break;
-          case CantDoReason.invalidTradeIndex:
-            actionText = S.of(context)!.invalidTradeIndex;
-            break;
-          case CantDoReason.invalidAmount:
-            actionText = S.of(context)!.invalidAmount;
-            break;
-          case CantDoReason.invalidInvoice:
-            actionText = S.of(context)!.invalidInvoice;
-            break;
-          case CantDoReason.invalidPaymentRequest:
-            actionText = S.of(context)!.invalidPaymentRequest;
-            break;
-          case CantDoReason.invalidPeer:
-            actionText = S.of(context)!.invalidPeer;
-            break;
-          case CantDoReason.invalidRating:
-            actionText = S.of(context)!.invalidRating;
-            break;
-          case CantDoReason.invalidTextMessage:
-            actionText = S.of(context)!.invalidTextMessage;
-            break;
-          case CantDoReason.invalidOrderKind:
-            actionText = S.of(context)!.invalidOrderKind;
-            break;
-          case CantDoReason.invalidOrderStatus:
-            actionText = S.of(context)!.invalidOrderStatus;
-            break;
-          case CantDoReason.invalidPubkey:
-            actionText = S.of(context)!.invalidPubkey;
-            break;
-          case CantDoReason.invalidParameters:
-            actionText = S.of(context)!.invalidParameters;
-            break;
-          case CantDoReason.orderAlreadyCanceled:
-            actionText = S.of(context)!.orderAlreadyCanceled;
-            break;
-          case CantDoReason.cantCreateUser:
-            actionText = S.of(context)!.cantCreateUser;
-            break;
-          case CantDoReason.isNotYourOrder:
-            actionText = S.of(context)!.isNotYourOrder;
-            break;
-          case CantDoReason.notAllowedByStatus:
-            actionText = S.of(context)!.notAllowedByStatus(order.orderId!, status);
-            break;
-          case CantDoReason.outOfRangeFiatAmount:
-            actionText =
-                S.of(context)!.outOfRangeFiatAmount('{fiat_min}', '{fiat_max}');
-            break;
-          case CantDoReason.outOfRangeSatsAmount:
-            final mostroInstance =
-                ref.read(orderRepositoryProvider).mostroInstance;
-            actionText = S.of(context)!.outOfRangeSatsAmount(
-                mostroInstance!.maxOrderAmount, mostroInstance.minOrderAmount);
-            break;
-          case CantDoReason.isNotYourDispute:
-            actionText = S.of(context)!.isNotYourDispute;
-            break;
-          case CantDoReason.disputeCreationError:
-            actionText = S.of(context)!.disputeCreationError;
-            break;
-          case CantDoReason.notFound:
-            actionText = S.of(context)!.notFound;
-            break;
-          case CantDoReason.invalidDisputeStatus:
-            actionText = S.of(context)!.invalidDisputeStatus;
-            break;
-          case CantDoReason.invalidAction:
-            actionText = S.of(context)!.invalidAction;
-            break;
-          case CantDoReason.pendingOrderExists:
-            actionText = S.of(context)!.pendingOrderExists;
-            break;
-        }
-        break;
-      case actions.Action.adminAddSolver:
-        actionText = S.of(context)!.adminAddSolver('{admin_solver}');
-        break;
-      default:
-        actionText = '';
+    final tradeState = ref.watch(tradeStateProvider(orderId));
+
+    if (tradeState.lastAction == null || tradeState.orderPayload == null) {
+      return const CustomCard(
+        padding: EdgeInsets.all(16),
+        child: Center(child: CircularProgressIndicator()),
+      );
     }
 
+    final actionText = _getActionText(
+      context,
+      ref,
+      tradeState,
+    );
     return CustomCard(
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
           const CircleAvatar(
-            backgroundColor: AppTheme.grey2,
+            backgroundColor: Colors.grey,
             foregroundImage: AssetImage('assets/images/launcher-icon.png'),
           ),
           const SizedBox(width: 12),
@@ -267,15 +49,178 @@ class MostroMessageDetail extends ConsumerWidget {
               children: [
                 Text(
                   actionText,
-                  style: AppTheme.theme.textTheme.bodyLarge,
+                  style: Theme.of(context).textTheme.bodyLarge,
                 ),
                 const SizedBox(height: 16),
-                Text('$status - $action'),
+                Text('${tradeState.status} - ${tradeState.lastAction}'),
               ],
             ),
           ),
         ],
       ),
     );
+  }
+
+  String _getActionText(
+    BuildContext context,
+    WidgetRef ref,
+    TradeState tradeState,
+  ) {
+    final action = tradeState.lastAction;
+    final orderPayload = tradeState.orderPayload;
+    switch (action) {
+      case actions.Action.newOrder:
+        final expHrs =
+            ref.read(orderRepositoryProvider).mostroInstance?.expiration ??
+                '24';
+        return S.of(context)!.newOrder(int.tryParse(expHrs) ?? 24);
+      case actions.Action.canceled:
+        return S.of(context)!.canceled(orderPayload?.id ?? '');
+      case actions.Action.payInvoice:
+        final expSecs = ref
+                .read(orderRepositoryProvider)
+                .mostroInstance
+                ?.expirationSeconds ??
+            900;
+        return S.of(context)!.payInvoice(
+              orderPayload?.amount.toString() ?? '',
+              orderPayload?.fiatCode ?? '',
+              orderPayload?.fiatAmount.toString() ?? '',
+              expSecs,
+            );
+      case actions.Action.addInvoice:
+        final expSecs = ref
+                .read(orderRepositoryProvider)
+                .mostroInstance
+                ?.expirationSeconds ??
+            900;
+        return S.of(context)!.addInvoice(
+              orderPayload?.amount.toString() ?? '',
+              orderPayload?.fiatCode ?? '',
+              orderPayload?.fiatAmount.toString() ?? '',
+              expSecs,
+            );
+      case actions.Action.waitingSellerToPay:
+        final expSecs = ref
+                .read(orderRepositoryProvider)
+                .mostroInstance
+                ?.expirationSeconds ??
+            900;
+        return S
+            .of(context)!
+            .waitingSellerToPay(orderPayload?.id ?? '', expSecs);
+      case actions.Action.waitingBuyerInvoice:
+        final expSecs = ref
+                .read(orderRepositoryProvider)
+                .mostroInstance
+                ?.expirationSeconds ??
+            900;
+        return S.of(context)!.waitingBuyerInvoice(expSecs);
+      case actions.Action.buyerInvoiceAccepted:
+        return S.of(context)!.buyerInvoiceAccepted;
+      case actions.Action.holdInvoicePaymentAccepted:
+        final session = ref.watch(sessionProvider(orderPayload?.id ?? ''));
+        return S.of(context)!.holdInvoicePaymentAccepted(
+              orderPayload?.fiatAmount.toString() ?? '',
+              orderPayload?.fiatCode ?? '',
+              orderPayload?.paymentMethod ?? '',
+              session?.peer?.publicKey ?? '',
+            );
+      case actions.Action.buyerTookOrder:
+        final session = ref.watch(sessionProvider(orderPayload?.id ?? ''));
+        return S.of(context)!.buyerTookOrder(
+              session?.peer?.publicKey ?? '',
+              orderPayload?.fiatCode ?? '',
+              orderPayload?.fiatAmount.toString() ?? '',
+              orderPayload?.paymentMethod ?? '',
+            );
+      case actions.Action.fiatSentOk:
+        final session = ref.watch(sessionProvider(orderPayload?.id ?? ''));
+        return session!.role == Role.buyer
+            ? S.of(context)!.fiatSentOkBuyer(session.peer!.publicKey)
+            : S.of(context)!.fiatSentOkSeller(session.peer!.publicKey);
+      case actions.Action.released:
+        return S.of(context)!.released('{seller_npub}');
+      case actions.Action.purchaseCompleted:
+        return S.of(context)!.purchaseCompleted;
+      case actions.Action.holdInvoicePaymentSettled:
+        return S.of(context)!.holdInvoicePaymentSettled('{buyer_npub}');
+      case actions.Action.rate:
+        return S.of(context)!.rate;
+      case actions.Action.rateReceived:
+        return S.of(context)!.rateReceived;
+      case actions.Action.cooperativeCancelInitiatedByYou:
+        return S
+            .of(context)!
+            .cooperativeCancelInitiatedByYou(orderPayload?.id ?? '');
+      case actions.Action.cooperativeCancelInitiatedByPeer:
+        return S
+            .of(context)!
+            .cooperativeCancelInitiatedByPeer(orderPayload?.id ?? '');
+      case actions.Action.cooperativeCancelAccepted:
+        return S.of(context)!.cooperativeCancelAccepted(orderPayload?.id ?? '');
+      case actions.Action.disputeInitiatedByYou:
+        final payload = ref
+            .read(disputeNotifierProvider(orderPayload?.id ?? ''))
+            .getPayload<Dispute>();
+        return S
+            .of(context)!
+            .disputeInitiatedByYou(orderPayload?.id ?? '', payload!.disputeId);
+      case actions.Action.disputeInitiatedByPeer:
+        final payload = ref
+            .read(disputeNotifierProvider(orderPayload?.id ?? ''))
+            .getPayload<Dispute>();
+        return S
+            .of(context)!
+            .disputeInitiatedByPeer(orderPayload?.id ?? '', payload!.disputeId);
+      case actions.Action.adminTookDispute:
+        return S.of(context)!.adminTookDisputeUsers('{admin token}');
+      case actions.Action.adminCanceled:
+        return S.of(context)!.adminCanceledUsers(orderPayload?.id ?? '');
+      case actions.Action.adminSettled:
+        return S.of(context)!.adminSettledUsers(orderPayload?.id ?? '');
+      case actions.Action.paymentFailed:
+        return S.of(context)!.paymentFailed('{attempts}', '{retries}');
+      case actions.Action.invoiceUpdated:
+        return S.of(context)!.invoiceUpdated;
+      case actions.Action.holdInvoicePaymentCanceled:
+        return S.of(context)!.holdInvoicePaymentCanceled;
+      case actions.Action.cantDo:
+        return _getCantDoMessage(context, ref, tradeState);
+      default:
+        return 'No message found for action ${tradeState.lastAction}';
+    }
+  }
+
+  String _getCantDoMessage(BuildContext context, WidgetRef ref, TradeState tradeState) {
+    final orderPayload = tradeState.orderPayload;
+    final status = tradeState.status;
+    final cantDoReason = ref
+        .read(cantDoNotifierProvider(orderPayload?.id ?? ''))
+        .getPayload<CantDoReason>();
+    switch (cantDoReason) {
+      case CantDoReason.invalidSignature:
+        return S.of(context)!.invalidSignature;
+      case CantDoReason.notAllowedByStatus:
+        return S.of(context)!.notAllowedByStatus(orderPayload?.id ?? '', status);
+      case CantDoReason.outOfRangeFiatAmount:
+        return S.of(context)!.outOfRangeFiatAmount('{fiat_min}', '{fiat_max}');
+      case CantDoReason.outOfRangeSatsAmount:
+        final mostroInstance = ref.read(orderRepositoryProvider).mostroInstance;
+        return S.of(context)!.outOfRangeSatsAmount(
+            mostroInstance!.maxOrderAmount, mostroInstance.minOrderAmount);
+      case CantDoReason.isNotYourDispute:
+        return S.of(context)!.isNotYourDispute;
+      case CantDoReason.disputeCreationError:
+        return S.of(context)!.disputeCreationError;
+      case CantDoReason.invalidDisputeStatus:
+        return S.of(context)!.invalidDisputeStatus;
+      case CantDoReason.invalidAction:
+        return S.of(context)!.invalidAction;
+      case CantDoReason.pendingOrderExists:
+        return S.of(context)!.pendingOrderExists;
+      default:
+        return '${status.toString()} - ${tradeState.lastAction}';
+    }
   }
 }

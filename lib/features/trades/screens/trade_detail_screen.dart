@@ -1,5 +1,4 @@
 import 'package:circular_countdown/circular_countdown.dart';
-import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,12 +8,11 @@ import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
 import 'package:mostro_mobile/data/models/enums/role.dart';
 import 'package:mostro_mobile/data/models/enums/status.dart';
-import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
+import 'package:mostro_mobile/features/trades/models/trade_state.dart';
+import 'package:mostro_mobile/features/trades/providers/trade_state_provider.dart';
 import 'package:mostro_mobile/features/trades/widgets/mostro_message_detail_widget.dart';
-import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
-import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_manager_provider.dart';
 import 'package:mostro_mobile/shared/utils/currency_utils.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
@@ -28,10 +26,10 @@ class TradeDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final order = ref.watch(eventProvider(orderId));
-
-    // Make sure we actually have an order from the provider:
-    if (order == null) {
+    final tradeState = ref.watch(tradeStateProvider(orderId));
+    // If message is null or doesn't have an Order payload, show loading
+    final orderPayload = tradeState.orderPayload;
+    if (orderPayload == null) {
       return const Scaffold(
         backgroundColor: AppTheme.dark1,
         body: Center(child: CircularProgressIndicator()),
@@ -41,62 +39,79 @@ class TradeDetailScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppTheme.dark1,
       appBar: OrderAppBar(title: 'ORDER DETAILS'),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            const SizedBox(height: 16),
-            // Display basic info about the trade:
-            _buildSellerAmount(ref, order),
-            const SizedBox(height: 16),
-            _buildOrderId(context),
-            const SizedBox(height: 16),
-            // Detailed info: includes the last Mostro message action text
-            MostroMessageDetail(order: order),
-            const SizedBox(height: 24),
-            _buildCountDownTime(order.expirationDate),
-            const SizedBox(height: 36),
-            Wrap(
-              alignment: WrapAlignment.center,
-              spacing: 10,
-              runSpacing: 10,
+      body: Builder(
+        builder: (context) {
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
               children: [
-                _buildCloseButton(context),
-                ..._buildActionButtons(context, ref, order),
+                const SizedBox(height: 16),
+                // Display basic info about the trade:
+                _buildSellerAmount(ref, tradeState),
+                const SizedBox(height: 16),
+                _buildOrderId(context),
+                const SizedBox(height: 16),
+                // Detailed info: includes the last Mostro message action text
+                MostroMessageDetail(orderId: orderId),
+                const SizedBox(height: 24),
+                _buildCountDownTime(orderPayload.expiresAt),
+                const SizedBox(height: 36),
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    _buildCloseButton(context),
+                    ..._buildActionButtons(
+                      context,
+                      ref,
+                      tradeState,
+                    ),
+                  ],
+                ),
               ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 
   /// Builds a card showing the user is "selling/buying X sats for Y fiat" etc.
-  Widget _buildSellerAmount(WidgetRef ref, NostrEvent order) {
-    final session = ref.watch(sessionProvider(order.orderId!));
+  Widget _buildSellerAmount(WidgetRef ref, TradeState tradeState) {
+    final session = ref.watch(sessionProvider(orderId));
 
     final selling = session!.role == Role.seller ? 'selling' : 'buying';
+    final currencyFlag = CurrencyUtils.getFlagFromCurrency(
+      tradeState.orderPayload!.fiatCode,
+    );
 
     final amountString =
-        '${order.fiatAmount} ${order.currency} ${CurrencyUtils.getFlagFromCurrency(order.currency!)}';
+        '${tradeState.orderPayload!.fiatAmount} ${tradeState.orderPayload!.fiatCode} $currencyFlag';
 
-    // If `order.amount` is "0", the trade is "at market price"
-    final isZeroAmount = (order.amount == '0');
-    final satText = isZeroAmount ? '' : ' ${order.amount}';
+    // If `orderPayload.amount` is 0, the trade is "at market price"
+    final isZeroAmount = (tradeState.orderPayload!.amount == 0);
+    final satText = isZeroAmount ? '' : ' ${tradeState.orderPayload!.amount}';
     final priceText = isZeroAmount ? 'at market price' : '';
 
-    final premium = int.tryParse(order.premium ?? '0') ?? 0;
+    final premium = tradeState.orderPayload!.premium;
     final premiumText = premium == 0
         ? ''
         : (premium > 0)
             ? 'with a +$premium% premium'
             : 'with a $premium% discount';
 
-    // Payment method can be multiple, we only display the first for brevity:
-    final method = order.paymentMethods.isNotEmpty
-        ? order.paymentMethods[0]
-        : 'No payment method';
-
+    // Payment method
+    final method = tradeState.orderPayload!.paymentMethod;
+    final timestamp = formatDateTime(
+      tradeState.orderPayload!.createdAt != null &&
+              tradeState.orderPayload!.createdAt! > 0
+          ? DateTime.fromMillisecondsSinceEpoch(
+              tradeState.orderPayload!.createdAt!)
+          : DateTime.fromMillisecondsSinceEpoch(
+              tradeState.orderPayload!.createdAt ?? 0,
+            ),
+    );
     return CustomCard(
       padding: const EdgeInsets.all(16),
       child: Row(
@@ -113,7 +128,7 @@ class TradeDetailScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Created on: ${formatDateTime(order.createdAt!)}',
+                  'Created on: $timestamp',
                   style: textTheme.bodyLarge,
                 ),
                 const SizedBox(height: 16),
@@ -165,7 +180,12 @@ class TradeDetailScreen extends ConsumerWidget {
   }
 
   /// Build a circular countdown to show how many hours are left until expiration.
-  Widget _buildCountDownTime(DateTime expiration) {
+  Widget _buildCountDownTime(int? expiresAtTimestamp) {
+    // Convert timestamp to DateTime
+    final expiration = expiresAtTimestamp != null && expiresAtTimestamp > 0
+        ? DateTime.fromMillisecondsSinceEpoch(expiresAtTimestamp)
+        : DateTime.now().add(const Duration(hours: 24));
+
     // If expiration has passed, the difference is negative => zero.
     final now = DateTime.now();
     final Duration difference =
@@ -185,18 +205,11 @@ class TradeDetailScreen extends ConsumerWidget {
     );
   }
 
-  /// Main action button area, switching on `order.status`.
+  /// Main action button area, switching on `orderPayload.status`.
   /// Additional checks use `message.action` to refine which button to show.
   /// Following the Mostro protocol state machine for order flow.
   List<Widget> _buildActionButtons(
-      BuildContext context, WidgetRef ref, NostrEvent order) {
-    // Using the new messageStateProvider to ensure we get the latest message state
-    final messageState = ref.watch(mostroMessageStreamProvider(orderId));
-    final message =
-        messageState.value ?? ref.watch(orderNotifierProvider(orderId));
-
-    // Default action if message is null
-    final currentAction = message?.action;
+      BuildContext context, WidgetRef ref, TradeState tradeState) {
     final session = ref.watch(sessionProvider(orderId));
     final userRole = session?.role;
 
@@ -206,7 +219,8 @@ class TradeDetailScreen extends ConsumerWidget {
 
     // Decide using canonical FSM status from provider (falls back to
     // on-chain tag if not yet available).
-    final status = order.status;
+    final status = tradeState.status;
+    // Create and return buttons list based on status
 
     switch (status) {
       case Status.pending:
@@ -280,7 +294,7 @@ class TradeDetailScreen extends ConsumerWidget {
         return widgets;
 
       case Status.settledHoldInvoice:
-        if (currentAction == actions.Action.rate) {
+        if (tradeState.lastAction == actions.Action.rate) {
           return [
             // Rate button if applicable (common for both roles)
             _buildNostrButton(
@@ -303,8 +317,8 @@ class TradeDetailScreen extends ConsumerWidget {
         // Role-specific actions according to FSM
         if (userRole == Role.buyer) {
           // FSM: Buyer can fiat-sent
-          if (currentAction != actions.Action.fiatSentOk &&
-              currentAction != actions.Action.fiatSent) {
+          if (tradeState.lastAction != actions.Action.fiatSentOk &&
+              tradeState.lastAction != actions.Action.fiatSent) {
             widgets.add(_buildNostrButton(
               'FIAT SENT',
               ref: ref,
@@ -329,9 +343,9 @@ class TradeDetailScreen extends ConsumerWidget {
           ));
 
           // FSM: Buyer can dispute
-          if (currentAction != actions.Action.disputeInitiatedByYou &&
-              currentAction != actions.Action.disputeInitiatedByPeer &&
-              currentAction != actions.Action.dispute) {
+          if (tradeState.lastAction != actions.Action.disputeInitiatedByYou &&
+              tradeState.lastAction != actions.Action.disputeInitiatedByPeer &&
+              tradeState.lastAction != actions.Action.dispute) {
             widgets.add(_buildNostrButton(
               'DISPUTE',
               ref: ref,
@@ -356,9 +370,9 @@ class TradeDetailScreen extends ConsumerWidget {
           ));
 
           // FSM: Seller can dispute
-          if (currentAction != actions.Action.disputeInitiatedByYou &&
-              currentAction != actions.Action.disputeInitiatedByPeer &&
-              currentAction != actions.Action.dispute) {
+          if (tradeState.lastAction != actions.Action.disputeInitiatedByYou &&
+              tradeState.lastAction != actions.Action.disputeInitiatedByPeer &&
+              tradeState.lastAction != actions.Action.dispute) {
             widgets.add(_buildNostrButton(
               'DISPUTE',
               ref: ref,
@@ -373,7 +387,7 @@ class TradeDetailScreen extends ConsumerWidget {
         }
 
         // Rate button if applicable (common for both roles)
-        if (currentAction == actions.Action.rate) {
+        if (tradeState.lastAction == actions.Action.rate) {
           widgets.add(_buildNostrButton(
             'RATE',
             ref: ref,
@@ -450,7 +464,8 @@ class TradeDetailScreen extends ConsumerWidget {
         final widgets = <Widget>[];
 
         // Add confirm cancel if cooperative cancel was initiated by peer
-        if (currentAction == actions.Action.cooperativeCancelInitiatedByPeer) {
+        if (tradeState.lastAction ==
+            actions.Action.cooperativeCancelInitiatedByPeer) {
           widgets.add(_buildNostrButton(
             'CONFIRM CANCEL',
             ref: ref,
@@ -470,7 +485,7 @@ class TradeDetailScreen extends ConsumerWidget {
         final widgets = <Widget>[];
 
         // FSM: Both roles can rate counterparty if not already rated
-        if (currentAction != actions.Action.rateReceived) {
+        if (tradeState.lastAction != actions.Action.rateReceived) {
           widgets.add(_buildNostrButton(
             'RATE',
             ref: ref,

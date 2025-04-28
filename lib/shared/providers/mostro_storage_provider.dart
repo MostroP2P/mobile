@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
+import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/data/repositories/mostro_storage.dart';
 import 'package:mostro_mobile/shared/providers/mostro_database_provider.dart';
 
@@ -19,3 +20,13 @@ final mostroMessageHistoryProvider = StreamProvider.family<List<MostroMessage>, 
     return storage.watchAllMessages(orderId);
   },
 );
+
+final mostroOrderStreamProvider = FutureProvider.family<MostroMessage?, String>((ref, orderId) async {
+  final storage = ref.read(mostroStorageProvider);
+  return await storage.getLatestMessageOfTypeById<Order>(orderId);
+});
+
+final mostroOrderProvider = FutureProvider.family<MostroMessage?, String>((ref, orderId) async {
+  final storage = ref.read(mostroStorageProvider);
+  return await storage.getLatestMessageById(orderId);
+});
