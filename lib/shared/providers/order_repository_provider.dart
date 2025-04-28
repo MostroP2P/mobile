@@ -30,7 +30,7 @@ final eventProvider = Provider.family<NostrEvent?, String>((ref, orderId) {
     data: (data) => data,
     orElse: () => [],
   );
-  // firstWhereOrNull returns null if no match is found
+  // lastWhereOrNull returns null if no match is found
   return allEvents
-      .firstWhereOrNull((evt) => (evt as NostrEvent).orderId == orderId);
+      .lastWhereOrNull((evt) => (evt as NostrEvent).orderId == orderId);
 });

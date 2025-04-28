@@ -11,7 +11,6 @@ import 'package:mostro_mobile/data/models/enums/role.dart';
 import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
-import 'package:mostro_mobile/features/order/providers/order_status_provider.dart';
 import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
 import 'package:mostro_mobile/features/trades/widgets/mostro_message_detail_widget.dart';
 import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
@@ -239,7 +238,7 @@ class TradeDetailScreen extends ConsumerWidget {
             completeProvider: completeProvider,
             errorProvider: errorProvider,
             backgroundColor: AppTheme.mostroGreen,
-            onPressed: () => context.push('/pay_invoice/${orderId}'),
+            onPressed: () => context.push('/pay_invoice/$orderId'),
           ));
         }
         widgets.add(_buildNostrButton(
@@ -265,7 +264,7 @@ class TradeDetailScreen extends ConsumerWidget {
             completeProvider: completeProvider,
             errorProvider: errorProvider,
             backgroundColor: AppTheme.mostroGreen,
-            onPressed: () => context.push('/add_invoice/${orderId}'),
+            onPressed: () => context.push('/add_invoice/$orderId'),
           ));
         }
         widgets.add(_buildNostrButton(
@@ -290,7 +289,7 @@ class TradeDetailScreen extends ConsumerWidget {
               completeProvider: completeProvider,
               errorProvider: errorProvider,
               backgroundColor: AppTheme.mostroGreen,
-              onPressed: () => context.push('/rate_user/${orderId}'),
+              onPressed: () => context.push('/rate_user/$orderId'),
             )
           ];
         } else {
@@ -381,7 +380,7 @@ class TradeDetailScreen extends ConsumerWidget {
             completeProvider: completeProvider,
             errorProvider: errorProvider,
             backgroundColor: AppTheme.mostroGreen,
-            onPressed: () => context.push('/rate_user/${orderId}'),
+            onPressed: () => context.push('/rate_user/$orderId'),
           ));
         }
 
@@ -478,7 +477,7 @@ class TradeDetailScreen extends ConsumerWidget {
             completeProvider: completeProvider,
             errorProvider: errorProvider,
             backgroundColor: AppTheme.mostroGreen,
-            onPressed: () => context.push('/rate_user/${orderId}'),
+            onPressed: () => context.push('/rate_user/$orderId'),
           ));
         }
 

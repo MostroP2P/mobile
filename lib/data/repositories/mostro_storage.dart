@@ -16,6 +16,9 @@ class MostroStorage extends BaseStorage<MostroMessage> {
     try {
       // Add metadata for easier querying
       final Map<String, dynamic> dbMap = message.toJson();
+      if (message.timestamp == null) {
+        message.timestamp = DateTime.now().millisecondsSinceEpoch;
+      }
       dbMap['timestamp'] = message.timestamp;
 
       await store.record(id).put(db, dbMap);
@@ -75,12 +78,25 @@ class MostroStorage extends BaseStorage<MostroMessage> {
   }
 
   /// Filter messages by payload type
-  Future<List<MostroMessage<T>>> getMessagesOfType<T extends Payload>() async {
+  Future<List<MostroMessage>> getMessagesOfType<T extends Payload>() async {
     final messages = await getAllMessages();
     return messages
         .where((m) => m.payload is T)
         .map((m) => m as MostroMessage<T>)
         .toList();
+  }
+
+  /// Filter messages by payload type
+  Future<MostroMessage?> getLatestMessageOfTypeById<T extends Payload>(
+    String orderId,
+  ) async {
+    final messages = await getMessagesForId(orderId);
+    for (final message in messages.reversed) {
+      if (message.payload is T) {
+        return message;
+      }
+    }
+    return null;
   }
 
   /// Filter messages by tradeKeyPublic
@@ -105,7 +121,11 @@ class MostroStorage extends BaseStorage<MostroMessage> {
 
   /// Get the latest message for an order, regardless of type
   Future<MostroMessage?> getLatestMessageById(String orderId) async {
-    final finder = Finder(filter: Filter.equals('id', orderId), limit: 1);
+    final finder = Finder(
+      filter: Filter.equals('id', orderId),
+      sortOrders: _getDefaultSort(),
+      limit: 1,
+    );
 
     final snapshot = await store.findFirst(db, finder: finder);
     if (snapshot != null) {
@@ -119,11 +139,14 @@ class MostroStorage extends BaseStorage<MostroMessage> {
     return watchById(orderId);
   }
 
+  // Use the same sorting across all methods that return lists of messages
+  List<SortOrder> _getDefaultSort() => [SortOrder('timestamp', false, true)];
+
   /// Stream of all messages for an order
   Stream<List<MostroMessage>> watchAllMessages(String orderId) {
     return watch(
       filter: Filter.equals('id', orderId),
-      sort: [SortOrder('timestamp', false, true)],
+      sort: _getDefaultSort(),
     );
   }
 

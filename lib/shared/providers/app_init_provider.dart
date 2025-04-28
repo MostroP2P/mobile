@@ -37,10 +37,10 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
 
   for (final session in sessionManager.sessions) {
     if (session.orderId != null) {
-      final orderList = await mostroStorage.getMessagesForId(session.orderId!);
-      if (orderList.isNotEmpty) {
+      final order = await mostroStorage.getLatestMessageById(session.orderId!);
+      if (order != null) {
         ref.read(orderActionNotifierProvider(session.orderId!).notifier).set(
-              orderList.last.action,
+              order.action,
             );
       }
       ref.read(
