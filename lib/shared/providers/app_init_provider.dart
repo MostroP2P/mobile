@@ -39,13 +39,20 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
     if (session.orderId != null) {
       final order = await mostroStorage.getLatestMessageById(session.orderId!);
       if (order != null) {
+        // Set the order action
         ref.read(orderActionNotifierProvider(session.orderId!).notifier).set(
               order.action,
             );
+            
+        // Explicitly initialize EACH notifier in the family
+        // to ensure they're all properly set up for this orderId
+        ref.read(paymentNotifierProvider(session.orderId!).notifier).sync();
+        ref.read(cantDoNotifierProvider(session.orderId!).notifier).sync();
+        ref.read(disputeNotifierProvider(session.orderId!).notifier).sync();
       }
-      ref.read(
-        orderNotifierProvider(session.orderId!),
-      );
+      
+      // Read the order notifier provider last, which will watch all the above
+      ref.read(orderNotifierProvider(session.orderId!));
     }
 
     if (session.peer != null) {

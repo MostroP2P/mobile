@@ -13,9 +13,11 @@ part 'order_notifier_provider.g.dart';
 final orderNotifierProvider =
     StateNotifierProvider.family<OrderNotifier, MostroMessage, String>(
   (ref, orderId) {
+    // Initialize all related notifiers
     ref.read(cantDoNotifierProvider(orderId));
     ref.read(paymentNotifierProvider(orderId));
     ref.read(disputeNotifierProvider(orderId));
+    
     return OrderNotifier(
       orderId,
       ref,

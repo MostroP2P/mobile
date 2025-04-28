@@ -136,7 +136,18 @@ class MostroStorage extends BaseStorage<MostroMessage> {
 
   /// Stream of the latest message for an order
   Stream<MostroMessage?> watchLatestMessage(String orderId) {
-    return watchById(orderId);
+    // We want to watch ALL messages for this orderId, not just a specific key
+    final query = store.query(
+      finder: Finder(
+        filter: Filter.equals('id', orderId),
+        sortOrders: _getDefaultSort(),
+        limit: 1,
+      ),
+    );
+    
+    return query
+        .onSnapshots(db)
+        .map((snaps) => snaps.isEmpty ? null : MostroMessage.fromJson(snaps.first.value));
   }
 
   // Use the same sorting across all methods that return lists of messages
