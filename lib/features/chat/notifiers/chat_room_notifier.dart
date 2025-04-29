@@ -42,14 +42,17 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
       (event) async {
         try {
           final chat = await event.mostroUnWrap(session.sharedKey!);
-          if (!state.messages.contains(chat)) {
-            state = state.copy(
-              messages: [
-                ...state.messages,
-                chat,
-              ],
-            );
-          }
+          // Deduplicate by message ID and always sort by createdAt
+          final allMessages = [
+            ...state.messages,
+            chat,
+          ];
+          // Use a map to deduplicate by event id
+          final deduped = {
+            for (var m in allMessages) m.id: m
+          }.values.toList();
+          deduped.sort((a, b) => a.createdAt!.compareTo(b.createdAt!));
+          state = state.copy(messages: deduped);
         } catch (e) {
           _logger.e(e);
         }
