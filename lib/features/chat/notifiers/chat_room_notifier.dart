@@ -54,7 +54,6 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
         try {
           final eventStore = ref.read(eventStorageProvider);
 
-          if (await eventStore.hasItem(event.id!)) return;
           await eventStore.putItem(
             event.id!,
             event,
