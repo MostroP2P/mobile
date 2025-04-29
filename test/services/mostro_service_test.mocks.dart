@@ -107,6 +107,16 @@ class _FakeMostroMessage_6<T extends _i6.Payload> extends _i1.SmartFake
         );
 }
 
+class _FakeFilter_7 extends _i1.SmartFake implements _i5.Filter {
+  _FakeFilter_7(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
+}
+
 /// A class which mocks [NostrService].
 ///
 /// See the documentation for Mockito's code generation for more information.
@@ -571,16 +581,6 @@ class MockSessionNotifier extends _i1.Mock implements _i12.SessionNotifier {
       ) as _i9.Future<void>);
 
   @override
-  _i9.Future<void> clearExpiredSessions() => (super.noSuchMethod(
-        Invocation.method(
-          #clearExpiredSessions,
-          [],
-        ),
-        returnValue: _i9.Future<void>.value(),
-        returnValueForMissingStub: _i9.Future<void>.value(),
-      ) as _i9.Future<void>);
-
-  @override
   void dispose() => super.noSuchMethod(
         Invocation.method(
           #dispose,
@@ -647,39 +647,17 @@ class MockMostroStorage extends _i1.Mock implements _i16.MostroStorage {
       ) as _i5.StoreRef<String, Map<String, dynamic>>);
 
   @override
-  String generateMessageKey(_i7.MostroMessage<_i6.Payload>? message) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #generateMessageKey,
-          [message],
-        ),
-        returnValue: _i11.dummyValue<String>(
-          this,
-          Invocation.method(
-            #generateMessageKey,
-            [message],
-          ),
-        ),
-      ) as String);
-
-  @override
-  _i9.Future<void> addMessage(_i7.MostroMessage<_i6.Payload>? message) =>
+  _i9.Future<void> addMessage(
+    String? key,
+    _i7.MostroMessage<_i6.Payload>? message,
+  ) =>
       (super.noSuchMethod(
         Invocation.method(
           #addMessage,
-          [message],
-        ),
-        returnValue: _i9.Future<void>.value(),
-        returnValueForMissingStub: _i9.Future<void>.value(),
-      ) as _i9.Future<void>);
-
-  @override
-  _i9.Future<void> addMessages(
-          List<_i7.MostroMessage<_i6.Payload>>? messages) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #addMessages,
-          [messages],
+          [
+            key,
+            message,
+          ],
         ),
         returnValue: _i9.Future<void>.value(),
         returnValueForMissingStub: _i9.Future<void>.value(),
@@ -708,18 +686,6 @@ class MockMostroStorage extends _i1.Mock implements _i16.MostroStorage {
       ) as _i9.Future<List<_i7.MostroMessage<_i6.Payload>>>);
 
   @override
-  _i9.Future<void> deleteMessageByOrderId<T extends _i6.Payload>(
-          String? orderId) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #deleteMessage,
-          [orderId],
-        ),
-        returnValue: _i9.Future<void>.value(),
-        returnValueForMissingStub: _i9.Future<void>.value(),
-      ) as _i9.Future<void>);
-
-  @override
   _i9.Future<void> deleteAllMessages() => (super.noSuchMethod(
         Invocation.method(
           #deleteAllMessages,
@@ -733,7 +699,7 @@ class MockMostroStorage extends _i1.Mock implements _i16.MostroStorage {
   _i9.Future<void> deleteAllMessagesByOrderId(String? orderId) =>
       (super.noSuchMethod(
         Invocation.method(
-          #deleteAllMessagesById,
+          #deleteAllMessagesByOrderId,
           [orderId],
         ),
         returnValue: _i9.Future<void>.value(),
@@ -741,15 +707,26 @@ class MockMostroStorage extends _i1.Mock implements _i16.MostroStorage {
       ) as _i9.Future<void>);
 
   @override
-  _i9.Future<List<_i7.MostroMessage<T>>>
+  _i9.Future<List<_i7.MostroMessage<_i6.Payload>>>
       getMessagesOfType<T extends _i6.Payload>() => (super.noSuchMethod(
             Invocation.method(
               #getMessagesOfType,
               [],
             ),
-            returnValue: _i9.Future<List<_i7.MostroMessage<T>>>.value(
-                <_i7.MostroMessage<T>>[]),
-          ) as _i9.Future<List<_i7.MostroMessage<T>>>);
+            returnValue: _i9.Future<List<_i7.MostroMessage<_i6.Payload>>>.value(
+                <_i7.MostroMessage<_i6.Payload>>[]),
+          ) as _i9.Future<List<_i7.MostroMessage<_i6.Payload>>>);
+
+  @override
+  _i9.Future<_i7.MostroMessage<_i6.Payload>?>
+      getLatestMessageOfTypeById<T extends _i6.Payload>(String? orderId) =>
+          (super.noSuchMethod(
+            Invocation.method(
+              #getLatestMessageOfTypeById,
+              [orderId],
+            ),
+            returnValue: _i9.Future<_i7.MostroMessage<_i6.Payload>?>.value(),
+          ) as _i9.Future<_i7.MostroMessage<_i6.Payload>?>);
 
   @override
   _i9.Future<List<_i7.MostroMessage<_i6.Payload>>> getMessagesForId(
@@ -799,26 +776,10 @@ class MockMostroStorage extends _i1.Mock implements _i16.MostroStorage {
       ) as Map<String, dynamic>);
 
   @override
-  String messageKey(_i7.MostroMessage<_i6.Payload>? msg) => (super.noSuchMethod(
+  _i9.Future<bool> hasMessageByKey(String? key) => (super.noSuchMethod(
         Invocation.method(
-          #messageKey,
-          [msg],
-        ),
-        returnValue: _i11.dummyValue<String>(
-          this,
-          Invocation.method(
-            #messageKey,
-            [msg],
-          ),
-        ),
-      ) as String);
-
-  @override
-  _i9.Future<bool> hasMessage(_i7.MostroMessage<_i6.Payload>? msg) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #hasMessage,
-          [msg],
+          #hasMessageByKey,
+          [key],
         ),
         returnValue: _i9.Future<bool>.value(false),
       ) as _i9.Future<bool>);
@@ -846,6 +807,17 @@ class MockMostroStorage extends _i1.Mock implements _i16.MostroStorage {
       ) as _i9.Stream<_i7.MostroMessage<_i6.Payload>?>);
 
   @override
+  _i9.Stream<_i7.MostroMessage<_i6.Payload>?> watchLatestMessageOfType<T>(
+          String? orderId) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #watchLatestMessageOfType,
+          [orderId],
+        ),
+        returnValue: _i9.Stream<_i7.MostroMessage<_i6.Payload>?>.empty(),
+      ) as _i9.Stream<_i7.MostroMessage<_i6.Payload>?>);
+
+  @override
   _i9.Stream<List<_i7.MostroMessage<_i6.Payload>>> watchAllMessages(
           String? orderId) =>
       (super.noSuchMethod(
@@ -857,15 +829,27 @@ class MockMostroStorage extends _i1.Mock implements _i16.MostroStorage {
       ) as _i9.Stream<List<_i7.MostroMessage<_i6.Payload>>>);
 
   @override
-  _i9.Stream<_i7.MostroMessage<_i6.Payload>?> watchMessagesByRequestId(
+  _i9.Stream<_i7.MostroMessage<_i6.Payload>?> watchByRequestId(
           int? requestId) =>
       (super.noSuchMethod(
         Invocation.method(
-          #watchMessagesByRequestId,
+          #watchByRequestId,
           [requestId],
         ),
         returnValue: _i9.Stream<_i7.MostroMessage<_i6.Payload>?>.empty(),
       ) as _i9.Stream<_i7.MostroMessage<_i6.Payload>?>);
+
+  @override
+  _i9.Future<List<_i7.MostroMessage<_i6.Payload>>> getAllMessagesForOrderId(
+          String? orderId) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #getAllMessagesForOrderId,
+          [orderId],
+        ),
+        returnValue: _i9.Future<List<_i7.MostroMessage<_i6.Payload>>>.value(
+            <_i7.MostroMessage<_i6.Payload>>[]),
+      ) as _i9.Future<List<_i7.MostroMessage<_i6.Payload>>>);
 
   @override
   _i9.Future<void> putItem(
@@ -904,17 +888,6 @@ class MockMostroStorage extends _i1.Mock implements _i16.MostroStorage {
       ) as _i9.Future<bool>);
 
   @override
-  _i9.Future<List<_i7.MostroMessage<_i6.Payload>>> getAllItems() =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #getAllItems,
-          [],
-        ),
-        returnValue: _i9.Future<List<_i7.MostroMessage<_i6.Payload>>>.value(
-            <_i7.MostroMessage<_i6.Payload>>[]),
-      ) as _i9.Future<List<_i7.MostroMessage<_i6.Payload>>>);
-
-  @override
   _i9.Future<void> deleteItem(String? id) => (super.noSuchMethod(
         Invocation.method(
           #deleteItem,
@@ -925,9 +898,9 @@ class MockMostroStorage extends _i1.Mock implements _i16.MostroStorage {
       ) as _i9.Future<void>);
 
   @override
-  _i9.Future<void> deleteAllItems() => (super.noSuchMethod(
+  _i9.Future<void> deleteAll() => (super.noSuchMethod(
         Invocation.method(
-          #deleteAllItems,
+          #deleteAll,
           [],
         ),
         returnValue: _i9.Future<void>.value(),
@@ -935,57 +908,96 @@ class MockMostroStorage extends _i1.Mock implements _i16.MostroStorage {
       ) as _i9.Future<void>);
 
   @override
-  _i9.Future<List<String>> deleteWhere(
-    bool Function(_i7.MostroMessage<_i6.Payload>)? filter, {
-    int? maxBatchSize,
-  }) =>
-      (super.noSuchMethod(
+  _i9.Future<int> deleteWhere(_i5.Filter? filter) => (super.noSuchMethod(
         Invocation.method(
           #deleteWhere,
           [filter],
-          {#maxBatchSize: maxBatchSize},
         ),
-        returnValue: _i9.Future<List<String>>.value(<String>[]),
-      ) as _i9.Future<List<String>>);
+        returnValue: _i9.Future<int>.value(0),
+      ) as _i9.Future<int>);
 
   @override
-  _i9.Stream<List<_i7.MostroMessage<_i6.Payload>>> watch() =>
+  _i9.Future<List<_i7.MostroMessage<_i6.Payload>>> find({
+    _i5.Filter? filter,
+    List<_i5.SortOrder<Object?>>? sort,
+    int? limit,
+    int? offset,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #find,
+          [],
+          {
+            #filter: filter,
+            #sort: sort,
+            #limit: limit,
+            #offset: offset,
+          },
+        ),
+        returnValue: _i9.Future<List<_i7.MostroMessage<_i6.Payload>>>.value(
+            <_i7.MostroMessage<_i6.Payload>>[]),
+      ) as _i9.Future<List<_i7.MostroMessage<_i6.Payload>>>);
+
+  @override
+  _i9.Future<List<_i7.MostroMessage<_i6.Payload>>> getAll() =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #getAll,
+          [],
+        ),
+        returnValue: _i9.Future<List<_i7.MostroMessage<_i6.Payload>>>.value(
+            <_i7.MostroMessage<_i6.Payload>>[]),
+      ) as _i9.Future<List<_i7.MostroMessage<_i6.Payload>>>);
+
+  @override
+  _i9.Stream<List<_i7.MostroMessage<_i6.Payload>>> watch({
+    _i5.Filter? filter,
+    List<_i5.SortOrder<Object?>>? sort,
+  }) =>
       (super.noSuchMethod(
         Invocation.method(
           #watch,
           [],
+          {
+            #filter: filter,
+            #sort: sort,
+          },
         ),
         returnValue: _i9.Stream<List<_i7.MostroMessage<_i6.Payload>>>.empty(),
       ) as _i9.Stream<List<_i7.MostroMessage<_i6.Payload>>>);
 
   @override
-  _i9.Stream<_i7.MostroMessage<_i6.Payload>?> watchMessageForOrderId(
-          String? orderId) =>
+  _i9.Stream<_i7.MostroMessage<_i6.Payload>?> watchById(String? id) =>
       (super.noSuchMethod(
         Invocation.method(
-          #watchMessageForOrderId,
-          [orderId],
+          #watchById,
+          [id],
         ),
         returnValue: _i9.Stream<_i7.MostroMessage<_i6.Payload>?>.empty(),
       ) as _i9.Stream<_i7.MostroMessage<_i6.Payload>?>);
 
   @override
-  _i9.Stream<List<_i7.MostroMessage<_i6.Payload>>> watchAllMessagesForOrderId(
-          String? orderId) =>
+  _i5.Filter eq(
+    String? field,
+    Object? value,
+  ) =>
       (super.noSuchMethod(
         Invocation.method(
-          #watchAllMessagesForOrderId,
-          [orderId],
+          #eq,
+          [
+            field,
+            value,
+          ],
         ),
-        returnValue: _i9.Stream<List<_i7.MostroMessage<_i6.Payload>>>.empty(),
-      ) as _i9.Stream<List<_i7.MostroMessage<_i6.Payload>>>);
-
-  @override
-  void dispose() => super.noSuchMethod(
-        Invocation.method(
-          #dispose,
-          [],
+        returnValue: _FakeFilter_7(
+          this,
+          Invocation.method(
+            #eq,
+            [
+              field,
+              value,
+            ],
+          ),
         ),
-        returnValueForMissingStub: null,
-      );
+      ) as _i5.Filter);
 }

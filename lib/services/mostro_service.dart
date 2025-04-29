@@ -68,11 +68,6 @@ class MostroService {
         if (await messageStorage.hasMessageByKey(decryptedEvent.id!)) return;
         ref.read(orderActionNotifierProvider(msg.id!).notifier).set(msg.action);
       }
-      if (msg.action == Action.canceled) {
-        await messageStorage.deleteAllMessagesByOrderId(session.orderId!);
-        await _sessionNotifier.deleteSession(session.orderId!);
-        return;
-      }
       await messageStorage.addMessage(decryptedEvent.id!, msg);
       if (session.orderId == null && msg.id != null) {
         session.orderId = msg.id;

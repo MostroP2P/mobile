@@ -6,13 +6,13 @@ import 'package:mostro_mobile/shared/providers/session_manager_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'mostro_service_provider.g.dart';
 
-@riverpod
+@Riverpod(keepAlive: true)
 EventStorage eventStorage(Ref ref) {
   final db = ref.watch(eventDatabaseProvider);
   return EventStorage(db: db);
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 MostroService mostroService(Ref ref) {
   final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
   final mostroService = MostroService(
