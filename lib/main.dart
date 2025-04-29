@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -16,7 +18,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await requestNotificationPermissionIfNeeded();
+  if (Platform.isAndroid) {
+    await requestNotificationPermissionIfNeeded();
+  }
 
   final biometricsHelper = BiometricsHelper();
   final sharedPreferences = SharedPreferencesAsync();
@@ -24,7 +28,6 @@ Future<void> main() async {
 
   final mostroDatabase = await openMostroDatabase('mostro.db');
   final eventsDatabase = await openMostroDatabase('events.db');
-
 
   final settings = SettingsNotifier(sharedPreferences);
   await settings.init();

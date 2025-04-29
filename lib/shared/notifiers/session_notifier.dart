@@ -32,8 +32,12 @@ class SessionNotifier extends StateNotifier<List<Session>> {
 
   Future<void> init() async {
     final allSessions = await _storage.getAllSessions();
+    final now = DateTime.now();
+    final cutoff = now.subtract(const Duration(hours: 48));
     for (final session in allSessions) {
-      _sessions[session.orderId!] = session;
+      if (session.startTime.isAfter(cutoff)) {
+        _sessions[session.orderId!] = session;
+      }
     }
     state = sessions;
   }
