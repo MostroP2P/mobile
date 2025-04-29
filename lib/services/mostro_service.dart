@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:dart_nostr/nostr/model/export.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/models.dart';
+import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/services/lifecycle_manager.dart';
@@ -67,6 +68,12 @@ class MostroService {
       if (msg.id != null) {
         if (await messageStorage.hasMessageByKey(decryptedEvent.id!)) return;
         ref.read(orderActionNotifierProvider(msg.id!).notifier).set(msg.action);
+      }
+      if (msg.action == Action.canceled) {
+        ref.read(orderNotifierProvider(session.orderId!).notifier).dispose();
+        await messageStorage.deleteAllMessagesByOrderId(session.orderId!);
+        await _sessionNotifier.deleteSession(session.orderId!);
+        return;
       }
       await messageStorage.addMessage(decryptedEvent.id!, msg);
       if (session.orderId == null && msg.id != null) {

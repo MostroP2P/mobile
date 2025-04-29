@@ -3,6 +3,7 @@ import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/features/order/notfiers/abstract_mostro_notifier.dart';
+import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/services/mostro_service.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 
@@ -77,5 +78,13 @@ class OrderNotifier extends AbstractMostroNotifier {
       orderId,
       rating,
     );
+  }
+
+  @override
+  void dispose() {
+    ref.read(cantDoNotifierProvider(orderId).notifier).dispose();
+    ref.read(paymentNotifierProvider(orderId).notifier).dispose();
+    ref.read(disputeNotifierProvider(orderId).notifier).dispose();
+    super.dispose();
   }
 }
