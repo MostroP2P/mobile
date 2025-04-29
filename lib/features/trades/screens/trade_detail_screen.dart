@@ -213,16 +213,7 @@ class TradeDetailScreen extends ConsumerWidget {
     final session = ref.watch(sessionProvider(orderId));
     final userRole = session?.role;
 
-    // State providers for NostrResponsiveButton
-    final completeProvider = StateProvider<bool>((ref) => false);
-    final errorProvider = StateProvider<String?>((ref) => null);
-
-    // Decide using canonical FSM status from provider (falls back to
-    // on-chain tag if not yet available).
-    final status = tradeState.status;
-    // Create and return buttons list based on status
-
-    switch (status) {
+    switch (tradeState.status) {
       case Status.pending:
         // According to Mostro FSM: Pending state
         final widgets = <Widget>[];
@@ -230,9 +221,7 @@ class TradeDetailScreen extends ConsumerWidget {
         // FSM: In pending state, seller can cancel
         widgets.add(_buildNostrButton(
           'CANCEL',
-          ref: ref,
-          completeProvider: completeProvider,
-          errorProvider: errorProvider,
+          action: actions.Action.cancel,
           backgroundColor: AppTheme.red1,
           onPressed: () =>
               ref.read(orderNotifierProvider(orderId).notifier).cancelOrder(),
@@ -248,18 +237,14 @@ class TradeDetailScreen extends ConsumerWidget {
         if (userRole == Role.seller) {
           widgets.add(_buildNostrButton(
             'PAY INVOICE',
-            ref: ref,
-            completeProvider: completeProvider,
-            errorProvider: errorProvider,
+            action: actions.Action.waitingBuyerInvoice,
             backgroundColor: AppTheme.mostroGreen,
             onPressed: () => context.push('/pay_invoice/$orderId'),
           ));
         }
         widgets.add(_buildNostrButton(
           'CANCEL',
-          ref: ref,
-          completeProvider: completeProvider,
-          errorProvider: errorProvider,
+          action: actions.Action.canceled,
           backgroundColor: AppTheme.red1,
           onPressed: () =>
               ref.read(orderNotifierProvider(orderId).notifier).cancelOrder(),
@@ -274,18 +259,14 @@ class TradeDetailScreen extends ConsumerWidget {
         if (userRole == Role.buyer) {
           widgets.add(_buildNostrButton(
             'ADD INVOICE',
-            ref: ref,
-            completeProvider: completeProvider,
-            errorProvider: errorProvider,
+            action: actions.Action.payInvoice,
             backgroundColor: AppTheme.mostroGreen,
             onPressed: () => context.push('/add_invoice/$orderId'),
           ));
         }
         widgets.add(_buildNostrButton(
           'CANCEL',
-          ref: ref,
-          completeProvider: completeProvider,
-          errorProvider: errorProvider,
+          action: actions.Action.canceled,
           backgroundColor: AppTheme.red1,
           onPressed: () =>
               ref.read(orderNotifierProvider(orderId).notifier).cancelOrder(),
@@ -299,9 +280,7 @@ class TradeDetailScreen extends ConsumerWidget {
             // Rate button if applicable (common for both roles)
             _buildNostrButton(
               'RATE',
-              ref: ref,
-              completeProvider: completeProvider,
-              errorProvider: errorProvider,
+              action: actions.Action.rateReceived,
               backgroundColor: AppTheme.mostroGreen,
               onPressed: () => context.push('/rate_user/$orderId'),
             )
@@ -321,9 +300,7 @@ class TradeDetailScreen extends ConsumerWidget {
               tradeState.lastAction != actions.Action.fiatSent) {
             widgets.add(_buildNostrButton(
               'FIAT SENT',
-              ref: ref,
-              completeProvider: completeProvider,
-              errorProvider: errorProvider,
+              action: actions.Action.fiatSentOk,
               backgroundColor: AppTheme.mostroGreen,
               onPressed: () => ref
                   .read(orderNotifierProvider(orderId).notifier)
@@ -334,9 +311,7 @@ class TradeDetailScreen extends ConsumerWidget {
           // FSM: Buyer can cancel
           widgets.add(_buildNostrButton(
             'CANCEL',
-            ref: ref,
-            completeProvider: completeProvider,
-            errorProvider: errorProvider,
+            action: actions.Action.canceled,
             backgroundColor: AppTheme.red1,
             onPressed: () =>
                 ref.read(orderNotifierProvider(orderId).notifier).cancelOrder(),
@@ -348,9 +323,7 @@ class TradeDetailScreen extends ConsumerWidget {
               tradeState.lastAction != actions.Action.dispute) {
             widgets.add(_buildNostrButton(
               'DISPUTE',
-              ref: ref,
-              completeProvider: completeProvider,
-              errorProvider: errorProvider,
+              action: actions.Action.disputeInitiatedByYou,
               backgroundColor: AppTheme.red1,
               onPressed: () => ref
                   .read(orderNotifierProvider(orderId).notifier)
@@ -361,9 +334,7 @@ class TradeDetailScreen extends ConsumerWidget {
           // FSM: Seller can cancel
           widgets.add(_buildNostrButton(
             'CANCEL',
-            ref: ref,
-            completeProvider: completeProvider,
-            errorProvider: errorProvider,
+            action: actions.Action.canceled,
             backgroundColor: AppTheme.red1,
             onPressed: () =>
                 ref.read(orderNotifierProvider(orderId).notifier).cancelOrder(),
@@ -375,9 +346,7 @@ class TradeDetailScreen extends ConsumerWidget {
               tradeState.lastAction != actions.Action.dispute) {
             widgets.add(_buildNostrButton(
               'DISPUTE',
-              ref: ref,
-              completeProvider: completeProvider,
-              errorProvider: errorProvider,
+              action: actions.Action.disputeInitiatedByYou,
               backgroundColor: AppTheme.red1,
               onPressed: () => ref
                   .read(orderNotifierProvider(orderId).notifier)
@@ -390,9 +359,7 @@ class TradeDetailScreen extends ConsumerWidget {
         if (tradeState.lastAction == actions.Action.rate) {
           widgets.add(_buildNostrButton(
             'RATE',
-            ref: ref,
-            completeProvider: completeProvider,
-            errorProvider: errorProvider,
+            action: actions.Action.rateReceived,
             backgroundColor: AppTheme.mostroGreen,
             onPressed: () => context.push('/rate_user/$orderId'),
           ));
@@ -412,9 +379,7 @@ class TradeDetailScreen extends ConsumerWidget {
           // FSM: Seller can release
           widgets.add(_buildNostrButton(
             'RELEASE SATS',
-            ref: ref,
-            completeProvider: completeProvider,
-            errorProvider: errorProvider,
+            action: actions.Action.released,
             backgroundColor: AppTheme.mostroGreen,
             onPressed: () => ref
                 .read(orderNotifierProvider(orderId).notifier)
@@ -424,9 +389,7 @@ class TradeDetailScreen extends ConsumerWidget {
           // FSM: Seller can cancel
           widgets.add(_buildNostrButton(
             'CANCEL',
-            ref: ref,
-            completeProvider: completeProvider,
-            errorProvider: errorProvider,
+            action: actions.Action.canceled,
             backgroundColor: AppTheme.red1,
             onPressed: () =>
                 ref.read(orderNotifierProvider(orderId).notifier).cancelOrder(),
@@ -435,9 +398,7 @@ class TradeDetailScreen extends ConsumerWidget {
           // FSM: Seller can dispute
           widgets.add(_buildNostrButton(
             'DISPUTE',
-            ref: ref,
-            completeProvider: completeProvider,
-            errorProvider: errorProvider,
+            action: actions.Action.disputeInitiatedByYou,
             backgroundColor: AppTheme.red1,
             onPressed: () => ref
                 .read(orderNotifierProvider(orderId).notifier)
@@ -447,9 +408,7 @@ class TradeDetailScreen extends ConsumerWidget {
           // FSM: Buyer can only dispute in fiat-sent state
           widgets.add(_buildNostrButton(
             'DISPUTE',
-            ref: ref,
-            completeProvider: completeProvider,
-            errorProvider: errorProvider,
+            action: actions.Action.disputeInitiatedByYou,
             backgroundColor: AppTheme.red1,
             onPressed: () => ref
                 .read(orderNotifierProvider(orderId).notifier)
@@ -468,9 +427,7 @@ class TradeDetailScreen extends ConsumerWidget {
             actions.Action.cooperativeCancelInitiatedByPeer) {
           widgets.add(_buildNostrButton(
             'CONFIRM CANCEL',
-            ref: ref,
-            completeProvider: completeProvider,
-            errorProvider: errorProvider,
+            action: actions.Action.cooperativeCancelAccepted,
             backgroundColor: AppTheme.red1,
             onPressed: () =>
                 ref.read(orderNotifierProvider(orderId).notifier).cancelOrder(),
@@ -488,9 +445,7 @@ class TradeDetailScreen extends ConsumerWidget {
         if (tradeState.lastAction != actions.Action.rateReceived) {
           widgets.add(_buildNostrButton(
             'RATE',
-            ref: ref,
-            completeProvider: completeProvider,
-            errorProvider: errorProvider,
+            action: actions.Action.rateReceived,
             backgroundColor: AppTheme.mostroGreen,
             onPressed: () => context.push('/rate_user/$orderId'),
           ));
@@ -506,9 +461,7 @@ class TradeDetailScreen extends ConsumerWidget {
         // Both roles can cancel during in-progress state, similar to active
         widgets.add(_buildNostrButton(
           'CANCEL',
-          ref: ref,
-          completeProvider: completeProvider,
-          errorProvider: errorProvider,
+          action: actions.Action.canceled,
           backgroundColor: AppTheme.red1,
           onPressed: () =>
               ref.read(orderNotifierProvider(orderId).notifier).cancelOrder(),
@@ -531,9 +484,7 @@ class TradeDetailScreen extends ConsumerWidget {
   /// Helper method to build a NostrResponsiveButton with common properties
   Widget _buildNostrButton(
     String label, {
-    required WidgetRef ref,
-    required StateProvider<bool> completeProvider,
-    required StateProvider<String?> errorProvider,
+    required actions.Action action,
     required VoidCallback onPressed,
     Color? backgroundColor,
   }) {
@@ -544,8 +495,8 @@ class TradeDetailScreen extends ConsumerWidget {
         buttonStyle: ButtonStyleType.raised,
         width: 180,
         height: 48,
-        completionProvider: completeProvider,
-        errorProvider: errorProvider,
+        orderId: orderId,
+        action: action,
         onPressed: onPressed,
         showSuccessIndicator: true,
         timeout: const Duration(seconds: 30),

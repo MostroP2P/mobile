@@ -464,30 +464,8 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
           label: 'SUBMIT',
           buttonStyle: ButtonStyleType.raised,
           width: 120,
-          // Use an explicit provider that responds to the latest order message state
-          completionProvider: StateProvider((ref) {
-            final requestId = _currentRequestId; // Track the current request ID
-            if (requestId == null) return false;
-            
-            // Check if we have a completed order message
-            final messageState = ref.watch(addOrderEventsProvider(requestId));
-            return messageState.whenOrNull(
-              data: (msg) => msg?.action == nostr_action.Action.newOrder && msg?.id != null,
-            ) ?? false;
-          }),
-          // Error provider based on order action status
-          errorProvider: StateProvider((ref) {
-            final requestId = _currentRequestId;
-            if (requestId == null) return null;
-            
-            // Check for CantDo response
-            final messageState = ref.watch(addOrderEventsProvider(requestId));
-            return messageState.whenOrNull(
-              data: (msg) => msg?.payload is CantDo 
-                ? (msg?.getPayload<CantDo>()?.cantDoReason.toString() ?? 'Failed to create order')
-                : null,
-            );
-          }),
+          orderId: _currentRequestId?.toString() ?? '',
+          action: nostr_action.Action.newOrder,
           onPressed: () {
             if (_formKey.currentState?.validate() ?? false) {
               _submitOrder(context, ref, orderType);
