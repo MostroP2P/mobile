@@ -26,9 +26,13 @@ class MostroService {
   }
 
   void init() {
+    final now = DateTime.now();
+    final cutoff = now.subtract(const Duration(hours: 24));
     final sessions = _sessionNotifier.sessions;
     for (final session in sessions) {
-      subscribe(session);
+      if (session.startTime.isAfter(cutoff)) {
+        subscribe(session);
+      }
     }
   }
 
