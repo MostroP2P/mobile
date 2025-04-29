@@ -6,9 +6,9 @@ import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
 
 enum ButtonStyleType { raised, outlined, text }
 
-/// A button specially designed for Nostr operations that shows loading state
-/// and handles the unique event-based nature of Nostr protocols.
-class NostrResponsiveButton extends ConsumerStatefulWidget {
+/// A button specially designed for reactive operations that shows loading state
+/// and handles the unique event-based nature of the mostro protocol.
+class MostroReactiveButton extends ConsumerStatefulWidget {
   final String label;
   final ButtonStyleType buttonStyle;
   final VoidCallback onPressed;
@@ -19,7 +19,7 @@ class NostrResponsiveButton extends ConsumerStatefulWidget {
   final double height;
   final bool showSuccessIndicator;
 
-  const NostrResponsiveButton({
+  const MostroReactiveButton({
     super.key,
     required this.label,
     required this.buttonStyle,
@@ -33,10 +33,10 @@ class NostrResponsiveButton extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<NostrResponsiveButton> createState() => _NostrResponsiveButtonState();
+  ConsumerState<MostroReactiveButton> createState() => _MostroReactiveButtonState();
 }
 
-class _NostrResponsiveButtonState extends ConsumerState<NostrResponsiveButton> {
+class _MostroReactiveButtonState extends ConsumerState<MostroReactiveButton> {
   bool _loading = false;
   bool _showSuccess = false;
   Timer? _timeoutTimer;
@@ -69,15 +69,18 @@ class _NostrResponsiveButtonState extends ConsumerState<NostrResponsiveButton> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen<AsyncValue<dynamic>>(mostroMessageStreamProvider(widget.orderId), (prev, next) {
+    ref.listen<AsyncValue<dynamic>>(mostroMessageStreamProvider(widget.orderId),
+        (prev, next) {
       next.whenData((msg) {
         if (msg == null || msg.action == _lastSeenAction) return;
         _lastSeenAction = msg.action;
         if (!_loading) return;
-        if (msg.action == actions.Action.cantDo || msg.action == widget.action) {
+        if (msg.action == actions.Action.cantDo ||
+            msg.action == widget.action) {
           setState(() {
             _loading = false;
-            _showSuccess = widget.showSuccessIndicator && msg.action == widget.action;
+            _showSuccess =
+                widget.showSuccessIndicator && msg.action == widget.action;
           });
         }
       });

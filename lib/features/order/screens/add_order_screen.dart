@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
-import 'package:mostro_mobile/data/models/cant_do.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as nostr_action;
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
@@ -17,12 +16,11 @@ import 'package:mostro_mobile/shared/widgets/currency_text_field.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
 import 'package:mostro_mobile/shared/widgets/nostr_responsive_button.dart';
 import 'package:uuid/uuid.dart';
-import 'package:mostro_mobile/data/models/mostro_message.dart';
 
 // Create a direct state provider tied to the order action/status
-final orderActionStatusProvider = Provider.family<AsyncValue<MostroMessage?>, int>(
-  (ref, requestId) => ref.watch(addOrderEventsProvider(requestId))
-);
+final orderActionStatusProvider =
+    Provider.family<AsyncValue<MostroMessage?>, int>(
+        (ref, requestId) => ref.watch(addOrderEventsProvider(requestId)));
 
 class AddOrderScreen extends ConsumerStatefulWidget {
   const AddOrderScreen({super.key});
@@ -460,7 +458,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
           child: const Text('CANCEL'),
         ),
         const SizedBox(width: 8.0),
-        NostrResponsiveButton(
+        MostroReactiveButton(
           label: 'SUBMIT',
           buttonStyle: ButtonStyleType.raised,
           width: 120,
@@ -496,7 +494,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
 
       // Calculate the request ID the same way AddOrderNotifier does
       final requestId = notifier.requestId;
-      
+
       // Store the current request ID for the button state providers
       setState(() {
         _currentRequestId = requestId;

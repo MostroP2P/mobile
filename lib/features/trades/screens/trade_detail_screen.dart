@@ -490,7 +490,7 @@ class TradeDetailScreen extends ConsumerWidget {
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: NostrResponsiveButton(
+      child: MostroReactiveButton(
         label: label,
         buttonStyle: ButtonStyleType.raised,
         width: 180,
