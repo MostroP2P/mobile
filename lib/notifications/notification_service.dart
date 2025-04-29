@@ -30,11 +30,26 @@ Future<void> showLocalNotification(NostrEvent event) async {
     android: AndroidNotificationDetails(
       'mostro_channel',
       'Mostro Notifications',
+      channelDescription: 'Notifications for Mostro trades and messages',
       importance: Importance.max,
+      priority: Priority.high,
+      visibility: NotificationVisibility.public,
+      playSound: true,
+      enableVibration: true,
+      ticker: 'ticker',
+      // Uncomment for heads-up notification, use with care:
+      // fullScreenIntent: true,
+    ),
+    iOS: DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+      // Optionally set interruption level for iOS 15+:
+      interruptionLevel: InterruptionLevel.critical,
     ),
   );
   await notificationsPlugin.show(
-    0,
+    event.id.hashCode, // Use unique ID for each event
     'New Mostro Event',
     'You have received a new message from Mostro',
     details,
