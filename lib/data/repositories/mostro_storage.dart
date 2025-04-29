@@ -150,6 +150,26 @@ class MostroStorage extends BaseStorage<MostroMessage> {
         .map((snaps) => snaps.isEmpty ? null : MostroMessage.fromJson(snaps.first.value));
   }
 
+  /// Stream of the latest message for an order whose payload is of type T
+  Stream<MostroMessage?> watchLatestMessageOfType<T>(String orderId) {
+    // Watch all messages for the orderId, sorted by timestamp descending
+    final query = store.query(
+      finder: Finder(
+        filter: Filter.equals('id', orderId),
+        sortOrders: _getDefaultSort(),
+      ),
+    );
+    return query.onSnapshots(db).map((snaps) {
+      for (final snap in snaps) {
+        final msg = MostroMessage.fromJson(snap.value);
+        if (msg.payload is T) {
+          return msg;
+        }
+      }
+      return null;
+    });
+  }
+
   // Use the same sorting across all methods that return lists of messages
   List<SortOrder> _getDefaultSort() => [SortOrder('timestamp', false, true)];
 

@@ -21,12 +21,12 @@ final mostroMessageHistoryProvider = StreamProvider.family<List<MostroMessage>, 
   },
 );
 
-final mostroOrderStreamProvider = FutureProvider.family<MostroMessage?, String>((ref, orderId) async {
+final mostroOrderStreamProvider = StreamProvider.family<MostroMessage?, String>((ref, orderId) {
   final storage = ref.read(mostroStorageProvider);
-  return await storage.getLatestMessageOfTypeById<Order>(orderId);
+  return storage.watchLatestMessageOfType<Order>(orderId);
 });
 
-final mostroOrderProvider = FutureProvider.family<MostroMessage?, String>((ref, orderId) async {
+final mostroOrderProvider = StreamProvider.family<MostroMessage?, String>((ref, orderId) {
   final storage = ref.read(mostroStorageProvider);
-  return await storage.getLatestMessageById(orderId);
+  return storage.watchLatestMessage(orderId);
 });
