@@ -17,7 +17,7 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
   Settings _settings;
 
   final StreamController<List<NostrEvent>> _eventStreamController =
-      StreamController.broadcast();
+      StreamController<List<NostrEvent>>.broadcast();
   final Map<String, NostrEvent> _events = {};
   final _logger = Logger();
   StreamSubscription<NostrEvent>? _subscription;
@@ -28,7 +28,7 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
     // Subscribe to orders and initialize data
     _subscribeToOrders();
     // Immediately emit current (possibly empty) cache so UI doesn't remain in loading state
-    _eventStreamController.add(_events.values.toList());
+    _emitEvents();
   }
 
   /// Subscribes to events matching the given filter.
@@ -37,9 +37,9 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
 
     final filterTime =
         DateTime.now().subtract(Duration(hours: orderFilterDurationHours));
-    var filter = NostrFilter(
-      kinds: const [orderEventKind],
-      authors: [_settings.mostroPublicKey],
+
+    final filter = NostrFilter(
+      kinds: [orderEventKind],
       since: filterTime,
     );
 
@@ -49,8 +49,12 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
 
     _subscription = _nostrService.subscribeToEvents(request).listen((event) {
       if (event.type == 'order') {
-        _events[event.orderId!] = event;
-        _eventStreamController.add(_events.values.toList());
+        final oldEvent = _events[event.orderId!];
+        // Only emit if the event is new or changed
+        if (oldEvent == null || oldEvent != event) {
+          _events[event.orderId!] = event;
+          _emitEvents();
+        }
       } else if (event.type == 'info' &&
           event.pubkey == _settings.mostroPublicKey) {
         _logger.i('Mostro instance info loaded: $event');
@@ -58,9 +62,14 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
       }
     }, onError: (error) {
       _logger.e('Error in order subscription: $error');
+      // Optionally, you could auto-resubscribe here if desired
     });
 
     // Ensure listeners receive at least one snapshot right after (re)subscription
+    _emitEvents();
+  }
+
+  void _emitEvents() {
     if (!_eventStreamController.isClosed) {
       _eventStreamController.add(_events.values.toList());
     }
@@ -90,14 +99,14 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
   @override
   Future<void> addOrder(NostrEvent order) {
     _events[order.id!] = order;
-    _eventStreamController.add(_events.values.toList());
+    _emitEvents();
     return Future.value();
   }
 
   @override
   Future<void> deleteOrder(String orderId) {
     _events.remove(orderId);
-    _eventStreamController.add(_events.values.toList());
+    _emitEvents();
     return Future.value();
   }
 
@@ -110,7 +119,7 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
   Future<void> updateOrder(NostrEvent order) {
     if (_events.containsKey(order.id)) {
       _events[order.id!] = order;
-      _eventStreamController.add(_events.values.toList());
+      _emitEvents();
     }
     return Future.value();
   }
@@ -129,5 +138,6 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
   Future<void> reloadData() async {
     _logger.i('Reloading repository data');
     _subscribeToOrders();
+    _emitEvents();
   }
 }

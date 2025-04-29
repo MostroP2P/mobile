@@ -72,7 +72,7 @@ class LifecycleManager extends WidgetsBindingObserver {
       // Reinitialize chat rooms
       _logger.i("Reloading chat rooms");
       final chatRooms = ref.read(chatRoomsNotifierProvider.notifier);
-      await chatRooms.loadChats();
+      await chatRooms.reloadAllChats();
 
       // Force UI update for trades
       _logger.i("Invalidating providers to refresh UI");

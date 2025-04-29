@@ -6,6 +6,20 @@ import 'package:mostro_mobile/shared/notifiers/session_notifier.dart';
 import 'package:mostro_mobile/shared/providers/session_manager_provider.dart';
 
 class ChatRoomsNotifier extends StateNotifier<List<ChatRoom>> {
+  /// Reload all chat rooms by triggering their notifiers to resubscribe to events.
+  Future<void> reloadAllChats() async {
+    for (final chat in state) {
+      try {
+        final notifier = ref.read(chatRoomsProvider(chat.orderId).notifier);
+        if (notifier.mounted) {
+          notifier.reload();
+        }
+      } catch (e) {
+        _logger.e('Failed to reload chat for orderId ${chat.orderId}: $e');
+      }
+    }
+  }
+
   final SessionNotifier sessionNotifier;
   final Ref ref;
   final _logger = Logger();
@@ -15,12 +29,21 @@ class ChatRoomsNotifier extends StateNotifier<List<ChatRoom>> {
   }
 
   Future<void> loadChats() async {
-    final sessions = ref.watch(sessionNotifierProvider.notifier).sessions;
+    final sessions = ref.read(sessionNotifierProvider.notifier).sessions;
+    if (sessions.isEmpty) {
+      _logger.i("No sessions yet, skipping chat load.");
+      return;
+    }
     try {
-      state = sessions.where((s) => s.peer != null).map((s) {
+      final chats = sessions.where((s) => s.peer != null).map((s) {
         final chat = ref.read(chatRoomsProvider(s.orderId!));
         return chat;
       }).toList();
+      if (chats.isNotEmpty) {
+        state = chats;
+      } else {
+        _logger.i("No chats found for sessions, keeping previous state.");
+      }
     } catch (e) {
       _logger.e(e);
     }

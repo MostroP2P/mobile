@@ -5,10 +5,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/models/chat_room.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
+import 'package:mostro_mobile/services/lifecycle_manager.dart';
+import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_manager_provider.dart';
 
 class ChatRoomNotifier extends StateNotifier<ChatRoom> {
+  /// Reload the chat room by re-subscribing to events.
+  void reload() {
+    subscription.cancel();
+    subscribe();
+  }
+
   final _logger = Logger();
   final String orderId;
   final Ref ref;
@@ -26,7 +34,7 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
       _logger.e('Session is null');
       return;
     }
-    if(session.sharedKey == null) {
+    if (session.sharedKey == null) {
       _logger.e('Shared key is null');
       return;
     }
@@ -37,10 +45,21 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
     final request = NostrRequest(
       filters: [filter],
     );
+
+    ref.read(lifecycleManagerProvider).addSubscription(filter);
+
     subscription =
         ref.read(nostrServiceProvider).subscribeToEvents(request).listen(
       (event) async {
         try {
+          final eventStore = ref.read(eventStorageProvider);
+
+          if (await eventStore.hasItem(event.id!)) return;
+          await eventStore.putItem(
+            event.id!,
+            event,
+          );
+
           final chat = await event.mostroUnWrap(session.sharedKey!);
           // Deduplicate by message ID and always sort by createdAt
           final allMessages = [
@@ -48,9 +67,7 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
             chat,
           ];
           // Use a map to deduplicate by event id
-          final deduped = {
-            for (var m in allMessages) m.id: m
-          }.values.toList();
+          final deduped = {for (var m in allMessages) m.id: m}.values.toList();
           deduped.sort((a, b) => a.createdAt!.compareTo(b.createdAt!));
           state = state.copy(messages: deduped);
         } catch (e) {
@@ -62,8 +79,16 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
 
   Future<void> sendMessage(String text) async {
     final session = ref.read(sessionProvider(orderId));
+    if (session == null) {
+      _logger.e('Session is null');
+      return;
+    }
+    if (session.sharedKey == null) {
+      _logger.e('Shared key is null');
+      return;
+    }
     final event = NostrEvent.fromPartialData(
-      keyPairs: session!.tradeKey,
+      keyPairs: session.tradeKey,
       content: text,
       kind: 1,
     );
