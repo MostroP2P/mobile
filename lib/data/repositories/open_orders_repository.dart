@@ -128,13 +128,6 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
 
   Future<void> reloadData() async {
     _logger.i('Reloading repository data');
-    // Clear existing events
-    _events.clear();
-    // Then resubscribe for future updates
     _subscribeToOrders();
-    // Emit empty list so UI updates immediately
-    if (!_eventStreamController.isClosed) {
-      _eventStreamController.add([]);
-    }
   }
 }
