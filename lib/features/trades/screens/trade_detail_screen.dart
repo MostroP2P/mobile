@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/mostro_fsm.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
 import 'package:mostro_mobile/data/models/enums/role.dart';
 import 'package:mostro_mobile/data/models/enums/status.dart';
@@ -62,7 +63,7 @@ class TradeDetailScreen extends ConsumerWidget {
                   runSpacing: 10,
                   children: [
                     _buildCloseButton(context),
-                    ..._buildActionButtons(
+                    ..._buildActionButtonsFromFSM(
                       context,
                       ref,
                       tradeState,
@@ -525,6 +526,103 @@ class TradeDetailScreen extends ConsumerWidget {
       child: const Text('CLOSE'),
     );
   }
+
+
+/// FSM-driven action buttons for the current order state and user role
+List<Widget> _buildActionButtonsFromFSM(
+  BuildContext context,
+  WidgetRef ref,
+  TradeState tradeState,
+) {
+  final order = tradeState.orderPayload;
+  if (order == null) return [];
+  final status = order.status;
+  final orderId = order.id!;
+  final session = ref.read(sessionProvider(orderId));
+  final userRole = session?.role;
+  final validActions = MostroFSM.transitions[status]?.keys ?? [];
+  final List<Widget> widgets = [];
+
+  for (final action in validActions) {
+    switch (action) {
+      case actions.Action.addInvoice:
+      case actions.Action.payInvoice:
+        if (userRole == Role.buyer) {
+          widgets.add(_buildNostrButton(
+            'ADD INVOICE',
+            action: action,
+            backgroundColor: AppTheme.mostroGreen,
+            onPressed: () => context.push('/add_invoice/$orderId'),
+          ));
+        }
+        break;
+      case actions.Action.fiatSent:
+        if (userRole == Role.buyer) {
+          widgets.add(_buildNostrButton(
+            'FIAT SENT',
+            action: action,
+            backgroundColor: AppTheme.mostroGreen,
+            onPressed: () => ref.read(orderNotifierProvider(orderId).notifier).sendFiatSent(),
+          ));
+        }
+        break;
+      case actions.Action.release:
+      case actions.Action.released:
+        if (userRole == Role.seller) {
+          widgets.add(_buildNostrButton(
+            'RELEASE SATS',
+            action: action,
+            backgroundColor: AppTheme.mostroGreen,
+            onPressed: () => ref.read(orderNotifierProvider(orderId).notifier).releaseOrder(),
+          ));
+        }
+        break;
+      case actions.Action.cancel:
+      case actions.Action.canceled:
+        widgets.add(_buildNostrButton(
+          'CANCEL',
+          action: action,
+          backgroundColor: AppTheme.red1,
+          onPressed: () => ref.read(orderNotifierProvider(orderId).notifier).cancelOrder(),
+        ));
+        break;
+      case actions.Action.cooperativeCancelInitiatedByYou:
+      case actions.Action.cooperativeCancelInitiatedByPeer:
+        widgets.add(_buildNostrButton(
+          'COOP CANCEL',
+          action: action,
+          backgroundColor: AppTheme.yellow,
+          onPressed: () => ref.read(orderNotifierProvider(orderId).notifier).cancelOrder(),
+        ));
+        break;
+      case actions.Action.disputeInitiatedByYou:
+      case actions.Action.disputeInitiatedByPeer:
+        widgets.add(_buildNostrButton(
+          'DISPUTE',
+          action: action,
+          backgroundColor: AppTheme.red1,
+          onPressed: () => ref.read(orderNotifierProvider(orderId).notifier).disputeOrder(),
+        ));
+        break;
+      case actions.Action.rate:
+      case actions.Action.rateUser:
+      case actions.Action.rateReceived:
+        widgets.add(_buildNostrButton(
+          'RATE',
+          action: action,
+          backgroundColor: AppTheme.mostroGreen,
+          onPressed: () => context.push('/rate_user/$orderId'),
+        ));
+        break;
+      default:
+        // For unhandled actions, skip or add logging if needed
+        break;
+    }
+  }
+  // Always show contact/chat button
+  widgets.add(_buildContactButton(context));
+  return widgets;
+}
 
   /// Format the date time to a user-friendly string with UTC offset
   String formatDateTime(DateTime dt) {

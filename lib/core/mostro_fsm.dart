@@ -12,7 +12,7 @@ class MostroFSM {
   MostroFSM._();
 
   /// Nested map: *currentStatus → { action → nextStatus }*.
-  static final Map<Status, Map<Action, Status>> _transitions = {
+  static final Map<Status, Map<Action, Status>> transitions = {
     // ───────────────────────── MATCHING / TAKING ────────────────────────
     Status.pending: {
       Action.takeSell: Status.waitingBuyerInvoice,
@@ -88,6 +88,6 @@ class MostroFSM {
     // If current is null (unknown), treat as pending so that first transition
     // works for historical messages.
     final safeCurrent = current ?? Status.pending;
-    return _transitions[safeCurrent]?[action] ?? safeCurrent;
+    return transitions[safeCurrent]?[action] ?? safeCurrent;
   }
 }
