@@ -461,7 +461,6 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
         MostroReactiveButton(
           label: 'SUBMIT',
           buttonStyle: ButtonStyleType.raised,
-          width: 120,
           orderId: _currentRequestId?.toString() ?? '',
           action: nostr_action.Action.newOrder,
           onPressed: () {

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
 import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
+import 'package:mostro_mobile/core/app_theme.dart';
 
 enum ButtonStyleType { raised, outlined, text }
 
@@ -15,8 +16,7 @@ class MostroReactiveButton extends ConsumerStatefulWidget {
   final String orderId;
   final actions.Action action;
   final Duration timeout;
-  final double? width;
-  final double height;
+
   final bool showSuccessIndicator;
 
   const MostroReactiveButton({
@@ -27,8 +27,7 @@ class MostroReactiveButton extends ConsumerStatefulWidget {
     required this.orderId,
     required this.action,
     this.timeout = const Duration(seconds: 30),
-    this.width,
-    this.height = 48,
+
     this.showSuccessIndicator = false,
   });
 
@@ -104,27 +103,27 @@ class _MostroReactiveButtonState extends ConsumerState<MostroReactiveButton> {
       case ButtonStyleType.raised:
         button = ElevatedButton(
           onPressed: _loading ? null : _startOperation,
+          style: AppTheme.theme.elevatedButtonTheme.style,
           child: childWidget,
         );
         break;
       case ButtonStyleType.outlined:
         button = OutlinedButton(
           onPressed: _loading ? null : _startOperation,
+          style: AppTheme.theme.outlinedButtonTheme.style,
           child: childWidget,
         );
         break;
       case ButtonStyleType.text:
         button = TextButton(
           onPressed: _loading ? null : _startOperation,
+          style: AppTheme.theme.textButtonTheme.style,
           child: childWidget,
         );
         break;
     }
 
-    return SizedBox(
-      width: widget.width,
-      height: widget.height,
-      child: button,
-    );
+    return button;
+
   }
 }

@@ -488,19 +488,14 @@ class TradeDetailScreen extends ConsumerWidget {
     required VoidCallback onPressed,
     Color? backgroundColor,
   }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: MostroReactiveButton(
-        label: label,
-        buttonStyle: ButtonStyleType.raised,
-        width: 180,
-        height: 48,
-        orderId: orderId,
-        action: action,
-        onPressed: onPressed,
-        showSuccessIndicator: true,
-        timeout: const Duration(seconds: 30),
-      ),
+    return MostroReactiveButton(
+      label: label,
+      buttonStyle: ButtonStyleType.raised,
+      orderId: orderId,
+      action: action,
+      onPressed: onPressed,
+      showSuccessIndicator: true,
+      timeout: const Duration(seconds: 30),
     );
   }
 
