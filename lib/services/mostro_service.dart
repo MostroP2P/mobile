@@ -43,7 +43,8 @@ class MostroService {
     for (final session in sessions) {
       if (session.startTime.isAfter(cutoff)) {
         if (session.orderId != null) {
-          final latestOrderMsg = await messageStorage.getLatestMessageOfTypeById<Order>(session.orderId!);
+          final latestOrderMsg = await messageStorage
+              .getLatestMessageOfTypeById<Order>(session.orderId!);
           final status = latestOrderMsg?.payload is Order
               ? (latestOrderMsg!.payload as Order).status
               : null;
@@ -101,10 +102,8 @@ class MostroService {
       }
       await messageStorage.addMessage(decryptedEvent.id!, msg);
       if (session.orderId == null && msg.id != null) {
-        await _sessionNotifier.updateSession(
-          session.orderId!,
-          (s) => s.orderId = msg.id,
-        );
+        session.orderId = msg.id;
+        await _sessionNotifier.saveSession(session);
       }
     });
   }
