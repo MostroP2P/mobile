@@ -25,12 +25,32 @@ class MostroService {
     init();
   }
 
-  void init() {
+  void init() async {
     final now = DateTime.now();
     final cutoff = now.subtract(const Duration(hours: 24));
     final sessions = _sessionNotifier.sessions;
+    final messageStorage = ref.read(mostroStorageProvider);
+    // Set of terminal statuses
+    const terminalStatuses = {
+      Status.canceled,
+      Status.cooperativelyCanceled,
+      Status.success,
+      Status.expired,
+      Status.canceledByAdmin,
+      Status.settledByAdmin,
+      Status.completedByAdmin,
+    };
     for (final session in sessions) {
       if (session.startTime.isAfter(cutoff)) {
+        if (session.orderId != null) {
+          final latestOrderMsg = await messageStorage.getLatestMessageOfTypeById<Order>(session.orderId!);
+          final status = latestOrderMsg?.payload is Order
+              ? (latestOrderMsg!.payload as Order).status
+              : null;
+          if (status != null && terminalStatuses.contains(status)) {
+            continue;
+          }
+        }
         subscribe(session);
       }
     }
@@ -81,8 +101,10 @@ class MostroService {
       }
       await messageStorage.addMessage(decryptedEvent.id!, msg);
       if (session.orderId == null && msg.id != null) {
-        session.orderId = msg.id;
-        await _sessionNotifier.saveSession(session);
+        await _sessionNotifier.updateSession(
+          session.orderId!,
+          (s) => s.orderId = msg.id,
+        );
       }
     });
   }

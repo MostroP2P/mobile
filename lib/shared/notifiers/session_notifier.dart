@@ -25,10 +25,7 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     this._keyManager,
     this._storage,
     this._settings,
-  ) : super([]) {
-    //_init();
-    //_initializeCleanup();
-  }
+  ) : super([]);
 
   Future<void> init() async {
     final allSessions = await _storage.getAllSessions();
@@ -75,6 +72,17 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     _sessions[session.orderId!] = session;
     await _storage.putSession(session);
     state = sessions;
+  }
+
+  /// Generic session update and persist method
+  Future<void> updateSession(
+      String orderId, void Function(Session) update) async {
+    final session = _sessions[orderId];
+    if (session != null) {
+      update(session);
+      await _storage.putSession(session);
+      state = sessions;
+    }
   }
 
   Session? getSessionByOrderId(String orderId) {

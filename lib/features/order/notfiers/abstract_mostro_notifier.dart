@@ -133,15 +133,13 @@ class AbstractMostroNotifier extends StateNotifier<MostroMessage> {
         // add seller tradekey to session
         // open chat
         final sessionProvider = ref.read(sessionNotifierProvider.notifier);
-        final session = sessionProvider.getSessionByOrderId(orderId);
-        if (session == null) {
-          logger.e('Session is null for order: $orderId');
-          break;
-        }
-        session.peer = order.buyerTradePubkey != null
+        final peer = order.buyerTradePubkey != null
             ? Peer(publicKey: order.buyerTradePubkey!)
             : null;
-        sessionProvider.saveSession(session);
+        sessionProvider.updateSession(
+          orderId,
+          (s) => s.peer = peer,
+        );
         final chat = ref.read(chatRoomsProvider(orderId).notifier);
         chat.subscribe();
         break;
@@ -161,9 +159,11 @@ class AbstractMostroNotifier extends StateNotifier<MostroMessage> {
         // add seller tradekey to session
         // open chat
         final sessionProvider = ref.read(sessionNotifierProvider.notifier);
-        final session = sessionProvider.getSessionByOrderId(orderId);
-        session?.peer = Peer(publicKey: order!.sellerTradePubkey!);
-        sessionProvider.saveSession(session!);
+        final peer = Peer(publicKey: order!.sellerTradePubkey!);
+        sessionProvider.updateSession(
+          orderId,
+          (s) => s.peer = peer,
+        );
         final chat = ref.read(chatRoomsProvider(orderId).notifier);
         chat.subscribe();
         break;

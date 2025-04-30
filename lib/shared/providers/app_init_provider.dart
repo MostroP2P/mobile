@@ -7,6 +7,8 @@ import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
+import 'package:mostro_mobile/data/models/enums/status.dart';
+import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/shared/notifiers/order_action_notifier.dart';
 import 'package:mostro_mobile/shared/providers/background_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
@@ -24,6 +26,43 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
 
   final sessionManager = ref.read(sessionNotifierProvider.notifier);
   await sessionManager.init();
+
+  // --- Custom logic for initializing notifiers and chats ---
+  final now = DateTime.now();
+  final cutoff = now.subtract(const Duration(hours: 24));
+  final sessions = sessionManager.sessions;
+  final messageStorage = ref.read(mostroStorageProvider);
+  final terminalStatuses = {
+    Status.canceled,
+    Status.cooperativelyCanceled,
+    Status.success,
+    Status.expired,
+    Status.canceledByAdmin,
+    Status.settledByAdmin,
+    Status.completedByAdmin,
+  };
+  for (final session in sessions) {
+    if (session.startTime.isAfter(cutoff)) {
+      bool isActive = true;
+      if (session.orderId != null) {
+        final latestOrderMsg = await messageStorage.getLatestMessageOfTypeById<Order>(session.orderId!);
+        final status = latestOrderMsg?.payload is Order
+            ? (latestOrderMsg!.payload as Order).status
+            : null;
+        if (status != null && terminalStatuses.contains(status)) {
+          isActive = false;
+        }
+      }
+      if (isActive) {
+        // Initialize order notifier if needed
+        ref.read(orderNotifierProvider(session.orderId!).notifier);
+        // Initialize chat notifier if needed
+        if (session.peer != null) {
+          ref.read(chatRoomsProvider(session.orderId!).notifier);
+        }
+      }
+    }
+  }
 
   final mostroService = ref.read(mostroServiceProvider);
 
