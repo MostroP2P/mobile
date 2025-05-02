@@ -58,7 +58,7 @@ class SEn extends S {
 
   @override
   String fiatSentOkSeller(Object buyer_npub) {
-    return '$buyer_npub has informed you that they sent the fiat money. Once you confirm receipt, please release the funds. After releasing, the money will go to the buyer and there will be no turning back, so only proceed if you are sure. If you want to release the Sats to the buyer, send me release-order-message.';
+    return '$buyer_npub has informed you that they sent the fiat money. Once you confirm receipt, please release the funds. After releasing, the money will go to the buyer and there will be no turning back, so only proceed if you are sure. If you want to release the Sats to the buyer, tap the release button.';
   }
 
   @override
