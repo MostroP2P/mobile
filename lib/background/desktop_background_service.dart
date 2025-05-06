@@ -14,6 +14,9 @@ class DesktopBackgroundService implements BackgroundService {
   final _subscriptions = <String, Map<String, dynamic>>{};
   bool _isRunning = false;
   late SendPort _sendPort;
+  Settings _settings;
+
+  DesktopBackgroundService(this._settings);
 
   @override
   Future<void> init() async {}

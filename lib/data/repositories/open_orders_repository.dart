@@ -135,7 +135,7 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
     }
   }
 
-  Future<void> reloadData() async {
+  void reloadData() {
     _logger.i('Reloading repository data');
     _subscribeToOrders();
     _emitEvents();

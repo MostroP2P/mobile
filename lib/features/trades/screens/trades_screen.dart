@@ -26,7 +26,7 @@ class TradesScreen extends ConsumerWidget {
       body: RefreshIndicator(
         onRefresh: () async {
           // Force reload the orders repository first
-          await ref.read(orderRepositoryProvider).reloadData();
+          ref.read(orderRepositoryProvider).reloadData();
           // Then refresh the filtered trades provider
           ref.invalidate(filteredTradesProvider);
         },

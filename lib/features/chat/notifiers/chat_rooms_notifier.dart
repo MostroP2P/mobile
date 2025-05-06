@@ -15,7 +15,7 @@ class ChatRoomsNotifier extends StateNotifier<List<ChatRoom>> {
   }
 
   /// Reload all chat rooms by triggering their notifiers to resubscribe to events.
-  Future<void> reloadAllChats() async {
+  void reloadAllChats() {
     for (final chat in state) {
       try {
         final notifier = ref.read(chatRoomsProvider(chat.orderId).notifier);

@@ -82,9 +82,9 @@ class OrderNotifier extends AbstractMostroNotifier {
 
   @override
   void dispose() {
-    ref.read(cantDoNotifierProvider(orderId).notifier).dispose();
-    ref.read(paymentNotifierProvider(orderId).notifier).dispose();
-    ref.read(disputeNotifierProvider(orderId).notifier).dispose();
+    ref.invalidate(cantDoNotifierProvider(orderId));
+    ref.invalidate(paymentNotifierProvider(orderId));
+    ref.invalidate(disputeNotifierProvider(orderId));
     super.dispose();
   }
 }

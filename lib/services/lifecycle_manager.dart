@@ -67,12 +67,12 @@ class LifecycleManager extends WidgetsBindingObserver {
       // Refresh order repository by re-reading it
       _logger.i("Refreshing order repository");
       final orderRepo = ref.read(orderRepositoryProvider);
-      await orderRepo.reloadData();
+      orderRepo.reloadData();
 
       // Reinitialize chat rooms
       _logger.i("Reloading chat rooms");
       final chatRooms = ref.read(chatRoomsNotifierProvider.notifier);
-      await chatRooms.reloadAllChats();
+      chatRooms.reloadAllChats();
 
       // Force UI update for trades
       _logger.i("Invalidating providers to refresh UI");
