@@ -16,7 +16,7 @@ import 'package:mostro_mobile/features/trades/widgets/mostro_message_detail_widg
 import 'package:mostro_mobile/shared/providers/session_manager_provider.dart';
 import 'package:mostro_mobile/shared/utils/currency_utils.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
-import 'package:mostro_mobile/shared/widgets/nostr_responsive_button.dart';
+import 'package:mostro_mobile/shared/widgets/mostro_reactive_button.dart';
 
 class TradeDetailScreen extends ConsumerWidget {
   final String orderId;
@@ -493,13 +493,12 @@ class TradeDetailScreen extends ConsumerWidget {
       buttonStyle: ButtonStyleType.raised,
       orderId: orderId,
       action: action,
+      backgroundColor: backgroundColor,
       onPressed: onPressed,
       showSuccessIndicator: true,
       timeout: const Duration(seconds: 30),
     );
   }
-
-  /// CONTACT
   Widget _buildContactButton(BuildContext context) {
     return ElevatedButton(
       onPressed: () {

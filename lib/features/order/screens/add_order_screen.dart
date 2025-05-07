@@ -14,7 +14,7 @@ import 'package:mostro_mobile/features/order/providers/order_notifier_provider.d
 import 'package:mostro_mobile/shared/widgets/currency_combo_box.dart';
 import 'package:mostro_mobile/shared/widgets/currency_text_field.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
-import 'package:mostro_mobile/shared/widgets/nostr_responsive_button.dart';
+import 'package:mostro_mobile/shared/widgets/mostro_reactive_button.dart';
 import 'package:uuid/uuid.dart';
 
 // Create a direct state provider tied to the order action/status

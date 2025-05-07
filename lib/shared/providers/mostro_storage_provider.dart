@@ -25,8 +25,3 @@ final mostroOrderStreamProvider = StreamProvider.family<MostroMessage?, String>(
   final storage = ref.read(mostroStorageProvider);
   return storage.watchLatestMessageOfType<Order>(orderId);
 });
-
-final mostroOrderProvider = StreamProvider.family<MostroMessage?, String>((ref, orderId) {
-  final storage = ref.read(mostroStorageProvider);
-  return storage.watchLatestMessage(orderId);
-});

@@ -43,6 +43,18 @@ Future<void> serviceMain(ServiceInstance service) async {
     service.invoke('service-ready', {});
   });
 
+  service.on('update-settings').listen((data) async {
+    if (data == null) return;
+
+    final settingsMap = data['settings'];
+    if (settingsMap == null) return;
+
+    final settings = Settings.fromJson(settingsMap);
+    await nostrService.updateSettings(settings);
+
+    service.invoke('service-ready', {});
+  });
+
   service.on('create-subscription').listen((data) {
     if (data == null || data['filters'] == null) return;
 

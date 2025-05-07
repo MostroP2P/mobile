@@ -47,9 +47,9 @@ class TradesScreen extends ConsumerWidget {
               ),
               // Use the async value pattern to handle different states
               tradesAsync.when(
-                data: (trades) => _buildFilterButton(context, trades),
-                loading: () => _buildFilterButton(context, []),
-                error: (error, _) => _buildFilterButton(context, []),
+                data: (trades) => _buildFilterButton(context, ref, trades),
+                loading: () => _buildFilterButton(context, ref, []),
+                error: (error, _) => _buildFilterButton(context, ref, []),
               ),
               const SizedBox(height: 6.0),
               Expanded(
@@ -98,7 +98,7 @@ class TradesScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildFilterButton(BuildContext context, List<NostrEvent> trades) {
+  Widget _buildFilterButton(BuildContext context, WidgetRef ref, List<NostrEvent> trades) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
@@ -107,24 +107,24 @@ class TradesScreen extends ConsumerWidget {
           OutlinedButton.icon(
             onPressed: () {
               showModalBottomSheet(
-                context: context,
-                backgroundColor: Colors.transparent,
-                builder: (BuildContext context) {
-                  return const Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: OrderFilter(),
-                  );
-                },
+          context: context,
+          backgroundColor: Colors.transparent,
+          builder: (BuildContext context) {
+            return const Padding(
+              padding: EdgeInsets.all(16.0),
+              child: OrderFilter(),
+            );
+          },
               );
             },
             icon: const HeroIcon(HeroIcons.funnel,
-                style: HeroIconStyle.outline, color: AppTheme.cream1),
+          style: HeroIconStyle.outline, color: AppTheme.cream1),
             label:
-                const Text("FILTER", style: TextStyle(color: AppTheme.cream1)),
+          const Text("FILTER", style: TextStyle(color: AppTheme.cream1)),
             style: OutlinedButton.styleFrom(
               side: const BorderSide(color: AppTheme.cream1),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(20),
               ),
             ),
           ),
@@ -137,11 +137,9 @@ class TradesScreen extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.refresh, color: AppTheme.cream1),
             onPressed: () {
-              // Get the riverpod context from the widget
-              final container = ProviderScope.containerOf(context, listen: false);
-              // Invalidate providers to force refresh
-              container.invalidate(orderEventsProvider);
-              container.invalidate(filteredTradesProvider);
+              // Use the ref from the build method
+              ref.invalidate(orderEventsProvider);
+              ref.invalidate(filteredTradesProvider);
             },
           ),
         ],

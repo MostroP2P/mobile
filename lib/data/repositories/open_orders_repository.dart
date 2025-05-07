@@ -17,7 +17,7 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
   Settings _settings;
 
   final StreamController<List<NostrEvent>> _eventStreamController =
-      StreamController<List<NostrEvent>>.broadcast();
+      StreamController.broadcast();
   final Map<String, NostrEvent> _events = {};
   final _logger = Logger();
   StreamSubscription<NostrEvent>? _subscription;
@@ -41,6 +41,7 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
     final filter = NostrFilter(
       kinds: [orderEventKind],
       since: filterTime,
+      authors: [_settings.mostroPublicKey],
     );
 
     final request = NostrRequest(
@@ -49,12 +50,8 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
 
     _subscription = _nostrService.subscribeToEvents(request).listen((event) {
       if (event.type == 'order') {
-        final oldEvent = _events[event.orderId!];
-        // Only emit if the event is new or changed
-        if (oldEvent == null || oldEvent != event) {
-          _events[event.orderId!] = event;
-          _emitEvents();
-        }
+        _events[event.orderId!] = event;
+        _eventStreamController.add(_events.values.toList());
       } else if (event.type == 'info' &&
           event.pubkey == _settings.mostroPublicKey) {
         _logger.i('Mostro instance info loaded: $event');

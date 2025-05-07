@@ -1,7 +1,7 @@
 import 'package:sembast/sembast.dart';
 
 /// Base repository
-///
+/// A base interface for a Sembast-backed storage of items of type [T].
 /// Sub-class must implement:
 ///   • `toDbMap`   → encode  T  → Map
 ///   • `fromDbMap` → decode  Map → T
@@ -11,11 +11,19 @@ abstract class BaseStorage<T> {
 
   BaseStorage(this.db, this.store);
 
+  /// Convert a domain object [T] to JSON-ready Map.
   Map<String, dynamic> toDbMap(T item);
-  T fromDbMap(String key, Map<String, dynamic> json);
 
-  Future<void> putItem(String id, T item) =>
-      store.record(id).put(db, toDbMap(item));
+  /// Decode a JSON Map into domain object [T].
+  T fromDbMap(String key, Map<String, dynamic> jsonMap);
+
+  /// Insert or update an item in the store. The item is identified by [id].
+  Future<void> putItem(String id, T item) async {
+    final jsonMap = toDbMap(item);
+    await db.transaction((txn) async {
+      await store.record(id).put(txn, jsonMap);
+    });
+  }
 
   Future<T?> getItem(String id) async {
     final json = await store.record(id).get(db);
@@ -24,13 +32,29 @@ abstract class BaseStorage<T> {
 
   Future<bool> hasItem(String id) => store.record(id).exists(db);
 
-  Future<void> deleteItem(String id) => store.record(id).delete(db);
+  /// Delete an item by [id].
+  Future<void> deleteItem(String id) async {
+    await db.transaction((txn) async {
+      await store.record(id).delete(txn);
+    });
+  }
 
-  Future<void> deleteAll() => store.delete(db);
+  /// Delete all items in the store.
+  Future<void> deleteAll() async {
+    await db.transaction((txn) async {
+      await store.delete(txn);
+    });
+  }
 
   /// Delete by arbitrary Sembast [Filter].
-  Future<int> deleteWhere(Filter filter) =>
-      store.delete(db, finder: Finder(filter: filter));
+  Future<int> deleteWhere(Filter filter) async {
+    return await db.transaction((txn) async {
+      return await store.delete(
+        db,
+        finder: Finder(filter: filter),
+      );
+    });
+  }
 
   Future<List<T>> find({
     Filter? filter,
@@ -61,11 +85,8 @@ abstract class BaseStorage<T> {
     final query = store.query(
       finder: Finder(filter: filter, sortOrders: sort),
     );
-    return query
-        .onSnapshots(db)
-        .map((snaps) => snaps
-            .map((s) => fromDbMap(s.key, s.value))
-            .toList(growable: false));
+    return query.onSnapshots(db).map((snaps) =>
+        snaps.map((s) => fromDbMap(s.key, s.value)).toList(growable: false));
   }
 
   /// Watch a single record by its [id] – emits *null* when deleted.
@@ -76,8 +97,6 @@ abstract class BaseStorage<T> {
         .map((snap) => snap == null ? null : fromDbMap(id, snap.value));
   }
 
-  // ──────────────────────────  Convenience helpers  ────────────────
   /// Equality filter on a given [field] (`x == value`)
   Filter eq(String field, Object? value) => Filter.equals(field, value);
-
 }

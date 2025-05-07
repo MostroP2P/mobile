@@ -142,7 +142,13 @@ class MobileBackgroundService implements BackgroundService {
     _serviceReady = false; // Reset ready state when starting
 
     // Wait for the service to be running
+    const maxWait = Duration(seconds: 5);
+    final deadline = DateTime.now().add(maxWait);
+
     while (!(await service.isRunning())) {
+      if (DateTime.now().isAfter(deadline)) {
+        throw StateError('Background service failed to start within $maxWait');
+      }
       await Future.delayed(const Duration(milliseconds: 50));
     }
 
@@ -160,6 +166,11 @@ class MobileBackgroundService implements BackgroundService {
   @override
   void updateSettings(Settings settings) {
     _settings = settings;
+    _executeWhenReady(() {
+      service.invoke('update-settings', {
+        'settings': settings.toJson(),
+      });
+    });
   }
 
   @override

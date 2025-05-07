@@ -27,12 +27,13 @@ class MostroReactiveButton extends ConsumerStatefulWidget {
     required this.orderId,
     required this.action,
     this.timeout = const Duration(seconds: 30),
-
     this.showSuccessIndicator = false,
+    Color? backgroundColor,
   });
 
   @override
-  ConsumerState<MostroReactiveButton> createState() => _MostroReactiveButtonState();
+  ConsumerState<MostroReactiveButton> createState() =>
+      _MostroReactiveButtonState();
 }
 
 class _MostroReactiveButtonState extends ConsumerState<MostroReactiveButton> {
@@ -124,6 +125,5 @@ class _MostroReactiveButtonState extends ConsumerState<MostroReactiveButton> {
     }
 
     return button;
-
   }
 }
