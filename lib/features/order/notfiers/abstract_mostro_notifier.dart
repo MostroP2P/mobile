@@ -4,26 +4,30 @@ import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/cant_do.dart';
 import 'package:mostro_mobile/data/models/dispute.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
+import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/order.dart';
-import 'package:mostro_mobile/data/models/payload.dart';
 import 'package:mostro_mobile/data/models/peer.dart';
+import 'package:mostro_mobile/core/mostro_fsm.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
+import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
 import 'package:mostro_mobile/shared/providers/navigation_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/notification_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
-import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/shared/providers/session_manager_provider.dart';
-import 'package:mostro_mobile/shared/providers/session_providers.dart';
 
-class AbstractMostroNotifier<T extends Payload>
-    extends StateNotifier<MostroMessage> {
+class AbstractMostroNotifier extends StateNotifier<MostroMessage> {
   final String orderId;
   final Ref ref;
 
-  ProviderSubscription<AsyncValue<MostroMessage>>? subscription;
+  ProviderSubscription<AsyncValue<MostroMessage?>>? subscription;
   final logger = Logger();
+
+  // Keep local FSM state in sync with every incoming MostroMessage.
+  Status _currentStatus = Status.pending;
+
+  Status get currentStatus => _currentStatus;
 
   AbstractMostroNotifier(
     this.orderId,
@@ -32,19 +36,31 @@ class AbstractMostroNotifier<T extends Payload>
 
   Future<void> sync() async {
     final storage = ref.read(mostroStorageProvider);
-    state = await storage.getMessageById<T>(orderId) ?? state;
+    final latestMessage = await storage.getMessageById(orderId);
+    if (latestMessage != null) {
+      state = latestMessage;
+      // Bootstrap FSM status from the order payload if present.
+      final orderPayload = latestMessage.getPayload<Order>();
+      _currentStatus = orderPayload?.status ?? _currentStatus;
+    }
   }
 
   void subscribe() {
-    subscription = ref.listen(sessionMessagesProvider(orderId), (_, next) {
-      next.when(
-        data: (msg) {
-          handleEvent(msg);
-        },
-        error: (error, stack) => handleError(error, stack),
-        loading: () {},
-      );
-    });
+    // Use the mostroMessageStream provider that directly watches Sembast storage changes
+    subscription = ref.listen(
+      mostroMessageStreamProvider(orderId),
+      (_, AsyncValue<MostroMessage?> next) {
+        next.when(
+          data: (MostroMessage? msg) {
+            if (msg != null) {
+              handleEvent(msg);
+            }
+          },
+          error: (error, stack) => handleError(error, stack),
+          loading: () {},
+        );
+      },
+    );
   }
 
   void handleError(Object err, StackTrace stack) {
@@ -52,7 +68,12 @@ class AbstractMostroNotifier<T extends Payload>
   }
 
   void handleEvent(MostroMessage event) {
+    // Update FSM first so UI can react to new `Status` if needed.
+    _currentStatus = MostroFSM.nextStatus(_currentStatus, event.action);
+
+    // Persist the message as the latest state for the order.
     state = event;
+
     handleOrderUpdate();
   }
 
@@ -99,18 +120,26 @@ class AbstractMostroNotifier<T extends Payload>
         break;
       case Action.buyerTookOrder:
         final order = state.getPayload<Order>();
+        if (order == null) {
+          logger.e('Buyer took order, but order is null');
+          break;
+        }
         notifProvider.showInformation(state.action, values: {
-          'buyer_npub': order?.buyerTradePubkey ?? 'Unknown',
-          'fiat_code': order?.fiatCode,
-          'fiat_amount': order?.fiatAmount,
-          'payment_method': order?.paymentMethod,
+          'buyer_npub': order.buyerTradePubkey ?? 'Unknown',
+          'fiat_code': order.fiatCode,
+          'fiat_amount': order.fiatAmount,
+          'payment_method': order.paymentMethod,
         });
         // add seller tradekey to session
         // open chat
         final sessionProvider = ref.read(sessionNotifierProvider.notifier);
-        final session = sessionProvider.getSessionByOrderId(orderId);
-        session?.peer = Peer(publicKey: order!.buyerTradePubkey!);
-        sessionProvider.saveSession(session!);
+        final peer = order.buyerTradePubkey != null
+            ? Peer(publicKey: order.buyerTradePubkey!)
+            : null;
+        sessionProvider.updateSession(
+          orderId,
+          (s) => s.peer = peer,
+        );
         final chat = ref.read(chatRoomsProvider(orderId).notifier);
         chat.subscribe();
         break;
@@ -130,9 +159,11 @@ class AbstractMostroNotifier<T extends Payload>
         // add seller tradekey to session
         // open chat
         final sessionProvider = ref.read(sessionNotifierProvider.notifier);
-        final session = sessionProvider.getSessionByOrderId(orderId);
-        session?.peer = Peer(publicKey: order!.sellerTradePubkey!);
-        sessionProvider.saveSession(session!);
+        final peer = Peer(publicKey: order!.sellerTradePubkey!);
+        sessionProvider.updateSession(
+          orderId,
+          (s) => s.peer = peer,
+        );
         final chat = ref.read(chatRoomsProvider(orderId).notifier);
         chat.subscribe();
         break;

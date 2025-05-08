@@ -4,7 +4,7 @@ import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/features/order/notfiers/abstract_mostro_notifier.dart';
 import 'package:mostro_mobile/shared/providers/notification_notifier_provider.dart';
 
-class CantDoNotifier extends AbstractMostroNotifier<CantDo> {
+class CantDoNotifier extends AbstractMostroNotifier {
   CantDoNotifier(super.orderId, super.ref) {
     sync();
     subscribe();

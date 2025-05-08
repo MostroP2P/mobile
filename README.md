@@ -81,6 +81,8 @@ flutter run
    cargo run
    ```
 
+See the README.md in the mostro repository for more details.
+
 ## Setting up Polar for Testing
 
 1. Launch Polar and create a new Lightning Network.
@@ -106,18 +108,17 @@ This project is licensed under the MIT License. See the `LICENSE` file for detai
 - [x] Displays order list
 - [x] Take orders (Buy & Sell)
 - [x] Posts Orders (Buy & Sell)
-- [ ] Direct message with peers (use nip-17)
-- [ ] Fiat sent
-- [ ] Release
-- [ ] Maker cancel pending order
-- [ ] Cooperative cancellation
+- [x] Direct message with peers
+- [x] Fiat sent
+- [x] Release
+- [x] Maker cancel pending order
+- [x] Cooperative cancellation
 - [ ] Buyer: add new invoice if payment fails
-- [ ] Rate users
-- [ ] List own orders
+- [x] Rate users
+- [x] List own orders
 - [ ] Dispute flow (users)
 - [ ] Dispute management (for admins)
 - [ ] Conversation key management
-- [ ] Create buy orders with LN address
-- [ ] Nip-06 support (identity management)
-- [ ] Settings tab
-- [ ] Notifications
+- [x] Create buy orders with LN address
+- [x] Settings tab
+- [x] Notifications

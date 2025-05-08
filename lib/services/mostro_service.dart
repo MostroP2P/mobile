@@ -1,46 +1,61 @@
 import 'dart:convert';
-import 'package:dart_nostr/dart_nostr.dart';
+import 'package:dart_nostr/nostr/model/export.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mostro_mobile/data/models/amount.dart';
-import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
-import 'package:mostro_mobile/data/models/enums/order_type.dart';
-import 'package:mostro_mobile/data/models/enums/role.dart';
-import 'package:mostro_mobile/data/models/mostro_message.dart';
-import 'package:mostro_mobile/data/models/enums/action.dart';
-import 'package:mostro_mobile/data/models/nostr_event.dart';
-import 'package:mostro_mobile/data/models/order.dart';
-import 'package:mostro_mobile/data/models/payment_request.dart';
-import 'package:mostro_mobile/data/models/rating_user.dart';
-import 'package:mostro_mobile/data/models/session.dart';
-import 'package:mostro_mobile/data/repositories/event_storage.dart';
-import 'package:mostro_mobile/data/repositories/mostro_storage.dart';
+import 'package:mostro_mobile/data/models.dart';
+import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
-import 'package:mostro_mobile/services/event_bus.dart';
-import 'package:mostro_mobile/services/nostr_service.dart';
+import 'package:mostro_mobile/services/lifecycle_manager.dart';
 import 'package:mostro_mobile/shared/notifiers/order_action_notifier.dart';
 import 'package:mostro_mobile/shared/notifiers/session_notifier.dart';
+import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
+import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 
 class MostroService {
   final Ref ref;
-  final NostrService _nostrService;
   final SessionNotifier _sessionNotifier;
-  final EventStorage _eventStorage;
-  final MostroStorage _messageStorage;
-
-  final EventBus _bus;
 
   Settings _settings;
 
   MostroService(
     this._sessionNotifier,
-    this._eventStorage,
-    this._bus,
-    this._messageStorage,
     this.ref,
-  )   : _nostrService = ref.read(nostrServiceProvider),
-        _settings = ref.read(settingsProvider);
+  ) : _settings = ref.read(settingsProvider).copyWith() {
+    init();
+  }
+
+  void init() async {
+    final now = DateTime.now();
+    final cutoff = now.subtract(const Duration(hours: 24));
+    final sessions = _sessionNotifier.sessions;
+    final messageStorage = ref.read(mostroStorageProvider);
+    // Set of terminal statuses
+    const terminalStatuses = {
+      Status.canceled,
+      Status.cooperativelyCanceled,
+      Status.success,
+      Status.expired,
+      Status.canceledByAdmin,
+      Status.settledByAdmin,
+      Status.completedByAdmin,
+    };
+    for (final session in sessions) {
+      if (session.startTime.isAfter(cutoff)) {
+        if (session.orderId != null) {
+          final latestOrderMsg = await messageStorage
+              .getLatestMessageOfTypeById<Order>(session.orderId!);
+          final status = latestOrderMsg?.payload is Order
+              ? (latestOrderMsg!.payload as Order).status
+              : null;
+          if (status != null && terminalStatuses.contains(status)) {
+            continue;
+          }
+        }
+        subscribe(session);
+      }
+    }
+  }
 
   void subscribe(Session session) {
     final filter = NostrFilter(
@@ -48,11 +63,17 @@ class MostroService {
       p: [session.tradeKey.public],
     );
 
-    _nostrService.subscribeToEvents(filter).listen((event) async {
-      // The item has already beeen processed
-      if (await _eventStorage.hasItem(event.id!)) return;
-      // Store the event
-      await _eventStorage.putItem(
+    final request = NostrRequest(filters: [filter]);
+
+    ref.read(lifecycleManagerProvider).addSubscription(filter);
+
+    final nostrService = ref.read(nostrServiceProvider);
+
+    nostrService.subscribeToEvents(request).listen((event) async {
+      final eventStore = ref.read(eventStorageProvider);
+
+      if (await eventStore.hasItem(event.id!)) return;
+      await eventStore.putItem(
         event.id!,
         event,
       );
@@ -65,34 +86,25 @@ class MostroService {
       final result = jsonDecode(decryptedEvent.content!);
       if (result is! List) return;
 
-      final msgMap = result[0];
-
-      final msg = MostroMessage.fromJson(msgMap);
+      result[0]['timestamp'] = decryptedEvent.createdAt?.millisecondsSinceEpoch;
+      final msg = MostroMessage.fromJson(result[0]);
+      final messageStorage = ref.read(mostroStorageProvider);
 
       if (msg.id != null) {
-        ref
-            .read(
-              orderActionNotifierProvider(msg.id!).notifier,
-            )
-            .set(
-              msg.action,
-            );
+        if (await messageStorage.hasMessageByKey(decryptedEvent.id!)) return;
+        ref.read(orderActionNotifierProvider(msg.id!).notifier).set(msg.action);
       }
-
-      if (msg.action == actions.Action.canceled) {
-        await _messageStorage.deleteAllMessagesById(session.orderId!);
+      if (msg.action == Action.canceled) {
+        ref.read(orderNotifierProvider(session.orderId!).notifier).dispose();
+        await messageStorage.deleteAllMessagesByOrderId(session.orderId!);
         await _sessionNotifier.deleteSession(session.orderId!);
         return;
       }
-
-      await _messageStorage.addMessage(msg);
-
+      await messageStorage.addMessage(decryptedEvent.id!, msg);
       if (session.orderId == null && msg.id != null) {
         session.orderId = msg.id;
         await _sessionNotifier.saveSession(session);
       }
-
-      _bus.emit(msg);
     });
   }
 
@@ -207,7 +219,8 @@ class MostroService {
       masterKey: session.fullPrivacy ? null : session.masterKey,
       keyIndex: session.fullPrivacy ? null : session.keyIndex,
     );
-    await _nostrService.publishEvent(event);
+
+    await ref.read(nostrServiceProvider).publishEvent(event);
     return session;
   }
 

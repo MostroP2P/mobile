@@ -57,7 +57,7 @@ class AppTheme {
           backgroundColor: mostroGreen,
           textStyle: GoogleFonts.robotoCondensed(
             fontWeight: FontWeight.w500,
-            fontSize: 16.0,
+            fontSize: 14.0,
           ),
           padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 30),
         ),

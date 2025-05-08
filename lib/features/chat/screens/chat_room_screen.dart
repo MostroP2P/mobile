@@ -9,7 +9,7 @@ import 'package:mostro_mobile/data/models/chat_room.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/shared/providers/avatar_provider.dart';
-import 'package:mostro_mobile/shared/providers/legible_hande_provider.dart';
+import 'package:mostro_mobile/shared/providers/legible_handle_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_manager_provider.dart';
 import 'package:mostro_mobile/shared/widgets/clickable_text_widget.dart';
 

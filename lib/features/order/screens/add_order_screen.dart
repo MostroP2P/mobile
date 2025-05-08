@@ -5,14 +5,22 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/data/models/enums/action.dart' as nostr_action;
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
+import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/features/order/widgets/fixed_switch_widget.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/shared/widgets/currency_combo_box.dart';
 import 'package:mostro_mobile/shared/widgets/currency_text_field.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
+import 'package:mostro_mobile/shared/widgets/mostro_reactive_button.dart';
 import 'package:uuid/uuid.dart';
+
+// Create a direct state provider tied to the order action/status
+final orderActionStatusProvider =
+    Provider.family<AsyncValue<MostroMessage?>, int>(
+        (ref, requestId) => ref.watch(addOrderEventsProvider(requestId)));
 
 class AddOrderScreen extends ConsumerStatefulWidget {
   const AddOrderScreen({super.key});
@@ -435,26 +443,33 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
   ///
   /// ACTION BUTTONS
   ///
+  // Track the current request ID for the button state providers
+  int? _currentRequestId;
+
   Widget _buildActionButtons(
       BuildContext context, WidgetRef ref, OrderType orderType) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         TextButton(
-          onPressed: () => context.go('/'),
-          child: const Text('CANCEL', style: TextStyle(color: AppTheme.red2)),
+          onPressed: () {
+            context.pop();
+          },
+          child: const Text('CANCEL'),
         ),
-        const SizedBox(width: 16),
-        ElevatedButton(
+        const SizedBox(width: 8.0),
+        MostroReactiveButton(
+          label: 'SUBMIT',
+          buttonStyle: ButtonStyleType.raised,
+          orderId: _currentRequestId?.toString() ?? '',
+          action: nostr_action.Action.newOrder,
           onPressed: () {
             if (_formKey.currentState?.validate() ?? false) {
               _submitOrder(context, ref, orderType);
             }
           },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.mostroGreen,
-          ),
-          child: const Text('SUBMIT'),
+          timeout: const Duration(seconds: 5), // Short timeout for better UX
+          showSuccessIndicator: true,
         ),
       ],
     );
@@ -464,13 +479,25 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
   /// SUBMIT ORDER
   ///
   void _submitOrder(BuildContext context, WidgetRef ref, OrderType orderType) {
+    // No need to reset state providers as they're now derived from the order state
+
     final selectedFiatCode = ref.read(selectedFiatCodeProvider);
 
-    if (_formKey.currentState?.validate() ?? false) {
+    try {
       // Generate a unique temporary ID for this new order
       final uuid = Uuid();
       final tempOrderId = uuid.v4();
-      final notifier = ref.read(addOrderNotifierProvider(tempOrderId).notifier);
+      final notifier = ref.read(
+        addOrderNotifierProvider(tempOrderId).notifier,
+      );
+
+      // Calculate the request ID the same way AddOrderNotifier does
+      final requestId = notifier.requestId;
+
+      // Store the current request ID for the button state providers
+      setState(() {
+        _currentRequestId = requestId;
+      });
 
       final fiatAmount = _maxFiatAmount != null ? 0 : _minFiatAmount;
       final minAmount = _maxFiatAmount != null ? _minFiatAmount : null;
@@ -495,7 +522,27 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
         buyerInvoice: buyerInvoice,
       );
 
+      // Submit the order first
       notifier.submitOrder(order);
+
+      // The timeout is now handled by the NostrResponsiveButton
+    } catch (e) {
+      // If there's an exception, show an error dialog instead of using providers
+      if (context.mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Error'),
+            content: Text(e.toString()),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
     }
   }
 }

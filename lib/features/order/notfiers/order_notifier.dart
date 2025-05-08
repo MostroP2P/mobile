@@ -3,10 +3,11 @@ import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/features/order/notfiers/abstract_mostro_notifier.dart';
+import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/services/mostro_service.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 
-class OrderNotifier extends AbstractMostroNotifier<Order> {
+class OrderNotifier extends AbstractMostroNotifier {
   late final MostroService mostroService;
 
   OrderNotifier(super.orderId, super.ref) {
@@ -18,10 +19,9 @@ class OrderNotifier extends AbstractMostroNotifier<Order> {
 
   @override
   void handleEvent(MostroMessage event) {
-    if (event.payload is Order || event.payload == null) {
-      state = event;
-      handleOrderUpdate();
-    }
+    // Forward all messages so UI reacts to CantDo, Peer, PaymentRequest, etc.
+    state = event;
+    handleOrderUpdate();
   }
 
   Future<void> submitOrder(Order order) async {
@@ -78,5 +78,13 @@ class OrderNotifier extends AbstractMostroNotifier<Order> {
       orderId,
       rating,
     );
+  }
+
+  @override
+  void dispose() {
+    ref.invalidate(cantDoNotifierProvider(orderId));
+    ref.invalidate(paymentNotifierProvider(orderId));
+    ref.invalidate(disputeNotifierProvider(orderId));
+    super.dispose();
   }
 }

@@ -30,4 +30,9 @@ class Config {
 
   static int expirationSeconds = 900;
   static int expirationHours = 24;
+
+  // Configuración de notificaciones
+  static String notificationChannelId = 'mostro_mobile';
+  static int notificationId = 38383;
+
 }

@@ -6,28 +6,48 @@ class KeyStorage {
   final FlutterSecureStorage secureStorage;
   final SharedPreferencesAsync sharedPrefs;
 
-  KeyStorage({required this.secureStorage, required this.sharedPrefs});
+  KeyStorage({
+    required this.secureStorage,
+    required this.sharedPrefs,
+  });
+
   Future<void> storeMasterKey(String masterKey) async {
-    await secureStorage.write(key: SecureStorageKeys.masterKey.value, value: masterKey);
+    await secureStorage.write(
+      key: SecureStorageKeys.masterKey.value,
+      value: masterKey,
+    );
   }
 
   Future<String?> readMasterKey() async {
-    return secureStorage.read(key: SecureStorageKeys.masterKey.value);
+    return secureStorage.read(
+      key: SecureStorageKeys.masterKey.value,
+    );
   }
 
   Future<void> storeMnemonic(String mnemonic) async {
-    await secureStorage.write(key: SecureStorageKeys.mnemonic.value, value: mnemonic);
+    await secureStorage.write(
+      key: SecureStorageKeys.mnemonic.value,
+      value: mnemonic,
+    );
   }
 
   Future<String?> readMnemonic() async {
-    return secureStorage.read(key: SecureStorageKeys.mnemonic.value);
+    return secureStorage.read(
+      key: SecureStorageKeys.mnemonic.value,
+    );
   }
 
   Future<void> storeTradeKeyIndex(int index) async {
-    await sharedPrefs.setInt(SharedPreferencesKeys.keyIndex.value, index);
+    await sharedPrefs.setInt(
+      SharedPreferencesKeys.keyIndex.value,
+      index,
+    );
   }
 
   Future<int> readTradeKeyIndex() async {
-    return await sharedPrefs.getInt(SharedPreferencesKeys.keyIndex.value) ?? 1;
+    return await sharedPrefs.getInt(
+          SharedPreferencesKeys.keyIndex.value,
+        ) ??
+        1;
   }
 }

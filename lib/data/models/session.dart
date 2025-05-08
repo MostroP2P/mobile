@@ -64,10 +64,15 @@ class Session {
   Peer? get peer => _peer;
 
   set peer(Peer? newPeer) {
+    if (newPeer == null) {
+      _peer = null;
+      _sharedKey = null;
+      return;
+    }
     _peer = newPeer;
     _sharedKey = NostrUtils.computeSharedKey(
       tradeKey.private,
-      newPeer!.publicKey,
+      newPeer.publicKey,
     );
   }
 }

@@ -5,7 +5,7 @@ import 'package:mostro_mobile/features/order/notfiers/add_order_notifier.dart';
 import 'package:mostro_mobile/features/order/notfiers/dispute_notifier.dart';
 import 'package:mostro_mobile/features/order/notfiers/order_notifier.dart';
 import 'package:mostro_mobile/features/order/notfiers/payment_request_notifier.dart';
-import 'package:mostro_mobile/services/event_bus.dart';
+import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
 import 'package:mostro_mobile/features/order/notfiers/cant_do_notifier.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'order_notifier_provider.g.dart';
@@ -13,9 +13,11 @@ part 'order_notifier_provider.g.dart';
 final orderNotifierProvider =
     StateNotifierProvider.family<OrderNotifier, MostroMessage, String>(
   (ref, orderId) {
+    // Initialize all related notifiers
     ref.read(cantDoNotifierProvider(orderId));
     ref.read(paymentNotifierProvider(orderId));
     ref.read(disputeNotifierProvider(orderId));
+    
     return OrderNotifier(
       orderId,
       ref,
@@ -36,21 +38,30 @@ final addOrderNotifierProvider =
 final cantDoNotifierProvider =
     StateNotifierProvider.family<CantDoNotifier, MostroMessage, String>(
   (ref, orderId) {
-    return CantDoNotifier(orderId, ref);
+    return CantDoNotifier(
+      orderId,
+      ref,
+    );
   },
 );
 
 final paymentNotifierProvider =
     StateNotifierProvider.family<PaymentRequestNotifier, MostroMessage, String>(
   (ref, orderId) {
-    return PaymentRequestNotifier(orderId, ref);
+    return PaymentRequestNotifier(
+      orderId,
+      ref,
+    );
   },
 );
 
 final disputeNotifierProvider =
     StateNotifierProvider.family<DisputeNotifier, MostroMessage, String>(
   (ref, orderId) {
-    return DisputeNotifier(orderId, ref);
+    return DisputeNotifier(
+      orderId,
+      ref,
+    );
   },
 );
 
@@ -63,9 +74,16 @@ class OrderTypeNotifier extends _$OrderTypeNotifier {
   void set(OrderType value) => state = value;
 }
 
-final addOrderEventsProvider = StreamProvider.family<MostroMessage, int>(
+final addOrderEventsProvider = StreamProvider.family<MostroMessage?, int>(
   (ref, requestId) {
-    final bus = ref.watch(eventBusProvider);
-    return bus.stream.where((msg) => msg.requestId == requestId);
+    final storage = ref.watch(mostroStorageProvider);
+    return storage.watchByRequestId(requestId);
+  },
+);
+
+final orderMessagesStreamProvider = StreamProvider.family<List<MostroMessage>, String>(
+  (ref, orderId) {
+    final storage = ref.watch(mostroStorageProvider);
+    return storage.watchAllMessages(orderId);
   },
 );

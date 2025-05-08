@@ -6,5 +6,5 @@ import 'package:mostro_mobile/shared/providers/mostro_database_provider.dart';
 final sessionStorageProvider = Provider<SessionStorage>((ref) {
   final keyManager = ref.read(keyManagerProvider);
   final database = ref.read(mostroDatabaseProvider);
-  return SessionStorage(db: database, keyManager);
+  return SessionStorage(keyManager, db: database);
 });

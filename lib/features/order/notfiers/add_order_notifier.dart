@@ -10,32 +10,48 @@ import 'package:mostro_mobile/services/mostro_service.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/notification_notifier_provider.dart';
 
-class AddOrderNotifier extends AbstractMostroNotifier<Order> {
+class AddOrderNotifier extends AbstractMostroNotifier {
   late final MostroService mostroService;
-  int? requestId;
+  late int requestId;
 
   AddOrderNotifier(super.orderId, super.ref) {
     mostroService = ref.read(mostroServiceProvider);
+
+    // Generate a unique requestId from the orderId but with better uniqueness
+    // Take a portion of the UUID and combine with current timestamp to ensure uniqueness
+    final uuid = orderId.replaceAll('-', '');
+    final timestamp = DateTime.now().microsecondsSinceEpoch;
+    
+    // Use only the first 8 chars of UUID combined with current timestamp for uniqueness
+    // This avoids potential collisions from truncation while keeping values in int range
+    requestId = (int.parse(uuid.substring(0, 8), radix: 16) ^ timestamp) & 0x7FFFFFFF;
+
+    subscribe();
   }
 
   @override
   void subscribe() {
-    subscription = ref.listen(addOrderEventsProvider(requestId!), (_, next) {
-      next.when(
-        data: (msg) {
-          if (msg.payload is Order) {
-            state = msg;
-            if (msg.action == Action.newOrder) {
-              confirmOrder(msg);
+    subscription = ref.listen(
+      addOrderEventsProvider(requestId),
+      (_, next) {
+        next.when(
+          data: (msg) {
+            if (msg != null) {
+              if (msg.payload is Order) {
+                state = msg;
+                if (msg.action == Action.newOrder) {
+                  confirmOrder(msg);
+                }
+              } else if (msg.payload is CantDo) {
+                _handleCantDo(msg);
+              }
             }
-          } else if (msg.payload is CantDo) {
-            _handleCantDo(msg);
-          }
-        },
-        error: (error, stack) => handleError(error, stack),
-        loading: () {},
-      );
-    });
+          },
+          error: (error, stack) => handleError(error, stack),
+          loading: () {},
+        );
+      },
+    );
   }
 
   void _handleCantDo(MostroMessage message) {
@@ -49,29 +65,22 @@ class AddOrderNotifier extends AbstractMostroNotifier<Order> {
     );
   }
 
-  // This method is called when the order is confirmed.
   Future<void> confirmOrder(MostroMessage confirmedOrder) async {
-    final orderNotifier =
-        ref.watch(orderNotifierProvider(confirmedOrder.id!).notifier);
+    final orderNotifier = ref.watch(
+      orderNotifierProvider(confirmedOrder.id!).notifier,
+    );
     handleOrderUpdate();
     orderNotifier.subscribe();
     dispose();
   }
 
   Future<void> submitOrder(Order order) async {
-    requestId = requestId ??
-        BigInt.parse(
-          orderId.replaceAll('-', ''),
-          radix: 16,
-        ).toUnsigned(64).toInt();
-
     final message = MostroMessage<Order>(
       action: Action.newOrder,
       id: null,
       requestId: requestId,
       payload: order,
     );
-    if (subscription == null) subscribe();
     await mostroService.submitOrder(message);
   }
 }

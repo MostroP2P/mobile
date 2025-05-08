@@ -1,13 +1,24 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tekartik_app_flutter_sembast/sembast.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
+import 'package:sembast/sembast_io.dart';
 
-Future<Database> openMostroDatabase() async {
+Future<Database> openMostroDatabase(String dbName) async {
+  //var factory = getDatabaseFactory(packageName: dbName);
+  //final db = await factory.openDatabase(dbName);
 
-  var factory = getDatabaseFactory();
-  final db = await factory.openDatabase('mostro.db');
+  final dir = await getApplicationSupportDirectory();
+  final path = p.join(dir.path, 'mostro', 'databases', dbName);
+
+  final db = await databaseFactoryIo.openDatabase(path);
   return db;
 }
 
 final mostroDatabaseProvider = Provider<Database>((ref) {
+  throw UnimplementedError();
+});
+
+
+final eventDatabaseProvider = Provider<Database>((ref) {
   throw UnimplementedError();
 });

@@ -1,11 +1,12 @@
 import 'package:sembast/sembast.dart';
 
+/// Base repository
 /// A base interface for a Sembast-backed storage of items of type [T].
+/// Sub-class must implement:
+///   • `toDbMap`   → encode  T  → Map
+///   • `fromDbMap` → decode  Map → T
 abstract class BaseStorage<T> {
-  /// Reference to the Sembast database.
   final Database db;
-
-  /// The Sembast store reference (string key, Map&lt;String, dynamic&gt; value).
   final StoreRef<String, Map<String, dynamic>> store;
 
   BaseStorage(this.db, this.store);
@@ -24,32 +25,12 @@ abstract class BaseStorage<T> {
     });
   }
 
-  /// Retrieve an item by [id].
   Future<T?> getItem(String id) async {
-    final record = await store.record(id).get(db);
-    if (record == null) return null;
-    return fromDbMap(id, record);
+    final json = await store.record(id).get(db);
+    return json == null ? null : fromDbMap(id, json);
   }
 
-  /// Check if an item exists in the data store by [id].
-  Future<bool> hasItem(String id) async {
-    return await store.record(id).exists(db);
-  }
-
-  /// Return all items in the store.
-  Future<List<T>> getAllItems() async {
-    final records = await store.find(db);
-    final result = <T>[];
-    for (final record in records) {
-      try {
-        final item = fromDbMap(record.key, record.value);
-        result.add(item);
-      } catch (e) {
-        // Optionally handle or log parse errors
-      }
-    }
-    return result;
-  }
+  Future<bool> hasItem(String id) => store.record(id).exists(db);
 
   /// Delete an item by [id].
   Future<void> deleteItem(String id) async {
@@ -59,44 +40,63 @@ abstract class BaseStorage<T> {
   }
 
   /// Delete all items in the store.
-  Future<void> deleteAllItems() async {
+  Future<void> deleteAll() async {
     await db.transaction((txn) async {
       await store.delete(txn);
     });
   }
 
-  /// Delete items that match a predicate [filter].
-  /// Return the list of deleted IDs.
-  Future<List<String>> deleteWhere(bool Function(T) filter,
-      {int? maxBatchSize}) async {
-    final toDelete = <String>[];
-    final records = await store.find(db);
-
-    for (final record in records) {
-      if (maxBatchSize != null && toDelete.length >= maxBatchSize) {
-        break;
-      }
-      try {
-        final item = fromDbMap(record.key, record.value);
-        if (filter(item)) {
-          toDelete.add(record.key);
-        }
-      } catch (_) {
-        // Could not parse => also consider removing or ignoring
-        toDelete.add(record.key);
-      }
-    }
-
-    // Remove the matched records in a transaction
-    await db.transaction((txn) async {
-      for (final key in toDelete) {
-        await store.record(key).delete(txn);
-      }
+  /// Delete by arbitrary Sembast [Filter].
+  Future<int> deleteWhere(Filter filter) async {
+    return await db.transaction((txn) async {
+      return await store.delete(
+        txn,
+        finder: Finder(filter: filter),
+      );
     });
-
-    return toDelete;
   }
 
-  /// If needed, close or clean up resources here.
-  void dispose() {}
+  Future<List<T>> find({
+    Filter? filter,
+    List<SortOrder>? sort,
+    int? limit,
+    int? offset,
+  }) async {
+    final records = await store.find(
+      db,
+      finder: Finder(
+        filter: filter,
+        sortOrders: sort,
+        limit: limit,
+        offset: offset,
+      ),
+    );
+    return records
+        .map((rec) => fromDbMap(rec.key, rec.value))
+        .toList(growable: false);
+  }
+
+  Future<List<T>> getAll() => find();
+
+  Stream<List<T>> watch({
+    Filter? filter,
+    List<SortOrder>? sort,
+  }) {
+    final query = store.query(
+      finder: Finder(filter: filter, sortOrders: sort),
+    );
+    return query.onSnapshots(db).map((snaps) =>
+        snaps.map((s) => fromDbMap(s.key, s.value)).toList(growable: false));
+  }
+
+  /// Watch a single record by its [id] – emits *null* when deleted.
+  Stream<T?> watchById(String id) {
+    return store
+        .record(id)
+        .onSnapshot(db)
+        .map((snap) => snap == null ? null : fromDbMap(id, snap.value));
+  }
+
+  /// Equality filter on a given [field] (`x == value`)
+  Filter eq(String field, Object? value) => Filter.equals(field, value);
 }

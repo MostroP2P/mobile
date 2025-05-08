@@ -2,7 +2,7 @@ import 'package:mostro_mobile/data/models/dispute.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/features/order/notfiers/abstract_mostro_notifier.dart';
 
-class DisputeNotifier extends AbstractMostroNotifier<Dispute> {
+class DisputeNotifier extends AbstractMostroNotifier {
   DisputeNotifier(super.orderId, super.ref) {
     sync();
     subscribe();

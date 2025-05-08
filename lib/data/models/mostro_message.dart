@@ -14,14 +14,16 @@ class MostroMessage<T extends Payload> {
   final Action action;
   int? tradeIndex;
   T? _payload;
+  int? timestamp;
 
-  MostroMessage({
-    required this.action,
-    this.requestId,
-    this.id,
-    T? payload,
-    this.tradeIndex,
-  }) : _payload = payload;
+  MostroMessage(
+      {required this.action,
+      this.requestId,
+      this.id,
+      T? payload,
+      this.tradeIndex,
+      this.timestamp})
+      : _payload = payload;
 
   Map<String, dynamic> toJson() {
     Map<String, dynamic> json = {
@@ -38,9 +40,10 @@ class MostroMessage<T extends Payload> {
   }
 
   factory MostroMessage.fromJson(Map<String, dynamic> json) {
+    final timestamp = json['timestamp'];
 
     json = json['order'] ?? json['cant-do'] ?? json;
-    
+
     return MostroMessage(
       action: Action.fromString(json['action']),
       requestId: json['request_id'],
@@ -49,6 +52,7 @@ class MostroMessage<T extends Payload> {
       payload: json['payload'] != null
           ? Payload.fromJson(json['payload']) as T?
           : null,
+      timestamp: timestamp,
     );
   }
 

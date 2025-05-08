@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:dart_nostr/nostr/model/request/filter.dart';
+import 'package:dart_nostr/nostr/model/request/request.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/repositories/order_repository_interface.dart';
@@ -24,7 +25,10 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
   NostrEvent? get mostroInstance => _mostroInstance;
 
   OpenOrdersRepository(this._nostrService, this._settings) {
+    // Subscribe to orders and initialize data
     _subscribeToOrders();
+    // Immediately emit current (possibly empty) cache so UI doesn't remain in loading state
+    _emitEvents();
   }
 
   /// Subscribes to events matching the given filter.
@@ -33,13 +37,18 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
 
     final filterTime =
         DateTime.now().subtract(Duration(hours: orderFilterDurationHours));
-    var filter = NostrFilter(
-      kinds: const [orderEventKind],
-      authors: [_settings.mostroPublicKey],
+
+    final filter = NostrFilter(
+      kinds: [orderEventKind],
       since: filterTime,
+      authors: [_settings.mostroPublicKey],
     );
 
-    _subscription = _nostrService.subscribeToEvents(filter).listen((event) {
+    final request = NostrRequest(
+      filters: [filter],
+    );
+
+    _subscription = _nostrService.subscribeToEvents(request).listen((event) {
       if (event.type == 'order') {
         _events[event.orderId!] = event;
         _eventStreamController.add(_events.values.toList());
@@ -50,7 +59,17 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
       }
     }, onError: (error) {
       _logger.e('Error in order subscription: $error');
+      // Optionally, you could auto-resubscribe here if desired
     });
+
+    // Ensure listeners receive at least one snapshot right after (re)subscription
+    _emitEvents();
+  }
+
+  void _emitEvents() {
+    if (!_eventStreamController.isClosed) {
+      _eventStreamController.add(_events.values.toList());
+    }
   }
 
   @override
@@ -65,30 +84,41 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
     return Future.value(_events[orderId]);
   }
 
-  Stream<List<NostrEvent>> get eventsStream => _eventStreamController.stream;
+  // Stream that immediately emits current cache to every new listener before
+  // forwarding live updates.
+  Stream<List<NostrEvent>> get eventsStream async* {
+    // Emit cached events synchronously.
+    yield _events.values.toList();
+    // Forward subsequent updates.
+    yield* _eventStreamController.stream;
+  }
 
   @override
   Future<void> addOrder(NostrEvent order) {
-    // TODO: implement addOrder
-    throw UnimplementedError();
+    _events[order.id!] = order;
+    _emitEvents();
+    return Future.value();
   }
 
   @override
   Future<void> deleteOrder(String orderId) {
-    // TODO: implement deleteOrder
-    throw UnimplementedError();
+    _events.remove(orderId);
+    _emitEvents();
+    return Future.value();
   }
 
   @override
   Future<List<NostrEvent>> getAllOrders() {
-    // TODO: implement getAllOrders
-    throw UnimplementedError();
+    return Future.value(_events.values.toList());
   }
 
   @override
   Future<void> updateOrder(NostrEvent order) {
-    // TODO: implement updateOrder
-    throw UnimplementedError();
+    if (order.id != null && _events.containsKey(order.id)) {
+      _events[order.id!] = order;
+      _emitEvents();
+    }
+    return Future.value();
   }
 
   void updateSettings(Settings settings) {
@@ -100,5 +130,11 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
     } else {
       _settings = settings.copyWith();
     }
+  }
+
+  void reloadData() {
+    _logger.i('Reloading repository data');
+    _subscribeToOrders();
+    _emitEvents();
   }
 }

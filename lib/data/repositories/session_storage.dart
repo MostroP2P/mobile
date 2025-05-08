@@ -56,17 +56,15 @@ class SessionStorage extends BaseStorage<Session> {
   Future<Session?> getSession(String sessionId) => getItem(sessionId);
 
   /// Shortcut to get all sessions (direct pass-through).
-  Future<List<Session>> getAllSessions() => getAllItems();
+  Future<List<Session>> getAllSessions() => getAll();
 
   /// Shortcut to remove a specific session by its ID.
   Future<void> deleteSession(String sessionId) => deleteItem(sessionId);
 
-  Future<List<String>> deleteExpiredSessions(
-      int sessionExpirationHours, int maxBatchSize) {
-    final now = DateTime.now();
-    return deleteWhere((session) {
-      final startTime = session.startTime;
-      return now.difference(startTime).inHours >= sessionExpirationHours;
-    }, maxBatchSize: maxBatchSize);
-  }
+  /// Watch a single session by ID with immediate value emission
+  Stream<Session?> watchSession(String sessionId) => watchById(sessionId);
+
+  /// Watch all sessions with immediate value emission
+  Stream<List<Session>> watchAllSessions() => watch();
+
 }

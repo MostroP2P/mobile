@@ -1,5 +1,7 @@
 import 'package:collection/collection.dart';
 import 'package:dart_nostr/dart_nostr.dart';
+import 'package:dart_nostr/nostr/model/ease.dart';
+import 'package:dart_nostr/nostr/model/ok.dart';
 import 'package:dart_nostr/nostr/model/relay_informations.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/core/config.dart';
@@ -7,22 +9,37 @@ import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
 class NostrService {
-  Settings settings;
+  late Settings settings;
   final Nostr _nostr = Nostr.instance;
 
-  NostrService(this.settings);
+  NostrService();
 
   final Logger _logger = Logger();
   bool _isInitialized = false;
 
-  Future<void> init() async {
+  Future<void> init(Settings settings) async {
+    this.settings = settings;
     try {
       await _nostr.services.relays.init(
         relaysUrl: settings.relays,
         connectionTimeout: Config.nostrConnectionTimeout,
         shouldReconnectToRelayOnNotice: true,
-        onRelayListening: (relay, url, channel) {
-          _logger.i('Connected to relay: $relay');
+        retryOnClose: true,
+        retryOnError: true,
+        onRelayListening: (relayUrl, receivedData, channel) {
+          if (receivedData is NostrEvent) {
+            _logger.i('Event from $relayUrl: ${receivedData.content}');
+          } else if (receivedData is NostrNotice) {
+            _logger.i('Notice from $relayUrl: ${receivedData.message}');
+          } else if (receivedData is NostrEventOkCommand) {
+            _logger.i(
+                'OK from $relayUrl: ${receivedData.eventId} (accepted: ${receivedData.isEventAccepted})');
+          } else if (receivedData is NostrRequestEoseCommand) {
+            _logger.i(
+                'EOSE from $relayUrl for subscription: ${receivedData.subscriptionId}');
+          } else if (receivedData is NostrCountResponse) {
+            _logger.i('Count from $relayUrl: ${receivedData.count}');
+          }
         },
         onRelayConnectionError: (relay, error, channel) {
           _logger.w('Failed to connect to relay $relay: $error');
@@ -30,8 +47,6 @@ class NostrService {
         onRelayConnectionDone: (relay, socket) {
           _logger.i('Connection to relay: $relay via $socket is done');
         },
-        retryOnClose: true,
-        retryOnError: true,
       );
       _isInitialized = true;
       _logger.i('Nostr initialized successfully');
@@ -42,11 +57,10 @@ class NostrService {
   }
 
   Future<void> updateSettings(Settings newSettings) async {
-    settings = newSettings.copyWith();
     final relays = Nostr.instance.services.relays.relaysList;
-    if (!ListEquality().equals(relays, settings.relays)) {
+    if (!ListEquality().equals(relays, newSettings.relays)) {
       _logger.i('Updating relays...');
-      await init();
+      await init(newSettings);
     }
   }
 
@@ -79,20 +93,17 @@ class NostrService {
     }
 
     final request = NostrRequest(filters: [filter]);
-    return
-        await _nostr.services.relays.startEventsSubscriptionAsync(
+    return await _nostr.services.relays.startEventsSubscriptionAsync(
       request: request,
       timeout: Config.nostrConnectionTimeout,
     );
-
   }
 
-  Stream<NostrEvent> subscribeToEvents(NostrFilter filter) {
+  Stream<NostrEvent> subscribeToEvents(NostrRequest request) {
     if (!_isInitialized) {
       throw Exception('Nostr is not initialized. Call init() first.');
     }
 
-    final request = NostrRequest(filters: [filter]);
     final subscription =
         _nostr.services.relays.startEventsSubscription(request: request);
 
@@ -119,7 +130,7 @@ class NostrService {
   }
 
   String getMostroPubKey() {
-    return Config.mostroPubKey;
+    return settings.mostroPublicKey;
   }
 
   Future<NostrEvent> createNIP59Event(
@@ -174,5 +185,13 @@ class NostrService {
       sealedContent,
       recipientPubKey,
     );
+  }
+
+  void unsubscribe(String id) {
+    if (!_isInitialized) {
+      throw Exception('Nostr is not initialized. Call init() first.');
+    }
+
+    _nostr.services.relays.closeEventsSubscription(id);
   }
 }
