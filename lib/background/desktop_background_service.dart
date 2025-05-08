@@ -12,9 +12,9 @@ import 'abstract_background_service.dart';
 
 class DesktopBackgroundService implements BackgroundService {
   final _subscriptions = <String, Map<String, dynamic>>{};
-  bool _isRunning = false;
+  final bool _isRunning = false;
   late SendPort _sendPort;
-  Settings _settings;
+  final Settings _settings;
 
   DesktopBackgroundService(this._settings);
 

@@ -20,8 +20,8 @@ typedef String MessageIfAbsent(String messageStr, List<dynamic> args);
 class MessageLookup extends MessageLookupByLibrary {
   String get localeName => 'en';
 
-  static String m0(amount, fiat_code, fiat_amount, expiration_seconds) =>
-      "Please send me an invoice for ${amount} satoshis equivalent to ${fiat_code} ${fiat_amount}. This is where I\'ll send the funds upon completion of the trade. If you don\'t provide the invoice within ${expiration_seconds} this trade will be cancelled.";
+  static String m0(amount, fiatCode, fiatAmount, expirationSeconds) =>
+      "Please send me an invoice for ${amount} satoshis equivalent to ${fiatCode} ${fiatAmount}. This is where I\'ll send the funds upon completion of the trade. If you don\'t provide the invoice within ${expirationSeconds} this trade will be cancelled.";
 
   static String m1(npub) => "You have successfully added the solver ${npub}.";
 
@@ -36,11 +36,11 @@ class MessageLookup extends MessageLookupByLibrary {
   static String m6(details) =>
       "Here are the details of the dispute order you have taken: ${details}. You need to determine which user is correct and decide whether to cancel or complete the order. Please note that your decision will be final and cannot be reversed.";
 
-  static String m7(admin_npub) =>
-      "The solver ${admin_npub} will handle your dispute. You can contact them directly, but if they reach out to you first, make sure to ask them for your dispute token.";
+  static String m7(adminNpub) =>
+      "The solver ${adminNpub} will handle your dispute. You can contact them directly, but if they reach out to you first, make sure to ask them for your dispute token.";
 
-  static String m8(buyer_npub, fiat_code, fiat_amount, payment_method) =>
-      "Get in touch with the buyer, this is their npub ${buyer_npub} to inform them how to send you ${fiat_code} ${fiat_amount} through ${payment_method}. I will notify you once the buyer indicates the fiat money has been sent. Afterward, you should verify if it has arrived. If the buyer does not respond, you can initiate a cancellation or a dispute. Remember, an administrator will NEVER contact you to resolve your order unless you open a dispute first.";
+  static String m8(buyerNpub, fiatCode, fiatAmount, paymentMethod) =>
+      "Get in touch with the buyer, this is their npub ${buyerNpub} to inform them how to send you ${fiatCode} ${fiatAmount} through ${paymentMethod}. I will notify you once the buyer indicates the fiat money has been sent. Afterward, you should verify if it has arrived. If the buyer does not respond, you can initiate a cancellation or a dispute. Remember, an administrator will NEVER contact you to resolve your order unless you open a dispute first.";
 
   static String m9(id) => "You have cancelled the order ID: ${id}!";
 
@@ -55,23 +55,23 @@ class MessageLookup extends MessageLookupByLibrary {
   static String m13(id) =>
       "You have initiated the cancellation of the order ID: ${id}. Your counterparty must agree to the cancellation too. If they do not respond, you can open a dispute. Note that no administrator will contact you regarding this cancellation unless you open a dispute first.";
 
-  static String m14(id, user_token) =>
-      "Your counterparty has initiated a dispute for order Id: ${id}. A solver will be assigned to your dispute soon. Once assigned, I will share their npub with you, and only they will be able to assist you. You may contact the solver directly, but if they reach out first, please ask them to provide the token for your dispute. Your dispute token is: ${user_token}.";
+  static String m14(id, userToken) =>
+      "Your counterparty has initiated a dispute for order Id: ${id}. A solver will be assigned to your dispute soon. Once assigned, I will share their npub with you, and only they will be able to assist you. You may contact the solver directly, but if they reach out first, please ask them to provide the token for your dispute. Your dispute token is: ${userToken}.";
 
-  static String m15(id, user_token) =>
-      "You have initiated a dispute for order Id: ${id}. A solver will be assigned to your dispute soon. Once assigned, I will share their npub with you, and only they will be able to assist you. You may contact the solver directly, but if they reach out first, please ask them to provide the token for your dispute. Your dispute token is: ${user_token}.";
+  static String m15(id, userToken) =>
+      "You have initiated a dispute for order Id: ${id}. A solver will be assigned to your dispute soon. Once assigned, I will share their npub with you, and only they will be able to assist you. You may contact the solver directly, but if they reach out first, please ask them to provide the token for your dispute. Your dispute token is: ${userToken}.";
 
-  static String m16(seller_npub) =>
-      "I have informed ${seller_npub} that you have sent the fiat money. When the seller confirms they have received your fiat money, they should release the funds. If they refuse, you can open a dispute.";
+  static String m16(sellerNpub) =>
+      "I have informed ${sellerNpub} that you have sent the fiat money. When the seller confirms they have received your fiat money, they should release the funds. If they refuse, you can open a dispute.";
 
-  static String m17(buyer_npub) =>
-      "${buyer_npub} has informed that they have sent you the fiat money. Once you confirm receipt, please release the funds. After releasing, the money will go to the buyer and there will be no turning back, so only proceed if you are sure. If you want to release the Sats to the buyer, send me release-order-message.";
+  static String m17(buyerNpub) =>
+      "${buyerNpub} has informed that they have sent you the fiat money. Once you confirm receipt, please release the funds. After releasing, the money will go to the buyer and there will be no turning back, so only proceed if you are sure. If you want to release the Sats to the buyer, send me release-order-message.";
 
-  static String m18(seller_npub, id, fiat_code, fiat_amount, payment_method) =>
-      "Get in touch with the seller, this is their npub ${seller_npub} to get the details on how to send the fiat money for the order ${id}, you must send ${fiat_code} ${fiat_amount} using ${payment_method}. Once you send the fiat money, please let me know with fiat-sent.";
+  static String m18(sellerNpub, id, fiatCode, fiatAmount, paymentMethod) =>
+      "Get in touch with the seller, this is their npub ${sellerNpub} to get the details on how to send the fiat money for the order ${id}, you must send ${fiatCode} ${fiatAmount} using ${paymentMethod}. Once you send the fiat money, please let me know with fiat-sent.";
 
-  static String m19(buyer_npub) =>
-      "Your Sats sale has been completed after confirming the payment from ${buyer_npub}.";
+  static String m19(buyerNpub) =>
+      "Your Sats sale has been completed after confirming the payment from ${buyerNpub}.";
 
   static String m20(amount) =>
       "The amount stated in the invoice is incorrect. Please send an invoice with an amount of ${amount} satoshis, an invoice without an amount, or a lightning address.";
@@ -79,32 +79,32 @@ class MessageLookup extends MessageLookupByLibrary {
   static String m21(action) =>
       "You did not create this order and are not authorized to ${action} it.";
 
-  static String m22(expiration_hours) =>
-      "Your offer has been published! Please wait until another user picks your order. It will be available for ${expiration_hours} hours. You can cancel this order before another user picks it up by executing: cancel.";
+  static String m22(expirationHours) =>
+      "Your offer has been published! Please wait until another user picks your order. It will be available for ${expirationHours} hours. You can cancel this order before another user picks it up by executing: cancel.";
 
-  static String m23(action, id, order_status) =>
-      "You are not allowed to ${action} because order Id ${id} status is ${order_status}.";
+  static String m23(action, id, orderStatus) =>
+      "You are not allowed to ${action} because order Id ${id} status is ${orderStatus}.";
 
-  static String m24(min_amount, max_amount) =>
-      "The requested amount is incorrect and may be outside the acceptable range. The minimum is ${min_amount} and the maximum is ${max_amount}.";
+  static String m24(minAmount, maxAmount) =>
+      "The requested amount is incorrect and may be outside the acceptable range. The minimum is ${minAmount} and the maximum is ${maxAmount}.";
 
-  static String m25(min_order_amount, max_order_amount) =>
-      "The allowed Sats amount for this Mostro is between min ${min_order_amount} and max ${max_order_amount}. Please enter an amount within this range.";
+  static String m25(minOrderAmount, maxOrderAmount) =>
+      "The allowed Sats amount for this Mostro is between min ${minOrderAmount} and max ${maxOrderAmount}. Please enter an amount within this range.";
 
-  static String m26(amount, fiat_code, fiat_amount, expiration_seconds) =>
-      "Please pay this hold invoice of ${amount} Sats for ${fiat_code} ${fiat_amount} to start the operation. If you do not pay it within ${expiration_seconds} the trade will be cancelled.";
+  static String m26(amount, fiatCode, fiatAmount, expirationSeconds) =>
+      "Please pay this hold invoice of ${amount} Sats for ${fiatCode} ${fiatAmount} to start the operation. If you do not pay it within ${expirationSeconds} the trade will be cancelled.";
 
-  static String m27(payment_attempts, payment_retries_interval) =>
-      "I tried to send you the Sats but the payment of your invoice failed. I will try ${payment_attempts} more times in ${payment_retries_interval} minutes window. Please ensure your node/wallet is online.";
+  static String m27(paymentAttempts, paymentRetriesInterval) =>
+      "I tried to send you the Sats but the payment of your invoice failed. I will try ${paymentAttempts} more times in ${paymentRetriesInterval} minutes window. Please ensure your node/wallet is online.";
 
-  static String m28(seller_npub) =>
-      "${seller_npub} has already released the Sats! Expect your invoice to be paid any time. Remember your wallet needs to be online to receive through the Lightning Network.";
+  static String m28(sellerNpub) =>
+      "${sellerNpub} has already released the Sats! Expect your invoice to be paid any time. Remember your wallet needs to be online to receive through the Lightning Network.";
 
-  static String m29(expiration_seconds) =>
-      "Payment received! Your Sats are now \'held\' in your own wallet. Please wait a bit. I\'ve requested the buyer to provide an invoice. Once they do, I\'ll connect you both. If they do not do so within ${expiration_seconds} your Sats will be available in your wallet again and the trade will be cancelled.";
+  static String m29(expirationSeconds) =>
+      "Payment received! Your Sats are now \'held\' in your own wallet. Please wait a bit. I\'ve requested the buyer to provide an invoice. Once they do, I\'ll connect you both. If they do not do so within ${expirationSeconds} your Sats will be available in your wallet again and the trade will be cancelled.";
 
-  static String m30(id, expiration_seconds) =>
-      "Please wait a bit. I\'ve sent a payment request to the seller to send the Sats for the order ID ${id}. Once the payment is made, I\'ll connect you both. If the seller doesn\'t complete the payment within ${expiration_seconds} minutes the trade will be cancelled.";
+  static String m30(id, expirationSeconds) =>
+      "Please wait a bit. I\'ve sent a payment request to the seller to send the Sats for the order ID ${id}. Once the payment is made, I\'ll connect you both. If the seller doesn\'t complete the payment within ${expirationSeconds} minutes the trade will be cancelled.";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
