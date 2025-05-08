@@ -19,6 +19,8 @@ class MostroReactiveButton extends ConsumerStatefulWidget {
 
   final bool showSuccessIndicator;
 
+  final Color? backgroundColor;
+
   const MostroReactiveButton({
     super.key,
     required this.label,
@@ -28,7 +30,7 @@ class MostroReactiveButton extends ConsumerStatefulWidget {
     required this.action,
     this.timeout = const Duration(seconds: 30),
     this.showSuccessIndicator = false,
-    Color? backgroundColor,
+    this.backgroundColor,
   });
 
   @override
@@ -104,21 +106,39 @@ class _MostroReactiveButtonState extends ConsumerState<MostroReactiveButton> {
       case ButtonStyleType.raised:
         button = ElevatedButton(
           onPressed: _loading ? null : _startOperation,
-          style: AppTheme.theme.elevatedButtonTheme.style,
+          style: widget.backgroundColor != null
+              ? AppTheme.theme.elevatedButtonTheme.style?.copyWith(
+                  backgroundColor: WidgetStateProperty.resolveWith(
+                    (_) => widget.backgroundColor!,
+                  ),
+                )
+              : AppTheme.theme.elevatedButtonTheme.style,
           child: childWidget,
         );
         break;
       case ButtonStyleType.outlined:
         button = OutlinedButton(
           onPressed: _loading ? null : _startOperation,
-          style: AppTheme.theme.outlinedButtonTheme.style,
+          style: widget.backgroundColor != null
+              ? AppTheme.theme.elevatedButtonTheme.style?.copyWith(
+                  backgroundColor: WidgetStateProperty.resolveWith(
+                    (_) => widget.backgroundColor!,
+                  ),
+                )
+              : AppTheme.theme.elevatedButtonTheme.style,
           child: childWidget,
         );
         break;
       case ButtonStyleType.text:
         button = TextButton(
           onPressed: _loading ? null : _startOperation,
-          style: AppTheme.theme.textButtonTheme.style,
+          style: widget.backgroundColor != null
+              ? AppTheme.theme.elevatedButtonTheme.style?.copyWith(
+                  backgroundColor: WidgetStateProperty.resolveWith(
+                    (_) => widget.backgroundColor!,
+                  ),
+                )
+              : AppTheme.theme.elevatedButtonTheme.style,
           child: childWidget,
         );
         break;

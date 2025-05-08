@@ -50,7 +50,7 @@ abstract class BaseStorage<T> {
   Future<int> deleteWhere(Filter filter) async {
     return await db.transaction((txn) async {
       return await store.delete(
-        db,
+        txn,
         finder: Finder(filter: filter),
       );
     });

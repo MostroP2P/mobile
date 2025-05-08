@@ -73,12 +73,6 @@ dependencies:
       url: https://github.com/chebizarro/dart-nip44.git
       ref: master
 
-  tekartik_app_flutter_sembast:
-    git:
-      url: https://github.com/tekartik/app_flutter_utils.dart
-      ref: dart3a
-      path: app_sembast
-    version: '>=0.1.0'
   flutter_local_notifications: ^19.0.0
   flutter_background_service: ^5.1.0
   system_tray: ^2.0.3

@@ -302,14 +302,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.6.10"
-  dart_flutter_team_lints:
-    dependency: transitive
-    description:
-      name: dart_flutter_team_lints
-      sha256: "4c8f38142598339cd28c0b48a66b6b04434ee0499b6e40baf7c62c76daa1fcad"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.5.1"
   dart_nostr:
     dependency: "direct main"
     description:
@@ -334,14 +326,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.7.11"
-  dev_build:
-    dependency: transitive
-    description:
-      name: dev_build
-      sha256: "87abaa4f6cfd50320b229e29a7ef5532d86bc804f3124328c7e9db238ba45b33"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.1.2+8"
   dots_indicator:
     dependency: transitive
     description:
@@ -1138,14 +1122,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.0.3"
-  process_run:
-    dependency: transitive
-    description:
-      name: process_run
-      sha256: "6ec839cdd3e6de4685318e7686cd4abb523c3d3a55af0e8d32a12ae19bc66622"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.2.4"
   pub_semver:
     dependency: transitive
     description:
@@ -1226,14 +1202,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.8.5"
-  sembast_sqflite:
-    dependency: transitive
-    description:
-      name: sembast_sqflite
-      sha256: "38ffa967af36d6867d087ec82c37b70b55707b2cd533157e8a32d15aa66e40d2"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.2.1"
   sembast_web:
     dependency: "direct main"
     description:
@@ -1367,70 +1335,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.10.1"
-  sqflite:
-    dependency: transitive
-    description:
-      name: sqflite
-      sha256: e2297b1da52f127bc7a3da11439985d9b536f75070f3325e62ada69a5c585d03
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.4.2"
-  sqflite_android:
-    dependency: transitive
-    description:
-      name: sqflite_android
-      sha256: "2b3070c5fa881839f8b402ee4a39c1b4d561704d4ebbbcfb808a119bc2a1701b"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.4.1"
-  sqflite_common:
-    dependency: transitive
-    description:
-      name: sqflite_common
-      sha256: "84731e8bfd8303a3389903e01fb2141b6e59b5973cacbb0929021df08dddbe8b"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.5.5"
-  sqflite_common_ffi:
-    dependency: transitive
-    description:
-      name: sqflite_common_ffi
-      sha256: "1f3ef3888d3bfbb47785cc1dda0dc7dd7ebd8c1955d32a9e8e9dae1e38d1c4c1"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.3.5"
-  sqflite_common_ffi_web:
-    dependency: transitive
-    description:
-      name: sqflite_common_ffi_web
-      sha256: cfc9d1c61a3e06e5b2e96994a44b11125b4f451fee95b9fad8bd473b4613d592
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.4.3+1"
-  sqflite_darwin:
-    dependency: transitive
-    description:
-      name: sqflite_darwin
-      sha256: "279832e5cde3fe99e8571879498c9211f3ca6391b0d818df4e17d9fff5c6ccb3"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.4.2"
-  sqflite_platform_interface:
-    dependency: transitive
-    description:
-      name: sqflite_platform_interface
-      sha256: "8dd4515c7bdcae0a785b0062859336de775e8c65db81ae33dd5445f35be61920"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.4.0"
-  sqlite3:
-    dependency: transitive
-    description:
-      name: sqlite3
-      sha256: fde692580bee3379374af1f624eb3e113ab2865ecb161dbe2d8ac2de9735dbdb
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.4.5"
   stack_trace:
     dependency: transitive
     description:
@@ -1495,42 +1399,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.3"
-  tekartik_app_flutter_sembast:
-    dependency: "direct main"
-    description:
-      path: app_sembast
-      ref: dart3a
-      resolved-ref: "7c0aac5f8ec557a4fe975798600c47e4dcce0538"
-      url: "https://github.com/tekartik/app_flutter_utils.dart"
-    source: git
-    version: "0.5.1"
-  tekartik_app_flutter_sqflite:
-    dependency: transitive
-    description:
-      path: app_sqflite
-      ref: dart3a
-      resolved-ref: "7c0aac5f8ec557a4fe975798600c47e4dcce0538"
-      url: "https://github.com/tekartik/app_flutter_utils.dart"
-    source: git
-    version: "0.6.1"
-  tekartik_lints:
-    dependency: transitive
-    description:
-      path: "packages/lints"
-      ref: dart3a
-      resolved-ref: "6f9dded79246357567633739554ae58bde1bc9a3"
-      url: "https://github.com/tekartik/common.dart"
-    source: git
-    version: "0.4.2"
-  tekartik_lints_flutter:
-    dependency: transitive
-    description:
-      path: "packages/lints_flutter"
-      ref: dart3a
-      resolved-ref: "4d58d3cc559c5c92854fce73fc176c5951e78338"
-      url: "https://github.com/tekartik/common_flutter.dart"
-    source: git
-    version: "0.2.3"
   term_glyph:
     dependency: transitive
     description:
@@ -1635,14 +1503,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.4"
-  very_good_analysis:
-    dependency: transitive
-    description:
-      name: very_good_analysis
-      sha256: "62d2b86d183fb81b2edc22913d9f155d26eb5cf3855173adb1f59fac85035c63"
-      url: "https://pub.dev"
-    source: hosted
-    version: "7.0.0"
   vm_service:
     dependency: transitive
     description:

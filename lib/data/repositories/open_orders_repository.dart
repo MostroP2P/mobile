@@ -114,7 +114,7 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
 
   @override
   Future<void> updateOrder(NostrEvent order) {
-    if (_events.containsKey(order.id)) {
+    if (order.id != null && _events.containsKey(order.id)) {
       _events[order.id!] = order;
       _emitEvents();
     }

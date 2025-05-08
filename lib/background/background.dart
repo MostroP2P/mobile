@@ -73,7 +73,7 @@ Future<void> serviceMain(ServiceInstance service) async {
 
     subscription.listen((event) async {
       if (await eventStore.hasItem(event.id!)) return;
-      await showLocalNotification(event);
+      await retryNotification(event);
     });
   });
 
