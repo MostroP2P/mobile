@@ -120,12 +120,12 @@ class _MostroReactiveButtonState extends ConsumerState<MostroReactiveButton> {
         button = OutlinedButton(
           onPressed: _loading ? null : _startOperation,
           style: widget.backgroundColor != null
-              ? AppTheme.theme.elevatedButtonTheme.style?.copyWith(
+              ? AppTheme.theme.outlinedButtonTheme.style?.copyWith(
                   backgroundColor: WidgetStateProperty.resolveWith(
                     (_) => widget.backgroundColor!,
                   ),
                 )
-              : AppTheme.theme.elevatedButtonTheme.style,
+              : AppTheme.theme.outlinedButtonTheme.style,
           child: childWidget,
         );
         break;
@@ -133,12 +133,12 @@ class _MostroReactiveButtonState extends ConsumerState<MostroReactiveButton> {
         button = TextButton(
           onPressed: _loading ? null : _startOperation,
           style: widget.backgroundColor != null
-              ? AppTheme.theme.elevatedButtonTheme.style?.copyWith(
+              ? AppTheme.theme.textButtonTheme.style?.copyWith(
                   backgroundColor: WidgetStateProperty.resolveWith(
                     (_) => widget.backgroundColor!,
                   ),
                 )
-              : AppTheme.theme.elevatedButtonTheme.style,
+              : AppTheme.theme.textButtonTheme.style,
           child: childWidget,
         );
         break;

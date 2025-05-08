@@ -5,7 +5,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:logger/logger.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-    FlutterLocalNotificationsPlugin();
+  FlutterLocalNotificationsPlugin();
 
 Future<void> initializeNotifications() async {
   const android = AndroidInitializationSettings(
@@ -23,12 +23,10 @@ Future<void> initializeNotifications() async {
     linux: linux,
     macOS: ios
   );
-  final plugin = FlutterLocalNotificationsPlugin();
-  await plugin.initialize(initSettings);
+  await flutterLocalNotificationsPlugin.initialize(initSettings);
 }
 
 Future<void> showLocalNotification(NostrEvent event) async {
-  final notificationsPlugin = FlutterLocalNotificationsPlugin();
   const details = NotificationDetails(
     android: AndroidNotificationDetails(
       'mostro_channel',
@@ -51,13 +49,14 @@ Future<void> showLocalNotification(NostrEvent event) async {
       interruptionLevel: InterruptionLevel.critical,
     ),
   );
-  await notificationsPlugin.show(
+  await flutterLocalNotificationsPlugin.show(
     event.id.hashCode, // Use unique ID for each event
     'New Mostro Event',
     'You have received a new message from Mostro',
     details,
   );
 }
+
 Future<void> retryNotification(NostrEvent event, {int maxAttempts = 3}) async {  
   int attempt = 0;  
   bool success = false;  
