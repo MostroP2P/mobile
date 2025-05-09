@@ -5,6 +5,7 @@ import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/features/home/providers/home_order_providers.dart';
 import 'package:mostro_mobile/features/home/widgets/order_list_item.dart';
+import 'package:mostro_mobile/shared/widgets/add_order_button.dart'; // Importa el nuevo componente
 import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_app_bar.dart';
 import 'package:mostro_mobile/shared/widgets/order_filter.dart';
@@ -26,38 +27,43 @@ class HomeScreen extends ConsumerWidget {
         onRefresh: () async {
           return await ref.refresh(filteredOrdersProvider);
         },
-        child: Container(
-          margin: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppTheme.dark2,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Column(
-            children: [
-              _buildTabs(ref),
-              const SizedBox(height: 12.0),
-              _buildFilterButton(context, ref),
-              const SizedBox(height: 6.0),
-              Expanded(
-                child: filteredOrders.isEmpty
-                    ? const Center(
-                        child: Text(
-                          'No orders available for this type',
-                          style: TextStyle(color: AppTheme.cream1),
-                        ),
-                      )
-                    : ListView.builder(
-                        itemCount: filteredOrders.length,
-                        itemBuilder: (context, index) {
-                          final order = filteredOrders[index];
-                          return OrderListItem(
-                              order: order);
-                        },
-                      ),
+        child: Stack(
+          children: [
+            Container(
+              margin: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppTheme.dark2,
+                borderRadius: BorderRadius.circular(20),
               ),
-              const BottomNavBar(),
-            ],
-          ),
+              child: Column(
+                children: [
+                  _buildTabs(ref),
+                  const SizedBox(height: 12.0),
+                  _buildFilterButton(context, ref),
+                  const SizedBox(height: 6.0),
+                  Expanded(
+                    child: filteredOrders.isEmpty
+                        ? const Center(
+                            child: Text(
+                              'No orders available for this type',
+                              style: TextStyle(color: AppTheme.cream1),
+                            ),
+                          )
+                        : ListView.builder(
+                            itemCount: filteredOrders.length,
+                            itemBuilder: (context, index) {
+                              final order = filteredOrders[index];
+                              return OrderListItem(order: order);
+                            },
+                          ),
+                  ),
+                  const BottomNavBar(),
+                ],
+              ),
+            ),
+            // Añadir el botón como componente separado
+            const AddOrderButton(),
+          ],
         ),
       ),
     );

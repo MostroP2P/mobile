@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 
@@ -20,18 +19,13 @@ class MostroAppBar extends ConsumerWidget implements PreferredSizeWidget {
         },
       ),
       actions: [
-        IconButton(
-          key: Key('createOrderButton'),
-          icon: const HeroIcon(HeroIcons.plus,
-              style: HeroIconStyle.outline, color: AppTheme.cream1),
-          onPressed: () {
-            context.push('/add_order');
-          },
-        ),
+        // Eliminamos el botón de agregar (plus)
+        // Mantenemos solo el icono bolt si lo necesitas
         IconButton(
           icon: const HeroIcon(HeroIcons.bolt,
               style: HeroIconStyle.solid, color: AppTheme.yellow),
-          onPressed: () async {
+          onPressed: () {
+            // Acción del icono bolt
           },
         ),
       ],
