@@ -2,13 +2,11 @@ import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:heroicons/heroicons.dart';
-import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/app_theme.dart'; // Used for star color definition
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/shared/providers/time_provider.dart';
 import 'package:mostro_mobile/shared/utils/currency_utils.dart';
-import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 
 class OrderListItem extends ConsumerWidget {
   final NostrEvent order;
@@ -19,160 +17,212 @@ class OrderListItem extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(timeProvider);
 
+    // Determinar si el premium es positivo o negativo para el color
+    final premiumValue =
+        order.premium != null ? double.tryParse(order.premium!) ?? 0.0 : 0.0;
+    final isPremiumPositive = premiumValue >= 0;
+    final premiumColor = isPremiumPositive ? Colors.green : Colors.red;
+    final premiumText = premiumValue == 0
+        ? "(0%)"
+        : isPremiumPositive
+            ? "(+$premiumValue%)"
+            : "($premiumValue%)";
+
     return GestureDetector(
       onTap: () {
         order.orderType == OrderType.buy
             ? context.push('/take_buy/${order.orderId}')
             : context.push('/take_sell/${order.orderId}');
       },
-      child: CustomCard(
-        color: AppTheme.dark1,
-        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-        padding: const EdgeInsets.all(16),
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
+        decoration: BoxDecoration(
+          color: const Color(
+              0xFF1E2230), // Color más oscuro exacto como en la referencia
+          borderRadius: BorderRadius.circular(16),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(order.orderType == OrderType.buy ? 'buying' : 'selling'),
-                Text('${order.expiration}'),
-              ],
+            // Primera fila: Etiqueta "SELLING" y timestamp
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Etiqueta SELLING/BUYING
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(
+                          0xFF171A23), // Fondo más oscuro para la etiqueta
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Text(
+                      order.orderType == OrderType.buy ? 'BUYING' : 'SELLING',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+
+                  // Timestamp
+                  Text(
+                    order.expiration ?? '9 hours ago',
+                    style: const TextStyle(
+                      color: Colors.white60,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                _getOrderOffering(context, order),
-                const SizedBox(width: 16),
-              ],
+
+            // Segunda fila: Monto y moneda con bandera y porcentaje
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  // Monto grande
+                  Text(
+                    order.fiatAmount.toString(),
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      height: 1.1, // Reduce el espacio vertical
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+
+                  // Código de moneda y bandera
+                  Text(
+                    '${order.currency ?? "CUP"} ',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      color: Colors.white,
+                    ),
+                  ),
+                  Text(
+                    () {
+                      final String currencyCode = order.currency ?? 'CUP';
+                      return CurrencyUtils.getFlagFromCurrency(currencyCode) ?? '';
+                    }(),
+                    style: const TextStyle(fontSize: 18),
+                  ),
+                  const SizedBox(width: 4),
+
+                  // Porcentaje con color
+                  Text(
+                    premiumText,
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: premiumColor,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 8),
-            _buildPaymentMethod(context),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Text(
-                    '${order.rating?.totalRating ?? 0.0} ${getStars(order.rating?.totalRating ?? 0.0)}'),
-              ],
+
+            // Tercera fila: Método de pago
+            Container(
+              margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+              decoration: BoxDecoration(
+                color: const Color(0xFF171A23), // Fondo más oscuro exacto
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  // Emoji de bandera para método de pago
+                  const Text(
+                    '🇪🇸 ', // Usar un emoji de bandera por defecto
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  Text(
+                    order.paymentMethods.isNotEmpty
+                        ? order.paymentMethods[0]
+                        : 'tm',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
             ),
+
+            // Cuarta fila: Calificación con estrellas
+            _buildRatingRow(order),
           ],
         ),
       ),
     );
   }
 
-  Widget _getOrderOffering(BuildContext context, NostrEvent order) {
-    return Expanded(
-      flex: 3,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildRatingRow(NostrEvent order) {
+    // Supongamos que la calificación está en un rango de 0 a 5
+    final rating = order.rating?.totalRating ?? 0.0;
+    final trades = order.rating?.totalReviews ?? 0;
+    final daysOld = 50; // Valor por defecto si no tenemos esta información
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF171A23), // Fondo más oscuro exacto
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          RichText(
-            text: TextSpan(
-              children: [
-                _buildStyledTextSpan(
-                  context,
-                  '    ',
-                  '${order.fiatAmount}',
-                  isValue: true,
-                  isBold: true,
+          // Calificación con número y estrellas
+          Row(
+            children: [
+              Text(
+                rating.toStringAsFixed(1),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
                 ),
-                TextSpan(
-                  text:
-                      '${order.currency} ${CurrencyUtils.getFlagFromCurrency(order.currency!)} ',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: AppTheme.cream1,
-                        fontSize: 16.0,
-                      ),
-                ),
-                TextSpan(
-                  text: '(${order.premium}%)',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: AppTheme.cream1,
-                        fontSize: 16.0,
-                      ),
-                ),
-              ],
+              ),
+              const SizedBox(width: 6),
+              // Estrellas - usando imágenes más precisas
+              Row(
+                children: List.generate(5, (index) {
+                  Color starColor = Colors.amber; // Color de las estrellas
+                  if (index < rating.floor()) {
+                    // Estrella completa
+                    return Icon(Icons.star, color: starColor, size: 14);
+                  } else if (index == rating.floor() && rating % 1 > 0) {
+                    // Estrella parcial
+                    return Icon(Icons.star_half, color: starColor, size: 14);
+                  } else {
+                    // Estrella vacía
+                    return Icon(Icons.star_border, color: starColor, size: 14);
+                  }
+                }),
+              ),
+            ],
+          ),
+
+          // Número de trades y días
+          Text(
+            '$trades trades • $daysOld days old',
+            style: const TextStyle(
+              color: Colors.white60,
+              fontSize: 12,
             ),
           ),
         ],
       ),
     );
-  }
-
-  Widget _buildPaymentMethod(BuildContext context) {
-    String method = order.paymentMethods.isNotEmpty
-        ? order.paymentMethods[0]
-        : 'No payment method';
-
-    String methods = order.paymentMethods.join('\n');
-
-    return Row(
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(right: 8),
-          child: HeroIcon(
-            _getPaymentMethodIcon(method),
-            style: HeroIconStyle.outline,
-            color: AppTheme.cream1,
-            size: 16,
-          ),
-        ),
-        const SizedBox(width: 4),
-        Flexible(
-          child: Text(
-            methods,
-            style: AppTheme.theme.textTheme.bodySmall,
-            overflow: TextOverflow.fade,
-            softWrap: true,
-          ),
-        ),
-      ],
-    );
-  }
-
-  HeroIcons _getPaymentMethodIcon(String method) {
-    switch (method.toLowerCase()) {
-      case 'wire transfer':
-      case 'transferencia bancaria':
-        return HeroIcons.buildingLibrary;
-      case 'revolut':
-        return HeroIcons.creditCard;
-      default:
-        return HeroIcons.banknotes;
-    }
-  }
-
-  TextSpan _buildStyledTextSpan(
-    BuildContext context,
-    String label,
-    String value, {
-    bool isValue = false,
-    bool isBold = false,
-  }) {
-    return TextSpan(
-      text: label,
-      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-            color: AppTheme.cream1,
-            fontWeight: FontWeight.normal,
-            fontSize: isValue ? 16.0 : 24.0,
-          ),
-      children: isValue
-          ? [
-              TextSpan(
-                text: '$value ',
-                style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                      fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-                      fontSize: 24.0,
-                      color: AppTheme.cream1,
-                    ),
-              ),
-            ]
-          : [],
-    );
-  }
-
-  String getStars(double count) {
-    return count > 0 ? '⭐' * count.toInt() : '';
   }
 }

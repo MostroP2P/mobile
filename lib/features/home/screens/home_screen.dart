@@ -31,17 +31,41 @@ class HomeScreen extends ConsumerWidget {
             _buildFilterButton(context, ref),
             Expanded(
               child: Container(
-                color: const Color(
-                    0xFF171A23), // Asegurando que el fondo sea coherente
+                color: const Color(0xFF171A23), // Fondo oscuro
                 child: filteredOrders.isEmpty
                     ? const Center(
-                        child: Text(
-                          'No orders available for this type',
-                          style: TextStyle(color: Colors.white70),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.search_off,
+                              color: Colors.white30,
+                              size: 48,
+                            ),
+                            SizedBox(height: 16),
+                            Text(
+                              'No orders available',
+                              style: TextStyle(
+                                color: Colors.white60,
+                                fontSize: 16,
+                              ),
+                            ),
+                            Text(
+                              'Try changing filter settings or check back later',
+                              style: TextStyle(
+                                color: Colors.white38,
+                                fontSize: 14,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
                         ),
                       )
                     : ListView.builder(
                         itemCount: filteredOrders.length,
+                        padding: const EdgeInsets.only(
+                            bottom: 80,
+                            top: 6), // Padding para la navigation bar
                         itemBuilder: (context, index) {
                           final order = filteredOrders[index];
                           return OrderListItem(order: order);
