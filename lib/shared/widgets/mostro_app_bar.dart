@@ -1,3 +1,4 @@
+// lib/shared/widgets/mostro_app_bar.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -12,28 +13,63 @@ class MostroAppBar extends ConsumerWidget implements PreferredSizeWidget {
     return AppBar(
       backgroundColor: AppTheme.dark1,
       elevation: 0,
-      leading: IconButton(
-        icon: const HeroIcon(HeroIcons.bars3,
-            style: HeroIconStyle.outline, color: AppTheme.cream1),
-        onPressed: () {
-          Scaffold.of(context).openDrawer();
-        },
+      leadingWidth: 70,
+      // Usar un IconButton personalizado con un padding específico
+      leading: Padding(
+        padding: const EdgeInsets.only(left: 16.0),
+        child: IconButton(
+          icon: const HeroIcon(
+            HeroIcons.bars3,
+            style: HeroIconStyle.outline,
+            color: AppTheme.cream1,
+            size: 28,
+          ),
+          onPressed: () {
+            Scaffold.of(context).openDrawer();
+          },
+        ),
       ),
       actions: [
-        IconButton(
-          key: Key('createOrderButton'),
-          icon: const HeroIcon(HeroIcons.plus,
-              style: HeroIconStyle.outline, color: AppTheme.cream1),
-          onPressed: () {
-            context.push('/add_order');
-          },
+        // Notificación con indicador de número
+        Stack(
+          children: [
+            IconButton(
+              icon: const HeroIcon(
+                HeroIcons.bell,
+                style: HeroIconStyle.outline,
+                color: AppTheme.cream1,
+                size: 28,
+              ),
+              onPressed: () {
+                // Acción para notificaciones
+              },
+            ),
+            // Indicador del número de notificaciones
+            Positioned(
+              top: 10,
+              right: 10,
+              child: Container(
+                width: 18,
+                height: 18,
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+                child: const Center(
+                  child: Text(
+                    '6',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
-        IconButton(
-          icon: const HeroIcon(HeroIcons.bolt,
-              style: HeroIconStyle.solid, color: AppTheme.yellow),
-          onPressed: () async {
-          },
-        ),
+        const SizedBox(width: 16), // Espaciado
       ],
     );
   }
