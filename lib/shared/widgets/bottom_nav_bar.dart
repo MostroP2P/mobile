@@ -19,7 +19,8 @@ class BottomNavBar extends ConsumerWidget {
         ref.watch(orderBookNotificationCountProvider);
 
     return Container(
-      height: 56,
+      height: 52, // Altura ajustada para ser similar a la de React
+      width: double.infinity,
       decoration: BoxDecoration(
         color: const Color(0xFF1A1F2C),
         border: Border(
@@ -29,28 +30,45 @@ class BottomNavBar extends ConsumerWidget {
           ),
         ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      child: Stack(
         children: [
-          _buildNavItem(
-            context,
-            LucideIcons.book,
-            'Order Book',
-            0,
+          // Línea diagonal decorativa en la esquina inferior derecha
+          Positioned(
+            right: 0,
+            bottom: 0,
+            child: SizedBox(
+              width: 20,
+              height: 20,
+              child: CustomPaint(
+                painter: DiagonalLinePainter(),
+              ),
+            ),
           ),
-          _buildNavItem(
-            context,
-            LucideIcons.zap,
-            'My Trades',
-            1,
-            notificationCount: orderNotificationCount,
-          ),
-          _buildNavItem(
-            context,
-            LucideIcons.messageSquare,
-            'Chat',
-            2,
-            notificationCount: chatCount,
+          // Barra de navegación
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildNavItem(
+                context,
+                LucideIcons.book,
+                'Order Book',
+                0,
+              ),
+              _buildNavItem(
+                context,
+                LucideIcons.zap,
+                'My Trades',
+                1,
+                notificationCount: orderNotificationCount,
+              ),
+              _buildNavItem(
+                context,
+                LucideIcons.messageSquare,
+                'Chat',
+                2,
+                notificationCount: chatCount,
+              ),
+            ],
           ),
         ],
       ),
@@ -66,10 +84,9 @@ class BottomNavBar extends ConsumerWidget {
     Color iconColor = isActive ? const Color(0xFF8CC541) : Colors.white;
     Color textColor = isActive ? const Color(0xFF8CC541) : Colors.white;
 
-    return InkWell(
-      onTap: () => _onItemTapped(context, index),
-      child: SizedBox(
-        width: 100,
+    return Expanded(
+      child: InkWell(
+        onTap: () => _onItemTapped(context, index),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -149,4 +166,18 @@ class BottomNavBar extends ConsumerWidget {
       context.push(nextRoute);
     }
   }
+}
+
+// Para la línea diagonal en la esquina (como se ve en la referencia)
+class DiagonalLinePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white.withOpacity(0.1)
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke;
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }
