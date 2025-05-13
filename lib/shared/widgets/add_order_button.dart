@@ -7,8 +7,9 @@ class AddOrderButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Positioned(
-      right: 25,
-      bottom: 80, // Ajusta según sea necesario para que quede encima del navbar
+      right: 20,
+      bottom:
+          100, // Ajusta según sea necesario para que quede encima del navbar
       child: Container(
         width: 56,
         height: 56,

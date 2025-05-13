@@ -19,32 +19,20 @@ class BottomNavBar extends ConsumerWidget {
         ref.watch(orderBookNotificationCountProvider);
 
     return Container(
-      height: 52, // Altura ajustada para ser similar a la de React
+      height: 75, // Height adjusted to be similar to React
       width: double.infinity,
       decoration: BoxDecoration(
         color: const Color(0xFF1A1F2C),
         border: Border(
           top: BorderSide(
             color: Colors.white.withOpacity(0.1),
-            width: 0.5,
+            width: 1,
           ),
         ),
       ),
       child: Stack(
         children: [
-          // Línea diagonal decorativa en la esquina inferior derecha
-          Positioned(
-            right: 0,
-            bottom: 0,
-            child: SizedBox(
-              width: 20,
-              height: 20,
-              child: CustomPaint(
-                painter: DiagonalLinePainter(),
-              ),
-            ),
-          ),
-          // Barra de navegación
+          // Navigation bar
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
@@ -80,7 +68,7 @@ class BottomNavBar extends ConsumerWidget {
       {int? notificationCount}) {
     bool isActive = _isActive(context, index);
 
-    // Colores específicos basados en la imagen de React
+    // TODO: adjust with the app_theme
     Color iconColor = isActive ? const Color(0xFF8CC541) : Colors.white;
     Color textColor = isActive ? const Color(0xFF8CC541) : Colors.white;
 
@@ -96,7 +84,7 @@ class BottomNavBar extends ConsumerWidget {
                 Icon(
                   icon,
                   color: iconColor,
-                  size: 20, // Un poco más pequeño
+                  size: 23, // A bit smaller
                 ),
                 if (notificationCount != null && notificationCount > 0)
                   Positioned(
@@ -113,16 +101,16 @@ class BottomNavBar extends ConsumerWidget {
                   ),
               ],
             ),
-            const SizedBox(height: 3), // Menos espacio
+            const SizedBox(height: 5), // Less space
             Text(
               label,
               style: GoogleFonts.inter(
-                // Usar la fuente Inter para un aspecto más moderno
-                fontSize: 11, // Texto más pequeño
-                fontWeight: FontWeight.w400, // Más ligero
+                // Use Inter font for a more modern look
+                fontSize: 12, // Smaller text
+                fontWeight: FontWeight.w400, // Lighter weight
                 color: textColor,
                 letterSpacing:
-                    -0.2, // Espacio negativo entre letras para texto más condensado
+                    -0.2, // Negative letter spacing for more condensed text
               ),
             ),
           ],
@@ -166,18 +154,4 @@ class BottomNavBar extends ConsumerWidget {
       context.push(nextRoute);
     }
   }
-}
-
-// Para la línea diagonal en la esquina (como se ve en la referencia)
-class DiagonalLinePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white.withOpacity(0.1)
-      ..strokeWidth = 1.0
-      ..style = PaintingStyle.stroke;
-  }
-
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }
