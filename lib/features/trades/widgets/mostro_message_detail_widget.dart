@@ -84,9 +84,9 @@ class MostroMessageDetail extends ConsumerWidget {
             900;
         return S.of(context)!.payInvoice(
               orderPayload?.amount.toString() ?? '',
-              orderPayload?.fiatCode ?? '',
+              '${expSecs ~/ 60} minutes',
               orderPayload?.fiatAmount.toString() ?? '',
-              expSecs,
+              orderPayload?.fiatCode ?? '',
             );
       case actions.Action.addInvoice:
         final expSecs = ref

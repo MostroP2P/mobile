@@ -467,6 +467,16 @@ class TradeDetailScreen extends ConsumerWidget {
               ref.read(orderNotifierProvider(orderId).notifier).cancelOrder(),
         ));
 
+        if (userRole == Role.seller &&
+            tradeState.lastAction == actions.Action.payInvoice) {
+          widgets.add(_buildNostrButton(
+            'PAY INVOICE',
+            action: actions.Action.payInvoice,
+            backgroundColor: AppTheme.mostroGreen,
+            onPressed: () => context.push('/pay_invoice/$orderId'),
+          ));
+        }
+
         return widgets;
 
       // Terminal states according to Mostro FSM
@@ -499,6 +509,7 @@ class TradeDetailScreen extends ConsumerWidget {
       timeout: const Duration(seconds: 30),
     );
   }
+
   Widget _buildContactButton(BuildContext context) {
     return ElevatedButton(
       onPressed: () {
