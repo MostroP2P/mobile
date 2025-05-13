@@ -19,7 +19,7 @@ class BottomNavBar extends ConsumerWidget {
         ref.watch(orderBookNotificationCountProvider);
 
     return Container(
-      height: 75, // Height adjusted to be similar to React
+      // We remove the fixed height so it adapts automatically
       width: double.infinity,
       decoration: BoxDecoration(
         color: const Color(0xFF1A1F2C),
@@ -30,10 +30,14 @@ class BottomNavBar extends ConsumerWidget {
           ),
         ),
       ),
-      child: Stack(
-        children: [
-          // Navigation bar
-          Row(
+      // We use SafeArea with bottom:true to handle the bottom space automatically
+      child: SafeArea(
+        top: false, // We don't need safe area at the top
+        bottom: true, // Only at the bottom
+        child: Padding(
+          padding:
+              const EdgeInsets.symmetric(vertical: 8), // We reduce the padding
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _buildNavItem(
@@ -58,7 +62,7 @@ class BottomNavBar extends ConsumerWidget {
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -76,6 +80,7 @@ class BottomNavBar extends ConsumerWidget {
       child: InkWell(
         onTap: () => _onItemTapped(context, index),
         child: Column(
+          mainAxisSize: MainAxisSize.min, // Use minimum size to adapt
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Stack(

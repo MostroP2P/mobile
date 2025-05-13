@@ -17,7 +17,7 @@ class OrderListItem extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(timeProvider);
 
-    // Determinar si el premium es positivo o negativo para el color
+    // Determine if the premium is positive or negative for the color
     final premiumValue =
         order.premium != null ? double.tryParse(order.premium!) ?? 0.0 : 0.0;
     final isPremiumPositive = premiumValue >= 0;
@@ -32,18 +32,18 @@ class OrderListItem extends ConsumerWidget {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFF171A23), // Color de fondo más oscuro
+        color: const Color(0xFF171A23), // Darker background color
         borderRadius: BorderRadius.circular(20),
-        // Sombras más pronunciadas para mayor efecto de profundidad
+        // More pronounced shadows for greater depth effect
         boxShadow: [
-          // Sombra principal más intensa
+          // More intense main shadow
           BoxShadow(
             color: Colors.black.withOpacity(0.7),
             blurRadius: 15,
             offset: const Offset(0, 5),
             spreadRadius: -3,
           ),
-          // Borde brillante superior más definido
+          // More defined top bright border
           BoxShadow(
             color: Colors.white.withOpacity(0.07),
             blurRadius: 1,
@@ -51,7 +51,7 @@ class OrderListItem extends ConsumerWidget {
             spreadRadius: 0,
           ),
         ],
-        // Borde muy sutil para definir el contorno
+        // Very subtle border to define the outline
         border: Border.all(
           color: Colors.white.withOpacity(0.05),
           width: 1,
@@ -72,20 +72,21 @@ class OrderListItem extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Primera fila: Etiqueta "SELLING" y timestamp
+              // First row: "SELLING" label and timestamp
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Etiqueta SELLING/BUYING con más contraste
+                    // SELLING/BUYING label with more contrast
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1A1F2C), // Un poco más oscuro
+                        color: const Color(
+                            0xFF1E2230), // Same as payment method background
                         borderRadius: BorderRadius.circular(14),
-                        // Sombra más definida
+                        // More defined shadow
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withOpacity(0.6),
@@ -93,7 +94,7 @@ class OrderListItem extends ConsumerWidget {
                             offset: const Offset(0, 2),
                             spreadRadius: -1,
                           ),
-                          // Borde superior iluminado
+                          // Illuminated top border
                           BoxShadow(
                             color: Colors.white.withOpacity(0.08),
                             blurRadius: 1,
@@ -124,7 +125,7 @@ class OrderListItem extends ConsumerWidget {
                 ),
               ),
 
-              // Segunda fila: Monto y moneda con bandera y porcentaje
+              // Second row: Amount and currency with flag and percentage
               Padding(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -132,7 +133,7 @@ class OrderListItem extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.baseline,
                   textBaseline: TextBaseline.alphabetic,
                   children: [
-                    // Monto grande con más contraste
+                    // Large amount with more contrast
                     Text(
                       order.fiatAmount.toString(),
                       style: const TextStyle(
@@ -144,7 +145,7 @@ class OrderListItem extends ConsumerWidget {
                     ),
                     const SizedBox(width: 8),
 
-                    // Código de moneda y bandera
+                    // Currency code and flag
                     Text(
                       '${order.currency ?? "CUP"} ',
                       style: const TextStyle(
@@ -163,7 +164,7 @@ class OrderListItem extends ConsumerWidget {
                     ),
                     const SizedBox(width: 4),
 
-                    // Porcentaje con color más vibrante
+                    // Percentage with more vibrant color
                     Text(
                       premiumText,
                       style: TextStyle(
@@ -176,26 +177,22 @@ class OrderListItem extends ConsumerWidget {
                 ),
               ),
 
-              // Tercera fila: Método de pago
+              // Third row: Payment method
               Container(
                 margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                 width: double.infinity,
                 padding:
                     const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
                 decoration: BoxDecoration(
-                  color: const Color(
-                      0xFF1E2230), // Más oscuro para mayor contraste
+                  color: const Color(0xFF1E2230),
                   borderRadius: BorderRadius.circular(12),
-                  // Sombra interna más pronunciada
                   boxShadow: [
-                    // Sombra principal
                     BoxShadow(
                       color: Colors.black.withOpacity(0.7),
                       blurRadius: 6,
                       offset: const Offset(0, 3),
                       spreadRadius: -2,
                     ),
-                    // Brillo sutil en la parte superior
                     BoxShadow(
                       color: Colors.white.withOpacity(0.08),
                       blurRadius: 1,
@@ -206,9 +203,9 @@ class OrderListItem extends ConsumerWidget {
                 ),
                 child: Row(
                   children: [
-                    // Emoji para el método de pago
+                    // Emoji for payment method
                     const Text(
-                      '💳 ', // Emoji por defecto
+                      '💳 ', // Default emoji
                       style: TextStyle(fontSize: 16),
                     ),
                     Text(
@@ -225,25 +222,21 @@ class OrderListItem extends ConsumerWidget {
                 ),
               ),
 
-              // Cuarta fila: Calificación con estrellas
+              // Fourth row: Rating with stars
               Container(
                 margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 padding:
                     const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
                 decoration: BoxDecoration(
-                  color: const Color(
-                      0xFF1E2230), // Más oscuro para mayor contraste
+                  color: const Color(0xFF1E2230),
                   borderRadius: BorderRadius.circular(12),
-                  // Sombra interna más pronunciada
                   boxShadow: [
-                    // Sombra principal
                     BoxShadow(
                       color: Colors.black.withOpacity(0.7),
                       blurRadius: 6,
                       offset: const Offset(0, 3),
                       spreadRadius: -2,
                     ),
-                    // Brillo sutil en la parte superior
                     BoxShadow(
                       color: Colors.white.withOpacity(0.08),
                       blurRadius: 1,
@@ -262,15 +255,15 @@ class OrderListItem extends ConsumerWidget {
   }
 
   Widget _buildRatingRow(NostrEvent order) {
-    // Calificación en un rango de 0 a 5
+    // Rating in a range of 0 to 5
     final rating = order.rating?.totalRating ?? 0.0;
     final trades = order.rating?.totalReviews ?? 0;
-    final daysOld = 50; // Valor por defecto
+    final daysOld = 50; // Default value
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        // Calificación con número y estrellas
+        // Rating with number and stars
         Row(
           children: [
             Text(
@@ -282,20 +275,20 @@ class OrderListItem extends ConsumerWidget {
               ),
             ),
             const SizedBox(width: 6),
-            // Estrellas con más brillo
+            // Stars with more brightness
             Row(
               children: List.generate(5, (index) {
-                // Color ámbar más brillante para las estrellas
+                // Brighter amber color for stars
                 const starColor = Color(0xFFFFD700);
                 if (index < rating.floor()) {
-                  // Estrella completa
+                  // Full star
                   return const Icon(Icons.star, color: starColor, size: 14);
                 } else if (index == rating.floor() && rating % 1 > 0) {
-                  // Estrella parcial
+                  // Half star
                   return const Icon(Icons.star_half,
                       color: starColor, size: 14);
                 } else {
-                  // Estrella vacía
+                  // Empty star
                   return Icon(Icons.star_border,
                       color: starColor.withOpacity(0.3), size: 14);
                 }
@@ -304,7 +297,7 @@ class OrderListItem extends ConsumerWidget {
           ],
         ),
 
-        // Número de trades y días
+        // Number of trades and days
         Text(
           '$trades trades • $daysOld days old',
           style: const TextStyle(

@@ -5,7 +5,7 @@ import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/features/home/providers/home_order_providers.dart';
 import 'package:mostro_mobile/features/home/widgets/order_list_item.dart';
-import 'package:mostro_mobile/shared/widgets/add_order_button.dart'; // Importamos el botón
+import 'package:mostro_mobile/shared/widgets/add_order_button.dart';
 import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
 import 'package:mostro_mobile/shared/widgets/order_filter.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_app_drawer.dart';
@@ -15,15 +15,13 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Watch the filtered orders directly.
     final filteredOrders = ref.watch(filteredOrdersProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF171A23), // Color oscuro más específico
+      backgroundColor: const Color(0xFF171A23),
       appBar: _buildAppBar(),
       drawer: const MostroAppDrawer(),
       body: Stack(
-        // Usamos Stack para superponer el botón
         children: [
           RefreshIndicator(
             onRefresh: () async {
@@ -35,7 +33,7 @@ class HomeScreen extends ConsumerWidget {
                 _buildFilterButton(context, ref),
                 Expanded(
                   child: Container(
-                    color: const Color(0xFF171A23), // Fondo oscuro
+                    color: const Color(0xFF171A23),
                     child: filteredOrders.isEmpty
                         ? const Center(
                             child: Column(
@@ -67,9 +65,7 @@ class HomeScreen extends ConsumerWidget {
                           )
                         : ListView.builder(
                             itemCount: filteredOrders.length,
-                            padding: const EdgeInsets.only(
-                                bottom: 80,
-                                top: 6), // Padding para la navigation bar
+                            padding: const EdgeInsets.only(bottom: 80, top: 6),
                             itemBuilder: (context, index) {
                               final order = filteredOrders[index];
                               return OrderListItem(order: order);
@@ -81,7 +77,7 @@ class HomeScreen extends ConsumerWidget {
               ],
             ),
           ),
-          // Añadimos nuestro botón
+          // Adding our button
           const AddOrderButton(),
         ],
       ),
@@ -90,11 +86,17 @@ class HomeScreen extends ConsumerWidget {
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor:
-          const Color(0xFF171A23), // Color más específico para el fondo
+      backgroundColor: const Color(0xFF171A23),
       elevation: 0,
       leadingWidth: 60,
-      toolbarHeight: 56, // Altura exacta
+      toolbarHeight: 56,
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(1),
+        child: Container(
+          height: 1,
+          color: Colors.white.withOpacity(0.1),
+        ),
+      ),
       leading: Padding(
         padding: const EdgeInsets.only(left: 16.0),
         child: Builder(
@@ -112,7 +114,6 @@ class HomeScreen extends ConsumerWidget {
         ),
       ),
       actions: [
-        // Notificación con indicador de número
         Padding(
           padding: const EdgeInsets.only(right: 16.0),
           child: Stack(
@@ -126,10 +127,10 @@ class HomeScreen extends ConsumerWidget {
                   size: 24,
                 ),
                 onPressed: () {
-                  // Acción para notificaciones
+                  // Action for notifications
                 },
               ),
-              // Indicador del número de notificaciones
+              // Indicator for the number of notifications
               Positioned(
                 top: 12,
                 right: 8,
@@ -163,12 +164,12 @@ class HomeScreen extends ConsumerWidget {
     final orderType = ref.watch(homeOrderTypeProvider);
 
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF171A23), // Fondo oscuro exacto
+      decoration: BoxDecoration(
+        color: const Color(0xFF171A23), // Exact dark background
         border: Border(
           bottom: BorderSide(
-            color:
-                Color(0xFF1E2230), // Color ligeramente más claro para el borde
+            color: Colors.white
+                .withOpacity(0.1), // Same style as the other divider lines
             width: 1.0,
           ),
         ),
@@ -180,14 +181,14 @@ class HomeScreen extends ConsumerWidget {
             "BUY BTC",
             orderType == OrderType.sell,
             OrderType.sell,
-            const Color(0xFF8CC63F), // Verde exacto
+            const Color(0xFF8CC63F), // Exact green
           ),
           _buildTabButton(
             ref,
             "SELL BTC",
             orderType == OrderType.buy,
             OrderType.buy,
-            const Color(0xFFEA384C), // Rojo exacto
+            const Color(0xFFEA384C), // Exact red
           ),
         ],
       ),
@@ -210,7 +211,7 @@ class HomeScreen extends ConsumerWidget {
             border: Border(
               bottom: BorderSide(
                 color: isActive ? activeColor : Colors.transparent,
-                width: 3.0, // Línea más gruesa
+                width: 3.0, // Thicker line
               ),
             ),
           ),
@@ -220,12 +221,11 @@ class HomeScreen extends ConsumerWidget {
             style: TextStyle(
               color: isActive
                   ? activeColor
-                  : const Color(
-                      0xFF8A8D98), // Gris específico cuando no está activo
+                  : const Color(0xFF8A8D98), // Specific gray when not active
               fontWeight: FontWeight.w600, // Semi-bold
               fontSize: 15,
-              letterSpacing: 0.5, // Espaciado entre letras
-              fontFamily: 'Roboto', // Asumiendo Roboto como fuente
+              letterSpacing: 0.5, // Letter spacing
+              fontFamily: 'Roboto', // Assuming Roboto as font
             ),
           ),
         ),
@@ -237,10 +237,9 @@ class HomeScreen extends ConsumerWidget {
     final filteredOrders = ref.watch(filteredOrdersProvider);
 
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-      // Cambiamos el color para que coincida con el fondo de las órdenes
-      color: const Color(
-          0xFF171A23), // Mismo color de fondo que el área de órdenes
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+      // Changing the color to match the background of the orders
+      color: const Color(0xFF171A23),
       child: Align(
         alignment: Alignment.centerLeft,
         child: GestureDetector(
@@ -257,12 +256,12 @@ class HomeScreen extends ConsumerWidget {
             );
           },
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
               color: const Color(0xFF252A3A),
               borderRadius: BorderRadius.circular(30),
               border: Border.all(color: Colors.white.withOpacity(0.05)),
-              // Agregamos sombra sutil
+              // Adding subtle shadow
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.2),
