@@ -3,11 +3,10 @@ import 'package:mostro_mobile/data/models/enums/status.dart';
 
 /// Finite-State-Machine helper for Mostro order lifecycles.
 ///
-/// This table was generated directly from the authoritative
-/// specification sent by the Mostro team.  Only *state–transition →
-/// next-state* information is encoded here.  All auxiliary / neutral
-/// notifications intentionally map to the **same** state so that
-/// `nextStatus` always returns a non-null value.
+/// This table was generated directly from the authoritative specification.
+/// Only *state–transition → next-state* information is encoded here.
+/// All auxiliary / neutral notifications intentionally map to
+/// the **same** state so that `nextStatus` always returns a non-null value.
 class MostroFSM {
   MostroFSM._();
 
@@ -15,8 +14,8 @@ class MostroFSM {
   static final Map<Status, Map<Action, Status>> _transitions = {
     // ───────────────────────── MATCHING / TAKING ────────────────────────
     Status.pending: {
-      Action.takeSell: Status.waitingBuyerInvoice,
-      Action.takeBuy: Status.waitingBuyerInvoice, // invoice presence handled elsewhere
+      Action.takeSell: Status.waitingBuyerInvoice, // can go to waitingPayment
+      Action.takeBuy: Status.waitingPayment,
       Action.cancel: Status.canceled,
       Action.disputeInitiatedByYou: Status.dispute,
       Action.disputeInitiatedByPeer: Status.dispute,
@@ -24,7 +23,8 @@ class MostroFSM {
 
     // ───────────────────────── INVOICING ────────────────────────────────
     Status.waitingBuyerInvoice: {
-      Action.addInvoice: Status.waitingPayment,
+      Action.waitingBuyerInvoice: Status.active,
+      Action.addInvoice: Status.waitingPayment, // can go to active
       Action.cancel: Status.canceled,
       Action.disputeInitiatedByYou: Status.dispute,
       Action.disputeInitiatedByPeer: Status.dispute,
@@ -32,7 +32,8 @@ class MostroFSM {
 
     // ───────────────────────── HOLD INVOICE PAYMENT ────────────────────
     Status.waitingPayment: {
-      Action.payInvoice: Status.active,
+      Action.payInvoice: Status.waitingBuyerInvoice, // can go to active
+      Action.waitingSellerToPay: Status.waitingBuyerInvoice,
       Action.holdInvoicePaymentAccepted: Status.active,
       Action.holdInvoicePaymentCanceled: Status.canceled,
       Action.cancel: Status.canceled,
@@ -42,6 +43,9 @@ class MostroFSM {
 
     // ───────────────────────── ACTIVE TRADE ────────────────────────────
     Status.active: {
+      Action.holdInvoicePaymentAccepted: Status.fiatSent,
+      Action.buyerTookOrder: Status.fiatSent,
+
       Action.fiatSent: Status.fiatSent,
       Action.cooperativeCancelInitiatedByYou: Status.cooperativelyCanceled,
       Action.cooperativeCancelInitiatedByPeer: Status.cooperativelyCanceled,
@@ -89,5 +93,12 @@ class MostroFSM {
     // works for historical messages.
     final safeCurrent = current ?? Status.pending;
     return _transitions[safeCurrent]?[action] ?? safeCurrent;
+  }
+
+  /// Returns a list of all actions that can be applied to [status].
+  /// This is used to determine which buttons to show in the UI and
+  /// to validate user input.
+  static List<Action> actionsForStatus(Status status) {
+    return _transitions[status]!.keys.toList();
   }
 }

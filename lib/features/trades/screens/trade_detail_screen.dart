@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/mostro_fsm.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
 import 'package:mostro_mobile/data/models/enums/role.dart';
 import 'package:mostro_mobile/data/models/enums/status.dart';
@@ -28,7 +29,7 @@ class TradeDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tradeState = ref.watch(tradeStateProvider(orderId));
     // If message is null or doesn't have an Order payload, show loading
-    final orderPayload = tradeState.orderPayload;
+    final orderPayload = tradeState.order;
     if (orderPayload == null) {
       return const Scaffold(
         backgroundColor: AppTheme.dark1,
@@ -83,18 +84,18 @@ class TradeDetailScreen extends ConsumerWidget {
 
     final selling = session!.role == Role.seller ? 'selling' : 'buying';
     final currencyFlag = CurrencyUtils.getFlagFromCurrency(
-      tradeState.orderPayload!.fiatCode,
+      tradeState.order!.fiatCode,
     );
 
     final amountString =
-        '${tradeState.orderPayload!.fiatAmount} ${tradeState.orderPayload!.fiatCode} $currencyFlag';
+        '${tradeState.order!.fiatAmount} ${tradeState.order!.fiatCode} $currencyFlag';
 
     // If `orderPayload.amount` is 0, the trade is "at market price"
-    final isZeroAmount = (tradeState.orderPayload!.amount == 0);
-    final satText = isZeroAmount ? '' : ' ${tradeState.orderPayload!.amount}';
+    final isZeroAmount = (tradeState.order!.amount == 0);
+    final satText = isZeroAmount ? '' : ' ${tradeState.order!.amount}';
     final priceText = isZeroAmount ? 'at market price' : '';
 
-    final premium = tradeState.orderPayload!.premium;
+    final premium = tradeState.order!.premium;
     final premiumText = premium == 0
         ? ''
         : (premium > 0)
@@ -102,14 +103,12 @@ class TradeDetailScreen extends ConsumerWidget {
             : 'with a $premium% discount';
 
     // Payment method
-    final method = tradeState.orderPayload!.paymentMethod;
+    final method = tradeState.order!.paymentMethod;
     final timestamp = formatDateTime(
-      tradeState.orderPayload!.createdAt != null &&
-              tradeState.orderPayload!.createdAt! > 0
-          ? DateTime.fromMillisecondsSinceEpoch(
-              tradeState.orderPayload!.createdAt!)
+      tradeState.order!.createdAt != null && tradeState.order!.createdAt! > 0
+          ? DateTime.fromMillisecondsSinceEpoch(tradeState.order!.createdAt!)
           : DateTime.fromMillisecondsSinceEpoch(
-              tradeState.orderPayload!.createdAt ?? 0,
+              tradeState.order!.createdAt ?? 0,
             ),
     );
     return CustomCard(
@@ -213,91 +212,49 @@ class TradeDetailScreen extends ConsumerWidget {
     final session = ref.watch(sessionProvider(orderId));
     final userRole = session?.role;
 
-    switch (tradeState.status) {
-      case Status.pending:
-        // According to Mostro FSM: Pending state
-        final widgets = <Widget>[];
+    final userActions = MostroFSM.actionsForStatus(tradeState.status);
+    if (userActions.isEmpty) return [];
 
-        // FSM: In pending state, seller can cancel
-        widgets.add(_buildNostrButton(
-          'CANCEL',
-          action: actions.Action.cancel,
-          backgroundColor: AppTheme.red1,
-          onPressed: () =>
-              ref.read(orderNotifierProvider(orderId).notifier).cancelOrder(),
-        ));
+    final widgets = <Widget>[];
 
-        return widgets;
-
-      case Status.waitingPayment:
-        // According to Mostro FSM: waiting-payment state
-        final widgets = <Widget>[];
-
-        // FSM: Seller can pay-invoice and cancel
-        if (userRole == Role.seller) {
+    for (final action in userActions) {
+      // FSM-driven action mapping: ensure all actions are handled
+      switch (action) {
+        case actions.Action.cancel:
+        case actions.Action.canceled:
           widgets.add(_buildNostrButton(
-            'PAY INVOICE',
-            action: actions.Action.waitingBuyerInvoice,
-            backgroundColor: AppTheme.mostroGreen,
-            onPressed: () => context.push('/pay_invoice/$orderId'),
+            'CANCEL',
+            action: action,
+            backgroundColor: AppTheme.red1,
+            onPressed: () =>
+                ref.read(orderNotifierProvider(orderId).notifier).cancelOrder(),
           ));
-        }
-        widgets.add(_buildNostrButton(
-          'CANCEL',
-          action: actions.Action.canceled,
-          backgroundColor: AppTheme.red1,
-          onPressed: () =>
-              ref.read(orderNotifierProvider(orderId).notifier).cancelOrder(),
-        ));
-        return widgets;
-
-      case Status.waitingBuyerInvoice:
-        // According to Mostro FSM: waiting-buyer-invoice state
-        final widgets = <Widget>[];
-
-        // FSM: Buyer can add-invoice and cancel
-        if (userRole == Role.buyer) {
-          widgets.add(_buildNostrButton(
-            'ADD INVOICE',
-            action: actions.Action.payInvoice,
-            backgroundColor: AppTheme.mostroGreen,
-            onPressed: () => context.push('/add_invoice/$orderId'),
-          ));
-        }
-        widgets.add(_buildNostrButton(
-          'CANCEL',
-          action: actions.Action.canceled,
-          backgroundColor: AppTheme.red1,
-          onPressed: () =>
-              ref.read(orderNotifierProvider(orderId).notifier).cancelOrder(),
-        ));
-
-        return widgets;
-
-      case Status.settledHoldInvoice:
-        if (tradeState.lastAction == actions.Action.rate) {
-          return [
-            // Rate button if applicable (common for both roles)
-            _buildNostrButton(
-              'RATE',
-              action: actions.Action.rateReceived,
+          break;
+        case actions.Action.payInvoice:
+          if (userRole == Role.seller) {
+            widgets.add(_buildNostrButton(
+              'PAY INVOICE',
+              action: actions.Action.payInvoice,
               backgroundColor: AppTheme.mostroGreen,
-              onPressed: () => context.push('/rate_user/$orderId'),
-            )
-          ];
-        } else {
-          return [];
-        }
-
-      case Status.active:
-        // According to Mostro FSM: active state
-        final widgets = <Widget>[];
-
-        // Role-specific actions according to FSM
-        if (userRole == Role.buyer) {
-          // FSM: Buyer can fiat-sent
-          if (tradeState.lastAction != actions.Action.fiatSentOk &&
-              tradeState.lastAction != actions.Action.fiatSent) {
+              onPressed: () => context.push('/pay_invoice/$orderId'),
+            ));
+          }
+          break;
+        case actions.Action.addInvoice:
+          if (userRole == Role.buyer) {
+            widgets.add(_buildNostrButton(
+              'ADD INVOICE',
+              action: actions.Action.addInvoice,
+              backgroundColor: AppTheme.mostroGreen,
+              onPressed: () => context.push('/add_invoice/$orderId'),
+            ));
+          }
+          break;
+        case actions.Action.fiatSent:
+        case actions.Action.fiatSentOk:
+          if (userRole == Role.buyer &&
+              tradeState.action != actions.Action.fiatSentOk &&
+              tradeState.action != actions.Action.fiatSent) {
             widgets.add(_buildNostrButton(
               'FIAT SENT',
               action: actions.Action.fiatSentOk,
@@ -307,20 +264,14 @@ class TradeDetailScreen extends ConsumerWidget {
                   .sendFiatSent(),
             ));
           }
-
-          // FSM: Buyer can cancel
-          widgets.add(_buildNostrButton(
-            'CANCEL',
-            action: actions.Action.canceled,
-            backgroundColor: AppTheme.red1,
-            onPressed: () =>
-                ref.read(orderNotifierProvider(orderId).notifier).cancelOrder(),
-          ));
-
-          // FSM: Buyer can dispute
-          if (tradeState.lastAction != actions.Action.disputeInitiatedByYou &&
-              tradeState.lastAction != actions.Action.disputeInitiatedByPeer &&
-              tradeState.lastAction != actions.Action.dispute) {
+          break;
+        case actions.Action.disputeInitiatedByYou:
+        case actions.Action.disputeInitiatedByPeer:
+        case actions.Action.dispute:
+          // Only allow dispute if not already disputed
+          if (tradeState.action != actions.Action.disputeInitiatedByYou &&
+              tradeState.action != actions.Action.disputeInitiatedByPeer &&
+              tradeState.action != actions.Action.dispute) {
             widgets.add(_buildNostrButton(
               'DISPUTE',
               action: actions.Action.disputeInitiatedByYou,
@@ -330,101 +281,51 @@ class TradeDetailScreen extends ConsumerWidget {
                   .disputeOrder(),
             ));
           }
-        } else if (userRole == Role.seller) {
-          // FSM: Seller can cancel
-          widgets.add(_buildNostrButton(
-            'CANCEL',
-            action: actions.Action.canceled,
-            backgroundColor: AppTheme.red1,
-            onPressed: () =>
-                ref.read(orderNotifierProvider(orderId).notifier).cancelOrder(),
-          ));
-
-          // FSM: Seller can dispute
-          if (tradeState.lastAction != actions.Action.disputeInitiatedByYou &&
-              tradeState.lastAction != actions.Action.disputeInitiatedByPeer &&
-              tradeState.lastAction != actions.Action.dispute) {
+          break;
+        case actions.Action.release:
+        case actions.Action.released:
+          if (userRole == Role.seller) {
             widgets.add(_buildNostrButton(
-              'DISPUTE',
-              action: actions.Action.disputeInitiatedByYou,
-              backgroundColor: AppTheme.red1,
+              'RELEASE',
+              action: actions.Action.release,
+              backgroundColor: AppTheme.mostroGreen,
               onPressed: () => ref
                   .read(orderNotifierProvider(orderId).notifier)
-                  .disputeOrder(),
+                  .releaseOrder(),
             ));
           }
-        }
-
-        // Rate button if applicable (common for both roles)
-        if (tradeState.lastAction == actions.Action.rate) {
+          break;
+        case actions.Action.takeSell:
+          if (userRole == Role.buyer) {
+            widgets.add(_buildNostrButton(
+              'TAKE SELL',
+              action: actions.Action.takeSell,
+              backgroundColor: AppTheme.mostroGreen,
+              onPressed: () => context.push('/take_sell/$orderId'),
+            ));
+          }
+          break;
+        case actions.Action.takeBuy:
+          if (userRole == Role.seller) {
+            widgets.add(_buildNostrButton(
+              'TAKE BUY',
+              action: actions.Action.takeBuy,
+              backgroundColor: AppTheme.mostroGreen,
+              onPressed: () => context.push('/take_buy/$orderId'),
+            ));
+          }
+          break;
+        case actions.Action.cooperativeCancelInitiatedByYou:
+        case actions.Action.cooperativeCancelInitiatedByPeer:
           widgets.add(_buildNostrButton(
-            'RATE',
-            action: actions.Action.rateReceived,
-            backgroundColor: AppTheme.mostroGreen,
-            onPressed: () => context.push('/rate_user/$orderId'),
-          ));
-        }
-
-        widgets.add(
-          _buildContactButton(context),
-        );
-
-        return widgets;
-
-      case Status.fiatSent:
-        // According to Mostro FSM: fiat-sent state
-        final widgets = <Widget>[];
-
-        if (userRole == Role.seller) {
-          // FSM: Seller can release
-          widgets.add(_buildNostrButton(
-            'RELEASE SATS',
-            action: actions.Action.released,
-            backgroundColor: AppTheme.mostroGreen,
-            onPressed: () => ref
-                .read(orderNotifierProvider(orderId).notifier)
-                .releaseOrder(),
-          ));
-
-          // FSM: Seller can cancel
-          widgets.add(_buildNostrButton(
-            'CANCEL',
-            action: actions.Action.canceled,
+            'COOPERATIVE CANCEL',
+            action: actions.Action.cooperativeCancelInitiatedByYou,
             backgroundColor: AppTheme.red1,
             onPressed: () =>
                 ref.read(orderNotifierProvider(orderId).notifier).cancelOrder(),
           ));
-
-          // FSM: Seller can dispute
-          widgets.add(_buildNostrButton(
-            'DISPUTE',
-            action: actions.Action.disputeInitiatedByYou,
-            backgroundColor: AppTheme.red1,
-            onPressed: () => ref
-                .read(orderNotifierProvider(orderId).notifier)
-                .disputeOrder(),
-          ));
-        } else if (userRole == Role.buyer) {
-          // FSM: Buyer can only dispute in fiat-sent state
-          widgets.add(_buildNostrButton(
-            'DISPUTE',
-            action: actions.Action.disputeInitiatedByYou,
-            backgroundColor: AppTheme.red1,
-            onPressed: () => ref
-                .read(orderNotifierProvider(orderId).notifier)
-                .disputeOrder(),
-          ));
-        }
-
-        return widgets;
-
-      case Status.cooperativelyCanceled:
-        // According to Mostro FSM: cooperatively-canceled state
-        final widgets = <Widget>[];
-
-        // Add confirm cancel if cooperative cancel was initiated by peer
-        if (tradeState.lastAction ==
-            actions.Action.cooperativeCancelInitiatedByPeer) {
+          break;
+        case actions.Action.cooperativeCancelAccepted:
           widgets.add(_buildNostrButton(
             'CONFIRM CANCEL',
             action: actions.Action.cooperativeCancelAccepted,
@@ -432,63 +333,68 @@ class TradeDetailScreen extends ConsumerWidget {
             onPressed: () =>
                 ref.read(orderNotifierProvider(orderId).notifier).cancelOrder(),
           ));
-        }
-
-        return widgets;
-
-      case Status.success:
-        // According to Mostro FSM: success state
-        // Both buyer and seller can only rate
-        final widgets = <Widget>[];
-
-        // FSM: Both roles can rate counterparty if not already rated
-        if (tradeState.lastAction != actions.Action.rateReceived) {
+          break;
+        case actions.Action.purchaseCompleted:
+          widgets.add(_buildNostrButton(
+            'COMPLETE PURCHASE',
+            action: actions.Action.purchaseCompleted,
+            backgroundColor: AppTheme.mostroGreen,
+            onPressed: () => ref
+                .read(orderNotifierProvider(orderId).notifier)
+                .releaseOrder(), // This usually triggers completion
+          ));
+          break;
+        case actions.Action.rate:
+        case actions.Action.rateUser:
+        case actions.Action.rateReceived:
           widgets.add(_buildNostrButton(
             'RATE',
             action: actions.Action.rateReceived,
             backgroundColor: AppTheme.mostroGreen,
             onPressed: () => context.push('/rate_user/$orderId'),
           ));
-        }
-
-        return widgets;
-
-      case Status.inProgress:
-        // According to Mostro FSM: in-progress is a transitional state
-        // This is not explicitly in the FSM but we follow cancel rules as active state
-        final widgets = <Widget>[];
-
-        // Both roles can cancel during in-progress state, similar to active
-        widgets.add(_buildNostrButton(
-          'CANCEL',
-          action: actions.Action.canceled,
-          backgroundColor: AppTheme.red1,
-          onPressed: () =>
-              ref.read(orderNotifierProvider(orderId).notifier).cancelOrder(),
-        ));
-
-        if (userRole == Role.seller &&
-            tradeState.lastAction == actions.Action.payInvoice) {
-          widgets.add(_buildNostrButton(
-            'PAY INVOICE',
-            action: actions.Action.payInvoice,
-            backgroundColor: AppTheme.mostroGreen,
-            onPressed: () => context.push('/pay_invoice/$orderId'),
-          ));
-        }
-
-        return widgets;
-
-      // Terminal states according to Mostro FSM
-      case Status.expired:
-      case Status.dispute:
-      case Status.completedByAdmin:
-      case Status.canceledByAdmin:
-      case Status.settledByAdmin:
-      case Status.canceled:
-        // No actions allowed in these terminal states
-        return [];
+          break;
+        case actions.Action.holdInvoicePaymentAccepted:
+        case actions.Action.holdInvoicePaymentSettled:
+        case actions.Action.holdInvoicePaymentCanceled:
+          // These are system actions, not user actions, so no button needed
+          break;
+        case actions.Action.buyerInvoiceAccepted:
+        case actions.Action.buyerTookOrder:
+        case actions.Action.waitingSellerToPay:
+        case actions.Action.waitingBuyerInvoice:
+        case actions.Action.adminCancel:
+        case actions.Action.adminCanceled:
+        case actions.Action.adminSettle:
+        case actions.Action.adminSettled:
+        case actions.Action.adminAddSolver:
+        case actions.Action.adminTakeDispute:
+        case actions.Action.adminTookDispute:
+        case actions.Action.paymentFailed:
+        case actions.Action.invoiceUpdated:
+        case actions.Action.sendDm:
+        case actions.Action.tradePubkey:
+        case actions.Action.cantDo:
+          // Not user-facing or not relevant as a button
+          break;
+        default:
+          // Optionally handle unknown or unimplemented actions
+          break;
+      }
     }
+
+    // Special case for RATE button after settlement
+    if (tradeState.status == Status.settledHoldInvoice &&
+        tradeState.action == actions.Action.rate) {
+      widgets.add(_buildNostrButton(
+        'RATE',
+        action: actions.Action.rateReceived,
+        backgroundColor: AppTheme.mostroGreen,
+        onPressed: () => context.push('/rate_user/$orderId'),
+      ));
+    }
+
+    return widgets;
   }
 
   /// Helper method to build a NostrResponsiveButton with common properties

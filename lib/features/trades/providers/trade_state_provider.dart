@@ -10,19 +10,17 @@ import 'package:collection/collection.dart';
 
 final tradeStateProvider =
     Provider.family.autoDispose<TradeState, String>((ref, orderId) {
-  final statusAsync = ref.watch(mostroMessageStreamProvider(orderId));
   final messagesAsync = ref.watch(mostroMessageHistoryProvider(orderId));
   final lastOrderMessageAsync = ref.watch(mostroOrderStreamProvider(orderId));
 
-  final status = statusAsync.value?.getPayload<Order>()?.status ?? Status.pending;
   final messages = messagesAsync.value ?? [];
   final lastActionMessage =
       messages.firstWhereOrNull((m) => m.action != actions.Action.cantDo);
   final orderPayload = lastOrderMessageAsync.value?.getPayload<Order>();
 
   return TradeState(
-    status: status,
-    lastAction: lastActionMessage?.action,
-    orderPayload: orderPayload,
+    status: orderPayload?.status ?? Status.pending,
+    action: lastActionMessage?.action,
+    order: orderPayload,
   );
 });

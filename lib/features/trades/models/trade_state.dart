@@ -4,39 +4,39 @@ import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
 
 class TradeState {
   final Status status;
-  final actions.Action? lastAction;
-  final Order? orderPayload;
+  final actions.Action? action;
+  final Order? order;
 
   TradeState({
     required this.status,
-    required this.lastAction,
-    required this.orderPayload,
+    required this.action,
+    required this.order,
   });
 
   @override
   String toString() =>
-      'TradeState(status: $status, lastAction: $lastAction, orderPayload: $orderPayload)';
+      'TradeState(status: $status, action: $action, order: $order)';
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is TradeState &&
           other.status == status &&
-          other.lastAction == lastAction &&
-          other.orderPayload == orderPayload;
+          other.action == action &&
+          other.order == order;
 
   @override
-  int get hashCode => Object.hash(status, lastAction, orderPayload);
+  int get hashCode => Object.hash(status, action, order);
 
   TradeState copyWith({
     Status? status,
-    actions.Action? lastAction,
-    Order? orderPayload,
+    actions.Action? action,
+    Order? order,
   }) {
     return TradeState(
       status: status ?? this.status,
-      lastAction: lastAction ?? this.lastAction,
-      orderPayload: orderPayload ?? this.orderPayload,
+      action: action ?? this.action,
+      order: order ?? this.order,
     );
   }
 }

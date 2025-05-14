@@ -22,7 +22,7 @@ class MostroMessageDetail extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tradeState = ref.watch(tradeStateProvider(orderId));
 
-    if (tradeState.lastAction == null || tradeState.orderPayload == null) {
+    if (tradeState.action == null || tradeState.order == null) {
       return const CustomCard(
         padding: EdgeInsets.all(16),
         child: Center(child: CircularProgressIndicator()),
@@ -52,7 +52,7 @@ class MostroMessageDetail extends ConsumerWidget {
                   style: Theme.of(context).textTheme.bodyLarge,
                 ),
                 const SizedBox(height: 16),
-                Text('${tradeState.status} - ${tradeState.lastAction}'),
+                Text('${tradeState.status} - ${tradeState.action}'),
               ],
             ),
           ),
@@ -66,8 +66,8 @@ class MostroMessageDetail extends ConsumerWidget {
     WidgetRef ref,
     TradeState tradeState,
   ) {
-    final action = tradeState.lastAction;
-    final orderPayload = tradeState.orderPayload;
+    final action = tradeState.action;
+    final orderPayload = tradeState.order;
     switch (action) {
       case actions.Action.newOrder:
         final expHrs =
@@ -188,12 +188,13 @@ class MostroMessageDetail extends ConsumerWidget {
       case actions.Action.cantDo:
         return _getCantDoMessage(context, ref, tradeState);
       default:
-        return 'No message found for action ${tradeState.lastAction}';
+        return 'No message found for action ${tradeState.action}';
     }
   }
 
-  String _getCantDoMessage(BuildContext context, WidgetRef ref, TradeState tradeState) {
-    final orderPayload = tradeState.orderPayload;
+  String _getCantDoMessage(
+      BuildContext context, WidgetRef ref, TradeState tradeState) {
+    final orderPayload = tradeState.order;
     final status = tradeState.status;
     final cantDoReason = ref
         .read(cantDoNotifierProvider(orderPayload?.id ?? ''))
@@ -202,7 +203,9 @@ class MostroMessageDetail extends ConsumerWidget {
       case CantDoReason.invalidSignature:
         return S.of(context)!.invalidSignature;
       case CantDoReason.notAllowedByStatus:
-        return S.of(context)!.notAllowedByStatus(orderPayload?.id ?? '', status);
+        return S
+            .of(context)!
+            .notAllowedByStatus(orderPayload?.id ?? '', status);
       case CantDoReason.outOfRangeFiatAmount:
         return S.of(context)!.outOfRangeFiatAmount('{fiat_min}', '{fiat_max}');
       case CantDoReason.outOfRangeSatsAmount:
@@ -220,7 +223,7 @@ class MostroMessageDetail extends ConsumerWidget {
       case CantDoReason.pendingOrderExists:
         return S.of(context)!.pendingOrderExists;
       default:
-        return '${status.toString()} - ${tradeState.lastAction}';
+        return '${status.toString()} - ${tradeState.action}';
     }
   }
 }
