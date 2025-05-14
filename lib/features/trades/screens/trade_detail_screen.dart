@@ -14,7 +14,7 @@ import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
 import 'package:mostro_mobile/features/trades/models/trade_state.dart';
 import 'package:mostro_mobile/features/trades/providers/trade_state_provider.dart';
 import 'package:mostro_mobile/features/trades/widgets/mostro_message_detail_widget.dart';
-import 'package:mostro_mobile/shared/providers/session_manager_provider.dart';
+import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/shared/utils/currency_utils.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_reactive_button.dart';

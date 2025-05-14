@@ -3,15 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/models/dispute.dart';
 import 'package:mostro_mobile/data/models/enums/role.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
-import 'package:mostro_mobile/features/trades/models/trade_state.dart';
+import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
-import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
-import 'package:mostro_mobile/shared/providers/session_manager_provider.dart';
+import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
-import 'package:mostro_mobile/features/trades/providers/trade_state_provider.dart';
 import 'package:mostro_mobile/data/models/enums/cant_do_reason.dart';
 
 class MostroMessageDetail extends ConsumerWidget {
@@ -20,19 +18,11 @@ class MostroMessageDetail extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final tradeState = ref.watch(tradeStateProvider(orderId));
-
-    if (tradeState.action == null || tradeState.order == null) {
-      return const CustomCard(
-        padding: EdgeInsets.all(16),
-        child: Center(child: CircularProgressIndicator()),
-      );
-    }
+    final orderState = ref.watch(orderNotifierProvider(orderId).notifier);
 
     final actionText = _getActionText(
       context,
       ref,
-      tradeState,
     );
     return CustomCard(
       padding: const EdgeInsets.all(16),
@@ -52,7 +42,7 @@ class MostroMessageDetail extends ConsumerWidget {
                   style: Theme.of(context).textTheme.bodyLarge,
                 ),
                 const SizedBox(height: 16),
-                Text('${tradeState.status} - ${tradeState.action}'),
+                Text('${orderState.status} - ${orderState.action}'),
               ],
             ),
           ),
@@ -64,8 +54,8 @@ class MostroMessageDetail extends ConsumerWidget {
   String _getActionText(
     BuildContext context,
     WidgetRef ref,
-    TradeState tradeState,
   ) {
+    final tradeState = ref.watch(orderNotifierProvider(orderId).notifier);
     final action = tradeState.action;
     final orderPayload = tradeState.order;
     switch (action) {
@@ -75,7 +65,7 @@ class MostroMessageDetail extends ConsumerWidget {
                 '24';
         return S.of(context)!.newOrder(int.tryParse(expHrs) ?? 24);
       case actions.Action.canceled:
-        return S.of(context)!.canceled(orderPayload?.id ?? '');
+        return S.of(context)!.canceled(orderPayload.id ?? '');
       case actions.Action.payInvoice:
         final expSecs = ref
                 .read(orderRepositoryProvider)
@@ -83,10 +73,10 @@ class MostroMessageDetail extends ConsumerWidget {
                 ?.expirationSeconds ??
             900;
         return S.of(context)!.payInvoice(
-              orderPayload?.amount.toString() ?? '',
+              orderPayload.amount.toString(),
               '${expSecs ~/ 60} minutes',
-              orderPayload?.fiatAmount.toString() ?? '',
-              orderPayload?.fiatCode ?? '',
+              orderPayload.fiatAmount.toString(),
+              orderPayload.fiatCode,
             );
       case actions.Action.addInvoice:
         final expSecs = ref
@@ -95,9 +85,9 @@ class MostroMessageDetail extends ConsumerWidget {
                 ?.expirationSeconds ??
             900;
         return S.of(context)!.addInvoice(
-              orderPayload?.amount.toString() ?? '',
-              orderPayload?.fiatCode ?? '',
-              orderPayload?.fiatAmount.toString() ?? '',
+              orderPayload.amount.toString(),
+              orderPayload.fiatCode,
+              orderPayload.fiatAmount.toString(),
               expSecs,
             );
       case actions.Action.waitingSellerToPay:
@@ -108,7 +98,7 @@ class MostroMessageDetail extends ConsumerWidget {
             900;
         return S
             .of(context)!
-            .waitingSellerToPay(orderPayload?.id ?? '', expSecs);
+            .waitingSellerToPay(orderPayload.id ?? '', expSecs);
       case actions.Action.waitingBuyerInvoice:
         final expSecs = ref
                 .read(orderRepositoryProvider)
@@ -119,23 +109,23 @@ class MostroMessageDetail extends ConsumerWidget {
       case actions.Action.buyerInvoiceAccepted:
         return S.of(context)!.buyerInvoiceAccepted;
       case actions.Action.holdInvoicePaymentAccepted:
-        final session = ref.watch(sessionProvider(orderPayload?.id ?? ''));
+        final session = ref.watch(sessionProvider(orderPayload.id ?? ''));
         return S.of(context)!.holdInvoicePaymentAccepted(
-              orderPayload?.fiatAmount.toString() ?? '',
-              orderPayload?.fiatCode ?? '',
-              orderPayload?.paymentMethod ?? '',
+              orderPayload.fiatAmount.toString(),
+              orderPayload.fiatCode,
+              orderPayload.paymentMethod,
               session?.peer?.publicKey ?? '',
             );
       case actions.Action.buyerTookOrder:
-        final session = ref.watch(sessionProvider(orderPayload?.id ?? ''));
+        final session = ref.watch(sessionProvider(orderPayload.id ?? ''));
         return S.of(context)!.buyerTookOrder(
               session?.peer?.publicKey ?? '',
-              orderPayload?.fiatCode ?? '',
-              orderPayload?.fiatAmount.toString() ?? '',
-              orderPayload?.paymentMethod ?? '',
+              orderPayload.fiatCode,
+              orderPayload.fiatAmount.toString(),
+              orderPayload.paymentMethod,
             );
       case actions.Action.fiatSentOk:
-        final session = ref.watch(sessionProvider(orderPayload?.id ?? ''));
+        final session = ref.watch(sessionProvider(orderPayload.id ?? ''));
         return session!.role == Role.buyer
             ? S.of(context)!.fiatSentOkBuyer(session.peer!.publicKey)
             : S.of(context)!.fiatSentOkSeller(session.peer!.publicKey);
@@ -150,35 +140,27 @@ class MostroMessageDetail extends ConsumerWidget {
       case actions.Action.rateReceived:
         return S.of(context)!.rateReceived;
       case actions.Action.cooperativeCancelInitiatedByYou:
-        return S
-            .of(context)!
-            .cooperativeCancelInitiatedByYou(orderPayload?.id ?? '');
+        return S.of(context)!.cooperativeCancelInitiatedByYou(orderPayload.id ?? '');
       case actions.Action.cooperativeCancelInitiatedByPeer:
-        return S
-            .of(context)!
-            .cooperativeCancelInitiatedByPeer(orderPayload?.id ?? '');
+        return S.of(context)!.cooperativeCancelInitiatedByPeer(orderPayload.id ?? '');
       case actions.Action.cooperativeCancelAccepted:
-        return S.of(context)!.cooperativeCancelAccepted(orderPayload?.id ?? '');
+        return S.of(context)!.cooperativeCancelAccepted(orderPayload.id ?? '');
       case actions.Action.disputeInitiatedByYou:
         final payload = ref
-            .read(disputeNotifierProvider(orderPayload?.id ?? ''))
+            .read(orderNotifierProvider(orderId))
             .getPayload<Dispute>();
-        return S
-            .of(context)!
-            .disputeInitiatedByYou(orderPayload?.id ?? '', payload!.disputeId);
+        return S.of(context)!.disputeInitiatedByYou(orderPayload.id!, payload!.disputeId);
       case actions.Action.disputeInitiatedByPeer:
         final payload = ref
-            .read(disputeNotifierProvider(orderPayload?.id ?? ''))
+            .read(orderNotifierProvider(orderId))
             .getPayload<Dispute>();
-        return S
-            .of(context)!
-            .disputeInitiatedByPeer(orderPayload?.id ?? '', payload!.disputeId);
+        return S.of(context)!.disputeInitiatedByPeer(orderPayload.id!, payload!.disputeId);
       case actions.Action.adminTookDispute:
         return S.of(context)!.adminTookDisputeUsers('{admin token}');
       case actions.Action.adminCanceled:
-        return S.of(context)!.adminCanceledUsers(orderPayload?.id ?? '');
+        return S.of(context)!.adminCanceledUsers(orderPayload.id ?? '');
       case actions.Action.adminSettled:
-        return S.of(context)!.adminSettledUsers(orderPayload?.id ?? '');
+        return S.of(context)!.adminSettledUsers(orderPayload.id ?? '');
       case actions.Action.paymentFailed:
         return S.of(context)!.paymentFailed('{attempts}', '{retries}');
       case actions.Action.invoiceUpdated:
@@ -186,18 +168,19 @@ class MostroMessageDetail extends ConsumerWidget {
       case actions.Action.holdInvoicePaymentCanceled:
         return S.of(context)!.holdInvoicePaymentCanceled;
       case actions.Action.cantDo:
-        return _getCantDoMessage(context, ref, tradeState);
+        return _getCantDoMessage(context, ref);
       default:
         return 'No message found for action ${tradeState.action}';
     }
   }
 
   String _getCantDoMessage(
-      BuildContext context, WidgetRef ref, TradeState tradeState) {
+      BuildContext context, WidgetRef ref) {
+final tradeState = ref.watch(orderNotifierProvider(orderId).notifier);
     final orderPayload = tradeState.order;
     final status = tradeState.status;
     final cantDoReason = ref
-        .read(cantDoNotifierProvider(orderPayload?.id ?? ''))
+        .read(orderNotifierProvider(orderId))
         .getPayload<CantDoReason>();
     switch (cantDoReason) {
       case CantDoReason.invalidSignature:
@@ -205,7 +188,7 @@ class MostroMessageDetail extends ConsumerWidget {
       case CantDoReason.notAllowedByStatus:
         return S
             .of(context)!
-            .notAllowedByStatus(orderPayload?.id ?? '', status);
+            .notAllowedByStatus(orderPayload.id ?? '', status);
       case CantDoReason.outOfRangeFiatAmount:
         return S.of(context)!.outOfRangeFiatAmount('{fiat_min}', '{fiat_max}');
       case CantDoReason.outOfRangeSatsAmount:

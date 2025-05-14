@@ -1,14 +1,16 @@
 import 'dart:async';
-import 'package:mostro_mobile/data/models/enums/action.dart';
-import 'package:mostro_mobile/data/models/mostro_message.dart';
+import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/features/order/notfiers/abstract_mostro_notifier.dart';
-import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/services/mostro_service.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
+import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 
 class OrderNotifier extends AbstractMostroNotifier {
   late final MostroService mostroService;
+
+  late Order _order;
+  Order get order => _order;
 
   OrderNotifier(super.orderId, super.ref) {
     mostroService = ref.read(mostroServiceProvider);
@@ -16,25 +18,14 @@ class OrderNotifier extends AbstractMostroNotifier {
     subscribe();
   }
 
-
-  @override
-  void handleEvent(MostroMessage event) {
-    // Forward all messages so UI reacts to CantDo, Peer, PaymentRequest, etc.
-    state = event;
-    handleOrderUpdate();
-  }
-
-  Future<void> submitOrder(Order order) async {
-    final message = MostroMessage<Order>(
-      action: Action.newOrder,
-      id: null,
-      payload: order,
-    );
-    await mostroService.submitOrder(message);
-  }
-
   Future<void> takeSellOrder(
       String orderId, int? amount, String? lnAddress) async {
+    final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+    session = await sessionNotifier.newSession(
+      orderId: orderId,
+      role: order.kind == OrderType.buy ? Role.buyer : Role.seller,
+    );
+    mostroService.subscribe(session);
     await mostroService.takeSellOrder(
       orderId,
       amount,
@@ -43,6 +34,12 @@ class OrderNotifier extends AbstractMostroNotifier {
   }
 
   Future<void> takeBuyOrder(String orderId, int? amount) async {
+    final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+    session = await sessionNotifier.newSession(
+      orderId: orderId,
+      role: order.kind == OrderType.buy ? Role.buyer : Role.seller,
+    );
+    mostroService.subscribe(session);
     await mostroService.takeBuyOrder(
       orderId,
       amount,
@@ -80,11 +77,4 @@ class OrderNotifier extends AbstractMostroNotifier {
     );
   }
 
-  @override
-  void dispose() {
-    ref.invalidate(cantDoNotifierProvider(orderId));
-    ref.invalidate(paymentNotifierProvider(orderId));
-    ref.invalidate(disputeNotifierProvider(orderId));
-    super.dispose();
-  }
 }

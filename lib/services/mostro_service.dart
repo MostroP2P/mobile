@@ -1,12 +1,11 @@
 import 'dart:convert';
 import 'package:dart_nostr/nostr/model/export.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models.dart';
-import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/services/lifecycle_manager.dart';
-import 'package:mostro_mobile/shared/notifiers/order_action_notifier.dart';
 import 'package:mostro_mobile/shared/notifiers/session_notifier.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
@@ -89,22 +88,7 @@ class MostroService {
       result[0]['timestamp'] = decryptedEvent.createdAt?.millisecondsSinceEpoch;
       final msg = MostroMessage.fromJson(result[0]);
       final messageStorage = ref.read(mostroStorageProvider);
-
-      if (msg.id != null) {
-        if (await messageStorage.hasMessageByKey(decryptedEvent.id!)) return;
-        ref.read(orderActionNotifierProvider(msg.id!).notifier).set(msg.action);
-      }
-      if (msg.action == Action.canceled) {
-        ref.read(orderNotifierProvider(session.orderId!).notifier).dispose();
-        await messageStorage.deleteAllMessagesByOrderId(session.orderId!);
-        await _sessionNotifier.deleteSession(session.orderId!);
-        return;
-      }
       await messageStorage.addMessage(decryptedEvent.id!, msg);
-      if (session.orderId == null && msg.id != null) {
-        session.orderId = msg.id;
-        await _sessionNotifier.saveSession(session);
-      }
     });
   }
 
@@ -113,20 +97,18 @@ class MostroService {
   }
 
   Future<void> submitOrder(MostroMessage order) async {
-    final session = await publishOrder(order);
-    subscribe(session);
+    await publishOrder(order);
   }
 
   Future<void> takeBuyOrder(String orderId, int? amount) async {
     final amt = amount != null ? Amount(amount: amount) : null;
-    final session = await publishOrder(
+    await publishOrder(
       MostroMessage(
         action: Action.takeBuy,
         id: orderId,
         payload: amt,
       ),
     );
-    subscribe(session);
   }
 
   Future<void> takeSellOrder(
@@ -141,15 +123,13 @@ class MostroService {
             ? Amount(amount: amount)
             : null;
 
-    final session = await publishOrder(
+    await publishOrder(
       MostroMessage(
         action: Action.takeSell,
         id: orderId,
         payload: payload,
       ),
     );
-
-    subscribe(session);
   }
 
   Future<void> sendInvoice(String orderId, String invoice, int? amount) async {
@@ -204,14 +184,16 @@ class MostroService {
   }
 
   Future<void> submitRating(String orderId, int rating) async {
-    await publishOrder(MostroMessage(
-      action: Action.rateUser,
-      id: orderId,
-      payload: RatingUser(userRating: rating),
-    ));
+    await publishOrder(
+      MostroMessage(
+        action: Action.rateUser,
+        id: orderId,
+        payload: RatingUser(userRating: rating),
+      ),
+    );
   }
 
-  Future<Session> publishOrder(MostroMessage order) async {
+  Future<void> publishOrder(MostroMessage order) async {
     final session = await _getSession(order);
     final event = await order.wrap(
       tradeKey: session.tradeKey,
@@ -221,7 +203,6 @@ class MostroService {
     );
 
     await ref.read(nostrServiceProvider).publishEvent(event);
-    return session;
   }
 
   Role? _getRole(MostroMessage order) {
