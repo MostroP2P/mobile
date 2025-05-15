@@ -13,6 +13,7 @@ class SessionNotifier extends StateNotifier<List<Session>> {
   Settings _settings;
 
   final Map<String, Session> _sessions = {};
+final Map<int, Session> _requestIdToSession = {};
 
   Timer? _cleanupTimer;
   static const int sessionExpirationHours = 36;
@@ -43,7 +44,7 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     _settings = settings.copyWith();
   }
 
-  Future<Session> newSession({String? orderId, Role? role}) async {
+  Future<Session> newSession({String? orderId, int? requestId, Role? role}) async {
     final masterKey = _keyManager.masterKeyPair!;
     final keyIndex = await _keyManager.getCurrentKeyIndex();
     final tradeKey = await _keyManager.deriveTradeKey();
@@ -62,7 +63,8 @@ class SessionNotifier extends StateNotifier<List<Session>> {
       _sessions[orderId] = session;
       await _storage.putSession(session);
       state = sessions;
-    } else {
+    } else if (requestId != null) {
+      _requestIdToSession[requestId] = session;
       state = [...sessions, session];
     }
     return session;
@@ -82,6 +84,14 @@ class SessionNotifier extends StateNotifier<List<Session>> {
       update(session);
       await _storage.putSession(session);
       state = sessions;
+    }
+  }
+
+  Session? getSessionByRequestId(int requestId) {
+    try {
+      return _requestIdToSession[requestId];
+    } on StateError {
+      return null;
     }
   }
 

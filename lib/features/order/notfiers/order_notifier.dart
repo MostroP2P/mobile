@@ -1,21 +1,33 @@
 import 'dart:async';
 import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models/order.dart';
+import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/features/order/notfiers/abstract_mostro_notifier.dart';
 import 'package:mostro_mobile/services/mostro_service.dart';
-import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
-import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 
 class OrderNotifier extends AbstractMostroNotifier {
   late final MostroService mostroService;
 
-  late Order _order;
-  Order get order => _order;
+  late Order order;
 
   OrderNotifier(super.orderId, super.ref) {
     mostroService = ref.read(mostroServiceProvider);
     sync();
     subscribe();
+  }
+
+  Future<void> sync() async {
+    final storage = ref.read(mostroStorageProvider);
+    final latestOrder =
+        await storage.getLatestMessageOfTypeById<Order>(orderId);
+    if (latestOrder != null) {
+      order = latestOrder.getPayload<Order>()!;
+      status = order.status;
+    }
+    final newState = await storage.getLatestMessageById(orderId);
+    if (newState != null) {
+      state = newState;
+    }
   }
 
   Future<void> takeSellOrder(

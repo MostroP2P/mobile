@@ -205,26 +205,13 @@ class MostroService {
     await ref.read(nostrServiceProvider).publishEvent(event);
   }
 
-  Role? _getRole(MostroMessage order) {
-    final payload = order.getPayload<Order>();
-
-    return order.action == Action.newOrder
-        ? payload?.kind == OrderType.buy
-            ? Role.buyer
-            : Role.seller
-        : order.action == Action.takeBuy
-            ? Role.seller
-            : order.action == Action.takeSell
-                ? Role.buyer
-                : null;
-  }
-
   Future<Session> _getSession(MostroMessage order) async {
-    final role = _getRole(order);
-    return (order.id != null)
-        ? _sessionNotifier.getSessionByOrderId(order.id!) ??
-            await _sessionNotifier.newSession(orderId: order.id, role: role)
-        : await _sessionNotifier.newSession(role: role);
+    if (order.requestId != null) {
+      return _sessionNotifier.getSessionByRequestId(order.requestId!)!;
+    } else if (order.id != null) {
+      return _sessionNotifier.getSessionByOrderId(order.id!)!;
+    }
+    throw Exception('No session found for order');
   }
 
   void updateSettings(Settings settings) {
