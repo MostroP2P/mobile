@@ -237,7 +237,7 @@ class OrderListItem extends ConsumerWidget {
   Widget _buildRatingRow(NostrEvent order) {
     // Rating in a range of 0 to 5
     final rating = order.rating?.totalRating ?? 0.0;
-    final trades = order.rating?.totalReviews ?? 0;
+    final reviews = order.rating?.totalReviews ?? 0;
     final daysOld = 50; // Default value
 
     return Row(
@@ -277,9 +277,9 @@ class OrderListItem extends ConsumerWidget {
           ],
         ),
 
-        // Number of trades and days
+        // Number of reviews and days
         Text(
-          '$trades reviews • $daysOld days old',
+          '$reviews reviews • $daysOld days old',
           style: const TextStyle(
             color: Colors.white60,
             fontSize: 12,
