@@ -13,7 +13,7 @@ class MostroAppBar extends ConsumerWidget implements PreferredSizeWidget {
       backgroundColor: AppTheme.dark1,
       elevation: 0,
       leadingWidth: 70,
-      // Usar un IconButton personalizado con un padding específico
+      // Use a custom IconButton with specific padding
       leading: Padding(
         padding: const EdgeInsets.only(left: 16.0),
         child: IconButton(
@@ -29,7 +29,7 @@ class MostroAppBar extends ConsumerWidget implements PreferredSizeWidget {
         ),
       ),
       actions: [
-        // Notificación con indicador de número
+        // Notification with count indicator
         Stack(
           children: [
             IconButton(
@@ -40,10 +40,10 @@ class MostroAppBar extends ConsumerWidget implements PreferredSizeWidget {
                 size: 28,
               ),
               onPressed: () {
-                // Acción para notificaciones
+                // Action for notifications
               },
             ),
-            // Indicador del número de notificaciones
+            // Notification count indicator
             Positioned(
               top: 10,
               right: 10,
@@ -68,7 +68,7 @@ class MostroAppBar extends ConsumerWidget implements PreferredSizeWidget {
             ),
           ],
         ),
-        const SizedBox(width: 16), // Espaciado
+        const SizedBox(width: 16), // Spacing
       ],
     );
   }

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  // COLORES ORIGINALES - Mantener para componentes existentes
+  // Original colors
   static const Color grey = Color(0xFFCCCCCC);
   static const Color mostroGreen = Color(0xFF8CC541);
   static const Color dark1 = Color(0xFF1D212C);
@@ -14,35 +14,34 @@ class AppTheme {
   static const Color red2 = Color(0xFFE45A5A);
   static const Color green2 = Color(0xFF739C3D);
 
-  // NUEVOS COLORES - Organizados por categorías
+  // New colors
 
-  // Colores para fondos
+  // Colors for backgrounds
   static const Color backgroundDark =
-      Color(0xFF171A23); // Fondo principal oscuro
-  static const Color backgroundCard = Color(0xFF1E2230); // Fondo de tarjetas
-  static const Color backgroundInput = Color(0xFF252A3A); // Fondo de inputs
-  static const Color backgroundInactive = Color(0xFF2A3042); // Fondo inactivo
-  static const Color backgroundNavBar =
-      Color(0xFF1A1F2C); // Fondo de la barra de navegación
+      Color(0xFF171A23); // Main dark background
+  static const Color backgroundCard = Color(0xFF1E2230);
+  static const Color backgroundInput = Color(0xFF252A3A);
+  static const Color backgroundInactive = Color(0xFF2A3042);
+  static const Color backgroundNavBar = Color(0xFF1A1F2C);
 
-  // Colores para texto
-  static const Color textPrimary = Colors.white; // Texto principal
-  static const Color textSecondary = Color(0xFFCCCCCC); // Texto secundario
-  static const Color textInactive = Color(0xFF8A8D98); // Texto inactivo
-  static const Color textSubtle = Colors.white60; // Texto sutil
+  // Colors for text
+  static const Color textPrimary = Colors.white;
+  static const Color textSecondary = Color(0xFFCCCCCC);
+  static const Color textInactive = Color(0xFF8A8D98);
+  static const Color textSubtle = Colors.white60;
 
-  // Colores de acción
-  static const Color buyColor = Color(0xFF8CC63F); // Color para comprar (verde)
-  static const Color sellColor = Color(0xFFEA384C); // Color para vender (rojo)
-  static const Color activeColor = Color(0xFF8CC541); // Color activo (verde)
+  // Colors for actions
+  static const Color buyColor = Color(0xFF8CC63F);
+  static const Color sellColor = Color(0xFFEA384C);
+  static const Color activeColor = Color(0xFF8CC541);
 
-  // Colores para estados
-  static const Color statusSuccess = Color(0xFF8CC541); // Estado de éxito
-  static const Color statusWarning = Color(0xFFF3CA29); // Estado de advertencia
-  static const Color statusError = Color(0xFFE45A5A); // Estado de error
-  static const Color statusActive = Color(0xFF8CC541); // Estado activo
+  // Colors for states
+  static const Color statusSuccess = Color(0xFF8CC541);
+  static const Color statusWarning = Color(0xFFF3CA29);
+  static const Color statusError = Color(0xFFE45A5A);
+  static const Color statusActive = Color(0xFF8CC541);
 
-  // Padding y Margin constantes
+  // Padding  and margin constants
   static const EdgeInsets smallPadding = EdgeInsets.all(8.0);
   static const EdgeInsets mediumPadding =
       EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0);
@@ -57,7 +56,7 @@ class AppTheme {
     return ThemeData(
       hoverColor: dark1,
       primaryColor: mostroGreen,
-      scaffoldBackgroundColor: backgroundDark, // Actualizado al nuevo color
+      scaffoldBackgroundColor: backgroundDark,
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -188,7 +187,7 @@ class AppTheme {
     );
   }
 
-  // Helpers para crear sombras consistentes
+  // helpers for shadows
   static List<BoxShadow> get cardShadow => [
         BoxShadow(
           color: Colors.black.withOpacity(0.7),

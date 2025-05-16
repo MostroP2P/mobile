@@ -20,6 +20,7 @@ class BottomNavBar extends ConsumerWidget {
 
     return Container(
       width: double.infinity,
+      height: 80,
       decoration: BoxDecoration(
         color: AppTheme.backgroundNavBar,
         border: Border(
@@ -29,37 +30,30 @@ class BottomNavBar extends ConsumerWidget {
           ),
         ),
       ),
-      child: SafeArea(
-        top: false,
-        bottom: true,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildNavItem(
-                context,
-                LucideIcons.book,
-                'Order Book',
-                0,
-              ),
-              _buildNavItem(
-                context,
-                LucideIcons.zap,
-                'My Trades',
-                1,
-                notificationCount: orderNotificationCount,
-              ),
-              _buildNavItem(
-                context,
-                LucideIcons.messageSquare,
-                'Chat',
-                2,
-                notificationCount: chatCount,
-              ),
-            ],
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildNavItem(
+            context,
+            LucideIcons.book,
+            'Order Book',
+            0,
           ),
-        ),
+          _buildNavItem(
+            context,
+            LucideIcons.zap,
+            'My Trades',
+            1,
+            notificationCount: orderNotificationCount,
+          ),
+          _buildNavItem(
+            context,
+            LucideIcons.messageSquare,
+            'Chat',
+            2,
+            notificationCount: chatCount,
+          ),
+        ],
       ),
     );
   }
@@ -73,46 +67,59 @@ class BottomNavBar extends ConsumerWidget {
     Color textColor = isActive ? AppTheme.activeColor : Colors.white;
 
     return Expanded(
-      child: InkWell(
-        onTap: () => _onItemTapped(context, index),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Stack(
-              clipBehavior: Clip.none,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _onItemTapped(context, index),
+          child: SizedBox(
+            height: double.infinity,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  icon,
-                  color: iconColor,
-                  size: 23,
-                ),
-                if (notificationCount != null && notificationCount > 0)
-                  Positioned(
-                    top: -4,
-                    right: -4,
-                    child: Container(
-                      width: 6,
-                      height: 6,
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
+                const SizedBox(height: 2),
+                SizedBox(
+                  height: 24,
+                  width: 24,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    alignment: Alignment.center,
+                    children: [
+                      Icon(
+                        icon,
+                        color: iconColor,
+                        size: 24,
                       ),
-                    ),
+                      if (notificationCount != null && notificationCount > 0)
+                        Positioned(
+                          top: -2,
+                          right: -2,
+                          child: Container(
+                            width: 6,
+                            height: 6,
+                            decoration: const BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                    color: textColor,
+                    height: 1.0,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+                const SizedBox(height: 2),
               ],
             ),
-            const SizedBox(height: 5),
-            Text(
-              label,
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                fontWeight: FontWeight.w400,
-                color: textColor,
-                letterSpacing: -0.2,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
