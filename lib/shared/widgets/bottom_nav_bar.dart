@@ -19,10 +19,9 @@ class BottomNavBar extends ConsumerWidget {
         ref.watch(orderBookNotificationCountProvider);
 
     return Container(
-      // We remove the fixed height so it adapts automatically
       width: double.infinity,
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1F2C),
+        color: AppTheme.backgroundNavBar,
         border: Border(
           top: BorderSide(
             color: Colors.white.withOpacity(0.1),
@@ -30,13 +29,11 @@ class BottomNavBar extends ConsumerWidget {
           ),
         ),
       ),
-      // We use SafeArea with bottom:true to handle the bottom space automatically
       child: SafeArea(
-        top: false, // We don't need safe area at the top
-        bottom: true, // Only at the bottom
+        top: false,
+        bottom: true,
         child: Padding(
-          padding:
-              const EdgeInsets.symmetric(vertical: 8), // We reduce the padding
+          padding: const EdgeInsets.symmetric(vertical: 8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
@@ -72,15 +69,14 @@ class BottomNavBar extends ConsumerWidget {
       {int? notificationCount}) {
     bool isActive = _isActive(context, index);
 
-    // TODO: adjust with the app_theme
-    Color iconColor = isActive ? const Color(0xFF8CC541) : Colors.white;
-    Color textColor = isActive ? const Color(0xFF8CC541) : Colors.white;
+    Color iconColor = isActive ? AppTheme.activeColor : Colors.white;
+    Color textColor = isActive ? AppTheme.activeColor : Colors.white;
 
     return Expanded(
       child: InkWell(
         onTap: () => _onItemTapped(context, index),
         child: Column(
-          mainAxisSize: MainAxisSize.min, // Use minimum size to adapt
+          mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Stack(
@@ -89,7 +85,7 @@ class BottomNavBar extends ConsumerWidget {
                 Icon(
                   icon,
                   color: iconColor,
-                  size: 23, // A bit smaller
+                  size: 23,
                 ),
                 if (notificationCount != null && notificationCount > 0)
                   Positioned(
@@ -106,16 +102,14 @@ class BottomNavBar extends ConsumerWidget {
                   ),
               ],
             ),
-            const SizedBox(height: 5), // Less space
+            const SizedBox(height: 5),
             Text(
               label,
               style: GoogleFonts.inter(
-                // Use Inter font for a more modern look
-                fontSize: 12, // Smaller text
-                fontWeight: FontWeight.w400, // Lighter weight
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
                 color: textColor,
-                letterSpacing:
-                    -0.2, // Negative letter spacing for more condensed text
+                letterSpacing: -0.2,
               ),
             ),
           ],

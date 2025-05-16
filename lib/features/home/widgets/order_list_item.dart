@@ -22,7 +22,7 @@ class OrderListItem extends ConsumerWidget {
         order.premium != null ? double.tryParse(order.premium!) ?? 0.0 : 0.0;
     final isPremiumPositive = premiumValue >= 0;
     final premiumColor =
-        isPremiumPositive ? const Color(0xFF8CC63F) : const Color(0xFFE45A5A);
+        isPremiumPositive ? AppTheme.buyColor : AppTheme.sellColor;
     final premiumText = premiumValue == 0
         ? "(0%)"
         : isPremiumPositive
@@ -32,26 +32,9 @@ class OrderListItem extends ConsumerWidget {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFF171A23), // Darker background color
+        color: AppTheme.backgroundDark,
         borderRadius: BorderRadius.circular(20),
-        // More pronounced shadows for greater depth effect
-        boxShadow: [
-          // More intense main shadow
-          BoxShadow(
-            color: Colors.black.withOpacity(0.7),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
-            spreadRadius: -3,
-          ),
-          // More defined top bright border
-          BoxShadow(
-            color: Colors.white.withOpacity(0.07),
-            blurRadius: 1,
-            offset: const Offset(0, -1),
-            spreadRadius: 0,
-          ),
-        ],
-        // Very subtle border to define the outline
+        boxShadow: AppTheme.cardShadow,
         border: Border.all(
           color: Colors.white.withOpacity(0.05),
           width: 1,
@@ -83,10 +66,8 @@ class OrderListItem extends ConsumerWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: const Color(
-                            0xFF1E2230), // Same as payment method background
+                        color: AppTheme.backgroundCard,
                         borderRadius: BorderRadius.circular(14),
-                        // More defined shadow
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withOpacity(0.6),
@@ -94,7 +75,6 @@ class OrderListItem extends ConsumerWidget {
                             offset: const Offset(0, 2),
                             spreadRadius: -1,
                           ),
-                          // Illuminated top border
                           BoxShadow(
                             color: Colors.white.withOpacity(0.08),
                             blurRadius: 1,
@@ -170,7 +150,7 @@ class OrderListItem extends ConsumerWidget {
                       style: TextStyle(
                         fontSize: 16,
                         color: premiumColor,
-                        fontWeight: FontWeight.w600, // Más bold
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
@@ -184,7 +164,7 @@ class OrderListItem extends ConsumerWidget {
                 padding:
                     const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E2230),
+                  color: AppTheme.backgroundCard,
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
@@ -228,7 +208,7 @@ class OrderListItem extends ConsumerWidget {
                 padding:
                     const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E2230),
+                  color: AppTheme.backgroundCard,
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
@@ -299,7 +279,7 @@ class OrderListItem extends ConsumerWidget {
 
         // Number of trades and days
         Text(
-          '$trades trades • $daysOld days old',
+          '$trades reviews • $daysOld days old',
           style: const TextStyle(
             color: Colors.white60,
             fontSize: 12,
