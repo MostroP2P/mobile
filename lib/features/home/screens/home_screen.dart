@@ -37,7 +37,7 @@ class HomeScreen extends ConsumerWidget {
             _buildFilterButton(context, ref),
             Expanded(
               child: Container(
-                color: AppTheme.backgroundDark,
+                color: const Color(0xFF1D212C),
                 child: filteredOrders.isEmpty
                     ? const Center(
                         child: Column(
@@ -235,7 +235,8 @@ class HomeScreen extends ConsumerWidget {
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-      color: AppTheme.backgroundDark,
+      // Usar el mismo color que el fondo de la lista para que se vea como una sola sección fluida
+      color: const Color(0xFF1D212C),
       child: Align(
         alignment: Alignment.centerLeft,
         child: GestureDetector(
