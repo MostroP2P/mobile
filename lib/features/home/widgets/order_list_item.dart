@@ -235,15 +235,15 @@ class OrderListItem extends ConsumerWidget {
   }
 
   Widget _buildRatingRow(NostrEvent order) {
-    // Rating in a range of 0 to 5
     final rating = order.rating?.totalRating ?? 0.0;
-    final reviews = order.rating?.totalReviews ?? 0;
-    final daysOld = 50; // Default value
+
+    final int reviews = order.rating?.totalReviews ?? 0;
+
+    final int daysOld = order.rating?.days ?? 0;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        // Rating with number and stars
         Row(
           children: [
             Text(
@@ -254,30 +254,30 @@ class OrderListItem extends ConsumerWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(width: 6),
-            // Stars with more brightness
-            Row(
-              children: List.generate(5, (index) {
-                // Brighter amber color for stars
-                const starColor = Color(0xFFFFD700);
-                if (index < rating.floor()) {
-                  // Full star
-                  return const Icon(Icons.star, color: starColor, size: 14);
-                } else if (index == rating.floor() && rating % 1 > 0) {
-                  // Half star
-                  return const Icon(Icons.star_half,
-                      color: starColor, size: 14);
-                } else {
-                  // Empty star
-                  return Icon(Icons.star_border,
-                      color: starColor.withOpacity(0.3), size: 14);
-                }
-              }),
+            const SizedBox(width: 4),
+            SizedBox(
+              height: 20,
+              child: ListView.builder(
+                  shrinkWrap: true,
+                  scrollDirection: Axis.horizontal,
+                  itemCount: 5,
+                  itemBuilder: (context, index) {
+                    const Color starColor = Colors.amber;
+
+                    if (index < rating.floor()) {
+                      return const Icon(Icons.star, color: starColor, size: 14);
+                    } else if (index == rating.floor() &&
+                        rating - rating.floor() >= 0.5) {
+                      return const Icon(Icons.star_half,
+                          color: starColor, size: 14);
+                    } else {
+                      return Icon(Icons.star_border,
+                          color: starColor.withOpacity(0.3), size: 14);
+                    }
+                  }),
             ),
           ],
         ),
-
-        // Number of reviews and days
         Text(
           '$reviews reviews • $daysOld days old',
           style: const TextStyle(
