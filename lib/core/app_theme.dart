@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  // Color Definitions
+  // Original colors
   static const Color grey = Color(0xFFCCCCCC);
   static const Color mostroGreen = Color(0xFF8CC541);
   static const Color dark1 = Color(0xFF1D212C);
@@ -14,7 +14,34 @@ class AppTheme {
   static const Color red2 = Color(0xFFE45A5A);
   static const Color green2 = Color(0xFF739C3D);
 
-  // Padding and Margin Constants
+  // New colors
+
+  // Colors for backgrounds
+  static const Color backgroundDark =
+      Color(0xFF171A23); // Main dark background
+  static const Color backgroundCard = Color(0xFF1E2230);
+  static const Color backgroundInput = Color(0xFF252A3A);
+  static const Color backgroundInactive = Color(0xFF2A3042);
+  static const Color backgroundNavBar = Color(0xFF1A1F2C);
+
+  // Colors for text
+  static const Color textPrimary = Colors.white;
+  static const Color textSecondary = Color(0xFFCCCCCC);
+  static const Color textInactive = Color(0xFF8A8D98);
+  static const Color textSubtle = Colors.white60;
+
+  // Colors for actions
+  static const Color buyColor = Color(0xFF8CC63F);
+  static const Color sellColor = Color(0xFFEA384C);
+  static const Color activeColor = Color(0xFF8CC541);
+
+  // Colors for states
+  static const Color statusSuccess = Color(0xFF8CC541);
+  static const Color statusWarning = Color(0xFFF3CA29);
+  static const Color statusError = Color(0xFFE45A5A);
+  static const Color statusActive = Color(0xFF8CC541);
+
+  // Padding  and margin constants
   static const EdgeInsets smallPadding = EdgeInsets.all(8.0);
   static const EdgeInsets mediumPadding =
       EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0);
@@ -29,7 +56,7 @@ class AppTheme {
     return ThemeData(
       hoverColor: dark1,
       primaryColor: mostroGreen,
-      scaffoldBackgroundColor: dark1,
+      scaffoldBackgroundColor: backgroundDark,
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -53,7 +80,7 @@ class AppTheme {
       textTheme: _buildTextTheme(),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          foregroundColor: AppTheme.cream1,
+          foregroundColor: cream1,
           backgroundColor: mostroGreen,
           textStyle: GoogleFonts.robotoCondensed(
             fontWeight: FontWeight.w500,
@@ -103,10 +130,11 @@ class AppTheme {
         size: 24.0,
       ),
       listTileTheme: ListTileThemeData(
-          titleTextStyle: TextStyle(
-        color: grey,
-        fontFamily: GoogleFonts.robotoCondensed().fontFamily,
-      )),
+        titleTextStyle: TextStyle(
+          color: grey,
+          fontFamily: GoogleFonts.robotoCondensed().fontFamily,
+        ),
+      ),
     );
   }
 
@@ -115,47 +143,72 @@ class AppTheme {
       const TextTheme(
         displayLarge: TextStyle(
           fontSize: 24.0,
-        ), // For larger titles
+        ),
         displayMedium: TextStyle(
           fontWeight: FontWeight.w700,
           fontSize: 20.0,
-        ), // For medium titles
+        ),
         displaySmall: TextStyle(
           fontWeight: FontWeight.w700,
           fontSize: 16.0,
-        ), // For smaller titles
+        ),
         headlineMedium: TextStyle(
           fontWeight: FontWeight.w700,
           fontSize: 16.0,
-        ), // For subtitles
+        ),
         headlineSmall: TextStyle(
           fontWeight: FontWeight.w500,
           fontSize: 14.0,
-        ), // For secondary text
+        ),
         titleMedium: TextStyle(
           fontWeight: FontWeight.w500,
           fontSize: 16.0,
-        ), // For form labels
+        ),
         titleLarge: TextStyle(
           fontWeight: FontWeight.w500,
           fontSize: 18.0,
-        ), // For form labels
+        ),
         bodyLarge: TextStyle(
           fontWeight: FontWeight.w400,
           fontSize: 16.0,
-        ), // For body text
+        ),
         bodyMedium: TextStyle(
           fontWeight: FontWeight.w400,
           fontSize: 14.0,
-        ), // For smaller body text
+        ),
         labelLarge: TextStyle(
           fontWeight: FontWeight.w500,
           fontSize: 14.0,
-        ), // For buttons and labels
+        ),
       ),
     ).apply(
       bodyColor: cream1,
       displayColor: cream1,
     );
   }
+
+  // helpers for shadows
+  static List<BoxShadow> get cardShadow => [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.7),
+          blurRadius: 15,
+          offset: const Offset(0, 5),
+          spreadRadius: -3,
+        ),
+        BoxShadow(
+          color: Colors.white.withOpacity(0.07),
+          blurRadius: 1,
+          offset: const Offset(0, -1),
+          spreadRadius: 0,
+        ),
+      ];
+
+  static List<BoxShadow> get buttonShadow => [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.4),
+          blurRadius: 6,
+          offset: const Offset(0, 3),
+          spreadRadius: -2,
+        ),
+      ];
 }
