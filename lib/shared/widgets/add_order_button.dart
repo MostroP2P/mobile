@@ -42,7 +42,11 @@ class _AddOrderButtonState extends State<AddOrderButton>
 
   void _navigateToCreateOrder(BuildContext context, String type) {
     _toggleMenu();
-    context.push('/add_order', extra: type);
+    if (type == 'buy') {
+      context.push('/add_order', extra: {'orderType': 'buy'});
+    } else {
+      context.push('/add_order', extra: {'orderType': 'sell'});
+    }
   }
 
   @override
