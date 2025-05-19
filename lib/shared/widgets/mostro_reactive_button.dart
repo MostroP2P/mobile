@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
+import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 
@@ -71,22 +72,31 @@ class _MostroReactiveButtonState extends ConsumerState<MostroReactiveButton> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen<AsyncValue<dynamic>>(mostroMessageStreamProvider(widget.orderId),
-        (prev, next) {
-      next.whenData((msg) {
-        if (msg == null || msg.action == _lastSeenAction) return;
-        _lastSeenAction = msg.action;
-        if (!_loading) return;
-        if (msg.action == actions.Action.cantDo ||
-            msg.action == widget.action) {
-          setState(() {
-            _loading = false;
-            _showSuccess =
-                widget.showSuccessIndicator && msg.action == widget.action;
-          });
-        }
-      });
-    });
+    final orderState = ref.watch(orderNotifierProvider(widget.orderId));
+    if (orderState.action != widget.action) {
+      return const SizedBox.shrink();
+    }
+
+    ref.listen(
+      mostroMessageStreamProvider(widget.orderId),
+      (_, next) {
+        next.whenData(
+          (msg) {
+            if (msg == null || msg.action == _lastSeenAction) return;
+            _lastSeenAction = msg.action;
+            if (!_loading) return;
+            if (msg.action == actions.Action.cantDo ||
+                msg.action == widget.action) {
+              setState(() {
+                _loading = false;
+                _showSuccess =
+                    widget.showSuccessIndicator && msg.action == widget.action;
+              });
+            }
+          },
+        );
+      },
+    );
 
     Widget childWidget;
     if (_loading) {

@@ -3,17 +3,15 @@ import 'package:logger/logger.dart';
 import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models.dart';
+import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 
-class AbstractMostroNotifier extends StateNotifier<MostroMessage> {
+class AbstractMostroNotifier extends StateNotifier<OrderState> {
   final String orderId;
   final Ref ref;
   final logger = Logger();
-
-  Status status = Status.pending;
-  Action action = Action.newOrder;
 
   late Session session;
 
@@ -22,7 +20,8 @@ class AbstractMostroNotifier extends StateNotifier<MostroMessage> {
   AbstractMostroNotifier(
     this.orderId,
     this.ref,
-  ) : super(MostroMessage(action: Action.newOrder, id: orderId));
+  ) : super(OrderState(
+            action: Action.newOrder, status: Status.pending, order: null));
 
   void subscribe() {
     subscription = ref.listen(
@@ -52,33 +51,47 @@ class AbstractMostroNotifier extends StateNotifier<MostroMessage> {
 
     switch (event.action) {
       case Action.newOrder:
-        action = event.action;
-        state = event;
-        navProvider.go('/order_confirmed/${event.id!}');
+        state = OrderState(
+          action: event.action,
+          status: event.getPayload<Order>()!.status,
+          order: event.getPayload<Order>()!,
+        );
         break;
       case Action.payInvoice:
-        action = event.action;
-        state = event;
+        state = OrderState(
+          action: event.action,
+          status: event.getPayload<Order>()!.status,
+          order: event.getPayload<Order>()!,
+        );
         navProvider.go('/pay_invoice/${event.id!}');
         break;
       case Action.fiatSentOk:
-        action = event.action;
-        state = event;
+        state = OrderState(
+          action: event.action,
+          status: event.getPayload<Order>()!.status,
+          order: event.getPayload<Order>()!,
+        );
         final peer = event.getPayload<Peer>();
         notifProvider.showInformation(event.action, values: {
           'buyer_npub': peer?.publicKey ?? '{buyer_npub}',
         });
         break;
       case Action.released:
-        action = event.action;
-        state = event;
+        state = OrderState(
+          action: event.action,
+          status: event.getPayload<Order>()!.status,
+          order: event.getPayload<Order>()!,
+        );
         notifProvider.showInformation(event.action, values: {
           'seller_npub': '',
         });
         break;
       case Action.canceled:
-        action = event.action;
-        state = event;
+        state = OrderState(
+          action: event.action,
+          status: event.getPayload<Order>()!.status,
+          order: event.getPayload<Order>()!,
+        );
         ref
             .read(mostroStorageProvider)
             .deleteAllMessagesByOrderId(session.orderId!);

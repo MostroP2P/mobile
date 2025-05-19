@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models.dart';
+import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/features/order/notfiers/abstract_mostro_notifier.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
@@ -13,11 +14,15 @@ class AddOrderNotifier extends AbstractMostroNotifier {
 
   AddOrderNotifier(super.orderId, super.ref) {
     mostroService = ref.read(mostroServiceProvider);
+    requestId = _requestIdFromOrderId(orderId);
+    subscribe();
+  }
+
+  int _requestIdFromOrderId(String orderId) {
     final uuid = orderId.replaceAll('-', '');
     final timestamp = DateTime.now().microsecondsSinceEpoch;
-    requestId =
-        (int.parse(uuid.substring(0, 8), radix: 16) ^ timestamp) & 0x7FFFFFFF;
-    subscribe();
+    return (int.parse(uuid.substring(0, 8), radix: 16) ^ timestamp) &
+        0x7FFFFFFF;
   }
 
   @override
@@ -35,7 +40,7 @@ class AddOrderNotifier extends AbstractMostroNotifier {
                   logger.i('AddOrderNotifier: received ${msg.action}');
                 }
               } else if (msg.payload is CantDo) {
-                _handleCantDo(msg);
+                handleEvent(msg);
               }
             }
           },
@@ -46,18 +51,10 @@ class AddOrderNotifier extends AbstractMostroNotifier {
     );
   }
 
-  void _handleCantDo(MostroMessage message) {
-    final cantDo = message.getPayload<CantDo>();
-    ref.read(notificationProvider.notifier).showInformation(
-      message.action,
-      values: {
-        'action': cantDo?.cantDoReason.toString(),
-      },
-    );
-  }
-
   Future<void> _confirmOrder(MostroMessage message) async {
-    state = message;
+    final order = message.getPayload<Order>();
+    
+    state = OrderState(status: order!.status, action: message.action, order: order);
     session.orderId = message.id;
     ref.read(sessionNotifierProvider.notifier).saveSession(session);
     ref.read(orderNotifierProvider(message.id!).notifier).subscribe();
@@ -68,7 +65,7 @@ class AddOrderNotifier extends AbstractMostroNotifier {
   }
 
   Future<void> submitOrder(Order order) async {
-    state = MostroMessage<Order>(
+    final message = MostroMessage<Order>(
       action: Action.newOrder,
       id: null,
       requestId: requestId,
@@ -80,6 +77,11 @@ class AddOrderNotifier extends AbstractMostroNotifier {
       role: order.kind == OrderType.buy ? Role.buyer : Role.seller,
     );
     mostroService.subscribe(session);
-    await mostroService.submitOrder(state);
+    await mostroService.submitOrder(message);
+    state = OrderState(
+      action: message.action,
+      status: Status.pending,
+      order: order,
+    );
   }
 }

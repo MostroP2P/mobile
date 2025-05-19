@@ -1,14 +1,14 @@
 import 'dart:async';
+import 'package:collection/collection.dart';
 import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models/order.dart';
+import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/features/order/notfiers/abstract_mostro_notifier.dart';
 import 'package:mostro_mobile/services/mostro_service.dart';
 
 class OrderNotifier extends AbstractMostroNotifier {
   late final MostroService mostroService;
-
-  late Order order;
 
   OrderNotifier(super.orderId, super.ref) {
     mostroService = ref.read(mostroServiceProvider);
@@ -18,15 +18,18 @@ class OrderNotifier extends AbstractMostroNotifier {
 
   Future<void> sync() async {
     final storage = ref.read(mostroStorageProvider);
-    final latestOrder =
-        await storage.getLatestMessageOfTypeById<Order>(orderId);
-    if (latestOrder != null) {
-      order = latestOrder.getPayload<Order>()!;
-      status = order.status;
+    final messages = await storage.getAllMessagesForOrderId(orderId);
+    if (messages.isEmpty) {
+      return;
     }
-    final newState = await storage.getLatestMessageById(orderId);
-    if (newState != null) {
-      state = newState;
+    final msg = messages.firstWhereOrNull((m) => m.action != Action.cantDo);
+    if (msg?.payload is Order) {
+      state = OrderState(status: msg!.getPayload<Order>()!.status, action: msg.action, order: msg.getPayload<Order>()!);
+    } else {
+      final orderMsg = await storage.getLatestMessageOfTypeById<Order>(orderId);
+      if (orderMsg != null) {
+        state = OrderState(status: orderMsg.getPayload<Order>()!.status, action: orderMsg.action, order: orderMsg.getPayload<Order>()!);
+      }
     }
   }
 
@@ -35,7 +38,7 @@ class OrderNotifier extends AbstractMostroNotifier {
     final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
     session = await sessionNotifier.newSession(
       orderId: orderId,
-      role: order.kind == OrderType.buy ? Role.buyer : Role.seller,
+      role: Role.buyer,
     );
     mostroService.subscribe(session);
     await mostroService.takeSellOrder(
@@ -49,7 +52,7 @@ class OrderNotifier extends AbstractMostroNotifier {
     final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
     session = await sessionNotifier.newSession(
       orderId: orderId,
-      role: order.kind == OrderType.buy ? Role.buyer : Role.seller,
+      role: Role.seller,
     );
     mostroService.subscribe(session);
     await mostroService.takeBuyOrder(
@@ -58,7 +61,11 @@ class OrderNotifier extends AbstractMostroNotifier {
     );
   }
 
-  Future<void> sendInvoice(String orderId, String invoice, int? amount) async {
+  Future<void> sendInvoice(
+    String orderId,
+    String invoice,
+    int? amount,
+  ) async {
     await mostroService.sendInvoice(
       orderId,
       invoice,
@@ -88,5 +95,4 @@ class OrderNotifier extends AbstractMostroNotifier {
       rating,
     );
   }
-
 }

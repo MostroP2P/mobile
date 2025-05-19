@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
+import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/features/order/notfiers/add_order_notifier.dart';
 import 'package:mostro_mobile/features/order/notfiers/order_notifier.dart';
 import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
@@ -8,7 +9,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'order_notifier_provider.g.dart';
 
 final orderNotifierProvider =
-    StateNotifierProvider.family<OrderNotifier, MostroMessage, String>(
+    StateNotifierProvider.family<OrderNotifier, OrderState, String>(
   (ref, orderId) {
     return OrderNotifier(
       orderId,
@@ -18,7 +19,7 @@ final orderNotifierProvider =
 );
 
 final addOrderNotifierProvider =
-    StateNotifierProvider.family<AddOrderNotifier, MostroMessage, String>(
+    StateNotifierProvider.family<AddOrderNotifier, OrderState, String>(
   (ref, orderId) {
     return AddOrderNotifier(
       orderId,

@@ -211,8 +211,8 @@ class TradeDetailScreen extends ConsumerWidget {
       BuildContext context, WidgetRef ref, TradeState tradeState) {
     final session = ref.watch(sessionProvider(orderId));
     final userRole = session?.role;
-
-    final userActions = MostroFSM.actionsForStatus(tradeState.status);
+  
+    final userActions = MostroFSM.possibleActions(tradeState.status, userRole!);
     if (userActions.isEmpty) return [];
 
     final widgets = <Widget>[];

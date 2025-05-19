@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
-import 'package:mostro_mobile/data/models/payment_request.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
@@ -23,7 +22,7 @@ class _PayLightningInvoiceScreenState
   @override
   Widget build(BuildContext context) {
     final order = ref.read(orderNotifierProvider(widget.orderId));
-    final lnInvoice = order.getPayload<PaymentRequest>()?.lnInvoice ?? '';
+    final lnInvoice = order.paymentRequest?.lnInvoice ?? '';
     final orderNotifier =
         ref.read(orderNotifierProvider(widget.orderId).notifier);
 

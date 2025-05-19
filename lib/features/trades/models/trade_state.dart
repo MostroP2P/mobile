@@ -1,10 +1,10 @@
 import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/data/models/order.dart';
-import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
+import 'package:mostro_mobile/data/models/enums/action.dart';
 
 class TradeState {
   final Status status;
-  final actions.Action? action;
+  final Action? action;
   final Order? order;
 
   TradeState({
@@ -30,7 +30,7 @@ class TradeState {
 
   TradeState copyWith({
     Status? status,
-    actions.Action? action,
+    Action? action,
     Order? order,
   }) {
     return TradeState(
