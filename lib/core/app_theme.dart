@@ -4,15 +4,15 @@ import 'package:google_fonts/google_fonts.dart';
 class AppTheme {
   // Original colors
   static const Color grey = Color(0xFFCCCCCC);
-  static const Color mostroGreen = Color(0xFF8CC541);
+  static const Color mostroGreen = Color(0xFF9CD651);
   static const Color dark1 = Color(0xFF1D212C);
   static const Color grey2 = Color(0xFF92949A);
   static const Color yellow = Color(0xFFF3CA29);
-  static const Color red1 = Color(0xFFCA3C3C);
+  static const Color red1 = Color(0xFFD84D4D);
   static const Color dark2 = Color(0xFF303544);
   static const Color cream1 = Color(0xFFF9F8F1);
-  static const Color red2 = Color(0xFFE45A5A);
-  static const Color green2 = Color(0xFF739C3D);
+  static const Color red2 = Color(0xFFEF6A6A);
+  static const Color green2 = Color(0xFF84AC4D);
 
   // New colors
 
@@ -31,15 +31,15 @@ class AppTheme {
   static const Color textSubtle = Colors.white60;
 
   // Colors for actions
-  static const Color buyColor = Color(0xFF8CC63F);
-  static const Color sellColor = Color(0xFFEA384C);
-  static const Color activeColor = Color(0xFF8CC541);
+  static const Color buyColor = Color(0xFF9DD64F);
+  static const Color sellColor = Color(0xFFF5485C);
+  static const Color activeColor = Color(0xFF9CD651);
 
   // Colors for states
-  static const Color statusSuccess = Color(0xFF8CC541);
+  static const Color statusSuccess = Color(0xFF9CD651);
   static const Color statusWarning = Color(0xFFF3CA29);
-  static const Color statusError = Color(0xFFE45A5A);
-  static const Color statusActive = Color(0xFF8CC541);
+  static const Color statusError = Color(0xFFEF6A6A);
+  static const Color statusActive = Color(0xFF9CD651);
 
   // Padding  and margin constants
   static const EdgeInsets smallPadding = EdgeInsets.all(8.0);

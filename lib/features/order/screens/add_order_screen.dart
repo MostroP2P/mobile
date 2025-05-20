@@ -82,12 +82,12 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
               // Nuevo: Tarjeta con esquinas redondeadas para el tipo de orden
               Container(
                 width: double.infinity,
-                margin: const EdgeInsets.only(bottom: 0), // Sin margen inferior
+                margin: const EdgeInsets.only(bottom: 0),
                 decoration: const BoxDecoration(
                   color: Color(0xFF1E2230),
                   borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(12),
-                    bottomRight: Radius.circular(12),
+                    topLeft: Radius.circular(12),
+                    topRight: Radius.circular(12),
                   ),
                 ),
                 child: Padding(
@@ -110,12 +110,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
               Expanded(
                 child: SingleChildScrollView(
                   controller: _scrollController,
-                  padding: const EdgeInsets.only(
-                    left: 16,
-                    right: 16,
-                    top: 16,
-                    bottom: 80, // Espacio para los botones
-                  ),
+                  padding: const EdgeInsets.all(16),
                   child: Form(
                     key: _formKey,
                     child: Column(
@@ -133,70 +128,63 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
                         const SizedBox(height: 16),
                         if (_orderType == OrderType.buy)
                           _buildLightningAddressSection(),
+                        // Add buttons at the end of the form
+                        const SizedBox(height: 32),
+                        Container(
+                          decoration: BoxDecoration(
+                            border: Border(
+                              top: BorderSide(
+                                color: Colors.white.withOpacity(0.1),
+                                width: 1,
+                              ),
+                            ),
+                          ),
+                          padding: const EdgeInsets.only(top: 16),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              // Botón Cancelar
+                              SizedBox(
+                                width: 100,
+                                child: ElevatedButton(
+                                  onPressed: () => context.pop(),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF1E2230),
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  child: const Text('Cancel'),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              // Botón Enviar
+                              SizedBox(
+                                width: 100,
+                                child: ElevatedButton(
+                                  onPressed: _submitOrder,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF764BA2),
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  child: const Text('Submit'),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ),
                 ),
               ),
             ],
-          ),
-
-          // Botones de acción fijos al fondo
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFF171A23),
-                border: Border(
-                  top: BorderSide(
-                    color: Colors.white.withOpacity(0.1),
-                    width: 1,
-                  ),
-                ),
-              ),
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                mainAxisAlignment:
-                    MainAxisAlignment.end, // Alineado a la derecha
-                children: [
-                  // Botón Cancelar
-                  SizedBox(
-                    width: 100,
-                    child: ElevatedButton(
-                      onPressed: () => context.pop(),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1E2230),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text('Cancel'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  // Botón Enviar
-                  SizedBox(
-                    width: 100,
-                    child: ElevatedButton(
-                      onPressed: _submitOrder,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF764BA2),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text('Submit'),
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ),
         ],
       ),
