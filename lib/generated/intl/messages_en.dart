@@ -65,7 +65,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "I have informed ${seller_npub} that you have sent the fiat money. When the seller confirms they have received your fiat money, they should release the funds. If they refuse, you can open a dispute.";
 
   static String m17(buyer_npub) =>
-      "${buyer_npub} has informed that they have sent you the fiat money. Once you confirm receipt, please release the funds. After releasing, the money will go to the buyer and there will be no turning back, so only proceed if you are sure. If you want to release the Sats to the buyer, send me release-order-message.";
+      "${buyer_npub} has informed that they have sent you the fiat money. Once you confirm receipt, please release the funds. After releasing, the money will go to the buyer and there will be no turning back, so only proceed if you are sure. If you want to release the Sats to the buyer, tap the release button.";
 
   static String m18(seller_npub, id, fiat_code, fiat_amount, payment_method) =>
       "Get in touch with the seller, this is their npub ${seller_npub} to get the details on how to send the fiat money for the order ${id}, you must send ${fiat_code} ${fiat_amount} using ${payment_method}. Once you send the fiat money, please let me know with fiat-sent.";
