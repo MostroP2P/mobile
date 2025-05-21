@@ -51,19 +51,22 @@ class _AddOrderButtonState extends State<AddOrderButton>
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      alignment: Alignment.bottomRight,
+    return SizedBox(
+      height: 130, // Altura suficiente para mostrar ambos elementos
+      width: 200, // Ancho suficiente para los botones
       child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.end,
+        mainAxisAlignment:
+            MainAxisAlignment.end, // Alinea los elementos al final
+        crossAxisAlignment: CrossAxisAlignment.end, // Alinea a la derecha
         children: [
-          AnimatedOpacity(
-            opacity: _isMenuOpen ? 1.0 : 0.0,
+          // Opciones de menú que aparecen sobre el botón principal
+          AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              height: _isMenuOpen ? 45 : 0,
-              margin: const EdgeInsets.only(bottom: 10),
+            height:
+                _isMenuOpen ? 45 : 0, // Se expande al abrir, colapsa al cerrar
+            margin: const EdgeInsets.only(bottom: 10),
+            child: Opacity(
+              opacity: _isMenuOpen ? 1.0 : 0.0,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -106,6 +109,8 @@ class _AddOrderButtonState extends State<AddOrderButton>
               ),
             ),
           ),
+
+          // Botón principal siempre visible
           FloatingActionButton(
             onPressed: _toggleMenu,
             backgroundColor:

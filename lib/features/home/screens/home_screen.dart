@@ -21,65 +21,68 @@ class HomeScreen extends ConsumerWidget {
       backgroundColor: AppTheme.backgroundDark,
       appBar: _buildAppBar(),
       drawer: const MostroAppDrawer(),
-      // Creating a custom floating action button position
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 70), // Move above navbar
-        child: const AddOrderButton(),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      body: RefreshIndicator(
-        onRefresh: () async {
-          return await ref.refresh(filteredOrdersProvider);
-        },
-        child: Column(
-          children: [
-            _buildTabs(ref),
-            _buildFilterButton(context, ref),
-            Expanded(
-              child: Container(
-                color: const Color(0xFF1D212C),
-                child: filteredOrders.isEmpty
-                    ? const Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.search_off,
-                              color: Colors.white30,
-                              size: 48,
+      body: Stack(
+        children: [
+          RefreshIndicator(
+            onRefresh: () async {
+              return await ref.refresh(filteredOrdersProvider);
+            },
+            child: Column(
+              children: [
+                _buildTabs(ref),
+                _buildFilterButton(context, ref),
+                Expanded(
+                  child: Container(
+                    color: const Color(0xFF1D212C),
+                    child: filteredOrders.isEmpty
+                        ? const Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.search_off,
+                                  color: Colors.white30,
+                                  size: 48,
+                                ),
+                                SizedBox(height: 16),
+                                Text(
+                                  'No orders available',
+                                  style: TextStyle(
+                                    color: Colors.white60,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                Text(
+                                  'Try changing filter settings or check back later',
+                                  style: TextStyle(
+                                    color: Colors.white38,
+                                    fontSize: 14,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
                             ),
-                            SizedBox(height: 16),
-                            Text(
-                              'No orders available',
-                              style: TextStyle(
-                                color: Colors.white60,
-                                fontSize: 16,
-                              ),
-                            ),
-                            Text(
-                              'Try changing filter settings or check back later',
-                              style: TextStyle(
-                                color: Colors.white38,
-                                fontSize: 14,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      )
-                    : ListView.builder(
-                        itemCount: filteredOrders.length,
-                        padding: const EdgeInsets.only(bottom: 80, top: 6),
-                        itemBuilder: (context, index) {
-                          final order = filteredOrders[index];
-                          return OrderListItem(order: order);
-                        },
-                      ),
-              ),
+                          )
+                        : ListView.builder(
+                            itemCount: filteredOrders.length,
+                            padding: const EdgeInsets.only(bottom: 80, top: 6),
+                            itemBuilder: (context, index) {
+                              final order = filteredOrders[index];
+                              return OrderListItem(order: order);
+                            },
+                          ),
+                  ),
+                ),
+                const BottomNavBar(),
+              ],
             ),
-            const BottomNavBar(),
-          ],
-        ),
+          ),
+          Positioned(
+            bottom: 100,
+            right: 16,
+            child: const AddOrderButton(),
+          ),
+        ],
       ),
     );
   }
@@ -235,7 +238,6 @@ class HomeScreen extends ConsumerWidget {
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-      // Usar el mismo color que el fondo de la lista para que se vea como una sola sección fluida
       color: const Color(0xFF1D212C),
       child: Align(
         alignment: Alignment.centerLeft,

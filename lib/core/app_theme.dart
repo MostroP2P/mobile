@@ -17,8 +17,7 @@ class AppTheme {
   // New colors
 
   // Colors for backgrounds
-  static const Color backgroundDark =
-      Color(0xFF171A23); // Main dark background
+  static const Color backgroundDark = Color(0xFF171A23); // Main dark background
   static const Color backgroundCard = Color(0xFF1E2230);
   static const Color backgroundInput = Color(0xFF252A3A);
   static const Color backgroundInactive = Color(0xFF2A3042);
@@ -32,7 +31,7 @@ class AppTheme {
 
   // Colors for actions
   static const Color buyColor = Color(0xFF9DD64F);
-  static const Color sellColor = Color(0xFFF5485C);
+  static const Color sellColor = Color(0xFFFF8A8A);
   static const Color activeColor = Color(0xFF9CD651);
 
   // Colors for states
