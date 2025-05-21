@@ -7,6 +7,8 @@ import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
+import 'package:mostro_mobile/features/order/providers/payment_methods_provider.dart';
+import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_reactive_button.dart';
 import 'package:uuid/uuid.dart';
 
@@ -22,11 +24,16 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
   final _fiatAmountController = TextEditingController();
   final _lightningAddressController = TextEditingController();
   final _scrollController = ScrollController();
+  final _customPaymentMethodController = TextEditingController();
 
   bool _marketRate = true;
   double _premiumValue = 0.0;
   int? _requestId;
   OrderType _orderType = OrderType.sell;
+
+  // Lista de métodos de pago seleccionados
+  List<String> _selectedPaymentMethods = [];
+  bool _showCustomPaymentMethod = false;
 
   @override
   void initState() {
@@ -52,6 +59,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
     _scrollController.dispose();
     _fiatAmountController.dispose();
     _lightningAddressController.dispose();
+    _customPaymentMethodController.dispose();
     super.dispose();
   }
 
@@ -151,7 +159,8 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFF1E2230),
                                     foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 12),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(8),
                                     ),
@@ -168,7 +177,8 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFF764BA2),
                                     foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 12),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(8),
                                     ),
@@ -192,6 +202,9 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
   }
 
   Widget _buildCurrencySection() {
+    final selectedFiatCode = ref.watch(selectedFiatCodeProvider) ?? 'USD';
+    final currenciesAsync = ref.watch(currencyCodesProvider);
+
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFF1E2230),
@@ -212,53 +225,69 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
               ),
             ),
           ),
-          Container(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF764BA2).withOpacity(0.3),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Center(
-                    child: Text(
-                      '\$',
-                      style: TextStyle(color: Color(0xFF8CC63F), fontSize: 18),
+          InkWell(
+            onTap: () {
+              _showCurrencySelectionDialog();
+            },
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF764BA2).withOpacity(0.3),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Center(
+                      child: Text(
+                        '\$',
+                        style:
+                            TextStyle(color: Color(0xFF8CC63F), fontSize: 18),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Image.asset(
-                            'assets/flags/us.png',
-                            width: 24,
-                            height: 16,
-                            errorBuilder: (context, error, stackTrace) {
-                              return const Text('🇺🇸',
-                                  style: TextStyle(fontSize: 18));
-                            },
-                          ),
-                          const SizedBox(width: 8),
-                          const Text(
-                            'USD - US Dollar',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                        ],
-                      ),
-                      const Icon(Icons.keyboard_arrow_down,
-                          color: Colors.white),
-                    ],
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: currenciesAsync.when(
+                      loading: () => const Text('Loading currencies...',
+                          style: TextStyle(color: Colors.white)),
+                      error: (_, __) => const Text('Error loading currencies',
+                          style: TextStyle(color: Colors.red)),
+                      data: (currencies) {
+                        final currency = currencies[selectedFiatCode];
+                        String flag = '🏳️';
+                        String name = 'US Dollar';
+
+                        if (currency != null) {
+                          flag = currency.emoji;
+                          name = currency.name;
+                        }
+
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Text(flag,
+                                    style: const TextStyle(fontSize: 18)),
+                                const SizedBox(width: 8),
+                                Text(
+                                  '$selectedFiatCode - $name',
+                                  style: const TextStyle(color: Colors.white),
+                                ),
+                              ],
+                            ),
+                            const Icon(Icons.keyboard_arrow_down,
+                                color: Colors.white),
+                          ],
+                        );
+                      },
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           Container(
@@ -268,6 +297,91 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  void _showCurrencySelectionDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: const Color(0xFF1E2230),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AppBar(
+                backgroundColor: const Color(0xFF252a3a),
+                title: const Text('Select Currency',
+                    style: TextStyle(color: Colors.white)),
+                leading: IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+                centerTitle: true,
+                elevation: 0,
+              ),
+              Flexible(
+                child: Consumer(
+                  builder: (context, ref, child) {
+                    final currenciesAsync = ref.watch(currencyCodesProvider);
+                    return currenciesAsync.when(
+                      loading: () =>
+                          const Center(child: CircularProgressIndicator()),
+                      error: (_, __) => Center(
+                        child: Text(
+                          'Error loading currencies',
+                          style: TextStyle(color: Colors.red.shade300),
+                        ),
+                      ),
+                      data: (currencies) {
+                        final selectedCode =
+                            ref.watch(selectedFiatCodeProvider);
+                        final sortedCurrencies = currencies.entries.toList()
+                          ..sort((a, b) => a.key.compareTo(b.key));
+
+                        return ListView.builder(
+                          itemCount: sortedCurrencies.length,
+                          itemBuilder: (context, index) {
+                            final entry = sortedCurrencies[index];
+                            final code = entry.key;
+                            final currency = entry.value;
+                            final isSelected = code == selectedCode;
+
+                            return ListTile(
+                              leading: Text(
+                                currency.emoji.isNotEmpty
+                                    ? currency.emoji
+                                    : '🏳️',
+                                style: const TextStyle(fontSize: 20),
+                              ),
+                              title: Text(
+                                '$code - ${currency.name}',
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                              trailing: isSelected
+                                  ? const Icon(Icons.check,
+                                      color: Color(0xFF8CC63F))
+                                  : null,
+                              onTap: () {
+                                ref
+                                    .read(selectedFiatCodeProvider.notifier)
+                                    .state = code;
+                                Navigator.of(context).pop();
+                              },
+                            );
+                          },
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -335,6 +449,20 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
   }
 
   Widget _buildPaymentMethodsSection() {
+    // Lista de métodos de pago disponibles para mostrar
+    final availableMethods = [
+      'Bank Transfer',
+      'Cash in person',
+      'Wise',
+      'Revolut',
+      'Other'
+    ];
+
+    // Texto a mostrar cuando no hay métodos seleccionados o cuando hay selecciones
+    final displayText = _selectedPaymentMethods.isEmpty
+        ? 'Select payment methods'
+        : _selectedPaymentMethods.join(', ');
+
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFF1E2230),
@@ -353,39 +481,72 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
               ),
             ),
           ),
-          Container(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF8CC63F).withOpacity(0.3),
-                    shape: BoxShape.circle,
+          InkWell(
+            onTap: () {
+              _showPaymentMethodsDialog(availableMethods);
+            },
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF8CC63F).withOpacity(0.3),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.credit_card,
+                      color: Color(0xFF8CC63F),
+                      size: 18,
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.credit_card,
-                    color: Color(0xFF8CC63F),
-                    size: 18,
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            displayText,
+                            style: TextStyle(
+                              color: _selectedPaymentMethods.isEmpty
+                                  ? Colors.grey
+                                  : Colors.white,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
+                        const Icon(Icons.keyboard_arrow_down,
+                            color: Colors.white),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: const [
-                      Text(
-                        'Select payment methods',
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                      Icon(Icons.keyboard_arrow_down, color: Colors.white),
-                    ],
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
+          if (_showCustomPaymentMethod) ...[
+            // Mostrar campo para método personalizado
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              child: TextField(
+                controller: _customPaymentMethodController,
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(
+                  hintText: 'Enter custom payment method',
+                  hintStyle: TextStyle(color: Colors.grey),
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colors.white24),
+                  ),
+                  focusedBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFF8CC63F)),
+                  ),
+                ),
+              ),
+            ),
+          ],
           Container(
             height: 1,
             color: Colors.white.withOpacity(0.1),
@@ -393,6 +554,117 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  // Muestra el diálogo para seleccionar métodos de pago
+  void _showPaymentMethodsDialog(List<String> availableMethods) {
+    // Asegurarnos de que 'Other' esté siempre disponible
+    if (!availableMethods.contains('Other')) {
+      availableMethods = [...availableMethods, 'Other'];
+    }
+
+    // Crear una copia local de los métodos seleccionados para el diálogo
+    List<String> dialogSelectedMethods =
+        List<String>.from(_selectedPaymentMethods);
+    bool dialogShowOtherField = dialogSelectedMethods.contains('Other');
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: const Color(0xFF1E2230),
+              title: const Text(
+                'Select Payment Methods',
+                style: TextStyle(color: Colors.white, fontSize: 18),
+              ),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ...availableMethods.map((method) => CheckboxListTile(
+                            title: Text(method,
+                                style: const TextStyle(color: Colors.white)),
+                            value: dialogSelectedMethods.contains(method),
+                            activeColor: const Color(0xFF8CC63F),
+                            checkColor: Colors.black,
+                            contentPadding: EdgeInsets.zero,
+                            onChanged: (selected) {
+                              setDialogState(() {
+                                if (selected == true) {
+                                  dialogSelectedMethods.add(method);
+                                  if (method == 'Other') {
+                                    dialogShowOtherField = true;
+                                  }
+                                } else {
+                                  dialogSelectedMethods.remove(method);
+                                  if (method == 'Other') {
+                                    dialogShowOtherField = false;
+                                  }
+                                }
+                              });
+                            },
+                          )),
+                      if (dialogShowOtherField) ...[
+                        // Mostrar campo para método personalizado en el diálogo
+                        const SizedBox(height: 16),
+                        StatefulBuilder(
+                          builder: (context, setState) {
+                            String customValue =
+                                _customPaymentMethodController.text;
+                            return TextField(
+                              controller:
+                                  TextEditingController(text: customValue),
+                              style: const TextStyle(color: Colors.white),
+                              decoration: const InputDecoration(
+                                hintText: 'Enter custom payment method',
+                                hintStyle: TextStyle(color: Colors.grey),
+                                enabledBorder: UnderlineInputBorder(
+                                  borderSide: BorderSide(color: Colors.white24),
+                                ),
+                                focusedBorder: UnderlineInputBorder(
+                                  borderSide:
+                                      BorderSide(color: Color(0xFF8CC63F)),
+                                ),
+                              ),
+                              onChanged: (value) {
+                                customValue = value;
+                                _customPaymentMethodController.text = value;
+                              },
+                            );
+                          },
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancel',
+                      style: TextStyle(color: Colors.white70)),
+                ),
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _selectedPaymentMethods = dialogSelectedMethods;
+                      _showCustomPaymentMethod = dialogShowOtherField;
+                    });
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Confirm',
+                      style: TextStyle(color: Color(0xFF8CC63F))),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 
