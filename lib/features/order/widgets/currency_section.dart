@@ -13,7 +13,7 @@ class CurrencySection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final selectedFiatCode = ref.watch(selectedFiatCodeProvider) ?? 'USD';
+    final selectedFiatCode = ref.watch(selectedFiatCodeProvider);
     final currenciesAsync = ref.watch(currencyCodesProvider);
 
     return FormSection(

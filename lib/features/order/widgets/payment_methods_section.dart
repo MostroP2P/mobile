@@ -20,7 +20,7 @@ class PaymentMethodsSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final selectedFiatCode = ref.watch(selectedFiatCodeProvider) ?? 'USD';
+    final selectedFiatCode = ref.watch(selectedFiatCodeProvider);
 
     final paymentMethodsData = ref.watch(paymentMethodsDataProvider);
 

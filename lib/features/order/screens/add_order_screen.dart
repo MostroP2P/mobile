@@ -232,7 +232,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
     if (_formKey.currentState?.validate() ?? false) {
       final selectedFiatCode = ref.read(selectedFiatCodeProvider);
 
-      if (selectedFiatCode == null || selectedFiatCode.isEmpty) {
+      if (selectedFiatCode.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Please select a currency'),
