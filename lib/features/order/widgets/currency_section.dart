@@ -65,91 +65,136 @@ class CurrencySection extends ConsumerWidget {
   }
 
   void _showCurrencySelectionDialog(BuildContext context, WidgetRef ref, VoidCallback onCurrencySelected) {
+    // State for search query
+    String searchQuery = '';
+    
     showDialog(
       context: context,
       builder: (context) {
-        return Dialog(
-          backgroundColor: const Color(0xFF1E2230),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AppBar(
-                backgroundColor: const Color(0xFF252a3a),
-                title: const Text('Select Currency',
-                    style: TextStyle(color: Colors.white)),
-                leading: IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-                centerTitle: true,
-                elevation: 0,
-              ),
-              Flexible(
-                child: Consumer(
-                  builder: (context, ref, child) {
-                    final currenciesAsync = ref.watch(currencyCodesProvider);
-                    return currenciesAsync.when(
-                      loading: () =>
-                          const Center(child: CircularProgressIndicator()),
-                      error: (_, __) => Center(
-                        child: Text(
-                          'Error loading currencies',
-                          style: TextStyle(color: Colors.red.shade300),
-                        ),
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Dialog(
+              backgroundColor: const Color(0xFF1E2230),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AppBar(
+                    backgroundColor: const Color(0xFF252a3a),
+                    title: const Text('Select Currency',
+                        style: TextStyle(color: Colors.white)),
+                    leading: IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                    centerTitle: true,
+                    elevation: 0,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                    child: Container(
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF252a3a),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFF8CC63F).withOpacity(0.3), width: 1),
                       ),
-                      data: (currencies) {
-                        final selectedCode =
-                            ref.watch(selectedFiatCodeProvider);
-                        final sortedCurrencies = currencies.entries.toList()
-                          ..sort((a, b) => a.key.compareTo(b.key));
+                      child: TextField(
+                        textAlign: TextAlign.left,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          hintText: 'Search currencies...',
+                          hintStyle: const TextStyle(color: Colors.grey),
+                          prefixIcon: const Icon(Icons.search, color: Colors.grey, size: 20),
+                          filled: false,
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 14.0),
+                        ),
+                        onChanged: (value) {
+                          setState(() {
+                            searchQuery = value.toLowerCase();
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+                  Flexible(
+                    child: Consumer(
+                      builder: (context, ref, child) {
+                        final currenciesAsync = ref.watch(currencyCodesProvider);
+                        return currenciesAsync.when(
+                          loading: () => const Center(child: CircularProgressIndicator()),
+                          error: (_, __) => Center(
+                            child: Text(
+                              'Error loading currencies',
+                              style: TextStyle(color: Colors.red.shade300),
+                            ),
+                          ),
+                          data: (currencies) {
+                            final selectedCode = ref.watch(selectedFiatCodeProvider);
+                            final filteredCurrencies = currencies.entries
+                                .where((entry) {
+                                  final code = entry.key.toLowerCase();
+                                  final name = entry.value.name.toLowerCase();
+                                  return searchQuery.isEmpty ||
+                                      code.contains(searchQuery) ||
+                                      name.contains(searchQuery);
+                                })
+                                .toList()
+                                  ..sort((a, b) => a.key.compareTo(b.key));
 
-                        return ListView.builder(
-                          itemCount: sortedCurrencies.length,
-                          itemBuilder: (context, index) {
-                            final entry = sortedCurrencies[index];
-                            final code = entry.key;
-                            final currency = entry.value;
-                            final isSelected = code == selectedCode;
+                            return filteredCurrencies.isEmpty
+                                ? const Center(
+                                    child: Padding(
+                                      padding: EdgeInsets.all(16.0),
+                                      child: Text(
+                                        'No currencies found',
+                                        style: TextStyle(color: Colors.white70),
+                                      ),
+                                    ),
+                                  )
+                                : ListView.builder(
+                                    itemCount: filteredCurrencies.length,
+                                    itemBuilder: (context, index) {
+                                      final entry = filteredCurrencies[index];
+                                      final code = entry.key;
+                                      final currency = entry.value;
+                                      final isSelected = code == selectedCode;
 
-                            return ListTile(
-                              leading: Text(
-                                currency.emoji.isNotEmpty
-                                    ? currency.emoji
-                                    : '🏳️',
-                                style: const TextStyle(fontSize: 20),
-                              ),
-                              title: Text(
-                                '$code - ${currency.name}',
-                                style: const TextStyle(color: Colors.white),
-                              ),
-                              trailing: isSelected
-                                  ? const Icon(Icons.check,
-                                      color: Color(0xFF8CC63F))
-                                  : null,
-                              onTap: () {
-                                // Update the provider state first
-                                ref
-                                    .read(selectedFiatCodeProvider.notifier)
-                                    .state = code;
-                                
-                                // Call the callback with the selected code
-                                onCurrencySelected();
-                                
-                                // Close the dialog after handling the selection
-                                Navigator.of(context).pop();
-                              },
-                            );
+                                      return ListTile(
+                                        leading: Text(
+                                          currency.emoji.isNotEmpty
+                                              ? currency.emoji
+                                              : '🏳️',
+                                          style: const TextStyle(fontSize: 20),
+                                        ),
+                                        title: Text(
+                                          '$code - ${currency.name}',
+                                          style: const TextStyle(color: Colors.white),
+                                        ),
+                                        trailing: isSelected
+                                            ? const Icon(Icons.check,
+                                                color: Color(0xFF8CC63F))
+                                            : null,
+                                        onTap: () {
+                                          ref
+                                              .read(selectedFiatCodeProvider.notifier)
+                                              .state = code;
+                                          onCurrencySelected();
+                                          Navigator.of(context).pop();
+                                        },
+                                      );
+                                    },
+                                  );
                           },
                         );
                       },
-                    );
-                  },
-                ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
