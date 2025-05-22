@@ -33,6 +33,8 @@ class AppTheme {
   static const Color buyColor = Color(0xFF9DD64F);
   static const Color sellColor = Color(0xFFFF8A8A);
   static const Color activeColor = Color(0xFF9CD651);
+  static const Color purpleAccent = Color(0xFF764BA2);
+  static const Color purpleButton = Color(0xFF7856AF);
 
   // Colors for states
   static const Color statusSuccess = Color(0xFF9CD651);

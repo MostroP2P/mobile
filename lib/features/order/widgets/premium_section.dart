@@ -24,17 +24,17 @@ class PremiumSection extends StatelessWidget {
     return FormSection(
       title: 'Premium (%) ',
       icon: premiumValueIcon,
-      iconBackgroundColor: const Color(0xFF764BA2), // Purple color for premium
+      iconBackgroundColor: AppTheme.purpleAccent, // Purple color for premium
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Slider
           SliderTheme(
             data: SliderThemeData(
-              activeTrackColor: const Color(0xFF764BA2),
+              activeTrackColor: AppTheme.purpleAccent,
               inactiveTrackColor: AppTheme.backgroundInactive,
               thumbColor: AppTheme.textPrimary,
-              overlayColor: const Color(0xFF764BA2).withOpacity(0.2),
+              overlayColor: AppTheme.purpleAccent.withOpacity(0.2),
               trackHeight: 4,
             ),
             child: Slider(

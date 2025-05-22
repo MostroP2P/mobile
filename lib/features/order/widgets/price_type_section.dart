@@ -24,7 +24,7 @@ class PriceTypeSection extends StatelessWidget {
     return FormSection(
       title: 'Price type',
       icon: priceTypeIcon,
-      iconBackgroundColor: const Color(0xFF764BA2).withOpacity(0.3), // Purple color consistent with other sections
+      iconBackgroundColor: AppTheme.purpleAccent.withOpacity(0.3), // Purple color consistent with other sections
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -46,7 +46,7 @@ class PriceTypeSection extends StatelessWidget {
               ),
               Switch(
                 value: isMarketRate,
-                activeColor: const Color(0xFF764BA2), // Keep the purple accent color
+                activeColor: AppTheme.purpleAccent, // Keep the purple accent color
                 onChanged: onToggle,
               ),
             ],

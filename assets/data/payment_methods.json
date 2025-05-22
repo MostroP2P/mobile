@@ -4,8 +4,7 @@
     "Venmo",
     "Zelle",
     "Bank Transfer",
-    "PayPal",
-    "Cash, LA meetup"
+    "PayPal"
   ],
   "EUR": ["SEPA", "Revolut", "N26", "Bank Transfer"],
   "GBP": ["Bank Transfer", "Revolut", "Monzo"],

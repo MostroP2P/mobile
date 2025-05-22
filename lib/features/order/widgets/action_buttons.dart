@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as nostr_action;
 import 'package:mostro_mobile/shared/widgets/mostro_reactive_button.dart';
 
@@ -25,7 +26,7 @@ class ActionButtons extends StatelessWidget {
             child: ElevatedButton(
               onPressed: onCancel,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1E2230),
+                backgroundColor: AppTheme.backgroundCard,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
@@ -48,7 +49,7 @@ class ActionButtons extends StatelessWidget {
               onPressed: onSubmit,
               timeout: const Duration(seconds: 5),
               showSuccessIndicator: true,
-              backgroundColor: const Color(0xFF7856AF),
+              backgroundColor: AppTheme.purpleButton,
             ),
           ),
         ),

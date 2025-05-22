@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mostro_mobile/core/app_theme.dart';
 
 class FormSection extends StatelessWidget {
   final String title;
@@ -20,7 +21,7 @@ class FormSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF1E2230),
+        color: AppTheme.backgroundCard,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
