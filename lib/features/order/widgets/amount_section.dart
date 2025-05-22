@@ -36,6 +36,26 @@ class AmountSection extends StatelessWidget {
           if (value == null || value.isEmpty) {
             return 'Please enter an amount';
           }
+          
+          // Regex to match either a single number or a range format (number-number)
+          // The regex allows optional spaces around the hyphen
+          final regex = RegExp(r'^\d+$|^\d+\s*-\s*\d+$');
+          
+          if (!regex.hasMatch(value)) {
+            return 'Please enter a valid amount (e.g., 100) or range (e.g., 100-500)';
+          }
+          
+          // If it's a range, check that the first number is less than the second
+          if (value.contains('-')) {
+            final parts = value.split('-');
+            final firstNum = int.tryParse(parts[0].trim());
+            final secondNum = int.tryParse(parts[1].trim());
+            
+            if (firstNum != null && secondNum != null && firstNum >= secondNum) {
+              return 'In a range, the first number must be less than the second';
+            }
+          }
+          
           return null;
         },
       ),

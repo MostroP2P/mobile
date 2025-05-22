@@ -40,7 +40,7 @@ class CurrencySection extends ConsumerWidget {
 
           return InkWell(
             onTap: () {
-              _showCurrencySelectionDialog(context, ref);
+              _showCurrencySelectionDialog(context, ref, onCurrencySelected);
             },
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -64,7 +64,7 @@ class CurrencySection extends ConsumerWidget {
     );
   }
 
-  void _showCurrencySelectionDialog(BuildContext context, WidgetRef ref) {
+  void _showCurrencySelectionDialog(BuildContext context, WidgetRef ref, VoidCallback onCurrencySelected) {
     showDialog(
       context: context,
       builder: (context) {
@@ -129,11 +129,15 @@ class CurrencySection extends ConsumerWidget {
                                       color: Color(0xFF8CC63F))
                                   : null,
                               onTap: () {
+                                // Update the provider state first
                                 ref
                                     .read(selectedFiatCodeProvider.notifier)
                                     .state = code;
-                                // Call the callback after currency is actually selected
+                                
+                                // Call the callback with the selected code
                                 onCurrencySelected();
+                                
+                                // Close the dialog after handling the selection
                                 Navigator.of(context).pop();
                               },
                             );
