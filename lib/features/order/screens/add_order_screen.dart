@@ -12,6 +12,7 @@ import 'package:mostro_mobile/features/order/widgets/order_type_header.dart';
 import 'package:mostro_mobile/features/order/widgets/payment_methods_section.dart';
 import 'package:mostro_mobile/features/order/widgets/premium_section.dart';
 import 'package:mostro_mobile/features/order/widgets/price_type_section.dart';
+import 'package:mostro_mobile/features/order/widgets/form_section.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
 import 'package:uuid/uuid.dart';
 
@@ -155,14 +156,42 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
                           },
                         ),
                         const SizedBox(height: 16),
-                        PremiumSection(
-                          value: _premiumValue,
-                          onChanged: (value) {
-                            setState(() {
-                              _premiumValue = value;
-                            });
-                          },
-                        ),
+                        // Conditionally show Premium section for market rate
+                        if (_marketRate) ...[  
+                          PremiumSection(
+                            value: _premiumValue,
+                            onChanged: (value) {
+                              setState(() {
+                                _premiumValue = value;
+                              });
+                            },
+                          ),
+                        ] else ...[  
+                          // Show sats amount input field for fixed price
+                          FormSection(
+                            title: _orderType == OrderType.buy
+                                ? 'Enter the Sats amount you want to Buy'
+                                : 'Enter the Sats amount you want to Sell',
+                            icon: const Icon(Icons.bolt, color: Color(0xFFF3CA29), size: 18),
+                            iconBackgroundColor: const Color(0xFFF3CA29).withOpacity(0.3),
+                            child: TextFormField(
+                              controller: _satsAmountController,
+                              style: const TextStyle(color: Colors.white),
+                              decoration: const InputDecoration(
+                                border: InputBorder.none,
+                                hintText: 'Enter sats amount',
+                                hintStyle: TextStyle(color: Colors.grey),
+                              ),
+                              keyboardType: TextInputType.number,
+                              validator: (value) {
+                                if (!_marketRate && (value == null || value.isEmpty)) {
+                                  return 'Please enter sats amount';
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 16),
                         if (_orderType == OrderType.buy) ...[
                           LightningAddressSection(
