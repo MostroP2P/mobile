@@ -20,17 +20,20 @@ class ActionButtons extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Expanded(
-          child: ElevatedButton(
-            onPressed: onCancel,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1E2230),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24),
+          child: SizedBox(
+            height: 48,
+            child: ElevatedButton(
+              onPressed: onCancel,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1E2230),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
               ),
+              child: const Text('Cancel'),
             ),
-            child: const Text('Cancel'),
           ),
         ),
         const SizedBox(width: 12),
