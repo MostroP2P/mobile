@@ -82,10 +82,10 @@ class PaymentMethodsSection extends ConsumerWidget {
                 Flexible(
                   child: Text(
                     displayText,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color:
                           selectedMethods.isEmpty ? Colors.grey : Colors.white,
-                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ),
