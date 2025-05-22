@@ -30,7 +30,7 @@ class AmountSection extends StatelessWidget {
           hintText: 'Enter amount (example: 100 or 100-500)',
           hintStyle: TextStyle(color: Colors.grey),
         ),
-        keyboardType: TextInputType.text,
+        keyboardType: const TextInputType.numberWithOptions(signed: true),
         onChanged: onAmountChanged,
         validator: (value) {
           if (value == null || value.isEmpty) {

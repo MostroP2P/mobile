@@ -276,6 +276,9 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
             List<String>.from(_selectedPaymentMethods);
         if (_showCustomPaymentMethod &&
             _customPaymentMethodController.text.isNotEmpty) {
+          // Eliminar "Other" de la lista si existe para evitar duplicación
+          paymentMethods.remove("Other");
+          // Agregar el método de pago personalizado
           paymentMethods.add(_customPaymentMethodController.text);
         }
 
