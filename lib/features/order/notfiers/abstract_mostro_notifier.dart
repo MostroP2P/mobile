@@ -34,6 +34,21 @@ class AbstractMostroNotifier extends StateNotifier<MostroMessage> {
     this.ref,
   ) : super(MostroMessage(action: Action.newOrder, id: orderId));
 
+  /// Helper function to format payment methods for notifications
+  /// Returns "method1 (+X más)" if multiple methods, or just "method1" if single
+  String _formatPaymentMethods(List<String> paymentMethods) {
+    if (paymentMethods.isEmpty) {
+      return 'No payment method';
+    }
+
+    if (paymentMethods.length == 1) {
+      return paymentMethods.first;
+    }
+
+    final additionalCount = paymentMethods.length - 1;
+    return '${paymentMethods.first} (+$additionalCount más)';
+  }
+
   Future<void> sync() async {
     final storage = ref.read(mostroStorageProvider);
     final latestMessage = await storage.getMessageById(orderId);
@@ -128,7 +143,7 @@ class AbstractMostroNotifier extends StateNotifier<MostroMessage> {
           'buyer_npub': order.buyerTradePubkey ?? 'Unknown',
           'fiat_code': order.fiatCode,
           'fiat_amount': order.fiatAmount,
-          'payment_method': order.paymentMethod,
+          'payment_method': _formatPaymentMethods(order.paymentMethods),
         });
         // add seller tradekey to session
         // open chat
@@ -154,7 +169,9 @@ class AbstractMostroNotifier extends StateNotifier<MostroMessage> {
           'id': order?.id,
           'fiat_code': order?.fiatCode,
           'fiat_amount': order?.fiatAmount,
-          'payment_method': order?.paymentMethod,
+          'payment_method': order != null
+              ? _formatPaymentMethods(order.paymentMethods)
+              : 'No payment method',
         });
         // add seller tradekey to session
         // open chat
