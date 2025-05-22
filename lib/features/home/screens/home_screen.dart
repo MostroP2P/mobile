@@ -65,7 +65,7 @@ class HomeScreen extends ConsumerWidget {
                           )
                         : ListView.builder(
                             itemCount: filteredOrders.length,
-                            padding: const EdgeInsets.only(bottom: 80, top: 6),
+                            padding: const EdgeInsets.only(bottom: 155, top: 6),
                             itemBuilder: (context, index) {
                               final order = filteredOrders[index];
                               return OrderListItem(order: order);
