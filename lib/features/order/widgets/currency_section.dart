@@ -41,7 +41,6 @@ class CurrencySection extends ConsumerWidget {
           return InkWell(
             onTap: () {
               _showCurrencySelectionDialog(context, ref);
-              onCurrencySelected();
             },
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -133,6 +132,8 @@ class CurrencySection extends ConsumerWidget {
                                 ref
                                     .read(selectedFiatCodeProvider.notifier)
                                     .state = code;
+                                // Call the callback after currency is actually selected
+                                onCurrencySelected();
                                 Navigator.of(context).pop();
                               },
                             );
