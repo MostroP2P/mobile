@@ -30,6 +30,11 @@ class _AddOrderButtonState extends State<AddOrderButton>
   }
 
   void _toggleMenu() {
+    // Guard: return early if animation is in progress to prevent glitches
+    if (_animationController.isAnimating) {
+      return;
+    }
+    
     setState(() {
       _isMenuOpen = !_isMenuOpen;
       if (_isMenuOpen) {
