@@ -13,7 +13,7 @@ class Order implements Payload {
   final int? minAmount;
   final int? maxAmount;
   final int fiatAmount;
-  final String paymentMethod;
+  final List<String> paymentMethods;
   final int premium;
   final String? masterBuyerPubkey;
   final String? masterSellerPubkey;
@@ -34,7 +34,7 @@ class Order implements Payload {
     this.minAmount,
     this.maxAmount,
     required this.fiatAmount,
-    required this.paymentMethod,
+    required List<String> paymentMethods,
     this.premium = 0,
     this.masterBuyerPubkey,
     this.masterSellerPubkey,
@@ -45,7 +45,7 @@ class Order implements Payload {
     this.expiresAt,
     this.buyerToken,
     this.sellerToken,
-  });
+  }) : this.paymentMethods = List<String>.from(paymentMethods);
 
   @override
   Map<String, dynamic> toJson() {
@@ -58,7 +58,7 @@ class Order implements Payload {
         'min_amount': minAmount,
         'max_amount': maxAmount,
         'fiat_amount': fiatAmount,
-        'payment_method': paymentMethod,
+        'payment_methods': paymentMethods,
         'premium': premium,
       }
     };
@@ -90,8 +90,21 @@ class Order implements Payload {
     }
 
     // Validate required fields
-    ['kind', 'status', 'fiat_code', 'fiat_amount', 'payment_method', 'premium']
+    ['kind', 'status', 'fiat_code', 'fiat_amount', 'payment_methods', 'premium']
         .forEach(validateField);
+
+    // Handle payment methods - could be a string or a list
+    List<String> paymentMethods;
+    if (json['payment_methods'] is List) {
+      paymentMethods = List<String>.from(json['payment_methods']);
+    } else if (json['payment_methods'] is String) {
+      paymentMethods = (json['payment_methods'] as String).split(',');
+    } else if (json['payment_method'] is String) {
+      // For backward compatibility
+      paymentMethods = (json['payment_method'] as String).split(',');
+    } else {
+      paymentMethods = [];
+    }
 
     return Order(
       id: json['id'],
@@ -102,7 +115,7 @@ class Order implements Payload {
       minAmount: json['min_amount'],
       maxAmount: json['max_amount'],
       fiatAmount: json['fiat_amount'],
-      paymentMethod: json['payment_method'],
+      paymentMethods: paymentMethods,
       premium: json['premium'],
       masterBuyerPubkey: json['master_buyer_pubkey'],
       masterSellerPubkey: json['master_seller_pubkey'],
@@ -124,7 +137,7 @@ class Order implements Payload {
       amount: event.amount as int,
       fiatCode: event.currency!,
       fiatAmount: event.fiatAmount.minimum,
-      paymentMethod: event.paymentMethods.join(','),
+      paymentMethods: event.paymentMethods,
       premium: event.premium as int,
       createdAt: event.createdAt as int,
       expiresAt: event.expiration as int?,
@@ -141,7 +154,7 @@ class Order implements Payload {
       'minAmount': minAmount,
       'maxAmount': maxAmount,
       'fiatAmount': fiatAmount,
-      'paymentMethod': paymentMethod,
+      'paymentMethods': paymentMethods,
       'premium': premium,
       'masterBuyerPubkey': masterBuyerPubkey,
       'masterSellerPubkey': masterSellerPubkey,
@@ -155,6 +168,19 @@ class Order implements Payload {
 
   // Construct from a Map (row in DB)
   factory Order.fromMap(Map<String, dynamic> map) {
+    // Handle payment methods - could be a string or a list
+    List<String> paymentMethods;
+    if (map['paymentMethods'] is List) {
+      paymentMethods = List<String>.from(map['paymentMethods']);
+    } else if (map['paymentMethods'] is String) {
+      paymentMethods = (map['paymentMethods'] as String).split(',');
+    } else if (map['paymentMethod'] is String) {
+      // For backward compatibility
+      paymentMethods = (map['paymentMethod'] as String).split(',');
+    } else {
+      paymentMethods = [];
+    }
+
     return Order(
       id: map['id'] as String?,
       kind: OrderType.fromString(map['kind'] as String),
@@ -164,7 +190,7 @@ class Order implements Payload {
       minAmount: map['minAmount'] as int?,
       maxAmount: map['maxAmount'] as int?,
       fiatAmount: map['fiatAmount'] as int,
-      paymentMethod: map['paymentMethod'] as String,
+      paymentMethods: paymentMethods,
       premium: map['premium'] as int,
       masterBuyerPubkey: map['masterBuyerPubkey'] as String?,
       masterSellerPubkey: map['masterSellerPubkey'] as String?,
@@ -179,5 +205,27 @@ class Order implements Payload {
   @override
   String get type => 'order';
 
-  copyWith({required String buyerInvoice}) {}
+  Order copyWith({String? buyerInvoice}) {
+    return Order(
+      id: id,
+      kind: kind,
+      status: status,
+      amount: amount,
+      fiatCode: fiatCode,
+      minAmount: minAmount,
+      maxAmount: maxAmount,
+      fiatAmount: fiatAmount,
+      paymentMethods: paymentMethods,
+      premium: premium,
+      masterBuyerPubkey: masterBuyerPubkey,
+      masterSellerPubkey: masterSellerPubkey,
+      buyerTradePubkey: buyerTradePubkey,
+      sellerTradePubkey: sellerTradePubkey,
+      buyerInvoice: buyerInvoice ?? this.buyerInvoice,
+      createdAt: createdAt,
+      expiresAt: expiresAt,
+      buyerToken: buyerToken,
+      sellerToken: sellerToken,
+    );
+  }
 }

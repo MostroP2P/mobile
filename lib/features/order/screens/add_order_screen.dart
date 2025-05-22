@@ -271,6 +271,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
 
         final satsAmount = int.tryParse(_satsAmountController.text) ?? 0;
 
+        // Preparar la lista de métodos de pago para cumplir con NIP-69
         List<String> paymentMethods =
             List<String>.from(_selectedPaymentMethods);
         if (_showCustomPaymentMethod &&
@@ -278,7 +279,8 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
           paymentMethods.add(_customPaymentMethodController.text);
         }
 
-        final paymentMethod = paymentMethods.join(', ');
+        // Cada método de pago se mantiene como un elemento separado en la lista
+        // en lugar de concatenarlos en una cadena
 
         final buyerInvoice = _orderType == OrderType.buy &&
                 _lightningAddressController.text.isNotEmpty
@@ -291,7 +293,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
           fiatAmount: fiatAmount!,
           minAmount: minAmount,
           maxAmount: maxAmount,
-          paymentMethod: paymentMethod,
+          paymentMethods: paymentMethods, // Pasando la lista directamente
           amount: _marketRate ? 0 : satsAmount,
           premium: _marketRate ? _premiumValue.toInt() : 0,
           buyerInvoice: buyerInvoice,
