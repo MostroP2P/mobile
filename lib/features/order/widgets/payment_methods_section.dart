@@ -155,30 +155,22 @@ class PaymentMethodsSection extends ConsumerWidget {
                           )),
                       if (dialogShowOtherField) ...[
                         const SizedBox(height: 16),
-                        StatefulBuilder(
-                          builder: (context, setState) {
-                            String customValue = customController.text;
-                            return TextField(
-                              controller:
-                                  TextEditingController(text: customValue),
-                              style: const TextStyle(color: Colors.white),
-                              decoration: const InputDecoration(
-                                hintText: 'Enter custom payment method',
-                                hintStyle: TextStyle(color: Colors.grey),
-                                enabledBorder: UnderlineInputBorder(
-                                  borderSide: BorderSide(color: Colors.white24),
-                                ),
-                                focusedBorder: UnderlineInputBorder(
-                                  borderSide:
-                                      BorderSide(color: Color(0xFF8CC63F)),
-                                ),
-                              ),
-                              onChanged: (value) {
-                                customValue = value;
-                                customController.text = value;
-                              },
-                            );
-                          },
+                        // Use the existing controller directly to avoid memory leaks and cursor position loss
+                        TextField(
+                          controller: customController,
+                          style: const TextStyle(color: Colors.white),
+                          decoration: const InputDecoration(
+                            hintText: 'Enter custom payment method',
+                            hintStyle: TextStyle(color: Colors.grey),
+                            enabledBorder: UnderlineInputBorder(
+                              borderSide: BorderSide(color: Colors.white24),
+                            ),
+                            focusedBorder: UnderlineInputBorder(
+                              borderSide: BorderSide(color: Color(0xFF8CC63F)),
+                            ),
+                          ),
+                          // No need for an onChanged handler that updates the controller
+                          // as the controller will automatically update its text
                         ),
                       ],
                     ],
