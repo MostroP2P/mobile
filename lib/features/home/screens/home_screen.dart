@@ -7,6 +7,7 @@ import 'package:mostro_mobile/features/home/providers/home_order_providers.dart'
 import 'package:mostro_mobile/features/home/widgets/order_list_item.dart';
 import 'package:mostro_mobile/shared/widgets/add_order_button.dart';
 import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
+import 'package:mostro_mobile/shared/widgets/mostro_app_bar.dart';
 import 'package:mostro_mobile/shared/widgets/order_filter.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_app_drawer.dart';
 
@@ -19,7 +20,7 @@ class HomeScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundDark,
-      appBar: _buildAppBar(),
+      appBar: MostroAppBar(),
       drawer: const MostroAppDrawer(),
       body: Stack(
         children: [

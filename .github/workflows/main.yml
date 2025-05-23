@@ -1,7 +1,9 @@
 name: "Build"
 
+description: "Build and release Flutter application for Android and iOS"
+
 on:
-  pull_request:
+  push:
     branches:
       - main
 
@@ -11,44 +13,36 @@ jobs:
     runs-on: macos-latest 
 
     steps:
-        #1 Checkout Repository
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-        #2 Setup Java
       - name: Set Up Java
         uses: actions/setup-java@v3.12.0
         with:
           distribution: 'oracle'
           java-version: '17'
 
-        #3 Setup Flutter
       - name: Set Up Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.29.0'
           channel: 'stable'
 
-        #4 Install Dependencies
       - name: Install Dependencies
         run: flutter pub get
 
-        #5 Extract Version
       - name: Extract version from pubspec.yaml
         id: extract_version
         run: |
           version=$(grep '^version: ' pubspec.yaml | cut -d ' ' -f 2 | tr -d '\r')
           echo "VERSION=$version" >> $GITHUB_ENV
 
-        #6 Building APK
       - name: Build APK
         run: flutter build apk --release --dart-define=APP_VERSION=${{ env.VERSION }} --dart-define=GIT_COMMIT=${{ github.sha }}
 
-        #7 Building App Bundle (aab)
       - name: Build appBundle
         run: flutter build appbundle --release --dart-define=APP_VERSION=${{ env.VERSION }} --dart-define=GIT_COMMIT=${{ github.sha }}
 
-        #8 Build IPA ( IOS Build )
       - name: Build IPA
         run: flutter build ipa --no-codesign --dart-define=APP_VERSION=${{ env.VERSION }} --dart-define=GIT_COMMIT=${{ github.sha }}
 
@@ -57,7 +51,6 @@ jobs:
           cd build
           tar -czf ios_build.tar.gz ios
 
-        #9 Upload Artifacts
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -67,7 +60,6 @@ jobs:
             build/app/outputs/bundle/release/app-release.aab
             build/ios_build.tar.gz
 
-        #10 Check if Tag Exists
       - name: Check if Tag Exists
         id: check_tag
         run: |
@@ -77,7 +69,6 @@ jobs:
             echo "TAG_EXISTS=false" >> $GITHUB_ENV
           fi
 
-        #12 Modify Tag if it Exists
       - name: Modify Tag
         if: ${{ env.TAG_EXISTS }} == 'true'
         id: modify_tag
@@ -85,7 +76,6 @@ jobs:
           new_version="${{ env.VERSION }}-alpha-${{ github.run_number }}"
           echo "VERSION=$new_version" >> $GITHUB_ENV
         
-        #13 Create Release
       - name: Create Release
         uses: ncipollo/release-action@v1
         with:

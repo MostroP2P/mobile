@@ -44,28 +44,6 @@ class MostroAppBar extends ConsumerWidget implements PreferredSizeWidget {
               },
             ),
             // Notification count indicator
-            Positioned(
-              top: 10,
-              right: 10,
-              child: Container(
-                width: 18,
-                height: 18,
-                decoration: const BoxDecoration(
-                  color: Colors.red,
-                  shape: BoxShape.circle,
-                ),
-                child: const Center(
-                  child: Text(
-                    '6',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-            ),
           ],
         ),
         const SizedBox(width: 16), // Spacing
