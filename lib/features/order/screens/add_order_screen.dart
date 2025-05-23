@@ -296,7 +296,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
           fiatAmount: fiatAmount!,
           minAmount: minAmount,
           maxAmount: maxAmount,
-          paymentMethods: paymentMethods, // Pasando la lista directamente
+          paymentMethod: paymentMethods.join(','),
           amount: _marketRate ? 0 : satsAmount,
           premium: _marketRate ? _premiumValue.toInt() : 0,
           buyerInvoice: buyerInvoice,

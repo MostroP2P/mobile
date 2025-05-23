@@ -102,10 +102,7 @@ class TradeDetailScreen extends ConsumerWidget {
             : 'with a $premium% discount';
 
     // Payment methods - format multiple methods separated by commas
-    final paymentMethods = tradeState.orderPayload!.paymentMethods;
-    final methodText = paymentMethods.isNotEmpty
-        ? paymentMethods.join(', ')
-        : 'No payment method specified';
+    final methodText = tradeState.orderPayload!.paymentMethod;
 
     final timestamp = formatDateTime(
       tradeState.orderPayload!.createdAt != null &&

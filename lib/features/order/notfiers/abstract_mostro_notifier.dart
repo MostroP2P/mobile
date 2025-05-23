@@ -143,7 +143,7 @@ class AbstractMostroNotifier extends StateNotifier<MostroMessage> {
           'buyer_npub': order.buyerTradePubkey ?? 'Unknown',
           'fiat_code': order.fiatCode,
           'fiat_amount': order.fiatAmount,
-          'payment_method': _formatPaymentMethods(order.paymentMethods),
+          'payment_method': order.paymentMethod,
         });
         // add seller tradekey to session
         // open chat
@@ -170,7 +170,7 @@ class AbstractMostroNotifier extends StateNotifier<MostroMessage> {
           'fiat_code': order?.fiatCode,
           'fiat_amount': order?.fiatAmount,
           'payment_method': order != null
-              ? _formatPaymentMethods(order.paymentMethods)
+              ? order.paymentMethod
               : 'No payment method',
         });
         // add seller tradekey to session

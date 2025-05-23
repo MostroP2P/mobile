@@ -139,7 +139,7 @@ class MostroMessageDetail extends ConsumerWidget {
               orderPayload?.fiatAmount.toString() ?? '',
               orderPayload?.fiatCode ?? '',
               orderPayload != null
-                  ? _formatPaymentMethods(orderPayload.paymentMethods)
+                  ? orderPayload.paymentMethod
                   : 'No payment method',
               session?.peer?.publicKey ?? '',
             );
@@ -150,7 +150,7 @@ class MostroMessageDetail extends ConsumerWidget {
               orderPayload?.fiatCode ?? '',
               orderPayload?.fiatAmount.toString() ?? '',
               orderPayload != null
-                  ? _formatPaymentMethods(orderPayload.paymentMethods)
+                  ? orderPayload.paymentMethod
                   : 'No payment method',
             );
       case actions.Action.fiatSentOk:
