@@ -68,11 +68,9 @@ class CurrencyComboBox extends ConsumerWidget {
                 (context, textEditingController, focusNode, onFieldSubmitted) {
               // Initialize the text field with the selected code
               // so it shows up when the user opens the screen
-              if (selectedFiatCode != null) {
-                final existingLabel = currencyCodes[selectedFiatCode];
-                if (existingLabel != null) {
-                  textEditingController.text = '$selectedFiatCode - ${existingLabel.name}';
-                }
+              final existingLabel = currencyCodes[selectedFiatCode];
+              if (existingLabel != null) {
+                textEditingController.text = '$selectedFiatCode - ${existingLabel.name}';
               }
 
               return TextFormField(

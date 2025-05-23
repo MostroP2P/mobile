@@ -18,6 +18,21 @@ class MostroMessageDetail extends ConsumerWidget {
   final String orderId;
   const MostroMessageDetail({super.key, required this.orderId});
 
+  /// Helper function to format payment methods for display
+  /// Returns "method1 (+X más)" if multiple methods, or just "method1" if single
+  String _formatPaymentMethods(List<String> paymentMethods) {
+    if (paymentMethods.isEmpty) {
+      return 'No payment method';
+    }
+
+    if (paymentMethods.length == 1) {
+      return paymentMethods.first;
+    }
+
+    final additionalCount = paymentMethods.length - 1;
+    return '${paymentMethods.first} (+$additionalCount más)';
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tradeState = ref.watch(tradeStateProvider(orderId));
@@ -123,7 +138,9 @@ class MostroMessageDetail extends ConsumerWidget {
         return S.of(context)!.holdInvoicePaymentAccepted(
               orderPayload?.fiatAmount.toString() ?? '',
               orderPayload?.fiatCode ?? '',
-              orderPayload?.paymentMethod ?? '',
+              orderPayload != null
+                  ? _formatPaymentMethods(orderPayload.paymentMethods)
+                  : 'No payment method',
               session?.peer?.publicKey ?? '',
             );
       case actions.Action.buyerTookOrder:
@@ -132,7 +149,9 @@ class MostroMessageDetail extends ConsumerWidget {
               session?.peer?.publicKey ?? '',
               orderPayload?.fiatCode ?? '',
               orderPayload?.fiatAmount.toString() ?? '',
-              orderPayload?.paymentMethod ?? '',
+              orderPayload != null
+                  ? _formatPaymentMethods(orderPayload.paymentMethods)
+                  : 'No payment method',
             );
       case actions.Action.fiatSentOk:
         final session = ref.watch(sessionProvider(orderPayload?.id ?? ''));
@@ -192,7 +211,8 @@ class MostroMessageDetail extends ConsumerWidget {
     }
   }
 
-  String _getCantDoMessage(BuildContext context, WidgetRef ref, TradeState tradeState) {
+  String _getCantDoMessage(
+      BuildContext context, WidgetRef ref, TradeState tradeState) {
     final orderPayload = tradeState.orderPayload;
     final status = tradeState.status;
     final cantDoReason = ref
@@ -202,7 +222,9 @@ class MostroMessageDetail extends ConsumerWidget {
       case CantDoReason.invalidSignature:
         return S.of(context)!.invalidSignature;
       case CantDoReason.notAllowedByStatus:
-        return S.of(context)!.notAllowedByStatus(orderPayload?.id ?? '', status);
+        return S
+            .of(context)!
+            .notAllowedByStatus(orderPayload?.id ?? '', status);
       case CantDoReason.outOfRangeFiatAmount:
         return S.of(context)!.outOfRangeFiatAmount('{fiat_min}', '{fiat_max}');
       case CantDoReason.outOfRangeSatsAmount:

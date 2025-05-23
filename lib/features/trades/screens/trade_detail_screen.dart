@@ -101,8 +101,12 @@ class TradeDetailScreen extends ConsumerWidget {
             ? 'with a +$premium% premium'
             : 'with a $premium% discount';
 
-    // Payment method
-    final method = tradeState.orderPayload!.paymentMethod;
+    // Payment methods - format multiple methods separated by commas
+    final paymentMethods = tradeState.orderPayload!.paymentMethods;
+    final methodText = paymentMethods.isNotEmpty
+        ? paymentMethods.join(', ')
+        : 'No payment method specified';
+
     final timestamp = formatDateTime(
       tradeState.orderPayload!.createdAt != null &&
               tradeState.orderPayload!.createdAt! > 0
@@ -118,7 +122,7 @@ class TradeDetailScreen extends ConsumerWidget {
         children: [
           Expanded(
             child: Column(
-              // Using Column with spacing = 2 isn’t standard; using SizedBoxes for spacing is fine.
+              // Using Column with spacing = 2 isn't standard; using SizedBoxes for spacing is fine.
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
@@ -133,7 +137,7 @@ class TradeDetailScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Payment method: $method',
+                  'Payment methods: $methodText',
                   style: textTheme.bodyLarge,
                 ),
               ],
@@ -499,6 +503,7 @@ class TradeDetailScreen extends ConsumerWidget {
       timeout: const Duration(seconds: 30),
     );
   }
+
   Widget _buildContactButton(BuildContext context) {
     return ElevatedButton(
       onPressed: () {
