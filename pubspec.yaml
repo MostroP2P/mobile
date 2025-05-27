@@ -64,6 +64,7 @@ dependencies:
   line_icons: ^2.0.3
   introduction_screen: ^3.1.17
   riverpod_annotation: ^2.6.1
+  lucide_icons: ^0.257.0 
 
   flutter_localizations:
     sdk: flutter
@@ -112,7 +113,7 @@ flutter:
   assets:
     - assets/
     - assets/images/
-    - assets/data/fiat.json
+    - assets/data/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

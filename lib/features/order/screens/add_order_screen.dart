@@ -1,26 +1,20 @@
-import 'package:bitcoin_icons/bitcoin_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:heroicons/heroicons.dart';
-import 'package:mostro_mobile/core/app_theme.dart';
-import 'package:mostro_mobile/data/models/enums/action.dart' as nostr_action;
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
-import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/order.dart';
-import 'package:mostro_mobile/features/order/widgets/fixed_switch_widget.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
-import 'package:mostro_mobile/shared/widgets/currency_combo_box.dart';
-import 'package:mostro_mobile/shared/widgets/currency_text_field.dart';
+import 'package:mostro_mobile/features/order/widgets/action_buttons.dart';
+import 'package:mostro_mobile/features/order/widgets/amount_section.dart';
+import 'package:mostro_mobile/features/order/widgets/currency_section.dart';
+import 'package:mostro_mobile/features/order/widgets/lightning_address_section.dart';
+import 'package:mostro_mobile/features/order/widgets/order_type_header.dart';
+import 'package:mostro_mobile/features/order/widgets/payment_methods_section.dart';
+import 'package:mostro_mobile/features/order/widgets/premium_section.dart';
+import 'package:mostro_mobile/features/order/widgets/price_type_section.dart';
+import 'package:mostro_mobile/features/order/widgets/form_section.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
-import 'package:mostro_mobile/shared/widgets/mostro_reactive_button.dart';
 import 'package:uuid/uuid.dart';
-
-// Create a direct state provider tied to the order action/status
-final orderActionStatusProvider =
-    Provider.family<AsyncValue<MostroMessage?>, int>(
-        (ref, requestId) => ref.watch(addOrderEventsProvider(requestId)));
 
 class AddOrderScreen extends ConsumerStatefulWidget {
   const AddOrderScreen({super.key});
@@ -32,516 +26,302 @@ class AddOrderScreen extends ConsumerStatefulWidget {
 class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
   final _formKey = GlobalKey<FormState>();
   final _fiatAmountController = TextEditingController();
+  final _lightningAddressController = TextEditingController();
+  final _scrollController = ScrollController();
+  final _customPaymentMethodController = TextEditingController();
   final _satsAmountController = TextEditingController();
-  final _paymentMethodController = TextEditingController();
-  final _lightningInvoiceController = TextEditingController();
 
-  bool _marketRate = true; // false => Fixed, true => Market
-  double _premiumValue = 0.0; // slider for -10..10
-  bool _isEnabled = false; // controls enabled or not
+  bool _marketRate = true;
+  double _premiumValue = 0.0;
+  OrderType _orderType = OrderType.sell;
+  int? _currentRequestId;
 
   int? _minFiatAmount;
   int? _maxFiatAmount;
 
+  List<String> _selectedPaymentMethods = [];
+  bool _showCustomPaymentMethod = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final GoRouterState state = GoRouterState.of(context);
+      final extras = state.extra;
+
+      if (extras != null && extras is Map<String, dynamic>) {
+        final orderTypeStr = extras['orderType'] as String?;
+        if (orderTypeStr == 'buy') {
+          setState(() {
+            _orderType = OrderType.buy;
+          });
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _fiatAmountController.dispose();
+    _lightningAddressController.dispose();
+    _customPaymentMethodController.dispose();
+    _satsAmountController.dispose();
+    super.dispose();
+  }
+
+  void _parseFiatAmount(String input) {
+    if (input.contains('-')) {
+      final parts = input.split('-');
+      if (parts.length == 2) {
+        setState(() {
+          _minFiatAmount = int.tryParse(parts[0].trim());
+          _maxFiatAmount = int.tryParse(parts[1].trim());
+        });
+      }
+    } else {
+      setState(() {
+        _minFiatAmount = int.tryParse(input);
+        _maxFiatAmount = null;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final orderType = ref.watch(orderTypeNotifierProvider);
-
     return Scaffold(
-      backgroundColor: AppTheme.dark1,
+      backgroundColor: const Color(0xFF171A23),
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: const Color(0xFF171A23),
         elevation: 0,
         leading: IconButton(
-          icon: const HeroIcon(HeroIcons.arrowLeft, color: AppTheme.cream1),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => context.pop(),
         ),
-        title: Text(
-          'NEW ORDER',
+        title: const Text(
+          'CREATING NEW ORDER',
           style: TextStyle(
-            color: AppTheme.cream1,
-            fontFamily: GoogleFonts.robotoCondensed().fontFamily,
-          ),
-        ),
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: Container(
-              margin: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppTheme.dark2,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: _buildContent(context, ref, orderType),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildContent(
-      BuildContext context, WidgetRef ref, OrderType orderType) {
-    return Form(
-      key: _formKey,
-      child: Column(
-        children: [
-          _buildTabs(context, ref, orderType),
-          Expanded(
-            child: orderType == OrderType.sell
-                ? _buildSellForm(context, ref)
-                : _buildBuyForm(context, ref),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTabs(BuildContext context, WidgetRef ref, OrderType orderType) {
-    final currencyCode = ref.watch(selectedFiatCodeProvider);
-    if (currencyCode != null && currencyCode.isNotEmpty) {
-      _isEnabled = true;
-    } else {
-      _isEnabled = false;
-    }
-    return Container(
-      decoration: const BoxDecoration(
-        color: AppTheme.dark1,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: _buildTab(context, ref, "SELL", orderType == OrderType.sell,
-                OrderType.sell),
-          ),
-          Expanded(
-            child: _buildTab(
-                context, ref, "BUY", orderType == OrderType.buy, OrderType.buy),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTab(BuildContext context, WidgetRef ref, String text,
-      bool isActive, OrderType type) {
-    return GestureDetector(
-      onTap: () {
-        // Update the local orderType state
-        ref.read(orderTypeNotifierProvider.notifier).set(type);
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: isActive ? AppTheme.dark2 : AppTheme.dark1,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(isActive ? 20 : 0),
-            topRight: Radius.circular(isActive ? 20 : 0),
-          ),
-        ),
-        child: Text(
-          text,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: isActive ? AppTheme.cream1 : AppTheme.grey2,
+            color: Colors.white,
             fontWeight: FontWeight.bold,
           ),
         ),
+        centerTitle: true,
       ),
-    );
-  }
-
-  ///
-  /// SELL FORM
-  ///
-  Widget _buildSellForm(BuildContext context, WidgetRef ref) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      body: Stack(
         children: [
-          const Text('Make sure your order is below 20K sats',
-              style: TextStyle(color: AppTheme.grey2)),
-          const SizedBox(height: 16),
-
-          // 1) Currency dropdown always enabled
-          CurrencyComboBox(
-            key: const Key("fiatCodeDropdown"),
-            label: 'Fiat code',
-            onSelected: (String fiatCode) {
-              // Once a fiat code is selected, enable the other fields
-              setState(() {
-                _isEnabled = true;
-              });
-            },
-          ),
-
-          const SizedBox(height: 16),
-
-          // 2) fiat amount
-          _buildDisabledWrapper(
-            enabled: _isEnabled,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppTheme.dark1,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: CurrencyTextField(
-                key: const ValueKey('fiatAmountField'),
-                controller: _fiatAmountController,
-                label: 'Fiat amount',
-                onChanged: (parsed) {
-                  setState(() {
-                    _minFiatAmount = parsed.$1;
-                    _maxFiatAmount = parsed.$2;
-                  });
-                },
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // 3) fixed/market toggle
-          _buildDisabledWrapper(
-            enabled: _isEnabled,
-            child: FixedSwitch(
-              initialValue: _marketRate,
-              onChanged: (value) {
-                setState(() {
-                  _marketRate = value;
-                });
-              },
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // 4) either a text field for sats or a slider for premium
-          _marketRate
-              ? _buildDisabledWrapper(
-                  enabled: _isEnabled,
-                  child: _buildPremiumSlider(),
-                )
-              : _buildDisabledWrapper(
-                  enabled: _isEnabled,
-                  child: _buildTextField('Sats amount',
-                      const Key('satsAmountField'), _satsAmountController,
-                      suffix: Icon(BitcoinIcons.satoshi_v1_outline).icon),
+          Column(
+            children: [
+              OrderTypeHeader(orderType: _orderType),
+              Expanded(
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.all(16),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        CurrencySection(
+                          orderType: _orderType,
+                          onCurrencySelected: () {
+                            setState(() {});
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        AmountSection(
+                          orderType: _orderType,
+                          controller: _fiatAmountController,
+                          onAmountChanged: _parseFiatAmount,
+                        ),
+                        const SizedBox(height: 16),
+                        PaymentMethodsSection(
+                          selectedMethods: _selectedPaymentMethods,
+                          showCustomField: _showCustomPaymentMethod,
+                          customController: _customPaymentMethodController,
+                          onMethodsChanged: (methods, showCustom) {
+                            setState(() {
+                              _selectedPaymentMethods = methods;
+                              _showCustomPaymentMethod = showCustom;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        PriceTypeSection(
+                          isMarketRate: _marketRate,
+                          onToggle: (value) {
+                            setState(() {
+                              _marketRate = value;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        // Conditionally show Premium section for market rate
+                        if (_marketRate) ...[  
+                          PremiumSection(
+                            value: _premiumValue,
+                            onChanged: (value) {
+                              setState(() {
+                                _premiumValue = value;
+                              });
+                            },
+                          ),
+                        ] else ...[  
+                          // Show sats amount input field for fixed price
+                          FormSection(
+                            title: _orderType == OrderType.buy
+                                ? 'Enter the Sats amount you want to Buy'
+                                : 'Enter the Sats amount you want to Sell',
+                            icon: const Icon(Icons.bolt, color: Color(0xFFF3CA29), size: 18),
+                            iconBackgroundColor: const Color(0xFFF3CA29).withOpacity(0.3),
+                            child: TextFormField(
+                              controller: _satsAmountController,
+                              style: const TextStyle(color: Colors.white),
+                              decoration: const InputDecoration(
+                                border: InputBorder.none,
+                                hintText: 'Enter sats amount',
+                                hintStyle: TextStyle(color: Colors.grey),
+                              ),
+                              keyboardType: TextInputType.number,
+                              validator: (value) {
+                                if (!_marketRate && (value == null || value.isEmpty)) {
+                                  return 'Please enter sats amount';
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 16),
+                        if (_orderType == OrderType.buy) ...[
+                          LightningAddressSection(
+                            controller: _lightningAddressController,
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                        const SizedBox(height: 32),
+                        Container(
+                          decoration: BoxDecoration(
+                            border: Border(
+                              top: BorderSide(
+                                color: Colors.white.withOpacity(0.1),
+                                width: 1,
+                              ),
+                            ),
+                          ),
+                          padding: const EdgeInsets.only(top: 16),
+                          child: ActionButtons(
+                            onCancel: () => context.pop(),
+                            onSubmit: _submitOrder,
+                            currentRequestId: _currentRequestId,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-
-          const SizedBox(height: 16),
-
-          // 5) Payment method
-          _buildDisabledWrapper(
-            enabled: _isEnabled,
-            child: _buildTextField('Payment method',
-                const Key('paymentMethodField'), _paymentMethodController),
-          ),
-
-          const SizedBox(height: 32),
-
-          _buildActionButtons(context, ref, OrderType.sell),
-        ],
-      ),
-    );
-  }
-
-  ///
-  /// BUY FORM
-  ///
-  Widget _buildBuyForm(BuildContext context, WidgetRef ref) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Make sure your order is below 20K sats',
-              style: TextStyle(color: AppTheme.grey2)),
-          const SizedBox(height: 16),
-
-          // 1) Currency dropdown always enabled
-          CurrencyComboBox(
-            key: const Key('fiatCodeDropdown'),
-            label: 'Fiat code',
-            onSelected: (String fiatCode) {
-              setState(() {
-                _isEnabled = true;
-              });
-            },
-          ),
-
-          const SizedBox(height: 16),
-
-          // 2) fiat amount
-          _buildDisabledWrapper(
-            enabled: _isEnabled,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppTheme.dark1,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: CurrencyTextField(
-                key: const ValueKey('fiatAmountField'),
-                controller: _fiatAmountController,
-                label: 'Fiat amount',
-                onChanged: (parsed) {
-                  setState(() {
-                    _minFiatAmount = parsed.$1;
-                    _maxFiatAmount = parsed.$2;
-                  });
-                },
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // 3) fixed/market toggle
-          _buildDisabledWrapper(
-            enabled: _isEnabled,
-            child: FixedSwitch(
-              initialValue: _marketRate,
-              onChanged: (value) {
-                setState(() {
-                  _marketRate = value;
-                });
-              },
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // 4) either text for sats or a slider for premium
-          if (_marketRate)
-            // MARKET: Show only premium slider
-            _buildDisabledWrapper(
-              enabled: _isEnabled,
-              child: _buildPremiumSlider(),
-            )
-          else
-            // FIXED: Show Sats amount + LN Invoice fields
-            Column(
-              children: [
-                _buildDisabledWrapper(
-                  enabled: _isEnabled,
-                  child: _buildTextField('Sats amount',
-                      const Key('satsAmountField'), _satsAmountController,
-                      suffix: Icon(BitcoinIcons.satoshi_v1_outline).icon),
-                ),
-                const SizedBox(height: 16),
-              ],
-            ),
-          _buildDisabledWrapper(
-            enabled: _isEnabled,
-            child: _buildTextField(
-              'Lightning Address or Lightning Invoice without an amount',
-              const Key('lightningInvoiceField'),
-              _lightningInvoiceController,
-              nullable: true,
-            ),
-          ),
-          const SizedBox(height: 16),
-          // 6) Payment method
-          _buildDisabledWrapper(
-            enabled: _isEnabled,
-            child: _buildTextField('Payment method',
-                const Key('paymentMethodField'), _paymentMethodController),
-          ),
-
-          const SizedBox(height: 32),
-
-          _buildActionButtons(context, ref, OrderType.buy),
-        ],
-      ),
-    );
-  }
-
-  ///
-  /// REUSABLE TEXT FIELD
-  ///
-  Widget _buildTextField(
-      String label, Key key, TextEditingController controller,
-      {bool nullable = false, IconData? suffix}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: AppTheme.dark1,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: TextFormField(
-        key: key,
-        controller: controller,
-        style: const TextStyle(color: AppTheme.cream1),
-        decoration: InputDecoration(
-          border: InputBorder.none,
-          labelText: label,
-          labelStyle: const TextStyle(color: AppTheme.grey2),
-          suffixIcon:
-              suffix != null ? Icon(suffix, color: AppTheme.grey2) : null,
-        ),
-        validator: nullable
-            ? null
-            : (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter a value';
-                }
-                return null;
-              },
-      ),
-    );
-  }
-
-  ///
-  /// DISABLED WRAPPER
-  ///
-  /// If [enabled] is false, we show a grey overlay to indicate
-  /// it's disabled and the child can't be interacted with.
-  Widget _buildDisabledWrapper({required bool enabled, required Widget child}) {
-    return IgnorePointer(
-      ignoring: !enabled,
-      child: AnimatedOpacity(
-        duration: const Duration(milliseconds: 300),
-        opacity: enabled ? 1.0 : 0.4,
-        child: child,
-      ),
-    );
-  }
-
-  ///
-  /// PREMIUM SLIDER for -10..10
-  ///
-  Widget _buildPremiumSlider() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Premium (%)', style: TextStyle(color: AppTheme.cream1)),
-        Slider(
-          key: const Key('premiumSlider'),
-          value: _premiumValue,
-          min: -10,
-          max: 10,
-          divisions: 20,
-          label: _premiumValue.toStringAsFixed(1),
-          onChanged: (val) {
-            setState(() {
-              _premiumValue = val;
-            });
-          },
-        ),
-      ],
-    );
-  }
-
-  ///
-  /// ACTION BUTTONS
-  ///
-  // Track the current request ID for the button state providers
-  int? _currentRequestId;
-
-  Widget _buildActionButtons(
-      BuildContext context, WidgetRef ref, OrderType orderType) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        TextButton(
-          onPressed: () {
-            context.pop();
-          },
-          child: const Text('CANCEL'),
-        ),
-        const SizedBox(width: 8.0),
-        MostroReactiveButton(
-          label: 'SUBMIT',
-          buttonStyle: ButtonStyleType.raised,
-          orderId: _currentRequestId?.toString() ?? '',
-          action: nostr_action.Action.newOrder,
-          onPressed: () {
-            if (_formKey.currentState?.validate() ?? false) {
-              _submitOrder(context, ref, orderType);
-            }
-          },
-          timeout: const Duration(seconds: 5), // Short timeout for better UX
-          showSuccessIndicator: true,
-        ),
-      ],
-    );
-  }
-
-  ///
-  /// SUBMIT ORDER
-  ///
-  void _submitOrder(BuildContext context, WidgetRef ref, OrderType orderType) {
-    // No need to reset state providers as they're now derived from the order state
-
-    final selectedFiatCode = ref.read(selectedFiatCodeProvider);
-
-    try {
-      // Generate a unique temporary ID for this new order
-      final uuid = Uuid();
-      final tempOrderId = uuid.v4();
-      final notifier = ref.read(
-        addOrderNotifierProvider(tempOrderId).notifier,
-      );
-
-      // Calculate the request ID the same way AddOrderNotifier does
-      final requestId = notifier.requestId;
-
-      // Store the current request ID for the button state providers
-      setState(() {
-        _currentRequestId = requestId;
-      });
-
-      final fiatAmount = _maxFiatAmount != null ? 0 : _minFiatAmount;
-      final minAmount = _maxFiatAmount != null ? _minFiatAmount : null;
-      final maxAmount = _maxFiatAmount;
-
-      final satsAmount = int.tryParse(_satsAmountController.text) ?? 0;
-      final paymentMethod = _paymentMethodController.text;
-
-      final buyerInvoice = _lightningInvoiceController.text.isEmpty
-          ? null
-          : _lightningInvoiceController.text;
-
-      final order = Order(
-        kind: orderType,
-        fiatCode: selectedFiatCode!,
-        fiatAmount: fiatAmount!,
-        minAmount: minAmount,
-        maxAmount: maxAmount,
-        paymentMethod: paymentMethod,
-        amount: _marketRate ? 0 : satsAmount,
-        premium: _marketRate ? _premiumValue.toInt() : 0,
-        buyerInvoice: buyerInvoice,
-      );
-
-      // Submit the order first
-      notifier.submitOrder(order);
-
-      // The timeout is now handled by the NostrResponsiveButton
-    } catch (e) {
-      // If there's an exception, show an error dialog instead of using providers
-      if (context.mounted) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Error'),
-            content: Text(e.toString()),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('OK'),
               ),
             ],
           ),
+        ],
+      ),
+    );
+  }
+
+  void _submitOrder() {
+    if (_formKey.currentState?.validate() ?? false) {
+      final selectedFiatCode = ref.read(selectedFiatCodeProvider);
+
+      if (selectedFiatCode.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please select a currency'),
+            duration: Duration(seconds: 2),
+          ),
         );
+        return;
+      }
+
+      if (_selectedPaymentMethods.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please select at least one payment method'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+        return;
+      }
+
+      try {
+        final uuid = const Uuid();
+        final tempOrderId = uuid.v4();
+        final notifier = ref.read(
+          addOrderNotifierProvider(tempOrderId).notifier,
+        );
+
+        final requestId = notifier.requestId;
+
+        setState(() {
+          _currentRequestId = requestId;
+        });
+
+        final fiatAmount = _maxFiatAmount != null ? 0 : _minFiatAmount;
+        final minAmount = _maxFiatAmount != null ? _minFiatAmount : null;
+        final maxAmount = _maxFiatAmount;
+
+        final satsAmount = int.tryParse(_satsAmountController.text) ?? 0;
+
+        // Preparar la lista de métodos de pago para cumplir con NIP-69
+        List<String> paymentMethods =
+            List<String>.from(_selectedPaymentMethods);
+        if (_showCustomPaymentMethod &&
+            _customPaymentMethodController.text.isNotEmpty) {
+          // Eliminar "Other" de la lista si existe para evitar duplicación
+          paymentMethods.remove("Other");
+          // Agregar el método de pago personalizado
+          paymentMethods.add(_customPaymentMethodController.text);
+        }
+
+        // Cada método de pago se mantiene como un elemento separado en la lista
+        // en lugar de concatenarlos en una cadena
+
+        final buyerInvoice = _orderType == OrderType.buy &&
+                _lightningAddressController.text.isNotEmpty
+            ? _lightningAddressController.text
+            : null;
+
+        final order = Order(
+          kind: _orderType,
+          fiatCode: selectedFiatCode,
+          fiatAmount: fiatAmount!,
+          minAmount: minAmount,
+          maxAmount: maxAmount,
+          paymentMethod: paymentMethods.join(','),
+          amount: _marketRate ? 0 : satsAmount,
+          premium: _marketRate ? _premiumValue.toInt() : 0,
+          buyerInvoice: buyerInvoice,
+        );
+
+        notifier.submitOrder(order);
+      } catch (e) {
+        if (context.mounted) {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              backgroundColor: const Color(0xFF1E2230),
+              title: const Text('Error', style: TextStyle(color: Colors.white)),
+              content: Text(e.toString(),
+                  style: const TextStyle(color: Colors.white)),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('OK',
+                      style: TextStyle(color: Color(0xFF8CC63F))),
+                ),
+              ],
+            ),
+          );
+        }
       }
     }
   }

@@ -1,0 +1,19 @@
+{
+  "USD": [
+    "Cash App",
+    "Venmo",
+    "Zelle",
+    "Bank Transfer",
+    "PayPal"
+  ],
+  "EUR": ["SEPA", "Revolut", "N26", "Bank Transfer"],
+  "GBP": ["Bank Transfer", "Revolut", "Monzo"],
+  "JPY": ["Bank Transfer", "PayPay"],
+  "VES": ["Pago Móvil", "Binance P2P", "Efectivo"],
+  "ARS": ["Mercado Pago", "MODO", "CVU", "Belo", "Lemon"],
+  "CUP": ["Transfermovil", "EnZona", "Efectivo"],
+  "CLP": ["Transferencia bancaria", "MACH", "Cuenta RUT"],
+  "COP": ["Nequi", "Daviplata", "PSE", "Bancolombia"],
+  "MXN": ["SPEI", "CoDi", "Efectivo"],
+  "default": ["Bank Transfer", "Cash in person", "Other"]
+}

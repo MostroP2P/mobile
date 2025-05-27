@@ -117,7 +117,7 @@ class TradeDetailScreen extends ConsumerWidget {
         children: [
           Expanded(
             child: Column(
-              // Using Column with spacing = 2 isn’t standard; using SizedBoxes for spacing is fine.
+              // Using Column with spacing = 2 isn't standard; using SizedBoxes for spacing is fine.
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
@@ -132,7 +132,7 @@ class TradeDetailScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Payment method: $method',
+                  'Payment methods: $methodText',
                   style: textTheme.bodyLarge,
                 ),
               ],

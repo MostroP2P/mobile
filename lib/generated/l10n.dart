@@ -158,7 +158,7 @@ abstract class S {
   /// No description provided for @fiatSentOkSeller.
   ///
   /// In en, this message translates to:
-  /// **'{buyer_npub} has informed you that they sent the fiat money. Once you confirm receipt, please release the funds. After releasing, the money will go to the buyer and there will be no turning back, so only proceed if you are sure. If you want to release the Sats to the buyer, send me release-order-message.'**
+  /// **'{buyer_npub} has informed you that they sent the fiat money. Once you confirm receipt, please release the funds. After releasing, the money will go to the buyer and there will be no turning back, so only proceed if you are sure. If you want to release the Sats to the buyer, tap the release button.'**
   String fiatSentOkSeller(Object buyer_npub);
 
   /// No description provided for @released.
