@@ -61,7 +61,6 @@ final Map<int, Session> _requestIdToSession = {};
 
     if (orderId != null) {
       _sessions[orderId] = session;
-      await _storage.putSession(session);
       state = sessions;
     } else if (requestId != null) {
       _requestIdToSession[requestId] = session;

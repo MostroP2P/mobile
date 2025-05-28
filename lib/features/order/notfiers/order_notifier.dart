@@ -24,11 +24,19 @@ class OrderNotifier extends AbstractMostroNotifier {
     }
     final msg = messages.firstWhereOrNull((m) => m.action != Action.cantDo);
     if (msg?.payload is Order) {
-      state = OrderState(status: msg!.getPayload<Order>()!.status, action: msg.action, order: msg.getPayload<Order>()!);
+      state = OrderState(
+        status: msg!.getPayload<Order>()!.status,
+        action: msg.action,
+        order: msg.getPayload<Order>()!,
+      );
     } else {
       final orderMsg = await storage.getLatestMessageOfTypeById<Order>(orderId);
       if (orderMsg != null) {
-        state = OrderState(status: orderMsg.getPayload<Order>()!.status, action: orderMsg.action, order: orderMsg.getPayload<Order>()!);
+        state = OrderState(
+          status: orderMsg.getPayload<Order>()!.status,
+          action: orderMsg.action,
+          order: orderMsg.getPayload<Order>()!,
+        );
       }
     }
   }

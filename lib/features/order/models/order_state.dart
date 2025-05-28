@@ -18,16 +18,16 @@ class OrderState {
     this.dispute,
   });
 
-factory OrderState.fromMostroMessage(MostroMessage message) {
-  return OrderState(
-    status: message.getPayload<Order>()?.status ?? Status.pending,
-    action: message.action,
-    order: message.getPayload<Order>(),
-    paymentRequest: message.getPayload<PaymentRequest>(),
-    cantDo: message.getPayload<CantDo>(),
-    dispute: message.getPayload<Dispute>(),
-  );
-}
+  factory OrderState.fromMostroMessage(MostroMessage message) {
+    return OrderState(
+      status: message.getPayload<Order>()?.status ?? Status.pending,
+      action: message.action,
+      order: message.getPayload<Order>(),
+      paymentRequest: message.getPayload<PaymentRequest>(),
+      cantDo: message.getPayload<CantDo>(),
+      dispute: message.getPayload<Dispute>(),
+    );
+  }
 
   @override
   String toString() =>
@@ -72,11 +72,15 @@ factory OrderState.fromMostroMessage(MostroMessage message) {
     );
   }
 
-  OrderState updateFromMostroMessage(MostroMessage message) {
+  OrderState updateWith(MostroMessage message) {
     return copyWith(
       status: message.getPayload<Order>()?.status ?? status,
-      action: message.action,
-      order: message.getPayload<Order>() ?? order,
+      action: message.action != Action.cantDo ? message.action : action,
+      order: message.payload is Order
+        ? message.getPayload<Order>()
+        : message.payload is PaymentRequest
+            ? message.getPayload<PaymentRequest>()!.order
+            : order,
       paymentRequest: message.getPayload<PaymentRequest>() ?? paymentRequest,
       cantDo: message.getPayload<CantDo>() ?? cantDo,
       dispute: message.getPayload<Dispute>() ?? dispute,

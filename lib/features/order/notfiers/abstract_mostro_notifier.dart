@@ -49,51 +49,26 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
     final notifProvider = ref.read(notificationProvider.notifier);
     final mostroInstance = ref.read(orderRepositoryProvider).mostroInstance;
 
+    state = state.updateWith(event);
+
     switch (event.action) {
       case Action.newOrder:
-        state = OrderState(
-          action: event.action,
-          status: event.getPayload<Order>()!.status,
-          order: event.getPayload<Order>()!,
-        );
         break;
       case Action.payInvoice:
-        final pr = event.getPayload<PaymentRequest>();
-        final order = pr?.order;
-        state = OrderState(
-          action: event.action,
-          status: order?.status ?? state.status,
-          order: order,
-        );
         navProvider.go('/pay_invoice/${event.id!}');
         break;
       case Action.fiatSentOk:
-        state = OrderState(
-          action: event.action,
-          status: event.getPayload<Order>()!.status,
-          order: event.getPayload<Order>()!,
-        );
         final peer = event.getPayload<Peer>();
         notifProvider.showInformation(event.action, values: {
           'buyer_npub': peer?.publicKey ?? '{buyer_npub}',
         });
         break;
       case Action.released:
-        state = OrderState(
-          action: event.action,
-          status: event.getPayload<Order>()!.status,
-          order: event.getPayload<Order>()!,
-        );
         notifProvider.showInformation(event.action, values: {
           'seller_npub': '',
         });
         break;
       case Action.canceled:
-        state = OrderState(
-          action: event.action,
-          status: event.getPayload<Order>()!.status,
-          order: event.getPayload<Order>()!,
-        );
         ref
             .read(mostroStorageProvider)
             .deleteAllMessagesByOrderId(session.orderId!);
@@ -173,6 +148,9 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         });
         break;
       case Action.addInvoice:
+        final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+        sessionNotifier.saveSession(session);
+
         navProvider.go('/add_invoice/$orderId');
         break;
       case Action.buyerTookOrder:
