@@ -58,10 +58,12 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         );
         break;
       case Action.payInvoice:
+        final pr = event.getPayload<PaymentRequest>();
+        final order = pr?.order;
         state = OrderState(
           action: event.action,
-          status: event.getPayload<Order>()!.status,
-          order: event.getPayload<Order>()!,
+          status: order?.status ?? state.status,
+          order: order,
         );
         navProvider.go('/pay_invoice/${event.id!}');
         break;

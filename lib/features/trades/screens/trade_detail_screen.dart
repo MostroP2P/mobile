@@ -132,7 +132,7 @@ class TradeDetailScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Payment methods: $methodText',
+                  'Payment methods: $method',
                   style: textTheme.bodyLarge,
                 ),
               ],
