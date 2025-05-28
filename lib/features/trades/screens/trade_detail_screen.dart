@@ -9,6 +9,7 @@ import 'package:mostro_mobile/core/mostro_fsm.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
 import 'package:mostro_mobile/data/models/enums/role.dart';
 import 'package:mostro_mobile/data/models/enums/status.dart';
+import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
 import 'package:mostro_mobile/features/trades/models/trade_state.dart';
@@ -27,7 +28,7 @@ class TradeDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final tradeState = ref.watch(tradeStateProvider(orderId));
+    final tradeState = ref.watch(orderNotifierProvider(orderId));
     // If message is null or doesn't have an Order payload, show loading
     final orderPayload = tradeState.order;
     if (orderPayload == null) {
@@ -79,7 +80,7 @@ class TradeDetailScreen extends ConsumerWidget {
   }
 
   /// Builds a card showing the user is "selling/buying X sats for Y fiat" etc.
-  Widget _buildSellerAmount(WidgetRef ref, TradeState tradeState) {
+  Widget _buildSellerAmount(WidgetRef ref, OrderState tradeState) {
     final session = ref.watch(sessionProvider(orderId));
 
     final selling = session!.role == Role.seller ? 'selling' : 'buying';
@@ -208,7 +209,7 @@ class TradeDetailScreen extends ConsumerWidget {
   /// Additional checks use `message.action` to refine which button to show.
   /// Following the Mostro protocol state machine for order flow.
   List<Widget> _buildActionButtons(
-      BuildContext context, WidgetRef ref, TradeState tradeState) {
+      BuildContext context, WidgetRef ref, OrderState tradeState) {
     final session = ref.watch(sessionProvider(orderId));
     final userRole = session?.role;
   
