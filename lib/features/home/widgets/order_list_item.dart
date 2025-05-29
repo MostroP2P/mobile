@@ -17,10 +17,11 @@ class OrderListItem extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(timeProvider);
 
-    // Determine if this is a fixed order (has specific sats amount)
-    final bool isFixedOrder = order.amount != null && order.amount!.isNotEmpty;
+    // Determine if this is a fixed order (has specific sats amount and is not zero)
+    final bool isFixedOrder =
+        order.amount != null && order.amount != "0" && order.amount!.isNotEmpty;
 
-    // Determine if the premium is positive or negative for the color
+    // Calcular el valor del premium para órdenes de tipo market
     final premiumValue =
         order.premium != null ? double.tryParse(order.premium!) ?? 0.0 : 0.0;
     final isPremiumPositive = premiumValue >= 0;
@@ -149,33 +150,42 @@ class OrderListItem extends ConsumerWidget {
                           style: const TextStyle(fontSize: 18),
                         ),
                         const SizedBox(width: 4),
-
-                        // Percentage with more vibrant color (only for non-fixed orders)
-                        if (!isFixedOrder)
-                          Text(
-                            premiumText,
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: premiumColor,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
                       ],
                     ),
-                    
-                    // Display sats amount for fixed orders
-                    if (isFixedOrder)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(
-                          '${order.orderType == OrderType.buy ? "Buying" : "Selling"} ${order.fiatAmount} ${order.currency ?? ""} for ${order.amount} sats',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.white70,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
+
+                    // Display sats amount for all orders (simplified)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: isFixedOrder
+                          ? Text(
+                              'For ${order.amount!} sats',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.white70,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            )
+                          : Row(
+                              children: [
+                                Text(
+                                  'Market Price ',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.white70,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                Text(
+                                  premiumText,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: premiumColor,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                    ),
                   ],
                 ),
               ),
