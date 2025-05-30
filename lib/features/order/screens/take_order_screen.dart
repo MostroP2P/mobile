@@ -160,7 +160,7 @@ class TakeOrderScreen extends ConsumerWidget {
       children: [
         OutlinedButton(
           onPressed: () {
-            context.go('/');
+            context.pop();
           },
           style: AppTheme.theme.outlinedButtonTheme.style,
           child: const Text('CLOSE'),

@@ -7,6 +7,61 @@ import 'package:mostro_mobile/data/models/enums/status.dart';
 /// All auxiliary / neutral notifications intentionally map to
 /// the **same** state so that `nextStatus` always returns a non-null value.
 class MostroFSM {
+  /// Private constructor to prevent instantiation
+  MostroFSM._();
+
+  static final buyer = {
+    Status.pending: {
+      Action.takeSell: Status.waitingBuyerInvoice,
+      // A seller has taken the order
+      Action.waitingSellerToPay: Status.waitingPayment,
+      Action.cancel: Status.canceled,
+    },
+    Status.waitingBuyerInvoice: {
+      Action.addInvoice: Status.waitingPayment,
+      Action.cancel: Status.canceled,
+      Action.dispute: Status.dispute,
+    },
+    Status.waitingPayment: {
+      Action.waitingSellerToPay: Status.waitingPayment,
+      Action.holdInvoicePaymentAccepted: Status.active,
+      Action.cancel: Status.canceled,
+      Action.dispute: Status.dispute,
+    },
+    Status.active: {
+      Action.holdInvoicePaymentAccepted: Status.active,
+      Action.cancel: Status.canceled,
+      Action.dispute: Status.dispute,
+    },
+    Status.fiatSent: {}
+  };
+
+  static final seller = {
+    Status.pending: {
+      Action.takeBuy: Status.waitingPayment,
+      Action.cancel: Status.canceled,
+    },
+    Status.waitingPayment: {
+      Action.payInvoice: Status.waitingBuyerInvoice,
+      Action.cancel: Status.canceled,
+    },
+    Status.waitingBuyerInvoice: {
+      Action.waitingBuyerInvoice: Status.waitingPayment,
+      Action.cancel: Status.canceled,
+      Action.dispute: Status.dispute,
+    },
+    Status.active: {
+      Action.buyerTookOrder: Status.active,
+      Action.cancel: Status.canceled,
+      Action.dispute: Status.dispute,
+    },
+    Status.fiatSent: {
+      Action.release: Status.settledHoldInvoice,
+      Action.cancel: Status.canceled,
+      Action.dispute: Status.dispute,
+    },
+  };
+
   /// Nested map: *currentStatus → { role → { action → nextStatus } }*.
   static final Map<Status, Map<Role, Map<Action, Status>>> _transitions = {
     // ───────────────────────── MATCHING / TAKING ────────────────────────
@@ -14,10 +69,12 @@ class MostroFSM {
       Role.buyer: {
         Action.takeSell: Status.waitingBuyerInvoice,
         Action.cancel: Status.canceled,
+        Action.dispute: Status.dispute,
       },
       Role.seller: {
         Action.takeBuy: Status.waitingPayment,
         Action.cancel: Status.canceled,
+        Action.dispute: Status.dispute,
       },
       Role.admin: {},
     },
@@ -27,7 +84,9 @@ class MostroFSM {
         Action.addInvoice: Status.waitingPayment,
         Action.cancel: Status.canceled,
       },
-      Role.seller: {},
+      Role.seller: {
+        Action.cancel: Status.canceled,
+      },
       Role.admin: {},
     },
     // ───────────────────────── HOLD INVOICE PAYMENT ────────────────────
@@ -36,19 +95,23 @@ class MostroFSM {
         Action.payInvoice: Status.active,
         Action.cancel: Status.canceled,
       },
-      Role.buyer: {},
+      Role.buyer: {
+        Action.cancel: Status.canceled,
+      },
       Role.admin: {},
     },
     // ───────────────────────── ACTIVE ────────────────────────────
     Status.active: {
       Role.buyer: {
+        Action.holdInvoicePaymentAccepted: Status.active,
         Action.fiatSent: Status.fiatSent,
         Action.cancel: Status.canceled,
-        Action.disputeInitiatedByYou: Status.dispute,
+        Action.dispute: Status.dispute,
       },
       Role.seller: {
         Action.cancel: Status.canceled,
-        Action.disputeInitiatedByYou: Status.dispute,
+        Action.dispute: Status.dispute,
+        Action.buyerTookOrder: Status.active,
       },
       Role.admin: {},
     },

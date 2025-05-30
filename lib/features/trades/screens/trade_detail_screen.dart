@@ -12,8 +12,6 @@ import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
-import 'package:mostro_mobile/features/trades/models/trade_state.dart';
-import 'package:mostro_mobile/features/trades/providers/trade_state_provider.dart';
 import 'package:mostro_mobile/features/trades/widgets/mostro_message_detail_widget.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/shared/utils/currency_utils.dart';
@@ -222,7 +220,6 @@ class TradeDetailScreen extends ConsumerWidget {
       // FSM-driven action mapping: ensure all actions are handled
       switch (action) {
         case actions.Action.cancel:
-        case actions.Action.canceled:
           widgets.add(_buildNostrButton(
             'CANCEL',
             action: action,
@@ -252,10 +249,7 @@ class TradeDetailScreen extends ConsumerWidget {
           }
           break;
         case actions.Action.fiatSent:
-        case actions.Action.fiatSentOk:
-          if (userRole == Role.buyer &&
-              tradeState.action != actions.Action.fiatSentOk &&
-              tradeState.action != actions.Action.fiatSent) {
+          if (userRole == Role.buyer) {
             widgets.add(_buildNostrButton(
               'FIAT SENT',
               action: actions.Action.fiatSentOk,
@@ -345,6 +339,9 @@ class TradeDetailScreen extends ConsumerWidget {
                 .releaseOrder(), // This usually triggers completion
           ));
           break;
+        case actions.Action.buyerTookOrder:
+          widgets.add(_buildContactButton(context));
+          break;
         case actions.Action.rate:
         case actions.Action.rateUser:
         case actions.Action.rateReceived:
@@ -356,12 +353,13 @@ class TradeDetailScreen extends ConsumerWidget {
           ));
           break;
         case actions.Action.holdInvoicePaymentAccepted:
+          widgets.add(_buildContactButton(context));
+          break;
         case actions.Action.holdInvoicePaymentSettled:
         case actions.Action.holdInvoicePaymentCanceled:
           // These are system actions, not user actions, so no button needed
           break;
         case actions.Action.buyerInvoiceAccepted:
-        case actions.Action.buyerTookOrder:
         case actions.Action.waitingSellerToPay:
         case actions.Action.waitingBuyerInvoice:
         case actions.Action.adminCancel:
