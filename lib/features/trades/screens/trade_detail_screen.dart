@@ -278,6 +278,17 @@ class TradeDetailScreen extends ConsumerWidget {
           }
           break;
         case actions.Action.release:
+          if (userRole == Role.seller) {
+            widgets.add(_buildNostrButton(
+              'RELEASE',
+              action: actions.Action.release,
+              backgroundColor: AppTheme.mostroGreen,
+              onPressed: () => ref
+                  .read(orderNotifierProvider(orderId).notifier)
+                  .releaseOrder(),
+            ));
+          }
+          break;
         case actions.Action.released:
           if (userRole == Role.seller) {
             widgets.add(_buildNostrButton(

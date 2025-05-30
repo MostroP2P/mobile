@@ -10,6 +10,14 @@ class MostroFSM {
   /// Private constructor to prevent instantiation
   MostroFSM._();
 
+  static final admin = {
+    (Status.active, Action.fiatSentOk): {
+      Action.cancel: Status.canceled,
+      Action.dispute: Status.dispute,
+      Action.release: Status.settledHoldInvoice,
+    }
+  };
+
   static final buyer = {
     Status.pending: {
       Action.takeSell: Status.waitingBuyerInvoice,
@@ -112,6 +120,8 @@ class MostroFSM {
         Action.cancel: Status.canceled,
         Action.dispute: Status.dispute,
         Action.buyerTookOrder: Status.active,
+        Action.release: Status.fiatSent,
+        Action.rate: Status.success,
       },
       Role.admin: {},
     },

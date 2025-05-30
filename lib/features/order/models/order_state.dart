@@ -77,13 +77,85 @@ class OrderState {
       status: message.getPayload<Order>()?.status ?? status,
       action: message.action != Action.cantDo ? message.action : action,
       order: message.payload is Order
-        ? message.getPayload<Order>()
-        : message.payload is PaymentRequest
-            ? message.getPayload<PaymentRequest>()!.order
-            : order,
+          ? message.getPayload<Order>()
+          : message.payload is PaymentRequest
+              ? message.getPayload<PaymentRequest>()!.order
+              : order,
       paymentRequest: message.getPayload<PaymentRequest>() ?? paymentRequest,
       cantDo: message.getPayload<CantDo>() ?? cantDo,
       dispute: message.getPayload<Dispute>() ?? dispute,
     );
   }
+
+  final actions = {
+    Role.seller: {
+      Status.pending: {
+        Action.takeBuy: [
+          Action.takeBuy,
+          Action.cancel,
+        ],
+        Action.waitingBuyerInvoice: [
+          Action.cancel,
+        ],
+        Action.payInvoice: [
+          Action.payInvoice,
+          Action.cancel,
+        ],
+      },
+      Status.active: {
+        Action.buyerTookOrder: [
+          Action.buyerTookOrder,
+          Action.cancel,
+          Action.dispute,
+        ],
+        Action.fiatSentOk: [
+          Action.cancel,
+          Action.dispute,
+          Action.release,
+        ],
+        Action.rate: [
+          Action.rate,
+        ],
+        Action.purchaseCompleted: []
+      },
+      Status.waitingPayment: {
+        Action.payInvoice: [
+          Action.payInvoice,
+          Action.cancel,
+        ],
+      },
+    },
+    Role.buyer: {
+      Status.pending: {
+        Action.takeSell: [
+          Action.takeSell,
+          Action.cancel,
+        ],
+      },
+      Status.waitingBuyerInvoice: {
+        Action.addInvoice: [
+          Action.addInvoice,
+          Action.cancel,
+        ],
+        Action.waitingSellerToPay: [
+          Action.cancel,
+        ],
+      },
+      Status.active: {
+        Action.holdInvoicePaymentAccepted: [
+          Action.fiatSent,
+          Action.cancel,
+          Action.dispute,
+        ],
+        Action.fiatSentOk: [
+          Action.cancel,
+          Action.dispute,
+        ],
+        Action.rate: [
+          Action.rate,
+        ],
+        Action.purchaseCompleted: [],
+      },
+    },
+  };
 }
