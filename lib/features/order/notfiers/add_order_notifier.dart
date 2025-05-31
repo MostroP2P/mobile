@@ -61,7 +61,7 @@ class AddOrderNotifier extends AbstractMostroNotifier {
     ref.read(navigationProvider.notifier).go(
           '/order_confirmed/${message.id!}',
         );
-    dispose();
+    ref.invalidateSelf();
   }
 
   Future<void> submitOrder(Order order) async {
