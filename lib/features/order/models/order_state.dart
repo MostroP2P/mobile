@@ -87,7 +87,7 @@ class OrderState {
     );
   }
 
-  final actions = {
+  static final actions = {
     Role.seller: {
       Status.pending: {
         Action.takeBuy: [
@@ -154,6 +154,7 @@ class OrderState {
         Action.rate: [
           Action.rate,
         ],
+        Action.rateReceived: [],
         Action.purchaseCompleted: [],
       },
     },

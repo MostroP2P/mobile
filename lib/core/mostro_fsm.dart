@@ -40,6 +40,7 @@ class MostroFSM {
       Action.holdInvoicePaymentAccepted: Status.active,
       Action.cancel: Status.canceled,
       Action.dispute: Status.dispute,
+      Action.rate: Status.success,
     },
     Status.fiatSent: {}
   };

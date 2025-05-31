@@ -4,6 +4,7 @@ import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models.dart';
 import 'package:mostro_mobile/features/order/models/order_state.dart';
+import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
@@ -21,7 +22,16 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
     this.orderId,
     this.ref,
   ) : super(OrderState(
-            action: Action.newOrder, status: Status.pending, order: null));
+            action: Action.newOrder, status: Status.pending, order: null)) {
+
+    final oldSession = ref
+        .read(sessionNotifierProvider.notifier)
+        .getSessionByOrderId(orderId);
+    if (oldSession != null) {
+      session = oldSession;
+    }
+
+  }
 
   void subscribe() {
     subscription = ref.listen(
@@ -78,6 +88,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         navProvider.go('/');
         notifProvider.showInformation(event.action, values: {'id': orderId});
         dispose();
+        ref.invalidate(orderNotifierProvider(orderId));
         break;
       case Action.cooperativeCancelInitiatedByYou:
         notifProvider.showInformation(event.action, values: {
