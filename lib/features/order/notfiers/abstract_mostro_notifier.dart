@@ -81,14 +81,13 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
       case Action.canceled:
         ref
             .read(mostroStorageProvider)
-            .deleteAllMessagesByOrderId(session.orderId!);
+            .deleteAllMessagesByOrderId(orderId);
         ref
             .read(sessionNotifierProvider.notifier)
-            .deleteSession(session.orderId!);
+            .deleteSession(orderId);
         navProvider.go('/');
         notifProvider.showInformation(event.action, values: {'id': orderId});
         dispose();
-        ref.invalidate(orderNotifierProvider(orderId));
         break;
       case Action.cooperativeCancelInitiatedByYou:
         notifProvider.showInformation(event.action, values: {
