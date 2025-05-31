@@ -20,6 +20,7 @@ class TakeOrderScreen extends ConsumerWidget {
   final TextEditingController _fiatAmountController = TextEditingController();
   final TextEditingController _lndAddressController = TextEditingController();
   final TextTheme textTheme = AppTheme.theme.textTheme;
+
   TakeOrderScreen({super.key, required this.orderId, required this.orderType});
 
   @override

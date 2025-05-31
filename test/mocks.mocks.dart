@@ -8,11 +8,11 @@ import 'dart:async' as _i5;
 import 'package:dart_nostr/nostr/model/export.dart' as _i8;
 import 'package:flutter_riverpod/flutter_riverpod.dart' as _i2;
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:mostro_mobile/data/models.dart' as _i3;
+import 'package:mostro_mobile/data/models.dart' as _i4;
 import 'package:mostro_mobile/data/repositories/open_orders_repository.dart'
     as _i7;
 import 'package:mostro_mobile/features/settings/settings.dart' as _i6;
-import 'package:mostro_mobile/services/mostro_service.dart' as _i4;
+import 'package:mostro_mobile/services/mostro_service.dart' as _i3;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -39,20 +39,10 @@ class _FakeRef_0<State extends Object?> extends _i1.SmartFake
         );
 }
 
-class _FakeSession_1 extends _i1.SmartFake implements _i3.Session {
-  _FakeSession_1(
-    Object parent,
-    Invocation parentInvocation,
-  ) : super(
-          parent,
-          parentInvocation,
-        );
-}
-
 /// A class which mocks [MostroService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockMostroService extends _i1.Mock implements _i4.MostroService {
+class MockMostroService extends _i1.Mock implements _i3.MostroService {
   MockMostroService() {
     _i1.throwOnMissingStub(this);
   }
@@ -76,7 +66,7 @@ class MockMostroService extends _i1.Mock implements _i4.MostroService {
       );
 
   @override
-  void subscribe(_i3.Session? session) => super.noSuchMethod(
+  void subscribe(_i4.Session? session) => super.noSuchMethod(
         Invocation.method(
           #subscribe,
           [session],
@@ -85,14 +75,14 @@ class MockMostroService extends _i1.Mock implements _i4.MostroService {
       );
 
   @override
-  _i3.Session? getSessionByOrderId(String? orderId) =>
+  _i4.Session? getSessionByOrderId(String? orderId) =>
       (super.noSuchMethod(Invocation.method(
         #getSessionByOrderId,
         [orderId],
-      )) as _i3.Session?);
+      )) as _i4.Session?);
 
   @override
-  _i5.Future<void> submitOrder(_i3.MostroMessage<_i3.Payload>? order) =>
+  _i5.Future<void> submitOrder(_i4.MostroMessage<_i4.Payload>? order) =>
       (super.noSuchMethod(
         Invocation.method(
           #submitOrder,
@@ -215,20 +205,15 @@ class MockMostroService extends _i1.Mock implements _i4.MostroService {
       ) as _i5.Future<void>);
 
   @override
-  _i5.Future<_i3.Session> publishOrder(_i3.MostroMessage<_i3.Payload>? order) =>
+  _i5.Future<void> publishOrder(_i4.MostroMessage<_i4.Payload>? order) =>
       (super.noSuchMethod(
         Invocation.method(
           #publishOrder,
           [order],
         ),
-        returnValue: _i5.Future<_i3.Session>.value(_FakeSession_1(
-          this,
-          Invocation.method(
-            #publishOrder,
-            [order],
-          ),
-        )),
-      ) as _i5.Future<_i3.Session>);
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
 
   @override
   void updateSettings(_i6.Settings? settings) => super.noSuchMethod(
@@ -323,12 +308,11 @@ class MockOpenOrdersRepository extends _i1.Mock
       );
 
   @override
-  _i5.Future<void> reloadData() => (super.noSuchMethod(
+  void reloadData() => super.noSuchMethod(
         Invocation.method(
           #reloadData,
           [],
         ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
+        returnValueForMissingStub: null,
+      );
 }

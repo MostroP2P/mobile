@@ -1,10 +1,8 @@
-import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
-import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 
@@ -71,8 +69,8 @@ void main() {
 
       // Stub the repository’s takeBuyOrder method.
       when(mockMostroService.takeBuyOrder(any, any)).thenAnswer((_) async {
-        final msg = MostroMessage.fromJson(confirmationJsonTakeBuy);
-        return Stream.value(msg);
+        //final msg = MostroMessage.fromJson(confirmationJsonTakeBuy);
+        //return Stream.value(msg);
       });
 
       // Override the repository provider with our mock.
@@ -119,8 +117,8 @@ void main() {
       };
 
       when(mockMostroService.takeSellOrder(any, any, any)).thenAnswer((_) async {
-        final msg = MostroMessage.fromJson(confirmationJsonTakeSell);
-        return Stream.value(msg);
+        //final msg = MostroMessage.fromJson(confirmationJsonTakeSell);
+        //return Stream.value(msg);
       });
 
       // Override the repository provider with our mock.
@@ -137,7 +135,7 @@ void main() {
       final state = container.read(orderNotifierProvider(testOrderId));
       expect(state, isNotNull);
       expect(state.action, equals(Action.addInvoice));
-      final orderPayload = state.getPayload<Order>();
+      final orderPayload = state.order;
       expect(orderPayload, isNotNull);
       expect(orderPayload!.amount, equals(0));
       expect(orderPayload.fiatCode, equals('VES'));
@@ -173,8 +171,8 @@ void main() {
       };
 
       when(mockMostroService.takeSellOrder(any, any, any)).thenAnswer((_) async {
-        final msg = MostroMessage.fromJson(confirmationJsonSellRange);
-        return Stream.value(msg);
+        //final msg = MostroMessage.fromJson(confirmationJsonSellRange);
+        //return Stream.value(msg);
       });
 
       // Override the repository provider with our mock.
@@ -191,7 +189,7 @@ void main() {
       final state = container.read(orderNotifierProvider(testOrderId));
       expect(state, isNotNull);
       expect(state.action, equals(Action.addInvoice));
-      final orderPayload = state.getPayload<Order>();
+      final orderPayload = state.order;
       expect(orderPayload, isNotNull);
       expect(orderPayload!.minAmount, equals(10));
       expect(orderPayload.maxAmount, equals(20));
@@ -211,8 +209,8 @@ void main() {
       };
 
       when(mockMostroService.takeSellOrder(any, any, any)).thenAnswer((_) async {
-        final msg = MostroMessage.fromJson(confirmationJsonSellLN);
-        return Stream.value(msg);
+        //final msg = MostroMessage.fromJson(confirmationJsonSellLN);
+        //return Stream.value(msg);
       });
 
       // Override the repository provider with our mock.

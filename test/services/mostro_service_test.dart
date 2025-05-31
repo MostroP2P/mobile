@@ -1,14 +1,13 @@
 import 'dart:convert';
 import 'package:convert/convert.dart';
 import 'package:dart_nostr/dart_nostr.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/session.dart';
-import 'package:mostro_mobile/data/repositories/mostro_storage.dart';
 import 'package:mostro_mobile/features/key_manager/key_derivator.dart';
-import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/services/mostro_service.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
 import 'package:mostro_mobile/shared/notifiers/session_notifier.dart';
@@ -17,26 +16,21 @@ import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 import 'mostro_service_test.mocks.dart';
 import 'mostro_service_helper_functions.dart';
 
-@GenerateMocks([NostrService, SessionNotifier, MostroStorage])
+@GenerateMocks([NostrService, SessionNotifier, Ref])
 void main() {
   late MostroService mostroService;
   late KeyDerivator keyDerivator;
   late MockNostrService mockNostrService;
   late MockSessionNotifier mockSessionNotifier;
-  late MockMostroStorage mockSessionStorage;
+  late MockRef mockRef;
 
   final mockServerTradeIndex = MockServerTradeIndex();
 
   setUp(() {
     mockNostrService = MockNostrService();
     mockSessionNotifier = MockSessionNotifier();
-    mockSessionStorage = MockMostroStorage();
-    mostroService = MostroService(
-      mockNostrService,
-      mockSessionNotifier,
-      Settings(relays: [], fullPrivacyMode: true, mostroPublicKey: 'xxx'),
-      mockSessionStorage,
-    );
+    mockRef = MockRef();
+    mostroService = MostroService(mockSessionNotifier, mockRef);
     keyDerivator = KeyDerivator("m/44'/1237'/38383'/0");
   });
 
