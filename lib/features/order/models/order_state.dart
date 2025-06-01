@@ -87,7 +87,11 @@ class OrderState {
     );
   }
 
-  static final actions = {
+  List<Action> getActions(Role role) {
+    return actions[role]![status]![action] ?? [];
+  }
+
+  static final Map<Role, Map<Status, Map<Action, List<Action>>>> actions = {
     Role.seller: {
       Status.pending: {
         Action.takeBuy: [

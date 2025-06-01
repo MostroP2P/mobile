@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
-import 'package:mostro_mobile/core/mostro_fsm.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
 import 'package:mostro_mobile/data/models/enums/role.dart';
 import 'package:mostro_mobile/data/models/enums/status.dart';
@@ -211,7 +210,7 @@ class TradeDetailScreen extends ConsumerWidget {
     final session = ref.watch(sessionProvider(orderId));
     final userRole = session?.role;
   
-    final userActions = MostroFSM.possibleActions(tradeState.status, userRole!);
+    final userActions = tradeState.getActions(userRole!);
     if (userActions.isEmpty) return [];
 
     final widgets = <Widget>[];
@@ -347,7 +346,7 @@ class TradeDetailScreen extends ConsumerWidget {
             backgroundColor: AppTheme.mostroGreen,
             onPressed: () => ref
                 .read(orderNotifierProvider(orderId).notifier)
-                .releaseOrder(), // This usually triggers completion
+                .releaseOrder(),
           ));
           break;
         case actions.Action.buyerTookOrder:
