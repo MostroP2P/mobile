@@ -113,6 +113,9 @@ final Peer? peer;
           Action.payInvoice,
           Action.cancel,
         ],
+        Action.newOrder: [
+          Action.cancel,
+        ],
       },
       Status.active: {
         Action.buyerTookOrder: [
