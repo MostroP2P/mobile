@@ -364,6 +364,7 @@ class TradeDetailScreen extends ConsumerWidget {
           break;
         case actions.Action.holdInvoicePaymentAccepted:
           widgets.add(_buildContactButton(context));
+          
           break;
         case actions.Action.holdInvoicePaymentSettled:
         case actions.Action.holdInvoicePaymentCanceled:

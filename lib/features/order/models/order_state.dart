@@ -8,6 +8,7 @@ class OrderState {
   final PaymentRequest? paymentRequest;
   final CantDo? cantDo;
   final Dispute? dispute;
+final Peer? peer;
 
   OrderState({
     required this.status,
@@ -16,6 +17,7 @@ class OrderState {
     this.paymentRequest,
     this.cantDo,
     this.dispute,
+    this.peer,
   });
 
   factory OrderState.fromMostroMessage(MostroMessage message) {
@@ -26,12 +28,13 @@ class OrderState {
       paymentRequest: message.getPayload<PaymentRequest>(),
       cantDo: message.getPayload<CantDo>(),
       dispute: message.getPayload<Dispute>(),
+      peer: message.getPayload<Peer>(),
     );
   }
 
   @override
   String toString() =>
-      'OrderState(status: $status, action: $action, order: $order, paymentRequest: $paymentRequest, cantDo: $cantDo, dispute: $dispute)';
+      'OrderState(status: $status, action: $action, order: $order, paymentRequest: $paymentRequest, cantDo: $cantDo, dispute: $dispute, peer: $peer)';
 
   @override
   bool operator ==(Object other) =>
@@ -42,7 +45,8 @@ class OrderState {
           other.order == order &&
           other.paymentRequest == paymentRequest &&
           other.cantDo == cantDo &&
-          other.dispute == dispute;
+          other.dispute == dispute &&
+          other.peer == peer;
 
   @override
   int get hashCode => Object.hash(
@@ -52,6 +56,7 @@ class OrderState {
         paymentRequest,
         cantDo,
         dispute,
+        peer,
       );
 
   OrderState copyWith({
@@ -61,6 +66,7 @@ class OrderState {
     PaymentRequest? paymentRequest,
     CantDo? cantDo,
     Dispute? dispute,
+    Peer? peer,
   }) {
     return OrderState(
       status: status ?? this.status,
@@ -69,6 +75,7 @@ class OrderState {
       paymentRequest: paymentRequest ?? this.paymentRequest,
       cantDo: cantDo ?? this.cantDo,
       dispute: dispute ?? this.dispute,
+      peer: peer ?? this.peer,
     );
   }
 
@@ -84,6 +91,7 @@ class OrderState {
       paymentRequest: message.getPayload<PaymentRequest>() ?? paymentRequest,
       cantDo: message.getPayload<CantDo>() ?? cantDo,
       dispute: message.getPayload<Dispute>() ?? dispute,
+      peer: message.getPayload<Peer>() ?? peer,
     );
   }
 
@@ -120,7 +128,12 @@ class OrderState {
         Action.rate: [
           Action.rate,
         ],
-        Action.purchaseCompleted: []
+        Action.purchaseCompleted: [],
+        Action.holdInvoicePaymentSettled: [],
+        Action.cooperativeCancelInitiatedByPeer: [
+          Action.cancel,
+        ],
+        
       },
       Status.waitingPayment: {
         Action.payInvoice: [
@@ -135,6 +148,9 @@ class OrderState {
           Action.takeSell,
           Action.cancel,
         ],
+        Action.newOrder: [
+          Action.cancel,
+        ],
       },
       Status.waitingBuyerInvoice: {
         Action.addInvoice: [
@@ -147,6 +163,7 @@ class OrderState {
       },
       Status.active: {
         Action.holdInvoicePaymentAccepted: [
+          Action.holdInvoicePaymentAccepted,
           Action.fiatSent,
           Action.cancel,
           Action.dispute,
@@ -160,6 +177,7 @@ class OrderState {
         ],
         Action.rateReceived: [],
         Action.purchaseCompleted: [],
+        Action.paymentFailed: [],
       },
     },
   };

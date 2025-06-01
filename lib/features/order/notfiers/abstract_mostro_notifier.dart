@@ -22,14 +22,11 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
     this.ref,
   ) : super(OrderState(
             action: Action.newOrder, status: Status.pending, order: null)) {
-
-    final oldSession = ref
-        .read(sessionNotifierProvider.notifier)
-        .getSessionByOrderId(orderId);
+    final oldSession =
+        ref.read(sessionNotifierProvider.notifier).getSessionByOrderId(orderId);
     if (oldSession != null) {
       session = oldSession;
     }
-
   }
 
   void subscribe() {
@@ -58,13 +55,17 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
     final notifProvider = ref.read(notificationProvider.notifier);
     final mostroInstance = ref.read(orderRepositoryProvider).mostroInstance;
 
-    state = state.updateWith(event);
+    if (mounted) {
+      state = state.updateWith(event);
+    }
 
     switch (event.action) {
       case Action.newOrder:
         break;
       case Action.payInvoice:
-        navProvider.go('/pay_invoice/${event.id!}');
+        if (event.payload is PaymentRequest) {
+          navProvider.go('/pay_invoice/${event.id!}');
+        }
         break;
       case Action.fiatSentOk:
         final peer = event.getPayload<Peer>();
@@ -78,12 +79,8 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         });
         break;
       case Action.canceled:
-        ref
-            .read(mostroStorageProvider)
-            .deleteAllMessagesByOrderId(orderId);
-        ref
-            .read(sessionNotifierProvider.notifier)
-            .deleteSession(orderId);
+        ref.read(mostroStorageProvider).deleteAllMessagesByOrderId(orderId);
+        ref.read(sessionNotifierProvider.notifier).deleteSession(orderId);
         navProvider.go('/');
         notifProvider.showInformation(event.action, values: {'id': orderId});
         ref.invalidateSelf();
