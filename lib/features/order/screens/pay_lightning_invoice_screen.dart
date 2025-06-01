@@ -21,10 +21,10 @@ class _PayLightningInvoiceScreenState
     extends ConsumerState<PayLightningInvoiceScreen> {
   @override
   Widget build(BuildContext context) {
-    final order = ref.read(orderNotifierProvider(widget.orderId));
+    final order = ref.watch(orderNotifierProvider(widget.orderId));
     final lnInvoice = order.paymentRequest?.lnInvoice ?? '';
     final orderNotifier =
-        ref.read(orderNotifierProvider(widget.orderId).notifier);
+        ref.watch(orderNotifierProvider(widget.orderId).notifier);
 
     return Scaffold(
         backgroundColor: AppTheme.dark1,

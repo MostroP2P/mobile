@@ -152,7 +152,7 @@ class TakeOrderScreen extends ConsumerWidget {
 
   Widget _buildActionButtons(
       BuildContext context, WidgetRef ref, NostrEvent order) {
-    final orderDetailsNotifier = ref.read(
+    final orderDetailsNotifier = ref.watch(
       orderNotifierProvider(order.orderId!).notifier,
     );
 
