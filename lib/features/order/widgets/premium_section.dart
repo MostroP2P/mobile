@@ -14,9 +14,9 @@ class PremiumSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Define the premium value display as the icon
+    // Define the premium value display as the icon - showing only whole numbers
     final premiumValueIcon = Text(
-      value.toStringAsFixed(1),
+      value.round().toString(),
       style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
     );
     
