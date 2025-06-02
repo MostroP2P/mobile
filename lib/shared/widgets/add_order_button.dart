@@ -30,7 +30,6 @@ class _AddOrderButtonState extends State<AddOrderButton>
   }
 
   void _toggleMenu() {
-    // Guard: return early if animation is in progress to prevent glitches
     if (_animationController.isAnimating) {
       return;
     }
@@ -57,18 +56,15 @@ class _AddOrderButtonState extends State<AddOrderButton>
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 130, // Altura suficiente para mostrar ambos elementos
-      width: 200, // Ancho suficiente para los botones
+      height: 130,
+      width: 200,
       child: Column(
-        mainAxisAlignment:
-            MainAxisAlignment.end, // Alinea los elementos al final
-        crossAxisAlignment: CrossAxisAlignment.end, // Alinea a la derecha
+        mainAxisAlignment: MainAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          // Opciones de menú que aparecen sobre el botón principal
           AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            height:
-                _isMenuOpen ? 45 : 0, // Se expande al abrir, colapsa al cerrar
+            height: _isMenuOpen ? 45 : 0,
             margin: const EdgeInsets.only(bottom: 10),
             child: Opacity(
               opacity: _isMenuOpen ? 1.0 : 0.0,
@@ -136,8 +132,6 @@ class _AddOrderButtonState extends State<AddOrderButton>
               ),
             ),
           ),
-
-          // Botón principal siempre visible
           FloatingActionButton(
             onPressed: _toggleMenu,
             backgroundColor:

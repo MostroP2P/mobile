@@ -21,7 +21,6 @@ class OrderListItem extends ConsumerWidget {
     final bool isFixedOrder =
         order.amount != null && order.amount != "0" && order.amount!.isNotEmpty;
 
-    // Calcular el valor del premium para órdenes de tipo market
     final premiumValue =
         order.premium != null ? double.tryParse(order.premium!) ?? 0.0 : 0.0;
     final isPremiumPositive = premiumValue >= 0;
