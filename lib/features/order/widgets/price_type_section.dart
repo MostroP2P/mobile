@@ -29,9 +29,9 @@ class PriceTypeSection extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text(
-            'Market price',
-            style: TextStyle(
+          Text(
+            isMarketRate ? 'Market price' : 'Fixed price',
+            style: const TextStyle(
                 color: AppTheme.textPrimary, fontWeight: FontWeight.w500),
           ),
           Row(
