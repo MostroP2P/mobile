@@ -25,6 +25,7 @@ class PremiumSection extends StatelessWidget {
       title: 'Premium (%) ',
       icon: premiumValueIcon,
       iconBackgroundColor: AppTheme.purpleAccent, // Purple color for premium
+      infoTooltip: 'Adjust how much above or below the market price you want your offer. By default, it\'s set to 0%, with no premium or discount, so if you don\'t want to change the price, you can leave it as is.',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -63,18 +64,6 @@ class PremiumSection extends StatelessWidget {
             ),
           ),
         ],
-      ),
-      // Add an info icon as extra content
-      extraContent: Padding(
-        padding: const EdgeInsets.only(right: 16, bottom: 8),
-        child: Align(
-          alignment: Alignment.centerRight,
-          child: Icon(
-            Icons.info_outline,
-            size: 14,
-            color: AppTheme.textSubtle,
-          ),
-        ),
       ),
     );
   }
