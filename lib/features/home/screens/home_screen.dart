@@ -79,7 +79,7 @@ class HomeScreen extends ConsumerWidget {
             ),
           ),
           Positioned(
-            bottom: 100,
+            bottom: 80 + MediaQuery.of(context).viewPadding.bottom + 16,
             right: 16,
             child: const AddOrderButton(),
           ),
