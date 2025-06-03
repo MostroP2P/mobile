@@ -17,7 +17,10 @@ class OrderListItem extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(timeProvider);
 
-    // Determine if the premium is positive or negative for the color
+    // Determine if this is a fixed order (has specific sats amount and is not zero)
+    final bool isFixedOrder =
+        order.amount != null && order.amount != "0" && order.amount!.isNotEmpty;
+
     final premiumValue =
         order.premium != null ? double.tryParse(order.premium!) ?? 0.0 : 0.0;
     final isPremiumPositive = premiumValue >= 0;
@@ -105,53 +108,82 @@ class OrderListItem extends ConsumerWidget {
                 ),
               ),
 
-              // Second row: Amount and currency with flag and percentage
+              // Second row: Amount and currency with flag and percentage (if not fixed)
               Padding(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Large amount with more contrast
-                    Text(
-                      order.fiatAmount.toString(),
-                      style: const TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        height: 1.1,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        // Large amount with more contrast
+                        Text(
+                          order.fiatAmount.toString(),
+                          style: const TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            height: 1.1,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
 
-                    // Currency code and flag
-                    Text(
-                      '${order.currency ?? "CUP"} ',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        color: Colors.white,
-                      ),
+                        // Currency code and flag
+                        Text(
+                          '${order.currency ?? "CUP"} ',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            color: Colors.white,
+                          ),
+                        ),
+                        Text(
+                          () {
+                            final String currencyCode = order.currency ?? 'CUP';
+                            return CurrencyUtils.getFlagFromCurrency(
+                                    currencyCode) ??
+                                '';
+                          }(),
+                          style: const TextStyle(fontSize: 18),
+                        ),
+                        const SizedBox(width: 4),
+                      ],
                     ),
-                    Text(
-                      () {
-                        final String currencyCode = order.currency ?? 'CUP';
-                        return CurrencyUtils.getFlagFromCurrency(
-                                currencyCode) ??
-                            '';
-                      }(),
-                      style: const TextStyle(fontSize: 18),
-                    ),
-                    const SizedBox(width: 4),
 
-                    // Percentage with more vibrant color
-                    Text(
-                      premiumText,
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: premiumColor,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    // Display sats amount for all orders (simplified)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: isFixedOrder
+                          ? Text(
+                              'For ${order.amount!} sats',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.white70,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            )
+                          : Row(
+                              children: [
+                                Text(
+                                  'Market Price ',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.white70,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                Text(
+                                  premiumText,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: premiumColor,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
                     ),
                   ],
                 ),

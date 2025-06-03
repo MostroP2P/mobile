@@ -30,11 +30,10 @@ class _AddOrderButtonState extends State<AddOrderButton>
   }
 
   void _toggleMenu() {
-    // Guard: return early if animation is in progress to prevent glitches
     if (_animationController.isAnimating) {
       return;
     }
-    
+
     setState(() {
       _isMenuOpen = !_isMenuOpen;
       if (_isMenuOpen) {
@@ -57,65 +56,82 @@ class _AddOrderButtonState extends State<AddOrderButton>
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 130, // Altura suficiente para mostrar ambos elementos
-      width: 200, // Ancho suficiente para los botones
+      height: 130,
+      width: 200,
       child: Column(
-        mainAxisAlignment:
-            MainAxisAlignment.end, // Alinea los elementos al final
-        crossAxisAlignment: CrossAxisAlignment.end, // Alinea a la derecha
+        mainAxisAlignment: MainAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          // Opciones de menú que aparecen sobre el botón principal
           AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            height:
-                _isMenuOpen ? 45 : 0, // Se expande al abrir, colapsa al cerrar
+            height: _isMenuOpen ? 45 : 0,
             margin: const EdgeInsets.only(bottom: 10),
             child: Opacity(
               opacity: _isMenuOpen ? 1.0 : 0.0,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  ElevatedButton.icon(
-                    onPressed: _isMenuOpen
-                        ? () => _navigateToCreateOrder(context, 'buy')
-                        : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.buyColor,
-                      foregroundColor: Colors.black,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(50),
+                  Stack(
+                    alignment: Alignment.centerLeft,
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: _isMenuOpen
+                            ? () => _navigateToCreateOrder(context, 'buy')
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.buyColor,
+                          foregroundColor: Colors.black,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(50),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 10),
+                        ),
+                        icon: const SizedBox(width: 16, height: 16),
+                        label: const Text('BUY',
+                            style: TextStyle(fontWeight: FontWeight.bold)),
                       ),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 10),
-                    ),
-                    icon: const Icon(Icons.arrow_downward, size: 16),
-                    label: const Text('BUY',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
+                      if (_isMenuOpen)
+                        const Positioned(
+                          left: 16,
+                          child: Icon(Icons.arrow_downward,
+                              size: 16, color: Colors.black),
+                        ),
+                    ],
                   ),
                   const SizedBox(width: 8),
-                  ElevatedButton.icon(
-                    onPressed: _isMenuOpen
-                        ? () => _navigateToCreateOrder(context, 'sell')
-                        : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.sellColor,
-                      foregroundColor: Colors.black,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(50),
+                  Stack(
+                    alignment: Alignment.centerLeft,
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: _isMenuOpen
+                            ? () => _navigateToCreateOrder(context, 'sell')
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.sellColor,
+                          foregroundColor: Colors.black,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(50),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 10),
+                        ),
+                        icon: const SizedBox(width: 16, height: 16),
+                        label: const Text('SELL',
+                            style: TextStyle(fontWeight: FontWeight.bold)),
                       ),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 10),
-                    ),
-                    icon: const Icon(Icons.arrow_upward, size: 16),
-                    label: const Text('SELL',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
+                      if (_isMenuOpen)
+                        const Positioned(
+                          left: 16,
+                          child: Icon(Icons.arrow_upward,
+                              size: 16, color: Colors.black),
+                        ),
+                    ],
                   ),
                 ],
               ),
             ),
           ),
-
-          // Botón principal siempre visible
           FloatingActionButton(
             onPressed: _toggleMenu,
             backgroundColor:
