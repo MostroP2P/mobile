@@ -62,7 +62,7 @@ class AppTheme {
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      dialogTheme: DialogTheme(
+      dialogTheme: DialogThemeData(
         backgroundColor: dark2,
         titleTextStyle: GoogleFonts.robotoCondensed(
           fontWeight: FontWeight.bold,
@@ -118,7 +118,7 @@ class AppTheme {
           borderSide: BorderSide(color: mostroGreen),
         ),
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: dark2,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
