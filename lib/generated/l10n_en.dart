@@ -19,12 +19,14 @@ class SEn extends S {
   }
 
   @override
-  String payInvoice(Object amount, Object expiration_seconds, Object fiat_amount, Object fiat_code) {
+  String payInvoice(Object amount, Object expiration_seconds,
+      Object fiat_amount, Object fiat_code) {
     return 'Please pay this hold invoice of $amount Sats for $fiat_code $fiat_amount to start the operation. If you do not pay it within $expiration_seconds, the trade will be canceled.';
   }
 
   @override
-  String addInvoice(Object amount, Object expiration_seconds, Object fiat_amount, Object fiat_code) {
+  String addInvoice(Object amount, Object expiration_seconds,
+      Object fiat_amount, Object fiat_code) {
     return 'Please send me an invoice for $amount satoshis equivalent to $fiat_code $fiat_amount. This is where I will send the funds upon trade completion. If you don\'t provide the invoice within $expiration_seconds, the trade will be canceled.';
   }
 
@@ -42,12 +44,14 @@ class SEn extends S {
   String get buyerInvoiceAccepted => 'The invoice has been successfully saved.';
 
   @override
-  String holdInvoicePaymentAccepted(Object fiat_amount, Object fiat_code, Object payment_method, Object seller_npub) {
+  String holdInvoicePaymentAccepted(Object fiat_amount, Object fiat_code,
+      Object payment_method, Object seller_npub) {
     return 'Contact the seller at $seller_npub to arrange how to send $fiat_code $fiat_amount using $payment_method. Once you send the fiat money, please notify me with fiat-sent.';
   }
 
   @override
-  String buyerTookOrder(Object buyer_npub, Object fiat_amount, Object fiat_code, Object payment_method) {
+  String buyerTookOrder(Object buyer_npub, Object fiat_amount, Object fiat_code,
+      Object payment_method) {
     return 'Contact the buyer at $buyer_npub to inform them how to send $fiat_code $fiat_amount through $payment_method. You’ll be notified when the buyer confirms the fiat payment. Afterward, verify if it has arrived. If the buyer does not respond, you can initiate a cancellation or a dispute. Remember, an administrator will NEVER contact you to resolve your order unless you open a dispute first.';
   }
 
@@ -67,7 +71,8 @@ class SEn extends S {
   }
 
   @override
-  String get purchaseCompleted => 'Your purchase of Bitcoin has been completed successfully. I have paid your invoice; enjoy sound money!';
+  String get purchaseCompleted =>
+      'Your purchase of Bitcoin has been completed successfully. I have paid your invoice; enjoy sound money!';
 
   @override
   String holdInvoicePaymentSettled(Object buyer_npub) {
@@ -136,7 +141,8 @@ class SEn extends S {
   }
 
   @override
-  String paymentFailed(Object payment_attempts, Object payment_retries_interval) {
+  String paymentFailed(
+      Object payment_attempts, Object payment_retries_interval) {
     return 'I couldn’t send the Sats. I will try $payment_attempts more times in $payment_retries_interval minutes. Please ensure your node or wallet is online.';
   }
 
@@ -144,7 +150,8 @@ class SEn extends S {
   String get invoiceUpdated => 'The invoice has been successfully updated!';
 
   @override
-  String get holdInvoicePaymentCanceled => 'The invoice was canceled; your Sats are available in your wallet again.';
+  String get holdInvoicePaymentCanceled =>
+      'The invoice was canceled; your Sats are available in your wallet again.';
 
   @override
   String cantDo(Object action) {
@@ -157,19 +164,24 @@ class SEn extends S {
   }
 
   @override
-  String get invalidSignature => 'The action cannot be completed because the signature is invalid.';
+  String get invalidSignature =>
+      'The action cannot be completed because the signature is invalid.';
 
   @override
-  String get invalidTradeIndex => 'The provided trade index is invalid. Please ensure your client is synchronized and try again.';
+  String get invalidTradeIndex =>
+      'The provided trade index is invalid. Please ensure your client is synchronized and try again.';
 
   @override
-  String get invalidAmount => 'The provided amount is invalid. Please verify it and try again.';
+  String get invalidAmount =>
+      'The provided amount is invalid. Please verify it and try again.';
 
   @override
-  String get invalidInvoice => 'The provided Lightning invoice is invalid. Please check the invoice details and try again.';
+  String get invalidInvoice =>
+      'The provided Lightning invoice is invalid. Please check the invoice details and try again.';
 
   @override
-  String get invalidPaymentRequest => 'The payment request is invalid or cannot be processed.';
+  String get invalidPaymentRequest =>
+      'The payment request is invalid or cannot be processed.';
 
   @override
   String get invalidPeer => 'You are not authorized to perform this action.';
@@ -178,25 +190,31 @@ class SEn extends S {
   String get invalidRating => 'The rating value is invalid or out of range.';
 
   @override
-  String get invalidTextMessage => 'The text message is invalid or contains prohibited content.';
+  String get invalidTextMessage =>
+      'The text message is invalid or contains prohibited content.';
 
   @override
   String get invalidOrderKind => 'The order kind is invalid.';
 
   @override
-  String get invalidOrderStatus => 'The action cannot be completed due to the current order status.';
+  String get invalidOrderStatus =>
+      'The action cannot be completed due to the current order status.';
 
   @override
-  String get invalidPubkey => 'The action cannot be completed because the public key is invalid.';
+  String get invalidPubkey =>
+      'The action cannot be completed because the public key is invalid.';
 
   @override
-  String get invalidParameters => 'The action cannot be completed due to invalid parameters. Please review the provided values and try again.';
+  String get invalidParameters =>
+      'The action cannot be completed due to invalid parameters. Please review the provided values and try again.';
 
   @override
-  String get orderAlreadyCanceled => 'The action cannot be completed because the order has already been canceled.';
+  String get orderAlreadyCanceled =>
+      'The action cannot be completed because the order has already been canceled.';
 
   @override
-  String get cantCreateUser => 'The action cannot be completed because the user could not be created.';
+  String get cantCreateUser =>
+      'The action cannot be completed because the user could not be created.';
 
   @override
   String get isNotYourOrder => 'This order does not belong to you.';
@@ -212,7 +230,8 @@ class SEn extends S {
   }
 
   @override
-  String outOfRangeSatsAmount(Object max_order_amount, Object min_order_amount) {
+  String outOfRangeSatsAmount(
+      Object max_order_amount, Object min_order_amount) {
     return 'The allowed Sats amount for this Mostro is between min $min_order_amount and max $max_order_amount. Please enter an amount within this range.';
   }
 
@@ -220,7 +239,8 @@ class SEn extends S {
   String get isNotYourDispute => 'This dispute is not assigned to you.';
 
   @override
-  String get disputeCreationError => 'A dispute cannot be created for this order.';
+  String get disputeCreationError =>
+      'A dispute cannot be created for this order.';
 
   @override
   String get notFound => 'The requested dispute could not be found.';

@@ -19,12 +19,14 @@ class SIt extends S {
   }
 
   @override
-  String payInvoice(Object amount, Object expiration_seconds, Object fiat_amount, Object fiat_code) {
+  String payInvoice(Object amount, Object expiration_seconds,
+      Object fiat_amount, Object fiat_code) {
     return 'Paga questa Hodl Invoice di $amount Sats per $fiat_amount $fiat_code per iniziare l\'operazione. Se non la paghi entro $expiration_seconds lo scambio sarà annullato.';
   }
 
   @override
-  String addInvoice(Object amount, Object expiration_seconds, Object fiat_amount, Object fiat_code) {
+  String addInvoice(Object amount, Object expiration_seconds,
+      Object fiat_amount, Object fiat_code) {
     return 'Inserisci una Invoice bolt11 di $amount satoshi equivalente a $fiat_amount $fiat_code. Questa invoice riceverà i fondi una volta completato lo scambio. Se non fornisci una invoice entro $expiration_seconds questo scambio sarà annullato.';
   }
 
@@ -42,12 +44,14 @@ class SIt extends S {
   String get buyerInvoiceAccepted => 'Fattura salvata con successo!';
 
   @override
-  String holdInvoicePaymentAccepted(Object fiat_amount, Object fiat_code, Object payment_method, Object seller_npub) {
+  String holdInvoicePaymentAccepted(Object fiat_amount, Object fiat_code,
+      Object payment_method, Object seller_npub) {
     return 'Contatta il venditore tramite la sua npub $seller_npub ed ottieni i dettagli per inviare il pagamento di $fiat_amount $fiat_code utilizzando $payment_method. Una volta inviato il pagamento, clicca: Pagamento inviato';
   }
 
   @override
-  String buyerTookOrder(Object buyer_npub, Object fiat_amount, Object fiat_code, Object payment_method) {
+  String buyerTookOrder(Object buyer_npub, Object fiat_amount, Object fiat_code,
+      Object payment_method) {
     return 'Contatta l\'acquirente, ecco il suo npub $buyer_npub, per informarlo su come inviarti $fiat_amount $fiat_code tramite $payment_method. Riceverai una notifica una volta che l\'acquirente indicherà che il pagamento fiat è stato inviato. Successivamente, dovresti verificare se sono arrivati i fondi. Se l\'acquirente non risponde, puoi iniziare l\'annullamento dell\'ordine o una disputa. Ricorda, un amministratore NON ti contatterà per risolvere il tuo ordine a meno che tu non apra prima una disputa.';
   }
 
@@ -67,7 +71,8 @@ class SIt extends S {
   }
 
   @override
-  String get purchaseCompleted => 'L\'acquisto di nuovi satoshi è stato completato con successo. Goditi questi dolci Sats!';
+  String get purchaseCompleted =>
+      'L\'acquisto di nuovi satoshi è stato completato con successo. Goditi questi dolci Sats!';
 
   @override
   String holdInvoicePaymentSettled(Object buyer_npub) {
@@ -136,7 +141,8 @@ class SIt extends S {
   }
 
   @override
-  String paymentFailed(Object payment_attempts, Object payment_retries_interval) {
+  String paymentFailed(
+      Object payment_attempts, Object payment_retries_interval) {
     return 'Ho provato a inviarti i Sats ma il pagamento della tua invoice è fallito. Tenterò $payment_attempts volte ancora ogni $payment_retries_interval minuti. Per favore assicurati che il tuo nodo/portafoglio lightning sia online.';
   }
 
@@ -144,7 +150,8 @@ class SIt extends S {
   String get invoiceUpdated => 'Invoice aggiornata con successo!';
 
   @override
-  String get holdInvoicePaymentCanceled => 'Invoice annullata; i tuoi Sats saranno nuovamente disponibili nel tuo portafoglio.';
+  String get holdInvoicePaymentCanceled =>
+      'Invoice annullata; i tuoi Sats saranno nuovamente disponibili nel tuo portafoglio.';
 
   @override
   String cantDo(Object action) {
@@ -157,46 +164,58 @@ class SIt extends S {
   }
 
   @override
-  String get invalidSignature => 'L\'azione non può essere completata perché la firma non è valida.';
+  String get invalidSignature =>
+      'L\'azione non può essere completata perché la firma non è valida.';
 
   @override
-  String get invalidTradeIndex => 'L\'indice di scambio fornito non è valido. Assicurati che il tuo client sia sincronizzato e riprova.';
+  String get invalidTradeIndex =>
+      'L\'indice di scambio fornito non è valido. Assicurati che il tuo client sia sincronizzato e riprova.';
 
   @override
-  String get invalidAmount => 'L\'importo fornito non è valido. Verificalo e riprova.';
+  String get invalidAmount =>
+      'L\'importo fornito non è valido. Verificalo e riprova.';
 
   @override
-  String get invalidInvoice => 'La fattura Lightning fornita non è valida. Controlla i dettagli della fattura e riprova.';
+  String get invalidInvoice =>
+      'La fattura Lightning fornita non è valida. Controlla i dettagli della fattura e riprova.';
 
   @override
-  String get invalidPaymentRequest => 'La richiesta di pagamento non è valida o non può essere elaborata.';
+  String get invalidPaymentRequest =>
+      'La richiesta di pagamento non è valida o non può essere elaborata.';
 
   @override
   String get invalidPeer => 'Non sei autorizzato ad eseguire questa azione.';
 
   @override
-  String get invalidRating => 'Il valore della valutazione è non valido o fuori dal range consentito.';
+  String get invalidRating =>
+      'Il valore della valutazione è non valido o fuori dal range consentito.';
 
   @override
-  String get invalidTextMessage => 'Il messaggio di testo non è valido o contiene contenuti proibiti.';
+  String get invalidTextMessage =>
+      'Il messaggio di testo non è valido o contiene contenuti proibiti.';
 
   @override
   String get invalidOrderKind => 'Il tipo di ordine non è valido.';
 
   @override
-  String get invalidOrderStatus => 'L\'azione non può essere completata a causa dello stato attuale dell\'ordine.';
+  String get invalidOrderStatus =>
+      'L\'azione non può essere completata a causa dello stato attuale dell\'ordine.';
 
   @override
-  String get invalidPubkey => 'L\'azione non può essere completata perché la chiave pubblica non è valida.';
+  String get invalidPubkey =>
+      'L\'azione non può essere completata perché la chiave pubblica non è valida.';
 
   @override
-  String get invalidParameters => 'L\'azione non può essere completata a causa di parametri non validi. Rivedi i valori forniti e riprova.';
+  String get invalidParameters =>
+      'L\'azione non può essere completata a causa di parametri non validi. Rivedi i valori forniti e riprova.';
 
   @override
-  String get orderAlreadyCanceled => 'L\'azione non può essere completata perché l\'ordine è già stato annullato.';
+  String get orderAlreadyCanceled =>
+      'L\'azione non può essere completata perché l\'ordine è già stato annullato.';
 
   @override
-  String get cantCreateUser => 'L\'azione non può essere completata perché l\'utente non può essere creato.';
+  String get cantCreateUser =>
+      'L\'azione non può essere completata perché l\'utente non può essere creato.';
 
   @override
   String get isNotYourOrder => 'Questo ordine non appartiene a te.';
@@ -212,7 +231,8 @@ class SIt extends S {
   }
 
   @override
-  String outOfRangeSatsAmount(Object max_order_amount, Object min_order_amount) {
+  String outOfRangeSatsAmount(
+      Object max_order_amount, Object min_order_amount) {
     return 'L\'importo consentito per gli ordini di questo Mostro è compreso tra min $min_order_amount e max $max_order_amount Sats. Inserisci un importo all\'interno di questo range.';
   }
 
@@ -220,7 +240,8 @@ class SIt extends S {
   String get isNotYourDispute => 'Questa disputa non è assegnata a te!';
 
   @override
-  String get disputeCreationError => 'Non è possibile avviare una disputa per questo ordine.';
+  String get disputeCreationError =>
+      'Non è possibile avviare una disputa per questo ordine.';
 
   @override
   String get notFound => 'Disputa non trovata.';

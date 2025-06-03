@@ -62,7 +62,8 @@ import 'l10n_it.dart';
 /// be consistent with the languages listed in the S.supportedLocales
 /// property.
 abstract class S {
-  S(String locale) : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+  S(String locale)
+      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -82,7 +83,8 @@ abstract class S {
   /// Additional delegates can be added by appending to this list in
   /// MaterialApp. This list does not have to be used at all if a custom list
   /// of delegates is preferred or required.
-  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates = <LocalizationsDelegate<dynamic>>[
+  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
+      <LocalizationsDelegate<dynamic>>[
     delegate,
     GlobalMaterialLocalizations.delegate,
     GlobalCupertinoLocalizations.delegate,
@@ -111,13 +113,15 @@ abstract class S {
   ///
   /// In en, this message translates to:
   /// **'Please pay this hold invoice of {amount} Sats for {fiat_code} {fiat_amount} to start the operation. If you do not pay it within {expiration_seconds}, the trade will be canceled.'**
-  String payInvoice(Object amount, Object expiration_seconds, Object fiat_amount, Object fiat_code);
+  String payInvoice(Object amount, Object expiration_seconds,
+      Object fiat_amount, Object fiat_code);
 
   /// No description provided for @addInvoice.
   ///
   /// In en, this message translates to:
   /// **'Please send me an invoice for {amount} satoshis equivalent to {fiat_code} {fiat_amount}. This is where I will send the funds upon trade completion. If you don\'t provide the invoice within {expiration_seconds}, the trade will be canceled.'**
-  String addInvoice(Object amount, Object expiration_seconds, Object fiat_amount, Object fiat_code);
+  String addInvoice(Object amount, Object expiration_seconds,
+      Object fiat_amount, Object fiat_code);
 
   /// No description provided for @waitingSellerToPay.
   ///
@@ -141,13 +145,15 @@ abstract class S {
   ///
   /// In en, this message translates to:
   /// **'Contact the seller at {seller_npub} to arrange how to send {fiat_code} {fiat_amount} using {payment_method}. Once you send the fiat money, please notify me with fiat-sent.'**
-  String holdInvoicePaymentAccepted(Object fiat_amount, Object fiat_code, Object payment_method, Object seller_npub);
+  String holdInvoicePaymentAccepted(Object fiat_amount, Object fiat_code,
+      Object payment_method, Object seller_npub);
 
   /// No description provided for @buyerTookOrder.
   ///
   /// In en, this message translates to:
   /// **'Contact the buyer at {buyer_npub} to inform them how to send {fiat_code} {fiat_amount} through {payment_method}. You’ll be notified when the buyer confirms the fiat payment. Afterward, verify if it has arrived. If the buyer does not respond, you can initiate a cancellation or a dispute. Remember, an administrator will NEVER contact you to resolve your order unless you open a dispute first.'**
-  String buyerTookOrder(Object buyer_npub, Object fiat_amount, Object fiat_code, Object payment_method);
+  String buyerTookOrder(Object buyer_npub, Object fiat_amount, Object fiat_code,
+      Object payment_method);
 
   /// No description provided for @fiatSentOkBuyer.
   ///
@@ -261,7 +267,8 @@ abstract class S {
   ///
   /// In en, this message translates to:
   /// **'I couldn’t send the Sats. I will try {payment_attempts} more times in {payment_retries_interval} minutes. Please ensure your node or wallet is online.'**
-  String paymentFailed(Object payment_attempts, Object payment_retries_interval);
+  String paymentFailed(
+      Object payment_attempts, Object payment_retries_interval);
 
   /// No description provided for @invoiceUpdated.
   ///
@@ -441,25 +448,25 @@ class _SDelegate extends LocalizationsDelegate<S> {
   }
 
   @override
-  bool isSupported(Locale locale) => <String>['en', 'it'].contains(locale.languageCode);
+  bool isSupported(Locale locale) =>
+      <String>['en', 'it'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_SDelegate old) => false;
 }
 
 S lookupS(Locale locale) {
-
-
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
-    case 'en': return SEn();
-    case 'it': return SIt();
+    case 'en':
+      return SEn();
+    case 'it':
+      return SIt();
   }
 
   throw FlutterError(
-    'S.delegate failed to load unsupported locale "$locale". This is likely '
-    'an issue with the localizations generation tool. Please file an issue '
-    'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.'
-  );
+      'S.delegate failed to load unsupported locale "$locale". This is likely '
+      'an issue with the localizations generation tool. Please file an issue '
+      'on GitHub with a reproducible sample app and the gen-l10n configuration '
+      'that was used.');
 }
