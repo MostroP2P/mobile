@@ -25,12 +25,13 @@ class PriceTypeSection extends StatelessWidget {
       title: 'Price type',
       icon: priceTypeIcon,
       iconBackgroundColor: AppTheme.purpleAccent.withOpacity(0.3), // Purple color consistent with other sections
+      infoTooltip: '• Select Market Price if you want to use the price that Bitcoin has when someone takes your offer.\n• Select Fixed Price if you want to define the exact amount of Bitcoin you will exchange.',
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text(
-            'Market price',
-            style: TextStyle(
+          Text(
+            isMarketRate ? 'Market price' : 'Fixed price',
+            style: const TextStyle(
                 color: AppTheme.textPrimary, fontWeight: FontWeight.w500),
           ),
           Row(
@@ -52,18 +53,6 @@ class PriceTypeSection extends StatelessWidget {
             ],
           ),
         ],
-      ),
-      // Add info icon as extra content
-      extraContent: Padding(
-        padding: const EdgeInsets.only(right: 16, bottom: 8),
-        child: Align(
-          alignment: Alignment.centerRight,
-          child: Icon(
-            Icons.info_outline,
-            size: 14,
-            color: AppTheme.textSubtle,
-          ),
-        ),
       ),
     );
   }
