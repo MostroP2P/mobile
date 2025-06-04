@@ -21,18 +21,18 @@ class TradesListItem extends ConsumerWidget {
     final session = ref.watch(sessionProvider(trade.orderId!));
     final role = session?.role;
     final isBuying = role == Role.buyer;
+    // Determine if the user is the creator of the order based on available information
+    final isCreator = session != null && role != null;
 
     return GestureDetector(
       onTap: () {
         context.push('/trade_detail/${trade.orderId}');
       },
       child: Container(
-        margin: const EdgeInsets.only(bottom: 1),
+        margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
         decoration: BoxDecoration(
-          color: AppTheme.dark1,
-          border: Border(
-            bottom: BorderSide(color: Colors.grey.shade900, width: 1),
-          ),
+          color: AppTheme.dark2, // Más oscuro para los items
+          borderRadius: BorderRadius.circular(12.0),
         ),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -44,7 +44,7 @@ class TradesListItem extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // First row: Buy/Sell Bitcoin + Status
+                    // First row: Buy/Sell Bitcoin text + status and role chips
                     Row(
                       children: [
                         Text(
@@ -55,20 +55,29 @@ class TradesListItem extends ConsumerWidget {
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const Spacer(),
                         _buildStatusChip(trade.status),
+                        const SizedBox(width: 8),
+                        _buildRoleChip(isCreator),
                       ],
                     ),
                     const SizedBox(height: 8),
-                    // Second row: Amount and currency
+                    // Second row: Flag + Amount and currency
                     Row(
                       children: [
                         Text(
-                          '${isBuying ? trade.currency : trade.amount} ${CurrencyUtils.getFlagFromCurrency(trade.currency!)}',
+                          CurrencyUtils.getFlagFromCurrency(trade.currency ?? '') ?? '',
+                          style: const TextStyle(
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${trade.amount ?? '0'} ${trade.currency ?? ''}',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 16,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ],
@@ -100,61 +109,91 @@ class TradesListItem extends ConsumerWidget {
     );
   }
 
+  Widget _buildRoleChip(bool isCreator) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: isCreator ? Colors.blue.shade700 : Colors.purple.shade700,
+        borderRadius: BorderRadius.circular(12), // Más redondeado
+      ),
+      child: Text(
+        isCreator ? 'Created by you' : 'Taken by you',
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+
   Widget _buildStatusChip(Status status) {
     Color backgroundColor;
-    Color textColor = Colors.white;
+    Color textColor; // Ya no siempre blanca
     String label;
 
     switch (status) {
       case Status.active:
-        backgroundColor = Colors.blue;
+        backgroundColor = const Color(0xFF1E3A8A); // Azul oscuro
+        textColor = const Color(0xFF93C5FD); // Azul claro
         label = 'Active';
         break;
       case Status.pending:
-        backgroundColor = Colors.amber.shade800;
+        backgroundColor = const Color(0xFF854D0E); // Ámbar oscuro
+        textColor = const Color(0xFFFCD34D); // Ámbar claro
         label = 'Pending';
         break;
       case Status.fiatSent:
-        backgroundColor = Colors.green.shade700;
+        backgroundColor = const Color(0xFF065F46); // Verde oscuro
+        textColor = const Color(0xFF6EE7B7); // Verde claro
         label = 'Fiat-sent';
         break;
       case Status.canceled:
       case Status.canceledByAdmin:
       case Status.cooperativelyCanceled:
-        backgroundColor = Colors.grey.shade700;
+        backgroundColor = Colors.grey.shade800;
+        textColor = Colors.grey.shade300;
         label = 'Canceled';
         break;
       case Status.settledByAdmin:
       case Status.settledHoldInvoice:
-        backgroundColor = Colors.purple;
+        backgroundColor = const Color(0xFF581C87); // Morado oscuro
+        textColor = const Color(0xFFC084FC); // Morado claro
         label = 'Settled';
         break;
       case Status.completedByAdmin:
-        backgroundColor = Colors.green;
+        backgroundColor = const Color(0xFF065F46); // Verde oscuro
+        textColor = const Color(0xFF6EE7B7); // Verde claro
         label = 'Completed';
         break;
       case Status.dispute:
-        backgroundColor = Colors.red;
+        backgroundColor = const Color(0xFF7F1D1D); // Rojo oscuro
+        textColor = const Color(0xFFFCA5A5); // Rojo claro
         label = 'Dispute';
         break;
       case Status.expired:
-        backgroundColor = Colors.grey;
+        backgroundColor = Colors.grey.shade800;
+        textColor = Colors.grey.shade300;
         label = 'Expired';
         break;
       case Status.success:
-        backgroundColor = Colors.green;
+        backgroundColor = const Color(0xFF065F46); // Verde oscuro
+        textColor = const Color(0xFF6EE7B7); // Verde claro
         label = 'Success';
         break;
       case Status.waitingBuyerInvoice:
-        backgroundColor = Colors.blue.shade300;
+        backgroundColor = const Color(0xFF1E3A8A); // Azul oscuro
+        textColor = const Color(0xFF93C5FD); // Azul claro
         label = 'Waiting Invoice';
         break;
       case Status.waitingPayment:
-        backgroundColor = Colors.blue.shade400;
+        backgroundColor = const Color(0xFF1E3A8A); // Azul oscuro
+        textColor = const Color(0xFF93C5FD); // Azul claro
         label = 'Waiting Payment';
         break;
       case Status.inProgress:
-        backgroundColor = Colors.blue.shade700;
+        backgroundColor = const Color(0xFF1E3A8A); // Azul oscuro
+        textColor = const Color(0xFF93C5FD); // Azul claro
         label = 'In Progress';
         break;
     }
@@ -163,12 +202,12 @@ class TradesListItem extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(12), // Más redondeado
       ),
       child: Text(
         label,
         style: TextStyle(
-          color: textColor,
+          color: textColor, // Color específico para cada estado
           fontSize: 12,
           fontWeight: FontWeight.w500,
         ),
