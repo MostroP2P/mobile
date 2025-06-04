@@ -2,14 +2,12 @@ import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/role.dart';
 import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/shared/providers/session_manager_provider.dart';
 import 'package:mostro_mobile/shared/providers/time_provider.dart';
-import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 import 'package:mostro_mobile/shared/utils/currency_utils.dart';
 
 class TradesListItem extends ConsumerWidget {
@@ -20,276 +18,160 @@ class TradesListItem extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(timeProvider);
+    final session = ref.watch(sessionProvider(trade.orderId!));
+    final role = session?.role;
+    final isBuying = role == Role.buyer;
 
     return GestureDetector(
       onTap: () {
         context.push('/trade_detail/${trade.orderId}');
       },
-      child: CustomCard(
-        color: AppTheme.dark1,
-        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(context),
-            const SizedBox(height: 16),
-            _buildSessionDetails(context, ref),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        _buildStatusChip(trade.status),
-        Text(
-          '${trade.expiration}',
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: AppTheme.cream1,
-              ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSessionDetails(BuildContext context, WidgetRef ref) {
-    final session = ref.watch(sessionProvider(trade.orderId!));
-    return Row(
-      children: [
-        _getOrderOffering(context, trade, session!.role),
-        const SizedBox(width: 16),
-        Expanded(
-          flex: 3,
-          child: _buildPaymentMethod(context),
-        ),
-      ],
-    );
-  }
-
-  Widget _getOrderOffering(
-    BuildContext context,
-    NostrEvent trade,
-    Role? role,
-  ) {
-    String offering = role == Role.buyer ? 'Buying' : 'Selling';
-    String amountText = (trade.amount != null && trade.amount != '0')
-        ? ' ${trade.amount!}'
-        : '';
-
-    return Expanded(
-      flex: 3,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          RichText(
-            text: TextSpan(
-              children: [
-                _buildStyledTextSpan(
-                  context,
-                  offering,
-                  amountText,
-                  isValue: true,
-                  isBold: true,
-                ),
-                TextSpan(
-                  text: 'sats',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: AppTheme.cream1,
-                        fontWeight: FontWeight.normal,
-                      ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 8.0),
-          RichText(
-            text: TextSpan(
-              children: [
-                _buildStyledTextSpan(
-                  context,
-                  'for ',
-                  '${trade.fiatAmount}',
-                  isValue: true,
-                  isBold: true,
-                ),
-                TextSpan(
-                  text:
-                      '${trade.currency} ${CurrencyUtils.getFlagFromCurrency(trade.currency!)} ',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: AppTheme.cream1,
-                        fontSize: 16.0,
-                      ),
-                ),
-                TextSpan(
-                  text: '(${trade.premium}%)',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: AppTheme.cream1,
-                        fontSize: 16.0,
-                      ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPaymentMethod(BuildContext context) {
-    String method = trade.paymentMethods.isNotEmpty
-        ? trade.paymentMethods[0]
-        : 'No payment method';
-
-    return Row(
-      children: [
-        HeroIcon(
-          _getPaymentMethodIcon(method),
-          style: HeroIconStyle.outline,
-          color: AppTheme.cream1,
-          size: 16,
-        ),
-        const SizedBox(width: 4),
-        Flexible(
-          child: Text(
-            method,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppTheme.grey2,
-                ),
-            overflow: TextOverflow.ellipsis,
-            softWrap: true,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 1),
+        decoration: BoxDecoration(
+          color: AppTheme.dark1,
+          border: Border(
+            bottom: BorderSide(color: Colors.grey.shade900, width: 1),
           ),
         ),
-      ],
-    );
-  }
-
-  HeroIcons _getPaymentMethodIcon(String method) {
-    switch (method.toLowerCase()) {
-      case 'wire transfer':
-      case 'transferencia bancaria':
-        return HeroIcons.buildingLibrary;
-      case 'revolut':
-        return HeroIcons.creditCard;
-      default:
-        return HeroIcons.banknotes;
-    }
-  }
-
-  TextSpan _buildStyledTextSpan(
-    BuildContext context,
-    String label,
-    String value, {
-    bool isValue = false,
-    bool isBold = false,
-  }) {
-    return TextSpan(
-      text: label,
-      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-            color: AppTheme.cream1,
-            fontWeight: FontWeight.normal,
-            fontSize: isValue ? 16.0 : 24.0,
-          ),
-      children: isValue
-          ? [
-              TextSpan(
-                text: '$value ',
-                style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                      fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-                      fontSize: 24.0,
-                      color: AppTheme.cream1,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Left side - Trade info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // First row: Buy/Sell Bitcoin + Status
+                    Row(
+                      children: [
+                        Text(
+                          isBuying ? 'Buying Bitcoin' : 'Selling Bitcoin',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        _buildStatusChip(trade.status),
+                      ],
                     ),
+                    const SizedBox(height: 8),
+                    // Second row: Amount and currency
+                    Row(
+                      children: [
+                        Text(
+                          '${isBuying ? trade.currency : trade.amount} ${CurrencyUtils.getFlagFromCurrency(trade.currency!)}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    // Third row: Payment method
+                    Text(
+                      trade.paymentMethods.isNotEmpty
+                          ? trade.paymentMethods.first
+                          : 'Bank Transfer',
+                      style: TextStyle(
+                        color: Colors.grey.shade400,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ]
-          : [],
+              // Right side - Arrow icon
+              const Icon(
+                Icons.chevron_right,
+                color: Colors.white,
+                size: 24,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
   Widget _buildStatusChip(Status status) {
     Color backgroundColor;
-    Color textColor = AppTheme.cream1;
+    Color textColor = Colors.white;
     String label;
 
     switch (status) {
       case Status.active:
-        backgroundColor = AppTheme.red1;
+        backgroundColor = Colors.blue;
         label = 'Active';
         break;
+      case Status.pending:
+        backgroundColor = Colors.amber.shade800;
+        label = 'Pending';
+        break;
+      case Status.fiatSent:
+        backgroundColor = Colors.green.shade700;
+        label = 'Fiat-sent';
+        break;
       case Status.canceled:
-        backgroundColor = AppTheme.grey;
+      case Status.canceledByAdmin:
+      case Status.cooperativelyCanceled:
+        backgroundColor = Colors.grey.shade700;
         label = 'Canceled';
         break;
-      case Status.canceledByAdmin:
-        backgroundColor = AppTheme.red2;
-        label = 'Canceled by Admin';
-        break;
       case Status.settledByAdmin:
-        backgroundColor = AppTheme.yellow;
-        label = 'Settled by Admin';
+      case Status.settledHoldInvoice:
+        backgroundColor = Colors.purple;
+        label = 'Settled';
         break;
       case Status.completedByAdmin:
-        backgroundColor = AppTheme.grey2;
-        label = 'Completed by Admin';
+        backgroundColor = Colors.green;
+        label = 'Completed';
         break;
       case Status.dispute:
-        backgroundColor = AppTheme.red1;
+        backgroundColor = Colors.red;
         label = 'Dispute';
         break;
       case Status.expired:
-        backgroundColor = AppTheme.grey;
+        backgroundColor = Colors.grey;
         label = 'Expired';
-        break;
-      case Status.fiatSent:
-        backgroundColor = Colors.indigo;
-        label = 'Fiat Sent';
-        break;
-      case Status.settledHoldInvoice:
-        backgroundColor = Colors.teal;
-        label = 'Settled Hold Invoice';
-        break;
-      case Status.pending:
-        backgroundColor = AppTheme.mostroGreen;
-        textColor = Colors.black;
-        label = 'Pending';
         break;
       case Status.success:
         backgroundColor = Colors.green;
         label = 'Success';
         break;
       case Status.waitingBuyerInvoice:
-        backgroundColor = Colors.lightBlue;
-        label = 'Waiting Buyer Invoice';
+        backgroundColor = Colors.blue.shade300;
+        label = 'Waiting Invoice';
         break;
       case Status.waitingPayment:
-        backgroundColor = Colors.lightBlueAccent;
+        backgroundColor = Colors.blue.shade400;
         label = 'Waiting Payment';
         break;
-      case Status.cooperativelyCanceled:
-        backgroundColor = Colors.deepOrange;
-        label = 'Cooperatively Canceled';
-        break;
       case Status.inProgress:
-        backgroundColor = Colors.blueGrey;
+        backgroundColor = Colors.blue.shade700;
         label = 'In Progress';
         break;
     }
 
-    return Chip(
-      backgroundColor: backgroundColor,
-      visualDensity: VisualDensity.compact,
-      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(4.0),
-        side: BorderSide.none,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(4),
       ),
-      label: Text(
+      child: Text(
         label,
-        style: TextStyle(color: textColor, fontSize: 12.0),
+        style: TextStyle(
+          color: textColor,
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+        ),
       ),
     );
   }

@@ -30,69 +30,80 @@ class TradesScreen extends ConsumerWidget {
           // Then refresh the filtered trades provider
           ref.invalidate(filteredTradesProvider);
         },
-        child: Container(
-          margin: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-          decoration: BoxDecoration(
-            color: AppTheme.dark2,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  'MY TRADES',
-                  style: TextStyle(color: AppTheme.mostroGreen),
+        child: Column(
+          children: [
+            Expanded(
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: AppTheme.dark2,
                 ),
-              ),
-              // Use the async value pattern to handle different states
-              tradesAsync.when(
-                data: (trades) => _buildFilterButton(context, ref, trades),
-                loading: () => _buildFilterButton(context, ref, []),
-                error: (error, _) => _buildFilterButton(context, ref, []),
-              ),
-              const SizedBox(height: 6.0),
-              Expanded(
-                child: tradesAsync.when(
-                  data: (trades) => _buildOrderList(trades),
-                  loading: () => const Center(
-                    child: CircularProgressIndicator(),
-                  ),
-                  error: (error, _) => Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.error_outline,
-                          color: Colors.red,
-                          size: 60,
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'My Active Trades',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Error loading trades',
-                          style: TextStyle(color: AppTheme.cream1),
-                        ),
-                        Text(
-                          error.toString(),
-                          style: TextStyle(color: AppTheme.cream1, fontSize: 12),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: () {
-                            ref.invalidate(orderEventsProvider);
-                            ref.invalidate(filteredTradesProvider);
-                          },
-                          child: const Text('Retry'),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
+                    // Use the async value pattern to handle different states
+                    tradesAsync.when(
+                      data: (trades) => _buildFilterButton(context, ref, trades),
+                      loading: () => _buildFilterButton(context, ref, []),
+                      error: (error, _) => _buildFilterButton(context, ref, []),
+                    ),
+                    const SizedBox(height: 6.0),
+                    Expanded(
+                      child: tradesAsync.when(
+                        data: (trades) => _buildOrderList(trades),
+                        loading: () => const Center(
+                          child: CircularProgressIndicator(),
+                        ),
+                        error: (error, _) => Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.error_outline,
+                                color: Colors.red,
+                                size: 60,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Error loading trades',
+                                style: TextStyle(color: AppTheme.cream1),
+                              ),
+                              Text(
+                                error.toString(),
+                                style: TextStyle(color: AppTheme.cream1, fontSize: 12),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: () {
+                                  ref.invalidate(orderEventsProvider);
+                                  ref.invalidate(filteredTradesProvider);
+                                },
+                                child: const Text('Retry'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const BottomNavBar(),
-            ],
-          ),
+            ),
+            const BottomNavBar(),
+          ],
         ),
       ),
     );
