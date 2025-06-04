@@ -17,27 +17,36 @@ class OrderNotifier extends AbstractMostroNotifier {
   }
 
   Future<void> sync() async {
-    final storage = ref.read(mostroStorageProvider);
-    final messages = await storage.getAllMessagesForOrderId(orderId);
-    if (messages.isEmpty) {
-      return;
-    }
-    final msg = messages.firstWhereOrNull((m) => m.action != Action.cantDo);
-    if (msg?.payload is Order) {
-      state = OrderState(
-        status: msg!.getPayload<Order>()!.status,
-        action: msg.action,
-        order: msg.getPayload<Order>()!,
-      );
-    } else {
-      final orderMsg = await storage.getLatestMessageOfTypeById<Order>(orderId);
-      if (orderMsg != null) {
-        state = OrderState(
-          status: orderMsg.getPayload<Order>()!.status,
-          action: orderMsg.action,
-          order: orderMsg.getPayload<Order>()!,
-        );
+    try {
+      final storage = ref.read(mostroStorageProvider);
+      final messages = await storage.getAllMessagesForOrderId(orderId);
+      if (messages.isEmpty) {
+        return;
       }
+      final msg = messages.firstWhereOrNull((m) => m.action != Action.cantDo);
+      if (msg?.payload is Order) {
+        state = OrderState(
+          status: msg!.getPayload<Order>()!.status,
+          action: msg.action,
+          order: msg.getPayload<Order>()!,
+        );
+      } else {
+        final orderMsg =
+            await storage.getLatestMessageOfTypeById<Order>(orderId);
+        if (orderMsg != null) {
+          state = OrderState(
+            status: orderMsg.getPayload<Order>()!.status,
+            action: orderMsg.action,
+            order: orderMsg.getPayload<Order>()!,
+          );
+        }
+      }
+    } catch (e, stack) {
+      logger.e(
+        'Error syncing order state',
+        error: e,
+        stackTrace: stack,
+      );
     }
   }
 

@@ -39,7 +39,7 @@ class PaymentConfirmationScreen extends ConsumerWidget {
   Widget _buildBody(BuildContext context, WidgetRef ref, OrderState state) {
     switch (state.action) {
       case action.Action.purchaseCompleted:
-        final satoshis = 0;
+        final satoshis = state.order?.amount ?? 0;
 
         return Center(
           child: Container(

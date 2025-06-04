@@ -209,8 +209,12 @@ class TradeDetailScreen extends ConsumerWidget {
       BuildContext context, WidgetRef ref, OrderState tradeState) {
     final session = ref.watch(sessionProvider(orderId));
     final userRole = session?.role;
-  
-    final userActions = tradeState.getActions(userRole!);
+
+    if (userRole == null) {
+      return [];
+    }
+
+    final userActions = tradeState.getActions(userRole);
     if (userActions.isEmpty) return [];
 
     final widgets = <Widget>[];
@@ -288,18 +292,6 @@ class TradeDetailScreen extends ConsumerWidget {
             ));
           }
           break;
-        case actions.Action.released:
-          if (userRole == Role.seller) {
-            widgets.add(_buildNostrButton(
-              'RELEASE',
-              action: actions.Action.release,
-              backgroundColor: AppTheme.mostroGreen,
-              onPressed: () => ref
-                  .read(orderNotifierProvider(orderId).notifier)
-                  .releaseOrder(),
-            ));
-          }
-          break;
         case actions.Action.takeSell:
           if (userRole == Role.buyer) {
             widgets.add(_buildNostrButton(
@@ -364,7 +356,7 @@ class TradeDetailScreen extends ConsumerWidget {
           break;
         case actions.Action.holdInvoicePaymentAccepted:
           widgets.add(_buildContactButton(context));
-          
+
           break;
         case actions.Action.holdInvoicePaymentSettled:
         case actions.Action.holdInvoicePaymentCanceled:
@@ -385,6 +377,7 @@ class TradeDetailScreen extends ConsumerWidget {
         case actions.Action.sendDm:
         case actions.Action.tradePubkey:
         case actions.Action.cantDo:
+        case actions.Action.released:
           // Not user-facing or not relevant as a button
           break;
         default:

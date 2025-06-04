@@ -70,7 +70,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
       case Action.fiatSentOk:
         final peer = event.getPayload<Peer>();
         notifProvider.showInformation(event.action, values: {
-          'buyer_npub': peer?.publicKey ?? '{buyer_npub}',
+          'buyer_npub': peer?.publicKey ?? 'Unknown',
         });
         break;
       case Action.released:
@@ -136,7 +136,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         break;
       case Action.holdInvoicePaymentSettled:
         notifProvider.showInformation(event.action, values: {
-          'buyer_npub': 'buyerTradePubkey',
+          'buyer_npub': state.order?.buyerTradePubkey ?? 'Unknown',
         });
         break;
       case Action.waitingSellerToPay:

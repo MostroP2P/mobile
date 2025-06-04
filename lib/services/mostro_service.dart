@@ -207,11 +207,19 @@ class MostroService {
 
   Future<Session> _getSession(MostroMessage order) async {
     if (order.requestId != null) {
-      return _sessionNotifier.getSessionByRequestId(order.requestId!)!;
+      final session = _sessionNotifier.getSessionByRequestId(order.requestId!);
+      if (session == null) {
+        throw Exception('No session found for requestId: ${order.requestId}');
+      }
+      return session;
     } else if (order.id != null) {
-      return _sessionNotifier.getSessionByOrderId(order.id!)!;
+      final session = _sessionNotifier.getSessionByOrderId(order.id!);
+      if (session == null) {
+        throw Exception('No session found for orderId: ${order.id}');
+      }
+      return session;
     }
-    throw Exception('No session found for order');
+    throw Exception('Order has neither requestId nor orderId');
   }
 
   void updateSettings(Settings settings) {

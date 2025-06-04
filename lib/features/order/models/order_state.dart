@@ -178,6 +178,9 @@ final Peer? peer;
         Action.rate: [
           Action.rate,
         ],
+        Action.cooperativeCancelInitiatedByPeer: [
+          Action.cancel,
+        ],
         Action.rateReceived: [],
         Action.purchaseCompleted: [],
         Action.paymentFailed: [],

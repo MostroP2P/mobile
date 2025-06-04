@@ -20,9 +20,11 @@ class AddOrderNotifier extends AbstractMostroNotifier {
 
   int _requestIdFromOrderId(String orderId) {
     final uuid = orderId.replaceAll('-', '');
-    final timestamp = DateTime.now().microsecondsSinceEpoch;
-    return (int.parse(uuid.substring(0, 8), radix: 16) ^ timestamp) &
-        0x7FFFFFFF;
+    // Use more bits from UUID to reduce collision probability
+    final uuidPart1 = int.parse(uuid.substring(0, 8), radix: 16);
+    final uuidPart2 = int.parse(uuid.substring(8, 16), radix: 16);
+    // Combine both parts for better uniqueness
+    return ((uuidPart1 ^ uuidPart2) & 0x7FFFFFFF);
   }
 
   @override
