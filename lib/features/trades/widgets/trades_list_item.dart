@@ -73,7 +73,7 @@ class TradesListItem extends ConsumerWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          '${trade.amount ?? '0'} ${trade.currency ?? ''}',
+                          '${trade.fiatAmount.minimum} ${trade.currency ?? ''}',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 16,
@@ -83,16 +83,22 @@ class TradesListItem extends ConsumerWidget {
                       ],
                     ),
                     const SizedBox(height: 4),
-                    // Third row: Payment method
-                    Text(
-                      trade.paymentMethods.isNotEmpty
-                          ? trade.paymentMethods.first
-                          : 'Bank Transfer',
-                      style: TextStyle(
-                        color: Colors.grey.shade400,
-                        fontSize: 14,
-                      ),
-                    ),
+                    // Third row: Payment methods (muestra todos los métodos de pago separados por comas)
+                    trade.paymentMethods.isNotEmpty
+                        ? Text(
+                            trade.paymentMethods.join(', '),
+                            style: TextStyle(
+                              color: Colors.grey.shade400,
+                              fontSize: 14,
+                            ),
+                          )
+                        : Text(
+                            'Bank Transfer',
+                            style: TextStyle(
+                              color: Colors.grey.shade400,
+                              fontSize: 14,
+                            ),
+                          ),
                   ],
                 ),
               ),
