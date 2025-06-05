@@ -72,3 +72,4 @@ chrome/.packages
 *.lock
 .pdm
 bfg-1.14.0.jar
+lib/generated/
