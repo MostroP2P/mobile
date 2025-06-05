@@ -76,7 +76,9 @@ abstract class BaseStorage<T> {
         .toList(growable: false);
   }
 
-  Future<List<T>> getAll() => find();
+  Future<List<T>> getAll() => find(
+        filter: Filter.notEquals('deleted', true),
+      );
 
   Stream<List<T>> watch({
     Filter? filter,

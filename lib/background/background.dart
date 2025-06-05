@@ -16,10 +16,6 @@ Future<void> serviceMain(ServiceInstance service) async {
   // If on Android, set up a permanent notification so the OS won't kill it.
   if (service is AndroidServiceInstance) {
     service.setAsForegroundService();
-    service.setForegroundNotificationInfo(
-      title: "Mostro P2P",
-      content: "Connected to Mostro service",
-    );
   }
 
   final Map<String, Map<String, dynamic>> activeSubscriptions = {};

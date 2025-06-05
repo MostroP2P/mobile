@@ -8,7 +8,7 @@ import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/services/lifecycle_manager.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
-import 'package:mostro_mobile/shared/providers/session_manager_provider.dart';
+import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 
 class ChatRoomNotifier extends StateNotifier<ChatRoom> {
   /// Reload the chat room by re-subscribing to events.

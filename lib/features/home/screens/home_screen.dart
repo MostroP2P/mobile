@@ -88,82 +88,6 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      backgroundColor: AppTheme.backgroundDark,
-      elevation: 0,
-      leadingWidth: 60,
-      toolbarHeight: 56,
-      bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(1),
-        child: Container(
-          height: 1,
-          color: Colors.white.withOpacity(0.1),
-        ),
-      ),
-      leading: Padding(
-        padding: const EdgeInsets.only(left: 16.0),
-        child: Builder(
-          builder: (context) => IconButton(
-            icon: const HeroIcon(
-              HeroIcons.bars3,
-              style: HeroIconStyle.outline,
-              color: Colors.white,
-              size: 24,
-            ),
-            onPressed: () {
-              Scaffold.of(context).openDrawer();
-            },
-          ),
-        ),
-      ),
-      actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 16.0),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              IconButton(
-                icon: const HeroIcon(
-                  HeroIcons.bell,
-                  style: HeroIconStyle.outline,
-                  color: Colors.white,
-                  size: 24,
-                ),
-                onPressed: () {
-                  // Action for notifications
-                },
-              ),
-              // Indicator for the number of notifications
-              Positioned(
-                top: 12,
-                right: 8,
-                child: Container(
-                  width: 18,
-                  height: 18,
-                  decoration: const BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Center(
-                    child: Text(
-                      '6',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildTabs(WidgetRef ref) {
     final orderType = ref.watch(homeOrderTypeProvider);
 
@@ -172,7 +96,7 @@ class HomeScreen extends ConsumerWidget {
         color: AppTheme.backgroundDark,
         border: Border(
           bottom: BorderSide(
-            color: Colors.white.withOpacity(0.1),
+            color: Colors.white.withValues(alpha: 0.1),
             width: 1.0,
           ),
         ),
@@ -260,10 +184,10 @@ class HomeScreen extends ConsumerWidget {
             decoration: BoxDecoration(
               color: AppTheme.backgroundInput,
               borderRadius: BorderRadius.circular(30),
-              border: Border.all(color: Colors.white.withOpacity(0.05)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
+                  color: Colors.black.withValues(alpha: 0.2),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -292,7 +216,7 @@ class HomeScreen extends ConsumerWidget {
                   margin: const EdgeInsets.symmetric(horizontal: 8),
                   height: 16,
                   width: 1,
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                 ),
                 Text(
                   "${filteredOrders.length} offers",

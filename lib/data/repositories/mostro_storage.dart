@@ -35,20 +35,6 @@ class MostroStorage extends BaseStorage<MostroMessage> {
     }
   }
 
-  /// Retrieve a MostroMessage by ID
-  Future<MostroMessage?> getMessageById<T extends Payload>(
-    String orderId,
-  ) async {
-    final t = T;
-    final id = '$t:$orderId';
-    try {
-      return await getItem(id);
-    } catch (e, stack) {
-      _logger.e('Error deserializing message $id', error: e, stackTrace: stack);
-      return null;
-    }
-  }
-
   /// Get all messages
   Future<List<MostroMessage>> getAllMessages() async {
     try {

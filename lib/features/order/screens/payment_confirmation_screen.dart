@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
-import 'package:mostro_mobile/data/models/cant_do.dart';
-import 'package:mostro_mobile/data/models/mostro_message.dart';
+import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as action;
@@ -37,10 +36,10 @@ class PaymentConfirmationScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildBody(BuildContext context, WidgetRef ref, MostroMessage state) {
+  Widget _buildBody(BuildContext context, WidgetRef ref, OrderState state) {
     switch (state.action) {
       case action.Action.purchaseCompleted:
-        final satoshis = 0;
+        final satoshis = state.order?.amount ?? 0;
 
         return Center(
           child: Container(
@@ -105,10 +104,10 @@ class PaymentConfirmationScreen extends ConsumerWidget {
         );
 
       case action.Action.cantDo:
-        final error = state.getPayload<CantDo>()?.cantDoReason;
+        final error = state.cantDo;
         return Center(
           child: Text(
-            'Error: $error',
+            'Error: ${error?.cantDoReason}',
             style: const TextStyle(color: AppTheme.cream1),
           ),
         );
