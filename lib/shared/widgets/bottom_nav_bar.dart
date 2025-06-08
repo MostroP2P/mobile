@@ -18,21 +18,23 @@ class BottomNavBar extends ConsumerWidget {
     final int orderNotificationCount =
         ref.watch(orderBookNotificationCountProvider);
 
-    return Container(
-      width: double.infinity,
-      height: 80,
-      decoration: BoxDecoration(
-        color: AppTheme.backgroundNavBar,
-        border: Border(
-          top: BorderSide(
-            color: Colors.white.withOpacity(0.1),
-            width: 1,
+    return SafeArea(
+      top: false,
+      child: Container(
+        width: double.infinity,
+        height: 80,
+        decoration: BoxDecoration(
+          color: AppTheme.backgroundNavBar,
+          border: Border(
+            top: BorderSide(
+              color: Colors.white.withOpacity(0.1),
+              width: 1,
+            ),
           ),
         ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
           _buildNavItem(
             context,
             LucideIcons.book,
@@ -53,7 +55,8 @@ class BottomNavBar extends ConsumerWidget {
             2,
             notificationCount: chatCount,
           ),
-        ],
+          ],
+        ),
       ),
     );
   }

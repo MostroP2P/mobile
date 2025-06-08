@@ -48,7 +48,7 @@ dependencies:
   bitcoin_icons: ^0.0.4
   collection: ^1.18.0
   elliptic: ^0.3.11
-  intl: ^0.19.0
+  intl: ^0.20.2
   uuid: ^3.0.7
   flutter_secure_storage: ^10.0.0-beta.4
   go_router: ^15.0.0

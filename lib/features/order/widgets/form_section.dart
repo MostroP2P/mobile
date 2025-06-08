@@ -7,6 +7,7 @@ class FormSection extends StatelessWidget {
   final Color iconBackgroundColor;
   final Widget child;
   final Widget? extraContent;
+  final String? infoTooltip;
 
   const FormSection({
     super.key,
@@ -15,6 +16,7 @@ class FormSection extends StatelessWidget {
     required this.iconBackgroundColor,
     required this.child,
     this.extraContent,
+    this.infoTooltip,
   });
 
   @override
@@ -29,12 +31,69 @@ class FormSection extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Text(
-              title,
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.7),
-                fontSize: 14,
-              ),
+            child: Row(
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.7),
+                    fontSize: 14,
+                  ),
+                ),
+                if (infoTooltip != null) ...[  
+                  const SizedBox(width: 4),
+                  GestureDetector(
+                    onTap: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => Dialog(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          backgroundColor: const Color(0xFF1E2230),
+                          child: Padding(
+                            padding: const EdgeInsets.all(20.0),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 12.0),
+                                  child: Text(
+                                    infoTooltip!,
+                                    style: const TextStyle(color: Colors.white, fontSize: 16, height: 1.4),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF8CC63F),
+                                      foregroundColor: Colors.black,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(vertical: 12),
+                                    ),
+                                    onPressed: () => Navigator.of(context).pop(),
+                                    child: const Text('OK', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                    child: Icon(
+                      Icons.info_outline,
+                      size: 14,
+                      color: AppTheme.textSubtle,
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
           Container(
