@@ -195,6 +195,7 @@ class TakeOrderScreen extends ConsumerWidget {
                             child: const Text('Cancel'),
                           ),
                           ElevatedButton(
+                            key: const Key('submitAmountButton'),
                             onPressed: () {
                               final inputAmount = int.tryParse(
                                   _fiatAmountController.text.trim());

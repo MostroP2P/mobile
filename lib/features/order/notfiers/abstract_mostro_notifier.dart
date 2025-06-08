@@ -35,6 +35,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
       (_, next) {
         next.when(
           data: (MostroMessage? msg) {
+            logger.i('Received message: ${msg?.toJson()}');
             if (msg != null) {
               handleEvent(msg);
             }

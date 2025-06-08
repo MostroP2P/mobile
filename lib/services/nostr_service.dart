@@ -80,7 +80,6 @@ class NostrService {
         event,
         timeout: Config.nostrConnectionTimeout,
       );
-      _logger.i('Event published successfully');
     } catch (e) {
       _logger.w('Failed to publish event: $e');
       rethrow;

@@ -24,7 +24,19 @@ class PriceTypeSection extends StatelessWidget {
     return FormSection(
       title: 'Price type',
       icon: priceTypeIcon,
-      iconBackgroundColor: AppTheme.purpleAccent.withOpacity(0.3), // Purple color consistent with other sections
+      iconBackgroundColor: AppTheme.purpleAccent.withValues(alpha: 0.3),
+      // Add info icon as extra content
+      extraContent: Padding(
+        padding: const EdgeInsets.only(right: 16, bottom: 8),
+        child: Align(
+          alignment: Alignment.centerRight,
+          child: Icon(
+            Icons.info_outline,
+            size: 14,
+            color: AppTheme.textSubtle,
+          ),
+        ),
+      ), // Purple color consistent with other sections
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -45,6 +57,7 @@ class PriceTypeSection extends StatelessWidget {
                 ),
               ),
               Switch(
+                key: const Key('fixedSwitch'),
                 value: isMarketRate,
                 activeColor: AppTheme.purpleAccent, // Keep the purple accent color
                 onChanged: onToggle,
@@ -52,18 +65,6 @@ class PriceTypeSection extends StatelessWidget {
             ],
           ),
         ],
-      ),
-      // Add info icon as extra content
-      extraContent: Padding(
-        padding: const EdgeInsets.only(right: 16, bottom: 8),
-        child: Align(
-          alignment: Alignment.centerRight,
-          child: Icon(
-            Icons.info_outline,
-            size: 14,
-            color: AppTheme.textSubtle,
-          ),
-        ),
       ),
     );
   }

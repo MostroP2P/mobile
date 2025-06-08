@@ -1,3 +1,4 @@
+import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/models.dart';
 import 'package:mostro_mobile/data/enums.dart';
 
@@ -8,7 +9,8 @@ class OrderState {
   final PaymentRequest? paymentRequest;
   final CantDo? cantDo;
   final Dispute? dispute;
-final Peer? peer;
+  final Peer? peer;
+  final _logger = Logger();
 
   OrderState({
     required this.status,
@@ -80,6 +82,7 @@ final Peer? peer;
   }
 
   OrderState updateWith(MostroMessage message) {
+    _logger.i('Updating OrderState Action: ${message.action}');
     return copyWith(
       status: message.getPayload<Order>()?.status ?? status,
       action: message.action != Action.cantDo ? message.action : action,
@@ -136,7 +139,6 @@ final Peer? peer;
         Action.cooperativeCancelInitiatedByPeer: [
           Action.cancel,
         ],
-        
       },
       Status.waitingPayment: {
         Action.payInvoice: [

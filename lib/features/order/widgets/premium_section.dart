@@ -38,6 +38,7 @@ class PremiumSection extends StatelessWidget {
               trackHeight: 4,
             ),
             child: Slider(
+              key: const Key('premiumSlider'),
               value: value,
               min: -10,
               max: 10,

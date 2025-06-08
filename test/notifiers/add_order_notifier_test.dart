@@ -7,6 +7,7 @@ import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
+import 'package:mostro_mobile/shared/providers/storage_providers.dart';
 
 import '../mocks.mocks.dart';
 
@@ -17,6 +18,7 @@ void main() {
     late ProviderContainer container;
     late MockMostroService mockMostroService;
     late MockOpenOrdersRepository mockOrdersRepository;
+    late MockSharedPreferencesAsync mockSharedPreferencesAsync;
 
     const testUuid = "test_uuid";
 
@@ -24,6 +26,7 @@ void main() {
       container = ProviderContainer();
       mockMostroService = MockMostroService();
       mockOrdersRepository = MockOpenOrdersRepository();
+      mockSharedPreferencesAsync = MockSharedPreferencesAsync();
     });
 
     tearDown(() {
@@ -70,6 +73,7 @@ void main() {
       container = ProviderContainer(overrides: [
         mostroServiceProvider.overrideWithValue(mockMostroService),
         orderRepositoryProvider.overrideWithValue(mockOrdersRepository),
+        sharedPreferencesProvider.overrideWithValue(mockSharedPreferencesAsync),
       ]);
 
       // Create a new sell (fixed) order.
@@ -136,6 +140,7 @@ void main() {
       container = ProviderContainer(overrides: [
         mostroServiceProvider.overrideWithValue(mockMostroService),
         orderRepositoryProvider.overrideWithValue(mockOrdersRepository),
+        sharedPreferencesProvider.overrideWithValue(mockSharedPreferencesAsync),
       ]);
 
       final newSellRangeOrder = Order(
@@ -200,6 +205,7 @@ void main() {
       container = ProviderContainer(overrides: [
         mostroServiceProvider.overrideWithValue(mockMostroService),
         orderRepositoryProvider.overrideWithValue(mockOrdersRepository),
+        sharedPreferencesProvider.overrideWithValue(mockSharedPreferencesAsync),
       ]);
 
       final newBuyOrder = Order(
@@ -261,6 +267,7 @@ void main() {
       container = ProviderContainer(overrides: [
         mostroServiceProvider.overrideWithValue(mockMostroService),
         orderRepositoryProvider.overrideWithValue(mockOrdersRepository),
+        sharedPreferencesProvider.overrideWithValue(mockSharedPreferencesAsync),
       ]);
 
       final newBuyOrderWithInvoice = Order(

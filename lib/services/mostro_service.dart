@@ -10,10 +10,12 @@ import 'package:mostro_mobile/shared/notifiers/session_notifier.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
+import 'package:logger/logger.dart';
 
 class MostroService {
   final Ref ref;
   final SessionNotifier _sessionNotifier;
+  static final Logger _logger = Logger();
 
   Settings _settings;
 
@@ -85,10 +87,12 @@ class MostroService {
       final result = jsonDecode(decryptedEvent.content!);
       if (result is! List) return;
 
-      result[0]['timestamp'] = decryptedEvent.createdAt?.millisecondsSinceEpoch;
       final msg = MostroMessage.fromJson(result[0]);
       final messageStorage = ref.read(mostroStorageProvider);
       await messageStorage.addMessage(decryptedEvent.id!, msg);
+      _logger.i(
+        'Received message of type ${msg.action} with order id ${msg.id}',
+      );
     });
   }
 

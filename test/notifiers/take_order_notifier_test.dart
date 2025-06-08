@@ -5,6 +5,7 @@ import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
+import 'package:mostro_mobile/shared/providers/storage_providers.dart';
 
 import '../mocks.mocks.dart';
 
@@ -14,12 +15,13 @@ void main() {
   group('Take Order Notifiers - Mockito tests', () {
     late ProviderContainer container;
     late MockMostroService mockMostroService;
+    late MockSharedPreferencesAsync mockPreferences;
     const testOrderId = "test_order_id";
 
     setUp(() {
       // Create a new instance of the mock repository.
       mockMostroService = MockMostroService();
-
+      mockPreferences = MockSharedPreferencesAsync();
     });
 
     tearDown(() {
@@ -124,6 +126,7 @@ void main() {
       // Override the repository provider with our mock.
       container = ProviderContainer(overrides: [
         mostroServiceProvider.overrideWithValue(mockMostroService),
+        sharedPreferencesProvider.overrideWithValue(mockPreferences),
       ]);
 
       final takeSellNotifier =
@@ -178,6 +181,7 @@ void main() {
       // Override the repository provider with our mock.
       container = ProviderContainer(overrides: [
         mostroServiceProvider.overrideWithValue(mockMostroService),
+        sharedPreferencesProvider.overrideWithValue(mockPreferences),
       ]);
 
       final takeSellNotifier =
@@ -216,6 +220,7 @@ void main() {
       // Override the repository provider with our mock.
       container = ProviderContainer(overrides: [
         mostroServiceProvider.overrideWithValue(mockMostroService),
+        sharedPreferencesProvider.overrideWithValue(mockPreferences),
       ]);
 
       final takeSellNotifier =

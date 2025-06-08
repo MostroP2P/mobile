@@ -76,6 +76,7 @@ class _AddOrderButtonState extends State<AddOrderButton>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   ElevatedButton.icon(
+                    key: const Key('buyButton'),
                     onPressed: _isMenuOpen
                         ? () => _navigateToCreateOrder(context, 'buy')
                         : null,
@@ -94,6 +95,7 @@ class _AddOrderButtonState extends State<AddOrderButton>
                   ),
                   const SizedBox(width: 8),
                   ElevatedButton.icon(
+                    key: const Key('sellButton'),
                     onPressed: _isMenuOpen
                         ? () => _navigateToCreateOrder(context, 'sell')
                         : null,
@@ -117,6 +119,7 @@ class _AddOrderButtonState extends State<AddOrderButton>
 
           // Botón principal siempre visible
           FloatingActionButton(
+            key: const Key('addOrderButton'),
             onPressed: _toggleMenu,
             backgroundColor:
                 _isMenuOpen ? Colors.grey.shade700 : AppTheme.activeColor,
