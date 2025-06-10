@@ -25,11 +25,22 @@ jobs:
       - name: Set Up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.29.0'
+          flutter-version: '3.32.2'
           channel: 'stable'
 
+      - name: Cache Dart & Pub artifacts
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.pub-cache
+            .dart_tool
+          key: ${{ runner.os }}-dart-${{ hashFiles('**/pubspec.yaml') }}
+          
       - name: Install Dependencies
         run: flutter pub get
+
+      - name: Generate localization and other required files
+        run: dart run build_runner build -d
 
       - name: Extract version from pubspec.yaml
         id: extract_version

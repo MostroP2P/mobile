@@ -5,7 +5,7 @@ import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
-import 'package:mostro_mobile/shared/providers/session_manager_provider.dart';
+import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 import 'package:mostro_mobile/shared/widgets/privacy_switch_widget.dart';
 
@@ -55,8 +55,16 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
   Future<void> _generateNewMasterKey() async {
     final sessionNotifer = ref.read(sessionNotifierProvider.notifier);
     await sessionNotifer.reset();
+    
+    final mostroStorage = ref.read(mostroStorageProvider);
+    await mostroStorage.deleteAll();
+    
+    final eventStorage = ref.read(eventStorageProvider);
+    await eventStorage.deleteAll();
+
     final keyManager = ref.read(keyManagerProvider);
     await keyManager.generateAndStoreMasterKey();
+    
     await _loadKeys();
   }
 

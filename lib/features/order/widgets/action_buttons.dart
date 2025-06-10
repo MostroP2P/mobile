@@ -42,6 +42,7 @@ class ActionButtons extends StatelessWidget {
           child: SizedBox(
             height: 48,
             child: MostroReactiveButton(
+              key: const Key('submitOrderButton'),
               label: 'Submit',
               buttonStyle: ButtonStyleType.raised,
               orderId: currentRequestId?.toString() ?? '',

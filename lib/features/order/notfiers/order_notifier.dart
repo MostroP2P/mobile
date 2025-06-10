@@ -1,11 +1,11 @@
 import 'dart:async';
-import 'package:mostro_mobile/data/models/enums/action.dart';
-import 'package:mostro_mobile/data/models/mostro_message.dart';
+import 'package:collection/collection.dart';
+import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models/order.dart';
+import 'package:mostro_mobile/features/order/models/order_state.dart';
+import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/features/order/notfiers/abstract_mostro_notifier.dart';
-import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/services/mostro_service.dart';
-import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 
 class OrderNotifier extends AbstractMostroNotifier {
   late final MostroService mostroService;
@@ -16,25 +16,48 @@ class OrderNotifier extends AbstractMostroNotifier {
     subscribe();
   }
 
-
-  @override
-  void handleEvent(MostroMessage event) {
-    // Forward all messages so UI reacts to CantDo, Peer, PaymentRequest, etc.
-    state = event;
-    handleOrderUpdate();
-  }
-
-  Future<void> submitOrder(Order order) async {
-    final message = MostroMessage<Order>(
-      action: Action.newOrder,
-      id: null,
-      payload: order,
-    );
-    await mostroService.submitOrder(message);
+  Future<void> sync() async {
+    try {
+      final storage = ref.read(mostroStorageProvider);
+      final messages = await storage.getAllMessagesForOrderId(orderId);
+      if (messages.isEmpty) {
+        return;
+      }
+      final msg = messages.firstWhereOrNull((m) => m.action != Action.cantDo);
+      if (msg?.payload is Order) {
+        state = OrderState(
+          status: msg!.getPayload<Order>()!.status,
+          action: msg.action,
+          order: msg.getPayload<Order>()!,
+        );
+      } else {
+        final orderMsg =
+            await storage.getLatestMessageOfTypeById<Order>(orderId);
+        if (orderMsg != null) {
+          state = OrderState(
+            status: orderMsg.getPayload<Order>()!.status,
+            action: orderMsg.action,
+            order: orderMsg.getPayload<Order>()!,
+          );
+        }
+      }
+    } catch (e, stack) {
+      logger.e(
+        'Error syncing order state',
+        error: e,
+        stackTrace: stack,
+      );
+    }
   }
 
   Future<void> takeSellOrder(
       String orderId, int? amount, String? lnAddress) async {
+    final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+    session = await sessionNotifier.newSession(
+      orderId: orderId,
+      role: Role.buyer,
+    );
+    mostroService.subscribe(session);
     await mostroService.takeSellOrder(
       orderId,
       amount,
@@ -43,13 +66,23 @@ class OrderNotifier extends AbstractMostroNotifier {
   }
 
   Future<void> takeBuyOrder(String orderId, int? amount) async {
+    final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+    session = await sessionNotifier.newSession(
+      orderId: orderId,
+      role: Role.seller,
+    );
+    mostroService.subscribe(session);
     await mostroService.takeBuyOrder(
       orderId,
       amount,
     );
   }
 
-  Future<void> sendInvoice(String orderId, String invoice, int? amount) async {
+  Future<void> sendInvoice(
+    String orderId,
+    String invoice,
+    int? amount,
+  ) async {
     await mostroService.sendInvoice(
       orderId,
       invoice,
@@ -78,13 +111,5 @@ class OrderNotifier extends AbstractMostroNotifier {
       orderId,
       rating,
     );
-  }
-
-  @override
-  void dispose() {
-    ref.invalidate(cantDoNotifierProvider(orderId));
-    ref.invalidate(paymentNotifierProvider(orderId));
-    ref.invalidate(disputeNotifierProvider(orderId));
-    super.dispose();
   }
 }

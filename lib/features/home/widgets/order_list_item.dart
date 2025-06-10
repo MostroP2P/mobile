@@ -39,7 +39,7 @@ class OrderListItem extends ConsumerWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: AppTheme.cardShadow,
         border: Border.all(
-          color: Colors.white.withOpacity(0.05),
+          color: Colors.white.withValues(alpha: 0.05),
           width: 1,
         ),
       ),
@@ -53,8 +53,8 @@ class OrderListItem extends ConsumerWidget {
                 ? context.push('/take_buy/${order.orderId}')
                 : context.push('/take_sell/${order.orderId}');
           },
-          highlightColor: Colors.white.withOpacity(0.05),
-          splashColor: Colors.white.withOpacity(0.03),
+          highlightColor: Colors.white.withValues(alpha: 0.05),
+          splashColor: Colors.white.withValues(alpha: 0.03),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -73,13 +73,13 @@ class OrderListItem extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(14),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.6),
+                            color: Colors.black.withValues(alpha: 0.6),
                             blurRadius: 4,
                             offset: const Offset(0, 2),
                             spreadRadius: -1,
                           ),
                           BoxShadow(
-                            color: Colors.white.withOpacity(0.08),
+                            color: Colors.white.withValues(alpha: 0.08),
                             blurRadius: 1,
                             offset: const Offset(0, -1),
                             spreadRadius: 0,
@@ -200,13 +200,13 @@ class OrderListItem extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.7),
+                      color: Colors.black.withValues(alpha: 0.7),
                       blurRadius: 6,
                       offset: const Offset(0, 3),
                       spreadRadius: -2,
                     ),
                     BoxShadow(
-                      color: Colors.white.withOpacity(0.08),
+                      color: Colors.white.withValues(alpha: 0.08),
                       blurRadius: 1,
                       offset: const Offset(0, -1),
                       spreadRadius: 0,
@@ -244,13 +244,13 @@ class OrderListItem extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.7),
+                      color: Colors.black.withValues(alpha: 0.7),
                       blurRadius: 6,
                       offset: const Offset(0, 3),
                       spreadRadius: -2,
                     ),
                     BoxShadow(
-                      color: Colors.white.withOpacity(0.08),
+                      color: Colors.white.withValues(alpha: 0.08),
                       blurRadius: 1,
                       offset: const Offset(0, -1),
                       spreadRadius: 0,
@@ -304,7 +304,7 @@ class OrderListItem extends ConsumerWidget {
                           color: starColor, size: 14);
                     } else {
                       return Icon(Icons.star_border,
-                          color: starColor.withOpacity(0.3), size: 14);
+                          color: starColor.withValues(alpha: 0.3), size: 14);
                     }
                   }),
             ),

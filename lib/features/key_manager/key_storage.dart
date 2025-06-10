@@ -50,4 +50,9 @@ class KeyStorage {
         ) ??
         1;
   }
+
+  Future<void> clear() async {
+    await secureStorage.deleteAll();
+    await sharedPrefs.clear();
+  }
 }

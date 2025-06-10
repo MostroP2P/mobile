@@ -81,7 +81,7 @@ class _AddLightningInvoiceScreenState
                         );
                       }
                     },
-                    amount: amount!,
+                    amount: amount ?? 0,
                   ),
                 ),
               ),
