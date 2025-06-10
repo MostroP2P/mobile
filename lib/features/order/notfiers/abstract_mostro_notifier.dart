@@ -132,6 +132,9 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
           orderId,
           (s) => s.peer = peer,
         );
+        state = state.copyWith(
+          peer: peer,
+        );
         final chat = ref.read(chatRoomsProvider(orderId).notifier);
         chat.subscribe();
         break;
@@ -181,6 +184,9 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         sessionProvider.updateSession(
           orderId,
           (s) => s.peer = peer,
+        );
+        state = state.copyWith(
+          peer: peer,
         );
         final chat = ref.read(chatRoomsProvider(orderId).notifier);
         chat.subscribe();

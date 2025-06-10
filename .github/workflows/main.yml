@@ -28,6 +28,14 @@ jobs:
           flutter-version: '3.32.2'
           channel: 'stable'
 
+      - name: Cache Dart & Pub artifacts
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.pub-cache
+            .dart_tool
+          key: ${{ runner.os }}-dart-${{ hashFiles('**/pubspec.yaml') }}
+          
       - name: Install Dependencies
         run: flutter pub get
 

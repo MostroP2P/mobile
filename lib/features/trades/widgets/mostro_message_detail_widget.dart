@@ -131,9 +131,8 @@ class MostroMessageDetail extends ConsumerWidget {
               session?.peer?.publicKey ?? '',
             );
       case actions.Action.buyerTookOrder:
-        final session = ref.watch(sessionProvider(orderPayload?.id ?? ''));
         return S.of(context)!.buyerTookOrder(
-              session?.peer?.publicKey ?? '',
+              tradeState.peer?.publicKey ?? '',
               orderPayload!.fiatCode,
               orderPayload.fiatAmount.toString(),
               orderPayload.paymentMethod,
@@ -141,8 +140,8 @@ class MostroMessageDetail extends ConsumerWidget {
       case actions.Action.fiatSentOk:
         final session = ref.watch(sessionProvider(orderPayload!.id ?? ''));
         return session!.role == Role.buyer
-            ? S.of(context)!.fiatSentOkBuyer(session.peer!.publicKey)
-            : S.of(context)!.fiatSentOkSeller(session.peer!.publicKey);
+            ? S.of(context)!.fiatSentOkBuyer(tradeState.peer!.publicKey)
+            : S.of(context)!.fiatSentOkSeller(tradeState.peer!.publicKey);
       case actions.Action.released:
         return S.of(context)!.released('{seller_npub}');
       case actions.Action.purchaseCompleted:
@@ -165,10 +164,14 @@ class MostroMessageDetail extends ConsumerWidget {
         return S.of(context)!.cooperativeCancelAccepted(orderPayload!.id ?? '');
       case actions.Action.disputeInitiatedByYou:
         final payload = ref.read(orderNotifierProvider(orderId)).dispute;
-        return S.of(context)!.disputeInitiatedByYou(orderPayload!.id!, payload!.disputeId);
+        return S
+            .of(context)!
+            .disputeInitiatedByYou(orderPayload!.id!, payload!.disputeId);
       case actions.Action.disputeInitiatedByPeer:
         final payload = ref.read(orderNotifierProvider(orderId)).dispute;
-        return S.of(context)!.disputeInitiatedByPeer(orderPayload!.id!, payload!.disputeId);
+        return S
+            .of(context)!
+            .disputeInitiatedByPeer(orderPayload!.id!, payload!.disputeId);
       case actions.Action.adminTookDispute:
         return S.of(context)!.adminTookDisputeUsers('{admin token}');
       case actions.Action.adminCanceled:
@@ -198,7 +201,10 @@ class MostroMessageDetail extends ConsumerWidget {
       case CantDoReason.invalidSignature:
         return S.of(context)!.invalidSignature;
       case CantDoReason.notAllowedByStatus:
-        return S.of(context)!.notAllowedByStatus(tradeState.order!.id!, tradeState.status);
+        return S.of(context)!.notAllowedByStatus(
+              orderId,
+              tradeState.status,
+            );
       case CantDoReason.outOfRangeFiatAmount:
         return S.of(context)!.outOfRangeFiatAmount('{fiat_min}', '{fiat_max}');
       case CantDoReason.outOfRangeSatsAmount:
