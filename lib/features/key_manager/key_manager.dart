@@ -39,6 +39,7 @@ class KeyManager {
   Future<void> generateAndStoreMasterKeyFromMnemonic(String mnemonic) async {
     final masterKeyHex = _derivator.extendedKeyFromMnemonic(mnemonic);
 
+    await _storage.clear();
     await _storage.storeMnemonic(mnemonic);
     await _storage.storeMasterKey(masterKeyHex);
     await setCurrentKeyIndex(1);
