@@ -60,8 +60,8 @@ class TakeOrderScreen extends ConsumerWidget {
             ? ''
             : 'with a +$premium% premium'
         : 'with a -$premium% discount';
-    final method = order.paymentMethods.isNotEmpty
-        ? order.paymentMethods[0]
+    final methods = order.paymentMethods.isNotEmpty
+        ? order.paymentMethods.join(', ')
         : 'No payment method';
 
     return CustomCard(
@@ -85,7 +85,7 @@ class TakeOrderScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'The payment method is: $method',
+                  'The payment methods are: $methods',
                   style: textTheme.bodyLarge,
                 ),
               ],
