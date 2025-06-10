@@ -71,11 +71,12 @@ class MostroMessage<T extends Payload> {
           ? Payload.fromJson(order['payload']) as T
           : null;
 
-      final num tradeIndex = order['trade_index'];
+      final num tradeIndex = order['trade_index'] ?? 0;
+      final num requestId = order['request_id'] ?? 0;
 
       return MostroMessage<T>(
         action: action,
-        requestId: order['request_id'],
+        requestId: requestId.toInt(),
         id: order['id'],
         payload: payload,
         tradeIndex: tradeIndex.toInt(),
