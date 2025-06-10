@@ -41,12 +41,12 @@ class MostroMessage<T extends Payload> {
 
   factory MostroMessage.fromJson(Map<String, dynamic> json) {
     final timestamp = json['timestamp'];
-
     json = json['order'] ?? json['cant-do'] ?? json;
+    final num requestId = json['request_id'] ?? 0;
 
     return MostroMessage(
       action: Action.fromString(json['action']),
-      requestId: json['request_id'],
+      requestId: requestId.toInt(),
       tradeIndex: json['trade_index'],
       id: json['id'],
       payload: json['payload'] != null
@@ -71,14 +71,14 @@ class MostroMessage<T extends Payload> {
           ? Payload.fromJson(order['payload']) as T
           : null;
 
-      final tradeIndex = order['trade_index'];
+      final num tradeIndex = order['trade_index'];
 
       return MostroMessage<T>(
         action: action,
         requestId: order['request_id'],
         id: order['id'],
         payload: payload,
-        tradeIndex: tradeIndex,
+        tradeIndex: tradeIndex.toInt(),
       );
     } catch (e) {
       throw FormatException('Failed to deserialize MostroMessage: $e');
