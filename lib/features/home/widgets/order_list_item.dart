@@ -220,14 +220,17 @@ class OrderListItem extends ConsumerWidget {
                       '💳 ', // Default emoji
                       style: TextStyle(fontSize: 16),
                     ),
-                    Text(
-                      order.paymentMethods.isNotEmpty
-                          ? order.paymentMethods[0]
-                          : 'tm',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
+                    Expanded(
+                      child: Text(
+                        order.paymentMethods.isNotEmpty
+                            ? order.paymentMethods.join(', ')
+                            : 'tm',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
