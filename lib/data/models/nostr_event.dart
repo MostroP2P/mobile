@@ -19,7 +19,14 @@ extension NostrEventExtensions on NostrEvent {
   Status get status => Status.fromString(_getTagValue('s')!);
   String? get amount => _getTagValue('amt');
   RangeAmount get fiatAmount => _getAmount('fa');
-  List<String> get paymentMethods => _getTagValue('pm')?.split(',') ?? [];
+  List<String> get paymentMethods {
+    final tag = tags?.firstWhere((t) => t[0] == 'pm', orElse: () => []);
+    if (tag != null && tag.length > 1) {
+      return tag.sublist(1);
+    }
+    return [];
+  }
+
   String? get premium => _getTagValue('premium');
   String? get source => _getTagValue('source');
   Rating? get rating => _getTagValue('rating') != null
