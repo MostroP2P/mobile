@@ -86,14 +86,17 @@ class LifecycleManager extends WidgetsBindingObserver {
 
   Future<void> _switchToBackground() async {
     try {
-      _isInBackground = true;
-      _logger.i("Switching to background");
-
-      // Transfer active subscriptions to background service
-      final backgroundService = ref.read(backgroundServiceProvider);
-      await backgroundService.setForegroundStatus(false);
+      ref.read(mostroServiceProvider).currentRequest?.filters.forEach(
+            (f) => _activeSubscriptions.add(f),
+          );
 
       if (_activeSubscriptions.isNotEmpty) {
+        _isInBackground = true;
+        _logger.i("Switching to background");
+
+        // Transfer active subscriptions to background service
+        final backgroundService = ref.read(backgroundServiceProvider);
+        await backgroundService.setForegroundStatus(false);
         _logger.i(
             "Transferring ${_activeSubscriptions.length} active subscriptions to background service");
         backgroundService.subscribe(_activeSubscriptions);

@@ -67,10 +67,10 @@ class MockMostroService extends _i1.Mock implements _i3.MostroService {
       );
 
   @override
-  void subscribe(_i4.Session? session) => super.noSuchMethod(
+  void subscribe(_i4.Session? keyPair) => super.noSuchMethod(
         Invocation.method(
           #subscribe,
-          [session],
+          [keyPair],
         ),
         returnValueForMissingStub: null,
       );

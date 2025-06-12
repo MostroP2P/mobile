@@ -1,11 +1,11 @@
 import 'dart:convert';
+import 'package:dart_nostr/nostr/core/key_pairs.dart';
 import 'package:dart_nostr/nostr/model/export.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
-import 'package:mostro_mobile/services/lifecycle_manager.dart';
 import 'package:mostro_mobile/shared/notifiers/session_notifier.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
@@ -16,88 +16,79 @@ class MostroService {
   final Ref ref;
   final SessionNotifier _sessionNotifier;
   static final Logger _logger = Logger();
-
   Settings _settings;
+
+  final Map<String, NostrKeyPairs> _subscriptions = {};
+  NostrRequest? currentRequest;
 
   MostroService(
     this._sessionNotifier,
     this.ref,
   ) : _settings = ref.read(settingsProvider).copyWith() {
-    init();
+    //init();
   }
 
-  void init() async {
-    final now = DateTime.now();
-    final cutoff = now.subtract(const Duration(hours: 24));
-    final sessions = _sessionNotifier.sessions;
-    final messageStorage = ref.read(mostroStorageProvider);
-    // Set of terminal statuses
-    const terminalStatuses = {
-      Status.canceled,
-      Status.cooperativelyCanceled,
-      Status.success,
-      Status.expired,
-      Status.canceledByAdmin,
-      Status.settledByAdmin,
-      Status.completedByAdmin,
-    };
-    for (final session in sessions) {
-      if (session.startTime.isAfter(cutoff)) {
-        if (session.orderId != null) {
-          final latestOrderMsg = await messageStorage
-              .getLatestMessageOfTypeById<Order>(session.orderId!);
-          final status = latestOrderMsg?.payload is Order
-              ? (latestOrderMsg!.payload as Order).status
-              : null;
-          if (status != null && terminalStatuses.contains(status)) {
-            continue;
-          }
-        }
-        subscribe(session);
-      }
-    }
+  void init({List<NostrKeyPairs>? keys}) {
+    keys?.forEach((kp) => _subscriptions[kp.public] = kp);
+    _subscribe();
   }
 
-  void subscribe(Session session) {
-    final filter = NostrFilter(
-      kinds: [1059],
-      p: [session.tradeKey.public],
-    );
+  void subscribe(NostrKeyPairs keyPair) {
+    if (_subscriptions.containsKey(keyPair.public)) return;
+    _subscriptions[keyPair.public] = keyPair;
+    _subscribe();
+  }
 
-    final request = NostrRequest(filters: [filter]);
+  void unsubscribe(String pubKey) {
+    _subscriptions.remove(pubKey);
+    _subscribe();
+  }
 
-    ref.read(lifecycleManagerProvider).addSubscription(filter);
-
+  void _subscribe() {
     final nostrService = ref.read(nostrServiceProvider);
 
-    nostrService.subscribeToEvents(request).listen((event) async {
-      final eventStore = ref.read(eventStorageProvider);
-
-      if (await eventStore.hasItem(event.id!)) return;
-      await eventStore.putItem(
-        event.id!,
-        event,
+    if (currentRequest != null) {
+      nostrService.unsubscribe(
+        currentRequest!.subscriptionId!,
       );
+      currentRequest = null;
+    }
 
-      final decryptedEvent = await event.unWrap(
-        session.tradeKey.private,
-      );
-      if (decryptedEvent.content == null) return;
+    if (_subscriptions.isEmpty) return;
 
-      final result = jsonDecode(decryptedEvent.content!);
-      if (result is! List) return;
-
-      final msg = MostroMessage.fromJson(result[0]);
-      final messageStorage = ref.read(mostroStorageProvider);
-      await messageStorage.addMessage(decryptedEvent.id!, msg);
-      _logger.i(
-        'Received message of type ${msg.action} with order id ${msg.id}',
-      );
-    });
+    final filter = NostrFilter(
+      kinds: [1059],
+      p: [..._subscriptions.keys],
+    );
+    currentRequest = NostrRequest(filters: [filter]);
+    nostrService.subscribeToEvents(currentRequest!).listen(_onData);
   }
 
-  Session? getSessionByOrderId(String orderId) {
-    return _sessionNotifier.getSessionByOrderId(orderId);
+  Future<void> _onData(NostrEvent event) async {
+    if (!_subscriptions.containsKey(event.recipient)) return;
+
+    final eventStore = ref.read(eventStorageProvider);
+
+    if (await eventStore.hasItem(event.id!)) return;
+    await eventStore.putItem(
+      event.id!,
+      event,
+    );
+
+    final decryptedEvent = await event.unWrap(
+      _subscriptions[event.recipient]!.private,
+    );
+    if (decryptedEvent.content == null) return;
+
+    final result = jsonDecode(decryptedEvent.content!);
+    if (result is! List) return;
+
+    final msg = MostroMessage.fromJson(result[0]);
+    final messageStorage = ref.read(mostroStorageProvider);
+    await messageStorage.addMessage(decryptedEvent.id!, msg);
+    _logger.i(
+      'Received message of type ${msg.action} with order id ${msg.id}',
+    );
   }
 
   Future<void> submitOrder(MostroMessage order) async {
