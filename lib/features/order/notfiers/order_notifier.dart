@@ -1,8 +1,5 @@
 import 'dart:async';
-import 'package:collection/collection.dart';
 import 'package:mostro_mobile/data/enums.dart';
-import 'package:mostro_mobile/data/models/order.dart';
-import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/features/order/notfiers/abstract_mostro_notifier.dart';
 import 'package:mostro_mobile/services/mostro_service.dart';
@@ -20,26 +17,8 @@ class OrderNotifier extends AbstractMostroNotifier {
     try {
       final storage = ref.read(mostroStorageProvider);
       final messages = await storage.getAllMessagesForOrderId(orderId);
-      if (messages.isEmpty) {
-        return;
-      }
-      final msg = messages.firstWhereOrNull((m) => m.action != Action.cantDo);
-      if (msg?.payload is Order) {
-        state = OrderState(
-          status: msg!.getPayload<Order>()!.status,
-          action: msg.action,
-          order: msg.getPayload<Order>()!,
-        );
-      } else {
-        final orderMsg =
-            await storage.getLatestMessageOfTypeById<Order>(orderId);
-        if (orderMsg != null) {
-          state = OrderState(
-            status: orderMsg.getPayload<Order>()!.status,
-            action: orderMsg.action,
-            order: orderMsg.getPayload<Order>()!,
-          );
-        }
+      for (final msg in messages) {
+        state = state.updateWith(msg);
       }
     } catch (e, stack) {
       logger.e(

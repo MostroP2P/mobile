@@ -1,32 +1,22 @@
 import 'dart:convert';
-import 'package:dart_nostr/nostr/core/key_pairs.dart';
-import 'package:dart_nostr/nostr/model/export.dart';
+import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
-import 'package:mostro_mobile/shared/notifiers/session_notifier.dart';
-import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
-import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
-import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
+import 'package:mostro_mobile/shared/providers.dart';
 import 'package:logger/logger.dart';
 
 class MostroService {
   final Ref ref;
-  final SessionNotifier _sessionNotifier;
   static final Logger _logger = Logger();
   Settings _settings;
 
   final Map<String, NostrKeyPairs> _subscriptions = {};
   NostrRequest? currentRequest;
 
-  MostroService(
-    this._sessionNotifier,
-    this.ref,
-  ) : _settings = ref.read(settingsProvider).copyWith() {
-    //init();
-  }
+  MostroService(this.ref) : _settings = ref.read(settingsProvider).copyWith();
 
   void init({List<NostrKeyPairs>? keys}) {
     keys?.forEach((kp) => _subscriptions[kp.public] = kp);
@@ -201,14 +191,15 @@ class MostroService {
   }
 
   Future<Session> _getSession(MostroMessage order) async {
+    final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
     if (order.requestId != null) {
-      final session = _sessionNotifier.getSessionByRequestId(order.requestId!);
+      final session = sessionNotifier.getSessionByRequestId(order.requestId!);
       if (session == null) {
         throw Exception('No session found for requestId: ${order.requestId}');
       }
       return session;
     } else if (order.id != null) {
-      final session = _sessionNotifier.getSessionByOrderId(order.id!);
+      final session = sessionNotifier.getSessionByOrderId(order.id!);
       if (session == null) {
         throw Exception('No session found for orderId: ${order.id}');
       }

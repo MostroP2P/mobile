@@ -6,7 +6,6 @@ import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/data/models/order.dart';
-import 'package:mostro_mobile/shared/notifiers/order_action_notifier.dart';
 import 'package:mostro_mobile/shared/providers/background_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
@@ -74,11 +73,6 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
     if (session.orderId != null) {
       final order = await mostroStorage.getLatestMessageById(session.orderId!);
       if (order != null) {
-        // Set the order action
-        ref.read(orderActionNotifierProvider(session.orderId!).notifier).set(
-              order.action,
-            );
-            
         // Explicitly initialize order notifier
         // to ensure it's all properly set up for this orderId
         ref.read(orderNotifierProvider(session.orderId!).notifier).sync();
