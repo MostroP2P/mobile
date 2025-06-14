@@ -20,6 +20,7 @@ class TakeOrderScreen extends ConsumerWidget {
   final TextEditingController _fiatAmountController = TextEditingController();
   final TextEditingController _lndAddressController = TextEditingController();
   final TextTheme textTheme = AppTheme.theme.textTheme;
+
   TakeOrderScreen({super.key, required this.orderId, required this.orderType});
 
   @override
@@ -60,8 +61,8 @@ class TakeOrderScreen extends ConsumerWidget {
             ? ''
             : 'with a +$premium% premium'
         : 'with a -$premium% discount';
-    final method = order.paymentMethods.isNotEmpty
-        ? order.paymentMethods[0]
+    final methods = order.paymentMethods.isNotEmpty
+        ? order.paymentMethods.join(', ')
         : 'No payment method';
 
     return CustomCard(
@@ -85,7 +86,7 @@ class TakeOrderScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'The payment method is: $method',
+                  'The payment methods are: $methods',
                   style: textTheme.bodyLarge,
                 ),
               ],
@@ -151,7 +152,7 @@ class TakeOrderScreen extends ConsumerWidget {
 
   Widget _buildActionButtons(
       BuildContext context, WidgetRef ref, NostrEvent order) {
-    final orderDetailsNotifier = ref.read(
+    final orderDetailsNotifier = ref.watch(
       orderNotifierProvider(order.orderId!).notifier,
     );
 
@@ -160,7 +161,7 @@ class TakeOrderScreen extends ConsumerWidget {
       children: [
         OutlinedButton(
           onPressed: () {
-            context.go('/');
+            context.pop();
           },
           style: AppTheme.theme.outlinedButtonTheme.style,
           child: const Text('CLOSE'),
@@ -194,6 +195,7 @@ class TakeOrderScreen extends ConsumerWidget {
                             child: const Text('Cancel'),
                           ),
                           ElevatedButton(
+                            key: const Key('submitAmountButton'),
                             onPressed: () {
                               final inputAmount = int.tryParse(
                                   _fiatAmountController.text.trim());

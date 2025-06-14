@@ -32,6 +32,7 @@ class PaymentMethodsSection extends ConsumerWidget {
           ? Padding(
               padding: const EdgeInsets.fromLTRB(0, 8, 0, 0),
               child: TextField(
+                key: const Key('paymentMethodField'),
                 controller: customController,
                 style: const TextStyle(color: Colors.white),
                 decoration: const InputDecoration(

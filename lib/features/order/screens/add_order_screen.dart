@@ -212,13 +212,14 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
                           decoration: BoxDecoration(
                             border: Border(
                               top: BorderSide(
-                                color: Colors.white.withOpacity(0.1),
+                                color: Colors.white.withValues(alpha: 0.1),
                                 width: 1,
                               ),
                             ),
                           ),
                           padding: const EdgeInsets.only(top: 16),
                           child: ActionButtons(
+                            key: const Key('addOrderButtons'),
                             onCancel: () => context.pop(),
                             onSubmit: _submitOrder,
                             currentRequestId: _currentRequestId,

@@ -23,7 +23,7 @@ class MostroStorage extends BaseStorage<MostroMessage> {
 
       await store.record(id).put(db, dbMap);
       _logger.i(
-        'Saved message of type ${message.payload?.runtimeType} with id $id',
+        'Saved message of type ${message.action} with order id ${message.id}',
       );
     } catch (e, stack) {
       _logger.e(
@@ -32,20 +32,6 @@ class MostroStorage extends BaseStorage<MostroMessage> {
         stackTrace: stack,
       );
       rethrow;
-    }
-  }
-
-  /// Retrieve a MostroMessage by ID
-  Future<MostroMessage?> getMessageById<T extends Payload>(
-    String orderId,
-  ) async {
-    final t = T;
-    final id = '$t:$orderId';
-    try {
-      return await getItem(id);
-    } catch (e, stack) {
-      _logger.e('Error deserializing message $id', error: e, stackTrace: stack);
-      return null;
     }
   }
 
@@ -144,10 +130,9 @@ class MostroStorage extends BaseStorage<MostroMessage> {
         limit: 1,
       ),
     );
-    
-    return query
-        .onSnapshots(db)
-        .map((snaps) => snaps.isEmpty ? null : MostroMessage.fromJson(snaps.first.value));
+
+    return query.onSnapshots(db).map((snaps) =>
+        snaps.isEmpty ? null : MostroMessage.fromJson(snaps.first.value));
   }
 
   /// Stream of the latest message for an order whose payload is of type T

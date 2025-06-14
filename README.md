@@ -36,6 +36,15 @@ This project is a mobile interface that facilitates peer-to-peer bitcoin trading
    flutter pub get
    ```
 
+3. Generate localization and other required files:
+
+   ```bash
+   dart run build_runner build -d
+   ```
+
+> **Note:**
+> These commands generate files needed by `flutter_intl` and any other code generators. You must run them after installing dependencies and whenever you update localization files or code generation sources. If you skip this step, you may encounter missing file errors when running the app.
+
 ## Running the App
 
 ### On Emulator/Simulator

@@ -1,72 +1,41 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/core/config.dart';
-import 'package:mostro_mobile/data/models/cant_do.dart';
-import 'package:mostro_mobile/data/models/dispute.dart';
-import 'package:mostro_mobile/data/models/enums/action.dart';
-import 'package:mostro_mobile/data/models/enums/status.dart';
-import 'package:mostro_mobile/data/models/mostro_message.dart';
-import 'package:mostro_mobile/data/models/order.dart';
-import 'package:mostro_mobile/data/models/peer.dart';
-import 'package:mostro_mobile/core/mostro_fsm.dart';
+import 'package:mostro_mobile/data/enums.dart';
+import 'package:mostro_mobile/data/models.dart';
+import 'package:mostro_mobile/features/order/models/order_state.dart';
+import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
-import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
-import 'package:mostro_mobile/shared/providers/navigation_notifier_provider.dart';
-import 'package:mostro_mobile/shared/providers/notification_notifier_provider.dart';
-import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
-import 'package:mostro_mobile/shared/providers/session_manager_provider.dart';
 
-class AbstractMostroNotifier extends StateNotifier<MostroMessage> {
+class AbstractMostroNotifier extends StateNotifier<OrderState> {
   final String orderId;
   final Ref ref;
-
-  ProviderSubscription<AsyncValue<MostroMessage?>>? subscription;
   final logger = Logger();
 
-  // Keep local FSM state in sync with every incoming MostroMessage.
-  Status _currentStatus = Status.pending;
+  late Session session;
 
-  Status get currentStatus => _currentStatus;
+  ProviderSubscription<AsyncValue<MostroMessage?>>? subscription;
 
   AbstractMostroNotifier(
     this.orderId,
     this.ref,
-  ) : super(MostroMessage(action: Action.newOrder, id: orderId));
-
-  /// Helper function to format payment methods for notifications
-  /// Returns "method1 (+X más)" if multiple methods, or just "method1" if single
-  String _formatPaymentMethods(List<String> paymentMethods) {
-    if (paymentMethods.isEmpty) {
-      return 'No payment method';
-    }
-
-    if (paymentMethods.length == 1) {
-      return paymentMethods.first;
-    }
-
-    final additionalCount = paymentMethods.length - 1;
-    return '${paymentMethods.first} (+$additionalCount más)';
-  }
-
-  Future<void> sync() async {
-    final storage = ref.read(mostroStorageProvider);
-    final latestMessage = await storage.getMessageById(orderId);
-    if (latestMessage != null) {
-      state = latestMessage;
-      // Bootstrap FSM status from the order payload if present.
-      final orderPayload = latestMessage.getPayload<Order>();
-      _currentStatus = orderPayload?.status ?? _currentStatus;
+  ) : super(OrderState(
+            action: Action.newOrder, status: Status.pending, order: null)) {
+    final oldSession =
+        ref.read(sessionNotifierProvider.notifier).getSessionByOrderId(orderId);
+    if (oldSession != null) {
+      session = oldSession;
     }
   }
 
   void subscribe() {
-    // Use the mostroMessageStream provider that directly watches Sembast storage changes
     subscription = ref.listen(
       mostroMessageStreamProvider(orderId),
-      (_, AsyncValue<MostroMessage?> next) {
+      (_, next) {
         next.when(
           data: (MostroMessage? msg) {
+            logger.i('Received message: ${msg?.toJson()}');
             if (msg != null) {
               handleEvent(msg);
             }
@@ -83,63 +52,124 @@ class AbstractMostroNotifier extends StateNotifier<MostroMessage> {
   }
 
   void handleEvent(MostroMessage event) {
-    // Update FSM first so UI can react to new `Status` if needed.
-    _currentStatus = MostroFSM.nextStatus(_currentStatus, event.action);
-
-    // Persist the message as the latest state for the order.
-    state = event;
-
-    handleOrderUpdate();
-  }
-
-  void handleCantDo(CantDo? cantDo) {
-    final notifProvider = ref.read(notificationProvider.notifier);
-    notifProvider.showInformation(Action.cantDo, values: {
-      'action': cantDo?.cantDoReason.toString(),
-    });
-  }
-
-  void handleOrderUpdate() {
     final navProvider = ref.read(navigationProvider.notifier);
     final notifProvider = ref.read(notificationProvider.notifier);
     final mostroInstance = ref.read(orderRepositoryProvider).mostroInstance;
 
-    switch (state.action) {
-      case Action.addInvoice:
-        navProvider.go('/add_invoice/$orderId');
-        break;
-      case Action.cantDo:
-        final cantDo = state.getPayload<CantDo>();
-        notifProvider.showInformation(state.action,
-            values: {'action': cantDo?.cantDoReason.toString()});
-        break;
+    if (mounted) {
+      state = state.updateWith(event);
+    }
+
+    switch (event.action) {
       case Action.newOrder:
-        navProvider.go('/order_confirmed/${state.id!}');
         break;
       case Action.payInvoice:
-        navProvider.go('/pay_invoice/${state.id!}');
+        if (event.payload is PaymentRequest) {
+          navProvider.go('/pay_invoice/${event.id!}');
+        }
+        break;
+      case Action.fiatSentOk:
+        final peer = event.getPayload<Peer>();
+        notifProvider.showInformation(event.action, values: {
+          'buyer_npub': peer?.publicKey ?? 'Unknown',
+        });
+        break;
+      case Action.released:
+        notifProvider.showInformation(event.action, values: {
+          'seller_npub': '',
+        });
+        break;
+      case Action.canceled:
+        ref.read(mostroStorageProvider).deleteAllMessagesByOrderId(orderId);
+        ref.read(sessionNotifierProvider.notifier).deleteSession(orderId);
+        navProvider.go('/');
+        notifProvider.showInformation(event.action, values: {'id': orderId});
+        ref.invalidateSelf();
+        break;
+      case Action.cooperativeCancelInitiatedByYou:
+        notifProvider.showInformation(event.action, values: {
+          'id': event.id,
+        });
+        break;
+      case Action.cooperativeCancelInitiatedByPeer:
+        notifProvider.showInformation(event.action, values: {
+          'id': event.id!,
+        });
+        break;
+      case Action.disputeInitiatedByYou:
+        final dispute = event.getPayload<Dispute>()!;
+        notifProvider.showInformation(event.action, values: {
+          'id': event.id!,
+          'user_token': dispute.disputeId,
+        });
+        break;
+      case Action.disputeInitiatedByPeer:
+        final dispute = event.getPayload<Dispute>()!;
+        notifProvider.showInformation(event.action, values: {
+          'id': event.id!,
+          'user_token': dispute.disputeId,
+        });
+        break;
+      case Action.cooperativeCancelAccepted:
+        notifProvider.showInformation(event.action, values: {
+          'id': event.id!,
+        });
+        break;
+      case Action.holdInvoicePaymentAccepted:
+        final order = event.getPayload<Order>();
+        notifProvider.showInformation(event.action, values: {
+          'seller_npub': order?.sellerTradePubkey ?? 'Unknown',
+          'id': order?.id,
+          'fiat_code': order?.fiatCode,
+          'fiat_amount': order?.fiatAmount,
+          'payment_method': order?.paymentMethod,
+        });
+        // add seller tradekey to session
+        // open chat
+        final sessionProvider = ref.read(sessionNotifierProvider.notifier);
+        final peer = Peer(publicKey: order!.sellerTradePubkey!);
+        sessionProvider.updateSession(
+          orderId,
+          (s) => s.peer = peer,
+        );
+        state = state.copyWith(
+          peer: peer,
+        );
+        final chat = ref.read(chatRoomsProvider(orderId).notifier);
+        chat.subscribe();
+        break;
+      case Action.holdInvoicePaymentSettled:
+        notifProvider.showInformation(event.action, values: {
+          'buyer_npub': state.order?.buyerTradePubkey ?? 'Unknown',
+        });
         break;
       case Action.waitingSellerToPay:
         navProvider.go('/');
-        notifProvider.showInformation(state.action, values: {
-          'id': state.id,
+        notifProvider.showInformation(event.action, values: {
+          'id': event.id,
           'expiration_seconds':
               mostroInstance?.expirationSeconds ?? Config.expirationSeconds,
         });
         break;
       case Action.waitingBuyerInvoice:
-        notifProvider.showInformation(state.action, values: {
+        notifProvider.showInformation(event.action, values: {
           'expiration_seconds':
               mostroInstance?.expirationSeconds ?? Config.expirationSeconds,
         });
         break;
+      case Action.addInvoice:
+        final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+        sessionNotifier.saveSession(session);
+
+        navProvider.go('/add_invoice/$orderId');
+        break;
       case Action.buyerTookOrder:
-        final order = state.getPayload<Order>();
+        final order = event.getPayload<Order>();
         if (order == null) {
           logger.e('Buyer took order, but order is null');
           break;
         }
-        notifProvider.showInformation(state.action, values: {
+        notifProvider.showInformation(event.action, values: {
           'buyer_npub': order.buyerTradePubkey ?? 'Unknown',
           'fiat_code': order.fiatCode,
           'fiat_amount': order.fiatAmount,
@@ -155,89 +185,32 @@ class AbstractMostroNotifier extends StateNotifier<MostroMessage> {
           orderId,
           (s) => s.peer = peer,
         );
-        final chat = ref.read(chatRoomsProvider(orderId).notifier);
-        chat.subscribe();
-        break;
-      case Action.canceled:
-        navProvider.go('/');
-        notifProvider.showInformation(state.action, values: {'id': orderId});
-        break;
-      case Action.holdInvoicePaymentAccepted:
-        final order = state.getPayload<Order>();
-        notifProvider.showInformation(state.action, values: {
-          'seller_npub': order?.sellerTradePubkey ?? 'Unknown',
-          'id': order?.id,
-          'fiat_code': order?.fiatCode,
-          'fiat_amount': order?.fiatAmount,
-          'payment_method': order != null
-              ? order.paymentMethod
-              : 'No payment method',
-        });
-        // add seller tradekey to session
-        // open chat
-        final sessionProvider = ref.read(sessionNotifierProvider.notifier);
-        final peer = Peer(publicKey: order!.sellerTradePubkey!);
-        sessionProvider.updateSession(
-          orderId,
-          (s) => s.peer = peer,
+        state = state.copyWith(
+          peer: peer,
         );
         final chat = ref.read(chatRoomsProvider(orderId).notifier);
         chat.subscribe();
         break;
-      case Action.fiatSentOk:
-        final peer = state.getPayload<Peer>();
-        notifProvider.showInformation(state.action, values: {
-          'buyer_npub': peer?.publicKey ?? '{buyer_npub}',
-        });
-        break;
-      case Action.holdInvoicePaymentSettled:
-        notifProvider.showInformation(state.action, values: {
-          'buyer_npub': 'buyerTradePubkey',
-        });
-        break;
-      case Action.rate:
-      case Action.rateReceived:
-      case Action.cooperativeCancelInitiatedByYou:
-        notifProvider.showInformation(state.action, values: {
-          'id': state.id,
-        });
+      case Action.cantDo:
+        final cantDo = event.getPayload<CantDo>();
+        ref.read(notificationProvider.notifier).showInformation(
+          event.action,
+          values: {
+            'action': cantDo?.cantDoReason.toString(),
+          },
+        );
         break;
       case Action.adminSettled:
-        notifProvider.showInformation(state.action, values: {});
+        notifProvider.showInformation(event.action, values: {});
         break;
       case Action.paymentFailed:
-        notifProvider.showInformation(state.action, values: {
+        notifProvider.showInformation(event.action, values: {
           'payment_attempts': -1,
           'payment_retries_interval': -1000
         });
         break;
-      case Action.released:
-        notifProvider.showInformation(state.action, values: {
-          'seller_npub': '',
-        });
-      case Action.disputeInitiatedByPeer:
-        final dispute = state.getPayload<Dispute>()!;
-        notifProvider.showInformation(state.action, values: {
-          'id': state.id!,
-          'user_token': dispute.disputeId,
-        });
-        break;
-      case Action.disputeInitiatedByYou:
-        final dispute = state.getPayload<Dispute>()!;
-        notifProvider.showInformation(state.action, values: {
-          'id': state.id!,
-          'user_token': dispute.disputeId,
-        });
-      case Action.cooperativeCancelAccepted:
-        notifProvider.showInformation(state.action, values: {
-          'id': state.id!,
-        });
-      case Action.cooperativeCancelInitiatedByPeer:
-        notifProvider.showInformation(state.action, values: {
-          'id': state.id!,
-        });
       default:
-        notifProvider.showInformation(state.action, values: {});
+        notifProvider.showInformation(event.action, values: {});
         break;
     }
   }

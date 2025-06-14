@@ -75,7 +75,8 @@ class _AddOrderButtonState extends State<AddOrderButton>
                     alignment: Alignment.centerLeft,
                     children: [
                       ElevatedButton.icon(
-                        onPressed: _isMenuOpen
+                        key: const Key('buyButton'),
+                    onPressed: _isMenuOpen
                             ? () => _navigateToCreateOrder(context, 'buy')
                             : null,
                         style: ElevatedButton.styleFrom(
@@ -104,7 +105,8 @@ class _AddOrderButtonState extends State<AddOrderButton>
                     alignment: Alignment.centerLeft,
                     children: [
                       ElevatedButton.icon(
-                        onPressed: _isMenuOpen
+                        key: const Key('sellButton'),
+                    onPressed: _isMenuOpen
                             ? () => _navigateToCreateOrder(context, 'sell')
                             : null,
                         style: ElevatedButton.styleFrom(
@@ -133,6 +135,7 @@ class _AddOrderButtonState extends State<AddOrderButton>
             ),
           ),
           FloatingActionButton(
+            key: const Key('addOrderButton'),
             onPressed: _toggleMenu,
             backgroundColor:
                 _isMenuOpen ? Colors.grey.shade700 : AppTheme.activeColor,
