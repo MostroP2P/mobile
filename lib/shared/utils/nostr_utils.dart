@@ -191,7 +191,7 @@ class NostrUtils {
       tags: [
         ["p", recipientPubKey]
       ],
-      createdAt: DateTime.now(),
+      createdAt: randomNow(),
     );
 
     return wrapEvent;

@@ -18,7 +18,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  if (Platform.isAndroid) {
+  if (Platform.isAndroid && !Platform.environment.containsKey('FLUTTER_TEST')) {
     await requestNotificationPermissionIfNeeded();
   }
 

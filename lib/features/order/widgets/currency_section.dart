@@ -22,7 +22,7 @@ class CurrencySection extends ConsumerWidget {
           : 'Select the Fiat Currency you want to receive',
       icon: const Text('\$',
           style: TextStyle(color: Color(0xFF8CC63F), fontSize: 18)),
-      iconBackgroundColor: const Color(0xFF764BA2).withOpacity(0.3),
+      iconBackgroundColor: const Color(0xFF764BA2).withValues(alpha: 0.3),
       child: currenciesAsync.when(
         loading: () => const Text('Loading currencies...',
             style: TextStyle(color: Colors.white)),
@@ -39,6 +39,7 @@ class CurrencySection extends ConsumerWidget {
           }
 
           return InkWell(
+            key: const Key('fiatCodeDropdown'),
             onTap: () {
               _showCurrencySelectionDialog(context, ref, onCurrencySelected);
             },
@@ -46,6 +47,7 @@ class CurrencySection extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Row(
+                  key: Key('currency_$selectedFiatCode'),
                   children: [
                     Text(flag, style: const TextStyle(fontSize: 18)),
                     const SizedBox(width: 8),
@@ -162,6 +164,7 @@ class CurrencySection extends ConsumerWidget {
                                       final isSelected = code == selectedCode;
 
                                       return ListTile(
+  key: Key('currency_$code'),
                                         leading: Text(
                                           currency.emoji.isNotEmpty
                                               ? currency.emoji

@@ -13,3 +13,11 @@ class TradeKeyDerivationException implements Exception {
   @override
   String toString() => 'TradeKeyDerivationException: $message';
 }
+
+class InvalidTradeKeyIndexException implements Exception {
+  final String message;
+  InvalidTradeKeyIndexException(this.message);
+
+  @override
+  String toString() => 'InvalidTradeKeyIndexException: $message';
+}

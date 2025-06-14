@@ -18,16 +18,15 @@ class KeyManager {
       await generateAndStoreMasterKey();
     }
     masterKeyPair = await _getMasterKey();
-    _masterKeyHex = await _storage.readMasterKey();
-    tradeKeyIndex = await _storage.readTradeKeyIndex();
+    tradeKeyIndex = await getCurrentKeyIndex();
   }
 
   Future<bool> hasMasterKey() async {
     if (masterKeyPair != null) {
       return true;
     }
-    final masterKeyHex = await _storage.readMasterKey();
-    return masterKeyHex != null;
+    _masterKeyHex = await _storage.readMasterKey();
+    return _masterKeyHex != null;
   }
 
   /// Generate a new mnemonic, derive the master key, and store both
@@ -40,9 +39,10 @@ class KeyManager {
   Future<void> generateAndStoreMasterKeyFromMnemonic(String mnemonic) async {
     final masterKeyHex = _derivator.extendedKeyFromMnemonic(mnemonic);
 
+    await _storage.clear();
     await _storage.storeMnemonic(mnemonic);
     await _storage.storeMasterKey(masterKeyHex);
-    await _storage.storeTradeKeyIndex(1);
+    await setCurrentKeyIndex(1);
   }
 
   Future<void> importMnemonic(String mnemonic) async {
@@ -76,7 +76,7 @@ class KeyManager {
         _derivator.derivePrivateKey(masterKeyHex, currentIndex);
 
     // increment index
-    await _storage.storeTradeKeyIndex(currentIndex + 1);
+    await setCurrentKeyIndex(currentIndex + 1);
 
     return NostrKeyPairs(private: tradePrivateHex);
   }
@@ -109,6 +109,12 @@ class KeyManager {
   }
 
   Future<void> setCurrentKeyIndex(int index) async {
+    if (index < 1) {
+      throw InvalidTradeKeyIndexException(
+        'Trade key index must be greater than 0',
+      );
+    }
+    tradeKeyIndex = index;
     await _storage.storeTradeKeyIndex(index);
   }
 }
