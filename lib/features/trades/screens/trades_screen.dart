@@ -16,9 +16,9 @@ class TradesScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Watch the async trades data
     final tradesAsync = ref.watch(filteredTradesProvider);
-    
+
     return Scaffold(
-      backgroundColor: AppTheme.dark1,
+      backgroundColor: AppTheme.backgroundDark,
       appBar: const MostroAppBar(),
       drawer: const MostroAppDrawer(),
       body: RefreshIndicator(
@@ -38,7 +38,7 @@ class TradesScreen extends ConsumerWidget {
                     width: double.infinity,
                     padding: const EdgeInsets.all(16.0),
                     decoration: BoxDecoration(
-                      color: AppTheme.dark1,
+                      color: AppTheme.backgroundDark,
                       border: Border(
                         bottom: BorderSide(color: Colors.white24, width: 0.5),
                       ),
@@ -56,7 +56,7 @@ class TradesScreen extends ConsumerWidget {
                   Expanded(
                     child: Container(
                       decoration: const BoxDecoration(
-                        color: AppTheme.dark1,
+                        color: AppTheme.backgroundDark,
                       ),
                       child: Column(
                         children: [
@@ -84,7 +84,8 @@ class TradesScreen extends ConsumerWidget {
                                     ),
                                     Text(
                                       error.toString(),
-                                      style: TextStyle(color: AppTheme.cream1, fontSize: 12),
+                                      style: TextStyle(
+                                          color: AppTheme.cream1, fontSize: 12),
                                       textAlign: TextAlign.center,
                                     ),
                                     const SizedBox(height: 16),
