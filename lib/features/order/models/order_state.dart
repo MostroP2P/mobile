@@ -84,12 +84,17 @@ class OrderState {
   OrderState updateWith(MostroMessage message) {
     _logger.i('Updating OrderState Action: ${message.action}');
     
+    // Preserve the current state entirely for cantDo messages - they are informational only
+    if (message.action == Action.cantDo) {
+      return this;
+    }
+    
     // Determine the new status based on the action received
     Status newStatus = _getStatusFromAction(message.action, message.getPayload<Order>()?.status);
     
     return copyWith(
       status: newStatus,
-      action: message.action != Action.cantDo ? message.action : action,
+      action: message.action,
       order: message.payload is Order
           ? message.getPayload<Order>()
           : message.payload is PaymentRequest
