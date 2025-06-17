@@ -18,7 +18,7 @@ class MostroAppBar extends ConsumerWidget implements PreferredSizeWidget {
         preferredSize: const Size.fromHeight(1.0),
         child: Container(
           height: 1.0,
-          color: Colors.white.withValues(alpha: 0.1),
+          color: Colors.white.withOpacity(0.1),
         ),
       ),
       // Use a custom IconButton with specific padding
