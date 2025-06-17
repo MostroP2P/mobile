@@ -83,8 +83,12 @@ class OrderState {
 
   OrderState updateWith(MostroMessage message) {
     _logger.i('Updating OrderState Action: ${message.action}');
+    
+    // Determine the new status based on the action received
+    Status newStatus = _getStatusFromAction(message.action, message.getPayload<Order>()?.status);
+    
     return copyWith(
-      status: message.getPayload<Order>()?.status ?? status,
+      status: newStatus,
       action: message.action != Action.cantDo ? message.action : action,
       order: message.payload is Order
           ? message.getPayload<Order>()
@@ -98,8 +102,55 @@ class OrderState {
     );
   }
 
+  /// Maps actions to their corresponding statuses based on mostrod DM messages
+  Status _getStatusFromAction(Action action, Status? payloadStatus) {
+    switch (action) {
+      // Actions that should set status to waiting-payment
+      case Action.waitingSellerToPay:
+        return Status.waitingPayment;
+      
+      // Actions that should set status to waiting-buyer-invoice
+      case Action.waitingBuyerInvoice:
+      case Action.addInvoice:
+        return Status.waitingBuyerInvoice;
+      
+      // Actions that should set status to active
+      case Action.buyerTookOrder:
+      case Action.holdInvoicePaymentAccepted:
+      case Action.holdInvoicePaymentSettled:
+        return Status.active;
+      
+      // Actions that should set status to fiat-sent
+      case Action.fiatSent:
+      case Action.fiatSentOk:
+        return Status.fiatSent;
+      
+      // Actions that should set status to success (completed)
+      case Action.purchaseCompleted:
+      case Action.released:
+      case Action.rateReceived:
+        return Status.success;
+      
+      // Actions that should set status to canceled
+      case Action.canceled:
+      case Action.adminCanceled:
+      case Action.cooperativeCancelAccepted:
+        return Status.canceled;
+      
+      // For actions that include Order payload, use the payload status
+      case Action.newOrder:
+      case Action.takeSell:
+      case Action.takeBuy:
+        return payloadStatus ?? status;
+      
+      // For other actions, keep the current status unless payload has a different one
+      default:
+        return payloadStatus ?? status;
+    }
+  }
+
   List<Action> getActions(Role role) {
-    return actions[role]![status]![action] ?? [];
+    return actions[role]?[status]?[action] ?? [];
   }
 
   static final Map<Role, Map<Status, Map<Action, List<Action>>>> actions = {
