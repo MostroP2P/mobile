@@ -83,15 +83,16 @@ class OrderState {
 
   OrderState updateWith(MostroMessage message) {
     _logger.i('Updating OrderState Action: ${message.action}');
-    
+
     // Preserve the current state entirely for cantDo messages - they are informational only
     if (message.action == Action.cantDo) {
       return this;
     }
-    
+
     // Determine the new status based on the action received
-    Status newStatus = _getStatusFromAction(message.action, message.getPayload<Order>()?.status);
-    
+    Status newStatus = _getStatusFromAction(
+        message.action, message.getPayload<Order>()?.status);
+
     return copyWith(
       status: newStatus,
       action: message.action,
@@ -113,41 +114,41 @@ class OrderState {
       // Actions that should set status to waiting-payment
       case Action.waitingSellerToPay:
         return Status.waitingPayment;
-      
+
       // Actions that should set status to waiting-buyer-invoice
       case Action.waitingBuyerInvoice:
       case Action.addInvoice:
         return Status.waitingBuyerInvoice;
-      
+
       // Actions that should set status to active
       case Action.buyerTookOrder:
       case Action.holdInvoicePaymentAccepted:
       case Action.holdInvoicePaymentSettled:
         return Status.active;
-      
+
       // Actions that should set status to fiat-sent
       case Action.fiatSent:
       case Action.fiatSentOk:
         return Status.fiatSent;
-      
+
       // Actions that should set status to success (completed)
       case Action.purchaseCompleted:
       case Action.released:
       case Action.rateReceived:
         return Status.success;
-      
+
       // Actions that should set status to canceled
       case Action.canceled:
       case Action.adminCanceled:
       case Action.cooperativeCancelAccepted:
         return Status.canceled;
-      
+
       // For actions that include Order payload, use the payload status
       case Action.newOrder:
       case Action.takeSell:
       case Action.takeBuy:
         return payloadStatus ?? status;
-      
+
       // For other actions, keep the current status unless payload has a different one
       default:
         return payloadStatus ?? status;
@@ -176,16 +177,32 @@ class OrderState {
           Action.cancel,
         ],
       },
+      Status.waitingPayment: {
+        Action.waitingSellerToPay: [
+          Action.cancel,
+        ],
+        Action.payInvoice: [
+          Action.payInvoice,
+          Action.cancel,
+        ],
+      },
+      Status.waitingBuyerInvoice: {
+        Action.waitingBuyerInvoice: [
+          Action.cancel,
+        ],
+        Action.addInvoice: [
+          Action.cancel,
+        ],
+      },
       Status.active: {
         Action.buyerTookOrder: [
-          Action.buyerTookOrder,
           Action.cancel,
           Action.dispute,
         ],
         Action.fiatSentOk: [
+          Action.release,
           Action.cancel,
           Action.dispute,
-          Action.release,
         ],
         Action.rate: [
           Action.rate,
@@ -196,10 +213,23 @@ class OrderState {
           Action.cancel,
         ],
       },
-      Status.waitingPayment: {
-        Action.payInvoice: [
-          Action.payInvoice,
+      Status.fiatSent: {
+        Action.fiatSentOk: [
+          Action.release,
           Action.cancel,
+          Action.dispute,
+        ],
+      },
+      Status.success: {
+        Action.rate: [
+          Action.rate,
+        ],
+        Action.rateReceived: [],
+        Action.purchaseCompleted: [
+          Action.rate,
+        ],
+        Action.released: [
+          Action.rate,
         ],
       },
     },
@@ -213,9 +243,17 @@ class OrderState {
           Action.cancel,
         ],
       },
+      Status.waitingPayment: {
+        Action.waitingSellerToPay: [
+          Action.cancel,
+        ],
+      },
       Status.waitingBuyerInvoice: {
         Action.addInvoice: [
           Action.addInvoice,
+          Action.cancel,
+        ],
+        Action.waitingBuyerInvoice: [
           Action.cancel,
         ],
         Action.waitingSellerToPay: [
@@ -224,7 +262,6 @@ class OrderState {
       },
       Status.active: {
         Action.holdInvoicePaymentAccepted: [
-          Action.holdInvoicePaymentAccepted,
           Action.fiatSent,
           Action.cancel,
           Action.dispute,
@@ -243,6 +280,24 @@ class OrderState {
         Action.purchaseCompleted: [],
         Action.paymentFailed: [],
       },
-    },
+      Status.fiatSent: {
+        Action.fiatSentOk: [
+          Action.cancel,
+          Action.dispute,
+        ],
+      },
+      Status.success: {
+        Action.rate: [
+          Action.rate,
+        ],
+        Action.rateReceived: [],
+        Action.purchaseCompleted: [
+          Action.rate,
+        ],
+        Action.released: [
+          Action.rate,
+        ],
+      },
+    }
   };
 }

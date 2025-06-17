@@ -349,14 +349,13 @@ class TradeDetailScreen extends ConsumerWidget {
         case actions.Action.rateReceived:
           widgets.add(_buildNostrButton(
             'RATE',
-            action: actions.Action.rateReceived,
+            action: actions.Action.rate,
             backgroundColor: AppTheme.mostroGreen,
             onPressed: () => context.push('/rate_user/$orderId'),
           ));
           break;
         case actions.Action.holdInvoicePaymentAccepted:
           widgets.add(_buildContactButton(context));
-
           break;
         case actions.Action.holdInvoicePaymentSettled:
         case actions.Action.holdInvoicePaymentCanceled:
@@ -386,12 +385,28 @@ class TradeDetailScreen extends ConsumerWidget {
       }
     }
 
-    // Special case for RATE button after settlement
+    if (tradeState.status == Status.success) {
+      bool hasRateButton = widgets.any((widget) =>
+          widget is MostroReactiveButton && widget.toString().contains('RATE'));
+
+      if (!hasRateButton &&
+          (tradeState.action == actions.Action.purchaseCompleted ||
+              tradeState.action == actions.Action.released ||
+              tradeState.action == actions.Action.rate)) {
+        widgets.add(_buildNostrButton(
+          'RATE',
+          action: actions.Action.rate,
+          backgroundColor: AppTheme.mostroGreen,
+          onPressed: () => context.push('/rate_user/$orderId'),
+        ));
+      }
+    }
+
     if (tradeState.status == Status.settledHoldInvoice &&
         tradeState.action == actions.Action.rate) {
       widgets.add(_buildNostrButton(
         'RATE',
-        action: actions.Action.rateReceived,
+        action: actions.Action.rate,
         backgroundColor: AppTheme.mostroGreen,
         onPressed: () => context.push('/rate_user/$orderId'),
       ));
