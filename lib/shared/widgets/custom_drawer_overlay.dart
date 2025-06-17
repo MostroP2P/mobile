@@ -33,70 +33,80 @@ class CustomDrawerOverlay extends ConsumerWidget {
           ),
 
         // Drawer
-        AnimatedPositioned(
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-          left: isDrawerOpen ? 0 : -MediaQuery.of(context).size.width * 0.7,
-          top: 0,
-          bottom: 0,
-          child: Container(
-            width: MediaQuery.of(context).size.width * 0.7,
-            decoration: BoxDecoration(
-              color: AppTheme.dark1,
-              border: Border(
-                right: BorderSide(
-                  color: Colors.white.withAlpha(10),
-                  width: 1.0,
+        WillPopScope(
+          onWillPop: () async {
+            if (isDrawerOpen) {
+              // Close drawer if it's open
+              ref.read(drawerProvider.notifier).closeDrawer();
+              return false; // Prevent route pop
+            }
+            return true; // Allow route pop
+          },
+          child: AnimatedPositioned(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            left: isDrawerOpen ? 0 : -MediaQuery.of(context).size.width * 0.7,
+            top: 0,
+            bottom: 0,
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.7,
+              decoration: BoxDecoration(
+                color: AppTheme.dark1,
+                border: Border(
+                  right: BorderSide(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    width: 1.0,
+                  ),
                 ),
               ),
-            ),
-            child: Padding(
-              padding: EdgeInsets.only(top: statusBarHeight + appBarHeight),
-              child: Column(
-                children: [
-                  // Logo header
-                  Container(
-                    height: 80,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    decoration: const BoxDecoration(
-                      image: DecorationImage(
-                        image: AssetImage('assets/images/logo.png'),
-                        fit: BoxFit.contain,
+              child: Padding(
+                padding: EdgeInsets.only(top: statusBarHeight + appBarHeight),
+                child: Column(
+                  children: [
+                    // Logo header
+                    Container(
+                      height: 80,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: const BoxDecoration(
+                        image: DecorationImage(
+                          image: AssetImage('assets/images/logo.png'),
+                          fit: BoxFit.contain,
+                        ),
                       ),
                     ),
-                  ),
-                  const Divider(height: 1, color: Colors.transparent),
+                    const Divider(height: 1, color: Colors.transparent),
 
-                  // Menu items
-                  _buildMenuItem(
-                    context,
-                    ref,
-                    icon: LucideIcons.user,
-                    title: 'Account',
-                    route: '/key_management',
-                  ),
-                  _buildMenuItem(
-                    context,
-                    ref,
-                    icon: LucideIcons.settings,
-                    title: 'Settings',
-                    route: '/settings',
-                  ),
-                  _buildMenuItem(
-                    context,
-                    ref,
-                    icon: LucideIcons.info,
-                    title: 'About',
-                    route: '/about',
-                  ),
-                  _buildMenuItem(
-                    context,
-                    ref,
-                    icon: LucideIcons.bookOpen,
-                    title: 'Walkthrough',
-                    route: '/walkthrough',
-                  ),
-                ],
+                    // Menu items
+                    _buildMenuItem(
+                      context,
+                      ref,
+                      icon: LucideIcons.user,
+                      title: 'Account',
+                      route: '/key_management',
+                    ),
+                    _buildMenuItem(
+                      context,
+                      ref,
+                      icon: LucideIcons.settings,
+                      title: 'Settings',
+                      route: '/settings',
+                    ),
+                    _buildMenuItem(
+                      context,
+                      ref,
+                      icon: LucideIcons.info,
+                      title: 'About',
+                      route: '/about',
+                    ),
+                    _buildMenuItem(
+                      context,
+                      ref,
+                      icon: LucideIcons.bookOpen,
+                      title: 'Walkthrough',
+                      route: '/walkthrough',
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
