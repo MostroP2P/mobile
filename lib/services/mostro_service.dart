@@ -1,61 +1,118 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
-import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/providers.dart';
-import 'package:logger/logger.dart';
+import 'package:mostro_mobile/features/settings/settings_provider.dart';
+import 'package:mostro_mobile/shared/providers/subscription_manager_provider.dart';
 
 class MostroService {
   final Ref ref;
   static final Logger _logger = Logger();
+  
+  final Set<String> _subscribedPubKeys = {};
+  StreamSubscription<NostrEvent>? _subscription;
   Settings _settings;
+  
+  MostroService(this.ref) : _settings = ref.read(settingsProvider);
 
-  final Map<String, NostrKeyPairs> _subscriptions = {};
-  NostrRequest? currentRequest;
-
-  MostroService(this.ref) : _settings = ref.read(settingsProvider).copyWith();
-
-  void init({List<NostrKeyPairs>? keys}) {
-    keys?.forEach((kp) => _subscriptions[kp.public] = kp);
-    _subscribe();
+  void init() {
+    ref.listen<List<Session>>(sessionNotifierProvider, (previous, next) {
+      if (next.isNotEmpty) {
+        for (final session in next) {
+          subscribe(session.tradeKey.public);
+        }
+      } else {
+        _clearSubscriptions();
+      }
+    });
   }
 
-  void subscribe(NostrKeyPairs keyPair) {
-    if (_subscriptions.containsKey(keyPair.public)) return;
-    _subscriptions[keyPair.public] = keyPair;
-    _subscribe();
+  void dispose() {
+    _clearSubscriptions();
+    _subscription?.cancel();
+  }
+
+  /// Subscribes to events for a specific public key.
+  /// 
+  /// This method adds the public key to the internal set of subscribed keys
+  /// and updates the subscription if the key was not already being tracked.
+  /// 
+  /// Throws an [ArgumentError] if [pubKey] is empty or invalid.
+  /// 
+  /// [pubKey] The public key to subscribe to (must be a valid Nostr public key)
+  void subscribe(String pubKey) {
+    if (pubKey.isEmpty) {
+      _logger.w('Attempted to subscribe to empty pubKey');
+      throw ArgumentError('pubKey cannot be empty');
+    }
+    
+    try {
+      if (_subscribedPubKeys.add(pubKey)) {
+        _logger.i('Added subscription for pubKey: $pubKey');
+        _updateSubscription();
+      } else {
+        _logger.d('Already subscribed to pubKey: $pubKey');
+      }
+    } catch (e, stackTrace) {
+      _logger.e('Invalid public key: $pubKey', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
   }
 
   void unsubscribe(String pubKey) {
-    _subscriptions.remove(pubKey);
-    _subscribe();
+    _subscribedPubKeys.remove(pubKey);
+    _updateSubscription();
   }
 
-  void _subscribe() {
-    final nostrService = ref.read(nostrServiceProvider);
+  void _clearSubscriptions() {
+    _subscription?.cancel();
+    _subscription = null;
+    _subscribedPubKeys.clear();
+    
+    final subscriptionManager = ref.read(subscriptionManagerProvider.notifier);
+    subscriptionManager.subscribe(NostrFilter());
+  }
 
-    if (currentRequest != null) {
-      nostrService.unsubscribe(
-        currentRequest!.subscriptionId!,
-      );
-      currentRequest = null;
+  /// Updates the current subscription with the latest set of public keys.
+  /// 
+  /// This method creates a new subscription with the current set of public keys
+  /// and cancels any existing subscription. If there are no public keys to
+  /// subscribe to, it clears all subscriptions.
+  void _updateSubscription() {
+    _subscription?.cancel();
+    
+    if (_subscribedPubKeys.isEmpty) {
+      _clearSubscriptions();
+      return;
     }
-
-    if (_subscriptions.isEmpty) return;
-
-    final filter = NostrFilter(
-      kinds: [1059],
-      p: [..._subscriptions.keys],
-    );
-    currentRequest = NostrRequest(filters: [filter]);
-    nostrService.subscribeToEvents(currentRequest!).listen(_onData);
+    
+    try {
+      final filter = NostrFilter(
+        kinds: [1059],
+        p: _subscribedPubKeys.toList(),
+      );
+            
+      final subscriptionManager = ref.read(subscriptionManagerProvider.notifier);
+      _subscription = subscriptionManager.subscribe(filter).listen(
+        _onData,
+        onError: (error, stackTrace) {
+          _logger.e('Error in subscription', error: error, stackTrace: stackTrace);
+        },
+        cancelOnError: false,
+      );
+    } catch (e, stackTrace) {
+      _logger.e('Error updating subscription', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
   }
 
   Future<void> _onData(NostrEvent event) async {
-    if (!_subscriptions.containsKey(event.recipient)) return;
+    if (event.recipient == null || !_subscribedPubKeys.contains(event.recipient)) return;
 
     final eventStore = ref.read(eventStorageProvider);
 
@@ -65,20 +122,35 @@ class MostroService {
       event,
     );
 
-    final decryptedEvent = await event.unWrap(
-      _subscriptions[event.recipient]!.private,
-    );
-    if (decryptedEvent.content == null) return;
+    final sessions = ref.read(sessionNotifierProvider);
+    Session? matchingSession;
+    
+    try {
+      matchingSession = sessions.firstWhere(
+        (s) => s.tradeKey.public == event.recipient,
+      );
+    } catch (e) {
+      _logger.w('No matching session found for recipient: ${event.recipient}');
+      return;
+    }
+    final privateKey = matchingSession.tradeKey.private;
 
-    final result = jsonDecode(decryptedEvent.content!);
-    if (result is! List) return;
+    try {
+      final decryptedEvent = await event.unWrap(privateKey);
+      if (decryptedEvent.content == null) return;
+      
+      final result = jsonDecode(decryptedEvent.content!);
+      if (result is! List) return;
 
-    final msg = MostroMessage.fromJson(result[0]);
-    final messageStorage = ref.read(mostroStorageProvider);
-    await messageStorage.addMessage(decryptedEvent.id!, msg);
-    _logger.i(
-      'Received message of type ${msg.action} with order id ${msg.id}',
-    );
+      final msg = MostroMessage.fromJson(result[0]);
+      final messageStorage = ref.read(mostroStorageProvider);
+      await messageStorage.addMessage(decryptedEvent.id!, msg);
+      _logger.i(
+        'Received message of type ${msg.action} with order id ${msg.id}',
+      );
+    } catch (e) {
+      _logger.e('Error processing event', error: e);
+    }
   }
 
   Future<void> submitOrder(MostroMessage order) async {

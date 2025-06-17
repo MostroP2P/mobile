@@ -9,6 +9,7 @@ import 'package:mostro_mobile/features/trades/providers/trades_provider.dart';
 import 'package:mostro_mobile/shared/providers/background_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
+import 'package:mostro_mobile/shared/providers/subscription_manager_provider.dart';
 
 class LifecycleManager extends WidgetsBindingObserver {
   final Ref ref;
@@ -86,9 +87,13 @@ class LifecycleManager extends WidgetsBindingObserver {
 
   Future<void> _switchToBackground() async {
     try {
-      ref.read(mostroServiceProvider).currentRequest?.filters.forEach(
-            (f) => _activeSubscriptions.add(f),
-          );
+      // Get the current subscription filter from the subscription manager
+      final subscriptionManager = ref.read(subscriptionManagerProvider);
+      final currentFilter = subscriptionManager.request.filters;
+      
+      if (currentFilter.isNotEmpty) {
+        _activeSubscriptions.addAll(currentFilter);
+      }
 
       if (_activeSubscriptions.isNotEmpty) {
         _isInBackground = true;

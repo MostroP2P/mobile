@@ -3,35 +3,128 @@ import 'package:convert/convert.dart';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'dart:async';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
+import 'package:mostro_mobile/shared/notifiers/session_notifier.dart';
 import 'package:mostro_mobile/core/config.dart';
+import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/features/key_manager/key_derivator.dart';
 import 'package:mostro_mobile/services/mostro_service.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
+import 'package:mostro_mobile/services/subscription_manager.dart';
 import 'package:mostro_mobile/shared/notifiers/session_notifier.dart';
+import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
+import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
+import 'package:mostro_mobile/shared/providers/subscription_manager_provider.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
 import 'mostro_service_test.mocks.dart';
 import 'mostro_service_helper_functions.dart';
 
-@GenerateMocks([NostrService, SessionNotifier, Ref])
+// Create a mock SubscriptionManager class for testing
+class MockSubscriptionManager extends StateNotifier<Subscription> 
+    implements SubscriptionManager {
+  MockSubscriptionManager({required this.ref}) : super(Subscription(id: 'test-sub', request: NostrRequest(filters: [])));
+  
+  @override
+  final Ref ref;
+  
+  @override
+  Stream<NostrEvent> subscribe(NostrFilter filter) {
+    // Store the filter for verification
+    _lastFilter = filter;
+    // Return a new stream to avoid multiple subscriptions to the same controller
+    return _controller.stream;
+  }
+  
+  NostrFilter? _lastFilter;
+  NostrFilter? get lastFilter => _lastFilter;
+  
+  // Helper to create a mock filter for verification
+  static NostrFilter createMockFilter() {
+    return NostrFilter(
+      kinds: [1059],
+      limit: 1,
+    );
+  }
+  
+  @override
+  Future<void> cancel() async {
+    await _controller.close();
+  }
+  
+  @override
+  void dispose() {
+    _controller.close();
+    super.dispose();
+  }
+  
+  // Helper to add events to the stream
+  void addEvent(NostrEvent event) {
+    if (!_controller.isClosed) {
+      _controller.add(event);
+    }
+  }
+  
+  final StreamController<NostrEvent> _controller = StreamController<NostrEvent>.broadcast();
+}
+
+@GenerateMocks([
+  NostrService, 
+  SessionNotifier, 
+  Ref,
+  StateNotifierProviderRef,
+])
 void main() {
+  late MockRef mockRef;
+  late MockSessionNotifier mockSessionNotifier;
+  late MockSubscriptionManager mockSubscriptionManager;
+  late MockNostrService mockNostrService;
   late MostroService mostroService;
   late KeyDerivator keyDerivator;
-  late MockNostrService mockNostrService;
-  late MockSessionNotifier mockSessionNotifier;
-  late MockRef mockRef;
-
-  final mockServerTradeIndex = MockServerTradeIndex();
+  late MockServerTradeIndex mockServerTradeIndex;
+  
+  setUpAll(() {
+    provideDummy<SessionNotifier>(MockSessionNotifier());
+  });
 
   setUp(() {
     mockNostrService = MockNostrService();
     mockSessionNotifier = MockSessionNotifier();
     mockRef = MockRef();
-    mostroService = MostroService(mockSessionNotifier, mockRef);
+    mockSubscriptionManager = MockSubscriptionManager(ref: mockRef);
+    mockServerTradeIndex = MockServerTradeIndex();
+    
+    // Reset mocks before each test
+    reset(mockNostrService);
+    reset(mockSessionNotifier);
+    reset(mockRef);
+    
+    // Set up mock behavior
+    when(mockRef.read(mostroServiceProvider)).thenAnswer((_) => mostroService);
+    when(mockRef.read(nostrServiceProvider)).thenReturn(mockNostrService);
+    when(mockRef.read(sessionNotifierProvider.notifier))
+        .thenReturn(mockSessionNotifier);
+    when(mockRef.read(subscriptionManagerProvider.notifier))
+        .thenReturn(mockSubscriptionManager);
+        
+    // Initialize MostroService with mocks
+    mostroService = MostroService(mockRef);
+    
+    // Initialize MostroService
+    mostroService = MostroService(mockRef);
     keyDerivator = KeyDerivator("m/44'/1237'/38383'/0");
+    
+    // Reset mock server trade index for each test
+    mockServerTradeIndex.userTradeIndices.clear();
+  });
+  
+  tearDown(() {
+    // Clean up resources
+    mostroService.dispose();
+    mockSubscriptionManager.dispose();
   });
 
   // Helper function to verify signatures as server would
@@ -352,10 +445,21 @@ void main() {
       await mostroService.takeSellOrder(orderId, 400, 'lnbc121314invoice');
 
       // Assert
-      // Capture the published event
-      final captured = verify(mockNostrService.publishEvent(captureAny))
-          .captured
-          .single as NostrEvent;
+      // Verify the subscription was set up correctly
+      // The subscription should have been set up with a filter for kind 1059
+      final capturedFilter = mockSubscriptionManager.lastFilter;
+      expect(capturedFilter, isNotNull);
+      expect(capturedFilter!.kinds, contains(1059));
+
+      // Verify the published event
+      final capturedEvents = verify(
+        mockNostrService.publishEvent(captureAny),
+      ).captured.cast<NostrEvent>();
+      
+      expect(capturedEvents, hasLength(1));
+      final publishedEvent = capturedEvents.first;
+      expect(publishedEvent.kind, equals(1059));
+      expect(publishedEvent.content, isNotEmpty);
 
       // Simulate server-side verification
       final isValid = serverVerifyMessage(
