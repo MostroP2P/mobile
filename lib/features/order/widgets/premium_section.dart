@@ -35,7 +35,7 @@ class PremiumSection extends StatelessWidget {
               activeTrackColor: AppTheme.purpleAccent,
               inactiveTrackColor: AppTheme.backgroundInactive,
               thumbColor: AppTheme.textPrimary,
-              overlayColor: AppTheme.purpleAccent.withOpacity(0.2),
+              overlayColor: AppTheme.purpleAccent.withValues(alpha: 0.2),
               trackHeight: 4,
             ),
             child: Slider(
@@ -43,7 +43,7 @@ class PremiumSection extends StatelessWidget {
               value: value,
               min: -10,
               max: 10,
-              divisions: 200,
+              divisions: 20,
               onChanged: onChanged,
             ),
           ),
