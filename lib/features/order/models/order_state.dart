@@ -113,6 +113,7 @@ class OrderState {
     switch (action) {
       // Actions that should set status to waiting-payment
       case Action.waitingSellerToPay:
+      case Action.payInvoice:
         return Status.waitingPayment;
 
       // Actions that should set status to waiting-buyer-invoice
@@ -131,6 +132,10 @@ class OrderState {
       case Action.fiatSentOk:
         return Status.fiatSent;
 
+      // Actions that should set status to settled-hold-invoice
+      case Action.release:
+        return Status.settledHoldInvoice;
+
       // Actions that should set status to success (completed)
       case Action.purchaseCompleted:
       case Action.released:
@@ -139,17 +144,57 @@ class OrderState {
 
       // Actions that should set status to canceled
       case Action.canceled:
-      case Action.adminCanceled:
-      case Action.cooperativeCancelAccepted:
         return Status.canceled;
 
-      // For actions that include Order payload, use the payload status
+      // Actions that should set status to canceled-by-admin
+      case Action.adminCancel:
+      case Action.adminCanceled:
+        return Status.canceledByAdmin;
+
+      // Actions that should set status to settled-by-admin
+      case Action.adminSettle:
+      case Action.adminSettled:
+        return Status.settledByAdmin;
+
+      // Actions that should set status to cooperatively-canceled
+      case Action.cooperativeCancelAccepted:
+      case Action.cooperativeCancelInitiatedByYou:
+      case Action.cooperativeCancelInitiatedByPeer:
+        return Status.cooperativelyCanceled;
+
+      // Actions that should set status to dispute
+      case Action.dispute:
+      case Action.disputeInitiatedByYou:
+      case Action.disputeInitiatedByPeer:
+        return Status.dispute;
+
+      // Actions that should set status to in-progress (dispute resolution)
+      case Action.adminAddSolver:
+      case Action.adminTakeDispute:
+      case Action.adminTookDispute:
+        return Status.inProgress;
+
+      // For order creation and taking actions, use the payload status
       case Action.newOrder:
       case Action.takeSell:
       case Action.takeBuy:
         return payloadStatus ?? status;
 
-      // For other actions, keep the current status unless payload has a different one
+      // For informational actions that don't change state
+      case Action.cantDo:
+      case Action.rate:
+      case Action.rateUser:
+      case Action.sendDm:
+      case Action.tradePubkey:
+      case Action.invoiceUpdated:
+        return status; // Keep current status
+
+      // For payment failure, keep current status but could trigger retry logic
+      case Action.paymentFailed:
+      case Action.holdInvoicePaymentCanceled:
+        return status;
+
+      // For other actions, use payload status if available, otherwise keep current
       default:
         return payloadStatus ?? status;
     }
@@ -165,52 +210,52 @@ class OrderState {
         Action.takeBuy: [
           Action.takeBuy,
           Action.cancel,
-        ],
-        Action.waitingBuyerInvoice: [
-          Action.cancel,
-        ],
-        Action.payInvoice: [
-          Action.payInvoice,
-          Action.cancel,
+          Action.dispute,
         ],
         Action.newOrder: [
           Action.cancel,
+          Action.dispute,
         ],
       },
       Status.waitingPayment: {
         Action.waitingSellerToPay: [
+          Action.payInvoice,
           Action.cancel,
+          Action.dispute,
         ],
         Action.payInvoice: [
           Action.payInvoice,
           Action.cancel,
+          Action.dispute,
         ],
       },
       Status.waitingBuyerInvoice: {
         Action.waitingBuyerInvoice: [
           Action.cancel,
+          Action.dispute,
         ],
         Action.addInvoice: [
           Action.cancel,
+          Action.dispute,
         ],
       },
       Status.active: {
         Action.buyerTookOrder: [
           Action.cancel,
           Action.dispute,
+          Action.holdInvoicePaymentSettled,
         ],
         Action.fiatSentOk: [
           Action.release,
           Action.cancel,
           Action.dispute,
         ],
+        Action.cooperativeCancelInitiatedByPeer: [
+          Action.cooperativeCancelAccepted,
+          Action.cancel,
+        ],
         Action.rate: [
           Action.rate,
-        ],
-        Action.purchaseCompleted: [],
-        Action.holdInvoicePaymentSettled: [],
-        Action.cooperativeCancelInitiatedByPeer: [
-          Action.cancel,
         ],
       },
       Status.fiatSent: {
@@ -218,6 +263,18 @@ class OrderState {
           Action.release,
           Action.cancel,
           Action.dispute,
+        ],
+        Action.cooperativeCancelInitiatedByPeer: [
+          Action.cooperativeCancelAccepted,
+          Action.cancel,
+        ],
+      },
+      Status.settledHoldInvoice: {
+        Action.purchaseCompleted: [
+          Action.rate,
+        ],
+        Action.released: [
+          Action.rate,
         ],
       },
       Status.success: {
@@ -232,12 +289,29 @@ class OrderState {
           Action.rate,
         ],
       },
+      Status.dispute: {},
+      Status.inProgress: {},
+      Status.canceled: {},
+      Status.canceledByAdmin: {},
+      Status.settledByAdmin: {
+        Action.adminSettled: [
+          Action.rate,
+        ],
+      },
+      Status.completedByAdmin: {
+        Action.adminSettled: [
+          Action.rate,
+        ],
+      },
+      Status.cooperativelyCanceled: {},
+      Status.expired: {},
     },
     Role.buyer: {
       Status.pending: {
         Action.takeSell: [
           Action.takeSell,
           Action.cancel,
+          Action.dispute,
         ],
         Action.newOrder: [
           Action.cancel,
@@ -246,22 +320,29 @@ class OrderState {
       Status.waitingPayment: {
         Action.waitingSellerToPay: [
           Action.cancel,
+          Action.dispute,
+          Action.cooperativeCancelInitiatedByYou,
         ],
       },
       Status.waitingBuyerInvoice: {
         Action.addInvoice: [
           Action.addInvoice,
           Action.cancel,
+          Action.dispute,
         ],
         Action.waitingBuyerInvoice: [
           Action.cancel,
-        ],
-        Action.waitingSellerToPay: [
-          Action.cancel,
+          Action.dispute,
         ],
       },
       Status.active: {
         Action.holdInvoicePaymentAccepted: [
+          Action.fiatSent,
+          Action.cancel,
+          Action.dispute,
+          Action.holdInvoicePaymentSettled,
+        ],
+        Action.buyerTookOrder: [
           Action.fiatSent,
           Action.cancel,
           Action.dispute,
@@ -270,20 +351,35 @@ class OrderState {
           Action.cancel,
           Action.dispute,
         ],
-        Action.rate: [
-          Action.rate,
-        ],
         Action.cooperativeCancelInitiatedByPeer: [
+          Action.cooperativeCancelAccepted,
           Action.cancel,
         ],
-        Action.rateReceived: [],
-        Action.purchaseCompleted: [],
-        Action.paymentFailed: [],
+        Action.paymentFailed: [
+          Action.cancel,
+          Action.dispute,
+        ],
       },
       Status.fiatSent: {
+        Action.fiatSent: [
+          Action.cancel,
+          Action.dispute,
+        ],
         Action.fiatSentOk: [
           Action.cancel,
           Action.dispute,
+        ],
+        Action.cooperativeCancelInitiatedByPeer: [
+          Action.cooperativeCancelAccepted,
+          Action.cancel,
+        ],
+      },
+      Status.settledHoldInvoice: {
+        Action.purchaseCompleted: [
+          Action.rate,
+        ],
+        Action.holdInvoicePaymentSettled: [
+          Action.rate,
         ],
       },
       Status.success: {
@@ -298,6 +394,122 @@ class OrderState {
           Action.rate,
         ],
       },
+      Status.dispute: {},
+      Status.inProgress: {},
+      Status.canceled: {},
+      Status.canceledByAdmin: {},
+      Status.settledByAdmin: {
+        Action.adminSettled: [
+          Action.rate,
+        ],
+      },
+      Status.completedByAdmin: {
+        Action.adminSettled: [
+          Action.rate,
+        ],
+      },
+      Status.cooperativelyCanceled: {},
+      Status.expired: {},
+    },
+    Role.admin: {
+      Status.pending: {
+        Action.newOrder: [
+          Action.adminCancel,
+        ],
+        Action.takeBuy: [
+          Action.adminCancel,
+        ],
+        Action.takeSell: [
+          Action.adminCancel,
+        ],
+      },
+      Status.waitingPayment: {
+        Action.waitingSellerToPay: [
+          Action.adminCancel,
+        ],
+        Action.payInvoice: [
+          Action.adminCancel,
+        ],
+      },
+      Status.waitingBuyerInvoice: {
+        Action.waitingBuyerInvoice: [
+          Action.adminCancel,
+        ],
+        Action.addInvoice: [
+          Action.adminCancel,
+        ],
+      },
+      Status.active: {
+        Action.buyerTookOrder: [
+          Action.adminCancel,
+          Action.adminSettle,
+        ],
+        Action.holdInvoicePaymentAccepted: [
+          Action.adminCancel,
+          Action.adminSettle,
+        ],
+        Action.fiatSentOk: [
+          Action.adminCancel,
+          Action.adminSettle,
+        ],
+      },
+      Status.fiatSent: {
+        Action.fiatSent: [
+          Action.adminCancel,
+          Action.adminSettle,
+        ],
+        Action.fiatSentOk: [
+          Action.adminCancel,
+          Action.adminSettle,
+        ],
+      },
+      Status.settledHoldInvoice: {
+        Action.purchaseCompleted: [
+          Action.adminSettle,
+          Action.adminCancel,
+        ],
+        Action.released: [
+          Action.adminSettle,
+          Action.adminCancel,
+        ],
+      },
+      Status.dispute: {
+        Action.dispute: [
+          Action.adminSettle,
+          Action.adminCancel,
+          Action.adminAddSolver,
+          Action.adminTakeDispute,
+        ],
+        Action.disputeInitiatedByYou: [
+          Action.adminSettle,
+          Action.adminCancel,
+          Action.adminAddSolver,
+          Action.adminTakeDispute,
+        ],
+        Action.disputeInitiatedByPeer: [
+          Action.adminSettle,
+          Action.adminCancel,
+          Action.adminAddSolver,
+          Action.adminTakeDispute,
+        ],
+      },
+      Status.inProgress: {
+        Action.adminTookDispute: [
+          Action.adminSettle,
+          Action.adminCancel,
+        ],
+        Action.adminAddSolver: [
+          Action.adminSettle,
+          Action.adminCancel,
+        ],
+      },
+      Status.expired: {},
+      Status.success: {},
+      Status.canceled: {},
+      Status.canceledByAdmin: {},
+      Status.settledByAdmin: {},
+      Status.completedByAdmin: {},
+      Status.cooperativelyCanceled: {},
     }
   };
 }
