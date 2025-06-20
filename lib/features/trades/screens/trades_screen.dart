@@ -1,10 +1,8 @@
 import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
-import 'package:mostro_mobile/shared/widgets/order_filter.dart';
 import 'package:mostro_mobile/features/trades/providers/trades_provider.dart';
 import 'package:mostro_mobile/features/trades/widgets/trades_list.dart';
 import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
@@ -18,9 +16,9 @@ class TradesScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Watch the async trades data
     final tradesAsync = ref.watch(filteredTradesProvider);
-    
+
     return Scaffold(
-      backgroundColor: AppTheme.dark1,
+      backgroundColor: AppTheme.backgroundDark,
       appBar: const MostroAppBar(),
       drawer: const MostroAppDrawer(),
       body: RefreshIndicator(
@@ -30,122 +28,94 @@ class TradesScreen extends ConsumerWidget {
           // Then refresh the filtered trades provider
           ref.invalidate(filteredTradesProvider);
         },
-        child: Container(
-          margin: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-          decoration: BoxDecoration(
-            color: AppTheme.dark2,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  'MY TRADES',
-                  style: TextStyle(color: AppTheme.mostroGreen),
-                ),
-              ),
-              // Use the async value pattern to handle different states
-              tradesAsync.when(
-                data: (trades) => _buildFilterButton(context, ref, trades),
-                loading: () => _buildFilterButton(context, ref, []),
-                error: (error, _) => _buildFilterButton(context, ref, []),
-              ),
-              const SizedBox(height: 6.0),
-              Expanded(
-                child: tradesAsync.when(
-                  data: (trades) => _buildOrderList(trades),
-                  loading: () => const Center(
-                    child: CircularProgressIndicator(),
-                  ),
-                  error: (error, _) => Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.error_outline,
-                          color: Colors.red,
-                          size: 60,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Error loading trades',
-                          style: TextStyle(color: AppTheme.cream1),
-                        ),
-                        Text(
-                          error.toString(),
-                          style: TextStyle(color: AppTheme.cream1, fontSize: 12),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: () {
-                            ref.invalidate(orderEventsProvider);
-                            ref.invalidate(filteredTradesProvider);
-                          },
-                          child: const Text('Retry'),
-                        ),
-                      ],
+        child: Column(
+          children: [
+            Expanded(
+              child: Column(
+                children: [
+                  // Header with dark background
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16.0),
+                    decoration: BoxDecoration(
+                      color: AppTheme.backgroundDark,
+                      border: Border(
+                        bottom: BorderSide(color: Colors.white24, width: 0.5),
+                      ),
+                    ),
+                    child: const Text(
+                      'My Active Trades',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                ),
+                  // Content area with dark background
+                  Expanded(
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        color: AppTheme.backgroundDark,
+                      ),
+                      child: Column(
+                        children: [
+                          // Espacio superior
+                          const SizedBox(height: 16.0),
+                          Expanded(
+                            child: tradesAsync.when(
+                              data: (trades) => _buildOrderList(trades),
+                              loading: () => const Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                              error: (error, _) => Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(
+                                      Icons.error_outline,
+                                      color: Colors.red,
+                                      size: 60,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      'Error loading trades',
+                                      style: TextStyle(color: AppTheme.cream1),
+                                    ),
+                                    Text(
+                                      error.toString(),
+                                      style: TextStyle(
+                                          color: AppTheme.cream1, fontSize: 12),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        ref.invalidate(orderEventsProvider);
+                                        ref.invalidate(filteredTradesProvider);
+                                      },
+                                      child: const Text('Retry'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              const BottomNavBar(),
-            ],
-          ),
+            ),
+            const BottomNavBar(),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildFilterButton(BuildContext context, WidgetRef ref, List<NostrEvent> trades) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          OutlinedButton.icon(
-            onPressed: () {
-              showModalBottomSheet(
-          context: context,
-          backgroundColor: Colors.transparent,
-          builder: (BuildContext context) {
-            return const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: OrderFilter(),
-            );
-          },
-              );
-            },
-            icon: const HeroIcon(HeroIcons.funnel,
-          style: HeroIconStyle.outline, color: AppTheme.cream1),
-            label:
-          const Text("FILTER", style: TextStyle(color: AppTheme.cream1)),
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: AppTheme.cream1),
-              shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            "${trades.length} trades",
-            style: const TextStyle(color: AppTheme.cream1),
-          ),
-          // Add a manual refresh button
-          IconButton(
-            icon: const Icon(Icons.refresh, color: AppTheme.cream1),
-            onPressed: () {
-              // Use the ref from the build method
-              ref.invalidate(orderEventsProvider);
-              ref.invalidate(filteredTradesProvider);
-            },
-          ),
-        ],
-      ),
-    );
-  }
+  // Función eliminada: _buildFilterButton
 
   Widget _buildOrderList(List<NostrEvent> trades) {
     if (trades.isEmpty) {
