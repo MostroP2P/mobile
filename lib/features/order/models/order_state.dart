@@ -113,7 +113,6 @@ class OrderState {
     switch (action) {
       // Actions that should set status to waiting-payment
       case Action.waitingSellerToPay:
-      case Action.payInvoice:
         return Status.waitingPayment;
 
       // Actions that should set status to waiting-buyer-invoice
@@ -132,69 +131,26 @@ class OrderState {
       case Action.fiatSentOk:
         return Status.fiatSent;
 
-      // Actions that should set status to settled-hold-invoice
-      case Action.release:
-        return Status.settledHoldInvoice;
-
       // Actions that should set status to success (completed)
       case Action.purchaseCompleted:
       case Action.released:
+      case Action.rate:
       case Action.rateReceived:
         return Status.success;
 
       // Actions that should set status to canceled
       case Action.canceled:
+      case Action.adminCanceled:
+      case Action.cooperativeCancelAccepted:
         return Status.canceled;
 
-      // Actions that should set status to canceled-by-admin
-      case Action.adminCancel:
-      case Action.adminCanceled:
-        return Status.canceledByAdmin;
-
-      // Actions that should set status to settled-by-admin
-      case Action.adminSettle:
-      case Action.adminSettled:
-        return Status.settledByAdmin;
-
-      // Actions that should set status to cooperatively-canceled
-      case Action.cooperativeCancelAccepted:
-      case Action.cooperativeCancelInitiatedByYou:
-      case Action.cooperativeCancelInitiatedByPeer:
-        return Status.cooperativelyCanceled;
-
-      // Actions that should set status to dispute
-      case Action.dispute:
-      case Action.disputeInitiatedByYou:
-      case Action.disputeInitiatedByPeer:
-        return Status.dispute;
-
-      // Actions that should set status to in-progress (dispute resolution)
-      case Action.adminAddSolver:
-      case Action.adminTakeDispute:
-      case Action.adminTookDispute:
-        return Status.inProgress;
-
-      // For order creation and taking actions, use the payload status
+      // For actions that include Order payload, use the payload status
       case Action.newOrder:
       case Action.takeSell:
       case Action.takeBuy:
         return payloadStatus ?? status;
 
-      // For informational actions that don't change state
-      case Action.cantDo:
-      case Action.rate:
-      case Action.rateUser:
-      case Action.sendDm:
-      case Action.tradePubkey:
-      case Action.invoiceUpdated:
-        return status; // Keep current status
-
-      // For payment failure, keep current status but could trigger retry logic
-      case Action.paymentFailed:
-      case Action.holdInvoicePaymentCanceled:
-        return status;
-
-      // For other actions, use payload status if available, otherwise keep current
+      // For other actions, keep the current status unless payload has a different one
       default:
         return payloadStatus ?? status;
     }
