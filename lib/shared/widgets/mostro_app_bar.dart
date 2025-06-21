@@ -1,8 +1,8 @@
-// lib/shared/widgets/mostro_app_bar.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/shared/providers/drawer_provider.dart';
 
 class MostroAppBar extends ConsumerWidget implements PreferredSizeWidget {
   const MostroAppBar({super.key});
@@ -10,9 +10,17 @@ class MostroAppBar extends ConsumerWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return AppBar(
-      backgroundColor: AppTheme.dark1,
+      backgroundColor: AppTheme.backgroundDark,
       elevation: 0,
       leadingWidth: 70,
+      // Add bottom border similar to bottom navbar
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(1.0),
+        child: Container(
+          height: 1.0,
+          color: Colors.white.withOpacity(0.1),
+        ),
+      ),
       // Use a custom IconButton with specific padding
       leading: Padding(
         padding: const EdgeInsets.only(left: 16.0),
@@ -24,7 +32,7 @@ class MostroAppBar extends ConsumerWidget implements PreferredSizeWidget {
             size: 28,
           ),
           onPressed: () {
-            Scaffold.of(context).openDrawer();
+            ref.read(drawerProvider.notifier).toggleDrawer();
           },
         ),
       ),
@@ -52,5 +60,5 @@ class MostroAppBar extends ConsumerWidget implements PreferredSizeWidget {
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 1.0);
 }

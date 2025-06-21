@@ -9,7 +9,7 @@ import 'package:mostro_mobile/features/trades/providers/trades_provider.dart';
 import 'package:mostro_mobile/features/trades/widgets/trades_list.dart';
 import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_app_bar.dart';
-import 'package:mostro_mobile/shared/widgets/mostro_app_drawer.dart';
+import 'package:mostro_mobile/shared/widgets/custom_drawer_overlay.dart';
 
 class TradesScreen extends ConsumerWidget {
   const TradesScreen({super.key});
@@ -22,76 +22,77 @@ class TradesScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppTheme.dark1,
       appBar: const MostroAppBar(),
-      drawer: const MostroAppDrawer(),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          // Force reload the orders repository first
-          ref.read(orderRepositoryProvider).reloadData();
-          // Then refresh the filtered trades provider
-          ref.invalidate(filteredTradesProvider);
-        },
-        child: Container(
-          margin: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-          decoration: BoxDecoration(
-            color: AppTheme.dark2,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  'MY TRADES',
-                  style: TextStyle(color: AppTheme.mostroGreen),
-                ),
-              ),
-              // Use the async value pattern to handle different states
-              tradesAsync.when(
-                data: (trades) => _buildFilterButton(context, ref, trades),
-                loading: () => _buildFilterButton(context, ref, []),
-                error: (error, _) => _buildFilterButton(context, ref, []),
-              ),
-              const SizedBox(height: 6.0),
-              Expanded(
-                child: tradesAsync.when(
-                  data: (trades) => _buildOrderList(trades),
-                  loading: () => const Center(
-                    child: CircularProgressIndicator(),
+      body: CustomDrawerOverlay(
+        child: RefreshIndicator(
+          onRefresh: () async {
+            // Force reload the orders repository first
+            ref.read(orderRepositoryProvider).reloadData();
+            // Then refresh the filtered trades provider
+            ref.invalidate(filteredTradesProvider);
+          },
+          child: Container(
+            margin: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+            decoration: BoxDecoration(
+              color: AppTheme.dark2,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(
+                    'MY TRADES',
+                    style: TextStyle(color: AppTheme.mostroGreen),
                   ),
-                  error: (error, _) => Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.error_outline,
-                          color: Colors.red,
-                          size: 60,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Error loading trades',
-                          style: TextStyle(color: AppTheme.cream1),
-                        ),
-                        Text(
-                          error.toString(),
-                          style: TextStyle(color: AppTheme.cream1, fontSize: 12),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: () {
-                            ref.invalidate(orderEventsProvider);
-                            ref.invalidate(filteredTradesProvider);
-                          },
-                          child: const Text('Retry'),
-                        ),
-                      ],
+                ),
+                // Use the async value pattern to handle different states
+                tradesAsync.when(
+                  data: (trades) => _buildFilterButton(context, ref, trades),
+                  loading: () => _buildFilterButton(context, ref, []),
+                  error: (error, _) => _buildFilterButton(context, ref, []),
+                ),
+                const SizedBox(height: 6.0),
+                Expanded(
+                  child: tradesAsync.when(
+                    data: (trades) => _buildOrderList(trades),
+                    loading: () => const Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                    error: (error, _) => Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.error_outline,
+                            color: Colors.red,
+                            size: 60,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Error loading trades',
+                            style: TextStyle(color: AppTheme.cream1),
+                          ),
+                          Text(
+                            error.toString(),
+                            style: TextStyle(color: AppTheme.cream1, fontSize: 12),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () {
+                              ref.invalidate(orderEventsProvider);
+                              ref.invalidate(filteredTradesProvider);
+                            },
+                            child: const Text('Retry'),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const BottomNavBar(),
-            ],
+                const BottomNavBar(),
+              ],
+            ),
           ),
         ),
       ),
