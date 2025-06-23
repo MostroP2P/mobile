@@ -1,14 +1,25 @@
+import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/data/models/order.dart';
+import 'package:mostro_mobile/data/models/mostro_message.dart';
+import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
+import 'package:mostro_mobile/features/settings/settings.dart';
+import 'package:mostro_mobile/features/settings/settings_notifier.dart';
+import 'package:mostro_mobile/features/settings/settings_provider.dart';
+import 'package:mostro_mobile/shared/providers/mostro_database_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
+import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
+import 'package:mostro_mobile/shared/providers/session_storage_provider.dart';
 import 'package:mostro_mobile/shared/providers/storage_providers.dart';
+import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
 
+import '../mocks.dart';
 import '../mocks.mocks.dart';
 
 void main() {
@@ -19,23 +30,68 @@ void main() {
     late MockMostroService mockMostroService;
     late MockOpenOrdersRepository mockOrdersRepository;
     late MockSharedPreferencesAsync mockSharedPreferencesAsync;
+    late MockDatabase mockDatabase;
+    late MockSessionStorage mockSessionStorage;
+    late MockKeyManager mockKeyManager;
+    late MockSessionNotifier mockSessionNotifier;
+    late MockMostroStorage mockMostroStorage;
 
-    const testUuid = "test_uuid";
+    const testUuid = "12345678-1234-1234-1234-123456789abc";
 
     setUp(() {
-      container = ProviderContainer();
       mockMostroService = MockMostroService();
       mockOrdersRepository = MockOpenOrdersRepository();
       mockSharedPreferencesAsync = MockSharedPreferencesAsync();
+      mockDatabase = MockDatabase();
+      mockSessionStorage = MockSessionStorage();
+      mockKeyManager = MockKeyManager();
+      mockMostroStorage = MockMostroStorage();
+      
+      // Create test settings
+      final testSettings = Settings(
+        relays: ['wss://relay.damus.io'],
+        fullPrivacyMode: false,
+        mostroPublicKey: 'test_key',
+        defaultFiatCode: 'USD',
+      );
+      
+      mockSessionNotifier = MockSessionNotifier(mockKeyManager, mockSessionStorage, testSettings);
+      
+      // Stub the KeyManager methods
+      when(mockKeyManager.masterKeyPair).thenReturn(
+        NostrKeyPairs(private: '1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef'),
+      );
+      when(mockKeyManager.getCurrentKeyIndex()).thenAnswer((_) async => 0);
+      when(mockKeyManager.deriveTradeKey()).thenAnswer((_) async => 
+        NostrKeyPairs(private: 'abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890'),
+      );
+
+      // Stub MostroStorage methods
+      when(mockMostroStorage.getAllMessagesForOrderId(any)).thenAnswer((_) async => <MostroMessage>[]);
+
+      container = ProviderContainer(
+        overrides: [
+          mostroServiceProvider.overrideWithValue(mockMostroService),
+          orderRepositoryProvider.overrideWithValue(mockOrdersRepository),
+          sharedPreferencesProvider.overrideWithValue(mockSharedPreferencesAsync),
+          mostroDatabaseProvider.overrideWithValue(mockDatabase),
+          eventDatabaseProvider.overrideWithValue(mockDatabase),
+          sessionStorageProvider.overrideWithValue(mockSessionStorage),
+          keyManagerProvider.overrideWithValue(mockKeyManager),
+          sessionNotifierProvider.overrideWith((ref) => mockSessionNotifier),
+          settingsProvider.overrideWith((ref) => MockSettingsNotifier(testSettings, mockSharedPreferencesAsync)),
+          mostroStorageProvider.overrideWithValue(mockMostroStorage),
+        ],
+      );
     });
 
     tearDown(() {
       container.dispose();
     });
 
-    /// Helper that sets up the mock repository so that when `publishOrder` is
+    /// Helper that sets up the mock repository so that when `submitOrder` is
     /// called, it returns a Stream<MostroMessage> based on `confirmationJson`.
-    void configureMockPublishOrder(Map<String, dynamic> confirmationJson) {
+    void configureMockSubmitOrder(Map<String, dynamic> confirmationJson) {
       //final confirmationMessage = MostroMessage.fromJson(confirmationJson);
       when(mockMostroService.submitOrder(any)).thenAnswer((invocation) async {
         // Return a stream that emits the confirmation message once.
@@ -67,14 +123,9 @@ void main() {
           }
         }
       };
-      configureMockPublishOrder(confirmationJsonSell);
+      configureMockSubmitOrder(confirmationJsonSell);
 
-      // Override the repository provider with our mock.
-      container = ProviderContainer(overrides: [
-        mostroServiceProvider.overrideWithValue(mockMostroService),
-        orderRepositoryProvider.overrideWithValue(mockOrdersRepository),
-        sharedPreferencesProvider.overrideWithValue(mockSharedPreferencesAsync),
-      ]);
+      // Container is already set up in setUp() with all necessary overrides
 
       // Create a new sell (fixed) order.
       final newSellOrder = Order(
@@ -108,8 +159,8 @@ void main() {
       expect(confirmedOrder.premium, equals(1));
       expect(confirmedOrder.createdAt, equals(0));
 
-      // Optionally verify that publishOrder was called exactly once.
-      verify(mockMostroService.publishOrder(any)).called(1);
+      // Optionally verify that submitOrder was called exactly once.
+      verify(mockMostroService.submitOrder(any)).called(1);
     });
 
     test('New Sell Range Order', () async {
@@ -135,13 +186,9 @@ void main() {
           }
         }
       };
-      configureMockPublishOrder(confirmationJsonSellRange);
+      configureMockSubmitOrder(confirmationJsonSellRange);
 
-      container = ProviderContainer(overrides: [
-        mostroServiceProvider.overrideWithValue(mockMostroService),
-        orderRepositoryProvider.overrideWithValue(mockOrdersRepository),
-        sharedPreferencesProvider.overrideWithValue(mockSharedPreferencesAsync),
-      ]);
+      // Container is already set up in setUp() with all necessary overrides
 
       final newSellRangeOrder = Order(
         kind: OrderType.sell,
@@ -159,7 +206,7 @@ void main() {
           container.read(addOrderNotifierProvider(testUuid).notifier);
       await notifier.submitOrder(newSellRangeOrder);
 
-      final state = container.read(orderNotifierProvider(testUuid));
+      final state = container.read(addOrderNotifierProvider(testUuid));
       expect(state, isNotNull);
 
       final confirmedOrder = state.order;
@@ -173,7 +220,7 @@ void main() {
       expect(confirmedOrder.paymentMethod, equals('face to face'));
       expect(confirmedOrder.premium, equals(1));
 
-      verify(mockMostroService.publishOrder(any)).called(1);
+      verify(mockMostroService.submitOrder(any)).called(1);
     });
 
     test('New Buy Order', () async {
@@ -200,13 +247,9 @@ void main() {
           }
         }
       };
-      configureMockPublishOrder(confirmationJsonBuy);
+      configureMockSubmitOrder(confirmationJsonBuy);
 
-      container = ProviderContainer(overrides: [
-        mostroServiceProvider.overrideWithValue(mockMostroService),
-        orderRepositoryProvider.overrideWithValue(mockOrdersRepository),
-        sharedPreferencesProvider.overrideWithValue(mockSharedPreferencesAsync),
-      ]);
+      // Container is already set up in setUp() with all necessary overrides
 
       final newBuyOrder = Order(
         kind: OrderType.buy,
@@ -235,7 +278,7 @@ void main() {
       expect(confirmedOrder.premium, equals(1));
       expect(confirmedOrder.buyerInvoice, isNull);
 
-      verify(mockMostroService.publishOrder(any)).called(1);
+      verify(mockMostroService.submitOrder(any)).called(1);
     });
 
     test('New Buy Order with Lightning Address', () async {
@@ -262,13 +305,9 @@ void main() {
           }
         }
       };
-      configureMockPublishOrder(confirmationJsonBuyInvoice);
+      configureMockSubmitOrder(confirmationJsonBuyInvoice);
 
-      container = ProviderContainer(overrides: [
-        mostroServiceProvider.overrideWithValue(mockMostroService),
-        orderRepositoryProvider.overrideWithValue(mockOrdersRepository),
-        sharedPreferencesProvider.overrideWithValue(mockSharedPreferencesAsync),
-      ]);
+      // Container is already set up in setUp() with all necessary overrides
 
       final newBuyOrderWithInvoice = Order(
         kind: OrderType.buy,
@@ -285,7 +324,7 @@ void main() {
           container.read(addOrderNotifierProvider(testUuid).notifier);
       await notifier.submitOrder(newBuyOrderWithInvoice);
 
-      final state = container.read(orderNotifierProvider(testUuid));
+      final state = container.read(addOrderNotifierProvider(testUuid));
       expect(state, isNotNull);
 
       final confirmedOrder = state.order;
@@ -297,7 +336,7 @@ void main() {
       expect(confirmedOrder.premium, equals(1));
       expect(confirmedOrder.buyerInvoice, equals('mostro_p2p@ln.tips'));
 
-      verify(mockMostroService.publishOrder(any)).called(1);
+      verify(mockMostroService.submitOrder(any)).called(1);
     });
   });
 }

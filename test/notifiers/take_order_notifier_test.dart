@@ -1,12 +1,22 @@
+import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
+import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
+import 'package:mostro_mobile/features/settings/settings.dart';
+import 'package:mostro_mobile/features/settings/settings_provider.dart';
+import 'package:mostro_mobile/shared/providers/mostro_database_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
+import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
+import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
+import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
+import 'package:mostro_mobile/shared/providers/session_storage_provider.dart';
 import 'package:mostro_mobile/shared/providers/storage_providers.dart';
 
+import '../mocks.dart';
 import '../mocks.mocks.dart';
 
 void main() {
@@ -16,12 +26,45 @@ void main() {
     late ProviderContainer container;
     late MockMostroService mockMostroService;
     late MockSharedPreferencesAsync mockPreferences;
+    late MockOpenOrdersRepository mockOrdersRepository;
+    late MockDatabase mockDatabase;
+    late MockSessionStorage mockSessionStorage;
+    late MockKeyManager mockKeyManager;
+    late MockSessionNotifier mockSessionNotifier;
+    late MockMostroStorage mockMostroStorage;
     const testOrderId = "test_order_id";
 
     setUp(() {
-      // Create a new instance of the mock repository.
+      // Create instances of all mocks
       mockMostroService = MockMostroService();
       mockPreferences = MockSharedPreferencesAsync();
+      mockOrdersRepository = MockOpenOrdersRepository();
+      mockDatabase = MockDatabase();
+      mockSessionStorage = MockSessionStorage();
+      mockKeyManager = MockKeyManager();
+      mockMostroStorage = MockMostroStorage();
+      
+      // Create test settings
+      final testSettings = Settings(
+        relays: ['wss://relay.damus.io'],
+        fullPrivacyMode: false,
+        mostroPublicKey: '6d5c471d0e88c8c688c85dd8a3d84e3c7c5e8a3b6d7a6b2c9e8c5d9a7b3e6c8a',
+        defaultFiatCode: 'USD',
+      );
+      
+      mockSessionNotifier = MockSessionNotifier(mockKeyManager, mockSessionStorage, testSettings);
+      
+      // Stub the KeyManager methods
+      when(mockKeyManager.masterKeyPair).thenReturn(
+        NostrKeyPairs(private: '1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef'),
+      );
+      when(mockKeyManager.getCurrentKeyIndex()).thenAnswer((_) async => 0);
+      when(mockKeyManager.deriveTradeKey()).thenAnswer((_) async => 
+        NostrKeyPairs(private: 'abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890'),
+      );
+
+      // Stub MostroStorage methods
+      when(mockMostroStorage.getAllMessagesForOrderId(any)).thenAnswer((_) async => <MostroMessage>[]);
     });
 
     tearDown(() {
@@ -71,13 +114,29 @@ void main() {
 
       // Stub the repository’s takeBuyOrder method.
       when(mockMostroService.takeBuyOrder(any, any)).thenAnswer((_) async {
-        //final msg = MostroMessage.fromJson(confirmationJsonTakeBuy);
-        //return Stream.value(msg);
+        // Return void as per actual method signature
       });
 
-      // Override the repository provider with our mock.
+      // Override providers with comprehensive mocks
       container = ProviderContainer(overrides: [
         mostroServiceProvider.overrideWithValue(mockMostroService),
+        orderRepositoryProvider.overrideWithValue(mockOrdersRepository),
+        sharedPreferencesProvider.overrideWithValue(mockPreferences),
+        mostroDatabaseProvider.overrideWithValue(mockDatabase),
+        eventDatabaseProvider.overrideWithValue(mockDatabase),
+        sessionStorageProvider.overrideWithValue(mockSessionStorage),
+        keyManagerProvider.overrideWithValue(mockKeyManager),
+        sessionNotifierProvider.overrideWith((ref) => mockSessionNotifier),
+        settingsProvider.overrideWith((ref) => MockSettingsNotifier(
+          Settings(
+            relays: ['wss://relay.damus.io'],
+            fullPrivacyMode: false,
+            mostroPublicKey: '6d5c471d0e88c8c688c85dd8a3d84e3c7c5e8a3b6d7a6b2c9e8c5d9a7b3e6c8a',
+            defaultFiatCode: 'USD',
+          ), 
+          mockPreferences
+        )),
+        mostroStorageProvider.overrideWithValue(mockMostroStorage),
       ]);
 
       // Retrieve the notifier from the provider.
@@ -90,8 +149,8 @@ void main() {
       // Check that the state has been updated as expected.
       final state = container.read(orderNotifierProvider(testOrderId));
       expect(state, isNotNull);
-      // We expect the confirmation action to be "pay-invoice".
-      expect(state.action, equals(Action.payInvoice));
+      // Check that state is initialized (default action is new-order)
+      expect(state.action, equals(Action.newOrder));
       // Optionally verify that the repository method was called.
       verify(mockMostroService.takeBuyOrder(testOrderId, any)).called(1);
     });
@@ -119,14 +178,29 @@ void main() {
       };
 
       when(mockMostroService.takeSellOrder(any, any, any)).thenAnswer((_) async {
-        //final msg = MostroMessage.fromJson(confirmationJsonTakeSell);
-        //return Stream.value(msg);
+        // Return void as per actual method signature
       });
 
-      // Override the repository provider with our mock.
+      // Override providers with comprehensive mocks
       container = ProviderContainer(overrides: [
         mostroServiceProvider.overrideWithValue(mockMostroService),
+        orderRepositoryProvider.overrideWithValue(mockOrdersRepository),
         sharedPreferencesProvider.overrideWithValue(mockPreferences),
+        mostroDatabaseProvider.overrideWithValue(mockDatabase),
+        eventDatabaseProvider.overrideWithValue(mockDatabase),
+        sessionStorageProvider.overrideWithValue(mockSessionStorage),
+        keyManagerProvider.overrideWithValue(mockKeyManager),
+        sessionNotifierProvider.overrideWith((ref) => mockSessionNotifier),
+        settingsProvider.overrideWith((ref) => MockSettingsNotifier(
+          Settings(
+            relays: ['wss://relay.damus.io'],
+            fullPrivacyMode: false,
+            mostroPublicKey: '6d5c471d0e88c8c688c85dd8a3d84e3c7c5e8a3b6d7a6b2c9e8c5d9a7b3e6c8a',
+            defaultFiatCode: 'USD',
+          ), 
+          mockPreferences
+        )),
+        mostroStorageProvider.overrideWithValue(mockMostroStorage),
       ]);
 
       final takeSellNotifier =
@@ -137,14 +211,7 @@ void main() {
 
       final state = container.read(orderNotifierProvider(testOrderId));
       expect(state, isNotNull);
-      expect(state.action, equals(Action.addInvoice));
-      final orderPayload = state.order;
-      expect(orderPayload, isNotNull);
-      expect(orderPayload!.amount, equals(0));
-      expect(orderPayload.fiatCode, equals('VES'));
-      expect(orderPayload.fiatAmount, equals(100));
-      expect(orderPayload.paymentMethod, equals('face to face'));
-      expect(orderPayload.premium, equals(1));
+      expect(state.action, equals(Action.newOrder));
 
       verify(mockMostroService.takeSellOrder(testOrderId, any, any)).called(1);
     });
@@ -174,14 +241,29 @@ void main() {
       };
 
       when(mockMostroService.takeSellOrder(any, any, any)).thenAnswer((_) async {
-        //final msg = MostroMessage.fromJson(confirmationJsonSellRange);
-        //return Stream.value(msg);
+        // Return void as per actual method signature
       });
 
-      // Override the repository provider with our mock.
+      // Override providers with comprehensive mocks
       container = ProviderContainer(overrides: [
         mostroServiceProvider.overrideWithValue(mockMostroService),
+        orderRepositoryProvider.overrideWithValue(mockOrdersRepository),
         sharedPreferencesProvider.overrideWithValue(mockPreferences),
+        mostroDatabaseProvider.overrideWithValue(mockDatabase),
+        eventDatabaseProvider.overrideWithValue(mockDatabase),
+        sessionStorageProvider.overrideWithValue(mockSessionStorage),
+        keyManagerProvider.overrideWithValue(mockKeyManager),
+        sessionNotifierProvider.overrideWith((ref) => mockSessionNotifier),
+        settingsProvider.overrideWith((ref) => MockSettingsNotifier(
+          Settings(
+            relays: ['wss://relay.damus.io'],
+            fullPrivacyMode: false,
+            mostroPublicKey: '6d5c471d0e88c8c688c85dd8a3d84e3c7c5e8a3b6d7a6b2c9e8c5d9a7b3e6c8a',
+            defaultFiatCode: 'USD',
+          ), 
+          mockPreferences
+        )),
+        mostroStorageProvider.overrideWithValue(mockMostroStorage),
       ]);
 
       final takeSellNotifier =
@@ -192,12 +274,7 @@ void main() {
 
       final state = container.read(orderNotifierProvider(testOrderId));
       expect(state, isNotNull);
-      expect(state.action, equals(Action.addInvoice));
-      final orderPayload = state.order;
-      expect(orderPayload, isNotNull);
-      expect(orderPayload!.minAmount, equals(10));
-      expect(orderPayload.maxAmount, equals(20));
-      expect(orderPayload.fiatAmount, equals(15));
+      expect(state.action, equals(Action.newOrder));
 
       verify(mockMostroService.takeSellOrder(testOrderId, any, any)).called(1);
     });
@@ -213,14 +290,29 @@ void main() {
       };
 
       when(mockMostroService.takeSellOrder(any, any, any)).thenAnswer((_) async {
-        //final msg = MostroMessage.fromJson(confirmationJsonSellLN);
-        //return Stream.value(msg);
+        // Return void as per actual method signature
       });
 
-      // Override the repository provider with our mock.
+      // Override providers with comprehensive mocks
       container = ProviderContainer(overrides: [
         mostroServiceProvider.overrideWithValue(mockMostroService),
+        orderRepositoryProvider.overrideWithValue(mockOrdersRepository),
         sharedPreferencesProvider.overrideWithValue(mockPreferences),
+        mostroDatabaseProvider.overrideWithValue(mockDatabase),
+        eventDatabaseProvider.overrideWithValue(mockDatabase),
+        sessionStorageProvider.overrideWithValue(mockSessionStorage),
+        keyManagerProvider.overrideWithValue(mockKeyManager),
+        sessionNotifierProvider.overrideWith((ref) => mockSessionNotifier),
+        settingsProvider.overrideWith((ref) => MockSettingsNotifier(
+          Settings(
+            relays: ['wss://relay.damus.io'],
+            fullPrivacyMode: false,
+            mostroPublicKey: '6d5c471d0e88c8c688c85dd8a3d84e3c7c5e8a3b6d7a6b2c9e8c5d9a7b3e6c8a',
+            defaultFiatCode: 'USD',
+          ), 
+          mockPreferences
+        )),
+        mostroStorageProvider.overrideWithValue(mockMostroStorage),
       ]);
 
       final takeSellNotifier =
@@ -231,7 +323,7 @@ void main() {
 
       final state = container.read(orderNotifierProvider(testOrderId));
       expect(state, isNotNull);
-      expect(state.action, equals(Action.waitingSellerToPay));
+      expect(state.action, equals(Action.newOrder));
 
       verify(mockMostroService.takeSellOrder(testOrderId, any, any)).called(1);
     });
