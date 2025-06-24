@@ -17,7 +17,8 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: 2
+          fetch-depth: 0  # full history
+          fetch-tags: true  # ensure tags are available
           
       - name: Check if version changed
         id: check_version_change
@@ -26,13 +27,16 @@ jobs:
           CURRENT_VERSION=$(grep '^version: ' pubspec.yaml | cut -d ' ' -f 2 | tr -d '\r')
           echo "Current version: $CURRENT_VERSION"
           
-          # Get previous version (from previous commit)
-          git checkout HEAD~1 pubspec.yaml
-          PREVIOUS_VERSION=$(grep '^version: ' pubspec.yaml | cut -d ' ' -f 2 | tr -d '\r')
-          echo "Previous version: $PREVIOUS_VERSION"
-          
-          # Restore current version
-          git checkout HEAD pubspec.yaml
+          # Get previous version (from previous commit) with safeguard for shallow history
+          if git rev-parse --quiet --verify HEAD~1 >/dev/null; then
+            git checkout HEAD~1 pubspec.yaml
+            PREVIOUS_VERSION=$(grep '^version: ' pubspec.yaml | cut -d ' ' -f 2 | tr -d '\r')
+            git checkout -q HEAD pubspec.yaml
+            echo "Previous version: $PREVIOUS_VERSION"
+          else
+            echo "No previous commit - assuming version unchanged"
+            PREVIOUS_VERSION=$CURRENT_VERSION
+          fi
           
           # Compare versions and set output
           if [ "$CURRENT_VERSION" != "$PREVIOUS_VERSION" ]; then
