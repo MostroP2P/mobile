@@ -9,41 +9,36 @@ import 'package:mostro_mobile/services/mostro_service.dart';
 
 class OrderNotifier extends AbstractMostroNotifier {
   late final MostroService mostroService;
-
   OrderNotifier(super.orderId, super.ref) {
     mostroService = ref.read(mostroServiceProvider);
     sync();
     subscribe();
   }
-
   Future<void> sync() async {
     try {
       final storage = ref.read(mostroStorageProvider);
       final messages = await storage.getAllMessagesForOrderId(orderId);
       if (messages.isEmpty) {
+        logger.w('No messages found for order $orderId');
         return;
       }
-      final msg = messages.firstWhereOrNull((m) => m.action != Action.cantDo);
-      if (msg?.payload is Order) {
-        state = OrderState(
-          status: msg!.getPayload<Order>()!.status,
-          action: msg.action,
-          order: msg.getPayload<Order>()!,
-        );
-      } else {
-        final orderMsg =
-            await storage.getLatestMessageOfTypeById<Order>(orderId);
-        if (orderMsg != null) {
-          state = OrderState(
-            status: orderMsg.getPayload<Order>()!.status,
-            action: orderMsg.action,
-            order: orderMsg.getPayload<Order>()!,
-          );
+      messages.sort((a, b) {
+        final timestampA = a.timestamp ?? 0;
+        final timestampB = b.timestamp ?? 0;
+        return timestampA.compareTo(timestampB);
+      });
+      OrderState currentState = state;
+      for (final message in messages) {
+        if (message.action != Action.cantDo) {
+          currentState = currentState.updateWith(message);
         }
       }
+      state = currentState;
+      logger.i(
+          'Synced order $orderId to state: ${state.status} - ${state.action}');
     } catch (e, stack) {
       logger.e(
-        'Error syncing order state',
+        'Error syncing order state for $orderId',
         error: e,
         stackTrace: stack,
       );
