@@ -34,7 +34,7 @@ class OrderNotifier extends AbstractMostroNotifier {
       orderId: orderId,
       role: Role.buyer,
     );
-    mostroService.subscribe(session.tradeKey.public);
+    mostroService.subscribe(session);
     await mostroService.takeSellOrder(
       orderId,
       amount,
@@ -48,7 +48,7 @@ class OrderNotifier extends AbstractMostroNotifier {
       orderId: orderId,
       role: Role.seller,
     );
-    mostroService.subscribe(session.tradeKey.public);
+    mostroService.subscribe(session);
     await mostroService.takeBuyOrder(
       orderId,
       amount,

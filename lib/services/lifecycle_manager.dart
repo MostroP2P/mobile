@@ -89,10 +89,10 @@ class LifecycleManager extends WidgetsBindingObserver {
     try {
       // Get the current subscription filter from the subscription manager
       final subscriptionManager = ref.read(subscriptionManagerProvider);
-      final currentFilter = subscriptionManager.request.filters;
+      final currentFilter = subscriptionManager.subscriptions.values.map((s) => s.request).toList();
       
       if (currentFilter.isNotEmpty) {
-        _activeSubscriptions.addAll(currentFilter);
+        _activeSubscriptions.addAll(currentFilter.expand((s) => s.filters));
       }
 
       if (_activeSubscriptions.isNotEmpty) {

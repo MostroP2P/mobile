@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
@@ -19,11 +20,10 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
   await sessionManager.init();
 
   ref.listen<Settings>(settingsProvider, (previous, next) {
-    sessionManager.updateSettings(next);
     ref.read(backgroundServiceProvider).updateSettings(next);
   });
 
-  final cutoff = DateTime.now().subtract(const Duration(hours: 24));
+  final cutoff = DateTime.now().subtract(const Duration(hours: Config.sessionExpirationHours));
 
   for (final session in sessionManager.sessions) {
     if (session.orderId != null && session.startTime.isAfter(cutoff)) {

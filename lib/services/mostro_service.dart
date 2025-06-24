@@ -6,30 +6,27 @@ import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
+import 'package:mostro_mobile/services/subscription_manager.dart';
 import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/providers/subscription_manager_provider.dart';
 
 class MostroService {
   final Ref ref;
-  static final Logger _logger = Logger();
+  final _logger = Logger();
   
-  final Set<String> _subscribedPubKeys = {};
+  final Set<Session> _sessions = {};
   StreamSubscription<NostrEvent>? _subscription;
   Settings _settings;
   
   MostroService(this.ref) : _settings = ref.read(settingsProvider);
 
   void init() {
-    ref.listen<List<Session>>(sessionNotifierProvider, (previous, next) {
-      if (next.isNotEmpty) {
-        for (final session in next) {
-          subscribe(session.tradeKey.public);
-        }
-      } else {
-        _clearSubscriptions();
-      }
-    });
+    final sessions = ref.read(sessionNotifierProvider);
+    for (final session in sessions) {
+      _sessions.add(session);
+    }
+    _updateSubscription();
   }
 
   void dispose() {
@@ -45,37 +42,37 @@ class MostroService {
   /// Throws an [ArgumentError] if [pubKey] is empty or invalid.
   /// 
   /// [pubKey] The public key to subscribe to (must be a valid Nostr public key)
-  void subscribe(String pubKey) {
-    if (pubKey.isEmpty) {
+  void subscribe(Session session) {
+    if (session.tradeKey.public.isEmpty) {
       _logger.w('Attempted to subscribe to empty pubKey');
       throw ArgumentError('pubKey cannot be empty');
     }
     
     try {
-      if (_subscribedPubKeys.add(pubKey)) {
-        _logger.i('Added subscription for pubKey: $pubKey');
+      if (_sessions.add(session)) {
+        _logger.i('Added subscription for pubKey: ${session.tradeKey.public}');
         _updateSubscription();
       } else {
-        _logger.d('Already subscribed to pubKey: $pubKey');
+        _logger.d('Already subscribed to pubKey: ${session.tradeKey.public}');
       }
     } catch (e, stackTrace) {
-      _logger.e('Invalid public key: $pubKey', error: e, stackTrace: stackTrace);
+      _logger.e('Invalid public key: ${session.tradeKey.public}', error: e, stackTrace: stackTrace);
       rethrow;
     }
   }
 
-  void unsubscribe(String pubKey) {
-    _subscribedPubKeys.remove(pubKey);
+  void unsubscribe(Session session) {
+    _sessions.remove(session);
     _updateSubscription();
   }
 
   void _clearSubscriptions() {
     _subscription?.cancel();
     _subscription = null;
-    _subscribedPubKeys.clear();
+    _sessions.clear();
     
-    final subscriptionManager = ref.read(subscriptionManagerProvider.notifier);
-    subscriptionManager.subscribe(NostrFilter());
+    final subscriptionManager = ref.read(subscriptionManagerProvider);
+    subscriptionManager.unsubscribe(SubscriptionType.orders);
   }
 
   /// Updates the current subscription with the latest set of public keys.
@@ -86,7 +83,7 @@ class MostroService {
   void _updateSubscription() {
     _subscription?.cancel();
     
-    if (_subscribedPubKeys.isEmpty) {
+    if (_sessions.isEmpty) {
       _clearSubscriptions();
       return;
     }
@@ -94,11 +91,11 @@ class MostroService {
     try {
       final filter = NostrFilter(
         kinds: [1059],
-        p: _subscribedPubKeys.toList(),
+        p: _sessions.map((s) => s.tradeKey.public).toList(),
       );
             
-      final subscriptionManager = ref.read(subscriptionManagerProvider.notifier);
-      _subscription = subscriptionManager.subscribe(filter).listen(
+      final subscriptionManager = ref.read(subscriptionManagerProvider);
+      _subscription = subscriptionManager.subscribe(SubscriptionType.orders, filter).listen(
         _onData,
         onError: (error, stackTrace) {
           _logger.e('Error in subscription', error: error, stackTrace: stackTrace);
@@ -112,8 +109,6 @@ class MostroService {
   }
 
   Future<void> _onData(NostrEvent event) async {
-    if (event.recipient == null || !_subscribedPubKeys.contains(event.recipient)) return;
-
     final eventStore = ref.read(eventStorageProvider);
 
     if (await eventStore.hasItem(event.id!)) return;

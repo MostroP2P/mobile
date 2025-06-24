@@ -132,7 +132,9 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         // add seller tradekey to session
         // open chat
         final sessionProvider = ref.read(sessionNotifierProvider.notifier);
-        final peer = Peer(publicKey: order!.sellerTradePubkey!);
+        final peer = order!.sellerTradePubkey != null
+            ? Peer(publicKey: order.sellerTradePubkey!)
+            : null;
         sessionProvider.updateSession(
           orderId,
           (s) => s.peer = peer,

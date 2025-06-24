@@ -28,8 +28,11 @@ class Config {
   // Versión de Mostro
   static int mostroVersion = 1;
 
-  static int expirationSeconds = 900;
-  static int expirationHours = 24;
+  static const int expirationSeconds = 900;
+  static const int expirationHours = 24;
+  static const int cleanupIntervalMinutes = 30;
+  static const int sessionExpirationHours = 36;
+  
 
   // Configuración de notificaciones
   static String notificationChannelId = 'mostro_mobile';
