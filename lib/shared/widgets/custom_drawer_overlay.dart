@@ -48,64 +48,88 @@ class CustomDrawerOverlay extends ConsumerWidget {
             left: isDrawerOpen ? 0 : -MediaQuery.of(context).size.width * 0.7,
             top: 0,
             bottom: 0,
-            child: Container(
-              width: MediaQuery.of(context).size.width * 0.7,
-              decoration: BoxDecoration(
-                color: AppTheme.dark1,
-                border: Border(
-                  right: BorderSide(
-                    color: Colors.white.withValues(alpha: 0.1),
-                    width: 1.0,
+            child: GestureDetector(
+              onHorizontalDragEnd: (details) {
+                if (details.primaryVelocity != null &&
+                    details.primaryVelocity! < 0) {
+                  ref.read(drawerProvider.notifier).closeDrawer();
+                }
+              },
+              child: Container(
+                width: MediaQuery.of(context).size.width * 0.7,
+                decoration: BoxDecoration(
+                  color: AppTheme.dark1,
+                  border: Border(
+                    right: BorderSide(
+                      color: Colors.white.withValues(alpha: 0.1),
+                      width: 1.0,
+                    ),
                   ),
                 ),
-              ),
-              child: Padding(
-                padding: EdgeInsets.only(top: statusBarHeight + appBarHeight),
-                child: Column(
-                  children: [
-                    // Logo header
-                    Container(
-                      height: 80,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: const BoxDecoration(
-                        image: DecorationImage(
-                          image: AssetImage('assets/images/logo.png'),
-                          fit: BoxFit.contain,
+                child: Padding(
+                  padding: EdgeInsets.only(top: statusBarHeight),
+                  child: Column(
+                    children: [
+                      // Espacio superior para el logo
+                      SizedBox(height: 24),
+
+                      // Logo header
+                      Container(
+                        height: 60,
+                        width: double.infinity,
+                        alignment: Alignment.center,
+                        decoration: const BoxDecoration(
+                          image: DecorationImage(
+                            image: AssetImage('assets/images/logo.png'),
+                            fit: BoxFit.contain,
+                          ),
                         ),
                       ),
-                    ),
-                    const Divider(height: 1, color: Colors.transparent),
 
-                    // Menu items
-                    _buildMenuItem(
-                      context,
-                      ref,
-                      icon: LucideIcons.user,
-                      title: 'Account',
-                      route: '/key_management',
-                    ),
-                    _buildMenuItem(
-                      context,
-                      ref,
-                      icon: LucideIcons.settings,
-                      title: 'Settings',
-                      route: '/settings',
-                    ),
-                    _buildMenuItem(
-                      context,
-                      ref,
-                      icon: LucideIcons.info,
-                      title: 'About',
-                      route: '/about',
-                    ),
-                    _buildMenuItem(
-                      context,
-                      ref,
-                      icon: LucideIcons.bookOpen,
-                      title: 'Walkthrough',
-                      route: '/walkthrough',
-                    ),
-                  ],
+                      // Espacio después del logo
+                      SizedBox(height: 24),
+
+                      // Línea divisoria
+                      Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: Colors.white.withOpacity(0.1),
+                      ),
+
+                      // Espacio después de la línea divisoria
+                      SizedBox(height: 16),
+
+                      // Menu items
+                      _buildMenuItem(
+                        context,
+                        ref,
+                        icon: LucideIcons.user,
+                        title: 'Account',
+                        route: '/key_management',
+                      ),
+                      _buildMenuItem(
+                        context,
+                        ref,
+                        icon: LucideIcons.settings,
+                        title: 'Settings',
+                        route: '/settings',
+                      ),
+                      _buildMenuItem(
+                        context,
+                        ref,
+                        icon: LucideIcons.info,
+                        title: 'About',
+                        route: '/about',
+                      ),
+                      _buildMenuItem(
+                        context,
+                        ref,
+                        icon: LucideIcons.bookOpen,
+                        title: 'Walkthrough',
+                        route: '/walkthrough',
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
