@@ -19,9 +19,14 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
 
   AbstractMostroNotifier(
     this.orderId,
-    this.ref,
-  ) : super(OrderState(
-            action: Action.newOrder, status: Status.pending, order: null)) {
+    this.ref, {
+    OrderState? initialState,
+  }) : super(initialState ??
+            OrderState(
+              action: Action.newOrder,
+              status: Status.pending,
+              order: null,
+            )) {
     final oldSession =
         ref.read(sessionNotifierProvider.notifier).getSessionByOrderId(orderId);
     if (oldSession != null) {

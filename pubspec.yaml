@@ -45,7 +45,6 @@ dependencies:
   google_fonts: ^6.2.1
   timeago: ^3.7.0
   flutter_riverpod: ^2.6.1
-  bitcoin_icons: ^0.0.4
   collection: ^1.18.0
   elliptic: ^0.3.11
   intl: ^0.20.2
@@ -61,7 +60,6 @@ dependencies:
   sembast: ^3.8.2
   sembast_web: ^2.4.1
   circular_countdown: ^2.1.0
-  line_icons: ^2.0.3
   introduction_screen: ^3.1.17
   riverpod_annotation: ^2.6.1
   lucide_icons: ^0.257.0 

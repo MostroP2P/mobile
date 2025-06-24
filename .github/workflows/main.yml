@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:  
   build:      
@@ -15,20 +16,70 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+          fetch-tags: true
+
+      - name: Check if version changed
+        id: check_version_change
+        run: |
+          # Get current version
+          CURRENT_VERSION=$(grep '^version: ' pubspec.yaml | cut -d ' ' -f 2 | tr -d '\r')
+          echo "Current version: $CURRENT_VERSION"
+
+          # Get previous version (from previous commit) with safeguard for shallow history
+          if git rev-parse --quiet --verify HEAD~1 >/dev/null; then
+            git checkout HEAD~1 pubspec.yaml
+            PREVIOUS_VERSION=$(grep '^version: ' pubspec.yaml | cut -d ' ' -f 2 | tr -d '\r')
+            git checkout -q HEAD pubspec.yaml
+            echo "Previous version: $PREVIOUS_VERSION"
+          else
+            echo "No previous commit - assuming version unchanged"
+            PREVIOUS_VERSION=$CURRENT_VERSION
+          fi
+
+          # Compare versions and set output
+          if [ "$CURRENT_VERSION" != "$PREVIOUS_VERSION" ]; then
+            echo "Version changed from $PREVIOUS_VERSION to $CURRENT_VERSION"
+            echo "VERSION_CHANGED=true" >> $GITHUB_OUTPUT
+          else
+            echo "Version unchanged: $CURRENT_VERSION"
+            echo "VERSION_CHANGED=false" >> $GITHUB_OUTPUT
+          fi
+
+          # Always store the current version for later steps
+          echo "VERSION=$CURRENT_VERSION" >> $GITHUB_ENV
+
+      - name: Check if build should continue
+        id: should_build
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "Building because workflow was manually triggered"
+            echo "SHOULD_BUILD=true" >> $GITHUB_OUTPUT
+          elif [[ "${{ steps.check_version_change.outputs.VERSION_CHANGED }}" == "true" ]]; then
+            echo "Building because version changed"
+            echo "SHOULD_BUILD=true" >> $GITHUB_OUTPUT
+          else
+            echo "Skipping build because version did not change"
+            echo "SHOULD_BUILD=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Set Up Java
+        if: steps.should_build.outputs.SHOULD_BUILD == 'true'
         uses: actions/setup-java@v3.12.0
         with:
           distribution: 'oracle'
           java-version: '17'
 
       - name: Set Up Flutter
+        if: steps.should_build.outputs.SHOULD_BUILD == 'true'
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.32.2'
           channel: 'stable'
 
       - name: Cache Dart & Pub artifacts
+        if: steps.should_build.outputs.SHOULD_BUILD == 'true'
         uses: actions/cache@v3
         with:
           path: |
@@ -37,32 +88,40 @@ jobs:
           key: ${{ runner.os }}-dart-${{ hashFiles('**/pubspec.yaml') }}
           
       - name: Install Dependencies
+        if: steps.should_build.outputs.SHOULD_BUILD == 'true'
         run: flutter pub get
 
       - name: Generate localization and other required files
+        if: steps.should_build.outputs.SHOULD_BUILD == 'true'
         run: dart run build_runner build -d
 
       - name: Extract version from pubspec.yaml
+        if: steps.should_build.outputs.SHOULD_BUILD == 'true'
         id: extract_version
         run: |
           version=$(grep '^version: ' pubspec.yaml | cut -d ' ' -f 2 | tr -d '\r')
           echo "VERSION=$version" >> $GITHUB_ENV
 
       - name: Build APK
+        if: steps.should_build.outputs.SHOULD_BUILD == 'true'
         run: flutter build apk --release --dart-define=APP_VERSION=${{ env.VERSION }} --dart-define=GIT_COMMIT=${{ github.sha }}
 
       - name: Build appBundle
+        if: steps.should_build.outputs.SHOULD_BUILD == 'true'
         run: flutter build appbundle --release --dart-define=APP_VERSION=${{ env.VERSION }} --dart-define=GIT_COMMIT=${{ github.sha }}
 
       - name: Build IPA
+        if: steps.should_build.outputs.SHOULD_BUILD == 'true'
         run: flutter build ipa --no-codesign --dart-define=APP_VERSION=${{ env.VERSION }} --dart-define=GIT_COMMIT=${{ github.sha }}
 
       - name: Compress Archives and IPAs
+        if: steps.should_build.outputs.SHOULD_BUILD == 'true'
         run: |
           cd build
           tar -czf ios_build.tar.gz ios
 
       - name: Upload Artifacts
+        if: steps.should_build.outputs.SHOULD_BUILD == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: Releases
@@ -72,6 +131,7 @@ jobs:
             build/ios_build.tar.gz
 
       - name: Check if Tag Exists
+        if: steps.should_build.outputs.SHOULD_BUILD == 'true'
         id: check_tag
         run: |
           if git rev-parse "v${{ env.VERSION }}" >/dev/null 2>&1; then
@@ -81,13 +141,14 @@ jobs:
           fi
 
       - name: Modify Tag
-        if: ${{ env.TAG_EXISTS }} == 'true'
+        if: steps.should_build.outputs.SHOULD_BUILD == 'true' && env.TAG_EXISTS == 'true'
         id: modify_tag
         run: |
           new_version="${{ env.VERSION }}-alpha-${{ github.run_number }}"
           echo "VERSION=$new_version" >> $GITHUB_ENV
-        
+
       - name: Create Release
+        if: steps.should_build.outputs.SHOULD_BUILD == 'true'
         uses: ncipollo/release-action@v1
         with:
           artifacts: "build/app/outputs/flutter-apk/app-release.apk,build/app/outputs/bundle/release/app-release.aab,build/ios_build.tar.gz"
