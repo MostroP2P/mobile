@@ -17,16 +17,16 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # full history
-          fetch-tags: true  # ensure tags are available
-          
+          fetch-depth: 2
+          fetch-tags: true
+
       - name: Check if version changed
         id: check_version_change
         run: |
           # Get current version
           CURRENT_VERSION=$(grep '^version: ' pubspec.yaml | cut -d ' ' -f 2 | tr -d '\r')
           echo "Current version: $CURRENT_VERSION"
-          
+
           # Get previous version (from previous commit) with safeguard for shallow history
           if git rev-parse --quiet --verify HEAD~1 >/dev/null; then
             git checkout HEAD~1 pubspec.yaml
@@ -37,7 +37,7 @@ jobs:
             echo "No previous commit - assuming version unchanged"
             PREVIOUS_VERSION=$CURRENT_VERSION
           fi
-          
+
           # Compare versions and set output
           if [ "$CURRENT_VERSION" != "$PREVIOUS_VERSION" ]; then
             echo "Version changed from $PREVIOUS_VERSION to $CURRENT_VERSION"
@@ -46,7 +46,7 @@ jobs:
             echo "Version unchanged: $CURRENT_VERSION"
             echo "VERSION_CHANGED=false" >> $GITHUB_OUTPUT
           fi
-          
+
           # Always store the current version for later steps
           echo "VERSION=$CURRENT_VERSION" >> $GITHUB_ENV
 
@@ -63,7 +63,7 @@ jobs:
             echo "Skipping build because version did not change"
             echo "SHOULD_BUILD=false" >> $GITHUB_OUTPUT
           fi
-      
+
       - name: Set Up Java
         if: steps.should_build.outputs.SHOULD_BUILD == 'true'
         uses: actions/setup-java@v3.12.0
@@ -146,7 +146,7 @@ jobs:
         run: |
           new_version="${{ env.VERSION }}-alpha-${{ github.run_number }}"
           echo "VERSION=$new_version" >> $GITHUB_ENV
-        
+
       - name: Create Release
         if: steps.should_build.outputs.SHOULD_BUILD == 'true'
         uses: ncipollo/release-action@v1
