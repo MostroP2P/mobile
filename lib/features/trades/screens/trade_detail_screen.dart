@@ -223,24 +223,42 @@ class TradeDetailScreen extends ConsumerWidget {
       // FSM-driven action mapping: ensure all actions are handled
       switch (action) {
         case actions.Action.cancel:
+          String buttonText;
+          Color buttonColor;
+
+          if (tradeState.status == Status.active ||
+              tradeState.status == Status.fiatSent) {
+            buttonText = 'COOPERATIVE CANCEL';
+            buttonColor = AppTheme.red1;
+          } else {
+            buttonText = 'CANCEL';
+            buttonColor = AppTheme.red1;
+          }
+
           widgets.add(_buildNostrButton(
-            'CANCEL',
+            buttonText,
             action: action,
-            backgroundColor: AppTheme.red1,
+            backgroundColor: buttonColor,
             onPressed: () =>
                 ref.read(orderNotifierProvider(orderId).notifier).cancelOrder(),
           ));
           break;
+
         case actions.Action.payInvoice:
           if (userRole == Role.seller) {
-            widgets.add(_buildNostrButton(
-              'PAY INVOICE',
-              action: actions.Action.payInvoice,
-              backgroundColor: AppTheme.mostroGreen,
-              onPressed: () => context.push('/pay_invoice/$orderId'),
-            ));
+            final hasPaymentRequest = tradeState.paymentRequest != null;
+
+            if (hasPaymentRequest) {
+              widgets.add(_buildNostrButton(
+                'PAY INVOICE',
+                action: actions.Action.payInvoice,
+                backgroundColor: AppTheme.mostroGreen,
+                onPressed: () => context.push('/pay_invoice/$orderId'),
+              ));
+            }
           }
           break;
+
         case actions.Action.addInvoice:
           if (userRole == Role.buyer) {
             widgets.add(_buildNostrButton(
@@ -251,11 +269,12 @@ class TradeDetailScreen extends ConsumerWidget {
             ));
           }
           break;
+
         case actions.Action.fiatSent:
           if (userRole == Role.buyer) {
             widgets.add(_buildNostrButton(
               'FIAT SENT',
-              action: actions.Action.fiatSentOk,
+              action: actions.Action.fiatSent,
               backgroundColor: AppTheme.mostroGreen,
               onPressed: () => ref
                   .read(orderNotifierProvider(orderId).notifier)
@@ -263,6 +282,7 @@ class TradeDetailScreen extends ConsumerWidget {
             ));
           }
           break;
+
         case actions.Action.disputeInitiatedByYou:
         case actions.Action.disputeInitiatedByPeer:
         case actions.Action.dispute:
@@ -280,6 +300,7 @@ class TradeDetailScreen extends ConsumerWidget {
             ));
           }
           break;
+
         case actions.Action.release:
           if (userRole == Role.seller) {
             widgets.add(_buildNostrButton(
@@ -292,6 +313,7 @@ class TradeDetailScreen extends ConsumerWidget {
             ));
           }
           break;
+
         case actions.Action.takeSell:
           if (userRole == Role.buyer) {
             widgets.add(_buildNostrButton(
@@ -302,6 +324,7 @@ class TradeDetailScreen extends ConsumerWidget {
             ));
           }
           break;
+
         case actions.Action.takeBuy:
           if (userRole == Role.seller) {
             widgets.add(_buildNostrButton(
@@ -312,25 +335,31 @@ class TradeDetailScreen extends ConsumerWidget {
             ));
           }
           break;
+
+        // ✅ CASOS DE COOPERATIVE CANCEL: Ahora estos se manejan cuando el usuario ya inició/recibió cooperative cancel
         case actions.Action.cooperativeCancelInitiatedByYou:
-        case actions.Action.cooperativeCancelInitiatedByPeer:
+          // El usuario ya inició cooperative cancel, ahora debe esperar respuesta
           widgets.add(_buildNostrButton(
-            'COOPERATIVE CANCEL',
+            'CANCEL PENDING',
             action: actions.Action.cooperativeCancelInitiatedByYou,
-            backgroundColor: AppTheme.red1,
-            onPressed: () =>
-                ref.read(orderNotifierProvider(orderId).notifier).cancelOrder(),
+            backgroundColor: Colors.grey,
+            onPressed: null,
           ));
           break;
-        case actions.Action.cooperativeCancelAccepted:
+
+        case actions.Action.cooperativeCancelInitiatedByPeer:
           widgets.add(_buildNostrButton(
-            'CONFIRM CANCEL',
+            'ACCEPT CANCEL',
             action: actions.Action.cooperativeCancelAccepted,
             backgroundColor: AppTheme.red1,
             onPressed: () =>
                 ref.read(orderNotifierProvider(orderId).notifier).cancelOrder(),
           ));
           break;
+
+        case actions.Action.cooperativeCancelAccepted:
+          break;
+
         case actions.Action.purchaseCompleted:
           widgets.add(_buildNostrButton(
             'COMPLETE PURCHASE',
@@ -341,27 +370,31 @@ class TradeDetailScreen extends ConsumerWidget {
                 .releaseOrder(),
           ));
           break;
+
         case actions.Action.buyerTookOrder:
           widgets.add(_buildContactButton(context));
           break;
+
         case actions.Action.rate:
         case actions.Action.rateUser:
         case actions.Action.rateReceived:
           widgets.add(_buildNostrButton(
             'RATE',
-            action: actions.Action.rateReceived,
+            action: actions.Action.rate,
             backgroundColor: AppTheme.mostroGreen,
             onPressed: () => context.push('/rate_user/$orderId'),
           ));
           break;
+
+        case actions.Action.holdInvoicePaymentSettled:
         case actions.Action.holdInvoicePaymentAccepted:
           widgets.add(_buildContactButton(context));
-
           break;
-        case actions.Action.holdInvoicePaymentSettled:
+
         case actions.Action.holdInvoicePaymentCanceled:
           // These are system actions, not user actions, so no button needed
           break;
+
         case actions.Action.buyerInvoiceAccepted:
         case actions.Action.waitingSellerToPay:
         case actions.Action.waitingBuyerInvoice:
@@ -380,21 +413,11 @@ class TradeDetailScreen extends ConsumerWidget {
         case actions.Action.released:
           // Not user-facing or not relevant as a button
           break;
+
         default:
           // Optionally handle unknown or unimplemented actions
           break;
       }
-    }
-
-    // Special case for RATE button after settlement
-    if (tradeState.status == Status.settledHoldInvoice &&
-        tradeState.action == actions.Action.rate) {
-      widgets.add(_buildNostrButton(
-        'RATE',
-        action: actions.Action.rateReceived,
-        backgroundColor: AppTheme.mostroGreen,
-        onPressed: () => context.push('/rate_user/$orderId'),
-      ));
     }
 
     return widgets;
@@ -404,7 +427,7 @@ class TradeDetailScreen extends ConsumerWidget {
   Widget _buildNostrButton(
     String label, {
     required actions.Action action,
-    required VoidCallback onPressed,
+    required VoidCallback? onPressed,
     Color? backgroundColor,
   }) {
     return MostroReactiveButton(
@@ -413,7 +436,7 @@ class TradeDetailScreen extends ConsumerWidget {
       orderId: orderId,
       action: action,
       backgroundColor: backgroundColor,
-      onPressed: onPressed,
+      onPressed: onPressed ?? () {}, // Provide empty function when null
       showSuccessIndicator: true,
       timeout: const Duration(seconds: 30),
     );
