@@ -21,8 +21,8 @@ class TradesScreen extends ConsumerWidget {
       backgroundColor: AppTheme.backgroundDark,
       appBar: const MostroAppBar(),
 
-      drawer: const MostroAppDrawer(),
-      body: RefreshIndicator(
+      body: CustomDrawerOverlay(
+        child: RefreshIndicator(
         onRefresh: () async {
           // Force reload the orders repository first
           ref.read(orderRepositoryProvider).reloadData();
@@ -113,6 +113,7 @@ class TradesScreen extends ConsumerWidget {
           ],
 
         ),
+      ),
       ),
     );
   }
