@@ -9,7 +9,6 @@ import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
-import 'package:mostro_mobile/features/settings/settings_notifier.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_database_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
@@ -46,7 +45,7 @@ void main() {
       mockSessionStorage = MockSessionStorage();
       mockKeyManager = MockKeyManager();
       mockMostroStorage = MockMostroStorage();
-      
+
       // Create test settings
       final testSettings = Settings(
         relays: ['wss://relay.damus.io'],
@@ -54,32 +53,40 @@ void main() {
         mostroPublicKey: 'test_key',
         defaultFiatCode: 'USD',
       );
-      
-      mockSessionNotifier = MockSessionNotifier(mockKeyManager, mockSessionStorage, testSettings);
-      
+
+      mockSessionNotifier =
+          MockSessionNotifier(mockKeyManager, mockSessionStorage, testSettings);
+
       // Stub the KeyManager methods
       when(mockKeyManager.masterKeyPair).thenReturn(
-        NostrKeyPairs(private: '1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef'),
+        NostrKeyPairs(
+            private:
+                '1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef'),
       );
       when(mockKeyManager.getCurrentKeyIndex()).thenAnswer((_) async => 0);
-      when(mockKeyManager.deriveTradeKey()).thenAnswer((_) async => 
-        NostrKeyPairs(private: 'abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890'),
+      when(mockKeyManager.deriveTradeKey()).thenAnswer(
+        (_) async => NostrKeyPairs(
+            private:
+                'abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890'),
       );
 
       // Stub MostroStorage methods
-      when(mockMostroStorage.getAllMessagesForOrderId(any)).thenAnswer((_) async => <MostroMessage>[]);
+      when(mockMostroStorage.getAllMessagesForOrderId(any))
+          .thenAnswer((_) async => <MostroMessage>[]);
 
       container = ProviderContainer(
         overrides: [
           mostroServiceProvider.overrideWithValue(mockMostroService),
           orderRepositoryProvider.overrideWithValue(mockOrdersRepository),
-          sharedPreferencesProvider.overrideWithValue(mockSharedPreferencesAsync),
+          sharedPreferencesProvider
+              .overrideWithValue(mockSharedPreferencesAsync),
           mostroDatabaseProvider.overrideWithValue(mockDatabase),
           eventDatabaseProvider.overrideWithValue(mockDatabase),
           sessionStorageProvider.overrideWithValue(mockSessionStorage),
           keyManagerProvider.overrideWithValue(mockKeyManager),
           sessionNotifierProvider.overrideWith((ref) => mockSessionNotifier),
-          settingsProvider.overrideWith((ref) => MockSettingsNotifier(testSettings, mockSharedPreferencesAsync)),
+          settingsProvider.overrideWith((ref) =>
+              MockSettingsNotifier(testSettings, mockSharedPreferencesAsync)),
           mostroStorageProvider.overrideWithValue(mockMostroStorage),
         ],
       );
