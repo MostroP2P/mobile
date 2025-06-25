@@ -60,7 +60,6 @@ class TradesScreen extends ConsumerWidget {
                         ),
                         child: Column(
                           children: [
-                            // Espacio superior
                             const SizedBox(height: 16.0),
                             Expanded(
                               child: tradesAsync.when(
@@ -80,19 +79,22 @@ class TradesScreen extends ConsumerWidget {
                                       const SizedBox(height: 16),
                                       Text(
                                         'Error loading trades',
-                                        style: TextStyle(color: AppTheme.cream1),
+                                        style:
+                                            TextStyle(color: AppTheme.cream1),
                                       ),
                                       Text(
                                         error.toString(),
                                         style: TextStyle(
-                                            color: AppTheme.cream1, fontSize: 12),
+                                            color: AppTheme.cream1,
+                                            fontSize: 12),
                                         textAlign: TextAlign.center,
                                       ),
                                       const SizedBox(height: 16),
                                       ElevatedButton(
                                         onPressed: () {
                                           ref.invalidate(orderEventsProvider);
-                                          ref.invalidate(filteredTradesProvider);
+                                          ref.invalidate(
+                                              filteredTradesProvider);
                                         },
                                         child: const Text('Retry'),
                                       ),

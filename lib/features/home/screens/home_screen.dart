@@ -35,14 +35,11 @@ class HomeScreen extends ConsumerWidget {
                     },
                     child: GestureDetector(
                       onHorizontalDragEnd: (details) {
-                        // Si el gesto es hacia la izquierda (velocidad negativa), cambiamos a SELL BTC
                         if (details.primaryVelocity != null &&
                             details.primaryVelocity! < 0) {
                           ref.read(homeOrderTypeProvider.notifier).state =
                               OrderType.buy;
-                        }
-                        // Si el gesto es hacia la derecha (velocidad positiva), cambiamos a BUY BTC
-                        else if (details.primaryVelocity != null &&
+                        } else if (details.primaryVelocity != null &&
                             details.primaryVelocity! > 0) {
                           ref.read(homeOrderTypeProvider.notifier).state =
                               OrderType.sell;
@@ -87,7 +84,6 @@ class HomeScreen extends ConsumerWidget {
                                     )
                                   : ListView.builder(
                                       itemCount: filteredOrders.length,
-                                      // Adjusted padding to account for bottom nav bar
                                       padding: const EdgeInsets.only(
                                           bottom: 100, top: 6),
                                       itemBuilder: (context, index) {
