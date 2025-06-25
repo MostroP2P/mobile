@@ -8,6 +8,7 @@ import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/providers/background_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
+import 'package:mostro_mobile/features/subscriptions/subscription_manager_provider.dart';
 
 final appInitializerProvider = FutureProvider<void>((ref) async {
   final nostrService = ref.read(nostrServiceProvider);
@@ -18,6 +19,8 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
 
   final sessionManager = ref.read(sessionNotifierProvider.notifier);
   await sessionManager.init();
+  
+  ref.read(subscriptionManagerProvider);
 
   ref.listen<Settings>(settingsProvider, (previous, next) {
     ref.read(backgroundServiceProvider).updateSettings(next);
@@ -26,11 +29,11 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
   final cutoff = DateTime.now().subtract(const Duration(hours: Config.sessionExpirationHours));
 
   for (final session in sessionManager.sessions) {
-    if (session.orderId != null && session.startTime.isAfter(cutoff)) {
-      ref.read(orderNotifierProvider(session.orderId!).notifier);
-    }
+    if(session.orderId == null || session.startTime.isBefore(cutoff)) continue;
 
-    if (session.peer != null && session.startTime.isAfter(cutoff)) {
+    ref.read(orderNotifierProvider(session.orderId!).notifier);
+
+    if (session.peer != null) {
       ref.read(chatRoomsProvider(session.orderId!).notifier).subscribe();
     }
   }

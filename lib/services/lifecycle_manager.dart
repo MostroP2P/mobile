@@ -5,16 +5,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
+import 'package:mostro_mobile/features/subscriptions/subscription_type.dart';
 import 'package:mostro_mobile/features/trades/providers/trades_provider.dart';
 import 'package:mostro_mobile/shared/providers/background_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
-import 'package:mostro_mobile/shared/providers/subscription_manager_provider.dart';
+import 'package:mostro_mobile/features/subscriptions/subscription_manager_provider.dart';
 
 class LifecycleManager extends WidgetsBindingObserver {
   final Ref ref;
   bool _isInBackground = false;
-  final List<NostrFilter> _activeSubscriptions = [];
   final _logger = Logger();
 
   LifecycleManager(this.ref) {
@@ -50,9 +50,6 @@ class LifecycleManager extends WidgetsBindingObserver {
       _isInBackground = false;
       _logger.i("Switching to foreground");
 
-      // Clear active subscriptions
-      _activeSubscriptions.clear();
-
       // Stop background service
       final backgroundService = ref.read(backgroundServiceProvider);
       await backgroundService.setForegroundStatus(true);
@@ -87,15 +84,20 @@ class LifecycleManager extends WidgetsBindingObserver {
 
   Future<void> _switchToBackground() async {
     try {
-      // Get the current subscription filter from the subscription manager
+      // Get the subscription manager
       final subscriptionManager = ref.read(subscriptionManagerProvider);
-      final currentFilter = subscriptionManager.subscriptions.values.map((s) => s.request).toList();
+      final activeFilters = <NostrFilter>[];
       
-      if (currentFilter.isNotEmpty) {
-        _activeSubscriptions.addAll(currentFilter.expand((s) => s.filters));
+      // Get actual filters for each subscription type
+      for (final type in SubscriptionType.values) {
+        final filters = subscriptionManager.getActiveFilters(type);
+        if (filters.isNotEmpty) {
+          _logger.d('Found ${filters.length} active filters for $type');
+          activeFilters.addAll(filters);
+        }
       }
 
-      if (_activeSubscriptions.isNotEmpty) {
+      if (activeFilters.isNotEmpty) {
         _isInBackground = true;
         _logger.i("Switching to background");
 
@@ -103,8 +105,8 @@ class LifecycleManager extends WidgetsBindingObserver {
         final backgroundService = ref.read(backgroundServiceProvider);
         await backgroundService.setForegroundStatus(false);
         _logger.i(
-            "Transferring ${_activeSubscriptions.length} active subscriptions to background service");
-        backgroundService.subscribe(_activeSubscriptions);
+            "Transferring ${activeFilters.length} active filters to background service");
+        backgroundService.subscribe(activeFilters);
       } else {
         _logger.w("No active subscriptions to transfer to background service");
       }
@@ -115,8 +117,10 @@ class LifecycleManager extends WidgetsBindingObserver {
     }
   }
 
+  @Deprecated('Use SubscriptionManager instead.')
   void addSubscription(NostrFilter filter) {
-    _activeSubscriptions.add(filter);
+    _logger.w('LifecycleManager.addSubscription is deprecated. Use SubscriptionManager instead.');
+    // No-op - subscriptions are now tracked by SubscriptionManager
   }
 
   void dispose() {

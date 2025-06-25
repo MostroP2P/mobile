@@ -6,108 +6,64 @@ import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
-import 'package:mostro_mobile/services/subscription_manager.dart';
+import 'package:mostro_mobile/features/subscriptions/subscription_manager_provider.dart';
 import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
-import 'package:mostro_mobile/shared/providers/subscription_manager_provider.dart';
 
 class MostroService {
   final Ref ref;
   final _logger = Logger();
   
-  final Set<Session> _sessions = {};
-  StreamSubscription<NostrEvent>? _subscription;
   Settings _settings;
+  StreamSubscription<NostrEvent>? _ordersSubscription;
   
   MostroService(this.ref) : _settings = ref.read(settingsProvider);
 
   void init() {
-    final sessions = ref.read(sessionNotifierProvider);
-    for (final session in sessions) {
-      _sessions.add(session);
-    }
-    _updateSubscription();
+    // Subscribe to the orders stream from SubscriptionManager
+    // The SubscriptionManager will automatically manage subscriptions based on SessionNotifier changes
+    _ordersSubscription = ref.read(subscriptionManagerProvider).orders.listen(
+      _onData,
+      onError: (error, stackTrace) {
+        _logger.e('Error in orders subscription', error: error, stackTrace: stackTrace);
+      },
+      cancelOnError: false,
+    );
   }
 
   void dispose() {
-    _clearSubscriptions();
-    _subscription?.cancel();
+    _ordersSubscription?.cancel();
+    _logger.i('MostroService disposed');
   }
 
-  /// Subscribes to events for a specific public key.
+  /// No need to manually subscribe to sessions anymore.
+  /// SubscriptionManager now automatically handles subscriptions based on SessionNotifier changes.
   /// 
-  /// This method adds the public key to the internal set of subscribed keys
-  /// and updates the subscription if the key was not already being tracked.
+  /// This method is kept for backward compatibility but doesn't perform manual subscription.
   /// 
-  /// Throws an [ArgumentError] if [pubKey] is empty or invalid.
-  /// 
-  /// [pubKey] The public key to subscribe to (must be a valid Nostr public key)
+  /// [session] The session that would have been subscribed to
   void subscribe(Session session) {
-    if (session.tradeKey.public.isEmpty) {
-      _logger.w('Attempted to subscribe to empty pubKey');
-      throw ArgumentError('pubKey cannot be empty');
-    }
-    
-    try {
-      if (_sessions.add(session)) {
-        _logger.i('Added subscription for pubKey: ${session.tradeKey.public}');
-        _updateSubscription();
-      } else {
-        _logger.d('Already subscribed to pubKey: ${session.tradeKey.public}');
-      }
-    } catch (e, stackTrace) {
-      _logger.e('Invalid public key: ${session.tradeKey.public}', error: e, stackTrace: stackTrace);
-      rethrow;
-    }
+    _logger.i('Manual subscription not needed for: ${session.tradeKey.public}');
+    // No action needed - SubscriptionManager handles subscriptions automatically
   }
 
-  void unsubscribe(Session session) {
-    _sessions.remove(session);
-    _updateSubscription();
-  }
-
-  void _clearSubscriptions() {
-    _subscription?.cancel();
-    _subscription = null;
-    _sessions.clear();
-    
-    final subscriptionManager = ref.read(subscriptionManagerProvider);
-    subscriptionManager.unsubscribe(SubscriptionType.orders);
-  }
-
-  /// Updates the current subscription with the latest set of public keys.
+  /// No need to manually unsubscribe from sessions anymore.
+  /// SubscriptionManager now automatically handles subscriptions based on SessionNotifier changes.
   /// 
-  /// This method creates a new subscription with the current set of public keys
-  /// and cancels any existing subscription. If there are no public keys to
-  /// subscribe to, it clears all subscriptions.
-  void _updateSubscription() {
-    _subscription?.cancel();
-    
-    if (_sessions.isEmpty) {
-      _clearSubscriptions();
-      return;
-    }
-    
-    try {
-      final filter = NostrFilter(
-        kinds: [1059],
-        p: _sessions.map((s) => s.tradeKey.public).toList(),
-      );
-            
-      final subscriptionManager = ref.read(subscriptionManagerProvider);
-      _subscription = subscriptionManager.subscribe(SubscriptionType.orders, filter).listen(
-        _onData,
-        onError: (error, stackTrace) {
-          _logger.e('Error in subscription', error: error, stackTrace: stackTrace);
-        },
-        cancelOnError: false,
-      );
-    } catch (e, stackTrace) {
-      _logger.e('Error updating subscription', error: e, stackTrace: stackTrace);
-      rethrow;
-    }
+  /// This method is kept for backward compatibility but doesn't perform manual unsubscription.
+  /// 
+  /// [session] The session that would have been unsubscribed from
+  void unsubscribe(Session session) {
+    _logger.i('Manual unsubscription not needed for: ${session.tradeKey.public}');
+    // No action needed - SubscriptionManager handles subscriptions automatically
   }
 
+  // No need to manually clear subscriptions anymore.
+  // SubscriptionManager now handles this automatically when needed.
+
+  // No need to manually update subscriptions anymore.
+  // SubscriptionManager now handles this automatically based on SessionNotifier changes.
+  
   Future<void> _onData(NostrEvent event) async {
     final eventStore = ref.read(eventStorageProvider);
 

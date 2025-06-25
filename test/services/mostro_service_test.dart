@@ -6,41 +6,139 @@ import 'package:flutter_test/flutter_test.dart';
 import 'dart:async';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
+import 'package:mostro_mobile/features/subscriptions/subscription.dart';
+import 'package:mostro_mobile/features/subscriptions/subscription_type.dart';
 import 'package:mostro_mobile/shared/notifiers/session_notifier.dart';
 import 'package:mostro_mobile/core/config.dart';
-import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
+// Removed unused import
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/features/key_manager/key_derivator.dart';
 import 'package:mostro_mobile/services/mostro_service.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
-import 'package:mostro_mobile/services/subscription_manager.dart';
-import 'package:mostro_mobile/shared/notifiers/session_notifier.dart';
+import 'package:mostro_mobile/features/subscriptions/subscription_manager.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
-import 'package:mostro_mobile/shared/providers/subscription_manager_provider.dart';
+import 'package:mostro_mobile/features/subscriptions/subscription_manager_provider.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
+import 'package:mostro_mobile/features/settings/settings.dart';
+import 'package:mostro_mobile/features/settings/settings_provider.dart';
 
 import 'mostro_service_test.mocks.dart';
 import 'mostro_service_helper_functions.dart';
 
 // Create a mock SubscriptionManager class for testing
-class MockSubscriptionManager extends StateNotifier<Subscription> 
-    implements SubscriptionManager {
-  MockSubscriptionManager({required this.ref}) : super(Subscription(id: 'test-sub', request: NostrRequest(filters: [])));
+class MockSubscriptionManager implements SubscriptionManager {
+  MockSubscriptionManager({required this.ref});
   
   @override
   final Ref ref;
   
+  final Map<SubscriptionType, Map<String, Subscription>> _subscriptions = {
+    SubscriptionType.chat: {},
+    SubscriptionType.orders: {},
+    SubscriptionType.trades: {},
+  };
+  
+  NostrFilter? _lastFilter;
+  NostrFilter? get lastFilter => _lastFilter;
+  String? _lastSubscriptionId;
+  
+  // Implement the stream getters required by SubscriptionManager
   @override
-  Stream<NostrEvent> subscribe(NostrFilter filter) {
+  Stream<NostrEvent> get chat => _controller.stream;
+  
+  @override
+  Stream<NostrEvent> get orders => _controller.stream;
+  
+  @override
+  Stream<NostrEvent> get trades => _controller.stream;
+  
+  @override
+  Stream<NostrEvent> subscribe({
+    required SubscriptionType type,
+    required NostrFilter filter,
+    String? id,
+  }) {
     // Store the filter for verification
     _lastFilter = filter;
+    _lastSubscriptionId = id ?? type.toString();
+    
+    // Create a subscription
+    final subscription = Subscription(
+      request: NostrRequest(filters: [filter]),
+      streamSubscription: _controller.stream.listen((_) {}),
+    );
+    
+    _subscriptions[type]![_lastSubscriptionId!] = subscription;
+    
     // Return a new stream to avoid multiple subscriptions to the same controller
     return _controller.stream;
   }
   
-  NostrFilter? _lastFilter;
-  NostrFilter? get lastFilter => _lastFilter;
+  @override
+  Stream<NostrEvent> subscribeSession({
+    required SubscriptionType type,
+    required Session session,
+    required NostrFilter Function(Session session) createFilter,
+  }) {
+    final filter = createFilter(session);
+    final sessionId = session.orderId ?? session.tradeKey.public;
+    return subscribe(
+      type: type,
+      filter: filter,
+      id: '${type.toString()}_$sessionId',
+    );
+  }
+  
+  @override
+  void unsubscribeById(SubscriptionType type, String id) {
+    _subscriptions[type]?.remove(id);
+  }
+  
+  @override
+  void unsubscribeByType(SubscriptionType type) {
+    _subscriptions[type]?.clear();
+  }
+  
+  @override
+  void unsubscribeAll() {
+    for (final type in SubscriptionType.values) {
+      unsubscribeByType(type);
+    }
+  }
+  
+  @override
+  List<NostrFilter> getActiveFilters(SubscriptionType type) {
+    final filters = <NostrFilter>[];
+    final subscriptions = _subscriptions[type] ?? {};
+    
+    for (final subscription in subscriptions.values) {
+      if (subscription.request.filters.isNotEmpty) {
+        filters.add(subscription.request.filters.first);
+      }
+    }
+    
+    return filters;
+  }
+  
+  @override
+  void unsubscribeSession(SubscriptionType type, Session session) {
+    final sessionId = session.orderId ?? session.tradeKey.public;
+    unsubscribeById(type, '${type.toString()}_$sessionId');
+  }
+  
+  @override
+  bool hasActiveSubscription(SubscriptionType type, {String? id}) {
+    if (id != null) {
+      return _subscriptions[type]?.containsKey(id) ?? false;
+    }
+    return (_subscriptions[type]?.isNotEmpty ?? false);
+  }
+  
+  @override
+  void dispose() {
+    _controller.close();
+  }
   
   // Helper to create a mock filter for verification
   static NostrFilter createMockFilter() {
@@ -48,17 +146,6 @@ class MockSubscriptionManager extends StateNotifier<Subscription>
       kinds: [1059],
       limit: 1,
     );
-  }
-  
-  @override
-  Future<void> cancel() async {
-    await _controller.close();
-  }
-  
-  @override
-  void dispose() {
-    _controller.close();
-    super.dispose();
   }
   
   // Helper to add events to the stream
@@ -87,38 +174,61 @@ void main() {
   late MockServerTradeIndex mockServerTradeIndex;
   
   setUpAll(() {
+    // Create a dummy Settings object that will be used by MockRef
+    final dummySettings = Settings(
+      relays: ['wss://relay.damus.io'],
+      fullPrivacyMode: false,
+      mostroPublicKey: 'npub1mostro',
+      defaultFiatCode: 'USD',
+    );
+    
+    // Provide dummy values for Mockito
     provideDummy<SessionNotifier>(MockSessionNotifier());
+    provideDummy<Settings>(dummySettings);
+    provideDummy<NostrService>(MockNostrService());
+    
+    // Create a mock ref for the SubscriptionManager dummy
+    final mockRefForSubscriptionManager = MockRef();
+    provideDummy<SubscriptionManager>(MockSubscriptionManager(ref: mockRefForSubscriptionManager));
+    
+    // Create a mock ref that returns the dummy settings
+    final mockRefForDummy = MockRef();
+    when(mockRefForDummy.read(settingsProvider)).thenReturn(dummySettings);
+    
+    // Provide a dummy MostroService that uses our properly configured mock ref
+    provideDummy<MostroService>(MostroService(mockRefForDummy));
   });
 
   setUp(() {
     mockNostrService = MockNostrService();
-    mockSessionNotifier = MockSessionNotifier();
     mockRef = MockRef();
+    mockSessionNotifier = MockSessionNotifier();
     mockSubscriptionManager = MockSubscriptionManager(ref: mockRef);
+    mockNostrService = MockNostrService();
     mockServerTradeIndex = MockServerTradeIndex();
     
-    // Reset mocks before each test
-    reset(mockNostrService);
-    reset(mockSessionNotifier);
-    reset(mockRef);
-    
-    // Set up mock behavior
-    when(mockRef.read(mostroServiceProvider)).thenAnswer((_) => mostroService);
-    when(mockRef.read(nostrServiceProvider)).thenReturn(mockNostrService);
-    when(mockRef.read(sessionNotifierProvider.notifier))
-        .thenReturn(mockSessionNotifier);
-    when(mockRef.read(subscriptionManagerProvider.notifier))
-        .thenReturn(mockSubscriptionManager);
-        
-    // Initialize MostroService with mocks
-    mostroService = MostroService(mockRef);
-    
-    // Initialize MostroService
-    mostroService = MostroService(mockRef);
+    // Setup key derivator
     keyDerivator = KeyDerivator("m/44'/1237'/38383'/0");
     
-    // Reset mock server trade index for each test
-    mockServerTradeIndex.userTradeIndices.clear();
+    // Setup mock session notifier
+    when(mockSessionNotifier.sessions).thenReturn(<Session>[]);
+    
+    // Setup mock ref with Settings
+    final settings = Settings(
+      relays: ['wss://relay.damus.io'],
+      fullPrivacyMode: false,
+      mostroPublicKey: 'npub1mostro',
+      defaultFiatCode: 'USD',
+    );
+    when(mockRef.read(settingsProvider)).thenReturn(settings);
+    when(mockRef.read(sessionNotifierProvider.notifier)).thenReturn(mockSessionNotifier);
+    when(mockRef.read(nostrServiceProvider)).thenReturn(mockNostrService);
+    when(mockRef.read(subscriptionManagerProvider)).thenReturn(mockSubscriptionManager);
+    // Mock server trade index is used in the service
+    // but we don't need to mock the provider
+    
+    // Create the service under test
+    mostroService = MostroService(mockRef);
   });
   
   tearDown(() {

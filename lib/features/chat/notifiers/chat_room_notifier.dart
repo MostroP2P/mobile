@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/models/chat_room.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
-import 'package:mostro_mobile/services/lifecycle_manager.dart';
+import 'package:mostro_mobile/features/subscriptions/subscription_manager_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
@@ -13,14 +13,15 @@ import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 class ChatRoomNotifier extends StateNotifier<ChatRoom> {
   /// Reload the chat room by re-subscribing to events.
   void reload() {
-    subscription.cancel();
+    // Cancel the current subscription if it exists
+    _subscription?.cancel();
     subscribe();
   }
 
   final _logger = Logger();
   final String orderId;
   final Ref ref;
-  late StreamSubscription<NostrEvent> subscription;
+  StreamSubscription<NostrEvent>? _subscription;
 
   ChatRoomNotifier(
     super.state,
@@ -38,42 +39,46 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
       _logger.e('Shared key is null');
       return;
     }
-    final filter = NostrFilter(
-      kinds: [1059],
-      p: [session.sharedKey!.public],
-    );
-    final request = NostrRequest(
-      filters: [filter],
-    );
 
-    ref.read(lifecycleManagerProvider).addSubscription(filter);
+    // Use SubscriptionManager to create a subscription for this specific chat room
+    final subscriptionManager = ref.read(subscriptionManagerProvider);
 
-    subscription =
-        ref.read(nostrServiceProvider).subscribeToEvents(request).listen(
-      (event) async {
-        try {
-          final eventStore = ref.read(eventStorageProvider);
+    subscriptionManager.chat.listen(_onChatEvent);
+  }
 
-          await eventStore.putItem(
-            event.id!,
-            event,
-          );
+  void _onChatEvent(NostrEvent event) async {
+    try {
+      final session = ref.read(sessionProvider(orderId));
+      if (session == null || session.sharedKey == null) {
+        _logger.e('Session or shared key is null when processing chat event');
+        return;
+      }
 
-          final chat = await event.mostroUnWrap(session.sharedKey!);
-          // Deduplicate by message ID and always sort by createdAt
-          final allMessages = [
-            ...state.messages,
-            chat,
-          ];
-          // Use a map to deduplicate by event id
-          final deduped = {for (var m in allMessages) m.id: m}.values.toList();
-          deduped.sort((a, b) => a.createdAt!.compareTo(b.createdAt!));
-          state = state.copy(messages: deduped);
-        } catch (e) {
-          _logger.e(e);
-        }
-      },
-    );
+      if (session.sharedKey?.public != event.recipient) {
+        return;
+      }
+
+      final eventStore = ref.read(eventStorageProvider);
+
+      await eventStore.putItem(
+        event.id!,
+        event,
+      );
+
+      final chat = await event.mostroUnWrap(session.sharedKey!);
+      // Deduplicate by message ID and always sort by createdAt
+      final allMessages = [
+        ...state.messages,
+        chat,
+      ];
+      // Use a map to deduplicate by event id
+      final deduped = {for (var m in allMessages) m.id: m}.values.toList();
+      deduped.sort((a, b) => a.createdAt!.compareTo(b.createdAt!));
+      state = state.copy(messages: deduped);
+    } catch (e, stackTrace) {
+      _logger.e('Error processing chat event',
+          error: e, stackTrace: stackTrace);
+    }
   }
 
   Future<void> sendMessage(String text) async {
@@ -98,7 +103,8 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
 
   @override
   void dispose() {
-    subscription.cancel();
+    _subscription?.cancel();
+    _logger.i('Disposed chat room notifier for orderId: $orderId');
     super.dispose();
   }
 }
