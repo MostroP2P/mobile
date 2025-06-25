@@ -7,7 +7,7 @@ import 'package:mostro_mobile/features/trades/providers/trades_provider.dart';
 import 'package:mostro_mobile/features/trades/widgets/trades_list.dart';
 import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_app_bar.dart';
-import 'package:mostro_mobile/shared/widgets/mostro_app_drawer.dart';
+import 'package:mostro_mobile/shared/widgets/custom_drawer_overlay.dart';
 
 class TradesScreen extends ConsumerWidget {
   const TradesScreen({super.key});
@@ -20,6 +20,7 @@ class TradesScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppTheme.backgroundDark,
       appBar: const MostroAppBar(),
+
       drawer: const MostroAppDrawer(),
       body: RefreshIndicator(
         onRefresh: () async {
@@ -110,6 +111,7 @@ class TradesScreen extends ConsumerWidget {
             ),
             const BottomNavBar(),
           ],
+
         ),
       ),
     );
