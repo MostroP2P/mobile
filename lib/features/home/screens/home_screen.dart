@@ -24,71 +24,89 @@ class HomeScreen extends ConsumerWidget {
       body: CustomDrawerOverlay(
         child: Stack(
           children: [
-            RefreshIndicator(
-              onRefresh: () async {
-                return await ref.refresh(filteredOrdersProvider);
-              },
-              child: GestureDetector(
-                onHorizontalDragEnd: (details) {
-                  // Si el gesto es hacia la izquierda (velocidad negativa), cambiamos a SELL BTC
-                  if (details.primaryVelocity != null && details.primaryVelocity! < 0) {
-                    ref.read(homeOrderTypeProvider.notifier).state = OrderType.buy;
-                  }
-                  // Si el gesto es hacia la derecha (velocidad positiva), cambiamos a BUY BTC
-                  else if (details.primaryVelocity != null && details.primaryVelocity! > 0) {
-                    ref.read(homeOrderTypeProvider.notifier).state = OrderType.sell;
-                  }
-                },
-                child: Column(
-                  children: [
-                    _buildTabs(ref),
-                    _buildFilterButton(context, ref),
-                    Expanded(
-                      child: Container(
-                        color: const Color(0xFF1D212C),
-                        child: filteredOrders.isEmpty
-                            ? const Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.search_off,
-                                      color: Colors.white30,
-                                      size: 48,
-                                    ),
-                                    SizedBox(height: 16),
-                                    Text(
-                                      'No orders available',
-                                      style: TextStyle(
-                                        color: Colors.white60,
-                                        fontSize: 16,
+            // Main content column with bottom navigation
+            Column(
+              children: [
+                // Content area that expands to fill available space
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: () async {
+                      return await ref.refresh(filteredOrdersProvider);
+                    },
+                    child: GestureDetector(
+                      onHorizontalDragEnd: (details) {
+                        // Si el gesto es hacia la izquierda (velocidad negativa), cambiamos a SELL BTC
+                        if (details.primaryVelocity != null &&
+                            details.primaryVelocity! < 0) {
+                          ref.read(homeOrderTypeProvider.notifier).state =
+                              OrderType.buy;
+                        }
+                        // Si el gesto es hacia la derecha (velocidad positiva), cambiamos a BUY BTC
+                        else if (details.primaryVelocity != null &&
+                            details.primaryVelocity! > 0) {
+                          ref.read(homeOrderTypeProvider.notifier).state =
+                              OrderType.sell;
+                        }
+                      },
+                      child: Column(
+                        children: [
+                          _buildTabs(ref),
+                          _buildFilterButton(context, ref),
+                          Expanded(
+                            child: Container(
+                              color: const Color(0xFF1D212C),
+                              child: filteredOrders.isEmpty
+                                  ? const Center(
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.search_off,
+                                            color: Colors.white30,
+                                            size: 48,
+                                          ),
+                                          SizedBox(height: 16),
+                                          Text(
+                                            'No orders available',
+                                            style: TextStyle(
+                                              color: Colors.white60,
+                                              fontSize: 16,
+                                            ),
+                                          ),
+                                          Text(
+                                            'Try changing filter settings or check back later',
+                                            style: TextStyle(
+                                              color: Colors.white38,
+                                              fontSize: 14,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ],
                                       ),
+                                    )
+                                  : ListView.builder(
+                                      itemCount: filteredOrders.length,
+                                      // Adjusted padding to account for bottom nav bar
+                                      padding: const EdgeInsets.only(
+                                          bottom: 100, top: 6),
+                                      itemBuilder: (context, index) {
+                                        final order = filteredOrders[index];
+                                        return OrderListItem(order: order);
+                                      },
                                     ),
-                                    Text(
-                                      'Try changing filter settings or check back later',
-                                      style: TextStyle(
-                                        color: Colors.white38,
-                                        fontSize: 14,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ],
-                                ),
-                              )
-                            : ListView.builder(
-                                itemCount: filteredOrders.length,
-                                padding: const EdgeInsets.only(bottom: 155, top: 6),
-                                itemBuilder: (context, index) {
-                                  final order = filteredOrders[index];
-                                  return OrderListItem(order: order);
-                                },
-                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
+                  ),
                 ),
-              ),
+                // Bottom navigation bar fixed at the bottom
+                const BottomNavBar(),
+              ],
             ),
+            // Floating action button positioned above bottom nav bar
             Positioned(
               bottom: 80 + MediaQuery.of(context).viewPadding.bottom + 16,
               right: 16,

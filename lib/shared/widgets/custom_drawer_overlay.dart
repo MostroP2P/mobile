@@ -70,7 +70,6 @@ class CustomDrawerOverlay extends ConsumerWidget {
                   padding: EdgeInsets.only(top: statusBarHeight),
                   child: Column(
                     children: [
-                      // Espacio superior para el logo
                       SizedBox(height: 24),
 
                       // Logo header
@@ -86,17 +85,14 @@ class CustomDrawerOverlay extends ConsumerWidget {
                         ),
                       ),
 
-                      // Espacio después del logo
                       SizedBox(height: 24),
 
-                      // Línea divisoria
                       Divider(
                         height: 1,
                         thickness: 1,
                         color: Colors.white.withOpacity(0.1),
                       ),
 
-                      // Espacio después de la línea divisoria
                       SizedBox(height: 16),
 
                       // Menu items

@@ -70,58 +70,55 @@ class BottomNavBar extends ConsumerWidget {
     Color textColor = isActive ? AppTheme.activeColor : Colors.white;
 
     return Expanded(
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => _onItemTapped(context, index),
-          child: SizedBox(
-            height: double.infinity,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const SizedBox(height: 2),
-                SizedBox(
-                  height: 24,
-                  width: 24,
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    alignment: Alignment.center,
-                    children: [
-                      Icon(
-                        icon,
-                        color: iconColor,
-                        size: 24,
-                      ),
-                      if (notificationCount != null && notificationCount > 0)
-                        Positioned(
-                          top: -2,
-                          right: -2,
-                          child: Container(
-                            width: 6,
-                            height: 6,
-                            decoration: const BoxDecoration(
-                              color: Colors.red,
-                              shape: BoxShape.circle,
-                            ),
+      child: GestureDetector(
+        onTap: () => _onItemTapped(context, index),
+        child: SizedBox(
+          height: double.infinity,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const SizedBox(height: 2),
+              SizedBox(
+                height: 24,
+                width: 24,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  alignment: Alignment.center,
+                  children: [
+                    Icon(
+                      icon,
+                      color: iconColor,
+                      size: 24,
+                    ),
+                    if (notificationCount != null && notificationCount > 0)
+                      Positioned(
+                        top: -2,
+                        right: -2,
+                        child: Container(
+                          width: 6,
+                          height: 6,
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
                           ),
                         ),
-                    ],
-                  ),
+                      ),
+                  ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  label,
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                    color: textColor,
-                    height: 1.0,
-                    letterSpacing: -0.2,
-                  ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                  color: textColor,
+                  height: 1.0,
+                  letterSpacing: -0.2,
                 ),
-                const SizedBox(height: 2),
-              ],
-            ),
+              ),
+              const SizedBox(height: 2),
+            ],
           ),
         ),
       ),
