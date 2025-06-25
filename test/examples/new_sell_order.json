@@ -1,0 +1,17 @@
+{
+  "order": {
+    "payload": {
+      "order": {
+        "kind": "sell",
+        "status": "pending",
+        "amount": 0,
+        "fiat_code": "VES",
+        "fiat_amount": 100,
+        "payment_method": "face to face",
+        "premium": 1,
+        "created_at": 1640995200,
+        "expires_at": 1640995200
+      }
+    }
+  }
+}
