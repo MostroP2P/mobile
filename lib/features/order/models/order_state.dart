@@ -233,6 +233,7 @@ class OrderState {
         Action.buyerTookOrder: [
           Action.cancel,
           Action.dispute,
+          Action.sendDm,
         ],
         Action.holdInvoicePaymentAccepted: [
           Action.cancel,
@@ -299,6 +300,7 @@ class OrderState {
           Action.fiatSent,
           Action.cancel,
           Action.dispute,
+          Action.sendDm,
         ],
         Action.holdInvoicePaymentSettled: [
           Action.fiatSent,
@@ -308,6 +310,7 @@ class OrderState {
         Action.buyerTookOrder: [
           Action.cancel,
           Action.dispute,
+          Action.sendDm,
         ],
       },
       Status.fiatSent: {

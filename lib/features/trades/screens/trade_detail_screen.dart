@@ -386,15 +386,11 @@ class TradeDetailScreen extends ConsumerWidget {
           ));
           break;
 
-        case actions.Action.holdInvoicePaymentSettled:
-        case actions.Action.holdInvoicePaymentAccepted:
+        case actions.Action.sendDm:
           widgets.add(_buildContactButton(context));
           break;
 
         case actions.Action.holdInvoicePaymentCanceled:
-          // These are system actions, not user actions, so no button needed
-          break;
-
         case actions.Action.buyerInvoiceAccepted:
         case actions.Action.waitingSellerToPay:
         case actions.Action.waitingBuyerInvoice:
@@ -407,15 +403,11 @@ class TradeDetailScreen extends ConsumerWidget {
         case actions.Action.adminTookDispute:
         case actions.Action.paymentFailed:
         case actions.Action.invoiceUpdated:
-        case actions.Action.sendDm:
         case actions.Action.tradePubkey:
         case actions.Action.cantDo:
         case actions.Action.released:
-          // Not user-facing or not relevant as a button
           break;
-
         default:
-          // Optionally handle unknown or unimplemented actions
           break;
       }
     }
