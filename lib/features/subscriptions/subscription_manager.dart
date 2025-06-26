@@ -12,7 +12,7 @@ import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 /// Manages Nostr subscriptions across different parts of the application.
 ///
 /// This class provides a centralized way to handle subscriptions to Nostr events,
-/// supporting different subscription types (chat, orders, trades) and automatically
+/// supporting different subscription types (chat, orders) and automatically
 /// managing subscriptions based on session changes in the SessionNotifier.
 class SubscriptionManager {
   final Ref ref;
@@ -22,12 +22,10 @@ class SubscriptionManager {
 
   // Controllers for each subscription type to expose streams to consumers
   final _ordersController = StreamController<NostrEvent>.broadcast();
-  final _tradesController = StreamController<NostrEvent>.broadcast();
   final _chatController = StreamController<NostrEvent>.broadcast();
 
   // Public streams that consumers can listen to
   Stream<NostrEvent> get orders => _ordersController.stream;
-  Stream<NostrEvent> get trades => _tradesController.stream;
   Stream<NostrEvent> get chat => _chatController.stream;
 
   SubscriptionManager(this.ref) {
@@ -112,11 +110,6 @@ class SubscriptionManager {
           kinds: [1059],
           p: sessions.map((s) => s.tradeKey.public).toList(),
         );
-      case SubscriptionType.trades:
-        return NostrFilter(
-          kinds: [1059],
-          p: sessions.map((s) => s.tradeKey.public).toList(),
-        );
       case SubscriptionType.chat:
         return NostrFilter(
           kinds: [1059],
@@ -135,9 +128,6 @@ class SubscriptionManager {
       switch (type) {
         case SubscriptionType.orders:
           _ordersController.add(event);
-          break;
-        case SubscriptionType.trades:
-          _tradesController.add(event);
           break;
         case SubscriptionType.chat:
           _chatController.add(event);
@@ -177,13 +167,15 @@ class SubscriptionManager {
       },
     );
 
+    if (_subscriptions.containsKey(type)) {
+      _subscriptions[type]!.cancel();
+    }
+
     _subscriptions[type] = subscription;
 
     switch (type) {
       case SubscriptionType.orders:
         return orders;
-      case SubscriptionType.trades:
-        return trades;
       case SubscriptionType.chat:
         return chat;
     }
@@ -264,7 +256,6 @@ class SubscriptionManager {
     unsubscribeAll();
 
     _ordersController.close();
-    _tradesController.close();
     _chatController.close();
 
     _logger.i('SubscriptionManager disposed');

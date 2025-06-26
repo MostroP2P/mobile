@@ -12,7 +12,7 @@ class Subscription {
     required this.onCancel,
   });
 
-  void cancel() {
+  void cancel(  ) {
     streamSubscription.cancel();
     onCancel();
   }
