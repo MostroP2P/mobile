@@ -73,7 +73,6 @@ class AddOrderNotifier extends AbstractMostroNotifier {
       requestId: requestId,
       role: order.kind == OrderType.buy ? Role.buyer : Role.seller,
     );
-    mostroService.subscribe(session);
     await mostroService.submitOrder(message);
     state = state.updateWith(message);
   }

@@ -42,8 +42,7 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
 
     // Use SubscriptionManager to create a subscription for this specific chat room
     final subscriptionManager = ref.read(subscriptionManagerProvider);
-
-    subscriptionManager.chat.listen(_onChatEvent);
+    _subscription = subscriptionManager.chat.listen(_onChatEvent);
   }
 
   void _onChatEvent(NostrEvent event) async {

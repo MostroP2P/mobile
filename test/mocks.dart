@@ -134,11 +134,7 @@ class MockSubscriptionManager extends SubscriptionManager {
   }
   
   @override
-  bool hasActiveSubscription(SubscriptionType type, {String? id}) {
-    if (id != null) {
-      final subscription = _subscriptions[type];
-      return subscription != null && subscription.request.subscriptionId == id;
-    }
+  bool hasActiveSubscription(SubscriptionType type) {
     return _subscriptions.containsKey(type);
   }
   

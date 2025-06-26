@@ -97,26 +97,7 @@ void main() {
     // Stub SessionNotifier methods
     when(mockSessionNotifier.sessions).thenReturn(<Session>[]);
     
-    mostroService = MostroService(mockRef);
-    keyDerivator = KeyDerivator("m/44'/1237'/38383'/0");
-    mockServerTradeIndex = MockServerTradeIndex();
-    
-    // Setup mock session notifier
-    when(mockSessionNotifier.sessions).thenReturn(<Session>[]);
-    
-    // Setup mock ref with Settings
-    final settings = Settings(
-      relays: ['wss://relay.damus.io'],
-      fullPrivacyMode: false,
-      mostroPublicKey: '9d9d0455a96871f2dc4289b8312429db2e925f167b37c77bf7b28014be235980',
-      defaultFiatCode: 'USD',
-    );
-    when(mockRef.read(settingsProvider)).thenReturn(settings);
     when(mockRef.read(sessionNotifierProvider.notifier)).thenReturn(mockSessionNotifier);
-    when(mockRef.read(nostrServiceProvider)).thenReturn(mockNostrService);
-    when(mockRef.read(subscriptionManagerProvider)).thenReturn(mockSubscriptionManager);
-    // Mock server trade index is used in the service
-    // but we don't need to mock the provider
     
     // Create the service under test
     mostroService = MostroService(mockRef);

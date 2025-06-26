@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:collection/collection.dart';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
@@ -37,35 +38,6 @@ class MostroService {
     _logger.i('MostroService disposed');
   }
 
-  /// No need to manually subscribe to sessions anymore.
-  /// SubscriptionManager now automatically handles subscriptions based on SessionNotifier changes.
-  ///
-  /// This method is kept for backward compatibility but doesn't perform manual subscription.
-  ///
-  /// [session] The session that would have been subscribed to
-  void subscribe(Session session) {
-    _logger.i('Manual subscription not needed for: ${session.tradeKey.public}');
-    // No action needed - SubscriptionManager handles subscriptions automatically
-  }
-
-  /// No need to manually unsubscribe from sessions anymore.
-  /// SubscriptionManager now automatically handles subscriptions based on SessionNotifier changes.
-  ///
-  /// This method is kept for backward compatibility but doesn't perform manual unsubscription.
-  ///
-  /// [session] The session that would have been unsubscribed from
-  void unsubscribe(Session session) {
-    _logger
-        .i('Manual unsubscription not needed for: ${session.tradeKey.public}');
-    // No action needed - SubscriptionManager handles subscriptions automatically
-  }
-
-  // No need to manually clear subscriptions anymore.
-  // SubscriptionManager now handles this automatically when needed.
-
-  // No need to manually update subscriptions anymore.
-  // SubscriptionManager now handles this automatically based on SessionNotifier changes.
-
   Future<void> _onData(NostrEvent event) async {
     final eventStore = ref.read(eventStorageProvider);
 
@@ -76,13 +48,10 @@ class MostroService {
     );
 
     final sessions = ref.read(sessionNotifierProvider);
-    Session? matchingSession;
-
-    try {
-      matchingSession = sessions.firstWhere(
+    final matchingSession = sessions.firstWhereOrNull(
         (s) => s.tradeKey.public == event.recipient,
       );
-    } catch (e) {
+    if (matchingSession == null) {
       _logger.w('No matching session found for recipient: ${event.recipient}');
       return;
     }
