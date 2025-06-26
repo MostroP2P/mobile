@@ -3,17 +3,23 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i5;
+import 'dart:async' as _i3;
 
-import 'package:dart_nostr/nostr/model/export.dart' as _i8;
+import 'package:dart_nostr/nostr/core/key_pairs.dart' as _i6;
+import 'package:dart_nostr/nostr/model/export.dart' as _i10;
 import 'package:flutter_riverpod/flutter_riverpod.dart' as _i2;
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:mostro_mobile/data/models.dart' as _i4;
+import 'package:mockito/src/dummies.dart' as _i12;
+import 'package:mostro_mobile/data/models.dart' as _i5;
+import 'package:mostro_mobile/data/repositories/mostro_storage.dart' as _i16;
 import 'package:mostro_mobile/data/repositories/open_orders_repository.dart'
-    as _i7;
-import 'package:mostro_mobile/features/settings/settings.dart' as _i6;
-import 'package:mostro_mobile/services/mostro_service.dart' as _i3;
-import 'package:shared_preferences/src/shared_preferences_async.dart' as _i9;
+    as _i9;
+import 'package:mostro_mobile/data/repositories/session_storage.dart' as _i14;
+import 'package:mostro_mobile/features/key_manager/key_manager.dart' as _i15;
+import 'package:mostro_mobile/features/settings/settings.dart' as _i8;
+import 'package:mostro_mobile/services/mostro_service.dart' as _i7;
+import 'package:sembast/sembast.dart' as _i4;
+import 'package:shared_preferences/src/shared_preferences_async.dart' as _i11;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -40,10 +46,82 @@ class _FakeRef_0<State extends Object?> extends _i1.SmartFake
         );
 }
 
+class _FakeFuture_1<T1> extends _i1.SmartFake implements _i3.Future<T1> {
+  _FakeFuture_1(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
+}
+
+class _FakeDatabase_2 extends _i1.SmartFake implements _i4.Database {
+  _FakeDatabase_2(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
+}
+
+class _FakeStoreRef_3<K extends Object?, V extends Object?>
+    extends _i1.SmartFake implements _i4.StoreRef<K, V> {
+  _FakeStoreRef_3(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
+}
+
+class _FakeSession_4 extends _i1.SmartFake implements _i5.Session {
+  _FakeSession_4(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
+}
+
+class _FakeFilter_5 extends _i1.SmartFake implements _i4.Filter {
+  _FakeFilter_5(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
+}
+
+class _FakeNostrKeyPairs_6 extends _i1.SmartFake implements _i6.NostrKeyPairs {
+  _FakeNostrKeyPairs_6(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
+}
+
+class _FakeMostroMessage_7<T extends _i5.Payload> extends _i1.SmartFake
+    implements _i5.MostroMessage<T> {
+  _FakeMostroMessage_7(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
+}
+
 /// A class which mocks [MostroService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockMostroService extends _i1.Mock implements _i3.MostroService {
+class MockMostroService extends _i1.Mock implements _i7.MostroService {
   MockMostroService() {
     _i1.throwOnMissingStub(this);
   }
@@ -67,7 +145,7 @@ class MockMostroService extends _i1.Mock implements _i3.MostroService {
       );
 
   @override
-  void subscribe(_i4.Session? keyPair) => super.noSuchMethod(
+  void subscribe(_i5.Session? session) => super.noSuchMethod(
         Invocation.method(
           #subscribe,
           [keyPair],
@@ -76,25 +154,25 @@ class MockMostroService extends _i1.Mock implements _i3.MostroService {
       );
 
   @override
-  _i4.Session? getSessionByOrderId(String? orderId) =>
+  _i5.Session? getSessionByOrderId(String? orderId) =>
       (super.noSuchMethod(Invocation.method(
         #getSessionByOrderId,
         [orderId],
-      )) as _i4.Session?);
+      )) as _i5.Session?);
 
   @override
-  _i5.Future<void> submitOrder(_i4.MostroMessage<_i4.Payload>? order) =>
+  _i3.Future<void> submitOrder(_i5.MostroMessage<_i5.Payload>? order) =>
       (super.noSuchMethod(
         Invocation.method(
           #submitOrder,
           [order],
         ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
 
   @override
-  _i5.Future<void> takeBuyOrder(
+  _i3.Future<void> takeBuyOrder(
     String? orderId,
     int? amount,
   ) =>
@@ -106,12 +184,12 @@ class MockMostroService extends _i1.Mock implements _i3.MostroService {
             amount,
           ],
         ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
 
   @override
-  _i5.Future<void> takeSellOrder(
+  _i3.Future<void> takeSellOrder(
     String? orderId,
     int? amount,
     String? lnAddress,
@@ -125,12 +203,12 @@ class MockMostroService extends _i1.Mock implements _i3.MostroService {
             lnAddress,
           ],
         ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
 
   @override
-  _i5.Future<void> sendInvoice(
+  _i3.Future<void> sendInvoice(
     String? orderId,
     String? invoice,
     int? amount,
@@ -144,52 +222,52 @@ class MockMostroService extends _i1.Mock implements _i3.MostroService {
             amount,
           ],
         ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
 
   @override
-  _i5.Future<void> cancelOrder(String? orderId) => (super.noSuchMethod(
+  _i3.Future<void> cancelOrder(String? orderId) => (super.noSuchMethod(
         Invocation.method(
           #cancelOrder,
           [orderId],
         ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
 
   @override
-  _i5.Future<void> sendFiatSent(String? orderId) => (super.noSuchMethod(
+  _i3.Future<void> sendFiatSent(String? orderId) => (super.noSuchMethod(
         Invocation.method(
           #sendFiatSent,
           [orderId],
         ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
 
   @override
-  _i5.Future<void> releaseOrder(String? orderId) => (super.noSuchMethod(
+  _i3.Future<void> releaseOrder(String? orderId) => (super.noSuchMethod(
         Invocation.method(
           #releaseOrder,
           [orderId],
         ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
 
   @override
-  _i5.Future<void> disputeOrder(String? orderId) => (super.noSuchMethod(
+  _i3.Future<void> disputeOrder(String? orderId) => (super.noSuchMethod(
         Invocation.method(
           #disputeOrder,
           [orderId],
         ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
 
   @override
-  _i5.Future<void> submitRating(
+  _i3.Future<void> submitRating(
     String? orderId,
     int? rating,
   ) =>
@@ -201,23 +279,23 @@ class MockMostroService extends _i1.Mock implements _i3.MostroService {
             rating,
           ],
         ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
 
   @override
-  _i5.Future<void> publishOrder(_i4.MostroMessage<_i4.Payload>? order) =>
+  _i3.Future<void> publishOrder(_i5.MostroMessage<_i5.Payload>? order) =>
       (super.noSuchMethod(
         Invocation.method(
           #publishOrder,
           [order],
         ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
 
   @override
-  void updateSettings(_i6.Settings? settings) => super.noSuchMethod(
+  void updateSettings(_i8.Settings? settings) => super.noSuchMethod(
         Invocation.method(
           #updateSettings,
           [settings],
@@ -230,16 +308,16 @@ class MockMostroService extends _i1.Mock implements _i3.MostroService {
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockOpenOrdersRepository extends _i1.Mock
-    implements _i7.OpenOrdersRepository {
+    implements _i9.OpenOrdersRepository {
   MockOpenOrdersRepository() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i5.Stream<List<_i8.NostrEvent>> get eventsStream => (super.noSuchMethod(
+  _i3.Stream<List<_i10.NostrEvent>> get eventsStream => (super.noSuchMethod(
         Invocation.getter(#eventsStream),
-        returnValue: _i5.Stream<List<_i8.NostrEvent>>.empty(),
-      ) as _i5.Stream<List<_i8.NostrEvent>>);
+        returnValue: _i3.Stream<List<_i10.NostrEvent>>.empty(),
+      ) as _i3.Stream<List<_i10.NostrEvent>>);
 
   @override
   void dispose() => super.noSuchMethod(
@@ -251,56 +329,57 @@ class MockOpenOrdersRepository extends _i1.Mock
       );
 
   @override
-  _i5.Future<_i8.NostrEvent?> getOrderById(String? orderId) =>
+  _i3.Future<_i10.NostrEvent?> getOrderById(String? orderId) =>
       (super.noSuchMethod(
         Invocation.method(
           #getOrderById,
           [orderId],
         ),
-        returnValue: _i5.Future<_i8.NostrEvent?>.value(),
-      ) as _i5.Future<_i8.NostrEvent?>);
+        returnValue: _i3.Future<_i10.NostrEvent?>.value(),
+      ) as _i3.Future<_i10.NostrEvent?>);
 
   @override
-  _i5.Future<void> addOrder(_i8.NostrEvent? order) => (super.noSuchMethod(
+  _i3.Future<void> addOrder(_i10.NostrEvent? order) => (super.noSuchMethod(
         Invocation.method(
           #addOrder,
           [order],
         ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
 
   @override
-  _i5.Future<void> deleteOrder(String? orderId) => (super.noSuchMethod(
+  _i3.Future<void> deleteOrder(String? orderId) => (super.noSuchMethod(
         Invocation.method(
           #deleteOrder,
           [orderId],
         ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
 
   @override
-  _i5.Future<List<_i8.NostrEvent>> getAllOrders() => (super.noSuchMethod(
+  _i3.Future<List<_i10.NostrEvent>> getAllOrders() => (super.noSuchMethod(
         Invocation.method(
           #getAllOrders,
           [],
         ),
-        returnValue: _i5.Future<List<_i8.NostrEvent>>.value(<_i8.NostrEvent>[]),
-      ) as _i5.Future<List<_i8.NostrEvent>>);
+        returnValue:
+            _i3.Future<List<_i10.NostrEvent>>.value(<_i10.NostrEvent>[]),
+      ) as _i3.Future<List<_i10.NostrEvent>>);
 
   @override
-  _i5.Future<void> updateOrder(_i8.NostrEvent? order) => (super.noSuchMethod(
+  _i3.Future<void> updateOrder(_i10.NostrEvent? order) => (super.noSuchMethod(
         Invocation.method(
           #updateOrder,
           [order],
         ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
 
   @override
-  void updateSettings(_i6.Settings? settings) => super.noSuchMethod(
+  void updateSettings(_i8.Settings? settings) => super.noSuchMethod(
         Invocation.method(
           #updateSettings,
           [settings],
@@ -321,26 +400,25 @@ class MockOpenOrdersRepository extends _i1.Mock
 /// A class which mocks [SharedPreferencesAsync].
 ///
 /// See the documentation for Mockito's code generation for more information.
-// ignore: must_be_immutable
 class MockSharedPreferencesAsync extends _i1.Mock
-    implements _i9.SharedPreferencesAsync {
+    implements _i11.SharedPreferencesAsync {
   MockSharedPreferencesAsync() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i5.Future<Set<String>> getKeys({Set<String>? allowList}) =>
+  _i3.Future<Set<String>> getKeys({Set<String>? allowList}) =>
       (super.noSuchMethod(
         Invocation.method(
           #getKeys,
           [],
           {#allowList: allowList},
         ),
-        returnValue: _i5.Future<Set<String>>.value(<String>{}),
-      ) as _i5.Future<Set<String>>);
+        returnValue: _i3.Future<Set<String>>.value(<String>{}),
+      ) as _i3.Future<Set<String>>);
 
   @override
-  _i5.Future<Map<String, Object?>> getAll({Set<String>? allowList}) =>
+  _i3.Future<Map<String, Object?>> getAll({Set<String>? allowList}) =>
       (super.noSuchMethod(
         Invocation.method(
           #getAll,
@@ -348,65 +426,65 @@ class MockSharedPreferencesAsync extends _i1.Mock
           {#allowList: allowList},
         ),
         returnValue:
-            _i5.Future<Map<String, Object?>>.value(<String, Object?>{}),
-      ) as _i5.Future<Map<String, Object?>>);
+            _i3.Future<Map<String, Object?>>.value(<String, Object?>{}),
+      ) as _i3.Future<Map<String, Object?>>);
 
   @override
-  _i5.Future<bool?> getBool(String? key) => (super.noSuchMethod(
+  _i3.Future<bool?> getBool(String? key) => (super.noSuchMethod(
         Invocation.method(
           #getBool,
           [key],
         ),
-        returnValue: _i5.Future<bool?>.value(),
-      ) as _i5.Future<bool?>);
+        returnValue: _i3.Future<bool?>.value(),
+      ) as _i3.Future<bool?>);
 
   @override
-  _i5.Future<int?> getInt(String? key) => (super.noSuchMethod(
+  _i3.Future<int?> getInt(String? key) => (super.noSuchMethod(
         Invocation.method(
           #getInt,
           [key],
         ),
-        returnValue: _i5.Future<int?>.value(),
-      ) as _i5.Future<int?>);
+        returnValue: _i3.Future<int?>.value(),
+      ) as _i3.Future<int?>);
 
   @override
-  _i5.Future<double?> getDouble(String? key) => (super.noSuchMethod(
+  _i3.Future<double?> getDouble(String? key) => (super.noSuchMethod(
         Invocation.method(
           #getDouble,
           [key],
         ),
-        returnValue: _i5.Future<double?>.value(),
-      ) as _i5.Future<double?>);
+        returnValue: _i3.Future<double?>.value(),
+      ) as _i3.Future<double?>);
 
   @override
-  _i5.Future<String?> getString(String? key) => (super.noSuchMethod(
+  _i3.Future<String?> getString(String? key) => (super.noSuchMethod(
         Invocation.method(
           #getString,
           [key],
         ),
-        returnValue: _i5.Future<String?>.value(),
-      ) as _i5.Future<String?>);
+        returnValue: _i3.Future<String?>.value(),
+      ) as _i3.Future<String?>);
 
   @override
-  _i5.Future<List<String>?> getStringList(String? key) => (super.noSuchMethod(
+  _i3.Future<List<String>?> getStringList(String? key) => (super.noSuchMethod(
         Invocation.method(
           #getStringList,
           [key],
         ),
-        returnValue: _i5.Future<List<String>?>.value(),
-      ) as _i5.Future<List<String>?>);
+        returnValue: _i3.Future<List<String>?>.value(),
+      ) as _i3.Future<List<String>?>);
 
   @override
-  _i5.Future<bool> containsKey(String? key) => (super.noSuchMethod(
+  _i3.Future<bool> containsKey(String? key) => (super.noSuchMethod(
         Invocation.method(
           #containsKey,
           [key],
         ),
-        returnValue: _i5.Future<bool>.value(false),
-      ) as _i5.Future<bool>);
+        returnValue: _i3.Future<bool>.value(false),
+      ) as _i3.Future<bool>);
 
   @override
-  _i5.Future<void> setBool(
+  _i3.Future<void> setBool(
     String? key,
     bool? value,
   ) =>
@@ -418,12 +496,12 @@ class MockSharedPreferencesAsync extends _i1.Mock
             value,
           ],
         ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
 
   @override
-  _i5.Future<void> setInt(
+  _i3.Future<void> setInt(
     String? key,
     int? value,
   ) =>
@@ -435,12 +513,12 @@ class MockSharedPreferencesAsync extends _i1.Mock
             value,
           ],
         ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
 
   @override
-  _i5.Future<void> setDouble(
+  _i3.Future<void> setDouble(
     String? key,
     double? value,
   ) =>
@@ -452,12 +530,12 @@ class MockSharedPreferencesAsync extends _i1.Mock
             value,
           ],
         ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
 
   @override
-  _i5.Future<void> setString(
+  _i3.Future<void> setString(
     String? key,
     String? value,
   ) =>
@@ -469,12 +547,12 @@ class MockSharedPreferencesAsync extends _i1.Mock
             value,
           ],
         ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
 
   @override
-  _i5.Future<void> setStringList(
+  _i3.Future<void> setStringList(
     String? key,
     List<String>? value,
   ) =>
@@ -486,28 +564,873 @@ class MockSharedPreferencesAsync extends _i1.Mock
             value,
           ],
         ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
 
   @override
-  _i5.Future<void> remove(String? key) => (super.noSuchMethod(
+  _i3.Future<void> remove(String? key) => (super.noSuchMethod(
         Invocation.method(
           #remove,
           [key],
         ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
 
   @override
-  _i5.Future<void> clear({Set<String>? allowList}) => (super.noSuchMethod(
+  _i3.Future<void> clear({Set<String>? allowList}) => (super.noSuchMethod(
         Invocation.method(
           #clear,
           [],
           {#allowList: allowList},
         ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
+}
+
+/// A class which mocks [Database].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockDatabase extends _i1.Mock implements _i4.Database {
+  MockDatabase() {
+    _i1.throwOnMissingStub(this);
+  }
+
+  @override
+  int get version => (super.noSuchMethod(
+        Invocation.getter(#version),
+        returnValue: 0,
+      ) as int);
+
+  @override
+  String get path => (super.noSuchMethod(
+        Invocation.getter(#path),
+        returnValue: _i12.dummyValue<String>(
+          this,
+          Invocation.getter(#path),
+        ),
+      ) as String);
+
+  @override
+  _i3.Future<T> transaction<T>(
+          _i3.FutureOr<T> Function(_i4.Transaction)? action) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #transaction,
+          [action],
+        ),
+        returnValue: _i12.ifNotNull(
+              _i12.dummyValueOrNull<T>(
+                this,
+                Invocation.method(
+                  #transaction,
+                  [action],
+                ),
+              ),
+              (T v) => _i3.Future<T>.value(v),
+            ) ??
+            _FakeFuture_1<T>(
+              this,
+              Invocation.method(
+                #transaction,
+                [action],
+              ),
+            ),
+      ) as _i3.Future<T>);
+
+  @override
+  _i3.Future<dynamic> close() => (super.noSuchMethod(
+        Invocation.method(
+          #close,
+          [],
+        ),
+        returnValue: _i3.Future<dynamic>.value(),
+      ) as _i3.Future<dynamic>);
+}
+
+/// A class which mocks [SessionStorage].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockSessionStorage extends _i1.Mock implements _i14.SessionStorage {
+  MockSessionStorage() {
+    _i1.throwOnMissingStub(this);
+  }
+
+  @override
+  _i4.Database get db => (super.noSuchMethod(
+        Invocation.getter(#db),
+        returnValue: _FakeDatabase_2(
+          this,
+          Invocation.getter(#db),
+        ),
+      ) as _i4.Database);
+
+  @override
+  _i4.StoreRef<String, Map<String, dynamic>> get store => (super.noSuchMethod(
+        Invocation.getter(#store),
+        returnValue: _FakeStoreRef_3<String, Map<String, dynamic>>(
+          this,
+          Invocation.getter(#store),
+        ),
+      ) as _i4.StoreRef<String, Map<String, dynamic>>);
+
+  @override
+  Map<String, dynamic> toDbMap(_i5.Session? session) => (super.noSuchMethod(
+        Invocation.method(
+          #toDbMap,
+          [session],
+        ),
+        returnValue: <String, dynamic>{},
+      ) as Map<String, dynamic>);
+
+  @override
+  _i5.Session fromDbMap(
+    String? key,
+    Map<String, dynamic>? jsonMap,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #fromDbMap,
+          [
+            key,
+            jsonMap,
+          ],
+        ),
+        returnValue: _FakeSession_4(
+          this,
+          Invocation.method(
+            #fromDbMap,
+            [
+              key,
+              jsonMap,
+            ],
+          ),
+        ),
+      ) as _i5.Session);
+
+  @override
+  _i3.Future<void> putSession(_i5.Session? session) => (super.noSuchMethod(
+        Invocation.method(
+          #putSession,
+          [session],
+        ),
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
+
+  @override
+  _i3.Future<_i5.Session?> getSession(String? sessionId) => (super.noSuchMethod(
+        Invocation.method(
+          #getSession,
+          [sessionId],
+        ),
+        returnValue: _i3.Future<_i5.Session?>.value(),
+      ) as _i3.Future<_i5.Session?>);
+
+  @override
+  _i3.Future<List<_i5.Session>> getAllSessions() => (super.noSuchMethod(
+        Invocation.method(
+          #getAllSessions,
+          [],
+        ),
+        returnValue: _i3.Future<List<_i5.Session>>.value(<_i5.Session>[]),
+      ) as _i3.Future<List<_i5.Session>>);
+
+  @override
+  _i3.Future<void> deleteSession(String? sessionId) => (super.noSuchMethod(
+        Invocation.method(
+          #deleteSession,
+          [sessionId],
+        ),
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
+
+  @override
+  _i3.Stream<_i5.Session?> watchSession(String? sessionId) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #watchSession,
+          [sessionId],
+        ),
+        returnValue: _i3.Stream<_i5.Session?>.empty(),
+      ) as _i3.Stream<_i5.Session?>);
+
+  @override
+  _i3.Stream<List<_i5.Session>> watchAllSessions() => (super.noSuchMethod(
+        Invocation.method(
+          #watchAllSessions,
+          [],
+        ),
+        returnValue: _i3.Stream<List<_i5.Session>>.empty(),
+      ) as _i3.Stream<List<_i5.Session>>);
+
+  @override
+  _i3.Future<void> putItem(
+    String? id,
+    _i5.Session? item,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #putItem,
+          [
+            id,
+            item,
+          ],
+        ),
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
+
+  @override
+  _i3.Future<_i5.Session?> getItem(String? id) => (super.noSuchMethod(
+        Invocation.method(
+          #getItem,
+          [id],
+        ),
+        returnValue: _i3.Future<_i5.Session?>.value(),
+      ) as _i3.Future<_i5.Session?>);
+
+  @override
+  _i3.Future<bool> hasItem(String? id) => (super.noSuchMethod(
+        Invocation.method(
+          #hasItem,
+          [id],
+        ),
+        returnValue: _i3.Future<bool>.value(false),
+      ) as _i3.Future<bool>);
+
+  @override
+  _i3.Future<void> deleteItem(String? id) => (super.noSuchMethod(
+        Invocation.method(
+          #deleteItem,
+          [id],
+        ),
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
+
+  @override
+  _i3.Future<void> deleteAll() => (super.noSuchMethod(
+        Invocation.method(
+          #deleteAll,
+          [],
+        ),
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
+
+  @override
+  _i3.Future<int> deleteWhere(_i4.Filter? filter) => (super.noSuchMethod(
+        Invocation.method(
+          #deleteWhere,
+          [filter],
+        ),
+        returnValue: _i3.Future<int>.value(0),
+      ) as _i3.Future<int>);
+
+  @override
+  _i3.Future<List<_i5.Session>> find({
+    _i4.Filter? filter,
+    List<_i4.SortOrder<Object?>>? sort,
+    int? limit,
+    int? offset,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #find,
+          [],
+          {
+            #filter: filter,
+            #sort: sort,
+            #limit: limit,
+            #offset: offset,
+          },
+        ),
+        returnValue: _i3.Future<List<_i5.Session>>.value(<_i5.Session>[]),
+      ) as _i3.Future<List<_i5.Session>>);
+
+  @override
+  _i3.Future<List<_i5.Session>> getAll() => (super.noSuchMethod(
+        Invocation.method(
+          #getAll,
+          [],
+        ),
+        returnValue: _i3.Future<List<_i5.Session>>.value(<_i5.Session>[]),
+      ) as _i3.Future<List<_i5.Session>>);
+
+  @override
+  _i3.Stream<List<_i5.Session>> watch({
+    _i4.Filter? filter,
+    List<_i4.SortOrder<Object?>>? sort,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #watch,
+          [],
+          {
+            #filter: filter,
+            #sort: sort,
+          },
+        ),
+        returnValue: _i3.Stream<List<_i5.Session>>.empty(),
+      ) as _i3.Stream<List<_i5.Session>>);
+
+  @override
+  _i3.Stream<_i5.Session?> watchById(String? id) => (super.noSuchMethod(
+        Invocation.method(
+          #watchById,
+          [id],
+        ),
+        returnValue: _i3.Stream<_i5.Session?>.empty(),
+      ) as _i3.Stream<_i5.Session?>);
+
+  @override
+  _i4.Filter eq(
+    String? field,
+    Object? value,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #eq,
+          [
+            field,
+            value,
+          ],
+        ),
+        returnValue: _FakeFilter_5(
+          this,
+          Invocation.method(
+            #eq,
+            [
+              field,
+              value,
+            ],
+          ),
+        ),
+      ) as _i4.Filter);
+}
+
+/// A class which mocks [KeyManager].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockKeyManager extends _i1.Mock implements _i15.KeyManager {
+  MockKeyManager() {
+    _i1.throwOnMissingStub(this);
+  }
+
+  @override
+  set masterKeyPair(_i6.NostrKeyPairs? _masterKeyPair) => super.noSuchMethod(
+        Invocation.setter(
+          #masterKeyPair,
+          _masterKeyPair,
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  set tradeKeyIndex(int? _tradeKeyIndex) => super.noSuchMethod(
+        Invocation.setter(
+          #tradeKeyIndex,
+          _tradeKeyIndex,
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  _i3.Future<void> init() => (super.noSuchMethod(
+        Invocation.method(
+          #init,
+          [],
+        ),
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
+
+  @override
+  _i3.Future<bool> hasMasterKey() => (super.noSuchMethod(
+        Invocation.method(
+          #hasMasterKey,
+          [],
+        ),
+        returnValue: _i3.Future<bool>.value(false),
+      ) as _i3.Future<bool>);
+
+  @override
+  _i3.Future<void> generateAndStoreMasterKey() => (super.noSuchMethod(
+        Invocation.method(
+          #generateAndStoreMasterKey,
+          [],
+        ),
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
+
+  @override
+  _i3.Future<void> generateAndStoreMasterKeyFromMnemonic(String? mnemonic) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #generateAndStoreMasterKeyFromMnemonic,
+          [mnemonic],
+        ),
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
+
+  @override
+  _i3.Future<void> importMnemonic(String? mnemonic) => (super.noSuchMethod(
+        Invocation.method(
+          #importMnemonic,
+          [mnemonic],
+        ),
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
+
+  @override
+  _i3.Future<String?> getMnemonic() => (super.noSuchMethod(
+        Invocation.method(
+          #getMnemonic,
+          [],
+        ),
+        returnValue: _i3.Future<String?>.value(),
+      ) as _i3.Future<String?>);
+
+  @override
+  _i3.Future<_i6.NostrKeyPairs> deriveTradeKey() => (super.noSuchMethod(
+        Invocation.method(
+          #deriveTradeKey,
+          [],
+        ),
+        returnValue: _i3.Future<_i6.NostrKeyPairs>.value(_FakeNostrKeyPairs_6(
+          this,
+          Invocation.method(
+            #deriveTradeKey,
+            [],
+          ),
+        )),
+      ) as _i3.Future<_i6.NostrKeyPairs>);
+
+  @override
+  _i6.NostrKeyPairs deriveTradeKeyPair(int? index) => (super.noSuchMethod(
+        Invocation.method(
+          #deriveTradeKeyPair,
+          [index],
+        ),
+        returnValue: _FakeNostrKeyPairs_6(
+          this,
+          Invocation.method(
+            #deriveTradeKeyPair,
+            [index],
+          ),
+        ),
+      ) as _i6.NostrKeyPairs);
+
+  @override
+  _i3.Future<_i6.NostrKeyPairs> deriveTradeKeyFromIndex(int? index) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #deriveTradeKeyFromIndex,
+          [index],
+        ),
+        returnValue: _i3.Future<_i6.NostrKeyPairs>.value(_FakeNostrKeyPairs_6(
+          this,
+          Invocation.method(
+            #deriveTradeKeyFromIndex,
+            [index],
+          ),
+        )),
+      ) as _i3.Future<_i6.NostrKeyPairs>);
+
+  @override
+  _i3.Future<int> getCurrentKeyIndex() => (super.noSuchMethod(
+        Invocation.method(
+          #getCurrentKeyIndex,
+          [],
+        ),
+        returnValue: _i3.Future<int>.value(0),
+      ) as _i3.Future<int>);
+
+  @override
+  _i3.Future<void> setCurrentKeyIndex(int? index) => (super.noSuchMethod(
+        Invocation.method(
+          #setCurrentKeyIndex,
+          [index],
+        ),
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
+}
+
+/// A class which mocks [MostroStorage].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockMostroStorage extends _i1.Mock implements _i16.MostroStorage {
+  MockMostroStorage() {
+    _i1.throwOnMissingStub(this);
+  }
+
+  @override
+  _i4.Database get db => (super.noSuchMethod(
+        Invocation.getter(#db),
+        returnValue: _FakeDatabase_2(
+          this,
+          Invocation.getter(#db),
+        ),
+      ) as _i4.Database);
+
+  @override
+  _i4.StoreRef<String, Map<String, dynamic>> get store => (super.noSuchMethod(
+        Invocation.getter(#store),
+        returnValue: _FakeStoreRef_3<String, Map<String, dynamic>>(
+          this,
+          Invocation.getter(#store),
+        ),
+      ) as _i4.StoreRef<String, Map<String, dynamic>>);
+
+  @override
+  _i3.Future<void> addMessage(
+    String? key,
+    _i5.MostroMessage<_i5.Payload>? message,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #addMessage,
+          [
+            key,
+            message,
+          ],
+        ),
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
+
+  @override
+  _i3.Future<List<_i5.MostroMessage<_i5.Payload>>> getAllMessages() =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #getAllMessages,
+          [],
+        ),
+        returnValue: _i3.Future<List<_i5.MostroMessage<_i5.Payload>>>.value(
+            <_i5.MostroMessage<_i5.Payload>>[]),
+      ) as _i3.Future<List<_i5.MostroMessage<_i5.Payload>>>);
+
+  @override
+  _i3.Future<void> deleteAllMessages() => (super.noSuchMethod(
+        Invocation.method(
+          #deleteAllMessages,
+          [],
+        ),
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
+
+  @override
+  _i3.Future<void> deleteAllMessagesByOrderId(String? orderId) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #deleteAllMessagesByOrderId,
+          [orderId],
+        ),
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
+
+  @override
+  _i3.Future<List<_i5.MostroMessage<_i5.Payload>>>
+      getMessagesOfType<T extends _i5.Payload>() => (super.noSuchMethod(
+            Invocation.method(
+              #getMessagesOfType,
+              [],
+            ),
+            returnValue: _i3.Future<List<_i5.MostroMessage<_i5.Payload>>>.value(
+                <_i5.MostroMessage<_i5.Payload>>[]),
+          ) as _i3.Future<List<_i5.MostroMessage<_i5.Payload>>>);
+
+  @override
+  _i3.Future<_i5.MostroMessage<_i5.Payload>?>
+      getLatestMessageOfTypeById<T extends _i5.Payload>(String? orderId) =>
+          (super.noSuchMethod(
+            Invocation.method(
+              #getLatestMessageOfTypeById,
+              [orderId],
+            ),
+            returnValue: _i3.Future<_i5.MostroMessage<_i5.Payload>?>.value(),
+          ) as _i3.Future<_i5.MostroMessage<_i5.Payload>?>);
+
+  @override
+  _i3.Future<List<_i5.MostroMessage<_i5.Payload>>> getMessagesForId(
+          String? orderId) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #getMessagesForId,
+          [orderId],
+        ),
+        returnValue: _i3.Future<List<_i5.MostroMessage<_i5.Payload>>>.value(
+            <_i5.MostroMessage<_i5.Payload>>[]),
+      ) as _i3.Future<List<_i5.MostroMessage<_i5.Payload>>>);
+
+  @override
+  _i5.MostroMessage<_i5.Payload> fromDbMap(
+    String? key,
+    Map<String, dynamic>? jsonMap,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #fromDbMap,
+          [
+            key,
+            jsonMap,
+          ],
+        ),
+        returnValue: _FakeMostroMessage_7<_i5.Payload>(
+          this,
+          Invocation.method(
+            #fromDbMap,
+            [
+              key,
+              jsonMap,
+            ],
+          ),
+        ),
+      ) as _i5.MostroMessage<_i5.Payload>);
+
+  @override
+  Map<String, dynamic> toDbMap(_i5.MostroMessage<_i5.Payload>? item) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #toDbMap,
+          [item],
+        ),
+        returnValue: <String, dynamic>{},
+      ) as Map<String, dynamic>);
+
+  @override
+  _i3.Future<bool> hasMessageByKey(String? key) => (super.noSuchMethod(
+        Invocation.method(
+          #hasMessageByKey,
+          [key],
+        ),
+        returnValue: _i3.Future<bool>.value(false),
+      ) as _i3.Future<bool>);
+
+  @override
+  _i3.Future<_i5.MostroMessage<_i5.Payload>?> getLatestMessageById(
+          String? orderId) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #getLatestMessageById,
+          [orderId],
+        ),
+        returnValue: _i3.Future<_i5.MostroMessage<_i5.Payload>?>.value(),
+      ) as _i3.Future<_i5.MostroMessage<_i5.Payload>?>);
+
+  @override
+  _i3.Stream<_i5.MostroMessage<_i5.Payload>?> watchLatestMessage(
+          String? orderId) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #watchLatestMessage,
+          [orderId],
+        ),
+        returnValue: _i3.Stream<_i5.MostroMessage<_i5.Payload>?>.empty(),
+      ) as _i3.Stream<_i5.MostroMessage<_i5.Payload>?>);
+
+  @override
+  _i3.Stream<_i5.MostroMessage<_i5.Payload>?> watchLatestMessageOfType<T>(
+          String? orderId) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #watchLatestMessageOfType,
+          [orderId],
+        ),
+        returnValue: _i3.Stream<_i5.MostroMessage<_i5.Payload>?>.empty(),
+      ) as _i3.Stream<_i5.MostroMessage<_i5.Payload>?>);
+
+  @override
+  _i3.Stream<List<_i5.MostroMessage<_i5.Payload>>> watchAllMessages(
+          String? orderId) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #watchAllMessages,
+          [orderId],
+        ),
+        returnValue: _i3.Stream<List<_i5.MostroMessage<_i5.Payload>>>.empty(),
+      ) as _i3.Stream<List<_i5.MostroMessage<_i5.Payload>>>);
+
+  @override
+  _i3.Stream<_i5.MostroMessage<_i5.Payload>?> watchByRequestId(
+          int? requestId) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #watchByRequestId,
+          [requestId],
+        ),
+        returnValue: _i3.Stream<_i5.MostroMessage<_i5.Payload>?>.empty(),
+      ) as _i3.Stream<_i5.MostroMessage<_i5.Payload>?>);
+
+  @override
+  _i3.Future<List<_i5.MostroMessage<_i5.Payload>>> getAllMessagesForOrderId(
+          String? orderId) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #getAllMessagesForOrderId,
+          [orderId],
+        ),
+        returnValue: _i3.Future<List<_i5.MostroMessage<_i5.Payload>>>.value(
+            <_i5.MostroMessage<_i5.Payload>>[]),
+      ) as _i3.Future<List<_i5.MostroMessage<_i5.Payload>>>);
+
+  @override
+  _i3.Future<void> putItem(
+    String? id,
+    _i5.MostroMessage<_i5.Payload>? item,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #putItem,
+          [
+            id,
+            item,
+          ],
+        ),
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
+
+  @override
+  _i3.Future<_i5.MostroMessage<_i5.Payload>?> getItem(String? id) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #getItem,
+          [id],
+        ),
+        returnValue: _i3.Future<_i5.MostroMessage<_i5.Payload>?>.value(),
+      ) as _i3.Future<_i5.MostroMessage<_i5.Payload>?>);
+
+  @override
+  _i3.Future<bool> hasItem(String? id) => (super.noSuchMethod(
+        Invocation.method(
+          #hasItem,
+          [id],
+        ),
+        returnValue: _i3.Future<bool>.value(false),
+      ) as _i3.Future<bool>);
+
+  @override
+  _i3.Future<void> deleteItem(String? id) => (super.noSuchMethod(
+        Invocation.method(
+          #deleteItem,
+          [id],
+        ),
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
+
+  @override
+  _i3.Future<void> deleteAll() => (super.noSuchMethod(
+        Invocation.method(
+          #deleteAll,
+          [],
+        ),
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
+
+  @override
+  _i3.Future<int> deleteWhere(_i4.Filter? filter) => (super.noSuchMethod(
+        Invocation.method(
+          #deleteWhere,
+          [filter],
+        ),
+        returnValue: _i3.Future<int>.value(0),
+      ) as _i3.Future<int>);
+
+  @override
+  _i3.Future<List<_i5.MostroMessage<_i5.Payload>>> find({
+    _i4.Filter? filter,
+    List<_i4.SortOrder<Object?>>? sort,
+    int? limit,
+    int? offset,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #find,
+          [],
+          {
+            #filter: filter,
+            #sort: sort,
+            #limit: limit,
+            #offset: offset,
+          },
+        ),
+        returnValue: _i3.Future<List<_i5.MostroMessage<_i5.Payload>>>.value(
+            <_i5.MostroMessage<_i5.Payload>>[]),
+      ) as _i3.Future<List<_i5.MostroMessage<_i5.Payload>>>);
+
+  @override
+  _i3.Future<List<_i5.MostroMessage<_i5.Payload>>> getAll() =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #getAll,
+          [],
+        ),
+        returnValue: _i3.Future<List<_i5.MostroMessage<_i5.Payload>>>.value(
+            <_i5.MostroMessage<_i5.Payload>>[]),
+      ) as _i3.Future<List<_i5.MostroMessage<_i5.Payload>>>);
+
+  @override
+  _i3.Stream<List<_i5.MostroMessage<_i5.Payload>>> watch({
+    _i4.Filter? filter,
+    List<_i4.SortOrder<Object?>>? sort,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #watch,
+          [],
+          {
+            #filter: filter,
+            #sort: sort,
+          },
+        ),
+        returnValue: _i3.Stream<List<_i5.MostroMessage<_i5.Payload>>>.empty(),
+      ) as _i3.Stream<List<_i5.MostroMessage<_i5.Payload>>>);
+
+  @override
+  _i3.Stream<_i5.MostroMessage<_i5.Payload>?> watchById(String? id) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #watchById,
+          [id],
+        ),
+        returnValue: _i3.Stream<_i5.MostroMessage<_i5.Payload>?>.empty(),
+      ) as _i3.Stream<_i5.MostroMessage<_i5.Payload>?>);
+
+  @override
+  _i4.Filter eq(
+    String? field,
+    Object? value,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #eq,
+          [
+            field,
+            value,
+          ],
+        ),
+        returnValue: _FakeFilter_5(
+          this,
+          Invocation.method(
+            #eq,
+            [
+              field,
+              value,
+            ],
+          ),
+        ),
+      ) as _i4.Filter);
 }
