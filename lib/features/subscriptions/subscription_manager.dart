@@ -234,7 +234,8 @@ class SubscriptionManager {
   void subscribeAll() {
     unsubscribeAll();
     _logger.i('Subscribing to all subscriptions');
-    _initSessionListener();
+    final currentSessions = ref.read(sessionNotifierProvider);
+    _updateAllSubscriptions(currentSessions);
   }
 
   /// Unsubscribe from all subscription types

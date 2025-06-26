@@ -75,6 +75,6 @@ class AddOrderNotifier extends AbstractMostroNotifier {
     );
     mostroService.subscribe(session);
     await mostroService.submitOrder(message);
-    //state = state.updateWith(message);
+    state = state.updateWith(message);
   }
 }
