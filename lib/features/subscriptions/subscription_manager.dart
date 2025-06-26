@@ -98,9 +98,8 @@ class SubscriptionManager {
         return NostrFilter(
           kinds: [1059],
           p: sessions
-              .where((s) => s.peer?.publicKey != null)
-              .map((s) => s.sharedKey?.public)
-              .whereType<String>()
+              .where((s) => s.sharedKey?.public != null)
+              .map((s) => s.sharedKey!.public)
               .toList(),
         );
     }

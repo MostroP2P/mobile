@@ -96,23 +96,21 @@ class MockSubscriptionManager extends SubscriptionManager {
   Stream<NostrEvent> subscribe({
     required SubscriptionType type,
     required NostrFilter filter,
-    String? id,
   }) {
     _lastFilter = filter;
-    
+
     final request = NostrRequest(filters: [filter]);
-    request.subscriptionId = id ?? type.toString();
-    
+
     final subscription = Subscription(
-      request: request,
-      streamSubscription: _ordersController.stream.listen((_) {}),
-      onCancel: () {},
-    );
-    
-    _subscriptions[type] = subscription;
-    
-    return type == SubscriptionType.orders ? orders : chat;
-  }
+    request: request,
+    streamSubscription: const Stream<NostrEvent>.empty().listen((_) {}),
+    onCancel: () {},
+  );
+
+  _subscriptions[type] = subscription;
+
+  return type == SubscriptionType.orders ? orders : chat;
+}
   
   @override
   void unsubscribeByType(SubscriptionType type) {
