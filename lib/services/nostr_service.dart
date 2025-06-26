@@ -6,16 +6,14 @@ import 'package:dart_nostr/nostr/model/relay_informations.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
-import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
 class NostrService {
   late Settings settings;
   final Nostr _nostr = Nostr.instance;
-
-  NostrService();
-
   final Logger _logger = Logger();
   bool _isInitialized = false;
+
+  NostrService();
 
   Future<void> init(Settings settings) async {
     this.settings = settings;
@@ -86,18 +84,6 @@ class NostrService {
     }
   }
 
-  Future<List<NostrEvent>> fecthEvents(NostrFilter filter) async {
-    if (!_isInitialized) {
-      throw Exception('Nostr is not initialized. Call init() first.');
-    }
-
-    final request = NostrRequest(filters: [filter]);
-    return await _nostr.services.relays.startEventsSubscriptionAsync(
-      request: request,
-      timeout: Config.nostrConnectionTimeout,
-    );
-  }
-
   Stream<NostrEvent> subscribeToEvents(NostrRequest request) {
     if (!_isInitialized) {
       throw Exception('Nostr is not initialized. Call init() first.');
@@ -118,73 +104,6 @@ class NostrService {
   }
 
   bool get isInitialized => _isInitialized;
-
-  Future<NostrKeyPairs> generateKeyPair() async {
-    final keyPair = NostrUtils.generateKeyPair();
-    return keyPair;
-  }
-
-  NostrKeyPairs generateKeyPairFromPrivateKey(String privateKey) {
-    return NostrUtils.generateKeyPairFromPrivateKey(privateKey);
-  }
-
-  String getMostroPubKey() {
-    return settings.mostroPublicKey;
-  }
-
-  Future<NostrEvent> createNIP59Event(
-      String content, String recipientPubKey, String senderPrivateKey) async {
-    if (!_isInitialized) {
-      throw Exception('Nostr is not initialized. Call init() first.');
-    }
-
-    return NostrUtils.createNIP59Event(
-      content,
-      recipientPubKey,
-      senderPrivateKey,
-    );
-  }
-
-  Future<NostrEvent> decryptNIP59Event(
-      NostrEvent event, String privateKey) async {
-    if (!_isInitialized) {
-      throw Exception('Nostr is not initialized. Call init() first.');
-    }
-
-    return NostrUtils.decryptNIP59Event(
-      event,
-      privateKey,
-    );
-  }
-
-  Future<String> createRumor(NostrKeyPairs senderKeyPair, String wrapperKey,
-      String recipientPubKey, String content) async {
-    return NostrUtils.createRumor(
-      senderKeyPair,
-      wrapperKey,
-      recipientPubKey,
-      content,
-    );
-  }
-
-  Future<String> createSeal(NostrKeyPairs senderKeyPair, String wrapperKey,
-      String recipientPubKey, String encryptedContent) async {
-    return NostrUtils.createSeal(
-      senderKeyPair,
-      wrapperKey,
-      recipientPubKey,
-      encryptedContent,
-    );
-  }
-
-  Future<NostrEvent> createWrap(NostrKeyPairs wrapperKeyPair,
-      String sealedContent, String recipientPubKey) async {
-    return NostrUtils.createWrap(
-      wrapperKeyPair,
-      sealedContent,
-      recipientPubKey,
-    );
-  }
 
   void unsubscribe(String id) {
     if (!_isInitialized) {

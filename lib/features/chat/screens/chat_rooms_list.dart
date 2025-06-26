@@ -5,9 +5,9 @@ import 'package:intl/intl.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/chat_room.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
+import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/avatar_provider.dart';
 import 'package:mostro_mobile/shared/providers/legible_handle_provider.dart';
-import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_app_bar.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_app_drawer.dart';
@@ -73,8 +73,8 @@ class ChatListItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final session = ref.watch(sessionProvider(orderId));
-    final pubkey = session!.peer!.publicKey;
+    final orderState = ref.watch(orderNotifierProvider(orderId));
+    final pubkey = orderState.peer!.publicKey;
     final handle = ref.read(nickNameProvider(pubkey));
     return GestureDetector(
       onTap: () {
