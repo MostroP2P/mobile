@@ -16,19 +16,15 @@ import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 /// managing subscriptions based on session changes in the SessionNotifier.
 class SubscriptionManager {
   final Ref ref;
-  final Map<SubscriptionType, Map<String, Subscription>> _subscriptions = {
-    SubscriptionType.chat: {},
-    SubscriptionType.orders: {},
-    SubscriptionType.trades: {},
-  };
+  final Map<SubscriptionType, Subscription> _subscriptions = {};
   final _logger = Logger();
   ProviderSubscription? _sessionListener;
-  
+
   // Controllers for each subscription type to expose streams to consumers
   final _ordersController = StreamController<NostrEvent>.broadcast();
   final _tradesController = StreamController<NostrEvent>.broadcast();
   final _chatController = StreamController<NostrEvent>.broadcast();
-  
+
   // Public streams that consumers can listen to
   Stream<NostrEvent> get orders => _ordersController.stream;
   Stream<NostrEvent> get trades => _tradesController.stream;
@@ -37,26 +33,27 @@ class SubscriptionManager {
   SubscriptionManager(this.ref) {
     _initSessionListener();
   }
-  
+
   /// Initialize the session listener to automatically update subscriptions
   /// when sessions change in the SessionNotifier
   void _initSessionListener() {
     _sessionListener = ref.listen<List<Session>>(
-      sessionNotifierProvider, 
+      sessionNotifierProvider,
       (previous, current) {
         _logger.i('Sessions changed, updating subscriptions');
         _updateAllSubscriptions(current);
       },
       onError: (error, stackTrace) {
-        _logger.e('Error in session listener', error: error, stackTrace: stackTrace);
+        _logger.e('Error in session listener',
+            error: error, stackTrace: stackTrace);
       },
     );
-    
+
     // Initialize subscriptions with current sessions
     final currentSessions = ref.read(sessionNotifierProvider);
     _updateAllSubscriptions(currentSessions);
   }
-  
+
   /// Update all subscription types based on the current sessions
   void _updateAllSubscriptions(List<Session> sessions) {
     if (sessions.isEmpty) {
@@ -64,49 +61,51 @@ class SubscriptionManager {
       _clearAllSubscriptions();
       return;
     }
-    
+
     // Update each subscription type
     for (final type in SubscriptionType.values) {
       _updateSubscription(type, sessions);
     }
   }
-  
+
   /// Clear all active subscriptions
   void _clearAllSubscriptions() {
     for (final type in SubscriptionType.values) {
       unsubscribeByType(type);
     }
   }
-  
+
   /// Update a specific subscription type with the current sessions
   void _updateSubscription(SubscriptionType type, List<Session> sessions) {
     // Cancel existing subscriptions for this type
     unsubscribeByType(type);
-    
+
     if (sessions.isEmpty) {
       _logger.i('No sessions for $type subscription');
       return;
     }
-    
+
     try {
       final filter = _createFilterForType(type, sessions);
-      
+
       // Create a subscription for this type
       subscribe(
         type: type,
         filter: filter,
-        id: type.toString(),
       );
-      
-      _logger.i('Subscription created for $type with ${sessions.length} sessions');
+
+      _logger
+          .i('Subscription created for $type with ${sessions.length} sessions');
     } catch (e, stackTrace) {
-      _logger.e('Failed to create $type subscription', 
+      _logger.e('Failed to create $type subscription',
           error: e, stackTrace: stackTrace);
     }
+    _logger.i('Updated $type subscription with $_subscriptions');
   }
-  
+
   /// Create a NostrFilter based on the subscription type and sessions
-  NostrFilter _createFilterForType(SubscriptionType type, List<Session> sessions) {
+  NostrFilter _createFilterForType(
+      SubscriptionType type, List<Session> sessions) {
     switch (type) {
       case SubscriptionType.orders:
         return NostrFilter(
@@ -129,7 +128,7 @@ class SubscriptionManager {
         );
     }
   }
-  
+
   /// Handle incoming events based on their subscription type
   void _handleEvent(SubscriptionType type, NostrEvent event) {
     try {
@@ -145,42 +144,41 @@ class SubscriptionManager {
           break;
       }
     } catch (e, stackTrace) {
-      _logger.e('Error handling $type event', 
-          error: e, stackTrace: stackTrace);
+      _logger.e('Error handling $type event', error: e, stackTrace: stackTrace);
     }
   }
-  
+
   /// Subscribe to Nostr events with a specific filter and subscription type.
   Stream<NostrEvent> subscribe({
     required SubscriptionType type,
     required NostrFilter filter,
-    String? id,
   }) {
-    final subscriptionId = id ?? type.toString();
     final nostrService = ref.read(nostrServiceProvider);
-    
+
     final request = NostrRequest(
-      subscriptionId: subscriptionId,
       filters: [filter],
     );
-    
+
     final stream = nostrService.subscribeToEvents(request);
     final streamSubscription = stream.listen(
       (event) => _handleEvent(type, event),
       onError: (error, stackTrace) {
-        _logger.e('Error in $type subscription', 
+        _logger.e('Error in $type subscription',
             error: error, stackTrace: stackTrace);
       },
       cancelOnError: false,
     );
-    
+
     final subscription = Subscription(
       request: request,
       streamSubscription: streamSubscription,
+      onCancel: () {
+        ref.read(nostrServiceProvider).unsubscribe(request.subscriptionId!);
+      },
     );
-    
-    _subscriptions[type]![subscriptionId] = subscription;
-    
+
+    _subscriptions[type] = subscription;
+
     switch (type) {
       case SubscriptionType.orders:
         return orders;
@@ -190,7 +188,7 @@ class SubscriptionManager {
         return chat;
     }
   }
-  
+
   /// Subscribe to Nostr events for a specific session.
   Stream<NostrEvent> subscribeSession({
     required SubscriptionType type,
@@ -198,66 +196,55 @@ class SubscriptionManager {
     required NostrFilter Function(Session) createFilter,
   }) {
     final filter = createFilter(session);
-    final sessionId = session.orderId ?? session.tradeKey.public;
     return subscribe(
       type: type,
       filter: filter,
-      id: '${type.toString()}_$sessionId',
     );
   }
-  
+
   /// Unsubscribe from a specific subscription by ID.
-  void unsubscribeById(SubscriptionType type, String id) {
-    final subscription = _subscriptions[type]?[id];
+  void unsubscribeById(SubscriptionType type) {
+    final subscription = _subscriptions[type];
     if (subscription != null) {
       subscription.cancel();
-      _subscriptions[type]?.remove(id);
-      _logger.d('Canceled subscription for $type with id $id');
+      _subscriptions.remove(type);
+      _logger.d('Canceled subscription for $type');
     }
   }
-  
+
   /// Unsubscribe from all subscriptions of a specific type.
   void unsubscribeByType(SubscriptionType type) {
-    final subscriptions = _subscriptions[type];
-    if (subscriptions != null) {
-      for (final subscription in subscriptions.values) {
-        subscription.cancel();
-      }
-      subscriptions.clear();
+    final subscription = _subscriptions[type];
+    if (subscription != null) {
+      subscription.cancel();
+      _subscriptions.remove(type);
       _logger.d('Canceled all subscriptions for $type');
     }
   }
-  
+
   /// Unsubscribe from a session-based subscription.
-  void unsubscribeSession(SubscriptionType type, Session session) {
-    final sessionId = session.orderId ?? session.tradeKey.public;
-    unsubscribeById(type, '${type.toString()}_$sessionId');
+  void unsubscribeSession(SubscriptionType type) {
+    unsubscribeByType(type);
   }
-  
+
   /// Check if there's an active subscription of a specific type.
-  bool hasActiveSubscription(SubscriptionType type, {String? id}) {
-    if (id != null) {
-      return _subscriptions[type]?.containsKey(id) ?? false;
-    }
-    return (_subscriptions[type]?.isNotEmpty ?? false);
+  bool hasActiveSubscription(SubscriptionType type) {
+    return _subscriptions[type] != null;
   }
-  
+
   /// Get all active filters for a specific subscription type
   /// Returns an empty list if no active subscriptions exist for the type
   List<NostrFilter> getActiveFilters(SubscriptionType type) {
-    final filters = <NostrFilter>[];
-    final subscriptions = _subscriptions[type] ?? {};
-    
-    for (final subscription in subscriptions.values) {
-      if (subscription.request.filters.isNotEmpty) {
-        filters.add(subscription.request.filters.first);
-      }
-    }
-    
-    _logger.d('Retrieved ${filters.length} active filters for $type');
-    return filters;
+    final subscription = _subscriptions[type];
+    return subscription?.request.filters ?? [];
   }
-  
+
+  void subscribeAll() {
+    unsubscribeAll();
+    _logger.i('Subscribing to all subscriptions');
+    _initSessionListener();
+  }
+
   /// Unsubscribe from all subscription types
   void unsubscribeAll() {
     _logger.i('Unsubscribing from all subscriptions');
@@ -265,7 +252,7 @@ class SubscriptionManager {
       unsubscribeByType(type);
     }
   }
-  
+
   /// Dispose all subscriptions and listeners
   void dispose() {
     _logger.i('Disposing SubscriptionManager');
@@ -273,13 +260,13 @@ class SubscriptionManager {
       _sessionListener!.close();
       _sessionListener = null;
     }
-    
+
     unsubscribeAll();
-    
+
     _ordersController.close();
     _tradesController.close();
     _chatController.close();
-    
+
     _logger.i('SubscriptionManager disposed');
   }
 }

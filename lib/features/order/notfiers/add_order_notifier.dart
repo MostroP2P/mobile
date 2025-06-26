@@ -19,9 +19,9 @@ class AddOrderNotifier extends AbstractMostroNotifier {
 
   int _requestIdFromOrderId(String orderId) {
     final uuid = orderId.replaceAll('-', '');
-    final uuidPart1 = int.parse(uuid.substring(0, 8), radix: 16);
-    final uuidPart2 = int.parse(uuid.substring(8, 16), radix: 16);
-    return ((uuidPart1 ^ uuidPart2) & 0x7FFFFFFF);
+    final timestamp = DateTime.now().microsecondsSinceEpoch;
+    return (int.parse(uuid.substring(0, 8), radix: 16) ^ timestamp) &
+        0x7FFFFFFF;
   }
 
   @override
@@ -75,6 +75,6 @@ class AddOrderNotifier extends AbstractMostroNotifier {
     );
     mostroService.subscribe(session);
     await mostroService.submitOrder(message);
-    state = state.updateWith(message);
+    //state = state.updateWith(message);
   }
 }

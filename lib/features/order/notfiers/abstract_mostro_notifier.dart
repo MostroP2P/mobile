@@ -42,10 +42,21 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
           data: (MostroMessage? msg) {
             logger.i('Received message: ${msg?.toJson()}');
             if (msg != null) {
-              handleEvent(msg);
+              if (mounted) {
+                state = state.updateWith(msg);
+              }
+              if (msg.timestamp != null &&
+                  msg.timestamp! >
+                      DateTime.now()
+                          .subtract(const Duration(seconds: 60))
+                          .millisecondsSinceEpoch) {
+                handleEvent(msg);
+              }
             }
           },
-          error: (error, stack) => handleError(error, stack),
+          error: (error, stack) {
+            handleError(error, stack);
+          },
           loading: () {},
         );
       },
@@ -60,10 +71,6 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
     final navProvider = ref.read(navigationProvider.notifier);
     final notifProvider = ref.read(notificationProvider.notifier);
     final mostroInstance = ref.read(orderRepositoryProvider).mostroInstance;
-
-    if (mounted) {
-      state = state.updateWith(event);
-    }
 
     switch (event.action) {
       case Action.newOrder:
@@ -87,7 +94,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
       case Action.canceled:
         ref.read(mostroStorageProvider).deleteAllMessagesByOrderId(orderId);
         ref.read(sessionNotifierProvider.notifier).deleteSession(orderId);
-        navProvider.go('/');
+        navProvider.go('/order_book');
         notifProvider.showInformation(event.action, values: {'id': orderId});
         ref.invalidateSelf();
         break;
@@ -149,9 +156,10 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         notifProvider.showInformation(event.action, values: {
           'buyer_npub': state.order?.buyerTradePubkey ?? 'Unknown',
         });
+        navProvider.go('/trade_detail/$orderId');
         break;
       case Action.waitingSellerToPay:
-        navProvider.go('/');
+        navProvider.go('/trade_detail/$orderId');
         notifProvider.showInformation(event.action, values: {
           'id': event.id,
           'expiration_seconds':
@@ -163,6 +171,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
           'expiration_seconds':
               mostroInstance?.expirationSeconds ?? Config.expirationSeconds,
         });
+        navProvider.go('/trade_detail/$orderId');
         break;
       case Action.addInvoice:
         final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
@@ -176,14 +185,6 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
           logger.e('Buyer took order, but order is null');
           break;
         }
-        notifProvider.showInformation(event.action, values: {
-          'buyer_npub': order.buyerTradePubkey ?? 'Unknown',
-          'fiat_code': order.fiatCode,
-          'fiat_amount': order.fiatAmount,
-          'payment_method': order.paymentMethod,
-        });
-        // add seller tradekey to session
-        // open chat
         final sessionProvider = ref.read(sessionNotifierProvider.notifier);
         final peer = order.buyerTradePubkey != null
             ? Peer(publicKey: order.buyerTradePubkey!)
@@ -197,6 +198,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         );
         final chat = ref.read(chatRoomsProvider(orderId).notifier);
         chat.subscribe();
+        navProvider.go('/trade_detail/$orderId');
         break;
       case Action.cantDo:
         final cantDo = event.getPayload<CantDo>();

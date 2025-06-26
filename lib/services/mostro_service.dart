@@ -13,10 +13,10 @@ import 'package:mostro_mobile/features/settings/settings_provider.dart';
 class MostroService {
   final Ref ref;
   final _logger = Logger();
-  
+
   Settings _settings;
   StreamSubscription<NostrEvent>? _ordersSubscription;
-  
+
   MostroService(this.ref) : _settings = ref.read(settingsProvider);
 
   void init() {
@@ -25,7 +25,8 @@ class MostroService {
     _ordersSubscription = ref.read(subscriptionManagerProvider).orders.listen(
       _onData,
       onError: (error, stackTrace) {
-        _logger.e('Error in orders subscription', error: error, stackTrace: stackTrace);
+        _logger.e('Error in orders subscription',
+            error: error, stackTrace: stackTrace);
       },
       cancelOnError: false,
     );
@@ -38,9 +39,9 @@ class MostroService {
 
   /// No need to manually subscribe to sessions anymore.
   /// SubscriptionManager now automatically handles subscriptions based on SessionNotifier changes.
-  /// 
+  ///
   /// This method is kept for backward compatibility but doesn't perform manual subscription.
-  /// 
+  ///
   /// [session] The session that would have been subscribed to
   void subscribe(Session session) {
     _logger.i('Manual subscription not needed for: ${session.tradeKey.public}');
@@ -49,12 +50,13 @@ class MostroService {
 
   /// No need to manually unsubscribe from sessions anymore.
   /// SubscriptionManager now automatically handles subscriptions based on SessionNotifier changes.
-  /// 
+  ///
   /// This method is kept for backward compatibility but doesn't perform manual unsubscription.
-  /// 
+  ///
   /// [session] The session that would have been unsubscribed from
   void unsubscribe(Session session) {
-    _logger.i('Manual unsubscription not needed for: ${session.tradeKey.public}');
+    _logger
+        .i('Manual unsubscription not needed for: ${session.tradeKey.public}');
     // No action needed - SubscriptionManager handles subscriptions automatically
   }
 
@@ -63,7 +65,7 @@ class MostroService {
 
   // No need to manually update subscriptions anymore.
   // SubscriptionManager now handles this automatically based on SessionNotifier changes.
-  
+
   Future<void> _onData(NostrEvent event) async {
     final eventStore = ref.read(eventStorageProvider);
 
@@ -75,7 +77,7 @@ class MostroService {
 
     final sessions = ref.read(sessionNotifierProvider);
     Session? matchingSession;
-    
+
     try {
       matchingSession = sessions.firstWhere(
         (s) => s.tradeKey.public == event.recipient,
@@ -89,7 +91,7 @@ class MostroService {
     try {
       final decryptedEvent = await event.unWrap(privateKey);
       if (decryptedEvent.content == null) return;
-      
+
       final result = jsonDecode(decryptedEvent.content!);
       if (result is! List) return;
 
@@ -97,7 +99,7 @@ class MostroService {
       final messageStorage = ref.read(mostroStorageProvider);
       await messageStorage.addMessage(decryptedEvent.id!, msg);
       _logger.i(
-        'Received message of type ${msg.action} with order id ${msg.id}',
+        'Received DM, Event ID: ${decryptedEvent.id} with payload: ${decryptedEvent.content}',
       );
     } catch (e) {
       _logger.e('Error processing event', error: e);

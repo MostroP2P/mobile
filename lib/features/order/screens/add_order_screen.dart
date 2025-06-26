@@ -280,19 +280,24 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
 
         final satsAmount = int.tryParse(_satsAmountController.text) ?? 0;
 
-        // Preparar la lista de métodos de pago para cumplir con NIP-69
         List<String> paymentMethods =
             List<String>.from(_selectedPaymentMethods);
         if (_showCustomPaymentMethod &&
             _customPaymentMethodController.text.isNotEmpty) {
-          // Eliminar "Other" de la lista si existe para evitar duplicación
           paymentMethods.remove("Other");
-          // Agregar el método de pago personalizado
-          paymentMethods.add(_customPaymentMethodController.text);
+          
+          String sanitizedPaymentMethod = _customPaymentMethodController.text;
+          
+          final problematicChars = RegExp(r'[,"\\\[\]{}]');
+          sanitizedPaymentMethod = sanitizedPaymentMethod
+              .replaceAll(problematicChars, ' ')
+              .replaceAll(RegExp(r'\s+'), ' ')
+              .trim();
+              
+          if (sanitizedPaymentMethod.isNotEmpty) {
+            paymentMethods.add(sanitizedPaymentMethod);
+          }
         }
-
-        // Cada método de pago se mantiene como un elemento separado en la lista
-        // en lugar de concatenarlos en una cadena
 
         final buyerInvoice = _orderType == OrderType.buy &&
                 _lightningAddressController.text.isNotEmpty

@@ -58,6 +58,9 @@ class LifecycleManager extends WidgetsBindingObserver {
       // Add a small delay to ensure the background service has fully transitioned
       await Future.delayed(const Duration(milliseconds: 500));
 
+      final subscriptionManager = ref.read(subscriptionManagerProvider);
+      subscriptionManager.subscribeAll();
+
       // Reinitialize the mostro service
       _logger.i("Reinitializing MostroService");
       ref.read(mostroServiceProvider).init();

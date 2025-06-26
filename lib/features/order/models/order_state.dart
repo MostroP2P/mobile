@@ -86,7 +86,7 @@ class OrderState {
 
     // Preserve the current state entirely for cantDo messages - they are informational only
     if (message.action == Action.cantDo) {
-      return this;
+      return copyWith(cantDo: message.getPayload<CantDo>());
     }
 
     // Determine the new status based on the action received
@@ -134,10 +134,6 @@ class OrderState {
       dispute: message.getPayload<Dispute>() ?? dispute,
       peer: newPeer,
     );
-
-    _logger.i('✅ New state: ${newState.status} - ${newState.action}');
-    _logger
-        .i('💳 PaymentRequest preserved: ${newState.paymentRequest != null}');
 
     return newState;
   }

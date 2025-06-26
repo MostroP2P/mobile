@@ -457,7 +457,7 @@ class TradeDetailScreen extends ConsumerWidget {
   /// CLOSE
   Widget _buildCloseButton(BuildContext context) {
     return OutlinedButton(
-      onPressed: () => context.pop(),
+      onPressed: () => context.go('/order_book'),
       style: AppTheme.theme.outlinedButtonTheme.style,
       child: const Text('CLOSE'),
     );
