@@ -271,9 +271,6 @@ class FakeMostroService implements MostroService {
   void init({List<NostrKeyPairs>? keys}) {}
 
   @override
-  void subscribe(Session session) {}
-
-  @override
   Future<void> submitOrder(MostroMessage order) async {
     final storage = ref.read(mostroStorageProvider);
     final orderMsg = MostroMessage<Order>(
@@ -317,11 +314,6 @@ class FakeMostroService implements MostroService {
   @override
   void updateSettings(Settings settings) {}
     
-  @override
-  void unsubscribe(Session session) {
-    // TODO: implement unsubscribe
-  }
-  
   @override
   void dispose() {
     // TODO: implement dispose
