@@ -19,6 +19,7 @@ class BottomNavBar extends ConsumerWidget {
 
     return SafeArea(
       top: false,
+      bottom: true,
       child: Container(
         width: double.infinity,
         height: 80,
