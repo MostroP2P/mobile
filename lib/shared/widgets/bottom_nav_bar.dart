@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 final chatCountProvider = StateProvider<int>((ref) => 0);
 final orderBookNotificationCountProvider = StateProvider<int>((ref) => 0);
@@ -20,6 +19,7 @@ class BottomNavBar extends ConsumerWidget {
 
     return SafeArea(
       top: false,
+      bottom: true,
       child: Container(
         width: double.infinity,
         height: 80,
@@ -35,26 +35,26 @@ class BottomNavBar extends ConsumerWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-          _buildNavItem(
-            context,
-            LucideIcons.book,
-            'Order Book',
-            0,
-          ),
-          _buildNavItem(
-            context,
-            LucideIcons.zap,
-            'My Trades',
-            1,
-            notificationCount: orderNotificationCount,
-          ),
-          _buildNavItem(
-            context,
-            LucideIcons.messageSquare,
-            'Chat',
-            2,
-            notificationCount: chatCount,
-          ),
+            _buildNavItem(
+              context,
+              LucideIcons.book,
+              'Order Book',
+              0,
+            ),
+            _buildNavItem(
+              context,
+              LucideIcons.zap,
+              'My Trades',
+              1,
+              notificationCount: orderNotificationCount,
+            ),
+            _buildNavItem(
+              context,
+              LucideIcons.messageSquare,
+              'Chat',
+              2,
+              notificationCount: chatCount,
+            ),
           ],
         ),
       ),
@@ -70,9 +70,11 @@ class BottomNavBar extends ConsumerWidget {
     Color textColor = isActive ? AppTheme.activeColor : Colors.white;
 
     return Expanded(
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
+      child: Semantics(
+        button: true,
+        enabled: true,
+        label: 'Navigate to $label',
+        child: GestureDetector(
           onTap: () => _onItemTapped(context, index),
           child: SizedBox(
             height: double.infinity,
@@ -111,7 +113,7 @@ class BottomNavBar extends ConsumerWidget {
                 const SizedBox(height: 4),
                 Text(
                   label,
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w400,
                     color: textColor,

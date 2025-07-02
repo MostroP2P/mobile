@@ -10,7 +10,7 @@ import 'package:mostro_mobile/shared/providers/legible_handle_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_app_bar.dart';
-import 'package:mostro_mobile/shared/widgets/mostro_app_drawer.dart';
+import 'package:mostro_mobile/shared/widgets/custom_drawer_overlay.dart';
 
 class ChatRoomsScreen extends ConsumerWidget {
   const ChatRoomsScreen({super.key});
@@ -22,27 +22,28 @@ class ChatRoomsScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppTheme.dark1,
       appBar: const MostroAppBar(),
-      drawer: const MostroAppDrawer(),
-      body: Container(
-        margin: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-        decoration: BoxDecoration(
-          color: const Color(0xFF303544),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                'CHAT',
-                style: TextStyle(color: AppTheme.mostroGreen),
+      body: CustomDrawerOverlay(
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF303544),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  'CHAT',
+                  style: TextStyle(color: AppTheme.mostroGreen),
+                ),
               ),
-            ),
-            Expanded(
-              child: _buildBody(chatListState),
-            ),
-            const BottomNavBar(),
-          ],
+              Expanded(
+                child: _buildBody(chatListState),
+              ),
+              const BottomNavBar(),
+            ],
+          ),
         ),
       ),
     );
