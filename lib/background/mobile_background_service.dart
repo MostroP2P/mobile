@@ -32,9 +32,9 @@ class MobileBackgroundService implements BackgroundService {
           autoStart: false,
           onStart: serviceMain,
           isForegroundMode: true,
-          autoStartOnBoot: true,
-          initialNotificationTitle: "Mostro P2P",
-          initialNotificationContent: "Connected to Mostro service",
+          autoStartOnBoot: false,
+          initialNotificationTitle: "Mostro",
+          initialNotificationContent: "Mostro service is running",
           foregroundServiceTypes: [
             AndroidForegroundType.dataSync,
           ]),
@@ -142,7 +142,7 @@ class MobileBackgroundService implements BackgroundService {
     _serviceReady = false; // Reset ready state when starting
 
     // Wait for the service to be running
-    const maxWait = Duration(seconds: 5);
+    const maxWait = Duration(seconds: 10);
     final deadline = DateTime.now().add(maxWait);
 
     while (!(await service.isRunning())) {
