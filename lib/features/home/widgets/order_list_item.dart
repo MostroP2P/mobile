@@ -37,7 +37,8 @@ class OrderListItem extends ConsumerWidget {
 
     final session = ref.watch(sessionProvider(order.orderId!));
     if (session != null) {
-      orderLabel = 'YOU ARE $orderLabel';
+      final selling = session.role == Role.seller ? 'SELLING' : 'BUYING';
+      orderLabel = 'YOU ARE $selling';
     }
 
     return Container(
