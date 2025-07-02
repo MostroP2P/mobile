@@ -59,10 +59,12 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
 
       final eventStore = ref.read(eventStorageProvider);
 
-      await eventStore.putItem(
-        event.id!,
-        event,
-      );
+      if (!await eventStore.hasItem(event.id!)) {
+        await eventStore.putItem(
+          event.id!,
+          event,
+        );
+      }
 
       final chat = await event.mostroUnWrap(session.sharedKey!);
       // Deduplicate by message ID and always sort by createdAt

@@ -53,7 +53,7 @@ class TradeDetailScreen extends ConsumerWidget {
                 // Detailed info: includes the last Mostro message action text
                 MostroMessageDetail(orderId: orderId),
                 const SizedBox(height: 24),
-                _buildCountDownTime(orderPayload.expiresAt),
+                _buildCountDownTime(orderPayload.expiresAt != null ? orderPayload.expiresAt!*1000 : null),
                 const SizedBox(height: 36),
                 Wrap(
                   alignment: WrapAlignment.center,
@@ -104,10 +104,8 @@ class TradeDetailScreen extends ConsumerWidget {
     final method = tradeState.order!.paymentMethod;
     final timestamp = formatDateTime(
       tradeState.order!.createdAt != null && tradeState.order!.createdAt! > 0
-          ? DateTime.fromMillisecondsSinceEpoch(tradeState.order!.createdAt!)
-          : DateTime.fromMillisecondsSinceEpoch(
-              tradeState.order!.createdAt ?? 0,
-            ),
+          ? DateTime.fromMillisecondsSinceEpoch(tradeState.order!.createdAt!*1000)
+          : session.startTime,
     );
     return CustomCard(
       padding: const EdgeInsets.all(16),

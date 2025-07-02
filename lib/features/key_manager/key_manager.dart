@@ -16,9 +16,10 @@ class KeyManager {
   Future<void> init() async {
     if (!await hasMasterKey()) {
       await generateAndStoreMasterKey();
+    } else {
+      masterKeyPair = await _getMasterKey();
+      tradeKeyIndex = await getCurrentKeyIndex();
     }
-    masterKeyPair = await _getMasterKey();
-    tradeKeyIndex = await getCurrentKeyIndex();
   }
 
   Future<bool> hasMasterKey() async {
@@ -43,6 +44,8 @@ class KeyManager {
     await _storage.storeMnemonic(mnemonic);
     await _storage.storeMasterKey(masterKeyHex);
     await setCurrentKeyIndex(1);
+    masterKeyPair = await _getMasterKey();
+    tradeKeyIndex = await getCurrentKeyIndex();
   }
 
   Future<void> importMnemonic(String mnemonic) async {

@@ -92,7 +92,9 @@ class SubscriptionManager {
       case SubscriptionType.orders:
         return NostrFilter(
           kinds: [1059],
-          p: sessions.map((s) => s.tradeKey.public).toList(),
+          p: sessions
+              .map((s) => s.tradeKey.public)
+              .toList(),
         );
       case SubscriptionType.chat:
         return NostrFilter(
