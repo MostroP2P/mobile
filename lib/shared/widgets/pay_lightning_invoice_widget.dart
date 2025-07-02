@@ -54,6 +54,11 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
           ),
         ),
         const SizedBox(height: 20),
+        Container(
+          padding: const EdgeInsets.all(8.0),
+          child: Text(widget.lnInvoice),
+        ),
+        const SizedBox(height: 20),
         ElevatedButton.icon(
           onPressed: () {
             Clipboard.setData(ClipboardData(text: widget.lnInvoice));
