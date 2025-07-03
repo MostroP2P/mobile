@@ -16,6 +16,7 @@ import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/shared/utils/currency_utils.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_reactive_button.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class TradeDetailScreen extends ConsumerWidget {
   final String orderId;
@@ -37,7 +38,7 @@ class TradeDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppTheme.dark1,
-      appBar: OrderAppBar(title: 'ORDER DETAILS'),
+      appBar: OrderAppBar(title: S.of(context)!.orderDetails),
       body: Builder(
         builder: (context) {
           return SingleChildScrollView(
@@ -46,14 +47,14 @@ class TradeDetailScreen extends ConsumerWidget {
               children: [
                 const SizedBox(height: 16),
                 // Display basic info about the trade:
-                _buildSellerAmount(ref, tradeState),
+                _buildSellerAmount(context, ref, tradeState),
                 const SizedBox(height: 16),
                 _buildOrderId(context),
                 const SizedBox(height: 16),
                 // Detailed info: includes the last Mostro message action text
                 MostroMessageDetail(orderId: orderId),
                 const SizedBox(height: 24),
-                _buildCountDownTime(orderPayload.expiresAt != null
+                _buildCountDownTime(context, orderPayload.expiresAt != null
                     ? orderPayload.expiresAt! * 1000
                     : null),
                 const SizedBox(height: 36),
@@ -79,28 +80,28 @@ class TradeDetailScreen extends ConsumerWidget {
   }
 
   /// Builds a card showing the user is "selling/buying X sats for Y fiat" etc.
-  Widget _buildSellerAmount(WidgetRef ref, OrderState tradeState) {
+  Widget _buildSellerAmount(BuildContext context, WidgetRef ref, OrderState tradeState) {
     final session = ref.watch(sessionProvider(orderId));
 
-    final selling = session!.role == Role.seller ? 'selling' : 'buying';
     final currencyFlag = CurrencyUtils.getFlagFromCurrency(
       tradeState.order!.fiatCode,
     );
 
-    final amountString =
-        '${tradeState.order!.fiatAmount} ${tradeState.order!.fiatCode} $currencyFlag';
-
+    final amountString = '${tradeState.order!.fiatAmount} ${tradeState.order!.fiatCode} $currencyFlag';
+    
     // If `orderPayload.amount` is 0, the trade is "at market price"
     final isZeroAmount = (tradeState.order!.amount == 0);
     final satText = isZeroAmount ? '' : ' ${tradeState.order!.amount}';
-    final priceText = isZeroAmount ? 'at market price' : '';
-
+    final priceText = isZeroAmount ? ' ${S.of(context)!.atMarketPrice}' : '';
+    
     final premium = tradeState.order!.premium;
     final premiumText = premium == 0
         ? ''
         : (premium > 0)
-            ? 'with a +$premium% premium'
-            : 'with a $premium% discount';
+            ? S.of(context)!.withPremium(premium)
+            : S.of(context)!.withDiscount(premium);
+    
+    final isSellingRole = session!.role == Role.seller;
 
     // Payment method
     final method = tradeState.order!.paymentMethod;
@@ -120,18 +121,20 @@ class TradeDetailScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'You are $selling$satText sats for $amountString $priceText $premiumText',
+                  isSellingRole 
+                    ? S.of(context)!.youAreSellingText(amountString, premiumText, priceText, satText)
+                    : S.of(context)!.youAreBuyingText(amountString, premiumText, priceText, satText),
                   style: AppTheme.theme.textTheme.bodyLarge,
                   softWrap: true,
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Created on: $timestamp',
+                  '${S.of(context)!.createdOn}: $timestamp',
                   style: textTheme.bodyLarge,
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Payment methods: $method',
+                  '${S.of(context)!.paymentMethodsLabel}: $method',
                   style: textTheme.bodyLarge,
                 ),
               ],
@@ -158,8 +161,8 @@ class TradeDetailScreen extends ConsumerWidget {
             onPressed: () {
               Clipboard.setData(ClipboardData(text: orderId));
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Order ID copied to clipboard'),
+                SnackBar(
+                  content: Text(S.of(context)!.orderIdCopied),
                   duration: Duration(seconds: 2),
                 ),
               );
@@ -178,7 +181,7 @@ class TradeDetailScreen extends ConsumerWidget {
   }
 
   /// Build a circular countdown to show how many hours are left until expiration.
-  Widget _buildCountDownTime(int? expiresAtTimestamp) {
+  Widget _buildCountDownTime(BuildContext context, int? expiresAtTimestamp) {
     // Convert timestamp to DateTime
     final expiration = expiresAtTimestamp != null && expiresAtTimestamp > 0
         ? DateTime.fromMillisecondsSinceEpoch(expiresAtTimestamp)
@@ -198,7 +201,7 @@ class TradeDetailScreen extends ConsumerWidget {
           countdownRemaining: hoursLeft,
         ),
         const SizedBox(height: 16),
-        Text('Time Left: ${difference.toString().split('.').first}'),
+        Text('${S.of(context)!.timeLeft}: ${difference.toString().split('.').first}'),
       ],
     );
   }
@@ -229,14 +232,12 @@ class TradeDetailScreen extends ConsumerWidget {
           if (tradeState.status == Status.active ||
               tradeState.status == Status.fiatSent) {
             if (tradeState.action == actions.Action.cooperativeCancelInitiatedByPeer) {
-              cancelMessage =
-                  'If you confirm, you will accept the cooperative cancellation initiated by your counterparty.';
+              cancelMessage = S.of(context)!.acceptCancelMessage;
             } else {
-              cancelMessage =
-                  'If you confirm, you will start a cooperative cancellation with your counterparty.';
+              cancelMessage = S.of(context)!.cooperativeCancelMessage;
             }
           } else {
-            cancelMessage = 'Are you sure you want to cancel this trade?';
+            cancelMessage = S.of(context)!.areYouSureCancel;
           }
 
           widgets.add(_buildNostrButton(
@@ -247,12 +248,12 @@ class TradeDetailScreen extends ConsumerWidget {
               showDialog(
                 context: context,
                 builder: (context) => AlertDialog(
-                  title: const Text('Cancel Trade'),
+                  title: Text(S.of(context)!.cancelTrade),
                   content: Text(cancelMessage),
                   actions: [
                     TextButton(
                       onPressed: () => context.pop(),
-                      child: const Text('Cancel'),
+                      child: Text(S.of(context)!.cancel),
                     ),
                     ElevatedButton(
                       onPressed: () {
@@ -261,7 +262,7 @@ class TradeDetailScreen extends ConsumerWidget {
                             .read(orderNotifierProvider(orderId).notifier)
                             .cancelOrder();
                       },
-                      child: const Text('Confirm'),
+                      child: Text(S.of(context)!.confirm),
                     ),
                   ],
                 ),
