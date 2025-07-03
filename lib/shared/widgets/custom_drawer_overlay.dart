@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/shared/providers/drawer_provider.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class CustomDrawerOverlay extends ConsumerWidget {
   final Widget child;
@@ -14,7 +15,6 @@ class CustomDrawerOverlay extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isDrawerOpen = ref.watch(drawerProvider);
     final statusBarHeight = MediaQuery.of(context).padding.top;
-    final appBarHeight = AppBar().preferredSize.height;
 
     return Stack(
       children: [
@@ -100,28 +100,28 @@ class CustomDrawerOverlay extends ConsumerWidget {
                         context,
                         ref,
                         icon: LucideIcons.user,
-                        title: 'Account',
+                        title: S.of(context)!.account,
                         route: '/key_management',
                       ),
                       _buildMenuItem(
                         context,
                         ref,
                         icon: LucideIcons.settings,
-                        title: 'Settings',
+                        title: S.of(context)!.settings,
                         route: '/settings',
                       ),
                       _buildMenuItem(
                         context,
                         ref,
                         icon: LucideIcons.info,
-                        title: 'About',
+                        title: S.of(context)!.about,
                         route: '/about',
                       ),
                       _buildMenuItem(
                         context,
                         ref,
                         icon: LucideIcons.bookOpen,
-                        title: 'Walkthrough',
+                        title: S.of(context)!.walkthrough,
                         route: '/walkthrough',
                       ),
                     ],

@@ -1,47 +1,48 @@
 import 'package:flutter/material.dart';
 import 'package:introduction_screen/introduction_screen.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class WalkthroughScreen extends StatelessWidget {
-  // Define your walkthrough pages – update texts, images and background colors as needed.
-  final List<PageViewModel> pages = [
-    PageViewModel(
-      title: "Welcome to Mostro Mobile",
-      body:
-          "Discover a secure, private, and efficient platform for peer-to-peer trading.",
-      image: Center(
-        child: Image.asset("assets/images/mostro-icons.png", height: 175.0),
-      ),
-      decoration: const PageDecoration(
-        titleTextStyle: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-        bodyTextStyle: TextStyle(fontSize: 16),
-      ),
-    ),
-    PageViewModel(
-      title: "Easy Onboarding",
-      body: "Our guided walkthrough makes it simple to get started.",
-      image: Center(
-        child: Image.asset("assets/images/logo.png", height: 175.0),
-      ),
-      decoration: const PageDecoration(
-        titleTextStyle: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-        bodyTextStyle: TextStyle(fontSize: 16),
-      ),
-    ),
-    PageViewModel(
-      title: "Trade with Confidence",
-      body: "Enjoy seamless peer-to-peer trades using our advanced protocols.",
-      image: Center(
-        child: Image.asset("assets/images/logo.png", height: 175.0),
-      ),
-      decoration: const PageDecoration(
-        titleTextStyle: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-        bodyTextStyle: TextStyle(fontSize: 16),
-      ),
-    ),
-  ];
-
   WalkthroughScreen({super.key});
+
+  List<PageViewModel> _getPages(BuildContext context) {
+    return [
+      PageViewModel(
+        title: S.of(context)!.welcomeToMostroMobile,
+        body: S.of(context)!.discoverSecurePlatform,
+        image: Center(
+          child: Image.asset("assets/images/mostro-icons.png", height: 175.0),
+        ),
+        decoration: const PageDecoration(
+          titleTextStyle: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          bodyTextStyle: TextStyle(fontSize: 16),
+        ),
+      ),
+      PageViewModel(
+        title: S.of(context)!.easyOnboarding,
+        body: S.of(context)!.guidedWalkthroughSimple,
+        image: Center(
+          child: Image.asset("assets/images/logo.png", height: 175.0),
+        ),
+        decoration: const PageDecoration(
+          titleTextStyle: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          bodyTextStyle: TextStyle(fontSize: 16),
+        ),
+      ),
+      PageViewModel(
+        title: S.of(context)!.tradeWithConfidence,
+        body: S.of(context)!.seamlessPeerToPeer,
+        image: Center(
+          child: Image.asset("assets/images/logo.png", height: 175.0),
+        ),
+        decoration: const PageDecoration(
+          titleTextStyle: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          bodyTextStyle: TextStyle(fontSize: 16),
+        ),
+      ),
+    ];
+  }
 
   void _onIntroEnd(BuildContext context) {
     context.pop();
@@ -52,13 +53,13 @@ class WalkthroughScreen extends StatelessWidget {
     // Use your app's theme colors.
     final theme = Theme.of(context);
     return IntroductionScreen(
-      pages: pages,
+      pages: _getPages(context),
       onDone: () => _onIntroEnd(context),
       onSkip: () => _onIntroEnd(context),
       showSkipButton: true,
-      skip: const Text("Skip"),
+      skip: Text(S.of(context)!.skip),
       next: const Icon(Icons.arrow_forward),
-      done: const Text("Done", style: TextStyle(fontWeight: FontWeight.w600)),
+      done: Text(S.of(context)!.done, style: const TextStyle(fontWeight: FontWeight.w600)),
       dotsDecorator: DotsDecorator(
         activeColor: theme.primaryColor,
         size: const Size(10, 10),

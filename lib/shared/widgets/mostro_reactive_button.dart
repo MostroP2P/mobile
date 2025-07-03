@@ -72,10 +72,7 @@ class _MostroReactiveButtonState extends ConsumerState<MostroReactiveButton> {
 
   @override
   Widget build(BuildContext context) {
-    final orderState = ref.watch(orderNotifierProvider(widget.orderId));
-    //if (orderState.action != widget.action) {
-      //return const SizedBox.shrink();
-    //}
+    ref.watch(orderNotifierProvider(widget.orderId));
 
     ref.listen(
       mostroMessageStreamProvider(widget.orderId),

@@ -69,6 +69,7 @@ class EventStorage extends BaseStorage<NostrEvent> {
   }
   
   /// Stream of events filtered by event ID
+  @override
   Stream<NostrEvent?> watchById(String eventId) {
     final finder = Finder(
       filter: Filter.equals('id', eventId),

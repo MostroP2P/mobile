@@ -7,6 +7,7 @@ import 'package:mostro_mobile/features/relays/widgets/relay_selector.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/widgets/currency_combo_box.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -26,8 +27,8 @@ class SettingsScreen extends ConsumerWidget {
             icon: const HeroIcon(HeroIcons.arrowLeft, color: AppTheme.cream1),
             onPressed: () => context.pop(),
           ),
-          title: const Text(
-            'Settings',
+          title: Text(
+            S.of(context)!.settings,
             style: TextStyle(
               color: AppTheme.cream1,
             ),
@@ -58,14 +59,14 @@ class SettingsScreen extends ConsumerWidget {
                                   Icons.toll,
                                   color: AppTheme.mostroGreen,
                                 ),
-                                Text('Currency', style: textTheme.titleLarge),
+                                Text(S.of(context)!.currency, style: textTheme.titleLarge),
                               ],
                             ),
-                            Text('Set your default fiat currency',
+                            Text(S.of(context)!.setDefaultFiatCurrency,
                                 style: textTheme.bodyMedium
                                     ?.copyWith(color: AppTheme.grey2)),
                             CurrencyComboBox(
-                              label: "Default Fiat Currency",
+                              label: S.of(context)!.defaultFiatCurrency,
                               onSelected: (fiatCode) {
                                 ref
                                     .watch(settingsProvider.notifier)
@@ -89,10 +90,10 @@ class SettingsScreen extends ConsumerWidget {
                                   Icons.sensors,
                                   color: AppTheme.mostroGreen,
                                 ),
-                                Text('Relays', style: textTheme.titleLarge),
+                                Text(S.of(context)!.relays, style: textTheme.titleLarge),
                               ],
                             ),
-                            Text('Select the Nostr relays you connect to',
+                            Text(S.of(context)!.selectNostrRelays,
                                 style: textTheme.bodyMedium
                                     ?.copyWith(color: AppTheme.grey2)),
                             RelaySelector(),
@@ -106,7 +107,7 @@ class SettingsScreen extends ConsumerWidget {
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: AppTheme.mostroGreen,
                                   ),
-                                  child: const Text('Add Relay'),
+                                  child: Text(S.of(context)!.addRelay),
                                 ),
                               ],
                             ),
@@ -127,11 +128,11 @@ class SettingsScreen extends ConsumerWidget {
                                   Icons.flash_on,
                                   color: AppTheme.mostroGreen,
                                 ),
-                                Text('Mostro', style: textTheme.titleLarge),
+                                Text(S.of(context)!.mostro, style: textTheme.titleLarge),
                               ],
                             ),
                             Text(
-                                'Enter the public key of the Mostro you will use',
+                                S.of(context)!.enterMostroPublicKey,
                                 style: textTheme.bodyMedium
                                     ?.copyWith(color: AppTheme.grey2)),
                             Container(
@@ -150,7 +151,7 @@ class SettingsScreen extends ConsumerWidget {
                                     .updateMostroInstance(value),
                                 decoration: InputDecoration(
                                   border: InputBorder.none,
-                                  labelText: 'Mostro Pubkey',
+                                  labelText: S.of(context)!.mostroPubkey,
                                   labelStyle:
                                       const TextStyle(color: AppTheme.grey2),
                                   contentPadding: const EdgeInsets.symmetric(

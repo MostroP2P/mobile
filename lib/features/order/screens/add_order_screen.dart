@@ -16,6 +16,7 @@ import 'package:mostro_mobile/features/order/widgets/price_type_section.dart';
 import 'package:mostro_mobile/features/order/widgets/form_section.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
 import 'package:uuid/uuid.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class AddOrderScreen extends ConsumerStatefulWidget {
   const AddOrderScreen({super.key});
@@ -100,8 +101,8 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => context.pop(),
         ),
-        title: const Text(
-          'CREATING NEW ORDER',
+        title: Text(
+          S.of(context)!.creatingNewOrder,
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
@@ -171,25 +172,25 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
                           // Show sats amount input field for fixed price
                           FormSection(
                             title: _orderType == OrderType.buy
-                                ? 'Enter the Sats amount you want to Buy'
-                                : 'Enter the Sats amount you want to Sell',
+                                ? S.of(context)!.enterSatsAmountBuy
+                                : S.of(context)!.enterSatsAmountSell,
                             icon: const Icon(Icons.bolt, color: Color(0xFFF3CA29), size: 18),
                             iconBackgroundColor: const Color(0xFFF3CA29).withOpacity(0.3),
                             child: TextFormField(
                               controller: _satsAmountController,
                               style: const TextStyle(color: Colors.white),
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 border: InputBorder.none,
-                                hintText: 'Enter sats amount',
-                                hintStyle: TextStyle(color: Colors.grey),
+                                hintText: S.of(context)!.enterSatsAmount,
+                                hintStyle: const TextStyle(color: Colors.grey),
                               ),
                               keyboardType: TextInputType.number,
                               validator: (value) {
                                 if (!_marketRate && (value == null || value.isEmpty)) {
-                                  return 'Please enter sats amount';
+                                  return S.of(context)!.pleaseEnterSatsAmount;
                                 }
                                 if (!_marketRate && !RegExp(r'^[0-9]+$').hasMatch(value!)) {
-                                  return 'Please enter numbers only';
+                                  return S.of(context)!.pleaseEnterNumbersOnly;
                                 }
                                 return null;
                               },
@@ -243,9 +244,9 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
 
       if (selectedFiatCode.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please select a currency'),
-            duration: Duration(seconds: 2),
+          SnackBar(
+            content: Text(S.of(context)!.pleaseSelectCurrency),
+            duration: const Duration(seconds: 2),
           ),
         );
         return;
@@ -253,9 +254,9 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
 
       if (_selectedPaymentMethods.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please select at least one payment method'),
-            duration: Duration(seconds: 2),
+          SnackBar(
+            content: Text(S.of(context)!.pleaseSelectPaymentMethod),
+            duration: const Duration(seconds: 2),
           ),
         );
         return;
@@ -318,13 +319,13 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
             context: context,
             builder: (context) => AlertDialog(
               backgroundColor: const Color(0xFF1E2230),
-              title: const Text('Error', style: TextStyle(color: Colors.white)),
+              title: Text(S.of(context)!.error, style: const TextStyle(color: Colors.white)),
               content: Text(e.toString(),
                   style: const TextStyle(color: Colors.white)),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('OK',
+                  child: Text(S.of(context)!.ok,
                       style: TextStyle(color: Color(0xFF8CC63F))),
                 ),
               ],
