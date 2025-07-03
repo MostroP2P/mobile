@@ -277,7 +277,7 @@ class TradeDetailScreen extends ConsumerWidget {
 
             if (hasPaymentRequest) {
               widgets.add(_buildNostrButton(
-                'PAY INVOICE',
+                S.of(context)!.payInvoiceButton,
                 action: actions.Action.payInvoice,
                 backgroundColor: AppTheme.mostroGreen,
                 onPressed: () => context.push('/pay_invoice/$orderId'),
@@ -289,7 +289,7 @@ class TradeDetailScreen extends ConsumerWidget {
         case actions.Action.addInvoice:
           if (userRole == Role.buyer) {
             widgets.add(_buildNostrButton(
-              'ADD INVOICE',
+              S.of(context)!.addInvoiceButton,
               action: actions.Action.addInvoice,
               backgroundColor: AppTheme.mostroGreen,
               onPressed: () => context.push('/add_invoice/$orderId'),
@@ -300,7 +300,7 @@ class TradeDetailScreen extends ConsumerWidget {
         case actions.Action.fiatSent:
           if (userRole == Role.buyer) {
             widgets.add(_buildNostrButton(
-              'FIAT SENT',
+              S.of(context)!.fiatSent,
               action: actions.Action.fiatSent,
               backgroundColor: AppTheme.mostroGreen,
               onPressed: () => ref
@@ -318,7 +318,7 @@ class TradeDetailScreen extends ConsumerWidget {
               tradeState.action != actions.Action.disputeInitiatedByPeer &&
               tradeState.action != actions.Action.dispute) {
             widgets.add(_buildNostrButton(
-              'DISPUTE',
+              S.of(context)!.dispute,
               action: actions.Action.disputeInitiatedByYou,
               backgroundColor: AppTheme.red1,
               onPressed: () => ref
@@ -331,7 +331,7 @@ class TradeDetailScreen extends ConsumerWidget {
         case actions.Action.release:
           if (userRole == Role.seller) {
             widgets.add(_buildNostrButton(
-              'RELEASE',
+              S.of(context)!.release,
               action: actions.Action.release,
               backgroundColor: AppTheme.mostroGreen,
               onPressed: () => ref
@@ -344,7 +344,7 @@ class TradeDetailScreen extends ConsumerWidget {
         case actions.Action.takeSell:
           if (userRole == Role.buyer) {
             widgets.add(_buildNostrButton(
-              'TAKE SELL',
+              S.of(context)!.takeSell,
               action: actions.Action.takeSell,
               backgroundColor: AppTheme.mostroGreen,
               onPressed: () => context.push('/take_sell/$orderId'),
@@ -355,7 +355,7 @@ class TradeDetailScreen extends ConsumerWidget {
         case actions.Action.takeBuy:
           if (userRole == Role.seller) {
             widgets.add(_buildNostrButton(
-              'TAKE BUY',
+              S.of(context)!.takeBuy,
               action: actions.Action.takeBuy,
               backgroundColor: AppTheme.mostroGreen,
               onPressed: () => context.push('/take_buy/$orderId'),
