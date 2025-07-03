@@ -53,7 +53,9 @@ class TradeDetailScreen extends ConsumerWidget {
                 // Detailed info: includes the last Mostro message action text
                 MostroMessageDetail(orderId: orderId),
                 const SizedBox(height: 24),
-                _buildCountDownTime(orderPayload.expiresAt),
+                _buildCountDownTime(orderPayload.expiresAt != null
+                    ? orderPayload.expiresAt! * 1000
+                    : null),
                 const SizedBox(height: 36),
                 Wrap(
                   alignment: WrapAlignment.center,
@@ -104,10 +106,9 @@ class TradeDetailScreen extends ConsumerWidget {
     final method = tradeState.order!.paymentMethod;
     final timestamp = formatDateTime(
       tradeState.order!.createdAt != null && tradeState.order!.createdAt! > 0
-          ? DateTime.fromMillisecondsSinceEpoch(tradeState.order!.createdAt!)
-          : DateTime.fromMillisecondsSinceEpoch(
-              tradeState.order!.createdAt ?? 0,
-            ),
+          ? DateTime.fromMillisecondsSinceEpoch(
+              tradeState.order!.createdAt! * 1000)
+          : session.startTime,
     );
     return CustomCard(
       padding: const EdgeInsets.all(16),
@@ -223,24 +224,49 @@ class TradeDetailScreen extends ConsumerWidget {
       // FSM-driven action mapping: ensure all actions are handled
       switch (action) {
         case actions.Action.cancel:
-          String buttonText;
-          Color buttonColor;
+          String cancelMessage;
 
           if (tradeState.status == Status.active ||
               tradeState.status == Status.fiatSent) {
-            buttonText = 'COOPERATIVE CANCEL';
-            buttonColor = AppTheme.red1;
+            if (tradeState.action == actions.Action.cooperativeCancelInitiatedByPeer) {
+              cancelMessage =
+                  'If you confirm, you will accept the cooperative cancellation initiated by your counterparty.';
+            } else {
+              cancelMessage =
+                  'If you confirm, you will start a cooperative cancellation with your counterparty.';
+            }
           } else {
-            buttonText = 'CANCEL';
-            buttonColor = AppTheme.red1;
+            cancelMessage = 'Are you sure you want to cancel this trade?';
           }
 
           widgets.add(_buildNostrButton(
-            buttonText,
+            'CANCEL',
             action: action,
-            backgroundColor: buttonColor,
-            onPressed: () =>
-                ref.read(orderNotifierProvider(orderId).notifier).cancelOrder(),
+            backgroundColor: AppTheme.red1,
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Cancel Trade'),
+                  content: Text(cancelMessage),
+                  actions: [
+                    TextButton(
+                      onPressed: () => context.pop(),
+                      child: const Text('Cancel'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        context.pop();
+                        ref
+                            .read(orderNotifierProvider(orderId).notifier)
+                            .cancelOrder();
+                      },
+                      child: const Text('Confirm'),
+                    ),
+                  ],
+                ),
+              );
+            },
           ));
           break;
 
@@ -386,15 +412,11 @@ class TradeDetailScreen extends ConsumerWidget {
           ));
           break;
 
-        case actions.Action.holdInvoicePaymentSettled:
-        case actions.Action.holdInvoicePaymentAccepted:
+        case actions.Action.sendDm:
           widgets.add(_buildContactButton(context));
           break;
 
         case actions.Action.holdInvoicePaymentCanceled:
-          // These are system actions, not user actions, so no button needed
-          break;
-
         case actions.Action.buyerInvoiceAccepted:
         case actions.Action.waitingSellerToPay:
         case actions.Action.waitingBuyerInvoice:
@@ -407,15 +429,11 @@ class TradeDetailScreen extends ConsumerWidget {
         case actions.Action.adminTookDispute:
         case actions.Action.paymentFailed:
         case actions.Action.invoiceUpdated:
-        case actions.Action.sendDm:
         case actions.Action.tradePubkey:
         case actions.Action.cantDo:
         case actions.Action.released:
-          // Not user-facing or not relevant as a button
           break;
-
         default:
-          // Optionally handle unknown or unimplemented actions
           break;
       }
     }
@@ -457,7 +475,7 @@ class TradeDetailScreen extends ConsumerWidget {
   /// CLOSE
   Widget _buildCloseButton(BuildContext context) {
     return OutlinedButton(
-      onPressed: () => context.pop(),
+      onPressed: () => context.go('/order_book'),
       style: AppTheme.theme.outlinedButtonTheme.style,
       child: const Text('CLOSE'),
     );
