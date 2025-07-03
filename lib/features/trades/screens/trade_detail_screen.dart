@@ -53,7 +53,9 @@ class TradeDetailScreen extends ConsumerWidget {
                 // Detailed info: includes the last Mostro message action text
                 MostroMessageDetail(orderId: orderId),
                 const SizedBox(height: 24),
-                _buildCountDownTime(orderPayload.expiresAt != null ? orderPayload.expiresAt!*1000 : null),
+                _buildCountDownTime(orderPayload.expiresAt != null
+                    ? orderPayload.expiresAt! * 1000
+                    : null),
                 const SizedBox(height: 36),
                 Wrap(
                   alignment: WrapAlignment.center,
@@ -104,7 +106,8 @@ class TradeDetailScreen extends ConsumerWidget {
     final method = tradeState.order!.paymentMethod;
     final timestamp = formatDateTime(
       tradeState.order!.createdAt != null && tradeState.order!.createdAt! > 0
-          ? DateTime.fromMillisecondsSinceEpoch(tradeState.order!.createdAt!*1000)
+          ? DateTime.fromMillisecondsSinceEpoch(
+              tradeState.order!.createdAt! * 1000)
           : session.startTime,
     );
     return CustomCard(
@@ -221,24 +224,49 @@ class TradeDetailScreen extends ConsumerWidget {
       // FSM-driven action mapping: ensure all actions are handled
       switch (action) {
         case actions.Action.cancel:
-          String buttonText;
-          Color buttonColor;
+          String cancelMessage;
 
           if (tradeState.status == Status.active ||
               tradeState.status == Status.fiatSent) {
-            buttonText = 'COOPERATIVE CANCEL';
-            buttonColor = AppTheme.red1;
+            if (tradeState.action == actions.Action.cooperativeCancelInitiatedByPeer) {
+              cancelMessage =
+                  'If you confirm, you will accept the cooperative cancellation initiated by your counterparty.';
+            } else {
+              cancelMessage =
+                  'If you confirm, you will start a cooperative cancellation with your counterparty.';
+            }
           } else {
-            buttonText = 'CANCEL';
-            buttonColor = AppTheme.red1;
+            cancelMessage = 'Are you sure you want to cancel this trade?';
           }
 
           widgets.add(_buildNostrButton(
-            buttonText,
+            'CANCEL',
             action: action,
-            backgroundColor: buttonColor,
-            onPressed: () =>
-                ref.read(orderNotifierProvider(orderId).notifier).cancelOrder(),
+            backgroundColor: AppTheme.red1,
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Cancel Trade'),
+                  content: Text(cancelMessage),
+                  actions: [
+                    TextButton(
+                      onPressed: () => context.pop(),
+                      child: const Text('Cancel'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        context.pop();
+                        ref
+                            .read(orderNotifierProvider(orderId).notifier)
+                            .cancelOrder();
+                      },
+                      child: const Text('Confirm'),
+                    ),
+                  ],
+                ),
+              );
+            },
           ));
           break;
 

@@ -238,10 +238,17 @@ class OrderState {
         Action.holdInvoicePaymentAccepted: [
           Action.cancel,
           Action.dispute,
+          Action.sendDm,
         ],
         Action.holdInvoicePaymentSettled: [
           Action.cancel,
           Action.dispute,
+          Action.sendDm,
+        ],
+        Action.cooperativeCancelInitiatedByPeer: [
+          Action.cancel,
+          Action.dispute,
+          Action.sendDm,
         ],
       },
       Status.fiatSent: {
@@ -306,8 +313,14 @@ class OrderState {
           Action.fiatSent,
           Action.cancel,
           Action.dispute,
+          Action.sendDm,
         ],
         Action.buyerTookOrder: [
+          Action.cancel,
+          Action.dispute,
+          Action.sendDm,
+        ],
+        Action.cooperativeCancelInitiatedByPeer: [
           Action.cancel,
           Action.dispute,
           Action.sendDm,
@@ -317,6 +330,7 @@ class OrderState {
         Action.fiatSentOk: [
           Action.cancel,
           Action.dispute,
+          Action.sendDm,
         ],
       },
       Status.success: {
