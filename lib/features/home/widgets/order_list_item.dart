@@ -8,6 +8,7 @@ import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/time_provider.dart';
 import 'package:mostro_mobile/shared/utils/currency_utils.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class OrderListItem extends ConsumerWidget {
   final NostrEvent order;
@@ -102,7 +103,7 @@ class OrderListItem extends ConsumerWidget {
                         ],
                       ),
                       child: Text(
-                        orderLabel,
+                        order.orderType == OrderType.buy ? S.of(context)!.buying : S.of(context)!.selling,
                         style: const TextStyle(
                           color: Colors.white70,
                           fontSize: 12,
@@ -113,7 +114,7 @@ class OrderListItem extends ConsumerWidget {
 
                     // Timestamp
                     Text(
-                      order.expiration ?? '9 hours ago',
+                      order.expiration ?? S.of(context)!.hoursAgo('9'),
                       style: const TextStyle(
                         color: Colors.white60,
                         fontSize: 14,
@@ -172,7 +173,7 @@ class OrderListItem extends ConsumerWidget {
                       padding: const EdgeInsets.only(top: 4),
                       child: isFixedOrder
                           ? Text(
-                              'For ${order.amount!} sats',
+                              S.of(context)!.forSats(order.amount!),
                               style: TextStyle(
                                 fontSize: 14,
                                 color: Colors.white70,
@@ -182,7 +183,7 @@ class OrderListItem extends ConsumerWidget {
                           : Row(
                               children: [
                                 Text(
-                                  'Market Price ',
+                                  '${S.of(context)!.marketPrice} ',
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: Colors.white70,
@@ -275,7 +276,7 @@ class OrderListItem extends ConsumerWidget {
                     ),
                   ],
                 ),
-                child: _buildRatingRow(order),
+                child: _buildRatingRow(context, order),
               ),
             ],
           ),
@@ -284,7 +285,7 @@ class OrderListItem extends ConsumerWidget {
     );
   }
 
-  Widget _buildRatingRow(NostrEvent order) {
+  Widget _buildRatingRow(BuildContext context, NostrEvent order) {
     final rating = order.rating?.totalRating ?? 0.0;
 
     final int reviews = order.rating?.totalReviews ?? 0;
@@ -329,7 +330,7 @@ class OrderListItem extends ConsumerWidget {
           ],
         ),
         Text(
-          '$reviews reviews • $daysOld days old',
+          S.of(context)!.reviewsAndDaysOld(reviews.toString(), daysOld.toString()),
           style: const TextStyle(
             color: Colors.white60,
             fontSize: 12,

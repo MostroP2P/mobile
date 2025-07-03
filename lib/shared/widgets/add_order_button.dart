@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class AddOrderButton extends StatefulWidget {
   const AddOrderButton({super.key});
@@ -89,8 +90,8 @@ class _AddOrderButtonState extends State<AddOrderButton>
                               horizontal: 16, vertical: 10),
                         ),
                         icon: const SizedBox(width: 16, height: 16),
-                        label: const Text('BUY',
-                            style: TextStyle(fontWeight: FontWeight.bold)),
+                        label: Text(S.of(context)!.buy,
+                            style: const TextStyle(fontWeight: FontWeight.bold)),
                       ),
                       if (_isMenuOpen)
                         const Positioned(
@@ -119,8 +120,8 @@ class _AddOrderButtonState extends State<AddOrderButton>
                               horizontal: 16, vertical: 10),
                         ),
                         icon: const SizedBox(width: 16, height: 16),
-                        label: const Text('SELL',
-                            style: TextStyle(fontWeight: FontWeight.bold)),
+                        label: Text(S.of(context)!.sell,
+                            style: const TextStyle(fontWeight: FontWeight.bold)),
                       ),
                       if (_isMenuOpen)
                         const Positioned(

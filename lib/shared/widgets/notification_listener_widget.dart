@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mostro_mobile/generated/action_localizations.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/notifiers/notification_notifier.dart';
 import 'package:mostro_mobile/shared/providers/notification_notifier_provider.dart';
@@ -17,9 +16,7 @@ class NotificationListenerWidget extends ConsumerWidget {
       if (next.informational) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text(S
-                  .of(context)!
-                  .actionLabel(next.action!, placeholders: next.placeholders))),
+              content: Text(next.action?.toString() ?? S.of(context)!.error)),
         );
         // Clear notification after showing to prevent repetition
         ref.read(notificationProvider.notifier).clearNotification();
@@ -27,21 +24,19 @@ class NotificationListenerWidget extends ConsumerWidget {
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
-            title: Text('Action Required'),
-            content: Text(S
-                .of(context)!
-                .actionLabel(next.action!, placeholders: next.placeholders)),
+            title: Text(S.of(context)!.error),
+            content: Text(next.action?.toString() ?? S.of(context)!.error),
             actions: [
               TextButton(
                 onPressed: () => context.go('/'),
-                child: Text('Cancel'),
+                child: Text(S.of(context)!.cancel),
               ),
               TextButton(
                 onPressed: () {
                   // Perform the required action
                   Navigator.of(context).pop();
                 },
-                child: Text('Add Invoice'),
+                child: Text(S.of(context)!.ok),
               ),
             ],
           ),

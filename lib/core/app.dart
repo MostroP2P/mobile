@@ -47,12 +47,7 @@ class _MostroAppState extends ConsumerState<MostroApp> {
           });
         });
 
-        // Debug: Check system locale at app start
         final systemLocale = ui.PlatformDispatcher.instance.locale;
-        print('🌐 APP START LOCALE CHECK:');
-        print('   System locale at start: $systemLocale');
-        print('   Language code: ${systemLocale.languageCode}');
-        print('   Country code: ${systemLocale.countryCode}');
         
         return MaterialApp.router(
           title: 'Mostro',
@@ -71,30 +66,19 @@ class _MostroAppState extends ConsumerState<MostroApp> {
           localeResolutionCallback: (locale, supportedLocales) {
             final deviceLocale = locale ?? systemLocale;
             
-            // Enhanced debug logging
-            print('🌐 LOCALE RESOLUTION CALLBACK CALLED:');
-            print('   Provided locale: $locale');
-            print('   System locale: $systemLocale');
-            print('   Device locale: $deviceLocale');
-            print('   Device language: ${deviceLocale.languageCode}');
-            print('   Supported locales: $supportedLocales');
-            
             // Check for Spanish language code (es) - includes es_AR, es_ES, etc.
             if (deviceLocale.languageCode == 'es') {
-              print('   ✅ Spanish detected (${deviceLocale.toString()}), returning es locale');
               return const Locale('es');
             }
             
             // Check for exact match with any supported locale
             for (var supportedLocale in supportedLocales) {
               if (supportedLocale.languageCode == deviceLocale.languageCode) {
-                print('   ✅ Found matching locale: $supportedLocale');
                 return supportedLocale;
               }
             }
             
             // If no match found, return English as fallback
-            print('   ⚠️ No match found, defaulting to English');
             return const Locale('en');
           },
         );
