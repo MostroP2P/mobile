@@ -224,26 +224,20 @@ class TradeDetailScreen extends ConsumerWidget {
       // FSM-driven action mapping: ensure all actions are handled
       switch (action) {
         case actions.Action.cancel:
-          String buttonText;
-          Color buttonColor;
           String cancelMessage;
 
           if (tradeState.status == Status.active ||
               tradeState.status == Status.fiatSent) {
-            buttonText = 'CANCEL';
-            buttonColor = AppTheme.red1;
             cancelMessage =
                 'If you confirm, you will start a cooperative cancellation with your counterparty.';
           } else {
-            buttonText = 'CANCEL';
-            buttonColor = AppTheme.red1;
             cancelMessage = 'Are you sure you want to cancel this trade?';
           }
 
           widgets.add(_buildNostrButton(
-            buttonText,
+            'CANCEL',
             action: action,
-            backgroundColor: buttonColor,
+            backgroundColor: AppTheme.red1,
             onPressed: () {
               showDialog(
                 context: context,
