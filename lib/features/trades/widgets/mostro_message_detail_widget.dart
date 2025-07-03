@@ -15,9 +15,9 @@ class MostroMessageDetail extends ConsumerWidget {
 
   /// Helper function to format payment methods for display
   /// Returns "method1 (+X más)" if multiple methods, or just "method1" if single
-  String _formatPaymentMethods(List<String> paymentMethods) {
+  String _formatPaymentMethods(List<String> paymentMethods, BuildContext context) {
     if (paymentMethods.isEmpty) {
-      return 'No payment method';
+      return S.of(context)!.noPaymentMethod;
     }
 
     if (paymentMethods.length == 1) {
@@ -187,7 +187,7 @@ class MostroMessageDetail extends ConsumerWidget {
       case actions.Action.cantDo:
         return _getCantDoMessage(context, ref);
       default:
-        return 'No message found for action ${tradeState.action}';
+        return 'No message found for action ${tradeState.action}'; // This is a fallback message for developers
     }
   }
 
