@@ -1,6 +1,7 @@
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:workmanager/workmanager.dart';
 
+@pragma('vm:entry-point')
 void callbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
     final service = FlutterBackgroundService();
@@ -17,8 +18,8 @@ Future<void> initializeWorkManager() async {
   );
 
   await Workmanager().registerPeriodicTask(
-    "mostroWebSocketTask",
-    "mostroWebSocketTask",
+    "mostroSyncTask",
+    "mostroSyncTask",
     frequency: Duration(hours: 1),
     initialDelay: Duration(minutes: 1),
   );
