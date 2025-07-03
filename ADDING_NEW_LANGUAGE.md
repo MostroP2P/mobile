@@ -9,7 +9,13 @@ The Mostro Mobile app currently supports:
 - **Spanish** (es) - Secondary language  
 - **Italian** (it) - Secondary language
 
-The localization system automatically detects the user's device language and displays the appropriate translations.
+The localization system automatically detects the user's device language and displays the appropriate translations. As of the latest update, the app includes comprehensive localization for:
+
+- **Order Creation Forms** - Amount entry, payment methods, premium settings
+- **Account Management** - Key management, privacy settings, trade counters
+- **Chat System** - Messages, conversation headers, input fields
+- **Trade Details** - Action buttons, status messages, order information
+- **Navigation** - Drawer menus, screen titles, button labels
 
 ## 🛠 Prerequisites
 
