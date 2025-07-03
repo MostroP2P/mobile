@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:share_plus/share_plus.dart';
 
 class PayLightningInvoiceWidget extends StatefulWidget {
   final VoidCallback onSubmit;
@@ -54,26 +55,57 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
           ),
         ),
         const SizedBox(height: 20),
-        ElevatedButton.icon(
-          onPressed: () {
-            Clipboard.setData(ClipboardData(text: widget.lnInvoice));
-            widget.logger
-                .i('Copied LN Invoice to clipboard: ${widget.lnInvoice}');
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Invoice copied to clipboard'),
-                duration: Duration(seconds: 2),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            ElevatedButton.icon(
+              onPressed: () {
+                Clipboard.setData(ClipboardData(text: widget.lnInvoice));
+                widget.logger
+                    .i('Copied LN Invoice to clipboard: ${widget.lnInvoice}');
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Invoice copied to clipboard'),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.copy),
+              label: const Text('Copy'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.mostroGreen,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
               ),
-            );
-          },
-          icon: const Icon(Icons.copy),
-          label: const Text('Copy Invoice'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.mostroGreen,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
             ),
-          ),
+            ElevatedButton.icon(
+              onPressed: () async {
+                try {
+                  await Share.share(widget.lnInvoice);
+                  widget.logger.i('Shared LN Invoice: ${widget.lnInvoice}');
+                } catch (e) {
+                  widget.logger.e('Failed to share LN Invoice: $e');
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Failed to share invoice. Please try copying instead.'),
+                        duration: Duration(seconds: 3),
+                      ),
+                    );
+                  }
+                }
+              },
+              icon: const Icon(Icons.share),
+              label: const Text('Share'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.mostroGreen,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 20),
         // Open Wallet Button
