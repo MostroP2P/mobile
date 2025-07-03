@@ -32,6 +32,7 @@ void main() {
     late MockKeyManager mockKeyManager;
     late MockSessionNotifier mockSessionNotifier;
     late MockMostroStorage mockMostroStorage;
+    late MockRef ref;
     const testOrderId = "test_order_id";
 
     setUp(() {
@@ -43,16 +44,12 @@ void main() {
       mockSessionStorage = MockSessionStorage();
       mockKeyManager = MockKeyManager();
       mockMostroStorage = MockMostroStorage();
+      ref = MockRef();
       
       // Create test settings
-      final testSettings = Settings(
-        relays: ['wss://relay.damus.io'],
-        fullPrivacyMode: false,
-        mostroPublicKey: '6d5c471d0e88c8c688c85dd8a3d84e3c7c5e8a3b6d7a6b2c9e8c5d9a7b3e6c8a',
-        defaultFiatCode: 'USD',
-      );
+      final testSettings = MockSettings();
       
-      mockSessionNotifier = MockSessionNotifier(mockKeyManager, mockSessionStorage, testSettings);
+      mockSessionNotifier = MockSessionNotifier(ref, mockKeyManager, mockSessionStorage, testSettings);
       
       // Stub the KeyManager methods
       when(mockKeyManager.masterKeyPair).thenReturn(
@@ -131,7 +128,7 @@ void main() {
           Settings(
             relays: ['wss://relay.damus.io'],
             fullPrivacyMode: false,
-            mostroPublicKey: '6d5c471d0e88c8c688c85dd8a3d84e3c7c5e8a3b6d7a6b2c9e8c5d9a7b3e6c8a',
+            mostroPublicKey: '9d9d0455a96871f2dc4289b8312429db2e925f167b37c77bf7b28014be235980',
             defaultFiatCode: 'USD',
           ), 
           mockPreferences
@@ -195,7 +192,7 @@ void main() {
           Settings(
             relays: ['wss://relay.damus.io'],
             fullPrivacyMode: false,
-            mostroPublicKey: '6d5c471d0e88c8c688c85dd8a3d84e3c7c5e8a3b6d7a6b2c9e8c5d9a7b3e6c8a',
+            mostroPublicKey: '9d9d0455a96871f2dc4289b8312429db2e925f167b37c77bf7b28014be235980',
             defaultFiatCode: 'USD',
           ), 
           mockPreferences
@@ -258,7 +255,7 @@ void main() {
           Settings(
             relays: ['wss://relay.damus.io'],
             fullPrivacyMode: false,
-            mostroPublicKey: '6d5c471d0e88c8c688c85dd8a3d84e3c7c5e8a3b6d7a6b2c9e8c5d9a7b3e6c8a',
+            mostroPublicKey: '9d9d0455a96871f2dc4289b8312429db2e925f167b37c77bf7b28014be235980',
             defaultFiatCode: 'USD',
           ), 
           mockPreferences
@@ -307,7 +304,7 @@ void main() {
           Settings(
             relays: ['wss://relay.damus.io'],
             fullPrivacyMode: false,
-            mostroPublicKey: '6d5c471d0e88c8c688c85dd8a3d84e3c7c5e8a3b6d7a6b2c9e8c5d9a7b3e6c8a',
+            mostroPublicKey: '9d9d0455a96871f2dc4289b8312429db2e925f167b37c77bf7b28014be235980',
             defaultFiatCode: 'USD',
           ), 
           mockPreferences

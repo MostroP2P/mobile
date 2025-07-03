@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -18,9 +16,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  if (Platform.isAndroid && !Platform.environment.containsKey('FLUTTER_TEST')) {
-    await requestNotificationPermissionIfNeeded();
-  }
+  await requestNotificationPermissionIfNeeded();
 
   final biometricsHelper = BiometricsHelper();
   final sharedPreferences = SharedPreferencesAsync();

@@ -8,7 +8,6 @@ import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
-import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_database_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
@@ -34,7 +33,7 @@ void main() {
     late MockKeyManager mockKeyManager;
     late MockSessionNotifier mockSessionNotifier;
     late MockMostroStorage mockMostroStorage;
-
+    late MockRef ref;
     const testUuid = "12345678-1234-1234-1234-123456789abc";
 
     setUp(() {
@@ -45,17 +44,13 @@ void main() {
       mockSessionStorage = MockSessionStorage();
       mockKeyManager = MockKeyManager();
       mockMostroStorage = MockMostroStorage();
+      ref = MockRef();
 
       // Create test settings
-      final testSettings = Settings(
-        relays: ['wss://relay.damus.io'],
-        fullPrivacyMode: false,
-        mostroPublicKey: 'test_key',
-        defaultFiatCode: 'USD',
-      );
+      final testSettings = MockSettings();
 
       mockSessionNotifier =
-          MockSessionNotifier(mockKeyManager, mockSessionStorage, testSettings);
+          MockSessionNotifier(ref, mockKeyManager, mockSessionStorage, testSettings);
 
       // Stub the KeyManager methods
       when(mockKeyManager.masterKeyPair).thenReturn(

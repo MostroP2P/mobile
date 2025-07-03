@@ -8,6 +8,7 @@ import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/chat_room.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
+import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/avatar_provider.dart';
 import 'package:mostro_mobile/shared/providers/legible_handle_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
@@ -29,7 +30,8 @@ class _MessagesDetailScreenState extends ConsumerState<ChatRoomScreen> {
   Widget build(BuildContext context) {
     final chatDetailState = ref.watch(chatRoomsProvider(widget.orderId));
     final session = ref.read(sessionProvider(widget.orderId));
-    final peer = session!.peer!.publicKey;
+    final orderState = ref.read(orderNotifierProvider(widget.orderId));
+    final peer = orderState.peer!.publicKey;
 
     return Scaffold(
       backgroundColor: AppTheme.dark1,
@@ -63,7 +65,7 @@ class _MessagesDetailScreenState extends ConsumerState<ChatRoomScreen> {
             children: [
               const SizedBox(height: 12.0),
               Text('Order: ${widget.orderId}'),
-              _buildMessageHeader(peer, session),
+              _buildMessageHeader(peer, session!),
               _buildBody(chatDetailState, peer),
               _buildMessageInput(),
               const SizedBox(height: 12.0),

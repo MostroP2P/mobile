@@ -86,7 +86,7 @@ class OrderState {
 
     // Preserve the current state entirely for cantDo messages - they are informational only
     if (message.action == Action.cantDo) {
-      return this;
+      return copyWith(cantDo: message.getPayload<CantDo>());
     }
 
     // Determine the new status based on the action received
@@ -105,6 +105,22 @@ class OrderState {
       newPaymentRequest = paymentRequest; // Preserve existing
     }
 
+    Peer? newPeer;
+    if (message.payload is Peer &&
+        message.getPayload<Peer>()!.publicKey.isNotEmpty) {
+      newPeer = message.getPayload<Peer>();
+      _logger.i('👤 New Peer found in message');
+    } else if (message.payload is Order) {
+      if (message.getPayload<Order>()!.buyerTradePubkey != null) {
+        newPeer = Peer(publicKey: message.getPayload<Order>()!.buyerTradePubkey!);
+      } else if (message.getPayload<Order>()!.sellerTradePubkey != null) {
+        newPeer = Peer(publicKey: message.getPayload<Order>()!.sellerTradePubkey!);
+      }
+      _logger.i('👤 New Peer found in message');
+    } else {
+      newPeer = peer; // Preserve existing
+    }
+
     final newState = copyWith(
       status: newStatus,
       action: message.action,
@@ -116,12 +132,8 @@ class OrderState {
       paymentRequest: newPaymentRequest,
       cantDo: message.getPayload<CantDo>() ?? cantDo,
       dispute: message.getPayload<Dispute>() ?? dispute,
-      peer: message.getPayload<Peer>() ?? peer,
+      peer: newPeer,
     );
-
-    _logger.i('✅ New state: ${newState.status} - ${newState.action}');
-    _logger
-        .i('💳 PaymentRequest preserved: ${newState.paymentRequest != null}');
 
     return newState;
   }
