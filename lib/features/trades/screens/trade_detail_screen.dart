@@ -61,7 +61,7 @@ class TradeDetailScreen extends ConsumerWidget {
                 const SizedBox(height: 16),
                 // For pending orders created by the user, show creator's reputation
                 if (isPending && isCreator) ...[  
-                  _buildCreatorReputation(),
+                  _buildCreatorReputation(tradeState),
                   const SizedBox(height: 16),
                 ] else ...[  // Use spread operator here too
                   // Detailed info: includes the last Mostro message action text
@@ -641,9 +641,10 @@ class TradeDetailScreen extends ConsumerWidget {
   }
 
   /// Build a card showing the creator's reputation with rating, reviews and days
-  Widget _buildCreatorReputation() {
-    // For now, show placeholder data matching the screenshot
-    // In a real implementation, this would come from the order creator's data
+  Widget _buildCreatorReputation(OrderState tradeState) {
+    // En trade_detail_screen.dart, no tenemos acceso directo al rating como en NostrEvent
+    // Por ahora, usamos valores predeterminados
+    // TODO: Implementar la extracción de datos de calificación del creador
     const rating = 3.1;
     const reviews = 15;
     const days = 7;
