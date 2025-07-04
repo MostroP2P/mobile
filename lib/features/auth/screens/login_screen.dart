@@ -6,6 +6,7 @@ import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/auth/notifiers/auth_state.dart';
 import 'package:mostro_mobile/features/auth/providers/auth_notifier_provider.dart';
 import 'package:mostro_mobile/shared/widgets/custom_button.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class LoginScreen extends HookConsumerWidget {
   const LoginScreen({super.key});
@@ -27,7 +28,7 @@ class LoginScreen extends HookConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Login', style: TextStyle(color: AppTheme.cream1)),
+        title: Text(S.of(context)!.login, style: const TextStyle(color: AppTheme.cream1)),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -41,8 +42,8 @@ class LoginScreen extends HookConsumerWidget {
             children: [
               TextFormField(
                 controller: pinController,
-                decoration: const InputDecoration(
-                  labelText: 'PIN',
+                decoration: InputDecoration(
+                  labelText: S.of(context)!.pin,
                   labelStyle: TextStyle(color: AppTheme.cream1),
                   enabledBorder: UnderlineInputBorder(
                     borderSide: BorderSide(color: AppTheme.cream1),
@@ -53,14 +54,14 @@ class LoginScreen extends HookConsumerWidget {
                 obscureText: true,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter your PIN';
+                    return S.of(context)!.pleaseEnterPin;
                   }
                   return null;
                 },
               ),
               const SizedBox(height: 24),
               CustomButton(
-                text: 'Login',
+                text: S.of(context)!.login,
                 onPressed: () => _onLogin(context, ref, formKey, pinController),
               ),
             ],

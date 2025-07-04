@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/order/widgets/form_section.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class PriceTypeSection extends StatelessWidget {
   final bool isMarketRate;
@@ -22,22 +23,22 @@ class PriceTypeSection extends StatelessWidget {
     );
     
     return FormSection(
-      title: 'Price type',
+      title: S.of(context)!.priceType,
       icon: priceTypeIcon,
       iconBackgroundColor: AppTheme.purpleAccent.withOpacity(0.3), // Purple color consistent with other sections
-      infoTooltip: '• Select Market Price if you want to use the price that Bitcoin has when someone takes your offer.\n• Select Fixed Price if you want to define the exact amount of Bitcoin you will exchange.',
+      infoTooltip: S.of(context)!.priceTypeTooltip,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            isMarketRate ? 'Market price' : 'Fixed price',
+            isMarketRate ? S.of(context)!.marketPrice : S.of(context)!.fixedPrice,
             style: const TextStyle(
                 color: AppTheme.textPrimary, fontWeight: FontWeight.w500),
           ),
           Row(
             children: [
               Text(
-                'Market',
+                S.of(context)!.market,
                 style: TextStyle(
                   color: isMarketRate
                       ? AppTheme.statusSuccess

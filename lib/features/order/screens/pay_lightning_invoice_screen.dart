@@ -6,6 +6,7 @@ import 'package:mostro_mobile/features/order/providers/order_notifier_provider.d
 import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 import 'package:mostro_mobile/shared/widgets/pay_lightning_invoice_widget.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class PayLightningInvoiceScreen extends ConsumerStatefulWidget {
   final String orderId;
@@ -28,7 +29,7 @@ class _PayLightningInvoiceScreenState
 
     return Scaffold(
         backgroundColor: AppTheme.dark1,
-        appBar: OrderAppBar(title: 'Pay Lightning Invoice'),
+        appBar: OrderAppBar(title: S.of(context)!.payLightningInvoice),
         body: CustomCard(
           padding: const EdgeInsets.all(16),
           child: Material(

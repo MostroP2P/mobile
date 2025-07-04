@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/features/order/providers/payment_methods_provider.dart';
 import 'package:mostro_mobile/features/order/widgets/form_section.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class PaymentMethodsSection extends ConsumerWidget {
   final List<String> selectedMethods;
@@ -25,7 +26,7 @@ class PaymentMethodsSection extends ConsumerWidget {
     final paymentMethodsData = ref.watch(paymentMethodsDataProvider);
 
     return FormSection(
-      title: 'Payment methods for $selectedFiatCode',
+      title: S.of(context)!.paymentMethodsForCurrency(selectedFiatCode),
       icon: const Icon(Icons.credit_card, color: Color(0xFF8CC63F), size: 18),
       iconBackgroundColor: const Color(0xFF8CC63F).withOpacity(0.3),
       extraContent: showCustomField
@@ -35,8 +36,8 @@ class PaymentMethodsSection extends ConsumerWidget {
                 key: const Key('paymentMethodField'),
                 controller: customController,
                 style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
-                  hintText: 'Enter custom payment method',
+                decoration: InputDecoration(
+                  hintText: S.of(context)!.enterCustomPaymentMethod,
                   hintStyle: TextStyle(color: Colors.grey),
                   enabledBorder: UnderlineInputBorder(
                     borderSide: BorderSide(color: Colors.white24),
@@ -49,13 +50,13 @@ class PaymentMethodsSection extends ConsumerWidget {
             )
           : null,
       child: paymentMethodsData.when(
-        loading: () => const Text('Loading payment methods...',
-            style: TextStyle(color: Colors.white)),
-        error: (error, _) => Text('Error loading payment methods: $error',
-            style: TextStyle(color: Colors.red)),
+        loading: () => Text(S.of(context)!.loadingPaymentMethods,
+            style: const TextStyle(color: Colors.white)),
+        error: (error, _) => Text(S.of(context)!.errorLoadingPaymentMethods(error.toString()),
+            style: const TextStyle(color: Colors.red)),
         data: (data) {
           final displayText = selectedMethods.isEmpty
-              ? 'Select payment methods'
+              ? S.of(context)!.selectPaymentMethods
               : selectedMethods.join(', ');
 
           List<String> availableMethods = [];
@@ -121,9 +122,9 @@ class PaymentMethodsSection extends ConsumerWidget {
           builder: (context, setDialogState) {
             return AlertDialog(
               backgroundColor: const Color(0xFF1E2230),
-              title: const Text(
-                'Select Payment Methods',
-                style: TextStyle(color: Colors.white, fontSize: 18),
+              title: Text(
+                S.of(context)!.selectPaymentMethodsTitle,
+                style: const TextStyle(color: Colors.white, fontSize: 18),
               ),
               content: SizedBox(
                 width: double.maxFinite,
@@ -160,8 +161,8 @@ class PaymentMethodsSection extends ConsumerWidget {
                         TextField(
                           controller: customController,
                           style: const TextStyle(color: Colors.white),
-                          decoration: const InputDecoration(
-                            hintText: 'Enter custom payment method',
+                          decoration: InputDecoration(
+                            hintText: S.of(context)!.enterCustomPaymentMethod,
                             hintStyle: TextStyle(color: Colors.grey),
                             enabledBorder: UnderlineInputBorder(
                               borderSide: BorderSide(color: Colors.white24),
@@ -181,8 +182,8 @@ class PaymentMethodsSection extends ConsumerWidget {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancel',
-                      style: TextStyle(color: Colors.white70)),
+                  child: Text(S.of(context)!.cancel,
+                      style: const TextStyle(color: Colors.white70)),
                 ),
                 TextButton(
                   onPressed: () {
@@ -190,8 +191,8 @@ class PaymentMethodsSection extends ConsumerWidget {
                         dialogSelectedMethods, dialogShowOtherField);
                     Navigator.of(context).pop();
                   },
-                  child: const Text('Confirm',
-                      style: TextStyle(color: Color(0xFF8CC63F))),
+                  child: Text(S.of(context)!.confirm,
+                      style: const TextStyle(color: Color(0xFF8CC63F))),
                 ),
               ],
             );

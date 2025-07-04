@@ -34,9 +34,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       }
       await authRepository.register(privateKey, password, useBiometrics);
       state = AuthRegistrationSuccess();
-    } catch (e, stackTrace) {
-      print('Error during registration: $e');
-      print('Stack trace: $stackTrace');
+    } catch (e) {
       state = AuthFailure(e.toString());
     }
   }

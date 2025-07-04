@@ -108,6 +108,18 @@ See the README.md in the mostro repository for more details.
 
 Please take a look at our issues section for areas where you can contribute. We welcome all contributions, big or small! 😊
 
+### Adding New Languages
+
+The Mostro Mobile app supports internationalization (i18n) and currently includes English, Spanish, and Italian translations. To add support for a new language, please see our comprehensive guide:
+
+📖 **[ADDING_NEW_LANGUAGE.md](ADDING_NEW_LANGUAGE.md)** - Complete step-by-step instructions for adding new language support
+
+The guide covers:
+- Setting up ARB translation files
+- Translating all app strings
+- Testing and validation
+- Troubleshooting common issues
+
 ## License
 
 This project is licensed under the MIT License. See the `LICENSE` file for details.

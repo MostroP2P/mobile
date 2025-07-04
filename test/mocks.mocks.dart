@@ -19,6 +19,7 @@ import 'package:mostro_mobile/features/key_manager/key_manager.dart' as _i15;
 import 'package:mostro_mobile/features/settings/settings.dart' as _i8;
 import 'package:mostro_mobile/services/mostro_service.dart' as _i7;
 import 'package:sembast/sembast.dart' as _i4;
+import 'package:sembast/src/api/transaction.dart' as _i13;
 import 'package:shared_preferences/src/shared_preferences_async.dart' as _i11;
 
 // ignore_for_file: type=lint
@@ -400,6 +401,7 @@ class MockOpenOrdersRepository extends _i1.Mock
 /// A class which mocks [SharedPreferencesAsync].
 ///
 /// See the documentation for Mockito's code generation for more information.
+// ignore: must_be_immutable
 class MockSharedPreferencesAsync extends _i1.Mock
     implements _i11.SharedPreferencesAsync {
   MockSharedPreferencesAsync() {
@@ -615,7 +617,7 @@ class MockDatabase extends _i1.Mock implements _i4.Database {
 
   @override
   _i3.Future<T> transaction<T>(
-          _i3.FutureOr<T> Function(_i4.Transaction)? action) =>
+          _i3.FutureOr<T> Function(_i13.Transaction)? action) =>
       (super.noSuchMethod(
         Invocation.method(
           #transaction,
