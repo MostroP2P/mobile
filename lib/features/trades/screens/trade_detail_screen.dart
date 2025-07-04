@@ -5,17 +5,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
-
+import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
 import 'package:mostro_mobile/data/models/enums/role.dart';
 import 'package:mostro_mobile/data/models/enums/status.dart';
-import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
-
+import 'package:mostro_mobile/features/trades/widgets/mostro_message_detail_widget.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/shared/utils/currency_utils.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
+import 'package:mostro_mobile/shared/widgets/mostro_reactive_button.dart';
 
 class TradeDetailScreen extends ConsumerWidget {
   final String orderId;
@@ -40,16 +40,38 @@ class TradeDetailScreen extends ConsumerWidget {
       appBar: OrderAppBar(title: 'ORDER DETAILS'),
       body: Builder(
         builder: (context) {
-          // Check if this is a pending order (created by user but not taken yet)
-          final isPendingOrder = tradeState.status == Status.pending;
-
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
-            child: isPendingOrder
-                ? _buildPendingOrderLayout(
-                    ref, tradeState, context, orderPayload)
-                : _buildActiveOrderLayout(
-                    ref, tradeState, context, orderPayload),
+            child: Column(
+              children: [
+                const SizedBox(height: 16),
+                // Display basic info about the trade:
+                _buildSellerAmount(ref, tradeState),
+                const SizedBox(height: 16),
+                _buildOrderId(context),
+                const SizedBox(height: 16),
+                // Detailed info: includes the last Mostro message action text
+                MostroMessageDetail(orderId: orderId),
+                const SizedBox(height: 24),
+                _buildCountDownTime(orderPayload.expiresAt != null
+                    ? orderPayload.expiresAt! * 1000
+                    : null),
+                const SizedBox(height: 36),
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    _buildCloseButton(context),
+                    ..._buildActionButtons(
+                      context,
+                      ref,
+                      tradeState,
+                    ),
+                  ],
+                ),
+              ],
+            ),
           );
         },
       ),
@@ -84,10 +106,9 @@ class TradeDetailScreen extends ConsumerWidget {
     final method = tradeState.order!.paymentMethod;
     final timestamp = formatDateTime(
       tradeState.order!.createdAt != null && tradeState.order!.createdAt! > 0
-          ? DateTime.fromMillisecondsSinceEpoch(tradeState.order!.createdAt!)
-          : DateTime.fromMillisecondsSinceEpoch(
-              tradeState.order!.createdAt ?? 0,
-            ),
+          ? DateTime.fromMillisecondsSinceEpoch(
+              tradeState.order!.createdAt! * 1000)
+          : session.startTime,
     );
     return CustomCard(
       padding: const EdgeInsets.all(16),
@@ -183,420 +204,293 @@ class TradeDetailScreen extends ConsumerWidget {
   }
 
   /// Main action button area, switching on `orderPayload.status`.
+  /// Additional checks use `message.action` to refine which button to show.
+  /// Following the Mostro protocol state machine for order flow.
+  List<Widget> _buildActionButtons(
+      BuildContext context, WidgetRef ref, OrderState tradeState) {
+    final session = ref.watch(sessionProvider(orderId));
+    final userRole = session?.role;
+
+    if (userRole == null) {
+      return [];
+    }
+
+    final userActions = tradeState.getActions(userRole);
+    if (userActions.isEmpty) return [];
+
+    final widgets = <Widget>[];
+
+    for (final action in userActions) {
+      // FSM-driven action mapping: ensure all actions are handled
+      switch (action) {
+        case actions.Action.cancel:
+          String cancelMessage;
+
+          if (tradeState.status == Status.active ||
+              tradeState.status == Status.fiatSent) {
+            if (tradeState.action ==
+                actions.Action.cooperativeCancelInitiatedByPeer) {
+              cancelMessage =
+                  'If you confirm, you will accept the cooperative cancellation initiated by your counterparty.';
+            } else {
+              cancelMessage =
+                  'If you confirm, you will start a cooperative cancellation with your counterparty.';
+            }
+          } else {
+            cancelMessage = 'Are you sure you want to cancel this trade?';
+          }
+
+          widgets.add(_buildNostrButton(
+            'CANCEL',
+            action: action,
+            backgroundColor: AppTheme.red1,
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Cancel Trade'),
+                  content: Text(cancelMessage),
+                  actions: [
+                    TextButton(
+                      onPressed: () => context.pop(),
+                      child: const Text('Cancel'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        context.pop();
+                        ref
+                            .read(orderNotifierProvider(orderId).notifier)
+                            .cancelOrder();
+                      },
+                      child: const Text('Confirm'),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ));
+          break;
+
+        case actions.Action.payInvoice:
+          if (userRole == Role.seller) {
+            final hasPaymentRequest = tradeState.paymentRequest != null;
+
+            if (hasPaymentRequest) {
+              widgets.add(_buildNostrButton(
+                'PAY INVOICE',
+                action: actions.Action.payInvoice,
+                backgroundColor: AppTheme.mostroGreen,
+                onPressed: () => context.push('/pay_invoice/$orderId'),
+              ));
+            }
+          }
+          break;
+
+        case actions.Action.addInvoice:
+          if (userRole == Role.buyer) {
+            widgets.add(_buildNostrButton(
+              'ADD INVOICE',
+              action: actions.Action.addInvoice,
+              backgroundColor: AppTheme.mostroGreen,
+              onPressed: () => context.push('/add_invoice/$orderId'),
+            ));
+          }
+          break;
+
+        case actions.Action.fiatSent:
+          if (userRole == Role.buyer) {
+            widgets.add(_buildNostrButton(
+              'FIAT SENT',
+              action: actions.Action.fiatSent,
+              backgroundColor: AppTheme.mostroGreen,
+              onPressed: () => ref
+                  .read(orderNotifierProvider(orderId).notifier)
+                  .sendFiatSent(),
+            ));
+          }
+          break;
+
+        case actions.Action.disputeInitiatedByYou:
+        case actions.Action.disputeInitiatedByPeer:
+        case actions.Action.dispute:
+          // Only allow dispute if not already disputed
+          if (tradeState.action != actions.Action.disputeInitiatedByYou &&
+              tradeState.action != actions.Action.disputeInitiatedByPeer &&
+              tradeState.action != actions.Action.dispute) {
+            widgets.add(_buildNostrButton(
+              'DISPUTE',
+              action: actions.Action.disputeInitiatedByYou,
+              backgroundColor: AppTheme.red1,
+              onPressed: () => ref
+                  .read(orderNotifierProvider(orderId).notifier)
+                  .disputeOrder(),
+            ));
+          }
+          break;
+
+        case actions.Action.release:
+          if (userRole == Role.seller) {
+            widgets.add(_buildNostrButton(
+              'RELEASE',
+              action: actions.Action.release,
+              backgroundColor: AppTheme.mostroGreen,
+              onPressed: () => ref
+                  .read(orderNotifierProvider(orderId).notifier)
+                  .releaseOrder(),
+            ));
+          }
+          break;
+
+        case actions.Action.takeSell:
+          if (userRole == Role.buyer) {
+            widgets.add(_buildNostrButton(
+              'TAKE SELL',
+              action: actions.Action.takeSell,
+              backgroundColor: AppTheme.mostroGreen,
+              onPressed: () => context.push('/take_sell/$orderId'),
+            ));
+          }
+          break;
+
+        case actions.Action.takeBuy:
+          if (userRole == Role.seller) {
+            widgets.add(_buildNostrButton(
+              'TAKE BUY',
+              action: actions.Action.takeBuy,
+              backgroundColor: AppTheme.mostroGreen,
+              onPressed: () => context.push('/take_buy/$orderId'),
+            ));
+          }
+          break;
+
+        // ✅ CASOS DE COOPERATIVE CANCEL: Ahora estos se manejan cuando el usuario ya inició/recibió cooperative cancel
+        case actions.Action.cooperativeCancelInitiatedByYou:
+          // El usuario ya inició cooperative cancel, ahora debe esperar respuesta
+          widgets.add(_buildNostrButton(
+            'CANCEL PENDING',
+            action: actions.Action.cooperativeCancelInitiatedByYou,
+            backgroundColor: Colors.grey,
+            onPressed: null,
+          ));
+          break;
+
+        case actions.Action.cooperativeCancelInitiatedByPeer:
+          widgets.add(_buildNostrButton(
+            'ACCEPT CANCEL',
+            action: actions.Action.cooperativeCancelAccepted,
+            backgroundColor: AppTheme.red1,
+            onPressed: () =>
+                ref.read(orderNotifierProvider(orderId).notifier).cancelOrder(),
+          ));
+          break;
+
+        case actions.Action.cooperativeCancelAccepted:
+          break;
+
+        case actions.Action.purchaseCompleted:
+          widgets.add(_buildNostrButton(
+            'COMPLETE PURCHASE',
+            action: actions.Action.purchaseCompleted,
+            backgroundColor: AppTheme.mostroGreen,
+            onPressed: () => ref
+                .read(orderNotifierProvider(orderId).notifier)
+                .releaseOrder(),
+          ));
+          break;
+
+        case actions.Action.buyerTookOrder:
+          widgets.add(_buildContactButton(context));
+          break;
+
+        case actions.Action.rate:
+        case actions.Action.rateUser:
+        case actions.Action.rateReceived:
+          widgets.add(_buildNostrButton(
+            'RATE',
+            action: actions.Action.rate,
+            backgroundColor: AppTheme.mostroGreen,
+            onPressed: () => context.push('/rate_user/$orderId'),
+          ));
+          break;
+
+        case actions.Action.sendDm:
+          widgets.add(_buildContactButton(context));
+          break;
+
+        case actions.Action.holdInvoicePaymentCanceled:
+        case actions.Action.buyerInvoiceAccepted:
+        case actions.Action.waitingSellerToPay:
+        case actions.Action.waitingBuyerInvoice:
+        case actions.Action.adminCancel:
+        case actions.Action.adminCanceled:
+        case actions.Action.adminSettle:
+        case actions.Action.adminSettled:
+        case actions.Action.adminAddSolver:
+        case actions.Action.adminTakeDispute:
+        case actions.Action.adminTookDispute:
+        case actions.Action.paymentFailed:
+        case actions.Action.invoiceUpdated:
+        case actions.Action.tradePubkey:
+        case actions.Action.cantDo:
+        case actions.Action.released:
+          break;
+        default:
+          break;
+      }
+    }
+
+    return widgets;
+  }
+
+  /// Helper method to build a NostrResponsiveButton with common properties
+  Widget _buildNostrButton(
+    String label, {
+    required actions.Action action,
+    required VoidCallback? onPressed,
+    Color? backgroundColor,
+  }) {
+    return MostroReactiveButton(
+      label: label,
+      buttonStyle: ButtonStyleType.raised,
+      orderId: orderId,
+      action: action,
+      backgroundColor: backgroundColor,
+      onPressed: onPressed ?? () {}, // Provide empty function when null
+      showSuccessIndicator: true,
+      timeout: const Duration(seconds: 30),
+    );
+  }
+
+  Widget _buildContactButton(BuildContext context) {
+    return ElevatedButton(
+      onPressed: () {
+        context.push('/chat_room/$orderId');
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppTheme.mostroGreen,
+      ),
+      child: const Text('CONTACT'),
+    );
+  }
+
+  /// CLOSE
+  Widget _buildCloseButton(BuildContext context) {
+    return OutlinedButton(
+      onPressed: () => context.go('/order_book'),
+      style: AppTheme.theme.outlinedButtonTheme.style,
+      child: const Text('CLOSE'),
+    );
+  }
 
   /// Format the date time to a user-friendly string with UTC offset
-  String formatDateTime(DateTime dateTime) {
-    return DateFormat('MMM dd, yyyy HH:mm').format(dateTime);
-  }
-
-  /// Builds the layout for pending orders (simple layout like screenshot 2)
-  Widget _buildPendingOrderLayout(WidgetRef ref, OrderState tradeState,
-      BuildContext context, Order orderPayload) {
-    return Column(
-      children: [
-        const SizedBox(height: 16),
-        // Information message
-        _buildPendingOrderInfo(),
-        const SizedBox(height: 16),
-        // Basic order info ("Someone is Selling Sats")
-        _buildSellerAmount(ref, tradeState),
-        const SizedBox(height: 16),
-        // Payment method card
-        _buildPaymentMethod(tradeState),
-        const SizedBox(height: 16),
-        // Created on card
-        _buildCreatedOn(tradeState),
-        const SizedBox(height: 16),
-        // Order ID
-        _buildOrderId(context),
-        const SizedBox(height: 16),
-        // Creator reputation
-        _buildCreatorReputation(tradeState),
-        const SizedBox(height: 16),
-        // Time remaining
-        _buildCountDownTime(orderPayload.expiresAt),
-        const SizedBox(height: 36),
-        // CLOSE and CANCEL buttons
-        _buildPendingOrderButtons(context, ref),
-      ],
-    );
-  }
-
-  /// Builds the layout for active orders (clean layout like screenshot 2)
-  Widget _buildActiveOrderLayout(WidgetRef ref, OrderState tradeState,
-      BuildContext context, Order orderPayload) {
-    return Column(
-      children: [
-        const SizedBox(height: 16),
-        // Display basic info about the trade:
-        _buildSellerAmount(ref, tradeState),
-        const SizedBox(height: 16),
-        // Payment method card
-        _buildPaymentMethod(tradeState),
-        const SizedBox(height: 16),
-        // Created on card
-        _buildCreatedOn(tradeState),
-        const SizedBox(height: 16),
-        // Order ID
-        _buildOrderId(context),
-        const SizedBox(height: 16),
-        // Creator reputation
-        _buildCreatorReputation(tradeState),
-        const SizedBox(height: 16),
-        // Time remaining
-        _buildCountDownTime(orderPayload.expiresAt),
-        const SizedBox(height: 36),
-        // Action buttons (CLOSE and main action)
-        _buildOrderActionButtons(context, ref, tradeState),
-      ],
-    );
-  }
-
-  /// Builds the information message for pending orders (only for creators)
-  Widget _buildPendingOrderInfo() {
-    return CustomCard(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.info_outline,
-                  color: AppTheme.mostroGreen,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Information',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Your offer has been published and will be available for 24 hours. Other users can now take your order.',
-              style: TextStyle(
-                color: Colors.white70,
-                fontSize: 14,
-                height: 1.4,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Builds payment method card
-  Widget _buildPaymentMethod(OrderState tradeState) {
-    final paymentMethod = tradeState.order?.paymentMethod ?? '';
-    final paymentMethodsText =
-        paymentMethod.isNotEmpty ? paymentMethod : 'Not specified';
-
-    return CustomCard(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          children: [
-            Icon(
-              Icons.payment,
-              color: AppTheme.mostroGreen,
-              size: 20,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Payment Method',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 12,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    paymentMethodsText,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Builds created on date card
-  Widget _buildCreatedOn(OrderState tradeState) {
-    final createdAt = tradeState.order?.createdAt;
-    final createdText = createdAt != null
-        ? formatDateTime(DateTime.fromMillisecondsSinceEpoch(createdAt * 1000))
-        : 'Unknown';
-
-    return CustomCard(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          children: [
-            Icon(
-              Icons.schedule,
-              color: AppTheme.mostroGreen,
-              size: 20,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Created On',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 12,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    createdText,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Builds creator reputation card with horizontal layout
-  Widget _buildCreatorReputation(OrderState tradeState) {
-    // For now, show placeholder data
-    // In a real implementation, this would come from the order creator's data
-    const rating = 3.1;
-    const reviews = 15;
-    const days = 7;
-
-    return CustomCard(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Creator\'s Reputation',
-              style: TextStyle(
-                color: Colors.white70,
-                fontSize: 12,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                // Rating section
-                Expanded(
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.star,
-                            color: AppTheme.mostroGreen,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            rating.toString(),
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Rating',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Reviews section
-                Expanded(
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.chat_bubble_outline,
-                            color: Colors.white70,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            reviews.toString(),
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Reviews',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Days section
-                Expanded(
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.calendar_today_outlined,
-                            color: Colors.white70,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            days.toString(),
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Days',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Builds buttons for pending orders (CLOSE and CANCEL)
-  Widget _buildPendingOrderButtons(BuildContext context, WidgetRef ref) {
-    return Row(
-      children: [
-        Expanded(
-          child: ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.grey[800],
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('CLOSE'),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: ElevatedButton(
-            onPressed: () {
-              // Handle cancel order action
-              final orderNotifier =
-                  ref.read(orderNotifierProvider(orderId).notifier);
-              orderNotifier.cancelOrder();
-              Navigator.of(context).pop();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red[700],
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('CANCEL'),
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// Builds action buttons for orders from home (CLOSE and main action like SELL BITCOIN)
-  Widget _buildOrderActionButtons(
-      BuildContext context, WidgetRef ref, OrderState tradeState) {
-    return Row(
-      children: [
-        Expanded(
-          child: OutlinedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.white,
-              side: const BorderSide(color: Colors.grey),
-              padding: const EdgeInsets.symmetric(vertical: 16),
-            ),
-            child: const Text('CLOSE'),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: ElevatedButton(
-            onPressed: () {
-              // Navigate to take order screen or handle main action
-              context.push('/take-order/$orderId');
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.mostroGreen,
-              foregroundColor: Colors.black,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-            ),
-            child: Text(
-              tradeState.order?.kind.name == 'buy'
-                  ? 'SELL BITCOIN'
-                  : 'BUY BITCOIN',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-        ),
-      ],
-    );
+  String formatDateTime(DateTime dt) {
+    final dateFormatter = DateFormat('EEE MMM dd yyyy HH:mm:ss');
+    final formattedDate = dateFormatter.format(dt);
+    final offset = dt.timeZoneOffset;
+    final sign = offset.isNegative ? '-' : '+';
+    final hours = offset.inHours.abs().toString().padLeft(2, '0');
+    final minutes = (offset.inMinutes.abs() % 60).toString().padLeft(2, '0');
+    final timeZoneName = dt.timeZoneName;
+    return '$formattedDate GMT $sign$hours$minutes ($timeZoneName)';
   }
 }
