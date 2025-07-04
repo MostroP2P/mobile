@@ -145,18 +145,20 @@ class TakeOrderScreen extends ConsumerWidget {
   }
 
   Widget _buildCreatorReputation(NostrEvent order) {
-  // For now, show placeholder data matching TradeDetailScreen
-  // In a real implementation, this would come from the order creator's data
-  const rating = 3.1;
-  const reviews = 15;
-  const days = 7;
-
-  return CreatorReputationCard(
-    rating: rating,
-    reviews: reviews,
-    days: days,
-  );
-}
+    // Extraer la información de calificación directamente del evento
+    final ratingInfo = order.rating;
+    
+    // Usar la información real o valores predeterminados si no está disponible
+    final rating = ratingInfo?.totalRating ?? 0.0;
+    final reviews = ratingInfo?.totalReviews ?? 0;
+    final days = ratingInfo?.days ?? 0;
+    
+    return CreatorReputationCard(
+      rating: rating,
+      reviews: reviews,
+      days: days,
+    );
+  }
 
   Widget _buildActionButtons(
       BuildContext context, WidgetRef ref, NostrEvent order) {
