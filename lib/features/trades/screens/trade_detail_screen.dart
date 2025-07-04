@@ -241,7 +241,7 @@ class TradeDetailScreen extends ConsumerWidget {
           }
 
           widgets.add(_buildNostrButton(
-            'CANCEL',
+            S.of(context)!.cancel,
             action: action,
             backgroundColor: AppTheme.red1,
             onPressed: () {
@@ -367,7 +367,7 @@ class TradeDetailScreen extends ConsumerWidget {
         case actions.Action.cooperativeCancelInitiatedByYou:
           // El usuario ya inició cooperative cancel, ahora debe esperar respuesta
           widgets.add(_buildNostrButton(
-            'CANCEL PENDING',
+            S.of(context)!.cancelPending,
             action: actions.Action.cooperativeCancelInitiatedByYou,
             backgroundColor: Colors.grey,
             onPressed: null,
@@ -376,7 +376,7 @@ class TradeDetailScreen extends ConsumerWidget {
 
         case actions.Action.cooperativeCancelInitiatedByPeer:
           widgets.add(_buildNostrButton(
-            'ACCEPT CANCEL',
+            S.of(context)!.acceptCancel,
             action: actions.Action.cooperativeCancelAccepted,
             backgroundColor: AppTheme.red1,
             onPressed: () =>
@@ -389,7 +389,7 @@ class TradeDetailScreen extends ConsumerWidget {
 
         case actions.Action.purchaseCompleted:
           widgets.add(_buildNostrButton(
-            'COMPLETE PURCHASE',
+            S.of(context)!.completePurchase,
             action: actions.Action.purchaseCompleted,
             backgroundColor: AppTheme.mostroGreen,
             onPressed: () => ref
@@ -406,7 +406,7 @@ class TradeDetailScreen extends ConsumerWidget {
         case actions.Action.rateUser:
         case actions.Action.rateReceived:
           widgets.add(_buildNostrButton(
-            'RATE',
+            S.of(context)!.rate,
             action: actions.Action.rate,
             backgroundColor: AppTheme.mostroGreen,
             onPressed: () => context.push('/rate_user/$orderId'),
@@ -469,7 +469,7 @@ class TradeDetailScreen extends ConsumerWidget {
       style: ElevatedButton.styleFrom(
         backgroundColor: AppTheme.mostroGreen,
       ),
-      child: const Text('CONTACT'),
+      child: Text(S.of(context)!.contact),
     );
   }
 
@@ -478,7 +478,7 @@ class TradeDetailScreen extends ConsumerWidget {
     return OutlinedButton(
       onPressed: () => context.go('/order_book'),
       style: AppTheme.theme.outlinedButtonTheme.style,
-      child: const Text('CLOSE'),
+      child: Text(S.of(context)!.close),
     );
   }
 
