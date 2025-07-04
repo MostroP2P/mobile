@@ -6,11 +6,13 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
+import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/enums/role.dart';
 import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
+import 'package:mostro_mobile/shared/widgets/order_cards.dart';
 import 'package:mostro_mobile/features/trades/widgets/mostro_message_detail_widget.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/shared/utils/currency_utils.dart';
@@ -30,13 +32,20 @@ class TradeDetailScreen extends ConsumerWidget {
     final orderPayload = tradeState.order;
     if (orderPayload == null) {
       return const Scaffold(
-        backgroundColor: AppTheme.dark1,
+        backgroundColor: AppTheme.backgroundDark,
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
+    // Check if this is a pending order created by the user
+    final session = ref.watch(sessionProvider(orderId));
+    final isPending = tradeState.status == Status.pending;
+    final isCreator = session!.role == Role.buyer
+        ? tradeState.order!.kind == OrderType.buy
+        : tradeState.order!.kind == OrderType.sell;
+
     return Scaffold(
-      backgroundColor: AppTheme.dark1,
+      backgroundColor: AppTheme.backgroundDark,
       appBar: OrderAppBar(title: 'ORDER DETAILS'),
       body: Builder(
         builder: (context) {
@@ -50,8 +59,14 @@ class TradeDetailScreen extends ConsumerWidget {
                 const SizedBox(height: 16),
                 _buildOrderId(context),
                 const SizedBox(height: 16),
-                // Detailed info: includes the last Mostro message action text
-                MostroMessageDetail(orderId: orderId),
+                // For pending orders created by the user, show creator's reputation
+                if (isPending && isCreator) ...[  
+                  _buildCreatorReputation(tradeState),
+                  const SizedBox(height: 16),
+                ] else ...[  // Use spread operator here too
+                  // Detailed info: includes the last Mostro message action text
+                  MostroMessageDetail(orderId: orderId),
+                ],
                 const SizedBox(height: 24),
                 _buildCountDownTime(orderPayload.expiresAt != null
                     ? orderPayload.expiresAt! * 1000
@@ -81,8 +96,181 @@ class TradeDetailScreen extends ConsumerWidget {
   /// Builds a card showing the user is "selling/buying X sats for Y fiat" etc.
   Widget _buildSellerAmount(WidgetRef ref, OrderState tradeState) {
     final session = ref.watch(sessionProvider(orderId));
+    final isPending = tradeState.status == Status.pending;
+  
+    // Determine if the user is the creator of the order based on role and order type
+    final isCreator = session!.role == Role.buyer
+        ? tradeState.order!.kind == OrderType.buy
+        : tradeState.order!.kind == OrderType.sell;
 
-    final selling = session!.role == Role.seller ? 'selling' : 'buying';
+    // For pending orders created by the user, show a notification message
+    if (isPending && isCreator) {
+      final selling = session.role == Role.seller ? 'Selling' : 'Buying';
+      final currencyFlag = CurrencyUtils.getFlagFromCurrency(
+        tradeState.order!.fiatCode,
+      );
+
+      final amountString =
+          '${tradeState.order!.fiatAmount} ${tradeState.order!.fiatCode} $currencyFlag';
+
+      // If `orderPayload.amount` is 0, the trade is "at market price"
+      final isZeroAmount = (tradeState.order!.amount == 0);
+      final priceText = isZeroAmount ? 'at market price' : '';
+
+      final paymentMethod = tradeState.order!.paymentMethod;
+      final createdOn = formatDateTime(
+        tradeState.order!.createdAt != null && tradeState.order!.createdAt! > 0
+            ? DateTime.fromMillisecondsSinceEpoch(
+                tradeState.order!.createdAt! * 1000)
+            : session.startTime,
+      );
+
+      return Column(
+        children: [
+          CustomCard(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.info_outline,
+                      color: Colors.white70,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'You created this offer. Below are the details of your offer. Wait for another user to take it. It will be published for 24 hours. You can cancel it at any time using the \'Cancel\' button.',
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          CustomCard(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Someone is $selling Sats',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Text(
+                      'for $amountString',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 16,
+                      ),
+                    ),
+                    if (priceText.isNotEmpty) ...[  
+                      const SizedBox(width: 8),
+                      Text(
+                        priceText,
+                        style: const TextStyle(
+                          color: Colors.white60,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          CustomCard(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.payment,
+                      color: Colors.white70,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Payment Method',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  paymentMethod,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          CustomCard(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.calendar_today,
+                      color: Colors.white70,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Created On',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  createdOn,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+  
+    // For non-pending orders or orders not created by the user, use the original display
+    final selling = session.role == Role.seller ? 'selling' : 'buying';
     final currencyFlag = CurrencyUtils.getFlagFromCurrency(
       tradeState.order!.fiatCode,
     );
@@ -116,7 +304,6 @@ class TradeDetailScreen extends ConsumerWidget {
         children: [
           Expanded(
             child: Column(
-              // Using Column with spacing = 2 isn't standard; using SizedBoxes for spacing is fine.
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
@@ -144,36 +331,8 @@ class TradeDetailScreen extends ConsumerWidget {
 
   /// Show a card with the order ID that can be copied.
   Widget _buildOrderId(BuildContext context) {
-    return CustomCard(
-      padding: const EdgeInsets.all(2),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SelectableText(
-            orderId,
-            style: const TextStyle(color: AppTheme.mostroGreen),
-          ),
-          const SizedBox(width: 16),
-          IconButton(
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: orderId));
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Order ID copied to clipboard'),
-                  duration: Duration(seconds: 2),
-                ),
-              );
-            },
-            icon: const Icon(Icons.copy),
-            style: IconButton.styleFrom(
-              foregroundColor: AppTheme.mostroGreen,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          )
-        ],
-      ),
+    return OrderIdCard(
+      orderId: orderId,
     );
   }
 
@@ -481,15 +640,35 @@ class TradeDetailScreen extends ConsumerWidget {
     );
   }
 
+  /// Build a card showing the creator's reputation with rating, reviews and days
+  Widget _buildCreatorReputation(OrderState tradeState) {
+    // En trade_detail_screen.dart, no tenemos acceso directo al rating como en NostrEvent
+    // Por ahora, usamos valores predeterminados
+    // TODO: Implementar la extracción de datos de calificación del creador
+    const rating = 3.1;
+    const reviews = 15;
+    const days = 7;
+
+    return CreatorReputationCard(
+      rating: rating,
+      reviews: reviews,
+      days: days,
+    );
+  }
+
   /// Format the date time to a user-friendly string with UTC offset
   String formatDateTime(DateTime dt) {
-    final dateFormatter = DateFormat('EEE MMM dd yyyy HH:mm:ss');
+    // Formato más amigable: Día de semana, Día Mes Año a las HH:MM (Zona horaria)
+    final dateFormatter = DateFormat('EEE, MMM dd yyyy');
+    final timeFormatter = DateFormat('HH:mm');
     final formattedDate = dateFormatter.format(dt);
+    final formattedTime = timeFormatter.format(dt);
+  
+    // Simplificar la zona horaria a solo GMT+/-XX
     final offset = dt.timeZoneOffset;
     final sign = offset.isNegative ? '-' : '+';
     final hours = offset.inHours.abs().toString().padLeft(2, '0');
-    final minutes = (offset.inMinutes.abs() % 60).toString().padLeft(2, '0');
-    final timeZoneName = dt.timeZoneName;
-    return '$formattedDate GMT $sign$hours$minutes ($timeZoneName)';
+  
+    return '$formattedDate at $formattedTime (GMT$sign$hours)';
   }
 }
