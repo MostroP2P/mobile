@@ -88,8 +88,10 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
                 } catch (e) {
                   widget.logger.e('Failed to share LN Invoice: $e');
                   if (mounted) {
+                    // ignore: use_build_context_synchronously
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
+                        // ignore: use_build_context_synchronously
                         content: Text(S.of(context)!.failedToShareInvoice),
                         duration: Duration(seconds: 3),
                       ),
