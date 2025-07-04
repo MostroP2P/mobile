@@ -5,11 +5,10 @@ import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 
 enum ButtonStyleType { raised, outlined, text }
 
-/// A button specially designed for reactive operations that shows loading state
-/// and handles the unique event-based nature of the mostro protocol.
 class MostroReactiveButton extends ConsumerStatefulWidget {
   final String label;
   final ButtonStyleType buttonStyle;
@@ -29,7 +28,7 @@ class MostroReactiveButton extends ConsumerStatefulWidget {
     required this.onPressed,
     required this.orderId,
     required this.action,
-    this.timeout = const Duration(seconds: 30),
+    this.timeout = const Duration(seconds: 5),
     this.showSuccessIndicator = false,
     this.backgroundColor,
   });
@@ -43,7 +42,7 @@ class _MostroReactiveButtonState extends ConsumerState<MostroReactiveButton> {
   bool _loading = false;
   bool _showSuccess = false;
   Timer? _timeoutTimer;
-  dynamic _lastSeenAction;
+  actions.Action? _lastSeenAction;
 
   @override
   void dispose() {
@@ -73,9 +72,14 @@ class _MostroReactiveButtonState extends ConsumerState<MostroReactiveButton> {
   @override
   Widget build(BuildContext context) {
     final orderState = ref.watch(orderNotifierProvider(widget.orderId));
-    //if (orderState.action != widget.action) {
-      //return const SizedBox.shrink();
-    //}
+    final session = ref.watch(sessionProvider(widget.orderId));
+
+    if (session != null) {
+      final nextStates = orderState.getActions(session.role!);
+      if (!nextStates.contains(widget.action)) {
+        return const SizedBox.shrink();
+      }
+    }
 
     ref.listen(
       mostroMessageStreamProvider(widget.orderId),
