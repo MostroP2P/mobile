@@ -14,6 +14,7 @@ import 'package:mostro_mobile/shared/providers/providers.dart';
 import 'package:mostro_mobile/shared/utils/biometrics_helper.dart';
 import 'package:mostro_mobile/shared/utils/notification_permission_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,6 +35,9 @@ Future<void> main() async {
 
   await initializeNotifications();
 
+  // Initialize timeago localization
+  _initializeTimeAgoLocalization();
+
   final backgroundService = createBackgroundService(settings.settings);
   await backgroundService.init();
 
@@ -51,4 +55,15 @@ Future<void> main() async {
       child: const MostroApp(),
     ),
   );
+}
+
+/// Initialize timeago localization for supported languages
+void _initializeTimeAgoLocalization() {
+  // Set Spanish locale for timeago
+  timeago.setLocaleMessages('es', timeago.EsMessages());
+  
+  // Set Italian locale for timeago
+  timeago.setLocaleMessages('it', timeago.ItMessages());
+  
+  // English is already the default, no need to set it
 }
