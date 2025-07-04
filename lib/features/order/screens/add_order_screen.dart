@@ -175,7 +175,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
                                 ? S.of(context)!.enterSatsAmountBuy
                                 : S.of(context)!.enterSatsAmountSell,
                             icon: const Icon(Icons.bolt, color: Color(0xFFF3CA29), size: 18),
-                            iconBackgroundColor: const Color(0xFFF3CA29).withOpacity(0.3),
+                            iconBackgroundColor: const Color(0xFFF3CA29).withValues(alpha: 0.3),
                             child: TextFormField(
                               controller: _satsAmountController,
                               style: const TextStyle(color: Colors.white),

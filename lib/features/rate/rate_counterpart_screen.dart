@@ -31,7 +31,7 @@ class _RateCounterpartScreenState extends ConsumerState<RateCounterpartScreen> {
 
     await orderNotifer.submitRating(_rating);
 
-    context.pop();
+    if (mounted) context.pop();
   }
 
   @override

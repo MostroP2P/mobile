@@ -191,13 +191,13 @@ class AppTheme {
   // helpers for shadows
   static List<BoxShadow> get cardShadow => [
         BoxShadow(
-          color: Colors.black.withOpacity(0.7),
+          color: Colors.black.withValues(alpha: 0.7),
           blurRadius: 15,
           offset: const Offset(0, 5),
           spreadRadius: -3,
         ),
         BoxShadow(
-          color: Colors.white.withOpacity(0.07),
+          color: Colors.white.withValues(alpha: 0.07),
           blurRadius: 1,
           offset: const Offset(0, -1),
           spreadRadius: 0,
@@ -206,7 +206,7 @@ class AppTheme {
 
   static List<BoxShadow> get buttonShadow => [
         BoxShadow(
-          color: Colors.black.withOpacity(0.4),
+          color: Colors.black.withValues(alpha: 0.4),
           blurRadius: 6,
           offset: const Offset(0, 3),
           spreadRadius: -2,

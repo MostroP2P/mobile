@@ -174,66 +174,66 @@ class TradesListItem extends ConsumerWidget {
 
   switch (status) {
     case Status.active:
-      backgroundColor = const Color(0xFF1E3A8A).withOpacity(0.3); // Azul oscuro con transparencia
+      backgroundColor = const Color(0xFF1E3A8A).withValues(alpha: 0.3); // Azul oscuro con transparencia
       textColor = const Color(0xFF93C5FD); // Azul claro
       label = S.of(context)!.active;
       break;
     case Status.pending:
-      backgroundColor = const Color(0xFF854D0E).withOpacity(0.3); // Ámbar oscuro con transparencia
+      backgroundColor = const Color(0xFF854D0E).withValues(alpha: 0.3); // Ámbar oscuro con transparencia
       textColor = const Color(0xFFFCD34D); // Ámbar claro
       label = S.of(context)!.pending;
       break;
     // ✅ SOLUCION PROBLEMA 1: Agregar casos específicos para waitingPayment y waitingBuyerInvoice
     case Status.waitingPayment:
-      backgroundColor = const Color(0xFF7C2D12).withOpacity(0.3); // Naranja oscuro con transparencia
+      backgroundColor = const Color(0xFF7C2D12).withValues(alpha: 0.3); // Naranja oscuro con transparencia
       textColor = const Color(0xFFFED7AA); // Naranja claro
       label = S.of(context)!.waitingPayment; // En lugar de "Pending"
       break;
     case Status.waitingBuyerInvoice:
-      backgroundColor = const Color(0xFF7C2D12).withOpacity(0.3); // Naranja oscuro con transparencia
+      backgroundColor = const Color(0xFF7C2D12).withValues(alpha: 0.3); // Naranja oscuro con transparencia
       textColor = const Color(0xFFFED7AA); // Naranja claro
       label = S.of(context)!.waitingInvoice; // En lugar de "Pending"
       break;
     case Status.fiatSent:
-      backgroundColor = const Color(0xFF065F46).withOpacity(0.3); // Verde oscuro con transparencia
+      backgroundColor = const Color(0xFF065F46).withValues(alpha: 0.3); // Verde oscuro con transparencia
       textColor = const Color(0xFF6EE7B7); // Verde claro
       label = S.of(context)!.fiatSent;
       break;
     case Status.canceled:
     case Status.canceledByAdmin:
     case Status.cooperativelyCanceled:
-      backgroundColor = Colors.grey.shade800.withOpacity(0.3);
+      backgroundColor = Colors.grey.shade800.withValues(alpha: 0.3);
       textColor = Colors.grey.shade300;
       label = S.of(context)!.cancel;
       break;
     case Status.settledByAdmin:
     case Status.settledHoldInvoice:
-      backgroundColor = const Color(0xFF581C87).withOpacity(0.3); // Morado oscuro con transparencia
+      backgroundColor = const Color(0xFF581C87).withValues(alpha: 0.3); // Morado oscuro con transparencia
       textColor = const Color(0xFFC084FC); // Morado claro
       label = S.of(context)!.settled;
       break;
     case Status.completedByAdmin:
-      backgroundColor = const Color(0xFF065F46).withOpacity(0.3); // Verde oscuro con transparencia
+      backgroundColor = const Color(0xFF065F46).withValues(alpha: 0.3); // Verde oscuro con transparencia
       textColor = const Color(0xFF6EE7B7); // Verde claro
       label = S.of(context)!.completed;
       break;
     case Status.dispute:
-      backgroundColor = const Color(0xFF7F1D1D).withOpacity(0.3); // Rojo oscuro con transparencia
+      backgroundColor = const Color(0xFF7F1D1D).withValues(alpha: 0.3); // Rojo oscuro con transparencia
       textColor = const Color(0xFFFCA5A5); // Rojo claro
       label = S.of(context)!.dispute;
       break;
     case Status.expired:
-      backgroundColor = Colors.grey.shade800.withOpacity(0.3);
+      backgroundColor = Colors.grey.shade800.withValues(alpha: 0.3);
       textColor = Colors.grey.shade300;
       label = S.of(context)!.expired;
       break;
     case Status.success:
-      backgroundColor = const Color(0xFF065F46).withOpacity(0.3); // Verde oscuro con transparencia
+      backgroundColor = const Color(0xFF065F46).withValues(alpha: 0.3); // Verde oscuro con transparencia
       textColor = const Color(0xFF6EE7B7); // Verde claro
       label = S.of(context)!.success;
       break;
     default:
-      backgroundColor = Colors.grey.shade800.withOpacity(0.3);
+      backgroundColor = Colors.grey.shade800.withValues(alpha: 0.3);
       textColor = Colors.grey.shade300;
       label = status.toString(); // Fallback para mostrar el status real
       break;

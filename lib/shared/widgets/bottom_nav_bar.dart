@@ -28,7 +28,7 @@ class BottomNavBar extends ConsumerWidget {
           color: AppTheme.backgroundNavBar,
           border: Border(
             top: BorderSide(
-              color: Colors.white.withOpacity(0.1),
+              color: Colors.white.withValues(alpha: 0.1),
               width: 1,
             ),
           ),

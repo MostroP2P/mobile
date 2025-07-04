@@ -41,11 +41,11 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
         _mnemonic = await keyManager.getMnemonic();
         _tradeKeyIndex = await keyManager.getCurrentKeyIndex();
       } else {
-        _mnemonic = S.of(context)!.noMnemonicFound;
+        if (mounted) _mnemonic = S.of(context)!.noMnemonicFound;
         _tradeKeyIndex = 0;
       }
     } catch (e) {
-      _mnemonic = S.of(context)!.errorLoadingMnemonic(e.toString());
+      if (mounted) _mnemonic = S.of(context)!.errorLoadingMnemonic(e.toString());
     } finally {
       setState(() {
         _loading = false;
@@ -76,13 +76,17 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
       try {
         await keyManager.importMnemonic(importValue);
         await _loadKeys();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(S.of(context)!.keyImportedSuccessfully)),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(S.of(context)!.keyImportedSuccessfully)),
+          );
+        }
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(S.of(context)!.importFailed(e.toString()))),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(S.of(context)!.importFailed(e.toString()))),
+          );
+        }
       }
     }
   }

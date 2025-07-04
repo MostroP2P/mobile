@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
 class WalkthroughScreen extends StatelessWidget {
-  WalkthroughScreen({super.key});
+  const WalkthroughScreen({super.key});
 
   List<PageViewModel> _getPages(BuildContext context) {
     return [
