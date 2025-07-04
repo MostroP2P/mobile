@@ -29,7 +29,10 @@ class TakeOrderScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppTheme.dark1,
-      appBar: OrderAppBar(title: 'ORDER DETAILS'),
+      appBar: OrderAppBar(
+          title: orderType == OrderType.buy
+              ? 'BUY ORDER DETAILS'
+              : 'SELL ORDER DETAILS'),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -37,11 +40,16 @@ class TakeOrderScreen extends ConsumerWidget {
             const SizedBox(height: 16),
             _buildSellerAmount(ref, order!),
             const SizedBox(height: 16),
+            _buildPaymentMethod(order),
+            const SizedBox(height: 16),
+            _buildCreatedOn(order),
+            const SizedBox(height: 16),
             _buildOrderId(context),
+            const SizedBox(height: 16),
+            _buildCreatorReputation(order),
             const SizedBox(height: 24),
             _buildCountDownTime(order.expirationDate),
             const SizedBox(height: 36),
-            // Pass the full order to the action buttons widget.
             _buildActionButtons(context, ref, order),
           ],
         ),
@@ -50,47 +58,45 @@ class TakeOrderScreen extends ConsumerWidget {
   }
 
   Widget _buildSellerAmount(WidgetRef ref, NostrEvent order) {
-    final selling = orderType == OrderType.sell ? 'selling' : 'buying';
-    final amountString =
-        '${order.fiatAmount} ${order.currency} ${CurrencyUtils.getFlagFromCurrency(order.currency!)}';
-    final satAmount = order.amount == '0' ? '' : ' ${order.amount}';
-    final price = order.amount != '0' ? '' : 'at market price';
-    final premium = int.parse(order.premium ?? '0');
-    final premiumText = premium >= 0
-        ? premium == 0
-            ? ''
-            : 'with a +$premium% premium'
-        : 'with a -$premium% discount';
-    final methods = order.paymentMethods.isNotEmpty
-        ? order.paymentMethods.join(', ')
-        : 'No payment method';
+    final selling = orderType == OrderType.sell ? 'Selling' : 'Buying';
+    final currencyFlag = CurrencyUtils.getFlagFromCurrency(order.currency!);
+    final amountString = '${order.fiatAmount} ${order.currency} $currencyFlag';
+    final priceText = order.amount == '0' ? 'at market price' : '';
 
     return CustomCard(
       padding: const EdgeInsets.all(16),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(
-              spacing: 2,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Someone is $selling$satAmount sats for $amountString $price $premiumText',
-                  style: AppTheme.theme.textTheme.bodyLarge,
-                  softWrap: true,
+          Text(
+            'Someone is $selling Sats',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Text(
+                'for $amountString',
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 16,
                 ),
-                const SizedBox(height: 16),
+              ),
+              if (priceText.isNotEmpty) ...[
+                const SizedBox(width: 8),
                 Text(
-                  'Created on: ${formatDateTime(order.createdAt!)}',
-                  style: textTheme.bodyLarge,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'The payment methods are: $methods',
-                  style: textTheme.bodyLarge,
+                  priceText,
+                  style: const TextStyle(
+                    color: Colors.white60,
+                    fontSize: 14,
+                  ),
                 ),
               ],
-            ),
+            ],
           ),
         ],
       ),
@@ -150,113 +156,333 @@ class TakeOrderScreen extends ConsumerWidget {
     );
   }
 
+  Widget _buildPaymentMethod(NostrEvent order) {
+    final methods = order.paymentMethods.isNotEmpty
+        ? order.paymentMethods.join(', ')
+        : 'No payment method';
+
+    return CustomCard(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.payment,
+            color: Colors.white70,
+            size: 20,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Payment Method',
+                  style: TextStyle(
+                    color: Colors.white60,
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  methods,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCreatedOn(NostrEvent order) {
+    return CustomCard(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.schedule,
+            color: Colors.white70,
+            size: 20,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Created On',
+                  style: TextStyle(
+                    color: Colors.white60,
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  formatDateTime(order.createdAt!),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCreatorReputation(NostrEvent order) {
+    // For now, show placeholder data matching TradeDetailScreen
+    // In a real implementation, this would come from the order creator's data
+    const rating = 3.1;
+    const reviews = 15;
+    const days = 7;
+
+    return CustomCard(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Creator\'s Reputation',
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 12,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                // Rating section
+                Expanded(
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.star,
+                            color: AppTheme.mostroGreen,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            rating.toString(),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Rating',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Reviews section
+                Expanded(
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.chat_bubble_outline,
+                            color: Colors.white70,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            reviews.toString(),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Reviews',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Days section
+                Expanded(
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.calendar_today_outlined,
+                            color: Colors.white70,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            days.toString(),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Days',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildActionButtons(
       BuildContext context, WidgetRef ref, NostrEvent order) {
-    final orderDetailsNotifier = ref.watch(
-      orderNotifierProvider(order.orderId!).notifier,
-    );
+    final orderDetailsNotifier =
+        ref.read(orderNotifierProvider(orderId).notifier);
+
+    final buttonText =
+        orderType == OrderType.buy ? 'SELL BITCOIN' : 'BUY BITCOIN';
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        OutlinedButton(
-          onPressed: () {
-            context.pop();
-          },
-          style: AppTheme.theme.outlinedButtonTheme.style,
-          child: const Text('CLOSE'),
+        Expanded(
+          child: OutlinedButton(
+            onPressed: () => context.pop(),
+            style: AppTheme.theme.outlinedButtonTheme.style,
+            child: const Text('CLOSE'),
+          ),
         ),
         const SizedBox(width: 16),
-        ElevatedButton(
-          onPressed: () async {
-            // Check if the order is a range order.
-            if (order.fiatAmount.maximum != null) {
-              final enteredAmount = await showDialog<int>(
-                context: context,
-                builder: (BuildContext context) {
-                  String? errorText;
-                  return StatefulBuilder(
-                    builder: (BuildContext context,
-                        void Function(void Function()) setState) {
-                      return AlertDialog(
-                        title: const Text('Enter Amount'),
-                        content: TextField(
-                          controller: _fiatAmountController,
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            hintText:
-                                'Enter an amount between ${order.fiatAmount.minimum} and ${order.fiatAmount.maximum}',
-                            errorText: errorText,
+        Expanded(
+          child: ElevatedButton(
+            onPressed: () async {
+              // Check if this is a range order
+              if (order.fiatAmount.minimum != order.fiatAmount.maximum) {
+                // Show dialog to get the amount
+                String? errorText;
+                final enteredAmount = await showDialog<int>(
+                  context: context,
+                  builder: (context) {
+                    return StatefulBuilder(
+                      builder: (context, setState) {
+                        return AlertDialog(
+                          title: const Text('Enter Amount'),
+                          content: TextField(
+                            controller: _fiatAmountController,
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              hintText:
+                                  'Enter an amount between ${order.fiatAmount.minimum} and ${order.fiatAmount.maximum}',
+                              errorText: errorText,
+                            ),
                           ),
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(null),
-                            child: const Text('Cancel'),
-                          ),
-                          ElevatedButton(
-                            key: const Key('submitAmountButton'),
-                            onPressed: () {
-                              final inputAmount = int.tryParse(
-                                  _fiatAmountController.text.trim());
-                              if (inputAmount == null) {
-                                setState(() {
-                                  errorText = "Please enter a valid number.";
-                                });
-                              } else if (inputAmount <
-                                      order.fiatAmount.minimum ||
-                                  inputAmount > order.fiatAmount.maximum!) {
-                                setState(() {
-                                  errorText =
-                                      "Amount must be between ${order.fiatAmount.minimum} and ${order.fiatAmount.maximum}.";
-                                });
-                              } else {
-                                Navigator.of(context).pop(inputAmount);
-                              }
-                            },
-                            child: const Text('Submit'),
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                },
-              );
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(null),
+                              child: const Text('Cancel'),
+                            ),
+                            ElevatedButton(
+                              key: const Key('submitAmountButton'),
+                              onPressed: () {
+                                final inputAmount = int.tryParse(
+                                    _fiatAmountController.text.trim());
+                                if (inputAmount == null) {
+                                  setState(() {
+                                    errorText = "Please enter a valid number.";
+                                  });
+                                } else if (inputAmount <
+                                        order.fiatAmount.minimum ||
+                                    inputAmount > order.fiatAmount.maximum!) {
+                                  setState(() {
+                                    errorText =
+                                        "Amount must be between ${order.fiatAmount.minimum} and ${order.fiatAmount.maximum}.";
+                                  });
+                                } else {
+                                  Navigator.of(context).pop(inputAmount);
+                                }
+                              },
+                              child: const Text('Submit'),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                );
 
-              if (enteredAmount != null) {
+                if (enteredAmount != null) {
+                  if (orderType == OrderType.buy) {
+                    await orderDetailsNotifier.takeBuyOrder(
+                        order.orderId!, enteredAmount);
+                  } else {
+                    final lndAddress = _lndAddressController.text.trim();
+                    await orderDetailsNotifier.takeSellOrder(
+                      order.orderId!,
+                      enteredAmount,
+                      lndAddress.isEmpty ? null : lndAddress,
+                    );
+                  }
+                }
+              } else {
+                // Not a range order – use the existing logic.
+                final fiatAmount =
+                    int.tryParse(_fiatAmountController.text.trim());
                 if (orderType == OrderType.buy) {
                   await orderDetailsNotifier.takeBuyOrder(
-                      order.orderId!, enteredAmount);
+                      order.orderId!, fiatAmount);
                 } else {
                   final lndAddress = _lndAddressController.text.trim();
                   await orderDetailsNotifier.takeSellOrder(
                     order.orderId!,
-                    enteredAmount,
+                    fiatAmount,
                     lndAddress.isEmpty ? null : lndAddress,
                   );
                 }
               }
-            } else {
-              // Not a range order – use the existing logic.
-              final fiatAmount =
-                  int.tryParse(_fiatAmountController.text.trim());
-              if (orderType == OrderType.buy) {
-                await orderDetailsNotifier.takeBuyOrder(
-                    order.orderId!, fiatAmount);
-              } else {
-                final lndAddress = _lndAddressController.text.trim();
-                await orderDetailsNotifier.takeSellOrder(
-                  order.orderId!,
-                  fiatAmount,
-                  lndAddress.isEmpty ? null : lndAddress,
-                );
-              }
-            }
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.mostroGreen,
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.mostroGreen,
+            ),
+            child: Text(buttonText),
           ),
-          child: const Text('TAKE'),
         ),
       ],
     );
