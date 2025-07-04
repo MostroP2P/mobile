@@ -201,7 +201,7 @@ class TradeDetailScreen extends ConsumerWidget {
           countdownRemaining: hoursLeft,
         ),
         const SizedBox(height: 16),
-        Text('${S.of(context)!.timeLeft}: ${difference.toString().split('.').first}'),
+        Text(S.of(context)!.timeLeft(difference.toString().split('.').first)),
       ],
     );
   }
