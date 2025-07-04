@@ -13,6 +13,7 @@ import 'package:mostro_mobile/shared/providers/avatar_provider.dart';
 import 'package:mostro_mobile/shared/providers/legible_handle_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/shared/widgets/clickable_text_widget.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class ChatRoomScreen extends ConsumerStatefulWidget {
   final String orderId;
@@ -39,7 +40,7 @@ class _MessagesDetailScreenState extends ConsumerState<ChatRoomScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
-          'BACK',
+          S.of(context)!.back,
           style: TextStyle(
             color: AppTheme.cream1,
             fontFamily: GoogleFonts.robotoCondensed().fontFamily,
@@ -122,7 +123,7 @@ class _MessagesDetailScreenState extends ConsumerState<ChatRoomScreen> {
               controller: _textController,
               style: const TextStyle(color: AppTheme.cream1),
               decoration: InputDecoration(
-                hintText: 'Type a message...',
+                hintText: S.of(context)!.typeAMessage,
                 hintStyle: const TextStyle(color: Colors.grey),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20),
@@ -172,16 +173,16 @@ class _MessagesDetailScreenState extends ConsumerState<ChatRoomScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'You are chatting with $handle',
+                    S.of(context)!.youAreChattingWith(handle),
                     style: const TextStyle(
                       color: AppTheme.cream1,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text('Your handle: $you'),
+                  Text(S.of(context)!.yourHandle(you)),
                   ClickableText(
-                    leftText: 'Your shared key:',
+                    leftText: S.of(context)!.yourSharedKey,
                     clickableText: sharedKey!,
                   ),
                 ],

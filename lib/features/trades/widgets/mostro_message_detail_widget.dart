@@ -172,7 +172,7 @@ class MostroMessageDetail extends ConsumerWidget {
       case actions.Action.cantDo:
         return _getCantDoMessage(context, ref);
       default:
-        return 'No message found for action ${tradeState.action}';
+        return 'No message found for action ${tradeState.action}'; // This is a fallback message for developers
     }
   }
 

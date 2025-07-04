@@ -70,21 +70,10 @@ void main() {
 
     /// Helper that stubs the repository method (for both takeBuyOrder and takeSellOrder)
     /// so that it returns a Stream emitting the provided confirmation JSON.
-    void configureMockMethod(
-      Future<Stream<MostroMessage>> Function(String, dynamic, [dynamic])
-          repositoryMethod,
-      Map<String, dynamic> confirmationJson,
-    ) {
-      final confirmationMessage = MostroMessage.fromJson(confirmationJson);
-      when(repositoryMethod(testOrderId, any, any))
-          .thenAnswer((_) async => Stream.value(confirmationMessage));
-      // For the takeBuyOrder method which takes only two parameters:
-      when(repositoryMethod(testOrderId, any, null))
-          .thenAnswer((_) async => Stream.value(confirmationMessage));
-    }
 
     test('Taking a Buy Order - seller sends take-buy and receives pay-invoice confirmation', () async {
       // Confirmation JSON for "Taking a buy order":
+      // ignore: unused_local_variable
       final confirmationJsonTakeBuy = {
         "order": {
           "version": 1,
@@ -153,6 +142,7 @@ void main() {
     });
 
     test('Taking a Sell Order (fixed) - buyer sends take-sell and receives add-invoice confirmation', () async {
+      // ignore: unused_local_variable
       final confirmationJsonTakeSell = {
         "order": {
           "version": 1,
@@ -214,6 +204,7 @@ void main() {
     });
 
     test('Taking a Sell Range Order - buyer sends take-sell with range payload', () async {
+      // ignore: unused_local_variable
       final confirmationJsonSellRange = {
         "order": {
           "version": 1,
@@ -277,6 +268,7 @@ void main() {
     });
 
     test('Taking a Sell Order with Lightning Address - buyer sends take-sell with LN address', () async {
+      // ignore: unused_local_variable
       final confirmationJsonSellLN = {
         "order": {
           "version": 1,

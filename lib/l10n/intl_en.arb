@@ -55,5 +55,349 @@
   "notFound": "The requested dispute could not be found.",
   "invalidDisputeStatus": "The dispute status is invalid.",
   "invalidAction": "The requested action is invalid.",
-  "pendingOrderExists": "A pending order already exists."
+  "pendingOrderExists": "A pending order already exists.",
+  "login": "Login",
+  "register": "Register",
+  "pin": "PIN",
+  "pleaseEnterPin": "Please enter your PIN",
+  "pleaseEnterPrivateKey": "Please enter a private key",
+  "invalidPrivateKeyFormat": "Invalid private key format",
+  "privateKeyLabel": "Private Key (nsec or hex)",
+  "pinMustBeAtLeast4Digits": "PIN must be at least 4 digits",
+  "confirmPin": "Confirm PIN",
+  "pinsDoNotMatch": "PINs do not match",
+  "useBiometrics": "Use Biometrics",
+  "generateNewKey": "Generate New Key",
+  "welcomeHeading": "NO-KYC P2P Lightning\nexchange on top of\nnostr",
+  "welcomeDescription": "Peer-to-peer Lightning Network platform over nostr",
+  "registerButton": "REGISTER",
+  "skipForNow": "Skip for now",
+  "noOrdersAvailable": "No orders available",
+  "tryChangingFilters": "Try changing filter settings or check back later",
+  "buyBtc": "BUY BTC",
+  "sellBtc": "SELL BTC",
+  "filter": "FILTER",
+  "offersCount": "{count} offers",
+  "@offersCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "creatingNewOrder": "CREATING NEW ORDER",
+  "enterSatsAmountBuy": "Enter the Sats amount you want to Buy",
+  "enterSatsAmountSell": "Enter the Sats amount you want to Sell",
+  "enterSatsAmount": "Enter sats amount",
+  "pleaseEnterSatsAmount": "Please enter sats amount",
+  "pleaseEnterNumbersOnly": "Please enter numbers only",
+  "pleaseSelectCurrency": "Please select a currency",
+  "pleaseSelectPaymentMethod": "Please select at least one payment method",
+  "error": "Error",
+  "ok": "OK",
+  "cancel": "Cancel",
+  "submit": "Submit",
+  "settings": "Settings",
+  "currency": "Currency",
+  "setDefaultFiatCurrency": "Set your default fiat currency",
+  "defaultFiatCurrency": "Default Fiat Currency",
+  "relays": "Relays",
+  "selectNostrRelays": "Select the Nostr relays you connect to",
+  "addRelay": "Add Relay",
+  "mostro": "Mostro",
+  "enterMostroPublicKey": "Enter the public key of the Mostro you will use",
+  "mostroPubkey": "Mostro Pubkey",
+  "orderBook": "Order Book",
+  "myTrades": "My Trades",
+  "chat": "Chat",
+  "navigateToLabel": "Navigate to {label}",
+  "myActiveTrades": "My Active Trades",
+  "errorLoadingTrades": "Error loading trades",
+  "retry": "Retry",
+  "noTradesAvailable": "No trades available for this type",
+  "welcomeToMostroMobile": "Welcome to Mostro Mobile",
+  "discoverSecurePlatform": "Discover a secure, private, and efficient platform for peer-to-peer trading.",
+  "easyOnboarding": "Easy Onboarding",
+  "guidedWalkthroughSimple": "Our guided walkthrough makes it simple to get started.",
+  "tradeWithConfidence": "Trade with Confidence",
+  "seamlessPeerToPeer": "Enjoy seamless peer-to-peer trades using our advanced protocols.",
+  "skip": "Skip",
+  "done": "Done",
+  "typeToAdd": "Type to add...",
+  "noneSelected": "None selected",
+  "fiatCurrencies": "Fiat currencies",
+  "paymentMethods": "Payment methods",
+  "ratingLabel": "Rating: {rating}",
+  "buyingBitcoin": "Buying Bitcoin",
+  "sellingBitcoin": "Selling Bitcoin",
+  "bankTransfer": "Bank Transfer",
+  "createdByYou": "Created by you",
+  "takenByYou": "Taken by you",
+  "active": "Active",
+  "pending": "Pending",
+  "waitingPayment": "Waiting payment",
+  "waitingInvoice": "Waiting invoice",
+  "fiatSent": "Fiat-sent",
+  "settled": "Settled",
+  "completed": "Completed",
+  "dispute": "Dispute",
+  "expired": "Expired",
+  "success": "Success",
+  "orderIdCopied": "Order ID copied to clipboard",
+  "orderDetails": "ORDER DETAILS",
+  "noPaymentMethod": "No payment method",
+  "youAreSellingText": "You are selling{sats} sats for {amount} {price} {premium}",
+  "youAreBuyingText": "You are buying{sats} sats for {amount} {price} {premium}",
+  "atMarketPrice": "at market price",
+  "withPremium": " with a +{premium}% premium",
+  "withDiscount": " with a {premium}% discount",
+  "createdOn": "Created on",
+  "paymentMethodsLabel": "Payment methods",
+  "cancelTrade": "Cancel Trade",
+  "areYouSureCancel": "Are you sure you want to cancel this trade?",
+  "cooperativeCancelMessage": "If you confirm, you will start a cooperative cancellation with your counterparty.",
+  "acceptCancelMessage": "If you confirm, you will accept the cooperative cancellation initiated by your counterparty.",
+  "confirm": "Confirm",
+  "buy": "BUY",
+  "sell": "SELL",
+  "buying": "BUYING",
+  "selling": "SELLING",
+  "marketPrice": "Market Price",
+  "forSats": "For {amount} sats",
+  "@forSats": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "hoursAgo": "{count} hours ago",
+  "@hoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "reviews": "reviews",
+  "daysOld": "days old",
+  "reviewsAndDaysOld": "{reviews} reviews • {days} days old",
+  "@reviewsAndDaysOld": {
+    "placeholders": {
+      "reviews": {
+        "type": "String"
+      },
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "account": "Account",
+  "about": "About",
+  "walkthrough": "Walkthrough",
+  "version": "Version",
+  "githubRepository": "GitHub Repository",
+  "commitHash": "Commit Hash",
+  "appInformation": "App Information",
+  "aboutMostroInstance": "About Mostro Instance",
+  "generalInfo": "General Info",
+  "pubkey": "Pubkey",
+  "mostroVersion": "Version",
+  "maxOrderAmount": "Max Order Amount",
+  "minOrderAmount": "Min Order Amount",
+  "expirationHours": "Expiration Hours",
+  "expirationSeconds": "Expiration Seconds",
+  "fee": "Fee",
+  "proofOfWork": "Proof of Work",
+  "holdInvoiceExpirationWindow": "Hold Invoice Expiration Window",
+  "holdInvoiceCltvDelta": "Hold Invoice CLTV Delta",
+  "invoiceExpirationWindow": "Invoice Expiration Window",
+  
+  "@_comment_order_creation": "Order Creation Form Strings",
+  "enterFiatAmountBuy": "Enter the fiat amount you want to pay (you can set a range)",
+  "enterFiatAmountSell": "Enter the fiat amount you want to receive (you can set a range)",
+  "enterAmountHint": "Enter amount (example: 100 or 100-500)",
+  "pleaseEnterAmount": "Please enter an amount",
+  "pleaseEnterValidAmount": "Please enter a valid amount (e.g., 100) or range (e.g., 100-500)",
+  "rangeFirstLowerThanSecond": "In a range, the first number must be less than the second",
+  "paymentMethodsForCurrency": "Payment methods for {currency}",
+  "enterCustomPaymentMethod": "Enter custom payment method",
+  "loadingPaymentMethods": "Loading payment methods...",
+  "errorLoadingPaymentMethods": "Error loading payment methods: {error}",
+  "selectPaymentMethods": "Select payment methods",
+  "selectPaymentMethodsTitle": "Select Payment Methods",
+  "premiumTitle": "Premium (%)",
+  "premiumTooltip": "Adjust how much above or below the market price you want your offer. By default, it's set to 0%, with no premium or discount, so if you don't want to change the price, you can leave it as is.",
+  
+  "@_comment_account_screen": "Account Management Screen Strings",
+  "secretWords": "Secret Words",
+  "toRestoreYourAccount": "To restore your account",
+  "privacy": "Privacy",
+  "controlPrivacySettings": "Control your privacy settings",
+  "currentTradeIndex": "Current Trade Index",
+  "yourTradeCounter": "Your trade counter",
+  "incrementsWithEachTrade": "Increments with each trade",
+  "generateNewUser": "Generate New User",
+  "importMostroUser": "Import Mostro User",
+  "keyImportedSuccessfully": "Key imported successfully",
+  "importFailed": "Import failed: {error}",
+  "noMnemonicFound": "No mnemonic found",
+  "errorLoadingMnemonic": "Error: {error}",
+  
+  "@_comment_chat_screens": "Chat Screen Strings",
+  "noMessagesAvailable": "No messages available",
+  "back": "BACK",
+  "typeAMessage": "Type a message...",
+  "youAreChattingWith": "You are chatting with {handle}",
+  "yourHandle": "Your handle: {handle}",
+  "yourSharedKey": "Your shared key:",
+  
+  "@_comment_trade_actions": "Trade Detail Actions",
+  "payInvoiceButton": "PAY INVOICE",
+  "addInvoiceButton": "ADD INVOICE",
+  "release": "RELEASE",
+  "takeSell": "TAKE SELL",
+  "takeBuy": "TAKE BUY",
+  
+  "@_comment_currency_errors": "Currency Error Messages",
+  "noExchangeDataAvailable": "No exchange data available",
+  "errorFetchingCurrencies": "Error fetching currencies",
+  
+  "@_comment_currency_section": "Currency Selection Section Strings",
+  "selectFiatCurrencyPay": "Select the fiat currency you will pay with",
+  "selectFiatCurrencyReceive": "Select the Fiat Currency you want to receive",
+  "loadingCurrencies": "Loading currencies...",
+  "errorLoadingCurrencies": "Error loading currencies",
+  "usDollar": "US Dollar",
+  "selectCurrency": "Select Currency",
+  "searchCurrencies": "Search currencies...",
+  "noCurrenciesFound": "No currencies found",
+  
+  "@_comment_price_type_section": "Price Type Section Strings",
+  "priceType": "Price type",
+  "marketPrice": "Market price",
+  "fixedPrice": "Fixed price",
+  "market": "Market",
+  "priceTypeTooltip": "• Select Market Price if you want to use the price that Bitcoin has when someone takes your offer.\\n• Select Fixed Price if you want to define the exact amount of Bitcoin you will exchange.",
+  
+  "@_comment_take_order_screen": "Take Order Screen Strings",
+  "orderDetails": "ORDER DETAILS",
+  "selling": "selling",
+  "buying": "buying",
+  "atMarketPrice": "at market price",
+  "withPremiumPercent": "with a +{premium}% premium",
+  "@withPremiumPercent": {
+    "placeholders": {
+      "premium": {
+        "type": "String"
+      }
+    }
+  },
+  "withDiscountPercent": "with a {premium}% discount",
+  "@withDiscountPercent": {
+    "placeholders": {
+      "premium": {
+        "type": "String"
+      }
+    }
+  },
+  "noPaymentMethod": "No payment method",
+  "someoneIsSellingBuying": "Someone is {action}{satAmount} sats for {amountString} {price} {premiumText}",
+  "@someoneIsSellingBuying": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      },
+      "satAmount": {
+        "type": "String"
+      },
+      "amountString": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      },
+      "premiumText": {
+        "type": "String"
+      }
+    }
+  },
+  "createdOnDate": "Created on: {date}",
+  "@createdOnDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "paymentMethodsAre": "The payment methods are: {methods}",
+  "@paymentMethodsAre": {
+    "placeholders": {
+      "methods": {
+        "type": "String"
+      }
+    }
+  },
+  "timeLeft": "Time Left: {time}",
+  "@timeLeft": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "close": "CLOSE",
+  "take": "TAKE",
+  "enterAmount": "Enter Amount",
+  "enterAmountBetween": "Enter an amount between {min} and {max}",
+  "@enterAmountBetween": {
+    "placeholders": {
+      "min": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  "pleaseEnterValidNumber": "Please enter a valid number.",
+  "amountMustBeBetween": "Amount must be between {min} and {max}.",
+  "@amountMustBeBetween": {
+    "placeholders": {
+      "min": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "@_comment_lightning_invoice": "Lightning Invoice Widget Strings",
+  "pleaseEnterLightningInvoiceFor": "Please enter a Lightning Invoice for: ",
+  "sats": " sats",
+  "lightningInvoice": "Lightning Invoice",
+  "enterInvoiceHere": "Enter invoice here",
+  
+  "@_comment_trade_detail_screen": "Trade Detail Screen Strings",
+  "cancelPending": "CANCEL PENDING",
+  "acceptCancel": "ACCEPT CANCEL",
+  "completePurchase": "COMPLETE PURCHASE",
+  "rate": "RATE",
+  "contact": "CONTACT",
+  
+  "@_comment_rate_screen": "Rate Counterpart Screen Strings",
+  "rateCounterpart": "Rate Counterpart",
+  "submitRating": "Submit Rating",
+  
+  "@_comment_pay_invoice_screen": "Pay Lightning Invoice Screen Strings",
+  "payLightningInvoice": "Pay Lightning Invoice",
+  "payInvoiceToContinue": "Pay this invoice to continue the exchange",
+  "failedToGenerateQR": "Failed to generate QR code",
+  "invoiceCopiedToClipboard": "Invoice copied to clipboard",
+  "copy": "Copy",
+  "share": "Share",
+  "failedToShareInvoice": "Failed to share invoice. Please try copying instead.",
+  "openWallet": "OPEN WALLET",
+  "done": "DONE"
 }

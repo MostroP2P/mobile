@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/features/order/widgets/form_section.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class CurrencySection extends ConsumerWidget {
   final OrderType orderType;
@@ -18,20 +19,20 @@ class CurrencySection extends ConsumerWidget {
 
     return FormSection(
       title: orderType == OrderType.buy
-          ? 'Select the fiat currency you will pay with'
-          : 'Select the Fiat Currency you want to receive',
+          ? S.of(context)!.selectFiatCurrencyPay
+          : S.of(context)!.selectFiatCurrencyReceive,
       icon: const Text('\$',
           style: TextStyle(color: Color(0xFF8CC63F), fontSize: 18)),
       iconBackgroundColor: const Color(0xFF764BA2).withValues(alpha: 0.3),
       child: currenciesAsync.when(
-        loading: () => const Text('Loading currencies...',
-            style: TextStyle(color: Colors.white)),
-        error: (_, __) => const Text('Error loading currencies',
-            style: TextStyle(color: Colors.red)),
+        loading: () => Text(S.of(context)!.loadingCurrencies,
+            style: const TextStyle(color: Colors.white)),
+        error: (_, __) => Text(S.of(context)!.errorLoadingCurrencies,
+            style: const TextStyle(color: Colors.red)),
         data: (currencies) {
           final currency = currencies[selectedFiatCode];
           String flag = '🏳️';
-          String name = 'US Dollar';
+          String name = S.of(context)!.usDollar;
 
           if (currency != null) {
             flag = currency.emoji;
@@ -83,8 +84,8 @@ class CurrencySection extends ConsumerWidget {
                 children: [
                   AppBar(
                     backgroundColor: const Color(0xFF252a3a),
-                    title: const Text('Select Currency',
-                        style: TextStyle(color: Colors.white)),
+                    title: Text(S.of(context)!.selectCurrency,
+                        style: const TextStyle(color: Colors.white)),
                     leading: IconButton(
                       icon: const Icon(Icons.close, color: Colors.white),
                       onPressed: () => Navigator.of(context).pop(),
@@ -99,13 +100,13 @@ class CurrencySection extends ConsumerWidget {
                       decoration: BoxDecoration(
                         color: const Color(0xFF252a3a),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFF8CC63F).withOpacity(0.3), width: 1),
+                        border: Border.all(color: const Color(0xFF8CC63F).withValues(alpha: 0.3), width: 1),
                       ),
                       child: TextField(
                         textAlign: TextAlign.left,
                         style: const TextStyle(color: Colors.white),
                         decoration: InputDecoration(
-                          hintText: 'Search currencies...',
+                          hintText: S.of(context)!.searchCurrencies,
                           hintStyle: const TextStyle(color: Colors.grey),
                           prefixIcon: const Icon(Icons.search, color: Colors.grey, size: 20),
                           filled: false,
@@ -146,12 +147,12 @@ class CurrencySection extends ConsumerWidget {
                                   ..sort((a, b) => a.key.compareTo(b.key));
 
                             return filteredCurrencies.isEmpty
-                                ? const Center(
+                                ? Center(
                                     child: Padding(
-                                      padding: EdgeInsets.all(16.0),
+                                      padding: const EdgeInsets.all(16.0),
                                       child: Text(
-                                        'No currencies found',
-                                        style: TextStyle(color: Colors.white70),
+                                        S.of(context)!.noCurrenciesFound,
+                                        style: const TextStyle(color: Colors.white70),
                                       ),
                                     ),
                                   )

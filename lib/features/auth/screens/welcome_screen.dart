@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/shared/widgets/custom_button.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -23,7 +24,7 @@ class WelcomeScreen extends StatelessWidget {
               ),
               const Spacer(),
               Text(
-                'NO-KYC P2P Lightning\nexchange on top of\nnostr',
+                S.of(context)!.welcomeHeading,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: AppTheme.cream1,
@@ -32,7 +33,7 @@ class WelcomeScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'Peer-to-peer Lightning Network platform over nostr',
+                S.of(context)!.welcomeDescription,
                 style: Theme.of(context)
                     .textTheme
                     .bodyMedium
@@ -41,16 +42,16 @@ class WelcomeScreen extends StatelessWidget {
               ),
               const Spacer(flex: 2),
               CustomButton(
-                text: 'REGISTER',
+                text: S.of(context)!.registerButton,
                 onPressed: () {
                   context.go('/register');
                 },
               ),
               const SizedBox(height: 16),
               TextButton(
-                child: const Text(
-                  'Skip for now',
-                  style: TextStyle(
+                child: Text(
+                  S.of(context)!.skipForNow,
+                  style: const TextStyle(
                     color: AppTheme.cream1,
                     decoration: TextDecoration.underline,
                     fontSize: 14,

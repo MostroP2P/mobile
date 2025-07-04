@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/data/models/range_amount.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
@@ -38,6 +37,7 @@ extension NostrEventExtensions on NostrEvent {
   String? get geohash => _getTagValue('g');
   String? get bond => _getTagValue('bond');
   String? get expiration => _timeAgo(_getTagValue('expiration'));
+  String? timeAgoWithLocale(String? locale) => _timeAgo(_getTagValue('expiration'), locale);
   DateTime get expirationDate => _getTimeStamp(_getTagValue('expiration')!);
   String? get platform => _getTagValue('y');
   String get type => _getTagValue('z')!;
@@ -60,14 +60,17 @@ extension NostrEventExtensions on NostrEvent {
         .subtract(Duration(hours: 12));
   }
 
-  String _timeAgo(String? ts) {
+  String _timeAgo(String? ts, [String? locale]) {
     if (ts == null) return "invalid date";
     final timestamp = int.tryParse(ts);
     if (timestamp != null && timestamp > 0) {
       final DateTime eventTime =
           DateTime.fromMillisecondsSinceEpoch(timestamp * 1000)
               .subtract(Duration(hours: 36));
-      return timeago.format(eventTime, allowFromNow: true);
+      
+      // Use provided locale or fallback to Spanish
+      final effectiveLocale = locale ?? 'es';
+      return timeago.format(eventTime, allowFromNow: true, locale: effectiveLocale);
     } else {
       return "invalid date";
     }

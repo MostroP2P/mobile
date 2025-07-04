@@ -11,6 +11,7 @@ import 'package:mostro_mobile/features/order/providers/order_notifier_provider.d
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/time_provider.dart';
 import 'package:mostro_mobile/shared/utils/currency_utils.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class TradesListItem extends ConsumerWidget {
   final NostrEvent trade;
@@ -54,7 +55,7 @@ class TradesListItem extends ConsumerWidget {
                     Row(
                       children: [
                         Text(
-                          isBuying ? 'Buying Bitcoin' : 'Selling Bitcoin',
+                          isBuying ? S.of(context)!.buyingBitcoin : S.of(context)!.sellingBitcoin,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 16,
@@ -62,9 +63,9 @@ class TradesListItem extends ConsumerWidget {
                           ),
                         ),
                         const Spacer(),
-                        _buildStatusChip(orderState.status),
+                        _buildStatusChip(context, orderState.status),
                         const SizedBox(width: 8),
-                        _buildRoleChip(isCreator),
+                        _buildRoleChip(context, isCreator),
                       ],
                     ),
                     const SizedBox(height: 8),
@@ -126,7 +127,7 @@ class TradesListItem extends ConsumerWidget {
                             ),
                           )
                         : Text(
-                            'Bank Transfer',
+                            S.of(context)!.bankTransfer,
                             style: TextStyle(
                               color: Colors.grey.shade400,
                               fontSize: 14,
@@ -148,7 +149,7 @@ class TradesListItem extends ConsumerWidget {
     );
   }
 
-  Widget _buildRoleChip(bool isCreator) {
+  Widget _buildRoleChip(BuildContext context, bool isCreator) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
@@ -156,7 +157,7 @@ class TradesListItem extends ConsumerWidget {
         borderRadius: BorderRadius.circular(12), // Más redondeado
       ),
       child: Text(
-        isCreator ? 'Created by you' : 'Taken by you',
+        isCreator ? S.of(context)!.createdByYou : S.of(context)!.takenByYou,
         style: const TextStyle(
           color: Colors.white,
           fontSize: 12,
@@ -166,73 +167,73 @@ class TradesListItem extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatusChip(Status status) {
+  Widget _buildStatusChip(BuildContext context, Status status) {
   Color backgroundColor;
   Color textColor;
   String label;
 
   switch (status) {
     case Status.active:
-      backgroundColor = const Color(0xFF1E3A8A).withOpacity(0.3); // Azul oscuro con transparencia
+      backgroundColor = const Color(0xFF1E3A8A).withValues(alpha: 0.3); // Azul oscuro con transparencia
       textColor = const Color(0xFF93C5FD); // Azul claro
-      label = 'Active';
+      label = S.of(context)!.active;
       break;
     case Status.pending:
-      backgroundColor = const Color(0xFF854D0E).withOpacity(0.3); // Ámbar oscuro con transparencia
+      backgroundColor = const Color(0xFF854D0E).withValues(alpha: 0.3); // Ámbar oscuro con transparencia
       textColor = const Color(0xFFFCD34D); // Ámbar claro
-      label = 'Pending';
+      label = S.of(context)!.pending;
       break;
     // ✅ SOLUCION PROBLEMA 1: Agregar casos específicos para waitingPayment y waitingBuyerInvoice
     case Status.waitingPayment:
-      backgroundColor = const Color(0xFF7C2D12).withOpacity(0.3); // Naranja oscuro con transparencia
+      backgroundColor = const Color(0xFF7C2D12).withValues(alpha: 0.3); // Naranja oscuro con transparencia
       textColor = const Color(0xFFFED7AA); // Naranja claro
-      label = 'Waiting payment'; // En lugar de "Pending"
+      label = S.of(context)!.waitingPayment; // En lugar de "Pending"
       break;
     case Status.waitingBuyerInvoice:
-      backgroundColor = const Color(0xFF7C2D12).withOpacity(0.3); // Naranja oscuro con transparencia
+      backgroundColor = const Color(0xFF7C2D12).withValues(alpha: 0.3); // Naranja oscuro con transparencia
       textColor = const Color(0xFFFED7AA); // Naranja claro
-      label = 'Waiting invoice'; // En lugar de "Pending"
+      label = S.of(context)!.waitingInvoice; // En lugar de "Pending"
       break;
     case Status.fiatSent:
-      backgroundColor = const Color(0xFF065F46).withOpacity(0.3); // Verde oscuro con transparencia
+      backgroundColor = const Color(0xFF065F46).withValues(alpha: 0.3); // Verde oscuro con transparencia
       textColor = const Color(0xFF6EE7B7); // Verde claro
-      label = 'Fiat-sent';
+      label = S.of(context)!.fiatSent;
       break;
     case Status.canceled:
     case Status.canceledByAdmin:
     case Status.cooperativelyCanceled:
-      backgroundColor = Colors.grey.shade800.withOpacity(0.3);
+      backgroundColor = Colors.grey.shade800.withValues(alpha: 0.3);
       textColor = Colors.grey.shade300;
-      label = 'Canceled';
+      label = S.of(context)!.cancel;
       break;
     case Status.settledByAdmin:
     case Status.settledHoldInvoice:
-      backgroundColor = const Color(0xFF581C87).withOpacity(0.3); // Morado oscuro con transparencia
+      backgroundColor = const Color(0xFF581C87).withValues(alpha: 0.3); // Morado oscuro con transparencia
       textColor = const Color(0xFFC084FC); // Morado claro
-      label = 'Settled';
+      label = S.of(context)!.settled;
       break;
     case Status.completedByAdmin:
-      backgroundColor = const Color(0xFF065F46).withOpacity(0.3); // Verde oscuro con transparencia
+      backgroundColor = const Color(0xFF065F46).withValues(alpha: 0.3); // Verde oscuro con transparencia
       textColor = const Color(0xFF6EE7B7); // Verde claro
-      label = 'Completed';
+      label = S.of(context)!.completed;
       break;
     case Status.dispute:
-      backgroundColor = const Color(0xFF7F1D1D).withOpacity(0.3); // Rojo oscuro con transparencia
+      backgroundColor = const Color(0xFF7F1D1D).withValues(alpha: 0.3); // Rojo oscuro con transparencia
       textColor = const Color(0xFFFCA5A5); // Rojo claro
-      label = 'Dispute';
+      label = S.of(context)!.dispute;
       break;
     case Status.expired:
-      backgroundColor = Colors.grey.shade800.withOpacity(0.3);
+      backgroundColor = Colors.grey.shade800.withValues(alpha: 0.3);
       textColor = Colors.grey.shade300;
-      label = 'Expired';
+      label = S.of(context)!.expired;
       break;
     case Status.success:
-      backgroundColor = const Color(0xFF065F46).withOpacity(0.3); // Verde oscuro con transparencia
+      backgroundColor = const Color(0xFF065F46).withValues(alpha: 0.3); // Verde oscuro con transparencia
       textColor = const Color(0xFF6EE7B7); // Verde claro
-      label = 'Success';
+      label = S.of(context)!.success;
       break;
     default:
-      backgroundColor = Colors.grey.shade800.withOpacity(0.3);
+      backgroundColor = Colors.grey.shade800.withValues(alpha: 0.3);
       textColor = Colors.grey.shade300;
       label = status.toString(); // Fallback para mostrar el status real
       break;

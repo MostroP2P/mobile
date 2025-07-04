@@ -22,8 +22,8 @@ import 'package:mostro_mobile/features/subscriptions/subscription_type.dart'
     as _i17;
 import 'package:mostro_mobile/services/mostro_service.dart' as _i8;
 import 'package:sembast/sembast.dart' as _i4;
-import 'package:sembast/src/api/transaction.dart' as _i12;
-import 'package:shared_preferences/src/shared_preferences_async.dart' as _i10;
+import 'package:sembast/src/api/transaction.dart' as _i13;
+import 'package:shared_preferences/src/shared_preferences_async.dart' as _i11;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -672,7 +672,7 @@ class MockDatabase extends _i1.Mock implements _i4.Database {
 
   @override
   _i3.Future<T> transaction<T>(
-          _i3.FutureOr<T> Function(_i12.Transaction)? action) =>
+          _i3.FutureOr<T> Function(_i13.Transaction)? action) =>
       (super.noSuchMethod(
         Invocation.method(
           #transaction,

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 final chatCountProvider = StateProvider<int>((ref) => 0);
 final orderBookNotificationCountProvider = StateProvider<int>((ref) => 0);
@@ -27,7 +28,7 @@ class BottomNavBar extends ConsumerWidget {
           color: AppTheme.backgroundNavBar,
           border: Border(
             top: BorderSide(
-              color: Colors.white.withOpacity(0.1),
+              color: Colors.white.withValues(alpha: 0.1),
               width: 1,
             ),
           ),
@@ -38,20 +39,20 @@ class BottomNavBar extends ConsumerWidget {
             _buildNavItem(
               context,
               LucideIcons.book,
-              'Order Book',
+              S.of(context)!.orderBook,
               0,
             ),
             _buildNavItem(
               context,
               LucideIcons.zap,
-              'My Trades',
+              S.of(context)!.myTrades,
               1,
               notificationCount: orderNotificationCount,
             ),
             _buildNavItem(
               context,
               LucideIcons.messageSquare,
-              'Chat',
+              S.of(context)!.chat,
               2,
               notificationCount: chatCount,
             ),
@@ -73,7 +74,7 @@ class BottomNavBar extends ConsumerWidget {
       child: Semantics(
         button: true,
         enabled: true,
-        label: 'Navigate to $label',
+        label: S.of(context)!.navigateToLabel(label),
         child: GestureDetector(
           onTap: () => _onItemTapped(context, index),
           child: SizedBox(

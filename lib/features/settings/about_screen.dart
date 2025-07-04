@@ -7,6 +7,7 @@ import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class AboutScreen extends ConsumerWidget {
   static final textTheme = AppTheme.theme.textTheme;
@@ -26,7 +27,7 @@ class AboutScreen extends ConsumerWidget {
           onPressed: () => context.pop(),
         ),
         title: Text(
-          'About',
+          S.of(context)!.about,
           style: TextStyle(
             color: AppTheme.cream1,
           ),
@@ -55,7 +56,7 @@ class AboutScreen extends ConsumerWidget {
                               Icons.content_paste,
                               color: AppTheme.mostroGreen,
                             ),
-                            Text('App Information',
+                            Text(S.of(context)!.appInformation,
                                 style: textTheme.titleLarge),
                           ],
                         ),
@@ -63,7 +64,7 @@ class AboutScreen extends ConsumerWidget {
                           spacing: 8,
                           children: [
                             Expanded(
-                              child: _buildClientDetails(),
+                              child: _buildClientDetails(context),
                             ),
                           ],
                         ),
@@ -84,11 +85,11 @@ class AboutScreen extends ConsumerWidget {
                               Icons.content_paste,
                               color: AppTheme.mostroGreen,
                             ),
-                            Text('About Mostro Instance',
+                            Text(S.of(context)!.aboutMostroInstance,
                                 style: textTheme.titleLarge),
                           ],
                         ),
-                        Text('General Info', 
+                        Text(S.of(context)!.generalInfo, 
                             style: textTheme.titleMedium?.copyWith(
                               color: AppTheme.mostroGreen,
                             )),
@@ -98,7 +99,7 @@ class AboutScreen extends ConsumerWidget {
                                 spacing: 8,
                                 children: [
                                   Expanded(
-                                    child: _buildInstanceDetails(
+                                    child: _buildInstanceDetails(context,
                                         MostroInstance.fromEvent(nostrEvent)),
                                   ),
                                 ],
@@ -116,7 +117,7 @@ class AboutScreen extends ConsumerWidget {
   }
 
   /// Builds the header displaying details from the client.
-  Widget _buildClientDetails() {
+  Widget _buildClientDetails(BuildContext context) {
     const String appVersion =
         String.fromEnvironment('APP_VERSION', defaultValue: 'N/A');
     const String gitCommit =
@@ -127,7 +128,7 @@ class AboutScreen extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Version',
+          S.of(context)!.version,
         ),
         Text(
           appVersion,
@@ -136,13 +137,13 @@ class AboutScreen extends ConsumerWidget {
         Row(
           children: [
             Text(
-              'GitHub Repository',
+              S.of(context)!.githubRepository,
             ),
           ],
         ),
         const SizedBox(height: 8),
         Text(
-          'Commit Hash',
+          S.of(context)!.commitHash,
         ),
         Text(
           gitCommit,
@@ -152,8 +153,8 @@ class AboutScreen extends ConsumerWidget {
   }
 
   /// Builds the header displaying details from the MostroInstance.
-  Widget _buildInstanceDetails(MostroInstance instance) {
-    final formatter = NumberFormat.decimalPattern(Intl.getCurrentLocale());
+  Widget _buildInstanceDetails(BuildContext context, MostroInstance instance) {
+    final formatter = NumberFormat.decimalPattern();
 
     return CustomCard(
         padding: EdgeInsets.all(16),
@@ -161,51 +162,51 @@ class AboutScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Pubkey: ${instance.pubKey}',
+              '${S.of(context)!.pubkey}: ${instance.pubKey}',
             ),
             const SizedBox(height: 3),
             Text(
-              'Version: ${instance.mostroVersion}',
+              '${S.of(context)!.mostroVersion}: ${instance.mostroVersion}',
             ),
             const SizedBox(height: 3),
             Text(
-              'Commit Hash: ${instance.commitHash}',
+              '${S.of(context)!.commitHash}: ${instance.commitHash}',
             ),
             const SizedBox(height: 3),
             Text(
-              'Max Order Amount: ${formatter.format(instance.maxOrderAmount)}',
+              '${S.of(context)!.maxOrderAmount}: ${formatter.format(instance.maxOrderAmount)}',
             ),
             const SizedBox(height: 3),
             Text(
-              'Min Order Amount: ${formatter.format(instance.minOrderAmount)}',
+              '${S.of(context)!.minOrderAmount}: ${formatter.format(instance.minOrderAmount)}',
             ),
             const SizedBox(height: 3),
             Text(
-              'Expiration Hours: ${instance.expirationHours}',
+              '${S.of(context)!.expirationHours}: ${instance.expirationHours}',
             ),
             const SizedBox(height: 3),
             Text(
-              'Expiration Seconds: ${instance.expirationSeconds}',
+              '${S.of(context)!.expirationSeconds}: ${instance.expirationSeconds}',
             ),
             const SizedBox(height: 3),
             Text(
-              'Fee: ${instance.fee}',
+              '${S.of(context)!.fee}: ${instance.fee}',
             ),
             const SizedBox(height: 3),
             Text(
-              'Proof of Work: ${instance.pow}',
+              '${S.of(context)!.proofOfWork}: ${instance.pow}',
             ),
             const SizedBox(height: 3),
             Text(
-              'Hold Invoice Expiration Window: ${instance.holdInvoiceExpirationWindow}',
+              '${S.of(context)!.holdInvoiceExpirationWindow}: ${instance.holdInvoiceExpirationWindow}',
             ),
             const SizedBox(height: 3),
             Text(
-              'Hold Invoice CLTV Delta: ${instance.holdInvoiceCltvDelta}',
+              '${S.of(context)!.holdInvoiceCltvDelta}: ${instance.holdInvoiceCltvDelta}',
             ),
             const SizedBox(height: 3),
             Text(
-              'Invoice Expiration Window: ${instance.invoiceExpirationWindow}',
+              '${S.of(context)!.invoiceExpirationWindow}: ${instance.invoiceExpirationWindow}',
             ),
           ],
         ));

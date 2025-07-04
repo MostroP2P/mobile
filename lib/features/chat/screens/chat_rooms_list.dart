@@ -11,6 +11,7 @@ import 'package:mostro_mobile/shared/providers/legible_handle_provider.dart';
 import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_app_bar.dart';
 import 'package:mostro_mobile/shared/widgets/custom_drawer_overlay.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class ChatRoomsScreen extends ConsumerWidget {
   const ChatRoomsScreen({super.key});
@@ -34,12 +35,12 @@ class ChatRoomsScreen extends ConsumerWidget {
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Text(
-                  'CHAT',
+                  S.of(context)!.chat,
                   style: TextStyle(color: AppTheme.mostroGreen),
                 ),
               ),
               Expanded(
-                child: _buildBody(chatListState),
+                child: _buildBody(context, chatListState),
               ),
               const BottomNavBar(),
             ],
@@ -49,11 +50,11 @@ class ChatRoomsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildBody(List<ChatRoom> state) {
+  Widget _buildBody(BuildContext context, List<ChatRoom> state) {
     if (state.isEmpty) {
       return Center(
           child: Text(
-        'No messages available',
+        S.of(context)!.noMessagesAvailable,
       ));
     }
     return ListView.builder(

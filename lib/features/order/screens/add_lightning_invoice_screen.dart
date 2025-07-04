@@ -55,14 +55,16 @@ class _AddLightningInvoiceScreenState
                         try {
                           await orderNotifier.sendInvoice(
                               widget.orderId, invoice, amount);
-                          context.go('/');
+                          if (context.mounted) context.go('/');
                         } catch (e) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content:
-                                  Text('Failed to update invoice: ${e.toString()}'),
-                            ),
-                          );
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content:
+                                    Text('Failed to update invoice: ${e.toString()}'),
+                              ),
+                            );
+                          }
                         }
                       }
                     },
@@ -71,14 +73,16 @@ class _AddLightningInvoiceScreenState
                           ref.read(orderNotifierProvider(widget.orderId).notifier);
                       try {
                         await orderNotifier.cancelOrder();
-                        context.go('/');
+                        if (context.mounted) context.go('/');
                       } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content:
-                                Text('Failed to cancel order: ${e.toString()}'),
-                          ),
-                        );
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content:
+                                  Text('Failed to cancel order: ${e.toString()}'),
+                            ),
+                          );
+                        }
                       }
                     },
                     amount: amount ?? 0,

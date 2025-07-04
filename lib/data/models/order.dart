@@ -179,5 +179,27 @@ class Order implements Payload {
   @override
   String get type => 'order';
 
-  copyWith({required String buyerInvoice}) {}
+  Order copyWith({String? buyerInvoice}) {
+    return Order(
+      id: id,
+      kind: kind,
+      status: status,
+      amount: amount,
+      fiatCode: fiatCode,
+      minAmount: minAmount,
+      maxAmount: maxAmount,
+      fiatAmount: fiatAmount,
+      paymentMethod: paymentMethod,
+      premium: premium,
+      masterBuyerPubkey: masterBuyerPubkey,
+      masterSellerPubkey: masterSellerPubkey,
+      buyerTradePubkey: buyerTradePubkey,
+      sellerTradePubkey: sellerTradePubkey,
+      buyerInvoice: buyerInvoice ?? this.buyerInvoice,
+      buyerToken: buyerToken,
+      sellerToken: sellerToken,
+      expiresAt: expiresAt,
+      createdAt: createdAt,
+    );
+  }
 }
