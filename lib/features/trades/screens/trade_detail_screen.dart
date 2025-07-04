@@ -657,13 +657,17 @@ class TradeDetailScreen extends ConsumerWidget {
 
   /// Format the date time to a user-friendly string with UTC offset
   String formatDateTime(DateTime dt) {
-    final dateFormatter = DateFormat('EEE MMM dd yyyy HH:mm:ss');
+    // Formato más amigable: Día de semana, Día Mes Año a las HH:MM (Zona horaria)
+    final dateFormatter = DateFormat('EEE, MMM dd yyyy');
+    final timeFormatter = DateFormat('HH:mm');
     final formattedDate = dateFormatter.format(dt);
+    final formattedTime = timeFormatter.format(dt);
+  
+    // Simplificar la zona horaria a solo GMT+/-XX
     final offset = dt.timeZoneOffset;
     final sign = offset.isNegative ? '-' : '+';
     final hours = offset.inHours.abs().toString().padLeft(2, '0');
-    final minutes = (offset.inMinutes.abs() % 60).toString().padLeft(2, '0');
-    final timeZoneName = dt.timeZoneName;
-    return '$formattedDate GMT $sign$hours$minutes ($timeZoneName)';
+  
+    return '$formattedDate at $formattedTime (GMT$sign$hours)';
   }
 }
