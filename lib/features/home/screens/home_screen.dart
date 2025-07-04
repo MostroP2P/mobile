@@ -249,7 +249,7 @@ class HomeScreen extends ConsumerWidget {
                   color: Colors.white.withValues(alpha: 0.2),
                 ),
                 Text(
-                  S.of(context)!.offersCount(filteredOrders.length),
+                  S.of(context)!.offersCount(filteredOrders.length.toString()),
                   style: const TextStyle(
                     color: Colors.grey,
                     fontSize: 12,

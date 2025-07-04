@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/shared/widgets/clickable_text_widget.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class AddLightningInvoiceWidget extends StatefulWidget {
   final TextEditingController controller;
@@ -28,9 +29,9 @@ class _AddLightningInvoiceWidgetState extends State<AddLightningInvoiceWidget> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ClickableText(
-          leftText: 'Please enter a Lightning Invoice for: ',
+          leftText: S.of(context)!.pleaseEnterLightningInvoiceFor,
           clickableText: '${widget.amount}',
-          rightText: ' sats',
+          rightText: S.of(context)!.sats,
         ),
         const SizedBox(height: 16),
         TextFormField(
@@ -41,9 +42,9 @@ class _AddLightningInvoiceWidgetState extends State<AddLightningInvoiceWidget> {
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
             ),
-            labelText: "Lightning Invoice",
+            labelText: S.of(context)!.lightningInvoice,
             labelStyle: const TextStyle(color: AppTheme.grey2),
-            hintText: "Enter invoice here",
+            hintText: S.of(context)!.enterInvoiceHere,
             hintStyle: const TextStyle(color: AppTheme.grey2),
             filled: true,
             fillColor: AppTheme.dark1,
@@ -61,7 +62,7 @@ class _AddLightningInvoiceWidgetState extends State<AddLightningInvoiceWidget> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,
                 ),
-                child: const Text('CANCEL'),
+                child: Text(S.of(context)!.cancel),
               ),
             ),
             const SizedBox(width: 16),
@@ -72,7 +73,7 @@ class _AddLightningInvoiceWidgetState extends State<AddLightningInvoiceWidget> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.mostroGreen,
                 ),
-                child: const Text('SUBMIT'),
+                child: Text(S.of(context)!.submit),
               ),
             ),
           ],

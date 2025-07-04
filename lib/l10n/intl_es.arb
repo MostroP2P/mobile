@@ -78,6 +78,13 @@
   "sellBtc": "VENDER BTC",
   "filter": "FILTRO",
   "offersCount": "{count} ofertas",
+  "@offersCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
   "creatingNewOrder": "CREANDO NUEVA ORDEN",
   "enterSatsAmountBuy": "Ingresa la cantidad de Sats que quieres Comprar",
   "enterSatsAmountSell": "Ingresa la cantidad de Sats que quieres Vender",
@@ -138,7 +145,6 @@
   "success": "Éxito",
   "orderIdCopied": "ID de orden copiado al portapapeles",
   "orderDetails": "DETALLES DE LA ORDEN",
-  "timeLeft": "Tiempo Restante",
   "noPaymentMethod": "Sin método de pago",
   "youAreSellingText": "Estás vendiendo{sats} sats por {amount} {price} {premium}",
   "youAreBuyingText": "Estás comprando{sats} sats por {amount} {price} {premium}",
@@ -158,10 +164,34 @@
   "selling": "VENDIENDO",
   "marketPrice": "Precio de Mercado",
   "forSats": "Por {amount} sats",
+  "@forSats": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
   "hoursAgo": "hace {count} horas",
+  "@hoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
   "reviews": "reseñas",
   "daysOld": "días de antigüedad",
   "reviewsAndDaysOld": "{reviews} reseñas • {days} días de antigüedad",
+  "@reviewsAndDaysOld": {
+    "placeholders": {
+      "reviews": {
+        "type": "String"
+      },
+      "days": {
+        "type": "String"
+      }
+    }
+  },
   "account": "Cuenta",
   "about": "Acerca de",
   "walkthrough": "Tutorial",
@@ -231,5 +261,143 @@
   
   "@_comment_currency_errors": "Mensajes de Error de Moneda",
   "noExchangeDataAvailable": "No hay datos de intercambio disponibles",
-  "errorFetchingCurrencies": "Error obteniendo monedas"
+  "errorFetchingCurrencies": "Error obteniendo monedas",
+  
+  "@_comment_currency_section": "Cadenas de Sección de Selección de Moneda",
+  "selectFiatCurrencyPay": "Selecciona la moneda fiat con la que pagarás",
+  "selectFiatCurrencyReceive": "Selecciona la Moneda Fiat que quieres recibir",
+  "loadingCurrencies": "Cargando monedas...",
+  "errorLoadingCurrencies": "Error cargando monedas",
+  "usDollar": "Dólar Estadounidense",
+  "selectCurrency": "Seleccionar Moneda",
+  "searchCurrencies": "Buscar monedas...",
+  "noCurrenciesFound": "No se encontraron monedas",
+  
+  "@_comment_price_type_section": "Cadenas de Sección de Tipo de Precio",
+  "priceType": "Tipo de precio",
+  "marketPrice": "Precio de mercado",
+  "fixedPrice": "Precio fijo",
+  "market": "Mercado",
+  "priceTypeTooltip": "• Selecciona Precio de Mercado si quieres usar el precio que tiene Bitcoin cuando alguien tome tu oferta.\\n• Selecciona Precio Fijo si quieres definir la cantidad exacta de Bitcoin que intercambiarás.",
+  
+  "@_comment_take_order_screen": "Cadenas de Pantalla de Tomar Orden",
+  "orderDetails": "DETALLES DE LA ORDEN",
+  "selling": "vendiendo",
+  "buying": "comprando",
+  "atMarketPrice": "a precio de mercado",
+  "withPremiumPercent": "con un +{premium}% de premio",
+  "@withPremiumPercent": {
+    "placeholders": {
+      "premium": {
+        "type": "String"
+      }
+    }
+  },
+  "withDiscountPercent": "con un {premium}% de descuento",
+  "@withDiscountPercent": {
+    "placeholders": {
+      "premium": {
+        "type": "String"
+      }
+    }
+  },
+  "noPaymentMethod": "Sin método de pago",
+  "someoneIsSellingBuying": "Alguien está {action}{satAmount} sats por {amountString} {price} {premiumText}",
+  "@someoneIsSellingBuying": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      },
+      "satAmount": {
+        "type": "String"
+      },
+      "amountString": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      },
+      "premiumText": {
+        "type": "String"
+      }
+    }
+  },
+  "createdOnDate": "Creado el: {date}",
+  "@createdOnDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "paymentMethodsAre": "Los métodos de pago son: {methods}",
+  "@paymentMethodsAre": {
+    "placeholders": {
+      "methods": {
+        "type": "String"
+      }
+    }
+  },
+  "timeLeft": "Tiempo Restante: {time}",
+  "@timeLeft": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "close": "CERRAR",
+  "take": "TOMAR",
+  "enterAmount": "Ingresa Cantidad",
+  "enterAmountBetween": "Ingresa una cantidad entre {min} y {max}",
+  "@enterAmountBetween": {
+    "placeholders": {
+      "min": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  "pleaseEnterValidNumber": "Por favor ingresa un número válido.",
+  "amountMustBeBetween": "La cantidad debe estar entre {min} y {max}.",
+  "@amountMustBeBetween": {
+    "placeholders": {
+      "min": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "@_comment_lightning_invoice": "Cadenas de Widget de Factura Lightning",
+  "pleaseEnterLightningInvoiceFor": "Por favor ingresa una Factura Lightning para: ",
+  "sats": " sats",
+  "lightningInvoice": "Factura Lightning",
+  "enterInvoiceHere": "Ingresa la factura aquí",
+  
+  "@_comment_trade_detail_screen": "Cadenas de Pantalla de Detalle de Intercambio",
+  "cancelPending": "CANCELACIÓN PENDIENTE",
+  "acceptCancel": "ACEPTAR CANCELACIÓN",
+  "completePurchase": "COMPLETAR COMPRA",
+  "rate": "CALIFICAR",
+  "contact": "CONTACTAR",
+  
+  "@_comment_rate_screen": "Cadenas de Pantalla de Calificar Contraparte",
+  "rateCounterpart": "Calificar Contraparte",
+  "submitRating": "Enviar Calificación",
+  
+  "@_comment_pay_invoice_screen": "Cadenas de Pantalla de Pago de Factura Lightning",
+  "payLightningInvoice": "Pagar Factura Lightning",
+  "payInvoiceToContinue": "Paga esta factura para continuar el intercambio",
+  "failedToGenerateQR": "Error al generar código QR",
+  "invoiceCopiedToClipboard": "Factura copiada al portapapeles",
+  "copy": "Copiar",
+  "share": "Compartir",
+  "failedToShareInvoice": "Error al compartir factura. Por favor intenta copiarla en su lugar.",
+  "openWallet": "ABRIR BILLETERA",
+  "done": "HECHO"
 }
