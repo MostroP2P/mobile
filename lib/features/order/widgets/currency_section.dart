@@ -100,7 +100,7 @@ class CurrencySection extends ConsumerWidget {
                       decoration: BoxDecoration(
                         color: const Color(0xFF252a3a),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFF8CC63F).withOpacity(0.3), width: 1),
+                        border: Border.all(color: const Color(0xFF8CC63F).withValues(alpha: 0.3), width: 1),
                       ),
                       child: TextField(
                         textAlign: TextAlign.left,

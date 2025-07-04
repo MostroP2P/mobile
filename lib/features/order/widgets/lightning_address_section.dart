@@ -14,7 +14,7 @@ class LightningAddressSection extends StatelessWidget {
     return FormSection(
       title: 'Lightning Address (optional)',
       icon: const Icon(Icons.bolt, color: Colors.amber, size: 18),
-      iconBackgroundColor: Colors.amber.withOpacity(0.3),
+      iconBackgroundColor: Colors.amber.withValues(alpha: 0.3),
       child: TextField(
         controller: controller,
         style: const TextStyle(color: Colors.white),

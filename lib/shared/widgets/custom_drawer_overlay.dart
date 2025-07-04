@@ -28,19 +28,18 @@ class CustomDrawerOverlay extends ConsumerWidget {
             child: Container(
               width: double.infinity,
               height: double.infinity,
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
             ),
           ),
 
         // Drawer
-        WillPopScope(
-          onWillPop: () async {
-            if (isDrawerOpen) {
+        PopScope(
+          canPop: !isDrawerOpen,
+          onPopInvokedWithResult: (didPop, result) {
+            if (!didPop && isDrawerOpen) {
               // Close drawer if it's open
               ref.read(drawerProvider.notifier).closeDrawer();
-              return false; // Prevent route pop
             }
-            return true; // Allow route pop
           },
           child: AnimatedPositioned(
             duration: const Duration(milliseconds: 300),
@@ -90,7 +89,7 @@ class CustomDrawerOverlay extends ConsumerWidget {
                       Divider(
                         height: 1,
                         thickness: 1,
-                        color: Colors.white.withOpacity(0.1),
+                        color: Colors.white.withValues(alpha: 0.1),
                       ),
 
                       SizedBox(height: 16),

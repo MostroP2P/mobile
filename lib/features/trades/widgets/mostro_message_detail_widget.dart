@@ -13,20 +13,6 @@ class MostroMessageDetail extends ConsumerWidget {
   final String orderId;
   const MostroMessageDetail({super.key, required this.orderId});
 
-  /// Helper function to format payment methods for display
-  /// Returns "method1 (+X más)" if multiple methods, or just "method1" if single
-  String _formatPaymentMethods(List<String> paymentMethods, BuildContext context) {
-    if (paymentMethods.isEmpty) {
-      return S.of(context)!.noPaymentMethod;
-    }
-
-    if (paymentMethods.length == 1) {
-      return paymentMethods.first;
-    }
-
-    final additionalCount = paymentMethods.length - 1;
-    return '${paymentMethods.first} (+$additionalCount más)';
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

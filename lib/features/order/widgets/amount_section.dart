@@ -22,7 +22,7 @@ class AmountSection extends StatelessWidget {
           ? S.of(context)!.enterFiatAmountBuy
           : S.of(context)!.enterFiatAmountSell,
       icon: const Icon(Icons.credit_card, color: Color(0xFF8CC63F), size: 18),
-      iconBackgroundColor: const Color(0xFF8CC63F).withOpacity(0.3),
+      iconBackgroundColor: const Color(0xFF8CC63F).withValues(alpha: 0.3),
       child: TextFormField(
         key: const Key('fiatAmountField'),
         controller: controller,

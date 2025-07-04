@@ -36,7 +36,7 @@ class FormSection extends StatelessWidget {
                 Text(
                   title,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.7),
+                    color: Colors.white.withValues(alpha: 0.7),
                     fontSize: 14,
                   ),
                 ),
@@ -117,7 +117,7 @@ class FormSection extends StatelessWidget {
           if (extraContent != null) extraContent!,
           Container(
             height: 1,
-            color: Colors.white.withOpacity(0.1),
+            color: Colors.white.withValues(alpha: 0.1),
             margin: const EdgeInsets.symmetric(horizontal: 16),
           ),
         ],
