@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:mostro_mobile/core/app_theme.dart';
 
 class CustomCard extends StatelessWidget {
   final Widget child;
@@ -20,11 +19,11 @@ class CustomCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: color ?? AppTheme.dark2,
+      color: color ?? const Color(0xFF1D212C),
       margin: margin,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: borderSide ?? BorderSide(color: AppTheme.dark2),
+        side: borderSide ?? BorderSide(color: const Color(0xFF1D212C)),
       ),
       child: Padding(
         padding: padding,

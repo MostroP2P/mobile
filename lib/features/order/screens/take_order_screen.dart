@@ -28,7 +28,7 @@ class TakeOrderScreen extends ConsumerWidget {
     final order = ref.watch(eventProvider(orderId));
 
     return Scaffold(
-      backgroundColor: AppTheme.dark1,
+      backgroundColor: AppTheme.backgroundDark,
       appBar: OrderAppBar(
           title: orderType == OrderType.buy
               ? 'BUY ORDER DETAILS'

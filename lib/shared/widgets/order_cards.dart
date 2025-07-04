@@ -179,32 +179,45 @@ class OrderIdCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return CustomCard(
       padding: const EdgeInsets.all(16),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Text(
-              orderId,
-              style: const TextStyle(
-                color: AppTheme.mostroGreen,
-                fontSize: 14,
-              ),
+          const Text(
+            'Order ID',
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 12,
             ),
           ),
-          IconButton(
-            icon: const Icon(
-              Icons.copy,
-              color: Colors.white70,
-              size: 20,
-            ),
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: orderId));
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Order ID copied to clipboard'),
-                  duration: Duration(seconds: 2),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  orderId,
+                  style: const TextStyle(
+                    color: AppTheme.mostroGreen,
+                    fontSize: 14,
+                  ),
                 ),
-              );
-            },
+              ),
+              IconButton(
+                icon: const Icon(
+                  Icons.copy,
+                  color: Colors.white70,
+                  size: 20,
+                ),
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: orderId));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Order ID copied to clipboard'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
         ],
       ),
@@ -286,7 +299,7 @@ class CreatorReputationCard extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           const Icon(
-                            Icons.chat_bubble_outline,
+                            Icons.person_outline,
                             color: Colors.white70,
                             size: 16,
                           ),

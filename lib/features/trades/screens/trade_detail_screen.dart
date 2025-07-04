@@ -32,7 +32,7 @@ class TradeDetailScreen extends ConsumerWidget {
     final orderPayload = tradeState.order;
     if (orderPayload == null) {
       return const Scaffold(
-        backgroundColor: AppTheme.dark1,
+        backgroundColor: AppTheme.backgroundDark,
         body: Center(child: CircularProgressIndicator()),
       );
     }
@@ -45,7 +45,7 @@ class TradeDetailScreen extends ConsumerWidget {
         : tradeState.order!.kind == OrderType.sell;
 
     return Scaffold(
-      backgroundColor: AppTheme.dark1,
+      backgroundColor: AppTheme.backgroundDark,
       appBar: OrderAppBar(title: 'ORDER DETAILS'),
       body: Builder(
         builder: (context) {
@@ -331,36 +331,8 @@ class TradeDetailScreen extends ConsumerWidget {
 
   /// Show a card with the order ID that can be copied.
   Widget _buildOrderId(BuildContext context) {
-    return CustomCard(
-      padding: const EdgeInsets.all(2),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SelectableText(
-            orderId,
-            style: const TextStyle(color: AppTheme.mostroGreen),
-          ),
-          const SizedBox(width: 16),
-          IconButton(
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: orderId));
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Order ID copied to clipboard'),
-                  duration: Duration(seconds: 2),
-                ),
-              );
-            },
-            icon: const Icon(Icons.copy),
-            style: IconButton.styleFrom(
-              foregroundColor: AppTheme.mostroGreen,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          )
-        ],
-      ),
+    return OrderIdCard(
+      orderId: orderId,
     );
   }
 
