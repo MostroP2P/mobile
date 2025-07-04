@@ -228,8 +228,7 @@ class TradeDetailScreen extends ConsumerWidget {
 
           if (tradeState.status == Status.active ||
               tradeState.status == Status.fiatSent) {
-            if (tradeState.action ==
-                actions.Action.cooperativeCancelInitiatedByPeer) {
+            if (tradeState.action == actions.Action.cooperativeCancelInitiatedByPeer) {
               cancelMessage =
                   'If you confirm, you will accept the cooperative cancellation initiated by your counterparty.';
             } else {
