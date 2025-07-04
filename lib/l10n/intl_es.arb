@@ -180,8 +180,8 @@
     }
   },
   "reviews": "reseñas",
-  "daysOld": "días de antigüedad",
-  "reviewsAndDaysOld": "{reviews} reseñas • {days} días de antigüedad",
+  "daysOld": "días de 👴",
+  "reviewsAndDaysOld": "{reviews} reseñas • {days} días de 👴",
   "@reviewsAndDaysOld": {
     "placeholders": {
       "reviews": {

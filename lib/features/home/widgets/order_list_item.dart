@@ -103,7 +103,9 @@ class OrderListItem extends ConsumerWidget {
                         ],
                       ),
                       child: Text(
-                        order.orderType == OrderType.buy ? S.of(context)!.buying : S.of(context)!.selling,
+                        order.orderType == OrderType.buy
+                            ? S.of(context)!.buying
+                            : S.of(context)!.selling,
                         style: const TextStyle(
                           color: Colors.white70,
                           fontSize: 12,
@@ -114,7 +116,7 @@ class OrderListItem extends ConsumerWidget {
 
                     // Timestamp
                     Text(
-                      order.expiration ?? S.of(context)!.hoursAgo('9'),
+                      order.timeAgoWithLocale(Localizations.localeOf(context).languageCode) ?? S.of(context)!.hoursAgo('9'),
                       style: const TextStyle(
                         color: Colors.white60,
                         fontSize: 14,
@@ -330,7 +332,9 @@ class OrderListItem extends ConsumerWidget {
           ],
         ),
         Text(
-          S.of(context)!.reviewsAndDaysOld(reviews.toString(), daysOld.toString()),
+          S
+              .of(context)!
+              .reviewsAndDaysOld(reviews.toString(), daysOld.toString()),
           style: const TextStyle(
             color: Colors.white60,
             fontSize: 12,
