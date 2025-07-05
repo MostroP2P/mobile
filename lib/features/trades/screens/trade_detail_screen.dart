@@ -14,8 +14,6 @@ import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
 import 'package:mostro_mobile/shared/widgets/order_cards.dart';
 import 'package:mostro_mobile/features/trades/widgets/mostro_message_detail_widget.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
-import 'package:mostro_mobile/shared/utils/currency_utils.dart';
-import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_reactive_button.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 
@@ -103,12 +101,7 @@ class TradeDetailScreen extends ConsumerWidget {
     // For pending orders created by the user, show a notification message
     if (isPending && isCreator) {
       final selling = session?.role == Role.seller ? 'Selling' : 'Buying';
-      final currencyFlag = CurrencyUtils.getFlagFromCurrency(
-        tradeState.order!.fiatCode,
-      );
-
-      final amountString =
-          '${tradeState.order!.fiatAmount} ${tradeState.order!.fiatCode} $currencyFlag';
+      // Currency information is now handled by OrderAmountCard
 
       // If `orderPayload.amount` is 0, the trade is "at market price"
       final isZeroAmount = (tradeState.order!.amount == 0);
@@ -124,143 +117,24 @@ class TradeDetailScreen extends ConsumerWidget {
 
       return Column(
         children: [
-          CustomCard(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.info_outline,
-                      color: Colors.white70,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'You created this offer. Below are the details of your offer. Wait for another user to take it. It will be published for 24 hours. You can cancel it at any time using the \'Cancel\' button.',
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+          NotificationMessageCard(
+            message: 'You created this offer. Below are the details of your offer. Wait for another user to take it. It will be published for 24 hours. You can cancel it at any time using the \'Cancel\' button.',
+            icon: Icons.info_outline,
           ),
           const SizedBox(height: 16),
-          CustomCard(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Someone is $selling Sats',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Text(
-                      'for $amountString',
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 16,
-                      ),
-                    ),
-                    if (priceText.isNotEmpty) ...[
-                      const SizedBox(width: 8),
-                      Text(
-                        priceText,
-                        style: const TextStyle(
-                          color: Colors.white60,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ],
-            ),
+          OrderAmountCard(
+            title: 'Someone is $selling Sats',
+            amount: tradeState.order!.fiatAmount.toString(),
+            currency: tradeState.order!.fiatCode,
+            priceText: priceText,
           ),
           const SizedBox(height: 16),
-          CustomCard(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.payment,
-                      color: Colors.white70,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Payment Method',
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  paymentMethod,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
+          PaymentMethodCard(
+            paymentMethod: paymentMethod,
           ),
           const SizedBox(height: 16),
-          CustomCard(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.calendar_today,
-                      color: Colors.white70,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Created On',
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  createdOn,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
+          CreatedDateCard(
+            createdDate: createdOn,
           ),
         ],
       );
@@ -268,13 +142,7 @@ class TradeDetailScreen extends ConsumerWidget {
 
     // For non-pending orders or orders not created by the user, use the original display
     final selling = session?.role == Role.seller ? 'selling' : 'buying';
-    final currencyFlag = CurrencyUtils.getFlagFromCurrency(
-      tradeState.order!.fiatCode,
-    );
-
-    final amountString =
-        '${tradeState.order!.fiatAmount} ${tradeState.order!.fiatCode} $currencyFlag';
-
+    
     // If `orderPayload.amount` is 0, the trade is "at market price"
     final isZeroAmount = (tradeState.order!.amount == 0);
     final satText = isZeroAmount ? '' : ' ${tradeState.order!.amount}';
@@ -295,34 +163,25 @@ class TradeDetailScreen extends ConsumerWidget {
               tradeState.order!.createdAt! * 1000)
           : session?.startTime ?? DateTime.now(),
     );
-    return CustomCard(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'You are $selling$satText sats for $amountString $priceText $premiumText',
-                  style: AppTheme.theme.textTheme.bodyLarge,
-                  softWrap: true,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Created on: $timestamp',
-                  style: textTheme.bodyLarge,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Payment methods: $method',
-                  style: textTheme.bodyLarge,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+    
+    return Column(
+      children: [
+        OrderAmountCard(
+          title: 'You are $selling$satText sats',
+          amount: tradeState.order!.fiatAmount.toString(),
+          currency: tradeState.order!.fiatCode,
+          priceText: priceText,
+          premiumText: premiumText,
+        ),
+        const SizedBox(height: 16),
+        PaymentMethodCard(
+          paymentMethod: method,
+        ),
+        const SizedBox(height: 16),
+        CreatedDateCard(
+          createdDate: timestamp,
+        ),
+      ],
     );
   }
 
