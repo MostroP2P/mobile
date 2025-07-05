@@ -1,6 +1,5 @@
 import 'package:circular_countdown/circular_countdown.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -18,6 +17,7 @@ import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/shared/utils/currency_utils.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_reactive_button.dart';
+import 'package:mostro_mobile/data/models/session.dart';
 
 class TradeDetailScreen extends ConsumerWidget {
   final String orderId;
@@ -40,9 +40,7 @@ class TradeDetailScreen extends ConsumerWidget {
     // Check if this is a pending order created by the user
     final session = ref.watch(sessionProvider(orderId));
     final isPending = tradeState.status == Status.pending;
-    final isCreator = session!.role == Role.buyer
-        ? tradeState.order!.kind == OrderType.buy
-        : tradeState.order!.kind == OrderType.sell;
+    final isCreator = _isUserCreator(session, tradeState);
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundDark,
@@ -60,10 +58,11 @@ class TradeDetailScreen extends ConsumerWidget {
                 _buildOrderId(context),
                 const SizedBox(height: 16),
                 // For pending orders created by the user, show creator's reputation
-                if (isPending && isCreator) ...[  
+                if (isPending && isCreator) ...[
                   _buildCreatorReputation(tradeState),
                   const SizedBox(height: 16),
-                ] else ...[  // Use spread operator here too
+                ] else ...[
+                  // Use spread operator here too
                   // Detailed info: includes the last Mostro message action text
                   MostroMessageDetail(orderId: orderId),
                 ],
@@ -97,15 +96,13 @@ class TradeDetailScreen extends ConsumerWidget {
   Widget _buildSellerAmount(WidgetRef ref, OrderState tradeState) {
     final session = ref.watch(sessionProvider(orderId));
     final isPending = tradeState.status == Status.pending;
-  
+
     // Determine if the user is the creator of the order based on role and order type
-    final isCreator = session!.role == Role.buyer
-        ? tradeState.order!.kind == OrderType.buy
-        : tradeState.order!.kind == OrderType.sell;
+    final isCreator = _isUserCreator(session, tradeState);
 
     // For pending orders created by the user, show a notification message
     if (isPending && isCreator) {
-      final selling = session.role == Role.seller ? 'Selling' : 'Buying';
+      final selling = session?.role == Role.seller ? 'Selling' : 'Buying';
       final currencyFlag = CurrencyUtils.getFlagFromCurrency(
         tradeState.order!.fiatCode,
       );
@@ -122,7 +119,7 @@ class TradeDetailScreen extends ConsumerWidget {
         tradeState.order!.createdAt != null && tradeState.order!.createdAt! > 0
             ? DateTime.fromMillisecondsSinceEpoch(
                 tradeState.order!.createdAt! * 1000)
-            : session.startTime,
+            : session?.startTime ?? DateTime.now(),
       );
 
       return Column(
@@ -178,7 +175,7 @@ class TradeDetailScreen extends ConsumerWidget {
                         fontSize: 16,
                       ),
                     ),
-                    if (priceText.isNotEmpty) ...[  
+                    if (priceText.isNotEmpty) ...[
                       const SizedBox(width: 8),
                       Text(
                         priceText,
@@ -268,9 +265,9 @@ class TradeDetailScreen extends ConsumerWidget {
         ],
       );
     }
-  
+
     // For non-pending orders or orders not created by the user, use the original display
-    final selling = session.role == Role.seller ? 'selling' : 'buying';
+    final selling = session?.role == Role.seller ? 'selling' : 'buying';
     final currencyFlag = CurrencyUtils.getFlagFromCurrency(
       tradeState.order!.fiatCode,
     );
@@ -296,7 +293,7 @@ class TradeDetailScreen extends ConsumerWidget {
       tradeState.order!.createdAt != null && tradeState.order!.createdAt! > 0
           ? DateTime.fromMillisecondsSinceEpoch(
               tradeState.order!.createdAt! * 1000)
-          : session.startTime,
+          : session?.startTime ?? DateTime.now(),
     );
     return CustomCard(
       padding: const EdgeInsets.all(16),
@@ -387,7 +384,8 @@ class TradeDetailScreen extends ConsumerWidget {
 
           if (tradeState.status == Status.active ||
               tradeState.status == Status.fiatSent) {
-            if (tradeState.action == actions.Action.cooperativeCancelInitiatedByPeer) {
+            if (tradeState.action ==
+                actions.Action.cooperativeCancelInitiatedByPeer) {
               cancelMessage =
                   'If you confirm, you will accept the cooperative cancellation initiated by your counterparty.';
             } else {
@@ -521,9 +519,7 @@ class TradeDetailScreen extends ConsumerWidget {
           }
           break;
 
-        // ✅ CASOS DE COOPERATIVE CANCEL: Ahora estos se manejan cuando el usuario ya inició/recibió cooperative cancel
         case actions.Action.cooperativeCancelInitiatedByYou:
-          // El usuario ya inició cooperative cancel, ahora debe esperar respuesta
           widgets.add(_buildNostrButton(
             'CANCEL PENDING',
             action: actions.Action.cooperativeCancelInitiatedByYou,
@@ -642,9 +638,9 @@ class TradeDetailScreen extends ConsumerWidget {
 
   /// Build a card showing the creator's reputation with rating, reviews and days
   Widget _buildCreatorReputation(OrderState tradeState) {
-    // En trade_detail_screen.dart, no tenemos acceso directo al rating como en NostrEvent
-    // Por ahora, usamos valores predeterminados
-    // TODO: Implementar la extracción de datos de calificación del creador
+    // In trade_detail_screen.dart, we don't have direct access to rating as in NostrEvent
+    // For now, we use default values
+    // TODO: Implement extraction of creator rating data
     const rating = 3.1;
     const reviews = 15;
     const days = 7;
@@ -656,19 +652,28 @@ class TradeDetailScreen extends ConsumerWidget {
     );
   }
 
+  /// Helper method to determine if the current user is the creator of the order
+  /// based on their role (buyer/seller) and the order type (buy/sell)
+  bool _isUserCreator(Session? session, OrderState tradeState) {
+    if (session == null || session.role == null || tradeState.order == null) {
+      return false;
+    }
+    return session.role == Role.buyer
+        ? tradeState.order!.kind == OrderType.buy
+        : tradeState.order!.kind == OrderType.sell;
+  }
+
   /// Format the date time to a user-friendly string with UTC offset
   String formatDateTime(DateTime dt) {
-    // Formato más amigable: Día de semana, Día Mes Año a las HH:MM (Zona horaria)
     final dateFormatter = DateFormat('EEE, MMM dd yyyy');
     final timeFormatter = DateFormat('HH:mm');
     final formattedDate = dateFormatter.format(dt);
     final formattedTime = timeFormatter.format(dt);
-  
-    // Simplificar la zona horaria a solo GMT+/-XX
+
     final offset = dt.timeZoneOffset;
     final sign = offset.isNegative ? '-' : '+';
     final hours = offset.inHours.abs().toString().padLeft(2, '0');
-  
+
     return '$formattedDate at $formattedTime (GMT$sign$hours)';
   }
 }
