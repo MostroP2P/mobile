@@ -145,14 +145,12 @@ class TakeOrderScreen extends ConsumerWidget {
   }
 
   Widget _buildCreatorReputation(NostrEvent order) {
-    // Extraer la información de calificación directamente del evento
     final ratingInfo = order.rating;
-    
-    // Usar la información real o valores predeterminados si no está disponible
+
     final rating = ratingInfo?.totalRating ?? 0.0;
     final reviews = ratingInfo?.totalReviews ?? 0;
     final days = ratingInfo?.days ?? 0;
-    
+
     return CreatorReputationCard(
       rating: rating,
       reviews: reviews,
@@ -183,7 +181,8 @@ class TakeOrderScreen extends ConsumerWidget {
           child: ElevatedButton(
             onPressed: () async {
               // Check if this is a range order
-              if (order.fiatAmount.minimum != order.fiatAmount.maximum) {
+              if (order.fiatAmount.maximum != null &&
+                  order.fiatAmount.minimum != order.fiatAmount.maximum) {
                 // Show dialog to get the amount
                 String? errorText;
                 final enteredAmount = await showDialog<int>(
@@ -218,7 +217,9 @@ class TakeOrderScreen extends ConsumerWidget {
                                   });
                                 } else if (inputAmount <
                                         order.fiatAmount.minimum ||
-                                    inputAmount > order.fiatAmount.maximum!) {
+                                    (order.fiatAmount.maximum != null &&
+                                        inputAmount >
+                                            order.fiatAmount.maximum!)) {
                                   setState(() {
                                     errorText =
                                         "Amount must be between ${order.fiatAmount.minimum} and ${order.fiatAmount.maximum}.";
@@ -277,17 +278,15 @@ class TakeOrderScreen extends ConsumerWidget {
   }
 
   String formatDateTime(DateTime dt) {
-    // Formato más amigable: Día de semana, Día Mes Año a las HH:MM (Zona horaria)
     final dateFormatter = DateFormat('EEE, MMM dd yyyy');
     final timeFormatter = DateFormat('HH:mm');
     final formattedDate = dateFormatter.format(dt);
     final formattedTime = timeFormatter.format(dt);
-    
-    // Simplificar la zona horaria a solo GMT+/-XX
+
     final offset = dt.timeZoneOffset;
     final sign = offset.isNegative ? '-' : '+';
     final hours = offset.inHours.abs().toString().padLeft(2, '0');
-    
+
     return '$formattedDate at $formattedTime (GMT$sign$hours)';
   }
 }
