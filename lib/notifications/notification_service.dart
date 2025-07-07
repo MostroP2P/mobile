@@ -38,19 +38,16 @@ Future<void> showLocalNotification(NostrEvent event) async {
       playSound: true,
       enableVibration: true,
       ticker: 'ticker',
-      // Uncomment for heads-up notification, use with care:
-      // fullScreenIntent: true,
     ),
     iOS: DarwinNotificationDetails(
       presentAlert: true,
       presentBadge: true,
       presentSound: true,
-      // Optionally set interruption level for iOS 15+:
       interruptionLevel: InterruptionLevel.critical,
     ),
   );
   await flutterLocalNotificationsPlugin.show(
-    event.id.hashCode, // Use unique ID for each event
+    event.id.hashCode,
     'New Mostro Event',
     'You have received a new message from Mostro',
     details,
@@ -77,11 +74,5 @@ Future<void> retryNotification(NostrEvent event, {int maxAttempts = 3}) async {
       Logger().e('Notification attempt $attempt failed: $e. Retrying in ${backoffSeconds}s');  
       await Future.delayed(Duration(seconds: backoffSeconds));  
     }  
-  }  
-  
-  // Optionally store failed notifications for later retry when app returns to foreground  
-  if (!success) {  
-    // Store the event ID in a persistent queue for later retry  
-    // await failedNotificationsQueue.add(event.id!);  
   }  
 }  
