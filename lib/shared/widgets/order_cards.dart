@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 import 'package:mostro_mobile/shared/utils/currency_utils.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 /// Card that displays the order amount information (selling/buying sats for amount)
 class OrderAmountCard extends StatelessWidget {
@@ -13,13 +14,13 @@ class OrderAmountCard extends StatelessWidget {
   final String? premiumText;
 
   const OrderAmountCard({
-    Key? key,
+    super.key,
     required this.title,
     required this.amount,
     required this.currency,
     this.priceText,
     this.premiumText,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +44,7 @@ class OrderAmountCard extends StatelessWidget {
           Row(
             children: [
               Text(
-                'for $amountString',
+                S.of(context)!.forAmount(amountString),
                 style: const TextStyle(
                   color: Colors.white70,
                   fontSize: 16,
@@ -81,7 +82,7 @@ class OrderAmountCard extends StatelessWidget {
 class PaymentMethodCard extends StatelessWidget {
   final String paymentMethod;
 
-  const PaymentMethodCard({Key? key, required this.paymentMethod}) : super(key: key);
+  const PaymentMethodCard({super.key, required this.paymentMethod});
 
   @override
   Widget build(BuildContext context) {
@@ -99,8 +100,8 @@ class PaymentMethodCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Payment Method',
+                Text(
+                  S.of(context)!.paymentMethodLabel,
                   style: TextStyle(
                     color: Colors.white70,
                     fontSize: 12,
@@ -127,7 +128,7 @@ class PaymentMethodCard extends StatelessWidget {
 class CreatedDateCard extends StatelessWidget {
   final String createdDate;
 
-  const CreatedDateCard({Key? key, required this.createdDate}) : super(key: key);
+  const CreatedDateCard({super.key, required this.createdDate});
 
   @override
   Widget build(BuildContext context) {
@@ -145,8 +146,8 @@ class CreatedDateCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Created On',
+                Text(
+                  S.of(context)!.createdOnLabel,
                   style: TextStyle(
                     color: Colors.white70,
                     fontSize: 12,
@@ -173,7 +174,10 @@ class CreatedDateCard extends StatelessWidget {
 class OrderIdCard extends StatelessWidget {
   final String orderId;
 
-  const OrderIdCard({Key? key, required this.orderId}) : super(key: key);
+  const OrderIdCard({
+    super.key,
+    required this.orderId,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -182,8 +186,8 @@ class OrderIdCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Order ID',
+          Text(
+            S.of(context)!.orderIdLabel,
             style: TextStyle(
               color: Colors.white70,
               fontSize: 12,
@@ -210,8 +214,8 @@ class OrderIdCard extends StatelessWidget {
                 onPressed: () {
                   Clipboard.setData(ClipboardData(text: orderId));
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Order ID copied to clipboard'),
+                    SnackBar(
+                      content: Text(S.of(context)!.orderIdCopiedMessage),
                       duration: Duration(seconds: 2),
                     ),
                   );
@@ -232,11 +236,11 @@ class CreatorReputationCard extends StatelessWidget {
   final int days;
 
   const CreatorReputationCard({
-    Key? key,
+    super.key,
     required this.rating,
     required this.reviews,
     required this.days,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -246,8 +250,8 @@ class CreatorReputationCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Creator\'s Reputation',
+            Text(
+              S.of(context)!.creatorReputationLabel,
               style: TextStyle(
                 color: Colors.white70,
                 fontSize: 12,
@@ -281,8 +285,8 @@ class CreatorReputationCard extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 4),
-                      const Text(
-                        'Rating',
+                      Text(
+                        S.of(context)!.ratingLabel.toString(),
                         style: TextStyle(
                           color: Colors.white70,
                           fontSize: 12,
@@ -315,8 +319,8 @@ class CreatorReputationCard extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 4),
-                      const Text(
-                        'Reviews',
+                      Text(
+                        S.of(context)!.reviewsLabel,
                         style: TextStyle(
                           color: Colors.white70,
                           fontSize: 12,
@@ -349,8 +353,8 @@ class CreatorReputationCard extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 4),
-                      const Text(
-                        'Days',
+                      Text(
+                        S.of(context)!.daysLabel,
                         style: TextStyle(
                           color: Colors.white70,
                           fontSize: 12,
@@ -375,11 +379,11 @@ class NotificationMessageCard extends StatelessWidget {
   final Color iconColor;
 
   const NotificationMessageCard({
-    Key? key,
+    super.key,
     required this.message,
     this.icon = Icons.info_outline,
     this.iconColor = Colors.white70,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

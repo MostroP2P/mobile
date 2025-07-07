@@ -399,5 +399,42 @@
   "share": "Condividi",
   "failedToShareInvoice": "Errore nel condividere la fattura. Per favore prova a copiarla invece.",
   "openWallet": "APRI PORTAFOGLIO",
-  "done": "FATTO"
+  "done": "FATTO",
+
+  "@_comment_trade_detail_screen_new": "Nuove Stringhe Schermata Dettagli Scambio",
+  "orderDetailsTitle": "DETTAGLI ORDINE",
+  "buyOrderDetailsTitle": "DETTAGLI ORDINE DI ACQUISTO",
+  "sellOrderDetailsTitle": "DETTAGLI ORDINE DI VENDITA",
+  "someoneIsSellingTitle": "Qualcuno sta vendendo Sats",
+  "someoneIsBuyingTitle": "Qualcuno sta comprando Sats",
+  "youCreatedOfferMessage": "Hai creato questa offerta. Di seguito sono riportati i dettagli della tua offerta. Aspetta che un altro utente la prenda. Sarà pubblicata per 24 ore. Puoi cancellarla in qualsiasi momento utilizzando il pulsante 'Annulla'.",
+  "youAreSellingTitle": "Stai vendendo{sats} sats",
+  "youAreBuyingTitle": "Stai comprando{sats} sats",
+  "forAmount": "per {amount}",
+  "timeLeftLabel": "Tempo rimasto: {time}",
+  "@timeLeftLabel": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "cancelPendingButton": "ANNULLAMENTO IN SOSPESO",
+  "acceptCancelButton": "ACCETTA ANNULLAMENTO",
+  "disputeButton": "DISPUTA",
+  "fiatSentButton": "FIAT INVIATO",
+  "completePurchaseButton": "COMPLETA ACQUISTO",
+  "sellBitcoinButton": "VENDI BITCOIN",
+  "buyBitcoinButton": "COMPRA BITCOIN",
+  "paymentMethodLabel": "Metodo di Pagamento",
+  "createdOnLabel": "Creato il",
+  "orderIdLabel": "ID Ordine",
+  "creatorReputationLabel": "Reputazione del Creatore",
+  "ratingLabel": "Valutazione",
+  "reviewsLabel": "Recensioni",
+  "daysLabel": "Giorni",
+  "cancelTradeDialogTitle": "Annulla Scambio",
+  "cooperativeCancelDialogMessage": "Se confermi, inizierai un annullamento cooperativo con la tua controparte.",
+  "acceptCancelDialogMessage": "Se confermi, accetterai l'annullamento cooperativo iniziato dalla tua controparte.",
+  "orderIdCopiedMessage": "ID ordine copiato negli appunti"
 }
