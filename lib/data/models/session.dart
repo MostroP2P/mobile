@@ -47,16 +47,90 @@ class Session {
       };
 
   factory Session.fromJson(Map<String, dynamic> json) {
-    return Session(
-      masterKey: json['master_key'],
-      tradeKey: json['trade_key'],
-      keyIndex: json['key_index'],
-      fullPrivacy: json['full_privacy'],
-      startTime: DateTime.parse(json['start_time']),
-      orderId: json['order_id'],
-      role: json['role'] != null ? Role.fromString(json['role']) : null,
-      peer: json['peer'] != null ? Peer(publicKey: json['peer']) : null,
-    );
+    try {
+      // Validate required fields
+      final requiredFields = ['master_key', 'trade_key', 'key_index', 'full_privacy', 'start_time'];
+      for (final field in requiredFields) {
+        if (!json.containsKey(field) || json[field] == null) {
+          throw FormatException('Missing required field: $field');
+        }
+      }
+
+      // Parse keyIndex
+      final keyIndexValue = json['key_index'];
+      int keyIndex;
+      if (keyIndexValue is int) {
+        keyIndex = keyIndexValue;
+      } else if (keyIndexValue is String) {
+        keyIndex = int.tryParse(keyIndexValue) ??
+            (throw FormatException('Invalid key_index format: $keyIndexValue'));
+      } else {
+        throw FormatException('Invalid key_index type: ${keyIndexValue.runtimeType}');
+      }
+
+      if (keyIndex < 0) {
+        throw FormatException('Key index cannot be negative: $keyIndex');
+      }
+
+      // Parse fullPrivacy
+      final fullPrivacyValue = json['full_privacy'];
+      bool fullPrivacy;
+      if (fullPrivacyValue is bool) {
+        fullPrivacy = fullPrivacyValue;
+      } else if (fullPrivacyValue is String) {
+        fullPrivacy = fullPrivacyValue.toLowerCase() == 'true';
+      } else {
+        throw FormatException('Invalid full_privacy type: ${fullPrivacyValue.runtimeType}');
+      }
+
+      // Parse startTime
+      final startTimeValue = json['start_time'];
+      DateTime startTime;
+      if (startTimeValue is String) {
+        if (startTimeValue.isEmpty) {
+          throw FormatException('Start time string cannot be empty');
+        }
+        startTime = DateTime.tryParse(startTimeValue) ??
+            (throw FormatException('Invalid start_time format: $startTimeValue'));
+      } else {
+        throw FormatException('Invalid start_time type: ${startTimeValue.runtimeType}');
+      }
+
+      // Parse optional role
+      Role? role;
+      final roleValue = json['role'];
+      if (roleValue != null) {
+        if (roleValue is String && roleValue.isNotEmpty) {
+          role = Role.fromString(roleValue);
+        } else if (roleValue is! String) {
+          throw FormatException('Invalid role type: ${roleValue.runtimeType}');
+        }
+      }
+
+      // Parse optional peer
+      Peer? peer;
+      final peerValue = json['peer'];
+      if (peerValue != null) {
+        if (peerValue is String && peerValue.isNotEmpty) {
+          peer = Peer(publicKey: peerValue);
+        } else if (peerValue is! String) {
+          throw FormatException('Invalid peer type: ${peerValue.runtimeType}');
+        }
+      }
+
+      return Session(
+        masterKey: json['master_key'],
+        tradeKey: json['trade_key'],
+        keyIndex: keyIndex,
+        fullPrivacy: fullPrivacy,
+        startTime: startTime,
+        orderId: json['order_id']?.toString(),
+        role: role,
+        peer: peer,
+      );
+    } catch (e) {
+      throw FormatException('Failed to parse Session from JSON: $e');
+    }
   }
 
   NostrKeyPairs? get sharedKey => _sharedKey;
