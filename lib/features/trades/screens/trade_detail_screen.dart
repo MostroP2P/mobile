@@ -1,22 +1,23 @@
 import 'package:circular_countdown/circular_countdown.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
+import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/enums/role.dart';
 import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
+import 'package:mostro_mobile/shared/widgets/order_cards.dart';
 import 'package:mostro_mobile/features/trades/widgets/mostro_message_detail_widget.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
-import 'package:mostro_mobile/shared/utils/currency_utils.dart';
-import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_reactive_button.dart';
-import 'package:mostro_mobile/generated/l10n.dart';
+
+import 'package:mostro_mobile/data/models/session.dart';
+
 
 class TradeDetailScreen extends ConsumerWidget {
   final String orderId;
@@ -31,14 +32,21 @@ class TradeDetailScreen extends ConsumerWidget {
     final orderPayload = tradeState.order;
     if (orderPayload == null) {
       return const Scaffold(
-        backgroundColor: AppTheme.dark1,
+        backgroundColor: AppTheme.backgroundDark,
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
+    // Check if this is a pending order created by the user
+    final session = ref.watch(sessionProvider(orderId));
+    final isPending = tradeState.status == Status.pending;
+    final isCreator = _isUserCreator(session, tradeState);
+
     return Scaffold(
-      backgroundColor: AppTheme.dark1,
-      appBar: OrderAppBar(title: S.of(context)!.orderDetails),
+
+      backgroundColor: AppTheme.backgroundDark,
+      appBar: OrderAppBar(title: 'ORDER DETAILS'),
+
       body: Builder(
         builder: (context) {
           return SingleChildScrollView(
@@ -51,8 +59,15 @@ class TradeDetailScreen extends ConsumerWidget {
                 const SizedBox(height: 16),
                 _buildOrderId(context),
                 const SizedBox(height: 16),
-                // Detailed info: includes the last Mostro message action text
-                MostroMessageDetail(orderId: orderId),
+                // For pending orders created by the user, show creator's reputation
+                if (isPending && isCreator) ...[
+                  _buildCreatorReputation(tradeState),
+                  const SizedBox(height: 16),
+                ] else ...[
+                  // Use spread operator here too
+                  // Detailed info: includes the last Mostro message action text
+                  MostroMessageDetail(orderId: orderId),
+                ],
                 const SizedBox(height: 24),
                 _buildCountDownTime(context, orderPayload.expiresAt != null
                     ? orderPayload.expiresAt! * 1000
@@ -82,12 +97,57 @@ class TradeDetailScreen extends ConsumerWidget {
   /// Builds a card showing the user is "selling/buying X sats for Y fiat" etc.
   Widget _buildSellerAmount(BuildContext context, WidgetRef ref, OrderState tradeState) {
     final session = ref.watch(sessionProvider(orderId));
+    final isPending = tradeState.status == Status.pending;
 
-    final currencyFlag = CurrencyUtils.getFlagFromCurrency(
-      tradeState.order!.fiatCode,
-    );
+    // Determine if the user is the creator of the order based on role and order type
+    final isCreator = _isUserCreator(session, tradeState);
 
-    final amountString = '${tradeState.order!.fiatAmount} ${tradeState.order!.fiatCode} $currencyFlag';
+    // For pending orders created by the user, show a notification message
+    if (isPending && isCreator) {
+      final selling = session?.role == Role.seller ? 'Selling' : 'Buying';
+      // Currency information is now handled by OrderAmountCard
+
+      // If `orderPayload.amount` is 0, the trade is "at market price"
+      final isZeroAmount = (tradeState.order!.amount == 0);
+      final priceText = isZeroAmount ? 'at market price' : '';
+
+      final paymentMethod = tradeState.order!.paymentMethod;
+      final createdOn = formatDateTime(
+        tradeState.order!.createdAt != null && tradeState.order!.createdAt! > 0
+            ? DateTime.fromMillisecondsSinceEpoch(
+                tradeState.order!.createdAt! * 1000)
+            : session?.startTime ?? DateTime.now(),
+      );
+
+
+      return Column(
+        children: [
+          NotificationMessageCard(
+            message: 'You created this offer. Below are the details of your offer. Wait for another user to take it. It will be published for 24 hours. You can cancel it at any time using the \'Cancel\' button.',
+            icon: Icons.info_outline,
+          ),
+          const SizedBox(height: 16),
+          OrderAmountCard(
+            title: 'Someone is $selling Sats',
+            amount: tradeState.order!.fiatAmount.toString(),
+            currency: tradeState.order!.fiatCode,
+            priceText: priceText,
+          ),
+          const SizedBox(height: 16),
+          PaymentMethodCard(
+            paymentMethod: paymentMethod,
+          ),
+          const SizedBox(height: 16),
+          CreatedDateCard(
+            createdDate: createdOn,
+          ),
+        ],
+      );
+    }
+
+    // For non-pending orders or orders not created by the user, use the original display
+    final selling = session?.role == Role.seller ? 'selling' : 'buying';
+
     
     // If `orderPayload.amount` is 0, the trade is "at market price"
     final isZeroAmount = (tradeState.order!.amount == 0);
@@ -109,74 +169,38 @@ class TradeDetailScreen extends ConsumerWidget {
       tradeState.order!.createdAt != null && tradeState.order!.createdAt! > 0
           ? DateTime.fromMillisecondsSinceEpoch(
               tradeState.order!.createdAt! * 1000)
-          : session.startTime,
+          : session?.startTime ?? DateTime.now(),
     );
-    return CustomCard(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              // Using Column with spacing = 2 isn't standard; using SizedBoxes for spacing is fine.
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  isSellingRole 
-                    ? S.of(context)!.youAreSellingText(amountString, premiumText, priceText, satText)
-                    : S.of(context)!.youAreBuyingText(amountString, premiumText, priceText, satText),
-                  style: AppTheme.theme.textTheme.bodyLarge,
-                  softWrap: true,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  '${S.of(context)!.createdOn}: $timestamp',
-                  style: textTheme.bodyLarge,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  '${S.of(context)!.paymentMethodsLabel}: $method',
-                  style: textTheme.bodyLarge,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+
+    
+    return Column(
+      children: [
+        OrderAmountCard(
+          title: 'You are $selling$satText sats',
+          amount: tradeState.order!.fiatAmount.toString(),
+          currency: tradeState.order!.fiatCode,
+          priceText: priceText,
+          premiumText: premiumText,
+        ),
+        const SizedBox(height: 16),
+        PaymentMethodCard(
+          paymentMethod: method,
+        ),
+        const SizedBox(height: 16),
+        CreatedDateCard(
+          createdDate: timestamp,
+        ),
+      ],
+
     );
   }
 
   /// Show a card with the order ID that can be copied.
   Widget _buildOrderId(BuildContext context) {
-    return CustomCard(
-      padding: const EdgeInsets.all(2),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SelectableText(
-            orderId,
-            style: const TextStyle(color: AppTheme.mostroGreen),
-          ),
-          const SizedBox(width: 16),
-          IconButton(
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: orderId));
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(S.of(context)!.orderIdCopied),
-                  duration: Duration(seconds: 2),
-                ),
-              );
-            },
-            icon: const Icon(Icons.copy),
-            style: IconButton.styleFrom(
-              foregroundColor: AppTheme.mostroGreen,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          )
-        ],
-      ),
+
+    return OrderIdCard(
+      orderId: orderId,
+
     );
   }
 
@@ -231,8 +255,12 @@ class TradeDetailScreen extends ConsumerWidget {
 
           if (tradeState.status == Status.active ||
               tradeState.status == Status.fiatSent) {
-            if (tradeState.action == actions.Action.cooperativeCancelInitiatedByPeer) {
-              cancelMessage = S.of(context)!.acceptCancelMessage;
+
+            if (tradeState.action ==
+                actions.Action.cooperativeCancelInitiatedByPeer) {
+              cancelMessage =
+                  'If you confirm, you will accept the cooperative cancellation initiated by your counterparty.';
+
             } else {
               cancelMessage = S.of(context)!.cooperativeCancelMessage;
             }
@@ -363,9 +391,7 @@ class TradeDetailScreen extends ConsumerWidget {
           }
           break;
 
-        // ✅ CASOS DE COOPERATIVE CANCEL: Ahora estos se manejan cuando el usuario ya inició/recibió cooperative cancel
         case actions.Action.cooperativeCancelInitiatedByYou:
-          // El usuario ya inició cooperative cancel, ahora debe esperar respuesta
           widgets.add(_buildNostrButton(
             S.of(context)!.cancelPending,
             action: actions.Action.cooperativeCancelInitiatedByYou,
@@ -482,15 +508,44 @@ class TradeDetailScreen extends ConsumerWidget {
     );
   }
 
+  /// Build a card showing the creator's reputation with rating, reviews and days
+  Widget _buildCreatorReputation(OrderState tradeState) {
+    // In trade_detail_screen.dart, we don't have direct access to rating as in NostrEvent
+    // For now, we use default values
+    // TODO: Implement extraction of creator rating data
+    const rating = 3.1;
+    const reviews = 15;
+    const days = 7;
+
+    return CreatorReputationCard(
+      rating: rating,
+      reviews: reviews,
+      days: days,
+    );
+  }
+
+  /// Helper method to determine if the current user is the creator of the order
+  /// based on their role (buyer/seller) and the order type (buy/sell)
+  bool _isUserCreator(Session? session, OrderState tradeState) {
+    if (session == null || session.role == null || tradeState.order == null) {
+      return false;
+    }
+    return session.role == Role.buyer
+        ? tradeState.order!.kind == OrderType.buy
+        : tradeState.order!.kind == OrderType.sell;
+  }
+
   /// Format the date time to a user-friendly string with UTC offset
   String formatDateTime(DateTime dt) {
-    final dateFormatter = DateFormat('EEE MMM dd yyyy HH:mm:ss');
+    final dateFormatter = DateFormat('EEE, MMM dd yyyy');
+    final timeFormatter = DateFormat('HH:mm');
     final formattedDate = dateFormatter.format(dt);
+    final formattedTime = timeFormatter.format(dt);
+
     final offset = dt.timeZoneOffset;
     final sign = offset.isNegative ? '-' : '+';
     final hours = offset.inHours.abs().toString().padLeft(2, '0');
-    final minutes = (offset.inMinutes.abs() % 60).toString().padLeft(2, '0');
-    final timeZoneName = dt.timeZoneName;
-    return '$formattedDate GMT $sign$hours$minutes ($timeZoneName)';
+
+    return '$formattedDate at $formattedTime (GMT$sign$hours)';
   }
 }
