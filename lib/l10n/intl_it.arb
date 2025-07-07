@@ -55,5 +55,349 @@
   "notFound": "Disputa non trovata.",
   "invalidDisputeStatus": "Lo stato della disputa è invalido.",
   "invalidAction": "L'azione richiesta è invalida",
-  "pendingOrderExists": "Esiste già un ordine in attesa."
+  "pendingOrderExists": "Esiste già un ordine in attesa.",
+  "login": "Accedi",
+  "register": "Registrati",
+  "pin": "PIN",
+  "pleaseEnterPin": "Per favore inserisci il tuo PIN",
+  "pleaseEnterPrivateKey": "Per favore inserisci una chiave privata",
+  "invalidPrivateKeyFormat": "Formato della chiave privata non valido",
+  "privateKeyLabel": "Chiave Privata (nsec o hex)",
+  "pinMustBeAtLeast4Digits": "Il PIN deve essere di almeno 4 cifre",
+  "confirmPin": "Conferma PIN",
+  "pinsDoNotMatch": "I PIN non corrispondono",
+  "useBiometrics": "Usa Biometria",
+  "generateNewKey": "Genera Nuova Chiave",
+  "welcomeHeading": "Scambio Lightning P2P\nNO-KYC basato su\nnostr",
+  "welcomeDescription": "Piattaforma peer-to-peer Lightning Network su nostr",
+  "registerButton": "REGISTRATI",
+  "skipForNow": "Salta per ora",
+  "noOrdersAvailable": "Nessun ordine disponibile",
+  "tryChangingFilters": "Prova a cambiare le impostazioni del filtro o riprova più tardi",
+  "buyBtc": "COMPRA BTC",
+  "sellBtc": "VENDI BTC",
+  "filter": "FILTRO",
+  "offersCount": "{count} offerte",
+  "@offersCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "creatingNewOrder": "CREAZIONE NUOVO ORDINE",
+  "enterSatsAmountBuy": "Inserisci la quantità di Sats che vuoi Comprare",
+  "enterSatsAmountSell": "Inserisci la quantità di Sats che vuoi Vendere",
+  "enterSatsAmount": "Inserisci quantità sats",
+  "pleaseEnterSatsAmount": "Per favore inserisci la quantità di sats",
+  "pleaseEnterNumbersOnly": "Per favore inserisci solo numeri",
+  "pleaseSelectCurrency": "Per favore seleziona una valuta",
+  "pleaseSelectPaymentMethod": "Per favore seleziona almeno un metodo di pagamento",
+  "error": "Errore",
+  "ok": "OK",
+  "cancel": "Annulla",
+  "submit": "Invia",
+  "settings": "Impostazioni",
+  "currency": "Valuta",
+  "setDefaultFiatCurrency": "Imposta la tua valuta fiat predefinita",
+  "defaultFiatCurrency": "Valuta Fiat Predefinita",
+  "relays": "Relay",
+  "selectNostrRelays": "Seleziona i relay Nostr a cui connetterti",
+  "addRelay": "Aggiungi Relay",
+  "mostro": "Mostro",
+  "enterMostroPublicKey": "Inserisci la chiave pubblica del Mostro che utilizzerai",
+  "mostroPubkey": "Chiave Pubblica Mostro",
+  "orderBook": "Libro Ordini",
+  "myTrades": "I Miei Scambi",
+  "chat": "Chat",
+  "navigateToLabel": "Naviga a {label}",
+  "myActiveTrades": "I Miei Scambi Attivi",
+  "errorLoadingTrades": "Errore nel caricamento degli scambi",
+  "retry": "Riprova",
+  "noTradesAvailable": "Nessuno scambio disponibile per questo tipo",
+  "welcomeToMostroMobile": "Benvenuto in Mostro Mobile",
+  "discoverSecurePlatform": "Scopri una piattaforma sicura, privata ed efficiente per il trading peer-to-peer.",
+  "easyOnboarding": "Onboarding Facile",
+  "guidedWalkthroughSimple": "La nostra guida guidata rende semplice iniziare.",
+  "tradeWithConfidence": "Scambia con Fiducia",
+  "seamlessPeerToPeer": "Goditi scambi peer-to-peer senza soluzione di continuità utilizzando i nostri protocolli avanzati.",
+  "skip": "Salta",
+  "done": "Fatto",
+  "typeToAdd": "Digita per aggiungere...",
+  "noneSelected": "Nessuna selezione",
+  "fiatCurrencies": "Valute fiat",
+  "paymentMethods": "Metodi di pagamento",
+  "ratingLabel": "Valutazione: {rating}",
+  "buyingBitcoin": "Comprando Bitcoin",
+  "sellingBitcoin": "Vendendo Bitcoin",
+  "bankTransfer": "Bonifico Bancario",
+  "createdByYou": "Creato da te",
+  "takenByYou": "Preso da te",
+  "active": "Attivo",
+  "pending": "In attesa",
+  "waitingPayment": "Aspettando pagamento",
+  "waitingInvoice": "Aspettando fattura",
+  "fiatSent": "Fiat inviato",
+  "settled": "Liquidato",
+  "completed": "Completato",
+  "dispute": "Disputa",
+  "expired": "Scaduto",
+  "success": "Successo",
+  "orderIdCopied": "ID ordine copiato negli appunti",
+  "orderDetails": "DETTAGLI ORDINE",
+  "noPaymentMethod": "Nessun metodo di pagamento",
+  "youAreSellingText": "Stai vendendo{sats} sats per {amount} {price} {premium}",
+  "youAreBuyingText": "Stai comprando{sats} sats per {amount} {price} {premium}",
+  "atMarketPrice": "a prezzo di mercato",
+  "withPremium": " con un +{premium}% di premio",
+  "withDiscount": " con un {premium}% di sconto",
+  "createdOn": "Creato il",
+  "paymentMethodsLabel": "Metodi di pagamento",
+  "cancelTrade": "Annulla Scambio",
+  "areYouSureCancel": "Sei sicuro di voler annullare questo scambio?",
+  "cooperativeCancelMessage": "Se confermi, inizierai un annullamento cooperativo con la tua controparte.",
+  "acceptCancelMessage": "Se confermi, accetterai l'annullamento cooperativo iniziato dalla tua controparte.",
+  "confirm": "Conferma",
+  "buy": "COMPRA",
+  "sell": "VENDI",
+  "buying": "COMPRANDO",
+  "selling": "VENDENDO",
+  "marketPrice": "Prezzo di Mercato",
+  "forSats": "Per {amount} sats",
+  "@forSats": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "hoursAgo": "{count} ore fa",
+  "@hoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "reviews": "recensioni",
+  "daysOld": "giorni di anzianità",
+  "reviewsAndDaysOld": "{reviews} recensioni • {days} giorni di anzianità",
+  "@reviewsAndDaysOld": {
+    "placeholders": {
+      "reviews": {
+        "type": "String"
+      },
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "account": "Account",
+  "about": "Informazioni",
+  "walkthrough": "Tutorial",
+  "version": "Versione",
+  "githubRepository": "Repository GitHub",
+  "commitHash": "Hash Commit",
+  "appInformation": "Informazioni App",
+  "aboutMostroInstance": "Informazioni Istanza Mostro",
+  "generalInfo": "Informazioni Generali",
+  "pubkey": "Chiave Pubblica",
+  "mostroVersion": "Versione",
+  "maxOrderAmount": "Importo Massimo Ordine",
+  "minOrderAmount": "Importo Minimo Ordine",
+  "expirationHours": "Ore di Scadenza",
+  "expirationSeconds": "Secondi di Scadenza",
+  "fee": "Commissione",
+  "proofOfWork": "Proof of Work",
+  "holdInvoiceExpirationWindow": "Finestra Scadenza Fattura Hold",
+  "holdInvoiceCltvDelta": "Delta CLTV Fattura Hold",
+  "invoiceExpirationWindow": "Finestra Scadenza Fattura",
+  
+  "@_comment_order_creation": "Stringhe Modulo Creazione Ordine",
+  "enterFiatAmountBuy": "Inserisci l'importo fiat che vuoi pagare (puoi impostare un intervallo)",
+  "enterFiatAmountSell": "Inserisci l'importo fiat che vuoi ricevere (puoi impostare un intervallo)",
+  "enterAmountHint": "Inserisci importo (esempio: 100 o 100-500)",
+  "pleaseEnterAmount": "Per favore inserisci un importo",
+  "pleaseEnterValidAmount": "Per favore inserisci un importo valido (es., 100) o intervallo (es., 100-500)",
+  "rangeFirstLowerThanSecond": "In un intervallo, il primo numero deve essere minore del secondo",
+  "paymentMethodsForCurrency": "Metodi di pagamento per {currency}",
+  "enterCustomPaymentMethod": "Inserisci metodo di pagamento personalizzato",
+  "loadingPaymentMethods": "Caricamento metodi di pagamento...",
+  "errorLoadingPaymentMethods": "Errore nel caricamento dei metodi di pagamento: {error}",
+  "selectPaymentMethods": "Seleziona metodi di pagamento",
+  "selectPaymentMethodsTitle": "Seleziona Metodi di Pagamento",
+  "premiumTitle": "Premio (%)",
+  "premiumTooltip": "Regola quanto sopra o sotto il prezzo di mercato vuoi la tua offerta. Di default, è impostato al 0%, senza premio o sconto, quindi se non vuoi cambiare il prezzo, puoi lasciarlo così com'è.",
+  
+  "@_comment_account_screen": "Stringhe Schermata Gestione Account",
+  "secretWords": "Parole Segrete",
+  "toRestoreYourAccount": "Per ripristinare il tuo account",
+  "privacy": "Privacy",
+  "controlPrivacySettings": "Controlla le tue impostazioni di privacy",
+  "currentTradeIndex": "Indice Scambio Corrente",
+  "yourTradeCounter": "Il tuo contatore di scambi",
+  "incrementsWithEachTrade": "Si incrementa ad ogni scambio",
+  "generateNewUser": "Genera Nuovo Utente",
+  "importMostroUser": "Importa Utente Mostro",
+  "keyImportedSuccessfully": "Chiave importata con successo",
+  "importFailed": "Importazione fallita: {error}",
+  "noMnemonicFound": "Nessun mnemonico trovato",
+  "errorLoadingMnemonic": "Errore: {error}",
+  
+  "@_comment_chat_screens": "Stringhe Schermata Chat",
+  "noMessagesAvailable": "Nessun messaggio disponibile",
+  "back": "INDIETRO",
+  "typeAMessage": "Scrivi un messaggio...",
+  "youAreChattingWith": "Stai chattando con {handle}",
+  "yourHandle": "Il tuo nome: {handle}",
+  "yourSharedKey": "La tua chiave condivisa:",
+  
+  "@_comment_trade_actions": "Azioni Dettaglio Scambio",
+  "payInvoiceButton": "PAGA FATTURA",
+  "addInvoiceButton": "AGGIUNGI FATTURA",
+  "release": "RILASCIA",
+  "takeSell": "PRENDI VENDITA",
+  "takeBuy": "PRENDI ACQUISTO",
+  
+  "@_comment_currency_errors": "Messaggi Errore Valuta",
+  "noExchangeDataAvailable": "Nessun dato di cambio disponibile",
+  "errorFetchingCurrencies": "Errore nel recupero delle valute",
+  
+  "@_comment_currency_section": "Stringhe Sezione Selezione Valuta",
+  "selectFiatCurrencyPay": "Seleziona la valuta fiat con cui pagherai",
+  "selectFiatCurrencyReceive": "Seleziona la Valuta Fiat che vuoi ricevere",
+  "loadingCurrencies": "Caricamento valute...",
+  "errorLoadingCurrencies": "Errore nel caricamento delle valute",
+  "usDollar": "Dollaro Americano",
+  "selectCurrency": "Seleziona Valuta",
+  "searchCurrencies": "Cerca valute...",
+  "noCurrenciesFound": "Nessuna valuta trovata",
+  
+  "@_comment_price_type_section": "Stringhe Sezione Tipo di Prezzo",
+  "priceType": "Tipo di prezzo",
+  "marketPrice": "Prezzo di mercato",
+  "fixedPrice": "Prezzo fisso",
+  "market": "Mercato",
+  "priceTypeTooltip": "• Seleziona Prezzo di Mercato se vuoi usare il prezzo che ha Bitcoin quando qualcuno prende la tua offerta.\\n• Seleziona Prezzo Fisso se vuoi definire l'importo esatto di Bitcoin che scambierai.",
+  
+  "@_comment_take_order_screen": "Stringhe Schermata Prendi Ordine",
+  "orderDetails": "DETTAGLI ORDINE",
+  "selling": "vendendo",
+  "buying": "comprando",
+  "atMarketPrice": "a prezzo di mercato",
+  "withPremiumPercent": "con un +{premium}% di premio",
+  "@withPremiumPercent": {
+    "placeholders": {
+      "premium": {
+        "type": "String"
+      }
+    }
+  },
+  "withDiscountPercent": "con un {premium}% di sconto",
+  "@withDiscountPercent": {
+    "placeholders": {
+      "premium": {
+        "type": "String"
+      }
+    }
+  },
+  "noPaymentMethod": "Nessun metodo di pagamento",
+  "someoneIsSellingBuying": "Qualcuno sta {action}{satAmount} sats per {amountString} {price} {premiumText}",
+  "@someoneIsSellingBuying": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      },
+      "satAmount": {
+        "type": "String"
+      },
+      "amountString": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      },
+      "premiumText": {
+        "type": "String"
+      }
+    }
+  },
+  "createdOnDate": "Creato il: {date}",
+  "@createdOnDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "paymentMethodsAre": "I metodi di pagamento sono: {methods}",
+  "@paymentMethodsAre": {
+    "placeholders": {
+      "methods": {
+        "type": "String"
+      }
+    }
+  },
+  "timeLeft": "Tempo Rimanente: {time}",
+  "@timeLeft": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "close": "CHIUDI",
+  "take": "PRENDI",
+  "enterAmount": "Inserisci Importo",
+  "enterAmountBetween": "Inserisci un importo tra {min} e {max}",
+  "@enterAmountBetween": {
+    "placeholders": {
+      "min": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  "pleaseEnterValidNumber": "Per favore inserisci un numero valido.",
+  "amountMustBeBetween": "L'importo deve essere tra {min} e {max}.",
+  "@amountMustBeBetween": {
+    "placeholders": {
+      "min": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "@_comment_lightning_invoice": "Stringhe Widget Fattura Lightning",
+  "pleaseEnterLightningInvoiceFor": "Per favore inserisci una Fattura Lightning per: ",
+  "sats": " sats",
+  "lightningInvoice": "Fattura Lightning",
+  "enterInvoiceHere": "Inserisci la fattura qui",
+  
+  "@_comment_trade_detail_screen": "Stringhe Schermata Dettaglio Scambio",
+  "cancelPending": "CANCELLAZIONE IN ATTESA",
+  "acceptCancel": "ACCETTA CANCELLAZIONE",
+  "completePurchase": "COMPLETA ACQUISTO",
+  "rate": "VALUTA",
+  "contact": "CONTATTA",
+  
+  "@_comment_rate_screen": "Stringhe Schermata Valuta Controparte",
+  "rateCounterpart": "Valuta Controparte",
+  "submitRating": "Invia Valutazione",
+  
+  "@_comment_pay_invoice_screen": "Stringhe Schermata Pagamento Fattura Lightning",
+  "payLightningInvoice": "Paga Fattura Lightning",
+  "payInvoiceToContinue": "Paga questa fattura per continuare lo scambio",
+  "failedToGenerateQR": "Errore nella generazione del codice QR",
+  "invoiceCopiedToClipboard": "Fattura copiata negli appunti",
+  "copy": "Copia",
+  "share": "Condividi",
+  "failedToShareInvoice": "Errore nel condividere la fattura. Per favore prova a copiarla invece.",
+  "openWallet": "APRI PORTAFOGLIO",
+  "done": "FATTO"
 }

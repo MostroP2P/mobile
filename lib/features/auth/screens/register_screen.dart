@@ -7,6 +7,7 @@ import 'package:mostro_mobile/features/auth/notifiers/auth_state.dart';
 import 'package:mostro_mobile/features/auth/providers/auth_notifier_provider.dart';
 import 'package:mostro_mobile/shared/widgets/custom_button.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class RegisterScreen extends HookConsumerWidget {
   const RegisterScreen({super.key});
@@ -47,7 +48,7 @@ class RegisterScreen extends HookConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Register', style: TextStyle(color: AppTheme.cream1)),
+        title: Text(S.of(context)!.register, style: const TextStyle(color: AppTheme.cream1)),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -63,7 +64,7 @@ class RegisterScreen extends HookConsumerWidget {
               TextFormField(
                 controller: privateKeyController,
                 decoration: InputDecoration(
-                  labelText: 'Private Key (nsec or hex)',
+                  labelText: S.of(context)!.privateKeyLabel,
                   labelStyle: const TextStyle(color: AppTheme.cream1),
                   enabledBorder: const UnderlineInputBorder(
                     borderSide: BorderSide(color: AppTheme.cream1),
@@ -85,11 +86,11 @@ class RegisterScreen extends HookConsumerWidget {
                 obscureText: obscurePrivateKey,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter a private key';
+                    return S.of(context)!.pleaseEnterPrivateKey;
                   }
                   if (!value.startsWith('nsec') &&
                       !RegExp(r'^[0-9a-fA-F]{64}$').hasMatch(value)) {
-                    return 'Invalid private key format';
+                    return S.of(context)!.invalidPrivateKeyFormat;
                   }
                   return null;
                 },
@@ -100,7 +101,7 @@ class RegisterScreen extends HookConsumerWidget {
               TextFormField(
                 controller: pinController,
                 decoration: InputDecoration(
-                  labelText: 'PIN',
+                  labelText: S.of(context)!.pin,
                   labelStyle: const TextStyle(color: AppTheme.cream1),
                   enabledBorder: const UnderlineInputBorder(
                     borderSide: BorderSide(color: AppTheme.cream1),
@@ -120,10 +121,10 @@ class RegisterScreen extends HookConsumerWidget {
                 obscureText: obscurePin,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter a PIN';
+                    return S.of(context)!.pleaseEnterPin;
                   }
                   if (value.length < 4) {
-                    return 'PIN must be at least 4 digits';
+                    return S.of(context)!.pinMustBeAtLeast4Digits;
                   }
                   return null;
                 },
@@ -134,7 +135,7 @@ class RegisterScreen extends HookConsumerWidget {
               TextFormField(
                 controller: confirmPinController,
                 decoration: InputDecoration(
-                  labelText: 'Confirm PIN',
+                  labelText: S.of(context)!.confirmPin,
                   labelStyle: const TextStyle(color: AppTheme.cream1),
                   enabledBorder: const UnderlineInputBorder(
                     borderSide: BorderSide(color: AppTheme.cream1),
@@ -157,7 +158,7 @@ class RegisterScreen extends HookConsumerWidget {
                 obscureText: obscureConfirmPin,
                 validator: (value) {
                   if (value != pinController.text) {
-                    return 'PINs do not match';
+                    return S.of(context)!.pinsDoNotMatch;
                   }
                   return null;
                 },
@@ -173,8 +174,8 @@ class RegisterScreen extends HookConsumerWidget {
                 }
                 return biometricsAvailable
                     ? SwitchListTile(
-                        title: const Text('Use Biometrics',
-                            style: TextStyle(color: AppTheme.cream1)),
+                        title: Text(S.of(context)!.useBiometrics,
+                            style: const TextStyle(color: AppTheme.cream1)),
                         value: useBiometrics,
                         onChanged: (bool value) {
                           ref.read(useBiometricsProvider.notifier).state =
@@ -188,7 +189,7 @@ class RegisterScreen extends HookConsumerWidget {
 
               // Register Button
               CustomButton(
-                text: 'Register',
+                text: S.of(context)!.register,
                 onPressed: () => _onRegister(context, ref, formKey,
                     privateKeyController, pinController, useBiometrics),
               ),
@@ -196,7 +197,7 @@ class RegisterScreen extends HookConsumerWidget {
 
               // Generate New Key Button
               CustomButton(
-                text: 'Generate New Key',
+                text: S.of(context)!.generateNewKey,
                 onPressed: () =>
                     ref.read(authNotifierProvider.notifier).generateKey(),
               ),

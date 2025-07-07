@@ -8,6 +8,7 @@ import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 import 'package:mostro_mobile/shared/widgets/privacy_switch_widget.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class KeyManagementScreen extends ConsumerStatefulWidget {
   const KeyManagementScreen({super.key});
@@ -40,11 +41,11 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
         _mnemonic = await keyManager.getMnemonic();
         _tradeKeyIndex = await keyManager.getCurrentKeyIndex();
       } else {
-        _mnemonic = 'No mnemonic found';
+        if (mounted) _mnemonic = S.of(context)!.noMnemonicFound;
         _tradeKeyIndex = 0;
       }
     } catch (e) {
-      _mnemonic = 'Error: $e';
+      if (mounted) _mnemonic = S.of(context)!.errorLoadingMnemonic(e.toString());
     } finally {
       setState(() {
         _loading = false;
@@ -75,13 +76,17 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
       try {
         await keyManager.importMnemonic(importValue);
         await _loadKeys();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Key imported successfully')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(S.of(context)!.keyImportedSuccessfully)),
+          );
+        }
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Import failed: $e')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(S.of(context)!.importFailed(e.toString()))),
+          );
+        }
       }
     }
   }
@@ -103,7 +108,7 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
           onPressed: () => context.pop(),
         ),
         title: Text(
-          'Account',
+          S.of(context)!.account,
           style: TextStyle(
             color: AppTheme.cream1,
           ),
@@ -132,10 +137,10 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                               Icons.key,
                               color: AppTheme.mostroGreen,
                             ),
-                            Text('Secret Words', style: textTheme.titleLarge),
+                            Text(S.of(context)!.secretWords, style: textTheme.titleLarge),
                           ],
                         ),
-                        Text('To restore your account',
+                        Text(S.of(context)!.toRestoreYourAccount,
                             style: textTheme.bodyMedium
                                 ?.copyWith(color: AppTheme.grey2)),
                         SelectableText(
@@ -159,10 +164,10 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                               Icons.key,
                               color: AppTheme.mostroGreen,
                             ),
-                            Text('Privacy', style: textTheme.titleLarge),
+                            Text(S.of(context)!.privacy, style: textTheme.titleLarge),
                           ],
                         ),
-                        Text('Control your privacy settings',
+                        Text(S.of(context)!.controlPrivacySettings,
                             style: textTheme.bodyMedium
                                 ?.copyWith(color: AppTheme.grey2)),
                         PrivacySwitch(
@@ -190,11 +195,11 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                               Icons.sync,
                               color: AppTheme.mostroGreen,
                             ),
-                            Text('Current Trade Index',
+                            Text(S.of(context)!.currentTradeIndex,
                                 style: textTheme.titleLarge),
                           ],
                         ),
-                        Text('Your trade counter',
+                        Text(S.of(context)!.yourTradeCounter,
                             style: textTheme.bodyMedium
                                 ?.copyWith(color: AppTheme.grey2)),
                         CustomCard(
@@ -210,7 +215,7 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
-                                  Text('Increments with each trade',
+                                  Text(S.of(context)!.incrementsWithEachTrade,
                                       style: textTheme.bodyMedium
                                           ?.copyWith(color: AppTheme.grey2)),
                                 ],
@@ -230,7 +235,7 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                           spacing: 8,
                           children: [
                             const Icon(Icons.person_2_outlined),
-                            const Text('Generate New User'),
+                            Text(S.of(context)!.generateNewUser),
                           ],
                         ),
                       ),
@@ -242,7 +247,7 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                       spacing: 8,
                       children: [
                         const Icon(Icons.download),
-                        const Text('Import Mostro User'),
+                        Text(S.of(context)!.importMostroUser),
                       ],
                     ),
                   ),

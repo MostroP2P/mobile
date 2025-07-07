@@ -31,7 +31,7 @@ class _RateCounterpartScreenState extends ConsumerState<RateCounterpartScreen> {
 
     await orderNotifer.submitRating(_rating);
 
-    context.pop();
+    if (mounted) context.pop();
   }
 
   @override
@@ -41,8 +41,8 @@ class _RateCounterpartScreenState extends ConsumerState<RateCounterpartScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text('Rate Counterpart',
-            style: TextStyle(color: AppTheme.cream1)),
+        title: Text(S.of(context)!.rateCounterpart,
+            style: const TextStyle(color: AppTheme.cream1)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppTheme.cream1),
           onPressed: () => context.pop(),
@@ -85,7 +85,7 @@ class _RateCounterpartScreenState extends ConsumerState<RateCounterpartScreen> {
                 ),
                 onPressed: _rating > 0 ? _submitRating : null,
                 child:
-                    const Text('Submit Rating', style: TextStyle(fontSize: 16)),
+                    Text(S.of(context)!.submitRating, style: const TextStyle(fontSize: 16)),
               ),
             ],
           ),

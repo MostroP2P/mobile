@@ -19,7 +19,6 @@ class AuthRepository {
         await AuthUtils.enableBiometrics();
       }
     } catch (e) {
-      print('Error in AuthRepository.register: $e');
       rethrow; // Re-lanza el error para que pueda ser manejado en el Bloc
     }
   }

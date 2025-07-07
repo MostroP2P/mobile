@@ -10,6 +10,7 @@ import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_app_bar.dart';
 import 'package:mostro_mobile/shared/widgets/order_filter.dart';
 import 'package:mostro_mobile/shared/widgets/custom_drawer_overlay.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -47,33 +48,33 @@ class HomeScreen extends ConsumerWidget {
                       },
                       child: Column(
                         children: [
-                          _buildTabs(ref),
+                          _buildTabs(context, ref),
                           _buildFilterButton(context, ref),
                           Expanded(
                             child: Container(
                               color: const Color(0xFF1D212C),
                               child: filteredOrders.isEmpty
-                                  ? const Center(
+                                  ? Center(
                                       child: Column(
                                         mainAxisAlignment:
                                             MainAxisAlignment.center,
                                         children: [
-                                          Icon(
+                                          const Icon(
                                             Icons.search_off,
                                             color: Colors.white30,
                                             size: 48,
                                           ),
-                                          SizedBox(height: 16),
+                                          const SizedBox(height: 16),
                                           Text(
-                                            'No orders available',
-                                            style: TextStyle(
+                                            S.of(context)!.noOrdersAvailable,
+                                            style: const TextStyle(
                                               color: Colors.white60,
                                               fontSize: 16,
                                             ),
                                           ),
                                           Text(
-                                            'Try changing filter settings or check back later',
-                                            style: TextStyle(
+                                            S.of(context)!.tryChangingFilters,
+                                            style: const TextStyle(
                                               color: Colors.white38,
                                               fontSize: 14,
                                             ),
@@ -114,7 +115,7 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildTabs(WidgetRef ref) {
+  Widget _buildTabs(BuildContext context, WidgetRef ref) {
     final orderType = ref.watch(homeOrderTypeProvider);
 
     return Container(
@@ -130,15 +131,17 @@ class HomeScreen extends ConsumerWidget {
       child: Row(
         children: [
           _buildTabButton(
+            context,
             ref,
-            "BUY BTC",
+            S.of(context)!.buyBtc,
             orderType == OrderType.sell,
             OrderType.sell,
             AppTheme.buyColor,
           ),
           _buildTabButton(
+            context,
             ref,
-            "SELL BTC",
+            S.of(context)!.sellBtc,
             orderType == OrderType.buy,
             OrderType.buy,
             AppTheme.sellColor,
@@ -149,6 +152,7 @@ class HomeScreen extends ConsumerWidget {
   }
 
   Widget _buildTabButton(
+    BuildContext context,
     WidgetRef ref,
     String text,
     bool isActive,
@@ -229,9 +233,9 @@ class HomeScreen extends ConsumerWidget {
                   size: 18,
                 ),
                 const SizedBox(width: 8),
-                const Text(
-                  "FILTER",
-                  style: TextStyle(
+                Text(
+                  S.of(context)!.filter,
+                  style: const TextStyle(
                     color: Colors.white70,
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
@@ -245,7 +249,7 @@ class HomeScreen extends ConsumerWidget {
                   color: Colors.white.withValues(alpha: 0.2),
                 ),
                 Text(
-                  "${filteredOrders.length} offers",
+                  S.of(context)!.offersCount(filteredOrders.length.toString()),
                   style: const TextStyle(
                     color: Colors.grey,
                     fontSize: 12,

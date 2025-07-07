@@ -2,6 +2,7 @@ import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/features/trades/providers/trades_provider.dart';
 import 'package:mostro_mobile/features/trades/widgets/trades_list.dart';
@@ -43,9 +44,9 @@ class TradesScreen extends ConsumerWidget {
                           bottom: BorderSide(color: Colors.white24, width: 0.5),
                         ),
                       ),
-                      child: const Text(
-                        'My Active Trades',
-                        style: TextStyle(
+                      child: Text(
+                        S.of(context)!.myActiveTrades,
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -63,7 +64,7 @@ class TradesScreen extends ConsumerWidget {
                             const SizedBox(height: 16.0),
                             Expanded(
                               child: tradesAsync.when(
-                                data: (trades) => _buildOrderList(trades),
+                                data: (trades) => _buildOrderList(context, trades),
                                 loading: () => const Center(
                                   child: CircularProgressIndicator(),
                                 ),
@@ -78,7 +79,7 @@ class TradesScreen extends ConsumerWidget {
                                       ),
                                       const SizedBox(height: 16),
                                       Text(
-                                        'Error loading trades',
+                                        S.of(context)!.errorLoadingTrades,
                                         style:
                                             TextStyle(color: AppTheme.cream1),
                                       ),
@@ -96,7 +97,7 @@ class TradesScreen extends ConsumerWidget {
                                           ref.invalidate(
                                               filteredTradesProvider);
                                         },
-                                        child: const Text('Retry'),
+                                        child: Text(S.of(context)!.retry),
                                       ),
                                     ],
                                   ),
@@ -118,12 +119,12 @@ class TradesScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildOrderList(List<NostrEvent> trades) {
+  Widget _buildOrderList(BuildContext context, List<NostrEvent> trades) {
     if (trades.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
-          'No trades available for this type',
-          style: TextStyle(color: AppTheme.cream1),
+          S.of(context)!.noTradesAvailable,
+          style: const TextStyle(color: AppTheme.cream1),
         ),
       );
     }

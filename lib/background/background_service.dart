@@ -12,6 +12,6 @@ BackgroundService createBackgroundService(Settings settings) {
   if (Platform.isAndroid || Platform.isIOS) {
     return MobileBackgroundService(settings);
   } else {
-    return DesktopBackgroundService(settings);
+    return DesktopBackgroundService();
   }
 }

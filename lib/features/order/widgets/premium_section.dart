@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/order/widgets/form_section.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class PremiumSection extends StatelessWidget {
   final double value;
@@ -22,10 +23,10 @@ class PremiumSection extends StatelessWidget {
     
     // Use the FormSection for consistent styling
     return FormSection(
-      title: 'Premium (%) ',
+      title: S.of(context)!.premiumTitle,
       icon: premiumValueIcon,
       iconBackgroundColor: AppTheme.purpleAccent, // Purple color for premium
-      infoTooltip: 'Adjust how much above or below the market price you want your offer. By default, it\'s set to 0%, with no premium or discount, so if you don\'t want to change the price, you can leave it as is.',
+      infoTooltip: S.of(context)!.premiumTooltip,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

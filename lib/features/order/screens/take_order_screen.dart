@@ -13,6 +13,7 @@ import 'package:mostro_mobile/shared/widgets/order_cards.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/utils/currency_utils.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class TakeOrderScreen extends ConsumerWidget {
   final String orderId;
@@ -28,17 +29,19 @@ class TakeOrderScreen extends ConsumerWidget {
     final order = ref.watch(eventProvider(orderId));
 
     return Scaffold(
+
       backgroundColor: AppTheme.backgroundDark,
       appBar: OrderAppBar(
           title: orderType == OrderType.buy
               ? 'BUY ORDER DETAILS'
               : 'SELL ORDER DETAILS'),
+
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
             const SizedBox(height: 16),
-            _buildSellerAmount(ref, order!),
+            _buildSellerAmount(ref, order!, context),
             const SizedBox(height: 16),
             _buildPaymentMethod(order),
             const SizedBox(height: 16),
@@ -48,7 +51,7 @@ class TakeOrderScreen extends ConsumerWidget {
             const SizedBox(height: 16),
             _buildCreatorReputation(order),
             const SizedBox(height: 24),
-            _buildCountDownTime(order.expirationDate),
+            _buildCountDownTime(order.expirationDate, context),
             const SizedBox(height: 36),
             _buildActionButtons(context, ref, order),
           ],
@@ -57,17 +60,20 @@ class TakeOrderScreen extends ConsumerWidget {
     );
   }
 
+
   Widget _buildSellerAmount(WidgetRef ref, NostrEvent order) {
     final selling = orderType == OrderType.sell ? 'Selling' : 'Buying';
     final currencyFlag = CurrencyUtils.getFlagFromCurrency(order.currency!);
     final amountString = '${order.fiatAmount} ${order.currency} $currencyFlag';
     final priceText = order.amount == '0' ? 'at market price' : '';
 
+
     return CustomCard(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+
           Text(
             'Someone is $selling Sats',
             style: const TextStyle(
@@ -84,16 +90,19 @@ class TakeOrderScreen extends ConsumerWidget {
                 style: const TextStyle(
                   color: Colors.white70,
                   fontSize: 16,
+
                 ),
               ),
               if (priceText.isNotEmpty) ...[
                 const SizedBox(width: 8),
                 Text(
+
                   priceText,
                   style: const TextStyle(
                     color: Colors.white60,
                     fontSize: 14,
                   ),
+
                 ),
               ],
             ],
@@ -104,12 +113,14 @@ class TakeOrderScreen extends ConsumerWidget {
   }
 
   Widget _buildOrderId(BuildContext context) {
+
     return OrderIdCard(
       orderId: orderId,
+
     );
   }
 
-  Widget _buildCountDownTime(DateTime expiration) {
+  Widget _buildCountDownTime(DateTime expiration, BuildContext context) {
     Duration countdown = Duration(hours: 0);
     final now = DateTime.now();
     if (expiration.isAfter(now)) {
@@ -123,7 +134,7 @@ class TakeOrderScreen extends ConsumerWidget {
           countdownRemaining: countdown.inHours,
         ),
         const SizedBox(height: 16),
-        Text('Time Left: ${countdown.toString().split('.')[0]}'),
+        Text(S.of(context)!.timeLeft(countdown.toString().split('.')[0])),
       ],
     );
   }
@@ -169,6 +180,7 @@ class TakeOrderScreen extends ConsumerWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
+
         Expanded(
           child: OutlinedButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -237,6 +249,7 @@ class TakeOrderScreen extends ConsumerWidget {
                   },
                 );
 
+
                 if (enteredAmount != null) {
                   if (orderType == OrderType.buy) {
                     await orderDetailsNotifier.takeBuyOrder(
@@ -272,6 +285,8 @@ class TakeOrderScreen extends ConsumerWidget {
             ),
             child: Text(buttonText),
           ),
+
+
         ),
       ],
     );

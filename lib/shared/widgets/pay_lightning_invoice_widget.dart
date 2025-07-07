@@ -5,6 +5,7 @@ import 'package:logger/logger.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class PayLightningInvoiceWidget extends StatefulWidget {
   final VoidCallback onSubmit;
@@ -30,9 +31,9 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        const Text(
-          'Pay this invoice to continue the exchange',
-          style: TextStyle(color: AppTheme.cream1, fontSize: 18),
+        Text(
+          S.of(context)!.payInvoiceToContinue,
+          style: const TextStyle(color: AppTheme.cream1, fontSize: 18),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 20),
@@ -45,9 +46,9 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
             size: 250.0,
             backgroundColor: AppTheme.cream1,
             errorStateBuilder: (cxt, err) {
-              return const Center(
+              return Center(
                 child: Text(
-                  'Failed to generate QR code',
+                  S.of(context)!.failedToGenerateQR,
                   textAlign: TextAlign.center,
                 ),
               );
@@ -64,14 +65,14 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
                 widget.logger
                     .i('Copied LN Invoice to clipboard: ${widget.lnInvoice}');
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Invoice copied to clipboard'),
+                  SnackBar(
+                    content: Text(S.of(context)!.invoiceCopiedToClipboard),
                     duration: Duration(seconds: 2),
                   ),
                 );
               },
               icon: const Icon(Icons.copy),
-              label: const Text('Copy'),
+              label: Text(S.of(context)!.copy),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.mostroGreen,
                 shape: RoundedRectangleBorder(
@@ -87,9 +88,11 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
                 } catch (e) {
                   widget.logger.e('Failed to share LN Invoice: $e');
                   if (mounted) {
+                    // ignore: use_build_context_synchronously
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Failed to share invoice. Please try copying instead.'),
+                      SnackBar(
+                        // ignore: use_build_context_synchronously
+                        content: Text(S.of(context)!.failedToShareInvoice),
                         duration: Duration(seconds: 3),
                       ),
                     );
@@ -97,7 +100,7 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
                 }
               },
               icon: const Icon(Icons.share),
-              label: const Text('Share'),
+              label: Text(S.of(context)!.share),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.mostroGreen,
                 shape: RoundedRectangleBorder(
@@ -117,7 +120,7 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
             ),
           ),
           onPressed: widget.onSubmit,
-          child: const Text('OPEN WALLET'),
+          child: Text(S.of(context)!.openWallet),
         ),
         const SizedBox(height: 20),
         Row(
@@ -131,7 +134,7 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
                   borderRadius: BorderRadius.circular(20),
                 ),
               ),
-              child: const Text('CANCEL'),
+              child: Text(S.of(context)!.cancel),
             ),
             const SizedBox(width: 8),
             ElevatedButton(
@@ -144,7 +147,7 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
                   borderRadius: BorderRadius.circular(20),
                 ),
               ),
-              child: const Text('DONE'),
+              child: Text(S.of(context)!.done),
             ),
           ],
         ),

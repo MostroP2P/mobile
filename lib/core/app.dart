@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -46,11 +47,15 @@ class _MostroAppState extends ConsumerState<MostroApp> {
           });
         });
 
+        final systemLocale = ui.PlatformDispatcher.instance.locale;
+        
         return MaterialApp.router(
           title: 'Mostro',
           theme: AppTheme.theme,
           darkTheme: AppTheme.theme,
           routerConfig: goRouter,
+          // Force Spanish locale for testing if device is Spanish
+          locale: systemLocale.languageCode == 'es' ? const Locale('es') : null,
           localizationsDelegates: const [
             S.delegate,
             GlobalMaterialLocalizations.delegate,
@@ -58,6 +63,24 @@ class _MostroAppState extends ConsumerState<MostroApp> {
             GlobalCupertinoLocalizations.delegate,
           ],
           supportedLocales: S.supportedLocales,
+          localeResolutionCallback: (locale, supportedLocales) {
+            final deviceLocale = locale ?? systemLocale;
+            
+            // Check for Spanish language code (es) - includes es_AR, es_ES, etc.
+            if (deviceLocale.languageCode == 'es') {
+              return const Locale('es');
+            }
+            
+            // Check for exact match with any supported locale
+            for (var supportedLocale in supportedLocales) {
+              if (supportedLocale.languageCode == deviceLocale.languageCode) {
+                return supportedLocale;
+              }
+            }
+            
+            // If no match found, return English as fallback
+            return const Locale('en');
+          },
         );
       },
       loading: () => MaterialApp(
