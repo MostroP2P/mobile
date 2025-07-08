@@ -92,9 +92,8 @@ class TradeDetailScreen extends ConsumerWidget {
       tradeState.order!.fiatCode,
     );
 
-    final amountString =
-        '${tradeState.order!.fiatAmount} ${tradeState.order!.fiatCode} $currencyFlag';
-
+    final amountString = '${tradeState.order!.fiatAmount} ${tradeState.order!.fiatCode} $currencyFlag';
+    
     // If `orderPayload.amount` is 0, the trade is "at market price"
     final isZeroAmount = (tradeState.order!.amount == 0);
     final satText = isZeroAmount ? '' : ' ${tradeState.order!.amount}';
@@ -137,6 +136,7 @@ class TradeDetailScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
+                  '${S.of(context)!.createdOn}: $timestamp',
                   '${S.of(context)!.createdOn}: $timestamp',
                   style: textTheme.bodyLarge,
                 ),
