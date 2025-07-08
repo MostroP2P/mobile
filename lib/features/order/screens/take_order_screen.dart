@@ -127,18 +127,27 @@ class TakeOrderScreen extends ConsumerWidget {
   Widget _buildCountDownTime(BuildContext context, DateTime expiration) {
     Duration countdown = Duration(hours: 0);
     final now = DateTime.now();
+
     if (expiration.isAfter(now)) {
       countdown = expiration.difference(now);
     }
 
+    final int maxOrderHours = 24;
+    final hoursLeft = countdown.inHours.clamp(0, maxOrderHours);
+    final minutesLeft = countdown.inMinutes % 60;
+    final secondsLeft = countdown.inSeconds % 60;
+
+    final formattedTime =
+        '${hoursLeft.toString().padLeft(2, '0')}:${minutesLeft.toString().padLeft(2, '0')}:${secondsLeft.toString().padLeft(2, '0')}';
+
     return Column(
       children: [
         CircularCountdown(
-          countdownTotal: 24,
-          countdownRemaining: countdown.inHours,
+          countdownTotal: maxOrderHours,
+          countdownRemaining: hoursLeft,
         ),
         const SizedBox(height: 16),
-        Text(S.of(context)!.timeLeftLabel(countdown.toString().split('.')[0])),
+        Text(S.of(context)!.timeLeftLabel(formattedTime)),
       ],
     );
   }

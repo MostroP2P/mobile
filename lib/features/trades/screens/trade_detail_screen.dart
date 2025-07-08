@@ -217,27 +217,31 @@ class TradeDetailScreen extends ConsumerWidget {
   /// Build a circular countdown to show how many hours are left until expiration.
   Widget _buildCountDownTime(BuildContext context, int? expiresAtTimestamp) {
     // Convert timestamp to DateTime
+    final now = DateTime.now();
+
     final expiration = expiresAtTimestamp != null && expiresAtTimestamp > 0
         ? DateTime.fromMillisecondsSinceEpoch(expiresAtTimestamp)
-        : DateTime.now().add(const Duration(hours: 24));
+        : now.add(const Duration(hours: 24));
 
-    // If expiration has passed, the difference is negative => zero.
-    final now = DateTime.now();
     final Duration difference =
         expiration.isAfter(now) ? expiration.difference(now) : const Duration();
 
-    // Display hours left
-    final hoursLeft = difference.inHours.clamp(0, 9999);
+    final int maxOrderHours = 24;
+    final hoursLeft = difference.inHours.clamp(0, maxOrderHours);
+    final minutesLeft = difference.inMinutes % 60;
+    final secondsLeft = difference.inSeconds % 60;
+
+    final formattedTime =
+        '${hoursLeft.toString().padLeft(2, '0')}:${minutesLeft.toString().padLeft(2, '0')}:${secondsLeft.toString().padLeft(2, '0')}';
+
     return Column(
       children: [
         CircularCountdown(
-          countdownTotal: 24,
+          countdownTotal: maxOrderHours,
           countdownRemaining: hoursLeft,
         ),
         const SizedBox(height: 16),
-        Text(S
-            .of(context)!
-            .timeLeftLabel(difference.toString().split('.').first)),
+        Text(S.of(context)!.timeLeftLabel(formattedTime)),
       ],
     );
   }
