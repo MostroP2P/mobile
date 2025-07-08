@@ -1,4 +1,4 @@
-import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +10,8 @@ import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/features/auth/notifiers/auth_state.dart';
 import 'package:mostro_mobile/services/lifecycle_manager.dart';
 import 'package:mostro_mobile/shared/providers/app_init_provider.dart';
+import 'package:mostro_mobile/features/settings/settings_provider.dart';
+import 'package:mostro_mobile/shared/notifiers/locale_notifier.dart';
 
 class MostroApp extends ConsumerStatefulWidget {
   const MostroApp({super.key});
@@ -47,15 +49,19 @@ class _MostroAppState extends ConsumerState<MostroApp> {
           });
         });
 
-        final systemLocale = ui.PlatformDispatcher.instance.locale;
+        // Watch both system locale and settings for changes
+        final systemLocale = ref.watch(systemLocaleProvider);
+        final settings = ref.watch(settingsProvider);
         
         return MaterialApp.router(
           title: 'Mostro',
           theme: AppTheme.theme,
           darkTheme: AppTheme.theme,
           routerConfig: goRouter,
-          // Force Spanish locale for testing if device is Spanish
-          locale: systemLocale.languageCode == 'es' ? const Locale('es') : null,
+          // Use language override from settings if available, otherwise let callback handle detection
+          locale: settings.selectedLanguage != null 
+              ? Locale(settings.selectedLanguage!) 
+              : systemLocale,
           localizationsDelegates: const [
             S.delegate,
             GlobalMaterialLocalizations.delegate,
@@ -64,6 +70,7 @@ class _MostroAppState extends ConsumerState<MostroApp> {
           ],
           supportedLocales: S.supportedLocales,
           localeResolutionCallback: (locale, supportedLocales) {
+            // Use the current system locale from our provider
             final deviceLocale = locale ?? systemLocale;
             
             // Check for Spanish language code (es) - includes es_AR, es_ES, etc.
@@ -78,8 +85,8 @@ class _MostroAppState extends ConsumerState<MostroApp> {
               }
             }
             
-            // If no match found, return English as fallback
-            return const Locale('en');
+            // If no match found, return Spanish as fallback
+            return const Locale('es');
           },
         );
       },
