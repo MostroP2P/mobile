@@ -137,7 +137,6 @@ class TradeDetailScreen extends ConsumerWidget {
                 const SizedBox(height: 16),
                 Text(
                   '${S.of(context)!.createdOn}: $timestamp',
-                  '${S.of(context)!.createdOn}: $timestamp',
                   style: textTheme.bodyLarge,
                 ),
                 const SizedBox(height: 16),
