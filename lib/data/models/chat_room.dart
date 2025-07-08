@@ -37,7 +37,7 @@ class ChatRoom {
   }
   
   @override
-  int get hashCode => Object.hash(orderId, messages.length);
+  int get hashCode => Object.hash(orderId, Object.hashAll(messages));
   
   @override
   String toString() => 'ChatRoom(orderId: $orderId, messages: ${messages.length} messages)';

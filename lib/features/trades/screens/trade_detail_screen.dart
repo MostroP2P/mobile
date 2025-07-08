@@ -406,7 +406,7 @@ class TradeDetailScreen extends ConsumerWidget {
         case actions.Action.rateUser:
         case actions.Action.rateReceived:
           widgets.add(_buildNostrButton(
-            S.of(context)!.rate,
+            S.of(context)!.rateButton,
             action: actions.Action.rate,
             backgroundColor: AppTheme.mostroGreen,
             onPressed: () => context.push('/rate_user/$orderId'),

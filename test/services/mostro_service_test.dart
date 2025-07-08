@@ -2,21 +2,21 @@ import 'dart:convert';
 import 'package:convert/convert.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
-import 'package:mostro_mobile/shared/notifiers/session_notifier.dart';
-import 'package:dart_nostr/dart_nostr.dart';
 import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/features/key_manager/key_derivator.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
+import 'package:mostro_mobile/features/subscriptions/subscription_manager.dart';
+import 'package:mostro_mobile/features/subscriptions/subscription_manager_provider.dart';
+import 'package:mostro_mobile/shared/notifiers/session_notifier.dart';
+import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/services/mostro_service.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
-import 'package:mostro_mobile/features/subscriptions/subscription_manager.dart';
-import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
-import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
-import 'package:mostro_mobile/features/subscriptions/subscription_manager_provider.dart';
+import 'package:dart_nostr/dart_nostr.dart';
 import 'package:mostro_mobile/data/repositories/mostro_storage.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
+import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 
 import '../mocks.dart';
 import '../mocks.mocks.dart';
@@ -31,12 +31,33 @@ void main() {
         '9d9d0455a96871f2dc4289b8312429db2e925f167b37c77bf7b28014be235980',
     defaultFiatCode: 'USD',
   ));
-
-  // Add dummy for MostroStorage
   provideDummy<MostroStorage>(MockMostroStorage());
-
-  // Add dummy for NostrService
   provideDummy<NostrService>(MockNostrService());
+  
+  // Create dummy values for Mockito
+  final dummyRef = MockRef();
+  final dummyKeyManager = MockKeyManager();
+  final dummySessionStorage = MockSessionStorage();
+  final dummySettings = MockSettings();
+  
+  // Stub listen on dummyRef to prevent errors when creating MockSubscriptionManager
+  when(dummyRef.listen<List<Session>>(
+    any,
+    any,
+    onError: anyNamed('onError'),
+    fireImmediately: anyNamed('fireImmediately'),
+  )).thenReturn(MockProviderSubscription<List<Session>>());
+  
+  // Create and provide dummy values
+  final dummySessionNotifier = MockSessionNotifier(
+    dummyRef, dummyKeyManager, dummySessionStorage, dummySettings
+  );
+  provideDummy<SessionNotifier>(dummySessionNotifier);
+  
+  // Provide dummy for SubscriptionManager
+  final dummySubscriptionManagerForMockito = MockSubscriptionManager(dummyRef);
+  provideDummy<SubscriptionManager>(dummySubscriptionManagerForMockito);
+
   late MostroService mostroService;
   late KeyDerivator keyDerivator;
   late MockServerTradeIndex mockServerTradeIndex;
@@ -47,59 +68,49 @@ void main() {
   late MockKeyManager mockKeyManager;
   late MockSessionStorage mockSessionStorage;
 
-  setUpAll(() {
-    // Create a dummy Settings object that will be used by MockRef
-    final dummySettings = MockSettings();
-
-    // Provide dummy values for Mockito
-    provideDummy<SessionNotifier>(MockSessionNotifier(
-        mockRef, mockKeyManager, mockSessionStorage, dummySettings));
-    provideDummy<Settings>(dummySettings);
-    provideDummy<NostrService>(MockNostrService());
-
-    // Create a mock ref for the SubscriptionManager dummy
-    provideDummy<SubscriptionManager>(MockSubscriptionManager());
-
-    // Create a mock ref that returns the dummy settings
-    final mockRefForDummy = MockRef();
-    when(mockRefForDummy.read(settingsProvider)).thenReturn(dummySettings);
-
-    // Provide a dummy MostroService that uses our properly configured mock ref
-    provideDummy<MostroService>(MostroService(mockRefForDummy));
-  });
-
   setUp(() {
-    mockNostrService = MockNostrService();
-    mockSessionNotifier = MockSessionNotifier(
-        mockRef, mockKeyManager, mockSessionStorage, MockSettings());
+    // Initialize all mocks first
     mockRef = MockRef();
-    mockSubscriptionManager = MockSubscriptionManager();
-    mockServerTradeIndex = MockServerTradeIndex();
     mockKeyManager = MockKeyManager();
     mockSessionStorage = MockSessionStorage();
+    mockNostrService = MockNostrService();
+    mockServerTradeIndex = MockServerTradeIndex();
     keyDerivator = KeyDerivator("m/44'/1237'/38383'/0");
-    // Create test settings
+    
+    // Setup all stubs before creating any objects that use them
     final testSettings = MockSettings();
-
-    // Stub specific provider reads
+    when(testSettings.mostroPublicKey).thenReturn(
+        '9d9d0455a96871f2dc4289b8312429db2e925f167b37c77bf7b28014be235980');
     when(mockRef.read(settingsProvider)).thenReturn(testSettings);
     when(mockRef.read(mostroStorageProvider)).thenReturn(MockMostroStorage());
     when(mockRef.read(nostrServiceProvider)).thenReturn(mockNostrService);
-    when(mockRef.read(subscriptionManagerProvider))
-        .thenReturn(mockSubscriptionManager);
-
-    // Stub SessionNotifier methods
-    when(mockSessionNotifier.sessions).thenReturn(<Session>[]);
-
-    when(mockRef.read(sessionNotifierProvider.notifier))
-        .thenReturn(mockSessionNotifier);
-
-    // Create the service under test
+    
+    // Stub the listen method before creating SubscriptionManager
+    when(mockRef.listen<List<Session>>(
+      any,
+      any,
+      onError: anyNamed('onError'),
+      fireImmediately: anyNamed('fireImmediately'),
+    )).thenReturn(MockProviderSubscription<List<Session>>());
+    
+    // Create mockSessionNotifier
+    mockSessionNotifier = MockSessionNotifier(
+      mockRef,
+      mockKeyManager,
+      mockSessionStorage,
+      testSettings,
+    );
+    when(mockRef.read(sessionNotifierProvider.notifier)).thenReturn(mockSessionNotifier);
+    
+    // Create mockSubscriptionManager with the stubbed mockRef
+    mockSubscriptionManager = MockSubscriptionManager(mockRef);
+    when(mockRef.read(subscriptionManagerProvider)).thenReturn(mockSubscriptionManager);
+    
+    // Finally create the service under test
     mostroService = MostroService(mockRef);
   });
 
   tearDown(() {
-    // Clean up resources
     mostroService.dispose();
     mockSubscriptionManager.dispose();
   });
@@ -153,14 +164,13 @@ void main() {
         fullPrivacy: false,
       );
 
-      when(mockSessionNotifier.getSessionByOrderId(orderId))
-          .thenReturn(session);
+      // Set mock return value for custom mock
+      mockSessionNotifier.setMockSession(session);
 
       // Mock NostrService's publishEvent only
       when(mockNostrService.publishEvent(any)).thenAnswer((_) async {});
 
-      when(mockSessionNotifier.newSession(orderId: orderId))
-          .thenAnswer((_) async => session);
+      // Note: newSession is already implemented in MockSessionNotifier
 
       // Act
       await mostroService.takeSellOrder(orderId, 100, 'lnbc1234invoice');
@@ -212,8 +222,8 @@ void main() {
         fullPrivacy: false,
       );
 
-      when(mockSessionNotifier.getSessionByOrderId(orderId))
-          .thenReturn(session);
+      // Set mock return value for custom mock
+      mockSessionNotifier.setMockSession(session); // Replaced when() call
 
       // Mock NostrService's publishEvent only - other methods are now static in NostrUtils
       when(mockNostrService.publishEvent(any))
@@ -272,8 +282,8 @@ void main() {
         fullPrivacy: false,
       );
 
-      when(mockSessionNotifier.getSessionByOrderId(orderId))
-          .thenReturn(session);
+      // Set mock return value for custom mock
+      mockSessionNotifier.setMockSession(session); // Replaced when() call
 
       // Simulate that tradeIndex=3 has already been used
       mockServerTradeIndex.userTradeIndices[userPubKey] = 3;
@@ -335,8 +345,8 @@ void main() {
         fullPrivacy: true,
       );
 
-      when(mockSessionNotifier.getSessionByOrderId(orderId))
-          .thenReturn(session);
+      // Set mock return value for custom mock
+      mockSessionNotifier.setMockSession(session); // Replaced when() call
 
       // Mock NostrService's publishEvent only - other methods are now static in NostrUtils
       when(mockNostrService.publishEvent(any))

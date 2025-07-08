@@ -72,6 +72,16 @@ class Session {
         throw FormatException('Key index cannot be negative: $keyIndex');
       }
 
+      // Validate key pair fields  
+      final masterKeyValue = json['master_key'];  
+      final tradeKeyValue = json['trade_key'];  
+      if (masterKeyValue is! NostrKeyPairs) {  
+        throw FormatException('Invalid master_key type: ${masterKeyValue.runtimeType}');  
+      }  
+      if (tradeKeyValue is! NostrKeyPairs) {  
+        throw FormatException('Invalid trade_key type: ${tradeKeyValue.runtimeType}');  
+      }  
+
       // Parse fullPrivacy
       final fullPrivacyValue = json['full_privacy'];
       bool fullPrivacy;
@@ -119,8 +129,8 @@ class Session {
       }
 
       return Session(
-        masterKey: json['master_key'],
-        tradeKey: json['trade_key'],
+        masterKey: masterKeyValue,
+        tradeKey: tradeKeyValue,
         keyIndex: keyIndex,
         fullPrivacy: fullPrivacy,
         startTime: startTime,

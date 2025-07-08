@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
+import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/models/nostr_filter.dart';
 import 'package:mostro_mobile/data/repositories/event_storage.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
@@ -72,7 +73,7 @@ Future<void> serviceMain(ServiceInstance service) async {
         if (await eventStore.hasItem(event.id!)) return;
         await retryNotification(event);
       } catch (e) {
-        // ignore
+        Logger().e('Error processing event', error: e);
       }
     });
   });
