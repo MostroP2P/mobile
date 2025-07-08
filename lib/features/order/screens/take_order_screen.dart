@@ -61,49 +61,59 @@ class TakeOrderScreen extends ConsumerWidget {
   Widget _buildSellerAmount(WidgetRef ref, NostrEvent order) {
     return Builder(
       builder: (context) {
-        final selling = orderType == OrderType.sell ? S.of(context)!.selling : S.of(context)!.buying;
         final currencyFlag = CurrencyUtils.getFlagFromCurrency(order.currency!);
-        final amountString = '${order.fiatAmount} ${order.currency} $currencyFlag';
-        final priceText = order.amount == '0' ? S.of(context)!.atMarketPrice : '';
-        
+        final amountString =
+            '${order.fiatAmount} ${order.currency} $currencyFlag';
+        final priceText =
+            order.amount == '0' ? S.of(context)!.atMarketPrice : '';
+
+        final hasFixedSatsAmount = order.amount != null && order.amount != '0';
+
         return CustomCard(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            selling == S.of(context)!.selling ? S.of(context)!.someoneIsSellingTitle : S.of(context)!.someoneIsBuyingTitle,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                S.of(context)!.forAmount(amountString),
+                hasFixedSatsAmount
+                    ? (orderType == OrderType.sell
+                        ? "${S.of(context)!.someoneIsSellingTitle.replaceAll(' Sats', '')} ${order.amount} Sats"
+                        : "${S.of(context)!.someoneIsBuyingTitle.replaceAll(' Sats', '')} ${order.amount} Sats")
+                    : (orderType == OrderType.sell
+                        ? S.of(context)!.someoneIsSellingTitle
+                        : S.of(context)!.someoneIsBuyingTitle),
                 style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 16,
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-              if (priceText.isNotEmpty) ...[
-                const SizedBox(width: 8),
-                Text(
-                  priceText,
-                  style: const TextStyle(
-                    color: Colors.white60,
-                    fontSize: 14,
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Text(
+                    S.of(context)!.forAmount(amountString),
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 16,
+                    ),
                   ),
-                ),
-              ],
+                  if (priceText.isNotEmpty) ...[
+                    // Fixed [...] brackets
+                    const SizedBox(width: 8),
+                    Text(
+                      priceText,
+                      style: const TextStyle(
+                        color: Colors.white60,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ],
           ),
-        ],
-      ),
-    );
+        );
       },
     );
   }
@@ -168,8 +178,9 @@ class TakeOrderScreen extends ConsumerWidget {
     final orderDetailsNotifier =
         ref.read(orderNotifierProvider(orderId).notifier);
 
-    final buttonText =
-        orderType == OrderType.buy ? S.of(context)!.sellBitcoinButton : S.of(context)!.buyBitcoinButton;
+    final buttonText = orderType == OrderType.buy
+        ? S.of(context)!.sellBitcoinButton
+        : S.of(context)!.buyBitcoinButton;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -201,7 +212,9 @@ class TakeOrderScreen extends ConsumerWidget {
                             controller: _fiatAmountController,
                             keyboardType: TextInputType.number,
                             decoration: InputDecoration(
-                              hintText: S.of(context)!.enterAmountBetween(order.fiatAmount.minimum.toString(), order.fiatAmount.maximum.toString()),
+                              hintText: S.of(context)!.enterAmountBetween(
+                                  order.fiatAmount.minimum.toString(),
+                                  order.fiatAmount.maximum.toString()),
                               errorText: errorText,
                             ),
                           ),
@@ -217,7 +230,8 @@ class TakeOrderScreen extends ConsumerWidget {
                                     _fiatAmountController.text.trim());
                                 if (inputAmount == null) {
                                   setState(() {
-                                    errorText = S.of(context)!.pleaseEnterValidNumber;
+                                    errorText =
+                                        S.of(context)!.pleaseEnterValidNumber;
                                   });
                                 } else if (inputAmount <
                                         order.fiatAmount.minimum ||
@@ -225,7 +239,12 @@ class TakeOrderScreen extends ConsumerWidget {
                                         inputAmount >
                                             order.fiatAmount.maximum!)) {
                                   setState(() {
-                                    errorText = S.of(context)!.amountMustBeBetween(order.fiatAmount.minimum.toString(), order.fiatAmount.maximum.toString());
+                                    errorText = S
+                                        .of(context)!
+                                        .amountMustBeBetween(
+                                            order.fiatAmount.minimum.toString(),
+                                            order.fiatAmount.maximum
+                                                .toString());
                                   });
                                 } else {
                                   Navigator.of(context).pop(inputAmount);

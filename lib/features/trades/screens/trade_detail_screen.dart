@@ -66,9 +66,11 @@ class TradeDetailScreen extends ConsumerWidget {
                   MostroMessageDetail(orderId: orderId),
                 ],
                 const SizedBox(height: 24),
-                _buildCountDownTime(context, orderPayload.expiresAt != null
-                    ? orderPayload.expiresAt! * 1000
-                    : null),
+                _buildCountDownTime(
+                    context,
+                    orderPayload.expiresAt != null
+                        ? orderPayload.expiresAt! * 1000
+                        : null),
                 const SizedBox(height: 36),
                 Wrap(
                   alignment: WrapAlignment.center,
@@ -92,7 +94,8 @@ class TradeDetailScreen extends ConsumerWidget {
   }
 
   /// Builds a card showing the user is "selling/buying X sats for Y fiat" etc.
-  Widget _buildSellerAmount(BuildContext context, WidgetRef ref, OrderState tradeState) {
+  Widget _buildSellerAmount(
+      BuildContext context, WidgetRef ref, OrderState tradeState) {
     final session = ref.watch(sessionProvider(orderId));
     final isPending = tradeState.status == Status.pending;
 
@@ -101,7 +104,9 @@ class TradeDetailScreen extends ConsumerWidget {
 
     // For pending orders created by the user, show a notification message
     if (isPending && isCreator) {
-      final selling = session?.role == Role.seller ? S.of(context)!.selling : S.of(context)!.buying;
+      final selling = session?.role == Role.seller
+          ? S.of(context)!.selling
+          : S.of(context)!.buying;
       // Currency information is now handled by OrderAmountCard
 
       // If `orderPayload.amount` is 0, the trade is "at market price"
@@ -116,6 +121,10 @@ class TradeDetailScreen extends ConsumerWidget {
             : session?.startTime ?? DateTime.now(),
       );
 
+      final hasFixedSatsAmount = tradeState.order!.amount != 0;
+      final satAmount =
+          hasFixedSatsAmount ? ' ${tradeState.order!.amount}' : '';
+
       return Column(
         children: [
           NotificationMessageCard(
@@ -124,8 +133,13 @@ class TradeDetailScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           OrderAmountCard(
-            title: selling == S.of(context)!.selling ? S.of(context)!.someoneIsSellingTitle : S.of(context)!.someoneIsBuyingTitle,
-            amount: tradeState.order!.fiatAmount.toString(),
+            title:
+                "${selling == S.of(context)!.selling ? 'You are Selling' : 'You are Buying'}$satAmount Sats",
+            amount: (tradeState.order!.minAmount != null &&
+                    tradeState.order!.maxAmount != null &&
+                    tradeState.order!.minAmount != tradeState.order!.maxAmount)
+                ? "${tradeState.order!.minAmount} - ${tradeState.order!.maxAmount}"
+                : tradeState.order!.fiatAmount.toString(),
             currency: tradeState.order!.fiatCode,
             priceText: priceText,
           ),
@@ -142,12 +156,13 @@ class TradeDetailScreen extends ConsumerWidget {
     }
 
     // For non-pending orders or orders not created by the user, use the original display
-    final selling = session?.role == Role.seller ? S.of(context)!.selling : S.of(context)!.buying;
+    final selling = session?.role == Role.seller
+        ? S.of(context)!.selling
+        : S.of(context)!.buying;
 
-    // If `orderPayload.amount` is 0, the trade is "at market price"
-    final isZeroAmount = (tradeState.order!.amount == 0);
-    final satText = isZeroAmount ? '' : ' ${tradeState.order!.amount}';
-    final priceText = isZeroAmount ? 'at market price' : '';
+    final hasFixedSatsAmount = tradeState.order!.amount != 0;
+    final satAmount = hasFixedSatsAmount ? ' ${tradeState.order!.amount}' : '';
+    final priceText = !hasFixedSatsAmount ? S.of(context)!.atMarketPrice : '';
 
     final premium = tradeState.order!.premium;
     final premiumText = premium == 0
@@ -168,8 +183,14 @@ class TradeDetailScreen extends ConsumerWidget {
     return Column(
       children: [
         OrderAmountCard(
-          title: selling == S.of(context)!.selling ? S.of(context)!.youAreSellingTitle(satText) : S.of(context)!.youAreBuyingTitle(satText),
-          amount: tradeState.order!.fiatAmount.toString(),
+          title: selling == S.of(context)!.selling
+              ? "You are Selling$satAmount Sats"
+              : "You are Buying$satAmount Sats",
+          amount: (tradeState.order!.minAmount != null &&
+                  tradeState.order!.maxAmount != null &&
+                  tradeState.order!.minAmount != tradeState.order!.maxAmount)
+              ? "${tradeState.order!.minAmount} - ${tradeState.order!.maxAmount}"
+              : tradeState.order!.fiatAmount.toString(),
           currency: tradeState.order!.fiatCode,
           priceText: priceText,
           premiumText: premiumText,
@@ -214,7 +235,9 @@ class TradeDetailScreen extends ConsumerWidget {
           countdownRemaining: hoursLeft,
         ),
         const SizedBox(height: 16),
-        Text(S.of(context)!.timeLeftLabel(difference.toString().split('.').first)),
+        Text(S
+            .of(context)!
+            .timeLeftLabel(difference.toString().split('.').first)),
       ],
     );
   }
@@ -246,14 +269,12 @@ class TradeDetailScreen extends ConsumerWidget {
               tradeState.status == Status.fiatSent) {
             if (tradeState.action ==
                 actions.Action.cooperativeCancelInitiatedByPeer) {
-              cancelMessage =
-                  'If you confirm, you will accept the cooperative cancellation initiated by your counterparty.';
+              cancelMessage = S.of(context)!.acceptCancelMessage;
             } else {
-              cancelMessage =
-                  'If you confirm, you will start a cooperative cancellation with your counterparty.';
+              cancelMessage = S.of(context)!.cooperativeCancelMessage;
             }
           } else {
-            cancelMessage = 'Are you sure you want to cancel this trade?';
+            cancelMessage = S.of(context)!.areYouSureCancel;
           }
 
           widgets.add(_buildNostrButton(

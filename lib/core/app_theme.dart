@@ -41,6 +41,31 @@ class AppTheme {
   static const Color statusWarning = Color(0xFFF3CA29);
   static const Color statusError = Color(0xFFEF6A6A);
   static const Color statusActive = Color(0xFF9CD651);
+  
+  // Colors for role chips
+  static const Color createdByYouChip = Color(0xFF1565C0); // Colors.blue.shade700
+  static const Color takenByYouChip = Color(0xFF00796B);   // Colors.teal.shade700
+  static const Color premiumPositiveChip = Color(0xFF388E3C); // Colors.green.shade700
+  static const Color premiumNegativeChip = Color(0xFFC62828); // Colors.red.shade700
+  
+  // Colors for status chips
+  static const Color statusPendingBackground = Color(0xFF854D0E);
+  static const Color statusPendingText = Color(0xFFFCD34D);
+  static const Color statusWaitingBackground = Color(0xFF7C2D12);
+  static const Color statusWaitingText = Color(0xFFFED7AA);
+  static const Color statusActiveBackground = Color(0xFF1E3A8A);
+  static const Color statusActiveText = Color(0xFF93C5FD);
+  static const Color statusSuccessBackground = Color(0xFF065F46);
+  static const Color statusSuccessText = Color(0xFF6EE7B7);
+  static const Color statusDisputeBackground = Color(0xFF7F1D1D);
+  static const Color statusDisputeText = Color(0xFFFCA5A5);
+  static const Color statusSettledBackground = Color(0xFF581C87);
+  static const Color statusSettledText = Color(0xFFC084FC);
+  static const Color statusInactiveBackground = Color(0xFF1F2937); // Colors.grey.shade800
+  static const Color statusInactiveText = Color(0xFFD1D5DB);     // Colors.grey.shade300
+  
+  // Text colors
+  static const Color secondaryText = Color(0xFFBDBDBD);  // Colors.grey.shade400
 
   // Padding  and margin constants
   static const EdgeInsets smallPadding = EdgeInsets.all(8.0);

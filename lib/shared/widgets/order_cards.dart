@@ -275,7 +275,7 @@ class CreatorReputationCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            rating.toString(),
+                            rating.toStringAsFixed(1),
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 16,
@@ -286,7 +286,7 @@ class CreatorReputationCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        S.of(context)!.ratingLabel.toString(),
+                        S.of(context)!.ratingTitleLabel,
                         style: TextStyle(
                           color: Colors.white70,
                           fontSize: 12,

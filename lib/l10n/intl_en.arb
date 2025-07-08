@@ -130,6 +130,8 @@
   "sellOrderDetailsTitle": "SELL ORDER DETAILS",
   "someoneIsSellingTitle": "Someone is Selling Sats",
   "someoneIsBuyingTitle": "Someone is Buying Sats",
+  "someoneIsSellingFixedTitle": "Someone is Selling {sats} Sats",
+  "someoneIsBuyingFixedTitle": "Someone is Buying {sats} Sats",
   "youCreatedOfferMessage": "You created this offer. Below are the details of your offer. Wait for another user to take it. It will be published for 24 hours. You can cancel it at any time using the 'Cancel' button.",
   "youAreSellingTitle": "You are selling{sats} sats",
   "youAreBuyingTitle": "You are buying{sats} sats",
@@ -153,7 +155,7 @@
   "createdOnLabel": "Created On",
   "orderIdLabel": "Order ID",
   "creatorReputationLabel": "Creator's Reputation",
-  "ratingLabel": "Rating",
+  "ratingTitleLabel": "Rating",
   "reviewsLabel": "Reviews",
   "daysLabel": "Days",
   "cancelTradeDialogTitle": "Cancel Trade",
@@ -319,8 +321,6 @@
   
   "@_comment_take_order_screen": "Take Order Screen Strings",
   "orderDetails": "ORDER DETAILS",
-  "selling": "selling",
-  "buying": "buying",
   "atMarketPrice": "at market price",
   "withPremiumPercent": "with a +{premium}% premium",
   "@withPremiumPercent": {
