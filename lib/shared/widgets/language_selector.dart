@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
-
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class LanguageSelector extends ConsumerWidget {
   const LanguageSelector({super.key});
 
-  static const Map<String?, String> _languageOptions = {
-    null: 'System Default', // Will be localized in build method
-    'en': 'English',
-    'es': 'Español',
-    'it': 'Italiano',
+  static const Map<String?, String> _languageKeys = {
+    null: 'systemDefault',
+    'en': 'english',
+    'es': 'spanish',
+    'it': 'italian',
   };
 
   @override
@@ -33,15 +33,12 @@ class LanguageSelector extends ConsumerWidget {
           style: const TextStyle(color: AppTheme.cream1),
           icon: const Icon(Icons.arrow_drop_down, color: AppTheme.cream1),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          items: _languageOptions.entries.map((entry) {
+          items: _languageKeys.entries.map((entry) {
             final languageCode = entry.key;
-            final languageName = entry.value;
-            
-            // Localize "System Default" text
-            final displayName = languageCode == null 
-                ? 'System Default' // Fallback text since systemDefault may not exist
-                : languageName;
-            
+            final languageKey = entry.value;
+
+            final displayName = _getLocalizedLanguageName(context, languageKey);
+
             return DropdownMenuItem<String?>(
               value: languageCode,
               child: Row(
@@ -72,10 +69,27 @@ class LanguageSelector extends ConsumerWidget {
             );
           }).toList(),
           onChanged: (String? newLanguage) {
-            ref.read(settingsProvider.notifier).updateSelectedLanguage(newLanguage);
+            ref
+                .read(settingsProvider.notifier)
+                .updateSelectedLanguage(newLanguage);
           },
         ),
       ),
     );
+  }
+
+  String _getLocalizedLanguageName(BuildContext context, String key) {
+    switch (key) {
+      case 'systemDefault':
+        return S.of(context)!.systemDefault;
+      case 'english':
+        return S.of(context)!.english;
+      case 'spanish':
+        return S.of(context)!.spanish;
+      case 'italian':
+        return S.of(context)!.italian;
+      default:
+        return key;
+    }
   }
 }
