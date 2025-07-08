@@ -320,23 +320,51 @@ class OrderListItem extends ConsumerWidget {
         ),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          spacing: 4,
           children: [
-            Icon(Icons.person_2_outlined, color: Colors.white, size: 14),
-            Text(
-              reviews.toString(),
-              style: const TextStyle(
-                color: Colors.white60,
-                fontSize: 12,
+            Semantics(
+              label: '${S.of(context)!.reviews}: $reviews',
+              child: Row(
+                spacing: 4,
+                children: [
+                  ExcludeSemantics(
+                    child: Icon(
+                      Icons.person_2_outlined,
+                      color: Colors.white,
+                      size: 14,
+                    ),
+                  ),
+                  Text(
+                    reviews.toString(),
+                    style: const TextStyle(
+                      color: Colors.white60,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(width: 8),
-            Icon(Icons.calendar_today_outlined, color: Colors.white, size: 14),
-            Text(
-              daysOld.toString(),
-              style: const TextStyle(
-                color: Colors.white60,
-                fontSize: 12,
+            Semantics(
+              label:
+                  '${S.of(context)!.daysOld}: $daysOld ${S.of(context)!.daysOld}',
+              child: Row(
+                spacing: 4,
+                children: [
+                  ExcludeSemantics(
+                    child: Icon(
+                      Icons.calendar_today_outlined,
+                      color: Colors.white,
+                      size: 14,
+                    ),
+                  ),
+                  Text(
+                    daysOld.toString(),
+                    style: const TextStyle(
+                      color: Colors.white60,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
