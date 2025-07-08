@@ -21,18 +21,17 @@ class LanguageSelector extends ConsumerWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: AppTheme.backgroundInput,
+        color: AppTheme.dark1,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppTheme.grey2, width: 1),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String?>(
           value: currentLanguage,
           isExpanded: true,
-          dropdownColor: AppTheme.backgroundInput,
+          dropdownColor: AppTheme.dark1,
           style: const TextStyle(color: AppTheme.cream1),
           icon: const Icon(Icons.arrow_drop_down, color: AppTheme.cream1),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
           items: _languageKeys.entries.map((entry) {
             final languageCode = entry.key;
             final languageKey = entry.value;
@@ -56,14 +55,6 @@ class LanguageSelector extends ConsumerWidget {
                       fontSize: 16,
                     ),
                   ),
-                  if (languageCode == currentLanguage) ...[
-                    const Spacer(),
-                    const Icon(
-                      Icons.check,
-                      color: AppTheme.mostroGreen,
-                      size: 20,
-                    ),
-                  ],
                 ],
               ),
             );

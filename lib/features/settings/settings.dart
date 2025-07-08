@@ -25,7 +25,7 @@ class Settings {
       fullPrivacyMode: privacyModeSetting ?? fullPrivacyMode,
       mostroPublicKey: mostroInstance ?? mostroPublicKey,
       defaultFiatCode: defaultFiatCode ?? this.defaultFiatCode,
-      selectedLanguage: selectedLanguage ?? this.selectedLanguage,
+      selectedLanguage: selectedLanguage,
     );
   }
 
