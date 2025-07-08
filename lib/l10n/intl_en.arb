@@ -380,6 +380,11 @@
   "copyButton": "Copy",
   "shareButton": "Share",
   "failedToShareInvoice": "Failed to share invoice. Please try copying instead.",
-  "openWalletButton": "OPEN WALLET",
-  "doneButton": "DONE"
+  "openWallet": "OPEN WALLET",
+  "language": "Language",
+  "systemDefault": "System Default",
+  "english": "English",
+  "spanish": "Spanish",
+  "italian": "Italian",
+  "chooseLanguageDescription": "Choose your preferred language or use system default"
 }

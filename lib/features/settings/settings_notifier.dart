@@ -16,6 +16,7 @@ class SettingsNotifier extends StateNotifier<Settings> {
       relays: Config.nostrRelays,
       fullPrivacyMode: Config.fullPrivacyMode,
       mostroPublicKey: Config.mostroPubKey,
+      selectedLanguage: null,
     );
   }
 
@@ -49,6 +50,11 @@ class SettingsNotifier extends StateNotifier<Settings> {
 
   Future<void> updateDefaultFiatCode(String newValue) async {
     state = state.copyWith(defaultFiatCode: newValue);
+    await _saveToPrefs();
+  }
+
+  Future<void> updateSelectedLanguage(String? newValue) async {
+    state = state.copyWith(selectedLanguage: newValue);
     await _saveToPrefs();
   }
 
