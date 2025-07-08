@@ -116,7 +116,7 @@ class Order implements Payload {
         if (stringValue.isEmpty) {
           throw FormatException('Field $field cannot be empty');
         }
-        return stringValue;
+        return stringValue; // ignore: return_of_null 
       }
 
       // Parse optional string fields

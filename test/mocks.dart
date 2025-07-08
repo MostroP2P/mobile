@@ -11,9 +11,8 @@ import 'package:mostro_mobile/features/key_manager/key_manager.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/features/settings/settings_notifier.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_manager.dart';
-import 'package:mostro_mobile/features/subscriptions/subscription_type.dart';
-import 'package:mostro_mobile/features/subscriptions/subscription.dart';
 import 'package:mostro_mobile/services/mostro_service.dart';
+import 'package:mostro_mobile/services/nostr_service.dart';
 import 'package:mostro_mobile/shared/notifiers/session_notifier.dart';
 import 'package:sembast/sembast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -22,6 +21,7 @@ import 'mocks.mocks.dart';
 
 @GenerateMocks([
   MostroService,
+  NostrService,
   OpenOrdersRepository,
   SharedPreferencesAsync,
   Database,
@@ -75,87 +75,5 @@ class MockSessionNotifier extends SessionNotifier {
   }
 }
 
-// Custom mock for SubscriptionManager
-class MockSubscriptionManager extends SubscriptionManager {
-  final StreamController<NostrEvent> _ordersController =
-      StreamController<NostrEvent>.broadcast();
-  final StreamController<NostrEvent> _chatController =
-      StreamController<NostrEvent>.broadcast();
-  final Map<SubscriptionType, Subscription> _subscriptions = {};
-  NostrFilter? _lastFilter;
-
-  MockSubscriptionManager() : super(MockRef());
-
-  NostrFilter? get lastFilter => _lastFilter;
-
-  @override
-  Stream<NostrEvent> get orders => _ordersController.stream;
-
-  @override
-  Stream<NostrEvent> get chat => _chatController.stream;
-
-  @override
-  Stream<NostrEvent> subscribe({
-    required SubscriptionType type,
-    required NostrFilter filter,
-  }) {
-    _lastFilter = filter;
-
-    final request = NostrRequest(filters: [filter]);
-
-    final subscription = Subscription(
-      request: request,
-      streamSubscription: (type == SubscriptionType.orders
-              ? _ordersController.stream
-              : _chatController.stream)
-          .listen((_) {}),
-      onCancel: () {},
-    );
-
-    _subscriptions[type] = subscription;
-
-    return type == SubscriptionType.orders ? orders : chat;
-  }
-
-  @override
-  void unsubscribeByType(SubscriptionType type) {
-    _subscriptions.remove(type);
-  }
-
-  @override
-  void unsubscribeAll() {
-    _subscriptions.clear();
-  }
-
-  @override
-  List<NostrFilter> getActiveFilters(SubscriptionType type) {
-    final subscription = _subscriptions[type];
-    if (subscription != null && subscription.request.filters.isNotEmpty) {
-      return [subscription.request.filters.first];
-    }
-    return [];
-  }
-
-  @override
-  bool hasActiveSubscription(SubscriptionType type) {
-    return _subscriptions.containsKey(type);
-  }
-
-  // Helper to add events to the stream
-  void addEvent(NostrEvent event, SubscriptionType type) {
-    if (type == SubscriptionType.orders) {
-      _ordersController.add(event);
-    } else if (type == SubscriptionType.chat) {
-      _chatController.add(event);
-    }
-  }
-
-  @override
-  void dispose() {
-    _ordersController.close();
-    _chatController.close();
-    super.dispose();
-  }
-}
 
 void main() {}

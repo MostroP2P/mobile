@@ -213,7 +213,6 @@
   "holdInvoiceCltvDelta": "Delta CLTV Fattura Hold",
   "invoiceExpirationWindow": "Finestra Scadenza Fattura",
   
-  "@_comment_order_creation": "Stringhe Modulo Creazione Ordine",
   "enterFiatAmountBuy": "Inserisci l'importo fiat che vuoi pagare (puoi impostare un intervallo)",
   "enterFiatAmountSell": "Inserisci l'importo fiat che vuoi ricevere (puoi impostare un intervallo)",
   "enterAmountHint": "Inserisci importo (esempio: 100 o 100-500)",
@@ -229,7 +228,6 @@
   "premiumTitle": "Premio (%)",
   "premiumTooltip": "Regola quanto sopra o sotto il prezzo di mercato vuoi la tua offerta. Di default, è impostato al 0%, senza premio o sconto, quindi se non vuoi cambiare il prezzo, puoi lasciarlo così com'è.",
   
-  "@_comment_account_screen": "Stringhe Schermata Gestione Account",
   "secretWords": "Parole Segrete",
   "toRestoreYourAccount": "Per ripristinare il tuo account",
   "privacy": "Privacy",
@@ -244,7 +242,6 @@
   "noMnemonicFound": "Nessun mnemonico trovato",
   "errorLoadingMnemonic": "Errore: {error}",
   
-  "@_comment_chat_screens": "Stringhe Schermata Chat",
   "noMessagesAvailable": "Nessun messaggio disponibile",
   "back": "INDIETRO",
   "typeAMessage": "Scrivi un messaggio...",
@@ -252,18 +249,15 @@
   "yourHandle": "Il tuo nome: {handle}",
   "yourSharedKey": "La tua chiave condivisa:",
   
-  "@_comment_trade_actions": "Azioni Dettaglio Scambio",
   "payInvoiceButton": "PAGA FATTURA",
   "addInvoiceButton": "AGGIUNGI FATTURA",
   "release": "RILASCIA",
   "takeSell": "PRENDI VENDITA",
   "takeBuy": "PRENDI ACQUISTO",
   
-  "@_comment_currency_errors": "Messaggi Errore Valuta",
   "noExchangeDataAvailable": "Nessun dato di cambio disponibile",
   "errorFetchingCurrencies": "Errore nel recupero delle valute",
   
-  "@_comment_currency_section": "Stringhe Sezione Selezione Valuta",
   "selectFiatCurrencyPay": "Seleziona la valuta fiat con cui pagherai",
   "selectFiatCurrencyReceive": "Seleziona la Valuta Fiat che vuoi ricevere",
   "loadingCurrencies": "Caricamento valute...",
@@ -273,18 +267,11 @@
   "searchCurrencies": "Cerca valute...",
   "noCurrenciesFound": "Nessuna valuta trovata",
   
-  "@_comment_price_type_section": "Stringhe Sezione Tipo di Prezzo",
   "priceType": "Tipo di prezzo",
-  "marketPrice": "Prezzo di mercato",
   "fixedPrice": "Prezzo fisso",
   "market": "Mercato",
   "priceTypeTooltip": "• Seleziona Prezzo di Mercato se vuoi usare il prezzo che ha Bitcoin quando qualcuno prende la tua offerta.\\n• Seleziona Prezzo Fisso se vuoi definire l'importo esatto di Bitcoin che scambierai.",
   
-  "@_comment_take_order_screen": "Stringhe Schermata Prendi Ordine",
-  "orderDetails": "DETTAGLI ORDINE",
-  "selling": "vendendo",
-  "buying": "comprando",
-  "atMarketPrice": "a prezzo di mercato",
   "withPremiumPercent": "con un +{premium}% di premio",
   "@withPremiumPercent": {
     "placeholders": {
@@ -301,7 +288,6 @@
       }
     }
   },
-  "noPaymentMethod": "Nessun metodo di pagamento",
   "someoneIsSellingBuying": "Qualcuno sta {action}{satAmount} sats per {amountString} {price} {premiumText}",
   "@someoneIsSellingBuying": {
     "placeholders": {
@@ -373,31 +359,27 @@
     }
   },
   
-  "@_comment_lightning_invoice": "Stringhe Widget Fattura Lightning",
   "pleaseEnterLightningInvoiceFor": "Per favore inserisci una Fattura Lightning per: ",
   "sats": " sats",
   "lightningInvoice": "Fattura Lightning",
   "enterInvoiceHere": "Inserisci la fattura qui",
   
-  "@_comment_trade_detail_screen": "Stringhe Schermata Dettaglio Scambio",
-  "cancelPending": "CANCELLAZIONE IN ATTESA",
-  "acceptCancel": "ACCETTA CANCELLAZIONE",
-  "completePurchase": "COMPLETA ACQUISTO",
-  "rate": "VALUTA",
-  "contact": "CONTATTA",
+  "cancelPendingButton": "CANCELLAZIONE IN ATTESA",
+  "acceptCancelButton": "ACCETTA CANCELLAZIONE",
+  "completePurchaseButton": "COMPLETA ACQUISTO",
+  "rateButton": "VALUTA",
+  "contactButton": "CONTATTA",
   
-  "@_comment_rate_screen": "Stringhe Schermata Valuta Controparte",
   "rateCounterpart": "Valuta Controparte",
   "submitRating": "Invia Valutazione",
   
-  "@_comment_pay_invoice_screen": "Stringhe Schermata Pagamento Fattura Lightning",
   "payLightningInvoice": "Paga Fattura Lightning",
   "payInvoiceToContinue": "Paga questa fattura per continuare lo scambio",
   "failedToGenerateQR": "Errore nella generazione del codice QR",
   "invoiceCopiedToClipboard": "Fattura copiata negli appunti",
-  "copy": "Copia",
-  "share": "Condividi",
+  "copyButton": "Copia",
+  "shareButton": "Condividi",
   "failedToShareInvoice": "Errore nel condividere la fattura. Per favore prova a copiarla invece.",
-  "openWallet": "APRI PORTAFOGLIO",
-  "done": "FATTO"
+  "openWalletButton": "APRI PORTAFOGLIO",
+  "doneButton": "FATTO"
 }

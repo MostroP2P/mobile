@@ -24,16 +24,16 @@ class MobileBackgroundService implements BackgroundService {
   Future<void> init() async {
     await service.configure(
       iosConfiguration: IosConfiguration(
-        autoStart: true,
+        autoStart: false,
         onForeground: serviceMain,
         onBackground: onIosBackground,
       ),
       androidConfiguration: AndroidConfiguration(
           autoStart: false,
           onStart: serviceMain,
-          isForegroundMode: true,
-          autoStartOnBoot: true,
-          initialNotificationTitle: "Mostro P2P",
+          isForegroundMode: false,
+          autoStartOnBoot: false,
+          initialNotificationTitle: "Mostro",
           initialNotificationContent: "Connected to Mostro service",
           foregroundServiceTypes: [
             AndroidForegroundType.dataSync,

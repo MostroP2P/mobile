@@ -213,7 +213,6 @@
   "holdInvoiceCltvDelta": "Delta CLTV de Factura de Retención",
   "invoiceExpirationWindow": "Ventana de Expiración de Factura",
   
-  "@_comment_order_creation": "Cadenas del Formulario de Creación de Orden",
   "enterFiatAmountBuy": "Ingresa la cantidad fiat que quieres pagar (puedes establecer un rango)",
   "enterFiatAmountSell": "Ingresa la cantidad fiat que quieres recibir (puedes establecer un rango)",
   "enterAmountHint": "Ingresa cantidad (ejemplo: 100 o 100-500)",
@@ -229,7 +228,6 @@
   "premiumTitle": "Prima (%)",
   "premiumTooltip": "Ajusta cuánto por encima o por debajo del precio de mercado quieres tu oferta. Por defecto, está establecido en 0%, sin prima o descuento, así que si no quieres cambiar el precio, puedes dejarlo como está.",
   
-  "@_comment_account_screen": "Cadenas de Pantalla de Gestión de Cuenta",
   "secretWords": "Palabras Secretas",
   "toRestoreYourAccount": "Para restaurar tu cuenta",
   "privacy": "Privacidad",
@@ -244,7 +242,6 @@
   "noMnemonicFound": "No se encontró mnemónico",
   "errorLoadingMnemonic": "Error: {error}",
   
-  "@_comment_chat_screens": "Cadenas de Pantalla de Chat",
   "noMessagesAvailable": "No hay mensajes disponibles",
   "back": "ATRÁS",
   "typeAMessage": "Escribe un mensaje...",
@@ -252,18 +249,15 @@
   "yourHandle": "Tu nombre: {handle}",
   "yourSharedKey": "Tu clave compartida:",
   
-  "@_comment_trade_actions": "Acciones de Detalle de Intercambio",
   "payInvoiceButton": "PAGAR FACTURA",
   "addInvoiceButton": "AGREGAR FACTURA",
   "release": "LIBERAR",
   "takeSell": "TOMAR VENTA",
   "takeBuy": "TOMAR COMPRA",
   
-  "@_comment_currency_errors": "Mensajes de Error de Moneda",
   "noExchangeDataAvailable": "No hay datos de intercambio disponibles",
   "errorFetchingCurrencies": "Error obteniendo monedas",
   
-  "@_comment_currency_section": "Cadenas de Sección de Selección de Moneda",
   "selectFiatCurrencyPay": "Selecciona la moneda fiat con la que pagarás",
   "selectFiatCurrencyReceive": "Selecciona la Moneda Fiat que quieres recibir",
   "loadingCurrencies": "Cargando monedas...",
@@ -273,18 +267,11 @@
   "searchCurrencies": "Buscar monedas...",
   "noCurrenciesFound": "No se encontraron monedas",
   
-  "@_comment_price_type_section": "Cadenas de Sección de Tipo de Precio",
   "priceType": "Tipo de precio",
-  "marketPrice": "Precio de mercado",
   "fixedPrice": "Precio fijo",
   "market": "Mercado",
   "priceTypeTooltip": "• Selecciona Precio de Mercado si quieres usar el precio que tiene Bitcoin cuando alguien tome tu oferta.\\n• Selecciona Precio Fijo si quieres definir la cantidad exacta de Bitcoin que intercambiarás.",
   
-  "@_comment_take_order_screen": "Cadenas de Pantalla de Tomar Orden",
-  "orderDetails": "DETALLES DE LA ORDEN",
-  "selling": "vendiendo",
-  "buying": "comprando",
-  "atMarketPrice": "a precio de mercado",
   "withPremiumPercent": "con un +{premium}% de premio",
   "@withPremiumPercent": {
     "placeholders": {
@@ -301,7 +288,6 @@
       }
     }
   },
-  "noPaymentMethod": "Sin método de pago",
   "someoneIsSellingBuying": "Alguien está {action}{satAmount} sats por {amountString} {price} {premiumText}",
   "@someoneIsSellingBuying": {
     "placeholders": {
@@ -373,31 +359,27 @@
     }
   },
   
-  "@_comment_lightning_invoice": "Cadenas de Widget de Factura Lightning",
   "pleaseEnterLightningInvoiceFor": "Por favor ingresa una Factura Lightning para: ",
   "sats": " sats",
   "lightningInvoice": "Factura Lightning",
   "enterInvoiceHere": "Ingresa la factura aquí",
   
-  "@_comment_trade_detail_screen": "Cadenas de Pantalla de Detalle de Intercambio",
-  "cancelPending": "CANCELACIÓN PENDIENTE",
-  "acceptCancel": "ACEPTAR CANCELACIÓN",
-  "completePurchase": "COMPLETAR COMPRA",
-  "rate": "CALIFICAR",
-  "contact": "CONTACTAR",
+  "cancelPendingButton": "CANCELACIÓN PENDIENTE",
+  "acceptCancelButton": "ACEPTAR CANCELACIÓN",
+  "completePurchaseButton": "COMPLETAR COMPRA",
+  "rateButton": "CALIFICAR",
+  "contactButton": "CONTACTAR",
   
-  "@_comment_rate_screen": "Cadenas de Pantalla de Calificar Contraparte",
   "rateCounterpart": "Calificar Contraparte",
   "submitRating": "Enviar Calificación",
   
-  "@_comment_pay_invoice_screen": "Cadenas de Pantalla de Pago de Factura Lightning",
   "payLightningInvoice": "Pagar Factura Lightning",
   "payInvoiceToContinue": "Paga esta factura para continuar el intercambio",
   "failedToGenerateQR": "Error al generar código QR",
   "invoiceCopiedToClipboard": "Factura copiada al portapapeles",
-  "copy": "Copiar",
-  "share": "Compartir",
+  "copyButton": "Copiar",
+  "shareButton": "Compartir",
   "failedToShareInvoice": "Error al compartir factura. Por favor intenta copiarla en su lugar.",
-  "openWallet": "ABRIR BILLETERA",
-  "done": "HECHO"
+  "openWalletButton": "ABRIR BILLETERA",
+  "doneButton": "HECHO"
 }

@@ -14,13 +14,12 @@ import 'package:mostro_mobile/features/subscriptions/subscription_manager.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_manager_provider.dart';
-import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 import 'package:mostro_mobile/data/repositories/mostro_storage.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
 
+import '../mocks.dart';
 import '../mocks.mocks.dart';
-import 'mostro_service_test.mocks.dart' hide MockRef;
 import 'mostro_service_helper_functions.dart';
 
 void main() {
@@ -28,13 +27,14 @@ void main() {
   provideDummy<Settings>(Settings(
     relays: ['wss://relay.damus.io'],
     fullPrivacyMode: false,
-    mostroPublicKey: '9d9d0455a96871f2dc4289b8312429db2e925f167b37c77bf7b28014be235980',
+    mostroPublicKey:
+        '9d9d0455a96871f2dc4289b8312429db2e925f167b37c77bf7b28014be235980',
     defaultFiatCode: 'USD',
   ));
-  
+
   // Add dummy for MostroStorage
   provideDummy<MostroStorage>(MockMostroStorage());
-  
+
   // Add dummy for NostrService
   provideDummy<NostrService>(MockNostrService());
   late MostroService mostroService;
@@ -44,65 +44,60 @@ void main() {
   late MockSessionNotifier mockSessionNotifier;
   late MockRef mockRef;
   late MockSubscriptionManager mockSubscriptionManager;
+  late MockKeyManager mockKeyManager;
+  late MockSessionStorage mockSessionStorage;
 
   setUpAll(() {
     // Create a dummy Settings object that will be used by MockRef
-    final dummySettings = Settings(
-      relays: ['wss://relay.damus.io'],
-      fullPrivacyMode: false,
-      mostroPublicKey: '9d9d0455a96871f2dc4289b8312429db2e925f167b37c77bf7b28014be235980',
-      defaultFiatCode: 'USD',
-    );
-    
+    final dummySettings = MockSettings();
+
     // Provide dummy values for Mockito
-    provideDummy<SessionNotifier>(MockSessionNotifier());
+    provideDummy<SessionNotifier>(MockSessionNotifier(
+        mockRef, mockKeyManager, mockSessionStorage, dummySettings));
     provideDummy<Settings>(dummySettings);
     provideDummy<NostrService>(MockNostrService());
-    
+
     // Create a mock ref for the SubscriptionManager dummy
     provideDummy<SubscriptionManager>(MockSubscriptionManager());
-    
+
     // Create a mock ref that returns the dummy settings
     final mockRefForDummy = MockRef();
     when(mockRefForDummy.read(settingsProvider)).thenReturn(dummySettings);
-    
+
     // Provide a dummy MostroService that uses our properly configured mock ref
     provideDummy<MostroService>(MostroService(mockRefForDummy));
   });
 
   setUp(() {
     mockNostrService = MockNostrService();
-    mockSessionNotifier = MockSessionNotifier();
+    mockSessionNotifier = MockSessionNotifier(
+        mockRef, mockKeyManager, mockSessionStorage, MockSettings());
     mockRef = MockRef();
     mockSubscriptionManager = MockSubscriptionManager();
     mockServerTradeIndex = MockServerTradeIndex();
+    mockKeyManager = MockKeyManager();
+    mockSessionStorage = MockSessionStorage();
     keyDerivator = KeyDerivator("m/44'/1237'/38383'/0");
-    // Generate a valid test key pair for mostro public key
-    final testKeyPair = NostrUtils.generateKeyPair();
-    
     // Create test settings
-    final testSettings = Settings(
-      relays: ['wss://relay.damus.io'],
-      fullPrivacyMode: false,
-      mostroPublicKey: testKeyPair.public,
-      defaultFiatCode: 'USD',
-    );
-    
+    final testSettings = MockSettings();
+
     // Stub specific provider reads
     when(mockRef.read(settingsProvider)).thenReturn(testSettings);
     when(mockRef.read(mostroStorageProvider)).thenReturn(MockMostroStorage());
     when(mockRef.read(nostrServiceProvider)).thenReturn(mockNostrService);
-    when(mockRef.read(subscriptionManagerProvider)).thenReturn(mockSubscriptionManager);
-    
+    when(mockRef.read(subscriptionManagerProvider))
+        .thenReturn(mockSubscriptionManager);
+
     // Stub SessionNotifier methods
     when(mockSessionNotifier.sessions).thenReturn(<Session>[]);
-    
-    when(mockRef.read(sessionNotifierProvider.notifier)).thenReturn(mockSessionNotifier);
-    
+
+    when(mockRef.read(sessionNotifierProvider.notifier))
+        .thenReturn(mockSessionNotifier);
+
     // Create the service under test
     mostroService = MostroService(mockRef);
   });
-  
+
   tearDown(() {
     // Clean up resources
     mostroService.dispose();
@@ -162,8 +157,7 @@ void main() {
           .thenReturn(session);
 
       // Mock NostrService's publishEvent only
-      when(mockNostrService.publishEvent(any))
-          .thenAnswer((_) async {});
+      when(mockNostrService.publishEvent(any)).thenAnswer((_) async {});
 
       when(mockSessionNotifier.newSession(orderId: orderId))
           .thenAnswer((_) async => session);
@@ -202,7 +196,8 @@ void main() {
       final extendedPrivKey = keyDerivator.extendedKeyFromMnemonic(mnemonic);
       final userPrivKey = keyDerivator.derivePrivateKey(extendedPrivKey, 0);
       final userPubKey = keyDerivator.privateToPublicKey(userPrivKey);
-      final tradePrivKey = keyDerivator.derivePrivateKey(extendedPrivKey, tradeIndex);
+      final tradePrivKey =
+          keyDerivator.derivePrivateKey(extendedPrivKey, tradeIndex);
       // Create key pairs
       final tradeKeyPair = NostrKeyPairs(private: tradePrivKey);
       final identityKeyPair = NostrKeyPairs(private: userPrivKey);
@@ -245,7 +240,8 @@ void main() {
             'trade_index': tradeIndex,
           },
         },
-        signatureHex: '0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
+        signatureHex:
+            '0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
       );
 
       expect(isValid, isFalse,
@@ -260,7 +256,8 @@ void main() {
       final extendedPrivKey = keyDerivator.extendedKeyFromMnemonic(mnemonic);
       final userPrivKey = keyDerivator.derivePrivateKey(extendedPrivKey, 0);
       final userPubKey = keyDerivator.privateToPublicKey(userPrivKey);
-      final tradePrivKey = keyDerivator.derivePrivateKey(extendedPrivKey, tradeIndex);
+      final tradePrivKey =
+          keyDerivator.derivePrivateKey(extendedPrivKey, tradeIndex);
       // Create key pairs
       final tradeKeyPair = NostrKeyPairs(private: tradePrivKey);
       final identityKeyPair = NostrKeyPairs(private: userPrivKey);
@@ -322,7 +319,8 @@ void main() {
       final extendedPrivKey = keyDerivator.extendedKeyFromMnemonic(mnemonic);
       final userPrivKey = keyDerivator.derivePrivateKey(extendedPrivKey, 0);
       final userPubKey = keyDerivator.privateToPublicKey(userPrivKey);
-      final tradePrivKey = keyDerivator.derivePrivateKey(extendedPrivKey, tradeIndex);
+      final tradePrivKey =
+          keyDerivator.derivePrivateKey(extendedPrivKey, tradeIndex);
       // Create key pairs
       final tradeKeyPair = NostrKeyPairs(private: tradePrivKey);
       final identityKeyPair = NostrKeyPairs(private: userPrivKey);
@@ -363,7 +361,7 @@ void main() {
           'trade_index': tradeIndex,
         },
       };
-      
+
       final isValid = serverVerifyMessage(
         userPubKey: userPubKey,
         messageContent: messageContent,

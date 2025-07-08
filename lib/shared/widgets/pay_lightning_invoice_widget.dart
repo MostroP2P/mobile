@@ -72,7 +72,7 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
                 );
               },
               icon: const Icon(Icons.copy),
-              label: Text(S.of(context)!.copy),
+              label: Text(S.of(context)!.copyButton),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.mostroGreen,
                 shape: RoundedRectangleBorder(
@@ -100,7 +100,7 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
                 }
               },
               icon: const Icon(Icons.share),
-              label: Text(S.of(context)!.share),
+              label: Text(S.of(context)!.shareButton),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.mostroGreen,
                 shape: RoundedRectangleBorder(
@@ -120,7 +120,7 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
             ),
           ),
           onPressed: widget.onSubmit,
-          child: Text(S.of(context)!.openWallet),
+          child: Text(S.of(context)!.openWalletButton),
         ),
         const SizedBox(height: 20),
         Row(

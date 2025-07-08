@@ -213,7 +213,6 @@
   "holdInvoiceCltvDelta": "Hold Invoice CLTV Delta",
   "invoiceExpirationWindow": "Invoice Expiration Window",
   
-  "@_comment_order_creation": "Order Creation Form Strings",
   "enterFiatAmountBuy": "Enter the fiat amount you want to pay (you can set a range)",
   "enterFiatAmountSell": "Enter the fiat amount you want to receive (you can set a range)",
   "enterAmountHint": "Enter amount (example: 100 or 100-500)",
@@ -229,7 +228,6 @@
   "premiumTitle": "Premium (%)",
   "premiumTooltip": "Adjust how much above or below the market price you want your offer. By default, it's set to 0%, with no premium or discount, so if you don't want to change the price, you can leave it as is.",
   
-  "@_comment_account_screen": "Account Management Screen Strings",
   "secretWords": "Secret Words",
   "toRestoreYourAccount": "To restore your account",
   "privacy": "Privacy",
@@ -244,7 +242,6 @@
   "noMnemonicFound": "No mnemonic found",
   "errorLoadingMnemonic": "Error: {error}",
   
-  "@_comment_chat_screens": "Chat Screen Strings",
   "noMessagesAvailable": "No messages available",
   "back": "BACK",
   "typeAMessage": "Type a message...",
@@ -252,18 +249,15 @@
   "yourHandle": "Your handle: {handle}",
   "yourSharedKey": "Your shared key:",
   
-  "@_comment_trade_actions": "Trade Detail Actions",
   "payInvoiceButton": "PAY INVOICE",
   "addInvoiceButton": "ADD INVOICE",
   "release": "RELEASE",
   "takeSell": "TAKE SELL",
   "takeBuy": "TAKE BUY",
   
-  "@_comment_currency_errors": "Currency Error Messages",
   "noExchangeDataAvailable": "No exchange data available",
   "errorFetchingCurrencies": "Error fetching currencies",
   
-  "@_comment_currency_section": "Currency Selection Section Strings",
   "selectFiatCurrencyPay": "Select the fiat currency you will pay with",
   "selectFiatCurrencyReceive": "Select the Fiat Currency you want to receive",
   "loadingCurrencies": "Loading currencies...",
@@ -273,18 +267,11 @@
   "searchCurrencies": "Search currencies...",
   "noCurrenciesFound": "No currencies found",
   
-  "@_comment_price_type_section": "Price Type Section Strings",
   "priceType": "Price type",
-  "marketPrice": "Market price",
   "fixedPrice": "Fixed price",
   "market": "Market",
   "priceTypeTooltip": "• Select Market Price if you want to use the price that Bitcoin has when someone takes your offer.\\n• Select Fixed Price if you want to define the exact amount of Bitcoin you will exchange.",
   
-  "@_comment_take_order_screen": "Take Order Screen Strings",
-  "orderDetails": "ORDER DETAILS",
-  "selling": "selling",
-  "buying": "buying",
-  "atMarketPrice": "at market price",
   "withPremiumPercent": "with a +{premium}% premium",
   "@withPremiumPercent": {
     "placeholders": {
@@ -301,7 +288,6 @@
       }
     }
   },
-  "noPaymentMethod": "No payment method",
   "someoneIsSellingBuying": "Someone is {action}{satAmount} sats for {amountString} {price} {premiumText}",
   "@someoneIsSellingBuying": {
     "placeholders": {
@@ -373,31 +359,27 @@
     }
   },
   
-  "@_comment_lightning_invoice": "Lightning Invoice Widget Strings",
   "pleaseEnterLightningInvoiceFor": "Please enter a Lightning Invoice for: ",
   "sats": " sats",
   "lightningInvoice": "Lightning Invoice",
   "enterInvoiceHere": "Enter invoice here",
   
-  "@_comment_trade_detail_screen": "Trade Detail Screen Strings",
-  "cancelPending": "CANCEL PENDING",
-  "acceptCancel": "ACCEPT CANCEL",
-  "completePurchase": "COMPLETE PURCHASE",
-  "rate": "RATE",
-  "contact": "CONTACT",
+  "cancelPendingButton": "CANCEL PENDING",
+  "acceptCancelButton": "ACCEPT CANCEL",
+  "completePurchaseButton": "COMPLETE PURCHASE",
+  "rateButton": "RATE",
+  "contactButton": "CONTACT",
   
-  "@_comment_rate_screen": "Rate Counterpart Screen Strings",
   "rateCounterpart": "Rate Counterpart",
   "submitRating": "Submit Rating",
   
-  "@_comment_pay_invoice_screen": "Pay Lightning Invoice Screen Strings",
   "payLightningInvoice": "Pay Lightning Invoice",
   "payInvoiceToContinue": "Pay this invoice to continue the exchange",
   "failedToGenerateQR": "Failed to generate QR code",
   "invoiceCopiedToClipboard": "Invoice copied to clipboard",
-  "copy": "Copy",
-  "share": "Share",
+  "copyButton": "Copy",
+  "shareButton": "Share",
   "failedToShareInvoice": "Failed to share invoice. Please try copying instead.",
-  "openWallet": "OPEN WALLET",
-  "done": "DONE"
+  "openWalletButton": "OPEN WALLET",
+  "doneButton": "DONE"
 }

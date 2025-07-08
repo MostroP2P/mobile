@@ -15,7 +15,7 @@ bool isAppForeground = true;
 Future<void> serviceMain(ServiceInstance service) async {
   // If on Android, set up a permanent notification so the OS won't kill it.
   if (service is AndroidServiceInstance) {
-    service.setAsForegroundService();
+    //service.setAsForegroundService();
   }
 
   final Map<String, Map<String, dynamic>> activeSubscriptions = {};
@@ -68,8 +68,12 @@ Future<void> serviceMain(ServiceInstance service) async {
     };
 
     subscription.listen((event) async {
-      if (await eventStore.hasItem(event.id!)) return;
-      await retryNotification(event);
+      try {
+        if (await eventStore.hasItem(event.id!)) return;
+        await retryNotification(event);
+      } catch (e) {
+        // ignore
+      }
     });
   });
 
