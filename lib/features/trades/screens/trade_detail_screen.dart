@@ -1,4 +1,5 @@
 import 'package:circular_countdown/circular_countdown.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -54,9 +55,11 @@ class TradeDetailScreen extends ConsumerWidget {
                 // Detailed info: includes the last Mostro message action text
                 MostroMessageDetail(orderId: orderId),
                 const SizedBox(height: 24),
-                _buildCountDownTime(context, orderPayload.expiresAt != null
-                    ? orderPayload.expiresAt! * 1000
-                    : null),
+                _buildCountDownTime(
+                    context,
+                    orderPayload.expiresAt != null
+                        ? orderPayload.expiresAt! * 1000
+                        : null),
                 const SizedBox(height: 36),
                 Wrap(
                   alignment: WrapAlignment.center,
@@ -80,28 +83,31 @@ class TradeDetailScreen extends ConsumerWidget {
   }
 
   /// Builds a card showing the user is "selling/buying X sats for Y fiat" etc.
-  Widget _buildSellerAmount(BuildContext context, WidgetRef ref, OrderState tradeState) {
-    final session = ref.watch(sessionProvider(orderId));
+  Widget _buildSellerAmount(
+      BuildContext context, WidgetRef ref, OrderState tradeState) {
+    final sessions = ref.watch(sessionNotifierProvider);
+    final session = sessions.firstWhereOrNull((s) => s.orderId == orderId);
 
     final currencyFlag = CurrencyUtils.getFlagFromCurrency(
       tradeState.order!.fiatCode,
     );
 
-    final amountString = '${tradeState.order!.fiatAmount} ${tradeState.order!.fiatCode} $currencyFlag';
-    
+    final amountString =
+        '${tradeState.order!.fiatAmount} ${tradeState.order!.fiatCode} $currencyFlag';
+
     // If `orderPayload.amount` is 0, the trade is "at market price"
     final isZeroAmount = (tradeState.order!.amount == 0);
     final satText = isZeroAmount ? '' : ' ${tradeState.order!.amount}';
     final priceText = isZeroAmount ? ' ${S.of(context)!.atMarketPrice}' : '';
-    
+
     final premium = tradeState.order!.premium;
     final premiumText = premium == 0
         ? ''
         : (premium > 0)
             ? S.of(context)!.withPremium(premium)
             : S.of(context)!.withDiscount(premium);
-    
-    final isSellingRole = session!.role == Role.seller;
+
+    final isSellingRole = session?.role == Role.seller;
 
     // Payment method
     final method = tradeState.order!.paymentMethod;
@@ -109,7 +115,7 @@ class TradeDetailScreen extends ConsumerWidget {
       tradeState.order!.createdAt != null && tradeState.order!.createdAt! > 0
           ? DateTime.fromMillisecondsSinceEpoch(
               tradeState.order!.createdAt! * 1000)
-          : session.startTime,
+          : session?.startTime ?? DateTime.now(),
     );
     return CustomCard(
       padding: const EdgeInsets.all(16),
@@ -121,9 +127,11 @@ class TradeDetailScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isSellingRole 
-                    ? S.of(context)!.youAreSellingText(amountString, premiumText, priceText, satText)
-                    : S.of(context)!.youAreBuyingText(amountString, premiumText, priceText, satText),
+                  isSellingRole
+                      ? S.of(context)!.youAreSellingText(
+                          amountString, premiumText, priceText, satText)
+                      : S.of(context)!.youAreBuyingText(
+                          amountString, premiumText, priceText, satText),
                   style: AppTheme.theme.textTheme.bodyLarge,
                   softWrap: true,
                 ),
@@ -231,7 +239,8 @@ class TradeDetailScreen extends ConsumerWidget {
 
           if (tradeState.status == Status.active ||
               tradeState.status == Status.fiatSent) {
-            if (tradeState.action == actions.Action.cooperativeCancelInitiatedByPeer) {
+            if (tradeState.action ==
+                actions.Action.cooperativeCancelInitiatedByPeer) {
               cancelMessage = S.of(context)!.acceptCancelMessage;
             } else {
               cancelMessage = S.of(context)!.cooperativeCancelMessage;

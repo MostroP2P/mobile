@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -34,12 +35,16 @@ class OrderListItem extends ConsumerWidget {
             ? "(+$premiumValue%)"
             : "($premiumValue%)";
 
-    String orderLabel = order.orderType == OrderType.buy ? 'BUYING' : 'SELLING';
+    String orderLabel = order.orderType == OrderType.buy
+        ? S.of(context)!.buying.toUpperCase()
+        : S.of(context)!.selling.toUpperCase();
 
     final session = ref.watch(sessionProvider(order.orderId!));
-    if (session != null) {
-      final selling = session.role == Role.seller ? 'SELLING' : 'BUYING';
-      orderLabel = 'YOU ARE $selling';
+    if (session != null && session.role != null) {
+      final selling = session.role == Role.seller
+          ? S.of(context)!.youAreSelling.toUpperCase()
+          : S.of(context)!.youAreBuying.toUpperCase();
+      orderLabel = selling;
     }
 
     return Container(
@@ -60,9 +65,9 @@ class OrderListItem extends ConsumerWidget {
           borderRadius: BorderRadius.circular(20),
           onTap: () {
             final sessions = ref.watch(sessionNotifierProvider);
-            final orderIds = sessions.map((s) => s.orderId).toSet();
-            if (orderIds.contains(order.orderId)) {
-              context.push('/trade_detail/${order.orderId}');
+            final session = sessions.firstWhereOrNull((s) => s.orderId == order.orderId);
+            if (session != null && session.role != null) {
+              context.push('/trade_detail/${session.orderId}');
               return;
             }
             order.orderType == OrderType.buy
@@ -103,9 +108,7 @@ class OrderListItem extends ConsumerWidget {
                         ],
                       ),
                       child: Text(
-                        order.orderType == OrderType.buy
-                            ? S.of(context)!.buying
-                            : S.of(context)!.selling,
+                        orderLabel,
                         style: const TextStyle(
                           color: Colors.white70,
                           fontSize: 12,
@@ -116,7 +119,9 @@ class OrderListItem extends ConsumerWidget {
 
                     // Timestamp
                     Text(
-                      order.timeAgoWithLocale(Localizations.localeOf(context).languageCode) ?? S.of(context)!.hoursAgo('9'),
+                      order.timeAgoWithLocale(
+                              Localizations.localeOf(context).languageCode) ??
+                          S.of(context)!.hoursAgo('9'),
                       style: const TextStyle(
                         color: Colors.white60,
                         fontSize: 14,
