@@ -380,12 +380,12 @@
   "copyButton": "Copia",
   "shareButton": "Condividi",
   "failedToShareInvoice": "Errore nel condividere la fattura. Per favore prova a copiarla invece.",
-  "openWallet": "APRI PORTAFOGLIO",
+  "openWalletButton": "APRI PORTAFOGLIO",
   "language": "Lingua",
   "systemDefault": "Predefinito di sistema",
   "english": "Inglese",
   "spanish": "Spagnolo",
   "italian": "Italiano",
   "chooseLanguageDescription": "Scegli la tua lingua preferita o usa il predefinito di sistema",
-  "done": "FATTO"
+  "doneButton": "FATTO"
 }
