@@ -54,8 +54,7 @@ class _MostroAppState extends ConsumerState<MostroApp> {
           theme: AppTheme.theme,
           darkTheme: AppTheme.theme,
           routerConfig: goRouter,
-          // Force Spanish locale for testing if device is Spanish
-          locale: systemLocale.languageCode == 'es' ? const Locale('es') : null,
+          // Let localeResolutionCallback handle all locale detection
           localizationsDelegates: const [
             S.delegate,
             GlobalMaterialLocalizations.delegate,
