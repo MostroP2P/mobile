@@ -16,6 +16,7 @@ class SettingsNotifier extends StateNotifier<Settings> {
       relays: Config.nostrRelays,
       fullPrivacyMode: Config.fullPrivacyMode,
       mostroPublicKey: Config.mostroPubKey,
+      selectedLanguage: null,
     );
   }
 
