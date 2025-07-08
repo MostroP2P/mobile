@@ -10,6 +10,7 @@ import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/features/auth/notifiers/auth_state.dart';
 import 'package:mostro_mobile/services/lifecycle_manager.dart';
 import 'package:mostro_mobile/shared/providers/app_init_provider.dart';
+import 'package:mostro_mobile/features/settings/settings_provider.dart';
 
 class MostroApp extends ConsumerStatefulWidget {
   const MostroApp({super.key});
@@ -48,13 +49,17 @@ class _MostroAppState extends ConsumerState<MostroApp> {
         });
 
         final systemLocale = ui.PlatformDispatcher.instance.locale;
+        final settings = ref.watch(settingsProvider);
         
         return MaterialApp.router(
           title: 'Mostro',
           theme: AppTheme.theme,
           darkTheme: AppTheme.theme,
           routerConfig: goRouter,
-          // Let localeResolutionCallback handle all locale detection
+          // Use language override from settings if available, otherwise let callback handle detection
+          locale: settings.selectedLanguage != null 
+              ? Locale(settings.selectedLanguage!) 
+              : null,
           localizationsDelegates: const [
             S.delegate,
             GlobalMaterialLocalizations.delegate,

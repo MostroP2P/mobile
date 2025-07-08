@@ -399,5 +399,10 @@
   "share": "Share",
   "failedToShareInvoice": "Failed to share invoice. Please try copying instead.",
   "openWallet": "OPEN WALLET",
-  "done": "DONE"
+  "language": "Language",
+  "systemDefault": "System Default",
+  "english": "English",
+  "spanish": "Spanish",
+  "italian": "Italian",
+  "chooseLanguageDescription": "Choose your preferred language or use system default"
 }
