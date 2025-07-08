@@ -281,8 +281,6 @@ class OrderListItem extends ConsumerWidget {
 
     final int daysOld = order.rating?.days ?? 0;
 
-    const Color starColor = Colors.amber;
-
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -304,6 +302,7 @@ class OrderListItem extends ConsumerWidget {
                   scrollDirection: Axis.horizontal,
                   itemCount: 5,
                   itemBuilder: (context, index) {
+                    const Color starColor = Colors.amber;
 
                     if (index < rating.floor()) {
                       return const Icon(Icons.star, color: starColor, size: 14);
@@ -330,7 +329,7 @@ class OrderListItem extends ConsumerWidget {
                   ExcludeSemantics(
                     child: Icon(
                       Icons.person_2_outlined,
-                      color: starColor,
+                      color: Colors.white,
                       size: 14,
                     ),
                   ),
@@ -355,7 +354,7 @@ class OrderListItem extends ConsumerWidget {
                   ExcludeSemantics(
                     child: Icon(
                       Icons.calendar_today_outlined,
-                      color: starColor,
+                      color: Colors.white,
                       size: 14,
                     ),
                   ),
