@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/features/chat/screens/chat_room_screen.dart';
 import 'package:mostro_mobile/features/order/screens/add_order_screen.dart';
@@ -19,12 +20,28 @@ import 'package:mostro_mobile/features/order/screens/pay_lightning_invoice_scree
 import 'package:mostro_mobile/features/order/screens/take_order_screen.dart';
 import 'package:mostro_mobile/features/auth/screens/register_screen.dart';
 import 'package:mostro_mobile/features/walkthrough/screens/walkthrough_screen.dart';
+import 'package:mostro_mobile/features/walkthrough/providers/first_run_provider.dart';
 import 'package:mostro_mobile/shared/widgets/navigation_listener_widget.dart';
 import 'package:mostro_mobile/shared/widgets/notification_listener_widget.dart';
 
-final goRouter = GoRouter(
-  navigatorKey: GlobalKey<NavigatorState>(),
-  routes: [
+GoRouter createRouter(WidgetRef ref) {
+  return GoRouter(
+    navigatorKey: GlobalKey<NavigatorState>(),
+    redirect: (context, state) {
+      final firstRunState = ref.read(firstRunProvider);
+      
+      return firstRunState.when(
+        data: (isFirstRun) {
+          if (isFirstRun && state.matchedLocation != '/walkthrough') {
+            return '/walkthrough';
+          }
+          return null;
+        },
+        loading: () => null,
+        error: (_, __) => null,
+      );
+    },
+    routes: [
     ShellRoute(
       builder: (BuildContext context, GoRouterState state, Widget child) {
         return NotificationListenerWidget(
@@ -198,6 +215,7 @@ final goRouter = GoRouter(
     body: Center(child: Text(state.error.toString())),
   ),
 );
+}
 
 CustomTransitionPage buildPageWithDefaultTransition<T>({
   required BuildContext context,
