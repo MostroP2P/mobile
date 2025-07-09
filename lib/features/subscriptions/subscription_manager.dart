@@ -72,7 +72,9 @@ class SubscriptionManager {
 
     try {
       final filter = _createFilterForType(type, sessions);
-
+      if (filter == null) {
+        return;
+      }
       subscribe(
         type: type,
         filter: filter,
@@ -86,17 +88,24 @@ class SubscriptionManager {
     }
   }
 
-  NostrFilter _createFilterForType(
+  NostrFilter? _createFilterForType(
       SubscriptionType type, List<Session> sessions) {
     switch (type) {
       case SubscriptionType.orders:
+        if (sessions.isEmpty) {
+          return null;
+        }
         return NostrFilter(
           kinds: [1059],
-          p: sessions
-              .map((s) => s.tradeKey.public)
-              .toList(),
+          p: sessions.map((s) => s.tradeKey.public).toList(),
         );
       case SubscriptionType.chat:
+        if (sessions.isEmpty) {
+          return null;
+        }
+        if (sessions.where((s) => s.sharedKey?.public != null).isEmpty) {
+          return null;
+        }
         return NostrFilter(
           kinds: [1059],
           p: sessions
