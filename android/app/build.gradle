@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.mostro_mobile"
+    namespace = "network.mostro.app"
     compileSdk = 35 // flutter.compileSdkVersion
     ndkVersion = "26.3.11579264" //flutter.ndkVersion
 
@@ -23,7 +23,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.mostro_mobile"
+        applicationId = "network.mostro.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 23 // flutter.minSdkVersion

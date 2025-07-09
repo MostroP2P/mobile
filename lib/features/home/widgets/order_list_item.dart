@@ -101,7 +101,9 @@ class OrderListItem extends ConsumerWidget {
 
                     // Timestamp
                     Text(
-                      order.timeAgoWithLocale(Localizations.localeOf(context).languageCode) ?? S.of(context)!.hoursAgo('9'),
+                      order.timeAgoWithLocale(
+                              Localizations.localeOf(context).languageCode) ??
+                          S.of(context)!.hoursAgo('9'),
                       style: const TextStyle(
                         color: Colors.white60,
                         fontSize: 14,
@@ -310,20 +312,64 @@ class OrderListItem extends ConsumerWidget {
                           color: starColor, size: 14);
                     } else {
                       return Icon(Icons.star_border,
-                          color: starColor.withValues(alpha: 0.3), size: 14);
+                          color: starColor, size: 14);
                     }
                   }),
             ),
           ],
         ),
-        Text(
-          S
-              .of(context)!
-              .reviewsAndDaysOld(reviews.toString(), daysOld.toString()),
-          style: const TextStyle(
-            color: Colors.white60,
-            fontSize: 12,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Semantics(
+              label: '${S.of(context)!.reviews}: $reviews',
+              child: Row(
+                spacing: 4,
+                children: [
+                  ExcludeSemantics(
+                    child: Icon(
+                      Icons.person_2_outlined,
+                      color: Colors.white,
+                      size: 14,
+                    ),
+                  ),
+                  Text(
+                    reviews.toString(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 16),
+            Semantics(
+              label:
+                  '${S.of(context)!.daysOld}: $daysOld ${S.of(context)!.daysOld}',
+              child: Row(
+                spacing: 4,
+                children: [
+                  ExcludeSemantics(
+                    child: Icon(
+                      Icons.calendar_today_outlined,
+                      color: Colors.white,
+                      size: 14,
+                    ),
+                  ),
+                  Text(
+                    daysOld.toString(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ],
     );
