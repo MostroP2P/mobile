@@ -408,11 +408,51 @@
   "someoneIsSellingTitle": "Qualcuno sta Vendendo Sats",
   "someoneIsBuyingTitle": "Qualcuno sta Comprando Sats",
   "someoneIsSellingFixedTitle": "Qualcuno sta Vendendo {sats} Sats",
+  "@someoneIsSellingFixedTitle": {
+    "placeholders": {
+      "sats": {
+        "type": "String",
+        "description": "Fixed amount of satoshis being sold"
+      }
+    }
+  },
   "someoneIsBuyingFixedTitle": "Qualcuno sta Comprando {sats} Sats",
+  "@someoneIsBuyingFixedTitle": {
+    "placeholders": {
+      "sats": {
+        "type": "String",
+        "description": "Fixed amount of satoshis being bought"
+      }
+    }
+  },
   "youCreatedOfferMessage": "Hai creato questa offerta. Di seguito sono riportati i dettagli della tua offerta. Aspetta che un altro utente la prenda. Sarà pubblicata per 24 ore. Puoi cancellarla in qualsiasi momento utilizzando il pulsante 'Annulla'.",
-  "youAreSellingTitle": "Stai vendendo{sats} sats",
-  "youAreBuyingTitle": "Stai comprando{sats} sats",
+  "youAreSellingTitle": "Stai vendendo {sats} sats",
+  "@youAreSellingTitle": {
+    "placeholders": {
+      "sats": {
+        "type": "String",
+        "description": "Amount of satoshis being sold"
+      }
+    }
+  },
+  "youAreBuyingTitle": "Stai comprando {sats} sats",
+  "@youAreBuyingTitle": {
+    "placeholders": {
+      "sats": {
+        "type": "String",
+        "description": "Amount of satoshis being bought"
+      }
+    }
+  },
   "forAmount": "per {amount}",
+  "@forAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String",
+        "description": "Fiat amount for the transaction"
+      }
+    }
+  },
   "timeLeftLabel": "Tempo rimasto: {time}",
   "@timeLeftLabel": {
     "placeholders": {
