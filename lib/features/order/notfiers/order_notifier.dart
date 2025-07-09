@@ -6,11 +6,13 @@ import 'package:mostro_mobile/services/mostro_service.dart';
 
 class OrderNotifier extends AbstractMostroNotifier {
   late final MostroService mostroService;
+
   OrderNotifier(super.orderId, super.ref) {
     mostroService = ref.read(mostroServiceProvider);
     sync();
     subscribe();
   }
+
   Future<void> sync() async {
     try {
       final storage = ref.read(mostroStorageProvider);

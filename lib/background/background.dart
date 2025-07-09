@@ -14,10 +14,6 @@ bool isAppForeground = true;
 
 @pragma('vm:entry-point')
 Future<void> serviceMain(ServiceInstance service) async {
-  // If on Android, set up a permanent notification so the OS won't kill it.
-  if (service is AndroidServiceInstance) {
-    //service.setAsForegroundService();
-  }
 
   final Map<String, Map<String, dynamic>> activeSubscriptions = {};
   final nostrService = NostrService();

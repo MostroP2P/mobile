@@ -31,7 +31,6 @@ Future<void> main() async {
 
   await initializeNotifications();
 
-  // Initialize timeago localization
   _initializeTimeAgoLocalization();
 
   final backgroundService = createBackgroundService(settings.settings);

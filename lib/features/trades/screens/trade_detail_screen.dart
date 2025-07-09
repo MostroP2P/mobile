@@ -457,7 +457,7 @@ class TradeDetailScreen extends ConsumerWidget {
       backgroundColor: backgroundColor,
       onPressed: onPressed ?? () {}, // Provide empty function when null
       showSuccessIndicator: true,
-      timeout: const Duration(seconds: 30),
+      timeout: const Duration(seconds: 10),
     );
   }
 

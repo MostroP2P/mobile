@@ -62,7 +62,10 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
       if (!await eventStore.hasItem(event.id!)) {
         await eventStore.putItem(
           event.id!,
-          event,
+          {
+            'id': event.id,
+            'created_at': event.createdAt!.millisecondsSinceEpoch ~/ 1000,
+          },
         );
       }
 

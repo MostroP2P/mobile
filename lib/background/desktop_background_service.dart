@@ -4,10 +4,8 @@ import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/models/nostr_filter.dart';
-import 'package:mostro_mobile/data/repositories.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
-import 'package:mostro_mobile/shared/providers/mostro_database_provider.dart';
 import 'abstract_background_service.dart';
 
 class DesktopBackgroundService implements BackgroundService {
@@ -30,8 +28,6 @@ class DesktopBackgroundService implements BackgroundService {
     BackgroundIsolateBinaryMessenger.ensureInitialized(token);
 
     final nostrService = NostrService();
-    final db = await openMostroDatabase('events.db');
-    final backgroundStorage = EventStorage(db: db);
     final logger = Logger();
     bool isAppForeground = true;
 
@@ -67,10 +63,6 @@ class DesktopBackgroundService implements BackgroundService {
 
           final subscription = nostrService.subscribeToEvents(request);
           subscription.listen((event) async {
-            await backgroundStorage.putItem(
-              event.id!,
-              event,
-            );
             mainSendPort.send({
               'event': event.toMap(),
             });

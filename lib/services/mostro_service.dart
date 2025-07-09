@@ -44,7 +44,10 @@ class MostroService {
     if (await eventStore.hasItem(event.id!)) return;
     await eventStore.putItem(
       event.id!,
-      event,
+      {
+        'id': event.id,
+        'created_at': event.createdAt!.millisecondsSinceEpoch ~/ 1000,
+      },
     );
 
     final sessions = ref.read(sessionNotifierProvider);
