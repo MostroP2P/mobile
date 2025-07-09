@@ -313,11 +313,7 @@ class TakeOrderScreen extends ConsumerWidget {
     final timeFormatter = DateFormat('HH:mm');
     final formattedDate = dateFormatter.format(dt);
     final formattedTime = timeFormatter.format(dt);
-
-    final offset = dt.timeZoneOffset;
-    final sign = offset.isNegative ? '-' : '+';
-    final hours = offset.inHours.abs().toString().padLeft(2, '0');
-
-    return '$formattedDate at $formattedTime (GMT$sign$hours)';
+    
+    return '$formattedDate at $formattedTime';
   }
 }
