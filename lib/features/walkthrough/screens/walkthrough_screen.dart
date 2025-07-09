@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/features/walkthrough/providers/first_run_provider.dart';
+import 'package:mostro_mobile/features/walkthrough/utils/highlight_config.dart';
 
 class WalkthroughScreen extends ConsumerStatefulWidget {
   const WalkthroughScreen({super.key});
@@ -13,188 +14,59 @@ class WalkthroughScreen extends ConsumerStatefulWidget {
 }
 
 class _WalkthroughScreenState extends ConsumerState<WalkthroughScreen> {
-  Widget _buildHighlightedText(String text,
-      {bool isPrivacyStep = false,
-      bool isSecurityStep = false,
-      bool isChatStep = false,
-      bool isOrderBookStep = false}) {
+  Widget _buildHighlightedText(String text, {
+    bool isPrivacyStep = false,
+    bool isSecurityStep = false,
+    bool isChatStep = false,
+    bool isOrderBookStep = false,
+  }) {
+    const defaultStyle = TextStyle(fontSize: 16, color: Color(0xFF9aa1b6));
+    const highlightStyle = TextStyle(
+      fontSize: 16,
+      color: Color(0xFF8cc63f),
+      fontWeight: FontWeight.w600,
+    );
+
     final List<TextSpan> spans = [];
+    
+    // Determine which highlight config to use based on the step type
+    final HighlightConfig config = isPrivacyStep
+        ? HighlightConfig.privacy
+        : isSecurityStep
+            ? HighlightConfig.security
+            : isChatStep
+                ? HighlightConfig.chat
+                : isOrderBookStep
+                    ? HighlightConfig.orderBook
+                    : HighlightConfig.firstStep;
 
-    if (isOrderBookStep) {
-      // For order book step, highlight "order book" and its translations
-      final RegExp orderBookRegex = RegExp(
-          r'\b(order book|libro de órdenes|libro ordini)\b',
-          caseSensitive: true);
-
-      int start = 0;
-      for (final match in orderBookRegex.allMatches(text)) {
-        // Add text before highlighted term
-        if (match.start > start) {
-          spans.add(TextSpan(
-            text: text.substring(start, match.start),
-            style: const TextStyle(fontSize: 16, color: Color(0xFF9aa1b6)),
-          ));
-        }
-
-        // Add highlighted term with green color and bold
+    final RegExp highlightRegex = RegExp(config.pattern, caseSensitive: true);
+    
+    int start = 0;
+    for (final match in highlightRegex.allMatches(text)) {
+      // Add text before highlighted term
+      if (match.start > start) {
         spans.add(TextSpan(
-          text: match.group(0),
-          style: const TextStyle(
-              fontSize: 16,
-              color: Color(0xFF8cc63f),
-              fontWeight: FontWeight.w600),
-        ));
-
-        start = match.end;
-      }
-
-      // Add remaining text
-      if (start < text.length) {
-        spans.add(TextSpan(
-          text: text.substring(start),
-          style: const TextStyle(fontSize: 16, color: Color(0xFF9aa1b6)),
+          text: text.substring(start, match.start),
+          style: defaultStyle,
         ));
       }
-    } else if (isChatStep) {
-      // For chat step, highlight "end-to-end encrypted" and its translations
-      final RegExp encryptedRegex = RegExp(
-          r'\b(end-to-end encrypted|encriptado de extremo a extremo|crittografata end-to-end)\b',
-          caseSensitive: true);
-
-      int start = 0;
-      for (final match in encryptedRegex.allMatches(text)) {
-        // Add text before highlighted term
-        if (match.start > start) {
-          spans.add(TextSpan(
-            text: text.substring(start, match.start),
-            style: const TextStyle(fontSize: 16, color: Color(0xFF9aa1b6)),
-          ));
-        }
-
-        // Add highlighted term with green color and bold
-        spans.add(TextSpan(
-          text: match.group(0),
-          style: const TextStyle(
-              fontSize: 16,
-              color: Color(0xFF8cc63f),
-              fontWeight: FontWeight.w600),
-        ));
-
-        start = match.end;
-      }
-
-      // Add remaining text
-      if (start < text.length) {
-        spans.add(TextSpan(
-          text: text.substring(start),
-          style: const TextStyle(fontSize: 16, color: Color(0xFF9aa1b6)),
-        ));
-      }
-    } else if (isSecurityStep) {
-      // For security step, highlight "Hold Invoices" and its translations
-      final RegExp holdInvoicesRegex = RegExp(
-          r'\b(Hold Invoices|Facturas Retenidas|Fatture di Blocco)\b',
-          caseSensitive: true);
-
-      int start = 0;
-      for (final match in holdInvoicesRegex.allMatches(text)) {
-        // Add text before highlighted term
-        if (match.start > start) {
-          spans.add(TextSpan(
-            text: text.substring(start, match.start),
-            style: const TextStyle(fontSize: 16, color: Color(0xFF9aa1b6)),
-          ));
-        }
-
-        // Add highlighted term with green color and bold
-        spans.add(TextSpan(
-          text: match.group(0),
-          style: const TextStyle(
-              fontSize: 16,
-              color: Color(0xFF8cc63f),
-              fontWeight: FontWeight.w600),
-        ));
-
-        start = match.end;
-      }
-
-      // Add remaining text
-      if (start < text.length) {
-        spans.add(TextSpan(
-          text: text.substring(start),
-          style: const TextStyle(fontSize: 16, color: Color(0xFF9aa1b6)),
-        ));
-      }
-    } else if (isPrivacyStep) {
-      // For privacy step, highlight "Reputation mode" and "Full privacy mode"
-      final RegExp privacyTermsRegex = RegExp(
-          r'\b(Reputation mode|Full privacy mode|Modo reputación|Modo privacidad completa|Modalità reputazione|Modalità privacy completa)\b',
-          caseSensitive: true);
-
-      int start = 0;
-      for (final match in privacyTermsRegex.allMatches(text)) {
-        // Add text before highlighted term
-        if (match.start > start) {
-          spans.add(TextSpan(
-            text: text.substring(start, match.start),
-            style: const TextStyle(fontSize: 16, color: Color(0xFF9aa1b6)),
-          ));
-        }
-
-        // Add highlighted term with green color
-        spans.add(TextSpan(
-          text: match.group(0),
-          style: const TextStyle(
-              fontSize: 16,
-              color: Color(0xFF8cc63f),
-              fontWeight: FontWeight.w600),
-        ));
-
-        start = match.end;
-      }
-
-      // Add remaining text
-      if (start < text.length) {
-        spans.add(TextSpan(
-          text: text.substring(start),
-          style: const TextStyle(fontSize: 16, color: Color(0xFF9aa1b6)),
-        ));
-      }
-    } else {
-      // For first step, highlight "Nostr", "no KYC", and "censorship-resistant"
-      final RegExp highlightRegex = RegExp(
-          r'\b(Nostr|no KYC|sin KYC|censorship-resistant|resistente a la censura|resistente alla censura)\b',
-          caseSensitive: true);
-
-      int start = 0;
-      for (final match in highlightRegex.allMatches(text)) {
-        // Add text before highlighted term
-        if (match.start > start) {
-          spans.add(TextSpan(
-            text: text.substring(start, match.start),
-            style: const TextStyle(fontSize: 16, color: Color(0xFF9aa1b6)),
-          ));
-        }
-
-        // Add highlighted term with green color and bold
-        spans.add(TextSpan(
-          text: match.group(0),
-          style: const TextStyle(
-              fontSize: 16,
-              color: Color(0xFF8cc63f),
-              fontWeight: FontWeight.w600),
-        ));
-
-        start = match.end;
-      }
-
-      // Add remaining text
-      if (start < text.length) {
-        spans.add(TextSpan(
-          text: text.substring(start),
-          style: const TextStyle(fontSize: 16, color: Color(0xFF9aa1b6)),
-        ));
-      }
+      
+      // Add highlighted term with green color and bold
+      spans.add(TextSpan(
+        text: match.group(0),
+        style: highlightStyle,
+      ));
+      
+      start = match.end;
+    }
+    
+    // Add remaining text
+    if (start < text.length) {
+      spans.add(TextSpan(
+        text: text.substring(start),
+        style: defaultStyle,
+      ));
     }
 
     return Builder(
@@ -214,105 +86,70 @@ class _WalkthroughScreenState extends ConsumerState<WalkthroughScreen> {
   }
 
   List<PageViewModel> _getPages(BuildContext context) {
-    return [
-      PageViewModel(
-        title: S.of(context)!.welcomeToMostroMobile,
-        bodyWidget:
-            _buildHighlightedText(S.of(context)!.discoverSecurePlatform),
-        image: Center(
-          child: Padding(
-            padding: const EdgeInsets.only(top: 30.0),
-            child: SizedBox(
-              height: 200,
-              child: Image.asset(
-                "assets/images/wt-1.png",
-                fit: BoxFit.contain,
-              ),
+    const pageDecoration = PageDecoration(
+      titleTextStyle: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+      bodyTextStyle: TextStyle(fontSize: 16, color: Color(0xFF9aa1b6)),
+      bodyPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      imagePadding: EdgeInsets.zero,
+    );
+
+    Widget buildPageImage(String assetPath) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.only(top: 30.0),
+          child: SizedBox(
+            height: 200,
+            child: Image.asset(
+              assetPath,
+              fit: BoxFit.contain,
             ),
           ),
         ),
-        decoration: const PageDecoration(
-          titleTextStyle: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          bodyTextStyle: TextStyle(fontSize: 16, color: Color(0xFF9aa1b6)),
-          bodyPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          imagePadding: EdgeInsets.zero,
-        ),
+      );
+    }
+
+    return [
+      PageViewModel(
+        title: S.of(context)!.welcomeToMostroMobile,
+        bodyWidget: _buildHighlightedText(S.of(context)!.discoverSecurePlatform),
+        image: buildPageImage("assets/images/wt-1.png"),
+        decoration: pageDecoration,
       ),
       PageViewModel(
         title: S.of(context)!.easyOnboarding,
         bodyWidget: _buildHighlightedText(
             S.of(context)!.guidedWalkthroughSimple,
             isPrivacyStep: true),
-        image: Center(
-          child: Padding(
-            padding: const EdgeInsets.only(top: 60.0),
-            child: Image.asset("assets/images/wt-2.png", height: 256.5),
-          ),
-        ),
-        decoration: const PageDecoration(
-          titleTextStyle: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          bodyTextStyle: TextStyle(fontSize: 16, color: Color(0xFF9aa1b6)),
-        ),
+        image: buildPageImage("assets/images/wt-2.png"),
+        decoration: pageDecoration,
       ),
       PageViewModel(
         title: S.of(context)!.tradeWithConfidence,
         bodyWidget: _buildHighlightedText(S.of(context)!.seamlessPeerToPeer,
             isSecurityStep: true),
-        image: Center(
-          child: Padding(
-            padding: const EdgeInsets.only(top: 60.0),
-            child: Image.asset("assets/images/wt-3.png", height: 256.5),
-          ),
-        ),
-        decoration: const PageDecoration(
-          titleTextStyle: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          bodyTextStyle: TextStyle(fontSize: 16, color: Color(0xFF9aa1b6)),
-        ),
+        image: buildPageImage("assets/images/wt-3.png"),
+        decoration: pageDecoration,
       ),
       PageViewModel(
         title: S.of(context)!.encryptedChat,
         bodyWidget: _buildHighlightedText(
             S.of(context)!.encryptedChatDescription,
             isChatStep: true),
-        image: Center(
-          child: Padding(
-            padding: const EdgeInsets.only(top: 60.0),
-            child: Image.asset("assets/images/wt-4.png", height: 256.5),
-          ),
-        ),
-        decoration: const PageDecoration(
-          titleTextStyle: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          bodyTextStyle: TextStyle(fontSize: 16, color: Color(0xFF9aa1b6)),
-        ),
+        image: buildPageImage("assets/images/wt-4.png"),
+        decoration: pageDecoration,
       ),
       PageViewModel(
         title: S.of(context)!.takeAnOffer,
         bodyWidget: _buildHighlightedText(S.of(context)!.takeAnOfferDescription,
             isOrderBookStep: true),
-        image: Center(
-          child: Padding(
-            padding: const EdgeInsets.only(top: 60.0),
-            child: Image.asset("assets/images/wt-5.png", height: 256.5),
-          ),
-        ),
-        decoration: const PageDecoration(
-          titleTextStyle: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          bodyTextStyle: TextStyle(fontSize: 16, color: Color(0xFF9aa1b6)),
-        ),
+        image: buildPageImage("assets/images/wt-5.png"),
+        decoration: pageDecoration,
       ),
       PageViewModel(
         title: S.of(context)!.cantFindWhatYouNeed,
         bodyWidget: _buildHighlightedText(S.of(context)!.createYourOwnOffer),
-        image: Center(
-          child: Padding(
-            padding: const EdgeInsets.only(top: 60.0),
-            child: Image.asset("assets/images/wt-6.png", height: 256.5),
-          ),
-        ),
-        decoration: const PageDecoration(
-          titleTextStyle: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          bodyTextStyle: TextStyle(fontSize: 16, color: Color(0xFF9aa1b6)),
-        ),
+        image: buildPageImage("assets/images/wt-6.png"),
+        decoration: pageDecoration,
       ),
     ];
   }
