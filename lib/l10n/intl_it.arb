@@ -125,6 +125,8 @@
   "encryptedChatDescription": "Ogni scambio ha la propria chat privata, crittografata end-to-end. Solo i due utenti coinvolti possono leggerla.\n\nIn caso di disputa, puoi dare la chiave condivisa a un amministratore per aiutare a risolvere il problema.",
   "takeAnOffer": "Prendi un'offerta",
   "takeAnOfferDescription": "Naviga il libro ordini, scegli un'offerta che funziona per te, e segui il flusso di scambio passo dopo passo.\n\nPotrai controllare il profilo dell'altro utente, chattare in sicurezza, e completare lo scambio con facilità.",
+  "cantFindWhatYouNeed": "Non trovi quello che ti serve?",
+  "createYourOwnOffer": "Puoi anche creare la tua offerta e aspettare che qualcuno la prenda.\n\nImposta l'importo e il metodo di pagamento preferito — Mostro si occupa del resto.",
   "skip": "Salta",
   "done": "Fatto",
   "typeToAdd": "Digita per aggiungere...",

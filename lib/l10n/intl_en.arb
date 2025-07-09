@@ -125,6 +125,8 @@
   "encryptedChatDescription": "Each trade has its own private chat, end-to-end encrypted. Only the two users involved can read it.\n\nIn case of a dispute, you can give the shared key to an admin to help resolve the issue.",
   "takeAnOffer": "Take an offer",
   "takeAnOfferDescription": "Browse the order book, choose an offer that works for you, and follow the trade flow step by step.\n\nYou'll be able to check the other user's profile, chat securely, and complete the trade with ease.",
+  "cantFindWhatYouNeed": "Can't find what you need?",
+  "createYourOwnOffer": "You can also create your own offer and wait for someone to take it.\n\nSet the amount and preferred payment method — Mostro handles the rest.",
   "skip": "Skip",
   "done": "Done",
   "typeToAdd": "Type to add...",
