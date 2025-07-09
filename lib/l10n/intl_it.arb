@@ -411,7 +411,6 @@
   "@someoneIsSellingFixedTitle": {
     "placeholders": {
       "sats": {
-        "type": "String",
         "description": "Fixed amount of satoshis being sold"
       }
     }
@@ -420,7 +419,6 @@
   "@someoneIsBuyingFixedTitle": {
     "placeholders": {
       "sats": {
-        "type": "String",
         "description": "Fixed amount of satoshis being bought"
       }
     }
@@ -430,7 +428,6 @@
   "@youAreSellingTitle": {
     "placeholders": {
       "sats": {
-        "type": "String",
         "description": "Amount of satoshis being sold"
       }
     }
@@ -439,7 +436,6 @@
   "@youAreBuyingTitle": {
     "placeholders": {
       "sats": {
-        "type": "String",
         "description": "Amount of satoshis being bought"
       }
     }
@@ -448,7 +444,6 @@
   "@forAmount": {
     "placeholders": {
       "amount": {
-        "type": "String",
         "description": "Fiat amount for the transaction"
       }
     }
