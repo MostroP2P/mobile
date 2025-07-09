@@ -438,7 +438,7 @@
   "cancelTradeDialogTitle": "Cancelar Intercambio",
   "cooperativeCancelDialogMessage": "Si confirmas, iniciarás una cancelación cooperativa con tu contraparte.",
   "acceptCancelDialogMessage": "Si confirmas, aceptarás la cancelación cooperativa iniciada por tu contraparte.",
-  "orderIdCopiedMessage": "ID de orden copiado al portapapeles"
+  "orderIdCopiedMessage": "ID de orden copiado al portapapeles",
 
   "language": "Idioma",
   "systemDefault": "Predeterminado del sistema",

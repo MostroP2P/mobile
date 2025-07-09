@@ -438,7 +438,7 @@
   "cancelTradeDialogTitle": "Annulla Scambio",
   "cooperativeCancelDialogMessage": "Se confermi, inizierai un annullamento cooperativo con la tua controparte.",
   "acceptCancelDialogMessage": "Se confermi, accetterai l'annullamento cooperativo iniziato dalla tua controparte.",
-  "orderIdCopiedMessage": "ID ordine copiato negli appunti"
+  "orderIdCopiedMessage": "ID ordine copiato negli appunti",
 
   "language": "Lingua",
   "systemDefault": "Predefinito di sistema",
