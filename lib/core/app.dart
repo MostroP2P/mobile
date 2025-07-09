@@ -12,6 +12,7 @@ import 'package:mostro_mobile/services/lifecycle_manager.dart';
 import 'package:mostro_mobile/shared/providers/app_init_provider.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/notifiers/locale_notifier.dart';
+import 'package:mostro_mobile/features/walkthrough/providers/first_run_provider.dart';
 
 class MostroApp extends ConsumerStatefulWidget {
   const MostroApp({super.key});
@@ -36,6 +37,9 @@ class _MostroAppState extends ConsumerState<MostroApp> {
 
     return initAsyncValue.when(
       data: (_) {
+        // Initialize first run provider
+        ref.watch(firstRunProvider);
+        
         ref.listen<AuthState>(authNotifierProvider, (previous, state) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!context.mounted) return;
@@ -57,7 +61,7 @@ class _MostroAppState extends ConsumerState<MostroApp> {
           title: 'Mostro',
           theme: AppTheme.theme,
           darkTheme: AppTheme.theme,
-          routerConfig: goRouter,
+          routerConfig: createRouter(ref),
           // Use language override from settings if available, otherwise let callback handle detection
           locale: settings.selectedLanguage != null 
               ? Locale(settings.selectedLanguage!) 
