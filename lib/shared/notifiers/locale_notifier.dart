@@ -25,6 +25,7 @@ class LocaleNotifier extends StateNotifier<Locale> {
 }
 
 /// Provider for system locale changes
-final systemLocaleProvider = StateNotifierProvider<LocaleNotifier, Locale>((ref) {
+final systemLocaleProvider =
+    StateNotifierProvider<LocaleNotifier, Locale>((ref) {
   return LocaleNotifier();
 });

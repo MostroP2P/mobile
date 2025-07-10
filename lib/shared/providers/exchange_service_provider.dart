@@ -28,4 +28,3 @@ final currencyCodesProvider =
 });
 
 final selectedFiatCodeProvider = StateProvider<String>((ref) => 'USD');
-

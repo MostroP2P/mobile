@@ -5,7 +5,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:logger/logger.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-  FlutterLocalNotificationsPlugin();
+    FlutterLocalNotificationsPlugin();
 
 Future<void> initializeNotifications() async {
   const android = AndroidInitializationSettings(
@@ -18,11 +18,7 @@ Future<void> initializeNotifications() async {
   );
 
   const initSettings = InitializationSettings(
-    android: android,
-    iOS: ios,
-    linux: linux,
-    macOS: ios
-  );
+      android: android, iOS: ios, linux: linux, macOS: ios);
   await flutterLocalNotificationsPlugin.initialize(initSettings);
 }
 

@@ -66,5 +66,4 @@ class SessionStorage extends BaseStorage<Session> {
 
   /// Watch all sessions with immediate value emission
   Stream<List<Session>> watchAllSessions() => watch();
-
 }

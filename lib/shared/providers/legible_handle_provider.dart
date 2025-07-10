@@ -126,8 +126,8 @@ String deterministicHandleFromHexKey(String hexKey) {
   final nounsCount = kNouns.length;
 
   final indexAdjective = pubKeyBigInt % BigInt.from(adjectivesCount);
-  final indexNoun = (pubKeyBigInt ~/ BigInt.from(adjectivesCount)) %
-      BigInt.from(nounsCount);
+  final indexNoun =
+      (pubKeyBigInt ~/ BigInt.from(adjectivesCount)) % BigInt.from(nounsCount);
 
   final adjective = kAdjectives[indexAdjective.toInt()];
   final noun = kNouns[indexNoun.toInt()];

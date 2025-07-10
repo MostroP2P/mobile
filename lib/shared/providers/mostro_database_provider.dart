@@ -18,7 +18,6 @@ final mostroDatabaseProvider = Provider<Database>((ref) {
   throw UnimplementedError();
 });
 
-
 final eventDatabaseProvider = Provider<Database>((ref) {
   throw UnimplementedError();
 });

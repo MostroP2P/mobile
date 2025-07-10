@@ -67,10 +67,11 @@ class CurrencySection extends ConsumerWidget {
     );
   }
 
-  void _showCurrencySelectionDialog(BuildContext context, WidgetRef ref, VoidCallback onCurrencySelected) {
+  void _showCurrencySelectionDialog(
+      BuildContext context, WidgetRef ref, VoidCallback onCurrencySelected) {
     // State for search query
     String searchQuery = '';
-    
+
     showDialog(
       context: context,
       builder: (context) {
@@ -78,7 +79,8 @@ class CurrencySection extends ConsumerWidget {
           builder: (context, setState) {
             return Dialog(
               backgroundColor: const Color(0xFF1E2230),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -100,7 +102,10 @@ class CurrencySection extends ConsumerWidget {
                       decoration: BoxDecoration(
                         color: const Color(0xFF252a3a),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFF8CC63F).withValues(alpha: 0.3), width: 1),
+                        border: Border.all(
+                            color:
+                                const Color(0xFF8CC63F).withValues(alpha: 0.3),
+                            width: 1),
                       ),
                       child: TextField(
                         textAlign: TextAlign.left,
@@ -108,10 +113,12 @@ class CurrencySection extends ConsumerWidget {
                         decoration: InputDecoration(
                           hintText: S.of(context)!.searchCurrencies,
                           hintStyle: const TextStyle(color: Colors.grey),
-                          prefixIcon: const Icon(Icons.search, color: Colors.grey, size: 20),
+                          prefixIcon: const Icon(Icons.search,
+                              color: Colors.grey, size: 20),
                           filled: false,
                           border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 14.0),
+                          contentPadding:
+                              const EdgeInsets.symmetric(vertical: 14.0),
                         ),
                         onChanged: (value) {
                           setState(() {
@@ -124,9 +131,11 @@ class CurrencySection extends ConsumerWidget {
                   Flexible(
                     child: Consumer(
                       builder: (context, ref, child) {
-                        final currenciesAsync = ref.watch(currencyCodesProvider);
+                        final currenciesAsync =
+                            ref.watch(currencyCodesProvider);
                         return currenciesAsync.when(
-                          loading: () => const Center(child: CircularProgressIndicator()),
+                          loading: () =>
+                              const Center(child: CircularProgressIndicator()),
                           error: (_, __) => Center(
                             child: Text(
                               'Error loading currencies',
@@ -134,16 +143,16 @@ class CurrencySection extends ConsumerWidget {
                             ),
                           ),
                           data: (currencies) {
-                            final selectedCode = ref.watch(selectedFiatCodeProvider);
-                            final filteredCurrencies = currencies.entries
-                                .where((entry) {
-                                  final code = entry.key.toLowerCase();
-                                  final name = entry.value.name.toLowerCase();
-                                  return searchQuery.isEmpty ||
-                                      code.contains(searchQuery) ||
-                                      name.contains(searchQuery);
-                                })
-                                .toList()
+                            final selectedCode =
+                                ref.watch(selectedFiatCodeProvider);
+                            final filteredCurrencies =
+                                currencies.entries.where((entry) {
+                              final code = entry.key.toLowerCase();
+                              final name = entry.value.name.toLowerCase();
+                              return searchQuery.isEmpty ||
+                                  code.contains(searchQuery) ||
+                                  name.contains(searchQuery);
+                            }).toList()
                                   ..sort((a, b) => a.key.compareTo(b.key));
 
                             return filteredCurrencies.isEmpty
@@ -152,7 +161,8 @@ class CurrencySection extends ConsumerWidget {
                                       padding: const EdgeInsets.all(16.0),
                                       child: Text(
                                         S.of(context)!.noCurrenciesFound,
-                                        style: const TextStyle(color: Colors.white70),
+                                        style: const TextStyle(
+                                            color: Colors.white70),
                                       ),
                                     ),
                                   )
@@ -165,7 +175,7 @@ class CurrencySection extends ConsumerWidget {
                                       final isSelected = code == selectedCode;
 
                                       return ListTile(
-  key: Key('currency_$code'),
+                                        key: Key('currency_$code'),
                                         leading: Text(
                                           currency.emoji.isNotEmpty
                                               ? currency.emoji
@@ -174,7 +184,8 @@ class CurrencySection extends ConsumerWidget {
                                         ),
                                         title: Text(
                                           '$code - ${currency.name}',
-                                          style: const TextStyle(color: Colors.white),
+                                          style: const TextStyle(
+                                              color: Colors.white),
                                         ),
                                         trailing: isSelected
                                             ? const Icon(Icons.check,
@@ -182,7 +193,8 @@ class CurrencySection extends ConsumerWidget {
                                             : null,
                                         onTap: () {
                                           ref
-                                              .read(selectedFiatCodeProvider.notifier)
+                                              .read(selectedFiatCodeProvider
+                                                  .notifier)
                                               .state = code;
                                           onCurrencySelected();
                                           Navigator.of(context).pop();
