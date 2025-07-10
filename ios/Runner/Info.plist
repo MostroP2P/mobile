@@ -43,6 +43,8 @@
 		</array>
 		<key>CADisableMinimumFrameDurationOnPhone</key>
 		<true />
+		<key>FlutterDeepLinkingEnabled</key>
+		<false />
 		<key>UIApplicationSupportsIndirectInputEvents</key>
 		<true />
 		<key>NSCameraUsageDescription</key>
