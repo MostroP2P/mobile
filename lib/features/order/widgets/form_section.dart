@@ -40,7 +40,7 @@ class FormSection extends StatelessWidget {
                     fontSize: 14,
                   ),
                 ),
-                if (infoTooltip != null) ...[  
+                if (infoTooltip != null) ...[
                   const SizedBox(width: 4),
                   GestureDetector(
                     onTap: () {
@@ -57,10 +57,14 @@ class FormSection extends StatelessWidget {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 12.0),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8.0, vertical: 12.0),
                                   child: Text(
                                     infoTooltip!,
-                                    style: const TextStyle(color: Colors.white, fontSize: 16, height: 1.4),
+                                    style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        height: 1.4),
                                     textAlign: TextAlign.center,
                                   ),
                                 ),
@@ -74,10 +78,14 @@ class FormSection extends StatelessWidget {
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(8),
                                       ),
-                                      padding: const EdgeInsets.symmetric(vertical: 12),
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 12),
                                     ),
-                                    onPressed: () => Navigator.of(context).pop(),
-                                    child: const Text('OK', style: TextStyle(fontWeight: FontWeight.bold)),
+                                    onPressed: () =>
+                                        Navigator.of(context).pop(),
+                                    child: const Text('OK',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold)),
                                   ),
                                 ),
                               ],

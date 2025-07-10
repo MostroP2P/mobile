@@ -89,7 +89,7 @@ class AboutScreen extends ConsumerWidget {
                                 style: textTheme.titleLarge),
                           ],
                         ),
-                        Text(S.of(context)!.generalInfo, 
+                        Text(S.of(context)!.generalInfo,
                             style: textTheme.titleMedium?.copyWith(
                               color: AppTheme.mostroGreen,
                             )),

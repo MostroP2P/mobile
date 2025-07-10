@@ -61,9 +61,9 @@ Future<void> main() async {
 void _initializeTimeAgoLocalization() {
   // Set Spanish locale for timeago
   timeago.setLocaleMessages('es', timeago.EsMessages());
-  
+
   // Set Italian locale for timeago
   timeago.setLocaleMessages('it', timeago.ItMessages());
-  
+
   // English is already the default, no need to set it
 }

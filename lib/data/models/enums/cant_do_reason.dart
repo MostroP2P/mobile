@@ -23,7 +23,7 @@ enum CantDoReason {
   invalidDisputeStatus('invalid_dispute_status'),
   invalidAction('invalid_action'),
   pendingOrderExists('pending_order_exists');
-  
+
   final String value;
 
   const CantDoReason(this.value);
@@ -39,6 +39,7 @@ enum CantDoReason {
     }
     return cantDo;
   }
+
   @override
   String toString() {
     return value;

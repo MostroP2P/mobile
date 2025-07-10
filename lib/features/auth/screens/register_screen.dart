@@ -48,7 +48,8 @@ class RegisterScreen extends HookConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(S.of(context)!.register, style: const TextStyle(color: AppTheme.cream1)),
+        title: Text(S.of(context)!.register,
+            style: const TextStyle(color: AppTheme.cream1)),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),

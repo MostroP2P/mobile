@@ -1,4 +1,3 @@
-
 /// Mock server's trade index storage
 class MockServerTradeIndex {
   final Map<String, int> userTradeIndices = {};

@@ -4,7 +4,8 @@ import 'package:mostro_mobile/data/models/enums/storage_keys.dart';
 import 'package:mostro_mobile/shared/providers/storage_providers.dart';
 
 class FirstRunNotifier extends StateNotifier<AsyncValue<bool>> {
-  FirstRunNotifier(this._sharedPreferences) : super(const AsyncValue.loading()) {
+  FirstRunNotifier(this._sharedPreferences)
+      : super(const AsyncValue.loading()) {
     _init();
   }
 
@@ -50,7 +51,8 @@ class FirstRunNotifier extends StateNotifier<AsyncValue<bool>> {
   }
 }
 
-final firstRunProvider = StateNotifierProvider<FirstRunNotifier, AsyncValue<bool>>((ref) {
+final firstRunProvider =
+    StateNotifierProvider<FirstRunNotifier, AsyncValue<bool>>((ref) {
   final sharedPreferences = ref.read(sharedPreferencesProvider);
   return FirstRunNotifier(sharedPreferences);
 });

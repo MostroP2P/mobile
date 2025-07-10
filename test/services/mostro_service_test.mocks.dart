@@ -10,12 +10,14 @@ import 'package:dart_nostr/nostr/model/relay_informations.dart' as _i8;
 import 'package:flutter_riverpod/flutter_riverpod.dart' as _i5;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:mockito/src/dummies.dart' as _i9;
-import 'package:mostro_mobile/data/models/enums/role.dart' as _i11;
+import 'package:mostro_mobile/data/models/enums/role.dart' as _i13;
+import 'package:mostro_mobile/data/models/order.dart' as _i10;
 import 'package:mostro_mobile/data/models/session.dart' as _i4;
 import 'package:mostro_mobile/features/settings/settings.dart' as _i2;
+import 'package:mostro_mobile/services/deep_link_service.dart' as _i11;
 import 'package:mostro_mobile/services/nostr_service.dart' as _i6;
-import 'package:mostro_mobile/shared/notifiers/session_notifier.dart' as _i10;
-import 'package:state_notifier/state_notifier.dart' as _i12;
+import 'package:mostro_mobile/shared/notifiers/session_notifier.dart' as _i12;
+import 'package:state_notifier/state_notifier.dart' as _i14;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -403,12 +405,44 @@ class MockNostrService extends _i1.Mock implements _i6.NostrService {
         ),
         returnValueForMissingStub: null,
       );
+
+  @override
+  _i7.Future<_i10.Order?> fetchEventById(
+    String? eventId, [
+    List<String>? specificRelays,
+  ]) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #fetchEventById,
+          [
+            eventId,
+            specificRelays,
+          ],
+        ),
+        returnValue: _i7.Future<_i10.Order?>.value(),
+      ) as _i7.Future<_i10.Order?>);
+
+  @override
+  _i7.Future<_i11.OrderInfo?> fetchOrderInfoByEventId(
+    String? eventId, [
+    List<String>? specificRelays,
+  ]) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #fetchOrderInfoByEventId,
+          [
+            eventId,
+            specificRelays,
+          ],
+        ),
+        returnValue: _i7.Future<_i11.OrderInfo?>.value(),
+      ) as _i7.Future<_i11.OrderInfo?>);
 }
 
 /// A class which mocks [SessionNotifier].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockSessionNotifier extends _i1.Mock implements _i10.SessionNotifier {
+class MockSessionNotifier extends _i1.Mock implements _i12.SessionNotifier {
   MockSessionNotifier() {
     _i1.throwOnMissingStub(this);
   }
@@ -490,7 +524,7 @@ class MockSessionNotifier extends _i1.Mock implements _i10.SessionNotifier {
   _i7.Future<_i4.Session> newSession({
     String? orderId,
     int? requestId,
-    _i11.Role? role,
+    _i13.Role? role,
   }) =>
       (super.noSuchMethod(
         Invocation.method(
@@ -620,7 +654,7 @@ class MockSessionNotifier extends _i1.Mock implements _i10.SessionNotifier {
 
   @override
   _i5.RemoveListener addListener(
-    _i12.Listener<List<_i4.Session>>? listener, {
+    _i14.Listener<List<_i4.Session>>? listener, {
     bool? fireImmediately = true,
   }) =>
       (super.noSuchMethod(

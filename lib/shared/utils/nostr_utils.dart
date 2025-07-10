@@ -101,11 +101,99 @@ class NostrUtils {
   // Utilidades generales
   static String decodeBech32(String bech32String) {
     final result = _instance.services.bech32.decodeBech32(bech32String);
-    return result[1]; // Devuelve solo la parte de datos
+    return result[0]; // Devuelve la parte de datos (índice 0)
   }
 
   static String encodeBech32(String hrp, String data) {
     return _instance.services.bech32.encodeBech32(hrp, data);
+  }
+
+  /// Decodes a nevent string (NIP-19) to extract event ID and relay information
+  /// Returns a map with 'eventId' and 'relays' keys
+  static Map<String, dynamic> decodeNevent(String nevent) {
+    if (!nevent.startsWith('nevent1')) {
+      throw ArgumentError('Invalid nevent format: must start with nevent1');
+    }
+
+    try {
+      final decoded = _instance.services.bech32.decodeBech32(nevent);
+      if (decoded.isEmpty || decoded.length < 2) {
+        throw FormatException('Invalid bech32 decoding result');
+      }
+
+      final data = decoded[0]; // Get the data part (index 0)
+      final bytes = hex.decode(data);
+
+      final result = <String, dynamic>{
+        'eventId': '',
+        'relays': <String>[],
+      };
+
+      // Parse TLV (Type-Length-Value) format
+      int index = 0;
+      while (index < bytes.length) {
+        if (index + 2 >= bytes.length) break;
+
+        final type = bytes[index];
+        final length = bytes[index + 1];
+
+        if (index + 2 + length > bytes.length) break;
+
+        final value = bytes.sublist(index + 2, index + 2 + length);
+
+        switch (type) {
+          case 0: // Event ID (32 bytes)
+            if (length == 32) {
+              result['eventId'] = hex.encode(value);
+            }
+            break;
+          case 1: // Relay URL (variable length)
+            final relayUrl = utf8.decode(value);
+            if (relayUrl.isNotEmpty) {
+              (result['relays'] as List<String>).add(relayUrl);
+            }
+            break;
+          // Skip other types for now
+        }
+
+        index += 2 + length;
+      }
+
+      if ((result['eventId'] as String).isEmpty) {
+        throw FormatException('No event ID found in nevent');
+      }
+
+      return result;
+    } catch (e) {
+      throw FormatException('Failed to decode nevent: $e');
+    }
+  }
+
+  /// Validates if a string is a valid nostr: URL
+  static bool isValidNostrUrl(String url) {
+    if (!url.startsWith('nostr:')) return false;
+
+    final nevent = url.substring(6); // Remove 'nostr:' prefix
+
+    try {
+      decodeNevent(nevent);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Parses a nostr: URL and returns event information
+  static Map<String, dynamic>? parseNostrUrl(String url) {
+    if (!isValidNostrUrl(url)) return null;
+
+    final nevent = url.substring(6); // Remove 'nostr:' prefix
+
+    try {
+      return decodeNevent(nevent);
+    } catch (e) {
+      return null;
+    }
   }
 
   static Future<String?> pubKeyFromIdentifierNip05(

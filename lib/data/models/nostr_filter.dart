@@ -2,7 +2,6 @@ import 'package:dart_nostr/dart_nostr.dart';
 
 extension NostrRequestX on NostrRequest {
   static NostrRequest fromJson(List<dynamic> json) {
-
     final filters = json
         .map(
           (e) => NostrFilterX.fromJsonSafe(e),

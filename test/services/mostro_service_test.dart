@@ -28,13 +28,14 @@ void main() {
   provideDummy<Settings>(Settings(
     relays: ['wss://relay.damus.io'],
     fullPrivacyMode: false,
-    mostroPublicKey: '6d5c471d0e88c8c688c85dd8a3d84e3c7c5e8a3b6d7a6b2c9e8c5d9a7b3e6c8a',
+    mostroPublicKey:
+        '6d5c471d0e88c8c688c85dd8a3d84e3c7c5e8a3b6d7a6b2c9e8c5d9a7b3e6c8a',
     defaultFiatCode: 'USD',
   ));
-  
+
   // Add dummy for MostroStorage
   provideDummy<MostroStorage>(MockMostroStorage());
-  
+
   // Add dummy for NostrService
   provideDummy<NostrService>(MockNostrService());
   late MostroService mostroService;
@@ -49,10 +50,10 @@ void main() {
     mockNostrService = MockNostrService();
     mockSessionNotifier = MockSessionNotifier();
     mockRef = MockRef();
-    
+
     // Generate a valid test key pair for mostro public key
     final testKeyPair = NostrUtils.generateKeyPair();
-    
+
     // Create test settings
     final testSettings = Settings(
       relays: ['wss://relay.damus.io'],
@@ -60,15 +61,15 @@ void main() {
       mostroPublicKey: testKeyPair.public,
       defaultFiatCode: 'USD',
     );
-    
+
     // Stub specific provider reads
     when(mockRef.read(settingsProvider)).thenReturn(testSettings);
     when(mockRef.read(mostroStorageProvider)).thenReturn(MockMostroStorage());
     when(mockRef.read(nostrServiceProvider)).thenReturn(mockNostrService);
-    
+
     // Stub SessionNotifier methods
     when(mockSessionNotifier.sessions).thenReturn(<Session>[]);
-    
+
     mostroService = MostroService(mockSessionNotifier, mockRef);
     keyDerivator = KeyDerivator("m/44'/1237'/38383'/0");
   });
@@ -188,7 +189,8 @@ void main() {
       final extendedPrivKey = keyDerivator.extendedKeyFromMnemonic(mnemonic);
       final userPrivKey = keyDerivator.derivePrivateKey(extendedPrivKey, 0);
       final userPubKey = keyDerivator.privateToPublicKey(userPrivKey);
-      final tradePrivKey = keyDerivator.derivePrivateKey(extendedPrivKey, tradeIndex);
+      final tradePrivKey =
+          keyDerivator.derivePrivateKey(extendedPrivKey, tradeIndex);
       // Create key pairs
       final tradeKeyPair = NostrKeyPairs(private: tradePrivKey);
       final identityKeyPair = NostrKeyPairs(private: userPrivKey);
@@ -250,7 +252,8 @@ void main() {
             'trade_index': tradeIndex,
           },
         },
-        signatureHex: '0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
+        signatureHex:
+            '0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
       );
 
       expect(isValid, isFalse,
@@ -265,7 +268,8 @@ void main() {
       final extendedPrivKey = keyDerivator.extendedKeyFromMnemonic(mnemonic);
       final userPrivKey = keyDerivator.derivePrivateKey(extendedPrivKey, 0);
       final userPubKey = keyDerivator.privateToPublicKey(userPrivKey);
-      final tradePrivKey = keyDerivator.derivePrivateKey(extendedPrivKey, tradeIndex);
+      final tradePrivKey =
+          keyDerivator.derivePrivateKey(extendedPrivKey, tradeIndex);
       // Create key pairs
       final tradeKeyPair = NostrKeyPairs(private: tradePrivKey);
       final identityKeyPair = NostrKeyPairs(private: userPrivKey);
@@ -346,7 +350,8 @@ void main() {
       final extendedPrivKey = keyDerivator.extendedKeyFromMnemonic(mnemonic);
       final userPrivKey = keyDerivator.derivePrivateKey(extendedPrivKey, 0);
       final userPubKey = keyDerivator.privateToPublicKey(userPrivKey);
-      final tradePrivKey = keyDerivator.derivePrivateKey(extendedPrivKey, tradeIndex);
+      final tradePrivKey =
+          keyDerivator.derivePrivateKey(extendedPrivKey, tradeIndex);
       // Create key pairs
       final tradeKeyPair = NostrKeyPairs(private: tradePrivKey);
       final identityKeyPair = NostrKeyPairs(private: userPrivKey);
@@ -406,7 +411,7 @@ void main() {
           'trade_index': tradeIndex,
         },
       };
-      
+
       final isValid = serverVerifyMessage(
         userPubKey: userPubKey,
         messageContent: messageContent,

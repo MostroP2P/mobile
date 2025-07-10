@@ -14,7 +14,8 @@ class WalkthroughScreen extends ConsumerStatefulWidget {
 }
 
 class _WalkthroughScreenState extends ConsumerState<WalkthroughScreen> {
-  Widget _buildHighlightedText(String text, {
+  Widget _buildHighlightedText(
+    String text, {
     bool isPrivacyStep = false,
     bool isSecurityStep = false,
     bool isChatStep = false,
@@ -28,7 +29,7 @@ class _WalkthroughScreenState extends ConsumerState<WalkthroughScreen> {
     );
 
     final List<TextSpan> spans = [];
-    
+
     // Determine which highlight config to use based on the step type
     final HighlightConfig config = isPrivacyStep
         ? HighlightConfig.privacy
@@ -41,7 +42,7 @@ class _WalkthroughScreenState extends ConsumerState<WalkthroughScreen> {
                     : HighlightConfig.firstStep;
 
     final RegExp highlightRegex = RegExp(config.pattern, caseSensitive: true);
-    
+
     int start = 0;
     for (final match in highlightRegex.allMatches(text)) {
       // Add text before highlighted term
@@ -51,16 +52,16 @@ class _WalkthroughScreenState extends ConsumerState<WalkthroughScreen> {
           style: defaultStyle,
         ));
       }
-      
+
       // Add highlighted term with green color and bold
       spans.add(TextSpan(
         text: match.group(0),
         style: highlightStyle,
       ));
-      
+
       start = match.end;
     }
-    
+
     // Add remaining text
     if (start < text.length) {
       spans.add(TextSpan(
@@ -111,7 +112,8 @@ class _WalkthroughScreenState extends ConsumerState<WalkthroughScreen> {
     return [
       PageViewModel(
         title: S.of(context)!.welcomeToMostroMobile,
-        bodyWidget: _buildHighlightedText(S.of(context)!.discoverSecurePlatform),
+        bodyWidget:
+            _buildHighlightedText(S.of(context)!.discoverSecurePlatform),
         image: buildPageImage("assets/images/wt-1.png"),
         decoration: pageDecoration,
       ),

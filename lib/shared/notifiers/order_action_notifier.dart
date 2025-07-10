@@ -11,6 +11,7 @@ class OrderActionNotifier extends StateNotifier<Action> {
   }
 }
 
-final orderActionNotifierProvider = StateNotifierProvider.family<OrderActionNotifier, Action, String>(
+final orderActionNotifierProvider =
+    StateNotifierProvider.family<OrderActionNotifier, Action, String>(
   (ref, orderId) => OrderActionNotifier(orderId: orderId),
 );

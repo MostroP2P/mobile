@@ -50,8 +50,8 @@ class _AddLightningInvoiceScreenState
                     onSubmit: () async {
                       final invoice = invoiceController.text.trim();
                       if (invoice.isNotEmpty) {
-                        final orderNotifier = ref
-                            .read(orderNotifierProvider(widget.orderId).notifier);
+                        final orderNotifier = ref.read(
+                            orderNotifierProvider(widget.orderId).notifier);
                         try {
                           await orderNotifier.sendInvoice(
                               widget.orderId, invoice, amount);
@@ -60,8 +60,8 @@ class _AddLightningInvoiceScreenState
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content:
-                                    Text('Failed to update invoice: ${e.toString()}'),
+                                content: Text(
+                                    'Failed to update invoice: ${e.toString()}'),
                               ),
                             );
                           }
@@ -69,8 +69,8 @@ class _AddLightningInvoiceScreenState
                       }
                     },
                     onCancel: () async {
-                      final orderNotifier =
-                          ref.read(orderNotifierProvider(widget.orderId).notifier);
+                      final orderNotifier = ref
+                          .read(orderNotifierProvider(widget.orderId).notifier);
                       try {
                         await orderNotifier.cancelOrder();
                         if (context.mounted) context.go('/');
@@ -78,8 +78,8 @@ class _AddLightningInvoiceScreenState
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content:
-                                  Text('Failed to cancel order: ${e.toString()}'),
+                              content: Text(
+                                  'Failed to cancel order: ${e.toString()}'),
                             ),
                           );
                         }

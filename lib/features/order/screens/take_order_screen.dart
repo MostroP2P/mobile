@@ -50,8 +50,11 @@ class TakeOrderScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSellerAmount(WidgetRef ref, NostrEvent order, BuildContext context) {
-    final selling = orderType == OrderType.sell ? S.of(context)!.selling : S.of(context)!.buying;
+  Widget _buildSellerAmount(
+      WidgetRef ref, NostrEvent order, BuildContext context) {
+    final selling = orderType == OrderType.sell
+        ? S.of(context)!.selling
+        : S.of(context)!.buying;
     final amountString =
         '${order.fiatAmount} ${order.currency} ${CurrencyUtils.getFlagFromCurrency(order.currency!)}';
     final satAmount = order.amount == '0' ? '' : ' ${order.amount}';
@@ -76,13 +79,16 @@ class TakeOrderScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  S.of(context)!.someoneIsSellingBuying(selling, satAmount, amountString, price, premiumText),
+                  S.of(context)!.someoneIsSellingBuying(
+                      selling, satAmount, amountString, price, premiumText),
                   style: AppTheme.theme.textTheme.bodyLarge,
                   softWrap: true,
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  S.of(context)!.createdOnDate(formatDateTime(order.createdAt!)),
+                  S
+                      .of(context)!
+                      .createdOnDate(formatDateTime(order.createdAt!)),
                   style: textTheme.bodyLarge,
                 ),
                 const SizedBox(height: 16),
@@ -185,8 +191,9 @@ class TakeOrderScreen extends ConsumerWidget {
                           controller: _fiatAmountController,
                           keyboardType: TextInputType.number,
                           decoration: InputDecoration(
-                            hintText:
-                                S.of(context)!.enterAmountBetween(order.fiatAmount.minimum.toString(), order.fiatAmount.maximum.toString()),
+                            hintText: S.of(context)!.enterAmountBetween(
+                                order.fiatAmount.minimum.toString(),
+                                order.fiatAmount.maximum.toString()),
                             errorText: errorText,
                           ),
                         ),
@@ -202,14 +209,18 @@ class TakeOrderScreen extends ConsumerWidget {
                                   _fiatAmountController.text.trim());
                               if (inputAmount == null) {
                                 setState(() {
-                                  errorText = S.of(context)!.pleaseEnterValidNumber;
+                                  errorText =
+                                      S.of(context)!.pleaseEnterValidNumber;
                                 });
                               } else if (inputAmount <
                                       order.fiatAmount.minimum ||
                                   inputAmount > order.fiatAmount.maximum!) {
                                 setState(() {
-                                  errorText =
-                                      S.of(context)!.amountMustBeBetween(order.fiatAmount.minimum.toString(), order.fiatAmount.maximum.toString());
+                                  errorText = S
+                                      .of(context)!
+                                      .amountMustBeBetween(
+                                          order.fiatAmount.minimum.toString(),
+                                          order.fiatAmount.maximum.toString());
                                 });
                               } else {
                                 Navigator.of(context).pop(inputAmount);

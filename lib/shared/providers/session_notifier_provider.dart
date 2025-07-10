@@ -5,7 +5,6 @@ import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/notifiers/session_notifier.dart';
 import 'package:mostro_mobile/shared/providers/session_storage_provider.dart';
 
-
 final sessionNotifierProvider =
     StateNotifierProvider<SessionNotifier, List<Session>>((ref) {
   final keyManager = ref.read(keyManagerProvider);

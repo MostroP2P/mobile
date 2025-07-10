@@ -36,8 +36,7 @@ class YadioExchangeService extends ExchangeService {
     try {
       final data = await getRequest(endpoint);
       return Map.fromEntries(
-        data.entries.where((entry) => entry.key != 'BTC')
-        .map((entry) {
+        data.entries.where((entry) => entry.key != 'BTC').map((entry) {
           return MapEntry(entry.key, entry.value?.toString() ?? '');
         }),
       );

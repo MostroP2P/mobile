@@ -52,7 +52,8 @@ class PaymentMethodsSection extends ConsumerWidget {
       child: paymentMethodsData.when(
         loading: () => Text(S.of(context)!.loadingPaymentMethods,
             style: const TextStyle(color: Colors.white)),
-        error: (error, _) => Text(S.of(context)!.errorLoadingPaymentMethods(error.toString()),
+        error: (error, _) => Text(
+            S.of(context)!.errorLoadingPaymentMethods(error.toString()),
             style: const TextStyle(color: Colors.red)),
         data: (data) {
           final displayText = selectedMethods.isEmpty

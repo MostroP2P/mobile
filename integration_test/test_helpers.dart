@@ -37,6 +37,7 @@ class FakeSharedPreferencesAsync implements SharedPreferencesAsync {
     _store[key] = value;
     return true;
   }
+
   @override
   Future<int?> getInt(String key) async => _store[key] as int?;
   @override
@@ -44,151 +45,199 @@ class FakeSharedPreferencesAsync implements SharedPreferencesAsync {
     _store[key] = value;
     return true;
   }
-  
+
   @override
   Future<void> clear({Set<String>? allowList}) async {
     _store.clear();
   }
-  
+
   @override
   Future<bool> containsKey(String key) async {
     return _store.containsKey(key);
   }
-    
+
   @override
   Future<bool?> getBool(String key) async {
     return _store[key] as bool?;
   }
-  
+
   @override
   Future<double?> getDouble(String key) async {
     return _store[key] as double?;
   }
-  
+
   @override
   Future<Set<String>> getKeys({Set<String>? allowList}) async {
     return _store.keys.toSet();
   }
-  
+
   @override
   Future<List<String>?> getStringList(String key) async {
     return _store[key] as List<String>?;
   }
-    
+
   @override
   Future<bool> remove(String key) async {
     _store.remove(key);
     return true;
   }
-  
+
   @override
   Future<bool> setBool(String key, bool value) async {
     _store[key] = value;
     return true;
   }
-  
+
   @override
   Future<bool> setDouble(String key, double value) async {
     _store[key] = value;
     return true;
   }
-  
+
   @override
   Future<bool> setStringList(String key, List<String> value) async {
     _store[key] = value;
     return true;
   }
-  
+
   @override
   Future<Map<String, Object?>> getAll({Set<String>? allowList}) async {
-    return Map.fromEntries(_store.entries.where((e) => e.value != null).map((e) => MapEntry(e.key, e.value!)));
+    return Map.fromEntries(_store.entries
+        .where((e) => e.value != null)
+        .map((e) => MapEntry(e.key, e.value!)));
   }
 }
 
 class FakeSecureStorage implements FlutterSecureStorage {
   final Map<String, String?> _store = {};
   @override
-  Future<void> deleteAll({AppleOptions? iOptions, AndroidOptions? aOptions, LinuxOptions? lOptions, AppleOptions? mOptions, WindowsOptions? wOptions, WebOptions? webOptions}) async {
+  Future<void> deleteAll(
+      {AppleOptions? iOptions,
+      AndroidOptions? aOptions,
+      LinuxOptions? lOptions,
+      AppleOptions? mOptions,
+      WindowsOptions? wOptions,
+      WebOptions? webOptions}) async {
     _store.clear();
   }
 
   @override
-  Future<String?> read({required String key, AppleOptions? iOptions, AndroidOptions? aOptions, LinuxOptions? lOptions, AppleOptions? mOptions, WindowsOptions? wOptions, WebOptions? webOptions}) async {
+  Future<String?> read(
+      {required String key,
+      AppleOptions? iOptions,
+      AndroidOptions? aOptions,
+      LinuxOptions? lOptions,
+      AppleOptions? mOptions,
+      WindowsOptions? wOptions,
+      WebOptions? webOptions}) async {
     return _store[key];
   }
 
   @override
-  Future<void> write({required String key, required String? value, AppleOptions? iOptions, AndroidOptions? aOptions, LinuxOptions? lOptions, AppleOptions? mOptions, WindowsOptions? wOptions, WebOptions? webOptions}) async {
+  Future<void> write(
+      {required String key,
+      required String? value,
+      AppleOptions? iOptions,
+      AndroidOptions? aOptions,
+      LinuxOptions? lOptions,
+      AppleOptions? mOptions,
+      WindowsOptions? wOptions,
+      WebOptions? webOptions}) async {
     _store[key] = value;
   }
 
   // Unused methods
   @override
-  Future<void> delete({required String key, AppleOptions? iOptions, AndroidOptions? aOptions, LinuxOptions? lOptions, AppleOptions? mOptions, WindowsOptions? wOptions, WebOptions? webOptions}) async {
+  Future<void> delete(
+      {required String key,
+      AppleOptions? iOptions,
+      AndroidOptions? aOptions,
+      LinuxOptions? lOptions,
+      AppleOptions? mOptions,
+      WindowsOptions? wOptions,
+      WebOptions? webOptions}) async {
     _store.remove(key);
   }
 
   @override
-  Future<Map<String, String>> readAll({AppleOptions? iOptions, AndroidOptions? aOptions, LinuxOptions? lOptions, AppleOptions? mOptions, WindowsOptions? wOptions, WebOptions? webOptions}) async {
-    return Map.fromEntries(_store.entries.where((e) => e.value != null).map((e) => MapEntry(e.key, e.value!)));
+  Future<Map<String, String>> readAll(
+      {AppleOptions? iOptions,
+      AndroidOptions? aOptions,
+      LinuxOptions? lOptions,
+      AppleOptions? mOptions,
+      WindowsOptions? wOptions,
+      WebOptions? webOptions}) async {
+    return Map.fromEntries(_store.entries
+        .where((e) => e.value != null)
+        .map((e) => MapEntry(e.key, e.value!)));
   }
 
   @override
   // TODO: implement aOptions
   AndroidOptions get aOptions => throw UnimplementedError();
-  
+
   @override
-  Future<bool> containsKey({required String key, AppleOptions? iOptions, AndroidOptions? aOptions, LinuxOptions? lOptions, WebOptions? webOptions, AppleOptions? mOptions, WindowsOptions? wOptions}) {
+  Future<bool> containsKey(
+      {required String key,
+      AppleOptions? iOptions,
+      AndroidOptions? aOptions,
+      LinuxOptions? lOptions,
+      WebOptions? webOptions,
+      AppleOptions? mOptions,
+      WindowsOptions? wOptions}) {
     // TODO: implement containsKey
     throw UnimplementedError();
   }
-  
+
   @override
   // TODO: implement iOptions
   IOSOptions get iOptions => throw UnimplementedError();
-  
+
   @override
   Future<bool?> isCupertinoProtectedDataAvailable() {
     // TODO: implement isCupertinoProtectedDataAvailable
     throw UnimplementedError();
   }
-  
+
   @override
   // TODO: implement lOptions
   LinuxOptions get lOptions => throw UnimplementedError();
-  
+
   @override
   // TODO: implement mOptions
   AppleOptions get mOptions => throw UnimplementedError();
-  
+
   @override
   // TODO: implement onCupertinoProtectedDataAvailabilityChanged
-  Stream<bool>? get onCupertinoProtectedDataAvailabilityChanged => throw UnimplementedError();
-  
+  Stream<bool>? get onCupertinoProtectedDataAvailabilityChanged =>
+      throw UnimplementedError();
+
   @override
-  void registerListener({required String key, required ValueChanged<String?> listener}) {
+  void registerListener(
+      {required String key, required ValueChanged<String?> listener}) {
     // TODO: implement registerListener
   }
-  
+
   @override
   void unregisterAllListeners() {
     // TODO: implement unregisterAllListeners
   }
-  
+
   @override
   void unregisterAllListenersForKey({required String key}) {
     // TODO: implement unregisterAllListenersForKey
   }
-  
+
   @override
-  void unregisterListener({required String key, required ValueChanged<String?> listener}) {
+  void unregisterListener(
+      {required String key, required ValueChanged<String?> listener}) {
     // TODO: implement unregisterListener
   }
-  
+
   @override
   // TODO: implement wOptions
   WindowsOptions get wOptions => throw UnimplementedError();
-  
+
   @override
   // TODO: implement webOptions
   WebOptions get webOptions => throw UnimplementedError();
@@ -243,7 +292,8 @@ class FakeMostroService implements MostroService {
   Future<void> takeBuyOrder(String orderId, int? amount) async {}
 
   @override
-  Future<void> takeSellOrder(String orderId, int? amount, String? lnAddress) async {}
+  Future<void> takeSellOrder(
+      String orderId, int? amount, String? lnAddress) async {}
 
   @override
   Future<void> sendInvoice(String orderId, String invoice, int? amount) async {}
@@ -264,7 +314,8 @@ class FakeMostroService implements MostroService {
   Future<void> submitRating(String orderId, int rating) async {}
 
   @override
-  Future<Session> publishOrder(MostroMessage order) => throw UnimplementedError();
+  Future<Session> publishOrder(MostroMessage order) =>
+      throw UnimplementedError();
 
   @override
   void updateSettings(Settings settings) {}
@@ -284,27 +335,27 @@ Future<void> pumpTestApp(WidgetTester tester) async {
       overrides: [
         settingsProvider.overrideWith((ref) => settingsNotifier),
         currencyCodesProvider.overrideWith((ref) async => {
-          'VES': Currency(
-            symbol: 'Bs',
-            name: 'Venezuelan Bolívar',
-            symbolNative: 'Bs',
-            code: 'VES',
-            emoji: '🇻🇪',
-            decimalDigits: 2,
-            namePlural: 'Venezuelan bolívars',
-            price: false,
-          ),
-          'USD': Currency(
-            symbol: '\$',
-            name: 'US Dollar',
-            symbolNative: '\$',
-            code: 'USD',
-            emoji: '🇺🇸',
-            decimalDigits: 2,
-            namePlural: 'US dollars',
-            price: false,
-          ),
-        }),
+              'VES': Currency(
+                symbol: 'Bs',
+                name: 'Venezuelan Bolívar',
+                symbolNative: 'Bs',
+                code: 'VES',
+                emoji: '🇻🇪',
+                decimalDigits: 2,
+                namePlural: 'Venezuelan bolívars',
+                price: false,
+              ),
+              'USD': Currency(
+                symbol: '\$',
+                name: 'US Dollar',
+                symbolNative: '\$',
+                code: 'USD',
+                emoji: '🇺🇸',
+                decimalDigits: 2,
+                namePlural: 'US dollars',
+                price: false,
+              ),
+            }),
         sharedPreferencesProvider.overrideWithValue(prefs),
         secureStorageProvider.overrideWithValue(secure),
         mostroDatabaseProvider.overrideWithValue(db),

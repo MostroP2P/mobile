@@ -411,5 +411,10 @@
   "spanish": "Español",
   "italian": "Italiano",
   "chooseLanguageDescription": "Elige tu idioma preferido o usa el predeterminado del sistema",
-  "done": "HECHO"
+  "loadingOrder": "Cargando orden...",
+  "done": "HECHO",
+  "unsupportedLinkFormat": "Formato de enlace no compatible",
+  "failedToOpenLink": "Error al abrir enlace",
+  "failedToLoadOrder": "Error al cargar orden",
+  "failedToOpenOrder": "Error al abrir orden"
 }

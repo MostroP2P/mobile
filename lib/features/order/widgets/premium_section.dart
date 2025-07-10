@@ -20,7 +20,7 @@ class PremiumSection extends StatelessWidget {
       value.round().toString(),
       style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
     );
-    
+
     // Use the FormSection for consistent styling
     return FormSection(
       title: S.of(context)!.premiumTitle,
