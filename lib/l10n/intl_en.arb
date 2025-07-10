@@ -164,6 +164,8 @@
   "cooperativeCancelMessage": "If you confirm, you will start a cooperative cancellation with your counterparty.",
   "acceptCancelMessage": "If you confirm, you will accept the cooperative cancellation initiated by your counterparty.",
   "confirm": "Confirm",
+  "yes": "Yes",
+  "no": "No",
   "buy": "BUY",
   "sell": "SELL",
   "buying": "BUYING",

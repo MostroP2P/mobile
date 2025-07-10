@@ -247,33 +247,40 @@ class TradeDetailScreen extends ConsumerWidget {
             cancelMessage = S.of(context)!.areYouSureCancel;
           }
 
+          final buttonController = MostroReactiveButtonController();
           widgets.add(_buildNostrButton(
             S.of(context)!.cancel,
             action: action,
             backgroundColor: AppTheme.red1,
-            onPressed: () {
-              showDialog(
+            controller: buttonController,
+            onPressed: () async {
+              final result = await showDialog<bool>(
                 context: context,
                 builder: (context) => AlertDialog(
                   title: Text(S.of(context)!.cancelTrade),
                   content: Text(cancelMessage),
                   actions: [
                     TextButton(
-                      onPressed: () => context.pop(),
-                      child: Text(S.of(context)!.cancel),
+                      onPressed: () => context.pop(false),
+                      child: Text(S.of(context)!.no),
                     ),
                     ElevatedButton(
                       onPressed: () {
-                        context.pop();
+                        context.pop(true);
                         ref
                             .read(orderNotifierProvider(orderId).notifier)
                             .cancelOrder();
                       },
-                      child: Text(S.of(context)!.confirm),
+                      child: Text(S.of(context)!.yes),
                     ),
                   ],
                 ),
               );
+              
+              // Reset loading state if dialog was cancelled
+              if (result != true) {
+                buttonController.resetLoading();
+              }
             },
           ));
           break;
@@ -455,8 +462,11 @@ class TradeDetailScreen extends ConsumerWidget {
     required actions.Action action,
     required VoidCallback? onPressed,
     Color? backgroundColor,
+    Key? key,
+    MostroReactiveButtonController? controller,
   }) {
     return MostroReactiveButton(
+      key: key,
       label: label,
       buttonStyle: ButtonStyleType.raised,
       orderId: orderId,
@@ -465,6 +475,7 @@ class TradeDetailScreen extends ConsumerWidget {
       onPressed: onPressed ?? () {}, // Provide empty function when null
       showSuccessIndicator: true,
       timeout: const Duration(seconds: 30),
+      controller: controller,
     );
   }
 

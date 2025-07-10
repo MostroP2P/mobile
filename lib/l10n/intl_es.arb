@@ -164,6 +164,8 @@
   "cooperativeCancelMessage": "Si confirmas, iniciarás una cancelación cooperativa con tu contraparte.",
   "acceptCancelMessage": "Si confirmas, aceptarás la cancelación cooperativa iniciada por tu contraparte.",
   "confirm": "Confirmar",
+  "yes": "Sí",
+  "no": "No",
   "buy": "COMPRAR",
   "sell": "VENDER",
   "buying": "COMPRANDO",
