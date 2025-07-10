@@ -134,10 +134,9 @@ class TradeDetailScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           OrderAmountCard(
-            title:
-              selling == S.of(context)!.selling
-                  ? S.of(context)!.youAreSellingTitle(satAmount)
-                  : S.of(context)!.youAreBuyingTitle(satAmount),
+            title: selling == S.of(context)!.selling
+                ? S.of(context)!.youAreSellingTitle(satAmount)
+                : S.of(context)!.youAreBuyingTitle(satAmount),
             amount: (tradeState.order!.minAmount != null &&
                     tradeState.order!.maxAmount != null &&
                     tradeState.order!.minAmount != tradeState.order!.maxAmount)
@@ -167,20 +166,10 @@ class TradeDetailScreen extends ConsumerWidget {
     final satAmount = hasFixedSatsAmount ? ' ${tradeState.order!.amount}' : '';
     final priceText = !hasFixedSatsAmount ? S.of(context)!.atMarketPrice : '';
 
-
-    final amountString =
-        '${tradeState.order!.fiatAmount} ${tradeState.order!.fiatCode} $currencyFlag';
-
-    // If `orderPayload.amount` is 0, the trade is "at market price"
-    final isZeroAmount = (tradeState.order!.amount == 0);
-    final satText = isZeroAmount ? '' : ' ${tradeState.order!.amount}';
-    final priceText = isZeroAmount ? ' ${S.of(context)!.atMarketPrice}' : '';
-
     final premium = tradeState.order!.premium;
     final premiumText = premium == 0
         ? ''
         : (premium > 0)
-
             ? S.of(context)!.withPremiumPercent(premium.toString())
             : S.of(context)!.withDiscountPercent(premium.abs().toString());
 
@@ -194,13 +183,12 @@ class TradeDetailScreen extends ConsumerWidget {
       context,
     );
 
-
     return Column(
       children: [
         OrderAmountCard(
           title: selling == S.of(context)!.selling
-            ? S.of(context)!.youAreSellingTitle(satAmount)
-            : S.of(context)!.youAreBuyingTitle(satAmount),
+              ? S.of(context)!.youAreSellingTitle(satAmount)
+              : S.of(context)!.youAreBuyingTitle(satAmount),
           amount: (tradeState.order!.minAmount != null &&
                   tradeState.order!.maxAmount != null &&
                   tradeState.order!.minAmount != tradeState.order!.maxAmount)
@@ -219,7 +207,6 @@ class TradeDetailScreen extends ConsumerWidget {
           createdDate: timestamp,
         ),
       ],
-
     );
   }
 
@@ -568,11 +555,13 @@ class TradeDetailScreen extends ConsumerWidget {
   String formatDateTime(DateTime dt, [BuildContext? context]) {
     if (context != null) {
       // Use internationalized date format
-      final dateFormatter = DateFormat.yMMMd(Localizations.localeOf(context).languageCode);
-      final timeFormatter = DateFormat.Hm(Localizations.localeOf(context).languageCode);
+      final dateFormatter =
+          DateFormat.yMMMd(Localizations.localeOf(context).languageCode);
+      final timeFormatter =
+          DateFormat.Hm(Localizations.localeOf(context).languageCode);
       final formattedDate = dateFormatter.format(dt);
       final formattedTime = timeFormatter.format(dt);
-      
+
       // Use the internationalized string for "Created on: date"
       return S.of(context)!.createdOnDate('$formattedDate $formattedTime');
     } else {
@@ -581,7 +570,7 @@ class TradeDetailScreen extends ConsumerWidget {
       final timeFormatter = DateFormat('HH:mm');
       final formattedDate = dateFormatter.format(dt);
       final formattedTime = timeFormatter.format(dt);
-      
+
       return '$formattedDate at $formattedTime';
     }
   }
