@@ -36,7 +36,7 @@ class _MostroAppState extends ConsumerState<MostroApp> {
 
   @override
   void dispose() {
-    DeepLinkHandler.dispose();
+    // Deep link handler disposal is handled automatically by Riverpod
     super.dispose();
   }
 
@@ -72,7 +72,8 @@ class _MostroAppState extends ConsumerState<MostroApp> {
         // Initialize deep links after router is created
         if (!_deepLinksInitialized && _router != null) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            DeepLinkHandler.initialize(ref, _router!);
+            final deepLinkHandler = ref.read(deepLinkHandlerProvider);
+            deepLinkHandler.initialize(_router!);
           });
           _deepLinksInitialized = true;
         }

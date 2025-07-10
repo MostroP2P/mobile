@@ -7,11 +7,14 @@ import 'package:mostro_mobile/services/deep_link_service.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 
 class DeepLinkHandler {
-  static final _logger = Logger();
-  static StreamSubscription<Uri>? _subscription;
+  final Ref _ref;
+  final Logger _logger = Logger();
+  StreamSubscription<Uri>? _subscription;
+
+  DeepLinkHandler(this._ref);
 
   /// Initializes deep link handling for the app
-  static void initialize(WidgetRef ref, GoRouter router) {
+  void initialize(GoRouter router) {
     _logger.i('Initializing DeepLinkHandler');
 
     // Initialize the deep link service
@@ -19,15 +22,14 @@ class DeepLinkHandler {
 
     // Listen for deep link events
     _subscription = DeepLinkService.deepLinkStream.listen(
-      (Uri uri) => _handleDeepLink(uri, ref, router),
+      (Uri uri) => _handleDeepLink(uri, router),
       onError: (error) => _logger.e('Deep link stream error: $error'),
     );
   }
 
   /// Handles incoming deep links
-  static Future<void> _handleDeepLink(
+  Future<void> _handleDeepLink(
     Uri uri,
-    WidgetRef ref,
     GoRouter router,
   ) async {
     try {
@@ -35,7 +37,7 @@ class DeepLinkHandler {
 
       // Check if it's a nostr: scheme
       if (uri.scheme == 'nostr') {
-        await _handleNostrDeepLink(uri.toString(), ref, router);
+        await _handleNostrDeepLink(uri.toString(), router);
       } else {
         _logger.w('Unsupported deep link scheme: ${uri.scheme}');
         _showErrorSnackBar(router.routerDelegate.navigatorKey.currentContext,
@@ -49,9 +51,8 @@ class DeepLinkHandler {
   }
 
   /// Handles nostr: scheme deep links
-  static Future<void> _handleNostrDeepLink(
+  Future<void> _handleNostrDeepLink(
     String url,
-    WidgetRef ref,
     GoRouter router,
   ) async {
     try {
@@ -62,7 +63,7 @@ class DeepLinkHandler {
       }
 
       // Get the NostrService
-      final nostrService = ref.read(nostrServiceProvider);
+      final nostrService = _ref.read(nostrServiceProvider);
 
       // Process the nostr link
       final result = await DeepLinkService.processNostrLink(url, nostrService);
@@ -93,7 +94,7 @@ class DeepLinkHandler {
   }
 
   /// Shows a loading dialog
-  static void _showLoadingDialog(BuildContext context) {
+  void _showLoadingDialog(BuildContext context) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -116,7 +117,7 @@ class DeepLinkHandler {
   }
 
   /// Shows an error snack bar
-  static void _showErrorSnackBar(BuildContext? context, String message) {
+  void _showErrorSnackBar(BuildContext? context, String message) {
     if (context == null) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -129,11 +130,20 @@ class DeepLinkHandler {
   }
 
   /// Disposes the deep link handler
-  static void dispose() {
+  void dispose() {
     _subscription?.cancel();
     _subscription = null;
     DeepLinkService.dispose();
   }
 }
+
+/// Provider for the deep link handler service
+final deepLinkHandlerProvider = Provider<DeepLinkHandler>((ref) {
+  final handler = DeepLinkHandler(ref);
+  ref.onDispose(() {
+    handler.dispose();
+  });
+  return handler;
+});
 
 // NostrService provider is imported from shared/providers/nostr_service_provider.dart
