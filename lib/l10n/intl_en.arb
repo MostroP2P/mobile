@@ -410,5 +410,6 @@
   "english": "English",
   "spanish": "Spanish",
   "italian": "Italian",
+  "loadingOrder": "Loading order...",
   "chooseLanguageDescription": "Choose your preferred language or use system default"
 }

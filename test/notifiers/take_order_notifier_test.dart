@@ -43,28 +43,35 @@ void main() {
       mockSessionStorage = MockSessionStorage();
       mockKeyManager = MockKeyManager();
       mockMostroStorage = MockMostroStorage();
-      
+
       // Create test settings
       final testSettings = Settings(
         relays: ['wss://relay.damus.io'],
         fullPrivacyMode: false,
-        mostroPublicKey: '6d5c471d0e88c8c688c85dd8a3d84e3c7c5e8a3b6d7a6b2c9e8c5d9a7b3e6c8a',
+        mostroPublicKey:
+            '6d5c471d0e88c8c688c85dd8a3d84e3c7c5e8a3b6d7a6b2c9e8c5d9a7b3e6c8a',
         defaultFiatCode: 'USD',
       );
-      
-      mockSessionNotifier = MockSessionNotifier(mockKeyManager, mockSessionStorage, testSettings);
-      
+
+      mockSessionNotifier =
+          MockSessionNotifier(mockKeyManager, mockSessionStorage, testSettings);
+
       // Stub the KeyManager methods
       when(mockKeyManager.masterKeyPair).thenReturn(
-        NostrKeyPairs(private: '1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef'),
+        NostrKeyPairs(
+            private:
+                '1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef'),
       );
       when(mockKeyManager.getCurrentKeyIndex()).thenAnswer((_) async => 0);
-      when(mockKeyManager.deriveTradeKey()).thenAnswer((_) async => 
-        NostrKeyPairs(private: 'abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890'),
+      when(mockKeyManager.deriveTradeKey()).thenAnswer(
+        (_) async => NostrKeyPairs(
+            private:
+                'abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890'),
       );
 
       // Stub MostroStorage methods
-      when(mockMostroStorage.getAllMessagesForOrderId(any)).thenAnswer((_) async => <MostroMessage>[]);
+      when(mockMostroStorage.getAllMessagesForOrderId(any))
+          .thenAnswer((_) async => <MostroMessage>[]);
     });
 
     tearDown(() {
@@ -74,7 +81,9 @@ void main() {
     /// Helper that stubs the repository method (for both takeBuyOrder and takeSellOrder)
     /// so that it returns a Stream emitting the provided confirmation JSON.
 
-    test('Taking a Buy Order - seller sends take-buy and receives pay-invoice confirmation', () async {
+    test(
+        'Taking a Buy Order - seller sends take-buy and receives pay-invoice confirmation',
+        () async {
       // Confirmation JSON for "Taking a buy order":
       // ignore: unused_local_variable
       final confirmationJsonTakeBuy = {
@@ -117,14 +126,14 @@ void main() {
         keyManagerProvider.overrideWithValue(mockKeyManager),
         sessionNotifierProvider.overrideWith((ref) => mockSessionNotifier),
         settingsProvider.overrideWith((ref) => MockSettingsNotifier(
-          Settings(
-            relays: ['wss://relay.damus.io'],
-            fullPrivacyMode: false,
-            mostroPublicKey: '6d5c471d0e88c8c688c85dd8a3d84e3c7c5e8a3b6d7a6b2c9e8c5d9a7b3e6c8a',
-            defaultFiatCode: 'USD',
-          ), 
-          mockPreferences
-        )),
+            Settings(
+              relays: ['wss://relay.damus.io'],
+              fullPrivacyMode: false,
+              mostroPublicKey:
+                  '6d5c471d0e88c8c688c85dd8a3d84e3c7c5e8a3b6d7a6b2c9e8c5d9a7b3e6c8a',
+              defaultFiatCode: 'USD',
+            ),
+            mockPreferences)),
         mostroStorageProvider.overrideWithValue(mockMostroStorage),
       ]);
 
@@ -144,7 +153,9 @@ void main() {
       verify(mockMostroService.takeBuyOrder(testOrderId, any)).called(1);
     });
 
-    test('Taking a Sell Order (fixed) - buyer sends take-sell and receives add-invoice confirmation', () async {
+    test(
+        'Taking a Sell Order (fixed) - buyer sends take-sell and receives add-invoice confirmation',
+        () async {
       // ignore: unused_local_variable
       final confirmationJsonTakeSell = {
         "order": {
@@ -167,7 +178,8 @@ void main() {
         }
       };
 
-      when(mockMostroService.takeSellOrder(any, any, any)).thenAnswer((_) async {
+      when(mockMostroService.takeSellOrder(any, any, any))
+          .thenAnswer((_) async {
         // Return void as per actual method signature
       });
 
@@ -182,14 +194,14 @@ void main() {
         keyManagerProvider.overrideWithValue(mockKeyManager),
         sessionNotifierProvider.overrideWith((ref) => mockSessionNotifier),
         settingsProvider.overrideWith((ref) => MockSettingsNotifier(
-          Settings(
-            relays: ['wss://relay.damus.io'],
-            fullPrivacyMode: false,
-            mostroPublicKey: '6d5c471d0e88c8c688c85dd8a3d84e3c7c5e8a3b6d7a6b2c9e8c5d9a7b3e6c8a',
-            defaultFiatCode: 'USD',
-          ), 
-          mockPreferences
-        )),
+            Settings(
+              relays: ['wss://relay.damus.io'],
+              fullPrivacyMode: false,
+              mostroPublicKey:
+                  '6d5c471d0e88c8c688c85dd8a3d84e3c7c5e8a3b6d7a6b2c9e8c5d9a7b3e6c8a',
+              defaultFiatCode: 'USD',
+            ),
+            mockPreferences)),
         mostroStorageProvider.overrideWithValue(mockMostroStorage),
       ]);
 
@@ -206,7 +218,8 @@ void main() {
       verify(mockMostroService.takeSellOrder(testOrderId, any, any)).called(1);
     });
 
-    test('Taking a Sell Range Order - buyer sends take-sell with range payload', () async {
+    test('Taking a Sell Range Order - buyer sends take-sell with range payload',
+        () async {
       // ignore: unused_local_variable
       final confirmationJsonSellRange = {
         "order": {
@@ -231,7 +244,8 @@ void main() {
         }
       };
 
-      when(mockMostroService.takeSellOrder(any, any, any)).thenAnswer((_) async {
+      when(mockMostroService.takeSellOrder(any, any, any))
+          .thenAnswer((_) async {
         // Return void as per actual method signature
       });
 
@@ -246,14 +260,14 @@ void main() {
         keyManagerProvider.overrideWithValue(mockKeyManager),
         sessionNotifierProvider.overrideWith((ref) => mockSessionNotifier),
         settingsProvider.overrideWith((ref) => MockSettingsNotifier(
-          Settings(
-            relays: ['wss://relay.damus.io'],
-            fullPrivacyMode: false,
-            mostroPublicKey: '6d5c471d0e88c8c688c85dd8a3d84e3c7c5e8a3b6d7a6b2c9e8c5d9a7b3e6c8a',
-            defaultFiatCode: 'USD',
-          ), 
-          mockPreferences
-        )),
+            Settings(
+              relays: ['wss://relay.damus.io'],
+              fullPrivacyMode: false,
+              mostroPublicKey:
+                  '6d5c471d0e88c8c688c85dd8a3d84e3c7c5e8a3b6d7a6b2c9e8c5d9a7b3e6c8a',
+              defaultFiatCode: 'USD',
+            ),
+            mockPreferences)),
         mostroStorageProvider.overrideWithValue(mockMostroStorage),
       ]);
 
@@ -270,7 +284,9 @@ void main() {
       verify(mockMostroService.takeSellOrder(testOrderId, any, any)).called(1);
     });
 
-    test('Taking a Sell Order with Lightning Address - buyer sends take-sell with LN address', () async {
+    test(
+        'Taking a Sell Order with Lightning Address - buyer sends take-sell with LN address',
+        () async {
       // ignore: unused_local_variable
       final confirmationJsonSellLN = {
         "order": {
@@ -281,7 +297,8 @@ void main() {
         }
       };
 
-      when(mockMostroService.takeSellOrder(any, any, any)).thenAnswer((_) async {
+      when(mockMostroService.takeSellOrder(any, any, any))
+          .thenAnswer((_) async {
         // Return void as per actual method signature
       });
 
@@ -296,14 +313,14 @@ void main() {
         keyManagerProvider.overrideWithValue(mockKeyManager),
         sessionNotifierProvider.overrideWith((ref) => mockSessionNotifier),
         settingsProvider.overrideWith((ref) => MockSettingsNotifier(
-          Settings(
-            relays: ['wss://relay.damus.io'],
-            fullPrivacyMode: false,
-            mostroPublicKey: '6d5c471d0e88c8c688c85dd8a3d84e3c7c5e8a3b6d7a6b2c9e8c5d9a7b3e6c8a',
-            defaultFiatCode: 'USD',
-          ), 
-          mockPreferences
-        )),
+            Settings(
+              relays: ['wss://relay.damus.io'],
+              fullPrivacyMode: false,
+              mostroPublicKey:
+                  '6d5c471d0e88c8c688c85dd8a3d84e3c7c5e8a3b6d7a6b2c9e8c5d9a7b3e6c8a',
+              defaultFiatCode: 'USD',
+            ),
+            mockPreferences)),
         mostroStorageProvider.overrideWithValue(mockMostroStorage),
       ]);
 
@@ -311,7 +328,8 @@ void main() {
           container.read(orderNotifierProvider(testOrderId).notifier);
 
       // Simulate taking a sell order with a lightning address payload.
-      await takeSellNotifier.takeSellOrder(testOrderId, 0, "mostro_p2p@ln.tips");
+      await takeSellNotifier.takeSellOrder(
+          testOrderId, 0, "mostro_p2p@ln.tips");
 
       final state = container.read(orderNotifierProvider(testOrderId));
       expect(state, isNotNull);
@@ -319,6 +337,5 @@ void main() {
 
       verify(mockMostroService.takeSellOrder(testOrderId, any, any)).called(1);
     });
-
   });
 }

@@ -17,6 +17,6 @@ class EventBus {
 @riverpod
 EventBus eventBus(Ref ref) {
   final bus = EventBus();
- // ref.onDispose(bus.dispose);
+  // ref.onDispose(bus.dispose);
   return bus;
 }

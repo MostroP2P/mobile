@@ -3,11 +3,13 @@ class HighlightConfig {
   const HighlightConfig({required this.pattern});
 
   static const firstStep = HighlightConfig(
-    pattern: r'\b(Nostr|no KYC|sin KYC|senza KYC|censorship-resistant|resistente a la censura|resistente alla censura)\b',
+    pattern:
+        r'\b(Nostr|no KYC|sin KYC|senza KYC|censorship-resistant|resistente a la censura|resistente alla censura)\b',
   );
 
   static const privacy = HighlightConfig(
-    pattern: r'\b(Reputation mode|Full privacy mode|Modo reputación|Modo privacidad completa|Modalità reputazione|Modalità privacy completa)\b',
+    pattern:
+        r'\b(Reputation mode|Full privacy mode|Modo reputación|Modo privacidad completa|Modalità reputazione|Modalità privacy completa)\b',
   );
 
   static const security = HighlightConfig(
@@ -15,7 +17,8 @@ class HighlightConfig {
   );
 
   static const chat = HighlightConfig(
-    pattern: r'\b(end-to-end encrypted|encriptado de extremo a extremo|crittografata end-to-end)\b',
+    pattern:
+        r'\b(end-to-end encrypted|encriptado de extremo a extremo|crittografata end-to-end)\b',
   );
 
   static const orderBook = HighlightConfig(

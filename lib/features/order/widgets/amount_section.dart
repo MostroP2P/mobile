@@ -38,26 +38,28 @@ class AmountSection extends StatelessWidget {
           if (value == null || value.isEmpty) {
             return S.of(context)!.pleaseEnterAmount;
           }
-          
+
           // Regex to match either a single number or a range format (number-number)
           // The regex allows optional spaces around the hyphen
           final regex = RegExp(r'^\d+$|^\d+\s*-\s*\d+$');
-          
+
           if (!regex.hasMatch(value)) {
             return S.of(context)!.pleaseEnterValidAmount;
           }
-          
+
           // If it's a range, check that the first number is less than the second
           if (value.contains('-')) {
             final parts = value.split('-');
             final firstNum = int.tryParse(parts[0].trim());
             final secondNum = int.tryParse(parts[1].trim());
-            
-            if (firstNum != null && secondNum != null && firstNum >= secondNum) {
+
+            if (firstNum != null &&
+                secondNum != null &&
+                firstNum >= secondNum) {
               return S.of(context)!.rangeFirstLowerThanSecond;
             }
           }
-          
+
           return null;
         },
       ),

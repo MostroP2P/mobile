@@ -84,8 +84,8 @@ class _RateCounterpartScreenState extends ConsumerState<RateCounterpartScreen> {
                   ),
                 ),
                 onPressed: _rating > 0 ? _submitRating : null,
-                child:
-                    Text(S.of(context)!.submitRating, style: const TextStyle(fontSize: 16)),
+                child: Text(S.of(context)!.submitRating,
+                    style: const TextStyle(fontSize: 16)),
               ),
             ],
           ),

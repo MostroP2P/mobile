@@ -13,7 +13,6 @@ class MostroMessageDetail extends ConsumerWidget {
   final String orderId;
   const MostroMessageDetail({super.key, required this.orderId});
 
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final orderState = ref.watch(orderNotifierProvider(orderId));

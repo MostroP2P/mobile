@@ -19,7 +19,6 @@ class Dispute implements Payload {
     );
   }
 
-
   @override
   String get type => 'dispute';
 }

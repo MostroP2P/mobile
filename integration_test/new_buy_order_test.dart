@@ -122,7 +122,6 @@ void main() {
       await tester.pumpAndSettle();
     });
 
-
     testWidgets(
         'User creates a new BUY order with EUR=10 and SATS=1500 using a lightning invoice',
         (tester) async {

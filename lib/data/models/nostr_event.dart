@@ -37,7 +37,8 @@ extension NostrEventExtensions on NostrEvent {
   String? get geohash => _getTagValue('g');
   String? get bond => _getTagValue('bond');
   String? get expiration => _timeAgo(_getTagValue('expiration'));
-  String? timeAgoWithLocale(String? locale) => _timeAgo(_getTagValue('expiration'), locale);
+  String? timeAgoWithLocale(String? locale) =>
+      _timeAgo(_getTagValue('expiration'), locale);
   DateTime get expirationDate => _getTimeStamp(_getTagValue('expiration')!);
   String? get platform => _getTagValue('y');
   String get type => _getTagValue('z')!;
@@ -67,10 +68,11 @@ extension NostrEventExtensions on NostrEvent {
       final DateTime eventTime =
           DateTime.fromMillisecondsSinceEpoch(timestamp * 1000)
               .subtract(Duration(hours: 36));
-      
+
       // Use provided locale or fallback to Spanish
       final effectiveLocale = locale ?? 'es';
-      return timeago.format(eventTime, allowFromNow: true, locale: effectiveLocale);
+      return timeago.format(eventTime,
+          allowFromNow: true, locale: effectiveLocale);
     } else {
       return "invalid date";
     }

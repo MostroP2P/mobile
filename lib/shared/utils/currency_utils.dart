@@ -1,5 +1,4 @@
 class CurrencyUtils {
-
   static String getFlagEmoji(String countryCode) {
     return countryCode
         .toUpperCase()

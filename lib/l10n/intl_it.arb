@@ -411,5 +411,6 @@
   "spanish": "Spagnolo",
   "italian": "Italiano",
   "chooseLanguageDescription": "Scegli la tua lingua preferita o usa il predefinito di sistema",
+  "loadingOrder": "Caricamento ordine...",
   "done": "FATTO"
 }

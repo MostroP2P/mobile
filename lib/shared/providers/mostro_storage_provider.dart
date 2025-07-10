@@ -9,19 +9,22 @@ final mostroStorageProvider = Provider<MostroStorage>((ref) {
   return MostroStorage(db: mostroDatabase);
 });
 
-final mostroMessageStreamProvider = StreamProvider.family<MostroMessage?, String>((ref, orderId) {
+final mostroMessageStreamProvider =
+    StreamProvider.family<MostroMessage?, String>((ref, orderId) {
   final storage = ref.read(mostroStorageProvider);
   return storage.watchLatestMessage(orderId);
 });
 
-final mostroMessageHistoryProvider = StreamProvider.family<List<MostroMessage>, String>(
+final mostroMessageHistoryProvider =
+    StreamProvider.family<List<MostroMessage>, String>(
   (ref, orderId) {
     final storage = ref.read(mostroStorageProvider);
     return storage.watchAllMessages(orderId);
   },
 );
 
-final mostroOrderStreamProvider = StreamProvider.family<MostroMessage?, String>((ref, orderId) {
+final mostroOrderStreamProvider =
+    StreamProvider.family<MostroMessage?, String>((ref, orderId) {
   final storage = ref.read(mostroStorageProvider);
   return storage.watchLatestMessageOfType<Order>(orderId);
 });

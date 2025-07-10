@@ -19,8 +19,7 @@ class MultiSelectAutocomplete extends StatefulWidget {
   });
 
   @override
-  MultiSelectAutocompleteState createState() =>
-      MultiSelectAutocompleteState();
+  MultiSelectAutocompleteState createState() => MultiSelectAutocompleteState();
 }
 
 class MultiSelectAutocompleteState extends State<MultiSelectAutocomplete> {
@@ -31,13 +30,13 @@ class MultiSelectAutocompleteState extends State<MultiSelectAutocomplete> {
     super.initState();
     _controller = TextEditingController();
   }
-  
+
   @override
   void dispose() {
     //_controller.dispose();
     super.dispose();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -92,8 +91,9 @@ class MultiSelectAutocompleteState extends State<MultiSelectAutocomplete> {
                   .map((value) => Chip(
                         label: Text(value),
                         onDeleted: () {
-                          final updated = List<String>.from(widget.selectedValues)
-                            ..remove(value);
+                          final updated =
+                              List<String>.from(widget.selectedValues)
+                                ..remove(value);
                           widget.onChanged(updated);
                         },
                       ))
@@ -166,8 +166,7 @@ class OrderFilterState extends State<OrderFilter> {
                 ],
               ),
               IconButton(
-                icon:
-                    const Icon(Icons.close, color: AppTheme.dark2, size: 20),
+                icon: const Icon(Icons.close, color: AppTheme.dark2, size: 20),
                 onPressed: () {
                   Navigator.of(context).pop();
                 },
