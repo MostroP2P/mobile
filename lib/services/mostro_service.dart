@@ -1,87 +1,67 @@
+import 'dart:async';
 import 'dart:convert';
-import 'package:dart_nostr/nostr/model/export.dart';
+import 'package:collection/collection.dart';
+import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
+import 'package:mostro_mobile/features/subscriptions/subscription_manager_provider.dart';
+import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
-import 'package:mostro_mobile/services/lifecycle_manager.dart';
-import 'package:mostro_mobile/shared/notifiers/session_notifier.dart';
-import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
-import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
-import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
-import 'package:logger/logger.dart';
 
 class MostroService {
   final Ref ref;
-  final SessionNotifier _sessionNotifier;
-  static final Logger _logger = Logger();
+  final _logger = Logger();
 
   Settings _settings;
+  StreamSubscription<NostrEvent>? _ordersSubscription;
 
-  MostroService(
-    this._sessionNotifier,
-    this.ref,
-  ) : _settings = ref.read(settingsProvider).copyWith() {
-    init();
+  MostroService(this.ref) : _settings = ref.read(settingsProvider);
+
+  void init() {
+    // Subscribe to the orders stream from SubscriptionManager
+    // The SubscriptionManager will automatically manage subscriptions based on SessionNotifier changes
+    _ordersSubscription = ref.read(subscriptionManagerProvider).orders.listen(
+      _onData,
+      onError: (error, stackTrace) {
+        _logger.e('Error in orders subscription',
+            error: error, stackTrace: stackTrace);
+      },
+      cancelOnError: false,
+    );
   }
 
-  void init() async {
-    final now = DateTime.now();
-    final cutoff = now.subtract(const Duration(hours: 24));
-    final sessions = _sessionNotifier.sessions;
-    final messageStorage = ref.read(mostroStorageProvider);
-    // Set of terminal statuses
-    const terminalStatuses = {
-      Status.canceled,
-      Status.cooperativelyCanceled,
-      Status.success,
-      Status.expired,
-      Status.canceledByAdmin,
-      Status.settledByAdmin,
-      Status.completedByAdmin,
-    };
-    for (final session in sessions) {
-      if (session.startTime.isAfter(cutoff)) {
-        if (session.orderId != null) {
-          final latestOrderMsg = await messageStorage
-              .getLatestMessageOfTypeById<Order>(session.orderId!);
-          final status = latestOrderMsg?.payload is Order
-              ? (latestOrderMsg!.payload as Order).status
-              : null;
-          if (status != null && terminalStatuses.contains(status)) {
-            continue;
-          }
-        }
-        subscribe(session);
-      }
-    }
+  void dispose() {
+    _ordersSubscription?.cancel();
+    _logger.i('MostroService disposed');
   }
 
-  void subscribe(Session session) {
-    final filter = NostrFilter(
-      kinds: [1059],
-      p: [session.tradeKey.public],
+  Future<void> _onData(NostrEvent event) async {
+    final eventStore = ref.read(eventStorageProvider);
+
+    if (await eventStore.hasItem(event.id!)) return;
+    await eventStore.putItem(
+      event.id!,
+      {
+        'id': event.id,
+        'created_at': event.createdAt!.millisecondsSinceEpoch ~/ 1000,
+      },
     );
 
-    final request = NostrRequest(filters: [filter]);
-
-    ref.read(lifecycleManagerProvider).addSubscription(filter);
-
-    final nostrService = ref.read(nostrServiceProvider);
-
-    nostrService.subscribeToEvents(request).listen((event) async {
-      final eventStore = ref.read(eventStorageProvider);
-
-      if (await eventStore.hasItem(event.id!)) return;
-      await eventStore.putItem(
-        event.id!,
-        event,
+    final sessions = ref.read(sessionNotifierProvider);
+    final matchingSession = sessions.firstWhereOrNull(
+        (s) => s.tradeKey.public == event.recipient,
       );
+    if (matchingSession == null) {
+      _logger.w('No matching session found for recipient: ${event.recipient}');
+      return;
+    }
+    final privateKey = matchingSession.tradeKey.private;
 
-      final decryptedEvent = await event.unWrap(
-        session.tradeKey.private,
-      );
+    try {
+      final decryptedEvent = await event.unWrap(privateKey);
       if (decryptedEvent.content == null) return;
 
       final result = jsonDecode(decryptedEvent.content!);
@@ -91,13 +71,11 @@ class MostroService {
       final messageStorage = ref.read(mostroStorageProvider);
       await messageStorage.addMessage(decryptedEvent.id!, msg);
       _logger.i(
-        'Received message of type ${msg.action} with order id ${msg.id}',
+        'Received DM, Event ID: ${decryptedEvent.id} with payload: ${decryptedEvent.content}',
       );
-    });
-  }
-
-  Session? getSessionByOrderId(String orderId) {
-    return _sessionNotifier.getSessionByOrderId(orderId);
+    } catch (e) {
+      _logger.e('Error processing event', error: e);
+    }
   }
 
   Future<void> submitOrder(MostroMessage order) async {
@@ -205,19 +183,20 @@ class MostroService {
       masterKey: session.fullPrivacy ? null : session.masterKey,
       keyIndex: session.fullPrivacy ? null : session.keyIndex,
     );
-
+    _logger.i('Sending DM, Event ID: ${event.id} with payload: ${order.toJson()}');
     await ref.read(nostrServiceProvider).publishEvent(event);
   }
 
   Future<Session> _getSession(MostroMessage order) async {
+    final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
     if (order.requestId != null) {
-      final session = _sessionNotifier.getSessionByRequestId(order.requestId!);
+      final session = sessionNotifier.getSessionByRequestId(order.requestId!);
       if (session == null) {
         throw Exception('No session found for requestId: ${order.requestId}');
       }
       return session;
     } else if (order.id != null) {
-      final session = _sessionNotifier.getSessionByOrderId(order.id!);
+      final session = sessionNotifier.getSessionByOrderId(order.id!);
       if (session == null) {
         throw Exception('No session found for orderId: ${order.id}');
       }

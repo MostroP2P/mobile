@@ -14,11 +14,10 @@ import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 class NostrService {
   late Settings settings;
   final Nostr _nostr = Nostr.instance;
-
-  NostrService();
-
   final Logger _logger = Logger();
   bool _isInitialized = false;
+
+  NostrService();
 
   Future<void> init(Settings settings) async {
     this.settings = settings;
@@ -89,7 +88,7 @@ class NostrService {
     }
   }
 
-  Future<List<NostrEvent>> fecthEvents(NostrFilter filter) async {
+  Future<List<NostrEvent>> fetchEvents(NostrFilter filter) async {
     if (!_isInitialized) {
       throw Exception('Nostr is not initialized. Call init() first.');
     }
@@ -221,7 +220,7 @@ class NostrService {
         events = await _fetchFromSpecificRelays(filter, specificRelays);
       } else {
         // Use default relays
-        events = await fecthEvents(filter);
+        events = await fetchEvents(filter);
       }
 
       if (events.isEmpty) {
@@ -273,7 +272,7 @@ class NostrService {
         events = await _fetchFromSpecificRelays(filter, specificRelays);
       } else {
         // Use default relays
-        events = await fecthEvents(filter);
+        events = await fetchEvents(filter);
       }
 
       if (events.isEmpty) {
@@ -368,7 +367,7 @@ class NostrService {
         await updateSettings(tempSettings);
 
         // Fetch the events
-        final events = await fecthEvents(filter);
+        final events = await fetchEvents(filter);
 
         // Restore original relays
         await updateSettings(settings);
@@ -376,7 +375,7 @@ class NostrService {
         return events;
       } else {
         // No new relays to add, use normal fetch
-        return await fecthEvents(filter);
+        return await fetchEvents(filter);
       }
     } catch (e) {
       _logger.e('Error fetching from specific relays: $e');

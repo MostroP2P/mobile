@@ -374,7 +374,7 @@ class TradeDetailScreen extends ConsumerWidget {
         case actions.Action.cooperativeCancelInitiatedByYou:
           // El usuario ya inició cooperative cancel, ahora debe esperar respuesta
           widgets.add(_buildNostrButton(
-            S.of(context)!.cancelPending,
+            S.of(context)!.cancelPendingButton,
             action: actions.Action.cooperativeCancelInitiatedByYou,
             backgroundColor: Colors.grey,
             onPressed: null,
@@ -383,7 +383,7 @@ class TradeDetailScreen extends ConsumerWidget {
 
         case actions.Action.cooperativeCancelInitiatedByPeer:
           widgets.add(_buildNostrButton(
-            S.of(context)!.acceptCancel,
+            S.of(context)!.acceptCancelButton,
             action: actions.Action.cooperativeCancelAccepted,
             backgroundColor: AppTheme.red1,
             onPressed: () =>
@@ -396,7 +396,7 @@ class TradeDetailScreen extends ConsumerWidget {
 
         case actions.Action.purchaseCompleted:
           widgets.add(_buildNostrButton(
-            S.of(context)!.completePurchase,
+            S.of(context)!.completePurchaseButton,
             action: actions.Action.purchaseCompleted,
             backgroundColor: AppTheme.mostroGreen,
             onPressed: () => ref
@@ -413,7 +413,7 @@ class TradeDetailScreen extends ConsumerWidget {
         case actions.Action.rateUser:
         case actions.Action.rateReceived:
           widgets.add(_buildNostrButton(
-            S.of(context)!.rate,
+            S.of(context)!.rateButton,
             action: actions.Action.rate,
             backgroundColor: AppTheme.mostroGreen,
             onPressed: () => context.push('/rate_user/$orderId'),
@@ -457,14 +457,14 @@ class TradeDetailScreen extends ConsumerWidget {
     Color? backgroundColor,
   }) {
     return MostroReactiveButton(
-      label: label,
+      label: label.toUpperCase(),
       buttonStyle: ButtonStyleType.raised,
       orderId: orderId,
       action: action,
       backgroundColor: backgroundColor,
       onPressed: onPressed ?? () {}, // Provide empty function when null
       showSuccessIndicator: true,
-      timeout: const Duration(seconds: 30),
+      timeout: const Duration(seconds: 10),
     );
   }
 
@@ -476,7 +476,7 @@ class TradeDetailScreen extends ConsumerWidget {
       style: ElevatedButton.styleFrom(
         backgroundColor: AppTheme.mostroGreen,
       ),
-      child: Text(S.of(context)!.contact),
+      child: Text(S.of(context)!.contactButton),
     );
   }
 

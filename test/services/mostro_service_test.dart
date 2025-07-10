@@ -1,28 +1,27 @@
 import 'dart:convert';
 import 'package:convert/convert.dart';
-import 'package:dart_nostr/dart_nostr.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/features/key_manager/key_derivator.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
+import 'package:mostro_mobile/features/subscriptions/subscription_manager.dart';
+import 'package:mostro_mobile/features/subscriptions/subscription_manager_provider.dart';
+import 'package:mostro_mobile/shared/notifiers/session_notifier.dart';
+import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/services/mostro_service.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
-import 'package:mostro_mobile/shared/notifiers/session_notifier.dart';
-import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
+import 'package:dart_nostr/dart_nostr.dart';
 import 'package:mostro_mobile/data/repositories/mostro_storage.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
-import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
+import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 
-import 'mostro_service_test.mocks.dart';
-import 'mostro_service_helper_functions.dart';
+import '../mocks.dart';
 import '../mocks.mocks.dart';
+import 'mostro_service_helper_functions.dart';
 
-@GenerateMocks([NostrService, SessionNotifier, Ref])
 void main() {
   // Provide dummy values for Mockito
   provideDummy<Settings>(Settings(
@@ -38,40 +37,86 @@ void main() {
 
   // Add dummy for NostrService
   provideDummy<NostrService>(MockNostrService());
+  
+  // Create dummy values for Mockito
+  final dummyRef = MockRef();
+  final dummyKeyManager = MockKeyManager();
+  final dummySessionStorage = MockSessionStorage();
+  final dummySettings = MockSettings();
+  
+  // Stub listen on dummyRef to prevent errors when creating MockSubscriptionManager
+  when(dummyRef.listen<List<Session>>(
+    any,
+    any,
+    onError: anyNamed('onError'),
+    fireImmediately: anyNamed('fireImmediately'),
+  )).thenReturn(MockProviderSubscription<List<Session>>());
+  
+  // Create and provide dummy values
+  final dummySessionNotifier = MockSessionNotifier(
+    dummyRef, dummyKeyManager, dummySessionStorage, dummySettings
+  );
+  provideDummy<SessionNotifier>(dummySessionNotifier);
+  
+  // Provide dummy for SubscriptionManager
+  final dummySubscriptionManagerForMockito = MockSubscriptionManager(dummyRef);
+  provideDummy<SubscriptionManager>(dummySubscriptionManagerForMockito);
+
   late MostroService mostroService;
   late KeyDerivator keyDerivator;
+  late MockServerTradeIndex mockServerTradeIndex;
   late MockNostrService mockNostrService;
   late MockSessionNotifier mockSessionNotifier;
   late MockRef mockRef;
-
-  final mockServerTradeIndex = MockServerTradeIndex();
+  late MockSubscriptionManager mockSubscriptionManager;
+  late MockKeyManager mockKeyManager;
+  late MockSessionStorage mockSessionStorage;
 
   setUp(() {
-    mockNostrService = MockNostrService();
-    mockSessionNotifier = MockSessionNotifier();
+    // Initialize all mocks first
     mockRef = MockRef();
-
-    // Generate a valid test key pair for mostro public key
-    final testKeyPair = NostrUtils.generateKeyPair();
-
-    // Create test settings
-    final testSettings = Settings(
-      relays: ['wss://relay.damus.io'],
-      fullPrivacyMode: false,
-      mostroPublicKey: testKeyPair.public,
-      defaultFiatCode: 'USD',
-    );
-
-    // Stub specific provider reads
+    mockKeyManager = MockKeyManager();
+    mockSessionStorage = MockSessionStorage();
+    mockNostrService = MockNostrService();
+    mockServerTradeIndex = MockServerTradeIndex();
+    keyDerivator = KeyDerivator("m/44'/1237'/38383'/0");
+    
+    // Setup all stubs before creating any objects that use them
+    final testSettings = MockSettings();
+    when(testSettings.mostroPublicKey).thenReturn(
+        '9d9d0455a96871f2dc4289b8312429db2e925f167b37c77bf7b28014be235980');
     when(mockRef.read(settingsProvider)).thenReturn(testSettings);
     when(mockRef.read(mostroStorageProvider)).thenReturn(MockMostroStorage());
     when(mockRef.read(nostrServiceProvider)).thenReturn(mockNostrService);
+    
+    // Stub the listen method before creating SubscriptionManager
+    when(mockRef.listen<List<Session>>(
+      any,
+      any,
+      onError: anyNamed('onError'),
+      fireImmediately: anyNamed('fireImmediately'),
+    )).thenReturn(MockProviderSubscription<List<Session>>());
+    
+    // Create mockSessionNotifier
+    mockSessionNotifier = MockSessionNotifier(
+      mockRef,
+      mockKeyManager,
+      mockSessionStorage,
+      testSettings,
+    );
+    when(mockRef.read(sessionNotifierProvider.notifier)).thenReturn(mockSessionNotifier);
+    
+    // Create mockSubscriptionManager with the stubbed mockRef
+    mockSubscriptionManager = MockSubscriptionManager(mockRef);
+    when(mockRef.read(subscriptionManagerProvider)).thenReturn(mockSubscriptionManager);
+    
+    // Finally create the service under test
+    mostroService = MostroService(mockRef);
+  });
 
-    // Stub SessionNotifier methods
-    when(mockSessionNotifier.sessions).thenReturn(<Session>[]);
-
-    mostroService = MostroService(mockSessionNotifier, mockRef);
-    keyDerivator = KeyDerivator("m/44'/1237'/38383'/0");
+  tearDown(() {
+    mostroService.dispose();
+    mockSubscriptionManager.dispose();
   });
 
   // Helper function to verify signatures as server would
@@ -123,37 +168,13 @@ void main() {
         fullPrivacy: false,
       );
 
-      when(mockSessionNotifier.getSessionByOrderId(orderId))
-          .thenReturn(session);
+      // Set mock return value for custom mock
+      mockSessionNotifier.setMockSession(session);
 
-      // Mock NostrService's createRumor, createSeal, createWrap, publishEvent
-      when(mockNostrService.createRumor(any, any, any, any))
-          .thenAnswer((_) async => 'encryptedRumorContent');
+      // Mock NostrService's publishEvent only
+      when(mockNostrService.publishEvent(any)).thenAnswer((_) async {});
 
-      when(mockNostrService.generateKeyPair())
-          .thenAnswer((_) async => NostrUtils.generateKeyPair());
-
-      when(mockNostrService.createSeal(any, any, any, any))
-          .thenAnswer((_) async => 'sealedContent');
-
-      when(mockNostrService.createWrap(any, any, any))
-          .thenAnswer((_) async => NostrEvent(
-                id: 'wrapEventId',
-                kind: 1059,
-                pubkey: 'wrapperPubKey',
-                content: 'sealedContent',
-                createdAt: DateTime.now(),
-                tags: [
-                  ['p', 'mostroPubKey']
-                ],
-                sig: 'wrapSignature',
-              ));
-
-      when(mockNostrService.publishEvent(any))
-          .thenAnswer((_) async => Future.value());
-
-      when(mockSessionNotifier.newSession(orderId: orderId))
-          .thenAnswer((_) async => session);
+      // Note: newSession is already implemented in MockSessionNotifier
 
       // Act
       await mostroService.takeSellOrder(orderId, 100, 'lnbc1234invoice');
@@ -205,31 +226,12 @@ void main() {
         fullPrivacy: false,
       );
 
-      when(mockSessionNotifier.getSessionByOrderId(orderId))
-          .thenReturn(session);
+      // Set mock return value for custom mock
+      mockSessionNotifier.setMockSession(session); // Replaced when() call
 
-      // Mock NostrService's createRumor, createSeal, createWrap, publishEvent
-      when(mockNostrService.createRumor(any, any, any, any))
-          .thenAnswer((_) async => 'encryptedRumorContentInvalid');
-
-      when(mockNostrService.generateKeyPair())
-          .thenAnswer((_) async => NostrUtils.generateKeyPair());
-
-      when(mockNostrService.createSeal(any, any, any, any))
-          .thenAnswer((_) async => 'sealedContentInvalid');
-
-      when(mockNostrService.createWrap(any, any, any))
-          .thenAnswer((_) async => NostrEvent(
-                id: 'wrapEventIdInvalid',
-                kind: 1059,
-                pubkey: 'wrapperPubKeyInvalid',
-                content: 'sealedContentInvalid',
-                createdAt: DateTime.now(),
-                tags: [
-                  ['p', 'mostroPubKey']
-                ],
-                sig: 'invalidWrapSignature',
-              ));
+      // Mock NostrService's publishEvent only - other methods are now static in NostrUtils
+      when(mockNostrService.publishEvent(any))
+          .thenAnswer((_) async => Future<void>.value());
 
       when(mockNostrService.publishEvent(any))
           .thenAnswer((_) async => Future.value());
@@ -284,34 +286,15 @@ void main() {
         fullPrivacy: false,
       );
 
-      when(mockSessionNotifier.getSessionByOrderId(orderId))
-          .thenReturn(session);
+      // Set mock return value for custom mock
+      mockSessionNotifier.setMockSession(session); // Replaced when() call
 
       // Simulate that tradeIndex=3 has already been used
       mockServerTradeIndex.userTradeIndices[userPubKey] = 3;
 
-      // Mock NostrService's createRumor, createSeal, createWrap, publishEvent
-      when(mockNostrService.createRumor(any, any, any, any))
-          .thenAnswer((_) async => 'encryptedRumorContentReused');
-
-      when(mockNostrService.generateKeyPair())
-          .thenAnswer((_) async => NostrUtils.generateKeyPair());
-
-      when(mockNostrService.createSeal(any, any, any, any))
-          .thenAnswer((_) async => 'sealedContentReused');
-
-      when(mockNostrService.createWrap(any, any, any))
-          .thenAnswer((_) async => NostrEvent(
-                id: 'wrapEventIdReused',
-                kind: 1059,
-                pubkey: 'wrapperPubKeyReused',
-                content: 'sealedContentReused',
-                createdAt: DateTime.now(),
-                tags: [
-                  ['p', 'mostroPubKey']
-                ],
-                sig: 'wrapSignatureReused',
-              ));
+      // Mock NostrService's publishEvent only - other methods are now static in NostrUtils
+      when(mockNostrService.publishEvent(any))
+          .thenAnswer((_) async => Future<void>.value());
 
       when(mockNostrService.publishEvent(any))
           .thenAnswer((_) async => Future.value());
@@ -366,31 +349,12 @@ void main() {
         fullPrivacy: true,
       );
 
-      when(mockSessionNotifier.getSessionByOrderId(orderId))
-          .thenReturn(session);
+      // Set mock return value for custom mock
+      mockSessionNotifier.setMockSession(session); // Replaced when() call
 
-      // Mock NostrService's createRumor, createSeal, createWrap, publishEvent
-      when(mockNostrService.createRumor(any, any, any, any))
-          .thenAnswer((_) async => 'encryptedRumorContentFullPrivacy');
-
-      when(mockNostrService.generateKeyPair())
-          .thenAnswer((_) async => NostrUtils.generateKeyPair());
-
-      when(mockNostrService.createSeal(any, any, any, any))
-          .thenAnswer((_) async => 'sealedContentFullPrivacy');
-
-      when(mockNostrService.createWrap(any, any, any))
-          .thenAnswer((_) async => NostrEvent(
-                id: 'wrapEventIdFullPrivacy',
-                kind: 1059,
-                pubkey: 'wrapperPubKeyFullPrivacy',
-                content: 'sealedContentFullPrivacy',
-                createdAt: DateTime.now(),
-                tags: [
-                  ['p', 'mostroPubKey']
-                ],
-                sig: 'wrapSignatureFullPrivacy',
-              ));
+      // Mock NostrService's publishEvent only - other methods are now static in NostrUtils
+      when(mockNostrService.publishEvent(any))
+          .thenAnswer((_) async => Future<void>.value());
 
       when(mockNostrService.publishEvent(any))
           .thenAnswer((_) async => Future.value());
