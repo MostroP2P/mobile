@@ -13,4 +13,3 @@ final keyManagerProvider = Provider<KeyManager>((ref) {
   final keyDerivator = KeyDerivator("m/44'/1237'/38383'/0");
   return KeyManager(keyStorage, keyDerivator);
 });
-

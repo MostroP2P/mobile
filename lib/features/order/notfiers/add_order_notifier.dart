@@ -55,8 +55,9 @@ class AddOrderNotifier extends AbstractMostroNotifier {
 
   Future<void> _confirmOrder(MostroMessage message) async {
     final order = message.getPayload<Order>();
-    
-    state = OrderState(status: order!.status, action: message.action, order: order);
+
+    state =
+        OrderState(status: order!.status, action: message.action, order: order);
     session.orderId = message.id;
     ref.read(sessionNotifierProvider.notifier).saveSession(session);
     ref.read(orderNotifierProvider(message.id!).notifier).subscribe();

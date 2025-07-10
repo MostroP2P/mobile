@@ -46,8 +46,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
       if (isAuthenticated) {
         state = AuthAuthenticated();
       } else {
-        state = const AuthFailure(
-            'Invalid PIN or biometric authentication failed');
+        state =
+            const AuthFailure('Invalid PIN or biometric authentication failed');
       }
     } catch (e) {
       state = AuthFailure(e.toString());
@@ -67,7 +67,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> generateKey() async {
     try {
       final newPrivateKey = await authRepository.generateNewIdentity();
-      state = AuthKeyGenerated(NostrUtils.encodePrivateKeyToNsec(newPrivateKey));
+      state =
+          AuthKeyGenerated(NostrUtils.encodePrivateKeyToNsec(newPrivateKey));
     } catch (e) {
       state = AuthFailure(e.toString());
     }

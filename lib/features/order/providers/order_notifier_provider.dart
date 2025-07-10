@@ -28,7 +28,6 @@ final addOrderNotifierProvider =
   },
 );
 
-
 // This provider tracks the currently selected OrderType tab
 @riverpod
 class OrderTypeNotifier extends _$OrderTypeNotifier {
@@ -45,7 +44,8 @@ final addOrderEventsProvider = StreamProvider.family<MostroMessage?, int>(
   },
 );
 
-final orderMessagesStreamProvider = StreamProvider.family<List<MostroMessage>, String>(
+final orderMessagesStreamProvider =
+    StreamProvider.family<List<MostroMessage>, String>(
   (ref, orderId) {
     final storage = ref.watch(mostroStorageProvider);
     return storage.watchAllMessages(orderId);

@@ -159,7 +159,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
                         ),
                         const SizedBox(height: 16),
                         // Conditionally show Premium section for market rate
-                        if (_marketRate) ...[  
+                        if (_marketRate) ...[
                           PremiumSection(
                             value: _premiumValue,
                             onChanged: (value) {
@@ -168,14 +168,16 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
                               });
                             },
                           ),
-                        ] else ...[  
+                        ] else ...[
                           // Show sats amount input field for fixed price
                           FormSection(
                             title: _orderType == OrderType.buy
                                 ? S.of(context)!.enterSatsAmountBuy
                                 : S.of(context)!.enterSatsAmountSell,
-                            icon: const Icon(Icons.bolt, color: Color(0xFFF3CA29), size: 18),
-                            iconBackgroundColor: const Color(0xFFF3CA29).withValues(alpha: 0.3),
+                            icon: const Icon(Icons.bolt,
+                                color: Color(0xFFF3CA29), size: 18),
+                            iconBackgroundColor:
+                                const Color(0xFFF3CA29).withValues(alpha: 0.3),
                             child: TextFormField(
                               controller: _satsAmountController,
                               style: const TextStyle(color: Colors.white),
@@ -186,10 +188,12 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
                               ),
                               keyboardType: TextInputType.number,
                               validator: (value) {
-                                if (!_marketRate && (value == null || value.isEmpty)) {
+                                if (!_marketRate &&
+                                    (value == null || value.isEmpty)) {
                                   return S.of(context)!.pleaseEnterSatsAmount;
                                 }
-                                if (!_marketRate && !RegExp(r'^[0-9]+$').hasMatch(value!)) {
+                                if (!_marketRate &&
+                                    !RegExp(r'^[0-9]+$').hasMatch(value!)) {
                                   return S.of(context)!.pleaseEnterNumbersOnly;
                                 }
                                 return null;
@@ -319,7 +323,8 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
             context: context,
             builder: (context) => AlertDialog(
               backgroundColor: const Color(0xFF1E2230),
-              title: Text(S.of(context)!.error, style: const TextStyle(color: Colors.white)),
+              title: Text(S.of(context)!.error,
+                  style: const TextStyle(color: Colors.white)),
               content: Text(e.toString(),
                   style: const TextStyle(color: Colors.white)),
               actions: [

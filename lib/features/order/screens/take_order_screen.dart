@@ -58,6 +58,7 @@ class TakeOrderScreen extends ConsumerWidget {
     );
   }
 
+
   Widget _buildSellerAmount(WidgetRef ref, NostrEvent order) {
     return Builder(
       builder: (context) {
@@ -86,6 +87,7 @@ class TakeOrderScreen extends ConsumerWidget {
                   color: Colors.white,
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
+
                 ),
               ),
               const SizedBox(height: 8),
@@ -206,6 +208,7 @@ class TakeOrderScreen extends ConsumerWidget {
           ),
         ),
         const SizedBox(width: 16),
+
         Expanded(
           child: ElevatedButton(
             onPressed: () async {
@@ -271,6 +274,7 @@ class TakeOrderScreen extends ConsumerWidget {
                     );
                   },
                 );
+
 
                 if (enteredAmount != null) {
                   if (orderType == OrderType.buy) {

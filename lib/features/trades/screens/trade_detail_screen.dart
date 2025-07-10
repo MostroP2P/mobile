@@ -167,10 +167,20 @@ class TradeDetailScreen extends ConsumerWidget {
     final satAmount = hasFixedSatsAmount ? ' ${tradeState.order!.amount}' : '';
     final priceText = !hasFixedSatsAmount ? S.of(context)!.atMarketPrice : '';
 
+
+    final amountString =
+        '${tradeState.order!.fiatAmount} ${tradeState.order!.fiatCode} $currencyFlag';
+
+    // If `orderPayload.amount` is 0, the trade is "at market price"
+    final isZeroAmount = (tradeState.order!.amount == 0);
+    final satText = isZeroAmount ? '' : ' ${tradeState.order!.amount}';
+    final priceText = isZeroAmount ? ' ${S.of(context)!.atMarketPrice}' : '';
+
     final premium = tradeState.order!.premium;
     final premiumText = premium == 0
         ? ''
         : (premium > 0)
+
             ? S.of(context)!.withPremiumPercent(premium.toString())
             : S.of(context)!.withDiscountPercent(premium.abs().toString());
 
@@ -183,6 +193,7 @@ class TradeDetailScreen extends ConsumerWidget {
           : session?.startTime ?? DateTime.now(),
       context,
     );
+
 
     return Column(
       children: [
@@ -208,6 +219,7 @@ class TradeDetailScreen extends ConsumerWidget {
           createdDate: timestamp,
         ),
       ],
+
     );
   }
 

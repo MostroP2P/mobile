@@ -2,7 +2,7 @@
   "@@locale": "es",
   "newOrder": "¡Tu oferta ha sido publicada! Por favor espera hasta que otro usuario elija tu orden. Estará disponible durante {expiration_hours} horas. Puedes cancelar esta orden antes de que otro usuario la tome ejecutando: cancel.",
   "canceled": "Has cancelado la orden ID: {id}.",
-  "payInvoice": "Por favor paga esta factura de retención de {amount} Sats por {fiat_code} {fiat_amount} para iniciar la operación. Si no la pagas dentro de {expiration_seconds}, el intercambio será cancelado.",
+  "payInvoice": "Por favor paga esta factura retenida de {amount} Sats por {fiat_code} {fiat_amount} para iniciar la operación. Si no la pagas dentro de {expiration_seconds}, el intercambio será cancelado.",
   "addInvoice": "Por favor envíame una factura por {amount} satoshis equivalente a {fiat_code} {fiat_amount}. Aquí es donde enviaré los fondos una vez completado el intercambio. Si no proporcionas la factura dentro de {expiration_seconds}, el intercambio será cancelado.",
   "waitingSellerToPay": "Por favor espera. He enviado una solicitud de pago al vendedor para enviar los Sats para la orden ID {id}. Si el vendedor no completa el pago dentro de {expiration_seconds}, el intercambio será cancelado.",
   "waitingBuyerInvoice": "¡Pago recibido! Tus Sats ahora están 'retenidos' en tu billetera. He solicitado al comprador que proporcione una factura. Si no lo hace dentro de {expiration_seconds}, tus Sats regresarán a tu billetera y el intercambio será cancelado.",
@@ -115,12 +115,18 @@
   "errorLoadingTrades": "Error al cargar intercambios",
   "retry": "Reintentar",
   "noTradesAvailable": "No hay intercambios disponibles para este tipo",
-  "welcomeToMostroMobile": "Bienvenido a Mostro Mobile",
-  "discoverSecurePlatform": "Descubre una plataforma segura, privada y eficiente para el trading peer-to-peer.",
-  "easyOnboarding": "Incorporación Fácil",
-  "guidedWalkthroughSimple": "Nuestro tutorial guiado hace que sea simple comenzar.",
-  "tradeWithConfidence": "Intercambia con Confianza",
-  "seamlessPeerToPeer": "Disfruta intercambios peer-to-peer sin inconvenientes usando nuestros protocolos avanzados.",
+  "welcomeToMostroMobile": "Opera Bitcoin libremente — sin KYC",
+  "discoverSecurePlatform": "Mostro es un intercambio peer-to-peer que te permite operar Bitcoin por cualquier moneda y método de pago — sin KYC, y sin necesidad de entregar tus datos a nadie.\n\nEstá construido en Nostr, lo que lo hace resistente a la censura. Nadie puede evitar que operes.",
+  "easyOnboarding": "Privacidad por defecto",
+  "guidedWalkthroughSimple": "Mostro genera una nueva identidad para cada intercambio, por lo que tus operaciones no pueden ser vinculadas.\n\nTambién puedes decidir qué tan privado quieres ser:\n\n• Modo reputación – Permite que otros vean tus intercambios exitosos y nivel de confianza.\n• Modo privacidad completa – No se construye reputación, pero tu actividad es completamente anónima.\n\nCambia de modo en cualquier momento desde la pantalla de Cuenta, donde también deberías guardar tus palabras secretas — son la única forma de recuperar tu cuenta.",
+  "tradeWithConfidence": "Seguridad en cada paso",
+  "seamlessPeerToPeer": "Mostro utiliza Facturas Retenidas: los sats permanecen en la billetera del vendedor hasta el final del intercambio. Esto protege a ambas partes.\n\nLa aplicación también está diseñada para ser intuitiva y fácil para todo tipo de usuarios.",
+  "encryptedChat": "Chat completamente encriptado",
+  "encryptedChatDescription": "Cada intercambio tiene su propio chat privado, encriptado de extremo a extremo. Solo los dos usuarios involucrados pueden leerlo.\n\nEn caso de una disputa, puedes darle la clave compartida a un administrador para ayudar a resolver el problema.",
+  "takeAnOffer": "Tomar una oferta",
+  "takeAnOfferDescription": "Navega por el libro de órdenes, elige una oferta que te funcione, y sigue el flujo de intercambio paso a paso.\n\nPodrás revisar el perfil del otro usuario, chatear de forma segura, y completar el intercambio con facilidad.",
+  "cantFindWhatYouNeed": "¿No encuentras lo que necesitas?",
+  "createYourOwnOffer": "También puedes crear tu propia oferta y esperar a que alguien la tome.\n\nEstablece la cantidad y el método de pago preferido — Mostro se encarga del resto.",
   "skip": "Saltar",
   "done": "Hecho",
   "typeToAdd": "Escribir para agregar...",
@@ -209,8 +215,8 @@
   "expirationSeconds": "Segundos de Expiración",
   "fee": "Comisión",
   "proofOfWork": "Prueba de Trabajo",
-  "holdInvoiceExpirationWindow": "Ventana de Expiración de Factura de Retención",
-  "holdInvoiceCltvDelta": "Delta CLTV de Factura de Retención",
+  "holdInvoiceExpirationWindow": "Ventana de Expiración de Factura Retenida",
+  "holdInvoiceCltvDelta": "Delta CLTV de Factura Retenida",
   "invoiceExpirationWindow": "Ventana de Expiración de Factura",
   
   "@_comment_order_creation": "Cadenas del Formulario de Creación de Orden",
@@ -471,6 +477,14 @@
   "spanish": "Español",
   "italian": "Italiano",
   "chooseLanguageDescription": "Elige tu idioma preferido o usa el predeterminado del sistema",
-  "done": "HECHO"
+
+
+
+  "loadingOrder": "Cargando orden...",
+  "done": "HECHO",
+  "unsupportedLinkFormat": "Formato de enlace no compatible",
+  "failedToOpenLink": "Error al abrir enlace",
+  "failedToLoadOrder": "Error al cargar orden",
+  "failedToOpenOrder": "Error al abrir orden"
 
 }

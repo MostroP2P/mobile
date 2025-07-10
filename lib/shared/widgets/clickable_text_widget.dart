@@ -37,7 +37,8 @@ class _ClickableTextState extends State<ClickableText> {
   void _handleTap() async {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('${widget.leftText} ${widget.clickableText} copied to clipboard'),
+        content: Text(
+            '${widget.leftText} ${widget.clickableText} copied to clipboard'),
         duration: const Duration(seconds: 2),
       ),
     );

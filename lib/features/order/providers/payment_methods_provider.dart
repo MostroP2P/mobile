@@ -70,7 +70,8 @@ class SelectedPaymentMethodsNotifier extends StateNotifier<List<String>> {
 }
 
 /// Provider for the selected payment methods
-final selectedPaymentMethodsProvider = StateNotifierProvider<SelectedPaymentMethodsNotifier, List<String>>(
+final selectedPaymentMethodsProvider =
+    StateNotifierProvider<SelectedPaymentMethodsNotifier, List<String>>(
   (ref) => SelectedPaymentMethodsNotifier(),
 );
 
@@ -87,6 +88,7 @@ class CustomPaymentMethodNotifier extends StateNotifier<String?> {
   }
 }
 
-final customPaymentMethodProvider = StateNotifierProvider<CustomPaymentMethodNotifier, String?>(
+final customPaymentMethodProvider =
+    StateNotifierProvider<CustomPaymentMethodNotifier, String?>(
   (ref) => CustomPaymentMethodNotifier(),
 );

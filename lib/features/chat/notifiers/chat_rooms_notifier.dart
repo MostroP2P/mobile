@@ -40,8 +40,8 @@ class ChatRoomsNotifier extends StateNotifier<List<ChatRoom>> {
     try {
       final chats = sessions
           .where(
-            (s) => s.peer != null && s.startTime.isAfter(cutoff),
-          )
+        (s) => s.peer != null && s.startTime.isAfter(cutoff),
+      )
           .map((s) {
         final chat = ref.read(chatRoomsProvider(s.orderId!));
         return chat;

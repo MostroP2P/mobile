@@ -77,7 +77,11 @@ dependencies:
   flutter_background_service: ^5.1.0
   path_provider: ^2.1.5
   permission_handler: ^12.0.0+1
+
   auto_size_text: ^3.0.0
+
+  app_links: ^6.4.0
+
 
 dev_dependencies:
   flutter_test:
