@@ -53,5 +53,19 @@
 			<string>processing</string>
 			<string>remote-notification</string>
 		</array>
+		<!-- Deep Link Support for nostr: scheme -->
+		<key>CFBundleURLTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleURLName</key>
+				<string>nostr.scheme</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>nostr</string>
+				</array>
+				<key>CFBundleTypeRole</key>
+				<string>Editor</string>
+			</dict>
+		</array>
 	</dict>
 </plist>

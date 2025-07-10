@@ -5,7 +5,10 @@ import 'package:dart_nostr/nostr/model/ok.dart';
 import 'package:dart_nostr/nostr/model/relay_informations.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/core/config.dart';
+import 'package:mostro_mobile/data/models/order.dart';
+import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
+import 'package:mostro_mobile/services/deep_link_service.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
 class NostrService {
@@ -192,5 +195,198 @@ class NostrService {
     }
 
     _nostr.services.relays.closeEventsSubscription(id);
+  }
+
+  /// Fetches an event by its ID from specified relays or default relays
+  /// Returns an Order if the event is a valid NIP-69 order, null otherwise
+  Future<Order?> fetchEventById(String eventId,
+      [List<String>? specificRelays]) async {
+    if (!_isInitialized) {
+      throw Exception('Nostr is not initialized. Call init() first.');
+    }
+
+    try {
+      _logger.i('Fetching event with ID: $eventId');
+
+      // Create filter to fetch the specific event
+      final filter = NostrFilter(
+        ids: [eventId],
+        kinds: [38383], // NIP-69 order events
+      );
+
+      List<NostrEvent> events;
+
+      if (specificRelays != null && specificRelays.isNotEmpty) {
+        // Temporarily connect to specific relays for fetching
+        events = await _fetchFromSpecificRelays(filter, specificRelays);
+      } else {
+        // Use default relays
+        events = await fecthEvents(filter);
+      }
+
+      if (events.isEmpty) {
+        _logger.w('No event found with ID: $eventId');
+        return null;
+      }
+
+      // Find the event with the exact ID
+      final event = events.firstWhere(
+        (e) => e.id == eventId,
+        orElse: () => throw StateError('Event not found'),
+      );
+
+      // Validate it's a proper order event
+      if (event.kind != 38383) {
+        _logger.w('Event $eventId is not an order event (kind: ${event.kind})');
+        return null;
+      }
+
+      // Check if it's from a valid Mostro instance
+      if (event.pubkey != settings.mostroPublicKey) {
+        _logger.w('Event $eventId is not from the configured Mostro instance');
+        return null;
+      }
+
+      _logger.i('Successfully found order event: ${event.id}');
+      return Order.fromEvent(event);
+    } catch (e) {
+      _logger.e('Error fetching event by ID: $e');
+      return null;
+    }
+  }
+
+  /// Fetches order information from an event by extracting the 'd' tag (order ID) and 'k' tag (order type)
+  /// This is specifically for deep link handling where the nevent points to an event containing order information
+  Future<OrderInfo?> fetchOrderInfoByEventId(String eventId, [List<String>? specificRelays]) async {
+    try {
+      _logger.i('Fetching order ID from event: $eventId');
+
+      final filter = NostrFilter(
+        ids: [eventId],
+        kinds: [38383], // NIP-69 order events
+      );
+
+      List<NostrEvent> events;
+
+      if (specificRelays != null && specificRelays.isNotEmpty) {
+        // Temporarily connect to specific relays for fetching
+        events = await _fetchFromSpecificRelays(filter, specificRelays);
+      } else {
+        // Use default relays
+        events = await fecthEvents(filter);
+      }
+
+      if (events.isEmpty) {
+        _logger.w('No event found with ID: $eventId');
+        return null;
+      }
+
+      // Find the event with the exact ID
+      final event = events.firstWhere(
+        (e) => e.id == eventId,
+        orElse: () => throw StateError('Event not found'),
+      );
+
+      // Validate it's a proper order event
+      if (event.kind != 38383) {
+        _logger.w('Event $eventId is not an order event (kind: ${event.kind})');
+        return null;
+      }
+
+      // Check if it's from a valid Mostro instance
+      if (event.pubkey != settings.mostroPublicKey) {
+        _logger.w('Event $eventId is not from the configured Mostro instance');
+        return null;
+      }
+
+      // Extract the order ID from the 'd' tag
+      final dTag = event.tags
+          ?.where((tag) => tag.isNotEmpty && tag[0] == 'd')
+          .map((tag) => tag.length > 1 ? tag[1] : null)
+          .where((value) => value != null)
+          .cast<String>()
+          .firstOrNull;
+
+      if (dTag == null || dTag.isEmpty) {
+        _logger.w('Event $eventId does not contain a valid d tag');
+        return null;
+      }
+
+      // Extract the order type from the 'k' tag
+      final kTag = event.tags
+          ?.where((tag) => tag.isNotEmpty && tag[0] == 'k')
+          .map((tag) => tag.length > 1 ? tag[1] : null)
+          .where((value) => value != null)
+          .cast<String>()
+          .firstOrNull;
+
+      if (kTag == null || kTag.isEmpty) {
+        _logger.w('Event $eventId does not contain a valid k tag (order type)');
+        return null;
+      }
+
+      OrderType orderType;
+      try {
+        orderType = OrderType.fromString(kTag);
+      } catch (e) {
+        _logger.w('Event $eventId contains invalid order type: $kTag');
+        return null;
+      }
+
+      _logger.i('Successfully extracted order info - ID: $dTag, Type: ${orderType.value} from event: $eventId');
+      return OrderInfo(orderId: dTag, orderType: orderType);
+    } catch (e) {
+      _logger.e('Error fetching order ID from event: $e');
+      return null;
+    }
+  }
+
+  /// Fetches events from specific relays temporarily
+  Future<List<NostrEvent>> _fetchFromSpecificRelays(
+    NostrFilter filter,
+    List<String> relays,
+  ) async {
+    try {
+      // Store current relays
+      final originalRelays = List<String>.from(settings.relays);
+
+      // Temporarily add specific relays if not already present
+      final allRelays = <String>{...originalRelays, ...relays}.toList();
+
+      if (!ListEquality().equals(originalRelays, allRelays)) {
+        _logger.i('Temporarily connecting to additional relays: $relays');
+
+        // Update settings with additional relays
+        final tempSettings = Settings(
+          relays: allRelays,
+          mostroPublicKey: settings.mostroPublicKey,
+          fullPrivacyMode: settings.fullPrivacyMode,
+          defaultFiatCode: settings.defaultFiatCode,
+          selectedLanguage: settings.selectedLanguage,
+        );
+
+        await updateSettings(tempSettings);
+
+        // Fetch the events
+        final events = await fecthEvents(filter);
+
+        // Restore original relays
+        await updateSettings(settings);
+
+        return events;
+      } else {
+        // No new relays to add, use normal fetch
+        return await fecthEvents(filter);
+      }
+    } catch (e) {
+      _logger.e('Error fetching from specific relays: $e');
+      // Ensure we restore original settings even on error
+      try {
+        await updateSettings(settings);
+      } catch (restoreError) {
+        _logger.e('Failed to restore original relay settings: $restoreError');
+      }
+      rethrow;
+    }
   }
 }
