@@ -134,7 +134,9 @@ class TradeDetailScreen extends ConsumerWidget {
           const SizedBox(height: 16),
           OrderAmountCard(
             title:
-                "${selling == S.of(context)!.selling ? 'You are Selling' : 'You are Buying'}$satAmount Sats",
+              selling == S.of(context)!.selling
+                  ? S.of(context)!.youAreSellingTitle(satAmount)
+                  : S.of(context)!.youAreBuyingTitle(satAmount),
             amount: (tradeState.order!.minAmount != null &&
                     tradeState.order!.maxAmount != null &&
                     tradeState.order!.minAmount != tradeState.order!.maxAmount)
@@ -184,8 +186,8 @@ class TradeDetailScreen extends ConsumerWidget {
       children: [
         OrderAmountCard(
           title: selling == S.of(context)!.selling
-              ? "You are Selling$satAmount Sats"
-              : "You are Buying$satAmount Sats",
+            ? S.of(context)!.youAreSellingTitle(satAmount)
+            : S.of(context)!.youAreBuyingTitle(satAmount),
           amount: (tradeState.order!.minAmount != null &&
                   tradeState.order!.maxAmount != null &&
                   tradeState.order!.minAmount != tradeState.order!.maxAmount)
