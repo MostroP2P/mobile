@@ -411,5 +411,9 @@
   "spanish": "Spanish",
   "italian": "Italian",
   "loadingOrder": "Loading order...",
-  "chooseLanguageDescription": "Choose your preferred language or use system default"
+  "chooseLanguageDescription": "Choose your preferred language or use system default",
+  "unsupportedLinkFormat": "Unsupported link format",
+  "failedToOpenLink": "Failed to open link",
+  "failedToLoadOrder": "Failed to load order",
+  "failedToOpenOrder": "Failed to open order"
 }

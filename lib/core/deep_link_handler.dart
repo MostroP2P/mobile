@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logger/logger.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/services/deep_link_service.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 
@@ -17,11 +18,14 @@ class DeepLinkHandler {
   void initialize(GoRouter router) {
     _logger.i('Initializing DeepLinkHandler');
 
+    // Get the deep link service instance
+    final deepLinkService = _ref.read(deepLinkServiceProvider);
+
     // Initialize the deep link service
-    DeepLinkService.initialize();
+    deepLinkService.initialize();
 
     // Listen for deep link events
-    _subscription = DeepLinkService.deepLinkStream.listen(
+    _subscription = deepLinkService.deepLinkStream.listen(
       (Uri uri) => _handleDeepLink(uri, router),
       onError: (error) => _logger.e('Deep link stream error: $error'),
     );
@@ -40,13 +44,17 @@ class DeepLinkHandler {
         await _handleNostrDeepLink(uri.toString(), router);
       } else {
         _logger.w('Unsupported deep link scheme: ${uri.scheme}');
-        _showErrorSnackBar(router.routerDelegate.navigatorKey.currentContext,
-            'Unsupported link format');
+        final context = router.routerDelegate.navigatorKey.currentContext;
+        if (context != null && context.mounted) {
+          _showErrorSnackBar(context, S.of(context)!.unsupportedLinkFormat);
+        }
       }
     } catch (e) {
       _logger.e('Error handling deep link: $e');
-      _showErrorSnackBar(router.routerDelegate.navigatorKey.currentContext,
-          'Failed to open link');
+      final context = router.routerDelegate.navigatorKey.currentContext;
+      if (context != null && context.mounted) {
+        _showErrorSnackBar(context, S.of(context)!.failedToOpenLink);
+      }
     }
   }
 
@@ -55,40 +63,47 @@ class DeepLinkHandler {
     String url,
     GoRouter router,
   ) async {
+    BuildContext? context;
     try {
       // Show loading indicator
-      final context = router.routerDelegate.navigatorKey.currentContext;
+      context = router.routerDelegate.navigatorKey.currentContext;
       if (context != null) {
         _showLoadingDialog(context);
       }
 
-      // Get the NostrService
+      // Get the services
       final nostrService = _ref.read(nostrServiceProvider);
+      final deepLinkService = _ref.read(deepLinkServiceProvider);
 
       // Process the nostr link
-      final result = await DeepLinkService.processNostrLink(url, nostrService);
+      final result = await deepLinkService.processNostrLink(url, nostrService);
 
+      // Get fresh context after async operation
+      final currentContext = router.routerDelegate.navigatorKey.currentContext;
+      
       // Hide loading indicator
-      if (context != null && context.mounted) {
-        Navigator.of(context).pop();
+      if (currentContext != null && currentContext.mounted) {
+        Navigator.of(currentContext).pop();
       }
 
       if (result.isSuccess && result.orderInfo != null) {
         // Navigate to the appropriate screen
-        DeepLinkService.navigateToOrder(router, result.orderInfo!);
+        deepLinkService.navigateToOrder(router, result.orderInfo!);
         _logger.i('Successfully navigated to order: ${result.orderInfo!.orderId} (${result.orderInfo!.orderType.value})');
       } else {
-        if (context != null && context.mounted) {
-          _showErrorSnackBar(context, result.error ?? 'Failed to load order');
+        final errorContext = router.routerDelegate.navigatorKey.currentContext;
+        if (errorContext != null && errorContext.mounted) {
+          final errorMessage = result.error ?? S.of(errorContext)!.failedToLoadOrder;
+          _showErrorSnackBar(errorContext, errorMessage);
         }
         _logger.w('Failed to process nostr link: ${result.error}');
       }
     } catch (e) {
       _logger.e('Error processing nostr deep link: $e');
-      final context = router.routerDelegate.navigatorKey.currentContext;
-      if (context != null && context.mounted) {
-        Navigator.of(context).pop(); // Hide loading if still showing
-        _showErrorSnackBar(context, 'Failed to open order');
+      final errorContext = router.routerDelegate.navigatorKey.currentContext;
+      if (errorContext != null && errorContext.mounted) {
+        Navigator.of(errorContext).pop(); // Hide loading if still showing
+        _showErrorSnackBar(errorContext, S.of(errorContext)!.failedToOpenOrder);
       }
     }
   }
@@ -98,16 +113,16 @@ class DeepLinkHandler {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(
+      builder: (dialogContext) => Center(
         child: Card(
           child: Padding(
-            padding: EdgeInsets.all(20.0),
+            padding: const EdgeInsets.all(20.0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('Loading order...'),
+                const CircularProgressIndicator(),
+                const SizedBox(height: 16),
+                Text(S.of(dialogContext)!.loadingOrder),
               ],
             ),
           ),
@@ -133,7 +148,7 @@ class DeepLinkHandler {
   void dispose() {
     _subscription?.cancel();
     _subscription = null;
-    DeepLinkService.dispose();
+    // DeepLinkService disposal is handled by Riverpod provider
   }
 }
 

@@ -19,18 +19,18 @@ class OrderInfo {
 }
 
 class DeepLinkService {
-  static final _logger = Logger();
-  static final _appLinks = AppLinks();
+  final Logger _logger = Logger();
+  final AppLinks _appLinks = AppLinks();
 
   // Stream controller for deep link events
-  static final _deepLinkController = StreamController<Uri>.broadcast();
-  static Stream<Uri> get deepLinkStream => _deepLinkController.stream;
+  final StreamController<Uri> _deepLinkController = StreamController<Uri>.broadcast();
+  Stream<Uri> get deepLinkStream => _deepLinkController.stream;
 
   // Flag to track if service is initialized
-  static bool _isInitialized = false;
+  bool _isInitialized = false;
 
   /// Initializes the deep link service and sets up listeners
-  static Future<void> initialize() async {
+  Future<void> initialize() async {
     if (_isInitialized) return;
 
     try {
@@ -61,12 +61,12 @@ class DeepLinkService {
   }
 
   /// Handles incoming deep links
-  static void _handleDeepLink(Uri uri) {
+  void _handleDeepLink(Uri uri) {
     _deepLinkController.add(uri);
   }
 
   /// Processes a nostr: deep link and resolves order information
-  static Future<DeepLinkResult> processNostrLink(
+  Future<DeepLinkResult> processNostrLink(
     String url,
     NostrService nostrService,
   ) async {
@@ -108,7 +108,7 @@ class DeepLinkService {
   }
 
   /// Fetches order information from the specified event's tags
-  static Future<OrderInfo?> _fetchOrderInfoFromEvent(
+  Future<OrderInfo?> _fetchOrderInfoFromEvent(
     String eventId,
     List<String> relays,
     NostrService nostrService,
@@ -132,7 +132,7 @@ class DeepLinkService {
   }
 
   /// Determines the appropriate navigation route for an order
-  static String getNavigationRoute(OrderInfo orderInfo) {
+  String getNavigationRoute(OrderInfo orderInfo) {
     // Navigate to the correct take order screen based on order type
     switch (orderInfo.orderType) {
       case OrderType.sell:
@@ -143,14 +143,14 @@ class DeepLinkService {
   }
 
   /// Navigates to the appropriate screen for the given order
-  static void navigateToOrder(GoRouter router, OrderInfo orderInfo) {
+  void navigateToOrder(GoRouter router, OrderInfo orderInfo) {
     final route = getNavigationRoute(orderInfo);
     _logger.i('Navigating to: $route (Order: ${orderInfo.orderId}, Type: ${orderInfo.orderType.value})');
     router.push(route);
   }
 
   /// Cleans up resources
-  static void dispose() {
+  void dispose() {
     _deepLinkController.close();
     _isInitialized = false;
   }
@@ -185,5 +185,9 @@ class DeepLinkResult {
 
 /// Provider for the deep link service
 final deepLinkServiceProvider = Provider<DeepLinkService>((ref) {
-  return DeepLinkService();
+  final service = DeepLinkService();
+  ref.onDispose(() {
+    service.dispose();
+  });
+  return service;
 });

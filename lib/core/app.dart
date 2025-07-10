@@ -72,10 +72,17 @@ class _MostroAppState extends ConsumerState<MostroApp> {
         // Initialize deep links after router is created
         if (!_deepLinksInitialized && _router != null) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            final deepLinkHandler = ref.read(deepLinkHandlerProvider);
-            deepLinkHandler.initialize(_router!);
+            try {
+              final deepLinkHandler = ref.read(deepLinkHandlerProvider);
+              deepLinkHandler.initialize(_router!);
+              _deepLinksInitialized = true;
+            } catch (e, stackTrace) {
+              // Log the error but don't set _deepLinksInitialized to true
+              // This allows retries on subsequent builds
+              debugPrint('Failed to initialize deep links: $e');
+              debugPrint('Stack trace: $stackTrace');
+            }
           });
-          _deepLinksInitialized = true;
         }
 
         return MaterialApp.router(
