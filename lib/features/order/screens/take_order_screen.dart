@@ -163,8 +163,12 @@ class TakeOrderScreen extends ConsumerWidget {
   }
 
   Widget _buildCreatedOn(NostrEvent order) {
-    return CreatedDateCard(
-      createdDate: formatDateTime(order.createdAt!),
+    return Builder(
+      builder: (context) {
+        return CreatedDateCard(
+          createdDate: formatDateTime(order.createdAt!, context),
+        );
+      },
     );
   }
 
@@ -308,12 +312,24 @@ class TakeOrderScreen extends ConsumerWidget {
     );
   }
 
-  String formatDateTime(DateTime dt) {
-    final dateFormatter = DateFormat('EEE, MMM dd yyyy');
-    final timeFormatter = DateFormat('HH:mm');
-    final formattedDate = dateFormatter.format(dt);
-    final formattedTime = timeFormatter.format(dt);
-    
-    return '$formattedDate at $formattedTime';
+  String formatDateTime(DateTime dt, [BuildContext? context]) {
+    if (context != null) {
+      // Use internationalized date format
+      final dateFormatter = DateFormat.yMMMd(Localizations.localeOf(context).languageCode);
+      final timeFormatter = DateFormat.Hm(Localizations.localeOf(context).languageCode);
+      final formattedDate = dateFormatter.format(dt);
+      final formattedTime = timeFormatter.format(dt);
+      
+      // Use the internationalized string for "Created on: date"
+      return S.of(context)!.createdOnDate('$formattedDate $formattedTime');
+    } else {
+      // Fallback if context is not available
+      final dateFormatter = DateFormat('EEE, MMM dd yyyy');
+      final timeFormatter = DateFormat('HH:mm');
+      final formattedDate = dateFormatter.format(dt);
+      final formattedTime = timeFormatter.format(dt);
+      
+      return '$formattedDate at $formattedTime';
+    }
   }
 }

@@ -119,6 +119,7 @@ class TradeDetailScreen extends ConsumerWidget {
             ? DateTime.fromMillisecondsSinceEpoch(
                 tradeState.order!.createdAt! * 1000)
             : session?.startTime ?? DateTime.now(),
+        context,
       );
 
       final hasFixedSatsAmount = tradeState.order!.amount != 0;
@@ -180,6 +181,7 @@ class TradeDetailScreen extends ConsumerWidget {
           ? DateTime.fromMillisecondsSinceEpoch(
               tradeState.order!.createdAt! * 1000)
           : session?.startTime ?? DateTime.now(),
+      context,
     );
 
     return Column(
@@ -550,13 +552,25 @@ class TradeDetailScreen extends ConsumerWidget {
         : tradeState.order!.kind == OrderType.sell;
   }
 
-  /// Format the date time to a user-friendly string without timezone
-  String formatDateTime(DateTime dt) {
-    final dateFormatter = DateFormat('EEE, MMM dd yyyy');
-    final timeFormatter = DateFormat('HH:mm');
-    final formattedDate = dateFormatter.format(dt);
-    final formattedTime = timeFormatter.format(dt);
-
-    return '$formattedDate at $formattedTime';
+  /// Format the date time to a user-friendly string with internationalization
+  String formatDateTime(DateTime dt, [BuildContext? context]) {
+    if (context != null) {
+      // Use internationalized date format
+      final dateFormatter = DateFormat.yMMMd(Localizations.localeOf(context).languageCode);
+      final timeFormatter = DateFormat.Hm(Localizations.localeOf(context).languageCode);
+      final formattedDate = dateFormatter.format(dt);
+      final formattedTime = timeFormatter.format(dt);
+      
+      // Use the internationalized string for "Created on: date"
+      return S.of(context)!.createdOnDate('$formattedDate $formattedTime');
+    } else {
+      // Fallback if context is not available
+      final dateFormatter = DateFormat('EEE, MMM dd yyyy');
+      final timeFormatter = DateFormat('HH:mm');
+      final formattedDate = dateFormatter.format(dt);
+      final formattedTime = timeFormatter.format(dt);
+      
+      return '$formattedDate at $formattedTime';
+    }
   }
 }
