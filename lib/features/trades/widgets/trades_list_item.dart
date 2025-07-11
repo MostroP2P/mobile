@@ -2,7 +2,7 @@ import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-// package:mostro_mobile/core/app_theme.dart is not used
+import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/role.dart';
 import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
@@ -38,8 +38,9 @@ class TradesListItem extends ConsumerWidget {
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
         decoration: BoxDecoration(
-          color: const Color(
-              0xFF1D212C), // Mismo color que el fondo de órdenes en home
+
+          color: AppTheme.dark1,
+
           borderRadius: BorderRadius.circular(12.0),
         ),
         child: Padding(
@@ -60,7 +61,7 @@ class TradesListItem extends ConsumerWidget {
                               ? S.of(context)!.buyingBitcoin
                               : S.of(context)!.sellingBitcoin,
                           style: const TextStyle(
-                            color: Colors.white,
+                            color: AppTheme.textPrimary,
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                           ),
@@ -85,9 +86,13 @@ class TradesListItem extends ConsumerWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          '${trade.fiatAmount.minimum} ${trade.currency ?? ''}',
+                          trade.fiatAmount.maximum != null &&
+                                  trade.fiatAmount.maximum !=
+                                      trade.fiatAmount.minimum
+                              ? '${trade.fiatAmount.minimum} - ${trade.fiatAmount.maximum} ${trade.currency ?? ''}'
+                              : '${trade.fiatAmount.minimum} ${trade.currency ?? ''}',
                           style: const TextStyle(
-                            color: Colors.white,
+                            color: AppTheme.textPrimary,
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
@@ -103,14 +108,14 @@ class TradesListItem extends ConsumerWidget {
                                 color:
                                     double.tryParse(trade.premium!) != null &&
                                             double.parse(trade.premium!) > 0
-                                        ? Colors.green.shade700
-                                        : Colors.red.shade700,
+                                        ? AppTheme.premiumPositiveChip
+                                        : AppTheme.premiumNegativeChip,
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
                                 '${double.tryParse(trade.premium!) != null && double.parse(trade.premium!) > 0 ? '+' : ''}${trade.premium}%',
                                 style: const TextStyle(
-                                  color: Colors.white,
+                                  color: AppTheme.textPrimary,
                                   fontSize: 11,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -120,19 +125,19 @@ class TradesListItem extends ConsumerWidget {
                       ],
                     ),
                     const SizedBox(height: 4),
-                    // Third row: Payment methods (muestra todos los métodos de pago separados por comas)
+
                     trade.paymentMethods.isNotEmpty
                         ? Text(
                             trade.paymentMethods.join(', '),
-                            style: TextStyle(
-                              color: Colors.grey.shade400,
+                            style: const TextStyle(
+                              color: AppTheme.secondaryText,
                               fontSize: 14,
                             ),
                           )
                         : Text(
                             S.of(context)!.bankTransfer,
-                            style: TextStyle(
-                              color: Colors.grey.shade400,
+                            style: const TextStyle(
+                              color: AppTheme.secondaryText,
                               fontSize: 14,
                             ),
                           ),
@@ -142,7 +147,7 @@ class TradesListItem extends ConsumerWidget {
               // Right side - Arrow icon
               const Icon(
                 Icons.chevron_right,
-                color: Colors.white,
+                color: AppTheme.textPrimary,
                 size: 24,
               ),
             ],
@@ -156,16 +161,15 @@ class TradesListItem extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: isCreator
-            ? Colors.blue.shade700
-            : Colors
-                .teal.shade700, // Cambiado de verde a teal para "Taken by you"
-        borderRadius: BorderRadius.circular(12), // Más redondeado
+
+        color: isCreator ? AppTheme.createdByYouChip : AppTheme.takenByYouChip,
+        borderRadius: BorderRadius.circular(12),
+
       ),
       child: Text(
         isCreator ? S.of(context)!.createdByYou : S.of(context)!.takenByYou,
         style: const TextStyle(
-          color: Colors.white,
+          color: AppTheme.textPrimary,
           fontSize: 12,
           fontWeight: FontWeight.w500,
         ),
@@ -180,77 +184,81 @@ class TradesListItem extends ConsumerWidget {
 
     switch (status) {
       case Status.active:
-        backgroundColor = const Color(0xFF1E3A8A)
-            .withValues(alpha: 0.3); // Azul oscuro con transparencia
-        textColor = const Color(0xFF93C5FD); // Azul claro
+
+        backgroundColor =
+            AppTheme.statusActiveBackground.withValues(alpha: 0.3);
+        textColor = AppTheme.statusActiveText;
         label = S.of(context)!.active;
         break;
       case Status.pending:
-        backgroundColor = const Color(0xFF854D0E)
-            .withValues(alpha: 0.3); // Ámbar oscuro con transparencia
-        textColor = const Color(0xFFFCD34D); // Ámbar claro
+        backgroundColor =
+            AppTheme.statusPendingBackground.withValues(alpha: 0.3);
+        textColor = AppTheme.statusPendingText;
         label = S.of(context)!.pending;
         break;
-      // ✅ SOLUCION PROBLEMA 1: Agregar casos específicos para waitingPayment y waitingBuyerInvoice
+
       case Status.waitingPayment:
-        backgroundColor = const Color(0xFF7C2D12)
-            .withValues(alpha: 0.3); // Naranja oscuro con transparencia
-        textColor = const Color(0xFFFED7AA); // Naranja claro
-        label = S.of(context)!.waitingPayment; // En lugar de "Pending"
+        backgroundColor =
+            AppTheme.statusWaitingBackground.withValues(alpha: 0.3);
+        textColor = AppTheme.statusWaitingText;
+        label = S.of(context)!.waitingPayment;
         break;
       case Status.waitingBuyerInvoice:
-        backgroundColor = const Color(0xFF7C2D12)
-            .withValues(alpha: 0.3); // Naranja oscuro con transparencia
-        textColor = const Color(0xFFFED7AA); // Naranja claro
-        label = S.of(context)!.waitingInvoice; // En lugar de "Pending"
+        backgroundColor =
+            AppTheme.statusWaitingBackground.withValues(alpha: 0.3);
+        textColor = AppTheme.statusWaitingText;
+        label = S.of(context)!.waitingInvoice;
         break;
       case Status.fiatSent:
-        backgroundColor = const Color(0xFF065F46)
-            .withValues(alpha: 0.3); // Verde oscuro con transparencia
-        textColor = const Color(0xFF6EE7B7); // Verde claro
+        backgroundColor =
+            AppTheme.statusSuccessBackground.withValues(alpha: 0.3);
+        textColor = AppTheme.statusSuccessText;
         label = S.of(context)!.fiatSent;
         break;
       case Status.canceled:
       case Status.canceledByAdmin:
       case Status.cooperativelyCanceled:
-        backgroundColor = Colors.grey.shade800.withValues(alpha: 0.3);
-        textColor = Colors.grey.shade300;
+        backgroundColor =
+            AppTheme.statusInactiveBackground.withValues(alpha: 0.3);
+        textColor = AppTheme.statusInactiveText;
         label = S.of(context)!.cancel;
         break;
       case Status.settledByAdmin:
       case Status.settledHoldInvoice:
-        backgroundColor = const Color(0xFF581C87)
-            .withValues(alpha: 0.3); // Morado oscuro con transparencia
-        textColor = const Color(0xFFC084FC); // Morado claro
+        backgroundColor =
+            AppTheme.statusSettledBackground.withValues(alpha: 0.3);
+        textColor = AppTheme.statusSettledText;
         label = S.of(context)!.settled;
         break;
       case Status.completedByAdmin:
-        backgroundColor = const Color(0xFF065F46)
-            .withValues(alpha: 0.3); // Verde oscuro con transparencia
-        textColor = const Color(0xFF6EE7B7); // Verde claro
+        backgroundColor =
+            AppTheme.statusSuccessBackground.withValues(alpha: 0.3);
+        textColor = AppTheme.statusSuccessText;
         label = S.of(context)!.completed;
         break;
       case Status.dispute:
-        backgroundColor = const Color(0xFF7F1D1D)
-            .withValues(alpha: 0.3); // Rojo oscuro con transparencia
-        textColor = const Color(0xFFFCA5A5); // Rojo claro
+        backgroundColor =
+            AppTheme.statusDisputeBackground.withValues(alpha: 0.3);
+        textColor = AppTheme.statusDisputeText;
         label = S.of(context)!.dispute;
         break;
       case Status.expired:
-        backgroundColor = Colors.grey.shade800.withValues(alpha: 0.3);
-        textColor = Colors.grey.shade300;
+        backgroundColor =
+            AppTheme.statusInactiveBackground.withValues(alpha: 0.3);
+        textColor = AppTheme.statusInactiveText;
         label = S.of(context)!.expired;
         break;
       case Status.success:
-        backgroundColor = const Color(0xFF065F46)
-            .withValues(alpha: 0.3); // Verde oscuro con transparencia
-        textColor = const Color(0xFF6EE7B7); // Verde claro
+        backgroundColor =
+            AppTheme.statusSuccessBackground.withValues(alpha: 0.3);
+        textColor = AppTheme.statusSuccessText;
         label = S.of(context)!.success;
         break;
       default:
-        backgroundColor = Colors.grey.shade800.withValues(alpha: 0.3);
-        textColor = Colors.grey.shade300;
-        label = status.toString(); // Fallback para mostrar el status real
+        backgroundColor =
+            AppTheme.statusInactiveBackground.withValues(alpha: 0.3);
+        textColor = AppTheme.statusInactiveText;
+        label = status.toString();
         break;
     }
 

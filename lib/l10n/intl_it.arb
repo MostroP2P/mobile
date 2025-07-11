@@ -405,16 +405,94 @@
   "share": "Condividi",
   "failedToShareInvoice": "Errore nel condividere la fattura. Per favore prova a copiarla invece.",
   "openWallet": "APRI PORTAFOGLIO",
+
+
+  "@_comment_trade_detail_screen_new": "Nuove Stringhe Schermata Dettagli Scambio",
+  "orderDetailsTitle": "DETTAGLI ORDINE",
+  "buyOrderDetailsTitle": "DETTAGLI ORDINE DI ACQUISTO",
+  "sellOrderDetailsTitle": "DETTAGLI ORDINE DI VENDITA",
+  "someoneIsSellingTitle": "Qualcuno sta Vendendo Sats",
+  "someoneIsBuyingTitle": "Qualcuno sta Comprando Sats",
+  "someoneIsSellingFixedTitle": "Qualcuno sta Vendendo {sats} Sats",
+  "@someoneIsSellingFixedTitle": {
+    "placeholders": {
+      "sats": {
+        "description": "Fixed amount of satoshis being sold"
+      }
+    }
+  },
+  "someoneIsBuyingFixedTitle": "Qualcuno sta Comprando {sats} Sats",
+  "@someoneIsBuyingFixedTitle": {
+    "placeholders": {
+      "sats": {
+        "description": "Fixed amount of satoshis being bought"
+      }
+    }
+  },
+  "youCreatedOfferMessage": "Hai creato questa offerta. Di seguito sono riportati i dettagli della tua offerta. Aspetta che un altro utente la prenda. Sarà pubblicata per 24 ore. Puoi cancellarla in qualsiasi momento utilizzando il pulsante 'Annulla'.",
+  "youAreSellingTitle": "Stai vendendo {sats} sats",
+  "@youAreSellingTitle": {
+    "placeholders": {
+      "sats": {
+        "description": "Amount of satoshis being sold"
+      }
+    }
+  },
+  "youAreBuyingTitle": "Stai comprando {sats} sats",
+  "@youAreBuyingTitle": {
+    "placeholders": {
+      "sats": {
+        "description": "Amount of satoshis being bought"
+      }
+    }
+  },
+  "forAmount": "per {amount}",
+  "@forAmount": {
+    "placeholders": {
+      "amount": {
+        "description": "Fiat amount for the transaction"
+      }
+    }
+  },
+  "timeLeftLabel": "Tempo rimasto: {time}",
+  "@timeLeftLabel": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "cancelPendingButton": "ANNULLAMENTO IN SOSPESO",
+  "acceptCancelButton": "ACCETTA ANNULLAMENTO",
+  "disputeButton": "DISPUTA",
+  "fiatSentButton": "FIAT INVIATO",
+  "completePurchaseButton": "COMPLETA ACQUISTO",
+  "sellBitcoinButton": "VENDI BITCOIN",
+  "buyBitcoinButton": "COMPRA BITCOIN",
+  "paymentMethodLabel": "Metodo di Pagamento",
+  "createdOnLabel": "Creato il",
+  "orderIdLabel": "ID Ordine",
+  "creatorReputationLabel": "Reputazione del Creatore",
+  "ratingTitleLabel": "Valutazione",
+  "reviewsLabel": "Recensioni",
+  "daysLabel": "Giorni",
+  "cancelTradeDialogTitle": "Annulla Scambio",
+  "cooperativeCancelDialogMessage": "Se confermi, inizierai un annullamento cooperativo con la tua controparte.",
+  "acceptCancelDialogMessage": "Se confermi, accetterai l'annullamento cooperativo iniziato dalla tua controparte.",
+  "orderIdCopiedMessage": "ID ordine copiato negli appunti",
+
   "language": "Lingua",
   "systemDefault": "Predefinito di sistema",
   "english": "Inglese",
   "spanish": "Spagnolo",
   "italian": "Italiano",
   "chooseLanguageDescription": "Scegli la tua lingua preferita o usa il predefinito di sistema",
+
   "loadingOrder": "Caricamento ordine...",
   "done": "FATTO",
   "unsupportedLinkFormat": "Formato di link non supportato",
   "failedToOpenLink": "Impossibile aprire il link",
   "failedToLoadOrder": "Impossibile caricare l'ordine",
   "failedToOpenOrder": "Impossibile aprire l'ordine"
+
 }

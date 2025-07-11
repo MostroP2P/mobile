@@ -405,16 +405,86 @@
   "share": "Compartir",
   "failedToShareInvoice": "Error al compartir factura. Por favor intenta copiarla en su lugar.",
   "openWallet": "ABRIR BILLETERA",
+
+
+  "@_comment_trade_detail_screen_new": "Nuevas cadenas de Pantalla de Detalles de Intercambio",
+  "orderDetailsTitle": "DETALLES DE ORDEN",
+  "buyOrderDetailsTitle": "DETALLES DE ORDEN DE COMPRA",
+  "sellOrderDetailsTitle": "DETALLES DE ORDEN DE VENTA",
+  "someoneIsSellingTitle": "Alguien está Vendiendo Sats",
+  "someoneIsBuyingTitle": "Alguien está Comprando Sats",
+  "someoneIsSellingFixedTitle": "Alguien está Vendiendo {sats} Sats",
+  "@someoneIsSellingFixedTitle": {
+    "placeholders": {
+      "sats": {}
+    }
+  },
+  "someoneIsBuyingFixedTitle": "Alguien está Comprando {sats} Sats",
+  "@someoneIsBuyingFixedTitle": {
+    "placeholders": {
+      "sats": {}
+    }
+  },
+  "youCreatedOfferMessage": "Creaste esta oferta. A continuación se muestran los detalles de tu oferta. Espera a que otro usuario la tome. Se publicará durante 24 horas. Puedes cancelarla en cualquier momento usando el botón 'Cancelar'.",
+  "youAreSellingTitle": "Estás vendiendo {sats} sats",
+  "@youAreSellingTitle": {
+    "placeholders": {
+      "sats": {}
+    }
+  },
+  "youAreBuyingTitle": "Estás comprando {sats} sats",
+  "@youAreBuyingTitle": {
+    "placeholders": {
+      "sats": {}
+    }
+  },
+  "forAmount": "por {amount}",
+  "@forAmount": {
+    "placeholders": {
+      "amount": {}
+    }
+  },
+  "timeLeftLabel": "Tiempo restante: {time}",
+  "@timeLeftLabel": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "cancelPendingButton": "CANCELACIÓN PENDIENTE",
+  "acceptCancelButton": "ACEPTAR CANCELACIÓN",
+  "disputeButton": "DISPUTA",
+  "fiatSentButton": "FIAT ENVIADO",
+  "completePurchaseButton": "COMPLETAR COMPRA",
+  "sellBitcoinButton": "VENDER BITCOIN",
+  "buyBitcoinButton": "COMPRAR BITCOIN",
+  "paymentMethodLabel": "Método de Pago",
+  "createdOnLabel": "Creado el",
+  "orderIdLabel": "ID de Orden",
+  "creatorReputationLabel": "Reputación del Creador",
+  "ratingTitleLabel": "Calificación",
+  "reviewsLabel": "Reseñas",
+  "daysLabel": "Días",
+  "cancelTradeDialogTitle": "Cancelar Intercambio",
+  "cooperativeCancelDialogMessage": "Si confirmas, iniciarás una cancelación cooperativa con tu contraparte.",
+  "acceptCancelDialogMessage": "Si confirmas, aceptarás la cancelación cooperativa iniciada por tu contraparte.",
+  "orderIdCopiedMessage": "ID de orden copiado al portapapeles",
+
   "language": "Idioma",
   "systemDefault": "Predeterminado del sistema",
   "english": "Inglés",
   "spanish": "Español",
   "italian": "Italiano",
   "chooseLanguageDescription": "Elige tu idioma preferido o usa el predeterminado del sistema",
+
+
+
   "loadingOrder": "Cargando orden...",
   "done": "HECHO",
   "unsupportedLinkFormat": "Formato de enlace no compatible",
   "failedToOpenLink": "Error al abrir enlace",
   "failedToLoadOrder": "Error al cargar orden",
   "failedToOpenOrder": "Error al abrir orden"
+
 }
