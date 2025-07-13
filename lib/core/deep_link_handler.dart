@@ -39,9 +39,9 @@ class DeepLinkHandler {
     try {
       _logger.i('Handling deep link: $uri');
 
-      // Check if it's a nostr: scheme
-      if (uri.scheme == 'nostr') {
-        await _handleNostrDeepLink(uri.toString(), router);
+      // Check if it's a mostro: scheme
+      if (uri.scheme == 'mostro') {
+        await _handleMostroDeepLink(uri.toString(), router);
       } else {
         _logger.w('Unsupported deep link scheme: ${uri.scheme}');
         final context = router.routerDelegate.navigatorKey.currentContext;
@@ -58,8 +58,8 @@ class DeepLinkHandler {
     }
   }
 
-  /// Handles nostr: scheme deep links
-  Future<void> _handleNostrDeepLink(
+  /// Handles mostro: scheme deep links
+  Future<void> _handleMostroDeepLink(
     String url,
     GoRouter router,
   ) async {
@@ -75,8 +75,8 @@ class DeepLinkHandler {
       final nostrService = _ref.read(nostrServiceProvider);
       final deepLinkService = _ref.read(deepLinkServiceProvider);
 
-      // Process the nostr link
-      final result = await deepLinkService.processNostrLink(url, nostrService);
+      // Process the mostro link
+      final result = await deepLinkService.processMostroLink(url, nostrService);
 
       // Get fresh context after async operation
       final currentContext = router.routerDelegate.navigatorKey.currentContext;
@@ -96,10 +96,10 @@ class DeepLinkHandler {
           final errorMessage = result.error ?? S.of(errorContext)!.failedToLoadOrder;
           _showErrorSnackBar(errorContext, errorMessage);
         }
-        _logger.w('Failed to process nostr link: ${result.error}');
+        _logger.w('Failed to process mostro link: ${result.error}');
       }
     } catch (e) {
-      _logger.e('Error processing nostr deep link: $e');
+      _logger.e('Error processing mostro deep link: $e');
       final errorContext = router.routerDelegate.navigatorKey.currentContext;
       if (errorContext != null && errorContext.mounted) {
         Navigator.of(errorContext).pop(); // Hide loading if still showing

@@ -196,6 +196,67 @@ class NostrUtils {
     }
   }
 
+  /// Validates if a string is a valid mostro: URL
+  /// Format: mostro:order-id&relays=wss://relay1,wss://relay2
+  static bool isValidMostroUrl(String url) {
+    if (!url.startsWith('mostro:')) return false;
+    
+    try {
+      final uri = Uri.parse(url);
+      if (uri.scheme != 'mostro') return false;
+      
+      // Check if we have an order ID (path)
+      final orderId = uri.path;
+      if (orderId.isEmpty) return false;
+      
+      // Check if relays parameter exists
+      final relaysParam = uri.queryParameters['relays'];
+      if (relaysParam == null || relaysParam.isEmpty) return false;
+      
+      // Validate relay URLs
+      final relays = relaysParam.split(',');
+      for (final relay in relays) {
+        final trimmedRelay = relay.trim();
+        if (!trimmedRelay.startsWith('wss://') && !trimmedRelay.startsWith('ws://')) {
+          return false;
+        }
+      }
+      
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Parses a mostro: URL and returns order information
+  /// Format: mostro:order-id&relays=wss://relay1,wss://relay2
+  /// Returns a map with 'orderId' and 'relays' keys
+  static Map<String, dynamic>? parseMostroUrl(String url) {
+    if (!isValidMostroUrl(url)) return null;
+
+    try {
+      final uri = Uri.parse(url);
+      
+      final orderId = uri.path;
+      final relaysParam = uri.queryParameters['relays'];
+      
+      if (orderId.isEmpty || relaysParam == null) return null;
+      
+      final relays = relaysParam
+          .split(',')
+          .map((relay) => relay.trim())
+          .where((relay) => relay.isNotEmpty)
+          .toList();
+      
+      return {
+        'orderId': orderId,
+        'relays': relays,
+      };
+    } catch (e) {
+      return null;
+    }
+  }
+
   static Future<String?> pubKeyFromIdentifierNip05(
       String internetIdentifier) async {
     return await _instance.services.utils
