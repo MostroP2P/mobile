@@ -11,6 +11,7 @@ import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/shared/providers/avatar_provider.dart';
 import 'package:mostro_mobile/shared/providers/legible_handle_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
+import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
 import 'package:mostro_mobile/shared/widgets/clickable_text_widget.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
@@ -33,7 +34,7 @@ class _MessagesDetailScreenState extends ConsumerState<ChatRoomScreen> {
     final peer = session!.peer!.publicKey;
 
     return Scaffold(
-      backgroundColor: AppTheme.dark1,
+      backgroundColor: AppTheme.backgroundDark,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -54,22 +55,35 @@ class _MessagesDetailScreenState extends ConsumerState<ChatRoomScreen> {
       ),
       body: RefreshIndicator(
         onRefresh: () async {},
-        child: Container(
-          margin: const EdgeInsets.all(16.0),
-          decoration: BoxDecoration(
-            color: AppTheme.dark2,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Column(
-            children: [
-              const SizedBox(height: 12.0),
-              Text('Order: ${widget.orderId}'),
-              _buildMessageHeader(peer, session),
-              _buildBody(chatDetailState, peer),
-              _buildMessageInput(),
-              const SizedBox(height: 12.0),
-            ],
-          ),
+        child: Stack(
+          children: [
+            Container(
+              margin: const EdgeInsets.all(16.0),
+              decoration: BoxDecoration(
+                color: AppTheme.backgroundCard,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Column(
+                children: [
+                  const SizedBox(height: 12.0),
+                  Text('Order: ${widget.orderId}'),
+                  _buildMessageHeader(peer, session),
+                  _buildBody(chatDetailState, peer),
+                  _buildMessageInput(),
+                  const SizedBox(height: 12.0),
+                  // Add bottom padding to prevent content from being covered by BottomNavBar
+                  SizedBox(height: 68 + MediaQuery.of(context).viewPadding.bottom),
+                ],
+              ),
+            ),
+            // Position BottomNavBar at the bottom of the screen
+            const Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: BottomNavBar(),
+            ),
+          ],
         ),
       ),
     );
@@ -113,7 +127,7 @@ class _MessagesDetailScreenState extends ConsumerState<ChatRoomScreen> {
   Widget _buildMessageInput() {
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 0, 12, 18),
-      color: const Color(0xFF303544),
+      color: AppTheme.backgroundCard,
       child: Row(
         children: [
           Expanded(
@@ -128,7 +142,7 @@ class _MessagesDetailScreenState extends ConsumerState<ChatRoomScreen> {
                   borderSide: BorderSide.none,
                 ),
                 filled: true,
-                fillColor: const Color(0xFF1D212C),
+                fillColor: AppTheme.backgroundInput,
               ),
             ),
           ),
@@ -157,7 +171,7 @@ class _MessagesDetailScreenState extends ConsumerState<ChatRoomScreen> {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1D212C),
+        color: AppTheme.backgroundInput,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Padding(
