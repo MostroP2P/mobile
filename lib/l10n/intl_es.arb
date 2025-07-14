@@ -485,6 +485,22 @@
   "unsupportedLinkFormat": "Formato de enlace no compatible",
   "failedToOpenLink": "Error al abrir enlace",
   "failedToLoadOrder": "Error al cargar orden",
-  "failedToOpenOrder": "Error al abrir orden"
+  "failedToOpenOrder": "Error al abrir orden",
+
+  "@_comment_deep_link_errors": "Mensajes de Error de Enlaces Profundos",
+  "deepLinkInvalidFormat": "Formato de URL mostro: inválido",
+  "deepLinkParseError": "Error al analizar la URL mostro:",
+  "deepLinkInvalidOrderId": "Formato de ID de orden inválido",
+  "deepLinkNoRelays": "No se especificaron relés en la URL",
+  "deepLinkOrderNotFound": "Orden no encontrada o inválida",
+  "deepLinkNavigationError": "Error de Navegación: {error}",
+  "@deepLinkNavigationError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "deepLinkGoHome": "Ir al Inicio"
 
 }

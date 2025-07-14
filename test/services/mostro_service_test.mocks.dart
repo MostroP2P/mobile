@@ -179,11 +179,15 @@ class MockNostrService extends _i1.Mock implements _i6.NostrService {
       ) as _i7.Future<void>);
 
   @override
-  _i7.Future<List<_i3.NostrEvent>> fecthEvents(_i3.NostrFilter? filter) =>
+  _i7.Future<List<_i3.NostrEvent>> fetchEvents(
+    _i3.NostrFilter? filter, {
+    List<String>? specificRelays,
+  }) =>
       (super.noSuchMethod(
         Invocation.method(
-          #fecthEvents,
+          #fetchEvents,
           [filter],
+          {#specificRelays: specificRelays},
         ),
         returnValue: _i7.Future<List<_i3.NostrEvent>>.value(<_i3.NostrEvent>[]),
       ) as _i7.Future<List<_i3.NostrEvent>>);

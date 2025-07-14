@@ -108,89 +108,63 @@ class NostrUtils {
     return _instance.services.bech32.encodeBech32(hrp, data);
   }
 
-  /// Decodes a nevent string (NIP-19) to extract event ID and relay information
-  /// Returns a map with 'eventId' and 'relays' keys
-  static Map<String, dynamic> decodeNevent(String nevent) {
-    if (!nevent.startsWith('nevent1')) {
-      throw ArgumentError('Invalid nevent format: must start with nevent1');
-    }
+  /// Validates if a string is a valid mostro: URL
+  /// Format: mostro:order-id&relays=wss://relay1,wss://relay2
+  static bool isValidMostroUrl(String url) {
+    if (!url.startsWith('mostro:')) return false;
 
     try {
-      final decoded = _instance.services.bech32.decodeBech32(nevent);
-      if (decoded.isEmpty || decoded.length < 2) {
-        throw FormatException('Invalid bech32 decoding result');
-      }
+      final uri = Uri.parse(url);
+      if (uri.scheme != 'mostro') return false;
 
-      final data = decoded[0]; // Get the data part (index 0)
-      final bytes = hex.decode(data);
+      // Check if we have an order ID (path)
+      final orderId = uri.path;
+      if (orderId.isEmpty) return false;
 
-      final result = <String, dynamic>{
-        'eventId': '',
-        'relays': <String>[],
-      };
+      // Check if relays parameter exists
+      final relaysParam = uri.queryParameters['relays'];
+      if (relaysParam == null || relaysParam.isEmpty) return false;
 
-      // Parse TLV (Type-Length-Value) format
-      int index = 0;
-      while (index < bytes.length) {
-        if (index + 2 >= bytes.length) break;
-
-        final type = bytes[index];
-        final length = bytes[index + 1];
-
-        if (index + 2 + length > bytes.length) break;
-
-        final value = bytes.sublist(index + 2, index + 2 + length);
-
-        switch (type) {
-          case 0: // Event ID (32 bytes)
-            if (length == 32) {
-              result['eventId'] = hex.encode(value);
-            }
-            break;
-          case 1: // Relay URL (variable length)
-            final relayUrl = utf8.decode(value);
-            if (relayUrl.isNotEmpty) {
-              (result['relays'] as List<String>).add(relayUrl);
-            }
-            break;
-          // Skip other types for now
+      // Validate relay URLs
+      final relays = relaysParam.split(',');
+      for (final relay in relays) {
+        final trimmedRelay = relay.trim();
+        if (!trimmedRelay.startsWith('wss://') &&
+            !trimmedRelay.startsWith('ws://')) {
+          return false;
         }
-
-        index += 2 + length;
       }
 
-      if ((result['eventId'] as String).isEmpty) {
-        throw FormatException('No event ID found in nevent');
-      }
-
-      return result;
-    } catch (e) {
-      throw FormatException('Failed to decode nevent: $e');
-    }
-  }
-
-  /// Validates if a string is a valid nostr: URL
-  static bool isValidNostrUrl(String url) {
-    if (!url.startsWith('nostr:')) return false;
-
-    final nevent = url.substring(6); // Remove 'nostr:' prefix
-
-    try {
-      decodeNevent(nevent);
       return true;
     } catch (e) {
       return false;
     }
   }
 
-  /// Parses a nostr: URL and returns event information
-  static Map<String, dynamic>? parseNostrUrl(String url) {
-    if (!isValidNostrUrl(url)) return null;
-
-    final nevent = url.substring(6); // Remove 'nostr:' prefix
+  /// Parses a mostro: URL and returns order information
+  /// Format: mostro:order-id&relays=wss://relay1,wss://relay2
+  /// Returns a map with 'orderId' and 'relays' keys
+  static Map<String, dynamic>? parseMostroUrl(String url) {
+    if (!isValidMostroUrl(url)) return null;
 
     try {
-      return decodeNevent(nevent);
+      final uri = Uri.parse(url);
+
+      final orderId = uri.path;
+      final relaysParam = uri.queryParameters['relays'];
+
+      if (orderId.isEmpty || relaysParam == null) return null;
+
+      final relays = relaysParam
+          .split(',')
+          .map((relay) => relay.trim())
+          .where((relay) => relay.isNotEmpty)
+          .toList();
+
+      return {
+        'orderId': orderId,
+        'relays': relays,
+      };
     } catch (e) {
       return null;
     }

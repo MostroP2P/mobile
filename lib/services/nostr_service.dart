@@ -89,11 +89,17 @@ class NostrService {
     }
   }
 
-  Future<List<NostrEvent>> fecthEvents(NostrFilter filter) async {
+  Future<List<NostrEvent>> fetchEvents(NostrFilter filter, {List<String>? specificRelays}) async {
     if (!_isInitialized) {
       throw Exception('Nostr is not initialized. Call init() first.');
     }
 
+    // If specific relays are provided, use the relay-specific fetching logic
+    if (specificRelays != null && specificRelays.isNotEmpty) {
+      return await _fetchFromSpecificRelays(filter, specificRelays);
+    }
+
+    // Default behavior: use all configured relays
     final request = NostrRequest(filters: [filter]);
     return await _nostr.services.relays.startEventsSubscriptionAsync(
       request: request,
@@ -221,7 +227,7 @@ class NostrService {
         events = await _fetchFromSpecificRelays(filter, specificRelays);
       } else {
         // Use default relays
-        events = await fecthEvents(filter);
+        events = await fetchEvents(filter);
       }
 
       if (events.isEmpty) {
@@ -256,8 +262,9 @@ class NostrService {
   }
 
   /// Fetches order information from an event by extracting the 'd' tag (order ID) and 'k' tag (order type)
-  /// This is specifically for deep link handling where the nevent points to an event containing order information
-  Future<OrderInfo?> fetchOrderInfoByEventId(String eventId, [List<String>? specificRelays]) async {
+  /// This is specifically for deep link handling where the mostro: URL provides order information
+  Future<OrderInfo?> fetchOrderInfoByEventId(String eventId,
+      [List<String>? specificRelays]) async {
     try {
       _logger.i('Fetching order ID from event: $eventId');
 
@@ -273,7 +280,7 @@ class NostrService {
         events = await _fetchFromSpecificRelays(filter, specificRelays);
       } else {
         // Use default relays
-        events = await fecthEvents(filter);
+        events = await fetchEvents(filter);
       }
 
       if (events.isEmpty) {
@@ -333,7 +340,8 @@ class NostrService {
         return null;
       }
 
-      _logger.i('Successfully extracted order info - ID: $dTag, Type: ${orderType.value} from event: $eventId');
+      _logger.i(
+          'Successfully extracted order info - ID: $dTag, Type: ${orderType.value} from event: $eventId');
       return OrderInfo(orderId: dTag, orderType: orderType);
     } catch (e) {
       _logger.e('Error fetching order ID from event: $e');
@@ -368,7 +376,7 @@ class NostrService {
         await updateSettings(tempSettings);
 
         // Fetch the events
-        final events = await fecthEvents(filter);
+        final events = await fetchEvents(filter);
 
         // Restore original relays
         await updateSettings(settings);
@@ -376,7 +384,7 @@ class NostrService {
         return events;
       } else {
         // No new relays to add, use normal fetch
-        return await fecthEvents(filter);
+        return await fetchEvents(filter);
       }
     } catch (e) {
       _logger.e('Error fetching from specific relays: $e');
