@@ -23,10 +23,12 @@ import 'package:mostro_mobile/features/walkthrough/screens/walkthrough_screen.da
 import 'package:mostro_mobile/features/walkthrough/providers/first_run_provider.dart';
 import 'package:mostro_mobile/shared/widgets/navigation_listener_widget.dart';
 import 'package:mostro_mobile/shared/widgets/notification_listener_widget.dart';
+import 'package:logger/logger.dart';
 
 GoRouter createRouter(WidgetRef ref) {
   return GoRouter(
     navigatorKey: GlobalKey<NavigatorState>(),
+    initialLocation: '/',
     redirect: (context, state) {
       final firstRunState = ref.read(firstRunProvider);
 
@@ -41,8 +43,31 @@ GoRouter createRouter(WidgetRef ref) {
         error: (_, __) => null,
       );
     },
+    errorBuilder: (context, state) {
+      final logger = Logger();
+      logger.w('GoRouter error: ${state.error}');
+      
+      // For errors, show a generic error page
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error, size: 64),
+              const SizedBox(height: 16),
+              Text('Navigation Error: ${state.error}'),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => context.go('/'),
+                child: const Text('Go Home'),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
     routes: [
-      ShellRoute(
+    ShellRoute(
         builder: (BuildContext context, GoRouterState state, Widget child) {
           return NotificationListenerWidget(
             child: NavigationListenerWidget(
@@ -227,10 +252,6 @@ GoRouter createRouter(WidgetRef ref) {
         ],
       ),
     ],
-    initialLocation: '/',
-    errorBuilder: (context, state) => Scaffold(
-      body: Center(child: Text(state.error.toString())),
-    ),
   );
 }
 

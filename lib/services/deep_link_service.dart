@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:app_links/app_links.dart';
 import 'package:dart_nostr/dart_nostr.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logger/logger.dart';
@@ -47,13 +48,9 @@ class DeepLinkService {
         },
       );
 
-      // Check for deep link when app is launched
-      final initialUri = await _appLinks.getInitialLink();
-      if (initialUri != null) {
-        _logger.i('App launched with deep link: $initialUri');
-        _handleDeepLink(initialUri);
-      }
-
+      // NOTE: We don't process the initial link here to avoid GoRouter conflicts
+      // The initial link will be handled by the app initialization in app.dart
+      
       _isInitialized = true;
       _logger.i('DeepLinkService initialized successfully');
     } catch (e) {
@@ -88,6 +85,16 @@ class DeepLinkService {
 
       final orderId = orderInfo['orderId'] as String;
       final relays = orderInfo['relays'] as List<String>;
+
+      // Validate order ID format (UUID-like string)
+      if (orderId.isEmpty || orderId.length < 10) {
+        return DeepLinkResult.error('Invalid order ID format');
+      }
+
+      // Validate relays
+      if (relays.isEmpty) {
+        return DeepLinkResult.error('No relays specified in URL');
+      }
 
       _logger.i('Parsed order ID: $orderId, relays: $relays');
 
@@ -185,7 +192,28 @@ class DeepLinkService {
     final route = getNavigationRoute(orderInfo);
     _logger.i(
         'Navigating to: $route (Order: ${orderInfo.orderId}, Type: ${orderInfo.orderType.value})');
-    router.push(route);
+    
+    // Use post-frame callback to ensure navigation happens after the current frame
+    // This prevents GoRouter assertion failures during app lifecycle transitions
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      try {
+        // Validate that the router is still in a valid state before navigation
+        final context = router.routerDelegate.navigatorKey.currentContext;
+        if (context != null && context.mounted) {
+          router.push(route);
+        } else {
+          _logger.w('Router context is not available for navigation to: $route');
+        }
+      } catch (e) {
+        _logger.e('Error navigating to order: $e');
+        // Fallback: try using go instead of push if push fails
+        try {
+          router.go(route);
+        } catch (fallbackError) {
+          _logger.e('Fallback navigation also failed: $fallbackError');
+        }
+      }
+    });
   }
 
   /// Cleans up resources

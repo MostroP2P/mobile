@@ -31,6 +31,11 @@ class DeepLinkHandler {
     );
   }
 
+  /// Handles initial deep link from app launch
+  Future<void> handleInitialDeepLink(Uri uri, GoRouter router) async {
+    await _handleDeepLink(uri, router);
+  }
+
   /// Handles incoming deep links
   Future<void> _handleDeepLink(
     Uri uri,
@@ -87,8 +92,10 @@ class DeepLinkHandler {
       }
 
       if (result.isSuccess && result.orderInfo != null) {
-        // Navigate to the appropriate screen
-        deepLinkService.navigateToOrder(router, result.orderInfo!);
+        // Navigate to the appropriate screen with proper timing
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          deepLinkService.navigateToOrder(router, result.orderInfo!);
+        });
         _logger.i('Successfully navigated to order: ${result.orderInfo!.orderId} (${result.orderInfo!.orderType.value})');
       } else {
         final errorContext = router.routerDelegate.navigatorKey.currentContext;
