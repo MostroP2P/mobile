@@ -8,6 +8,7 @@ import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 /// Contains order information extracted from a Nostr event
 class OrderInfo {
@@ -68,19 +69,20 @@ class DeepLinkService {
   Future<DeepLinkResult> processMostroLink(
     String url,
     NostrService nostrService,
+    BuildContext context,
   ) async {
     try {
       _logger.i('Processing mostro link: $url');
 
       // Validate URL format
       if (!NostrUtils.isValidMostroUrl(url)) {
-        return DeepLinkResult.error('Invalid mostro: URL format');
+        return DeepLinkResult.error(S.of(context)!.deepLinkInvalidFormat);
       }
 
       // Parse the mostro URL
       final orderInfo = NostrUtils.parseMostroUrl(url);
       if (orderInfo == null) {
-        return DeepLinkResult.error('Failed to parse mostro: URL');
+        return DeepLinkResult.error(S.of(context)!.deepLinkParseError);
       }
 
       final orderId = orderInfo['orderId'] as String;
@@ -88,12 +90,12 @@ class DeepLinkService {
 
       // Validate order ID format (UUID-like string)
       if (orderId.isEmpty || orderId.length < 10) {
-        return DeepLinkResult.error('Invalid order ID format');
+        return DeepLinkResult.error(S.of(context)!.deepLinkInvalidOrderId);
       }
 
       // Validate relays
       if (relays.isEmpty) {
-        return DeepLinkResult.error('No relays specified in URL');
+        return DeepLinkResult.error(S.of(context)!.deepLinkNoRelays);
       }
 
       _logger.i('Parsed order ID: $orderId, relays: $relays');
@@ -106,7 +108,11 @@ class DeepLinkService {
       );
 
       if (fetchedOrderInfo == null) {
-        return DeepLinkResult.error('Order not found or invalid');
+        if (context.mounted) {
+          return DeepLinkResult.error(S.of(context)!.deepLinkOrderNotFound);
+        } else {
+          return DeepLinkResult.error('Order not found or invalid');
+        }
       }
 
       return DeepLinkResult.success(fetchedOrderInfo);

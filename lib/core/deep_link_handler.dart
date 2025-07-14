@@ -81,7 +81,7 @@ class DeepLinkHandler {
       final deepLinkService = _ref.read(deepLinkServiceProvider);
 
       // Process the mostro link
-      final result = await deepLinkService.processMostroLink(url, nostrService);
+      final result = await deepLinkService.processMostroLink(url, nostrService, context!);
 
       // Get fresh context after async operation
       final currentContext = router.routerDelegate.navigatorKey.currentContext;

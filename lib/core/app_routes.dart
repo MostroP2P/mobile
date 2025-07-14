@@ -24,6 +24,7 @@ import 'package:mostro_mobile/features/walkthrough/providers/first_run_provider.
 import 'package:mostro_mobile/shared/widgets/navigation_listener_widget.dart';
 import 'package:mostro_mobile/shared/widgets/notification_listener_widget.dart';
 import 'package:logger/logger.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 GoRouter createRouter(WidgetRef ref) {
   return GoRouter(
@@ -55,11 +56,11 @@ GoRouter createRouter(WidgetRef ref) {
             children: [
               const Icon(Icons.error, size: 64),
               const SizedBox(height: 16),
-              Text('Navigation Error: ${state.error}'),
+              Text(S.of(context)!.deepLinkNavigationError(state.error.toString())),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () => context.go('/'),
-                child: const Text('Go Home'),
+                child: Text(S.of(context)!.deepLinkGoHome),
               ),
             ],
           ),

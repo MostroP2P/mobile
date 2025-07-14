@@ -493,6 +493,22 @@
   "unsupportedLinkFormat": "Formato di link non supportato",
   "failedToOpenLink": "Impossibile aprire il link",
   "failedToLoadOrder": "Impossibile caricare l'ordine",
-  "failedToOpenOrder": "Impossibile aprire l'ordine"
+  "failedToOpenOrder": "Impossibile aprire l'ordine",
+
+  "@_comment_deep_link_errors": "Messaggi di Errore per Deep Link",
+  "deepLinkInvalidFormat": "Formato URL mostro: non valido",
+  "deepLinkParseError": "Impossibile analizzare l'URL mostro:",
+  "deepLinkInvalidOrderId": "Formato ID ordine non valido",
+  "deepLinkNoRelays": "Nessun relay specificato nell'URL",
+  "deepLinkOrderNotFound": "Ordine non trovato o non valido",
+  "deepLinkNavigationError": "Errore di Navigazione: {error}",
+  "@deepLinkNavigationError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "deepLinkGoHome": "Vai alla Home"
 
 }

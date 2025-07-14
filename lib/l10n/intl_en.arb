@@ -452,5 +452,21 @@
   "unsupportedLinkFormat": "Unsupported link format",
   "failedToOpenLink": "Failed to open link",
   "failedToLoadOrder": "Failed to load order",
-  "failedToOpenOrder": "Failed to open order"
+  "failedToOpenOrder": "Failed to open order",
+
+  "@_comment_deep_link_errors": "Deep Link Error Messages",
+  "deepLinkInvalidFormat": "Invalid mostro: URL format",
+  "deepLinkParseError": "Failed to parse mostro: URL",
+  "deepLinkInvalidOrderId": "Invalid order ID format",
+  "deepLinkNoRelays": "No relays specified in URL",
+  "deepLinkOrderNotFound": "Order not found or invalid",
+  "deepLinkNavigationError": "Navigation Error: {error}",
+  "@deepLinkNavigationError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "deepLinkGoHome": "Go Home"
 }
