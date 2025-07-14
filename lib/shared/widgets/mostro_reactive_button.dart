@@ -8,6 +8,23 @@ import 'package:mostro_mobile/core/app_theme.dart';
 
 enum ButtonStyleType { raised, outlined, text }
 
+/// Controller for managing MostroReactiveButton state externally
+class MostroReactiveButtonController {
+  _MostroReactiveButtonState? _state;
+  
+  void _attach(_MostroReactiveButtonState state) {
+    _state = state;
+  }
+  
+  void _detach() {
+    _state = null;
+  }
+  
+  void resetLoading() {
+    _state?.resetLoading();
+  }
+}
+
 /// A button specially designed for reactive operations that shows loading state
 /// and handles the unique event-based nature of the mostro protocol.
 class MostroReactiveButton extends ConsumerStatefulWidget {
@@ -21,6 +38,7 @@ class MostroReactiveButton extends ConsumerStatefulWidget {
   final bool showSuccessIndicator;
 
   final Color? backgroundColor;
+  final MostroReactiveButtonController? controller;
 
   const MostroReactiveButton({
     super.key,
@@ -32,6 +50,7 @@ class MostroReactiveButton extends ConsumerStatefulWidget {
     this.timeout = const Duration(seconds: 30),
     this.showSuccessIndicator = false,
     this.backgroundColor,
+    this.controller,
   });
 
   @override
@@ -46,9 +65,24 @@ class _MostroReactiveButtonState extends ConsumerState<MostroReactiveButton> {
   dynamic _lastSeenAction;
 
   @override
+  void initState() {
+    super.initState();
+    widget.controller?._attach(this);
+  }
+
+  @override
   void dispose() {
+    widget.controller?._detach();
     _timeoutTimer?.cancel();
     super.dispose();
+  }
+
+  void resetLoading() {
+    setState(() {
+      _loading = false;
+      _showSuccess = false;
+    });
+    _timeoutTimer?.cancel();
   }
 
   void _startOperation() {
