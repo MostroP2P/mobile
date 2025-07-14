@@ -155,8 +155,6 @@
   "disputeButton": "DISPUTE",
   "fiatSentButton": "FIAT SENT",
   "completePurchaseButton": "COMPLETE PURCHASE",
-  "sellBitcoinButton": "SELL BITCOIN",
-  "buyBitcoinButton": "BUY BITCOIN",
   "paymentMethodLabel": "Payment Method",
   "createdOnLabel": "Created On",
   "orderIdLabel": "Order ID",

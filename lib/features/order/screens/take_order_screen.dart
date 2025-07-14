@@ -58,7 +58,6 @@ class TakeOrderScreen extends ConsumerWidget {
     );
   }
 
-
   Widget _buildSellerAmount(WidgetRef ref, NostrEvent order) {
     return Builder(
       builder: (context) {
@@ -87,7 +86,6 @@ class TakeOrderScreen extends ConsumerWidget {
                   color: Colors.white,
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
-
                 ),
               ),
               const SizedBox(height: 8),
@@ -193,9 +191,8 @@ class TakeOrderScreen extends ConsumerWidget {
     final orderDetailsNotifier =
         ref.read(orderNotifierProvider(orderId).notifier);
 
-    final buttonText = orderType == OrderType.buy
-        ? S.of(context)!.sellBitcoinButton
-        : S.of(context)!.buyBitcoinButton;
+    final buttonText =
+        orderType == OrderType.buy ? S.of(context)!.sell : S.of(context)!.buy;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -208,7 +205,6 @@ class TakeOrderScreen extends ConsumerWidget {
           ),
         ),
         const SizedBox(width: 16),
-
         Expanded(
           child: ElevatedButton(
             onPressed: () async {
@@ -275,7 +271,6 @@ class TakeOrderScreen extends ConsumerWidget {
                   },
                 );
 
-
                 if (enteredAmount != null) {
                   if (orderType == OrderType.buy) {
                     await orderDetailsNotifier.takeBuyOrder(
@@ -319,11 +314,13 @@ class TakeOrderScreen extends ConsumerWidget {
   String formatDateTime(DateTime dt, [BuildContext? context]) {
     if (context != null) {
       // Use internationalized date format
-      final dateFormatter = DateFormat.yMMMd(Localizations.localeOf(context).languageCode);
-      final timeFormatter = DateFormat.Hm(Localizations.localeOf(context).languageCode);
+      final dateFormatter =
+          DateFormat.yMMMd(Localizations.localeOf(context).languageCode);
+      final timeFormatter =
+          DateFormat.Hm(Localizations.localeOf(context).languageCode);
       final formattedDate = dateFormatter.format(dt);
       final formattedTime = timeFormatter.format(dt);
-      
+
       // Use the internationalized string for "Created on: date"
       return S.of(context)!.createdOnDate('$formattedDate $formattedTime');
     } else {
@@ -332,7 +329,7 @@ class TakeOrderScreen extends ConsumerWidget {
       final timeFormatter = DateFormat('HH:mm');
       final formattedDate = dateFormatter.format(dt);
       final formattedTime = timeFormatter.format(dt);
-      
+
       return '$formattedDate at $formattedTime';
     }
   }
