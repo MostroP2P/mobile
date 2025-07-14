@@ -141,8 +141,8 @@ class DeepLinkService {
 
       // First try to fetch from specified relays
       if (relays.isNotEmpty) {
-        // Use the existing _fetchFromSpecificRelays method pattern
-        final orderEvents = await nostrService.fetchEvents(filter);
+        // Use the specific relays from the deep link URL
+        final orderEvents = await nostrService.fetchEvents(filter, specificRelays: relays);
         events.addAll(orderEvents);
       }
 

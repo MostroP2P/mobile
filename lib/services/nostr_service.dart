@@ -89,11 +89,17 @@ class NostrService {
     }
   }
 
-  Future<List<NostrEvent>> fetchEvents(NostrFilter filter) async {
+  Future<List<NostrEvent>> fetchEvents(NostrFilter filter, {List<String>? specificRelays}) async {
     if (!_isInitialized) {
       throw Exception('Nostr is not initialized. Call init() first.');
     }
 
+    // If specific relays are provided, use the relay-specific fetching logic
+    if (specificRelays != null && specificRelays.isNotEmpty) {
+      return await _fetchFromSpecificRelays(filter, specificRelays);
+    }
+
+    // Default behavior: use all configured relays
     final request = NostrRequest(filters: [filter]);
     return await _nostr.services.relays.startEventsSubscriptionAsync(
       request: request,
