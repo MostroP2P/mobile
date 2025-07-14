@@ -31,6 +31,11 @@ GoRouter createRouter(WidgetRef ref) {
     navigatorKey: GlobalKey<NavigatorState>(),
     initialLocation: '/',
     redirect: (context, state) {
+      // Redirect custom schemes to home to prevent assertion failures
+      if (state.uri.scheme == 'mostro' || 
+          (!state.uri.scheme.startsWith('http') && state.uri.scheme.isNotEmpty)) {
+        return '/';
+      }
       final firstRunState = ref.read(firstRunProvider);
 
       return firstRunState.when(
