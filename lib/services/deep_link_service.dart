@@ -24,7 +24,8 @@ class DeepLinkService {
   final AppLinks _appLinks = AppLinks();
 
   // Stream controller for deep link events
-  final StreamController<Uri> _deepLinkController = StreamController<Uri>.broadcast();
+  final StreamController<Uri> _deepLinkController =
+      StreamController<Uri>.broadcast();
   Stream<Uri> get deepLinkStream => _deepLinkController.stream;
 
   // Flag to track if service is initialized
@@ -118,7 +119,9 @@ class DeepLinkService {
       // Create a filter to search for NIP-69 order events with the specific order ID
       final filter = NostrFilter(
         kinds: [38383], // NIP-69 order events
-        additionalFilters: {'#d': [orderId]}, // Order ID is stored in 'd' tag
+        additionalFilters: {
+          '#d': [orderId]
+        }, // Order ID is stored in 'd' tag
       );
 
       List<NostrEvent> events = [];
@@ -126,33 +129,32 @@ class DeepLinkService {
       // First try to fetch from specified relays
       if (relays.isNotEmpty) {
         // Use the existing _fetchFromSpecificRelays method pattern
-        final orderEvents = await nostrService.fecthEvents(filter);
+        final orderEvents = await nostrService.fetchEvents(filter);
         events.addAll(orderEvents);
       }
 
       // If no events found and we have default relays, try those
       if (events.isEmpty) {
         _logger.i('Order not found in specified relays, trying default relays');
-        final defaultEvents = await nostrService.fecthEvents(filter);
+        final defaultEvents = await nostrService.fetchEvents(filter);
         events.addAll(defaultEvents);
       }
 
       // Process the first matching event
       if (events.isNotEmpty) {
         final event = events.first;
-        
+
         // Extract order type from 'k' tag
         final kTag = event.tags?.firstWhere(
           (tag) => tag.isNotEmpty && tag[0] == 'k',
           orElse: () => <String>[],
         );
-        
+
         if (kTag != null && kTag.length > 1) {
           final orderTypeValue = kTag[1];
-          final orderType = orderTypeValue == 'sell' 
-              ? OrderType.sell 
-              : OrderType.buy;
-          
+          final orderType =
+              orderTypeValue == 'sell' ? OrderType.sell : OrderType.buy;
+
           return OrderInfo(
             orderId: orderId,
             orderType: orderType,
@@ -166,7 +168,6 @@ class DeepLinkService {
       return null;
     }
   }
-
 
   /// Determines the appropriate navigation route for an order
   String getNavigationRoute(OrderInfo orderInfo) {
@@ -182,7 +183,8 @@ class DeepLinkService {
   /// Navigates to the appropriate screen for the given order
   void navigateToOrder(GoRouter router, OrderInfo orderInfo) {
     final route = getNavigationRoute(orderInfo);
-    _logger.i('Navigating to: $route (Order: ${orderInfo.orderId}, Type: ${orderInfo.orderType.value})');
+    _logger.i(
+        'Navigating to: $route (Order: ${orderInfo.orderId}, Type: ${orderInfo.orderType.value})');
     router.push(route);
   }
 

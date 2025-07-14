@@ -55,15 +55,15 @@
 			<string>processing</string>
 			<string>remote-notification</string>
 		</array>
-		<!-- Deep Link Support for nostr: scheme -->
+		<!-- Deep Link Support for mostro: scheme -->
 		<key>CFBundleURLTypes</key>
 		<array>
 			<dict>
 				<key>CFBundleURLName</key>
-				<string>nostr.scheme</string>
+				<string>mostro.scheme</string>
 				<key>CFBundleURLSchemes</key>
 				<array>
-					<string>nostr</string>
+					<string>mostro</string>
 				</array>
 				<key>CFBundleTypeRole</key>
 				<string>Editor</string>
