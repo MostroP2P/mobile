@@ -21,11 +21,11 @@ class DeepLinkInterceptor extends WidgetsBindingObserver {
   @override
   Future<bool> didPushRouteInformation(RouteInformation routeInformation) async {
     final uri = routeInformation.uri;
-    _logger.i('Route information received: $uri');
+    _logger.i('DeepLinkInterceptor: Route information received: $uri');
 
     // Check if this is a custom scheme URL
     if (_isCustomScheme(uri)) {
-      _logger.i('Custom scheme detected: ${uri.scheme}, intercepting');
+      _logger.i('DeepLinkInterceptor: Custom scheme detected: ${uri.scheme}, intercepting and preventing GoRouter processing');
       
       // Emit the custom URL for processing
       _customUrlController.add(uri.toString());
@@ -35,12 +35,32 @@ class DeepLinkInterceptor extends WidgetsBindingObserver {
       return true;
     }
 
+    _logger.i('DeepLinkInterceptor: Allowing normal URL to pass through: $uri');
     // Let normal URLs pass through to GoRouter
     return super.didPushRouteInformation(routeInformation);
   }
 
   // Note: didPushRoute is deprecated, but we keep it for compatibility
   // The main handling is done in didPushRouteInformation above
+  @override
+  // ignore: deprecated_member_use
+  Future<bool> didPushRoute(String route) async {
+    _logger.i('DeepLinkInterceptor: didPushRoute called with: $route');
+    
+    try {
+      final uri = Uri.parse(route);
+      if (_isCustomScheme(uri)) {
+        _logger.i('DeepLinkInterceptor: Custom scheme detected in didPushRoute: ${uri.scheme}, intercepting');
+        _customUrlController.add(route);
+        return true;
+      }
+    } catch (e) {
+      _logger.w('DeepLinkInterceptor: Error parsing route in didPushRoute: $e');
+    }
+    
+    // ignore: deprecated_member_use
+    return super.didPushRoute(route);
+  }
 
   /// Check if the URI uses a custom scheme
   bool _isCustomScheme(Uri uri) {

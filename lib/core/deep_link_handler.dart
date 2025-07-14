@@ -72,7 +72,7 @@ class DeepLinkHandler {
     try {
       // Show loading indicator
       context = router.routerDelegate.navigatorKey.currentContext;
-      if (context != null) {
+      if (context != null && context.mounted) {
         _showLoadingDialog(context);
       }
 
@@ -80,8 +80,15 @@ class DeepLinkHandler {
       final nostrService = _ref.read(nostrServiceProvider);
       final deepLinkService = _ref.read(deepLinkServiceProvider);
 
+      // Ensure we have a valid context for processing
+      final processingContext = context ?? router.routerDelegate.navigatorKey.currentContext;
+      if (processingContext == null || !processingContext.mounted) {
+        _logger.e('No valid context available for deep link processing');
+        return;
+      }
+
       // Process the mostro link
-      final result = await deepLinkService.processMostroLink(url, nostrService, context!);
+      final result = await deepLinkService.processMostroLink(url, nostrService, processingContext);
 
       // Get fresh context after async operation
       final currentContext = router.routerDelegate.navigatorKey.currentContext;
