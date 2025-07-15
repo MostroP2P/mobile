@@ -69,9 +69,10 @@ class MostroMessageDetail extends ConsumerWidget {
                 .mostroInstance
                 ?.expirationSeconds ??
             900;
+        final expMinutes = (expSecs / 60).round();
         return S.of(context)!.payInvoice(
               orderPayload?.amount.toString() ?? '',
-              '${expSecs ~/ 60} minutes',
+              expMinutes,
               orderPayload?.fiatAmount.toString() ?? '',
               orderPayload?.fiatCode ?? '',
             );
@@ -81,11 +82,12 @@ class MostroMessageDetail extends ConsumerWidget {
                 .mostroInstance
                 ?.expirationSeconds ??
             900;
+        final expMinutes = (expSecs / 60).round();
         return S.of(context)!.addInvoice(
               orderPayload?.amount.toString() ?? '',
-              orderPayload?.fiatCode ?? '',
+              expMinutes,
               orderPayload?.fiatAmount.toString() ?? '',
-              expSecs,
+              orderPayload?.fiatCode ?? '',
             );
       case actions.Action.waitingSellerToPay:
         final expSecs = ref
