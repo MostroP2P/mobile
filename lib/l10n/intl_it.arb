@@ -469,7 +469,6 @@
   "chooseLanguageDescription": "Scegli la tua lingua preferita o usa il predefinito di sistema",
 
   "loadingOrder": "Caricamento ordine...",
-  "done": "FATTO",
   "unsupportedLinkFormat": "Formato di link non supportato",
   "failedToOpenLink": "Impossibile aprire il link",
   "failedToLoadOrder": "Impossibile caricare l'ordine",
@@ -489,6 +488,6 @@
       }
     }
   },
-  "deepLinkGoHome": "Vai alla Home"
-
+  "deepLinkGoHome": "Vai alla Home",
+  "doneButton": "FATTO"
 }

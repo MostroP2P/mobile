@@ -123,18 +123,6 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
           ],
         ),
         const SizedBox(height: 20),
-        // Open Wallet Button
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.mostroGreen,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-          ),
-          onPressed: widget.onSubmit,
-          child: Text(S.of(context)!.openWalletButton),
-        ),
-        const SizedBox(height: 20),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [

@@ -481,6 +481,6 @@
       }
     }
   },
-  "deepLinkGoHome": "Ir al Inicio"
-
+  "deepLinkGoHome": "Ir al Inicio",
+  "doneButton": "HECHO"
 }
