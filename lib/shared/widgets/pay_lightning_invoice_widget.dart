@@ -83,17 +83,19 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
             ),
             ElevatedButton.icon(
               onPressed: () async {
-                final lightningUri = 'lightning:${widget.lnInvoice}';
                 try {
                   // Try to launch Lightning URL directly first
-                  final uri = Uri.parse(lightningUri);
+                  final uri = Uri.parse('lightning:${widget.lnInvoice}');
                   if (await canLaunchUrl(uri)) {
                     await launchUrl(uri);
-                    widget.logger.i('Launched Lightning wallet with invoice: ${widget.lnInvoice}');
+                    widget.logger.i(
+                        'Launched Lightning wallet with invoice: ${widget.lnInvoice}');
                   } else {
                     // Fallback to generic share if no Lightning apps available
-                    await Share.share(lightningUri);
-                    widget.logger.i('Shared LN Invoice via share sheet: ${widget.lnInvoice}');
+                    // lightning: URL scheme is not necessary then
+                    await Share.share(widget.lnInvoice);
+                    widget.logger.i(
+                        'Shared LN Invoice via share sheet: ${widget.lnInvoice}');
                   }
                 } catch (e) {
                   widget.logger.e('Failed to share LN Invoice: $e');
