@@ -5,6 +5,7 @@ import 'package:logger/logger.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
 class PayLightningInvoiceWidget extends StatefulWidget {
@@ -82,9 +83,18 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
             ),
             ElevatedButton.icon(
               onPressed: () async {
+                final lightningUri = 'lightning:${widget.lnInvoice}';
                 try {
-                  await Share.share(widget.lnInvoice);
-                  widget.logger.i('Shared LN Invoice: ${widget.lnInvoice}');
+                  // Try to launch Lightning URL directly first
+                  final uri = Uri.parse(lightningUri);
+                  if (await canLaunchUrl(uri)) {
+                    await launchUrl(uri);
+                    widget.logger.i('Launched Lightning wallet with invoice: ${widget.lnInvoice}');
+                  } else {
+                    // Fallback to generic share if no Lightning apps available
+                    await Share.share(lightningUri);
+                    widget.logger.i('Shared LN Invoice via share sheet: ${widget.lnInvoice}');
+                  }
                 } catch (e) {
                   widget.logger.e('Failed to share LN Invoice: $e');
                   if (mounted) {
