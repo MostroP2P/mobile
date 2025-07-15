@@ -3,7 +3,47 @@
   "newOrder": "Your offer has been published! Please wait until another user picks your order. It will be available for {expiration_hours} hours. You can cancel this order before another user picks it up by executing: cancel.",
   "canceled": "You have canceled the order ID: {id}.",
   "payInvoice": "Please pay this hold invoice of {amount} Sats for {fiat_code} {fiat_amount} to start the operation. If you do not pay it within {expiration_seconds} minutes, the trade will be canceled.",
+  "@payInvoice": {
+    "placeholders": {
+      "amount": {
+        "type": "String",
+        "description": "The amount of satoshis"
+      },
+      "expiration_seconds": {
+        "type": "int",
+        "description": "The expiration time in minutes"
+      },
+      "fiat_amount": {
+        "type": "String",
+        "description": "The fiat amount"
+      },
+      "fiat_code": {
+        "type": "String",
+        "description": "The fiat currency code"
+      }
+    }
+  },
   "addInvoice": "Please send me an invoice for {amount} satoshis equivalent to {fiat_code} {fiat_amount}. This is where I will send the funds upon trade completion. If you don't provide the invoice within {expiration_seconds} minutes, the trade will be canceled.",
+  "@addInvoice": {
+    "placeholders": {
+      "amount": {
+        "type": "String",
+        "description": "The amount of satoshis"
+      },
+      "expiration_seconds": {
+        "type": "int",
+        "description": "The expiration time in minutes"
+      },
+      "fiat_amount": {
+        "type": "String",
+        "description": "The fiat amount"
+      },
+      "fiat_code": {
+        "type": "String",
+        "description": "The fiat currency code"
+      }
+    }
+  },
   "waitingSellerToPay": "Please wait. I’ve sent a payment request to the seller to send the Sats for the order ID {id}. If the seller doesn’t complete the payment within {expiration_seconds}, the trade will be canceled.",
   "waitingBuyerInvoice": "Payment received! Your Sats are now 'held' in your wallet. I’ve requested the buyer to provide an invoice. If they don’t do so within {expiration_seconds}, your Sats will return to your wallet, and the trade will be canceled.",
   "buyerInvoiceAccepted": "The invoice has been successfully saved.",
