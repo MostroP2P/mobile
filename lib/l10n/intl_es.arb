@@ -478,6 +478,8 @@
 
   "language": "Idioma",
   "systemDefault": "Predeterminado del sistema",
+  "tradeHistoryRestored": "Historial de operaciones restaurado hasta el índice de clave {index}",
+  "tradeHistoryRestorationFailed": "La restauración del historial de operaciones falló: {error}",
   "english": "Inglés",
   "spanish": "Español",
   "italian": "Italiano",

@@ -128,7 +128,7 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop();
+                context.pop();
               },
               child: Text(
                 S.of(context)!.cancel,
@@ -139,7 +139,7 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
               onPressed: () async {
                 final mnemonic = mnemonicController.text.trim();
                 if (mnemonic.isNotEmpty) {
-                  Navigator.of(context).pop();
+                  context.pop();
                   await _performImport(mnemonic);
                 }
               },
@@ -169,6 +169,25 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
     try {
       await keyManager.importMnemonic(mnemonic);
       await _loadKeys();
+      
+      // Start trade history restoration in the background
+      final restorationService = ref.read(tradeHistoryRestorationProvider);
+      restorationService.restoreTradeHistory().then((highestIndex) {
+        setState(() {
+          _tradeKeyIndex = highestIndex;
+        });
+        
+        if (mounted && highestIndex > 0) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(S.of(context)!.tradeHistoryRestored(highestIndex.toString())),
+            ),
+          );
+        }
+      }).catchError((error) {
+        debugPrint('Trade history restoration failed: $error');
+      });
+      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(S.of(context)!.keyImportedSuccessfully)),
@@ -303,10 +322,10 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                           width: double.infinity,
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.2),
+                            color: Colors.black.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: Colors.white.withOpacity(0.05),
+                              color: Colors.white.withValues(alpha: 0.05),
                             ),
                           ),
                           child: SelectableText(

@@ -474,6 +474,8 @@
   "disputeButton": "DISPUTA",
   "fiatSentButton": "FIAT INVIATO",
   "completePurchaseButton": "COMPLETA ACQUISTO",
+  "tradeHistoryRestored": "Cronologia delle operazioni ripristinata fino all'indice chiave {index}",
+  "tradeHistoryRestorationFailed": "Il ripristino della cronologia delle operazioni non è riuscito: {error}",
   "paymentMethodLabel": "Metodo di Pagamento",
   "createdOnLabel": "Creato il",
   "orderIdLabel": "ID Ordine",

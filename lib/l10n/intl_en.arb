@@ -474,5 +474,7 @@
       }
     }
   },
-  "deepLinkGoHome": "Go Home"
+  "deepLinkGoHome": "Go Home",
+  "tradeHistoryRestored": "Restored trade history up to key index {index}",
+  "tradeHistoryRestorationFailed": "Trade history restoration failed: {error}"
 }
