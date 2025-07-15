@@ -406,8 +406,6 @@
   "copy": "Copiar",
   "share": "Compartir",
   "failedToShareInvoice": "Error al compartir factura. Por favor intenta copiarla en su lugar.",
-  "openWallet": "ABRIR BILLETERA",
-
 
   "@_comment_trade_detail_screen_new": "Nuevas cadenas de Pantalla de Detalles de Intercambio",
   "orderDetailsTitle": "DETALLES DE ORDEN",

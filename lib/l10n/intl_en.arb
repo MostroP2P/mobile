@@ -441,7 +441,6 @@
   "copy": "Copy",
   "share": "Share",
   "failedToShareInvoice": "Failed to share invoice. Please try copying instead.",
-  "openWallet": "OPEN WALLET",
   "language": "Language",
   "systemDefault": "System Default",
   "english": "English",

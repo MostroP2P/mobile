@@ -406,8 +406,6 @@
   "copy": "Copia",
   "share": "Condividi",
   "failedToShareInvoice": "Errore nel condividere la fattura. Per favore prova a copiarla invece.",
-  "openWallet": "APRI PORTAFOGLIO",
-
 
   "@_comment_trade_detail_screen_new": "Nuove Stringhe Schermata Dettagli Scambio",
   "orderDetailsTitle": "DETTAGLI ORDINE",
