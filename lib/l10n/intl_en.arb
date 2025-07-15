@@ -129,6 +129,43 @@
   "createYourOwnOffer": "You can also create your own offer and wait for someone to take it.\n\nSet the amount and preferred payment method — Mostro handles the rest.",
   "skip": "Skip",
   "done": "Done",
+
+  "@_comment_trade_detail_screen_new": "New Trade Detail Screen Strings",
+  "orderDetailsTitle": "ORDER DETAILS",
+  "buyOrderDetailsTitle": "BUY ORDER DETAILS",
+  "sellOrderDetailsTitle": "SELL ORDER DETAILS",
+  "someoneIsSellingTitle": "Someone is Selling Sats",
+  "someoneIsBuyingTitle": "Someone is Buying Sats",
+  "someoneIsSellingFixedTitle": "Someone is Selling {sats} Sats",
+  "someoneIsBuyingFixedTitle": "Someone is Buying {sats} Sats",
+  "youCreatedOfferMessage": "You created this offer. Below are the details of your offer. Wait for another user to take it. It will be published for 24 hours. You can cancel it at any time using the 'Cancel' button.",
+  "youAreSellingTitle": "You are selling{sats} sats",
+  "youAreBuyingTitle": "You are buying{sats} sats",
+  "forAmount": "for {amount}",
+  "timeLeftLabel": "Time Left: {time}",
+  "@timeLeftLabel": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "cancelPendingButton": "CANCEL PENDING",
+  "acceptCancelButton": "ACCEPT CANCEL",
+  "disputeButton": "DISPUTE",
+  "fiatSentButton": "FIAT SENT",
+  "completePurchaseButton": "COMPLETE PURCHASE",
+  "paymentMethodLabel": "Payment Method",
+  "createdOnLabel": "Created On",
+  "orderIdLabel": "Order ID",
+  "creatorReputationLabel": "Creator's Reputation",
+  "ratingTitleLabel": "Rating",
+  "reviewsLabel": "Reviews",
+  "daysLabel": "Days",
+  "cancelTradeDialogTitle": "Cancel Trade",
+  "cooperativeCancelDialogMessage": "If you confirm, you will start a cooperative cancellation with your counterparty.",
+  "acceptCancelDialogMessage": "If you confirm, you will accept the cooperative cancellation initiated by your counterparty.",
+  "orderIdCopiedMessage": "Order ID copied to clipboard",
   "typeToAdd": "Type to add...",
   "noneSelected": "None selected",
   "fiatCurrencies": "Fiat currencies",
@@ -164,6 +201,8 @@
   "cooperativeCancelMessage": "If you confirm, you will start a cooperative cancellation with your counterparty.",
   "acceptCancelMessage": "If you confirm, you will accept the cooperative cancellation initiated by your counterparty.",
   "confirm": "Confirm",
+  "yes": "Yes",
+  "no": "No",
   "buy": "BUY",
   "sell": "SELL",
   "buying": "BUYING",
@@ -278,6 +317,9 @@
   "market": "Market",
   "priceTypeTooltip": "• Select Market Price if you want to use the price that Bitcoin has when someone takes your offer.\\n• Select Fixed Price if you want to define the exact amount of Bitcoin you will exchange.",
   
+  "@_comment_take_order_screen": "Take Order Screen Strings",
+  "orderDetails": "ORDER DETAILS",
+  "atMarketPrice": "at market price",
   "withPremiumPercent": "with a +{premium}% premium",
   "@withPremiumPercent": {
     "placeholders": {
@@ -398,5 +440,21 @@
   "unsupportedLinkFormat": "Unsupported link format",
   "failedToOpenLink": "Failed to open link",
   "failedToLoadOrder": "Failed to load order",
-  "failedToOpenOrder": "Failed to open order"
+  "failedToOpenOrder": "Failed to open order",
+
+  "@_comment_deep_link_errors": "Deep Link Error Messages",
+  "deepLinkInvalidFormat": "Invalid mostro: URL format",
+  "deepLinkParseError": "Failed to parse mostro: URL",
+  "deepLinkInvalidOrderId": "Invalid order ID format",
+  "deepLinkNoRelays": "No relays specified in URL",
+  "deepLinkOrderNotFound": "Order not found or invalid",
+  "deepLinkNavigationError": "Navigation Error: {error}",
+  "@deepLinkNavigationError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "deepLinkGoHome": "Go Home"
 }

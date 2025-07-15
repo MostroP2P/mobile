@@ -19,7 +19,7 @@ class OrderAppBar extends StatelessWidget implements PreferredSizeWidget {
           HeroIcons.arrowLeft,
           color: AppTheme.cream1,
         ),
-        onPressed: () => context.go('/order_book'),
+        onPressed: () => context.go('/'),
       ),
       title: Text(
         title,

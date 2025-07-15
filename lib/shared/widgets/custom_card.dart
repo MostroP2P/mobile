@@ -20,11 +20,11 @@ class CustomCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: color ?? AppTheme.dark2,
+      color: color ?? AppTheme.dark1,
       margin: margin,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: borderSide ?? BorderSide(color: AppTheme.dark2),
+        side: borderSide ?? BorderSide(color: AppTheme.dark1),
       ),
       child: Padding(
         padding: padding,

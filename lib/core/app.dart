@@ -1,10 +1,13 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:app_links/app_links.dart';
 import 'package:mostro_mobile/core/app_routes.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/core/deep_link_handler.dart';
+import 'package:mostro_mobile/core/deep_link_interceptor.dart';
 import 'package:mostro_mobile/features/auth/providers/auth_notifier_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/features/auth/notifiers/auth_state.dart';
@@ -27,15 +30,84 @@ class MostroApp extends ConsumerStatefulWidget {
 class _MostroAppState extends ConsumerState<MostroApp> {
   GoRouter? _router;
   bool _deepLinksInitialized = false;
+  DeepLinkInterceptor? _deepLinkInterceptor;
+  StreamSubscription<String>? _customUrlSubscription;
 
   @override
   void initState() {
     super.initState();
     ref.read(lifecycleManagerProvider);
+    _initializeDeepLinkInterceptor();
+    _processInitialDeepLink();
+  }
+
+  /// Initialize the deep link interceptor
+  void _initializeDeepLinkInterceptor() {
+    _deepLinkInterceptor = DeepLinkInterceptor();
+    _deepLinkInterceptor!.initialize();
+    
+    // Listen for intercepted custom URLs
+    _customUrlSubscription = _deepLinkInterceptor!.customUrlStream.listen(
+      (url) async {
+        debugPrint('Intercepted custom URL: $url');
+        
+        // Process the URL through our deep link handler
+        if (_router != null) {
+          try {
+            final uri = Uri.parse(url);
+            final deepLinkHandler = ref.read(deepLinkHandlerProvider);
+            await deepLinkHandler.handleInitialDeepLink(uri, _router!);
+          } catch (e) {
+            debugPrint('Error handling intercepted URL: $e');
+          }
+        }
+      },
+      onError: (error) {
+        debugPrint('Error in custom URL stream: $error');
+      },
+    );
+  }
+
+  /// Process initial deep link before router initialization
+  Future<void> _processInitialDeepLink() async {
+    try {
+      final appLinks = AppLinks();
+      final initialUri = await appLinks.getInitialLink();
+      
+      if (initialUri != null && initialUri.scheme == 'mostro') {
+        // Store the initial mostro URL for later processing
+        // and prevent it from being passed to GoRouter
+        debugPrint('Initial mostro deep link detected: $initialUri');
+        
+        // Schedule the deep link processing after the router is ready
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _handleInitialMostroLink(initialUri);
+        });
+      }
+    } catch (e) {
+      debugPrint('Error processing initial deep link: $e');
+    }
+  }
+
+  /// Handle initial mostro link after router is ready
+  Future<void> _handleInitialMostroLink(Uri uri) async {
+    try {
+      // Wait for router to be ready
+      await Future.delayed(const Duration(milliseconds: 100));
+      
+      if (_router != null) {
+        final deepLinkHandler = ref.read(deepLinkHandlerProvider);
+        await deepLinkHandler.handleInitialDeepLink(uri, _router!);
+      }
+    } catch (e) {
+      debugPrint('Error handling initial mostro link: $e');
+    }
   }
 
   @override
   void dispose() {
+    _customUrlSubscription?.cancel();
+    _deepLinkInterceptor?.dispose();
     // Deep link handler disposal is handled automatically by Riverpod
     super.dispose();
   }
@@ -75,6 +147,7 @@ class _MostroAppState extends ConsumerState<MostroApp> {
             try {
               final deepLinkHandler = ref.read(deepLinkHandlerProvider);
               deepLinkHandler.initialize(_router!);
+              
               _deepLinksInitialized = true;
             } catch (e, stackTrace) {
               // Log the error but don't set _deepLinksInitialized to true

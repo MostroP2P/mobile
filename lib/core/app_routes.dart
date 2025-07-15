@@ -23,11 +23,19 @@ import 'package:mostro_mobile/features/walkthrough/screens/walkthrough_screen.da
 import 'package:mostro_mobile/features/walkthrough/providers/first_run_provider.dart';
 import 'package:mostro_mobile/shared/widgets/navigation_listener_widget.dart';
 import 'package:mostro_mobile/shared/widgets/notification_listener_widget.dart';
+import 'package:logger/logger.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 GoRouter createRouter(WidgetRef ref) {
   return GoRouter(
     navigatorKey: GlobalKey<NavigatorState>(),
+    initialLocation: '/',
     redirect: (context, state) {
+      // Redirect custom schemes to home to prevent assertion failures
+      if (state.uri.scheme == 'mostro' || 
+          (!state.uri.scheme.startsWith('http') && state.uri.scheme.isNotEmpty)) {
+        return '/';
+      }
       final firstRunState = ref.read(firstRunProvider);
 
       return firstRunState.when(
@@ -41,8 +49,31 @@ GoRouter createRouter(WidgetRef ref) {
         error: (_, __) => null,
       );
     },
+    errorBuilder: (context, state) {
+      final logger = Logger();
+      logger.w('GoRouter error: ${state.error}');
+      
+      // For errors, show a generic error page
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error, size: 64),
+              const SizedBox(height: 16),
+              Text(S.of(context)!.deepLinkNavigationError(state.error.toString())),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => context.go('/'),
+                child: Text(S.of(context)!.deepLinkGoHome),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
     routes: [
-      ShellRoute(
+    ShellRoute(
         builder: (BuildContext context, GoRouterState state, Widget child) {
           return NotificationListenerWidget(
             child: NavigationListenerWidget(
@@ -227,10 +258,6 @@ GoRouter createRouter(WidgetRef ref) {
         ],
       ),
     ],
-    initialLocation: '/',
-    errorBuilder: (context, state) => Scaffold(
-      body: Center(child: Text(state.error.toString())),
-    ),
   );
 }
 
