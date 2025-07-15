@@ -22,7 +22,8 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
   String? _mnemonic;
   int? _tradeKeyIndex;
   bool _loading = false;
-  final TextEditingController _importController = TextEditingController();
+  bool _showMnemonic = false;
+  final GlobalKey<TooltipState> _tooltipKey = GlobalKey<TooltipState>();
 
   @override
   void initState() {
@@ -72,23 +73,112 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
   }
 
   Future<void> _importKey() async {
+    await _showImportDialog();
+  }
+
+  Future<void> _showImportDialog() async {
+    final TextEditingController mnemonicController = TextEditingController();
+    
+    await showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: AppTheme.dark2,
+          title: Text(
+            S.of(context)!.importUser,
+            style: const TextStyle(color: AppTheme.cream1),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                S.of(context)!.importUserInstructions,
+                style: TextStyle(
+                  color: AppTheme.grey2,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: mnemonicController,
+                maxLines: 3,
+                style: const TextStyle(color: AppTheme.cream1),
+                decoration: InputDecoration(
+                  hintText: S.of(context)!.mnemonicPlaceholder,
+                  hintStyle: TextStyle(color: AppTheme.grey2),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: AppTheme.grey2),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: AppTheme.grey2),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: AppTheme.mostroGreen),
+                  ),
+                  filled: true,
+                  fillColor: AppTheme.dark1,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text(
+                S.of(context)!.cancel,
+                style: const TextStyle(color: AppTheme.grey2),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final mnemonic = mnemonicController.text.trim();
+                if (mnemonic.isNotEmpty) {
+                  Navigator.of(context).pop();
+                  await _performImport(mnemonic);
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.mostroGreen,
+                foregroundColor: AppTheme.dark1,
+              ),
+              child: Text(S.of(context)!.import),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _performImport(String mnemonic) async {
+    final sessionNotifer = ref.read(sessionNotifierProvider.notifier);
+    await sessionNotifer.reset();
+
+    final mostroStorage = ref.read(mostroStorageProvider);
+    await mostroStorage.deleteAll();
+
+    final eventStorage = ref.read(eventStorageProvider);
+    await eventStorage.deleteAll();
+
     final keyManager = ref.read(keyManagerProvider);
-    final importValue = _importController.text.trim();
-    if (importValue.isNotEmpty) {
-      try {
-        await keyManager.importMnemonic(importValue);
-        await _loadKeys();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(S.of(context)!.keyImportedSuccessfully)),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(S.of(context)!.importFailed(e.toString()))),
-          );
-        }
+    try {
+      await keyManager.importMnemonic(mnemonic);
+      await _loadKeys();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(S.of(context)!.keyImportedSuccessfully)),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(S.of(context)!.importFailed(e.toString()))),
+        );
       }
     }
   }
@@ -132,22 +222,103 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                       spacing: 16,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Header with title, info icon, and show/hide button
                         Row(
-                          spacing: 8,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Icon(
-                              Icons.key,
-                              color: AppTheme.mostroGreen,
+                            Row(
+                              spacing: 8,
+                              children: [
+                                const Icon(
+                                  Icons.key,
+                                  color: AppTheme.mostroGreen,
+                                ),
+                                Text(S.of(context)!.secretWords,
+                                    style: textTheme.titleLarge),
+                                // Info tooltip
+                                Tooltip(
+                                  key: _tooltipKey,
+                                  message: S.of(context)!.mnemonicInfoTooltip,
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.8),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: Colors.white.withValues(alpha: 0.2),
+                                    ),
+                                  ),
+                                  textStyle: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                  ),
+                                  preferBelow: false,
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      _tooltipKey.currentState?.ensureTooltipVisible();
+                                    },
+                                    child: const Padding(
+                                      padding: EdgeInsets.all(2.0),
+                                      child: Icon(
+                                        Icons.info_outline,
+                                        size: 16,
+                                        color: AppTheme.grey2,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                            Text(S.of(context)!.secretWords,
-                                style: textTheme.titleLarge),
+                            // Show/Hide button
+                            TextButton(
+                              onPressed: () {
+                                setState(() {
+                                  _showMnemonic = !_showMnemonic;
+                                });
+                              },
+                              style: TextButton.styleFrom(
+                                foregroundColor: AppTheme.mostroGreen,
+                                backgroundColor: Colors.white.withValues(alpha: 0.05),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                              ),
+                              child: Text(
+                                _showMnemonic
+                                    ? S.of(context)!.hide
+                                    : S.of(context)!.show,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
                           ],
                         ),
+                        // Description
                         Text(S.of(context)!.toRestoreYourAccount,
                             style: textTheme.bodyMedium
                                 ?.copyWith(color: AppTheme.grey2)),
-                        SelectableText(
-                          _mnemonic ?? '',
+                        // Mnemonic display
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.05),
+                            ),
+                          ),
+                          child: SelectableText(
+                            _showMnemonic
+                                ? (_mnemonic ?? '')
+                                : '•••• •••• •••• •••• •••• •••• •••• •••• •••• •••• •••• ••••',
+                            style: const TextStyle(
+                              fontFamily: 'monospace',
+                              fontSize: 14,
+                              color: Colors.white,
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -164,7 +335,7 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                           spacing: 8,
                           children: [
                             const Icon(
-                              Icons.key,
+                              Icons.lock,
                               color: AppTheme.mostroGreen,
                             ),
                             Text(S.of(context)!.privacy,
@@ -232,10 +403,12 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                   ),
                   Column(
                     mainAxisAlignment: MainAxisAlignment.center,
+                    spacing: 16,
                     children: [
                       ElevatedButton(
                         onPressed: _generateNewMasterKey,
                         child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           spacing: 8,
                           children: [
                             const Icon(Icons.person_2_outlined),
@@ -243,17 +416,18 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                           ],
                         ),
                       ),
+                      OutlinedButton(
+                        onPressed: _importKey,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          spacing: 8,
+                          children: [
+                            const Icon(Icons.download),
+                            Text(S.of(context)!.importMostroUser),
+                          ],
+                        ),
+                      ),
                     ],
-                  ),
-                  OutlinedButton(
-                    onPressed: _importKey,
-                    child: Row(
-                      spacing: 8,
-                      children: [
-                        const Icon(Icons.download),
-                        Text(S.of(context)!.importMostroUser),
-                      ],
-                    ),
                   ),
                 ],
               ),
