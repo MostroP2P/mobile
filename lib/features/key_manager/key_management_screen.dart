@@ -128,7 +128,7 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop();
+                context.pop();
               },
               child: Text(
                 S.of(context)!.cancel,
@@ -139,7 +139,7 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
               onPressed: () async {
                 final mnemonic = mnemonicController.text.trim();
                 if (mnemonic.isNotEmpty) {
-                  Navigator.of(context).pop();
+                  context.pop();
                   await _performImport(mnemonic);
                 }
               },
