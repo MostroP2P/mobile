@@ -1,5 +1,4 @@
 import 'package:circular_countdown/circular_countdown.dart';
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -187,7 +186,6 @@ class TradeDetailScreen extends ConsumerWidget {
               tradeState.order!.createdAt! * 1000)
           : session?.startTime ?? DateTime.now(),
       context,
-          : session?.startTime ?? DateTime.now(),
     );
 
     return Column(
