@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 
 class CustomElevatedButton extends StatelessWidget {
@@ -7,6 +8,9 @@ class CustomElevatedButton extends StatelessWidget {
   final EdgeInsetsGeometry? padding;
   final Color? backgroundColor;
   final Color? foregroundColor;
+  final double minFontSize;
+  final double? width;
+  final TextStyle? textStyle;
 
   const CustomElevatedButton({
     super.key,
@@ -15,20 +19,30 @@ class CustomElevatedButton extends StatelessWidget {
     this.padding,
     this.backgroundColor,
     this.foregroundColor,
+    this.minFontSize = 12.0,
+    this.width,
+    this.textStyle,
   });
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton(
+    final buttonWidget = ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
         foregroundColor: foregroundColor ?? AppTheme.cream1,
         backgroundColor: backgroundColor ?? AppTheme.mostroGreen,
-        textStyle: Theme.of(context).textTheme.labelLarge,
         padding:
             padding ?? const EdgeInsets.symmetric(vertical: 15, horizontal: 30),
       ),
-      child: Text(text),
+      child: AutoSizeText(
+        text,
+        style: textStyle ?? Theme.of(context).textTheme.labelLarge,
+        minFontSize: minFontSize,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
     );
+    
+    return width != null ? SizedBox(width: width, child: buttonWidget) : buttonWidget;
   }
 }

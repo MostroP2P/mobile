@@ -41,7 +41,8 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
     if (session.startTime.isAfter(cutoff)) {
       bool isActive = true;
       if (session.orderId != null) {
-        final latestOrderMsg = await messageStorage.getLatestMessageOfTypeById<Order>(session.orderId!);
+        final latestOrderMsg = await messageStorage
+            .getLatestMessageOfTypeById<Order>(session.orderId!);
         final status = latestOrderMsg?.payload is Order
             ? (latestOrderMsg!.payload as Order).status
             : null;
@@ -78,12 +79,12 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
         ref.read(orderActionNotifierProvider(session.orderId!).notifier).set(
               order.action,
             );
-            
+
         // Explicitly initialize order notifier
         // to ensure it's all properly set up for this orderId
         ref.read(orderNotifierProvider(session.orderId!).notifier).sync();
       }
-      
+
       // Read the order notifier provider last, which will watch all the above
       ref.read(orderNotifierProvider(session.orderId!));
     }

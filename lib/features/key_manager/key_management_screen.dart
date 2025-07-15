@@ -45,7 +45,9 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
         _tradeKeyIndex = 0;
       }
     } catch (e) {
-      if (mounted) _mnemonic = S.of(context)!.errorLoadingMnemonic(e.toString());
+      if (mounted) {
+        _mnemonic = S.of(context)!.errorLoadingMnemonic(e.toString());
+      }
     } finally {
       setState(() {
         _loading = false;
@@ -56,16 +58,16 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
   Future<void> _generateNewMasterKey() async {
     final sessionNotifer = ref.read(sessionNotifierProvider.notifier);
     await sessionNotifer.reset();
-    
+
     final mostroStorage = ref.read(mostroStorageProvider);
     await mostroStorage.deleteAll();
-    
+
     final eventStorage = ref.read(eventStorageProvider);
     await eventStorage.deleteAll();
 
     final keyManager = ref.read(keyManagerProvider);
     await keyManager.generateAndStoreMasterKey();
-    
+
     await _loadKeys();
   }
 
@@ -137,7 +139,8 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                               Icons.key,
                               color: AppTheme.mostroGreen,
                             ),
-                            Text(S.of(context)!.secretWords, style: textTheme.titleLarge),
+                            Text(S.of(context)!.secretWords,
+                                style: textTheme.titleLarge),
                           ],
                         ),
                         Text(S.of(context)!.toRestoreYourAccount,
@@ -164,7 +167,8 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                               Icons.key,
                               color: AppTheme.mostroGreen,
                             ),
-                            Text(S.of(context)!.privacy, style: textTheme.titleLarge),
+                            Text(S.of(context)!.privacy,
+                                style: textTheme.titleLarge),
                           ],
                         ),
                         Text(S.of(context)!.controlPrivacySettings,

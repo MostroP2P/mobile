@@ -5,8 +5,10 @@ import 'package:shared_preferences/shared_preferences.dart'; // Replace with you
 class MemoryTextField extends StatefulWidget {
   /// The label for the text field.
   final String label;
+
   /// A unique key string for persisting the history of inputs.
   final String historyKey;
+
   /// An optional callback that fires whenever the text changes.
   final ValueChanged<String>? onChanged;
 

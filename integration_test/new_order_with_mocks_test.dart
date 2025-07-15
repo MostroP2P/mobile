@@ -7,7 +7,8 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   group('Create Orders with mocked providers', () {
-    testWidgets('User creates BUY order with VES=100 at premium 1', (tester) async {
+    testWidgets('User creates BUY order with VES=100 at premium 1',
+        (tester) async {
       await pumpTestApp(tester);
 
       final createOrderButton = find.byKey(const Key('addOrderButton'));
@@ -44,7 +45,8 @@ void main() {
       expect(find.byKey(const Key('homeButton')), findsOneWidget);
     });
 
-    testWidgets('User creates SELL order with VES=100 at premium 1', (tester) async {
+    testWidgets('User creates SELL order with VES=100 at premium 1',
+        (tester) async {
       await pumpTestApp(tester);
 
       final createOrderButton = find.byKey(const Key('addOrderButton'));

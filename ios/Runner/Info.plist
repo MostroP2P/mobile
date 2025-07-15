@@ -43,6 +43,8 @@
 		</array>
 		<key>CADisableMinimumFrameDurationOnPhone</key>
 		<true />
+		<key>FlutterDeepLinkingEnabled</key>
+		<false />
 		<key>UIApplicationSupportsIndirectInputEvents</key>
 		<true />
 		<key>NSCameraUsageDescription</key>
@@ -52,6 +54,20 @@
 			<string>fetch</string>
 			<string>processing</string>
 			<string>remote-notification</string>
+		</array>
+		<!-- Deep Link Support for mostro: scheme -->
+		<key>CFBundleURLTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleURLName</key>
+				<string>mostro.scheme</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>mostro</string>
+				</array>
+				<key>CFBundleTypeRole</key>
+				<string>Editor</string>
+			</dict>
 		</array>
 	</dict>
 </plist>

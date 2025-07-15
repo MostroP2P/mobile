@@ -47,14 +47,13 @@ abstract class ExchangeService {
   Future<Map<String, dynamic>> getRequest(String endpoint) async {
     final url = Uri.parse('$baseUrl$endpoint');
     try {
-      final response = await http
-          .get(url, headers: defaultHeaders)
-          .timeout(timeout);
+      final response =
+          await http.get(url, headers: defaultHeaders).timeout(timeout);
 
       if (response.statusCode == 200) {
         return json.decode(response.body) as Map<String, dynamic>;
       }
-      
+
       throw HttpException(
         'Failed to load data: ${response.statusCode}',
         uri: url,

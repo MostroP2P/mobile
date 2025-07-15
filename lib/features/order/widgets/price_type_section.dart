@@ -21,17 +21,20 @@ class PriceTypeSection extends StatelessWidget {
       size: 18,
       color: AppTheme.textPrimary,
     );
-    
+
     return FormSection(
       title: S.of(context)!.priceType,
       icon: priceTypeIcon,
-      iconBackgroundColor: AppTheme.purpleAccent.withValues(alpha: 0.3), // Purple color consistent with other sections
+      iconBackgroundColor: AppTheme.purpleAccent.withValues(
+          alpha: 0.3), // Purple color consistent with other sections
       infoTooltip: S.of(context)!.priceTypeTooltip,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            isMarketRate ? S.of(context)!.marketPrice : S.of(context)!.fixedPrice,
+            isMarketRate
+                ? S.of(context)!.marketPrice
+                : S.of(context)!.fixedPrice,
             style: const TextStyle(
                 color: AppTheme.textPrimary, fontWeight: FontWeight.w500),
           ),
@@ -49,7 +52,8 @@ class PriceTypeSection extends StatelessWidget {
               Switch(
                 key: const Key('fixedSwitch'),
                 value: isMarketRate,
-                activeColor: AppTheme.purpleAccent, // Keep the purple accent color
+                activeColor:
+                    AppTheme.purpleAccent, // Keep the purple accent color
                 onChanged: onToggle,
               ),
             ],

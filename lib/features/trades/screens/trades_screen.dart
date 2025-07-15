@@ -64,7 +64,8 @@ class TradesScreen extends ConsumerWidget {
                             const SizedBox(height: 16.0),
                             Expanded(
                               child: tradesAsync.when(
-                                data: (trades) => _buildOrderList(context, trades),
+                                data: (trades) =>
+                                    _buildOrderList(context, trades),
                                 loading: () => const Center(
                                   child: CircularProgressIndicator(),
                                 ),

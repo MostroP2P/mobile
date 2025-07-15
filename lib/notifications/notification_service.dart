@@ -5,7 +5,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:logger/logger.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-  FlutterLocalNotificationsPlugin();
+    FlutterLocalNotificationsPlugin();
 
 Future<void> initializeNotifications() async {
   const android = AndroidInitializationSettings(
@@ -18,11 +18,7 @@ Future<void> initializeNotifications() async {
   );
 
   const initSettings = InitializationSettings(
-    android: android,
-    iOS: ios,
-    linux: linux,
-    macOS: ios
-  );
+      android: android, iOS: ios, linux: linux, macOS: ios);
   await flutterLocalNotificationsPlugin.initialize(initSettings);
 }
 
@@ -57,31 +53,33 @@ Future<void> showLocalNotification(NostrEvent event) async {
   );
 }
 
-Future<void> retryNotification(NostrEvent event, {int maxAttempts = 3}) async {  
-  int attempt = 0;  
-  bool success = false;  
-  
-  while (!success && attempt < maxAttempts) {  
-    try {  
-      await showLocalNotification(event);  
-      success = true;  
-    } catch (e) {  
-      attempt++;  
-      if (attempt >= maxAttempts) {  
-        Logger().e('Failed to show notification after $maxAttempts attempts: $e');  
-        break;  
-      }  
-      
-      // Exponential backoff: 1s, 2s, 4s, etc.  
-      final backoffSeconds = pow(2, attempt - 1).toInt();  
-      Logger().e('Notification attempt $attempt failed: $e. Retrying in ${backoffSeconds}s');  
-      await Future.delayed(Duration(seconds: backoffSeconds));  
-    }  
-  }  
-  
-  // Optionally store failed notifications for later retry when app returns to foreground  
-  if (!success) {  
-    // Store the event ID in a persistent queue for later retry  
-    // await failedNotificationsQueue.add(event.id!);  
-  }  
-}  
+Future<void> retryNotification(NostrEvent event, {int maxAttempts = 3}) async {
+  int attempt = 0;
+  bool success = false;
+
+  while (!success && attempt < maxAttempts) {
+    try {
+      await showLocalNotification(event);
+      success = true;
+    } catch (e) {
+      attempt++;
+      if (attempt >= maxAttempts) {
+        Logger()
+            .e('Failed to show notification after $maxAttempts attempts: $e');
+        break;
+      }
+
+      // Exponential backoff: 1s, 2s, 4s, etc.
+      final backoffSeconds = pow(2, attempt - 1).toInt();
+      Logger().e(
+          'Notification attempt $attempt failed: $e. Retrying in ${backoffSeconds}s');
+      await Future.delayed(Duration(seconds: backoffSeconds));
+    }
+  }
+
+  // Optionally store failed notifications for later retry when app returns to foreground
+  if (!success) {
+    // Store the event ID in a persistent queue for later retry
+    // await failedNotificationsQueue.add(event.id!);
+  }
+}

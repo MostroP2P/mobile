@@ -30,7 +30,8 @@ class _StarRatingState extends State<StarRating> {
   Widget _buildStar(int index) {
     // Use a filled star if the index is less than current rating; otherwise an outlined star.
     final icon = index < _currentRating ? Icons.star : Icons.star_border;
-    final color = index < _currentRating ? AppTheme.mostroGreen : AppTheme.grey2;
+    final color =
+        index < _currentRating ? AppTheme.mostroGreen : AppTheme.grey2;
 
     return GestureDetector(
       onTap: () {

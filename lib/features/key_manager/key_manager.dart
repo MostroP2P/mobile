@@ -82,8 +82,7 @@ class KeyManager {
   }
 
   NostrKeyPairs deriveTradeKeyPair(int index) {
-    final tradePrivateHex =
-        _derivator.derivePrivateKey(_masterKeyHex!, index);
+    final tradePrivateHex = _derivator.derivePrivateKey(_masterKeyHex!, index);
 
     return NostrKeyPairs(private: tradePrivateHex);
   }

@@ -7,6 +7,7 @@ import 'package:mostro_mobile/features/relays/widgets/relay_selector.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/widgets/currency_combo_box.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
+import 'package:mostro_mobile/shared/widgets/language_selector.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -44,7 +45,33 @@ class SettingsScreen extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     spacing: 24,
                     children: [
-                      // General Settings
+                      // Language Settings
+                      CustomCard(
+                        color: AppTheme.dark2,
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          spacing: 16,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              spacing: 8,
+                              children: [
+                                const Icon(
+                                  Icons.language,
+                                  color: AppTheme.mostroGreen,
+                                ),
+                                Text(S.of(context)!.language,
+                                    style: textTheme.titleLarge),
+                              ],
+                            ),
+                            Text(S.of(context)!.chooseLanguageDescription,
+                                style: textTheme.bodyMedium
+                                    ?.copyWith(color: AppTheme.grey2)),
+                            const LanguageSelector(),
+                          ],
+                        ),
+                      ),
+                      // Currency Settings
                       CustomCard(
                         color: AppTheme.dark2,
                         padding: const EdgeInsets.all(16),
@@ -59,7 +86,8 @@ class SettingsScreen extends ConsumerWidget {
                                   Icons.toll,
                                   color: AppTheme.mostroGreen,
                                 ),
-                                Text(S.of(context)!.currency, style: textTheme.titleLarge),
+                                Text(S.of(context)!.currency,
+                                    style: textTheme.titleLarge),
                               ],
                             ),
                             Text(S.of(context)!.setDefaultFiatCurrency,
@@ -90,7 +118,8 @@ class SettingsScreen extends ConsumerWidget {
                                   Icons.sensors,
                                   color: AppTheme.mostroGreen,
                                 ),
-                                Text(S.of(context)!.relays, style: textTheme.titleLarge),
+                                Text(S.of(context)!.relays,
+                                    style: textTheme.titleLarge),
                               ],
                             ),
                             Text(S.of(context)!.selectNostrRelays,
@@ -128,11 +157,11 @@ class SettingsScreen extends ConsumerWidget {
                                   Icons.flash_on,
                                   color: AppTheme.mostroGreen,
                                 ),
-                                Text(S.of(context)!.mostro, style: textTheme.titleLarge),
+                                Text(S.of(context)!.mostro,
+                                    style: textTheme.titleLarge),
                               ],
                             ),
-                            Text(
-                                S.of(context)!.enterMostroPublicKey,
+                            Text(S.of(context)!.enterMostroPublicKey,
                                 style: textTheme.bodyMedium
                                     ?.copyWith(color: AppTheme.grey2)),
                             Container(

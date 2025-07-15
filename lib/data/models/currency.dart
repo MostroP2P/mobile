@@ -9,7 +9,6 @@ class Currency {
   final bool price;
   String? locale;
 
-
   Currency({
     required this.symbol,
     required this.name,
