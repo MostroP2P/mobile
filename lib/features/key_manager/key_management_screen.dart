@@ -73,6 +73,98 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
 
   // ignore: unused_element
   Future<void> _importKey() async {
+    await _showImportDialog();
+  }
+
+  Future<void> _showImportDialog() async {
+    final TextEditingController mnemonicController = TextEditingController();
+    
+    await showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: AppTheme.dark2,
+          title: Text(
+            S.of(context)!.importUser,
+            style: const TextStyle(color: AppTheme.cream1),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                S.of(context)!.importUserInstructions,
+                style: TextStyle(
+                  color: AppTheme.grey2,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: mnemonicController,
+                maxLines: 3,
+                style: const TextStyle(color: AppTheme.cream1),
+                decoration: InputDecoration(
+                  hintText: S.of(context)!.mnemonicPlaceholder,
+                  hintStyle: TextStyle(color: AppTheme.grey2),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: AppTheme.grey2),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: AppTheme.grey2),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: AppTheme.mostroGreen),
+                  ),
+                  filled: true,
+                  fillColor: AppTheme.dark1,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text(
+                S.of(context)!.cancel,
+                style: const TextStyle(color: AppTheme.grey2),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final mnemonic = mnemonicController.text.trim();
+                if (mnemonic.isNotEmpty) {
+                  Navigator.of(context).pop();
+                  await _performImport(mnemonic);
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.mostroGreen,
+                foregroundColor: AppTheme.dark1,
+              ),
+              child: Text(S.of(context)!.import),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _performImport(String mnemonic) async {
+    final sessionNotifer = ref.read(sessionNotifierProvider.notifier);
+    await sessionNotifer.reset();
+
+    final mostroStorage = ref.read(mostroStorageProvider);
+    await mostroStorage.deleteAll();
+
+    final eventStorage = ref.read(eventStorageProvider);
+    await eventStorage.deleteAll();
+
     final keyManager = ref.read(keyManagerProvider);
     final importValue = _importController.text.trim();
     if (importValue.isNotEmpty) {
