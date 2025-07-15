@@ -187,11 +187,9 @@
   "expired": "Expired",
   "success": "Success",
   "orderIdCopied": "Order ID copied to clipboard",
-  "orderDetails": "ORDER DETAILS",
   "noPaymentMethod": "No payment method",
   "youAreSellingText": "You are selling{sats} sats for {amount} {price} {premium}",
   "youAreBuyingText": "You are buying{sats} sats for {amount} {price} {premium}",
-  "atMarketPrice": "at market price",
   "withPremium": " with a +{premium}% premium",
   "withDiscount": " with a {premium}% discount",
   "createdOn": "Created on",
@@ -412,9 +410,6 @@
   "lightningInvoice": "Lightning Invoice",
   "enterInvoiceHere": "Enter invoice here",
   
-  "cancelPendingButton": "CANCEL PENDING",
-  "acceptCancelButton": "ACCEPT CANCEL",
-  "completePurchaseButton": "COMPLETE PURCHASE",
   "rateButton": "RATE",
   "contactButton": "CONTACT",
   
