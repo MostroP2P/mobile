@@ -22,7 +22,6 @@ class TradeHistoryRestorationService {
   Future<int> restoreTradeHistory({
     int maxKeysToScan = 100,
     int batchSize = 20,
-    Duration timeoutPerBatch = const Duration(seconds: 10),
   }) async {
     _logger.i('Starting trade history restoration...');
 
