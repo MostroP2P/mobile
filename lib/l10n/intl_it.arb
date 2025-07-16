@@ -282,6 +282,10 @@
   "invoiceExpirationWindow": "Finestra Scadenza Fattura",
   
   "@_comment_order_creation": "Stringhe Modulo Creazione Ordine",
+  "youWantToBuyBitcoin": "Vuoi comprare Bitcoin",
+  "youWantToSellBitcoin": "Vuoi vendere Bitcoin",
+  "lightningAddressOptional": "Lightning Address (opzionale)",
+  "enterLightningAddress": "Inserisci lightning address",
   "enterFiatAmountBuy": "Inserisci l'importo fiat che vuoi pagare (puoi impostare un intervallo)",
   "enterFiatAmountSell": "Inserisci l'importo fiat che vuoi ricevere (puoi impostare un intervallo)",
   "enterAmountHint": "Inserisci importo (esempio: 100 o 100-500)",
@@ -442,7 +446,27 @@
   },
   
   "@_comment_lightning_invoice": "Stringhe Widget Fattura Lightning",
-  "pleaseEnterLightningInvoiceFor": "Per favore inserisci una Fattura Lightning per: ",
+  "pleaseEnterLightningInvoiceFor": "Per favore inserisci una Fattura Lightning per {sats} Sats equivalenti a {fiat_amount} {fiat_code} per continuare lo scambio dell'ordine con ID {order_id}",
+  "@pleaseEnterLightningInvoiceFor": {
+    "placeholders": {
+      "sats": {
+        "type": "String",
+        "description": "L'importo in satoshi"
+      },
+      "fiat_amount": {
+        "type": "String",
+        "description": "L'importo fiat"
+      },
+      "fiat_code": {
+        "type": "String",
+        "description": "Il codice della valuta fiat"
+      },
+      "order_id": {
+        "type": "String",
+        "description": "L'ID dell'ordine"
+      }
+    }
+  },
   "sats": " sats",
   "lightningInvoice": "Fattura Lightning",
   "enterInvoiceHere": "Inserisci la fattura qui",
@@ -460,7 +484,27 @@
   
   "@_comment_pay_invoice_screen": "Stringhe Schermata Pagamento Fattura Lightning",
   "payLightningInvoice": "Paga Fattura Lightning",
-  "payInvoiceToContinue": "Paga questa fattura per continuare lo scambio",
+  "payInvoiceToContinue": "Paga questa fattura di {sats} Sats equivalenti a {fiat_amount} {fiat_code} per continuare lo scambio dell'ordine {order_id}",
+  "@payInvoiceToContinue": {
+    "placeholders": {
+      "sats": {
+        "type": "String",
+        "description": "L'importo in satoshi"
+      },
+      "fiat_code": {
+        "type": "String",
+        "description": "Il codice della valuta fiat"
+      },
+      "fiat_amount": {
+        "type": "String",
+        "description": "L'importo fiat"
+      },
+      "order_id": {
+        "type": "String",
+        "description": "L'ID dell'ordine"
+      }
+    }
+  },
   "failedToGenerateQR": "Errore nella generazione del codice QR",
   "invoiceCopiedToClipboard": "Fattura copiata negli appunti",
   "copy": "Copia",
