@@ -2,10 +2,70 @@
   "@@locale": "es",
   "newOrder": "¡Tu oferta ha sido publicada! Por favor espera hasta que otro usuario elija tu orden. Estará disponible durante {expiration_hours} horas. Puedes cancelar esta orden antes de que otro usuario la tome ejecutando: cancel.",
   "canceled": "Has cancelado la orden ID: {id}.",
-  "payInvoice": "Por favor paga esta factura retenida de {amount} Sats por {fiat_code} {fiat_amount} para iniciar la operación. Si no la pagas dentro de {expiration_seconds}, el intercambio será cancelado.",
-  "addInvoice": "Por favor envíame una factura por {amount} satoshis equivalente a {fiat_code} {fiat_amount}. Aquí es donde enviaré los fondos una vez completado el intercambio. Si no proporcionas la factura dentro de {expiration_seconds}, el intercambio será cancelado.",
-  "waitingSellerToPay": "Por favor espera. He enviado una solicitud de pago al vendedor para enviar los Sats para la orden ID {id}. Si el vendedor no completa el pago dentro de {expiration_seconds}, el intercambio será cancelado.",
-  "waitingBuyerInvoice": "¡Pago recibido! Tus Sats ahora están 'retenidos' en tu billetera. He solicitado al comprador que proporcione una factura. Si no lo hace dentro de {expiration_seconds}, tus Sats regresarán a tu billetera y el intercambio será cancelado.",
+  "payInvoice": "Por favor paga esta factura retenida de {amount} Sats por {fiat_amount} {fiat_code} para iniciar la operación. Si no la pagas antes de {expiration_seconds} minutos, el intercambio será cancelado.",
+  "@payInvoice": {
+    "placeholders": {
+      "amount": {
+        "type": "String",
+        "description": "La cantidad de satoshis"
+      },
+      "expiration_seconds": {
+        "type": "int",
+        "description": "El tiempo de expiración en minutos"
+      },
+      "fiat_amount": {
+        "type": "String",
+        "description": "La cantidad fiat"
+      },
+      "fiat_code": {
+        "type": "String",
+        "description": "El código de moneda fiat"
+      }
+    }
+  },
+  "addInvoice": "Por favor envíame una factura por {amount} satoshis equivalente a {fiat_amount} {fiat_code}. Aquí es donde enviaré los fondos una vez completado el intercambio. Si no proporcionas la factura antes de {expiration_seconds} minutos, el intercambio será cancelado.",
+  "@addInvoice": {
+    "placeholders": {
+      "amount": {
+        "type": "String",
+        "description": "La cantidad de satoshis"
+      },
+      "expiration_seconds": {
+        "type": "int",
+        "description": "El tiempo de expiración en minutos"
+      },
+      "fiat_amount": {
+        "type": "String",
+        "description": "La cantidad fiat"
+      },
+      "fiat_code": {
+        "type": "String",
+        "description": "El código de moneda fiat"
+      }
+    }
+  },
+  "waitingSellerToPay": "Por favor espera. He enviado una solicitud de pago al vendedor para enviar los Sats para la orden con ID {id}. Si el vendedor no completa el pago dentro de {expiration_seconds} minutos, el intercambio será cancelado.",
+  "@waitingSellerToPay": {
+    "placeholders": {
+      "expiration_seconds": {
+        "type": "int",
+        "description": "El tiempo de expiración en minutos"
+      },
+      "id": {
+        "type": "String",
+        "description": "El ID del pedido"
+      }
+    }
+  },
+  "waitingBuyerInvoice": "¡Pago recibido! Tus Sats ahora están 'retenidos' en tu billetera. He solicitado al comprador que proporcione una factura. Si no lo hace dentro de {expiration_seconds} minutos, tus Sats regresarán a tu billetera y el intercambio será cancelado.",
+  "@waitingBuyerInvoice": {
+    "placeholders": {
+      "expiration_seconds": {
+        "type": "int",
+        "description": "El tiempo de expiración en minutos"
+      }
+    }
+  },
   "buyerInvoiceAccepted": "La factura ha sido guardada exitosamente.",
   "holdInvoicePaymentAccepted": "Contacta al vendedor en {seller_npub} para acordar cómo enviar {fiat_code} {fiat_amount} usando {payment_method}. Una vez que envíes el dinero fiat, por favor notifícame con fiat-sent.",
   "buyerTookOrder": "Contacta al comprador en {buyer_npub} para informarle cómo enviar {fiat_code} {fiat_amount} a través de {payment_method}. Serás notificado cuando el comprador confirme el pago fiat. Después, verifica si ha llegado. Si el comprador no responde, puedes iniciar una cancelación o una disputa. Recuerda, un administrador NUNCA te contactará para resolver tu orden a menos que abras una disputa primero.",

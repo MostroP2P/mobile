@@ -2,10 +2,70 @@
   "@@locale": "it",
   "newOrder": "La tua offerta è stata pubblicata! Attendi fino a quando un altro utente accetta il tuo ordine. Sarà disponibile per {expiration_hours} ore. Puoi annullare questo ordine prima che un altro utente lo prenda premendo: Cancella.",
   "canceled": "Hai annullato l'ordine ID: {id}!",
-  "payInvoice": "Paga questa Hodl Invoice di {amount} Sats per {fiat_amount} {fiat_code} per iniziare l'operazione. Se non la paghi entro {expiration_seconds} lo scambio sarà annullato.",
-  "addInvoice": "Inserisci una Invoice bolt11 di {amount} satoshi equivalente a {fiat_amount} {fiat_code}. Questa invoice riceverà i fondi una volta completato lo scambio. Se non fornisci una invoice entro {expiration_seconds} questo scambio sarà annullato.",
+  "payInvoice": "Paga questa Hodl Invoice di {amount} Sats per {fiat_amount} {fiat_code} per iniziare l'operazione. Se non la paghi entro {expiration_seconds} minuti lo scambio sarà annullato.",
+  "@payInvoice": {
+    "placeholders": {
+      "amount": {
+        "type": "String",
+        "description": "L'importo in satoshi"
+      },
+      "expiration_seconds": {
+        "type": "int",
+        "description": "Il tempo di scadenza in minuti"
+      },
+      "fiat_amount": {
+        "type": "String",
+        "description": "L'importo fiat"
+      },
+      "fiat_code": {
+        "type": "String",
+        "description": "Il codice della valuta fiat"
+      }
+    }
+  },
+  "addInvoice": "Inserisci una Invoice bolt11 di {amount} satoshi equivalente a {fiat_amount} {fiat_code}. Questa invoice riceverà i fondi una volta completato lo scambio. Se non fornisci una invoice entro {expiration_seconds} minuti questo scambio sarà annullato.",
+  "@addInvoice": {
+    "placeholders": {
+      "amount": {
+        "type": "String",
+        "description": "L'importo in satoshi"
+      },
+      "expiration_seconds": {
+        "type": "int",
+        "description": "Il tempo di scadenza in minuti"
+      },
+      "fiat_amount": {
+        "type": "String",
+        "description": "L'importo fiat"
+      },
+      "fiat_code": {
+        "type": "String",
+        "description": "Il codice della valuta fiat"
+      }
+    }
+  },
   "waitingSellerToPay": "Attendi un momento per favore. Ho inviato una richiesta di pagamento al venditore per rilasciare i Sats per l'ordine ID {id}. Una volta effettuato il pagamento, vi connetterò entrambi. Se il venditore non completa il pagamento entro {expiration_seconds} minuti lo scambio sarà annullato.",
-  "waitingBuyerInvoice": "Pagamento ricevuto! I tuoi Sats sono ora 'custoditi' nel tuo portafoglio. Attendi un momento per favore. Ho richiesto all'acquirente di fornire una invoice lightning. Una volta ricevuta, vi connetterò entrambi, altrimenti se non la riceviamo entro {expiration_seconds} i tuoi Sats saranno nuovamente disponibili nel tuo portafoglio e lo scambio sarà annullato.",
+  "@waitingSellerToPay": {
+    "placeholders": {
+      "expiration_seconds": {
+        "type": "int",
+        "description": "Il tempo di scadenza in minuti"
+      },
+      "id": {
+        "type": "String",
+        "description": "L'ID dell'ordine"
+      }
+    }
+  },
+  "waitingBuyerInvoice": "Pagamento ricevuto! I tuoi Sats sono ora 'custoditi' nel tuo portafoglio. Attendi un momento per favore. Ho richiesto all'acquirente di fornire una invoice lightning. Una volta ricevuta, vi connetterò entrambi, altrimenti se non la riceviamo entro {expiration_seconds} minuti i tuoi Sats saranno nuovamente disponibili nel tuo portafoglio e lo scambio sarà annullato.",
+  "@waitingBuyerInvoice": {
+    "placeholders": {
+      "expiration_seconds": {
+        "type": "int",
+        "description": "Il tempo di scadenza in minuti"
+      }
+    }
+  },
   "buyerInvoiceAccepted": "Fattura salvata con successo!",
   "holdInvoicePaymentAccepted": "Contatta il venditore tramite la sua npub {seller_npub} ed ottieni i dettagli per inviare il pagamento di {fiat_amount} {fiat_code} utilizzando {payment_method}. Una volta inviato il pagamento, clicca: Pagamento inviato",
   "buyerTookOrder": "Contatta l'acquirente, ecco il suo npub {buyer_npub}, per informarlo su come inviarti {fiat_amount} {fiat_code} tramite {payment_method}. Riceverai una notifica una volta che l'acquirente indicherà che il pagamento fiat è stato inviato. Successivamente, dovresti verificare se sono arrivati i fondi. Se l'acquirente non risponde, puoi iniziare l'annullamento dell'ordine o una disputa. Ricorda, un amministratore NON ti contatterà per risolvere il tuo ordine a meno che tu non apra prima una disputa.",
