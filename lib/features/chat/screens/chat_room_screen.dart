@@ -74,21 +74,22 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
           children: [
             // Main content area
             Padding(
-              padding: const EdgeInsets.only(bottom: 80), // Add padding to avoid input bar overlap
+              padding: const EdgeInsets.only(
+                  bottom: 80), // Add padding to avoid input bar overlap
               child: Column(
                 children: [
                   // Header with peer information
                   _buildPeerHeader(peer, session),
-                  
+
                   // Info buttons
                   _buildInfoButtons(context),
-                  
+
                   // Selected info content
                   if (_selectedInfoType == 'trade')
                     _buildTradeInformationTab(order, context),
                   if (_selectedInfoType == 'user')
                     _buildUserInformationTab(peer, session),
-                  
+
                   // Chat area
                   Expanded(
                     child: Container(
@@ -105,15 +106,17 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                 ],
               ),
             ),
-            
+
             // Message input positioned above BottomNavBar with padding
             Positioned(
               left: 0,
               right: 0,
-              bottom: MediaQuery.of(context).viewInsets.bottom > 0 ? 0 : 90, // Adjust position based on keyboard
+              bottom: MediaQuery.of(context).viewInsets.bottom > 0
+                  ? 0
+                  : 90, // Adjust position based on keyboard
               child: _buildMessageInput(),
             ),
-            
+
             // Position BottomNavBar at the bottom of the screen
             Positioned(
               left: 0,
@@ -151,8 +154,8 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: message.pubkey == peer 
-              ? AppTheme.backgroundCard 
+          color: message.pubkey == peer
+              ? AppTheme.backgroundCard
               : AppTheme.purpleAccent,
           borderRadius: BorderRadius.circular(12),
         ),
@@ -166,7 +169,8 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
 
   Widget _buildMessageInput() {
     // Close info panels when keyboard opens
-    if (MediaQuery.of(context).viewInsets.bottom > 0 && _selectedInfoType != null) {
+    if (MediaQuery.of(context).viewInsets.bottom > 0 &&
+        _selectedInfoType != null) {
       // Use Future.delayed to avoid calling setState during build
       Future.microtask(() {
         setState(() {
@@ -174,7 +178,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
         });
       });
     }
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -200,8 +204,11 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                 style: const TextStyle(color: AppTheme.cream1, fontSize: 15),
                 decoration: InputDecoration(
                   hintText: "Type a message",
-                  hintStyle: TextStyle(color: AppTheme.textSecondary.withOpacity(0.6), fontSize: 15),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  hintStyle: TextStyle(
+                      color: AppTheme.textSecondary.withOpacity(0.6),
+                      fontSize: 15),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   border: InputBorder.none,
                   enabledBorder: InputBorder.none,
                   focusedBorder: InputBorder.none,
@@ -293,7 +300,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
       ),
     );
   }
-  
+
   Widget _buildInfoButtons(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -307,10 +314,10 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
       ),
     );
   }
-  
+
   Widget _buildInfoButton(BuildContext context, String title, String type) {
     final isSelected = _selectedInfoType == type;
-    
+
     return Expanded(
       child: ElevatedButton(
         onPressed: () {
@@ -319,8 +326,11 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
           });
         },
         style: ElevatedButton.styleFrom(
-          backgroundColor: isSelected ? AppTheme.mostroGreen.withOpacity(0.2) : AppTheme.backgroundCard,
-          foregroundColor: isSelected ? AppTheme.mostroGreen : AppTheme.textSecondary,
+          backgroundColor: isSelected
+              ? AppTheme.mostroGreen.withOpacity(0.2)
+              : AppTheme.backgroundCard,
+          foregroundColor:
+              isSelected ? AppTheme.mostroGreen : AppTheme.textSecondary,
           padding: const EdgeInsets.symmetric(vertical: 12),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
@@ -335,7 +345,9 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              type == 'trade' ? Icons.description_outlined : Icons.person_outline,
+              type == 'trade'
+                  ? Icons.description_outlined
+                  : Icons.person_outline,
               size: 18,
             ),
             const SizedBox(width: 8),
@@ -351,7 +363,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
       ),
     );
   }
-  
+
   Widget _buildTradeInformationTab(Order? order, BuildContext context) {
     if (order == null) {
       return Center(
@@ -360,7 +372,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
         ),
       );
     }
-    
+
     return Container(
       color: AppTheme.backgroundDark,
       padding: const EdgeInsets.all(16),
@@ -396,9 +408,9 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Order details
           Container(
             width: double.infinity,
@@ -414,7 +426,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      order.kind.value == 'sell' 
+                      order.kind.value == 'sell'
                           ? 'Selling ${CurrencyUtils.formatSats(order.amount)} sats'
                           : 'Buying ${CurrencyUtils.formatSats(order.amount)} sats',
                       style: const TextStyle(
@@ -424,18 +436,19 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: order.status.value == 'active' 
-                            ? AppTheme.statusActiveBackground 
+                        color: order.status.value == 'active'
+                            ? AppTheme.statusActiveBackground
                             : AppTheme.statusPendingBackground,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         order.status.value.toUpperCase(),
                         style: TextStyle(
-                          color: order.status.value == 'active' 
-                              ? AppTheme.statusActiveText 
+                          color: order.status.value == 'active'
+                              ? AppTheme.statusActiveText
                               : AppTheme.statusPendingText,
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
@@ -455,9 +468,9 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Payment method
           Container(
             width: double.infinity,
@@ -487,9 +500,9 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Created date
           Container(
             width: double.infinity,
@@ -510,8 +523,10 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  order.createdAt != null 
-                      ? DateFormat('MMMM d, yyyy').format(DateTime.fromMillisecondsSinceEpoch(order.createdAt! * 1000))
+                  order.createdAt != null
+                      ? DateFormat('MMMM d, yyyy').format(
+                          DateTime.fromMillisecondsSinceEpoch(
+                              order.createdAt! * 1000))
                       : 'Unknown date',
                   style: const TextStyle(
                     color: AppTheme.cream1,
@@ -525,12 +540,12 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
       ),
     );
   }
-  
+
   Widget _buildUserInformationTab(String peerPubkey, Session session) {
     final handle = ref.read(nickNameProvider(peerPubkey));
     final you = ref.read(nickNameProvider(session.tradeKey.public));
     final sharedKey = session.sharedKey?.private;
-    
+
     return Container(
       color: AppTheme.backgroundDark,
       padding: const EdgeInsets.all(16),
@@ -584,9 +599,9 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Your information
           Container(
             width: double.infinity,

@@ -12,6 +12,7 @@ import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
 import 'package:mostro_mobile/shared/widgets/custom_drawer_overlay.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_app_bar.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:dart_nostr/nostr/model/event/event.dart';
 
 class ChatRoomsScreen extends ConsumerStatefulWidget {
   const ChatRoomsScreen({super.key});
@@ -20,7 +21,8 @@ class ChatRoomsScreen extends ConsumerStatefulWidget {
   ConsumerState<ChatRoomsScreen> createState() => _ChatRoomsScreenState();
 }
 
-class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen> with SingleTickerProviderStateMixin {
+class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -71,7 +73,8 @@ class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen> with SingleTi
                 // Description text
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                   color: AppTheme.backgroundDark,
                   child: Text(
                     "Here you'll find your conversations with other users during trades.",
@@ -99,7 +102,8 @@ class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen> with SingleTi
                   ),
                 ),
                 // Add bottom padding to prevent content from being covered by BottomNavBar
-                SizedBox(height: 80 + MediaQuery.of(context).viewPadding.bottom),
+                SizedBox(
+                    height: 80 + MediaQuery.of(context).viewPadding.bottom),
               ],
             ),
             // Position BottomNavBar at the bottom of the screen
@@ -134,8 +138,9 @@ class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen> with SingleTi
       ),
     );
   }
-  
-  Widget _buildTabButton(BuildContext context, int index, String text, bool isActive) {
+
+  Widget _buildTabButton(
+      BuildContext context, int index, String text, bool isActive) {
     return Expanded(
       child: InkWell(
         onTap: () {
@@ -203,15 +208,45 @@ class ChatListItem extends ConsumerWidget {
     final session = ref.watch(sessionProvider(orderId));
     final pubkey = session!.peer!.publicKey;
     final handle = ref.read(nickNameProvider(pubkey));
-    
-    // Simulate some sample data for the UI
-    final bool isSelling = orderId.hashCode % 2 == 0;
-    final String actionText = isSelling ? "You are selling Bitcoin to" : "You are buying sats from";
-    final String messagePreview = isSelling 
-        ? "I just sent the transfer. Please check your account."
-        : "Your: Great! I just sent the payment. Here is the transfer receipt...";
-    final String date = "Apr ${(orderId.hashCode % 30) + 1}";
-    
+
+    // Get actual chat data
+    final chatRoom = ref.watch(chatRoomsProvider(orderId));
+    final bool isSelling = session.role == 'seller';
+    final String actionText =
+        isSelling ? "You are selling sats to" : "You are buying sats from";
+
+    // Get the last message if available
+    String messagePreview = "No messages yet";
+    String date = "Today"; // Default date if no message date is available
+
+    if (chatRoom.messages.isNotEmpty) {
+      // Sort messages by creation time (newest first)
+      final sortedMessages = List<NostrEvent>.from(chatRoom.messages);
+
+      // Sort by createdAt time (newest first)
+      sortedMessages.sort((a, b) {
+        final aTime = a.createdAt is int ? a.createdAt as int : 0;
+        final bTime = b.createdAt is int ? b.createdAt as int : 0;
+        return bTime.compareTo(aTime);
+      });
+
+      final lastMessage = sortedMessages.first;
+      messagePreview = lastMessage.content ?? "";
+
+      // If message is from the current user, prefix with "You: "
+      if (lastMessage.pubkey == pubkey) {
+        messagePreview = "You: $messagePreview";
+      }
+
+      // Format the date
+      if (lastMessage.createdAt != null && lastMessage.createdAt is int) {
+        // Convert Unix timestamp to DateTime (seconds to milliseconds)
+        final messageDate = DateTime.fromMillisecondsSinceEpoch(
+            (lastMessage.createdAt as int) * 1000);
+        date = formatDateTime(messageDate);
+      } else {}
+    }
+
     return GestureDetector(
       onTap: () {
         context.push('/chat_room/$orderId');
@@ -269,11 +304,20 @@ class ChatListItem extends ConsumerWidget {
                             fontSize: 16,
                           ),
                         ),
-                        Text(
-                          date,
-                          style: TextStyle(
-                            color: AppTheme.textSecondary,
-                            fontSize: 12,
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppTheme.backgroundInput.withOpacity(0.5),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            date,
+                            style: TextStyle(
+                              color: AppTheme.textSecondary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                       ],
@@ -308,8 +352,23 @@ class ChatListItem extends ConsumerWidget {
   }
 
   String formatDateTime(DateTime dt) {
-    final dateFormatter = DateFormat('MMM dd HH:mm:ss');
-    final formattedDate = dateFormatter.format(dt);
-    return formattedDate;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    final messageDate = DateTime(dt.year, dt.month, dt.day);
+
+    if (messageDate == today) {
+      // If message is from today, show only time
+      return DateFormat('HH:mm').format(dt);
+    } else if (messageDate == yesterday) {
+      // If message is from yesterday, show "Yesterday"
+      return "Yesterday";
+    } else if (now.difference(dt).inDays < 7) {
+      // If message is from this week, show day name
+      return DateFormat('EEEE').format(dt); // Full weekday name
+    } else {
+      // Otherwise show date
+      return DateFormat('MMM d').format(dt); // e.g. "Apr 14"
+    }
   }
 }
