@@ -45,7 +45,11 @@ GoRouter createRouter(WidgetRef ref) {
           }
           return null;
         },
-        loading: () => null,
+        loading: () {
+          // While loading, prevent navigation to home by redirecting to walkthrough
+          // The walkthrough route will handle the loading state appropriately
+          return state.matchedLocation == '/walkthrough' ? null : '/walkthrough';
+        },
         error: (_, __) => null,
       );
     },
