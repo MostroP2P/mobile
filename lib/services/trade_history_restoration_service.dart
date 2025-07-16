@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:logger/logger.dart';
+import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
@@ -44,7 +45,12 @@ class TradeHistoryRestorationService {
             batchKeys.map((entry) => entry.value.public).toList();
 
         // Query relays for messages to these keys
-        final keysWithMessages = await _queryRelaysForKeys(publicKeys);
+        final keysWithMessages = await _queryRelaysForKeys(publicKeys,
+            since: DateTime.now().subtract(
+              Duration(
+                hours: Config.tradeHistoryScanHours,
+              ),
+            ));
 
         // Track which keys have messages
         for (final entry in batchKeys) {
@@ -87,24 +93,24 @@ class TradeHistoryRestorationService {
 
   /// Query relays for messages addressed to the given public keys
   /// Returns a set of public keys that have messages
-  Future<Set<String>> _queryRelaysForKeys(List<String> publicKeys) async {
+  Future<Set<String>> _queryRelaysForKeys(List<String> publicKeys,
+      {DateTime? since}) async {
     final keysWithMessages = <String>{};
 
     final filter = NostrFilter(
       kinds: [1059],
       p: publicKeys,
-      since: DateTime.now().subtract(const Duration(hours: 72)),
+      since: since,
       limit: 100,
     );
 
     final events = await _nostrService.fetchEvents(filter);
     for (final event in events) {
-      if (publicKeys.contains(event.recipient!)) {
+      if (event.recipient != null && publicKeys.contains(event.recipient!)) {
         keysWithMessages.add(event.recipient!);
       }
     }
 
     return keysWithMessages;
   }
-
 }
