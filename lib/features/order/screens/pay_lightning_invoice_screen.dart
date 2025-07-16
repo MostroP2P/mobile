@@ -22,8 +22,11 @@ class _PayLightningInvoiceScreenState
     extends ConsumerState<PayLightningInvoiceScreen> {
   @override
   Widget build(BuildContext context) {
-    final order = ref.watch(orderNotifierProvider(widget.orderId));
-    final lnInvoice = order.paymentRequest?.lnInvoice ?? '';
+    final orderState = ref.watch(orderNotifierProvider(widget.orderId));
+    final lnInvoice = orderState.paymentRequest?.lnInvoice ?? '';
+    final sats = orderState.order?.amount ?? 0;
+    final fiatAmount = orderState.order?.fiatAmount.toString() ?? '0';
+    final fiatCode = orderState.order?.fiatCode ?? '';
     final orderNotifier =
         ref.watch(orderNotifierProvider(widget.orderId).notifier);
 
@@ -45,7 +48,11 @@ class _PayLightningInvoiceScreenState
                       context.go('/');
                       await orderNotifier.cancelOrder();
                     },
-                    lnInvoice: lnInvoice),
+                    lnInvoice: lnInvoice,
+                    sats: sats,
+                    fiatAmount: fiatAmount,
+                    fiatCode: fiatCode,
+                    orderId: widget.orderId),
               ],
             ),
           ),

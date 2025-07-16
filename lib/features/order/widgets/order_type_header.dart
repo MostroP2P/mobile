@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class OrderTypeHeader extends StatelessWidget {
   final OrderType orderType;
@@ -22,8 +23,8 @@ class OrderTypeHeader extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
         child: Text(
           orderType == OrderType.buy
-              ? 'You want to buy Bitcoin'
-              : 'You want to sell Bitcoin',
+              ? S.of(context)!.youWantToBuyBitcoin
+              : S.of(context)!.youWantToSellBitcoin,
           textAlign: TextAlign.center,
           style: const TextStyle(
             color: Colors.white,

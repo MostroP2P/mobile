@@ -319,6 +319,10 @@
   "invoiceExpirationWindow": "Invoice Expiration Window",
   
   "@_comment_order_creation": "Order Creation Form Strings",
+  "youWantToBuyBitcoin": "You want to buy Bitcoin",
+  "youWantToSellBitcoin": "You want to sell Bitcoin",
+  "lightningAddressOptional": "Lightning Address (optional)",
+  "enterLightningAddress": "Enter lightning address",
   "enterFiatAmountBuy": "Enter the fiat amount you want to pay (you can set a range)",
   "enterFiatAmountSell": "Enter the fiat amount you want to receive (you can set a range)",
   "enterAmountHint": "Enter amount (example: 100 or 100-500)",
@@ -477,7 +481,27 @@
   },
   
   "@_comment_lightning_invoice": "Lightning Invoice Widget Strings",
-  "pleaseEnterLightningInvoiceFor": "Please enter a Lightning Invoice for: ",
+  "pleaseEnterLightningInvoiceFor": "Please enter a Lightning Invoice for {sats} Sats equivalent to {fiat_code} {fiat_amount} to continue the exchange for order with ID {order_id}",
+  "@pleaseEnterLightningInvoiceFor": {
+    "placeholders": {
+      "sats": {
+        "type": "String",
+        "description": "The amount of satoshis"
+      },
+      "fiat_code": {
+        "type": "String",
+        "description": "The fiat currency code"
+      },      
+      "fiat_amount": {
+        "type": "String",
+        "description": "The fiat amount"
+      },
+      "order_id": {
+        "type": "String",
+        "description": "The order ID"
+      }
+    }
+  },
   "sats": " sats",
   "lightningInvoice": "Lightning Invoice",
   "enterInvoiceHere": "Enter invoice here",
@@ -495,7 +519,27 @@
   
   "@_comment_pay_invoice_screen": "Pay Lightning Invoice Screen Strings",
   "payLightningInvoice": "Pay Lightning Invoice",
-  "payInvoiceToContinue": "Pay this invoice to continue the exchange",
+  "payInvoiceToContinue": "Pay this invoice for {sats} Sats equivalent to {fiat_code} {fiat_amount} to continue the exchange for order {order_id}",
+  "@payInvoiceToContinue": {
+    "placeholders": {
+      "sats": {
+        "type": "String",
+        "description": "The amount of satoshis"
+      },
+      "fiat_code": {
+        "type": "String",
+        "description": "The fiat currency code"
+      },
+      "fiat_amount": {
+        "type": "String",
+        "description": "The fiat amount"
+      },
+      "order_id": {
+        "type": "String",
+        "description": "The order ID"
+      }
+    }
+  },
   "failedToGenerateQR": "Failed to generate QR code",
   "invoiceCopiedToClipboard": "Invoice copied to clipboard",
   "copy": "Copy",

@@ -13,12 +13,20 @@ class PayLightningInvoiceWidget extends StatefulWidget {
   final VoidCallback onCancel;
   final Logger logger = Logger();
   final String lnInvoice;
+  final int sats;
+  final String fiatAmount;
+  final String fiatCode;
+  final String orderId;
 
   PayLightningInvoiceWidget({
     super.key,
     required this.onSubmit,
     required this.onCancel,
     required this.lnInvoice,
+    required this.sats,
+    required this.fiatAmount,
+    required this.fiatCode,
+    required this.orderId,
   });
 
   @override
@@ -33,7 +41,12 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
-          S.of(context)!.payInvoiceToContinue,
+          S.of(context)!.payInvoiceToContinue(
+            widget.sats.toString(),
+            widget.fiatCode,
+            widget.fiatAmount,
+            widget.orderId,
+          ),
           style: const TextStyle(color: AppTheme.cream1, fontSize: 18),
           textAlign: TextAlign.center,
         ),
