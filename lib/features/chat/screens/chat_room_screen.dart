@@ -13,7 +13,6 @@ import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/shared/utils/currency_utils.dart';
 import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
 import 'package:mostro_mobile/shared/widgets/clickable_text_widget.dart';
-import 'package:mostro_mobile/shared/widgets/mostro_app_bar.dart';
 import 'package:intl/intl.dart';
 
 class ChatRoomScreen extends ConsumerStatefulWidget {
@@ -49,47 +48,80 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundDark,
-      appBar: const MostroAppBar(),
+      appBar: AppBar(
+        backgroundColor: AppTheme.backgroundDark,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppTheme.cream1),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: const Text(
+          'Back',
+          style: TextStyle(color: AppTheme.cream1),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1.0),
+          child: Container(
+            height: 1.0,
+            color: Colors.white.withOpacity(0.1),
+          ),
+        ),
+      ),
+      resizeToAvoidBottomInset: true, // Resize when keyboard appears
       body: RefreshIndicator(
         onRefresh: () async {},
         child: Stack(
           children: [
-            Column(
-              children: [
-                // Header with peer information
-                _buildPeerHeader(peer, session),
-                
-                // Info buttons
-                _buildInfoButtons(context),
-                
-                // Selected info content
-                if (_selectedInfoType == 'trade')
-                  _buildTradeInformationTab(order, context),
-                if (_selectedInfoType == 'user')
-                  _buildUserInformationTab(peer, session),
-                
-                // Chat area
-                Expanded(
-                  child: Container(
-                    color: AppTheme.backgroundDark,
-                    child: Column(
-                      children: [
-                        Expanded(
-                          child: _buildBody(chatDetailState, peer),
-                        ),
-                        _buildMessageInput(),
-                      ],
+            // Main content area
+            Padding(
+              padding: const EdgeInsets.only(bottom: 80), // Add padding to avoid input bar overlap
+              child: Column(
+                children: [
+                  // Header with peer information
+                  _buildPeerHeader(peer, session),
+                  
+                  // Info buttons
+                  _buildInfoButtons(context),
+                  
+                  // Selected info content
+                  if (_selectedInfoType == 'trade')
+                    _buildTradeInformationTab(order, context),
+                  if (_selectedInfoType == 'user')
+                    _buildUserInformationTab(peer, session),
+                  
+                  // Chat area
+                  Expanded(
+                    child: Container(
+                      color: AppTheme.backgroundDark,
+                      child: Column(
+                        children: [
+                          Expanded(
+                            child: _buildBody(chatDetailState, peer),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
+            
+            // Message input positioned above BottomNavBar with padding
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: MediaQuery.of(context).viewInsets.bottom > 0 ? 0 : 90, // Adjust position based on keyboard
+              child: _buildMessageInput(),
+            ),
+            
             // Position BottomNavBar at the bottom of the screen
-            const Positioned(
+            Positioned(
               left: 0,
               right: 0,
               bottom: 0,
-              child: BottomNavBar(),
+              child: MediaQuery.of(context).viewInsets.bottom > 0
+                  ? const SizedBox() // Hide BottomNavBar when keyboard is open
+                  : const BottomNavBar(),
             ),
           ],
         ),
@@ -133,38 +165,86 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
   }
 
   Widget _buildMessageInput() {
+    // Close info panels when keyboard opens
+    if (MediaQuery.of(context).viewInsets.bottom > 0 && _selectedInfoType != null) {
+      // Use Future.delayed to avoid calling setState during build
+      Future.microtask(() {
+        setState(() {
+          _selectedInfoType = null;
+        });
+      });
+    }
+    
     return Container(
-      padding: const EdgeInsets.fromLTRB(24, 12, 12, 18),
-      color: AppTheme.backgroundDark,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppTheme.backgroundDark,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, -1),
+          ),
+        ],
+      ),
       child: Row(
         children: [
           Expanded(
-            child: TextField(
-              controller: _textController,
-              style: const TextStyle(color: AppTheme.cream1),
-              decoration: InputDecoration(
-                hintText: "Type a message",
-                hintStyle: const TextStyle(color: Colors.grey),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide.none,
+            child: Container(
+              decoration: BoxDecoration(
+                color: AppTheme.backgroundInput,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: TextField(
+                controller: _textController,
+                style: const TextStyle(color: AppTheme.cream1, fontSize: 15),
+                decoration: InputDecoration(
+                  hintText: "Type a message",
+                  hintStyle: TextStyle(color: AppTheme.textSecondary.withOpacity(0.6), fontSize: 15),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  errorBorder: InputBorder.none,
+                  disabledBorder: InputBorder.none,
+                  isDense: true,
                 ),
-                filled: true,
-                fillColor: AppTheme.backgroundInput,
+                textCapitalization: TextCapitalization.sentences,
+                keyboardType: TextInputType.text,
+                textInputAction: TextInputAction.send,
+                onSubmitted: (text) {
+                  if (text.trim().isNotEmpty) {
+                    ref
+                        .read(chatRoomsProvider(widget.orderId).notifier)
+                        .sendMessage(text);
+                    _textController.clear();
+                  }
+                },
               ),
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.send, color: AppTheme.mostroGreen),
-            onPressed: () {
-              final text = _textController.text.trim();
-              if (text.isNotEmpty) {
-                ref
-                    .read(chatRoomsProvider(widget.orderId).notifier)
-                    .sendMessage(text);
-                _textController.clear();
-              }
-            },
+          const SizedBox(width: 12),
+          Container(
+            width: 42,
+            height: 42,
+            decoration: const BoxDecoration(
+              color: AppTheme.mostroGreen,
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.send, color: Colors.white, size: 20),
+              onPressed: () {
+                final text = _textController.text.trim();
+                if (text.isNotEmpty) {
+                  ref
+                      .read(chatRoomsProvider(widget.orderId).notifier)
+                      .sendMessage(text);
+                  _textController.clear();
+                }
+              },
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
           ),
         ],
       ),
