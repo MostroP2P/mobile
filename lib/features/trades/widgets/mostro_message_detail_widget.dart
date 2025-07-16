@@ -95,16 +95,18 @@ class MostroMessageDetail extends ConsumerWidget {
                 .mostroInstance
                 ?.expirationSeconds ??
             900;
+        final expMinutes = (expSecs / 60).round();
         return S
             .of(context)!
-            .waitingSellerToPay(orderPayload?.id ?? '', expSecs);
+            .waitingSellerToPay(expMinutes, orderPayload?.id ?? '');
       case actions.Action.waitingBuyerInvoice:
         final expSecs = ref
                 .read(orderRepositoryProvider)
                 .mostroInstance
                 ?.expirationSeconds ??
             900;
-        return S.of(context)!.waitingBuyerInvoice(expSecs);
+        final expMinutes = (expSecs / 60).round();
+        return S.of(context)!.waitingBuyerInvoice(expMinutes);
       case actions.Action.buyerInvoiceAccepted:
         return S.of(context)!.buyerInvoiceAccepted;
       case actions.Action.holdInvoicePaymentAccepted:

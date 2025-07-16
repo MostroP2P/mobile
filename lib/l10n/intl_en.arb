@@ -44,8 +44,28 @@
       }
     }
   },
-  "waitingSellerToPay": "Please wait. I’ve sent a payment request to the seller to send the Sats for the order ID {id}. If the seller doesn’t complete the payment within {expiration_seconds}, the trade will be canceled.",
-  "waitingBuyerInvoice": "Payment received! Your Sats are now 'held' in your wallet. I’ve requested the buyer to provide an invoice. If they don’t do so within {expiration_seconds}, your Sats will return to your wallet, and the trade will be canceled.",
+  "waitingSellerToPay": "Please wait. I’ve sent a payment request to the seller to send the Sats for the order ID {id}. If the seller doesn’t complete the payment within {expiration_seconds} minutes, the trade will be canceled.",
+  "@waitingSellerToPay": {
+    "placeholders": {
+      "expiration_seconds": {
+        "type": "int",
+        "description": "The expiration time in minutes"
+      },
+      "id": {
+        "type": "String",
+        "description": "The order ID"
+      }
+    }
+  },
+  "waitingBuyerInvoice": "Payment received! Your Sats are now 'held' in your wallet. I’ve requested the buyer to provide an invoice. If they don’t do so within {expiration_seconds} minutes, your Sats will return to your wallet, and the trade will be canceled.",
+  "@waitingBuyerInvoice": {
+    "placeholders": {
+      "expiration_seconds": {
+        "type": "int",
+        "description": "The expiration time in minutes"
+      }
+    }
+  },
   "buyerInvoiceAccepted": "The invoice has been successfully saved.",
   "holdInvoicePaymentAccepted": "Contact the seller at {seller_npub} to arrange how to send {fiat_code} {fiat_amount} using {payment_method}. Once you send the fiat money, please notify me with fiat-sent.",
   "buyerTookOrder": "Contact the buyer at {buyer_npub} to inform them how to send {fiat_code} {fiat_amount} through {payment_method}. You’ll be notified when the buyer confirms the fiat payment. Afterward, verify if it has arrived. If the buyer does not respond, you can initiate a cancellation or a dispute. Remember, an administrator will NEVER contact you to resolve your order unless you open a dispute first.",

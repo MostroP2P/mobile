@@ -44,8 +44,28 @@
       }
     }
   },
-  "waitingSellerToPay": "Por favor espera. He enviado una solicitud de pago al vendedor para enviar los Sats para la orden ID {id}. Si el vendedor no completa el pago dentro de {expiration_seconds}, el intercambio será cancelado.",
-  "waitingBuyerInvoice": "¡Pago recibido! Tus Sats ahora están 'retenidos' en tu billetera. He solicitado al comprador que proporcione una factura. Si no lo hace dentro de {expiration_seconds}, tus Sats regresarán a tu billetera y el intercambio será cancelado.",
+  "waitingSellerToPay": "Por favor espera. He enviado una solicitud de pago al vendedor para enviar los Sats para la orden con ID {id}. Si el vendedor no completa el pago dentro de {expiration_seconds} minutos, el intercambio será cancelado.",
+  "@waitingSellerToPay": {
+    "placeholders": {
+      "expiration_seconds": {
+        "type": "int",
+        "description": "El tiempo de expiración en minutos"
+      },
+      "id": {
+        "type": "String",
+        "description": "El ID del pedido"
+      }
+    }
+  },
+  "waitingBuyerInvoice": "¡Pago recibido! Tus Sats ahora están 'retenidos' en tu billetera. He solicitado al comprador que proporcione una factura. Si no lo hace dentro de {expiration_seconds} minutos, tus Sats regresarán a tu billetera y el intercambio será cancelado.",
+  "@waitingBuyerInvoice": {
+    "placeholders": {
+      "expiration_seconds": {
+        "type": "int",
+        "description": "El tiempo de expiración en minutos"
+      }
+    }
+  },
   "buyerInvoiceAccepted": "La factura ha sido guardada exitosamente.",
   "holdInvoicePaymentAccepted": "Contacta al vendedor en {seller_npub} para acordar cómo enviar {fiat_code} {fiat_amount} usando {payment_method}. Una vez que envíes el dinero fiat, por favor notifícame con fiat-sent.",
   "buyerTookOrder": "Contacta al comprador en {buyer_npub} para informarle cómo enviar {fiat_code} {fiat_amount} a través de {payment_method}. Serás notificado cuando el comprador confirme el pago fiat. Después, verifica si ha llegado. Si el comprador no responde, puedes iniciar una cancelación o una disputa. Recuerda, un administrador NUNCA te contactará para resolver tu orden a menos que abras una disputa primero.",
