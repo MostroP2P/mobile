@@ -476,5 +476,19 @@
   },
   "deepLinkGoHome": "Go Home",
   "tradeHistoryRestored": "Restored trade history up to key index {index}",
-  "tradeHistoryRestorationFailed": "Trade history restoration failed: {error}"
+  "tradeHistoryRestorationFailed": "Trade history restoration failed: {error}",
+  "@tradeHistoryRestored": {
+    "placeholders": {
+      "index": {
+        "type": "String"
+      }
+    }
+  },
+  "@tradeHistoryRestorationFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  }
 }

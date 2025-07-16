@@ -34,4 +34,6 @@ class Config {
   // Configuración de notificaciones
   static String notificationChannelId = 'mostro_mobile';
   static int notificationId = 38383;
+
+  static int tradeHistoryScanHours = 72;
 }

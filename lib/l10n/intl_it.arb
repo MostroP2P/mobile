@@ -475,7 +475,21 @@
   "fiatSentButton": "FIAT INVIATO",
   "completePurchaseButton": "COMPLETA ACQUISTO",
   "tradeHistoryRestored": "Cronologia delle operazioni ripristinata fino all'indice chiave {index}",
+  "@tradeHistoryRestored": {
+    "placeholders": {
+      "index": {
+        "type": "String"
+      }
+    }
+  },
   "tradeHistoryRestorationFailed": "Il ripristino della cronologia delle operazioni non è riuscito: {error}",
+  "@tradeHistoryRestorationFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "paymentMethodLabel": "Metodo di Pagamento",
   "createdOnLabel": "Creato il",
   "orderIdLabel": "ID Ordine",

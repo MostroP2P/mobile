@@ -479,7 +479,21 @@
   "language": "Idioma",
   "systemDefault": "Predeterminado del sistema",
   "tradeHistoryRestored": "Historial de operaciones restaurado hasta el índice de clave {index}",
+  "@tradeHistoryRestored": {
+    "placeholders": {
+      "index": {
+        "type": "String"
+      }
+    }
+  },
   "tradeHistoryRestorationFailed": "La restauración del historial de operaciones falló: {error}",
+  "@tradeHistoryRestorationFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "english": "Inglés",
   "spanish": "Español",
   "italian": "Italiano",
