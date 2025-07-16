@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:dart_nostr/nostr/model/request/filter.dart';
+import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -268,13 +268,7 @@ class FakeMostroService implements MostroService {
   final Ref ref;
 
   @override
-  void init() {}
-
-  @override
-  void subscribe(Session session) {}
-
-  @override
-  Session? getSessionByOrderId(String orderId) => null;
+  void init({List<NostrKeyPairs>? keys}) {}
 
   @override
   Future<void> submitOrder(MostroMessage order) async {
@@ -319,6 +313,11 @@ class FakeMostroService implements MostroService {
 
   @override
   void updateSettings(Settings settings) {}
+    
+  @override
+  void dispose() {
+    // TODO: implement dispose
+  }
 }
 
 Future<void> pumpTestApp(WidgetTester tester) async {

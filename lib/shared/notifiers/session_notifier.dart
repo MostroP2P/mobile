@@ -1,40 +1,61 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/enums/role.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/data/repositories/session_storage.dart';
-import 'package:mostro_mobile/features/key_manager/key_manager.dart';
+import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 
 class SessionNotifier extends StateNotifier<List<Session>> {
-  final KeyManager _keyManager;
+  final Ref ref;
   final SessionStorage _storage;
-
   Settings _settings;
-
   final Map<String, Session> _sessions = {};
   final Map<int, Session> _requestIdToSession = {};
 
   Timer? _cleanupTimer;
-  static const int sessionExpirationHours = 36;
-  static const int cleanupIntervalMinutes = 30;
-  static const int maxBatchSize = 100;
 
   List<Session> get sessions => _sessions.values.toList();
 
   SessionNotifier(
-    this._keyManager,
+    this.ref,
     this._storage,
     this._settings,
   ) : super([]);
 
   Future<void> init() async {
     final allSessions = await _storage.getAllSessions();
-    final now = DateTime.now();
-    final cutoff = now.subtract(const Duration(hours: 48));
+    final cutoff = DateTime.now()
+        .subtract(const Duration(hours: Config.sessionExpirationHours));
     for (final session in allSessions) {
       if (session.startTime.isAfter(cutoff)) {
         _sessions[session.orderId!] = session;
+      } else {
+        await _storage.deleteSession(session.orderId!);
+        _sessions.remove(session.orderId!);
+      }
+    }
+    state = sessions;
+    _scheduleCleanup();
+  }
+
+  void _scheduleCleanup() {
+    _cleanupTimer?.cancel();
+    _cleanupTimer = Timer.periodic(
+      const Duration(minutes: Config.cleanupIntervalMinutes),
+      (timer) => _cleanup(),
+    );
+  }
+
+  void _cleanup() async {
+    final cutoff = DateTime.now()
+        .subtract(const Duration(hours: Config.sessionExpirationHours));
+    final expiredSessions = await _storage.getAllSessions();
+    for (final session in expiredSessions) {
+      if (session.startTime.isBefore(cutoff)) {
+        await _storage.deleteSession(session.orderId!);
+        _sessions.remove(session.orderId!);
       }
     }
     state = sessions;
@@ -46,9 +67,9 @@ class SessionNotifier extends StateNotifier<List<Session>> {
 
   Future<Session> newSession(
       {String? orderId, int? requestId, Role? role}) async {
-    final masterKey = _keyManager.masterKeyPair!;
-    final keyIndex = await _keyManager.getCurrentKeyIndex();
-    final tradeKey = await _keyManager.deriveTradeKey();
+    final masterKey = ref.read(keyManagerProvider).masterKeyPair!;
+    final keyIndex = await ref.read(keyManagerProvider).getCurrentKeyIndex();
+    final tradeKey = await ref.read(keyManagerProvider).deriveTradeKey();
 
     final session = Session(
       startTime: DateTime.now(),
@@ -76,7 +97,6 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     state = sessions;
   }
 
-  /// Generic session update and persist method
   Future<void> updateSession(
       String orderId, void Function(Session) update) async {
     final session = _sessions[orderId];

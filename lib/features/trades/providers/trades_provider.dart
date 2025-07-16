@@ -9,6 +9,12 @@ import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 
 final _logger = Logger();
 
+final _statusFilter = {
+  Status.canceled,
+  Status.canceledByAdmin,
+  Status.expired,
+};
+
 final filteredTradesProvider = Provider<AsyncValue<List<NostrEvent>>>((ref) {
   final allOrdersAsync = ref.watch(orderEventsProvider);
   final sessions = ref.watch(sessionNotifierProvider);
@@ -29,8 +35,7 @@ final filteredTradesProvider = Provider<AsyncValue<List<NostrEvent>>>((ref) {
 
       final filtered = sortedOrders.reversed
           .where((o) => orderIds.contains(o.orderId))
-          .where((o) => o.status != Status.canceled)
-          .where((o) => o.status != Status.canceledByAdmin)
+          .where((o) => !_statusFilter.contains(o.status))
           .toList();
 
       _logger.d('Filtered to ${filtered.length} trades');

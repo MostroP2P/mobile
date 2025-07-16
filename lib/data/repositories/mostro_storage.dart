@@ -14,6 +14,7 @@ class MostroStorage extends BaseStorage<MostroMessage> {
   Future<void> addMessage(String key, MostroMessage message) async {
     final id = key;
     try {
+      if (await hasItem(id)) return;
       // Add metadata for easier querying
       final Map<String, dynamic> dbMap = message.toJson();
       if (message.timestamp == null) {
@@ -122,7 +123,6 @@ class MostroStorage extends BaseStorage<MostroMessage> {
 
   /// Stream of the latest message for an order
   Stream<MostroMessage?> watchLatestMessage(String orderId) {
-    // We want to watch ALL messages for this orderId, not just a specific key
     final query = store.query(
       finder: Finder(
         filter: Filter.equals('id', orderId),
@@ -166,14 +166,17 @@ class MostroStorage extends BaseStorage<MostroMessage> {
     );
   }
 
-  /// Stream of all messages for an order
   Stream<MostroMessage?> watchByRequestId(int requestId) {
     final query = store.query(
-      finder: Finder(filter: Filter.equals('request_id', requestId)),
+      finder: Finder(
+        filter: Filter.equals('request_id', requestId),
+        sortOrders: _getDefaultSort(),
+        limit: 1,
+      ),
     );
-    return query
-        .onSnapshot(db)
-        .map((snap) => snap == null ? null : fromDbMap('', snap.value));
+
+    return query.onSnapshots(db).map((snapshots) =>
+        snapshots.isNotEmpty ? MostroMessage.fromJson(snapshots.first.value) : null);
   }
 
   Future<List<MostroMessage>> getAllMessagesForOrderId(String orderId) async {
