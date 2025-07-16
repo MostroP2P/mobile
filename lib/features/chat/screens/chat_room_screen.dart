@@ -112,8 +112,8 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
               left: 0,
               right: 0,
               bottom: MediaQuery.of(context).viewInsets.bottom > 0
-                  ? 0
-                  : 90, // Adjust position based on keyboard
+                  ? 0 // Cuando el teclado está abierto, posicionar en la parte inferior
+                  : kBottomNavigationBarHeight, // Usar altura estándar de la barra de navegación
               child: _buildMessageInput(),
             ),
 
@@ -122,6 +122,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
               left: 0,
               right: 0,
               bottom: 0,
+              height: kBottomNavigationBarHeight + MediaQuery.of(context).padding.bottom,
               child: MediaQuery.of(context).viewInsets.bottom > 0
                   ? const SizedBox() // Hide BottomNavBar when keyboard is open
                   : const BottomNavBar(),
@@ -180,7 +181,12 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: EdgeInsets.only(
+        left: 16, 
+        right: 16, 
+        top: 12, 
+        bottom: 12 + MediaQuery.of(context).padding.bottom, // Agregar padding inferior para dispositivos con notch
+      ),
       decoration: BoxDecoration(
         color: AppTheme.backgroundDark,
         boxShadow: [
