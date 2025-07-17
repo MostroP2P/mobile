@@ -1,0 +1,120 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
+
+class MessageInput extends ConsumerStatefulWidget {
+  final String orderId;
+  final String? selectedInfoType;
+  final ValueChanged<String?> onInfoTypeChanged;
+
+  const MessageInput({
+    super.key,
+    required this.orderId,
+    required this.selectedInfoType,
+    required this.onInfoTypeChanged,
+  });
+
+  @override
+  ConsumerState<MessageInput> createState() => _MessageInputState();
+}
+
+class _MessageInputState extends ConsumerState<MessageInput> {
+  final TextEditingController _textController = TextEditingController();
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    super.dispose();
+  }
+
+  void _sendMessage() {
+    final text = _textController.text.trim();
+    if (text.isNotEmpty) {
+      ref
+          .read(chatRoomsProvider(widget.orderId).notifier)
+          .sendMessage(text);
+      _textController.clear();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Close info panels when keyboard opens
+    if (MediaQuery.of(context).viewInsets.bottom > 0 &&
+        widget.selectedInfoType != null) {
+      // Use Future.delayed to avoid calling setState during build
+      Future.microtask(() {
+        widget.onInfoTypeChanged(null);
+      });
+    }
+
+    return Container(
+      padding: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        top: 12,
+        bottom: 12 + MediaQuery.of(context).padding.bottom,
+      ),
+      decoration: BoxDecoration(
+        color: AppTheme.backgroundDark,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 4,
+            offset: const Offset(0, -1),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: AppTheme.backgroundInput,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: TextField(
+                controller: _textController,
+                style: const TextStyle(color: AppTheme.cream1, fontSize: 15),
+                decoration: InputDecoration(
+                  hintText: "Type a message",
+                  hintStyle: TextStyle(
+                      color: AppTheme.textSecondary.withValues(alpha: 0.6),
+                      fontSize: 15),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  errorBorder: InputBorder.none,
+                  disabledBorder: InputBorder.none,
+                  isDense: true,
+                ),
+                textCapitalization: TextCapitalization.sentences,
+                keyboardType: TextInputType.text,
+                textInputAction: TextInputAction.send,
+                onSubmitted: (_) => _sendMessage(),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Container(
+            width: 42,
+            height: 42,
+            decoration: const BoxDecoration(
+              color: AppTheme.mostroGreen,
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.send, color: Colors.white, size: 20),
+              onPressed: _sendMessage,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
