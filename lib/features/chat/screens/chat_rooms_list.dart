@@ -119,7 +119,6 @@ class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen>
     );
   }
 
-
   Widget _buildBody(BuildContext context, List<ChatRoom> state) {
     if (state.isEmpty) {
       return EmptyStateView(
@@ -135,17 +134,6 @@ class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen>
       final bLastMessageTime = _getLastMessageTime(b);
       return bLastMessageTime.compareTo(aLastMessageTime);
     });
-
-    // Special handling for "hungry" chat - move to top if it exists
-    if (sortedChatRooms.length > 1) {
-      int hungryIndex = sortedChatRooms
-          .indexWhere((chat) => chat.orderId.toLowerCase().contains('hungry'));
-
-      if (hungryIndex != -1 && hungryIndex != 0) {
-        final hungryChat = sortedChatRooms.removeAt(hungryIndex);
-        sortedChatRooms.insert(0, hungryChat);
-      }
-    }
 
     return Container(
       color: AppTheme.backgroundDark,
@@ -185,4 +173,3 @@ class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen>
     return 0;
   }
 }
-
