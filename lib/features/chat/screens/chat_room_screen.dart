@@ -108,8 +108,8 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
               left: 0,
               right: 0,
               bottom: MediaQuery.of(context).viewInsets.bottom > 0
-                  ? 0
-                  : kBottomNavigationBarHeight,
+                  ? 0 // Cuando el teclado está abierto, posicionar en la parte inferior
+                  : 80, // Altura del BottomNavBar según su implementación
               child: MessageInput(
                 orderId: widget.orderId,
                 selectedInfoType: _selectedInfoType,
@@ -126,11 +126,13 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
               left: 0,
               right: 0,
               bottom: 0,
-              height: kBottomNavigationBarHeight +
-                  MediaQuery.of(context).padding.bottom,
               child: MediaQuery.of(context).viewInsets.bottom > 0
                   ? const SizedBox() // Hide BottomNavBar when keyboard is open
-                  : const BottomNavBar(),
+                  : SafeArea(
+                      top: false,
+                      bottom: true,
+                      child: const BottomNavBar(),
+                    ),
             ),
           ],
         ),

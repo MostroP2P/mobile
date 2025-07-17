@@ -17,8 +17,9 @@ class ChatListItem extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(sessionProvider(orderId));
-    final pubkey = session!.peer!.publicKey;
-    final handle = ref.read(nickNameProvider(pubkey));
+    final peerPubkey = session!.peer!.publicKey;
+    final currentUserPubkey = session.tradeKey.public;
+    final handle = ref.read(nickNameProvider(peerPubkey));
 
     // Get actual chat data
     final chatRoom = ref.watch(chatRoomsProvider(orderId));
@@ -45,33 +46,24 @@ class ChatListItem extends ConsumerWidget {
       messagePreview = lastMessage.content ?? "";
 
       // If message is from the current user, prefix with "You: "
-      if (lastMessage.pubkey == pubkey) {
+      if (lastMessage.pubkey == currentUserPubkey) {
         messagePreview = "You: $messagePreview";
       }
 
+      // Check for unread messages from the peer (not from current user)
       hasUnreadMessages = false;
-
-      /*
-      // Verificar si hay mensajes recientes (menos de 1 hora) que no son del usuario
-      final now = DateTime.now();
-      final oneHourAgo = now.subtract(const Duration(hours: 1));
-      
       for (final message in sortedMessages) {
-        // Si el mensaje no es del usuario actual y es reciente
-        if (message.pubkey != pubkey && message.createdAt != null && message.createdAt is int) {
+        // If message is from peer (not current user) and is recent
+        if (message.pubkey == peerPubkey && message.createdAt != null && message.createdAt is int) {
           final messageTime = DateTime.fromMillisecondsSinceEpoch((message.createdAt as int) * 1000);
+          final now = DateTime.now();
+          final oneHourAgo = now.subtract(const Duration(hours: 1));
+          
           if (messageTime.isAfter(oneHourAgo)) {
             hasUnreadMessages = true;
             break;
           }
         }
-      }
-      */
-
-      if (orderId.toLowerCase().contains("fiery")) {
-        hasUnreadMessages = true;
-      } else {
-        hasUnreadMessages = false;
       }
 
       // Format the date
@@ -104,7 +96,7 @@ class ChatListItem extends ConsumerWidget {
               // Avatar with status indicator
               Stack(
                 children: [
-                  NymAvatar(pubkeyHex: pubkey),
+                  NymAvatar(pubkeyHex: peerPubkey),
                   // Indicador de rol (vendedor)
                   if (isSelling)
                     Positioned(

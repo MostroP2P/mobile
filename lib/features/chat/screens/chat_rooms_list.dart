@@ -129,6 +129,14 @@ class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen>
 
     final sortedChatRooms = List<ChatRoom>.from(state);
 
+    // Sort all chat rooms by most recent message time (newest first)
+    sortedChatRooms.sort((a, b) {
+      final aLastMessageTime = _getLastMessageTime(a);
+      final bLastMessageTime = _getLastMessageTime(b);
+      return bLastMessageTime.compareTo(aLastMessageTime);
+    });
+
+    // Special handling for "hungry" chat - move to top if it exists
     if (sortedChatRooms.length > 1) {
       int hungryIndex = sortedChatRooms
           .indexWhere((chat) => chat.orderId.toLowerCase().contains('hungry'));
@@ -137,12 +145,6 @@ class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen>
         final hungryChat = sortedChatRooms.removeAt(hungryIndex);
         sortedChatRooms.insert(0, hungryChat);
       }
-    } else {
-      sortedChatRooms.sort((a, b) {
-        final aLastMessageTime = _getLastMessageTime(a);
-        final bLastMessageTime = _getLastMessageTime(b);
-        return bLastMessageTime.compareTo(aLastMessageTime);
-      });
     }
 
     return Container(
