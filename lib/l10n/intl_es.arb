@@ -661,6 +661,7 @@
   "yourSharedKey": "Tu Clave Compartida:",
   "peerPublicKey": "Clave Pública del Par:",
   "notAvailable": "No disponible",
-  "unknownDate": "Fecha desconocida"
+  "unknownDate": "Fecha desconocida",
+  "messageCopiedToClipboard": "Mensaje copiado al portapapeles"
 
 }

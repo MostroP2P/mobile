@@ -614,6 +614,7 @@
   "peerPublicKey": "Peer Public Key:",
   "notAvailable": "Not available",
   "unknownDate": "Unknown date",
+  "messageCopiedToClipboard": "Message copied to clipboard",
 
   "@_comment_deep_link_errors": "Deep Link Error Messages",
   "deepLinkInvalidFormat": "Invalid mostro: URL format",
