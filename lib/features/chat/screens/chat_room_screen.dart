@@ -108,8 +108,8 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
               left: 0,
               right: 0,
               bottom: MediaQuery.of(context).viewInsets.bottom > 0
-                  ? 0 // Cuando el teclado está abierto, posicionar en la parte inferior
-                  : 80, // Altura del BottomNavBar según su implementación
+                  ? 0 // When keyboard is open, position at bottom
+                  : 80, // BottomNavBar height according to its implementation
               child: MessageInput(
                 orderId: widget.orderId,
                 selectedInfoType: _selectedInfoType,

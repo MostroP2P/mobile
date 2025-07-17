@@ -80,7 +80,7 @@ class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen>
                       const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                   color: AppTheme.backgroundDark,
                   child: Text(
-                    "Here you'll find your conversations with other users during trades.",
+                    S.of(context)!.conversationsDescription,
                     style: TextStyle(
                       color: AppTheme.textSecondary,
                       fontSize: 14,
@@ -95,8 +95,8 @@ class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen>
                       // Messages tab
                       _buildBody(context, chatListState),
                       // Disputes tab (placeholder for now)
-                      const EmptyStateView(
-                        message: "No disputes available",
+                      EmptyStateView(
+                        message: S.of(context)!.noDisputesAvailable,
                       ),
                     ],
                   ),

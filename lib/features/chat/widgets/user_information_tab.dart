@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/session.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/providers/avatar_provider.dart';
 import 'package:mostro_mobile/shared/providers/legible_handle_provider.dart';
 import 'package:mostro_mobile/shared/widgets/clickable_text_widget.dart';
@@ -57,7 +58,7 @@ class UserInformationTab extends ConsumerWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Peer Public Key:',
+                            S.of(context)!.peerPublicKey,
                             style: TextStyle(
                               color: AppTheme.textSecondary,
                               fontSize: 14,
@@ -89,9 +90,9 @@ class UserInformationTab extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Your Information',
-                  style: TextStyle(
+                Text(
+                  S.of(context)!.yourInformation,
+                  style: const TextStyle(
                     color: AppTheme.cream1,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -99,7 +100,7 @@ class UserInformationTab extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Your Handle:',
+                  S.of(context)!.yourHandle,
                   style: TextStyle(
                     color: AppTheme.textSecondary,
                     fontSize: 14,
@@ -114,7 +115,7 @@ class UserInformationTab extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Your Shared Key:',
+                  S.of(context)!.yourSharedKey,
                   style: TextStyle(
                     color: AppTheme.textSecondary,
                     fontSize: 14,
@@ -122,7 +123,7 @@ class UserInformationTab extends ConsumerWidget {
                 ),
                 ClickableText(
                   leftText: '',
-                  clickableText: sharedKey ?? 'Not available',
+                  clickableText: sharedKey ?? S.of(context)!.notAvailable,
                 ),
               ],
             ),

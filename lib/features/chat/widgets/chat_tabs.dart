@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class ChatTabs extends StatelessWidget {
   final TabController tabController;
@@ -25,8 +26,8 @@ class ChatTabs extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _buildTabButton(context, 0, "Messages", tabController.index == 0),
-          _buildTabButton(context, 1, "Disputes", tabController.index == 1),
+          _buildTabButton(context, 0, S.of(context)!.messages, tabController.index == 0),
+          _buildTabButton(context, 1, S.of(context)!.disputes, tabController.index == 1),
         ],
       ),
     );

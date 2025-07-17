@@ -603,6 +603,64 @@
       }
     }
   },
-  "deepLinkGoHome": "Ir al Inicio"
+  "deepLinkGoHome": "Ir al Inicio",
+
+  "@_comment_chat": "Sección de Chat",
+  "messages": "Mensajes",
+  "disputes": "Disputas",
+  "noDisputesAvailable": "No hay disputas disponibles",
+  "youAreChatting": "Estás chateando con {handle}",
+  "@youAreChatting": {
+    "placeholders": {
+      "handle": {
+        "type": "String"
+      }
+    }
+  },
+  "tradeInformation": "Información del Intercambio",
+  "userInformation": "Información del Usuario",
+  "youAreSellingTo": "Estás vendiendo sats a",
+  "youAreBuyingFrom": "Estás comprando sats de",
+  "noMessagesYet": "No hay mensajes aún",
+  "today": "Hoy",
+  "yesterday": "Ayer",
+  "youPrefix": "Tú: ",
+  "conversationsDescription": "Aquí encontrarás tus conversaciones con otros usuarios durante los intercambios.",
+  "orderId": "ID de Orden:",
+  "paymentMethod": "Método de Pago:",
+  "createdOn": "Creado el:",
+  "sellingSats": "Vendiendo {amount} sats",
+  "@sellingSats": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "buyingSats": "Comprando {amount} sats",
+  "@buyingSats": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "forAmount": "por {amount} {currency}",
+  "@forAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "yourInformation": "Tu Información",
+  "yourHandle": "Tu Identificador:",
+  "yourSharedKey": "Tu Clave Compartida:",
+  "peerPublicKey": "Clave Pública del Par:",
+  "notAvailable": "No disponible",
+  "unknownDate": "Fecha desconocida"
 
 }

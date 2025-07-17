@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class InfoButtons extends StatelessWidget {
   final String? selectedInfoType;
@@ -18,9 +19,9 @@ class InfoButtons extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _buildInfoButton(context, "Trade Information", "trade"),
+          _buildInfoButton(context, S.of(context)!.tradeInformation, "trade"),
           const SizedBox(width: 12),
-          _buildInfoButton(context, "User Information", "user"),
+          _buildInfoButton(context, S.of(context)!.userInformation, "user"),
         ],
       ),
     );

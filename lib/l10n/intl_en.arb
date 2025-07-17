@@ -557,6 +557,64 @@
   "failedToLoadOrder": "Failed to load order",
   "failedToOpenOrder": "Failed to open order",
 
+  "@_comment_chat": "Chat Section",
+  "messages": "Messages",
+  "disputes": "Disputes",
+  "noDisputesAvailable": "No disputes available",
+  "youAreChatting": "You are chatting with {handle}",
+  "@youAreChatting": {
+    "placeholders": {
+      "handle": {
+        "type": "String"
+      }
+    }
+  },
+  "tradeInformation": "Trade Information",
+  "userInformation": "User Information",
+  "youAreSellingTo": "You are selling sats to",
+  "youAreBuyingFrom": "You are buying sats from",
+  "noMessagesYet": "No messages yet",
+  "today": "Today",
+  "yesterday": "Yesterday",
+  "youPrefix": "You: ",
+  "conversationsDescription": "Here you'll find your conversations with other users during trades.",
+  "orderId": "Order ID:",
+  "paymentMethod": "Payment Method:",
+  "createdOn": "Created on:",
+  "sellingSats": "Selling {amount} sats",
+  "@sellingSats": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "buyingSats": "Buying {amount} sats",
+  "@buyingSats": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "forAmount": "for {amount} {currency}",
+  "@forAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "yourInformation": "Your Information",
+  "yourHandle": "Your Handle:",
+  "yourSharedKey": "Your Shared Key:",
+  "peerPublicKey": "Peer Public Key:",
+  "notAvailable": "Not available",
+  "unknownDate": "Unknown date",
+
   "@_comment_deep_link_errors": "Deep Link Error Messages",
   "deepLinkInvalidFormat": "Invalid mostro: URL format",
   "deepLinkParseError": "Failed to parse mostro: URL",

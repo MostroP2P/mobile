@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/providers/avatar_provider.dart';
 import 'package:mostro_mobile/shared/providers/legible_handle_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
@@ -25,11 +26,11 @@ class ChatListItem extends ConsumerWidget {
     final chatRoom = ref.watch(chatRoomsProvider(orderId));
     final bool isSelling = session.role?.value == 'seller';
     final String actionText =
-        isSelling ? "You are selling sats to" : "You are buying sats from";
+        isSelling ? S.of(context)!.youAreSellingTo : S.of(context)!.youAreBuyingFrom;
 
     // Get the last message if available
-    String messagePreview = "No messages yet";
-    String date = "Today"; // Default date if no message date is available
+    String messagePreview = S.of(context)!.noMessagesYet;
+    String date = S.of(context)!.today; // Default date if no message date is available
     bool hasUnreadMessages = false;
     if (chatRoom.messages.isNotEmpty) {
       // Sort messages by creation time (newest first)
@@ -47,7 +48,7 @@ class ChatListItem extends ConsumerWidget {
 
       // If message is from the current user, prefix with "You: "
       if (lastMessage.pubkey == currentUserPubkey) {
-        messagePreview = "You: $messagePreview";
+        messagePreview = "${S.of(context)!.youPrefix}$messagePreview";
       }
 
       // Check for unread messages from the peer (not from current user)
@@ -71,7 +72,7 @@ class ChatListItem extends ConsumerWidget {
         // Convert Unix timestamp to DateTime (seconds to milliseconds)
         final messageDate = DateTime.fromMillisecondsSinceEpoch(
             (lastMessage.createdAt as int) * 1000);
-        date = formatDateTime(messageDate);
+        date = formatDateTime(context, messageDate);
       } else {}
     }
 
@@ -97,7 +98,7 @@ class ChatListItem extends ConsumerWidget {
               Stack(
                 children: [
                   NymAvatar(pubkeyHex: peerPubkey),
-                  // Indicador de rol (vendedor)
+                  // Role indicator (seller)
                   if (isSelling)
                     Positioned(
                       right: 0,
@@ -194,7 +195,7 @@ class ChatListItem extends ConsumerWidget {
     );
   }
 
-  String formatDateTime(DateTime dt) {
+  String formatDateTime(BuildContext context, DateTime dt) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final yesterday = today.subtract(const Duration(days: 1));
@@ -205,7 +206,7 @@ class ChatListItem extends ConsumerWidget {
       return DateFormat('HH:mm').format(dt);
     } else if (messageDate == yesterday) {
       // If message is from yesterday, show "Yesterday"
-      return "Yesterday";
+      return S.of(context)!.yesterday;
     } else if (now.difference(dt).inDays < 7) {
       // If message is from this week, show day name
       return DateFormat('EEEE').format(dt); // Full weekday name

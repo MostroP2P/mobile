@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/order.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/utils/currency_utils.dart';
 
 class TradeInformationTab extends StatelessWidget {
@@ -42,7 +43,7 @@ class TradeInformationTab extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Order ID:',
+                  S.of(context)!.orderId,
                   style: TextStyle(
                     color: AppTheme.textSecondary,
                     fontSize: 14,
@@ -78,8 +79,8 @@ class TradeInformationTab extends StatelessWidget {
                   children: [
                     Text(
                       order!.kind.value == 'sell'
-                          ? 'Selling ${CurrencyUtils.formatSats(order!.amount)} sats'
-                          : 'Buying ${CurrencyUtils.formatSats(order!.amount)} sats',
+                          ? S.of(context)!.sellingSats(CurrencyUtils.formatSats(order!.amount))
+                          : S.of(context)!.buyingSats(CurrencyUtils.formatSats(order!.amount)),
                       style: const TextStyle(
                         color: AppTheme.cream1,
                         fontSize: 16,
@@ -110,7 +111,7 @@ class TradeInformationTab extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'for ${order!.fiatAmount} ${order!.fiatCode}',
+                  S.of(context)!.forAmount(order!.fiatAmount.toString(), order!.fiatCode),
                   style: TextStyle(
                     color: AppTheme.textSecondary,
                     fontSize: 14,
@@ -134,7 +135,7 @@ class TradeInformationTab extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Payment Method:',
+                  S.of(context)!.paymentMethod,
                   style: TextStyle(
                     color: AppTheme.textSecondary,
                     fontSize: 14,
@@ -166,7 +167,7 @@ class TradeInformationTab extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Created on:',
+                  S.of(context)!.createdOn,
                   style: TextStyle(
                     color: AppTheme.textSecondary,
                     fontSize: 14,
@@ -178,7 +179,7 @@ class TradeInformationTab extends StatelessWidget {
                       ? DateFormat('MMMM d, yyyy').format(
                           DateTime.fromMillisecondsSinceEpoch(
                               order!.createdAt! * 1000))
-                      : 'Unknown date',
+                      : S.of(context)!.unknownDate,
                   style: const TextStyle(
                     color: AppTheme.cream1,
                     fontSize: 14,

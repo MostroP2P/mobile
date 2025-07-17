@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class MessageInput extends ConsumerStatefulWidget {
   final String orderId;
@@ -78,7 +79,7 @@ class _MessageInputState extends ConsumerState<MessageInput> {
                 controller: _textController,
                 style: const TextStyle(color: AppTheme.cream1, fontSize: 15),
                 decoration: InputDecoration(
-                  hintText: "Type a message",
+                  hintText: S.of(context)!.typeAMessage,
                   hintStyle: TextStyle(
                       color: AppTheme.textSecondary.withValues(alpha: 0.6),
                       fontSize: 15),
