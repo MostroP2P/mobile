@@ -18,13 +18,19 @@ class ChatListItem extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(sessionProvider(orderId));
-    final peerPubkey = session!.peer!.publicKey;
+    
+    // Check if session or peer is null and return a placeholder widget
+    if (session == null || session.peer == null) {
+      return _buildPlaceholderItem(context);
+    }
+    
+    final peerPubkey = session.peer!.publicKey;
     final currentUserPubkey = session.tradeKey.public;
     final handle = ref.read(nickNameProvider(peerPubkey));
 
     // Get actual chat data
     final chatRoom = ref.watch(chatRoomsProvider(orderId));
-    final bool isSelling = session.role?.value == 'seller';
+    final bool isSelling = session.role?.toString() == 'seller';
     final String actionText =
         isSelling ? S.of(context)!.youAreSellingTo : S.of(context)!.youAreBuyingFrom;
 
@@ -190,6 +196,63 @@ class ChatListItem extends ConsumerWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  // Placeholder widget when session or peer data is not available
+  Widget _buildPlaceholderItem(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: Colors.white.withValues(alpha: 13), // 0.05 opacity
+            width: 1.0,
+          ),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+        child: Row(
+          children: [
+            // Placeholder avatar
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: AppTheme.backgroundDark,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Placeholder for name
+                  Container(
+                    width: 100,
+                    height: 16,
+                    decoration: BoxDecoration(
+                      color: AppTheme.backgroundDark,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  // Placeholder for message
+                  Container(
+                    width: 200,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: AppTheme.backgroundDark,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
