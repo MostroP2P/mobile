@@ -611,6 +611,37 @@
       }
     }
   },
-  "deepLinkGoHome": "Vai alla Home"
+  "deepLinkGoHome": "Vai alla Home",
 
+  "@_comment_about_screen_new": "About Screen New Strings",
+  "documentation": "Documentazione",
+  "usersDocumentationEnglish": "Documentazione Utente (Inglese)",
+  "usersDocumentationSpanish": "Documentazione Utente (Spagnolo)",
+  "technicalDocumentation": "Documentazione Tecnica",
+  "read": "Leggi",
+  "technicalDetails": "Dettagli Tecnici",
+  "mostroDaemonVersion": "Versione Daemon Mostro",
+  "mostroCommitId": "ID Commit Mostro",
+  "orderExpiration": "Scadenza Ordine",
+  "holdInvoiceExpiration": "Scadenza Fattura di Blocco",
+  "holdInvoiceCltvDelta": "Delta CLTV Fattura di Blocco",
+  "invoiceExpirationWindow": "Finestra di Scadenza Fattura",
+  "proofOfWork": "Prova di Lavoro",
+  "lndDaemonVersion": "Versione Daemon LND",
+  "lndNodePublicKey": "Chiave Pubblica Nodo LND",
+  "lndCommitId": "ID Commit LND",
+  "lndNodeAlias": "Alias Nodo LND",
+  "supportedChains": "Catene Supportate",
+  "supportedNetworks": "Reti Supportate",
+  "lndNodeUri": "URI Nodo LND",
+  "maxOrderAmount": "Importo Massimo Ordine",
+  "minOrderAmount": "Importo Minimo Ordine",
+  "orderLifespan": "Durata Ordine",
+  "serviceFee": "Commissione Servizio",
+  "satoshis": "Satoshis",
+  "hour": "ora",
+  "sec": "sec",
+  "blocks": "blocchi",
+  "seconds": "secondi",
+  "mostroPublicKey": "Chiave Pubblica di Mostro"
 }

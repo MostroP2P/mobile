@@ -603,6 +603,37 @@
       }
     }
   },
-  "deepLinkGoHome": "Ir al Inicio"
+  "deepLinkGoHome": "Ir al Inicio",
 
+  "@_comment_about_screen_new": "About Screen New Strings",
+  "documentation": "Documentación",
+  "usersDocumentationEnglish": "Documentación de Usuario (Inglés)",
+  "usersDocumentationSpanish": "Documentación de Usuario (Español)",
+  "technicalDocumentation": "Documentación Técnica",
+  "read": "Leer",
+  "technicalDetails": "Detalles Técnicos",
+  "mostroDaemonVersion": "Versión del Demonio Mostro",
+  "mostroCommitId": "ID de Commit Mostro",
+  "orderExpiration": "Expiración de Orden",
+  "holdInvoiceExpiration": "Expiración de Factura de Retención",
+  "holdInvoiceCltvDelta": "Delta CLTV de Factura de Retención",
+  "invoiceExpirationWindow": "Ventana de Expiración de Factura",
+  "proofOfWork": "Prueba de Trabajo",
+  "lndDaemonVersion": "Versión del Demonio LND",
+  "lndNodePublicKey": "Clave Pública del Nodo LND",
+  "lndCommitId": "ID de Commit LND",
+  "lndNodeAlias": "Alias del Nodo LND",
+  "supportedChains": "Cadenas Soportadas",
+  "supportedNetworks": "Redes Soportadas",
+  "lndNodeUri": "URI del Nodo LND",
+  "maxOrderAmount": "Cantidad Máxima de Orden",
+  "minOrderAmount": "Cantidad Mínima de Orden",
+  "orderLifespan": "Vida Útil de la Orden",
+  "serviceFee": "Tarifa de Servicio",
+  "satoshis": "Satoshis",
+  "hour": "hora",
+  "sec": "seg",
+  "blocks": "bloques",
+  "seconds": "segundos",
+  "mostroPublicKey": "Clave Pública de Mostro"
 }

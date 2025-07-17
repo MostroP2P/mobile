@@ -571,5 +571,37 @@
       }
     }
   },
-  "deepLinkGoHome": "Go Home"
+  "deepLinkGoHome": "Go Home",
+
+  "@_comment_about_screen_new": "About Screen New Strings",
+  "documentation": "Documentation",
+  "usersDocumentationEnglish": "Users Documentation (English)",
+  "usersDocumentationSpanish": "Users Documentation (Spanish)",
+  "technicalDocumentation": "Technical Documentation",
+  "read": "Read",
+  "technicalDetails": "Technical Details",
+  "mostroDaemonVersion": "Mostro Daemon Version",
+  "mostroCommitId": "Mostro Commit ID",
+  "orderExpiration": "Order Expiration",
+  "holdInvoiceExpiration": "Hold Invoice Expiration",
+  "holdInvoiceCltvDelta": "Hold Invoice CLTV Delta",
+  "invoiceExpirationWindow": "Invoice Expiration Window",
+  "proofOfWork": "Proof of Work",
+  "lndDaemonVersion": "LND Daemon Version",
+  "lndNodePublicKey": "LND Node Public Key",
+  "lndCommitId": "LND Commit ID",
+  "lndNodeAlias": "LND Node Alias",
+  "supportedChains": "Supported Chains",
+  "supportedNetworks": "Supported Networks",
+  "lndNodeUri": "LND Node URI",
+  "maxOrderAmount": "Maximum Order Amount",
+  "minOrderAmount": "Minimum Order Amount",
+  "orderLifespan": "Order Lifespan",
+  "serviceFee": "Service Fee",
+  "satoshis": "Satoshis",
+  "hour": "hour",
+  "sec": "sec",
+  "blocks": "blocks",
+  "seconds": "seconds",
+  "mostroPublicKey": "Mostro's Public Key"
 }
