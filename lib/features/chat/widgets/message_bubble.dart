@@ -17,12 +17,18 @@ class MessageBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isFromPeer = message.pubkey == peerPubkey;
+    final content = message.content;
+    
+    // Return empty container if message content is null
+    if (content == null) {
+      return const SizedBox.shrink();
+    }
     
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       alignment: isFromPeer ? Alignment.centerLeft : Alignment.centerRight,
       child: GestureDetector(
-        onLongPress: () => _copyToClipboard(context, message.content!),
+        onLongPress: () => _copyToClipboard(context, content),
         child: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
@@ -30,7 +36,7 @@ class MessageBubble extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
-            message.content!,
+            content,
             style: const TextStyle(color: AppTheme.cream1),
           ),
         ),
@@ -39,18 +45,21 @@ class MessageBubble extends StatelessWidget {
   }
 
   void _copyToClipboard(BuildContext context, String text) {
-    Clipboard.setData(ClipboardData(text: text));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(S.of(context)!.messageCopiedToClipboard),
-        duration: const Duration(seconds: 2),
-        backgroundColor: AppTheme.backgroundCard,
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.all(16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
+    // Only copy if text is not empty
+    if (text.isNotEmpty) {
+      Clipboard.setData(ClipboardData(text: text));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(S.of(context)!.messageCopiedToClipboard),
+          duration: const Duration(seconds: 2),
+          backgroundColor: AppTheme.backgroundCard,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
         ),
-      ),
-    );
+      );
+    }
   }
 }
