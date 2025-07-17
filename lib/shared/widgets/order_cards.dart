@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
-import 'package:mostro_mobile/shared/utils/currency_utils.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
 /// Card that displays the order amount information (selling/buying sats for amount)
@@ -24,8 +23,6 @@ class OrderAmountCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currencyFlag = CurrencyUtils.getFlagFromCurrency(currency);
-    final amountString = '$amount $currency $currencyFlag';
 
     return CustomCard(
       padding: const EdgeInsets.all(16),
@@ -44,7 +41,7 @@ class OrderAmountCard extends StatelessWidget {
           Row(
             children: [
               Text(
-                S.of(context)!.forAmount(amountString),
+                S.of(context)!.forAmount(amount, currency),
                 style: const TextStyle(
                   color: Colors.white70,
                   fontSize: 16,

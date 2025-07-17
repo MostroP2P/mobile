@@ -11,7 +11,6 @@ import 'package:mostro_mobile/features/order/providers/order_notifier_provider.d
 import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
 import 'package:mostro_mobile/shared/widgets/order_cards.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
-import 'package:mostro_mobile/shared/utils/currency_utils.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
@@ -61,9 +60,6 @@ class TakeOrderScreen extends ConsumerWidget {
   Widget _buildSellerAmount(WidgetRef ref, NostrEvent order) {
     return Builder(
       builder: (context) {
-        final currencyFlag = CurrencyUtils.getFlagFromCurrency(order.currency!);
-        final amountString =
-            '${order.fiatAmount} ${order.currency} $currencyFlag';
         final priceText =
             order.amount == '0' ? S.of(context)!.atMarketPrice : '';
 
@@ -92,7 +88,7 @@ class TakeOrderScreen extends ConsumerWidget {
               Row(
                 children: [
                   Text(
-                    S.of(context)!.forAmount(amountString),
+                    S.of(context)!.forAmount(order.fiatAmount.toString(), order.currency!),
                     style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 16,

@@ -1,18 +1,16 @@
-import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
-import 'package:mostro_mobile/data/models/chat_room.dart';
-import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
-import 'package:mostro_mobile/shared/providers/avatar_provider.dart';
-import 'package:mostro_mobile/shared/providers/legible_handle_provider.dart';
+import 'package:mostro_mobile/features/chat/widgets/chat_messages_list.dart';
+import 'package:mostro_mobile/features/chat/widgets/info_buttons.dart';
+import 'package:mostro_mobile/features/chat/widgets/message_input.dart';
+import 'package:mostro_mobile/features/chat/widgets/peer_header.dart';
+import 'package:mostro_mobile/features/chat/widgets/trade_information_tab.dart';
+import 'package:mostro_mobile/features/chat/widgets/user_information_tab.dart';
+import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
-import 'package:mostro_mobile/shared/widgets/clickable_text_widget.dart';
-import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
 
 class ChatRoomScreen extends ConsumerStatefulWidget {
   final String orderId;
@@ -20,175 +18,128 @@ class ChatRoomScreen extends ConsumerStatefulWidget {
   const ChatRoomScreen({super.key, required this.orderId});
 
   @override
-  ConsumerState<ChatRoomScreen> createState() => _MessagesDetailScreenState();
+  ConsumerState<ChatRoomScreen> createState() => _ChatRoomScreenState();
 }
 
-class _MessagesDetailScreenState extends ConsumerState<ChatRoomScreen> {
-  final TextEditingController _textController = TextEditingController();
+class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
+  // Constant for BottomNavBar height to ensure consistency
+  static const double bottomNavBarHeight = 80;
+  String? _selectedInfoType; // null, 'trade', or 'user'
 
   @override
   Widget build(BuildContext context) {
     final chatDetailState = ref.watch(chatRoomsProvider(widget.orderId));
     final session = ref.read(sessionProvider(widget.orderId));
     final peer = session!.peer!.publicKey;
+    final orderState = ref.watch(orderNotifierProvider(widget.orderId));
+    final order = orderState.order;
 
     return Scaffold(
-      backgroundColor: AppTheme.dark1,
+      backgroundColor: AppTheme.backgroundDark,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppTheme.backgroundDark,
         elevation: 0,
-        title: Text(
-          S.of(context)!.back,
-          style: TextStyle(
-            color: AppTheme.cream1,
-            fontFamily: GoogleFonts.robotoCondensed().fontFamily,
-          ),
-        ),
         leading: IconButton(
-          icon: const HeroIcon(
-            HeroIcons.arrowLeft,
-            color: AppTheme.cream1,
+          icon: const Icon(Icons.arrow_back, color: AppTheme.cream1),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: const Text(
+          'Back',
+          style: TextStyle(color: AppTheme.cream1),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1.0),
+          child: Container(
+            height: 1.0,
+            color: Colors.white.withValues(alpha: 0.1),
           ),
-          onPressed: () => context.pop(),
         ),
       ),
+      resizeToAvoidBottomInset: true, // Resize when keyboard appears
       body: RefreshIndicator(
         onRefresh: () async {},
-        child: Container(
-          margin: const EdgeInsets.all(16.0),
-          decoration: BoxDecoration(
-            color: AppTheme.dark2,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Column(
-            children: [
-              const SizedBox(height: 12.0),
-              Text('Order: ${widget.orderId}'),
-              _buildMessageHeader(peer, session),
-              _buildBody(chatDetailState, peer),
-              _buildMessageInput(),
-              const SizedBox(height: 12.0),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBody(ChatRoom state, String peer) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        child: ListView.builder(
-          itemCount: state.messages.length,
-          itemBuilder: (context, index) {
-            final message = state.messages[index];
-            return _buildMessageBubble(message, peer);
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMessageBubble(NostrEvent message, String peer) {
-    final peerBubble = pickNymColor(peer);
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      alignment:
-          message.pubkey == peer ? Alignment.centerLeft : Alignment.centerRight,
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: message.pubkey == peer ? peerBubble : const Color(0xFF8CC541),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Text(
-          message.content!,
-          style: const TextStyle(color: AppTheme.cream1),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMessageInput() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(24, 0, 12, 18),
-      color: const Color(0xFF303544),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _textController,
-              style: const TextStyle(color: AppTheme.cream1),
-              decoration: InputDecoration(
-                hintText: S.of(context)!.typeAMessage,
-                hintStyle: const TextStyle(color: Colors.grey),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide.none,
-                ),
-                filled: true,
-                fillColor: const Color(0xFF1D212C),
-              ),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.send, color: Color(0xFF8CC541)),
-            onPressed: () {
-              final text = _textController.text.trim();
-              if (text.isNotEmpty) {
-                ref
-                    .read(chatRoomsProvider(widget.orderId).notifier)
-                    .sendMessage(text);
-                _textController.clear();
-              }
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMessageHeader(String peerPubkey, Session session) {
-    final handle = ref.read(nickNameProvider(peerPubkey));
-    final you = ref.read(nickNameProvider(session.tradeKey.public));
-    final sharedKey = session.sharedKey?.private;
-
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1D212C),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
+        child: Stack(
           children: [
-            NymAvatar(pubkeyHex: peerPubkey),
-            const SizedBox(width: 16),
-            Expanded(
+            // Main content area
+            Padding(
+              padding: EdgeInsets.only(
+                  bottom: bottomNavBarHeight), // Add padding to avoid input bar overlap
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    S.of(context)!.youAreChattingWith(handle),
-                    style: const TextStyle(
-                      color: AppTheme.cream1,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  // Header with peer information
+                  PeerHeader(peerPubkey: peer, session: session),
+
+                  // Info buttons
+                  InfoButtons(
+                    selectedInfoType: _selectedInfoType,
+                    onInfoTypeChanged: (type) {
+                      setState(() {
+                        _selectedInfoType = type;
+                      });
+                    },
                   ),
-                  const SizedBox(height: 4),
-                  Text(S.of(context)!.yourHandle(you)),
-                  ClickableText(
-                    leftText: S.of(context)!.yourSharedKey,
-                    clickableText: sharedKey!,
+
+                  // Selected info content
+                  if (_selectedInfoType == 'trade')
+                    TradeInformationTab(order: order, orderId: widget.orderId),
+                  if (_selectedInfoType == 'user')
+                    UserInformationTab(peerPubkey: peer, session: session),
+
+                  // Chat area
+                  Expanded(
+                    child: Container(
+                      color: AppTheme.backgroundDark,
+                      child: Column(
+                        children: [
+                          Expanded(
+                            child: ChatMessagesList(
+                              chatRoom: chatDetailState,
+                              peerPubkey: peer,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),
+            ),
+
+            // Message input positioned above BottomNavBar with padding
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: MediaQuery.of(context).viewInsets.bottom > 0
+                  ? 0 // When keyboard is open, position at bottom
+                  : bottomNavBarHeight, // Use constant for BottomNavBar height
+              child: MessageInput(
+                orderId: widget.orderId,
+                selectedInfoType: _selectedInfoType,
+                onInfoTypeChanged: (type) {
+                  setState(() {
+                    _selectedInfoType = type;
+                  });
+                },
+              ),
+            ),
+
+            // Position BottomNavBar at the bottom of the screen
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: MediaQuery.of(context).viewInsets.bottom > 0
+                  ? const SizedBox() // Hide BottomNavBar when keyboard is open
+                  : SafeArea(
+                      top: false,
+                      bottom: true,
+                      child: const BottomNavBar(),
+                    ),
             ),
           ],
         ),
       ),
     );
   }
+
 }
