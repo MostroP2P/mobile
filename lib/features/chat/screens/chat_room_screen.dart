@@ -22,6 +22,8 @@ class ChatRoomScreen extends ConsumerStatefulWidget {
 }
 
 class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
+  // Constant for BottomNavBar height to ensure consistency
+  static const double bottomNavBarHeight = 80;
   String? _selectedInfoType; // null, 'trade', or 'user'
 
   @override
@@ -60,8 +62,8 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
           children: [
             // Main content area
             Padding(
-              padding: const EdgeInsets.only(
-                  bottom: 80), // Add padding to avoid input bar overlap
+              padding: EdgeInsets.only(
+                  bottom: bottomNavBarHeight), // Add padding to avoid input bar overlap
               child: Column(
                 children: [
                   // Header with peer information
@@ -109,7 +111,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
               right: 0,
               bottom: MediaQuery.of(context).viewInsets.bottom > 0
                   ? 0 // When keyboard is open, position at bottom
-                  : 80, // BottomNavBar height according to its implementation
+                  : bottomNavBarHeight, // Use constant for BottomNavBar height
               child: MessageInput(
                 orderId: widget.orderId,
                 selectedInfoType: _selectedInfoType,

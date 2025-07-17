@@ -22,11 +22,29 @@ class MessageInput extends ConsumerStatefulWidget {
 
 class _MessageInputState extends ConsumerState<MessageInput> {
   final TextEditingController _textController = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    // Add listener to focus node to detect keyboard visibility changes
+    _focusNode.addListener(_onFocusChange);
+  }
 
   @override
   void dispose() {
+    _focusNode.removeListener(_onFocusChange);
+    _focusNode.dispose();
     _textController.dispose();
     super.dispose();
+  }
+  
+  // Handle focus changes to detect keyboard visibility
+  void _onFocusChange() {
+    if (_focusNode.hasFocus && widget.selectedInfoType != null) {
+      // Close info panels when keyboard opens
+      widget.onInfoTypeChanged(null);
+    }
   }
 
   void _sendMessage() {
@@ -41,14 +59,6 @@ class _MessageInputState extends ConsumerState<MessageInput> {
 
   @override
   Widget build(BuildContext context) {
-    // Close info panels when keyboard opens
-    if (MediaQuery.of(context).viewInsets.bottom > 0 &&
-        widget.selectedInfoType != null) {
-      // Use Future.delayed to avoid calling setState during build
-      Future.microtask(() {
-        widget.onInfoTypeChanged(null);
-      });
-    }
 
     return Container(
       padding: EdgeInsets.only(
@@ -77,9 +87,10 @@ class _MessageInputState extends ConsumerState<MessageInput> {
               ),
               child: TextField(
                 controller: _textController,
+                focusNode: _focusNode,
                 style: const TextStyle(color: AppTheme.cream1, fontSize: 15),
                 decoration: InputDecoration(
-                  hintText: S.of(context)!.typeAMessage,
+                  hintText: S.of(context)?.typeAMessage ?? 'Type a message...',
                   hintStyle: TextStyle(
                       color: AppTheme.textSecondary.withValues(alpha: 0.6),
                       fontSize: 15),

@@ -1,4 +1,4 @@
-import 'package:dart_nostr/nostr/model/event/event.dart';
+// NostrEvent is now accessed through ChatRoom model
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
@@ -58,7 +58,7 @@ class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen>
                     ),
                   ),
                   child: Text(
-                    S.of(context)!.chat,
+                    S.of(context)?.chat ?? 'Chat',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 20,
@@ -80,7 +80,7 @@ class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen>
                       const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                   color: AppTheme.backgroundDark,
                   child: Text(
-                    S.of(context)!.conversationsDescription,
+                    S.of(context)?.conversationsDescription ?? 'Your conversations with other users will appear here.',
                     style: TextStyle(
                       color: AppTheme.textSecondary,
                       fontSize: 14,
@@ -96,7 +96,7 @@ class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen>
                       _buildBody(context, chatListState),
                       // Disputes tab (placeholder for now)
                       EmptyStateView(
-                        message: S.of(context)!.noDisputesAvailable,
+                        message: S.of(context)?.noDisputesAvailable ?? 'No disputes available',
                       ),
                     ],
                   ),
@@ -122,7 +122,7 @@ class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen>
   Widget _buildBody(BuildContext context, List<ChatRoom> state) {
     if (state.isEmpty) {
       return EmptyStateView(
-        message: S.of(context)!.noMessagesAvailable,
+        message: S.of(context)?.noMessagesAvailable ?? 'No messages available',
       );
     }
 
@@ -155,21 +155,19 @@ class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen>
       return 0;
     }
 
-    final sortedMessages = List<NostrEvent>.from(chatRoom.messages);
-    sortedMessages.sort((a, b) {
-      final aTime = a.createdAt is int ? a.createdAt as int : 0;
-      final bTime = b.createdAt is int ? b.createdAt as int : 0;
-
-      return bTime.compareTo(aTime);
-    });
-
-    if (sortedMessages.first.createdAt != null &&
-        sortedMessages.first.createdAt is int) {
-      final timestamp = sortedMessages.first.createdAt as int;
-
-      return timestamp;
+    // Track the maximum timestamp found
+    int maxTimestamp = 0;
+    
+    // Iterate once through all messages to find the maximum timestamp
+    for (final message in chatRoom.messages) {
+      if (message.createdAt != null && message.createdAt is int) {
+        final timestamp = message.createdAt as int;
+        if (timestamp > maxTimestamp) {
+          maxTimestamp = timestamp;
+        }
+      }
     }
-
-    return 0;
+    
+    return maxTimestamp;
   }
 }
