@@ -695,31 +695,23 @@ class AboutScreen extends ConsumerWidget {
     try {
       final Uri uri = Uri.parse(url);
 
-      // Try different launch modes in order of preference
-      bool launched = false;
+      final launchModes = [
+        LaunchMode.platformDefault,
+        LaunchMode.externalApplication,
+        LaunchMode.inAppWebView,
+      ];
 
-      // First try with platformDefault (most compatible)
-      try {
-        await launchUrl(uri, mode: LaunchMode.platformDefault);
-        launched = true;
-      } catch (e) {
-        // If platformDefault fails, try externalApplication
+      for (final mode in launchModes) {
         try {
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
-          launched = true;
-        } catch (e2) {
-          // If both fail, try inAppWebView as last resort
-          try {
-            await launchUrl(uri, mode: LaunchMode.inAppWebView);
-            launched = true;
-          } catch (e3) {
-            // All methods failed
-            launched = false;
-          }
+          await launchUrl(uri, mode: mode);
+          return; // Success, exit early
+        } catch (e) {
+          // Continue to next mode
         }
       }
 
-      if (!launched && context.mounted) {
+      // All launch modes failed
+      if (context.mounted) {
         _showErrorSnackBar(context, S.of(context)!.cannotOpenLink);
       }
     } catch (e) {
