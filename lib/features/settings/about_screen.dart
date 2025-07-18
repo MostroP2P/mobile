@@ -243,7 +243,7 @@ SOFTWARE.''';
             Row(
               children: [
                 const Icon(
-                  LucideIcons.info,
+                  LucideIcons.server,
                   color: AppTheme.activeColor,
                   size: 20,
                 ),
@@ -378,9 +378,9 @@ SOFTWARE.''';
             ),
             const SizedBox(height: 20),
 
-            // LND Daemon Section
+            // Lightning Network Section
             Text(
-              S.of(context)!.lndDaemonVersion,
+              S.of(context)!.lightningNetwork,
               style: const TextStyle(
                 color: AppTheme.activeColor,
                 fontSize: 16,
@@ -521,7 +521,8 @@ SOFTWARE.''';
     );
   }
 
-  Widget _buildInfoRowWithDialog(BuildContext context, String label, String value, String explanation) {
+  Widget _buildInfoRowWithDialog(
+      BuildContext context, String label, String value, String explanation) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

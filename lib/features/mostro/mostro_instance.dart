@@ -90,10 +90,10 @@ extension MostroInstanceExtensions on NostrEvent {
   int get invoiceExpirationWindow =>
       int.parse(_getTagValue('invoice_expiration_window'));
   String get lndVersion => _getTagValue('lnd_version');
-  String get lndNodePublicKey => _getTagValue('lnd_node_public_key');
+  String get lndNodePublicKey => _getTagValue('lnd_node_pubkey');
   String get lndCommitHash => _getTagValue('lnd_commit_hash');
   String get lndNodeAlias => _getTagValue('lnd_node_alias');
-  String get supportedChains => _getTagValue('supported_chains');
-  String get supportedNetworks => _getTagValue('supported_networks');
-  String get lndNodeUri => _getTagValue('lnd_node_uri');
+  String get supportedChains => _getTagValue('lnd_chains');
+  String get supportedNetworks => _getTagValue('lnd_networks');
+  String get lndNodeUri => _getTagValue('lnd_uris');
 }
