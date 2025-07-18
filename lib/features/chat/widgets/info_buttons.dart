@@ -15,12 +15,12 @@ class InfoButtons extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           _buildInfoButton(context, S.of(context)!.tradeInformation, "trade"),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
           _buildInfoButton(context, S.of(context)!.userInformation, "user"),
         ],
       ),
@@ -41,7 +41,7 @@ class InfoButtons extends StatelessWidget {
               : AppTheme.backgroundCard,
           foregroundColor:
               isSelected ? AppTheme.mostroGreen : AppTheme.textSecondary,
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
             side: BorderSide(
@@ -51,24 +51,31 @@ class InfoButtons extends StatelessWidget {
           ),
           elevation: 0,
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              type == 'trade'
-                  ? Icons.description_outlined
-                  : Icons.person_outline,
-              size: 18,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                type == 'trade'
+                    ? Icons.description_outlined
+                    : Icons.person_outline,
+                size: 18,
               ),
-            ),
-          ],
+              const SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
