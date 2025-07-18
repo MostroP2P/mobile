@@ -29,37 +29,56 @@ class InfoButtons extends StatelessWidget {
 
   Widget _buildInfoButton(BuildContext context, String title, String type) {
     final isSelected = selectedInfoType == type;
+    final textScaleFactor = MediaQuery.of(context).textScaleFactor;
+    final fontSize = 13.0 / textScaleFactor.clamp(0.8, 1.5); // Adjust font size based on text scale
 
-    return Expanded(
-      child: ElevatedButton(
-        onPressed: () {
-          onInfoTypeChanged(isSelected ? null : type);
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: isSelected
-              ? AppTheme.mostroGreen.withValues(alpha: 0.2)
-              : AppTheme.backgroundCard,
-          foregroundColor:
-              isSelected ? AppTheme.mostroGreen : AppTheme.textSecondary,
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-            side: BorderSide(
-              color: isSelected ? AppTheme.mostroGreen : Colors.transparent,
-              width: 1,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Calculate if we need to use a smaller font size for the text
+        final textPainter = TextPainter(
+          text: TextSpan(
+            text: title,
+            style: TextStyle(
+              fontSize: fontSize,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             ),
           ),
-          elevation: 0,
-        ),
-        child: FittedBox(
-          fit: BoxFit.scaleDown,
+          maxLines: 1,
+          textDirection: TextDirection.ltr,
+        )..layout();
+
+        // Calculate available width for the text (total width minus icon and padding)
+        final availableWidth = (constraints.maxWidth - 30).clamp(0, double.infinity);
+        final needsEllipsis = textPainter.width > availableWidth;
+
+        return ElevatedButton(
+          onPressed: () {
+            onInfoTypeChanged(isSelected ? null : type);
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: isSelected
+                ? AppTheme.mostroGreen.withValues(alpha: 0.2)
+                : AppTheme.backgroundCard,
+            foregroundColor:
+                isSelected ? AppTheme.mostroGreen : AppTheme.textSecondary,
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+              side: BorderSide(
+                color: isSelected ? AppTheme.mostroGreen : Colors.transparent,
+                width: 1,
+              ),
+            ),
+            elevation: 0,
+            minimumSize: Size(0, 40), // Set a minimum height
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
           child: Row(
+            mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
-                type == 'trade'
-                    ? Icons.description_outlined
-                    : Icons.person_outline,
+                type == 'trade' ? Icons.description_outlined : Icons.person_outline,
                 size: 18,
               ),
               const SizedBox(width: 4),
@@ -67,17 +86,25 @@ class InfoButtons extends StatelessWidget {
                 child: Text(
                   title,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: fontSize,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    height: 1.2,
                   ),
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
+                  textScaleFactor: 1.0, // Disable text scaling to prevent overflow
                 ),
               ),
+              // Add a small indicator if text is truncated
+              if (needsEllipsis)
+                const Padding(
+                  padding: EdgeInsets.only(left: 2),
+                  child: Text('…', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
             ],
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
