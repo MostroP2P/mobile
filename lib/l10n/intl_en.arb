@@ -629,5 +629,11 @@
   
   "@_comment_url_launch_errors": "URL Launch Error Messages",
   "cannotOpenLink": "Cannot open link - no app available",
-  "failedToOpenLink": "Failed to open link"
+  "failedToOpenLink": "Failed to open link",
+  
+  "@_comment_settings_info_dialogs": "Settings Info Dialog Text",
+  "languageInfoText": "Choose your preferred language for the application interface.",
+  "currencyInfoText": "Choose the default currency for your orders.",
+  "relaysInfoText": "• Relays are servers that help distribute your messages across the Nostr network\n\n• Adding more relays can improve connectivity and redundancy\n\n• Relays don't sync with each other, so only those you're connected to will receive your messages.",
+  "mostroInfoText": "• The Mostro you select will be the one where you post your offers.\n\n• In case of a dispute, a human assigned to that Mostro will be the one to resolve it."
 }

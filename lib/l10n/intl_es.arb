@@ -661,5 +661,11 @@
   
   "@_comment_url_launch_errors": "Mensajes de Error de Lanzamiento de URL",
   "cannotOpenLink": "No se puede abrir el enlace - no hay aplicación disponible",
-  "failedToOpenLink": "Error al abrir el enlace"
+  "failedToOpenLink": "Error al abrir el enlace",
+  
+  "@_comment_settings_info_dialogs": "Texto de Diálogos de Información de Configuración",
+  "languageInfoText": "Elige tu idioma preferido para la interfaz de la aplicación.",
+  "currencyInfoText": "Elige la moneda predeterminada para tus órdenes.",
+  "relaysInfoText": "• Los relays son servidores que ayudan a distribuir tus mensajes a través de la red Nostr\n\n• Agregar más relays puede mejorar la conectividad y redundancia\n\n• Los relays no se sincronizan entre sí, por lo que solo aquellos a los que estés conectado recibirán tus mensajes.",
+  "mostroInfoText": "• El Mostro que selecciones será donde publiques tus ofertas.\n\n• En caso de disputa, una persona asignada a ese Mostro será quien la resuelva."
 }
