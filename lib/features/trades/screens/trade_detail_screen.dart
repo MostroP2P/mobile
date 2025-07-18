@@ -71,6 +71,11 @@ class TradeDetailScreen extends ConsumerWidget {
                     orderPayload.expiresAt != null
                         ? orderPayload.expiresAt! * 1000
                         : null),
+                _buildCountDownTime(
+                    context,
+                    orderPayload.expiresAt != null
+                        ? orderPayload.expiresAt! * 1000
+                        : null),
                 const SizedBox(height: 36),
                 Wrap(
                   alignment: WrapAlignment.center,

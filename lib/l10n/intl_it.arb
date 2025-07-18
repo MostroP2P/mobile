@@ -230,6 +230,8 @@
   "sell": "VENDI",
   "buying": "COMPRANDO",
   "selling": "VENDENDO",
+  "youAreBuying": "STAI COMPRANDO",
+  "youAreSelling": "STAI VENDENDO",
   "marketPrice": "Prezzo di Mercato",
   "forSats": "Per {amount} sats",
   "@forSats": {
