@@ -611,7 +611,7 @@ SOFTWARE.''';
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // El label ocupa todo el espacio posible
+        // The label takes up as much space as possible.
         Expanded(
           child: Text(
             label,
@@ -624,7 +624,7 @@ SOFTWARE.''';
 
         const SizedBox(width: 8),
 
-        // El value + icon usan solo el espacio mínimo
+        // The value + icon take up only the minimum space
         ConstrainedBox(
           constraints: const BoxConstraints(minWidth: 0),
           child: Row(
@@ -712,7 +712,7 @@ SOFTWARE.''';
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // El label ocupa todo el espacio posible
+        // The label takes up as much space as possible
         Expanded(
           child: Text(
             S.of(context)!.license,
@@ -725,7 +725,7 @@ SOFTWARE.''';
 
         const SizedBox(width: 8),
 
-        // El value + icon usan solo el espacio mínimo
+        // The value + icon take up only the minimum space
         ConstrainedBox(
           constraints: const BoxConstraints(minWidth: 0),
           child: Row(
