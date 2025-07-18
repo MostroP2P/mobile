@@ -540,6 +540,7 @@
   },
   "failedToGenerateQR": "Failed to generate QR code",
   "invoiceCopiedToClipboard": "Invoice copied to clipboard",
+  "copiedToClipboard": "Copied to clipboard",
   "copy": "Copy",
   "share": "Share",
   "failedToShareInvoice": "Failed to share invoice. Please try copying instead.",

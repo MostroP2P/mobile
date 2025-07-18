@@ -507,6 +507,7 @@
   },
   "failedToGenerateQR": "Error al generar código QR",
   "invoiceCopiedToClipboard": "Factura copiada al portapapeles",
+  "copiedToClipboard": "Copiado al portapapeles",
   "copy": "Copiar",
   "share": "Compartir",
   "failedToShareInvoice": "Error al compartir factura. Por favor intenta copiarla en su lugar.",

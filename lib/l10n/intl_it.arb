@@ -503,6 +503,7 @@
   },
   "failedToGenerateQR": "Errore nella generazione del codice QR",
   "invoiceCopiedToClipboard": "Fattura copiata negli appunti",
+  "copiedToClipboard": "Copiato negli appunti",
   "copy": "Copia",
   "share": "Condividi",
   "failedToShareInvoice": "Errore nel condividere la fattura. Per favore prova a copiarla invece.",

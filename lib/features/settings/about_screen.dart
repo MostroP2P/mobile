@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:heroicons/heroicons.dart';
@@ -249,12 +250,13 @@ class AboutScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 12),
 
-            _buildInfoRowWithDialog(
+            _buildInfoRowWithDialogAndCopy(
               context,
               S.of(context)!.mostroPublicKey,
               instance.pubKey,
-              S.of(context)!.mostroPublicKeyExplanation,
+              S.of(context)!.lndNodePublicKeyExplanation,
             ),
+
             const SizedBox(height: 16),
 
             _buildInfoRowWithDialog(
@@ -375,7 +377,7 @@ class AboutScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
 
-            _buildInfoRowWithDialog(
+            _buildInfoRowWithDialogAndCopy(
               context,
               S.of(context)!.lndNodePublicKey,
               instance.lndNodePublicKey,
@@ -415,7 +417,7 @@ class AboutScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
 
-            _buildInfoRowWithDialog(
+            _buildInfoRowWithDialogAndCopy(
               context,
               S.of(context)!.lndNodeUri,
               instance.lndNodeUri,
@@ -520,6 +522,57 @@ class AboutScreen extends ConsumerWidget {
               borderRadius: BorderRadius.circular(12),
               child: const Icon(
                 Icons.info_outline,
+                size: 16,
+                color: AppTheme.textSecondary,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        // Value below the label
+        Text(
+          value,
+          style: const TextStyle(
+            color: AppTheme.textPrimary,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInfoRowWithDialogAndCopy(
+      BuildContext context, String label, String value, String explanation) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Label with info and copy icons
+        Row(
+          children: [
+            Text(
+              label,
+              style: const TextStyle(
+                color: AppTheme.textSecondary,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(width: 6),
+            InkWell(
+              onTap: () => _showInfoDialog(context, label, explanation),
+              borderRadius: BorderRadius.circular(12),
+              child: const Icon(
+                Icons.info_outline,
+                size: 16,
+                color: AppTheme.textSecondary,
+              ),
+            ),
+            const SizedBox(width: 6),
+            InkWell(
+              onTap: () => _copyToClipboard(context, value),
+              borderRadius: BorderRadius.circular(12),
+              child: const Icon(
+                Icons.copy,
                 size: 16,
                 color: AppTheme.textSecondary,
               ),
@@ -804,5 +857,18 @@ class AboutScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  void _copyToClipboard(BuildContext context, String text) {
+    Clipboard.setData(ClipboardData(text: text));
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(S.of(context)!.copiedToClipboard),
+          backgroundColor: AppTheme.statusSuccess,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 }
