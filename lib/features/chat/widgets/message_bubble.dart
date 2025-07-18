@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:mostro_mobile/shared/providers/avatar_provider.dart';
 
 class MessageBubble extends StatelessWidget {
   final NostrEvent message;
@@ -32,7 +33,7 @@ class MessageBubble extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: isFromPeer ? AppTheme.backgroundCard : AppTheme.purpleAccent,
+            color: isFromPeer ? _getPeerMessageColor(peerPubkey) : AppTheme.purpleAccent,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
@@ -61,5 +62,18 @@ class MessageBubble extends StatelessWidget {
         ),
       );
     }
+  }
+  
+  /// Returns a subdued version of the peer's avatar color for message bubbles
+  Color _getPeerMessageColor(String pubkey) {
+    // Get the original avatar color
+    final avatarColor = pickNymColor(pubkey);
+    
+    // Create a subdued version by reducing saturation and value
+    final HSVColor hsvColor = HSVColor.fromColor(avatarColor);
+    
+    // Create a more subdued version with lower saturation and value
+    // but keep enough color to be recognizable
+    return hsvColor.withSaturation(0.3).withValue(0.25).toColor();
   }
 }
