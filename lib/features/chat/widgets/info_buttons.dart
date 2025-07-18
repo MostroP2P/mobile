@@ -15,13 +15,16 @@ class InfoButtons extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _buildInfoButton(context, S.of(context)!.tradeInformation, "trade"),
+          Expanded(
+            child: _buildInfoButton(context, S.of(context)!.tradeInformation, "trade"),
+          ),
           const SizedBox(width: 8),
-          _buildInfoButton(context, S.of(context)!.userInformation, "user"),
+          Expanded(
+            child: _buildInfoButton(context, S.of(context)!.userInformation, "user"),
+          ),
         ],
       ),
     );
@@ -29,82 +32,61 @@ class InfoButtons extends StatelessWidget {
 
   Widget _buildInfoButton(BuildContext context, String title, String type) {
     final isSelected = selectedInfoType == type;
+    final textLength = title.length;
     final textScaleFactor = MediaQuery.of(context).textScaleFactor;
-    final fontSize = 13.0 / textScaleFactor.clamp(0.8, 1.5); // Adjust font size based on text scale
+    
+    // Adjust font size based on text length and scale factor
+    final baseFontSize = textLength > 15 ? 13.0 : 14.0;
+    final fontSize = baseFontSize / textScaleFactor.clamp(0.8, 1.5);
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // Calculate if we need to use a smaller font size for the text
-        final textPainter = TextPainter(
-          text: TextSpan(
-            text: title,
-            style: TextStyle(
-              fontSize: fontSize,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+    return Container(
+      height: 44,
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: ElevatedButton(
+        onPressed: () => onInfoTypeChanged(isSelected ? null : type),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: isSelected
+              ? AppTheme.mostroGreen.withValues(alpha: 51) // 0.2 opacity
+              : AppTheme.backgroundCard,
+          foregroundColor: isSelected ? AppTheme.mostroGreen : AppTheme.textSecondary,
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: BorderSide(
+              color: isSelected ? AppTheme.mostroGreen : Colors.transparent,
+              width: 1,
             ),
           ),
-          maxLines: 1,
-          textDirection: TextDirection.ltr,
-        )..layout();
-
-        // Calculate available width for the text (total width minus icon and padding)
-        final availableWidth = (constraints.maxWidth - 30).clamp(0, double.infinity);
-        final needsEllipsis = textPainter.width > availableWidth;
-
-        return ElevatedButton(
-          onPressed: () {
-            onInfoTypeChanged(isSelected ? null : type);
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: isSelected
-                ? AppTheme.mostroGreen.withValues(alpha: 0.2)
-                : AppTheme.backgroundCard,
-            foregroundColor:
-                isSelected ? AppTheme.mostroGreen : AppTheme.textSecondary,
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-              side: BorderSide(
-                color: isSelected ? AppTheme.mostroGreen : Colors.transparent,
-                width: 1,
+          elevation: 0,
+          minimumSize: const Size(0, 44), // Minimum tap target size
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              type == 'trade' ? Icons.description_outlined : Icons.person_outline,
+              size: 18,
+            ),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontSize: fontSize,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                  height: 1.2,
+                  letterSpacing: 0.1,
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+                textScaleFactor: 1.0,
               ),
             ),
-            elevation: 0,
-            minimumSize: Size(0, 40), // Set a minimum height
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                type == 'trade' ? Icons.description_outlined : Icons.person_outline,
-                size: 18,
-              ),
-              const SizedBox(width: 4),
-              Flexible(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: fontSize,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                    height: 1.2,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
-                  textScaleFactor: 1.0, // Disable text scaling to prevent overflow
-                ),
-              ),
-              // Add a small indicator if text is truncated
-              if (needsEllipsis)
-                const Padding(
-                  padding: EdgeInsets.only(left: 2),
-                  child: Text('…', style: TextStyle(fontWeight: FontWeight.bold)),
-                ),
-            ],
-          ),
-        );
-      },
+          ],
+        ),
+      ),
     );
   }
 }
