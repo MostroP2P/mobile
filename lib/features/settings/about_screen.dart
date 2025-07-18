@@ -76,10 +76,10 @@ SOFTWARE.''';
                   _buildDocumentationCard(context),
                   const SizedBox(height: 16),
 
-                  // About Mostro Instance Card
+                  // Mostro Node Card
                   nostrEvent == null
                       ? _buildLoadingCard(context)
-                      : _buildMostroInstanceCard(
+                      : _buildMostroNodeCard(
                           context, MostroInstance.fromEvent(nostrEvent)),
                   const SizedBox(height: 16),
                 ],
@@ -226,8 +226,7 @@ SOFTWARE.''';
     );
   }
 
-  Widget _buildMostroInstanceCard(
-      BuildContext context, MostroInstance instance) {
+  Widget _buildMostroNodeCard(BuildContext context, MostroInstance instance) {
     final formatter = NumberFormat.decimalPattern();
 
     return Container(
@@ -272,33 +271,43 @@ SOFTWARE.''';
             ),
             const SizedBox(height: 12),
 
-            _buildInfoRow(
+            _buildInfoRowWithDialog(
+              context,
               S.of(context)!.mostroPublicKey,
               instance.pubKey,
+              S.of(context)!.mostroPublicKeyExplanation,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
 
-            _buildInfoRow(
+            _buildInfoRowWithDialog(
+              context,
               S.of(context)!.maxOrderAmount,
               '${formatter.format(instance.maxOrderAmount)} ${S.of(context)!.satoshis}',
+              S.of(context)!.maxOrderAmountExplanation,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
 
-            _buildInfoRow(
+            _buildInfoRowWithDialog(
+              context,
               S.of(context)!.minOrderAmount,
               '${formatter.format(instance.minOrderAmount)} ${S.of(context)!.satoshis}',
+              S.of(context)!.minOrderAmountExplanation,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
 
-            _buildInfoRow(
+            _buildInfoRowWithDialog(
+              context,
               S.of(context)!.orderLifespan,
               '${instance.expirationHours} ${S.of(context)!.hour}',
+              S.of(context)!.orderExpirationExplanation,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
 
-            _buildInfoRow(
+            _buildInfoRowWithDialog(
+              context,
               S.of(context)!.serviceFee,
               '${instance.fee}%',
+              S.of(context)!.serviceFeeExplanation,
             ),
             const SizedBox(height: 20),
 
@@ -313,45 +322,59 @@ SOFTWARE.''';
             ),
             const SizedBox(height: 12),
 
-            _buildInfoRow(
+            _buildInfoRowWithDialog(
+              context,
               S.of(context)!.mostroDaemonVersion,
               instance.mostroVersion,
+              S.of(context)!.mostroVersionExplanation,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
 
-            _buildInfoRow(
+            _buildInfoRowWithDialog(
+              context,
               S.of(context)!.mostroCommitId,
               instance.commitHash,
+              S.of(context)!.mostroCommitIdExplanation,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
 
-            _buildInfoRow(
+            _buildInfoRowWithDialog(
+              context,
               S.of(context)!.orderExpiration,
               '${instance.expirationSeconds} ${S.of(context)!.sec}',
+              S.of(context)!.orderExpirationExplanation,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
 
-            _buildInfoRow(
+            _buildInfoRowWithDialog(
+              context,
               S.of(context)!.holdInvoiceExpiration,
               '${instance.holdInvoiceExpirationWindow} ${S.of(context)!.sec}',
+              S.of(context)!.holdInvoiceExpirationExplanation,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
 
-            _buildInfoRow(
+            _buildInfoRowWithDialog(
+              context,
               S.of(context)!.holdInvoiceCltvDelta,
               '${instance.holdInvoiceCltvDelta} ${S.of(context)!.blocks}',
+              S.of(context)!.holdInvoiceCltvDeltaExplanation,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
 
-            _buildInfoRow(
+            _buildInfoRowWithDialog(
+              context,
               S.of(context)!.invoiceExpirationWindow,
               '${instance.invoiceExpirationWindow} ${S.of(context)!.seconds}',
+              S.of(context)!.invoiceExpirationWindowExplanation,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
 
-            _buildInfoRow(
+            _buildInfoRowWithDialog(
+              context,
               S.of(context)!.proofOfWork,
               instance.pow.toString(),
+              S.of(context)!.proofOfWorkExplanation,
             ),
             const SizedBox(height: 20),
 
@@ -366,45 +389,59 @@ SOFTWARE.''';
             ),
             const SizedBox(height: 12),
 
-            _buildInfoRow(
+            _buildInfoRowWithDialog(
+              context,
               S.of(context)!.lndDaemonVersion,
               instance.lndVersion,
+              S.of(context)!.lndDaemonVersionExplanation,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
 
-            _buildInfoRow(
+            _buildInfoRowWithDialog(
+              context,
               S.of(context)!.lndNodePublicKey,
               instance.lndNodePublicKey,
+              S.of(context)!.lndNodePublicKeyExplanation,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
 
-            _buildInfoRow(
+            _buildInfoRowWithDialog(
+              context,
               S.of(context)!.lndCommitId,
               instance.lndCommitHash,
+              S.of(context)!.lndCommitIdExplanation,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
 
-            _buildInfoRow(
+            _buildInfoRowWithDialog(
+              context,
               S.of(context)!.lndNodeAlias,
               instance.lndNodeAlias,
+              S.of(context)!.lndNodeAliasExplanation,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
 
-            _buildInfoRow(
+            _buildInfoRowWithDialog(
+              context,
               S.of(context)!.supportedChains,
               instance.supportedChains,
+              S.of(context)!.supportedChainsExplanation,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
 
-            _buildInfoRow(
+            _buildInfoRowWithDialog(
+              context,
               S.of(context)!.supportedNetworks,
               instance.supportedNetworks,
+              S.of(context)!.supportedNetworksExplanation,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
 
-            _buildInfoRow(
+            _buildInfoRowWithDialog(
+              context,
               S.of(context)!.lndNodeUri,
               instance.lndNodeUri,
+              S.of(context)!.lndNodeUriExplanation,
             ),
           ],
         ),
@@ -481,6 +518,90 @@ SOFTWARE.''';
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildInfoRowWithDialog(BuildContext context, String label, String value, String explanation) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Label with info icon
+        Row(
+          children: [
+            Text(
+              label,
+              style: const TextStyle(
+                color: AppTheme.textSecondary,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(width: 6),
+            InkWell(
+              onTap: () => _showInfoDialog(context, label, explanation),
+              borderRadius: BorderRadius.circular(12),
+              child: const Icon(
+                Icons.info_outline,
+                size: 16,
+                color: AppTheme.textSecondary,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        // Value below the label
+        Text(
+          value,
+          style: const TextStyle(
+            color: AppTheme.textPrimary,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showInfoDialog(BuildContext context, String title, String content) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          backgroundColor: AppTheme.backgroundCard,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+          ),
+          title: Text(
+            title,
+            style: const TextStyle(
+              color: AppTheme.textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          content: Text(
+            content,
+            style: const TextStyle(
+              color: AppTheme.textSecondary,
+              fontSize: 14,
+              height: 1.5,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(
+                S.of(context)!.ok,
+                style: const TextStyle(
+                  color: AppTheme.activeColor,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
