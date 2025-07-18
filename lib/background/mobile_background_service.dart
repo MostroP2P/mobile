@@ -33,7 +33,7 @@ class MobileBackgroundService implements BackgroundService {
           onStart: serviceMain,
           isForegroundMode: true,
           autoStartOnBoot: true,
-          initialNotificationTitle: "Mostro P2P",
+          initialNotificationTitle: "Mostro",
           initialNotificationContent: "Connected to Mostro service",
           foregroundServiceTypes: [
             AndroidForegroundType.dataSync,
