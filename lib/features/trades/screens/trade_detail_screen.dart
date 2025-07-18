@@ -693,8 +693,8 @@ class _CountdownWidget extends ConsumerWidget {
       final messageTime = DateTime.fromMillisecondsSinceEpoch(messageTimestamp);
       
       // Handle edge case: message timestamp in the future
-      if (messageTime.isAfter(now.add(const Duration(minutes: 5)))) {
-        // If message is more than 5 minutes in the future, likely invalid
+      if (messageTime.isAfter(now.add(const Duration(hours: 1)))) {
+        // If message is more than 1 hour in the future, likely invalid
         return null;
       }
 
@@ -747,7 +747,7 @@ class _CountdownWidget extends ConsumerWidget {
     for (final message in sortedMessages) {
       // Additional validation: ensure timestamp is not in the future
       final messageTime = DateTime.fromMillisecondsSinceEpoch(message.timestamp!);
-      if (messageTime.isAfter(DateTime.now().add(const Duration(minutes: 5)))) {
+      if (messageTime.isAfter(DateTime.now().add(const Duration(hours: 1)))) {
         continue; // Skip messages with future timestamps
       }
 
