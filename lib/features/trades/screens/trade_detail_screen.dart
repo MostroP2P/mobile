@@ -13,9 +13,14 @@ import 'package:mostro_mobile/features/order/providers/order_notifier_provider.d
 import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
 import 'package:mostro_mobile/shared/widgets/order_cards.dart';
 import 'package:mostro_mobile/features/trades/widgets/mostro_message_detail_widget.dart';
+import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_reactive_button.dart';
 import 'package:mostro_mobile/data/models/session.dart';
+import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
+import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
+import 'package:mostro_mobile/data/models/mostro_message.dart';
+import 'package:mostro_mobile/shared/providers/time_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
 class TradeDetailScreen extends ConsumerWidget {
@@ -66,12 +71,14 @@ class TradeDetailScreen extends ConsumerWidget {
                   MostroMessageDetail(orderId: orderId),
                 ],
                 const SizedBox(height: 24),
-                _buildCountDownTime(
-                    context,
-                    orderPayload.expiresAt != null
-                        ? orderPayload.expiresAt! * 1000
-                        : null),
-                const SizedBox(height: 36),
+                // Show countdown timer only for specific statuses
+                _CountdownWidget(
+                  orderId: orderId,
+                  tradeState: tradeState,
+                  expiresAtTimestamp: orderPayload.expiresAt != null
+                      ? orderPayload.expiresAt! * 1000
+                      : null,
+                ),
                 Wrap(
                   alignment: WrapAlignment.center,
                   spacing: 10,
@@ -217,38 +224,6 @@ class TradeDetailScreen extends ConsumerWidget {
     );
   }
 
-  /// Build a circular countdown to show how many hours are left until expiration.
-  Widget _buildCountDownTime(BuildContext context, int? expiresAtTimestamp) {
-    // Convert timestamp to DateTime
-    final now = DateTime.now();
-
-    final expiration = expiresAtTimestamp != null && expiresAtTimestamp > 0
-        ? DateTime.fromMillisecondsSinceEpoch(expiresAtTimestamp)
-        : now.add(const Duration(hours: 24));
-
-    final Duration difference =
-        expiration.isAfter(now) ? expiration.difference(now) : const Duration();
-
-    final int maxOrderHours = 24;
-    final hoursLeft = difference.inHours.clamp(0, maxOrderHours);
-    final minutesLeft = difference.inMinutes % 60;
-    final secondsLeft = difference.inSeconds % 60;
-
-    final formattedTime =
-        '${hoursLeft.toString().padLeft(2, '0')}:${minutesLeft.toString().padLeft(2, '0')}:${secondsLeft.toString().padLeft(2, '0')}';
-
-    return Column(
-      children: [
-        CircularCountdown(
-          countdownTotal: maxOrderHours,
-          countdownRemaining: hoursLeft,
-        ),
-        const SizedBox(height: 16),
-        Text(S.of(context)!.timeLeftLabel(formattedTime)),
-      ],
-    );
-  }
-
   /// Main action button area, switching on `orderPayload.status`.
   /// Additional checks use `message.action` to refine which button to show.
   /// Following the Mostro protocol state machine for order flow.
@@ -313,7 +288,7 @@ class TradeDetailScreen extends ConsumerWidget {
                   ],
                 ),
               );
-              
+
               // Reset loading state if dialog was cancelled
               if (result != true) {
                 buttonController.resetLoading();
@@ -584,5 +559,208 @@ class TradeDetailScreen extends ConsumerWidget {
 
       return '$formattedDate at $formattedTime';
     }
+  }
+}
+
+/// Widget that displays a real-time countdown timer that updates every second
+class _CountdownWidget extends ConsumerWidget {
+  final String orderId;
+  final OrderState tradeState;
+  final int? expiresAtTimestamp;
+
+  const _CountdownWidget({
+    required this.orderId,
+    required this.tradeState,
+    this.expiresAtTimestamp,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Watch the countdown time provider for real-time updates
+    final timeAsync = ref.watch(countdownTimeProvider);
+    final messagesAsync = ref.watch(mostroMessageHistoryProvider(orderId));
+
+    return timeAsync.when(
+      data: (currentTime) {
+        return messagesAsync.maybeWhen(
+          data: (messages) {
+            final countdownWidget = _buildCountDownTime(
+              context,
+              ref,
+              tradeState,
+              messages,
+              expiresAtTimestamp,
+            );
+
+            if (countdownWidget != null) {
+              return Column(
+                children: [
+                  countdownWidget,
+                  const SizedBox(height: 36),
+                ],
+              );
+            } else {
+              return const SizedBox(height: 12);
+            }
+          },
+          orElse: () => const SizedBox(height: 12),
+        );
+      },
+      loading: () => const SizedBox(height: 12),
+      error: (error, stack) => const SizedBox(height: 12),
+    );
+  }
+
+  /// Build a circular countdown timer only for specific order statuses.
+  /// Shows countdown ONLY for: Pending, Waiting-buyer-invoice, Waiting-payment
+  /// - Pending: uses expirationHours from Mostro instance
+  /// - Waiting-buyer-invoice: countdown from message timestamp + expirationSeconds
+  /// - Waiting-payment: countdown from message timestamp + expirationSeconds
+  /// - All other states: no countdown timer
+  Widget? _buildCountDownTime(
+      BuildContext context,
+      WidgetRef ref,
+      OrderState tradeState,
+      List<MostroMessage> messages,
+      int? expiresAtTimestamp) {
+    final status = tradeState.status;
+    final now = DateTime.now();
+    final mostroInstance = ref.read(orderRepositoryProvider).mostroInstance;
+
+    // Show countdown ONLY for these 3 specific statuses
+    if (status == Status.pending) {
+      // Pending orders: use expirationHours
+      final expHours =
+          mostroInstance?.expirationHours ?? 24; // 24 hours fallback
+      final countdownDuration = Duration(hours: expHours);
+
+      // Handle edge case: invalid timestamp
+      if (expiresAtTimestamp != null && expiresAtTimestamp <= 0) {
+        expiresAtTimestamp = null;
+      }
+
+      final expiration = expiresAtTimestamp != null
+          ? DateTime.fromMillisecondsSinceEpoch(expiresAtTimestamp)
+          : now.add(countdownDuration);
+
+      // Handle edge case: expiration in the past
+      if (expiration.isBefore(now.subtract(const Duration(hours: 1)))) {
+        // If expiration is more than 1 hour in the past, likely invalid
+        return null;
+      }
+
+      final Duration difference = expiration.isAfter(now)
+          ? expiration.difference(now)
+          : const Duration();
+
+      final hoursLeft = difference.inHours.clamp(0, expHours);
+      final minutesLeft = difference.inMinutes % 60;
+      final secondsLeft = difference.inSeconds % 60;
+
+      final formattedTime =
+          '${hoursLeft.toString().padLeft(2, '0')}:${minutesLeft.toString().padLeft(2, '0')}:${secondsLeft.toString().padLeft(2, '0')}';
+
+      return Column(
+        children: [
+          CircularCountdown(
+            countdownTotal: expHours,
+            countdownRemaining: hoursLeft,
+          ),
+          const SizedBox(height: 16),
+          Text(S.of(context)!.timeLeftLabel(formattedTime)),
+        ],
+      );
+    } else if (status == Status.waitingBuyerInvoice ||
+        status == Status.waitingPayment) {
+      // Find the message that triggered this state
+      final stateMessage = _findMessageForState(messages, status);
+      if (stateMessage?.timestamp == null) {
+        // If no message found, don't show countdown
+        return null;
+      }
+
+      final expSecs =
+          mostroInstance?.expirationSeconds ?? 900; // 15 minutes fallback
+      final expMinutes = (expSecs / 60).round();
+
+      // Validate timestamp
+      final messageTimestamp = stateMessage!.timestamp!;
+      if (messageTimestamp <= 0) {
+        return null;
+      }
+
+      // Calculate expiration from when the message was received
+      final messageTime = DateTime.fromMillisecondsSinceEpoch(messageTimestamp);
+      
+      // Handle edge case: message timestamp in the future
+      if (messageTime.isAfter(now.add(const Duration(minutes: 5)))) {
+        // If message is more than 5 minutes in the future, likely invalid
+        return null;
+      }
+
+      final expiration = messageTime.add(Duration(seconds: expSecs));
+
+      final Duration difference = expiration.isAfter(now)
+          ? expiration.difference(now)
+          : const Duration();
+
+      final minutesLeft = difference.inMinutes.clamp(0, expMinutes);
+      final secondsLeft = difference.inSeconds % 60;
+
+      final formattedTime =
+          '${minutesLeft.toString().padLeft(2, '0')}:${secondsLeft.toString().padLeft(2, '0')}';
+
+      return Column(
+        children: [
+          CircularCountdown(
+            countdownTotal: expMinutes,
+            countdownRemaining: minutesLeft,
+          ),
+          const SizedBox(height: 16),
+          Text(S.of(context)!.timeLeftLabel(formattedTime)),
+        ],
+      );
+    } else {
+      // All other statuses: NO countdown timer
+      return null;
+    }
+  }
+
+  /// Find the message that triggered the current state
+  /// Returns null if no valid message is found
+  MostroMessage? _findMessageForState(
+      List<MostroMessage> messages, Status status) {
+    // Filter out messages with invalid timestamps
+    final validMessages = messages
+        .where((m) => m.timestamp != null && m.timestamp! > 0)
+        .toList();
+
+    if (validMessages.isEmpty) {
+      return null;
+    }
+
+    // Sort messages by timestamp (newest first)
+    final sortedMessages = List<MostroMessage>.from(validMessages)
+      ..sort((a, b) => (b.timestamp ?? 0).compareTo(a.timestamp ?? 0));
+
+    // Find the message that caused this state
+    for (final message in sortedMessages) {
+      // Additional validation: ensure timestamp is not in the future
+      final messageTime = DateTime.fromMillisecondsSinceEpoch(message.timestamp!);
+      if (messageTime.isAfter(DateTime.now().add(const Duration(minutes: 5)))) {
+        continue; // Skip messages with future timestamps
+      }
+
+      if (status == Status.waitingBuyerInvoice &&
+          (message.action == actions.Action.addInvoice ||
+              message.action == actions.Action.waitingBuyerInvoice)) {
+        return message;
+      } else if (status == Status.waitingPayment &&
+          (message.action == actions.Action.payInvoice ||
+              message.action == actions.Action.waitingSellerToPay)) {
+        return message;
+      }
+    }
+    return null;
   }
 }
