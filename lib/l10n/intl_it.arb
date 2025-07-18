@@ -267,7 +267,7 @@
   "githubRepository": "Repository GitHub",
   "commitHash": "Hash Commit",
   "appInformation": "Informazioni App",
-  "aboutMostroInstance": "Informazioni Istanza Mostro",
+  "mostroNode": "Nodo Mostro",
   "generalInfo": "Informazioni Generali",
   "pubkey": "Chiave Pubblica",
   "mostroVersion": "Versione",
@@ -643,5 +643,6 @@
   "sec": "sec",
   "blocks": "blocchi",
   "seconds": "secondi",
-  "mostroPublicKey": "Chiave Pubblica di Mostro"
+  "mostroPublicKey": "Chiave Pubblica di Mostro",
+  "license": "Licenza"
 }

@@ -304,7 +304,7 @@
   "githubRepository": "GitHub Repository",
   "commitHash": "Commit Hash",
   "appInformation": "App Information",
-  "aboutMostroInstance": "About Mostro Instance",
+  "mostroNode": "Mostro Node",
   "generalInfo": "General Info",
   "pubkey": "Pubkey",
   "mostroVersion": "Version",
@@ -603,5 +603,6 @@
   "sec": "sec",
   "blocks": "blocks",
   "seconds": "seconds",
-  "mostroPublicKey": "Mostro's Public Key"
+  "mostroPublicKey": "Mostro's Public Key",
+  "license": "License"
 }

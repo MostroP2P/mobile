@@ -267,7 +267,7 @@
   "githubRepository": "Repositorio GitHub",
   "commitHash": "Hash de Commit",
   "appInformation": "Información de la App",
-  "aboutMostroInstance": "Acerca de la Instancia Mostro",
+  "mostroNode": "Nodo Mostro",
   "generalInfo": "Información General",
   "pubkey": "Clave Pública",
   "mostroVersion": "Versión",
@@ -635,5 +635,6 @@
   "sec": "seg",
   "blocks": "bloques",
   "seconds": "segundos",
-  "mostroPublicKey": "Clave Pública de Mostro"
+  "mostroPublicKey": "Clave Pública de Mostro",
+  "license": "Licencia"
 }
