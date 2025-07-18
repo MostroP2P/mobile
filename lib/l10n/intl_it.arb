@@ -669,7 +669,6 @@
   
   "@_comment_url_launch_errors": "Messaggi di Errore Lancio URL",
   "cannotOpenLink": "Impossibile aprire il link - nessuna app disponibile",
-  "failedToOpenLink": "Errore nell'apertura del link",
   
   "@_comment_settings_info_dialogs": "Testo Dialoghi Informazioni Impostazioni",
   "languageInfoText": "Scegli la tua lingua preferita per l'interfaccia dell'applicazione.",

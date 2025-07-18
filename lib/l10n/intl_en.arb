@@ -629,7 +629,6 @@
   
   "@_comment_url_launch_errors": "URL Launch Error Messages",
   "cannotOpenLink": "Cannot open link - no app available",
-  "failedToOpenLink": "Failed to open link",
   
   "@_comment_settings_info_dialogs": "Settings Info Dialog Text",
   "languageInfoText": "Choose your preferred language for the application interface.",

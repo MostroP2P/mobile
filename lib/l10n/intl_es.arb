@@ -661,7 +661,6 @@
   
   "@_comment_url_launch_errors": "Mensajes de Error de Lanzamiento de URL",
   "cannotOpenLink": "No se puede abrir el enlace - no hay aplicación disponible",
-  "failedToOpenLink": "Error al abrir el enlace",
   
   "@_comment_settings_info_dialogs": "Texto de Diálogos de Información de Configuración",
   "languageInfoText": "Elige tu idioma preferido para la interfaz de la aplicación.",
