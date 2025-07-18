@@ -667,11 +667,11 @@ class AboutScreen extends ConsumerWidget {
       }
 
       if (!launched && context.mounted) {
-        _showErrorSnackBar(context, 'Cannot open link - no app available');
+        _showErrorSnackBar(context, S.of(context)!.cannotOpenLink);
       }
     } catch (e) {
       if (context.mounted) {
-        _showErrorSnackBar(context, 'Failed to open link');
+        _showErrorSnackBar(context, S.of(context)!.failedToOpenLink);
       }
     }
   }
@@ -793,9 +793,9 @@ class AboutScreen extends ConsumerWidget {
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text(
-                    'Close',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                  child: Text(
+                    S.of(context)!.close,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
