@@ -42,9 +42,9 @@ class CurrencyComboBox extends ConsumerWidget {
           ],
         ),
         data: (currencyCodes) {
-          // Create a list of string labels like "USD - United States Dollar"
+          // Create a list of string labels like "🇺🇸 USD - United States Dollar"
           final entries = currencyCodes.entries
-              .map((e) => '${e.key} - ${e.value.name}')
+              .map((e) => '${e.value.emoji.isNotEmpty ? e.value.emoji : '🏳️'} ${e.key} - ${e.value.name}')
               .toList();
 
           return Autocomplete<String>(
@@ -59,12 +59,18 @@ class CurrencyComboBox extends ConsumerWidget {
               );
             },
             onSelected: (String selection) {
-              // Extract the ISO code (the part before " - ")
-              final code = selection.split(' - ').first;
-              // Update Riverpod state
-              ref.read(selectedFiatCodeProvider.notifier).state = code;
-              // Notify parent via callback if provided
-              onSelected?.call(code);
+              // Extract the ISO code (the part after flag and space, before " - ")
+              // Format is "🇺🇸 USD - United States Dollar"
+              final parts = selection.split(' - ');
+              if (parts.isNotEmpty) {
+                // Get the first part "🇺🇸 USD" and extract just "USD"
+                final codeWithFlag = parts.first.trim();
+                final code = codeWithFlag.split(' ').last; // Get the last part after splitting by space
+                // Update Riverpod state
+                ref.read(selectedFiatCodeProvider.notifier).state = code;
+                // Notify parent via callback if provided
+                onSelected?.call(code);
+              }
             },
             fieldViewBuilder:
                 (context, textEditingController, focusNode, onFieldSubmitted) {
@@ -72,8 +78,9 @@ class CurrencyComboBox extends ConsumerWidget {
               // so it shows up when the user opens the screen
               final existingLabel = currencyCodes[selectedFiatCode];
               if (existingLabel != null) {
+                final flag = existingLabel.emoji.isNotEmpty ? existingLabel.emoji : '🏳️';
                 textEditingController.text =
-                    '$selectedFiatCode - ${existingLabel.name}';
+                    '$flag $selectedFiatCode - ${existingLabel.name}';
               }
 
               return TextFormField(
