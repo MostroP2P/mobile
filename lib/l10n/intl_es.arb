@@ -679,5 +679,6 @@
   "hide": "Ocultar",
   "reputationMode": "Modo reputación",
   "fullPrivacyMode": "Modo privacidad completa",
+  "maximumAnonymity": "Máximo anonimato",
   "standardPrivacyWithReputation": "Privacidad estándar con reputación"
 }

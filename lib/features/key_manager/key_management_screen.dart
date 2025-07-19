@@ -132,7 +132,8 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
       ),
       backgroundColor: AppTheme.backgroundDark,
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: AppTheme.activeColor))
+          ? const Center(
+              child: CircularProgressIndicator(color: AppTheme.activeColor))
           : Column(
               children: [
                 Expanded(
@@ -363,7 +364,7 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                         const SizedBox(height: 4),
                         Text(
                           settings.fullPrivacyMode
-                              ? 'Maximum anonymity'
+                              ? S.of(context)!.maximumAnonymity
                               : S.of(context)!.standardPrivacyWithReputation,
                           style: const TextStyle(
                             color: AppTheme.textSecondary,
@@ -374,11 +375,11 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                     ),
                   ),
                   Switch(
-                    value: !settings.fullPrivacyMode,
+                    value: settings.fullPrivacyMode,
                     onChanged: (value) {
                       ref
                           .watch(settingsProvider.notifier)
-                          .updatePrivacyMode(!value);
+                          .updatePrivacyMode(value);
                     },
                     activeColor: AppTheme.activeColor,
                     inactiveThumbColor: AppTheme.textSecondary,
@@ -523,7 +524,8 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
       child: OutlinedButton(
         onPressed: null, // Keep disabled as requested
         style: OutlinedButton.styleFrom(
-          side: BorderSide(color: AppTheme.textSecondary.withValues(alpha: 0.3)),
+          side:
+              BorderSide(color: AppTheme.textSecondary.withValues(alpha: 0.3)),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),

@@ -647,5 +647,6 @@
   "hide": "Hide",
   "reputationMode": "Reputation mode",
   "fullPrivacyMode": "Full privacy mode",
+  "maximumAnonymity": "Maximum anonymity",
   "standardPrivacyWithReputation": "Standard privacy with reputation"
 }
