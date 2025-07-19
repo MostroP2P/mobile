@@ -4,6 +4,7 @@ import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/relays/relay.dart';
 import 'package:mostro_mobile/features/relays/relays_provider.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class RelaySelector extends ConsumerWidget {
   const RelaySelector({super.key});
@@ -73,9 +74,9 @@ class RelaySelector extends ConsumerWidget {
           borderRadius: BorderRadius.circular(16),
           side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
         ),
-        title: const Text(
-          'Add Relay',
-          style: TextStyle(
+        title: Text(
+          S.of(context)!.addRelay,
+          style: const TextStyle(
             color: AppTheme.textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -91,11 +92,11 @@ class RelaySelector extends ConsumerWidget {
           child: TextField(
             controller: controller,
             style: const TextStyle(color: AppTheme.textPrimary),
-            decoration: const InputDecoration(
-              labelText: 'Relay URL',
-              labelStyle: TextStyle(color: AppTheme.textSecondary),
+            decoration: InputDecoration(
+              labelText: S.of(context)!.relayUrl,
+              labelStyle: const TextStyle(color: AppTheme.textSecondary),
               border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             ),
           ),
         ),
@@ -104,9 +105,9 @@ class RelaySelector extends ConsumerWidget {
             onPressed: () {
               Navigator.pop(dialogContext);
             },
-            child: const Text(
-              'Cancel',
-              style: TextStyle(
+            child: Text(
+              S.of(context)!.cancel,
+              style: const TextStyle(
                 color: AppTheme.textSecondary,
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
@@ -129,9 +130,9 @@ class RelaySelector extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-            child: const Text(
-              'Add',
-              style: TextStyle(
+            child: Text(
+              S.of(context)!.add,
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
@@ -153,9 +154,9 @@ class RelaySelector extends ConsumerWidget {
             borderRadius: BorderRadius.circular(16),
             side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
           ),
-          title: const Text(
-            'Edit Relay',
-            style: TextStyle(
+          title: Text(
+            S.of(context)!.editRelay,
+            style: const TextStyle(
               color: AppTheme.textPrimary,
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -171,20 +172,20 @@ class RelaySelector extends ConsumerWidget {
             child: TextField(
               controller: controller,
               style: const TextStyle(color: AppTheme.textPrimary),
-              decoration: const InputDecoration(
-                labelText: 'Relay URL',
-                labelStyle: TextStyle(color: AppTheme.textSecondary),
+              decoration: InputDecoration(
+                labelText: S.of(context)!.relayUrl,
+                labelStyle: const TextStyle(color: AppTheme.textSecondary),
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               ),
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
-              child: const Text(
-                'Cancel',
-                style: TextStyle(
+              child: Text(
+                S.of(context)!.cancel,
+                style: const TextStyle(
                   color: AppTheme.textSecondary,
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
@@ -209,9 +210,9 @@ class RelaySelector extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: const Text(
-                'Save',
-                style: TextStyle(
+              child: Text(
+                S.of(context)!.save,
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),

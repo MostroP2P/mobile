@@ -680,5 +680,11 @@
   "reputationMode": "Modo reputación",
   "fullPrivacyMode": "Modo privacidad completa",
   "maximumAnonymity": "Máximo anonimato",
-  "standardPrivacyWithReputation": "Privacidad estándar con reputación"
+  "standardPrivacyWithReputation": "Privacidad estándar con reputación",
+  
+  "@_comment_relay_dialogs": "Texto de Diálogos de Relay",
+  "editRelay": "Editar Relay",
+  "relayUrl": "URL del Relay",
+  "add": "Agregar",
+  "save": "Guardar"
 }

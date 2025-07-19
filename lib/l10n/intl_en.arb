@@ -648,5 +648,11 @@
   "reputationMode": "Reputation mode",
   "fullPrivacyMode": "Full privacy mode",
   "maximumAnonymity": "Maximum anonymity",
-  "standardPrivacyWithReputation": "Standard privacy with reputation"
+  "standardPrivacyWithReputation": "Standard privacy with reputation",
+  
+  "@_comment_relay_dialogs": "Relay Dialog Text",
+  "editRelay": "Edit Relay",
+  "relayUrl": "Relay URL",
+  "add": "Add",
+  "save": "Save"
 }
