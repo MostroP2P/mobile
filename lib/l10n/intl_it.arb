@@ -674,5 +674,18 @@
   "languageInfoText": "Scegli la tua lingua preferita per l'interfaccia dell'applicazione.",
   "currencyInfoText": "Scegli la valuta predefinita per i tuoi ordini.",
   "relaysInfoText": "• I relay sono server che aiutano a distribuire i tuoi messaggi attraverso la rete Nostr\n\n• Aggiungere più relay può migliorare la connettività e la ridondanza\n\n• I relay non si sincronizzano tra loro, quindi solo quelli a cui sei connesso riceveranno i tuoi messaggi.",
-  "mostroInfoText": "• Il Mostro che selezioni sarà quello dove pubblicherai le tue offerte.\n\n• In caso di disputa, una persona assegnata a quel Mostro sarà quella che la risolverà."
+  "mostroInfoText": "• Il Mostro che selezioni sarà quello dove pubblicherai le tue offerte.\n\n• In caso di disputa, una persona assegnata a quel Mostro sarà quella che la risolverà.",
+  
+  "@_comment_account_info_dialogs": "Testo Dialoghi Informazioni Account",
+  "secretWordsInfoText": "• Queste sono le tue parole segrete, l'unico modo per recuperare il tuo account se perdi l'accesso a questa app o vuoi usare la tua identità in un'altra app.\n\n• Scrivile attentamente e conservale in un luogo sicuro e privato. Non condividerle mai con nessuno.\n\n• Se perdi queste parole, perderai permanentemente l'accesso al tuo account.",
+  "privacyInfoText": "• La Modalità Reputazione protegge la tua privacy da terze parti permettendoti di costruire una reputazione con ogni scambio completato.\n\n• La modalità privacy completa fornisce massimo anonimato ma limita le funzionalità di costruzione della reputazione.",
+  "currentTradeIndexInfoText": "Con ogni nuovo scambio, viene generata una Chiave di Scambio unica per assicurare che le tue transazioni rimangano private. L'indice di scambio indica quante chiavi hai usato. Se sei in 'Modalità Reputazione,' permetti a Mostro di collegare tutte le tue Chiavi di Scambio per calcolare e mantenere la tua reputazione.",
+  "generateNewUserDialogTitle": "Generare un nuovo utente?",
+  "generateNewUserDialogContent": "Se continui, verrà generato un nuovo set di 12 parole come tuo nuovo utente. Questo nuovo utente non avrà reputazione, e dovrai ricominciare da capo.",
+  "continueButton": "Continua",
+  "show": "Mostra",
+  "hide": "Nascondi",
+  "reputationMode": "Modalità reputazione",
+  "fullPrivacyMode": "Modalità privacy completa",
+  "standardPrivacyWithReputation": "Privacy standard con reputazione"
 }
