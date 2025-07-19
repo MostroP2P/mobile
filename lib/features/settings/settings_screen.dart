@@ -145,7 +145,7 @@ class SettingsScreen extends ConsumerWidget {
             Row(
               children: [
                 const Icon(
-                  LucideIcons.dollarSign,
+                  LucideIcons.coins,
                   color: AppTheme.activeColor,
                   size: 20,
                 ),
@@ -283,7 +283,8 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildMostroCard(BuildContext context, WidgetRef ref, TextEditingController controller) {
+  Widget _buildMostroCard(
+      BuildContext context, WidgetRef ref, TextEditingController controller) {
     return Container(
       decoration: BoxDecoration(
         color: AppTheme.backgroundCard,
@@ -355,8 +356,7 @@ class SettingsScreen extends ConsumerWidget {
                 decoration: InputDecoration(
                   border: InputBorder.none,
                   labelText: S.of(context)!.mostroPubkey,
-                  labelStyle:
-                      const TextStyle(color: AppTheme.textSecondary),
+                  labelStyle: const TextStyle(color: AppTheme.textSecondary),
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 12,
                     vertical: 8,
