@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class CurrencyComboBox extends ConsumerWidget {
   final String label;
@@ -34,17 +35,18 @@ class CurrencyComboBox extends ConsumerWidget {
         ),
         error: (error, stackTrace) => Row(
           children: [
-            const Text('Failed to load currencies'),
+            Text(S.of(context)!.errorLoadingCurrencies),
             TextButton(
               onPressed: () => ref.refresh(currencyCodesProvider),
-              child: const Text('Retry'),
+              child: Text(S.of(context)!.retry),
             ),
           ],
         ),
         data: (currencyCodes) {
           // Create a list of string labels like "🇺🇸 USD - United States Dollar"
           final entries = currencyCodes.entries
-              .map((e) => '${e.value.emoji.isNotEmpty ? e.value.emoji : '🏳️'} ${e.key} - ${e.value.name}')
+              .map((e) =>
+                  '${e.value.emoji.isNotEmpty ? e.value.emoji : '🏳️'} ${e.key} - ${e.value.name}')
               .toList();
 
           return Autocomplete<String>(
@@ -65,7 +67,9 @@ class CurrencyComboBox extends ConsumerWidget {
               if (parts.isNotEmpty) {
                 // Get the first part "🇺🇸 USD" and extract just "USD"
                 final codeWithFlag = parts.first.trim();
-                final code = codeWithFlag.split(' ').last; // Get the last part after splitting by space
+                final code = codeWithFlag
+                    .split(' ')
+                    .last; // Get the last part after splitting by space
                 // Update Riverpod state
                 ref.read(selectedFiatCodeProvider.notifier).state = code;
                 // Notify parent via callback if provided
@@ -78,7 +82,9 @@ class CurrencyComboBox extends ConsumerWidget {
               // so it shows up when the user opens the screen
               final existingLabel = currencyCodes[selectedFiatCode];
               if (existingLabel != null) {
-                final flag = existingLabel.emoji.isNotEmpty ? existingLabel.emoji : '🏳️';
+                final flag = existingLabel.emoji.isNotEmpty
+                    ? existingLabel.emoji
+                    : '🏳️';
                 textEditingController.text =
                     '$flag $selectedFiatCode - ${existingLabel.name}';
               }
