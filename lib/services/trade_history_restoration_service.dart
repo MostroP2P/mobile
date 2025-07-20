@@ -1,8 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/core/config.dart';
+import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
+import 'package:mostro_mobile/data/models/order.dart';
+import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
 
@@ -19,13 +23,14 @@ class TradeHistoryRestorationService {
 
   /// Restore trade history by scanning for used trade keys and subscribing to them
   /// Returns the highest trade key index found with messages
-  Future<int> restoreTradeHistory({
+  Future<(int, Map<String, Session>)> restoreTradeHistory({
     int maxKeysToScan = 100,
     int batchSize = 20,
   }) async {
     _logger.i('Starting trade history restoration...');
 
     int highestUsedIndex = 0;
+    final sessions = <String, Session>{};
     final usedTradeKeys = <int, String>{};
 
     try {
@@ -41,10 +46,11 @@ class TradeHistoryRestorationService {
         final batchKeys = _keyManager.generateTradeKeyBatch(
             startIndex, endIndex - startIndex + 1);
         final publicKeys =
-            batchKeys.map((entry) => entry.value.public).toList();
+            batchKeys.map((entry) => MapEntry(entry.value.public, entry.value));
 
         // Query relays for messages to these keys
-        final keysWithMessages = await _queryRelaysForKeys(publicKeys,
+        final batchSessions = await _queryRelaysForKeys(
+            Map<String, NostrKeyPairs>.fromEntries(publicKeys),
             since: DateTime.now().subtract(
               Duration(
                 hours: Config.tradeHistoryScanHours,
@@ -53,16 +59,17 @@ class TradeHistoryRestorationService {
 
         // Track which keys have messages
         for (final entry in batchKeys) {
-          if (keysWithMessages.contains(entry.value.public)) {
+          if (batchSessions.containsKey(entry.value.public)) {
             usedTradeKeys[entry.key] = entry.value.public;
             highestUsedIndex =
                 entry.key > highestUsedIndex ? entry.key : highestUsedIndex;
             _logger.i('Found messages for trade key index ${entry.key}');
+            sessions.addAll(batchSessions);
           }
         }
 
         // If we found no keys in this batch, we might be done
-        if (keysWithMessages.isEmpty && startIndex > 20) {
+        if (batchSessions.isEmpty && startIndex > 20) {
           _logger.i(
               'No messages found in batch $startIndex-$endIndex, stopping scan');
           break;
@@ -76,14 +83,14 @@ class TradeHistoryRestorationService {
       if (usedTradeKeys.isNotEmpty) {
         // Update the trade key index to be one higher than the highest used
         await _keyManager.setCurrentKeyIndex(highestUsedIndex + 1);
-
+        
         _logger.i(
             'Trade history restoration complete. Found ${usedTradeKeys.length} used keys, set index to ${highestUsedIndex + 1}');
       } else {
         _logger.i('No trade history found, keeping default key index');
       }
 
-      return highestUsedIndex;
+      return (highestUsedIndex, sessions);
     } catch (e) {
       _logger.e('Error during trade history restoration: $e');
       rethrow;
@@ -92,24 +99,52 @@ class TradeHistoryRestorationService {
 
   /// Query relays for messages addressed to the given public keys
   /// Returns a set of public keys that have messages
-  Future<Set<String>> _queryRelaysForKeys(List<String> publicKeys,
+  Future<Map<String, Session>> _queryRelaysForKeys(Map<String, NostrKeyPairs> publicKeys,
       {DateTime? since}) async {
-    final keysWithMessages = <String>{};
+    final sessions = <String, Session>{};
 
     final filter = NostrFilter(
       kinds: [1059],
-      p: publicKeys,
+      p: publicKeys.keys.toList(),
       since: since,
       limit: 100,
     );
 
     final events = await _nostrService.fetchEvents(filter);
+
     for (final event in events) {
-      if (event.recipient != null && publicKeys.contains(event.recipient!)) {
-        keysWithMessages.add(event.recipient!);
+      if (event.recipient != null && publicKeys.containsKey(event.recipient)) {
+        final pkey = publicKeys[event.recipient!];
+        final decryptedEvent = await event.unWrap(
+          pkey!.private,
+        );
+        if (decryptedEvent.content == null) continue;
+
+        final result = jsonDecode(decryptedEvent.content!);
+        if (result is! List) continue;
+
+        final msg = MostroMessage.fromJson(result[0]);
+        if (msg.payload is Order) {
+          // Skip messages without trade index (shouldn't happen in trade history)
+          if (msg.tradeIndex == null) {
+            _logger.w('Skipping message ${msg.id} - no trade index');
+            continue;
+          }
+          
+          final session = Session(
+            tradeKey: pkey,
+            fullPrivacy: false, // Trade history implies indexed trades
+            masterKey: _keyManager.masterKeyPair!,
+            keyIndex: msg.tradeIndex!,
+            startTime: decryptedEvent.createdAt!,
+            orderId: msg.id,
+          );
+
+          sessions[event.recipient!] = session;
+          _logger.i('Created session for order ${msg.id} with trade index ${msg.tradeIndex}');
+        }
       }
     }
-
-    return keysWithMessages;
+    return sessions;
   }
 }

@@ -7,6 +7,7 @@ import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/providers.dart';
+import 'package:mostro_mobile/shared/providers/session_storage_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
 class KeyManagementScreen extends ConsumerStatefulWidget {
@@ -78,7 +79,7 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
 
   Future<void> _showImportDialog() async {
     final TextEditingController mnemonicController = TextEditingController();
-    
+
     await showDialog<void>(
       context: context,
       builder: (BuildContext context) {
@@ -164,6 +165,9 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
 
     final eventStorage = ref.read(eventStorageProvider);
     await eventStorage.deleteAll();
+
+    final sessionStorage = ref.read(sessionStorageProvider);
+    await sessionStorage.deleteAll();
 
     final keyManager = ref.read(keyManagerProvider);
     final importValue = _importController.text.trim();
