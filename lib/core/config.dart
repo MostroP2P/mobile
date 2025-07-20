@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 class Config {
-  // Configuración de Nostr
+  // Nostr configuration
   static const List<String> nostrRelays = [
     'wss://relay.mostro.network',
     //'ws://127.0.0.1:7000',
@@ -9,7 +9,7 @@ class Config {
     //'ws://10.0.2.2:7000', // mobile emulator
   ];
 
-  // hexkey de Mostro
+  // Mostro hexkey
   static const String mostroPubKey =
       '82fa8cb978b43c79b2156585bac2c011176a21d2aead6d9f7c575c005be88390';
   //'9d9d0455a96871f2dc4289b8312429db2e925f167b37c77bf7b28014be235980';
@@ -17,21 +17,25 @@ class Config {
   static const String dBName = 'mostro.db';
   static const String dBPassword = 'mostro';
 
-  // Tiempo de espera para conexiones a relays
+  // Timeout for relay connections
   static const Duration nostrConnectionTimeout = Duration(seconds: 30);
 
   static bool fullPrivacyMode = false;
 
-  // Modo de depuración
+  // Debug mode
   static bool get isDebug => !kReleaseMode;
 
-  // Versión de Mostro
+  // Mostro version
   static int mostroVersion = 1;
 
   static int expirationSeconds = 900;
   static int expirationHours = 24;
 
-  // Configuración de notificaciones
+  // Notification configuration
   static String notificationChannelId = 'mostro_mobile';
   static int notificationId = 38383;
+
+  // Timeouts for timeout detection (new critical operations)
+  static const Duration timeoutDetectionTimeout = Duration(seconds: 8);
+  static const Duration messageStorageTimeout = Duration(seconds: 5);
 }

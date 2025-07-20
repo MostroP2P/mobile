@@ -686,5 +686,9 @@
   "editRelay": "Editar Relay",
   "relayUrl": "URL del Relay",
   "add": "Agregar",
-  "save": "Guardar"
+  "save": "Guardar",
+
+  "@_comment_timeout_messages": "Mensajes de notificación de timeout",
+  "orderTimeoutTaker": "No respondiste a tiempo. La orden será republicada",
+  "orderTimeoutMaker": "Tu contraparte no respondió a tiempo. La orden será republicada"
 }
