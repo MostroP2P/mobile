@@ -24,7 +24,7 @@ class OrderNotifier extends AbstractMostroNotifier {
   @override
   void handleEvent(MostroMessage event) async {
     // First handle the event normally
-    super.handleEvent(event);
+    await super.handleEvent(event);
     
     // Then check for timeout if we're in waiting states
     // Only check if we have a valid session (this is a taker scenario)
