@@ -6,6 +6,7 @@ import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/models/nostr_filter.dart';
 import 'package:mostro_mobile/data/repositories.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
+import 'package:mostro_mobile/notifications/notification_service.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
 import 'package:mostro_mobile/shared/providers/mostro_database_provider.dart';
 import 'abstract_background_service.dart';
@@ -75,7 +76,7 @@ class DesktopBackgroundService implements BackgroundService {
               'event': event.toMap(),
             });
             if (!isAppForeground) {
-              //await showLocalNotification(event);
+              await showSimpleNotification(event);
             }
           });
           break;

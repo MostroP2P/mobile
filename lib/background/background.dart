@@ -69,7 +69,9 @@ Future<void> serviceMain(ServiceInstance service) async {
 
     subscription.listen((event) async {
       if (await eventStore.hasItem(event.id!)) return;
-      await retryNotification(event);
+      if (!isAppForeground) {
+        await showSimpleNotification(event);
+      }
     });
   });
 

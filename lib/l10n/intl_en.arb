@@ -654,5 +654,44 @@
   "editRelay": "Edit Relay",
   "relayUrl": "Relay URL",
   "add": "Add",
-  "save": "Save"
+  "save": "Save",
+
+  "@_comment_notifications": "Notification System",
+  "notificationChannelName": "Mostro Notifications",
+  "notificationChannelDescription": "Notifications for Mostro trades and messages",
+  "notificationNewMostroMessage": "New Mostro Message",
+  "notificationNewEncryptedMessage": "You have received a new encrypted message",
+  
+  "@_comment_notification_titles": "Notification Titles",
+  "notificationOrderPublished": "Order Published",
+  "notificationOrderTaken": "Order Taken",
+  "notificationPaymentRequired": "Payment Required",
+  "notificationInvoiceRequired": "Invoice Required",
+  "notificationPaymentSent": "Payment Sent",
+  "notificationBitcoinReleased": "Bitcoin Released",
+  "notificationOrderCanceled": "Order Canceled",
+  "notificationDisputeStarted": "Dispute Started",
+  "notificationTradeComplete": "Trade Complete",
+  "notificationPaymentFailed": "Payment Failed",
+  "notificationRequestFailed": "Request Failed",
+  "notificationMostroUpdate": "Mostro Update",
+  "notificationCooperativeCancelInitiatedByPeer": "Cooperative Cancel Initiated by Peer",
+  "notificationCooperativeCancelInitiatedByYou": "Cooperative Cancel Initiated by You",
+  "notificationCooperativeCancelAccepted": "Cooperative Cancel Accepted",
+  
+  "@_comment_notification_messages": "Notification Messages",
+  "notificationOrderTakenMessage": "Someone has taken your order. Check the trade details.",
+  "notificationPaymentSentMessage": "Fiat payment has been sent. Waiting for confirmation.",
+  "notificationOrderCanceledMessage": "Order has been canceled.",
+  "notificationUnableToProcessMessage": "Unable to process the request.",
+  "notificationUnableToProcessReasonMessage": "Unable to process: {reason}",
+  "@notificationUnableToProcessReasonMessage": {
+    "placeholders": {
+      "reason": {
+        "type": "String",
+        "description": "The specific reason why the request failed"
+      }
+    }
+  },
+  "notificationNewMessageReceived": "New message received"
 }

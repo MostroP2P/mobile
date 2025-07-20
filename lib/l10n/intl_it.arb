@@ -694,5 +694,64 @@
   "editRelay": "Modifica Relay",
   "relayUrl": "URL del Relay",
   "add": "Aggiungi",
-  "save": "Salva"
+  "save": "Salva",
+
+  "@_comment_notification_strings": "Stringhe di Notifica",
+  "notificationOrderPublished": "Ordine Pubblicato",
+  "notificationOrderTaken": "Ordine Preso",
+  "notificationPaymentRequired": "Pagamento Richiesto",
+  "notificationInvoiceRequired": "Fattura Richiesta",
+  "notificationPaymentSent": "Pagamento Inviato",
+  "notificationBitcoinReleased": "Bitcoin Rilasciato",
+  "notificationOrderCanceled": "Ordine Cancellato",
+  "notificationDisputeStarted": "Disputa Iniziata",
+  "notificationTradeComplete": "Scambio Completato",
+  "notificationPaymentFailed": "Pagamento Fallito",
+  "notificationRequestFailed": "Richiesta Fallita",
+  "notificationMostroUpdate": "Aggiornamento Mostro",
+  "notificationCooperativeCancelInitiatedByPeer": "La tua controparte ha iniziato un annullamento cooperativo",
+  "notificationCooperativeCancelInitiatedByYou": "Hai iniziato un annullamento cooperativo",
+  "notificationCooperativeCancelAccepted": "Annullamento cooperativo accettato",
+  "notificationChannelName": "Notifiche Mostro",
+  "notificationChannelDescription": "Notifiche per scambi e messaggi Mostro",
+  "notificationNewMostroMessage": "Nuovo Messaggio Mostro",
+  "notificationEncryptedMessageReceived": "Hai ricevuto un nuovo messaggio crittografato",
+  "notificationOfferPublished": "La tua offerta è stata pubblicata! Attendi che un altro utente scelga il tuo ordine.",
+  "notificationSomeoneTookOrder": "Qualcuno ha preso il tuo ordine. Controlla i dettagli dello scambio.",
+  "notificationPayHoldInvoice": "Si prega di pagare la fattura di blocco",
+  "notificationPayHoldInvoiceAmount": "Si prega di pagare la fattura di blocco di {amount} Sats",
+  "@notificationPayHoldInvoiceAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationSendInvoice": "Si prega di inviare una fattura",
+  "notificationSendInvoiceAmount": "Si prega di inviare una fattura per {amount} satoshi",
+  "@notificationSendInvoiceAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationFiatSent": "Il pagamento fiat è stato inviato. In attesa di conferma.",
+  "notificationBitcoinReleased": "Bitcoin è stato rilasciato! La tua fattura dovrebbe essere pagata presto.",
+  "notificationOrderCanceled": "L'ordine è stato cancellato.",
+  "notificationCooperativeCancelRequest": "La tua controparte vuole cancellare l'ordine",
+  "notificationDisputeInitiatedByYou": "Hai iniziato una disputa. Un risolutore sarà assegnato presto.",
+  "notificationDisputeInitiatedByPeer": "La tua controparte ha iniziato una disputa.",
+  "notificationTradeCompleted": "Scambio completato con successo!",
+  "notificationPaymentFailedTryAgain": "Pagamento fallito. Riprova o contatta il supporto.",
+  "notificationUnableToProcess": "Impossibile elaborare la richiesta.",
+  "notificationUnableToProcessReason": "Impossibile elaborare: {reason}",
+  "@notificationUnableToProcessReason": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationNewMessageReceived": "Nuovo messaggio ricevuto"
 }
