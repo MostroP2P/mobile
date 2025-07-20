@@ -6,6 +6,7 @@ import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/providers.dart';
+import 'package:mostro_mobile/shared/providers/session_storage_provider.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 import 'package:mostro_mobile/shared/widgets/privacy_switch_widget.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
@@ -78,7 +79,7 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
 
   Future<void> _showImportDialog() async {
     final TextEditingController mnemonicController = TextEditingController();
-    
+
     await showDialog<void>(
       context: context,
       builder: (BuildContext context) {
@@ -165,29 +166,51 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
     final eventStorage = ref.read(eventStorageProvider);
     await eventStorage.deleteAll();
 
+    final sessionStorage = ref.read(sessionStorageProvider);
+    await sessionStorage.deleteAll();
+
     final keyManager = ref.read(keyManagerProvider);
     try {
       await keyManager.importMnemonic(mnemonic);
       await _loadKeys();
-      
-      // Start trade history restoration in the background
+
       final restorationService = ref.read(tradeHistoryRestorationProvider);
-      restorationService.restoreTradeHistory().then((highestIndex) {
-        setState(() {
-          _tradeKeyIndex = highestIndex;
+      restorationService.restoreTradeHistory().then((result) {
+        sessionStorage
+            .putSessions(
+                result.$2.map((key, value) => MapEntry(value.orderId!, value)))
+            .then((_) {
+          sessionNotifer.init();
         });
-        
-        if (mounted && highestIndex > 0) {
+
+        setState(() {
+          _tradeKeyIndex = result.$1;
+        });
+
+        if (mounted && result.$1 > 0) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(S.of(context)!.tradeHistoryRestored(highestIndex.toString())),
+              content: Text(S.of(context)!.tradeHistoryRestored(
+                    result.$1.toString(),
+                  )),
             ),
           );
         }
       }).catchError((error) {
         debugPrint('Trade history restoration failed: $error');
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(S.of(context)!.tradeHistoryRestorationFailed(
+                    error.toString(),
+                  )),
+              backgroundColor: AppTheme.red2,
+            ),
+          );
+        }
       });
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(S.of(context)!.keyImportedSuccessfully)),
@@ -262,7 +285,8 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                                     color: Colors.black.withValues(alpha: 0.8),
                                     borderRadius: BorderRadius.circular(8),
                                     border: Border.all(
-                                      color: Colors.white.withValues(alpha: 0.2),
+                                      color:
+                                          Colors.white.withValues(alpha: 0.2),
                                     ),
                                   ),
                                   textStyle: const TextStyle(
@@ -272,7 +296,8 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                                   preferBelow: false,
                                   child: GestureDetector(
                                     onTap: () {
-                                      _tooltipKey.currentState?.ensureTooltipVisible();
+                                      _tooltipKey.currentState
+                                          ?.ensureTooltipVisible();
                                     },
                                     child: const Padding(
                                       padding: EdgeInsets.all(2.0),
@@ -295,7 +320,8 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                               },
                               style: TextButton.styleFrom(
                                 foregroundColor: AppTheme.mostroGreen,
-                                backgroundColor: Colors.white.withValues(alpha: 0.05),
+                                backgroundColor:
+                                    Colors.white.withValues(alpha: 0.05),
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 12,
                                   vertical: 6,
