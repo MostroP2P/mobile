@@ -38,7 +38,11 @@ class OrderNotifier extends AbstractMostroNotifier {
     }
   }
   Future<void> sync() async {
+    if (_isProcessingTimeout) return;
+    
     try {
+      _isProcessingTimeout = true;
+      
       final storage = ref.read(mostroStorageProvider);
       final messages = await storage.getAllMessagesForOrderId(orderId);
       if (messages.isEmpty) {
@@ -83,6 +87,8 @@ class OrderNotifier extends AbstractMostroNotifier {
         error: e,
         stackTrace: stack,
       );
+    } finally {
+      _isProcessingTimeout = false;
     }
   }
 
