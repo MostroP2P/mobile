@@ -26,11 +26,26 @@ class ChatRoomScreen extends ConsumerStatefulWidget {
 class _MessagesDetailScreenState extends ConsumerState<ChatRoomScreen> {
   final TextEditingController _textController = TextEditingController();
 
+  /// Safely get nickname from peer public key, returns empty string if invalid
+  String _getSafeNickname(WidgetRef ref, String? publicKey) {
+    if (publicKey == null || publicKey.isEmpty) {
+      return '';
+    }
+    
+    // Additional validation for hex string format
+    final hexRegex = RegExp(r'^[0-9a-fA-F]+$');
+    if (!hexRegex.hasMatch(publicKey.trim())) {
+      return '';
+    }
+    
+    return ref.read(nickNameProvider(publicKey));
+  }
+
   @override
   Widget build(BuildContext context) {
     final chatDetailState = ref.watch(chatRoomsProvider(widget.orderId));
     final session = ref.read(sessionProvider(widget.orderId));
-    final peer = session!.peer!.publicKey;
+    final peer = session?.peer?.publicKey ?? '';
 
     return Scaffold(
       backgroundColor: AppTheme.dark1,
@@ -64,7 +79,7 @@ class _MessagesDetailScreenState extends ConsumerState<ChatRoomScreen> {
             children: [
               const SizedBox(height: 12.0),
               Text('Order: ${widget.orderId}'),
-              _buildMessageHeader(peer, session),
+              if (session != null) _buildMessageHeader(peer, session),
               _buildBody(chatDetailState, peer),
               _buildMessageInput(),
               const SizedBox(height: 12.0),
@@ -150,8 +165,8 @@ class _MessagesDetailScreenState extends ConsumerState<ChatRoomScreen> {
   }
 
   Widget _buildMessageHeader(String peerPubkey, Session session) {
-    final handle = ref.read(nickNameProvider(peerPubkey));
-    final you = ref.read(nickNameProvider(session.tradeKey.public));
+    final handle = _getSafeNickname(ref, peerPubkey);
+    final you = _getSafeNickname(ref, session.tradeKey.public);
     final sharedKey = session.sharedKey?.private;
 
     return Container(

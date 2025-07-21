@@ -44,6 +44,8 @@
       }
     }
   },
+  "payInvoiceGeneric": "Paga la Hodl Invoice per continuare il commercio.",
+  "addInvoiceGeneric": "Invia una invoice per continuare il commercio.",
   "waitingSellerToPay": "Attendi un momento per favore. Ho inviato una richiesta di pagamento al venditore per rilasciare i Sats per l'ordine ID {id}. Una volta effettuato il pagamento, vi connetterò entrambi. Se il venditore non completa il pagamento entro {expiration_seconds} minuti lo scambio sarà annullato.",
   "@waitingSellerToPay": {
     "placeholders": {

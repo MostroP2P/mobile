@@ -15,6 +15,21 @@ class MostroMessageDetail extends ConsumerWidget {
   final String orderId;
   const MostroMessageDetail({super.key, required this.orderId});
 
+  /// Safely get nickname from peer public key, returns empty string if invalid
+  String _getSafeNickname(WidgetRef ref, String? publicKey) {
+    if (publicKey == null || publicKey.isEmpty) {
+      return '';
+    }
+    
+    // Additional validation for hex string format
+    final hexRegex = RegExp(r'^[0-9a-fA-F]+$');
+    if (!hexRegex.hasMatch(publicKey.trim())) {
+      return '';
+    }
+    
+    return ref.watch(nickNameProvider(publicKey));
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final orderState = ref.watch(orderNotifierProvider(orderId));
@@ -112,9 +127,7 @@ class MostroMessageDetail extends ConsumerWidget {
         return S.of(context)!.buyerInvoiceAccepted;
       case actions.Action.holdInvoicePaymentAccepted:
         final session = ref.watch(sessionProvider(orderPayload?.id ?? ''));
-        final sellerName = session?.peer?.publicKey != null
-            ? ref.watch(nickNameProvider(session!.peer!.publicKey))
-            : '';
+        final sellerName = _getSafeNickname(ref, session?.peer?.publicKey);
         return S.of(context)!.holdInvoicePaymentAccepted(
               orderPayload?.fiatAmount.toString() ?? '',
               orderPayload?.fiatCode ?? '',
@@ -124,9 +137,7 @@ class MostroMessageDetail extends ConsumerWidget {
               sellerName,
             );
       case actions.Action.buyerTookOrder:
-        final buyerName = tradeState.peer?.publicKey != null
-            ? ref.watch(nickNameProvider(tradeState.peer!.publicKey))
-            : '';
+        final buyerName = _getSafeNickname(ref, tradeState.peer?.publicKey);
         return S.of(context)!.buyerTookOrder(
               buyerName,
               orderPayload!.fiatAmount.toString(),
@@ -135,23 +146,17 @@ class MostroMessageDetail extends ConsumerWidget {
             );
       case actions.Action.fiatSentOk:
         final session = ref.watch(sessionProvider(orderPayload!.id ?? ''));
-        final peerName = tradeState.peer?.publicKey != null
-            ? ref.watch(nickNameProvider(tradeState.peer!.publicKey))
-            : '';
+        final peerName = _getSafeNickname(ref, tradeState.peer?.publicKey);
         return session!.role == Role.buyer
             ? S.of(context)!.fiatSentOkBuyer(peerName)
             : S.of(context)!.fiatSentOkSeller(peerName);
       case actions.Action.released:
-        final sellerName = tradeState.peer?.publicKey != null
-            ? ref.watch(nickNameProvider(tradeState.peer!.publicKey))
-            : '';
+        final sellerName = _getSafeNickname(ref, tradeState.peer?.publicKey);
         return S.of(context)!.released(sellerName);
       case actions.Action.purchaseCompleted:
         return S.of(context)!.purchaseCompleted;
       case actions.Action.holdInvoicePaymentSettled:
-        final buyerName = tradeState.peer?.publicKey != null
-            ? ref.watch(nickNameProvider(tradeState.peer!.publicKey))
-            : '';
+        final buyerName = _getSafeNickname(ref, tradeState.peer?.publicKey);
         return S.of(context)!.holdInvoicePaymentSettled(buyerName);
       case actions.Action.rate:
         return S.of(context)!.rate;

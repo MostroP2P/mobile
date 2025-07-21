@@ -44,7 +44,9 @@
       }
     }
   },
-  "waitingSellerToPay": "Please wait. I’ve sent a payment request to the seller to send the Sats for the order ID {id}. If the seller doesn’t complete the payment within {expiration_seconds} minutes, the trade will be canceled.",
+  "payInvoiceGeneric": "Please pay the hold invoice to continue the trade.",
+  "addInvoiceGeneric": "Please send an invoice to continue the trade.",
+  "waitingSellerToPay": "Please wait. I've sent a payment request to the seller to send the Sats for the order ID {id}. If the seller doesn't complete the payment within {expiration_seconds} minutes, the trade will be canceled.",
   "@waitingSellerToPay": {
     "placeholders": {
       "expiration_seconds": {

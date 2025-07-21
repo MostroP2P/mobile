@@ -73,11 +73,26 @@ class ChatListItem extends ConsumerWidget {
 
   const ChatListItem({super.key, required this.orderId});
 
+  /// Safely get nickname from peer public key, returns empty string if invalid
+  String _getSafeNickname(WidgetRef ref, String? publicKey) {
+    if (publicKey == null || publicKey.isEmpty) {
+      return '';
+    }
+    
+    // Additional validation for hex string format
+    final hexRegex = RegExp(r'^[0-9a-fA-F]+$');
+    if (!hexRegex.hasMatch(publicKey.trim())) {
+      return '';
+    }
+    
+    return ref.read(nickNameProvider(publicKey));
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(sessionProvider(orderId));
-    final pubkey = session!.peer!.publicKey;
-    final handle = ref.read(nickNameProvider(pubkey));
+    final pubkey = session?.peer?.publicKey;
+    final handle = _getSafeNickname(ref, pubkey);
     return GestureDetector(
       onTap: () {
         context.push('/chat_room/$orderId');
@@ -92,7 +107,7 @@ class ChatListItem extends ConsumerWidget {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              NymAvatar(pubkeyHex: pubkey),
+              NymAvatar(pubkeyHex: pubkey ?? ''),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(

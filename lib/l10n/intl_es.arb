@@ -44,6 +44,8 @@
       }
     }
   },
+  "payInvoiceGeneric": "Por favor paga la factura retenida para continuar el intercambio.",
+  "addInvoiceGeneric": "Por favor envía una factura para continuar el intercambio.",
   "waitingSellerToPay": "Por favor espera. He enviado una solicitud de pago al vendedor para enviar los Sats para la orden con ID {id}. Si el vendedor no completa el pago dentro de {expiration_seconds} minutos, el intercambio será cancelado.",
   "@waitingSellerToPay": {
     "placeholders": {

@@ -317,14 +317,17 @@ String _getActionBasedMessage(
       // Extract amount and fiat info from PaymentRequest payload
       if (msg.payload is PaymentRequest) {
         final paymentRequest = msg.payload as PaymentRequest;
-        final amount = paymentRequest.amount ?? 0;
         final order = paymentRequest.order;
+        // Try to get amount from PaymentRequest first, then from Order if available
+        final amount = paymentRequest.amount != null && paymentRequest.amount! > 0 
+            ? paymentRequest.amount! 
+            : (order?.amount ?? 0);
         final fiatCode = order?.fiatCode ?? 'USD';
         final fiatAmount = order?.fiatAmount ?? 0;
         return localizations.payInvoice(
             amount.toString(), 15, fiatAmount.toString(), fiatCode);
       }
-      return 'Please pay the hold invoice';
+      return localizations.payInvoiceGeneric;
 
     case Action.addInvoice:
     case Action.waitingBuyerInvoice:
@@ -337,7 +340,7 @@ String _getActionBasedMessage(
         return localizations.addInvoice(
             amount.toString(), 15, fiatAmount.toString(), fiatCode);
       }
-      return 'Please send an invoice';
+      return localizations.addInvoiceGeneric;
 
     case Action.fiatSent:
     case Action.fiatSentOk:
