@@ -183,14 +183,14 @@ class TradeHistoryRestorationService {
         final session = Session(
           tradeKey: pkey.value,
           fullPrivacy: msg.tradeIndex == null ? true : false,
-          masterKey: _keyManager.masterKeyPair!,
+          masterKey: _keyManager.masterKeyPair ?? (throw Exception('Master key pair is null')),
           keyIndex: msg.tradeIndex ?? pkey.key,
-          startTime: decryptedEvent.createdAt!,
+          startTime: decryptedEvent.createdAt ?? DateTime.now(),
           orderId: msg.id,
           role: role,
         );
 
-        sessions[event.recipient!] = session;
+        sessions[pkey.value.public] = session;
         _logger.i(
             'Created session for order ${msg.id} with trade index ${msg.tradeIndex}');
       }
