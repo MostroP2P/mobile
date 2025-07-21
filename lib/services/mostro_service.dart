@@ -11,6 +11,7 @@ import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:logger/logger.dart';
+import 'package:mostro_mobile/notifications/notification_service.dart';
 
 class MostroService {
   final Ref ref;
@@ -93,6 +94,13 @@ class MostroService {
       _logger.i(
         'Received message of type ${msg.action} with order id ${msg.id}',
       );
+
+      // Trigger foreground notification
+      try {
+        await showLocalNotificationFromService(event, ref);
+      } catch (e) {
+        _logger.e('Failed to show foreground notification: $e');
+      }
     });
   }
 
