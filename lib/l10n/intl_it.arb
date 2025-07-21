@@ -700,5 +700,6 @@
   "editRelay": "Modifica Relay",
   "relayUrl": "URL del Relay",
   "add": "Aggiungi",
-  "save": "Salva"
+  "save": "Salva",
+  "doneButton": "Fatto"
 }

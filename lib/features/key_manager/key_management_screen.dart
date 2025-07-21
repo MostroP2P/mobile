@@ -9,7 +9,6 @@ import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/shared/providers/session_storage_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
-import 'package:mostro_mobile/shared/providers/session_storage_provider.dart';
 
 class KeyManagementScreen extends ConsumerStatefulWidget {
   const KeyManagementScreen({super.key});
@@ -24,6 +23,7 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
   int? _tradeKeyIndex;
   bool _loading = false;
   bool _showSecretWords = false;
+  final TextEditingController _importController = TextEditingController();
 
   @override
   void initState() {
@@ -78,8 +78,6 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
   }
 
   Future<void> _showImportDialog() async {
-    final TextEditingController mnemonicController = TextEditingController();
-
     await showDialog<void>(
       context: context,
       builder: (BuildContext context) {
@@ -102,7 +100,7 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
               ),
               const SizedBox(height: 16),
               TextField(
-                controller: mnemonicController,
+                controller: _importController,
                 maxLines: 3,
                 style: const TextStyle(color: AppTheme.cream1),
                 decoration: InputDecoration(
@@ -138,7 +136,7 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
             ),
             ElevatedButton(
               onPressed: () async {
-                final mnemonic = mnemonicController.text.trim();
+                final mnemonic = _importController.text.trim();
                 if (mnemonic.isNotEmpty) {
                   context.pop();
                   await _performImport(mnemonic);
@@ -170,11 +168,35 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
     await sessionStorage.deleteAll();
 
     final keyManager = ref.read(keyManagerProvider);
-    final importValue = _importController.text.trim();
-    if (importValue.isNotEmpty) {
-      try {
-        await keyManager.importMnemonic(importValue);
-        await _loadKeys();
+    try {
+      await keyManager.importMnemonic(mnemonic);
+      await _loadKeys();
+
+      final restorationService = ref.read(tradeHistoryRestorationProvider);
+      restorationService.restoreTradeHistory().then((result) {
+        sessionStorage
+            .putSessions(
+                result.$2.map((key, value) => MapEntry(value.orderId!, value)))
+            .then((_) {
+          sessionNotifer.init();
+        });
+
+        setState(() {
+          _tradeKeyIndex = result.$1 + 1;
+        });
+
+        if (mounted && result.$1 > 0) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(S.of(context)!.tradeHistoryRestored(
+                    (result.$1 + 1).toString(),
+                  )),
+            ),
+          );
+        }
+      }).catchError((error) {
+        debugPrint('Trade history restoration failed: $error');
+        
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -629,9 +651,9 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton(
-        onPressed: _showImportDialog,
+        onPressed: _importKey,
         style: OutlinedButton.styleFrom(
-          backgroundColor: AppTheme.dark1,
+          backgroundColor: AppTheme.backgroundCard,
           side:
               BorderSide(color: AppTheme.textSecondary.withValues(alpha: 0.3)),
           shape: RoundedRectangleBorder(

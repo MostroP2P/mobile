@@ -693,5 +693,6 @@
   "editRelay": "Editar Relay",
   "relayUrl": "URL del Relay",
   "add": "Agregar",
-  "save": "Guardar"
+  "save": "Guardar",
+  "doneButton": "Listo"
   }

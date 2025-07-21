@@ -3,6 +3,9 @@ import 'dart:convert';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/core/config.dart';
+import 'package:mostro_mobile/data/models/enums/action.dart';
+import 'package:mostro_mobile/data/models/enums/order_type.dart';
+import 'package:mostro_mobile/data/models/enums/role.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/models/order.dart';
@@ -45,12 +48,10 @@ class TradeHistoryRestorationService {
         // Generate batch of trade keys
         final batchKeys = _keyManager.generateTradeKeyBatch(
             startIndex, endIndex - startIndex + 1);
-        final publicKeys =
-            batchKeys.map((entry) => MapEntry(entry.value.public, entry.value));
 
         // Query relays for messages to these keys
         final batchSessions = await _queryRelaysForKeys(
-            Map<String, NostrKeyPairs>.fromEntries(publicKeys),
+            Map<int, NostrKeyPairs>.fromEntries(batchKeys),
             since: DateTime.now().subtract(
               Duration(
                 hours: Config.tradeHistoryScanHours,
@@ -73,6 +74,9 @@ class TradeHistoryRestorationService {
           _logger.i(
               'No messages found in batch $startIndex-$endIndex, stopping scan');
           break;
+        } else {
+          _logger.i(
+              'Found ${batchSessions.length} messages in batch $startIndex-$endIndex');
         }
 
         // Small delay between batches to be nice to relays
@@ -90,7 +94,7 @@ class TradeHistoryRestorationService {
         _logger.i('No trade history found, keeping default key index');
       }
 
-      return (highestUsedIndex + 1, sessions);
+      return (highestUsedIndex, sessions);
     } catch (e) {
       _logger.e('Error during trade history restoration: $e');
       rethrow;
@@ -100,13 +104,19 @@ class TradeHistoryRestorationService {
   /// Query relays for messages addressed to the given public keys
   /// Returns a set of public keys that have messages
   Future<Map<String, Session>> _queryRelaysForKeys(
-      Map<String, NostrKeyPairs> publicKeys,
+      Map<int, NostrKeyPairs> publicKeys,
       {DateTime? since}) async {
     final sessions = <String, Session>{};
 
+    // Create lookup map to avoid concurrent modification during iteration
+    final publicKeyLookup = <String, MapEntry<int, NostrKeyPairs>>{};
+    for (final entry in publicKeys.entries) {
+      publicKeyLookup[entry.value.public] = entry;
+    }
+
     final filter = NostrFilter(
       kinds: [1059],
-      p: publicKeys.keys.toList(),
+      p: publicKeyLookup.keys.toList(),
       since: since,
       limit: 100,
     );
@@ -114,10 +124,10 @@ class TradeHistoryRestorationService {
     final events = await _nostrService.fetchEvents(filter);
 
     for (final event in events) {
-      if (event.recipient != null && publicKeys.containsKey(event.recipient)) {
-        final pkey = publicKeys[event.recipient!];
+      if (event.recipient != null && publicKeyLookup.containsKey(event.recipient)) {
+        final pkey = publicKeyLookup[event.recipient]!;
         final decryptedEvent = await event.unWrap(
-          pkey!.private,
+          pkey.value.private,
         );
         if (decryptedEvent.content == null) continue;
 
@@ -125,26 +135,56 @@ class TradeHistoryRestorationService {
         if (result is! List) continue;
 
         final msg = MostroMessage.fromJson(result[0]);
-        if (msg.payload is Order) {
-          // Skip messages without trade index (shouldn't happen in trade history)
-          if (msg.tradeIndex == null) {
-            _logger.w('Skipping message ${msg.id} - no trade index');
+        if (msg.tradeIndex != null && msg.tradeIndex != pkey.key) {
+          _logger.i(
+              'Trade index ${msg.tradeIndex} does not match key index ${pkey.key}');
+          continue;
+        }
+
+        if (msg.action != Action.newOrder &&
+            msg.action != Action.takeBuy &&
+            msg.action != Action.takeSell) {
+          _logger.i(
+              'Message action ${msg.action} is not newOrder, takeBuy or takeSell');
+          continue;
+        }
+        final order = msg.getPayload<Order>();
+
+        if (order == null) {
+          _logger.i('Message payload is not an Order');
+          continue;
+        }
+
+        Role role;
+        switch (msg.action) {
+          case Action.newOrder:
+            role = order.kind == OrderType.buy ? Role.buyer : Role.seller;
+            break;
+          case Action.takeBuy:
+            role = Role.buyer;
+            break;
+          case Action.takeSell:
+            role = Role.seller;
+            break;
+          default:
+            _logger.i(
+                'Message action ${msg.action} is not newOrder, takeBuy or takeSell');
             continue;
-          }
+        }
 
           final session = Session(
-            tradeKey: pkey,
-            fullPrivacy: false, // Trade history implies indexed trades
+            tradeKey: pkey.value,
+            fullPrivacy: msg.tradeIndex == null ? true : false,
             masterKey: _keyManager.masterKeyPair!,
-            keyIndex: msg.tradeIndex!,
+            keyIndex: msg.tradeIndex ?? pkey.key,
             startTime: decryptedEvent.createdAt!,
             orderId: msg.id,
+            role: role,
           );
 
           sessions[event.recipient!] = session;
           _logger.i(
               'Created session for order ${msg.id} with trade index ${msg.tradeIndex}');
-        }
       }
     }
     return sessions;
