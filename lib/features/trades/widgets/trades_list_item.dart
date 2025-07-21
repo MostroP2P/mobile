@@ -53,27 +53,51 @@ class TradesListItem extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // First row: Buy/Sell Bitcoin text + status and role chips
+                    // First row: Buy/Sell Bitcoin text (full width)
+                    Text(
+                      isBuying
+                          ? S.of(context)!.buyingBitcoin
+                          : S.of(context)!.sellingBitcoin,
+                      style: const TextStyle(
+                        color: AppTheme.textPrimary,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    // Second row: Status and role chips + Premium/Discount
                     Row(
                       children: [
-                        Text(
-                          isBuying
-                              ? S.of(context)!.buyingBitcoin
-                              : S.of(context)!.sellingBitcoin,
-                          style: const TextStyle(
-                            color: AppTheme.textPrimary,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const Spacer(),
                         _buildStatusChip(context, orderState.status),
                         const SizedBox(width: 8),
                         _buildRoleChip(context, isCreator),
+                        const Spacer(),
+                        // Show premium/discount if different from zero
+                        if (trade.premium != null && trade.premium != '0')
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color:
+                                  double.tryParse(trade.premium!) != null &&
+                                          double.parse(trade.premium!) > 0
+                                      ? AppTheme.premiumPositiveChip
+                                      : AppTheme.premiumNegativeChip,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              '${double.tryParse(trade.premium!) != null && double.parse(trade.premium!) > 0 ? '+' : ''}${trade.premium}%',
+                              style: const TextStyle(
+                                color: AppTheme.textPrimary,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                     const SizedBox(height: 8),
-                    // Second row: Flag + Amount and currency + Premium/Discount
+                    // Third row: Flag + Amount and currency
                     Row(
                       children: [
                         Text(
@@ -85,43 +109,21 @@ class TradesListItem extends ConsumerWidget {
                           ),
                         ),
                         const SizedBox(width: 4),
-                        Text(
-                          trade.fiatAmount.maximum != null &&
-                                  trade.fiatAmount.maximum !=
-                                      trade.fiatAmount.minimum
-                              ? '${trade.fiatAmount.minimum} - ${trade.fiatAmount.maximum} ${trade.currency ?? ''}'
-                              : '${trade.fiatAmount.minimum} ${trade.currency ?? ''}',
-                          style: const TextStyle(
-                            color: AppTheme.textPrimary,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                        Flexible(
+                          child: Text(
+                            trade.fiatAmount.maximum != null &&
+                                    trade.fiatAmount.maximum !=
+                                        trade.fiatAmount.minimum
+                                ? '${trade.fiatAmount.minimum} - ${trade.fiatAmount.maximum} ${trade.currency ?? ''}'
+                                : '${trade.fiatAmount.minimum} ${trade.currency ?? ''}',
+                            style: const TextStyle(
+                              color: AppTheme.textPrimary,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        // Show premium/discount if different from zero
-                        if (trade.premium != null && trade.premium != '0')
-                          Padding(
-                            padding: const EdgeInsets.only(left: 8.0),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color:
-                                    double.tryParse(trade.premium!) != null &&
-                                            double.parse(trade.premium!) > 0
-                                        ? AppTheme.premiumPositiveChip
-                                        : AppTheme.premiumNegativeChip,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                '${double.tryParse(trade.premium!) != null && double.parse(trade.premium!) > 0 ? '+' : ''}${trade.premium}%',
-                                style: const TextStyle(
-                                  color: AppTheme.textPrimary,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ),
                       ],
                     ),
                     const SizedBox(height: 4),
