@@ -58,7 +58,6 @@ class _AddOrderButtonState extends State<AddOrderButton>
   Widget build(BuildContext context) {
     return SizedBox(
       height: 130,
-      width: 200,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -69,71 +68,77 @@ class _AddOrderButtonState extends State<AddOrderButton>
             margin: const EdgeInsets.only(bottom: 10),
             child: Opacity(
               opacity: _isMenuOpen ? 1.0 : 0.0,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Stack(
-                    alignment: Alignment.centerLeft,
-                    children: [
-                      ElevatedButton.icon(
-                        key: const Key('buyButton'),
-                        onPressed: _isMenuOpen
-                            ? () => _navigateToCreateOrder(context, 'buy')
-                            : null,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.buyColor,
-                          foregroundColor: Colors.black,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(50),
+              child: IntrinsicWidth(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: Stack(
+                        alignment: Alignment.centerLeft,
+                        children: [
+                          ElevatedButton.icon(
+                            key: const Key('buyButton'),
+                            onPressed: _isMenuOpen
+                                ? () => _navigateToCreateOrder(context, 'buy')
+                                : null,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.buyColor,
+                              foregroundColor: Colors.black,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(50),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 10),
+                            ),
+                            icon: const SizedBox(width: 16, height: 16),
+                            label: Text(S.of(context)!.buy,
+                                style:
+                                    const TextStyle(fontWeight: FontWeight.bold)),
                           ),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 10),
-                        ),
-                        icon: const SizedBox(width: 16, height: 16),
-                        label: Text(S.of(context)!.buy,
-                            style:
-                                const TextStyle(fontWeight: FontWeight.bold)),
+                          if (_isMenuOpen)
+                            const Positioned(
+                              left: 12,
+                              child: Icon(Icons.arrow_downward,
+                                  size: 16, color: Colors.black),
+                            ),
+                        ],
                       ),
-                      if (_isMenuOpen)
-                        const Positioned(
-                          left: 16,
-                          child: Icon(Icons.arrow_downward,
-                              size: 16, color: Colors.black),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(width: 8),
-                  Stack(
-                    alignment: Alignment.centerLeft,
-                    children: [
-                      ElevatedButton.icon(
-                        key: const Key('sellButton'),
-                        onPressed: _isMenuOpen
-                            ? () => _navigateToCreateOrder(context, 'sell')
-                            : null,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.sellColor,
-                          foregroundColor: Colors.black,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(50),
+                    ),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Stack(
+                        alignment: Alignment.centerLeft,
+                        children: [
+                          ElevatedButton.icon(
+                            key: const Key('sellButton'),
+                            onPressed: _isMenuOpen
+                                ? () => _navigateToCreateOrder(context, 'sell')
+                                : null,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.sellColor,
+                              foregroundColor: Colors.black,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(50),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 10),
+                            ),
+                            icon: const SizedBox(width: 16, height: 16),
+                            label: Text(S.of(context)!.sell,
+                                style:
+                                    const TextStyle(fontWeight: FontWeight.bold)),
                           ),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 10),
-                        ),
-                        icon: const SizedBox(width: 16, height: 16),
-                        label: Text(S.of(context)!.sell,
-                            style:
-                                const TextStyle(fontWeight: FontWeight.bold)),
+                          if (_isMenuOpen)
+                            const Positioned(
+                              left: 12,
+                              child: Icon(Icons.arrow_upward,
+                                  size: 16, color: Colors.black),
+                            ),
+                        ],
                       ),
-                      if (_isMenuOpen)
-                        const Positioned(
-                          left: 16,
-                          child: Icon(Icons.arrow_upward,
-                              size: 16, color: Colors.black),
-                        ),
-                    ],
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

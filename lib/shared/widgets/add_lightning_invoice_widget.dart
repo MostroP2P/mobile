@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
-import 'package:mostro_mobile/shared/widgets/clickable_text_widget.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
 class AddLightningInvoiceWidget extends StatefulWidget {
@@ -8,6 +7,9 @@ class AddLightningInvoiceWidget extends StatefulWidget {
   final VoidCallback onSubmit;
   final VoidCallback onCancel;
   final int amount;
+  final String fiatAmount;
+  final String fiatCode;
+  final String orderId;
 
   const AddLightningInvoiceWidget({
     super.key,
@@ -15,6 +17,9 @@ class AddLightningInvoiceWidget extends StatefulWidget {
     required this.onSubmit,
     required this.onCancel,
     required this.amount,
+    required this.fiatAmount,
+    required this.fiatCode,
+    required this.orderId,
   });
 
   @override
@@ -28,10 +33,17 @@ class _AddLightningInvoiceWidgetState extends State<AddLightningInvoiceWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ClickableText(
-          leftText: S.of(context)!.pleaseEnterLightningInvoiceFor,
-          clickableText: '${widget.amount}',
-          rightText: S.of(context)!.sats,
+        Text(
+          S.of(context)!.pleaseEnterLightningInvoiceFor(
+            widget.amount.toString(),
+            widget.fiatCode,
+            widget.fiatAmount,
+            widget.orderId,
+          ),
+          style: const TextStyle(
+            color: AppTheme.cream1,
+            fontSize: 16,
+          ),
         ),
         const SizedBox(height: 16),
         TextFormField(

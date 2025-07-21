@@ -7,7 +7,9 @@ import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/providers.dart';
+import 'package:mostro_mobile/shared/providers/legible_handle_provider.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
+import 'package:mostro_mobile/shared/utils/text_formatting.dart';
 
 class MostroMessageDetail extends ConsumerWidget {
   final String orderId;
@@ -34,9 +36,8 @@ class MostroMessageDetail extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  actionText,
-                  style: Theme.of(context).textTheme.bodyLarge,
+                RichText(
+                  text: formatTextWithBoldUsernames(actionText, context),
                 ),
                 const SizedBox(height: 16),
                 Text('${orderState.status} - ${orderState.action}'),
@@ -69,9 +70,10 @@ class MostroMessageDetail extends ConsumerWidget {
                 .mostroInstance
                 ?.expirationSeconds ??
             900;
+        final expMinutes = (expSecs / 60).round();
         return S.of(context)!.payInvoice(
               orderPayload?.amount.toString() ?? '',
-              '${expSecs ~/ 60} minutes',
+              expMinutes,
               orderPayload?.fiatAmount.toString() ?? '',
               orderPayload?.fiatCode ?? '',
             );
@@ -81,11 +83,12 @@ class MostroMessageDetail extends ConsumerWidget {
                 .mostroInstance
                 ?.expirationSeconds ??
             900;
+        final expMinutes = (expSecs / 60).round();
         return S.of(context)!.addInvoice(
               orderPayload?.amount.toString() ?? '',
-              orderPayload?.fiatCode ?? '',
+              expMinutes,
               orderPayload?.fiatAmount.toString() ?? '',
-              expSecs,
+              orderPayload?.fiatCode ?? '',
             );
       case actions.Action.waitingSellerToPay:
         final expSecs = ref
@@ -93,46 +96,63 @@ class MostroMessageDetail extends ConsumerWidget {
                 .mostroInstance
                 ?.expirationSeconds ??
             900;
+        final expMinutes = (expSecs / 60).round();
         return S
             .of(context)!
-            .waitingSellerToPay(orderPayload?.id ?? '', expSecs);
+            .waitingSellerToPay(expMinutes, orderPayload?.id ?? '');
       case actions.Action.waitingBuyerInvoice:
         final expSecs = ref
                 .read(orderRepositoryProvider)
                 .mostroInstance
                 ?.expirationSeconds ??
             900;
-        return S.of(context)!.waitingBuyerInvoice(expSecs);
+        final expMinutes = (expSecs / 60).round();
+        return S.of(context)!.waitingBuyerInvoice(expMinutes);
       case actions.Action.buyerInvoiceAccepted:
         return S.of(context)!.buyerInvoiceAccepted;
       case actions.Action.holdInvoicePaymentAccepted:
         final session = ref.watch(sessionProvider(orderPayload?.id ?? ''));
+        final sellerName = session?.peer?.publicKey != null
+            ? ref.watch(nickNameProvider(session!.peer!.publicKey))
+            : '';
         return S.of(context)!.holdInvoicePaymentAccepted(
               orderPayload?.fiatAmount.toString() ?? '',
               orderPayload?.fiatCode ?? '',
               orderPayload != null
                   ? orderPayload.paymentMethod
                   : 'No payment method',
-              session?.peer?.publicKey ?? '',
+              sellerName,
             );
       case actions.Action.buyerTookOrder:
+        final buyerName = tradeState.peer?.publicKey != null
+            ? ref.watch(nickNameProvider(tradeState.peer!.publicKey))
+            : '';
         return S.of(context)!.buyerTookOrder(
-              tradeState.peer?.publicKey ?? '',
-              orderPayload!.fiatCode,
-              orderPayload.fiatAmount.toString(),
+              buyerName,
+              orderPayload!.fiatAmount.toString(),
+              orderPayload.fiatCode,
               orderPayload.paymentMethod,
             );
       case actions.Action.fiatSentOk:
         final session = ref.watch(sessionProvider(orderPayload!.id ?? ''));
+        final peerName = tradeState.peer?.publicKey != null
+            ? ref.watch(nickNameProvider(tradeState.peer!.publicKey))
+            : '';
         return session!.role == Role.buyer
-            ? S.of(context)!.fiatSentOkBuyer(tradeState.peer!.publicKey)
-            : S.of(context)!.fiatSentOkSeller(tradeState.peer!.publicKey);
+            ? S.of(context)!.fiatSentOkBuyer(peerName)
+            : S.of(context)!.fiatSentOkSeller(peerName);
       case actions.Action.released:
-        return S.of(context)!.released('{seller_npub}');
+        final sellerName = tradeState.peer?.publicKey != null
+            ? ref.watch(nickNameProvider(tradeState.peer!.publicKey))
+            : '';
+        return S.of(context)!.released(sellerName);
       case actions.Action.purchaseCompleted:
         return S.of(context)!.purchaseCompleted;
       case actions.Action.holdInvoicePaymentSettled:
-        return S.of(context)!.holdInvoicePaymentSettled('{buyer_npub}');
+        final buyerName = tradeState.peer?.publicKey != null
+            ? ref.watch(nickNameProvider(tradeState.peer!.publicKey))
+            : '';
+        return S.of(context)!.holdInvoicePaymentSettled(buyerName);
       case actions.Action.rate:
         return S.of(context)!.rate;
       case actions.Action.rateReceived:

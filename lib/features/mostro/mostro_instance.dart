@@ -13,6 +13,13 @@ class MostroInstance {
   final int holdInvoiceExpirationWindow;
   final int holdInvoiceCltvDelta;
   final int invoiceExpirationWindow;
+  final String lndVersion;
+  final String lndNodePublicKey;
+  final String lndCommitHash;
+  final String lndNodeAlias;
+  final String supportedChains;
+  final String supportedNetworks;
+  final String lndNodeUri;
 
   MostroInstance(
     this.pubKey,
@@ -27,6 +34,13 @@ class MostroInstance {
     this.holdInvoiceExpirationWindow,
     this.holdInvoiceCltvDelta,
     this.invoiceExpirationWindow,
+    this.lndVersion,
+    this.lndNodePublicKey,
+    this.lndCommitHash,
+    this.lndNodeAlias,
+    this.supportedChains,
+    this.supportedNetworks,
+    this.lndNodeUri,
   );
 
   factory MostroInstance.fromEvent(NostrEvent event) {
@@ -43,6 +57,13 @@ class MostroInstance {
       event.holdInvoiceExpirationWindow,
       event.holdInvoiceCltvDelta,
       event.invoiceExpirationWindow,
+      event.lndVersion,
+      event.lndNodePublicKey,
+      event.lndCommitHash,
+      event.lndNodeAlias,
+      event.supportedChains,
+      event.supportedNetworks,
+      event.lndNodeUri,
     );
   }
 }
@@ -68,4 +89,11 @@ extension MostroInstanceExtensions on NostrEvent {
       int.parse(_getTagValue('hold_invoice_cltv_delta'));
   int get invoiceExpirationWindow =>
       int.parse(_getTagValue('invoice_expiration_window'));
+  String get lndVersion => _getTagValue('lnd_version');
+  String get lndNodePublicKey => _getTagValue('lnd_node_pubkey');
+  String get lndCommitHash => _getTagValue('lnd_commit_hash');
+  String get lndNodeAlias => _getTagValue('lnd_node_alias');
+  String get supportedChains => _getTagValue('lnd_chains');
+  String get supportedNetworks => _getTagValue('lnd_networks');
+  String get lndNodeUri => _getTagValue('lnd_uris');
 }

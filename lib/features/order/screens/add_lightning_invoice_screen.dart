@@ -31,6 +31,9 @@ class _AddLightningInvoiceScreenState
       data: (mostroMessage) {
         final orderPayload = mostroMessage?.getPayload<Order>();
         final amount = orderPayload?.amount;
+        final fiatAmount = orderPayload?.fiatAmount.toString() ?? '0';
+        final fiatCode = orderPayload?.fiatCode ?? '';
+        final orderIdValue = orderPayload?.id ?? orderId;
 
         return Scaffold(
           backgroundColor: AppTheme.dark1,
@@ -86,6 +89,9 @@ class _AddLightningInvoiceScreenState
                       }
                     },
                     amount: amount ?? 0,
+                    fiatAmount: fiatAmount,
+                    fiatCode: fiatCode,
+                    orderId: orderIdValue,
                   ),
                 ),
               ),
