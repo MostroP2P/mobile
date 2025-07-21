@@ -18,12 +18,12 @@ class ChatListItem extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(sessionProvider(orderId));
-    
+
     // Check if session or peer is null and return a placeholder widget
     if (session == null || session.peer == null) {
       return _buildPlaceholderItem(context);
     }
-    
+
     final peerPubkey = session.peer!.publicKey;
     final currentUserPubkey = session.tradeKey.public;
     final handle = ref.read(nickNameProvider(peerPubkey));
@@ -31,12 +31,14 @@ class ChatListItem extends ConsumerWidget {
     // Get actual chat data
     final chatRoom = ref.watch(chatRoomsProvider(orderId));
     final bool isSelling = session.role?.toString() == 'seller';
-    final String actionText =
-        isSelling ? S.of(context)!.youAreSellingTo : S.of(context)!.youAreBuyingFrom;
+    final String actionText = isSelling
+        ? S.of(context)!.youAreSellingTo
+        : S.of(context)!.youAreBuyingFrom;
 
     // Get the last message if available
     String messagePreview = S.of(context)!.noMessagesYet;
-    String date = S.of(context)!.today; // Default date if no message date is available
+    String date =
+        S.of(context)!.today; // Default date if no message date is available
     bool hasUnreadMessages = false;
     if (chatRoom.messages.isNotEmpty) {
       // Sort messages by creation time (newest first)
@@ -60,13 +62,15 @@ class ChatListItem extends ConsumerWidget {
       // Check for unread messages from the peer (not from current user)
       hasUnreadMessages = false;
       for (final message in sortedMessages) {
-        // If message is from peer (not current user) and is recent
-        if (message.pubkey == peerPubkey && message.createdAt != null && message.createdAt is int) {
-          final messageTime = DateTime.fromMillisecondsSinceEpoch((message.createdAt as int) * 1000);
+        if (message.pubkey == peerPubkey &&
+            message.createdAt != null &&
+            message.createdAt is int) {
+          final messageTime = DateTime.fromMillisecondsSinceEpoch(
+              (message.createdAt as int) * 1000);
           final now = DateTime.now();
-          final oneHourAgo = now.subtract(const Duration(hours: 1));
-          
-          if (messageTime.isAfter(oneHourAgo)) {
+          final oneDayAgo = now.subtract(const Duration(hours: 24));
+
+          if (messageTime.isAfter(oneDayAgo)) {
             hasUnreadMessages = true;
             break;
           }
@@ -158,7 +162,8 @@ class ChatListItem extends ConsumerWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: AppTheme.backgroundInput.withValues(alpha: 0.5),
+                            color:
+                                AppTheme.backgroundInput.withValues(alpha: 0.5),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(

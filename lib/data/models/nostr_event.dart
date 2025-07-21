@@ -8,7 +8,6 @@ import 'package:timeago/timeago.dart' as timeago;
 import 'package:dart_nostr/dart_nostr.dart';
 
 extension NostrEventExtensions on NostrEvent {
-  // Getters para acceder fácilmente a los tags específicos
   String? get recipient => _getTagValue('p');
   String? get orderId => _getTagValue('d');
   OrderType? get orderType => _getTagValue('k') != null
@@ -100,13 +99,36 @@ extension NostrEventExtensions on NostrEvent {
       pubkey,
     );
 
-    final rumorEvent = NostrEvent.deserialized(
+    final innerEvent = NostrEvent.deserialized(
       '["EVENT", "", $decryptedContent]',
     );
-    if (rumorEvent.kind != 1) {
-      throw Exception('Not a Mostro DM: ${rumorEvent.toString()}');
+
+    if (innerEvent.kind == 13) {
+      try {
+        final messageContent = await NostrUtils.decryptNIP44(
+          innerEvent.content!,
+          receiver.private,
+          innerEvent.pubkey,
+        );
+
+        final messageEvent = NostrEvent.deserialized(
+          '["EVENT", "", $messageContent]',
+        );
+
+        if (messageEvent.kind != 14) {
+          throw Exception(
+              'Not a NIP-17 direct message: ${messageEvent.toString()}');
+        }
+
+        return messageEvent;
+      } catch (e) {
+        return innerEvent;
+      }
+    } else if (innerEvent.kind == 1) {
+      return innerEvent;
+    } else {
+      return innerEvent;
     }
-    return rumorEvent;
   }
 
   Future<NostrEvent> mostroWrap(NostrKeyPairs sharedKey) async {

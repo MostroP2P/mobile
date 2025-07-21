@@ -35,24 +35,24 @@ class ChatRoomsNotifier extends StateNotifier<List<ChatRoom>> {
       return;
     }
     final now = DateTime.now();
-    final cutoff = now.subtract(const Duration(hours: 36));
 
     try {
       final chats = sessions
           .where(
-        (s) => s.peer != null && s.startTime.isAfter(cutoff),
+        (s) =>
+            s.orderId != null &&
+            (s.peer != null ||
+                s.startTime.isAfter(now.subtract(const Duration(hours: 1)))),
       )
           .map((s) {
         final chat = ref.read(chatRoomsProvider(s.orderId!));
         return chat;
       }).toList();
-      if (chats.isNotEmpty) {
-        state = chats;
-      } else {
-        _logger.i("No chats found for sessions, keeping previous state.");
-      }
+
+      state = chats;
+      _logger.i("Loaded ${chats.length} chats");
     } catch (e) {
-      _logger.e(e);
+      _logger.e("Error loading chats: $e");
     }
   }
 }

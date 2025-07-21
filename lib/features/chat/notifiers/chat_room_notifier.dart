@@ -67,7 +67,8 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
           ];
           // Use a map to deduplicate by event id
           final deduped = {for (var m in allMessages) m.id: m}.values.toList();
-          deduped.sort((a, b) => a.createdAt!.compareTo(b.createdAt!));
+
+          deduped.sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
           state = state.copy(messages: deduped);
         } catch (e) {
           _logger.e(e);
