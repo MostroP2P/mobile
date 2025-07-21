@@ -15,6 +15,7 @@ import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
@@ -114,7 +115,27 @@ Future<void> retryNotification(NostrEvent event, WidgetRef ref,
   // Optionally store failed notifications for later retry when app returns to foreground
   if (!success) {
     // Store the event ID in a persistent queue for later retry
-    // await failedNotificationsQueue.add(event.id!);
+    await FailedNotificationQueue.add(event.id!);
+  }
+}
+
+class FailedNotificationQueue {
+  static const String _queueKey = 'failed_notifications';
+
+  static Future<void> add(String eventId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final queue = prefs.getStringList(_queueKey) ?? [];
+    if (!queue.contains(eventId)) {
+      queue.add(eventId);
+      await prefs.setStringList(_queueKey, queue);
+    }
+  }
+
+  static Future<List<String>> getAndClear() async {
+    final prefs = await SharedPreferences.getInstance();
+    final queue = prefs.getStringList(_queueKey) ?? [];
+    await prefs.remove(_queueKey);
+    return queue;
   }
 }
 
@@ -159,6 +180,12 @@ Future<void> _showGenericNotification(NostrEvent event) async {
       enableVibration: true,
       ticker: 'ticker',
       icon: '@drawable/ic_notification',
+      styleInformation: BigTextStyleInformation(
+        localizations.notificationNewEncryptedMessage,
+        htmlFormatBigText: false,
+        contentTitle: localizations.notificationNewMostroMessage,
+        htmlFormatContentTitle: false,
+      ),
     ),
     iOS: DarwinNotificationDetails(
       presentAlert: true,
@@ -207,6 +234,12 @@ Future<void> _showActionBasedNotification(
       enableVibration: true,
       ticker: 'ticker',
       icon: '@drawable/ic_notification',
+      styleInformation: BigTextStyleInformation(
+        message,
+        htmlFormatBigText: false,
+        contentTitle: title,
+        htmlFormatContentTitle: false,
+      ),
     ),
     iOS: DarwinNotificationDetails(
       presentAlert: true,
@@ -273,7 +306,7 @@ String _getActionBasedMessage(
     Action action, MostroMessage msg, Session session, S localizations) {
   switch (action) {
     case Action.newOrder:
-      return localizations.notificationOrderPublished;
+      return localizations.notificationOrderPublishedBody;
 
     case Action.takeBuy:
     case Action.takeSell:
@@ -281,19 +314,28 @@ String _getActionBasedMessage(
       return localizations.notificationOrderTakenMessage;
 
     case Action.payInvoice:
-      // Extract amount from PaymentRequest payload
+      // Extract amount and fiat info from PaymentRequest payload
       if (msg.payload is PaymentRequest) {
-        final amount = (msg.payload as PaymentRequest).amount;
-        return 'Please pay the hold invoice of $amount Sats';
+        final paymentRequest = msg.payload as PaymentRequest;
+        final amount = paymentRequest.amount ?? 0;
+        final order = paymentRequest.order;
+        final fiatCode = order?.fiatCode ?? 'USD';
+        final fiatAmount = order?.fiatAmount ?? 0;
+        return localizations.payInvoice(
+            amount.toString(), 15, fiatAmount.toString(), fiatCode);
       }
       return 'Please pay the hold invoice';
 
     case Action.addInvoice:
     case Action.waitingBuyerInvoice:
-      // Extract amount from Order payload
+      // Extract amount and fiat info from Order payload
       if (msg.payload is Order) {
-        final amount = (msg.payload as Order).amount;
-        return 'Please send an invoice for $amount satoshis';
+        final order = msg.payload as Order;
+        final amount = order.amount;
+        final fiatCode = order.fiatCode;
+        final fiatAmount = order.fiatAmount;
+        return localizations.addInvoice(
+            amount.toString(), 15, fiatAmount.toString(), fiatCode);
       }
       return 'Please send an invoice';
 
@@ -310,19 +352,20 @@ String _getActionBasedMessage(
       return localizations.notificationOrderCanceled;
 
     case Action.cooperativeCancelInitiatedByPeer:
-      return 'Your counterparty wants to cancel the order';
+      return localizations
+          .cooperativeCancelInitiatedByPeer(session.orderId ?? '');
 
     case Action.disputeInitiatedByYou:
-      return 'You\'ve initiated a dispute. A solver will be assigned soon.';
+      return localizations.disputeInitiatedByYou(session.orderId ?? '', '');
 
     case Action.disputeInitiatedByPeer:
-      return 'Your counterparty has initiated a dispute.';
+      return localizations.disputeInitiatedByPeer(session.orderId ?? '', '');
 
     case Action.purchaseCompleted:
       return localizations.purchaseCompleted;
 
     case Action.paymentFailed:
-      return 'Payment failed. Please try again or contact support.';
+      return localizations.paymentFailed(3, 5);
 
     case Action.cantDo:
       // Extract reason from CantDo payload
@@ -333,7 +376,7 @@ String _getActionBasedMessage(
       return localizations.notificationUnableToProcessMessage;
 
     default:
-      return localizations.notificationNewMessageReceived;
+      return '';
   }
 }
 
