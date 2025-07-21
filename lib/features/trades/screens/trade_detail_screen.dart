@@ -484,7 +484,7 @@ class TradeDetailScreen extends ConsumerWidget {
       backgroundColor: backgroundColor,
       onPressed: onPressed ?? () {}, // Provide empty function when null
       showSuccessIndicator: true,
-      timeout: const Duration(seconds: 30),
+      timeout: const Duration(seconds: 10),
       controller: controller,
     );
   }
@@ -497,7 +497,7 @@ class TradeDetailScreen extends ConsumerWidget {
       style: ElevatedButton.styleFrom(
         backgroundColor: AppTheme.mostroGreen,
       ),
-      child: Text(S.of(context)!.contact),
+      child: Text(S.of(context)!.contactButton),
     );
   }
 

@@ -301,7 +301,6 @@
   "premiumTitle": "Prima (%)",
   "premiumTooltip": "Ajusta cuánto por encima o por debajo del precio de mercado quieres tu oferta. Por defecto, está establecido en 0%, sin prima o descuento, así que si no quieres cambiar el precio, puedes dejarlo como está.",
   
-  "@_comment_account_screen": "Cadenas de Pantalla de Gestión de Cuenta",
   "secretWords": "Palabras Secretas",
   "toRestoreYourAccount": "Para restaurar tu cuenta",
   "privacy": "Privacidad",
@@ -316,7 +315,6 @@
   "noMnemonicFound": "No se encontró mnemónico",
   "errorLoadingMnemonic": "Error: {error}",
   
-  "@_comment_chat_screens": "Cadenas de Pantalla de Chat",
   "noMessagesAvailable": "No hay mensajes disponibles",
   "back": "ATRÁS",
   "typeAMessage": "Escribe un mensaje...",
@@ -324,18 +322,15 @@
   "yourHandle": "Tu nombre: {handle}",
   "yourSharedKey": "Tu clave compartida:",
   
-  "@_comment_trade_actions": "Acciones de Detalle de Intercambio",
   "payInvoiceButton": "PAGAR FACTURA",
   "addInvoiceButton": "AGREGAR FACTURA",
   "release": "LIBERAR",
   "takeSell": "TOMAR VENTA",
   "takeBuy": "TOMAR COMPRA",
   
-  "@_comment_currency_errors": "Mensajes de Error de Moneda",
   "noExchangeDataAvailable": "No hay datos de intercambio disponibles",
   "errorFetchingCurrencies": "Error obteniendo monedas",
   
-  "@_comment_currency_section": "Cadenas de Sección de Selección de Moneda",
   "selectFiatCurrencyPay": "Selecciona la moneda fiat con la que pagarás",
   "selectFiatCurrencyReceive": "Selecciona la Moneda Fiat que quieres recibir",
   "loadingCurrencies": "Cargando monedas...",
@@ -345,18 +340,11 @@
   "searchCurrencies": "Buscar monedas...",
   "noCurrenciesFound": "No se encontraron monedas",
   
-  "@_comment_price_type_section": "Cadenas de Sección de Tipo de Precio",
   "priceType": "Tipo de precio",
-  "marketPrice": "Precio de mercado",
   "fixedPrice": "Precio fijo",
   "market": "Mercado",
   "priceTypeTooltip": "• Selecciona Precio de Mercado si quieres usar el precio que tiene Bitcoin cuando alguien tome tu oferta.\\n• Selecciona Precio Fijo si quieres definir la cantidad exacta de Bitcoin que intercambiarás.",
   
-  "@_comment_take_order_screen": "Cadenas de Pantalla de Tomar Orden",
-  "orderDetails": "DETALLES DE LA ORDEN",
-  "selling": "vendiendo",
-  "buying": "comprando",
-  "atMarketPrice": "a precio de mercado",
   "withPremiumPercent": "con un +{premium}% de premio",
   "@withPremiumPercent": {
     "placeholders": {
@@ -373,7 +361,6 @@
       }
     }
   },
-  "noPaymentMethod": "Sin método de pago",
   "someoneIsSellingBuying": "Alguien está {action}{satAmount} sats por {amountString} {price} {premiumText}",
   "@someoneIsSellingBuying": {
     "placeholders": {
@@ -471,18 +458,15 @@
   "lightningInvoice": "Factura Lightning",
   "enterInvoiceHere": "Ingresa la factura aquí",
   
-  "@_comment_trade_detail_screen": "Cadenas de Pantalla de Detalle de Intercambio",
-  "cancelPending": "CANCELACIÓN PENDIENTE",
-  "acceptCancel": "ACEPTAR CANCELACIÓN",
-  "completePurchase": "COMPLETAR COMPRA",
-  "rate": "CALIFICAR",
-  "contact": "CONTACTAR",
+  "cancelPendingButton": "CANCELACIÓN PENDIENTE",
+  "acceptCancelButton": "ACEPTAR CANCELACIÓN",
+  "completePurchaseButton": "COMPLETAR COMPRA",
+  "rateButton": "CALIFICAR",
+  "contactButton": "CONTACTAR",
   
-  "@_comment_rate_screen": "Cadenas de Pantalla de Calificar Contraparte",
   "rateCounterpart": "Calificar Contraparte",
   "submitRating": "Enviar Calificación",
   
-  "@_comment_pay_invoice_screen": "Cadenas de Pantalla de Pago de Factura Lightning",
   "payLightningInvoice": "Pagar Factura Lightning",
   "payInvoiceToContinue": "Paga esta factura de {sats} Sats equivalentes a {fiat_amount} {fiat_code} para continuar el intercambio de la orden {order_id}",
   "@payInvoiceToContinue": {

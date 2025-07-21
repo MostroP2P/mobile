@@ -14,11 +14,10 @@ import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 class NostrService {
   late Settings settings;
   final Nostr _nostr = Nostr.instance;
-
-  NostrService();
-
   final Logger _logger = Logger();
   bool _isInitialized = false;
+
+  NostrService();
 
   Future<void> init(Settings settings) async {
     this.settings = settings;

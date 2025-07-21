@@ -247,11 +247,9 @@
   "expired": "Expired",
   "success": "Success",
   "orderIdCopied": "Order ID copied to clipboard",
-  "orderDetails": "ORDER DETAILS",
   "noPaymentMethod": "No payment method",
   "youAreSellingText": "You are selling{sats} sats for {amount} {price} {premium}",
   "youAreBuyingText": "You are buying{sats} sats for {amount} {price} {premium}",
-  "atMarketPrice": "at market price",
   "withPremium": " with a +{premium}% premium",
   "withDiscount": " with a {premium}% discount",
   "createdOn": "Created on",
@@ -336,7 +334,6 @@
   "premiumTitle": "Premium (%)",
   "premiumTooltip": "Adjust how much above or below the market price you want your offer. By default, it's set to 0%, with no premium or discount, so if you don't want to change the price, you can leave it as is.",
   
-  "@_comment_account_screen": "Account Management Screen Strings",
   "secretWords": "Secret Words",
   "toRestoreYourAccount": "To restore your account",
   "privacy": "Privacy",
@@ -351,7 +348,6 @@
   "noMnemonicFound": "No mnemonic found",
   "errorLoadingMnemonic": "Error: {error}",
   
-  "@_comment_chat_screens": "Chat Screen Strings",
   "noMessagesAvailable": "No messages available",
   "back": "BACK",
   "typeAMessage": "Type a message...",
@@ -359,18 +355,15 @@
   "yourHandle": "Your handle: {handle}",
   "yourSharedKey": "Your shared key:",
   
-  "@_comment_trade_actions": "Trade Detail Actions",
   "payInvoiceButton": "PAY INVOICE",
   "addInvoiceButton": "ADD INVOICE",
   "release": "RELEASE",
   "takeSell": "TAKE SELL",
   "takeBuy": "TAKE BUY",
   
-  "@_comment_currency_errors": "Currency Error Messages",
   "noExchangeDataAvailable": "No exchange data available",
   "errorFetchingCurrencies": "Error fetching currencies",
   
-  "@_comment_currency_section": "Currency Selection Section Strings",
   "selectFiatCurrencyPay": "Select the fiat currency you will pay with",
   "selectFiatCurrencyReceive": "Select the Fiat Currency you want to receive",
   "loadingCurrencies": "Loading currencies...",
@@ -380,9 +373,7 @@
   "searchCurrencies": "Search currencies...",
   "noCurrenciesFound": "No currencies found",
   
-  "@_comment_price_type_section": "Price Type Section Strings",
   "priceType": "Price type",
-  "marketPrice": "Market price",
   "fixedPrice": "Fixed price",
   "market": "Market",
   "priceTypeTooltip": "• Select Market Price if you want to use the price that Bitcoin has when someone takes your offer.\\n• Select Fixed Price if you want to define the exact amount of Bitcoin you will exchange.",
@@ -406,7 +397,6 @@
       }
     }
   },
-  "noPaymentMethod": "No payment method",
   "someoneIsSellingBuying": "Someone is {action}{satAmount} sats for {amountString} {price} {premiumText}",
   "@someoneIsSellingBuying": {
     "placeholders": {
@@ -504,18 +494,12 @@
   "lightningInvoice": "Lightning Invoice",
   "enterInvoiceHere": "Enter invoice here",
   
-  "@_comment_trade_detail_screen": "Trade Detail Screen Strings",
-  "cancelPending": "CANCEL PENDING",
-  "acceptCancel": "ACCEPT CANCEL",
-  "completePurchase": "COMPLETE PURCHASE",
-  "rate": "RATE",
-  "contact": "CONTACT",
+  "rateButton": "RATE",
+  "contactButton": "CONTACT",
   
-  "@_comment_rate_screen": "Rate Counterpart Screen Strings",
   "rateCounterpart": "Rate Counterpart",
   "submitRating": "Submit Rating",
   
-  "@_comment_pay_invoice_screen": "Pay Lightning Invoice Screen Strings",
   "payLightningInvoice": "Pay Lightning Invoice",
   "payInvoiceToContinue": "Pay this invoice for {sats} Sats equivalent to {fiat_code} {fiat_amount} to continue the exchange for order {order_id}",
   "@payInvoiceToContinue": {
@@ -551,6 +535,7 @@
   "italian": "Italian",
   "loadingOrder": "Loading order...",
   "chooseLanguageDescription": "Choose your preferred language or use system default",
+  "doneButton": "DONE",
   "unsupportedLinkFormat": "Unsupported link format",
   "failedToOpenLink": "Failed to open link",
   "failedToLoadOrder": "Failed to load order",
