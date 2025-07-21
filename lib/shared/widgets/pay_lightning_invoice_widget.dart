@@ -86,7 +86,7 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
                 );
               },
               icon: const Icon(Icons.copy),
-              label: Text(S.of(context)!.copyButton),
+              label: Text(S.of(context)!.copy),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.mostroGreen,
                 shape: RoundedRectangleBorder(
@@ -125,7 +125,7 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
                 }
               },
               icon: const Icon(Icons.share),
-              label: Text(S.of(context)!.shareButton),
+              label: Text(S.of(context)!.share),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.mostroGreen,
                 shape: RoundedRectangleBorder(
