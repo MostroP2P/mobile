@@ -4,6 +4,7 @@ import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/relays/relay.dart';
 import 'package:mostro_mobile/features/relays/relays_provider.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class RelaySelector extends ConsumerWidget {
   const RelaySelector({super.key});
@@ -68,19 +69,52 @@ class RelaySelector extends ConsumerWidget {
       useRootNavigator: true,
       context: context,
       builder: (BuildContext dialogContext) => AlertDialog(
-        title: const Text('Add Relay'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(labelText: 'Relay URL'),
+        backgroundColor: AppTheme.backgroundCard,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+        ),
+        title: Text(
+          S.of(context)!.addRelay,
+          style: const TextStyle(
+            color: AppTheme.textPrimary,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        content: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: AppTheme.backgroundInput,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+          ),
+          child: TextField(
+            controller: controller,
+            style: const TextStyle(color: AppTheme.textPrimary),
+            decoration: InputDecoration(
+              labelText: S.of(context)!.relayUrl,
+              labelStyle: const TextStyle(color: AppTheme.textSecondary),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () {
               Navigator.pop(dialogContext);
             },
-            child: const Text('Cancel'),
+            child: Text(
+              S.of(context)!.cancel,
+              style: const TextStyle(
+                color: AppTheme.textSecondary,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
-          TextButton(
+          ElevatedButton(
             onPressed: () {
               final url = controller.text.trim();
               if (url.isNotEmpty) {
@@ -89,7 +123,20 @@ class RelaySelector extends ConsumerWidget {
                 Navigator.pop(dialogContext);
               }
             },
-            child: const Text('Add'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.activeColor,
+              foregroundColor: Colors.black,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: Text(
+              S.of(context)!.add,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ],
       ),
@@ -102,17 +149,50 @@ class RelaySelector extends ConsumerWidget {
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: const Text('Edit Relay'),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(labelText: 'Relay URL'),
+          backgroundColor: AppTheme.backgroundCard,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+          ),
+          title: Text(
+            S.of(context)!.editRelay,
+            style: const TextStyle(
+              color: AppTheme.textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          content: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppTheme.backgroundInput,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+            ),
+            child: TextField(
+              controller: controller,
+              style: const TextStyle(color: AppTheme.textPrimary),
+              decoration: InputDecoration(
+                labelText: S.of(context)!.relayUrl,
+                labelStyle: const TextStyle(color: AppTheme.textSecondary),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Cancel'),
+              child: Text(
+                S.of(context)!.cancel,
+                style: const TextStyle(
+                  color: AppTheme.textSecondary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ),
-            TextButton(
+            ElevatedButton(
               onPressed: () {
                 final newUrl = controller.text.trim();
                 if (newUrl.isNotEmpty && newUrl != relay.url) {
@@ -123,7 +203,20 @@ class RelaySelector extends ConsumerWidget {
                 }
                 Navigator.pop(dialogContext);
               },
-              child: const Text('Save'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.activeColor,
+                foregroundColor: Colors.black,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text(
+                S.of(context)!.save,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ],
         );

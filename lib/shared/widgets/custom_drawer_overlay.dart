@@ -116,13 +116,6 @@ class CustomDrawerOverlay extends ConsumerWidget {
                         title: S.of(context)!.about,
                         route: '/about',
                       ),
-                      _buildMenuItem(
-                        context,
-                        ref,
-                        icon: LucideIcons.bookOpen,
-                        title: S.of(context)!.walkthrough,
-                        route: '/walkthrough',
-                      ),
                     ],
                   ),
                 ),

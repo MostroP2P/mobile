@@ -165,33 +165,63 @@ class _WalkthroughScreenState extends ConsumerState<WalkthroughScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Use your app's theme colors.
-    final theme = Theme.of(context);
-    return SafeArea(
-      child: IntroductionScreen(
-        pages: _getPages(context),
-        onDone: () => _onIntroEnd(context),
-        onSkip: () => _onIntroEnd(context),
-        showSkipButton: true,
-        showBackButton: true,
-        back: const Icon(Icons.arrow_back),
-        skip: Text(S.of(context)!.skip),
-        next: const Icon(Icons.arrow_forward),
-        done: Text(S.of(context)!.done,
-            style: const TextStyle(fontWeight: FontWeight.w600)),
-        dotsDecorator: DotsDecorator(
-          activeColor: theme.primaryColor,
-          size: const Size(8, 8),
-          color: theme.cardColor,
-          activeSize: const Size(16, 8),
-          spacing: const EdgeInsets.symmetric(horizontal: 3),
-          activeShape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(25.0),
+    final firstRunState = ref.watch(firstRunProvider);
+    
+    return firstRunState.when(
+      data: (isFirstRun) {
+        // If this is not the first run, redirect to home
+        if (!isFirstRun) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) {
+              context.go('/');
+            }
+          });
+          return const SizedBox.shrink();
+        }
+        
+        // Show walkthrough for first run
+        final theme = Theme.of(context);
+        return SafeArea(
+          child: IntroductionScreen(
+            pages: _getPages(context),
+            onDone: () => _onIntroEnd(context),
+            onSkip: () => _onIntroEnd(context),
+            showSkipButton: true,
+            showBackButton: true,
+            back: const Icon(Icons.arrow_back),
+            skip: Text(S.of(context)!.skip),
+            next: const Icon(Icons.arrow_forward),
+            done: Text(S.of(context)!.done,
+                style: const TextStyle(fontWeight: FontWeight.w600)),
+            dotsDecorator: DotsDecorator(
+              activeColor: theme.primaryColor,
+              size: const Size(8, 8),
+              color: theme.cardColor,
+              activeSize: const Size(16, 8),
+              spacing: const EdgeInsets.symmetric(horizontal: 3),
+              activeShape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(25.0),
+              ),
+            ),
+            globalFooter: const SizedBox(height: 16),
+            bodyPadding: const EdgeInsets.only(bottom: 0),
           ),
+        );
+      },
+      loading: () => const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
         ),
-        globalFooter: const SizedBox(height: 16),
-        bodyPadding: const EdgeInsets.only(bottom: 0),
       ),
+      error: (error, stackTrace) {
+        // On error, redirect to home
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (context.mounted) {
+            context.go('/');
+          }
+        });
+        return const SizedBox.shrink();
+      },
     );
   }
 }

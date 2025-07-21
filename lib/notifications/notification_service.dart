@@ -34,6 +34,11 @@ Future<void> showLocalNotification(NostrEvent event) async {
       playSound: true,
       enableVibration: true,
       ticker: 'ticker',
+      // Custom notification icon (ic_notification.png) for better visibility
+      // Available in multiple densities: mdpi, hdpi, xhdpi, xxhdpi, xxxhdpi
+      icon: '@drawable/ic_notification',
+      // Uncomment for heads-up notification, use with care:
+      // fullScreenIntent: true,
     ),
     iOS: DarwinNotificationDetails(
       presentAlert: true,

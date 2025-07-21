@@ -2,18 +2,78 @@
   "@@locale": "es",
   "newOrder": "¡Tu oferta ha sido publicada! Por favor espera hasta que otro usuario elija tu orden. Estará disponible durante {expiration_hours} horas. Puedes cancelar esta orden antes de que otro usuario la tome ejecutando: cancel.",
   "canceled": "Has cancelado la orden ID: {id}.",
-  "payInvoice": "Por favor paga esta factura retenida de {amount} Sats por {fiat_code} {fiat_amount} para iniciar la operación. Si no la pagas dentro de {expiration_seconds}, el intercambio será cancelado.",
-  "addInvoice": "Por favor envíame una factura por {amount} satoshis equivalente a {fiat_code} {fiat_amount}. Aquí es donde enviaré los fondos una vez completado el intercambio. Si no proporcionas la factura dentro de {expiration_seconds}, el intercambio será cancelado.",
-  "waitingSellerToPay": "Por favor espera. He enviado una solicitud de pago al vendedor para enviar los Sats para la orden ID {id}. Si el vendedor no completa el pago dentro de {expiration_seconds}, el intercambio será cancelado.",
-  "waitingBuyerInvoice": "¡Pago recibido! Tus Sats ahora están 'retenidos' en tu billetera. He solicitado al comprador que proporcione una factura. Si no lo hace dentro de {expiration_seconds}, tus Sats regresarán a tu billetera y el intercambio será cancelado.",
+  "payInvoice": "Por favor paga esta factura retenida de {amount} Sats por {fiat_amount} {fiat_code} para iniciar la operación. Si no la pagas antes de {expiration_seconds} minutos, el intercambio será cancelado.",
+  "@payInvoice": {
+    "placeholders": {
+      "amount": {
+        "type": "String",
+        "description": "La cantidad de satoshis"
+      },
+      "expiration_seconds": {
+        "type": "int",
+        "description": "El tiempo de expiración en minutos"
+      },
+      "fiat_amount": {
+        "type": "String",
+        "description": "La cantidad fiat"
+      },
+      "fiat_code": {
+        "type": "String",
+        "description": "El código de moneda fiat"
+      }
+    }
+  },
+  "addInvoice": "Por favor envíame una factura por {amount} satoshis equivalente a {fiat_amount} {fiat_code}. Aquí es donde enviaré los fondos una vez completado el intercambio. Si no proporcionas la factura antes de {expiration_seconds} minutos, el intercambio será cancelado.",
+  "@addInvoice": {
+    "placeholders": {
+      "amount": {
+        "type": "String",
+        "description": "La cantidad de satoshis"
+      },
+      "expiration_seconds": {
+        "type": "int",
+        "description": "El tiempo de expiración en minutos"
+      },
+      "fiat_amount": {
+        "type": "String",
+        "description": "La cantidad fiat"
+      },
+      "fiat_code": {
+        "type": "String",
+        "description": "El código de moneda fiat"
+      }
+    }
+  },
+  "waitingSellerToPay": "Por favor espera. He enviado una solicitud de pago al vendedor para enviar los Sats para la orden con ID {id}. Si el vendedor no completa el pago dentro de {expiration_seconds} minutos, el intercambio será cancelado.",
+  "@waitingSellerToPay": {
+    "placeholders": {
+      "expiration_seconds": {
+        "type": "int",
+        "description": "El tiempo de expiración en minutos"
+      },
+      "id": {
+        "type": "String",
+        "description": "El ID del pedido"
+      }
+    }
+  },
+  "waitingBuyerInvoice": "¡Pago recibido! Tus Sats ahora están 'retenidos' en tu billetera. He solicitado al comprador que proporcione una factura. Si no lo hace dentro de {expiration_seconds} minutos, tus Sats regresarán a tu billetera y el intercambio será cancelado.",
+  "@waitingBuyerInvoice": {
+    "placeholders": {
+      "expiration_seconds": {
+        "type": "int",
+        "description": "El tiempo de expiración en minutos"
+      }
+    }
+  },
   "buyerInvoiceAccepted": "La factura ha sido guardada exitosamente.",
-  "holdInvoicePaymentAccepted": "Contacta al vendedor en {seller_npub} para acordar cómo enviar {fiat_code} {fiat_amount} usando {payment_method}. Una vez que envíes el dinero fiat, por favor notifícame con fiat-sent.",
-  "buyerTookOrder": "Contacta al comprador en {buyer_npub} para informarle cómo enviar {fiat_code} {fiat_amount} a través de {payment_method}. Serás notificado cuando el comprador confirme el pago fiat. Después, verifica si ha llegado. Si el comprador no responde, puedes iniciar una cancelación o una disputa. Recuerda, un administrador NUNCA te contactará para resolver tu orden a menos que abras una disputa primero.",
-  "fiatSentOkBuyer": "He informado a {seller_npub} que enviaste el dinero fiat. Si el vendedor confirma la recepción, liberará los fondos. Si se niegan, puedes abrir una disputa.",
-  "fiatSentOkSeller": "{buyer_npub} te ha informado que enviaron el dinero fiat. Una vez que confirmes la recepción, por favor libera los fondos. Después de liberar, el dinero irá al comprador y no habrá vuelta atrás, así que solo procede si estás seguro. Si quieres liberar los Sats al comprador, toca el botón de liberación.",
-  "released": "¡{seller_npub} ha liberado los Sats! Espera que tu factura sea pagada pronto. Asegúrate de que tu billetera esté en línea para recibir a través de Lightning Network.",
+  "holdInvoicePaymentAccepted": "Contacta al vendedor {seller_name} para acordar cómo enviarle {fiat_amount} {fiat_code} usando {payment_method}. Una vez que hayas enviado el dinero fiat, notifícame presionando el botón Fiat Enviado.",
+  "buyerTookOrder": "Contacta al comprador {buyer_name} para indicarle cómo enviarte {fiat_amount} {fiat_code} a través de {payment_method}. Te notificaré cuando el comprador confirme el envío del dinero fiat. Luego, verifica si lo has recibido. Si el comprador no responde, puedes iniciar una cancelación o una disputa. Recuerda, un administrador NUNCA te contactará para resolver tu orden a menos que inicies una disputa.",
+  "fiatSentOkBuyer": "He informado a {seller_name} que enviaste el dinero fiat. Si el vendedor confirma la recepción, liberará los fondos. Si se niega, puedes abrir una disputa.",
+  "fiatSentOkSeller": "{buyer_name} me ha informado que ya te envió el dinero fiat. Una vez que hayas confirmado su recepción, por favor libera los satoshis; al hacerlo, estos se transferirán al comprador de forma irreversible. Si deseas continuar, presiona el botón Liberar.",
+  "released": "¡{seller_name} ha liberado los Sats! Espera que tu factura sea pagada pronto. Asegúrate de que tu billetera esté en línea para recibir a través de Lightning Network.",
   "purchaseCompleted": "Tu compra de Bitcoin ha sido completada exitosamente. He pagado tu factura; ¡disfruta del dinero sólido!",
-  "holdInvoicePaymentSettled": "Tu venta de Sats ha sido completada después de confirmar el pago de {buyer_npub}.",
+  "holdInvoicePaymentSettled": "Tu venta de Sats ha sido completada después de confirmar el pago de {buyer_name}.",
   "rate": "Por favor califica a tu contraparte",
   "rateReceived": "¡Calificación guardada exitosamente!",
   "cooperativeCancelInitiatedByYou": "Has iniciado la cancelación de la orden ID: {id}. Tu contraparte debe estar de acuerdo. Si no responden, puedes abrir una disputa. Ten en cuenta que ningún administrador te contactará sobre esta cancelación a menos que abras una disputa primero.",
@@ -207,7 +267,7 @@
   "githubRepository": "Repositorio GitHub",
   "commitHash": "Hash de Commit",
   "appInformation": "Información de la App",
-  "aboutMostroInstance": "Acerca de la Instancia Mostro",
+  "mostroNode": "Nodo Mostro",
   "generalInfo": "Información General",
   "pubkey": "Clave Pública",
   "mostroVersion": "Versión",
@@ -221,6 +281,11 @@
   "holdInvoiceCltvDelta": "Delta CLTV de Factura Retenida",
   "invoiceExpirationWindow": "Ventana de Expiración de Factura",
   
+  "@_comment_order_creation": "Cadenas del Formulario de Creación de Orden",
+  "youWantToBuyBitcoin": "Quieres comprar Bitcoin",
+  "youWantToSellBitcoin": "Quieres vender Bitcoin",
+  "lightningAddressOptional": "Lightning Address (opcional)",
+  "enterLightningAddress": "Introduzca una lightning address",
   "enterFiatAmountBuy": "Ingresa la cantidad fiat que quieres pagar (puedes establecer un rango)",
   "enterFiatAmountSell": "Ingresa la cantidad fiat que quieres recibir (puedes establecer un rango)",
   "enterAmountHint": "Ingresa cantidad (ejemplo: 100 o 100-500)",
@@ -367,7 +432,28 @@
     }
   },
   
-  "pleaseEnterLightningInvoiceFor": "Por favor ingresa una Factura Lightning para: ",
+  "@_comment_lightning_invoice": "Cadenas de Widget de Factura Lightning",
+  "pleaseEnterLightningInvoiceFor": "Ingresa una Factura Lightning de {sats} Sats equivalentes a {fiat_amount} {fiat_code} para continuar el intercambio de la orden con ID {order_id}",
+  "@pleaseEnterLightningInvoiceFor": {
+    "placeholders": {
+      "sats": {
+        "type": "String",
+        "description": "La cantidad de satoshis"
+      },
+      "fiat_amount": {
+        "type": "String",
+        "description": "La cantidad fiat"
+      },
+      "fiat_code": {
+        "type": "String",
+        "description": "El código de moneda fiat"
+      },
+      "order_id": {
+        "type": "String",
+        "description": "El ID de la orden"
+      }
+    }
+  },
   "sats": " sats",
   "lightningInvoice": "Factura Lightning",
   "enterInvoiceHere": "Ingresa la factura aquí",
@@ -382,11 +468,32 @@
   "submitRating": "Enviar Calificación",
   
   "payLightningInvoice": "Pagar Factura Lightning",
-  "payInvoiceToContinue": "Paga esta factura para continuar el intercambio",
+  "payInvoiceToContinue": "Paga esta factura de {sats} Sats equivalentes a {fiat_amount} {fiat_code} para continuar el intercambio de la orden {order_id}",
+  "@payInvoiceToContinue": {
+    "placeholders": {
+      "sats": {
+        "type": "String",
+        "description": "La cantidad de satoshis"
+      },
+      "fiat_code": {
+        "type": "String",
+        "description": "El código de moneda fiat"
+      },
+      "fiat_amount": {
+        "type": "String",
+        "description": "La cantidad fiat"
+      },
+      "order_id": {
+        "type": "String",
+        "description": "El ID de la orden"
+      }
+    }
+  },
   "failedToGenerateQR": "Error al generar código QR",
   "invoiceCopiedToClipboard": "Factura copiada al portapapeles",
-  "copyButton": "Copiar",
-  "shareButton": "Compartir",
+  "copiedToClipboard": "Copiado al portapapeles",
+  "copy": "Copiar",
+  "share": "Compartir",
   "failedToShareInvoice": "Error al compartir factura. Por favor intenta copiarla en su lugar.",
 
   "@_comment_trade_detail_screen_new": "Nuevas cadenas de Pantalla de Detalles de Intercambio",
@@ -482,5 +589,86 @@
     }
   },
   "deepLinkGoHome": "Ir al Inicio",
-  "doneButton": "HECHO"
+
+  "@_comment_about_screen_new": "About Screen New Strings",
+  "documentation": "Documentación",
+  "usersDocumentationEnglish": "Documentación de Usuario (Inglés)",
+  "usersDocumentationSpanish": "Documentación de Usuario (Español)",
+  "technicalDocumentation": "Documentación Técnica",
+  "read": "Leer",
+  "technicalDetails": "Detalles Técnicos",
+  "mostroDaemonVersion": "Versión de Mostro",
+  "mostroCommitId": "ID de Commit Mostro",
+  "orderExpiration": "Expiración de Orden",
+  "holdInvoiceExpiration": "Expiración de Factura de Retención",
+  "proofOfWork": "Prueba de Trabajo",
+  "lightningNetwork": "Lightning Network",
+  "lndDaemonVersion": "Versión de LND",
+  "lndNodePublicKey": "Clave Pública del Nodo LND",
+  "lndCommitId": "ID de Commit LND",
+  "lndNodeAlias": "Alias del Nodo LND",
+  "supportedChains": "Cadenas Soportadas",
+  "supportedNetworks": "Redes Soportadas",
+  "lndNodeUri": "URI del Nodo LND",
+  "orderLifespan": "Vida Útil de la Orden",
+  "serviceFee": "Tarifa de Servicio",
+  "satoshis": "Satoshis",
+  "hour": "hora",
+  "sec": "seg",
+  "blocks": "bloques",
+  "seconds": "segundos",
+  "mostroPublicKey": "Clave Pública de Mostro",
+  "license": "Licencia",
+  
+  "@_comment_mostro_node_field_explanations": "Explicaciones de campos del nodo Mostro",
+  "mostroPublicKeyExplanation": "El identificador único para este nodo Mostro en la red Nostr. Se utiliza para verificar la autenticidad de todas las comunicaciones con el nodo.",
+  "mostroVersionExplanation": "La versión del software Mostro que se ejecuta actualmente en este nodo. Esto ayuda a los usuarios a entender qué características están disponibles.",
+  "mostroCommitIdExplanation": "El hash específico del commit de Git del software Mostro. Esto proporciona la información exacta de la versión para depuración y compatibilidad.",
+  "maxOrderAmountExplanation": "La cantidad máxima de satoshis que se puede comerciar en una sola orden en este nodo Mostro. Las órdenes por encima de este límite serán rechazadas.",
+  "minOrderAmountExplanation": "La cantidad mínima de satoshis que se puede comerciar en una sola orden en este nodo Mostro. Las órdenes por debajo de este límite serán rechazadas.",
+  "orderExpirationExplanation": "Cuánto tiempo (en horas) permanece activa y visible una orden en el libro de órdenes antes de que expire automáticamente y sea eliminada.",
+  "holdInvoiceExpirationExplanation": "El período de tiempo (en segundos) para que expiren las facturas de retención. Las facturas de retención se utilizan para asegurar fondos durante el proceso de comercio.",
+  "holdInvoiceCltvDeltaExplanation": "El número de bloques agregados a la altura actual del bloque para la expiración de facturas de retención. Esto proporciona tiempo para que la Lightning Network procese el pago.",
+  "invoiceExpirationWindowExplanation": "El período de tiempo (en segundos) para que expiren las facturas regulares de Lightning. Esto asegura que las facturas no permanezcan válidas indefinidamente.",
+  "serviceFeeExplanation": "La tarifa cobrada por este nodo Mostro por facilitar intercambios. Esto es típicamente un pequeño porcentaje del monto del intercambio.",
+  "proofOfWorkExplanation": "El nivel de dificultad requerido para la prueba de trabajo en eventos Nostr. Esto ayuda a prevenir spam y asegura calidad de servicio.",
+  "lndDaemonVersionExplanation": "La versión del software Lightning Network Daemon (LND) que este nodo Mostro utiliza para procesar pagos de Bitcoin Lightning.",
+  "lndNodePublicKeyExplanation": "La clave pública del nodo de Lightning Network que maneja pagos para esta instancia de Mostro. Se utiliza para enrutamiento de Lightning Network.",
+  "lndCommitIdExplanation": "El hash específico del commit de Git del software LND. Esto proporciona información exacta de la versión para la implementación de Lightning Network.",
+  "lndNodeAliasExplanation": "El nombre o alias legible por humanos del nodo de Lightning Network. Esto hace más fácil identificar el nodo en la Lightning Network.",
+  "supportedChainsExplanation": "Las redes blockchain soportadas por este nodo Mostro (típicamente Bitcoin mainnet, testnet, o regtest).",
+  "supportedNetworksExplanation": "Los entornos de red específicos en los que opera este nodo Mostro (mainnet para Bitcoin real, testnet para pruebas).",
+  "lndNodeUriExplanation": "La dirección de red completa del nodo de Lightning Network, incluyendo clave pública e información de conexión para conexiones directas entre pares.",
+  
+  "@_comment_license_text": "Texto de Licencia MIT",
+  "mitLicenseText": "Licencia MIT\\n\\nCopyright (c) 2025 Equipo Mostro\\n\\nPor la presente se concede permiso, libre de cargos, a cualquier persona que obtenga una copia de este software y de los archivos de documentación asociados (el \\\"Software\\\"), a utilizar el Software sin restricción, incluyendo sin limitación los derechos a usar, copiar, modificar, fusionar, publicar, distribuir, sublicenciar, y/o vender copias del Software, y a permitir a las personas a las que se les proporcione el Software a hacer lo mismo, sujeto a las siguientes condiciones:\\n\\nEl aviso de copyright anterior y este aviso de permiso se incluirán en todas las copias o partes sustanciales del Software.\\n\\nEL SOFTWARE SE PROPORCIONA \\\"COMO ESTÁ\\\", SIN GARANTÍA DE NINGÚN TIPO, EXPRESA O IMPLÍCITA, INCLUYENDO PERO NO LIMITADO A GARANTÍAS DE COMERCIALIZACIÓN, IDONEIDAD PARA UN PROPÓSITO PARTICULAR E INCUMPLIMIENTO. EN NINGÚN CASO LOS AUTORES O PROPIETARIOS DE LOS DERECHOS DE AUTOR SERÁN RESPONSABLES DE NINGUNA RECLAMACIÓN, DAÑOS U OTRAS RESPONSABILIDADES, YA SEA EN UNA ACCIÓN DE CONTRATO, AGRAVIO O CUALQUIER OTRO MOTIVO, DERIVADAS DE, FUERA DE O EN CONEXIÓN CON EL SOFTWARE O SU USO U OTRO TIPO DE ACCIONES EN EL SOFTWARE.",
+  
+  "@_comment_url_launch_errors": "Mensajes de Error de Lanzamiento de URL",
+  "cannotOpenLink": "No se puede abrir el enlace - no hay aplicación disponible",
+  
+  "@_comment_settings_info_dialogs": "Texto de Diálogos de Información de Configuración",
+  "languageInfoText": "Elige tu idioma preferido para la interfaz de la aplicación.",
+  "currencyInfoText": "Elige la moneda predeterminada para tus órdenes.",
+  "relaysInfoText": "• Los relays son servidores que ayudan a distribuir tus mensajes a través de la red Nostr\n\n• Agregar más relays puede mejorar la conectividad y redundancia\n\n• Los relays no se sincronizan entre sí, por lo que solo aquellos a los que estés conectado recibirán tus mensajes.",
+  "mostroInfoText": "• El Mostro que selecciones será donde publiques tus ofertas.\n\n• En caso de disputa, una persona asignada a ese Mostro será quien la resuelva.",
+  
+  "@_comment_account_info_dialogs": "Texto de Diálogos de Información de Cuenta",
+  "secretWordsInfoText": "• Estas son tus palabras secretas, la única forma de recuperar tu cuenta si pierdes acceso a esta aplicación o quieres usar tu identidad en otra aplicación.\n\n• Escríbelas cuidadosamente y guárdalas en un lugar seguro y privado. Nunca las compartas con nadie.\n\n• Si pierdes estas palabras, perderás permanentemente el acceso a tu cuenta.",
+  "privacyInfoText": "• El Modo Reputación protege tu privacidad de terceros mientras te permite construir una reputación con cada intercambio completado.\n\n• El modo de privacidad completa proporciona máximo anonimato pero limita las funciones de construcción de reputación.",
+  "currentTradeIndexInfoText": "Con cada nuevo intercambio, se genera una Clave de Intercambio única para asegurar que tus transacciones permanezcan privadas. El índice de intercambio indica cuántas claves has usado. Si estás en 'Modo Reputación,' permites a Mostro vincular todas tus Claves de Intercambio para calcular y mantener tu reputación.",
+  "generateNewUserDialogTitle": "¿Generar un nuevo usuario?",
+  "generateNewUserDialogContent": "Si continúas, se generará un nuevo conjunto de 12 palabras como tu nuevo usuario. Este nuevo usuario no tendrá reputación, y tendrás que empezar desde cero.",
+  "continueButton": "Continuar",
+  "show": "Mostrar",
+  "hide": "Ocultar",
+  "reputationMode": "Modo reputación",
+  "fullPrivacyMode": "Modo privacidad completa",
+  "maximumAnonymity": "Máximo anonimato",
+  "standardPrivacyWithReputation": "Privacidad estándar con reputación",
+  
+  "@_comment_relay_dialogs": "Texto de Diálogos de Relay",
+  "editRelay": "Editar Relay",
+  "relayUrl": "URL del Relay",
+  "add": "Agregar",
+  "save": "Guardar"
 }

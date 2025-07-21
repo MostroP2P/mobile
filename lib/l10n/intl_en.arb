@@ -2,18 +2,78 @@
   "@@locale": "en",
   "newOrder": "Your offer has been published! Please wait until another user picks your order. It will be available for {expiration_hours} hours. You can cancel this order before another user picks it up by executing: cancel.",
   "canceled": "You have canceled the order ID: {id}.",
-  "payInvoice": "Please pay this hold invoice of {amount} Sats for {fiat_code} {fiat_amount} to start the operation. If you do not pay it within {expiration_seconds}, the trade will be canceled.",
-  "addInvoice": "Please send me an invoice for {amount} satoshis equivalent to {fiat_code} {fiat_amount}. This is where I will send the funds upon trade completion. If you don't provide the invoice within {expiration_seconds}, the trade will be canceled.",
-  "waitingSellerToPay": "Please wait. I’ve sent a payment request to the seller to send the Sats for the order ID {id}. If the seller doesn’t complete the payment within {expiration_seconds}, the trade will be canceled.",
-  "waitingBuyerInvoice": "Payment received! Your Sats are now 'held' in your wallet. I’ve requested the buyer to provide an invoice. If they don’t do so within {expiration_seconds}, your Sats will return to your wallet, and the trade will be canceled.",
+  "payInvoice": "Please pay this hold invoice of {amount} Sats for {fiat_code} {fiat_amount} to start the operation. If you do not pay it within {expiration_seconds} minutes, the trade will be canceled.",
+  "@payInvoice": {
+    "placeholders": {
+      "amount": {
+        "type": "String",
+        "description": "The amount of satoshis"
+      },
+      "expiration_seconds": {
+        "type": "int",
+        "description": "The expiration time in minutes"
+      },
+      "fiat_amount": {
+        "type": "String",
+        "description": "The fiat amount"
+      },
+      "fiat_code": {
+        "type": "String",
+        "description": "The fiat currency code"
+      }
+    }
+  },
+  "addInvoice": "Please send me an invoice for {amount} satoshis equivalent to {fiat_code} {fiat_amount}. This is where I will send the funds upon trade completion. If you don't provide the invoice within {expiration_seconds} minutes, the trade will be canceled.",
+  "@addInvoice": {
+    "placeholders": {
+      "amount": {
+        "type": "String",
+        "description": "The amount of satoshis"
+      },
+      "expiration_seconds": {
+        "type": "int",
+        "description": "The expiration time in minutes"
+      },
+      "fiat_amount": {
+        "type": "String",
+        "description": "The fiat amount"
+      },
+      "fiat_code": {
+        "type": "String",
+        "description": "The fiat currency code"
+      }
+    }
+  },
+  "waitingSellerToPay": "Please wait. I’ve sent a payment request to the seller to send the Sats for the order ID {id}. If the seller doesn’t complete the payment within {expiration_seconds} minutes, the trade will be canceled.",
+  "@waitingSellerToPay": {
+    "placeholders": {
+      "expiration_seconds": {
+        "type": "int",
+        "description": "The expiration time in minutes"
+      },
+      "id": {
+        "type": "String",
+        "description": "The order ID"
+      }
+    }
+  },
+  "waitingBuyerInvoice": "Payment received! Your Sats are now 'held' in your wallet. I’ve requested the buyer to provide an invoice. If they don’t do so within {expiration_seconds} minutes, your Sats will return to your wallet, and the trade will be canceled.",
+  "@waitingBuyerInvoice": {
+    "placeholders": {
+      "expiration_seconds": {
+        "type": "int",
+        "description": "The expiration time in minutes"
+      }
+    }
+  },
   "buyerInvoiceAccepted": "The invoice has been successfully saved.",
-  "holdInvoicePaymentAccepted": "Contact the seller at {seller_npub} to arrange how to send {fiat_code} {fiat_amount} using {payment_method}. Once you send the fiat money, please notify me with fiat-sent.",
-  "buyerTookOrder": "Contact the buyer at {buyer_npub} to inform them how to send {fiat_code} {fiat_amount} through {payment_method}. You’ll be notified when the buyer confirms the fiat payment. Afterward, verify if it has arrived. If the buyer does not respond, you can initiate a cancellation or a dispute. Remember, an administrator will NEVER contact you to resolve your order unless you open a dispute first.",
-  "fiatSentOkBuyer": "I have informed {seller_npub} that you sent the fiat money. If the seller confirms receipt, they will release the funds. If they refuse, you can open a dispute.",
-  "fiatSentOkSeller": "{buyer_npub} has informed you that they sent the fiat money. Once you confirm receipt, please release the funds. After releasing, the money will go to the buyer and there will be no turning back, so only proceed if you are sure. If you want to release the Sats to the buyer, tap the release button.",
-  "released": "{seller_npub} has released the Sats! Expect your invoice to be paid shortly. Ensure your wallet is online to receive via Lightning Network.",
+  "holdInvoicePaymentAccepted": "Contact the seller {seller_name} to arrange how to send {fiat_code} {fiat_amount} using {payment_method}. Once you’ve sent the fiat money, notify me by pressing the Fiat Sent button.",
+  "buyerTookOrder": "Contact the buyer {buyer_name} to inform them how to send {fiat_code} {fiat_amount} through {payment_method}. You’ll be notified when the buyer confirms the fiat payment. Afterward, verify if it has arrived. If the buyer does not respond, you can initiate a cancellation or a dispute. Remember, an administrator will NEVER contact you to resolve your order unless you open a dispute first.",
+  "fiatSentOkBuyer": "I have informed {seller_name} that you sent the fiat money. If the seller confirms receipt, they will release the funds. If they refuse, you can open a dispute.",
+  "fiatSentOkSeller": "{buyer_name} has informed me that the fiat money has already been sent to you. Once you’ve confirmed receipt, please release the satoshis. By doing so, they will be transferred to the buyer and the action cannot be undone. If you wish to proceed, press the Release button.",
+  "released": "{seller_name} has released the Sats! Expect your invoice to be paid shortly. Ensure your wallet is online to receive via Lightning Network.",
   "purchaseCompleted": "Your purchase of Bitcoin has been completed successfully. I have paid your invoice; enjoy sound money!",
-  "holdInvoicePaymentSettled": "Your Sats sale has been completed after confirming the payment from {buyer_npub}.",
+  "holdInvoicePaymentSettled": "Your Sats sale has been completed after confirming the payment from {buyer_name}.",
   "rate": "Please rate your counterparty",
   "rateReceived": "Rating successfully saved!",
   "cooperativeCancelInitiatedByYou": "You have initiated the cancellation of the order ID: {id}. Your counterparty must agree. If they do not respond, you can open a dispute. Note that no administrator will contact you regarding this cancellation unless you open a dispute first.",
@@ -242,12 +302,10 @@
   "githubRepository": "GitHub Repository",
   "commitHash": "Commit Hash",
   "appInformation": "App Information",
-  "aboutMostroInstance": "About Mostro Instance",
+  "mostroNode": "Mostro Node",
   "generalInfo": "General Info",
   "pubkey": "Pubkey",
   "mostroVersion": "Version",
-  "maxOrderAmount": "Max Order Amount",
-  "minOrderAmount": "Min Order Amount",
   "expirationHours": "Expiration Hours",
   "expirationSeconds": "Expiration Seconds",
   "fee": "Fee",
@@ -256,6 +314,11 @@
   "holdInvoiceCltvDelta": "Hold Invoice CLTV Delta",
   "invoiceExpirationWindow": "Invoice Expiration Window",
   
+  "@_comment_order_creation": "Order Creation Form Strings",
+  "youWantToBuyBitcoin": "You want to buy Bitcoin",
+  "youWantToSellBitcoin": "You want to sell Bitcoin",
+  "lightningAddressOptional": "Lightning Address (optional)",
+  "enterLightningAddress": "Enter lightning address",
   "enterFiatAmountBuy": "Enter the fiat amount you want to pay (you can set a range)",
   "enterFiatAmountSell": "Enter the fiat amount you want to receive (you can set a range)",
   "enterAmountHint": "Enter amount (example: 100 or 100-500)",
@@ -405,7 +468,28 @@
     }
   },
   
-  "pleaseEnterLightningInvoiceFor": "Please enter a Lightning Invoice for: ",
+  "@_comment_lightning_invoice": "Lightning Invoice Widget Strings",
+  "pleaseEnterLightningInvoiceFor": "Please enter a Lightning Invoice for {sats} Sats equivalent to {fiat_code} {fiat_amount} to continue the exchange for order with ID {order_id}",
+  "@pleaseEnterLightningInvoiceFor": {
+    "placeholders": {
+      "sats": {
+        "type": "String",
+        "description": "The amount of satoshis"
+      },
+      "fiat_code": {
+        "type": "String",
+        "description": "The fiat currency code"
+      },      
+      "fiat_amount": {
+        "type": "String",
+        "description": "The fiat amount"
+      },
+      "order_id": {
+        "type": "String",
+        "description": "The order ID"
+      }
+    }
+  },
   "sats": " sats",
   "lightningInvoice": "Lightning Invoice",
   "enterInvoiceHere": "Enter invoice here",
@@ -417,11 +501,32 @@
   "submitRating": "Submit Rating",
   
   "payLightningInvoice": "Pay Lightning Invoice",
-  "payInvoiceToContinue": "Pay this invoice to continue the exchange",
+  "payInvoiceToContinue": "Pay this invoice for {sats} Sats equivalent to {fiat_code} {fiat_amount} to continue the exchange for order {order_id}",
+  "@payInvoiceToContinue": {
+    "placeholders": {
+      "sats": {
+        "type": "String",
+        "description": "The amount of satoshis"
+      },
+      "fiat_code": {
+        "type": "String",
+        "description": "The fiat currency code"
+      },
+      "fiat_amount": {
+        "type": "String",
+        "description": "The fiat amount"
+      },
+      "order_id": {
+        "type": "String",
+        "description": "The order ID"
+      }
+    }
+  },
   "failedToGenerateQR": "Failed to generate QR code",
   "invoiceCopiedToClipboard": "Invoice copied to clipboard",
-  "copyButton": "Copy",
-  "shareButton": "Share",
+  "copiedToClipboard": "Copied to clipboard",
+  "copy": "Copy",
+  "share": "Share",
   "failedToShareInvoice": "Failed to share invoice. Please try copying instead.",
   "language": "Language",
   "systemDefault": "System Default",
@@ -450,5 +555,89 @@
       }
     }
   },
-  "deepLinkGoHome": "Go Home"
+  "deepLinkGoHome": "Go Home",
+
+  "@_comment_about_screen_new": "About Screen New Strings",
+  "documentation": "Documentation",
+  "usersDocumentationEnglish": "Users Documentation (English)",
+  "usersDocumentationSpanish": "Users Documentation (Spanish)",
+  "technicalDocumentation": "Technical Documentation",
+  "read": "Read",
+  "technicalDetails": "Technical Details",
+  "mostroDaemonVersion": "Mostro Version",
+  "mostroCommitId": "Mostro Commit ID",
+  "orderExpiration": "Order Expiration",
+  "holdInvoiceExpiration": "Hold Invoice Expiration",
+  "proofOfWork": "Proof of Work",
+  "lightningNetwork": "Lightning Network",
+  "lndDaemonVersion": "LND Version",
+  "lndNodePublicKey": "LND Node Public Key",
+  "lndCommitId": "LND Commit ID",
+  "lndNodeAlias": "LND Node Alias",
+  "supportedChains": "Supported Chains",
+  "supportedNetworks": "Supported Networks",
+  "lndNodeUri": "LND Node URI",
+  "maxOrderAmount": "Maximum Order Amount",
+  "minOrderAmount": "Minimum Order Amount",
+  "orderLifespan": "Order Lifespan",
+  "serviceFee": "Service Fee",
+  "satoshis": "Satoshis",
+  "hour": "hour",
+  "sec": "sec",
+  "blocks": "blocks",
+  "seconds": "seconds",
+  "mostroPublicKey": "Mostro's Public Key",
+  "license": "License",
+  
+  "@_comment_mostro_node_field_explanations": "Mostro Node Field Explanations",
+  "mostroPublicKeyExplanation": "The unique identifier for this Mostro node on the Nostr network. This is used to verify the authenticity of all communications with the node.",
+  "mostroVersionExplanation": "The version of the Mostro software currently running on this node. This helps users understand which features are available.",
+  "mostroCommitIdExplanation": "The specific Git commit hash of the Mostro software. This provides the exact version information for debugging and compatibility.",
+  "maxOrderAmountExplanation": "The maximum amount of satoshis that can be traded in a single order on this Mostro node. Orders above this limit will be rejected.",
+  "minOrderAmountExplanation": "The minimum amount of satoshis that can be traded in a single order on this Mostro node. Orders below this limit will be rejected.",
+  "orderExpirationExplanation": "How long (in hours) an order remains active and visible in the order book before it automatically expires and is removed.",
+  "holdInvoiceExpirationExplanation": "The time window (in seconds) for hold invoices to expire. Hold invoices are used to secure funds during the trade process.",
+  "holdInvoiceCltvDeltaExplanation": "The number of blocks added to the current block height for hold invoice expiration. This provides time for the Lightning Network to process the payment.",
+  "invoiceExpirationWindowExplanation": "The time window (in seconds) for regular Lightning invoices to expire. This ensures invoices don't remain valid indefinitely.",
+  "serviceFeeExplanation": "The fee charged by this Mostro node for facilitating trades. This is typically a small percentage of the trade amount.",
+  "proofOfWorkExplanation": "The difficulty level required for proof-of-work in Nostr events. This helps prevent spam and ensures quality of service.",
+  "lndDaemonVersionExplanation": "The version of the Lightning Network Daemon (LND) software that this Mostro node uses to process Bitcoin Lightning payments.",
+  "lndNodePublicKeyExplanation": "The public key of the Lightning Network node that handles payments for this Mostro instance. This is used for Lightning Network routing.",
+  "lndCommitIdExplanation": "The specific Git commit hash of the LND software. This provides exact version information for the Lightning Network implementation.",
+  "lndNodeAliasExplanation": "The human-readable name or alias of the Lightning Network node. This makes it easier to identify the node in the Lightning Network.",
+  "supportedChainsExplanation": "The blockchain networks supported by this Mostro node (typically Bitcoin mainnet, testnet, or regtest).",
+  "supportedNetworksExplanation": "The specific network environments that this Mostro node operates on (mainnet for real Bitcoin, testnet for testing).",
+  "lndNodeUriExplanation": "The complete network address of the Lightning Network node, including public key and connection information for direct peer connections.",
+  
+  "@_comment_license_text": "MIT License Text",
+  "mitLicenseText": "MIT License\\n\\nCopyright (c) 2025 Mostro team\\n\\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \\\"Software\\\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\\n\\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\\n\\nTHE SOFTWARE IS PROVIDED \\\"AS IS\\\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+  
+  "@_comment_url_launch_errors": "URL Launch Error Messages",
+  "cannotOpenLink": "Cannot open link - no app available",
+  
+  "@_comment_settings_info_dialogs": "Settings Info Dialog Text",
+  "languageInfoText": "Choose your preferred language for the application interface.",
+  "currencyInfoText": "Choose the default currency for your orders.",
+  "relaysInfoText": "• Relays are servers that help distribute your messages across the Nostr network\n\n• Adding more relays can improve connectivity and redundancy\n\n• Relays don't sync with each other, so only those you're connected to will receive your messages.",
+  "mostroInfoText": "• The Mostro you select will be the one where you post your offers.\n\n• In case of a dispute, a human assigned to that Mostro will be the one to resolve it.",
+  
+  "@_comment_account_info_dialogs": "Account Screen Info Dialog Text",
+  "secretWordsInfoText": "• These are your secret words, the only way to recover your account if you lose access to this app or want to use your identity in another app.\n\n• Write them down carefully and store them in a secure, private location. Never share them with anyone.\n\n• If you lose these words, you'll permanently lose access to your account.",
+  "privacyInfoText": "• Reputation Mode protects your privacy from third parties while allowing you to build a reputation with each completed trade.\n\n• Full privacy mode provides maximum anonymity but limits reputation building features.",
+  "currentTradeIndexInfoText": "With each new trade, a unique Trade Key is generated to ensure your transactions remain private. The trade index indicates how many keys you've used. If you're in 'Reputation Mode,' you allow Mostro to link all your Trade Keys to calculate and maintain your reputation.",
+  "generateNewUserDialogTitle": "Generate a new user?",
+  "generateNewUserDialogContent": "If you continue, a new set of 12 words will be generated as your new user. This new user will have no reputation, and you will have to start from scratch.",
+  "continueButton": "Continue",
+  "show": "Show",
+  "hide": "Hide",
+  "reputationMode": "Reputation mode",
+  "fullPrivacyMode": "Full privacy mode",
+  "maximumAnonymity": "Maximum anonymity",
+  "standardPrivacyWithReputation": "Standard privacy with reputation",
+  
+  "@_comment_relay_dialogs": "Relay Dialog Text",
+  "editRelay": "Edit Relay",
+  "relayUrl": "Relay URL",
+  "add": "Add",
+  "save": "Save"
 }
