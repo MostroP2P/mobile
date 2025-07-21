@@ -6,7 +6,7 @@ import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 final tradeHistoryRestorationProvider = Provider<TradeHistoryRestorationService>((ref) {
   final keyManager = ref.read(keyManagerProvider);
   final nostrService = ref.read(nostrServiceProvider);
-  
+
   return TradeHistoryRestorationService(
     keyManager,
     nostrService,

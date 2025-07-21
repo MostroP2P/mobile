@@ -23,9 +23,6 @@ class KeyManager {
   }
 
   Future<bool> hasMasterKey() async {
-    if (masterKeyPair != null) {
-      return true;
-    }
     _masterKeyHex = await _storage.readMasterKey();
     return _masterKeyHex != null;
   }

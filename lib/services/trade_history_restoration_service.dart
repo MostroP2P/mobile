@@ -32,6 +32,13 @@ class TradeHistoryRestorationService {
   }) async {
     _logger.i('Starting trade history restoration...');
 
+    // Guard against null master key pair
+    if (_keyManager.masterKeyPair == null) {
+      _logger.e('Master key pair is null, cannot restore trade history');
+      throw Exception(
+          'Master key pair not available for trade history restoration');
+    }
+
     int highestUsedIndex = 0;
     final sessions = <String, Session>{};
     final usedTradeKeys = <int, String>{};
@@ -124,7 +131,8 @@ class TradeHistoryRestorationService {
     final events = await _nostrService.fetchEvents(filter);
 
     for (final event in events) {
-      if (event.recipient != null && publicKeyLookup.containsKey(event.recipient)) {
+      if (event.recipient != null &&
+          publicKeyLookup.containsKey(event.recipient)) {
         final pkey = publicKeyLookup[event.recipient]!;
         final decryptedEvent = await event.unWrap(
           pkey.value.private,
@@ -172,19 +180,19 @@ class TradeHistoryRestorationService {
             continue;
         }
 
-          final session = Session(
-            tradeKey: pkey.value,
-            fullPrivacy: msg.tradeIndex == null ? true : false,
-            masterKey: _keyManager.masterKeyPair!,
-            keyIndex: msg.tradeIndex ?? pkey.key,
-            startTime: decryptedEvent.createdAt!,
-            orderId: msg.id,
-            role: role,
-          );
+        final session = Session(
+          tradeKey: pkey.value,
+          fullPrivacy: msg.tradeIndex == null ? true : false,
+          masterKey: _keyManager.masterKeyPair!,
+          keyIndex: msg.tradeIndex ?? pkey.key,
+          startTime: decryptedEvent.createdAt!,
+          orderId: msg.id,
+          role: role,
+        );
 
-          sessions[event.recipient!] = session;
-          _logger.i(
-              'Created session for order ${msg.id} with trade index ${msg.tradeIndex}');
+        sessions[event.recipient!] = session;
+        _logger.i(
+            'Created session for order ${msg.id} with trade index ${msg.tradeIndex}');
       }
     }
     return sessions;

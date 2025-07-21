@@ -22,6 +22,7 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
   String? _mnemonic;
   int? _tradeKeyIndex;
   bool _loading = false;
+  bool _loadingKeys = false;
   bool _showSecretWords = false;
   final TextEditingController _importController = TextEditingController();
 
@@ -139,6 +140,7 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                 final mnemonic = _importController.text.trim();
                 if (mnemonic.isNotEmpty) {
                   context.pop();
+                  _importController.clear();
                   await _performImport(mnemonic);
                 }
               },
@@ -155,6 +157,9 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
   }
 
   Future<void> _performImport(String mnemonic) async {
+    setState(() {
+      _loadingKeys = true;
+    });
     final sessionNotifer = ref.read(sessionNotifierProvider.notifier);
     await sessionNotifer.reset();
 
@@ -183,17 +188,9 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
 
         setState(() {
           _tradeKeyIndex = result.$1 + 1;
+          _loadingKeys = false;
         });
 
-        if (mounted && result.$1 > 0) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(S.of(context)!.tradeHistoryRestored(
-                    (result.$1 + 1).toString(),
-                  )),
-            ),
-          );
-        }
       }).catchError((error) {
         debugPrint('Trade history restoration failed: $error');
         
@@ -586,14 +583,18 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
               ),
               child: Row(
                 children: [
-                  Text(
-                    '${_tradeKeyIndex ?? 0}',
-                    style: const TextStyle(
-                      color: AppTheme.textPrimary,
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  _loadingKeys
+                      ? const CircularProgressIndicator(
+                          color: AppTheme.mostroGreen,
+                        )
+                      : Text(
+                          '${_tradeKeyIndex ?? 0}',
+                          style: const TextStyle(
+                            color: AppTheme.textPrimary,
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Text(
