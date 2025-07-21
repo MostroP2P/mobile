@@ -5,6 +5,8 @@ class Settings {
   final String? defaultFiatCode;
   final String? selectedLanguage; // null means use system locale
 
+  static const _unset = Object();
+
   Settings({
     required this.relays,
     required this.fullPrivacyMode,
@@ -15,17 +17,19 @@ class Settings {
 
   Settings copyWith({
     List<String>? relays,
-    bool? privacyModeSetting,
-    String? mostroInstance,
+    bool? fullPrivacyMode,
+    String? mostroPublicKey,
     String? defaultFiatCode,
-    String? selectedLanguage,
+    Object? selectedLanguage = _unset,
   }) {
     return Settings(
       relays: relays ?? this.relays,
-      fullPrivacyMode: privacyModeSetting ?? fullPrivacyMode,
-      mostroPublicKey: mostroInstance ?? mostroPublicKey,
+      fullPrivacyMode: fullPrivacyMode ?? this.fullPrivacyMode,
+      mostroPublicKey: mostroPublicKey ?? this.mostroPublicKey,
       defaultFiatCode: defaultFiatCode ?? this.defaultFiatCode,
-      selectedLanguage: selectedLanguage,
+      selectedLanguage: identical(selectedLanguage, _unset)
+          ? this.selectedLanguage
+          : selectedLanguage as String?,
     );
   }
 

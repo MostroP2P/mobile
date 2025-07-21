@@ -8,9 +8,6 @@ import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/shared/providers/session_storage_provider.dart';
-import 'package:mostro_mobile/shared/widgets/custom_card.dart';
-import 'package:mostro_mobile/shared/widgets/privacy_switch_widget.dart';
-import 'package:mostro_mobile/shared/providers/session_storage_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
 class KeyManagementScreen extends ConsumerStatefulWidget {
