@@ -5,6 +5,10 @@ import 'package:dart_nostr/nostr/core/key_pairs.dart';
 import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
+import 'package:mostro_mobile/data/models/enums/order_type.dart';
+import 'package:mostro_mobile/data/models/enums/status.dart';
+import 'package:mostro_mobile/data/models/nostr_event.dart';
+import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/data/models/payload.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
@@ -24,6 +28,57 @@ class MostroMessage<T extends Payload> {
       this.tradeIndex,
       this.timestamp})
       : _payload = payload;
+
+  /// Factory constructor for creating timeout reversal messages
+  /// This creates a synthetic message to persist the timeout state change
+  /// with complete order information from the public event
+  factory MostroMessage.createTimeoutReversal({
+    required String orderId,
+    required int timestamp,
+    required Status originalStatus,
+    required NostrEvent publicEvent,
+  }) {
+    // Extract complete information from the 38383 public event
+    final fiatAmountRange = publicEvent.fiatAmount;
+    final paymentMethodsList = publicEvent.paymentMethods;
+    
+    return MostroMessage(
+      action: Action.timeoutReversal,
+      id: orderId,
+      timestamp: timestamp,
+      payload: Order(
+        // Core order information from public event
+        id: publicEvent.orderId,
+        status: Status.pending, // Only this changes - reverting to pending
+        kind: publicEvent.orderType ?? OrderType.sell,
+        fiatCode: publicEvent.currency ?? 'USD',
+        fiatAmount: fiatAmountRange.minimum,
+        paymentMethod: paymentMethodsList.isNotEmpty 
+            ? paymentMethodsList.join(', ') 
+            : 'N/A',
+        
+        // Additional information for proper UI display
+        amount: int.tryParse(publicEvent.amount ?? '0') ?? 0,
+        minAmount: fiatAmountRange.minimum,
+        maxAmount: fiatAmountRange.maximum,
+        premium: int.tryParse(publicEvent.premium ?? '0') ?? 0,
+        
+        // Timestamps for countdown timer and creation info
+        createdAt: publicEvent.createdAt?.millisecondsSinceEpoch,
+        expiresAt: publicEvent.expirationDate.millisecondsSinceEpoch,
+        
+        // Master keys for reputation display (may be null, that's OK)
+        masterBuyerPubkey: publicEvent.orderType == OrderType.buy 
+            ? publicEvent.pubkey  // Creator of buy order is buyer
+            : null,
+        masterSellerPubkey: publicEvent.orderType == OrderType.sell 
+            ? publicEvent.pubkey  // Creator of sell order is seller
+            : null,
+            
+        // Trade keys and other fields will be null, which is fine for UI
+      ) as T,
+    );
+  }
 
   Map<String, dynamic> toJson() {
     Map<String, dynamic> json = {

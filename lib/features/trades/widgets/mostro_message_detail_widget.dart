@@ -40,7 +40,9 @@ class MostroMessageDetail extends ConsumerWidget {
                   text: formatTextWithBoldUsernames(actionText, context),
                 ),
                 const SizedBox(height: 16),
-                Text('${orderState.status} - ${orderState.action}'),
+                Text(orderState.action == actions.Action.timeoutReversal 
+                  ? orderState.status.toString() 
+                  : '${orderState.status} - ${orderState.action}'),
               ],
             ),
           ),
@@ -191,6 +193,8 @@ class MostroMessageDetail extends ConsumerWidget {
         return S.of(context)!.holdInvoicePaymentCanceled;
       case actions.Action.cantDo:
         return _getCantDoMessage(context, ref);
+      case actions.Action.timeoutReversal:
+        return S.of(context)!.orderTimeoutMaker; // Counterpart didn't respond, order republished
       default:
         return 'No message found for action ${tradeState.action}'; // This is a fallback message for developers
     }

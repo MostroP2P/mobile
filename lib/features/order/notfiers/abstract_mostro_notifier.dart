@@ -214,6 +214,9 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
           'payment_retries_interval': -1000
         });
         break;
+      case Action.timeoutReversal:
+        // No automatic notification - handled manually in OrderNotifier
+        break;
       default:
         notifProvider.showInformation(event.action, values: {});
         break;
