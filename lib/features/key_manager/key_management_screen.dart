@@ -9,6 +9,7 @@ import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/shared/providers/session_storage_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:mostro_mobile/shared/providers/session_storage_provider.dart';
 
 class KeyManagementScreen extends ConsumerStatefulWidget {
   const KeyManagementScreen({super.key});
@@ -23,7 +24,6 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
   int? _tradeKeyIndex;
   bool _loading = false;
   bool _showSecretWords = false;
-  final TextEditingController _importController = TextEditingController();
 
   @override
   void initState() {
@@ -177,15 +177,26 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
         await _loadKeys();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(S.of(context)!.keyImportedSuccessfully)),
+            SnackBar(
+              content: Text(S.of(context)!.tradeHistoryRestorationFailed(
+                    error.toString(),
+                  )),
+              backgroundColor: AppTheme.red2,
+            ),
           );
         }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(S.of(context)!.importFailed(e.toString()))),
-          );
-        }
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(S.of(context)!.keyImportedSuccessfully)),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(S.of(context)!.importFailed(e.toString()))),
+        );
       }
     }
   }
@@ -618,8 +629,9 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton(
-        onPressed: null, // Keep disabled as requested
+        onPressed: _showImportDialog,
         style: OutlinedButton.styleFrom(
+          backgroundColor: AppTheme.dark1,
           side:
               BorderSide(color: AppTheme.textSecondary.withValues(alpha: 0.3)),
           shape: RoundedRectangleBorder(
@@ -633,7 +645,7 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
             Icon(
               LucideIcons.download,
               size: 20,
-              color: AppTheme.textSecondary.withValues(alpha: 0.5),
+              color: AppTheme.textSecondary,
             ),
             const SizedBox(width: 8),
             Text(
@@ -641,7 +653,7 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
-                color: AppTheme.textSecondary.withValues(alpha: 0.5),
+                color: AppTheme.textSecondary,
               ),
             ),
           ],

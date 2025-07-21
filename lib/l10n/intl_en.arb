@@ -646,5 +646,21 @@
   "editRelay": "Edit Relay",
   "relayUrl": "Relay URL",
   "add": "Add",
-  "save": "Save"
+  "save": "Save",
+  "tradeHistoryRestored": "Restored trade history up to key index {index}",
+  "@tradeHistoryRestored": {
+    "placeholders": {
+      "index": {
+        "type": "String"
+      }
+    }
+  },
+  "tradeHistoryRestorationFailed": "Trade history restoration failed: {error}",
+  "@tradeHistoryRestorationFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  }
 }

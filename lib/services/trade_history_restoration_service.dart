@@ -64,9 +64,9 @@ class TradeHistoryRestorationService {
             highestUsedIndex =
                 entry.key > highestUsedIndex ? entry.key : highestUsedIndex;
             _logger.i('Found messages for trade key index ${entry.key}');
-            sessions.addAll(batchSessions);
           }
         }
+        sessions.addAll(batchSessions);
 
         // If we found no keys in this batch, we might be done
         if (batchSessions.isEmpty && startIndex > 20) {
@@ -83,14 +83,14 @@ class TradeHistoryRestorationService {
       if (usedTradeKeys.isNotEmpty) {
         // Update the trade key index to be one higher than the highest used
         await _keyManager.setCurrentKeyIndex(highestUsedIndex + 1);
-        
+
         _logger.i(
             'Trade history restoration complete. Found ${usedTradeKeys.length} used keys, set index to ${highestUsedIndex + 1}');
       } else {
         _logger.i('No trade history found, keeping default key index');
       }
 
-      return (highestUsedIndex, sessions);
+      return (highestUsedIndex + 1, sessions);
     } catch (e) {
       _logger.e('Error during trade history restoration: $e');
       rethrow;
@@ -99,7 +99,8 @@ class TradeHistoryRestorationService {
 
   /// Query relays for messages addressed to the given public keys
   /// Returns a set of public keys that have messages
-  Future<Map<String, Session>> _queryRelaysForKeys(Map<String, NostrKeyPairs> publicKeys,
+  Future<Map<String, Session>> _queryRelaysForKeys(
+      Map<String, NostrKeyPairs> publicKeys,
       {DateTime? since}) async {
     final sessions = <String, Session>{};
 
@@ -130,7 +131,7 @@ class TradeHistoryRestorationService {
             _logger.w('Skipping message ${msg.id} - no trade index');
             continue;
           }
-          
+
           final session = Session(
             tradeKey: pkey,
             fullPrivacy: false, // Trade history implies indexed trades
@@ -141,7 +142,8 @@ class TradeHistoryRestorationService {
           );
 
           sessions[event.recipient!] = session;
-          _logger.i('Created session for order ${msg.id} with trade index ${msg.tradeIndex}');
+          _logger.i(
+              'Created session for order ${msg.id} with trade index ${msg.tradeIndex}');
         }
       }
     }
