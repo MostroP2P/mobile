@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/models/currency.dart';
 import 'package:mostro_mobile/services/exchange_service.dart';
 import 'package:mostro_mobile/services/yadio_exchange_service.dart';
+import 'package:mostro_mobile/features/settings/settings_provider.dart';
 
 final exchangeServiceProvider = Provider<ExchangeService>((ref) {
   return YadioExchangeService();
@@ -27,4 +28,7 @@ final currencyCodesProvider =
   return currencies;
 });
 
-final selectedFiatCodeProvider = StateProvider<String>((ref) => 'USD');
+final selectedFiatCodeProvider = StateProvider<String>((ref) {
+  final settings = ref.watch(settingsProvider);
+  return settings.defaultFiatCode ?? 'USD';
+});
