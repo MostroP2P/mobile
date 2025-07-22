@@ -166,6 +166,7 @@ class OrderState {
       case Action.buyerTookOrder:
       case Action.holdInvoicePaymentAccepted:
       case Action.holdInvoicePaymentSettled:
+      case Action.buyerInvoiceAccepted:
         return Status.active;
 
       // Actions that should set status to fiat-sent
@@ -176,14 +177,18 @@ class OrderState {
       // Actions that should set status to success (completed)
       case Action.purchaseCompleted:
       case Action.released:
+      case Action.release:
       case Action.rate:
       case Action.rateReceived:
         return Status.success;
 
       // Actions that should set status to canceled
       case Action.canceled:
+      case Action.cancel:
       case Action.adminCanceled:
+      case Action.adminCancel:
       case Action.cooperativeCancelAccepted:
+      case Action.holdInvoicePaymentCanceled:
         return Status.canceled;
 
       // Actions that should set status to cooperatively canceled (pending cancellation)
@@ -195,7 +200,23 @@ class OrderState {
       case Action.disputeInitiatedByYou:
       case Action.disputeInitiatedByPeer:
       case Action.dispute:
+      case Action.adminTakeDispute:
+      case Action.adminTookDispute:
         return Status.dispute;
+
+      // Actions that should set status to admin settled
+      case Action.adminSettle:
+      case Action.adminSettled:
+        return Status.settledByAdmin;
+
+      // Informational actions that should preserve current status
+      case Action.rateUser:
+      case Action.paymentFailed:
+      case Action.invoiceUpdated:
+      case Action.sendDm:
+      case Action.tradePubkey:
+      case Action.adminAddSolver:
+        return payloadStatus ?? status;
 
       // For actions that include Order payload, use the payload status
       case Action.newOrder:
