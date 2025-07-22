@@ -9,12 +9,6 @@ import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 
 final _logger = Logger();
 
-final _statusFilter = {
-  Status.canceled,
-  Status.canceledByAdmin,
-  Status.expired,
-};
-
 // Status filter provider - holds the currently selected status filter
 final statusFilterProvider = StateProvider<Status?>((ref) => null);
 
@@ -38,8 +32,7 @@ final filteredTradesProvider = Provider<AsyncValue<List<NostrEvent>>>((ref) {
           .sort((o1, o2) => o1.expirationDate.compareTo(o2.expirationDate));
 
       var filtered = sortedOrders.reversed
-          .where((o) => orderIds.contains(o.orderId))
-          .where((o) => !_statusFilter.contains(o.status));
+          .where((o) => orderIds.contains(o.orderId));
 
       // Apply status filter if one is selected
       if (selectedStatusFilter != null) {

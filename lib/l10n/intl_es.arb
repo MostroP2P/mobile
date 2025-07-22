@@ -577,7 +577,6 @@
   "statusSettledHoldInvoice": "Factura-Retenida-Liquidada",
   
   "loadingOrder": "Cargando orden...",
-  "done": "HECHO",
   "unsupportedLinkFormat": "Formato de enlace no compatible",
   "failedToOpenLink": "Error al abrir enlace",
   "failedToLoadOrder": "Error al cargar orden",
