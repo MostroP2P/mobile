@@ -6,6 +6,7 @@ import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/features/trades/providers/trades_provider.dart';
 import 'package:mostro_mobile/features/trades/widgets/trades_list.dart';
+import 'package:mostro_mobile/features/trades/widgets/status_filter_widget.dart';
 import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_app_bar.dart';
 import 'package:mostro_mobile/shared/widgets/custom_drawer_overlay.dart';
@@ -34,7 +35,7 @@ class TradesScreen extends ConsumerWidget {
               Expanded(
                 child: Column(
                   children: [
-                    // Header with dark background
+                    // Header with dark background and status filter
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(16.0),
@@ -44,13 +45,20 @@ class TradesScreen extends ConsumerWidget {
                           bottom: BorderSide(color: Colors.white24, width: 0.5),
                         ),
                       ),
-                      child: Text(
-                        S.of(context)!.myActiveTrades,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            S.of(context)!.myActiveTrades,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          // Status Filter Dropdown
+                          const StatusFilterWidget(),
+                        ],
                       ),
                     ),
                     // Content area with dark background

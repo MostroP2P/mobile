@@ -15,12 +15,16 @@ final _statusFilter = {
   Status.expired,
 };
 
+// Status filter provider - holds the currently selected status filter
+final statusFilterProvider = StateProvider<Status?>((ref) => null);
+
 final filteredTradesProvider = Provider<AsyncValue<List<NostrEvent>>>((ref) {
   final allOrdersAsync = ref.watch(orderEventsProvider);
   final sessions = ref.watch(sessionNotifierProvider);
+  final selectedStatusFilter = ref.watch(statusFilterProvider);
 
   _logger.d(
-      'Filtering trades: Orders state=${allOrdersAsync.toString().substring(0, math.min(100, allOrdersAsync.toString().length))}, Sessions count=${sessions.length}');
+      'Filtering trades: Orders state=${allOrdersAsync.toString().substring(0, math.min(100, allOrdersAsync.toString().length))}, Sessions count=${sessions.length}, Status filter=${selectedStatusFilter?.value}');
 
   return allOrdersAsync.when(
     data: (allOrders) {
@@ -33,13 +37,18 @@ final filteredTradesProvider = Provider<AsyncValue<List<NostrEvent>>>((ref) {
       sortedOrders
           .sort((o1, o2) => o1.expirationDate.compareTo(o2.expirationDate));
 
-      final filtered = sortedOrders.reversed
+      var filtered = sortedOrders.reversed
           .where((o) => orderIds.contains(o.orderId))
-          .where((o) => !_statusFilter.contains(o.status))
-          .toList();
+          .where((o) => !_statusFilter.contains(o.status));
 
-      _logger.d('Filtered to ${filtered.length} trades');
-      return AsyncValue.data(filtered);
+      // Apply status filter if one is selected
+      if (selectedStatusFilter != null) {
+        filtered = filtered.where((o) => o.status == selectedStatusFilter);
+      }
+
+      final result = filtered.toList();
+      _logger.d('Filtered to ${result.length} trades');
+      return AsyncValue.data(result);
     },
     loading: () {
       _logger.d('Orders loading');
