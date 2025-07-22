@@ -178,7 +178,7 @@
   "welcomeToMostroMobile": "Opera Bitcoin libremente — sin KYC",
   "discoverSecurePlatform": "Mostro es un intercambio peer-to-peer que te permite operar Bitcoin por cualquier moneda y método de pago — sin KYC, y sin necesidad de entregar tus datos a nadie.\n\nEstá construido en Nostr, lo que lo hace resistente a la censura. Nadie puede evitar que operes.",
   "easyOnboarding": "Privacidad por defecto",
-  "guidedWalkthroughSimple": "Mostro genera una nueva identidad para cada intercambio, por lo que tus operaciones no pueden ser vinculadas.\n\nTambién puedes decidir qué tan privado quieres ser:\n\n• Modo reputación – Permite que otros vean tus intercambios exitosos y nivel de confianza.\n• Modo privacidad completa – No se construye reputación, pero tu actividad es completamente anónima.\n\nCambia de modo en cualquier momento desde la pantalla de Cuenta, donde también deberías guardar tus palabras secretas — son la única forma de recuperar tu cuenta.",
+  "guidedWalkthroughSimple": "Mostro genera una nueva identidad para cada intercambio, por lo que tus operaciones no pueden ser vinculadas.\n\nTambién puedes decidir qué tan privado quieres ser:\n\n• Modo reputación – Permite que otros vean tus intercambios exitosos y nivel de confianza.\n\n• Modo privacidad completa – No se construye reputación, pero tu actividad es completamente anónima.\n\nCambia de modo en cualquier momento desde la pantalla de Cuenta, donde también deberías guardar tus palabras secretas — son la única forma de recuperar tu cuenta.",
   "tradeWithConfidence": "Seguridad en cada paso",
   "seamlessPeerToPeer": "Mostro utiliza Facturas Retenidas: los sats permanecen en la billetera del vendedor hasta el final del intercambio. Esto protege a ambas partes.\n\nLa aplicación también está diseñada para ser intuitiva y fácil para todo tipo de usuarios.",
   "encryptedChat": "Chat completamente encriptado",
@@ -497,7 +497,7 @@
   "copy": "Copiar",
   "share": "Compartir",
   "failedToShareInvoice": "Error al compartir factura. Por favor intenta copiarla en su lugar.",
-
+  
   "@_comment_trade_detail_screen_new": "Nuevas cadenas de Pantalla de Detalles de Intercambio",
   "orderDetailsTitle": "DETALLES DE ORDEN",
   "buyOrderDetailsTitle": "DETALLES DE ORDEN DE COMPRA",
@@ -559,23 +559,31 @@
   "cooperativeCancelDialogMessage": "Si confirmas, iniciarás una cancelación cooperativa con tu contraparte.",
   "acceptCancelDialogMessage": "Si confirmas, aceptarás la cancelación cooperativa iniciada por tu contraparte.",
   "orderIdCopiedMessage": "ID de orden copiado al portapapeles",
-
+  
   "language": "Idioma",
   "systemDefault": "Predeterminado del sistema",
   "english": "Inglés",
   "spanish": "Español",
   "italian": "Italiano",
   "chooseLanguageDescription": "Elige tu idioma preferido o usa el predeterminado del sistema",
-
-
-
+  
+  "statusFilter": "Estado",
+  "allStatuses": "Todos",
+  "statusPending": "Pendiente",
+  "statusWaitingPayment": "Esperando-Pago",
+  "statusWaitingBuyerInvoice": "Esperando-Factura-Comprador",
+  "statusActive": "Activo",
+  "statusFiatSent": "Fiat-Enviado",
+  "statusSuccess": "Éxito",
+  "statusCanceled": "Cancelado",
+  "statusSettledHoldInvoice": "Factura-Retenida-Liquidada",
+  
   "loadingOrder": "Cargando orden...",
-  "done": "HECHO",
   "unsupportedLinkFormat": "Formato de enlace no compatible",
   "failedToOpenLink": "Error al abrir enlace",
   "failedToLoadOrder": "Error al cargar orden",
   "failedToOpenOrder": "Error al abrir orden",
-
+  
   "@_comment_deep_link_errors": "Mensajes de Error de Enlaces Profundos",
   "deepLinkInvalidFormat": "Formato de URL mostro: inválido",
   "deepLinkParseError": "Error al analizar la URL mostro:",
@@ -591,7 +599,7 @@
     }
   },
   "deepLinkGoHome": "Ir al Inicio",
-
+  
   "@_comment_about_screen_new": "About Screen New Strings",
   "documentation": "Documentación",
   "usersDocumentationEnglish": "Documentación de Usuario (Inglés)",
