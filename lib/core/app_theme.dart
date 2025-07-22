@@ -113,6 +113,9 @@ class AppTheme {
             fontSize: 14.0,
           ),
           padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 30),
+          fixedSize: const Size.fromHeight(48),
+          minimumSize: Size.zero,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
       ),
       textButtonTheme: TextButtonThemeData(

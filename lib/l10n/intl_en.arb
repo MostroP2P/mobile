@@ -1,5 +1,6 @@
 {
   "@@locale": "en",
+  "backToHome": "Back to Home",
   "newOrder": "Your offer has been published! Please wait until another user picks your order. It will be available for {expiration_hours} hours. You can cancel this order before another user picks it up by executing: cancel.",
   "canceled": "You have canceled the order ID: {id}.",
   "payInvoice": "Please pay this hold invoice of {amount} Sats for {fiat_code} {fiat_amount} to start the operation. If you do not pay it within {expiration_seconds} minutes, the trade will be canceled.",
