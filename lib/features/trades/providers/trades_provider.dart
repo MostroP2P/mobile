@@ -10,12 +10,6 @@ import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 
 final _logger = Logger();
 
-final _statusFilter = {
-  Status.canceled,
-  Status.canceledByAdmin,
-  Status.expired,
-};
-
 // Status filter provider - holds the currently selected status filter
 final statusFilterProvider = StateProvider<Status?>((ref) => null);
 
@@ -81,8 +75,10 @@ final filteredTradesProvider = Provider<AsyncValue<List<NostrEvent>>>((ref) {
   final allOrdersAsync = ref.watch(orderEventsProvider);
   final sessions = ref.watch(sessionNotifierProvider);
   final selectedStatusFilter = ref.watch(statusFilterProvider);
+  final selectedStatusFilter = ref.watch(statusFilterProvider);
 
   _logger.d(
+      'Filtering trades: Orders state=${allOrdersAsync.toString().substring(0, math.min(100, allOrdersAsync.toString().length))}, Sessions count=${sessions.length}, Status filter=${selectedStatusFilter?.value}');
       'Filtering trades: Orders state=${allOrdersAsync.toString().substring(0, math.min(100, allOrdersAsync.toString().length))}, Sessions count=${sessions.length}, Status filter=${selectedStatusFilter?.value}');
 
   return allOrdersAsync.when(

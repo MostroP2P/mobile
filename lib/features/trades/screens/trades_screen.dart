@@ -49,7 +49,7 @@ class TradesScreen extends ConsumerWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            S.of(context)!.myActiveTrades,
+                            S.of(context)!.myTrades,
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 20,
