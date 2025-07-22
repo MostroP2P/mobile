@@ -265,6 +265,8 @@
   "sell": "SELL",
   "buying": "BUYING",
   "selling": "SELLING",
+  "youAreBuying": "YOU ARE BUYING",
+  "youAreSelling": "YOU ARE SELLING",
   "marketPrice": "Market Price",
   "forSats": "For {amount} sats",
   "@forSats": {
