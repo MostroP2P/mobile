@@ -137,6 +137,16 @@
   "buyBtc": "COMPRA BTC",
   "sellBtc": "VENDI BTC",
   "filter": "FILTRO",
+  "statusFilter": "Stato",
+  "allStatuses": "Tutti",
+  "statusPending": "In Attesa",
+  "statusWaitingPayment": "Aspettando-Pagamento",
+  "statusWaitingBuyerInvoice": "Aspettando-Fattura-Acquirente",
+  "statusActive": "Attivo",
+  "statusFiatSent": "Fiat-Inviato",
+  "statusSuccess": "Successo",
+  "statusCanceled": "Annullato",
+  "statusSettledHoldInvoice": "Fattura-Trattenuta-Liquidata",
   "offersCount": "{count} offerte",
   "@offersCount": {
     "placeholders": {
@@ -171,7 +181,6 @@
   "myTrades": "I Miei Scambi",
   "chat": "Chat",
   "navigateToLabel": "Naviga a {label}",
-  "myActiveTrades": "I Miei Scambi Attivi",
   "errorLoadingTrades": "Errore nel caricamento degli scambi",
   "retry": "Riprova",
   "noTradesAvailable": "Nessuno scambio disponibile per questo tipo",
@@ -230,6 +239,8 @@
   "sell": "VENDI",
   "buying": "COMPRANDO",
   "selling": "VENDENDO",
+  "youAreBuying": "STAI COMPRANDO",
+  "youAreSelling": "STAI VENDENDO",
   "marketPrice": "Prezzo di Mercato",
   "forSats": "Per {amount} sats",
   "@forSats": {
@@ -267,19 +278,15 @@
   "githubRepository": "Repository GitHub",
   "commitHash": "Hash Commit",
   "appInformation": "Informazioni App",
-  "aboutMostroInstance": "Informazioni Istanza Mostro",
+  "mostroNode": "Nodo Mostro",
   "generalInfo": "Informazioni Generali",
   "pubkey": "Chiave Pubblica",
   "mostroVersion": "Versione",
-  "maxOrderAmount": "Importo Massimo Ordine",
-  "minOrderAmount": "Importo Minimo Ordine",
   "expirationHours": "Ore di Scadenza",
   "expirationSeconds": "Secondi di Scadenza",
   "fee": "Commissione",
   "proofOfWork": "Proof of Work",
   "holdInvoiceExpirationWindow": "Finestra Scadenza Fattura Hold",
-  "holdInvoiceCltvDelta": "Delta CLTV Fattura Hold",
-  "invoiceExpirationWindow": "Finestra Scadenza Fattura",
   
   "@_comment_order_creation": "Stringhe Modulo Creazione Ordine",
   "youWantToBuyBitcoin": "Vuoi comprare Bitcoin",
@@ -301,7 +308,6 @@
   "premiumTitle": "Premio (%)",
   "premiumTooltip": "Regola quanto sopra o sotto il prezzo di mercato vuoi la tua offerta. Di default, è impostato al 0%, senza premio o sconto, quindi se non vuoi cambiare il prezzo, puoi lasciarlo così com'è.",
   
-  "@_comment_account_screen": "Stringhe Schermata Gestione Account",
   "secretWords": "Parole Segrete",
   "toRestoreYourAccount": "Per ripristinare il tuo account",
   "privacy": "Privacy",
@@ -316,7 +322,6 @@
   "noMnemonicFound": "Nessun mnemonico trovato",
   "errorLoadingMnemonic": "Errore: {error}",
   
-  "@_comment_chat_screens": "Stringhe Schermata Chat",
   "noMessagesAvailable": "Nessun messaggio disponibile",
   "back": "INDIETRO",
   "typeAMessage": "Scrivi un messaggio...",
@@ -324,18 +329,15 @@
   "yourHandle": "Il tuo nome: {handle}",
   "yourSharedKey": "La tua chiave condivisa:",
   
-  "@_comment_trade_actions": "Azioni Dettaglio Scambio",
   "payInvoiceButton": "PAGA FATTURA",
   "addInvoiceButton": "AGGIUNGI FATTURA",
   "release": "RILASCIA",
   "takeSell": "PRENDI VENDITA",
   "takeBuy": "PRENDI ACQUISTO",
   
-  "@_comment_currency_errors": "Messaggi Errore Valuta",
   "noExchangeDataAvailable": "Nessun dato di cambio disponibile",
   "errorFetchingCurrencies": "Errore nel recupero delle valute",
   
-  "@_comment_currency_section": "Stringhe Sezione Selezione Valuta",
   "selectFiatCurrencyPay": "Seleziona la valuta fiat con cui pagherai",
   "selectFiatCurrencyReceive": "Seleziona la Valuta Fiat che vuoi ricevere",
   "loadingCurrencies": "Caricamento valute...",
@@ -345,18 +347,11 @@
   "searchCurrencies": "Cerca valute...",
   "noCurrenciesFound": "Nessuna valuta trovata",
   
-  "@_comment_price_type_section": "Stringhe Sezione Tipo di Prezzo",
   "priceType": "Tipo di prezzo",
-  "marketPrice": "Prezzo di mercato",
   "fixedPrice": "Prezzo fisso",
   "market": "Mercato",
   "priceTypeTooltip": "• Seleziona Prezzo di Mercato se vuoi usare il prezzo che ha Bitcoin quando qualcuno prende la tua offerta.\\n• Seleziona Prezzo Fisso se vuoi definire l'importo esatto di Bitcoin che scambierai.",
   
-  "@_comment_take_order_screen": "Stringhe Schermata Prendi Ordine",
-  "orderDetails": "DETTAGLI ORDINE",
-  "selling": "vendendo",
-  "buying": "comprando",
-  "atMarketPrice": "a prezzo di mercato",
   "withPremiumPercent": "con un +{premium}% di premio",
   "@withPremiumPercent": {
     "placeholders": {
@@ -373,7 +368,6 @@
       }
     }
   },
-  "noPaymentMethod": "Nessun metodo di pagamento",
   "someoneIsSellingBuying": "Qualcuno sta {action}{satAmount} sats per {amountString} {price} {premiumText}",
   "@someoneIsSellingBuying": {
     "placeholders": {
@@ -471,18 +465,15 @@
   "lightningInvoice": "Fattura Lightning",
   "enterInvoiceHere": "Inserisci la fattura qui",
   
-  "@_comment_trade_detail_screen": "Stringhe Schermata Dettaglio Scambio",
-  "cancelPending": "CANCELLAZIONE IN ATTESA",
-  "acceptCancel": "ACCETTA CANCELLAZIONE",
-  "completePurchase": "COMPLETA ACQUISTO",
-  "rate": "VALUTA",
-  "contact": "CONTATTA",
+  "cancelPendingButton": "CANCELLAZIONE IN ATTESA",
+  "acceptCancelButton": "ACCETTA CANCELLAZIONE",
+  "completePurchaseButton": "COMPLETA ACQUISTO",
+  "rateButton": "VALUTA",
+  "contactButton": "CONTATTA",
   
-  "@_comment_rate_screen": "Stringhe Schermata Valuta Controparte",
   "rateCounterpart": "Valuta Controparte",
   "submitRating": "Invia Valutazione",
   
-  "@_comment_pay_invoice_screen": "Stringhe Schermata Pagamento Fattura Lightning",
   "payLightningInvoice": "Paga Fattura Lightning",
   "payInvoiceToContinue": "Paga questa fattura di {sats} Sats equivalenti a {fiat_amount} {fiat_code} per continuare lo scambio dell'ordine {order_id}",
   "@payInvoiceToContinue": {
@@ -507,10 +498,11 @@
   },
   "failedToGenerateQR": "Errore nella generazione del codice QR",
   "invoiceCopiedToClipboard": "Fattura copiata negli appunti",
+  "copiedToClipboard": "Copiato negli appunti",
   "copy": "Copia",
   "share": "Condividi",
   "failedToShareInvoice": "Errore nel condividere la fattura. Per favore prova a copiarla invece.",
-
+  
   "@_comment_trade_detail_screen_new": "Nuove Stringhe Schermata Dettagli Scambio",
   "orderDetailsTitle": "DETTAGLI ORDINE",
   "buyOrderDetailsTitle": "DETTAGLI ORDINE DI ACQUISTO",
@@ -582,21 +574,20 @@
   "cooperativeCancelDialogMessage": "Se confermi, inizierai un annullamento cooperativo con la tua controparte.",
   "acceptCancelDialogMessage": "Se confermi, accetterai l'annullamento cooperativo iniziato dalla tua controparte.",
   "orderIdCopiedMessage": "ID ordine copiato negli appunti",
-
+  
   "language": "Lingua",
   "systemDefault": "Predefinito di sistema",
   "english": "Inglese",
   "spanish": "Spagnolo",
   "italian": "Italiano",
   "chooseLanguageDescription": "Scegli la tua lingua preferita o usa il predefinito di sistema",
-
+  
   "loadingOrder": "Caricamento ordine...",
-  "done": "FATTO",
   "unsupportedLinkFormat": "Formato di link non supportato",
   "failedToOpenLink": "Impossibile aprire il link",
   "failedToLoadOrder": "Impossibile caricare l'ordine",
   "failedToOpenOrder": "Impossibile aprire l'ordine",
-
+  
   "@_comment_deep_link_errors": "Messaggi di Errore per Deep Link",
   "deepLinkInvalidFormat": "Formato URL mostro: non valido",
   "deepLinkParseError": "Impossibile analizzare l'URL mostro:",
@@ -613,6 +604,7 @@
   },
   "deepLinkGoHome": "Vai alla Home",
   
+
   "@_comment_order_disabled_messages": "Messaggi Ordine Disabilitato",
   "orderCompletedMessagingDisabled": "Ordine completato - messaggistica disabilitata",
   "orderCanceledMessagingDisabled": "Ordine cancellato - messaggistica disabilitata",
@@ -678,5 +670,92 @@
   "notAvailable": "Non disponibile",
   "unknownDate": "Data sconosciuta",
   "messageCopiedToClipboard": "Messaggio copiato negli appunti"
+
+
+  "@_comment_about_screen_new": "About Screen New Strings",
+  "documentation": "Documentazione",
+  "usersDocumentationEnglish": "Documentazione Utente (Inglese)",
+  "usersDocumentationSpanish": "Documentazione Utente (Spagnolo)",
+  "technicalDocumentation": "Documentazione Tecnica",
+  "read": "Leggi",
+  "technicalDetails": "Dettagli Tecnici",
+  "mostroDaemonVersion": "Versione di Mostro",
+  "mostroCommitId": "ID Commit Mostro",
+  "orderExpiration": "Scadenza Ordine",
+  "holdInvoiceExpiration": "Scadenza Fattura di Blocco",
+  "holdInvoiceCltvDelta": "Delta CLTV Fattura di Blocco",
+  "invoiceExpirationWindow": "Finestra di Scadenza Fattura",
+  "proofOfWork": "Prova di Lavoro",
+  "lightningNetwork": "Lightning Network",
+  "lndDaemonVersion": "Versione di LND",
+  "lndNodePublicKey": "Chiave Pubblica Nodo LND",
+  "lndCommitId": "ID Commit LND",
+  "lndNodeAlias": "Alias Nodo LND",
+  "supportedChains": "Catene Supportate",
+  "supportedNetworks": "Reti Supportate",
+  "lndNodeUri": "URI Nodo LND",
+  "maxOrderAmount": "Importo Massimo Ordine",
+  "minOrderAmount": "Importo Minimo Ordine",
+  "orderLifespan": "Durata Ordine",
+  "serviceFee": "Commissione Servizio",
+  "satoshis": "Satoshis",
+  "hour": "ora",
+  "sec": "sec",
+  "blocks": "blocchi",
+  "seconds": "secondi",
+  "mostroPublicKey": "Chiave Pubblica di Mostro",
+  "license": "Licenza",
+  
+  "@_comment_mostro_node_field_explanations": "Spiegazioni dei campi del nodo Mostro",
+  "mostroPublicKeyExplanation": "L'identificatore univoco per questo nodo Mostro sulla rete Nostr. Viene utilizzato per verificare l'autenticità di tutte le comunicazioni con il nodo.",
+  "mostroVersionExplanation": "La versione del software Mostro attualmente in esecuzione su questo nodo. Questo aiuta gli utenti a capire quali funzionalità sono disponibili.",
+  "mostroCommitIdExplanation": "L'hash specifico del commit Git del software Mostro. Questo fornisce le informazioni esatte della versione per il debug e la compatibilità.",
+  "maxOrderAmountExplanation": "La quantità massima di satoshi che può essere scambiata in un singolo ordine su questo nodo Mostro. Gli ordini sopra questo limite saranno respinti.",
+  "minOrderAmountExplanation": "La quantità minima di satoshi che può essere scambiata in un singolo ordine su questo nodo Mostro. Gli ordini sotto questo limite saranno respinti.",
+  "orderExpirationExplanation": "Quanto tempo (in ore) un ordine rimane attivo e visibile nel libro degli ordini prima di scadere automaticamente e essere rimosso.",
+  "holdInvoiceExpirationExplanation": "La finestra temporale (in secondi) per la scadenza delle fatture di blocco. Le fatture di blocco vengono utilizzate per assicurare i fondi durante il processo di trading.",
+  "holdInvoiceCltvDeltaExplanation": "Il numero di blocchi aggiunti all'altezza attuale del blocco per la scadenza delle fatture di blocco. Questo fornisce tempo per la Lightning Network per elaborare il pagamento.",
+  "invoiceExpirationWindowExplanation": "La finestra temporale (in secondi) per la scadenza delle fatture Lightning regolari. Questo garantisce che le fatture non rimangano valide indefinitamente.",
+  "serviceFeeExplanation": "La commissione addebitata da questo nodo Mostro per facilitare gli scambi. Questo è tipicamente una piccola percentuale dell'importo dello scambio.",
+  "proofOfWorkExplanation": "Il livello di difficoltà richiesto per la prova di lavoro negli eventi Nostr. Questo aiuta a prevenire lo spam e garantisce la qualità del servizio.",
+  "lndDaemonVersionExplanation": "La versione del software Lightning Network Daemon (LND) che questo nodo Mostro utilizza per elaborare i pagamenti Bitcoin Lightning.",
+  "lndNodePublicKeyExplanation": "La chiave pubblica del nodo Lightning Network che gestisce i pagamenti per questa istanza di Mostro. Viene utilizzata per il routing della Lightning Network.",
+  "lndCommitIdExplanation": "L'hash specifico del commit Git del software LND. Questo fornisce informazioni esatte della versione per l'implementazione della Lightning Network.",
+  "lndNodeAliasExplanation": "Il nome leggibile dall'uomo o alias del nodo Lightning Network. Questo rende più facile identificare il nodo nella Lightning Network.",
+  "supportedChainsExplanation": "Le reti blockchain supportate da questo nodo Mostro (tipicamente Bitcoin mainnet, testnet, o regtest).",
+  "supportedNetworksExplanation": "Gli ambienti di rete specifici su cui opera questo nodo Mostro (mainnet per Bitcoin reale, testnet per i test).",
+  "lndNodeUriExplanation": "L'indirizzo di rete completo del nodo Lightning Network, incluse la chiave pubblica e le informazioni di connessione per connessioni peer dirette.",
+  
+  "@_comment_license_text": "Testo Licenza MIT",
+  "mitLicenseText": "Licenza MIT\\n\\nCopyright (c) 2025 Team Mostro\\n\\nÈ concesso il permesso, gratuitamente, a chiunque ottenga una copia di questo software e dei file di documentazione associati (il \\\"Software\\\"), di trattare il Software senza restrizioni, inclusi senza limitazione i diritti di utilizzare, copiare, modificare, fondere, pubblicare, distribuire, sublicenziare e/o vendere copie del Software, e di permettere alle persone a cui il Software è fornito di fare lo stesso, soggetto alle seguenti condizioni:\\n\\nL'avviso di copyright sopra riportato e questo avviso di permesso devono essere inclusi in tutte le copie o parti sostanziali del Software.\\n\\nIL SOFTWARE È FORNITO \\\"COSÌ COM'È\\\", SENZA GARANZIE DI ALCUN TIPO, ESPLICITE O IMPLICITE, INCLUSE MA NON LIMITATE ALLE GARANZIE DI COMMERCIABILITÀ, IDONEITÀ PER UN PARTICOLARE SCOPO E NON VIOLAZIONE. IN NESSUN CASO GLI AUTORI O I DETENTORI DEL COPYRIGHT SARANNO RESPONSABILI PER QUALSIASI RECLAMO, DANNO O ALTRA RESPONSABILITÀ, SIA IN UN'AZIONE CONTRATTUALE, ILLECITO O ALTRO, DERIVANTE DA, FUORI DA O IN CONNESSIONE CON IL SOFTWARE O L'USO O ALTRE OPERAZIONI NEL SOFTWARE.",
+  
+  "@_comment_url_launch_errors": "Messaggi di Errore Lancio URL",
+  "cannotOpenLink": "Impossibile aprire il link - nessuna app disponibile",
+  
+  "@_comment_settings_info_dialogs": "Testo Dialoghi Informazioni Impostazioni",
+  "languageInfoText": "Scegli la tua lingua preferita per l'interfaccia dell'applicazione.",
+  "currencyInfoText": "Scegli la valuta predefinita per i tuoi ordini.",
+  "relaysInfoText": "• I relay sono server che aiutano a distribuire i tuoi messaggi attraverso la rete Nostr\n\n• Aggiungere più relay può migliorare la connettività e la ridondanza\n\n• I relay non si sincronizzano tra loro, quindi solo quelli a cui sei connesso riceveranno i tuoi messaggi.",
+  "mostroInfoText": "• Il Mostro che selezioni sarà quello dove pubblicherai le tue offerte.\n\n• In caso di disputa, una persona assegnata a quel Mostro sarà quella che la risolverà.",
+  
+  "@_comment_account_info_dialogs": "Testo Dialoghi Informazioni Account",
+  "secretWordsInfoText": "• Queste sono le tue parole segrete, l'unico modo per recuperare il tuo account se perdi l'accesso a questa app o vuoi usare la tua identità in un'altra app.\n\n• Scrivile attentamente e conservale in un luogo sicuro e privato. Non condividerle mai con nessuno.\n\n• Se perdi queste parole, perderai permanentemente l'accesso al tuo account.",
+  "privacyInfoText": "• La Modalità Reputazione protegge la tua privacy da terze parti permettendoti di costruire una reputazione con ogni scambio completato.\n\n• La modalità privacy completa fornisce massimo anonimato ma limita le funzionalità di costruzione della reputazione.",
+  "currentTradeIndexInfoText": "Con ogni nuovo scambio, viene generata una Chiave di Scambio unica per assicurare che le tue transazioni rimangano private. L'indice di scambio indica quante chiavi hai usato. Se sei in 'Modalità Reputazione,' permetti a Mostro di collegare tutte le tue Chiavi di Scambio per calcolare e mantenere la tua reputazione.",
+  "generateNewUserDialogTitle": "Generare un nuovo utente?",
+  "generateNewUserDialogContent": "Se continui, verrà generato un nuovo set di 12 parole come tuo nuovo utente. Questo nuovo utente non avrà reputazione, e dovrai ricominciare da capo.",
+  "continueButton": "Continua",
+  "show": "Mostra",
+  "hide": "Nascondi",
+  "reputationMode": "Modalità reputazione",
+  "fullPrivacyMode": "Modalità privacy completa",
+  "maximumAnonymity": "Massimo anonimato",
+  "standardPrivacyWithReputation": "Privacy standard con reputazione",
+  
+  "@_comment_relay_dialogs": "Testo Dialoghi Relay",
+  "editRelay": "Modifica Relay",
+  "relayUrl": "URL del Relay",
+  "add": "Aggiungi",
+  "save": "Salva"
 
 }

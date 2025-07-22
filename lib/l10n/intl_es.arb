@@ -178,7 +178,7 @@
   "welcomeToMostroMobile": "Opera Bitcoin libremente — sin KYC",
   "discoverSecurePlatform": "Mostro es un intercambio peer-to-peer que te permite operar Bitcoin por cualquier moneda y método de pago — sin KYC, y sin necesidad de entregar tus datos a nadie.\n\nEstá construido en Nostr, lo que lo hace resistente a la censura. Nadie puede evitar que operes.",
   "easyOnboarding": "Privacidad por defecto",
-  "guidedWalkthroughSimple": "Mostro genera una nueva identidad para cada intercambio, por lo que tus operaciones no pueden ser vinculadas.\n\nTambién puedes decidir qué tan privado quieres ser:\n\n• Modo reputación – Permite que otros vean tus intercambios exitosos y nivel de confianza.\n• Modo privacidad completa – No se construye reputación, pero tu actividad es completamente anónima.\n\nCambia de modo en cualquier momento desde la pantalla de Cuenta, donde también deberías guardar tus palabras secretas — son la única forma de recuperar tu cuenta.",
+  "guidedWalkthroughSimple": "Mostro genera una nueva identidad para cada intercambio, por lo que tus operaciones no pueden ser vinculadas.\n\nTambién puedes decidir qué tan privado quieres ser:\n\n• Modo reputación – Permite que otros vean tus intercambios exitosos y nivel de confianza.\n\n• Modo privacidad completa – No se construye reputación, pero tu actividad es completamente anónima.\n\nCambia de modo en cualquier momento desde la pantalla de Cuenta, donde también deberías guardar tus palabras secretas — son la única forma de recuperar tu cuenta.",
   "tradeWithConfidence": "Seguridad en cada paso",
   "seamlessPeerToPeer": "Mostro utiliza Facturas Retenidas: los sats permanecen en la billetera del vendedor hasta el final del intercambio. Esto protege a ambas partes.\n\nLa aplicación también está diseñada para ser intuitiva y fácil para todo tipo de usuarios.",
   "encryptedChat": "Chat completamente encriptado",
@@ -230,6 +230,8 @@
   "sell": "VENDER",
   "buying": "COMPRANDO",
   "selling": "VENDIENDO",
+  "youAreBuying": "ESTÁS COMPRANDO",
+  "youAreSelling": "ESTÁS VENDIENDO",
   "marketPrice": "Precio de Mercado",
   "forSats": "Por {amount} sats",
   "@forSats": {
@@ -267,7 +269,7 @@
   "githubRepository": "Repositorio GitHub",
   "commitHash": "Hash de Commit",
   "appInformation": "Información de la App",
-  "aboutMostroInstance": "Acerca de la Instancia Mostro",
+  "mostroNode": "Nodo Mostro",
   "generalInfo": "Información General",
   "pubkey": "Clave Pública",
   "mostroVersion": "Versión",
@@ -301,7 +303,6 @@
   "premiumTitle": "Prima (%)",
   "premiumTooltip": "Ajusta cuánto por encima o por debajo del precio de mercado quieres tu oferta. Por defecto, está establecido en 0%, sin prima o descuento, así que si no quieres cambiar el precio, puedes dejarlo como está.",
   
-  "@_comment_account_screen": "Cadenas de Pantalla de Gestión de Cuenta",
   "secretWords": "Palabras Secretas",
   "toRestoreYourAccount": "Para restaurar tu cuenta",
   "privacy": "Privacidad",
@@ -316,7 +317,6 @@
   "noMnemonicFound": "No se encontró mnemónico",
   "errorLoadingMnemonic": "Error: {error}",
   
-  "@_comment_chat_screens": "Cadenas de Pantalla de Chat",
   "noMessagesAvailable": "No hay mensajes disponibles",
   "back": "ATRÁS",
   "typeAMessage": "Escribe un mensaje...",
@@ -324,18 +324,15 @@
   "yourHandle": "Tu nombre: {handle}",
   "yourSharedKey": "Tu clave compartida:",
   
-  "@_comment_trade_actions": "Acciones de Detalle de Intercambio",
   "payInvoiceButton": "PAGAR FACTURA",
   "addInvoiceButton": "AGREGAR FACTURA",
   "release": "LIBERAR",
   "takeSell": "TOMAR VENTA",
   "takeBuy": "TOMAR COMPRA",
   
-  "@_comment_currency_errors": "Mensajes de Error de Moneda",
   "noExchangeDataAvailable": "No hay datos de intercambio disponibles",
   "errorFetchingCurrencies": "Error obteniendo monedas",
   
-  "@_comment_currency_section": "Cadenas de Sección de Selección de Moneda",
   "selectFiatCurrencyPay": "Selecciona la moneda fiat con la que pagarás",
   "selectFiatCurrencyReceive": "Selecciona la Moneda Fiat que quieres recibir",
   "loadingCurrencies": "Cargando monedas...",
@@ -345,18 +342,11 @@
   "searchCurrencies": "Buscar monedas...",
   "noCurrenciesFound": "No se encontraron monedas",
   
-  "@_comment_price_type_section": "Cadenas de Sección de Tipo de Precio",
   "priceType": "Tipo de precio",
-  "marketPrice": "Precio de mercado",
   "fixedPrice": "Precio fijo",
   "market": "Mercado",
   "priceTypeTooltip": "• Selecciona Precio de Mercado si quieres usar el precio que tiene Bitcoin cuando alguien tome tu oferta.\\n• Selecciona Precio Fijo si quieres definir la cantidad exacta de Bitcoin que intercambiarás.",
   
-  "@_comment_take_order_screen": "Cadenas de Pantalla de Tomar Orden",
-  "orderDetails": "DETALLES DE LA ORDEN",
-  "selling": "vendiendo",
-  "buying": "comprando",
-  "atMarketPrice": "a precio de mercado",
   "withPremiumPercent": "con un +{premium}% de premio",
   "@withPremiumPercent": {
     "placeholders": {
@@ -373,7 +363,6 @@
       }
     }
   },
-  "noPaymentMethod": "Sin método de pago",
   "someoneIsSellingBuying": "Alguien está {action}{satAmount} sats por {amountString} {price} {premiumText}",
   "@someoneIsSellingBuying": {
     "placeholders": {
@@ -471,18 +460,15 @@
   "lightningInvoice": "Factura Lightning",
   "enterInvoiceHere": "Ingresa la factura aquí",
   
-  "@_comment_trade_detail_screen": "Cadenas de Pantalla de Detalle de Intercambio",
-  "cancelPending": "CANCELACIÓN PENDIENTE",
-  "acceptCancel": "ACEPTAR CANCELACIÓN",
-  "completePurchase": "COMPLETAR COMPRA",
-  "rate": "CALIFICAR",
-  "contact": "CONTACTAR",
+  "cancelPendingButton": "CANCELACIÓN PENDIENTE",
+  "acceptCancelButton": "ACEPTAR CANCELACIÓN",
+  "completePurchaseButton": "COMPLETAR COMPRA",
+  "rateButton": "CALIFICAR",
+  "contactButton": "CONTACTAR",
   
-  "@_comment_rate_screen": "Cadenas de Pantalla de Calificar Contraparte",
   "rateCounterpart": "Calificar Contraparte",
   "submitRating": "Enviar Calificación",
   
-  "@_comment_pay_invoice_screen": "Cadenas de Pantalla de Pago de Factura Lightning",
   "payLightningInvoice": "Pagar Factura Lightning",
   "payInvoiceToContinue": "Paga esta factura de {sats} Sats equivalentes a {fiat_amount} {fiat_code} para continuar el intercambio de la orden {order_id}",
   "@payInvoiceToContinue": {
@@ -507,10 +493,11 @@
   },
   "failedToGenerateQR": "Error al generar código QR",
   "invoiceCopiedToClipboard": "Factura copiada al portapapeles",
+  "copiedToClipboard": "Copiado al portapapeles",
   "copy": "Copiar",
   "share": "Compartir",
   "failedToShareInvoice": "Error al compartir factura. Por favor intenta copiarla en su lugar.",
-
+  
   "@_comment_trade_detail_screen_new": "Nuevas cadenas de Pantalla de Detalles de Intercambio",
   "orderDetailsTitle": "DETALLES DE ORDEN",
   "buyOrderDetailsTitle": "DETALLES DE ORDEN DE COMPRA",
@@ -572,23 +559,31 @@
   "cooperativeCancelDialogMessage": "Si confirmas, iniciarás una cancelación cooperativa con tu contraparte.",
   "acceptCancelDialogMessage": "Si confirmas, aceptarás la cancelación cooperativa iniciada por tu contraparte.",
   "orderIdCopiedMessage": "ID de orden copiado al portapapeles",
-
+  
   "language": "Idioma",
   "systemDefault": "Predeterminado del sistema",
   "english": "Inglés",
   "spanish": "Español",
   "italian": "Italiano",
   "chooseLanguageDescription": "Elige tu idioma preferido o usa el predeterminado del sistema",
-
-
-
+  
+  "statusFilter": "Estado",
+  "allStatuses": "Todos",
+  "statusPending": "Pendiente",
+  "statusWaitingPayment": "Esperando-Pago",
+  "statusWaitingBuyerInvoice": "Esperando-Factura-Comprador",
+  "statusActive": "Activo",
+  "statusFiatSent": "Fiat-Enviado",
+  "statusSuccess": "Éxito",
+  "statusCanceled": "Cancelado",
+  "statusSettledHoldInvoice": "Factura-Retenida-Liquidada",
+  
   "loadingOrder": "Cargando orden...",
-  "done": "HECHO",
   "unsupportedLinkFormat": "Formato de enlace no compatible",
   "failedToOpenLink": "Error al abrir enlace",
   "failedToLoadOrder": "Error al cargar orden",
   "failedToOpenOrder": "Error al abrir orden",
-
+  
   "@_comment_deep_link_errors": "Mensajes de Error de Enlaces Profundos",
   "deepLinkInvalidFormat": "Formato de URL mostro: inválido",
   "deepLinkParseError": "Error al analizar la URL mostro:",
@@ -605,6 +600,7 @@
   },
   "deepLinkGoHome": "Ir al Inicio",
   
+
   "@_comment_order_disabled_messages": "Mensajes de Orden Deshabilitada",
   "orderCompletedMessagingDisabled": "Orden completada - mensajería deshabilitada",
   "orderCanceledMessagingDisabled": "Orden cancelada - mensajería deshabilitada",
@@ -670,5 +666,88 @@
   "notAvailable": "No disponible",
   "unknownDate": "Fecha desconocida",
   "messageCopiedToClipboard": "Mensaje copiado al portapapeles"
+
+
+  "@_comment_about_screen_new": "About Screen New Strings",
+  "documentation": "Documentación",
+  "usersDocumentationEnglish": "Documentación de Usuario (Inglés)",
+  "usersDocumentationSpanish": "Documentación de Usuario (Español)",
+  "technicalDocumentation": "Documentación Técnica",
+  "read": "Leer",
+  "technicalDetails": "Detalles Técnicos",
+  "mostroDaemonVersion": "Versión de Mostro",
+  "mostroCommitId": "ID de Commit Mostro",
+  "orderExpiration": "Expiración de Orden",
+  "holdInvoiceExpiration": "Expiración de Factura de Retención",
+  "proofOfWork": "Prueba de Trabajo",
+  "lightningNetwork": "Lightning Network",
+  "lndDaemonVersion": "Versión de LND",
+  "lndNodePublicKey": "Clave Pública del Nodo LND",
+  "lndCommitId": "ID de Commit LND",
+  "lndNodeAlias": "Alias del Nodo LND",
+  "supportedChains": "Cadenas Soportadas",
+  "supportedNetworks": "Redes Soportadas",
+  "lndNodeUri": "URI del Nodo LND",
+  "orderLifespan": "Vida Útil de la Orden",
+  "serviceFee": "Tarifa de Servicio",
+  "satoshis": "Satoshis",
+  "hour": "hora",
+  "sec": "seg",
+  "blocks": "bloques",
+  "seconds": "segundos",
+  "mostroPublicKey": "Clave Pública de Mostro",
+  "license": "Licencia",
+  
+  "@_comment_mostro_node_field_explanations": "Explicaciones de campos del nodo Mostro",
+  "mostroPublicKeyExplanation": "El identificador único para este nodo Mostro en la red Nostr. Se utiliza para verificar la autenticidad de todas las comunicaciones con el nodo.",
+  "mostroVersionExplanation": "La versión del software Mostro que se ejecuta actualmente en este nodo. Esto ayuda a los usuarios a entender qué características están disponibles.",
+  "mostroCommitIdExplanation": "El hash específico del commit de Git del software Mostro. Esto proporciona la información exacta de la versión para depuración y compatibilidad.",
+  "maxOrderAmountExplanation": "La cantidad máxima de satoshis que se puede comerciar en una sola orden en este nodo Mostro. Las órdenes por encima de este límite serán rechazadas.",
+  "minOrderAmountExplanation": "La cantidad mínima de satoshis que se puede comerciar en una sola orden en este nodo Mostro. Las órdenes por debajo de este límite serán rechazadas.",
+  "orderExpirationExplanation": "Cuánto tiempo (en horas) permanece activa y visible una orden en el libro de órdenes antes de que expire automáticamente y sea eliminada.",
+  "holdInvoiceExpirationExplanation": "El período de tiempo (en segundos) para que expiren las facturas de retención. Las facturas de retención se utilizan para asegurar fondos durante el proceso de comercio.",
+  "holdInvoiceCltvDeltaExplanation": "El número de bloques agregados a la altura actual del bloque para la expiración de facturas de retención. Esto proporciona tiempo para que la Lightning Network procese el pago.",
+  "invoiceExpirationWindowExplanation": "El período de tiempo (en segundos) para que expiren las facturas regulares de Lightning. Esto asegura que las facturas no permanezcan válidas indefinidamente.",
+  "serviceFeeExplanation": "La tarifa cobrada por este nodo Mostro por facilitar intercambios. Esto es típicamente un pequeño porcentaje del monto del intercambio.",
+  "proofOfWorkExplanation": "El nivel de dificultad requerido para la prueba de trabajo en eventos Nostr. Esto ayuda a prevenir spam y asegura calidad de servicio.",
+  "lndDaemonVersionExplanation": "La versión del software Lightning Network Daemon (LND) que este nodo Mostro utiliza para procesar pagos de Bitcoin Lightning.",
+  "lndNodePublicKeyExplanation": "La clave pública del nodo de Lightning Network que maneja pagos para esta instancia de Mostro. Se utiliza para enrutamiento de Lightning Network.",
+  "lndCommitIdExplanation": "El hash específico del commit de Git del software LND. Esto proporciona información exacta de la versión para la implementación de Lightning Network.",
+  "lndNodeAliasExplanation": "El nombre o alias legible por humanos del nodo de Lightning Network. Esto hace más fácil identificar el nodo en la Lightning Network.",
+  "supportedChainsExplanation": "Las redes blockchain soportadas por este nodo Mostro (típicamente Bitcoin mainnet, testnet, o regtest).",
+  "supportedNetworksExplanation": "Los entornos de red específicos en los que opera este nodo Mostro (mainnet para Bitcoin real, testnet para pruebas).",
+  "lndNodeUriExplanation": "La dirección de red completa del nodo de Lightning Network, incluyendo clave pública e información de conexión para conexiones directas entre pares.",
+  
+  "@_comment_license_text": "Texto de Licencia MIT",
+  "mitLicenseText": "Licencia MIT\\n\\nCopyright (c) 2025 Equipo Mostro\\n\\nPor la presente se concede permiso, libre de cargos, a cualquier persona que obtenga una copia de este software y de los archivos de documentación asociados (el \\\"Software\\\"), a utilizar el Software sin restricción, incluyendo sin limitación los derechos a usar, copiar, modificar, fusionar, publicar, distribuir, sublicenciar, y/o vender copias del Software, y a permitir a las personas a las que se les proporcione el Software a hacer lo mismo, sujeto a las siguientes condiciones:\\n\\nEl aviso de copyright anterior y este aviso de permiso se incluirán en todas las copias o partes sustanciales del Software.\\n\\nEL SOFTWARE SE PROPORCIONA \\\"COMO ESTÁ\\\", SIN GARANTÍA DE NINGÚN TIPO, EXPRESA O IMPLÍCITA, INCLUYENDO PERO NO LIMITADO A GARANTÍAS DE COMERCIALIZACIÓN, IDONEIDAD PARA UN PROPÓSITO PARTICULAR E INCUMPLIMIENTO. EN NINGÚN CASO LOS AUTORES O PROPIETARIOS DE LOS DERECHOS DE AUTOR SERÁN RESPONSABLES DE NINGUNA RECLAMACIÓN, DAÑOS U OTRAS RESPONSABILIDADES, YA SEA EN UNA ACCIÓN DE CONTRATO, AGRAVIO O CUALQUIER OTRO MOTIVO, DERIVADAS DE, FUERA DE O EN CONEXIÓN CON EL SOFTWARE O SU USO U OTRO TIPO DE ACCIONES EN EL SOFTWARE.",
+  
+  "@_comment_url_launch_errors": "Mensajes de Error de Lanzamiento de URL",
+  "cannotOpenLink": "No se puede abrir el enlace - no hay aplicación disponible",
+  
+  "@_comment_settings_info_dialogs": "Texto de Diálogos de Información de Configuración",
+  "languageInfoText": "Elige tu idioma preferido para la interfaz de la aplicación.",
+  "currencyInfoText": "Elige la moneda predeterminada para tus órdenes.",
+  "relaysInfoText": "• Los relays son servidores que ayudan a distribuir tus mensajes a través de la red Nostr\n\n• Agregar más relays puede mejorar la conectividad y redundancia\n\n• Los relays no se sincronizan entre sí, por lo que solo aquellos a los que estés conectado recibirán tus mensajes.",
+  "mostroInfoText": "• El Mostro que selecciones será donde publiques tus ofertas.\n\n• En caso de disputa, una persona asignada a ese Mostro será quien la resuelva.",
+  
+  "@_comment_account_info_dialogs": "Texto de Diálogos de Información de Cuenta",
+  "secretWordsInfoText": "• Estas son tus palabras secretas, la única forma de recuperar tu cuenta si pierdes acceso a esta aplicación o quieres usar tu identidad en otra aplicación.\n\n• Escríbelas cuidadosamente y guárdalas en un lugar seguro y privado. Nunca las compartas con nadie.\n\n• Si pierdes estas palabras, perderás permanentemente el acceso a tu cuenta.",
+  "privacyInfoText": "• El Modo Reputación protege tu privacidad de terceros mientras te permite construir una reputación con cada intercambio completado.\n\n• El modo de privacidad completa proporciona máximo anonimato pero limita las funciones de construcción de reputación.",
+  "currentTradeIndexInfoText": "Con cada nuevo intercambio, se genera una Clave de Intercambio única para asegurar que tus transacciones permanezcan privadas. El índice de intercambio indica cuántas claves has usado. Si estás en 'Modo Reputación,' permites a Mostro vincular todas tus Claves de Intercambio para calcular y mantener tu reputación.",
+  "generateNewUserDialogTitle": "¿Generar un nuevo usuario?",
+  "generateNewUserDialogContent": "Si continúas, se generará un nuevo conjunto de 12 palabras como tu nuevo usuario. Este nuevo usuario no tendrá reputación, y tendrás que empezar desde cero.",
+  "continueButton": "Continuar",
+  "show": "Mostrar",
+  "hide": "Ocultar",
+  "reputationMode": "Modo reputación",
+  "fullPrivacyMode": "Modo privacidad completa",
+  "maximumAnonymity": "Máximo anonimato",
+  "standardPrivacyWithReputation": "Privacidad estándar con reputación",
+  
+  "@_comment_relay_dialogs": "Texto de Diálogos de Relay",
+  "editRelay": "Editar Relay",
+  "relayUrl": "URL del Relay",
+  "add": "Agregar",
+  "save": "Guardar"
 
 }

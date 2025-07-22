@@ -4,11 +4,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/chat_room.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
+
 import 'package:mostro_mobile/features/chat/widgets/chat_list_item.dart';
 import 'package:mostro_mobile/features/chat/widgets/chat_tabs.dart';
 import 'package:mostro_mobile/features/chat/widgets/empty_state_view.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
+
+import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
+import 'package:mostro_mobile/shared/providers/avatar_provider.dart';
+import 'package:mostro_mobile/shared/providers/legible_handle_provider.dart';
+
 import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
 import 'package:mostro_mobile/shared/widgets/custom_drawer_overlay.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_app_bar.dart';
@@ -140,6 +146,7 @@ class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen>
       return bSessionStartTime.compareTo(aSessionStartTime);
     });
 
+
     return Container(
       color: AppTheme.backgroundDark,
       child: ListView.builder(
@@ -151,6 +158,7 @@ class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen>
             orderId: chatRoomsWithFreshData[index].orderId,
           );
         },
+
       ),
     );
   }

@@ -1,0 +1,4 @@
+enum SubscriptionType {
+  chat,
+  orders,
+}

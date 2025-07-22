@@ -1,39 +1,25 @@
 import 'dart:async';
 import 'package:mostro_mobile/data/enums.dart';
-import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/features/order/notfiers/abstract_mostro_notifier.dart';
 import 'package:mostro_mobile/services/mostro_service.dart';
 
 class OrderNotifier extends AbstractMostroNotifier {
   late final MostroService mostroService;
+
   OrderNotifier(super.orderId, super.ref) {
     mostroService = ref.read(mostroServiceProvider);
     sync();
     subscribe();
   }
+
   Future<void> sync() async {
     try {
       final storage = ref.read(mostroStorageProvider);
       final messages = await storage.getAllMessagesForOrderId(orderId);
-      if (messages.isEmpty) {
-        logger.w('No messages found for order $orderId');
-        return;
+      for (final msg in messages) {
+        state = state.updateWith(msg);
       }
-      messages.sort((a, b) {
-        final timestampA = a.timestamp ?? 0;
-        final timestampB = b.timestamp ?? 0;
-        return timestampA.compareTo(timestampB);
-      });
-      OrderState currentState = state;
-      for (final message in messages) {
-        if (message.action != Action.cantDo) {
-          currentState = currentState.updateWith(message);
-        }
-      }
-      state = currentState;
-      logger.i(
-          'Synced order $orderId to state: ${state.status} - ${state.action}');
     } catch (e, stack) {
       logger.e(
         'Error syncing order state for $orderId',
@@ -50,7 +36,6 @@ class OrderNotifier extends AbstractMostroNotifier {
       orderId: orderId,
       role: Role.buyer,
     );
-    mostroService.subscribe(session);
     await mostroService.takeSellOrder(
       orderId,
       amount,
@@ -64,7 +49,6 @@ class OrderNotifier extends AbstractMostroNotifier {
       orderId: orderId,
       role: Role.seller,
     );
-    mostroService.subscribe(session);
     await mostroService.takeBuyOrder(
       orderId,
       amount,

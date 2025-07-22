@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
+import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/models/nostr_filter.dart';
 import 'package:mostro_mobile/data/repositories/event_storage.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
@@ -13,10 +14,6 @@ bool isAppForeground = true;
 
 @pragma('vm:entry-point')
 Future<void> serviceMain(ServiceInstance service) async {
-  // If on Android, set up a permanent notification so the OS won't kill it.
-  if (service is AndroidServiceInstance) {
-    service.setAsForegroundService();
-  }
 
   final Map<String, Map<String, dynamic>> activeSubscriptions = {};
   final nostrService = NostrService();
@@ -68,8 +65,12 @@ Future<void> serviceMain(ServiceInstance service) async {
     };
 
     subscription.listen((event) async {
-      if (await eventStore.hasItem(event.id!)) return;
-      await retryNotification(event);
+      try {
+        if (await eventStore.hasItem(event.id!)) return;
+        await retryNotification(event);
+      } catch (e) {
+        Logger().e('Error processing event', error: e);
+      }
     });
   });
 

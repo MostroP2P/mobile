@@ -82,38 +82,110 @@ class Order implements Payload {
   }
 
   factory Order.fromJson(Map<String, dynamic> json) {
-    // Validate required fields
-    void validateField(String field) {
-      if (!json.containsKey(field)) {
-        throw FormatException('Missing required field: $field');
+    try {
+      // Validate required fields
+      void validateField(String field) {
+        if (!json.containsKey(field) || json[field] == null) {
+          throw FormatException('Missing required field: $field');
+        }
       }
+
+      // Validate required fields
+      ['kind', 'status', 'fiat_code', 'fiat_amount', 'payment_method']
+          .forEach(validateField);
+
+      // Parse and validate integer fields with type safety
+      int parseIntField(String field, {int defaultValue = 0}) {
+        final value = json[field];
+        if (value == null) return defaultValue;
+        if (value is int) return value;
+        if (value is String) {
+          return int.tryParse(value) ??
+              (throw FormatException('Invalid $field format: $value'));
+        }
+        throw FormatException('Invalid $field type: ${value.runtimeType}');
+      }
+
+      // Parse and validate string fields
+      String parseStringField(String field) {
+        final value = json[field];
+        if (value == null) {
+          throw FormatException('Missing required field: $field');
+        }
+        final stringValue = value.toString();
+        if (stringValue.isEmpty) {
+          throw FormatException('Field $field cannot be empty');
+        }
+        return stringValue; // ignore: return_of_null 
+      }
+
+      // Parse optional string fields
+      String? parseOptionalStringField(String field) {
+        final value = json[field];
+        return value?.toString();
+      }
+
+      // Parse optional integer fields
+      int? parseOptionalIntField(String field) {
+        final value = json[field];
+        if (value == null) return null;
+        if (value is int) return value;
+        if (value is String) {
+          return int.tryParse(value);
+        }
+        return null;
+      }
+
+      final amount = parseIntField('amount');
+      final fiatAmount = parseIntField('fiat_amount');
+      final premium = parseIntField('premium');
+      
+      // Validate amounts are not negative
+      if (amount < 0) {
+        throw FormatException('Amount cannot be negative: $amount');
+      }
+      if (fiatAmount < 0) {
+        throw FormatException('Fiat amount cannot be negative: $fiatAmount');
+      }
+
+      final minAmount = parseOptionalIntField('min_amount');
+      final maxAmount = parseOptionalIntField('max_amount');
+      
+      // Validate min/max amount relationship
+      if (minAmount != null && minAmount < 0) {
+        throw FormatException('Min amount cannot be negative: $minAmount');
+      }
+      if (maxAmount != null && maxAmount < 0) {
+        throw FormatException('Max amount cannot be negative: $maxAmount');
+      }
+      if (minAmount != null && maxAmount != null && minAmount > maxAmount) {
+        throw FormatException('Min amount ($minAmount) cannot be greater than max amount ($maxAmount)');
+      }
+
+      return Order(
+        id: parseOptionalStringField('id'),
+        kind: OrderType.fromString(parseStringField('kind')),
+        status: Status.fromString(parseStringField('status')),
+        amount: amount,
+        fiatCode: parseStringField('fiat_code'),
+        minAmount: minAmount,
+        maxAmount: maxAmount,
+        fiatAmount: fiatAmount,
+        paymentMethod: parseStringField('payment_method'),
+        premium: premium,
+        masterBuyerPubkey: parseOptionalStringField('master_buyer_pubkey'),
+        masterSellerPubkey: parseOptionalStringField('master_seller_pubkey'),
+        buyerTradePubkey: parseOptionalStringField('buyer_trade_pubkey'),
+        sellerTradePubkey: parseOptionalStringField('seller_trade_pubkey'),
+        buyerInvoice: parseOptionalStringField('buyer_invoice'),
+        createdAt: parseOptionalIntField('created_at'),
+        expiresAt: parseOptionalIntField('expires_at'),
+        buyerToken: parseOptionalIntField('buyer_token'),
+        sellerToken: parseOptionalIntField('seller_token'),
+      );
+    } catch (e) {
+      throw FormatException('Failed to parse Order from JSON: $e');
     }
-
-    // Validate required fields
-    ['kind', 'status', 'fiat_code', 'fiat_amount', 'payment_method', 'premium']
-        .forEach(validateField);
-
-    return Order(
-      id: json['id'],
-      kind: OrderType.fromString(json['kind'].toString()),
-      status: Status.fromString(json['status']),
-      amount: json['amount'],
-      fiatCode: json['fiat_code'],
-      minAmount: json['min_amount'],
-      maxAmount: json['max_amount'],
-      fiatAmount: json['fiat_amount'],
-      paymentMethod: json['payment_method'],
-      premium: json['premium'],
-      masterBuyerPubkey: json['master_buyer_pubkey'],
-      masterSellerPubkey: json['master_seller_pubkey'],
-      buyerTradePubkey: json['buyer_trade_pubkey'],
-      sellerTradePubkey: json['seller_trade_pubkey'],
-      buyerInvoice: json['buyer_invoice'],
-      createdAt: json['created_at'],
-      expiresAt: json['expires_at'],
-      buyerToken: json['buyer_token'],
-      sellerToken: json['seller_token'],
-    );
   }
 
   factory Order.fromEvent(NostrEvent event) {

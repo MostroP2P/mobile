@@ -86,7 +86,7 @@ class OrderState {
 
     // Preserve the current state entirely for cantDo messages - they are informational only
     if (message.action == Action.cantDo) {
-      return this;
+      return copyWith(cantDo: message.getPayload<CantDo>());
     }
 
     // Determine the new status based on the action received
@@ -105,6 +105,24 @@ class OrderState {
       newPaymentRequest = paymentRequest; // Preserve existing
     }
 
+    Peer? newPeer;
+    if (message.payload is Peer &&
+        message.getPayload<Peer>()!.publicKey.isNotEmpty) {
+      newPeer = message.getPayload<Peer>();
+      _logger.i('👤 New Peer found in message');
+    } else if (message.payload is Order) {
+      if (message.getPayload<Order>()!.buyerTradePubkey != null) {
+        newPeer =
+            Peer(publicKey: message.getPayload<Order>()!.buyerTradePubkey!);
+      } else if (message.getPayload<Order>()!.sellerTradePubkey != null) {
+        newPeer =
+            Peer(publicKey: message.getPayload<Order>()!.sellerTradePubkey!);
+      }
+      _logger.i('👤 New Peer found in message');
+    } else {
+      newPeer = peer; // Preserve existing
+    }
+
     final newState = copyWith(
       status: newStatus,
       action: message.action,
@@ -116,12 +134,8 @@ class OrderState {
       paymentRequest: newPaymentRequest,
       cantDo: message.getPayload<CantDo>() ?? cantDo,
       dispute: message.getPayload<Dispute>() ?? dispute,
-      peer: message.getPayload<Peer>() ?? peer,
+      peer: newPeer,
     );
-
-    _logger.i('✅ New state: ${newState.status} - ${newState.action}');
-    _logger
-        .i('💳 PaymentRequest preserved: ${newState.paymentRequest != null}');
 
     return newState;
   }
@@ -152,6 +166,7 @@ class OrderState {
       case Action.buyerTookOrder:
       case Action.holdInvoicePaymentAccepted:
       case Action.holdInvoicePaymentSettled:
+      case Action.buyerInvoiceAccepted:
         return Status.active;
 
       // Actions that should set status to fiat-sent
@@ -162,15 +177,46 @@ class OrderState {
       // Actions that should set status to success (completed)
       case Action.purchaseCompleted:
       case Action.released:
+      case Action.release:
       case Action.rate:
       case Action.rateReceived:
         return Status.success;
 
       // Actions that should set status to canceled
       case Action.canceled:
+      case Action.cancel:
       case Action.adminCanceled:
+      case Action.adminCancel:
       case Action.cooperativeCancelAccepted:
+      case Action.holdInvoicePaymentCanceled:
         return Status.canceled;
+
+      // Actions that should set status to cooperatively canceled (pending cancellation)
+      case Action.cooperativeCancelInitiatedByYou:
+      case Action.cooperativeCancelInitiatedByPeer:
+        return Status.cooperativelyCanceled;
+
+      // Actions that should set status to dispute
+      case Action.disputeInitiatedByYou:
+      case Action.disputeInitiatedByPeer:
+      case Action.dispute:
+      case Action.adminTakeDispute:
+      case Action.adminTookDispute:
+        return Status.dispute;
+
+      // Actions that should set status to admin settled
+      case Action.adminSettle:
+      case Action.adminSettled:
+        return Status.settledByAdmin;
+
+      // Informational actions that should preserve current status
+      case Action.rateUser:
+      case Action.paymentFailed:
+      case Action.invoiceUpdated:
+      case Action.sendDm:
+      case Action.tradePubkey:
+      case Action.adminAddSolver:
+        return payloadStatus ?? status;
 
       // For actions that include Order payload, use the payload status
       case Action.newOrder:

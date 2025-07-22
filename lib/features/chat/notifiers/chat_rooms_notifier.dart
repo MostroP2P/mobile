@@ -1,20 +1,21 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/models/chat_room.dart';
+
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
-import 'package:mostro_mobile/shared/notifiers/session_notifier.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 
 class ChatRoomsNotifier extends StateNotifier<List<ChatRoom>> {
-  final SessionNotifier sessionNotifier;
   final Ref ref;
   final _logger = Logger();
 
-  ChatRoomsNotifier(this.ref, this.sessionNotifier) : super(const []) {
+  ChatRoomsNotifier(this.ref) : super(const []) {
     loadChats();
   }
+  
 
-  /// Reload all chat rooms by triggering their notifiers to resubscribe to events.
   void reloadAllChats() {
     for (final chat in state) {
       try {
@@ -26,10 +27,12 @@ class ChatRoomsNotifier extends StateNotifier<List<ChatRoom>> {
         _logger.e('Failed to reload chat for orderId ${chat.orderId}: $e');
       }
     }
+
+    _refreshAllSubscriptions();
   }
 
   Future<void> loadChats() async {
-    final sessions = ref.read(sessionNotifierProvider.notifier).sessions;
+    final sessions = ref.read(sessionNotifierProvider);
     if (sessions.isEmpty) {
       _logger.i("No sessions yet, skipping chat load.");
       return;
@@ -88,4 +91,14 @@ class ChatRoomsNotifier extends StateNotifier<List<ChatRoom>> {
       _logger.e("Error refreshing chats: $e");
     }
   }
+
+  void _refreshAllSubscriptions() {
+    // No need to manually refresh subscriptions
+    // SubscriptionManager now handles this automatically based on SessionNotifier changes
+    _logger.i('Subscription management is now handled by SubscriptionManager');
+    
+    // Just reload the chat rooms from the current sessions
+    //loadChats();
+  }
+
 }

@@ -12,6 +12,8 @@ import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
 import 'package:mostro_mobile/shared/widgets/order_cards.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
+import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
+import 'package:mostro_mobile/shared/providers/time_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
 class TakeOrderScreen extends ConsumerWidget {
@@ -48,7 +50,9 @@ class TakeOrderScreen extends ConsumerWidget {
             const SizedBox(height: 16),
             _buildCreatorReputation(order),
             const SizedBox(height: 24),
-            _buildCountDownTime(context, order.expirationDate),
+            _CountdownWidget(
+              expirationDate: order.expirationDate,
+            ),
             const SizedBox(height: 36),
             _buildActionButtons(context, ref, order),
           ],
@@ -117,34 +121,6 @@ class TakeOrderScreen extends ConsumerWidget {
   Widget _buildOrderId(BuildContext context) {
     return OrderIdCard(
       orderId: orderId,
-    );
-  }
-
-  Widget _buildCountDownTime(BuildContext context, DateTime expiration) {
-    Duration countdown = Duration(hours: 0);
-    final now = DateTime.now();
-
-    if (expiration.isAfter(now)) {
-      countdown = expiration.difference(now);
-    }
-
-    final int maxOrderHours = 24;
-    final hoursLeft = countdown.inHours.clamp(0, maxOrderHours);
-    final minutesLeft = countdown.inMinutes % 60;
-    final secondsLeft = countdown.inSeconds % 60;
-
-    final formattedTime =
-        '${hoursLeft.toString().padLeft(2, '0')}:${minutesLeft.toString().padLeft(2, '0')}:${secondsLeft.toString().padLeft(2, '0')}';
-
-    return Column(
-      children: [
-        CircularCountdown(
-          countdownTotal: maxOrderHours,
-          countdownRemaining: hoursLeft,
-        ),
-        const SizedBox(height: 16),
-        Text(S.of(context)!.timeLeftLabel(formattedTime)),
-      ],
     );
   }
 
@@ -328,5 +304,72 @@ class TakeOrderScreen extends ConsumerWidget {
 
       return '$formattedDate at $formattedTime';
     }
+  }
+}
+
+/// Widget that displays a real-time countdown timer for pending orders
+class _CountdownWidget extends ConsumerWidget {
+  final DateTime expirationDate;
+
+  const _CountdownWidget({
+    required this.expirationDate,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Watch the countdown time provider for real-time updates
+    final timeAsync = ref.watch(countdownTimeProvider);
+
+    return timeAsync.when(
+      data: (currentTime) {
+        return _buildCountDownTime(context, ref, expirationDate);
+      },
+      loading: () => const CircularProgressIndicator(),
+      error: (error, stack) => const SizedBox.shrink(),
+    );
+  }
+
+  Widget _buildCountDownTime(
+      BuildContext context, WidgetRef ref, DateTime expiration) {
+    Duration countdown = Duration(hours: 0);
+    final now = DateTime.now();
+
+    // Handle edge case: expiration in the past
+    if (expiration.isBefore(now.subtract(const Duration(hours: 1)))) {
+      // If expiration is more than 1 hour in the past, likely invalid
+      return const SizedBox.shrink();
+    }
+
+    if (expiration.isAfter(now)) {
+      countdown = expiration.difference(now);
+    }
+
+    // Get dynamic expiration hours from Mostro instance
+    final mostroInstance = ref.read(orderRepositoryProvider).mostroInstance;
+    final maxOrderHours =
+        mostroInstance?.expirationHours ?? 24; // fallback to 24 hours
+
+    // Validate expiration hours
+    if (maxOrderHours <= 0 || maxOrderHours > 168) { // Max 1 week
+      return const SizedBox.shrink();
+    }
+
+    final hoursLeft = countdown.inHours.clamp(0, maxOrderHours);
+    final minutesLeft = countdown.inMinutes % 60;
+    final secondsLeft = countdown.inSeconds % 60;
+
+    final formattedTime =
+        '${hoursLeft.toString().padLeft(2, '0')}:${minutesLeft.toString().padLeft(2, '0')}:${secondsLeft.toString().padLeft(2, '0')}';
+
+    return Column(
+      children: [
+        CircularCountdown(
+          countdownTotal: maxOrderHours,
+          countdownRemaining: hoursLeft,
+        ),
+        const SizedBox(height: 16),
+        Text(S.of(context)!.timeLeftLabel(formattedTime)),
+      ],
+    );
   }
 }

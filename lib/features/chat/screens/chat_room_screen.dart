@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
+
 import 'package:mostro_mobile/features/chat/widgets/chat_messages_list.dart';
 import 'package:mostro_mobile/features/chat/widgets/info_buttons.dart';
 import 'package:mostro_mobile/features/chat/widgets/message_input.dart';
@@ -9,6 +10,11 @@ import 'package:mostro_mobile/features/chat/widgets/peer_header.dart';
 import 'package:mostro_mobile/features/chat/widgets/trade_information_tab.dart';
 import 'package:mostro_mobile/features/chat/widgets/user_information_tab.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
+
+
+import 'package:mostro_mobile/shared/providers/avatar_provider.dart';
+import 'package:mostro_mobile/shared/providers/legible_handle_provider.dart';
+
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
 
@@ -42,6 +48,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
   Widget build(BuildContext context) {
     final chatDetailState = ref.watch(chatRoomsProvider(widget.orderId));
     final session = ref.read(sessionProvider(widget.orderId));
+
     final peer = session!.peer!.publicKey;
     final orderState = ref.watch(orderNotifierProvider(widget.orderId));
     final order = orderState.order;
@@ -74,6 +81,8 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
     // Update keyboard visibility tracking
     _wasKeyboardVisible = isKeyboardVisible;
 
+
+
     return Scaffold(
       backgroundColor: AppTheme.backgroundDark,
       appBar: AppBar(
@@ -98,6 +107,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
       resizeToAvoidBottomInset: true, // Resize when keyboard appears
       body: RefreshIndicator(
         onRefresh: () async {},
+
         child: Stack(
           children: [
             // Main content area
@@ -108,6 +118,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                 children: [
                   // Header with peer information
                   PeerHeader(peerPubkey: peer, session: session),
+
 
                   // Info buttons
                   InfoButtons(
