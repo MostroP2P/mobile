@@ -74,7 +74,7 @@
   "released": "{seller_name} ha già rilasciato i Sats! Aspetta solo che la tua invoice venga pagata. Ricorda, il tuo portafoglio deve essere online per ricevere i fondi tramite Lightning Network.",
   "purchaseCompleted": "L'acquisto di nuovi satoshi è stato completato con successo. Goditi questi dolci Sats!",
   "holdInvoicePaymentSettled": "Il tuo scambio di vendita di Sats è stato completato dopo aver confermato il pagamento da {buyer_name}.",
-  "rate": "Dai una valutazione alla controparte",
+  "rate": "RATE",
   "rateReceived": "Valutazione salvata con successo!",
   "cooperativeCancelInitiatedByYou": "Hai iniziato l'annullamento dell'ordine ID: {id}. La tua controparte deve anche concordare l'annullamento. Se non risponde, puoi aprire una disputa. Nota che nessun amministratore ti contatterà MAI riguardo questo annullamento a meno che tu non apra prima una disputa.",
   "cooperativeCancelInitiatedByPeer": "La tua controparte vuole annullare l'ordine ID: {id}. Nota che nessun amministratore ti contatterà MAI riguardo questo annullamento a meno che tu non apra prima una disputa. Se concordi su tale annullamento, premi: Annulla Ordine.",
@@ -232,6 +232,8 @@
   "areYouSureCancel": "Sei sicuro di voler annullare questo scambio?",
   "cooperativeCancelMessage": "Se confermi, inizierai un annullamento cooperativo con la tua controparte.",
   "acceptCancelMessage": "Se confermi, accetterai l'annullamento cooperativo iniziato dalla tua controparte.",
+  "releaseTradeDialogTitle": "Rilascia Bitcoin",
+  "areYouSureRelease": "Sei sicuro di voler rilasciare i Satoshi al compratore?",
   "confirm": "Conferma",
   "yes": "Sì",
   "no": "No",
@@ -466,7 +468,7 @@
   "enterInvoiceHere": "Inserisci la fattura qui",
   
   "cancelPendingButton": "CANCELLAZIONE IN ATTESA",
-  "acceptCancelButton": "ACCETTA CANCELLAZIONE",
+  "acceptCancelButton": "ANNULLA",
   "completePurchaseButton": "COMPLETA ACQUISTO",
   "rateButton": "VALUTA",
   "contactButton": "CONTATTA",
@@ -559,7 +561,7 @@
     }
   },
   "cancelPendingButton": "ANNULLAMENTO IN SOSPESO",
-  "acceptCancelButton": "ACCETTA ANNULLAMENTO",
+  "acceptCancelButton": "ANNULLA",
   "disputeButton": "DISPUTA",
   "fiatSentButton": "FIAT INVIATO",
   "completePurchaseButton": "COMPLETA ACQUISTO",
@@ -574,7 +576,9 @@
   "cooperativeCancelDialogMessage": "Se confermi, inizierai un annullamento cooperativo con la tua controparte.",
   "acceptCancelDialogMessage": "Se confermi, accetterai l'annullamento cooperativo iniziato dalla tua controparte.",
   "orderIdCopiedMessage": "ID ordine copiato negli appunti",
-  
+  "disputeTradeDialogTitle": "Inizia Disputa",
+  "disputeTradeDialogContent": "Stai per iniziare una disputa con la tua controparte. Vuoi continuare?",
+
   "language": "Lingua",
   "systemDefault": "Predefinito di sistema",
   "english": "Inglese",

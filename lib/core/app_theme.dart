@@ -106,10 +106,10 @@ class AppTheme {
       textTheme: _buildTextTheme(),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          foregroundColor: cream1,
+          foregroundColor: Colors.black,
           backgroundColor: mostroGreen,
           textStyle: GoogleFonts.robotoCondensed(
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.bold,
             fontSize: 14.0,
           ),
           padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 30),

@@ -80,8 +80,8 @@ class TradeDetailScreen extends ConsumerWidget {
                       : null,
                 ),
                 Wrap(
-                  alignment: WrapAlignment.center,
-                  spacing: 10,
+                  alignment: WrapAlignment.spaceEvenly,
+                  spacing: 8,
                   runSpacing: 10,
                   children: [
                     _buildCloseButton(context),
@@ -248,7 +248,8 @@ class TradeDetailScreen extends ConsumerWidget {
           String cancelMessage;
 
           if (tradeState.status == Status.active ||
-              tradeState.status == Status.fiatSent) {
+              tradeState.status == Status.fiatSent ||
+              tradeState.status == Status.cooperativelyCanceled) {
             if (tradeState.action ==
                 actions.Action.cooperativeCancelInitiatedByPeer) {
               cancelMessage = S.of(context)!.acceptCancelMessage;
@@ -259,41 +260,17 @@ class TradeDetailScreen extends ConsumerWidget {
             cancelMessage = S.of(context)!.areYouSureCancel;
           }
 
-          final buttonController = MostroReactiveButtonController();
-          widgets.add(_buildNostrButton(
-            S.of(context)!.cancel.toUpperCase(),
-            action: action,
-            backgroundColor: AppTheme.red1,
-            controller: buttonController,
-            onPressed: () async {
-              final result = await showDialog<bool>(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: Text(S.of(context)!.cancelTradeDialogTitle),
-                  content: Text(cancelMessage),
-                  actions: [
-                    TextButton(
-                      onPressed: () => context.pop(false),
-                      child: Text(S.of(context)!.no),
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        context.pop(true);
-                        ref
-                            .read(orderNotifierProvider(orderId).notifier)
-                            .cancelOrder();
-                      },
-                      child: Text(S.of(context)!.yes),
-                    ),
-                  ],
-                ),
-              );
-
-              // Reset loading state if dialog was cancelled
-              if (result != true) {
-                buttonController.resetLoading();
-              }
-            },
+          // Use different button text when accepting a peer's cancellation
+          final buttonText = tradeState.action == actions.Action.cooperativeCancelInitiatedByPeer
+              ? S.of(context)!.acceptCancelButton
+              : S.of(context)!.cancel.toUpperCase();
+          
+          widgets.add(_buildCancelButton(
+            context,
+            ref,
+            buttonText,
+            cancelMessage,
+            action,
           ));
           break;
 
@@ -343,26 +320,90 @@ class TradeDetailScreen extends ConsumerWidget {
           if (tradeState.action != actions.Action.disputeInitiatedByYou &&
               tradeState.action != actions.Action.disputeInitiatedByPeer &&
               tradeState.action != actions.Action.dispute) {
-            widgets.add(_buildNostrButton(
-              S.of(context)!.disputeButton,
-              action: actions.Action.disputeInitiatedByYou,
-              backgroundColor: AppTheme.red1,
-              onPressed: () => ref
-                  .read(orderNotifierProvider(orderId).notifier)
-                  .disputeOrder(),
+            widgets.add(_buildDisputeButton(
+              context,
+              ref,
             ));
           }
           break;
 
         case actions.Action.release:
           if (userRole == Role.seller) {
+            final buttonController = MostroReactiveButtonController();
+            
             widgets.add(_buildNostrButton(
               S.of(context)!.release.toUpperCase(),
               action: actions.Action.release,
               backgroundColor: AppTheme.mostroGreen,
-              onPressed: () => ref
-                  .read(orderNotifierProvider(orderId).notifier)
-                  .releaseOrder(),
+              controller: buttonController,
+              onPressed: () async {
+                final result = await showDialog<bool>(
+                  context: context,
+                  builder: (dialogContext) => AlertDialog(
+                    backgroundColor: AppTheme.backgroundCard,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                    ),
+                    title: Text(
+                      S.of(context)!.releaseTradeDialogTitle,
+                      style: const TextStyle(
+                        color: AppTheme.textPrimary,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    content: Text(
+                      S.of(context)!.areYouSureRelease,
+                      style: const TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 14,
+                        height: 1.5,
+                      ),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(dialogContext).pop(false),
+                        child: Text(
+                          S.of(context)!.no,
+                          style: const TextStyle(
+                            color: AppTheme.textSecondary,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(dialogContext).pop(true);
+                          ref
+                              .read(orderNotifierProvider(orderId).notifier)
+                              .releaseOrder();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.activeColor,
+                          foregroundColor: Colors.black,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: Text(
+                          S.of(context)!.yes,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+
+                // Reset loading state if dialog was cancelled or user clicked NO
+                if (result == null || result == false) {
+                  buttonController.resetLoading();
+                }
+              },
             ));
           }
           break;
@@ -396,17 +437,9 @@ class TradeDetailScreen extends ConsumerWidget {
             backgroundColor: Colors.grey,
             onPressed: null,
           ));
+          widgets.add(_buildContactButton(context));
           break;
 
-        case actions.Action.cooperativeCancelInitiatedByPeer:
-          widgets.add(_buildNostrButton(
-            S.of(context)!.acceptCancelButton,
-            action: actions.Action.cooperativeCancelAccepted,
-            backgroundColor: AppTheme.red1,
-            onPressed: () =>
-                ref.read(orderNotifierProvider(orderId).notifier).cancelOrder(),
-          ));
-          break;
 
         case actions.Action.cooperativeCancelAccepted:
           break;
@@ -463,6 +496,15 @@ class TradeDetailScreen extends ConsumerWidget {
       }
     }
 
+    // Add contact button for cooperatively canceled status regardless of action
+    if (tradeState.status == Status.cooperativelyCanceled) {
+      // Check if contact button was already added by checking if sendDm action was processed
+      bool hasContactButton = userActions.contains(actions.Action.sendDm);
+      if (!hasContactButton) {
+        widgets.add(_buildContactButton(context));
+      }
+    }
+
     return widgets;
   }
 
@@ -486,6 +528,159 @@ class TradeDetailScreen extends ConsumerWidget {
       showSuccessIndicator: true,
       timeout: const Duration(seconds: 10),
       controller: controller,
+    );
+  }
+
+  Widget _buildCancelButton(
+    BuildContext context,
+    WidgetRef ref,
+    String buttonText,
+    String cancelMessage,
+    actions.Action action,
+  ) {
+    return ElevatedButton(
+      onPressed: () async {
+        final result = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            backgroundColor: AppTheme.backgroundCard,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+            ),
+            title: Text(
+              S.of(context)!.cancelTradeDialogTitle,
+              style: const TextStyle(
+                color: AppTheme.textPrimary,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            content: Text(
+              cancelMessage,
+              style: const TextStyle(
+                color: AppTheme.textSecondary,
+                fontSize: 14,
+                height: 1.5,
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: Text(
+                  S.of(context)!.no,
+                  style: const TextStyle(
+                    color: AppTheme.textSecondary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.activeColor,
+                  foregroundColor: Colors.black,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: Text(
+                  S.of(context)!.yes,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+
+        // Only proceed with cancellation if user confirmed
+        if (result == true) {
+          ref.read(orderNotifierProvider(orderId).notifier).cancelOrder();
+        }
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppTheme.red1,
+      ),
+      child: Text(buttonText),
+    );
+  }
+
+  Widget _buildDisputeButton(
+    BuildContext context,
+    WidgetRef ref,
+  ) {
+    return ElevatedButton(
+      onPressed: () async {
+        final result = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            backgroundColor: AppTheme.backgroundCard,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+            ),
+            title: Text(
+              S.of(context)!.disputeTradeDialogTitle,
+              style: const TextStyle(
+                color: AppTheme.textPrimary,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            content: Text(
+              S.of(context)!.disputeTradeDialogContent,
+              style: const TextStyle(
+                color: AppTheme.textSecondary,
+                fontSize: 14,
+                height: 1.5,
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: Text(
+                  S.of(context)!.no,
+                  style: const TextStyle(
+                    color: AppTheme.textSecondary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.activeColor,
+                  foregroundColor: Colors.black,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: Text(
+                  S.of(context)!.yes,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+
+        // Only proceed with dispute if user confirmed
+        if (result == true) {
+          ref.read(orderNotifierProvider(orderId).notifier).disputeOrder();
+        }
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppTheme.red1,
+      ),
+      child: Text(S.of(context)!.disputeButton),
     );
   }
 
