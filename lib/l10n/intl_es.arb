@@ -604,7 +604,14 @@
     }
   },
   "deepLinkGoHome": "Ir al Inicio",
-
+  
+  "@_comment_order_disabled_messages": "Mensajes de Orden Deshabilitada",
+  "orderCompletedMessagingDisabled": "Orden completada - mensajería deshabilitada",
+  "orderCanceledMessagingDisabled": "Orden cancelada - mensajería deshabilitada",
+  "orderExpiredMessagingDisabled": "Orden expirada - mensajería deshabilitada",
+  "orderSettledMessagingDisabled": "Orden resuelta - mensajería deshabilitada",
+  "orderNotActiveMessagingDisabled": "La orden ya no está activa - mensajería deshabilitada",
+  
   "@_comment_chat": "Sección de Chat",
   "messages": "Mensajes",
   "disputes": "Disputas",

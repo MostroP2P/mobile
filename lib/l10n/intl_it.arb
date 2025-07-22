@@ -612,6 +612,13 @@
     }
   },
   "deepLinkGoHome": "Vai alla Home",
+  
+  "@_comment_order_disabled_messages": "Messaggi Ordine Disabilitato",
+  "orderCompletedMessagingDisabled": "Ordine completato - messaggistica disabilitata",
+  "orderCanceledMessagingDisabled": "Ordine cancellato - messaggistica disabilitata",
+  "orderExpiredMessagingDisabled": "Ordine scaduto - messaggistica disabilitata",
+  "orderSettledMessagingDisabled": "Ordine risolto - messaggistica disabilitata",
+  "orderNotActiveMessagingDisabled": "L'ordine non è più attivo - messaggistica disabilitata",
 
   "@_comment_chat": "Sezione Chat",
   "messages": "Messaggi",

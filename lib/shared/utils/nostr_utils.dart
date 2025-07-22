@@ -9,7 +9,7 @@ import 'package:nip44/nip44.dart';
 class NostrUtils {
   static final Nostr _instance = Nostr.instance;
 
-  // Generación de claves
+  // Key generation
   static NostrKeyPairs generateKeyPair() {
     try {
       final privateKey = generatePrivateKey();
@@ -35,7 +35,7 @@ class NostrUtils {
     }
   }
 
-  // Codificación y decodificación de claves
+  // Key encoding and decoding
   static String encodePrivateKeyToNsec(String privateKey) {
     return _instance.services.bech32.encodePrivateKeyToNsec(privateKey);
   }
@@ -56,10 +56,10 @@ class NostrUtils {
     if (nsec.startsWith('nsec')) {
       return decodeNsecKeyToPrivateKey(nsec);
     }
-    return nsec; // Si ya es hex, devolverlo tal cual
+    return nsec; // If already hex, return as is
   }
 
-  // Operaciones con claves
+  // Key operations
   static String derivePublicKey(String privateKey) {
     return _instance.services.keys.derivePublicKey(privateKey: privateKey);
   }
@@ -68,7 +68,7 @@ class NostrUtils {
     return _instance.services.keys.isValidPrivateKey(privateKey);
   }
 
-  // Firma y verificación
+  // Signing and verification
   static String signMessage(String message, String privateKey) {
     return _instance.services.keys
         .sign(privateKey: privateKey, message: message);
@@ -80,7 +80,7 @@ class NostrUtils {
         .verify(publicKey: publicKey, message: message, signature: signature);
   }
 
-  // Creación de eventos
+  // Event creation
   static NostrEvent createEvent({
     required int kind,
     required String content,
@@ -98,10 +98,10 @@ class NostrUtils {
     );
   }
 
-  // Utilidades generales
+  // General utilities
   static String decodeBech32(String bech32String) {
     final result = _instance.services.bech32.decodeBech32(bech32String);
-    return result[0]; // Devuelve la parte de datos (índice 0)
+    return result[0]; // Return data part (index 0)
   }
 
   static String encodeBech32(String hrp, String data) {
@@ -176,22 +176,22 @@ class NostrUtils {
         .pubKeyFromIdentifierNip05(internetIdentifier: internetIdentifier);
   }
 
-  // Método para generar el ID de un evento en Nostr
+  // Method to generate event ID in Nostr
   static String generateId(Map<String, dynamic> eventData) {
     final jsonString = jsonEncode([
-      0, // Versión del evento
-      eventData['pubkey'], // Clave pública
-      eventData['created_at'], // Marca de tiempo
-      eventData['kind'], // Tipo de evento
-      eventData['tags'], // Tags del evento
-      eventData['content'] // Contenido del evento
+      0, // Event version
+      eventData['pubkey'], // Public key
+      eventData['created_at'], // Timestamp
+      eventData['kind'], // Event type
+      eventData['tags'], // Event tags
+      eventData['content'] // Event content
     ]);
 
-    // Cálculo del hash SHA-256 para generar el ID
+    // Calculate SHA-256 hash to generate ID
     final bytes = utf8.encode(jsonString);
     final digest = sha256.convert(bytes);
 
-    return digest.toString(); // Devuelve el ID como una cadena hex
+    return digest.toString(); // Return ID as hex string
   }
 
   /// Generates a timestamp between now and 48 hours ago to enhance privacy

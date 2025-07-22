@@ -630,5 +630,12 @@
       }
     }
   },
-  "deepLinkGoHome": "Go Home"
+  "deepLinkGoHome": "Go Home",
+  
+  "@_comment_order_disabled_messages": "Order Disabled Messages",
+  "orderCompletedMessagingDisabled": "Order completed - messaging disabled",
+  "orderCanceledMessagingDisabled": "Order canceled - messaging disabled",
+  "orderExpiredMessagingDisabled": "Order expired - messaging disabled",
+  "orderSettledMessagingDisabled": "Order settled - messaging disabled",
+  "orderNotActiveMessagingDisabled": "Order is no longer active - messaging disabled"
 }

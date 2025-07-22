@@ -8,6 +8,7 @@ import 'package:mostro_mobile/features/chat/widgets/chat_list_item.dart';
 import 'package:mostro_mobile/features/chat/widgets/chat_tabs.dart';
 import 'package:mostro_mobile/features/chat/widgets/empty_state_view.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
 import 'package:mostro_mobile/shared/widgets/custom_drawer_overlay.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_app_bar.dart';
@@ -126,48 +127,47 @@ class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen>
       );
     }
 
-    final sortedChatRooms = List<ChatRoom>.from(state);
+    // Get fresh chat data for each order to ensure we have the latest messages
+    final chatRoomsWithFreshData = state.map((chatRoom) {
+      // Watch the individual chat provider to get the most up-to-date state
+      return ref.watch(chatRoomsProvider(chatRoom.orderId));
+    }).toList();
 
-    // Sort all chat rooms by most recent message time (newest first)
-    sortedChatRooms.sort((a, b) {
-      final aLastMessageTime = _getLastMessageTime(a);
-      final bLastMessageTime = _getLastMessageTime(b);
-      return bLastMessageTime.compareTo(aLastMessageTime);
+    // Sort all chat rooms by session start time (most recently taken order first)
+    chatRoomsWithFreshData.sort((a, b) {
+      final aSessionStartTime = _getSessionStartTime(a);
+      final bSessionStartTime = _getSessionStartTime(b);
+      return bSessionStartTime.compareTo(aSessionStartTime);
     });
 
     return Container(
       color: AppTheme.backgroundDark,
       child: ListView.builder(
-        itemCount: sortedChatRooms.length,
+        itemCount: chatRoomsWithFreshData.length,
         padding: EdgeInsets.zero,
         physics: const AlwaysScrollableScrollPhysics(),
         itemBuilder: (context, index) {
           return ChatListItem(
-            orderId: sortedChatRooms[index].orderId,
+            orderId: chatRoomsWithFreshData[index].orderId,
           );
         },
       ),
     );
   }
 
-  int _getLastMessageTime(ChatRoom chatRoom) {
-    if (chatRoom.messages.isEmpty) {
-      return 0;
-    }
-
-    // Track the maximum timestamp found
-    int maxTimestamp = 0;
-    
-    // Iterate once through all messages to find the maximum timestamp
-    for (final message in chatRoom.messages) {
-      if (message.createdAt != null && message.createdAt is int) {
-        final timestamp = message.createdAt as int;
-        if (timestamp > maxTimestamp) {
-          maxTimestamp = timestamp;
-        }
+  int _getSessionStartTime(ChatRoom chatRoom) {
+    try {
+      // Get the session for this chat room to access startTime
+      final session = ref.read(sessionProvider(chatRoom.orderId));
+      if (session != null) {
+        // Return the session start time (when the order was taken/contacted)
+        return session.startTime.millisecondsSinceEpoch ~/ 1000;
       }
+    } catch (e) {
+      // If we can't get the session, fall back to current time
     }
     
-    return maxTimestamp;
+    // Fallback: use current time so new chats appear at top
+    return DateTime.now().millisecondsSinceEpoch ~/ 1000;
   }
 }

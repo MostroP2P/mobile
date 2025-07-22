@@ -1,4 +1,3 @@
-import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -28,8 +27,11 @@ class ChatListItem extends ConsumerWidget {
     final currentUserPubkey = session.tradeKey.public;
     final handle = ref.read(nickNameProvider(peerPubkey));
 
-    // Get actual chat data
+    // Get actual chat data - use watch to ensure we get the latest state
     final chatRoom = ref.watch(chatRoomsProvider(orderId));
+    
+    // Force refresh to ensure we have the latest messages
+    // This helps with cases where the state might not be fully synchronized
     final bool isSelling = session.role?.toString() == 'seller';
     final String actionText = isSelling
         ? S.of(context)!.youAreSellingTo
@@ -41,18 +43,15 @@ class ChatListItem extends ConsumerWidget {
         S.of(context)!.today; // Default date if no message date is available
     bool hasUnreadMessages = false;
     if (chatRoom.messages.isNotEmpty) {
-      // Sort messages by creation time (newest first)
-      final sortedMessages = List<NostrEvent>.from(chatRoom.messages);
-
-      // Sort by createdAt time (newest first)
-      sortedMessages.sort((a, b) {
-        final aTime = a.createdAt is int ? a.createdAt as int : 0;
-        final bTime = b.createdAt is int ? b.createdAt as int : 0;
-        return bTime.compareTo(aTime);
-      });
-
-      final lastMessage = sortedMessages.first;
+      // ChatRoom constructor sorts messages from oldest to newest
+      // So the LAST message in the list is the most recent one
+      final lastMessage = chatRoom.messages.last;
       messagePreview = lastMessage.content ?? "";
+      
+      // Trim message preview if too long
+      if (messagePreview.length > 50) {
+        messagePreview = '${messagePreview.substring(0, 50)}...';
+      }
 
       // If message is from the current user, prefix with "You: "
       if (lastMessage.pubkey == currentUserPubkey) {
@@ -60,30 +59,32 @@ class ChatListItem extends ConsumerWidget {
       }
 
       // Check for unread messages from the peer (not from current user)
+      // A message is considered unread if it's from the peer and was sent in the last 2 hours
       hasUnreadMessages = false;
-      for (final message in sortedMessages) {
+      final now = DateTime.now();
+      final twoHoursAgo = now.subtract(const Duration(hours: 2));
+      
+      for (final message in chatRoom.messages) {
         if (message.pubkey == peerPubkey &&
             message.createdAt != null &&
             message.createdAt is int) {
           final messageTime = DateTime.fromMillisecondsSinceEpoch(
               (message.createdAt as int) * 1000);
-          final now = DateTime.now();
-          final oneDayAgo = now.subtract(const Duration(hours: 24));
 
-          if (messageTime.isAfter(oneDayAgo)) {
+          if (messageTime.isAfter(twoHoursAgo)) {
             hasUnreadMessages = true;
             break;
           }
         }
       }
 
-      // Format the date
+      // Format the date using the last message (most recent)
       if (lastMessage.createdAt != null && lastMessage.createdAt is int) {
         // Convert Unix timestamp to DateTime (seconds to milliseconds)
         final messageDate = DateTime.fromMillisecondsSinceEpoch(
             (lastMessage.createdAt as int) * 1000);
         date = formatDateTime(context, messageDate);
-      } else {}
+      }
     }
 
     return GestureDetector(
@@ -127,16 +128,21 @@ class ChatListItem extends ConsumerWidget {
                       ),
                     ),
 
+                  // Unread messages indicator (red dot)
                   if (hasUnreadMessages)
                     Positioned(
-                      right: 0,
+                      right: isSelling ? 2 : 0, // Adjust position if seller indicator is present
                       top: 0,
                       child: Container(
-                        width: 10,
-                        height: 10,
-                        decoration: const BoxDecoration(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
                           color: Colors.red,
                           shape: BoxShape.circle,
+                          border: Border.all(
+                            color: AppTheme.backgroundDark,
+                            width: 2,
+                          ),
                         ),
                       ),
                     ),

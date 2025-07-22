@@ -20,6 +20,7 @@ class ChatMessagesList extends StatefulWidget {
 
 class _ChatMessagesListState extends State<ChatMessagesList> {
   final ScrollController _scrollController = ScrollController();
+  bool _isFirstLoad = true;
 
   @override
   void dispose() {
@@ -28,19 +29,43 @@ class _ChatMessagesListState extends State<ChatMessagesList> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    // Scroll to bottom on first load
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollToBottom(animate: false);
+    });
+  }
+
+  @override
   void didUpdateWidget(ChatMessagesList oldWidget) {
     super.didUpdateWidget(oldWidget);
     // Auto-scroll to bottom when new messages arrive
     if (widget.chatRoom.messages.length != oldWidget.chatRoom.messages.length) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_scrollController.hasClients) {
-          _scrollController.animateTo(
-            _scrollController.position.maxScrollExtent,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOut,
-          );
-        }
+        _scrollToBottom(animate: true);
       });
+    }
+    // Also scroll to bottom on first load if messages are available
+    else if (_isFirstLoad && widget.chatRoom.messages.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToBottom(animate: false);
+        _isFirstLoad = false;
+      });
+    }
+  }
+
+  void _scrollToBottom({required bool animate}) {
+    if (_scrollController.hasClients) {
+      if (animate) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      } else {
+        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+      }
     }
   }
 
@@ -60,6 +85,10 @@ class _ChatMessagesListState extends State<ChatMessagesList> {
       child: ListView.builder(
         controller: _scrollController,
         itemCount: sortedMessages.length,
+        // Add physics for better scrolling performance with many messages
+        physics: const AlwaysScrollableScrollPhysics(),
+        // Add caching for better performance with many messages
+        cacheExtent: 1000,
         itemBuilder: (context, index) {
           final message = sortedMessages[index];
           return MessageBubble(
