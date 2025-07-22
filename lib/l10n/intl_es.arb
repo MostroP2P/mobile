@@ -665,7 +665,7 @@
   "peerPublicKey": "Clave Pública del Par:",
   "notAvailable": "No disponible",
   "unknownDate": "Fecha desconocida",
-  "messageCopiedToClipboard": "Mensaje copiado al portapapeles"
+  "messageCopiedToClipboard": "Mensaje copiado al portapapeles",
 
 
   "@_comment_about_screen_new": "About Screen New Strings",

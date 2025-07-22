@@ -632,7 +632,7 @@
   "orderCanceledMessagingDisabled": "Order canceled - messaging disabled",
   "orderExpiredMessagingDisabled": "Order expired - messaging disabled",
   "orderSettledMessagingDisabled": "Order settled - messaging disabled",
-  "orderNotActiveMessagingDisabled": "Order is no longer active - messaging disabled"
+  "orderNotActiveMessagingDisabled": "Order is no longer active - messaging disabled",
 
 
   "@_comment_about_screen_new": "About Screen New Strings",
