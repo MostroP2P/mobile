@@ -181,7 +181,6 @@
   "myTrades": "I Miei Scambi",
   "chat": "Chat",
   "navigateToLabel": "Naviga a {label}",
-  "myActiveTrades": "I Miei Scambi Attivi",
   "errorLoadingTrades": "Errore nel caricamento degli scambi",
   "retry": "Riprova",
   "noTradesAvailable": "Nessuno scambio disponibile per questo tipo",
