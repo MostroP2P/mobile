@@ -669,8 +669,7 @@
   "peerPublicKey": "Chiave Pubblica del Peer:",
   "notAvailable": "Non disponibile",
   "unknownDate": "Data sconosciuta",
-  "messageCopiedToClipboard": "Messaggio copiato negli appunti"
-
+  "messageCopiedToClipboard": "Messaggio copiato negli appunti",
 
   "@_comment_about_screen_new": "About Screen New Strings",
   "documentation": "Documentazione",
