@@ -65,7 +65,7 @@ class TradesScreen extends ConsumerWidget {
                     Expanded(
                       child: Container(
                         decoration: const BoxDecoration(
-                          color: AppTheme.dark1,
+                          color: AppTheme.backgroundDark,
                           borderRadius: BorderRadius.only(
                             topLeft: Radius.circular(20),
                             topRight: Radius.circular(20),
@@ -78,7 +78,7 @@ class TradesScreen extends ConsumerWidget {
                               child: tradesAsync.when(
                                 data: (trades) =>
                                     _buildOrderList(context, trades),
-                                loading: () => const Center(
+                                loading: () => Center(
                                   child: CircularProgressIndicator(
                                     color: AppTheme.cream1,
                                   ),
