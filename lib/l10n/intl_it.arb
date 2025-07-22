@@ -137,6 +137,16 @@
   "buyBtc": "COMPRA BTC",
   "sellBtc": "VENDI BTC",
   "filter": "FILTRO",
+  "statusFilter": "Stato",
+  "allStatuses": "Tutti",
+  "statusPending": "In Attesa",
+  "statusWaitingPayment": "Aspettando-Pagamento",
+  "statusWaitingBuyerInvoice": "Aspettando-Fattura-Acquirente",
+  "statusActive": "Attivo",
+  "statusFiatSent": "Fiat-Inviato",
+  "statusSuccess": "Successo",
+  "statusCanceled": "Annullato",
+  "statusSettledHoldInvoice": "Fattura-Trattenuta-Liquidata",
   "offersCount": "{count} offerte",
   "@offersCount": {
     "placeholders": {
@@ -493,7 +503,7 @@
   "copy": "Copia",
   "share": "Condividi",
   "failedToShareInvoice": "Errore nel condividere la fattura. Per favore prova a copiarla invece.",
-
+  
   "@_comment_trade_detail_screen_new": "Nuove Stringhe Schermata Dettagli Scambio",
   "orderDetailsTitle": "DETTAGLI ORDINE",
   "buyOrderDetailsTitle": "DETTAGLI ORDINE DI ACQUISTO",
@@ -565,20 +575,20 @@
   "cooperativeCancelDialogMessage": "Se confermi, inizierai un annullamento cooperativo con la tua controparte.",
   "acceptCancelDialogMessage": "Se confermi, accetterai l'annullamento cooperativo iniziato dalla tua controparte.",
   "orderIdCopiedMessage": "ID ordine copiato negli appunti",
-
+  
   "language": "Lingua",
   "systemDefault": "Predefinito di sistema",
   "english": "Inglese",
   "spanish": "Spagnolo",
   "italian": "Italiano",
   "chooseLanguageDescription": "Scegli la tua lingua preferita o usa il predefinito di sistema",
-
+  
   "loadingOrder": "Caricamento ordine...",
   "unsupportedLinkFormat": "Formato di link non supportato",
   "failedToOpenLink": "Impossibile aprire il link",
   "failedToLoadOrder": "Impossibile caricare l'ordine",
   "failedToOpenOrder": "Impossibile aprire l'ordine",
-
+  
   "@_comment_deep_link_errors": "Messaggi di Errore per Deep Link",
   "deepLinkInvalidFormat": "Formato URL mostro: non valido",
   "deepLinkParseError": "Impossibile analizzare l'URL mostro:",
@@ -594,7 +604,7 @@
     }
   },
   "deepLinkGoHome": "Vai alla Home",
-
+  
   "@_comment_about_screen_new": "About Screen New Strings",
   "documentation": "Documentazione",
   "usersDocumentationEnglish": "Documentazione Utente (Inglese)",
