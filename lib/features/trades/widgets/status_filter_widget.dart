@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logger/logger.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/status.dart';
@@ -8,6 +9,8 @@ import 'package:mostro_mobile/features/trades/providers/trades_provider.dart';
 
 class StatusFilterWidget extends ConsumerWidget {
   const StatusFilterWidget({super.key});
+
+  static final _logger = Logger();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -82,7 +85,7 @@ class StatusFilterWidget extends ConsumerWidget {
               ),
             ),
             PopupMenuItem<String>(
-              value: 'pending',
+              value: Status.pending.value,
               child: Text(
                 S.of(context)!.statusPending,
                 style: const TextStyle(
@@ -92,7 +95,7 @@ class StatusFilterWidget extends ConsumerWidget {
               ),
             ),
             PopupMenuItem<String>(
-              value: 'waitingPayment',
+              value: Status.waitingPayment.value,
               child: Text(
                 S.of(context)!.statusWaitingPayment,
                 style: const TextStyle(
@@ -102,7 +105,7 @@ class StatusFilterWidget extends ConsumerWidget {
               ),
             ),
             PopupMenuItem<String>(
-              value: 'waitingBuyerInvoice',
+              value: Status.waitingBuyerInvoice.value,
               child: Text(
                 S.of(context)!.statusWaitingBuyerInvoice,
                 style: const TextStyle(
@@ -112,7 +115,7 @@ class StatusFilterWidget extends ConsumerWidget {
               ),
             ),
             PopupMenuItem<String>(
-              value: 'active',
+              value: Status.active.value,
               child: Text(
                 S.of(context)!.statusActive,
                 style: const TextStyle(
@@ -122,7 +125,7 @@ class StatusFilterWidget extends ConsumerWidget {
               ),
             ),
             PopupMenuItem<String>(
-              value: 'fiatSent',
+              value: Status.fiatSent.value,
               child: Text(
                 S.of(context)!.statusFiatSent,
                 style: const TextStyle(
@@ -132,7 +135,7 @@ class StatusFilterWidget extends ConsumerWidget {
               ),
             ),
             PopupMenuItem<String>(
-              value: 'success',
+              value: Status.success.value,
               child: Text(
                 S.of(context)!.statusSuccess,
                 style: const TextStyle(
@@ -142,7 +145,7 @@ class StatusFilterWidget extends ConsumerWidget {
               ),
             ),
             PopupMenuItem<String>(
-              value: 'canceled',
+              value: Status.canceled.value,
               child: Text(
                 S.of(context)!.statusCanceled,
                 style: const TextStyle(
@@ -152,7 +155,7 @@ class StatusFilterWidget extends ConsumerWidget {
               ),
             ),
             PopupMenuItem<String>(
-              value: 'settledHoldInvoice',
+              value: Status.settledHoldInvoice.value,
               child: Text(
                 S.of(context)!.statusSettledHoldInvoice,
                 style: const TextStyle(
@@ -164,34 +167,15 @@ class StatusFilterWidget extends ConsumerWidget {
           ],
           onSelected: (String value) {
             Status? statusValue;
-            switch (value) {
-              case 'ALL':
+            if (value == 'ALL') {
+              statusValue = null;
+            } else {
+              try {
+                statusValue = Status.fromString(value);
+              } catch (e) {
+                _logger.e('Error parsing status: $e');
                 statusValue = null;
-                break;
-              case 'pending':
-                statusValue = Status.pending;
-                break;
-              case 'waitingPayment':
-                statusValue = Status.waitingPayment;
-                break;
-              case 'waitingBuyerInvoice':
-                statusValue = Status.waitingBuyerInvoice;
-                break;
-              case 'active':
-                statusValue = Status.active;
-                break;
-              case 'fiatSent':
-                statusValue = Status.fiatSent;
-                break;
-              case 'success':
-                statusValue = Status.success;
-                break;
-              case 'canceled':
-                statusValue = Status.canceled;
-                break;
-              case 'settledHoldInvoice':
-                statusValue = Status.settledHoldInvoice;
-                break;
+              }
             }
             ref.read(statusFilterProvider.notifier).state = statusValue;
           },

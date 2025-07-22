@@ -17,7 +17,7 @@ class TradesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Watch the async trades data
-    final tradesAsync = ref.watch(filteredTradesProvider);
+    final tradesAsync = ref.watch(filteredTradesWithOrderStateProvider);
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundDark,
@@ -28,7 +28,7 @@ class TradesScreen extends ConsumerWidget {
             // Force reload the orders repository first
             ref.read(orderRepositoryProvider).reloadData();
             // Then refresh the filtered trades provider
-            ref.invalidate(filteredTradesProvider);
+            ref.invalidate(filteredTradesWithOrderStateProvider);
           },
           child: Column(
             children: [
@@ -49,7 +49,7 @@ class TradesScreen extends ConsumerWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            S.of(context)!.myTrades,
+                            S.of(context)!.myActiveTrades,
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 20,
@@ -65,7 +65,11 @@ class TradesScreen extends ConsumerWidget {
                     Expanded(
                       child: Container(
                         decoration: const BoxDecoration(
-                          color: AppTheme.backgroundDark,
+                          color: AppTheme.backgroundLight,
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(20),
+                            topRight: Radius.circular(20),
+                          ),
                         ),
                         child: Column(
                           children: [
@@ -75,28 +79,26 @@ class TradesScreen extends ConsumerWidget {
                                 data: (trades) =>
                                     _buildOrderList(context, trades),
                                 loading: () => const Center(
-                                  child: CircularProgressIndicator(),
+                                  child: CircularProgressIndicator(
+                                    color: AppTheme.primary,
+                                  ),
                                 ),
-                                error: (error, _) => Center(
+                                error: (error, stackTrace) => Center(
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       const Icon(
                                         Icons.error_outline,
                                         color: Colors.red,
-                                        size: 60,
+                                        size: 48,
                                       ),
                                       const SizedBox(height: 16),
                                       Text(
                                         S.of(context)!.errorLoadingTrades,
-                                        style:
-                                            TextStyle(color: AppTheme.cream1),
-                                      ),
-                                      Text(
-                                        error.toString(),
-                                        style: TextStyle(
-                                            color: AppTheme.cream1,
-                                            fontSize: 12),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                        ),
                                         textAlign: TextAlign.center,
                                       ),
                                       const SizedBox(height: 16),
@@ -104,7 +106,7 @@ class TradesScreen extends ConsumerWidget {
                                         onPressed: () {
                                           ref.invalidate(orderEventsProvider);
                                           ref.invalidate(
-                                              filteredTradesProvider);
+                                              filteredTradesWithOrderStateProvider);
                                         },
                                         child: Text(S.of(context)!.retry),
                                       ),
