@@ -6,7 +6,8 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/relays/widgets/relay_selector.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
-import 'package:mostro_mobile/shared/widgets/currency_combo_box.dart';
+import 'package:mostro_mobile/shared/widgets/currency_selection_dialog.dart';
+import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
 import 'package:mostro_mobile/shared/widgets/language_selector.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
@@ -183,14 +184,7 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 16),
-            CurrencyComboBox(
-              label: S.of(context)!.defaultFiatCurrency,
-              onSelected: (fiatCode) {
-                ref
-                    .watch(settingsProvider.notifier)
-                    .updateDefaultFiatCode(fiatCode);
-              },
-            ),
+            _buildCurrencySelector(context, ref),
           ],
         ),
       ),
@@ -366,6 +360,92 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildCurrencySelector(BuildContext context, WidgetRef ref) {
+    final currenciesAsync = ref.watch(currencyCodesProvider);
+    final selectedFiatCode = ref.watch(selectedFiatCodeProvider);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppTheme.dark1,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: currenciesAsync.when(
+        loading: () => const Center(
+          child: SizedBox(
+            height: 24,
+            width: 24,
+            child: CircularProgressIndicator(),
+          ),
+        ),
+        error: (error, stackTrace) => Row(
+          children: [
+            Text(S.of(context)!.errorLoadingCurrencies),
+            TextButton(
+              onPressed: () => ref.refresh(currencyCodesProvider),
+              child: Text(S.of(context)!.retry),
+            ),
+          ],
+        ),
+        data: (currencies) {
+          final selectedCurrency = currencies[selectedFiatCode];
+          final displayText = selectedCurrency != null
+              ? '${selectedCurrency.emoji.isNotEmpty ? selectedCurrency.emoji : '🏳️'} $selectedFiatCode - ${selectedCurrency.name}'
+              : selectedFiatCode;
+
+          return InkWell(
+            onTap: () async {
+              final selectedCode = await CurrencySelectionDialog.show(
+                context,
+                ref,
+                title: S.of(context)!.defaultFiatCurrency,
+                currentSelection: selectedFiatCode,
+              );
+              if (selectedCode != null && context.mounted) {
+                ref
+                    .read(settingsProvider.notifier)
+                    .updateDefaultFiatCode(selectedCode);
+              }
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          S.of(context)!.defaultFiatCurrency,
+                          style: const TextStyle(
+                            color: AppTheme.grey2,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          displayText,
+                          style: const TextStyle(
+                            color: AppTheme.cream1,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(
+                    Icons.arrow_drop_down,
+                    color: AppTheme.grey2,
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
