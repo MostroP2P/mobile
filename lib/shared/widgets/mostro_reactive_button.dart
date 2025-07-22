@@ -37,6 +37,7 @@ class MostroReactiveButton extends ConsumerStatefulWidget {
   final bool showSuccessIndicator;
 
   final Color? backgroundColor;
+  final Color? foregroundColor;
   final MostroReactiveButtonController? controller;
 
   const MostroReactiveButton({
@@ -49,6 +50,7 @@ class MostroReactiveButton extends ConsumerStatefulWidget {
     this.timeout = const Duration(seconds: 5),
     this.showSuccessIndicator = false,
     this.backgroundColor,
+    this.foregroundColor,
     this.controller,
   });
 
@@ -154,11 +156,14 @@ class _MostroReactiveButtonState extends ConsumerState<MostroReactiveButton> {
       case ButtonStyleType.raised:
         button = ElevatedButton(
           onPressed: _loading ? null : _startOperation,
-          style: widget.backgroundColor != null
+          style: (widget.backgroundColor != null || widget.foregroundColor != null)
               ? AppTheme.theme.elevatedButtonTheme.style?.copyWith(
-                  backgroundColor: WidgetStateProperty.resolveWith(
-                    (_) => widget.backgroundColor!,
-                  ),
+                  backgroundColor: widget.backgroundColor != null
+                      ? WidgetStateProperty.resolveWith((_) => widget.backgroundColor!)
+                      : null,
+                  foregroundColor: widget.foregroundColor != null
+                      ? WidgetStateProperty.resolveWith((_) => widget.foregroundColor!)
+                      : null,
                 )
               : AppTheme.theme.elevatedButtonTheme.style,
           child: childWidget,

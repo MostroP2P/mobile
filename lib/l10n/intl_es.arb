@@ -1,5 +1,6 @@
 {
   "@@locale": "es",
+  "backToHome": "Volver al inicio",
   "newOrder": "¡Tu oferta ha sido publicada! Por favor espera hasta que otro usuario elija tu orden. Estará disponible durante {expiration_hours} horas. Puedes cancelar esta orden antes de que otro usuario la tome ejecutando: cancel.",
   "canceled": "Has cancelado la orden ID: {id}.",
   "payInvoice": "Por favor paga esta factura retenida de {amount} Sats por {fiat_amount} {fiat_code} para iniciar la operación. Si no la pagas antes de {expiration_seconds} minutos, el intercambio será cancelado.",
@@ -74,7 +75,7 @@
   "released": "¡{seller_name} ha liberado los Sats! Espera que tu factura sea pagada pronto. Asegúrate de que tu billetera esté en línea para recibir a través de Lightning Network.",
   "purchaseCompleted": "Tu compra de Bitcoin ha sido completada exitosamente. He pagado tu factura; ¡disfruta del dinero sólido!",
   "holdInvoicePaymentSettled": "Tu venta de Sats ha sido completada después de confirmar el pago de {buyer_name}.",
-  "rate": "Por favor califica a tu contraparte",
+  "rate": "CALIFICAR",
   "rateReceived": "¡Calificación guardada exitosamente!",
   "cooperativeCancelInitiatedByYou": "Has iniciado la cancelación de la orden ID: {id}. Tu contraparte debe estar de acuerdo. Si no responden, puedes abrir una disputa. Ten en cuenta que ningún administrador te contactará sobre esta cancelación a menos que abras una disputa primero.",
   "cooperativeCancelInitiatedByPeer": "Tu contraparte quiere cancelar la orden ID: {id}. Si estás de acuerdo, por favor envíame cancel-order-message. Ten en cuenta que ningún administrador te contactará sobre esta cancelación a menos que abras una disputa primero.",
@@ -223,6 +224,8 @@
   "areYouSureCancel": "¿Estás seguro de que quieres cancelar este intercambio?",
   "cooperativeCancelMessage": "Si confirmas, iniciarás una cancelación cooperativa con tu contraparte.",
   "acceptCancelMessage": "Si confirmas, aceptarás la cancelación cooperativa iniciada por tu contraparte.",
+  "releaseTradeDialogTitle": "Liberar Bitcoin",
+  "areYouSureRelease": "¿Estás seguro de que quieres liberar los Satoshis al comprador?",
   "confirm": "Confirmar",
   "yes": "Sí",
   "no": "No",
@@ -461,7 +464,7 @@
   "enterInvoiceHere": "Ingresa la factura aquí",
   
   "cancelPendingButton": "CANCELACIÓN PENDIENTE",
-  "acceptCancelButton": "ACEPTAR CANCELACIÓN",
+  "acceptCancelButton": "CANCELAR",
   "completePurchaseButton": "COMPLETAR COMPRA",
   "rateButton": "CALIFICAR",
   "contactButton": "CONTACTAR",
@@ -544,7 +547,6 @@
     }
   },
   "cancelPendingButton": "CANCELACIÓN PENDIENTE",
-  "acceptCancelButton": "ACEPTAR CANCELACIÓN",
   "disputeButton": "DISPUTA",
   "fiatSentButton": "FIAT ENVIADO",
   "completePurchaseButton": "COMPLETAR COMPRA",
@@ -559,7 +561,9 @@
   "cooperativeCancelDialogMessage": "Si confirmas, iniciarás una cancelación cooperativa con tu contraparte.",
   "acceptCancelDialogMessage": "Si confirmas, aceptarás la cancelación cooperativa iniciada por tu contraparte.",
   "orderIdCopiedMessage": "ID de orden copiado al portapapeles",
-  
+  "disputeTradeDialogTitle": "Iniciar Disputa",
+  "disputeTradeDialogContent": "Estás a punto de iniciar una disputa con tu contraparte. ¿Deseas continuar?",
+
   "language": "Idioma",
   "systemDefault": "Predeterminado del sistema",
   "english": "Inglés",
