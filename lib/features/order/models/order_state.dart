@@ -112,9 +112,11 @@ class OrderState {
       _logger.i('👤 New Peer found in message');
     } else if (message.payload is Order) {
       if (message.getPayload<Order>()!.buyerTradePubkey != null) {
-        newPeer = Peer(publicKey: message.getPayload<Order>()!.buyerTradePubkey!);
+        newPeer =
+            Peer(publicKey: message.getPayload<Order>()!.buyerTradePubkey!);
       } else if (message.getPayload<Order>()!.sellerTradePubkey != null) {
-        newPeer = Peer(publicKey: message.getPayload<Order>()!.sellerTradePubkey!);
+        newPeer =
+            Peer(publicKey: message.getPayload<Order>()!.sellerTradePubkey!);
       }
       _logger.i('👤 New Peer found in message');
     } else {
@@ -183,6 +185,17 @@ class OrderState {
       case Action.adminCanceled:
       case Action.cooperativeCancelAccepted:
         return Status.canceled;
+
+      // Actions that should set status to cooperatively canceled (pending cancellation)
+      case Action.cooperativeCancelInitiatedByYou:
+      case Action.cooperativeCancelInitiatedByPeer:
+        return Status.cooperativelyCanceled;
+
+      // Actions that should set status to dispute
+      case Action.disputeInitiatedByYou:
+      case Action.disputeInitiatedByPeer:
+      case Action.dispute:
+        return Status.dispute;
 
       // For actions that include Order payload, use the payload status
       case Action.newOrder:
