@@ -90,7 +90,7 @@ lib/
      "register": "S'inscrire",                  // Was: "Register"
      "buyingBitcoin": "Achat de Bitcoin",       // Was: "Buying Bitcoin"
      "sellingBitcoin": "Vente de Bitcoin",      // Was: "Selling Bitcoin"
-     "myActiveTrades": "Mes Échanges Actifs",   // Was: "My Active Trades"
+     "myTrades": "Mes Échanges Actifs",   // Was: "My Trades"
      // ... continue for all keys
    }
    ```

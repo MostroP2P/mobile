@@ -181,7 +181,6 @@
   "myTrades": "My Trades",
   "chat": "Chat",
   "navigateToLabel": "Navigate to {label}",
-  "myActiveTrades": "My Active Trades",
   "errorLoadingTrades": "Error loading trades",
   "retry": "Retry",
   "noTradesAvailable": "No trades available for this type",
