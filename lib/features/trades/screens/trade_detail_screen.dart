@@ -391,7 +391,9 @@ class TradeDetailScreen extends ConsumerWidget {
 
                 // Reset loading state if dialog was cancelled or user clicked NO
                 if (result == null || result == false) {
-                  buttonController.resetLoading();
+                  if (context.mounted) {
+                    buttonController.resetLoading();
+                  }
                 }
               },
             ));

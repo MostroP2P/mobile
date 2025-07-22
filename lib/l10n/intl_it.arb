@@ -562,7 +562,6 @@
     }
   },
   "cancelPendingButton": "ANNULLAMENTO IN SOSPESO",
-  "acceptCancelButton": "ANNULLA",
   "disputeButton": "DISPUTA",
   "fiatSentButton": "FIAT INVIATO",
   "completePurchaseButton": "COMPLETA ACQUISTO",
