@@ -7,6 +7,7 @@ import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/providers.dart';
+import 'package:mostro_mobile/shared/providers/session_storage_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
 class KeyManagementScreen extends ConsumerStatefulWidget {
@@ -21,6 +22,7 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
   String? _mnemonic;
   int? _tradeKeyIndex;
   bool _loading = false;
+  bool _loadingKeys = false;
   bool _showSecretWords = false;
   final TextEditingController _importController = TextEditingController();
 
@@ -73,23 +75,147 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
 
   // ignore: unused_element
   Future<void> _importKey() async {
+    await _showImportDialog();
+  }
+
+  Future<void> _showImportDialog() async {
+    await showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: AppTheme.dark2,
+          title: Text(
+            S.of(context)!.importUser,
+            style: const TextStyle(color: AppTheme.cream1),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                S.of(context)!.importUserInstructions,
+                style: TextStyle(
+                  color: AppTheme.grey2,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _importController,
+                maxLines: 3,
+                style: const TextStyle(color: AppTheme.cream1),
+                decoration: InputDecoration(
+                  hintText: S.of(context)!.mnemonicPlaceholder,
+                  hintStyle: TextStyle(color: AppTheme.grey2),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: AppTheme.grey2),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: AppTheme.grey2),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: AppTheme.mostroGreen),
+                  ),
+                  filled: true,
+                  fillColor: AppTheme.dark1,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                context.pop();
+              },
+              child: Text(
+                S.of(context)!.cancel,
+                style: const TextStyle(color: AppTheme.grey2),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final mnemonic = _importController.text.trim();
+                if (mnemonic.isNotEmpty) {
+                  context.pop();
+                  _importController.clear();
+                  await _performImport(mnemonic);
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.mostroGreen,
+                foregroundColor: AppTheme.dark1,
+              ),
+              child: Text(S.of(context)!.import),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _performImport(String mnemonic) async {
+    setState(() {
+      _loadingKeys = true;
+    });
+    final sessionNotifer = ref.read(sessionNotifierProvider.notifier);
+    await sessionNotifer.reset();
+
+    final mostroStorage = ref.read(mostroStorageProvider);
+    await mostroStorage.deleteAll();
+
+    final eventStorage = ref.read(eventStorageProvider);
+    await eventStorage.deleteAll();
+
+    final sessionStorage = ref.read(sessionStorageProvider);
+    await sessionStorage.deleteAll();
+
     final keyManager = ref.read(keyManagerProvider);
-    final importValue = _importController.text.trim();
-    if (importValue.isNotEmpty) {
-      try {
-        await keyManager.importMnemonic(importValue);
-        await _loadKeys();
+    try {
+      await keyManager.importMnemonic(mnemonic);
+      await _loadKeys();
+
+      final restorationService = ref.read(tradeHistoryRestorationProvider);
+      restorationService.restoreTradeHistory().then((result) {
+        sessionStorage
+            .putSessions(
+                result.$2.map((key, value) => MapEntry(value.orderId!, value)))
+            .then((_) {
+          sessionNotifer.init();
+        });
+
+        setState(() {
+          _tradeKeyIndex = result.$1 + 1;
+          _loadingKeys = false;
+        });
+
+      }).catchError((error) {
+        debugPrint('Trade history restoration failed: $error');
+        
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(S.of(context)!.keyImportedSuccessfully)),
+            SnackBar(
+              content: Text(S.of(context)!.tradeHistoryRestorationFailed(
+                    error.toString(),
+                  )),
+              backgroundColor: AppTheme.red2,
+            ),
           );
         }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(S.of(context)!.importFailed(e.toString()))),
-          );
-        }
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(S.of(context)!.keyImportedSuccessfully)),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(S.of(context)!.importFailed(e.toString()))),
+        );
       }
     }
   }
@@ -457,14 +583,18 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
               ),
               child: Row(
                 children: [
-                  Text(
-                    '${_tradeKeyIndex ?? 0}',
-                    style: const TextStyle(
-                      color: AppTheme.textPrimary,
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  _loadingKeys
+                      ? const CircularProgressIndicator(
+                          color: AppTheme.mostroGreen,
+                        )
+                      : Text(
+                          '${_tradeKeyIndex ?? 0}',
+                          style: const TextStyle(
+                            color: AppTheme.textPrimary,
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Text(
@@ -522,8 +652,9 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton(
-        onPressed: null, // Keep disabled as requested
+        onPressed: _importKey,
         style: OutlinedButton.styleFrom(
+          backgroundColor: AppTheme.backgroundCard,
           side:
               BorderSide(color: AppTheme.textSecondary.withValues(alpha: 0.3)),
           shape: RoundedRectangleBorder(
@@ -537,7 +668,7 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
             Icon(
               LucideIcons.download,
               size: 20,
-              color: AppTheme.textSecondary.withValues(alpha: 0.5),
+              color: AppTheme.textSecondary,
             ),
             const SizedBox(width: 8),
             Text(
@@ -545,7 +676,7 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
-                color: AppTheme.textSecondary.withValues(alpha: 0.5),
+                color: AppTheme.textSecondary,
               ),
             ),
           ],

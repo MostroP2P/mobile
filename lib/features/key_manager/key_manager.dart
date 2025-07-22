@@ -23,9 +23,6 @@ class KeyManager {
   }
 
   Future<bool> hasMasterKey() async {
-    if (masterKeyPair != null) {
-      return true;
-    }
     _masterKeyHex = await _storage.readMasterKey();
     return _masterKeyHex != null;
   }
@@ -118,5 +115,15 @@ class KeyManager {
     }
     tradeKeyIndex = index;
     await _storage.storeTradeKeyIndex(index);
+  }
+
+  /// Generate a batch of trade key pairs for efficient processing
+  List<MapEntry<int, NostrKeyPairs>> generateTradeKeyBatch(int startIndex, int count) {
+    final keys = <MapEntry<int, NostrKeyPairs>>[];
+    for (int i = startIndex; i < startIndex + count; i++) {
+      final keyPair = deriveTradeKeyPair(i);
+      keys.add(MapEntry(i, keyPair));
+    }
+    return keys;
   }
 }

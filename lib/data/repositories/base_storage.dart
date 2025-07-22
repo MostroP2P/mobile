@@ -80,6 +80,14 @@ abstract class BaseStorage<T> {
         filter: Filter.notEquals('deleted', true),
       );
 
+  Future<void> putAll(Map<String, T> items) async {
+    await db.transaction((txn) async {
+      for (final entry in items.entries) {
+        await store.record(entry.key).put(txn, toDbMap(entry.value));
+      }
+    });
+  }
+
   Stream<List<T>> watch({
     Filter? filter,
     List<SortOrder>? sort,

@@ -39,12 +39,12 @@ class SettingsNotifier extends StateNotifier<Settings> {
   }
 
   Future<void> updatePrivacyMode(bool newValue) async {
-    state = state.copyWith(privacyModeSetting: newValue);
+    state = state.copyWith(fullPrivacyMode: newValue);
     await _saveToPrefs();
   }
 
   Future<void> updateMostroInstance(String newValue) async {
-    state = state.copyWith(mostroInstance: newValue);
+    state = state.copyWith(mostroPublicKey: newValue);
     await _saveToPrefs();
   }
 
