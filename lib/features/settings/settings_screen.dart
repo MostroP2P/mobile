@@ -405,9 +405,9 @@ class SettingsScreen extends ConsumerWidget {
                 title: S.of(context)!.defaultFiatCurrency,
                 currentSelection: selectedFiatCode,
               );
-              if (selectedCode != null) {
+              if (selectedCode != null && context.mounted) {
                 ref
-                    .watch(settingsProvider.notifier)
+                    .read(settingsProvider.notifier)
                     .updateDefaultFiatCode(selectedCode);
               }
             },

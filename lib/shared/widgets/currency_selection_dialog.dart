@@ -79,12 +79,11 @@ class _CurrencySelectionDialogWidgetState
                 decoration: InputDecoration(
                   hintText: S.of(context)!.searchCurrencies,
                   hintStyle: const TextStyle(color: Colors.grey),
-                  prefixIcon: const Icon(Icons.search,
-                      color: Colors.grey, size: 20),
+                  prefixIcon:
+                      const Icon(Icons.search, color: Colors.grey, size: 20),
                   filled: false,
                   border: InputBorder.none,
-                  contentPadding:
-                      const EdgeInsets.symmetric(vertical: 14.0),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 14.0),
                 ),
                 onChanged: (value) {
                   setState(() {
@@ -103,19 +102,20 @@ class _CurrencySelectionDialogWidgetState
                       const Center(child: CircularProgressIndicator()),
                   error: (_, __) => Center(
                     child: Text(
-                      'Error loading currencies',
+                      S.of(context)!.errorLoadingCurrencies,
                       style: TextStyle(color: Colors.red.shade300),
                     ),
                   ),
                   data: (currencies) {
-                    final filteredCurrencies = currencies.entries.where((entry) {
+                    final filteredCurrencies =
+                        currencies.entries.where((entry) {
                       final code = entry.key.toLowerCase();
                       final name = entry.value.name.toLowerCase();
                       return searchQuery.isEmpty ||
                           code.contains(searchQuery) ||
                           name.contains(searchQuery);
                     }).toList()
-                      ..sort((a, b) => a.key.compareTo(b.key));
+                          ..sort((a, b) => a.key.compareTo(b.key));
 
                     return filteredCurrencies.isEmpty
                         ? Center(
@@ -133,7 +133,8 @@ class _CurrencySelectionDialogWidgetState
                               final entry = filteredCurrencies[index];
                               final code = entry.key;
                               final currency = entry.value;
-                              final isSelected = code == widget.currentSelection;
+                              final isSelected =
+                                  code == widget.currentSelection;
 
                               return ListTile(
                                 key: Key('currency_$code'),
