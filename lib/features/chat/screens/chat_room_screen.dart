@@ -25,6 +25,18 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
   // Constant for BottomNavBar height to ensure consistency
   static const double bottomNavBarHeight = 80;
   String? _selectedInfoType; // null, 'trade', or 'user'
+  
+  // Scroll controller for the chat messages list
+  final ScrollController _scrollController = ScrollController();
+  
+  // Track keyboard visibility to trigger scroll
+  bool _wasKeyboardVisible = false;
+  
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,6 +45,34 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
     final peer = session!.peer!.publicKey;
     final orderState = ref.watch(orderNotifierProvider(widget.orderId));
     final order = orderState.order;
+    
+    // Check if keyboard is visible
+    final isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
+    
+    // If keyboard just became visible, scroll to bottom
+    if (isKeyboardVisible && !_wasKeyboardVisible) {
+      // Use Future.delayed instead of microtask to ensure the list is built
+      Future.delayed(const Duration(milliseconds: 100), () {
+        // Verify controller is attached and list has content
+        if (_scrollController.hasClients && 
+            chatDetailState.messages.isNotEmpty &&
+            _scrollController.position.maxScrollExtent > 0) {
+          try {
+            _scrollController.animateTo(
+              _scrollController.position.maxScrollExtent,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOut,
+            );
+          } catch (e) {
+            // Silently handle any scroll errors
+            // This prevents exceptions from breaking the UI
+          }
+        }
+      });
+    }
+    
+    // Update keyboard visibility tracking
+    _wasKeyboardVisible = isKeyboardVisible;
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundDark,
@@ -95,6 +135,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                             child: ChatMessagesList(
                               chatRoom: chatDetailState,
                               peerPubkey: peer,
+                              scrollController: _scrollController,
                             ),
                           ),
                         ],
