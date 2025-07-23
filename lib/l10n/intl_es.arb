@@ -660,8 +660,6 @@
     }
   },
   "yourInformation": "Tu Información",
-  "yourHandle": "Tu Identificador:",
-  "yourSharedKey": "Tu Clave Compartida:",
   "peerPublicKey": "Clave Pública del Par:",
   "notAvailable": "No disponible",
   "unknownDate": "Fecha desconocida",
