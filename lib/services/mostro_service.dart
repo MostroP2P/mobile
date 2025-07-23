@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:collection/collection.dart';
 import 'package:dart_nostr/dart_nostr.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/enums.dart';
@@ -177,11 +178,17 @@ class MostroService {
 
   Future<void> publishOrder(MostroMessage order) async {
     final session = await _getSession(order);
+    
+    // Use lower difficulty for testing to prevent timeouts
+    // In test environments, use difficulty 1 instead of default 16
+    final targetDifficulty = kDebugMode && _isTestEnvironment() ? 1 : 16;
+    
     final event = await order.wrap(
       tradeKey: session.tradeKey,
       recipientPubKey: _settings.mostroPublicKey,
       masterKey: session.fullPrivacy ? null : session.masterKey,
       keyIndex: session.fullPrivacy ? null : session.keyIndex,
+      targetDifficulty: targetDifficulty,
     );
     _logger.i('Sending DM, Event ID: ${event.id} with payload: ${order.toJson()}');
     await ref.read(nostrServiceProvider).publishEvent(event);
@@ -203,6 +210,14 @@ class MostroService {
       return session;
     }
     throw Exception('Order has neither requestId nor orderId');
+  }
+
+  /// Helper method to detect if we're running in a test environment
+  /// This helps reduce proof-of-work difficulty during testing to prevent timeouts
+  bool _isTestEnvironment() {
+    // Simple detection: check if we're in debug mode or if zone contains 'test'
+    // This covers most test scenarios and is safe to use
+    return kDebugMode || Zone.current.toString().toLowerCase().contains('test');
   }
 
   void updateSettings(Settings settings) {

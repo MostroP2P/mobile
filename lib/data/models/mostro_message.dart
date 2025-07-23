@@ -118,6 +118,7 @@ class MostroMessage<T extends Payload> {
     required String recipientPubKey,
     NostrKeyPairs? masterKey,
     int? keyIndex,
+    int targetDifficulty = 16,
   }) async {
     this.tradeIndex = keyIndex;
     final content = serialize(keyPair: masterKey != null ? tradeKey : null);
@@ -132,6 +133,6 @@ class MostroMessage<T extends Payload> {
         keySet, wrapperKeyPair.private, recipientPubKey, encryptedContent);
 
     return await NostrUtils.createWrap(
-        wrapperKeyPair, sealedContent, recipientPubKey);
+        wrapperKeyPair, sealedContent, recipientPubKey, targetDifficulty: targetDifficulty);
   }
 }
