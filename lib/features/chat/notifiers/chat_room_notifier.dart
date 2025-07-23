@@ -8,6 +8,7 @@ import 'package:mostro_mobile/data/models/nostr_event.dart';
 
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_manager_provider.dart';
+import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 
@@ -48,6 +49,22 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
 
   void _onChatEvent(NostrEvent event) async {
     try {
+      // Check if event is already processed to prevent duplicate notifications
+      final eventStore = ref.read(eventStorageProvider);
+      if (await eventStore.hasItem(event.id!)) {
+        return;
+      }
+      
+      // Store the event to prevent future duplicates
+      await eventStore.putItem(
+        event.id!,
+        {
+          'id': event.id,
+          'created_at': event.createdAt!.millisecondsSinceEpoch ~/ 1000,
+          'type': 'chat',
+        },
+      );
+
       final session = ref.read(sessionProvider(orderId));
       if (session == null || session.sharedKey == null) {
         _logger.e('Session or shared key is null when processing chat event');
