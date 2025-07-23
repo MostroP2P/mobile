@@ -348,7 +348,7 @@
   "priceType": "Tipo de precio",
   "fixedPrice": "Precio fijo",
   "market": "Mercado",
-  "priceTypeTooltip": "• Selecciona Precio de Mercado si quieres usar el precio que tiene Bitcoin cuando alguien tome tu oferta.\\n• Selecciona Precio Fijo si quieres definir la cantidad exacta de Bitcoin que intercambiarás.",
+  "priceTypeTooltip": "• Selecciona Precio de Mercado si quieres usar el precio que tiene Bitcoin cuando alguien tome tu oferta.\n\n• Selecciona Precio Fijo si quieres definir la cantidad exacta de Bitcoin que intercambiarás.",
   
   "withPremiumPercent": "con un +{premium}% de premio",
   "@withPremiumPercent": {
@@ -663,7 +663,7 @@
   "@_comment_settings_info_dialogs": "Texto de Diálogos de Información de Configuración",
   "languageInfoText": "Elige tu idioma preferido para la interfaz de la aplicación.",
   "currencyInfoText": "Elige la moneda predeterminada para tus órdenes.",
-  "relaysInfoText": "• Los relays son servidores que ayudan a distribuir tus mensajes a través de la red Nostr\n\n• Agregar más relays puede mejorar la conectividad y redundancia\n\n• Los relays no se sincronizan entre sí, por lo que solo aquellos a los que estés conectado recibirán tus mensajes.",
+  "relaysInfoText": "• Los relays son servidores que ayudan a distribuir tus mensajes a través de la red Nostr.\n\n• Agregar más relays puede mejorar la conectividad y redundancia.\n\n• Los relays no se sincronizan entre sí, por lo que solo aquellos a los que estés conectado recibirán tus mensajes.",
   "mostroInfoText": "• El Mostro que selecciones será donde publiques tus ofertas.\n\n• En caso de disputa, una persona asignada a ese Mostro será quien la resuelva.",
   
   "@_comment_account_info_dialogs": "Texto de Diálogos de Información de Cuenta",

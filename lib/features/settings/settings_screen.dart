@@ -107,10 +107,13 @@ class SettingsScreen extends ConsumerWidget {
                     S.of(context)!.languageInfoText,
                   ),
                   borderRadius: BorderRadius.circular(12),
-                  child: const Icon(
-                    Icons.info_outline,
-                    size: 20,
-                    color: AppTheme.textSecondary,
+                  child: const Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Icon(
+                      Icons.info_outline,
+                      size: 20,
+                      color: AppTheme.textSecondary,
+                    ),
                   ),
                 ),
               ],
@@ -167,10 +170,13 @@ class SettingsScreen extends ConsumerWidget {
                     S.of(context)!.currencyInfoText,
                   ),
                   borderRadius: BorderRadius.circular(12),
-                  child: const Icon(
-                    Icons.info_outline,
-                    size: 20,
-                    color: AppTheme.textSecondary,
+                  child: const Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Icon(
+                      Icons.info_outline,
+                      size: 20,
+                      color: AppTheme.textSecondary,
+                    ),
                   ),
                 ),
               ],
@@ -227,10 +233,13 @@ class SettingsScreen extends ConsumerWidget {
                     S.of(context)!.relaysInfoText,
                   ),
                   borderRadius: BorderRadius.circular(12),
-                  child: const Icon(
-                    Icons.info_outline,
-                    size: 20,
-                    color: AppTheme.textSecondary,
+                  child: const Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Icon(
+                      Icons.info_outline,
+                      size: 20,
+                      color: AppTheme.textSecondary,
+                    ),
                   ),
                 ),
               ],
@@ -314,10 +323,13 @@ class SettingsScreen extends ConsumerWidget {
                     S.of(context)!.mostroInfoText,
                   ),
                   borderRadius: BorderRadius.circular(12),
-                  child: const Icon(
-                    Icons.info_outline,
-                    size: 20,
-                    color: AppTheme.textSecondary,
+                  child: const Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Icon(
+                      Icons.info_outline,
+                      size: 20,
+                      color: AppTheme.textSecondary,
+                    ),
                   ),
                 ),
               ],
