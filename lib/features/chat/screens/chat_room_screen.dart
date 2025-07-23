@@ -12,8 +12,6 @@ import 'package:mostro_mobile/features/chat/widgets/user_information_tab.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 
 
-import 'package:mostro_mobile/shared/providers/avatar_provider.dart';
-import 'package:mostro_mobile/shared/providers/legible_handle_provider.dart';
 
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';

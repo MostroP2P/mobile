@@ -33,11 +33,11 @@ class InfoButtons extends StatelessWidget {
   Widget _buildInfoButton(BuildContext context, String title, String type) {
     final isSelected = selectedInfoType == type;
     final textLength = title.length;
-    final textScaleFactor = MediaQuery.of(context).textScaleFactor;
+    final textScaler = MediaQuery.of(context).textScaler;
     
     // Adjust font size based on text length and scale factor
     final baseFontSize = textLength > 15 ? 13.0 : 14.0;
-    final fontSize = baseFontSize / textScaleFactor.clamp(0.8, 1.5);
+    final fontSize = baseFontSize / textScaler.scale(1.0).clamp(0.8, 1.5);
 
     return Container(
       height: 44,
@@ -81,7 +81,7 @@ class InfoButtons extends StatelessWidget {
                 ),
                 overflow: TextOverflow.ellipsis,
                 maxLines: 1,
-                textScaleFactor: 1.0,
+                textScaler: TextScaler.noScaling,
               ),
             ),
           ],

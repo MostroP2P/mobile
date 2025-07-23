@@ -7,11 +7,7 @@ import 'package:mostro_mobile/data/models/chat_room.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
-import 'package:mostro_mobile/services/lifecycle_manager.dart';
-
 import 'package:mostro_mobile/features/subscriptions/subscription_manager_provider.dart';
-
-import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 
@@ -62,31 +58,27 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
         return;
       }
 
+      final chat = await event.mostroUnWrap(session.sharedKey!);
+      // Deduplicate by message ID and always sort by createdAt
+      final allMessages = [
+        ...state.messages,
+        chat,
+      ];
+      // Use a map to deduplicate by event id
+      final deduped = {for (var m in allMessages) m.id: m}.values.toList();
 
-          final chat = await event.mostroUnWrap(session.sharedKey!);
-          // Deduplicate by message ID and always sort by createdAt
-          final allMessages = [
-            ...state.messages,
-            chat,
-          ];
-          // Use a map to deduplicate by event id
-          final deduped = {for (var m in allMessages) m.id: m}.values.toList();
-
-          deduped.sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
-          state = state.copy(messages: deduped);
-          
-          // Notify the chat rooms list to update when new messages arrive
-          try {
-            ref.read(chatRoomsNotifierProvider.notifier).refreshChatList();
-          } catch (e) {
-            _logger.w('Could not refresh chat list: $e');
-          }
-        } catch (e) {
-          _logger.e(e);
-        }
-      },
-    );
-
+      deduped.sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
+      state = state.copy(messages: deduped);
+      
+      // Notify the chat rooms list to update when new messages arrive
+      try {
+        ref.read(chatRoomsNotifierProvider.notifier).refreshChatList();
+      } catch (e) {
+        _logger.w('Could not refresh chat list: $e');
+      }
+    } catch (e) {
+      _logger.e(e);
+    }
   }
 
   Future<void> sendMessage(String text) async {

@@ -11,9 +11,6 @@ import 'package:mostro_mobile/features/chat/widgets/empty_state_view.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 
-import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
-import 'package:mostro_mobile/shared/providers/avatar_provider.dart';
-import 'package:mostro_mobile/shared/providers/legible_handle_provider.dart';
 
 import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
 import 'package:mostro_mobile/shared/widgets/custom_drawer_overlay.dart';
