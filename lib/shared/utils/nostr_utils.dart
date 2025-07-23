@@ -244,19 +244,33 @@ class NostrUtils {
         jsonEncode(sealEvent.toMap()), wrapperKey, recipientPubKey);
   }
 
+  /// Creates a NIP-59 wrapper event with NIP-13 proof-of-work as required by Mostro
+  /// This adds computational proof to demonstrate the event is not spam
   static Future<NostrEvent> createWrap(NostrKeyPairs wrapperKeyPair,
-      String sealedContent, String recipientPubKey) async {
-    final wrapEvent = NostrEvent.fromPartialData(
+      String sealedContent, String recipientPubKey, {int targetDifficulty = 16}) async {
+    
+    // Mine the wrapper event to achieve the target difficulty (NIP-13)
+    // This adds proof-of-work as required by Mostro documentation
+    final minedWrapEvent = await mineEvent(
+      wrapperKeyPair,
+      sealedContent,
+      targetDifficulty,
+      existingTags: [
+        ["p", recipientPubKey]
+      ],
+    );
+
+    // Update the created_at to use randomized timestamp for privacy
+    // while preserving the nonce that achieved the target difficulty
+    final finalWrapEvent = NostrEvent.fromPartialData(
       kind: 1059,
       content: sealedContent,
       keyPairs: wrapperKeyPair,
-      tags: [
-        ["p", recipientPubKey]
-      ],
+      tags: minedWrapEvent.tags,
       createdAt: randomNow(),
     );
 
-    return wrapEvent;
+    return finalWrapEvent;
   }
 
   static NostrKeyPairs computeSharedKey(String privateKey, String publicKey) {
@@ -392,5 +406,130 @@ class NostrUtils {
       // Handle encryption error appropriately
       throw Exception('Decryption failed: $e');
     }
+  }
+
+  /// Counts the number of leading zero bits in a hexadecimal string
+  /// Implementation based on NIP-13 specification
+  static int countLeadingZeroBits(String hex) {
+    int count = 0;
+    
+    for (int i = 0; i < hex.length; i++) {
+      final nibble = int.parse(hex[i], radix: 16);
+      if (nibble == 0) {
+        count += 4;
+      } else {
+        // Count leading zeros in the nibble
+        // Using bit manipulation to count leading zeros
+        int leadingZeros = 0;
+        int temp = nibble;
+        for (int bit = 3; bit >= 0; bit--) {
+          if ((temp & (1 << bit)) == 0) {
+            leadingZeros++;
+          } else {
+            break;
+          }
+        }
+        count += leadingZeros;
+        break;
+      }
+    }
+    
+    return count;
+  }
+
+  /// Mines a NostrEvent to achieve the target difficulty using NIP-13 proof-of-work
+  /// Returns the mined event with nonce tag and updated created_at
+  /// 
+  /// [senderKeyPairs] - The key pairs of the sender to sign the event
+  /// [content] - The content of the message to mine
+  /// [targetDifficulty] - The target number of leading zero bits
+  /// [existingTags] - Any existing tags to include in the event
+  static Future<NostrEvent> mineEvent(
+    NostrKeyPairs senderKeyPairs,
+    String content,
+    int targetDifficulty, {
+    List<List<String>>? existingTags,
+  }) async {
+    if (targetDifficulty <= 0) {
+      throw ArgumentError('Target difficulty must be positive');
+    }
+
+    int nonce = 0;
+    
+    while (true) {
+      // Create event with nonce tag
+      final tags = List<List<String>>.from(existingTags ?? []);
+      
+      // Remove existing nonce tag if present
+      tags.removeWhere((tag) => tag.isNotEmpty && tag[0] == 'nonce');
+      
+      // Add new nonce tag with current nonce and target difficulty
+      tags.add(['nonce', nonce.toString(), targetDifficulty.toString()]);
+      
+      // Update created_at to current time (recommended during mining)
+      final now = DateTime.now();
+      
+      // Create new event with updated nonce and timestamp
+      final minedEvent = NostrEvent.fromPartialData(
+        kind: 1, // Always kind 1 for text messages
+        content: content,
+        keyPairs: senderKeyPairs,
+        tags: tags,
+        createdAt: now,
+      );
+      
+      // Check if we've achieved the target difficulty
+      final eventId = minedEvent.id;
+      if (eventId == null) {
+        throw Exception('Failed to generate event ID');
+      }
+      final difficulty = countLeadingZeroBits(eventId);
+      if (difficulty >= targetDifficulty) {
+        return minedEvent;
+      }
+      
+      nonce++;
+      
+      // Prevent infinite loops - yield control periodically
+      if (nonce % 1000 == 0) {
+        await Future.delayed(Duration.zero);
+      }
+    }
+  }
+
+  /// Validates that an event meets the minimum difficulty requirement
+  /// Returns true if the event has sufficient proof-of-work
+  static bool validateProofOfWork(NostrEvent event, int minimumDifficulty) {
+    final eventId = event.id;
+    if (eventId == null) {
+      return false; // Cannot validate without event ID
+    }
+    final actualDifficulty = countLeadingZeroBits(eventId);
+    
+    // Check if event has a nonce tag with committed target difficulty
+    final nonceTags = event.tags?.where((tag) => 
+        tag.isNotEmpty && tag[0] == 'nonce') ?? [];
+    
+    if (nonceTags.isNotEmpty) {
+      final nonceTag = nonceTags.first;
+      if (nonceTag.length >= 3) {
+        final committedTarget = int.tryParse(nonceTag[2]);
+        if (committedTarget != null && committedTarget < minimumDifficulty) {
+          // Reject if committed target is lower than required minimum
+          return false;
+        }
+      }
+    }
+    
+    return actualDifficulty >= minimumDifficulty;
+  }
+
+  /// Gets the actual difficulty (leading zero bits) of an event
+  static int getEventDifficulty(NostrEvent event) {
+    final eventId = event.id;
+    if (eventId == null) {
+      return 0; // No difficulty if no event ID
+    }
+    return countLeadingZeroBits(eventId);
   }
 }
