@@ -100,7 +100,7 @@ class UserInformationTab extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  S.of(context)!.yourHandle,
+                  S.of(context)!.yourHandle(you),
                   style: TextStyle(
                     color: AppTheme.textSecondary,
                     fontSize: 14,
