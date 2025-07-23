@@ -181,7 +181,7 @@ class MostroService {
     
     // Use lower difficulty for testing to prevent timeouts
     // In test environments, use difficulty 1 instead of default 16
-    final targetDifficulty = kDebugMode && _isTestEnvironment() ? 1 : 16;
+    final targetDifficulty = _isTestEnvironment() ? 1 : 16;
     
     final event = await order.wrap(
       tradeKey: session.tradeKey,
