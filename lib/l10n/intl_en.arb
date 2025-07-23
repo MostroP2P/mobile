@@ -392,7 +392,7 @@
   "priceType": "Price type",
   "fixedPrice": "Fixed price",
   "market": "Market",
-  "priceTypeTooltip": "• Select Market Price if you want to use the price that Bitcoin has when someone takes your offer.\\n• Select Fixed Price if you want to define the exact amount of Bitcoin you will exchange.",
+  "priceTypeTooltip": "• Select Market Price if you want to use the price that Bitcoin has when someone takes your offer.\n\n• Select Fixed Price if you want to define the exact amount of Bitcoin you will exchange.",
   
   "@_comment_take_order_screen": "Take Order Screen Strings",
   "orderDetails": "ORDER DETAILS",
@@ -633,7 +633,7 @@
   "@_comment_settings_info_dialogs": "Settings Info Dialog Text",
   "languageInfoText": "Choose your preferred language for the application interface.",
   "currencyInfoText": "Choose the default currency for your orders.",
-  "relaysInfoText": "• Relays are servers that help distribute your messages across the Nostr network\n\n• Adding more relays can improve connectivity and redundancy\n\n• Relays don't sync with each other, so only those you're connected to will receive your messages.",
+  "relaysInfoText": "• Relays are servers that help distribute your messages across the Nostr network.\n\n• Adding more relays can improve connectivity and redundancy.\n\n• Relays don't sync with each other, so only those you're connected to will receive your messages.",
   "mostroInfoText": "• The Mostro you select will be the one where you post your offers.\n\n• In case of a dispute, a human assigned to that Mostro will be the one to resolve it.",
   
   "@_comment_account_info_dialogs": "Account Screen Info Dialog Text",

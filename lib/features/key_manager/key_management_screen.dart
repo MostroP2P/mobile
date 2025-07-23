@@ -206,10 +206,13 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                     S.of(context)!.secretWordsInfoText,
                   ),
                   borderRadius: BorderRadius.circular(12),
-                  child: const Icon(
-                    Icons.info_outline,
-                    size: 20,
-                    color: AppTheme.textSecondary,
+                  child: const Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Icon(
+                      Icons.info_outline,
+                      size: 20,
+                      color: AppTheme.textSecondary,
+                    ),
                   ),
                 ),
               ],
@@ -320,10 +323,13 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                     S.of(context)!.privacyInfoText,
                   ),
                   borderRadius: BorderRadius.circular(12),
-                  child: const Icon(
-                    Icons.info_outline,
-                    size: 20,
-                    color: AppTheme.textSecondary,
+                  child: const Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Icon(
+                      Icons.info_outline,
+                      size: 20,
+                      color: AppTheme.textSecondary,
+                    ),
                   ),
                 ),
               ],
@@ -430,10 +436,13 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                     S.of(context)!.currentTradeIndexInfoText,
                   ),
                   borderRadius: BorderRadius.circular(12),
-                  child: const Icon(
-                    Icons.info_outline,
-                    size: 20,
-                    color: AppTheme.textSecondary,
+                  child: const Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Icon(
+                      Icons.info_outline,
+                      size: 20,
+                      color: AppTheme.textSecondary,
+                    ),
                   ),
                 ),
               ],

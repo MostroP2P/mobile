@@ -4,6 +4,7 @@ import 'package:mostro_mobile/features/order/providers/payment_methods_provider.
 import 'package:mostro_mobile/features/order/widgets/form_section.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:mostro_mobile/core/app_theme.dart';
 
 class PaymentMethodsSection extends ConsumerWidget {
   final List<String> selectedMethods;
@@ -183,17 +184,35 @@ class PaymentMethodsSection extends ConsumerWidget {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: Text(S.of(context)!.cancel,
-                      style: const TextStyle(color: Colors.white70)),
+                  child: Text(
+                    S.of(context)!.cancel,
+                    style: const TextStyle(
+                      color: AppTheme.textSecondary,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ),
-                TextButton(
+                ElevatedButton(
                   onPressed: () {
                     onMethodsChanged(
                         dialogSelectedMethods, dialogShowOtherField);
                     Navigator.of(context).pop();
                   },
-                  child: Text(S.of(context)!.confirm,
-                      style: const TextStyle(color: Color(0xFF8CC63F))),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.activeColor,
+                    foregroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: Text(
+                    S.of(context)!.confirm,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ],
             );
