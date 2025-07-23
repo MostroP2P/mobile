@@ -214,10 +214,25 @@ class MostroService {
 
   /// Helper method to detect if we're running in a test environment
   /// This helps reduce proof-of-work difficulty during testing to prevent timeouts
+  /// 
+  /// Returns `true` if:
+  /// 1. Running in debug mode, or
+  /// 2. The 'MOSTRO_TEST_ENV' environment variable is set to 'true', or
+  /// 3. The 'FLUTTER_TEST' environment variable is set (standard Flutter test environment)
   bool _isTestEnvironment() {
-    // Simple detection: check if we're in debug mode or if zone contains 'test'
-    // This covers most test scenarios and is safe to use
-    return kDebugMode || Zone.current.toString().toLowerCase().contains('test');
+    // Check for debug mode first (fast path)
+    if (kDebugMode) {
+      return true;
+    }
+    
+    // Check for standard Flutter test environment variable
+    if (const bool.fromEnvironment('FLUTTER_TEST', defaultValue: false)) {
+      return true;
+    }
+    
+    // Check for custom test environment variable
+    const testEnv = String.fromEnvironment('MOSTRO_TEST_ENV', defaultValue: '');
+    return testEnv.toLowerCase() == 'true';
   }
 
   void updateSettings(Settings settings) {
