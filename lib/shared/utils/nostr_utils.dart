@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'package:convert/convert.dart';
@@ -443,20 +444,38 @@ class NostrUtils {
   /// [senderKeyPairs] - The key pairs of the sender to sign the event
   /// [content] - The content of the message to mine
   /// [targetDifficulty] - The target number of leading zero bits
+  /// [eventKind] - The kind of event to create (default: 1 for text notes)
+  /// [timeout] - Maximum duration to spend mining before giving up (default: 30 seconds)
+  /// [maxIterations] - Maximum number of iterations to try before giving up (default: 1,000,000)
   /// [existingTags] - Any existing tags to include in the event
+  /// 
+  /// Throws [TimeoutException] if the mining operation times out
+  /// Throws [StateError] if maximum iterations are reached without finding a solution
   static Future<NostrEvent> mineEvent(
     NostrKeyPairs senderKeyPairs,
     String content,
     int targetDifficulty, {
+    int eventKind = 1,
+    Duration timeout = const Duration(seconds: 30),
+    int maxIterations = 1000000,
     List<List<String>>? existingTags,
   }) async {
     if (targetDifficulty <= 0) {
       throw ArgumentError('Target difficulty must be positive');
     }
+    if (maxIterations <= 0) {
+      throw ArgumentError('maxIterations must be positive');
+    }
 
+    final stopwatch = Stopwatch()..start();
     int nonce = 0;
     
-    while (true) {
+    while (nonce < maxIterations) {
+      // Check for timeout
+      if (stopwatch.elapsed > timeout) {
+        throw TimeoutException('Mining timed out after ${timeout.inSeconds} seconds');
+      }
+      
       // Create event with nonce tag
       final tags = List<List<String>>.from(existingTags ?? []);
       
@@ -466,16 +485,13 @@ class NostrUtils {
       // Add new nonce tag with current nonce and target difficulty
       tags.add(['nonce', nonce.toString(), targetDifficulty.toString()]);
       
-      // Update created_at to current time (recommended during mining)
-      final now = DateTime.now();
-      
       // Create new event with updated nonce and timestamp
       final minedEvent = NostrEvent.fromPartialData(
-        kind: 1, // Always kind 1 for text messages
+        kind: eventKind,
         content: content,
         keyPairs: senderKeyPairs,
         tags: tags,
-        createdAt: now,
+        createdAt: DateTime.now(),
       );
       
       // Check if we've achieved the target difficulty
@@ -483,6 +499,7 @@ class NostrUtils {
       if (eventId == null) {
         throw Exception('Failed to generate event ID');
       }
+      
       final difficulty = countLeadingZeroBits(eventId);
       if (difficulty >= targetDifficulty) {
         return minedEvent;
@@ -490,11 +507,13 @@ class NostrUtils {
       
       nonce++;
       
-      // Prevent infinite loops - yield control periodically
+      // Yield control periodically to prevent UI freezing
       if (nonce % 1000 == 0) {
         await Future.delayed(Duration.zero);
       }
     }
+    
+    throw StateError('Failed to find a solution after $maxIterations iterations');
   }
 
   /// Validates that an event meets the minimum difficulty requirement
