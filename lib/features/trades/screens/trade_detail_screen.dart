@@ -1,4 +1,5 @@
 import 'package:circular_countdown/circular_countdown.dart';
+import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,6 +9,7 @@ import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/enums/role.dart';
 import 'package:mostro_mobile/data/models/enums/status.dart';
+import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
@@ -32,9 +34,10 @@ class TradeDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tradeState = ref.watch(orderNotifierProvider(orderId));
+    final originalOrder = ref.watch(eventProvider(orderId));
     // If message is null or doesn't have an Order payload, show loading
     final orderPayload = tradeState.order;
-    if (orderPayload == null) {
+    if (orderPayload == null || originalOrder == null) {
       return const Scaffold(
         backgroundColor: AppTheme.backgroundDark,
         body: Center(child: CircularProgressIndicator()),
@@ -63,7 +66,9 @@ class TradeDetailScreen extends ConsumerWidget {
                 const SizedBox(height: 16),
                 // For pending orders created by the user, show creator's reputation
                 if (isPending && isCreator) ...[
-                  _buildCreatorReputation(context, tradeState),
+                  // TODO: Change this to use `orderPayload` after Order model is updated
+                  // with rating information
+                  _buildCreatorReputation(context, originalOrder),
                   const SizedBox(height: 16),
                 ] else ...[
                   // Use spread operator here too
@@ -762,13 +767,12 @@ class TradeDetailScreen extends ConsumerWidget {
   }
 
   /// Build a card showing the creator's reputation with rating, reviews and days
-  Widget _buildCreatorReputation(BuildContext context, OrderState tradeState) {
-    // In trade_detail_screen.dart, we don't have direct access to rating as in NostrEvent
-    // For now, we use default values
-    // TODO: Implement extraction of creator rating data
-    const rating = 3.1;
-    const reviews = 15;
-    const days = 7;
+  Widget _buildCreatorReputation(BuildContext context, NostrEvent order) {
+    final ratingInfo = order.rating;
+
+    final rating = ratingInfo?.totalRating ?? 0.0;
+    final reviews = ratingInfo?.totalReviews ?? 0;
+    final days = ratingInfo?.days ?? 0;
 
     return CreatorReputationCard(
       rating: rating,
