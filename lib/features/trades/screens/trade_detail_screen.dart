@@ -111,7 +111,24 @@ class TradeDetailScreen extends ConsumerWidget {
 
       // If `orderPayload.amount` is 0, the trade is "at market price"
       final isZeroAmount = (tradeState.order!.amount == 0);
-      final priceText = isZeroAmount ? S.of(context)!.atMarketPrice : '';
+      String priceText = '';
+      
+      if (isZeroAmount) {
+        final premium = tradeState.order!.premium;
+        final premiumValue = premium.toDouble();
+        
+        if (premiumValue == 0) {
+          // No premium - show only market price
+          priceText = S.of(context)!.atMarketPrice;
+        } else {
+          // Has premium/discount - show market price with percentage
+          final isPremiumPositive = premiumValue >= 0;
+          final premiumDisplay = isPremiumPositive
+              ? '(+$premiumValue%)'
+              : '($premiumValue%)';
+          priceText = '${S.of(context)!.atMarketPrice} $premiumDisplay';
+        }
+      }
 
       final paymentMethod = tradeState.order!.paymentMethod;
       final createdOn = formatDateTime(
@@ -164,14 +181,26 @@ class TradeDetailScreen extends ConsumerWidget {
 
     final hasFixedSatsAmount = tradeState.order!.amount != 0;
     final satAmount = hasFixedSatsAmount ? ' ${tradeState.order!.amount}' : '';
-    final priceText = !hasFixedSatsAmount ? S.of(context)!.atMarketPrice : '';
-
-    final premium = tradeState.order!.premium;
-    final premiumText = premium == 0
-        ? ''
-        : (premium > 0)
-            ? S.of(context)!.withPremiumPercent(premium.toString())
-            : S.of(context)!.withDiscountPercent(premium.abs().toString());
+    
+    // For market price orders, show premium in the same format as order book
+    String priceText = '';
+    
+    if (!hasFixedSatsAmount) {
+      final premium = tradeState.order!.premium;
+      final premiumValue = premium.toDouble();
+      
+      if (premiumValue == 0) {
+        // No premium - show only market price
+        priceText = S.of(context)!.atMarketPrice;
+      } else {
+        // Has premium/discount - show market price with percentage
+        final isPremiumPositive = premiumValue >= 0;
+        final premiumDisplay = isPremiumPositive
+            ? '(+$premiumValue%)'
+            : '($premiumValue%)';
+        priceText = '${S.of(context)!.atMarketPrice} $premiumDisplay';
+      }
+    }
 
     // Payment method
     final method = tradeState.order!.paymentMethod;
@@ -196,7 +225,6 @@ class TradeDetailScreen extends ConsumerWidget {
               : tradeState.order!.fiatAmount.toString(),
           currency: tradeState.order!.fiatCode,
           priceText: priceText,
-          premiumText: premiumText,
         ),
         const SizedBox(height: 16),
         PaymentMethodCard(

@@ -70,8 +70,23 @@ class TakeOrderScreen extends ConsumerWidget {
         final currencyFlag = CurrencyUtils.getFlagFromCurrencyData(order.currency!, currencyData);
         final amountString =
             '${order.fiatAmount} ${order.currency} $currencyFlag';
-        final priceText =
-            order.amount == '0' ? S.of(context)!.atMarketPrice : '';
+        String priceText = '';
+        if (order.amount == '0') {
+          final premium = order.premium;
+          final premiumValue = premium != null ? double.tryParse(premium) ?? 0.0 : 0.0;
+          
+          if (premiumValue == 0) {
+            // No premium - show only market price
+            priceText = S.of(context)!.atMarketPrice;
+          } else {
+            // Has premium/discount - show market price with percentage
+            final isPremiumPositive = premiumValue >= 0;
+            final premiumDisplay = isPremiumPositive
+                ? '(+$premiumValue%)'
+                : '($premiumValue%)';
+            priceText = '${S.of(context)!.atMarketPrice} $premiumDisplay';
+          }
+        }
 
         final hasFixedSatsAmount = order.amount != null && order.amount != '0';
 
