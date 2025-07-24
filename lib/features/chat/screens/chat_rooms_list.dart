@@ -22,7 +22,7 @@ class ChatRoomsScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppTheme.dark1,
-      appBar: const MostroAppBar(showLogo: true),
+      appBar: const MostroAppBar(),
       body: CustomDrawerOverlay(
         child: Container(
           margin: const EdgeInsets.fromLTRB(16, 16, 16, 16),
