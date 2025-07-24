@@ -38,7 +38,12 @@ class TakeOrderScreen extends ConsumerWidget {
               ? S.of(context)!.buyOrderDetailsTitle
               : S.of(context)!.sellOrderDetailsTitle),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.fromLTRB(
+          16.0,
+          16.0,
+          16.0,
+          16.0 + MediaQuery.of(context).viewPadding.bottom,
+        ),
         child: Column(
           children: [
             const SizedBox(height: 16),
