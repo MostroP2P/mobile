@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:collection/collection.dart';
 import 'package:dart_nostr/dart_nostr.dart';
-import 'package:flutter/foundation.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/enums.dart';
@@ -179,16 +179,11 @@ class MostroService {
   Future<void> publishOrder(MostroMessage order) async {
     final session = await _getSession(order);
     
-    // Use lower difficulty for testing to prevent timeouts
-    // In test environments, use difficulty 1 instead of default 16
-    final targetDifficulty = _isTestEnvironment() ? 1 : 16;
-    
     final event = await order.wrap(
       tradeKey: session.tradeKey,
       recipientPubKey: _settings.mostroPublicKey,
       masterKey: session.fullPrivacy ? null : session.masterKey,
       keyIndex: session.fullPrivacy ? null : session.keyIndex,
-      targetDifficulty: targetDifficulty,
     );
     _logger.i('Sending DM, Event ID: ${event.id} with payload: ${order.toJson()}');
     await ref.read(nostrServiceProvider).publishEvent(event);
@@ -210,29 +205,6 @@ class MostroService {
       return session;
     }
     throw Exception('Order has neither requestId nor orderId');
-  }
-
-  /// Helper method to detect if we're running in a test environment
-  /// This helps reduce proof-of-work difficulty during testing to prevent timeouts
-  /// 
-  /// Returns `true` if:
-  /// 1. Running in debug mode, or
-  /// 2. The 'MOSTRO_TEST_ENV' environment variable is set to 'true', or
-  /// 3. The 'FLUTTER_TEST' environment variable is set (standard Flutter test environment)
-  bool _isTestEnvironment() {
-    // Check for debug mode first (fast path)
-    if (kDebugMode) {
-      return true;
-    }
-    
-    // Check for standard Flutter test environment variable
-    if (const bool.fromEnvironment('FLUTTER_TEST', defaultValue: false)) {
-      return true;
-    }
-    
-    // Check for custom test environment variable
-    const testEnv = String.fromEnvironment('MOSTRO_TEST_ENV', defaultValue: '');
-    return testEnv.toLowerCase() == 'true';
   }
 
   void updateSettings(Settings settings) {

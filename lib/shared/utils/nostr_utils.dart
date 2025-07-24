@@ -248,30 +248,20 @@ class NostrUtils {
   /// Creates a NIP-59 wrapper event with NIP-13 proof-of-work as required by Mostro
   /// This adds computational proof to demonstrate the event is not spam
   static Future<NostrEvent> createWrap(NostrKeyPairs wrapperKeyPair,
-      String sealedContent, String recipientPubKey, {int targetDifficulty = 16}) async {
+      String sealedContent, String recipientPubKey) async {
     
-    // Mine the wrapper event to achieve the target difficulty (NIP-13)
-    // This adds proof-of-work as required by Mostro documentation
-    final minedWrapEvent = await mineEvent(
-      wrapperKeyPair,
-      sealedContent,
-      targetDifficulty,
-      existingTags: [
-        ["p", recipientPubKey]
-      ],
-    );
-
-    // Update the created_at to use randomized timestamp for privacy
-    // while preserving the nonce that achieved the target difficulty
-    final finalWrapEvent = NostrEvent.fromPartialData(
+    // Create a simple wrapper event without proof-of-work
+    final wrapEvent = NostrEvent.fromPartialData(
       kind: 1059,
       content: sealedContent,
       keyPairs: wrapperKeyPair,
-      tags: minedWrapEvent.tags,
+      tags: [
+        ["p", recipientPubKey]
+      ],
       createdAt: randomNow(),
     );
 
-    return finalWrapEvent;
+    return wrapEvent;
   }
 
   static NostrKeyPairs computeSharedKey(String privateKey, String publicKey) {
@@ -409,146 +399,5 @@ class NostrUtils {
     }
   }
 
-  /// Counts the number of leading zero bits in a hexadecimal string
-  /// Implementation based on NIP-13 specification
-  static int countLeadingZeroBits(String hex) {
-    int count = 0;
-    
-    for (int i = 0; i < hex.length; i++) {
-      final nibble = int.parse(hex[i], radix: 16);
-      if (nibble == 0) {
-        count += 4;
-      } else {
-        // Count leading zeros in the nibble
-        // Using bit manipulation to count leading zeros
-        int leadingZeros = 0;
-        int temp = nibble;
-        for (int bit = 3; bit >= 0; bit--) {
-          if ((temp & (1 << bit)) == 0) {
-            leadingZeros++;
-          } else {
-            break;
-          }
-        }
-        count += leadingZeros;
-        break;
-      }
-    }
-    
-    return count;
-  }
 
-  /// Mines a NostrEvent to achieve the target difficulty using NIP-13 proof-of-work
-  /// Returns the mined event with nonce tag and updated created_at
-  /// 
-  /// [senderKeyPairs] - The key pairs of the sender to sign the event
-  /// [content] - The content of the message to mine
-  /// [targetDifficulty] - The target number of leading zero bits
-  /// [eventKind] - The kind of event to create (default: 1 for text notes)
-  /// [timeout] - Maximum duration to spend mining before giving up (default: 30 seconds)
-  /// [maxIterations] - Maximum number of iterations to try before giving up (default: 1,000,000)
-  /// [existingTags] - Any existing tags to include in the event
-  /// 
-  /// Throws [TimeoutException] if the mining operation times out
-  /// Throws [StateError] if maximum iterations are reached without finding a solution
-  static Future<NostrEvent> mineEvent(
-    NostrKeyPairs senderKeyPairs,
-    String content,
-    int targetDifficulty, {
-    int eventKind = 1,
-    Duration timeout = const Duration(seconds: 30),
-    int maxIterations = 1000000,
-    List<List<String>>? existingTags,
-  }) async {
-    if (targetDifficulty <= 0) {
-      throw ArgumentError('Target difficulty must be positive');
-    }
-    if (maxIterations <= 0) {
-      throw ArgumentError('maxIterations must be positive');
-    }
-
-    final stopwatch = Stopwatch()..start();
-    int nonce = 0;
-    
-    while (nonce < maxIterations) {
-      // Check for timeout
-      if (stopwatch.elapsed > timeout) {
-        throw TimeoutException('Mining timed out after ${timeout.inSeconds} seconds');
-      }
-      
-      // Create event with nonce tag
-      final tags = List<List<String>>.from(existingTags ?? []);
-      
-      // Remove existing nonce tag if present
-      tags.removeWhere((tag) => tag.isNotEmpty && tag[0] == 'nonce');
-      
-      // Add new nonce tag with current nonce and target difficulty
-      tags.add(['nonce', nonce.toString(), targetDifficulty.toString()]);
-      
-      // Create new event with updated nonce and timestamp
-      final minedEvent = NostrEvent.fromPartialData(
-        kind: eventKind,
-        content: content,
-        keyPairs: senderKeyPairs,
-        tags: tags,
-        createdAt: DateTime.now(),
-      );
-      
-      // Check if we've achieved the target difficulty
-      final eventId = minedEvent.id;
-      if (eventId == null) {
-        throw Exception('Failed to generate event ID');
-      }
-      
-      final difficulty = countLeadingZeroBits(eventId);
-      if (difficulty >= targetDifficulty) {
-        return minedEvent;
-      }
-      
-      nonce++;
-      
-      // Yield control periodically to prevent UI freezing
-      if (nonce % 1000 == 0) {
-        await Future.delayed(Duration.zero);
-      }
-    }
-    
-    throw StateError('Failed to find a solution after $maxIterations iterations');
-  }
-
-  /// Validates that an event meets the minimum difficulty requirement
-  /// Returns true if the event has sufficient proof-of-work
-  static bool validateProofOfWork(NostrEvent event, int minimumDifficulty) {
-    final eventId = event.id;
-    if (eventId == null) {
-      return false; // Cannot validate without event ID
-    }
-    final actualDifficulty = countLeadingZeroBits(eventId);
-    
-    // Check if event has a nonce tag with committed target difficulty
-    final nonceTags = event.tags?.where((tag) => 
-        tag.isNotEmpty && tag[0] == 'nonce') ?? [];
-    
-    if (nonceTags.isNotEmpty) {
-      final nonceTag = nonceTags.first;
-      if (nonceTag.length >= 3) {
-        final committedTarget = int.tryParse(nonceTag[2]);
-        if (committedTarget != null && committedTarget < minimumDifficulty) {
-          // Reject if committed target is lower than required minimum
-          return false;
-        }
-      }
-    }
-    
-    return actualDifficulty >= minimumDifficulty;
-  }
-
-  /// Gets the actual difficulty (leading zero bits) of an event
-  static int getEventDifficulty(NostrEvent event) {
-    final eventId = event.id;
-    if (eventId == null) {
-      return 0; // No difficulty if no event ID
-    }
-    return countLeadingZeroBits(eventId);
-  }
 }
