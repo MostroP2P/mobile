@@ -21,7 +21,7 @@ class TradesScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundDark,
-      appBar: const MostroAppBar(showLogo: true),
+      appBar: const MostroAppBar(),
       body: CustomDrawerOverlay(
         child: RefreshIndicator(
           onRefresh: () async {

@@ -18,8 +18,10 @@ class _AnimatedMostroLogoState extends State<AnimatedMostroLogo> {
   Timer? _timer;
 
   void _onTap() {
-    if (_timer?.isActive == true) return; // Prevent multiple taps during animation
-    
+    if (_timer?.isActive == true) {
+      return; // Prevent multiple taps during animation
+    }
+
     setState(() {
       _isHappy = true;
     });
@@ -46,9 +48,9 @@ class _AnimatedMostroLogoState extends State<AnimatedMostroLogo> {
       child: AnimatedSwitcher(
         duration: const Duration(milliseconds: 150),
         child: Image.asset(
-          _isHappy 
-            ? 'assets/images/mostro-happy-100.png'
-            : 'assets/images/mostro-100.png',
+          _isHappy
+              ? 'assets/images/mostro-happy-100.png'
+              : 'assets/images/mostro-100.png',
           key: ValueKey(_isHappy),
           height: 32,
           width: 32,
@@ -60,9 +62,7 @@ class _AnimatedMostroLogoState extends State<AnimatedMostroLogo> {
 }
 
 class MostroAppBar extends ConsumerWidget implements PreferredSizeWidget {
-  final bool showLogo;
-  
-  const MostroAppBar({super.key, this.showLogo = false});
+  const MostroAppBar({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -70,7 +70,7 @@ class MostroAppBar extends ConsumerWidget implements PreferredSizeWidget {
       backgroundColor: AppTheme.backgroundDark,
       elevation: 0,
       leadingWidth: 70,
-      title: showLogo ? const AnimatedMostroLogo() : null,
+      title: const AnimatedMostroLogo(),
       centerTitle: true,
       // Add bottom border similar to bottom navbar
       bottom: PreferredSize(
