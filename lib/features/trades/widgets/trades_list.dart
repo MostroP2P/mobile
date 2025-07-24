@@ -11,6 +11,9 @@ class TradesList extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView.builder(
       itemCount: trades.length,
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewPadding.bottom + 16,
+      ),
       itemBuilder: (context, index) {
         return TradesListItem(trade: trades[index]);
       },

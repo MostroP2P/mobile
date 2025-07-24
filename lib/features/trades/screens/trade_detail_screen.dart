@@ -55,7 +55,12 @@ class TradeDetailScreen extends ConsumerWidget {
       body: Builder(
         builder: (context) {
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
+            padding: EdgeInsets.fromLTRB(
+              16.0,
+              16.0,
+              16.0,
+              16.0 + MediaQuery.of(context).viewPadding.bottom,
+            ),
             child: Column(
               children: [
                 const SizedBox(height: 16),

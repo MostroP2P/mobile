@@ -59,6 +59,9 @@ class ChatRoomsScreen extends ConsumerWidget {
     }
     return ListView.builder(
       itemCount: state.length,
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewPadding.bottom + 16,
+      ),
       itemBuilder: (context, index) {
         return ChatListItem(
           orderId: state[index].orderId,
