@@ -18,8 +18,9 @@ class _AnimatedMostroLogoState extends State<AnimatedMostroLogo> {
   Timer? _timer;
 
   void _onTap() {
-    if (_timer?.isActive == true)
+    if (_timer?.isActive == true) {
       return; // Prevent multiple taps during animation
+    }
 
     setState(() {
       _isHappy = true;
