@@ -644,7 +644,7 @@
   "holdInvoiceExpirationExplanation": "El período de tiempo (en segundos) para que expiren las facturas de retención. Las facturas de retención se utilizan para asegurar fondos durante el proceso de comercio.",
   "holdInvoiceCltvDeltaExplanation": "El número de bloques agregados a la altura actual del bloque para la expiración de facturas de retención. Esto proporciona tiempo para que la Lightning Network procese el pago.",
   "invoiceExpirationWindowExplanation": "El período de tiempo (en segundos) para que expiren las facturas regulares de Lightning. Esto asegura que las facturas no permanezcan válidas indefinidamente.",
-  "serviceFeeExplanation": "La tarifa cobrada por este nodo Mostro por facilitar intercambios. Esto es típicamente un pequeño porcentaje del monto del intercambio.",
+  "serviceFeeExplanation": "La tarifa cobrada por este nodo Mostro por facilitar intercambios. Esto es típicamente un pequeño porcentaje del monto del intercambio, este monto se divide entre el comprador y el vendedor.",
   "proofOfWorkExplanation": "El nivel de dificultad requerido para la prueba de trabajo en eventos Nostr. Esto ayuda a prevenir spam y asegura calidad de servicio.",
   "lndDaemonVersionExplanation": "La versión del software Lightning Network Daemon (LND) que este nodo Mostro utiliza para procesar pagos de Bitcoin Lightning.",
   "lndNodePublicKeyExplanation": "La clave pública del nodo de Lightning Network que maneja pagos para esta instancia de Mostro. Se utiliza para enrutamiento de Lightning Network.",

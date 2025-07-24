@@ -286,7 +286,7 @@ class AboutScreen extends ConsumerWidget {
             _buildInfoRowWithDialog(
               context,
               S.of(context)!.serviceFee,
-              '${instance.fee}%',
+              '${instance.fee * 100}%',
               S.of(context)!.serviceFeeExplanation,
             ),
             const SizedBox(height: 20),
