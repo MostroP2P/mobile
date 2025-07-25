@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -150,9 +151,12 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                         _buildPrivacyCard(context, settings),
                         const SizedBox(height: 16),
 
-                        // Current Trade Index Card
-                        _buildCurrentTradeIndexCard(context),
-                        const SizedBox(height: 24),
+                        // Current Trade Index Card (Debug only)
+                        if (kDebugMode) ...[
+                          _buildCurrentTradeIndexCard(context),
+                          const SizedBox(height: 16),
+                        ],
+                        const SizedBox(height: 8),
 
                         // Generate New User Button
                         _buildGenerateNewUserButton(context),
