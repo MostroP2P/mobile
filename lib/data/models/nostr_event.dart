@@ -67,7 +67,7 @@ extension NostrEventExtensions on NostrEvent {
     if (timestamp != null && timestamp > 0) {
       final DateTime eventTime =
           DateTime.fromMillisecondsSinceEpoch(timestamp * 1000)
-              .subtract(Duration(hours: 36));
+              .subtract(Duration(hours: 48));
 
       // Use provided locale or fallback to Spanish
       final effectiveLocale = locale ?? 'es';
