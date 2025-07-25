@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
-import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
-import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
 class MessageInput extends ConsumerStatefulWidget {
@@ -51,7 +49,7 @@ class _MessageInputState extends ConsumerState<MessageInput> {
 
   void _sendMessage() {
     final text = _textController.text.trim();
-    if (text.isNotEmpty && !_isOrderCompleted()) {
+    if (text.isNotEmpty) {
       ref
           .read(chatRoomsProvider(widget.orderId).notifier)
           .sendMessage(text);
@@ -59,47 +57,10 @@ class _MessageInputState extends ConsumerState<MessageInput> {
     }
   }
 
-  bool _isOrderCompleted() {
-    final orderState = ref.watch(orderNotifierProvider(widget.orderId));
-    final status = orderState.status;
-    
-    // Disable messaging for completed, canceled, or expired orders
-    final isCompleted = status == Status.success ||
-                       status == Status.canceled ||
-                       status == Status.canceledByAdmin ||
-                       status == Status.settledByAdmin ||
-                       status == Status.completedByAdmin ||
-                       status == Status.expired ||
-                       status == Status.cooperativelyCanceled;
-    
-    return isCompleted;
-  }
 
-  String _getDisabledMessage(BuildContext context, Status? status) {
-    final l10n = S.of(context);
-    
-    switch (status) {
-      case Status.success:
-        return l10n?.invalidOrderStatus ?? 'Order completed - messaging disabled';
-      case Status.canceled:
-      case Status.canceledByAdmin:
-      case Status.cooperativelyCanceled:
-        return l10n?.orderAlreadyCanceled ?? 'Order canceled - messaging disabled';
-      case Status.expired:
-        return l10n?.invalidOrderStatus ?? 'Order expired - messaging disabled';
-      case Status.settledByAdmin:
-      case Status.completedByAdmin:
-        return l10n?.invalidOrderStatus ?? 'Order settled - messaging disabled';
-      default:
-        return l10n?.invalidOrderStatus ?? 'Order is no longer active - messaging disabled';
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
-    final isOrderCompleted = _isOrderCompleted();
-    final status = ref.watch(orderNotifierProvider(widget.orderId)).status;
-
     return Container(
       decoration: BoxDecoration(
         color: AppTheme.backgroundDark,
@@ -114,40 +75,6 @@ class _MessageInputState extends ConsumerState<MessageInput> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (isOrderCompleted) ...[
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppTheme.textSecondary.withValues(alpha: 0.1),
-                border: Border(
-                  bottom: BorderSide(
-                    color: AppTheme.textSecondary.withValues(alpha: 0.2),
-                    width: 1,
-                  ),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    color: AppTheme.textSecondary,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      _getDisabledMessage(context, status),
-                      style: TextStyle(
-                        color: AppTheme.textSecondary,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
           Padding(
             padding: EdgeInsets.only(
               left: 16,
@@ -166,9 +93,9 @@ class _MessageInputState extends ConsumerState<MessageInput> {
                     child: TextField(
                       controller: _textController,
                       focusNode: _focusNode,
-                      enabled: !isOrderCompleted,
+                      enabled: true,
                       style: TextStyle(
-                        color: isOrderCompleted ? AppTheme.textSecondary : AppTheme.cream1,
+                        color: AppTheme.cream1,
                         fontSize: 15,
                       ),
                       decoration: InputDecoration(
@@ -188,7 +115,7 @@ class _MessageInputState extends ConsumerState<MessageInput> {
                       textCapitalization: TextCapitalization.sentences,
                       keyboardType: TextInputType.text,
                       textInputAction: TextInputAction.send,
-                      onSubmitted: isOrderCompleted ? null : (_) => _sendMessage(),
+                      onSubmitted: (_) => _sendMessage(),
                     ),
                   ),
                 ),
@@ -197,16 +124,16 @@ class _MessageInputState extends ConsumerState<MessageInput> {
                   width: 42,
                   height: 42,
                   decoration: BoxDecoration(
-                    color: isOrderCompleted ? AppTheme.textSecondary : AppTheme.mostroGreen,
+                    color: AppTheme.mostroGreen,
                     shape: BoxShape.circle,
                   ),
                   child: IconButton(
                     icon: Icon(
                       Icons.send,
-                      color: isOrderCompleted ? AppTheme.backgroundDark : Colors.white,
+                      color: Colors.white,
                       size: 20,
                     ),
-                    onPressed: isOrderCompleted ? null : _sendMessage,
+                    onPressed: _sendMessage,
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                   ),
