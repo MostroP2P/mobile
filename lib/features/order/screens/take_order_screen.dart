@@ -72,23 +72,24 @@ class TakeOrderScreen extends ConsumerWidget {
     return Builder(
       builder: (context) {
         final currencyData = ref.watch(currencyCodesProvider).asData?.value;
-        final currencyFlag = CurrencyUtils.getFlagFromCurrencyData(order.currency!, currencyData);
+        final currencyFlag = CurrencyUtils.getFlagFromCurrencyData(
+            order.currency!, currencyData);
         final amountString =
             '${order.fiatAmount} ${order.currency} $currencyFlag';
         String priceText = '';
         if (order.amount == '0') {
           final premium = order.premium;
-          final premiumValue = premium != null ? double.tryParse(premium) ?? 0.0 : 0.0;
-          
+          final premiumValue =
+              premium != null ? double.tryParse(premium) ?? 0.0 : 0.0;
+
           if (premiumValue == 0) {
             // No premium - show only market price
             priceText = S.of(context)!.atMarketPrice;
           } else {
             // Has premium/discount - show market price with percentage
             final isPremiumPositive = premiumValue >= 0;
-            final premiumDisplay = isPremiumPositive
-                ? '(+$premiumValue%)'
-                : '($premiumValue%)';
+            final premiumDisplay =
+                isPremiumPositive ? '(+$premiumValue%)' : '($premiumValue%)';
             priceText = '${S.of(context)!.atMarketPrice} $premiumDisplay';
           }
         }
@@ -131,7 +132,7 @@ class TakeOrderScreen extends ConsumerWidget {
                               text: ' $priceText',
                               style: const TextStyle(
                                 color: Colors.white60,
-                                fontSize: 14,
+                                fontSize: 15,
                               ),
                             ),
                         ],
@@ -382,7 +383,8 @@ class _CountdownWidget extends ConsumerWidget {
         mostroInstance?.expirationHours ?? 24; // fallback to 24 hours
 
     // Validate expiration hours
-    if (maxOrderHours <= 0 || maxOrderHours > 168) { // Max 1 week
+    if (maxOrderHours <= 0 || maxOrderHours > 168) {
+      // Max 1 week
       return const SizedBox.shrink();
     }
 

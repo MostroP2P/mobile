@@ -27,7 +27,8 @@ class OrderAmountCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currencyData = ref.watch(currencyCodesProvider).asData?.value;
-    final currencyFlag = CurrencyUtils.getFlagFromCurrencyData(currency, currencyData);
+    final currencyFlag =
+        CurrencyUtils.getFlagFromCurrencyData(currency, currencyData);
     final amountString = '$amount $currency $currencyFlag';
 
     return CustomCard(
@@ -60,7 +61,7 @@ class OrderAmountCard extends ConsumerWidget {
                           text: ' $priceText',
                           style: const TextStyle(
                             color: Colors.white60,
-                            fontSize: 14,
+                            fontSize: 15,
                           ),
                         ),
                     ],
@@ -72,7 +73,7 @@ class OrderAmountCard extends ConsumerWidget {
               ),
             ],
           ),
-          if (premiumText != null && premiumText!.isNotEmpty) ...[  
+          if (premiumText != null && premiumText!.isNotEmpty) ...[
             const SizedBox(height: 4),
             Text(
               premiumText!,
