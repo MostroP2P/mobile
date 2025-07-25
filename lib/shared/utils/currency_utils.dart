@@ -1,7 +1,15 @@
 
 import 'package:mostro_mobile/data/models/currency.dart';
+import 'package:intl/intl.dart';
 
 class CurrencyUtils {
+  /// Formats a satoshi amount with thousand separators
+  /// Example: 1000000 -> '1,000,000'
+  static String formatSats(int sats) {
+    final formatter = NumberFormat('#,###');
+    return formatter.format(sats);
+  }
+
   static String getFlagEmoji(String countryCode) {
     return countryCode
         .toUpperCase()

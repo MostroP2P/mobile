@@ -55,7 +55,7 @@ class OrderAmountCard extends ConsumerWidget {
               Flexible(
                 child: RichText(
                   text: TextSpan(
-                    text: S.of(context)!.forAmount(amountString),
+                    text: S.of(context)!.forAmount(amountString, currency),
                     style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 16,
