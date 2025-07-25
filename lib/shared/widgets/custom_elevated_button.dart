@@ -37,7 +37,7 @@ class CustomElevatedButton extends StatelessWidget {
       child: AutoSizeText(
         text,
         style: textStyle ?? Theme.of(context).textTheme.labelLarge?.copyWith(
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w500,
           color: foregroundColor ?? Colors.black,
         ),
         minFontSize: minFontSize,
