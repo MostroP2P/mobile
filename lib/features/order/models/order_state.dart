@@ -1,6 +1,7 @@
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/models.dart';
 import 'package:mostro_mobile/data/enums.dart';
+import 'package:mostro_mobile/data/models/payment_failed.dart';
 
 class OrderState {
   final Status status;
@@ -10,6 +11,7 @@ class OrderState {
   final CantDo? cantDo;
   final Dispute? dispute;
   final Peer? peer;
+  final PaymentFailed? paymentFailed;
   final _logger = Logger();
 
   OrderState({
@@ -20,6 +22,7 @@ class OrderState {
     this.cantDo,
     this.dispute,
     this.peer,
+    this.paymentFailed,
   });
 
   factory OrderState.fromMostroMessage(MostroMessage message) {
@@ -31,12 +34,13 @@ class OrderState {
       cantDo: message.getPayload<CantDo>(),
       dispute: message.getPayload<Dispute>(),
       peer: message.getPayload<Peer>(),
+      paymentFailed: message.getPayload<PaymentFailed>(),
     );
   }
 
   @override
   String toString() =>
-      'OrderState(status: $status, action: $action, order: $order, paymentRequest: $paymentRequest, cantDo: $cantDo, dispute: $dispute, peer: $peer)';
+      'OrderState(status: $status, action: $action, order: $order, paymentRequest: $paymentRequest, cantDo: $cantDo, dispute: $dispute, peer: $peer, paymentFailed: $paymentFailed)';
 
   @override
   bool operator ==(Object other) =>
@@ -48,6 +52,7 @@ class OrderState {
           other.paymentRequest == paymentRequest &&
           other.cantDo == cantDo &&
           other.dispute == dispute &&
+          other.paymentFailed == paymentFailed &&
           other.peer == peer;
 
   @override
@@ -59,6 +64,7 @@ class OrderState {
         cantDo,
         dispute,
         peer,
+        paymentFailed,
       );
 
   OrderState copyWith({
@@ -69,6 +75,7 @@ class OrderState {
     CantDo? cantDo,
     Dispute? dispute,
     Peer? peer,
+    PaymentFailed? paymentFailed,
   }) {
     return OrderState(
       status: status ?? this.status,
@@ -78,6 +85,7 @@ class OrderState {
       cantDo: cantDo ?? this.cantDo,
       dispute: dispute ?? this.dispute,
       peer: peer ?? this.peer,
+      paymentFailed: paymentFailed ?? this.paymentFailed,
     );
   }
 
@@ -135,6 +143,7 @@ class OrderState {
       cantDo: message.getPayload<CantDo>() ?? cantDo,
       dispute: message.getPayload<Dispute>() ?? dispute,
       peer: newPeer,
+      paymentFailed: message.getPayload<PaymentFailed>() ?? paymentFailed,
     );
 
     return newState;

@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models.dart';
+import 'package:mostro_mobile/data/models/payment_failed.dart';
 import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
@@ -213,9 +214,10 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         notifProvider.showInformation(event.action, values: {});
         break;
       case Action.paymentFailed:
+        final paymentFailed = event.getPayload<PaymentFailed>();
         notifProvider.showInformation(event.action, values: {
-          'payment_attempts': -1,
-          'payment_retries_interval': -1000
+          'payment_attempts': paymentFailed?.paymentAttempts,
+          'payment_retries_interval': paymentFailed?.paymentRetriesInterval,
         });
         break;
       default:
