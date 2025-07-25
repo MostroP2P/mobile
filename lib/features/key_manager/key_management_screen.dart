@@ -518,7 +518,7 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
               S.of(context)!.generateNewUser,
               style: const TextStyle(
                 fontSize: 16,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ],
@@ -661,7 +661,7 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                 S.of(context)!.continueButton,
                 style: const TextStyle(
                   fontSize: 16,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ),
