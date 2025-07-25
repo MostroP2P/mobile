@@ -27,7 +27,8 @@ class OrderAmountCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currencyData = ref.watch(currencyCodesProvider).asData?.value;
-    final currencyFlag = CurrencyUtils.getFlagFromCurrencyData(currency, currencyData);
+    final currencyFlag =
+        CurrencyUtils.getFlagFromCurrencyData(currency, currencyData);
     final amountString = '$amount $currency $currencyFlag';
 
     return CustomCard(
@@ -46,26 +47,33 @@ class OrderAmountCard extends ConsumerWidget {
           const SizedBox(height: 8),
           Row(
             children: [
-              Text(
-                S.of(context)!.forAmount(amountString),
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 16,
+              Flexible(
+                child: RichText(
+                  text: TextSpan(
+                    text: S.of(context)!.forAmount(amountString),
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 16,
+                    ),
+                    children: [
+                      if (priceText != null && priceText!.isNotEmpty)
+                        TextSpan(
+                          text: ' $priceText',
+                          style: const TextStyle(
+                            color: Colors.white60,
+                            fontSize: 15,
+                          ),
+                        ),
+                    ],
+                  ),
+                  softWrap: true,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              if (priceText != null && priceText!.isNotEmpty) ...[  
-                const SizedBox(width: 8),
-                Text(
-                  priceText!,
-                  style: const TextStyle(
-                    color: Colors.white60,
-                    fontSize: 14,
-                  ),
-                ),
-              ],
             ],
           ),
-          if (premiumText != null && premiumText!.isNotEmpty) ...[  
+          if (premiumText != null && premiumText!.isNotEmpty) ...[
             const SizedBox(height: 4),
             Text(
               premiumText!,
