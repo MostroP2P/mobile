@@ -610,6 +610,7 @@ class TradeDetailScreen extends ConsumerWidget {
                   textAlign: TextAlign.center,
                 ),
               ),
+              const SizedBox(width: 12),
               ElevatedButton(
                 onPressed: () => Navigator.of(dialogContext).pop(true),
                 style: ElevatedButton.styleFrom(

@@ -655,6 +655,7 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                 textAlign: TextAlign.center,
               ),
             ),
+            const SizedBox(width: 12),
             ElevatedButton(
               onPressed: () {
                 Navigator.of(dialogContext).pop();
