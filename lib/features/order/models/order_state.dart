@@ -1,7 +1,6 @@
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/models.dart';
 import 'package:mostro_mobile/data/enums.dart';
-import 'package:mostro_mobile/data/models/payment_failed.dart';
 
 class OrderState {
   final Status status;
