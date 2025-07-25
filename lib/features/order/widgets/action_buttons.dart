@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as nostr_action;
 import 'package:mostro_mobile/shared/widgets/mostro_reactive_button.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class ActionButtons extends StatelessWidget {
   final VoidCallback onCancel;
@@ -33,7 +34,7 @@ class ActionButtons extends StatelessWidget {
                   borderRadius: BorderRadius.circular(24),
                 ),
               ),
-              child: const Text('Cancel'),
+              child: Text(S.of(context)!.cancel),
             ),
           ),
         ),
@@ -43,7 +44,7 @@ class ActionButtons extends StatelessWidget {
             height: 48,
             child: MostroReactiveButton(
               key: const Key('submitOrderButton'),
-              label: 'Submit',
+              label: S.of(context)!.submit,
               buttonStyle: ButtonStyleType.raised,
               orderId: currentRequestId?.toString() ?? '',
               action: nostr_action.Action.newOrder,
@@ -51,6 +52,7 @@ class ActionButtons extends StatelessWidget {
               timeout: const Duration(seconds: 5),
               showSuccessIndicator: true,
               backgroundColor: AppTheme.purpleButton,
+              foregroundColor: Colors.white,
             ),
           ),
         ),

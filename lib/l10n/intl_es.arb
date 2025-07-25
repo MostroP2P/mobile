@@ -1,5 +1,6 @@
 {
   "@@locale": "es",
+  "backToHome": "Volver al inicio",
   "newOrder": "¡Tu oferta ha sido publicada! Por favor espera hasta que otro usuario elija tu orden. Estará disponible durante {expiration_hours} horas. Puedes cancelar esta orden antes de que otro usuario la tome ejecutando: cancel.",
   "canceled": "Has cancelado la orden ID: {id}.",
   "payInvoice": "Por favor paga esta factura retenida de {amount} Sats por {fiat_amount} {fiat_code} para iniciar la operación. Si no la pagas antes de {expiration_seconds} minutos, el intercambio será cancelado.",
@@ -74,7 +75,7 @@
   "released": "¡{seller_name} ha liberado los Sats! Espera que tu factura sea pagada pronto. Asegúrate de que tu billetera esté en línea para recibir a través de Lightning Network.",
   "purchaseCompleted": "Tu compra de Bitcoin ha sido completada exitosamente. He pagado tu factura; ¡disfruta del dinero sólido!",
   "holdInvoicePaymentSettled": "Tu venta de Sats ha sido completada después de confirmar el pago de {buyer_name}.",
-  "rate": "Por favor califica a tu contraparte",
+  "rate": "CALIFICAR",
   "rateReceived": "¡Calificación guardada exitosamente!",
   "cooperativeCancelInitiatedByYou": "Has iniciado la cancelación de la orden ID: {id}. Tu contraparte debe estar de acuerdo. Si no responden, puedes abrir una disputa. Ten en cuenta que ningún administrador te contactará sobre esta cancelación a menos que abras una disputa primero.",
   "cooperativeCancelInitiatedByPeer": "Tu contraparte quiere cancelar la orden ID: {id}. Si estás de acuerdo, por favor envíame cancel-order-message. Ten en cuenta que ningún administrador te contactará sobre esta cancelación a menos que abras una disputa primero.",
@@ -223,6 +224,8 @@
   "areYouSureCancel": "¿Estás seguro de que quieres cancelar este intercambio?",
   "cooperativeCancelMessage": "Si confirmas, iniciarás una cancelación cooperativa con tu contraparte.",
   "acceptCancelMessage": "Si confirmas, aceptarás la cancelación cooperativa iniciada por tu contraparte.",
+  "releaseTradeDialogTitle": "Liberar Bitcoin",
+  "areYouSureRelease": "¿Estás seguro de que quieres liberar los Satoshis al comprador?",
   "confirm": "Confirmar",
   "yes": "Sí",
   "no": "No",
@@ -345,7 +348,7 @@
   "priceType": "Tipo de precio",
   "fixedPrice": "Precio fijo",
   "market": "Mercado",
-  "priceTypeTooltip": "• Selecciona Precio de Mercado si quieres usar el precio que tiene Bitcoin cuando alguien tome tu oferta.\\n• Selecciona Precio Fijo si quieres definir la cantidad exacta de Bitcoin que intercambiarás.",
+  "priceTypeTooltip": "• Selecciona Precio de Mercado si quieres usar el precio que tiene Bitcoin cuando alguien tome tu oferta.\n\n• Selecciona Precio Fijo si quieres definir la cantidad exacta de Bitcoin que intercambiarás.",
   
   "withPremiumPercent": "con un +{premium}% de premio",
   "@withPremiumPercent": {
@@ -461,7 +464,7 @@
   "enterInvoiceHere": "Ingresa la factura aquí",
   
   "cancelPendingButton": "CANCELACIÓN PENDIENTE",
-  "acceptCancelButton": "ACEPTAR CANCELACIÓN",
+  "acceptCancelButton": "CANCELAR",
   "completePurchaseButton": "COMPLETAR COMPRA",
   "rateButton": "CALIFICAR",
   "contactButton": "CONTACTAR",
@@ -544,7 +547,6 @@
     }
   },
   "cancelPendingButton": "CANCELACIÓN PENDIENTE",
-  "acceptCancelButton": "ACEPTAR CANCELACIÓN",
   "disputeButton": "DISPUTA",
   "fiatSentButton": "FIAT ENVIADO",
   "completePurchaseButton": "COMPLETAR COMPRA",
@@ -559,7 +561,9 @@
   "cooperativeCancelDialogMessage": "Si confirmas, iniciarás una cancelación cooperativa con tu contraparte.",
   "acceptCancelDialogMessage": "Si confirmas, aceptarás la cancelación cooperativa iniciada por tu contraparte.",
   "orderIdCopiedMessage": "ID de orden copiado al portapapeles",
-  
+  "disputeTradeDialogTitle": "Iniciar Disputa",
+  "disputeTradeDialogContent": "Estás a punto de iniciar una disputa con tu contraparte. ¿Deseas continuar?",
+
   "language": "Idioma",
   "systemDefault": "Predeterminado del sistema",
   "english": "Inglés",
@@ -706,7 +710,7 @@
   "holdInvoiceExpirationExplanation": "El período de tiempo (en segundos) para que expiren las facturas de retención. Las facturas de retención se utilizan para asegurar fondos durante el proceso de comercio.",
   "holdInvoiceCltvDeltaExplanation": "El número de bloques agregados a la altura actual del bloque para la expiración de facturas de retención. Esto proporciona tiempo para que la Lightning Network procese el pago.",
   "invoiceExpirationWindowExplanation": "El período de tiempo (en segundos) para que expiren las facturas regulares de Lightning. Esto asegura que las facturas no permanezcan válidas indefinidamente.",
-  "serviceFeeExplanation": "La tarifa cobrada por este nodo Mostro por facilitar intercambios. Esto es típicamente un pequeño porcentaje del monto del intercambio.",
+  "serviceFeeExplanation": "La tarifa cobrada por este nodo Mostro por facilitar intercambios. Esto es típicamente un pequeño porcentaje del monto del intercambio, este monto se divide entre el comprador y el vendedor.",
   "proofOfWorkExplanation": "El nivel de dificultad requerido para la prueba de trabajo en eventos Nostr. Esto ayuda a prevenir spam y asegura calidad de servicio.",
   "lndDaemonVersionExplanation": "La versión del software Lightning Network Daemon (LND) que este nodo Mostro utiliza para procesar pagos de Bitcoin Lightning.",
   "lndNodePublicKeyExplanation": "La clave pública del nodo de Lightning Network que maneja pagos para esta instancia de Mostro. Se utiliza para enrutamiento de Lightning Network.",
@@ -725,7 +729,7 @@
   "@_comment_settings_info_dialogs": "Texto de Diálogos de Información de Configuración",
   "languageInfoText": "Elige tu idioma preferido para la interfaz de la aplicación.",
   "currencyInfoText": "Elige la moneda predeterminada para tus órdenes.",
-  "relaysInfoText": "• Los relays son servidores que ayudan a distribuir tus mensajes a través de la red Nostr\n\n• Agregar más relays puede mejorar la conectividad y redundancia\n\n• Los relays no se sincronizan entre sí, por lo que solo aquellos a los que estés conectado recibirán tus mensajes.",
+  "relaysInfoText": "• Los relays son servidores que ayudan a distribuir tus mensajes a través de la red Nostr.\n\n• Agregar más relays puede mejorar la conectividad y redundancia.\n\n• Los relays no se sincronizan entre sí, por lo que solo aquellos a los que estés conectado recibirán tus mensajes.",
   "mostroInfoText": "• El Mostro que selecciones será donde publiques tus ofertas.\n\n• En caso de disputa, una persona asignada a ese Mostro será quien la resuelva.",
   
   "@_comment_account_info_dialogs": "Texto de Diálogos de Información de Cuenta",

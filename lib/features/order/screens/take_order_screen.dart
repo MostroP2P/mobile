@@ -11,6 +11,10 @@ import 'package:mostro_mobile/features/order/providers/order_notifier_provider.d
 import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
 import 'package:mostro_mobile/shared/widgets/order_cards.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
+
+import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
+import 'package:mostro_mobile/shared/utils/currency_utils.dart';
+
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/shared/providers/time_provider.dart';
@@ -36,7 +40,12 @@ class TakeOrderScreen extends ConsumerWidget {
               ? S.of(context)!.buyOrderDetailsTitle
               : S.of(context)!.sellOrderDetailsTitle),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.fromLTRB(
+          16.0,
+          16.0,
+          16.0,
+          16.0 + MediaQuery.of(context).viewPadding.bottom,
+        ),
         child: Column(
           children: [
             const SizedBox(height: 16),
@@ -64,8 +73,30 @@ class TakeOrderScreen extends ConsumerWidget {
   Widget _buildSellerAmount(WidgetRef ref, NostrEvent order) {
     return Builder(
       builder: (context) {
-        final priceText =
-            order.amount == '0' ? S.of(context)!.atMarketPrice : '';
+
+        final currencyData = ref.watch(currencyCodesProvider).asData?.value;
+        final currencyFlag = CurrencyUtils.getFlagFromCurrencyData(
+            order.currency!, currencyData);
+        final amountString =
+            '${order.fiatAmount} ${order.currency} $currencyFlag';
+        String priceText = '';
+        if (order.amount == '0') {
+          final premium = order.premium;
+          final premiumValue =
+              premium != null ? double.tryParse(premium) ?? 0.0 : 0.0;
+
+          if (premiumValue == 0) {
+            // No premium - show only market price
+            priceText = S.of(context)!.atMarketPrice;
+          } else {
+            // Has premium/discount - show market price with percentage
+            final isPremiumPositive = premiumValue >= 0;
+            final premiumDisplay =
+                isPremiumPositive ? '(+$premiumValue%)' : '($premiumValue%)';
+            priceText = '${S.of(context)!.atMarketPrice} $premiumDisplay';
+          }
+        }
+
 
         final hasFixedSatsAmount = order.amount != null && order.amount != '0';
 
@@ -91,24 +122,32 @@ class TakeOrderScreen extends ConsumerWidget {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Text(
-                    S.of(context)!.forAmount(order.fiatAmount.toString(), order.currency!),
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 16,
+
+                  Flexible(
+                    child: RichText(
+                      text: TextSpan(
+                        text: S.of(context)!.forAmount(amountString),
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 16,
+                        ),
+                        children: [
+                          if (priceText.isNotEmpty)
+                            TextSpan(
+                              text: ' $priceText',
+                              style: const TextStyle(
+                                color: Colors.white60,
+                                fontSize: 15,
+                              ),
+                            ),
+                        ],
+
+                      ),
+                      softWrap: true,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  if (priceText.isNotEmpty) ...[
-                    // Fixed [...] brackets
-                    const SizedBox(width: 8),
-                    Text(
-                      priceText,
-                      style: const TextStyle(
-                        color: Colors.white60,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
                 ],
               ),
             ],
@@ -350,7 +389,8 @@ class _CountdownWidget extends ConsumerWidget {
         mostroInstance?.expirationHours ?? 24; // fallback to 24 hours
 
     // Validate expiration hours
-    if (maxOrderHours <= 0 || maxOrderHours > 168) { // Max 1 week
+    if (maxOrderHours <= 0 || maxOrderHours > 168) {
+      // Max 1 week
       return const SizedBox.shrink();
     }
 

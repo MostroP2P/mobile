@@ -8,6 +8,7 @@ import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/time_provider.dart';
+import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
 import 'package:mostro_mobile/shared/utils/currency_utils.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
@@ -19,6 +20,7 @@ class OrderListItem extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(timeProvider);
+    final currencyData = ref.watch(currencyCodesProvider).asData?.value;
 
     // Determine if this is a fixed order (has specific sats amount and is not zero)
     final bool isFixedOrder =
@@ -165,9 +167,8 @@ class OrderListItem extends ConsumerWidget {
                         Text(
                           () {
                             final String currencyCode = order.currency ?? 'CUP';
-                            return CurrencyUtils.getFlagFromCurrency(
-                                    currencyCode) ??
-                                '';
+                            return CurrencyUtils.getFlagFromCurrencyData(
+                                currencyCode, currencyData);
                           }(),
                           style: const TextStyle(fontSize: 18),
                         ),
@@ -187,26 +188,35 @@ class OrderListItem extends ConsumerWidget {
                                 fontWeight: FontWeight.w500,
                               ),
                             )
-                          : Row(
-                              children: [
-                                Text(
-                                  '${S.of(context)!.marketPrice} ',
+                          : premiumValue == 0
+                              ? Text(
+                                  S.of(context)!.marketPrice,
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: Colors.white70,
                                     fontWeight: FontWeight.w500,
                                   ),
+                                )
+                              : Row(
+                                  children: [
+                                    Text(
+                                      '${S.of(context)!.marketPrice} ',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.white70,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    Text(
+                                      premiumText,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: premiumColor,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                Text(
-                                  premiumText,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: premiumColor,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
                     ),
                   ],
                 ),

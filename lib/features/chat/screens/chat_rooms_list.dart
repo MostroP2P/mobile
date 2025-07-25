@@ -130,6 +130,8 @@ class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen>
       );
     }
 
+
+
     // Get fresh chat data for each order to ensure we have the latest messages
     final chatRoomsWithFreshData = state.map((chatRoom) {
       // Watch the individual chat provider to get the most up-to-date state

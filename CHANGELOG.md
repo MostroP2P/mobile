@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0+3]
+
+### Fixed
+- Button text truncation issues in dialog boxes across multiple screens
+- Generate New User button text wrapping and proper icon alignment
+- Dialog button layouts with improved spacing and flexible sizing
+- Yes/No button text cutoff in trade cancellation confirmation dialogs
+- Add Relay dialog button text display issues
+- Proper horizontal padding and text overflow handling in buttons
+
+### Changed
+- Enhanced dialog button implementations with Flexible widgets for better text accommodation
+- Improved button padding and spacing for better visual consistency
+- Updated text wrapping behavior in buttons to prevent content cutoff
+
 ## [1.0.0+2]
 
 ### Added

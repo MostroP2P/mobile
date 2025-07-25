@@ -284,12 +284,28 @@ class OrderState {
           Action.dispute,
           Action.sendDm,
         ],
+        Action.cooperativeCancelInitiatedByYou: [
+          Action.dispute,
+          Action.sendDm,
+        ],
       },
       Status.fiatSent: {
         Action.fiatSentOk: [
           Action.release,
           Action.cancel,
           Action.dispute,
+          Action.sendDm,
+        ],
+        Action.cooperativeCancelInitiatedByPeer: [
+          Action.release,
+          Action.cancel,
+          Action.dispute,
+          Action.sendDm,
+        ],
+        Action.cooperativeCancelInitiatedByYou: [
+          Action.release,
+          Action.dispute,
+          Action.sendDm,
         ],
       },
       Status.success: {
@@ -308,6 +324,31 @@ class OrderState {
         Action.canceled: [],
         Action.adminCanceled: [],
         Action.cooperativeCancelAccepted: [],
+      },
+      Status.cooperativelyCanceled: {
+        Action.cooperativeCancelInitiatedByYou: [
+          Action.sendDm,
+          Action.dispute,
+          Action.release,
+        ],
+        Action.cooperativeCancelInitiatedByPeer: [
+          Action.sendDm,
+          Action.dispute,
+          Action.cancel,
+          Action.release,
+        ],
+      },
+      Status.dispute: {
+        Action.disputeInitiatedByYou: [
+          Action.sendDm,
+          Action.cancel,
+          Action.release,
+        ],
+        Action.disputeInitiatedByPeer: [
+          Action.sendDm,
+          Action.cancel,
+          Action.release,
+        ],
       },
     },
     Role.buyer: {
@@ -359,10 +400,23 @@ class OrderState {
           Action.dispute,
           Action.sendDm,
         ],
+        Action.cooperativeCancelInitiatedByYou: [
+          Action.dispute,
+          Action.sendDm,
+        ],
       },
       Status.fiatSent: {
         Action.fiatSentOk: [
           Action.cancel,
+          Action.dispute,
+          Action.sendDm,
+        ],
+        Action.cooperativeCancelInitiatedByPeer: [
+          Action.cancel,
+          Action.dispute,
+          Action.sendDm,
+        ],
+        Action.cooperativeCancelInitiatedByYou: [
           Action.dispute,
           Action.sendDm,
         ],
@@ -383,6 +437,27 @@ class OrderState {
         Action.canceled: [],
         Action.adminCanceled: [],
         Action.cooperativeCancelAccepted: [],
+      },
+      Status.cooperativelyCanceled: {
+        Action.cooperativeCancelInitiatedByYou: [
+          Action.sendDm,
+          Action.dispute,
+        ],
+        Action.cooperativeCancelInitiatedByPeer: [
+          Action.sendDm,
+          Action.dispute,
+          Action.cancel,
+        ],
+      },
+      Status.dispute: {
+        Action.disputeInitiatedByYou: [
+          Action.sendDm,
+          Action.cancel,
+        ],
+        Action.disputeInitiatedByPeer: [
+          Action.sendDm,
+          Action.cancel,
+        ],
       },
     },
   };

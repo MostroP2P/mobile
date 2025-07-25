@@ -29,14 +29,17 @@ class CustomElevatedButton extends StatelessWidget {
     final buttonWidget = ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
-        foregroundColor: foregroundColor ?? AppTheme.cream1,
+        foregroundColor: foregroundColor ?? Colors.black,
         backgroundColor: backgroundColor ?? AppTheme.mostroGreen,
         padding:
             padding ?? const EdgeInsets.symmetric(vertical: 15, horizontal: 30),
       ),
       child: AutoSizeText(
         text,
-        style: textStyle ?? Theme.of(context).textTheme.labelLarge,
+        style: textStyle ?? Theme.of(context).textTheme.labelLarge?.copyWith(
+          fontWeight: FontWeight.w500,
+          color: foregroundColor ?? Colors.black,
+        ),
         minFontSize: minFontSize,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,

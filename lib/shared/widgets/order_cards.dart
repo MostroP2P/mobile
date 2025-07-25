@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
+
+import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
+import 'package:mostro_mobile/shared/utils/currency_utils.dart';
+
 import 'package:mostro_mobile/generated/l10n.dart';
 
 /// Card that displays the order amount information (selling/buying sats for amount)
-class OrderAmountCard extends StatelessWidget {
+class OrderAmountCard extends ConsumerWidget {
   final String title;
   final String amount;
   final String currency;
@@ -22,7 +27,13 @@ class OrderAmountCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currencyData = ref.watch(currencyCodesProvider).asData?.value;
+    final currencyFlag =
+        CurrencyUtils.getFlagFromCurrencyData(currency, currencyData);
+    final amountString = '$amount $currency $currencyFlag';
+
 
     return CustomCard(
       padding: const EdgeInsets.all(16),
@@ -40,26 +51,35 @@ class OrderAmountCard extends StatelessWidget {
           const SizedBox(height: 8),
           Row(
             children: [
-              Text(
-                S.of(context)!.forAmount(amount, currency),
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 16,
+
+              Flexible(
+                child: RichText(
+                  text: TextSpan(
+                    text: S.of(context)!.forAmount(amountString),
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 16,
+                    ),
+                    children: [
+                      if (priceText != null && priceText!.isNotEmpty)
+                        TextSpan(
+                          text: ' $priceText',
+                          style: const TextStyle(
+                            color: Colors.white60,
+                            fontSize: 15,
+                          ),
+                        ),
+                    ],
+
+                  ),
+                  softWrap: true,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              if (priceText != null && priceText!.isNotEmpty) ...[  
-                const SizedBox(width: 8),
-                Text(
-                  priceText!,
-                  style: const TextStyle(
-                    color: Colors.white60,
-                    fontSize: 14,
-                  ),
-                ),
-              ],
             ],
           ),
-          if (premiumText != null && premiumText!.isNotEmpty) ...[  
+          if (premiumText != null && premiumText!.isNotEmpty) ...[
             const SizedBox(height: 4),
             Text(
               premiumText!,

@@ -286,7 +286,7 @@ class AboutScreen extends ConsumerWidget {
             _buildInfoRowWithDialog(
               context,
               S.of(context)!.serviceFee,
-              '${instance.fee}%',
+              '${instance.fee * 100}%',
               S.of(context)!.serviceFeeExplanation,
             ),
             const SizedBox(height: 20),
@@ -520,10 +520,13 @@ class AboutScreen extends ConsumerWidget {
             InkWell(
               onTap: () => _showInfoDialog(context, label, explanation),
               borderRadius: BorderRadius.circular(12),
-              child: const Icon(
-                Icons.info_outline,
-                size: 16,
-                color: AppTheme.textSecondary,
+              child: const Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Icon(
+                  Icons.info_outline,
+                  size: 16,
+                  color: AppTheme.textSecondary,
+                ),
               ),
             ),
           ],
@@ -561,10 +564,13 @@ class AboutScreen extends ConsumerWidget {
             InkWell(
               onTap: () => _showInfoDialog(context, label, explanation),
               borderRadius: BorderRadius.circular(12),
-              child: const Icon(
-                Icons.info_outline,
-                size: 16,
-                color: AppTheme.textSecondary,
+              child: const Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Icon(
+                  Icons.info_outline,
+                  size: 16,
+                  color: AppTheme.textSecondary,
+                ),
               ),
             ),
             const SizedBox(width: 6),

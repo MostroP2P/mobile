@@ -21,7 +21,7 @@ class HomeScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundDark,
-      appBar: MostroAppBar(),
+      appBar: const MostroAppBar(),
       body: CustomDrawerOverlay(
         child: Stack(
           children: [

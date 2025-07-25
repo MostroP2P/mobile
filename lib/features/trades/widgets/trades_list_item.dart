@@ -10,6 +10,7 @@ import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/time_provider.dart';
+import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
 import 'package:mostro_mobile/shared/utils/currency_utils.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
@@ -21,6 +22,7 @@ class TradesListItem extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(timeProvider);
+    final currencyData = ref.watch(currencyCodesProvider).asData?.value;
     final session = ref.watch(sessionProvider(trade.orderId!));
     final role = session?.role;
     final isBuying = role == Role.buyer;
@@ -101,9 +103,8 @@ class TradesListItem extends ConsumerWidget {
                     Row(
                       children: [
                         Text(
-                          CurrencyUtils.getFlagFromCurrency(
-                                  trade.currency ?? '') ??
-                              '',
+                          CurrencyUtils.getFlagFromCurrencyData(
+                              trade.currency ?? '', currencyData),
                           style: const TextStyle(
                             fontSize: 16,
                           ),

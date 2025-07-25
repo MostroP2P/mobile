@@ -27,6 +27,7 @@ class PremiumSection extends StatelessWidget {
       icon: premiumValueIcon,
       iconBackgroundColor: AppTheme.purpleAccent, // Purple color for premium
       infoTooltip: S.of(context)!.premiumTooltip,
+      infoTitle: S.of(context)!.premiumTitle,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
