@@ -188,26 +188,35 @@ class OrderListItem extends ConsumerWidget {
                                 fontWeight: FontWeight.w500,
                               ),
                             )
-                          : Row(
-                              children: [
-                                Text(
-                                  '${S.of(context)!.marketPrice} ',
+                          : premiumValue == 0
+                              ? Text(
+                                  S.of(context)!.marketPrice,
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: Colors.white70,
                                     fontWeight: FontWeight.w500,
                                   ),
+                                )
+                              : Row(
+                                  children: [
+                                    Text(
+                                      '${S.of(context)!.marketPrice} ',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.white70,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    Text(
+                                      premiumText,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: premiumColor,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                Text(
-                                  premiumText,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: premiumColor,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
                     ),
                   ],
                 ),

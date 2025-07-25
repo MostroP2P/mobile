@@ -202,6 +202,8 @@ class PaymentMethodsSection extends ConsumerWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.activeColor,
                     foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                    minimumSize: const Size(0, 52),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
