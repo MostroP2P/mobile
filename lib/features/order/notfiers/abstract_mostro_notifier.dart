@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models.dart';
-import 'package:mostro_mobile/data/models/payment_failed.dart';
 import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
