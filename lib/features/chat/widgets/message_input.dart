@@ -99,7 +99,7 @@ class _MessageInputState extends ConsumerState<MessageInput> {
                         fontSize: 15,
                       ),
                       decoration: InputDecoration(
-                        hintText: S.of(context)?.typeAMessage ?? 'Type a message...',
+                        hintText: S.of(context)!.typeAMessage,
                         hintStyle: TextStyle(
                             color: AppTheme.textSecondary.withValues(alpha: 153), // 0.6 opacity
                             fontSize: 15),
