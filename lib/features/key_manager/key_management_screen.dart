@@ -643,43 +643,38 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
             ),
           ),
           actions: [
-            Flexible(
-              child: TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(),
-                child: Text(
-                  S.of(context)!.cancel,
-                  style: const TextStyle(
-                    color: AppTheme.textSecondary,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  textAlign: TextAlign.center,
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(
+                S.of(context)!.cancel,
+                style: const TextStyle(
+                  color: AppTheme.textSecondary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
                 ),
+                textAlign: TextAlign.center,
               ),
             ),
-            const SizedBox(width: 8),
-            Flexible(
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.of(dialogContext).pop();
-                  _generateNewMasterKey();
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.activeColor,
-                  foregroundColor: Colors.black,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                _generateNewMasterKey();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.activeColor,
+                foregroundColor: Colors.black,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: Text(
-                  S.of(context)!.continueButton,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  textAlign: TextAlign.center,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              ),
+              child: Text(
+                S.of(context)!.continueButton,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
                 ),
+                textAlign: TextAlign.center,
               ),
             ),
           ],
