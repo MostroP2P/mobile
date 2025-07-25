@@ -117,24 +117,30 @@ class TakeOrderScreen extends ConsumerWidget {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Text(
-                    S.of(context)!.forAmount(amountString),
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 16,
+                  Flexible(
+                    child: RichText(
+                      text: TextSpan(
+                        text: S.of(context)!.forAmount(amountString),
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 16,
+                        ),
+                        children: [
+                          if (priceText.isNotEmpty)
+                            TextSpan(
+                              text: ' $priceText',
+                              style: const TextStyle(
+                                color: Colors.white60,
+                                fontSize: 14,
+                              ),
+                            ),
+                        ],
+                      ),
+                      softWrap: true,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  if (priceText.isNotEmpty) ...[
-                    // Fixed [...] brackets
-                    const SizedBox(width: 8),
-                    Text(
-                      priceText,
-                      style: const TextStyle(
-                        color: Colors.white60,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
                 ],
               ),
             ],
