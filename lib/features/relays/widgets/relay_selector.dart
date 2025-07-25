@@ -115,6 +115,7 @@ class RelaySelector extends ConsumerWidget {
               textAlign: TextAlign.center,
             ),
           ),
+          const SizedBox(width: 12),
           ElevatedButton(
             onPressed: () {
               final url = controller.text.trim();
@@ -196,6 +197,7 @@ class RelaySelector extends ConsumerWidget {
                 textAlign: TextAlign.center,
               ),
             ),
+            const SizedBox(width: 12),
             ElevatedButton(
               onPressed: () {
                 final newUrl = controller.text.trim();
