@@ -1,17 +1,15 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
-import 'package:nostr/nostr.dart';
+import 'package:dart_nostr/dart_nostr.dart';
 
 import '../data/models/dispute.dart';
 import '../data/models/dispute_event.dart';
 import '../data/models/enums/action.dart' as mostro;
 import '../data/models/mostro_message.dart';
-import '../features/order/models/order_state.dart';
 import '../features/order/providers/order_notifier_provider.dart';
-import '../shared/providers/nostr_provider.dart';
+import '../shared/providers/nostr_service_provider.dart';
 
 /// Provider for the DisputeService
 final disputeServiceProvider = Provider<DisputeService>((ref) {
@@ -31,50 +29,63 @@ class DisputeService {
 
   /// Subscribes to dispute events (kind 38383) related to orders
   void _subscribeToDisputeEvents() {
-    final relay = _ref.read(nostrRelayProvider);
+    final nostrService = _ref.read(nostrServiceProvider);
     
     // Create a filter for dispute events (kind 38383)
-    final filter = Filter(
+    final filter = NostrFilter(
       kinds: [38383],
-      // We could add additional filters here if needed
-      // e.g., specific tags for orders the user is involved in
+      // Add tag filter for dispute events (z tag with value 'dispute')
+      additionalFilters: {
+        '#z': ['dispute'],
+      },
     );
     
-    _logger.info('Subscribing to dispute events');
+    _logger.info('Subscribing to dispute events (kind 38383)');
     
-    // Subscribe to dispute events
-    _disputeSubscription = relay.subscribe(
-      [filter],
-      onEvent: _handleDisputeEvent,
+    // Create a NostrRequest with the filter
+    final request = NostrRequest(
+      filters: [filter],
+      subscriptionId: 'dispute-events-${DateTime.now().millisecondsSinceEpoch}',
+    );
+    
+    // Subscribe to dispute events using the stream API
+    final stream = nostrService.subscribeToEvents(request);
+    _disputeSubscription = stream.listen(
+      _handleDisputeEvent,
       onError: (error) {
         _logger.severe('Error in dispute event subscription: $error');
       },
     );
+    
+    _logger.info('Subscribed to dispute events with ID: ${request.subscriptionId}');
   }
 
   /// Handles incoming dispute events
   void _handleDisputeEvent(NostrEvent event) {
     try {
       // Parse the dispute event
-      final disputeEvent = DisputeEvent.fromNostrEvent(event);
+      final disputeEvent = DisputeEvent.fromEvent(event);
       _logger.info('Received dispute event: ${disputeEvent.disputeId} with status: ${disputeEvent.status}');
       
       // Update the order state with the dispute information
       _updateOrderState(disputeEvent);
     } catch (e, stackTrace) {
-      _logger.severe('Error handling dispute event', e, stackTrace);
+      _logger.severe('Error handling dispute event: $e', e, stackTrace);
     }
   }
 
   /// Updates the order state with dispute information
   void _updateOrderState(DisputeEvent disputeEvent) {
-    // Get the order ID from the dispute event
-    final orderId = disputeEvent.disputeId;
+    // Get the dispute ID from the event
+    final disputeId = disputeEvent.disputeId;
     
-    if (orderId == null || orderId.isEmpty) {
-      _logger.warning('Dispute event has no order ID');
+    if (disputeId.isEmpty) {
+      _logger.warning('Dispute event has no dispute ID');
       return;
     }
+    
+    // In Mostro's implementation, the dispute ID is the order ID
+    final orderId = disputeId;
     
     // Check if the order notifier exists for this order
     final orderNotifierExists = _ref.exists(orderNotifierProvider(orderId));
@@ -84,12 +95,9 @@ class DisputeService {
       return;
     }
     
-    // Get the current order state
-    final orderState = _ref.read(orderNotifierProvider(orderId));
-    
     // Create or update the dispute object
     final dispute = Dispute(
-      disputeId: disputeEvent.disputeId ?? '',
+      disputeId: disputeId,
       orderId: orderId,
       status: disputeEvent.status,
     );
@@ -97,22 +105,33 @@ class DisputeService {
     // Determine the appropriate action based on the dispute status
     mostro.Action action;
     
-    switch (disputeEvent.status?.toLowerCase()) {
+    switch (disputeEvent.status.toLowerCase()) {
       case 'initiated':
-        // Check if the current user initiated the dispute
-        final isCurrentUserDisputer = disputeEvent.pubkey == _ref.read(nostrProvider).publicKey;
-        action = isCurrentUserDisputer 
-            ? mostro.Action.disputeInitiatedByYou 
-            : mostro.Action.disputeInitiatedByPeer;
+        // For initiated disputes, we need to check if the current user initiated it
+        // We can determine this by checking the current order state's action
+        final orderState = _ref.read(orderNotifierProvider(orderId));
+        
+        // If the last action was dispute, then the current user initiated it
+        if (orderState.action == mostro.Action.dispute) {
+          action = mostro.Action.disputeInitiatedByYou;
+          _logger.info('Dispute initiated by current user for order $orderId');
+        } else {
+          // Otherwise, it was initiated by the peer
+          action = mostro.Action.disputeInitiatedByPeer;
+          _logger.info('Dispute initiated by peer for order $orderId');
+        }
         break;
       case 'in-progress':
         action = mostro.Action.adminTookDispute;
+        _logger.info('Admin took dispute for order $orderId');
         break;
       case 'resolved':
         action = mostro.Action.adminSettled;
+        _logger.info('Admin settled dispute for order $orderId');
         break;
       default:
         action = mostro.Action.dispute;
+        _logger.info('Unknown dispute status ${disputeEvent.status} for order $orderId');
     }
     
     // Create a MostroMessage to update the order state
@@ -122,15 +141,29 @@ class DisputeService {
       payload: dispute,
     );
     
-    // Update the order state
-    _ref.read(orderNotifierProvider(orderId).notifier).updateState(message);
+    // Get the OrderNotifier and update its state
+    final orderNotifier = _ref.read(orderNotifierProvider(orderId).notifier);
     
-    _logger.info('Updated order state for order $orderId with dispute status: ${disputeEvent.status}');
+    // Update the state with the dispute message
+    try {
+      // Call handleEvent on the orderNotifier which will properly update the state
+      if (orderNotifier.mounted) {
+        orderNotifier.handleEvent(message);
+        _logger.info('Updated order state for order $orderId with dispute status: ${disputeEvent.status}');
+      } else {
+        _logger.warning('OrderNotifier for $orderId is not mounted, could not update state');
+      }
+    } catch (e, stackTrace) {
+      _logger.severe('Error updating order state: $e', e, stackTrace);
+    }
   }
 
   /// Dispose of subscriptions when the service is no longer needed
   void dispose() {
-    _disputeSubscription?.cancel();
+    if (_disputeSubscription != null) {
+      _disputeSubscription!.cancel();
+      _logger.info('Canceled dispute event subscription');
+    }
     _logger.info('Disposed dispute service');
   }
 }

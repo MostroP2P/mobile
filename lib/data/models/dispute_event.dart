@@ -53,19 +53,16 @@ class DisputeEvent {
       orElse: () => throw ArgumentError('Event must have a "z" tag with value "dispute"'),
     );
 
-    // Handle createdAt which could be int, DateTime, or null
-    int timestamp;
+    // Handle createdAt which could be int or null
     final createdAt = event.createdAt;
+    final int timestamp;
     
     if (createdAt == null) {
       // Fallback to current time if createdAt is null
       timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    } else if (createdAt is int) {
-      timestamp = createdAt;
-    } else if (createdAt is DateTime) {
-      timestamp = createdAt.millisecondsSinceEpoch ~/ 1000;
     } else {
-      throw ArgumentError('Invalid createdAt type in NostrEvent');
+      // In dart_nostr package, createdAt should be an int, but we cast it to be safe
+      timestamp = createdAt as int;
     }
     
     return DisputeEvent(
