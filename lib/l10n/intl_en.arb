@@ -89,6 +89,7 @@
   "adminSettledAdmin": "You have completed the order ID: {id}.",
   "adminSettledUsers": "Admin has completed the order ID: {id}.",
   "paymentFailed": "I couldn’t send the Sats. I will try {payment_attempts} more times in {payment_retries_interval} minutes. Please ensure your node or wallet is online.",
+  "paymentFailedText": "Payment Failed",
   "invoiceUpdated": "The invoice has been successfully updated!",
   "holdInvoicePaymentCanceled": "The invoice was canceled; your Sats are available in your wallet again.",
   "cantDo": "You are not allowed to {action} for this order!",

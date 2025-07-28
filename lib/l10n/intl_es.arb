@@ -89,6 +89,7 @@
   "adminSettledAdmin": "Has completado la orden ID: {id}.",
   "adminSettledUsers": "El administrador ha completado la orden ID: {id}.",
   "paymentFailed": "No pude enviar los Sats. Intentaré {payment_attempts} veces más en {payment_retries_interval} minutos. Por favor asegúrate de que tu nodo o billetera esté en línea.",
+  "paymentFailedText": "Pago Fallido",
   "invoiceUpdated": "¡La factura ha sido actualizada exitosamente!",
   "holdInvoicePaymentCanceled": "La factura fue cancelada; tus Sats están disponibles en tu billetera nuevamente.",
   "cantDo": "¡No tienes permitido {action} para esta orden!",

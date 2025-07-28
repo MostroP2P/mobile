@@ -217,9 +217,12 @@ class OrderState {
       case Action.adminSettled:
         return Status.settledByAdmin;
 
+      // Actions that should set status to payment failed
+      case Action.paymentFailed:
+        return Status.paymentFailed;
+
       // Informational actions that should preserve current status
       case Action.rateUser:
-      case Action.paymentFailed:
       case Action.invoiceUpdated:
       case Action.sendDm:
       case Action.tradePubkey:
@@ -269,6 +272,13 @@ class OrderState {
         ],
         Action.takeBuy: [
           Action.cancel,
+        ],
+      },
+      Status.paymentFailed: {
+        Action.paymentFailed: [
+          Action.payInvoice,
+          Action.cancel,
+          Action.dispute,
         ],
       },
       Status.active: {
@@ -383,6 +393,13 @@ class OrderState {
         ],
         Action.waitingBuyerInvoice: [
           Action.cancel,
+        ],
+      },
+      Status.paymentFailed: {
+        Action.paymentFailed: [
+          Action.addInvoice,
+          Action.cancel,
+          Action.dispute,
         ],
       },
       Status.active: {

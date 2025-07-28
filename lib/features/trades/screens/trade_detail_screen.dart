@@ -503,6 +503,18 @@ class TradeDetailScreen extends ConsumerWidget {
           widgets.add(_buildContactButton(context));
           break;
 
+        case actions.Action.paymentFailed:
+          // Add Invoice button for payment failed state
+          if (userRole == Role.buyer) {
+            widgets.add(_buildNostrButton(
+              S.of(context)!.addInvoiceButton,
+              action: actions.Action.addInvoice,
+              backgroundColor: AppTheme.mostroGreen,
+              onPressed: () => context.push('/add_invoice/$orderId'),
+            ));
+          }
+          break;
+
         case actions.Action.holdInvoicePaymentCanceled:
         case actions.Action.buyerInvoiceAccepted:
         case actions.Action.waitingSellerToPay:
@@ -514,7 +526,6 @@ class TradeDetailScreen extends ConsumerWidget {
         case actions.Action.adminAddSolver:
         case actions.Action.adminTakeDispute:
         case actions.Action.adminTookDispute:
-        case actions.Action.paymentFailed:
         case actions.Action.invoiceUpdated:
         case actions.Action.tradePubkey:
         case actions.Action.cantDo:

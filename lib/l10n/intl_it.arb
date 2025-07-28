@@ -89,6 +89,7 @@
   "adminSettledAdmin": "Hai completato l'ordine ID: {id}!",
   "adminSettledUsers": "L'amministratore ha completato l'ordine ID: {id}!",
   "paymentFailed": "Ho provato a inviarti i Sats ma il pagamento della tua invoice è fallito. Tenterò {payment_attempts} volte ancora ogni {payment_retries_interval} minuti. Per favore assicurati che il tuo nodo/portafoglio lightning sia online.",
+  "paymentFailedText": "Pagamento Fallito",
   "invoiceUpdated": "Invoice aggiornata con successo!",
   "holdInvoicePaymentCanceled": "Invoice annullata; i tuoi Sats saranno nuovamente disponibili nel tuo portafoglio.",
   "cantDo": "Non sei autorizzato a {action} per questo ordine!",
