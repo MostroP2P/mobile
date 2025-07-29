@@ -32,9 +32,12 @@ class NotificationListenerWidget extends ConsumerWidget {
         } else {
           // Handle specific actions with proper localization
           if (next.action == actions.Action.timeoutReversal) {
-            message = S.of(context)!.orderTimeoutMaker; // Use the appropriate timeout message
+            // For timeoutReversal without custom message, use generic timeout message
+            final l10n = S.of(context);
+            message = l10n?.orderTimeout ?? 'Order timeout occurred';
           } else {
-            message = next.action?.toString() ?? S.of(context)!.error;
+            final l10n = S.of(context);
+            message = next.action?.toString() ?? l10n?.error ?? 'An error occurred';
           }
         }
         

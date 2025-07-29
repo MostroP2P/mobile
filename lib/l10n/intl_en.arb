@@ -658,5 +658,6 @@
 
   "@_comment_timeout_messages": "Timeout notification messages",
   "orderTimeoutTaker": "You didn't respond in time. The order will be republished",
-  "orderTimeoutMaker": "Your counterpart didn't respond in time. The order will be republished"
+  "orderTimeoutMaker": "Your counterpart didn't respond in time. The order will be republished",
+  "orderTimeout": "Order timeout occurred"
 }
