@@ -8,13 +8,15 @@ class NotificationState {
   final WidgetBuilder? widgetBuilder;
   final bool informational;
   final bool actionRequired;
+  final String? customMessage;
 
   NotificationState(
       {this.action,
       this.placeholders = const {},
       this.widgetBuilder,
       this.informational = false,
-      this.actionRequired = false});
+      this.actionRequired = false,
+      this.customMessage});
 }
 
 class NotificationNotifier extends StateNotifier<NotificationState> {
@@ -24,6 +26,11 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
       {Map<String, dynamic> values = const {}}) {
     state = NotificationState(
         action: action, placeholders: values, informational: true);
+  }
+
+  void showCustomMessage(String message) {
+    state = NotificationState(
+        customMessage: message, informational: true);
   }
 
   void showActionable(actions.Action action,
