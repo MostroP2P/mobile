@@ -158,7 +158,14 @@ class OrderState {
 
       // Actions that should set status to waiting-buyer-invoice
       case Action.waitingBuyerInvoice:
+        return Status.waitingBuyerInvoice;
+      
       case Action.addInvoice:
+        // If current status is paymentFailed, maintain it for UI consistency
+        // Otherwise, transition to waitingBuyerInvoice for normal flow
+        if (status == Status.paymentFailed) {
+          return Status.paymentFailed;
+        }
         return Status.waitingBuyerInvoice;
 
       // ✅ FIX: Cuando alguien toma una orden, debe cambiar el status inmediatamente
@@ -276,9 +283,8 @@ class OrderState {
       },
       Status.paymentFailed: {
         Action.paymentFailed: [
+          // Only allow payment retry, no cancel or dispute during retrying
           Action.payInvoice,
-          Action.cancel,
-          Action.dispute,
         ],
       },
       Status.active: {
@@ -403,9 +409,8 @@ class OrderState {
       },
       Status.paymentFailed: {
         Action.paymentFailed: [
+          // Only allow add invoice, no cancel or dispute during retrying
           Action.addInvoice,
-          Action.cancel,
-          Action.dispute,
         ],
       },
       Status.active: {
