@@ -368,6 +368,12 @@ class OrderState {
           Action.release,
         ],
       },
+      Status.settledHoldInvoice: {
+        Action.addInvoice: [
+          Action.addInvoice,
+          Action.cancel,
+        ],
+      },
     },
     Role.buyer: {
       Status.pending: {
@@ -481,6 +487,12 @@ class OrderState {
         ],
         Action.disputeInitiatedByPeer: [
           Action.sendDm,
+          Action.cancel,
+        ],
+      },
+      Status.settledHoldInvoice: {
+        Action.addInvoice: [
+          Action.addInvoice,
           Action.cancel,
         ],
       },

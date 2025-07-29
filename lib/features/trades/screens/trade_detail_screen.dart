@@ -504,15 +504,8 @@ class TradeDetailScreen extends ConsumerWidget {
           break;
 
         case actions.Action.paymentFailed:
-          // Add Invoice button for payment failed state
-          if (userRole == Role.buyer) {
-            widgets.add(_buildNostrButton(
-              S.of(context)!.addInvoiceButton,
-              action: actions.Action.addInvoice,
-              backgroundColor: AppTheme.mostroGreen,
-              onPressed: () => context.push('/add_invoice/$orderId'),
-            ));
-          }
+          // Payment failed - Mostro is still retrying, only show Close button
+          // No additional buttons (Add Invoice, Cancel, Dispute) should appear
           break;
 
         case actions.Action.holdInvoicePaymentCanceled:

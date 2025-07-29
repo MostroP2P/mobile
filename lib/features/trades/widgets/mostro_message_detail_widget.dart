@@ -185,9 +185,10 @@ class MostroMessageDetail extends ConsumerWidget {
         return S.of(context)!.adminSettledUsers(orderPayload!.id ?? '');
       case actions.Action.paymentFailed:
         final payload = ref.read(orderNotifierProvider(orderId)).paymentFailed;
+        final intervalInMinutes = ((payload?.paymentRetriesInterval ?? 0) / 60).round();
         return S.of(context)!.paymentFailed(
               payload?.paymentAttempts ?? 0,
-              payload?.paymentRetriesInterval ?? 0,
+              intervalInMinutes,
             );
       case actions.Action.invoiceUpdated:
         return S.of(context)!.invoiceUpdated;
