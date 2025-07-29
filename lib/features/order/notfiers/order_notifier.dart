@@ -21,7 +21,7 @@ class OrderNotifier extends AbstractMostroNotifier {
   }
 
   @override
-  void handleEvent(MostroMessage event) async {
+  void handleEvent(MostroMessage event) {
     // First handle the event normally
     super.handleEvent(event);
     
@@ -29,11 +29,14 @@ class OrderNotifier extends AbstractMostroNotifier {
     // Only check if we have a valid session (this is a taker scenario)
     final currentSession = ref.read(sessionProvider(orderId));
     if (mounted && currentSession != null && (state.status == Status.waitingBuyerInvoice || state.status == Status.waitingPayment)) {
-      final shouldCleanup = await _checkTimeoutAndCleanup(state, event);
-      if (shouldCleanup) {
-        // Session was cleaned up, invalidate this provider
-        ref.invalidateSelf();
-      }
+      // Schedule the async timeout check without blocking
+      Future.microtask(() async {
+        final shouldCleanup = await _checkTimeoutAndCleanup(state, event);
+        if (shouldCleanup && mounted) {
+          // Session was cleaned up, invalidate this provider
+          ref.invalidateSelf();
+        }
+      });
     }
   }
 
