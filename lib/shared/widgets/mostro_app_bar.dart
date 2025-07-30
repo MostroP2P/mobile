@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/shared/providers/drawer_provider.dart';
-import 'package:mostro_mobile/shared/widgets/notification_bell_widget.dart';
+import 'package:mostro_mobile/shared/widgets/notification_history_bell_widget.dart';
 
 class MostroAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final Widget? title;
