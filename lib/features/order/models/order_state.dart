@@ -82,7 +82,7 @@ class OrderState {
   }
 
   OrderState updateWith(MostroMessage message) {
-    _logger.i('🔄 Updating OrderState with Action: ${message.action}');
+    _logger.i('Updating OrderState with Action: ${message.action}');
 
     // Preserve the current state entirely for cantDo messages - they are informational only
     if (message.action == Action.cantDo) {
@@ -93,14 +93,14 @@ class OrderState {
     Status newStatus = _getStatusFromAction(
         message.action, message.getPayload<Order>()?.status);
 
-    // 🔍 DEBUG: Log status mapping
-    _logger.i('📊 Status mapping: ${message.action} → $newStatus');
+    // DEBUG: Log status mapping
+    _logger.i('Status mapping: ${message.action} → $newStatus');
 
     // Preserve PaymentRequest correctly
     PaymentRequest? newPaymentRequest;
     if (message.payload is PaymentRequest) {
       newPaymentRequest = message.getPayload<PaymentRequest>();
-      _logger.i('💳 New PaymentRequest found in message');
+      _logger.i('New PaymentRequest found in message');
     } else {
       newPaymentRequest = paymentRequest; // Preserve existing
     }
@@ -137,6 +137,10 @@ class OrderState {
       peer: newPeer,
     );
 
+    _logger.i('New state: ${newState.status} - ${newState.action}');
+    _logger
+        .i('PaymentRequest preserved: ${newState.paymentRequest != null}');
+
     return newState;
   }
 
@@ -153,7 +157,9 @@ class OrderState {
       case Action.addInvoice:
         return Status.waitingBuyerInvoice;
 
-      // ✅ FIX: When someone takes an order, status should change immediately
+
+      // FIX: Cuando alguien toma una orden, debe cambiar el status inmediatamente
+
       case Action.takeBuy:
         // When buyer takes sell order, seller must wait for buyer invoice
         return Status.waitingBuyerInvoice;
@@ -222,6 +228,10 @@ class OrderState {
       case Action.newOrder:
         return payloadStatus ?? status;
 
+      // Action for timeout reversal - always use payload status (should be pending)
+      case Action.timeoutReversal:
+        return payloadStatus ?? Status.pending;
+
       // For other actions, keep the current status unless payload has a different one
       default:
         return payloadStatus ?? status;
@@ -239,6 +249,9 @@ class OrderState {
           Action.cancel,
         ],
         Action.takeBuy: [
+          Action.cancel,
+        ],
+        Action.timeoutReversal: [
           Action.cancel,
         ],
       },
@@ -357,6 +370,9 @@ class OrderState {
           Action.cancel,
         ],
         Action.takeSell: [
+          Action.cancel,
+        ],
+        Action.timeoutReversal: [
           Action.cancel,
         ],
       },

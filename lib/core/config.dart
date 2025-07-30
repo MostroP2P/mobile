@@ -17,7 +17,10 @@ class Config {
   static const String dBName = 'mostro.db';
   static const String dBPassword = 'mostro';
 
-  // Connection timeout for relays
+
+
+  // Timeout for relay connections
+
   static const Duration nostrConnectionTimeout = Duration(seconds: 30);
 
   static bool fullPrivacyMode = false;
@@ -34,7 +37,13 @@ class Config {
   static const int sessionExpirationHours = 36;
   
 
-  // Notifications configuration
+
+  // Notification configuration
+
   static String notificationChannelId = 'mostro_mobile';
   static int notificationId = 38383;
+
+  // Timeouts for timeout detection (new critical operations)
+  static const Duration timeoutDetectionTimeout = Duration(seconds: 8);
+  static const Duration messageStorageTimeout = Duration(seconds: 5);
 }

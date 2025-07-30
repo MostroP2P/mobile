@@ -101,49 +101,45 @@ class RelaySelector extends ConsumerWidget {
           ),
         ),
         actions: [
-          Flexible(
-            child: TextButton(
-              onPressed: () {
-                Navigator.pop(dialogContext);
-              },
-              child: Text(
-                S.of(context)!.cancel,
-                style: const TextStyle(
-                  color: AppTheme.textSecondary,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-                textAlign: TextAlign.center,
+          TextButton(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+            },
+            child: Text(
+              S.of(context)!.cancel,
+              style: const TextStyle(
+                color: AppTheme.textSecondary,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
               ),
+              textAlign: TextAlign.center,
             ),
           ),
-          const SizedBox(width: 8),
-          Flexible(
-            child: ElevatedButton(
-              onPressed: () {
-                final url = controller.text.trim();
-                if (url.isNotEmpty) {
-                  final newRelay = Relay(url: url, isHealthy: true);
-                  ref.read(relaysProvider.notifier).addRelay(newRelay);
-                  Navigator.pop(dialogContext);
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.activeColor,
-                foregroundColor: Colors.black,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          const SizedBox(width: 12),
+          ElevatedButton(
+            onPressed: () {
+              final url = controller.text.trim();
+              if (url.isNotEmpty) {
+                final newRelay = Relay(url: url, isHealthy: true);
+                ref.read(relaysProvider.notifier).addRelay(newRelay);
+                Navigator.pop(dialogContext);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.activeColor,
+              foregroundColor: Colors.black,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
               ),
-              child: Text(
-                S.of(context)!.add,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-                textAlign: TextAlign.center,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            ),
+            child: Text(
+              S.of(context)!.add,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
               ),
+              textAlign: TextAlign.center,
             ),
           ),
         ],
@@ -189,49 +185,45 @@ class RelaySelector extends ConsumerWidget {
             ),
           ),
           actions: [
-            Flexible(
-              child: TextButton(
-                onPressed: () => Navigator.pop(dialogContext),
-                child: Text(
-                  S.of(context)!.cancel,
-                  style: const TextStyle(
-                    color: AppTheme.textSecondary,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  textAlign: TextAlign.center,
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(
+                S.of(context)!.cancel,
+                style: const TextStyle(
+                  color: AppTheme.textSecondary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
                 ),
+                textAlign: TextAlign.center,
               ),
             ),
-            const SizedBox(width: 8),
-            Flexible(
-              child: ElevatedButton(
-                onPressed: () {
-                  final newUrl = controller.text.trim();
-                  if (newUrl.isNotEmpty && newUrl != relay.url) {
-                    final updatedRelay = relay.copyWith(url: newUrl);
-                    ref
-                        .read(relaysProvider.notifier)
-                        .updateRelay(relay, updatedRelay);
-                  }
-                  Navigator.pop(dialogContext);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.activeColor,
-                  foregroundColor: Colors.black,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            const SizedBox(width: 12),
+            ElevatedButton(
+              onPressed: () {
+                final newUrl = controller.text.trim();
+                if (newUrl.isNotEmpty && newUrl != relay.url) {
+                  final updatedRelay = relay.copyWith(url: newUrl);
+                  ref
+                      .read(relaysProvider.notifier)
+                      .updateRelay(relay, updatedRelay);
+                }
+                Navigator.pop(dialogContext);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.activeColor,
+                foregroundColor: Colors.black,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: Text(
-                  S.of(context)!.save,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  textAlign: TextAlign.center,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              ),
+              child: Text(
+                S.of(context)!.save,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
                 ),
+                textAlign: TextAlign.center,
               ),
             ),
           ],

@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0+4]
+
+### Added
+- Comprehensive relay URL validation with proper WebSocket protocol checking
+- Real-time relay connectivity testing using direct WebSocket connections
+- Loading indicators during relay validation and testing process
+- Enhanced error messages for invalid relay URLs with helpful formatting hints
+- Debug-only display mode for Current Trade Index Card (hidden in release builds)
+
+### Fixed
+- Relay connectivity testing now accurately detects non-existent or unreachable relays
+- Invalid relay URLs (like "holahola" or "wss://xrelay.damus.io") now properly show as unhealthy
+- Relay health status now reflects actual Nostr protocol compatibility
+- False positive connectivity results for non-working relays eliminated
+- Proper cleanup of WebSocket connections during relay testing
+
+### Changed
+- Replaced dart_nostr library-based testing with direct WebSocket implementation
+- Improved relay validation logic with ws:// and wss:// protocol requirements
+- Enhanced relay testing with real Nostr REQ/response message cycles
+- Updated relay health checking to use actual connectivity verification
+- Optimized relay testing timeouts for better user experience
+
+### Security
+- Current Trade Index Card now hidden in production builds for enhanced privacy
+- Relay testing isolated from main app Nostr connections to prevent interference
+
 ## [1.0.0+3]
 
 ### Fixed
