@@ -684,5 +684,15 @@
   "editRelay": "Editar Relay",
   "relayUrl": "URL del Relay",
   "add": "Agregar",
-  "save": "Guardar"
+  "save": "Guardar",
+  
+  "@_comment_notifications": "Texto de Pantalla de Notificaciones",
+  "notifications": "Notificaciones",
+  "noNotifications": "Sin notificaciones",
+  "noNotificationsDescription": "Aún no tienes notificaciones. Las nuevas alertas de intercambio y actualizaciones aparecerán aquí.",
+  "errorLoadingNotifications": "Error al cargar notificaciones",
+  "retry": "Reintentar",
+  "markAsRead": "Marcar como leído",
+  "markAllAsRead": "Marcar todo como leído",
+  "clearAll": "Limpiar todo"
 }

@@ -654,5 +654,15 @@
   "editRelay": "Edit Relay",
   "relayUrl": "Relay URL",
   "add": "Add",
-  "save": "Save"
+  "save": "Save",
+  
+  "@_comment_notifications": "Notifications Screen Text",
+  "notifications": "Notifications",
+  "noNotifications": "No notifications",
+  "noNotificationsDescription": "You don't have any notifications yet. New trade alerts and updates will appear here.",
+  "errorLoadingNotifications": "Error loading notifications",
+  "retry": "Retry",
+  "markAsRead": "Mark as read",
+  "markAllAsRead": "Mark all as read",
+  "clearAll": "Clear all"
 }

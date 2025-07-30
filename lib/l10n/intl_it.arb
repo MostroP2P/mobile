@@ -692,5 +692,15 @@
   "editRelay": "Modifica Relay",
   "relayUrl": "URL del Relay",
   "add": "Aggiungi",
-  "save": "Salva"
+  "save": "Salva",
+  
+  "@_comment_notifications": "Testo Schermata Notifiche",
+  "notifications": "Notifiche",
+  "noNotifications": "Nessuna notifica",
+  "noNotificationsDescription": "Non hai ancora notifiche. I nuovi avvisi di scambio e gli aggiornamenti appariranno qui.",
+  "errorLoadingNotifications": "Errore nel caricamento delle notifiche",
+  "retry": "Riprova",
+  "markAsRead": "Segna come letto",
+  "markAllAsRead": "Segna tutto come letto",
+  "clearAll": "Cancella tutto"
 }
