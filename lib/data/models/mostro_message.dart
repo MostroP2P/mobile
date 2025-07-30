@@ -38,6 +38,7 @@ class MostroMessage<T extends Payload> {
     required Status originalStatus,
     required NostrEvent publicEvent,
   }) {
+    
     // Extract complete information from the 38383 public event
     final fiatAmountRange = publicEvent.fiatAmount;
     final paymentMethodsList = publicEvent.paymentMethods;
@@ -63,9 +64,9 @@ class MostroMessage<T extends Payload> {
         maxAmount: fiatAmountRange.maximum,
         premium: int.tryParse(publicEvent.premium ?? '0') ?? 0,
         
-        // Timestamps for countdown timer and creation info
-        createdAt: publicEvent.createdAt?.millisecondsSinceEpoch,
-        expiresAt: publicEvent.expirationDate.millisecondsSinceEpoch,
+        // Use the raw created_at from the 38383 event (already in seconds)
+        createdAt: publicEvent.createdAt!.millisecondsSinceEpoch ~/ 1000,
+        expiresAt: publicEvent.expirationDate.millisecondsSinceEpoch ~/ 1000,
         
         // Master keys for reputation display (may be null, that's OK)
         masterBuyerPubkey: publicEvent.orderType == OrderType.buy 
