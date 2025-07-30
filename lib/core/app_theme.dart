@@ -41,6 +41,7 @@ class AppTheme {
   static const Color statusWarning = Color(0xFFF3CA29);
   static const Color statusError = Color(0xFFEF6A6A);
   static const Color statusActive = Color(0xFF9CD651);
+  static const Color statusInfo = Color.fromARGB(255, 42, 123, 214);
   
   // Colors for role chips
   static const Color createdByYouChip = Color(0xFF1565C0); // Colors.blue.shade700
