@@ -42,23 +42,23 @@ class _NotificationBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Positioned(
-      right: 8,
-      top: 8,
+      right: 6,
+      top: 6,
       child: Container(
-        padding: AppTheme.smallPadding,
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
         decoration: BoxDecoration(
-          color: AppTheme.statusSuccess,
-          borderRadius: BorderRadius.circular(10),
+          color: AppTheme.statusPendingBackground,
+          borderRadius: BorderRadius.circular(8),
         ),
         constraints: const BoxConstraints(
-          minWidth: 16,
-          minHeight: 16,
+          minWidth: 12,
+          minHeight: 12,
         ),
         child: Text(
           count > 99 ? '99+' : count.toString(),
           style: const TextStyle(
-            color: AppTheme.textPrimary,
-            fontSize: 10,
+            color: AppTheme.statusPendingText,
+            fontSize: 8,
             fontWeight: FontWeight.bold,
           ),
           textAlign: TextAlign.center,
