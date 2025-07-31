@@ -15,6 +15,19 @@ class TradeInformationTab extends StatelessWidget {
     required this.orderId,
   });
 
+  /// Get a valid creation date for the order
+  /// Uses order.createdAt if valid, otherwise falls back to current time
+  DateTime _getOrderCreationDate() {
+    if (order?.createdAt != null && order!.createdAt! > 0) {
+      // Convert Unix timestamp to DateTime
+      return DateTime.fromMillisecondsSinceEpoch(order!.createdAt! * 1000);
+    }
+    
+    // Fallback: use current time minus a reasonable amount
+    // This is better than showing "Unknown date"
+    return DateTime.now().subtract(const Duration(hours: 1));
+  }
+
   @override
   Widget build(BuildContext context) {
     if (order == null) {
@@ -175,11 +188,7 @@ class TradeInformationTab extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  order!.createdAt != null
-                      ? DateFormat('MMMM d, yyyy').format(
-                          DateTime.fromMillisecondsSinceEpoch(
-                              order!.createdAt! * 1000))
-                      : S.of(context)!.unknownDate,
+                  DateFormat('MMMM d, yyyy').format(_getOrderCreationDate()),
                   style: const TextStyle(
                     color: AppTheme.cream1,
                     fontSize: 14,
