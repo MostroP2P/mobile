@@ -79,6 +79,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         if (event.payload is PaymentRequest) {
           navProvider.go('/pay_invoice/${event.id!}');
         }
+        ref.read(sessionNotifierProvider.notifier).saveSession(session);
         break;
       case Action.fiatSentOk:
         final peer = event.getPayload<Peer>();
