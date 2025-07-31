@@ -12,7 +12,7 @@ class NotificationsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final notifications = ref.watch(notificationsProvider);
+    final notifications = ref.watch(notificationsHistoryProvider);
     
     return Scaffold(
       backgroundColor: AppTheme.backgroundDark,

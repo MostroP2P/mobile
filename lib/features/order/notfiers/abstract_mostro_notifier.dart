@@ -6,6 +6,7 @@ import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
+import 'package:mostro_mobile/features/notifications/providers/notifications_provider.dart';
 import 'package:logger/logger.dart';
 
 class AbstractMostroNotifier extends StateNotifier<OrderState> {
@@ -69,12 +70,10 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
 
   void handleEvent(MostroMessage event) {
     final navProvider = ref.read(navigationProvider.notifier);
-    final notifProvider = ref.read(notificationProvider.notifier);
+    final notifProvider = ref.read(notificationsProvider.notifier);
     final mostroInstance = ref.read(orderRepositoryProvider).mostroInstance;
 
     switch (event.action) {
-      case Action.newOrder:
-        break;
       case Action.payInvoice:
         if (event.payload is PaymentRequest) {
           navProvider.go('/pay_invoice/${event.id!}');
@@ -82,60 +81,60 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         break;
       case Action.fiatSentOk:
         final peer = event.getPayload<Peer>();
-        notifProvider.showInformation(event.action, values: {
+        notifProvider.notifyBoth(event.action, values: {
           'buyer_npub': peer?.publicKey ?? 'Unknown',
-        });
+        }, orderId: orderId);
         break;
       case Action.released:
-        notifProvider.showInformation(event.action, values: {
+        notifProvider.notifyBoth(event.action, values: {
           'seller_npub': '',
-        });
+        }, orderId: orderId);
         break;
       case Action.canceled:
         ref.read(mostroStorageProvider).deleteAllMessagesByOrderId(orderId);
         ref.read(sessionNotifierProvider.notifier).deleteSession(orderId);
         navProvider.go('/order_book');
-        notifProvider.showInformation(event.action, values: {'id': orderId});
+        notifProvider.showTemporary(event.action, values: {'id': orderId});
         ref.invalidateSelf();
         break;
       case Action.cooperativeCancelInitiatedByYou:
-        notifProvider.showInformation(event.action, values: {
+        notifProvider.notifyBoth(event.action, values: {
           'id': event.id,
-        });
+        }, orderId: orderId);
         break;
       case Action.cooperativeCancelInitiatedByPeer:
-        notifProvider.showInformation(event.action, values: {
+        notifProvider.notifyBoth(event.action, values: {
           'id': event.id!,
-        });
+        }, orderId: orderId);
         break;
       case Action.disputeInitiatedByYou:
         final dispute = event.getPayload<Dispute>()!;
-        notifProvider.showInformation(event.action, values: {
+        notifProvider.notifyBoth(event.action, values: {
           'id': event.id!,
           'user_token': dispute.disputeId,
-        });
+        }, orderId: orderId);
         break;
       case Action.disputeInitiatedByPeer:
         final dispute = event.getPayload<Dispute>()!;
-        notifProvider.showInformation(event.action, values: {
+        notifProvider.notifyBoth(event.action, values: {
           'id': event.id!,
           'user_token': dispute.disputeId,
-        });
+        }, orderId: orderId);
         break;
       case Action.cooperativeCancelAccepted:
-        notifProvider.showInformation(event.action, values: {
+        notifProvider.showTemporary(event.action, values: {
           'id': event.id!,
         });
         break;
       case Action.holdInvoicePaymentAccepted:
         final order = event.getPayload<Order>();
-        notifProvider.showInformation(event.action, values: {
+        notifProvider.notifyBoth(event.action, values: {
           'seller_npub': order?.sellerTradePubkey ?? 'Unknown',
           'id': order?.id,
           'fiat_code': order?.fiatCode,
           'fiat_amount': order?.fiatAmount,
           'payment_method': order?.paymentMethod,
-        });
+        }, orderId: orderId);
         // add seller tradekey to session
         // open chat
         final sessionProvider = ref.read(sessionNotifierProvider.notifier);
@@ -153,21 +152,21 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         chat.subscribe();
         break;
       case Action.holdInvoicePaymentSettled:
-        notifProvider.showInformation(event.action, values: {
+        notifProvider.notifyBoth(event.action, values: {
           'buyer_npub': state.order?.buyerTradePubkey ?? 'Unknown',
-        });
+        }, orderId: orderId);
         navProvider.go('/trade_detail/$orderId');
         break;
       case Action.waitingSellerToPay:
         navProvider.go('/trade_detail/$orderId');
-        notifProvider.showInformation(event.action, values: {
+        notifProvider.showTemporary(event.action, values: {
           'id': event.id,
           'expiration_seconds':
               mostroInstance?.expirationSeconds ?? Config.expirationSeconds,
         });
         break;
       case Action.waitingBuyerInvoice:
-        notifProvider.showInformation(event.action, values: {
+        notifProvider.showTemporary(event.action, values: {
           'expiration_seconds':
               mostroInstance?.expirationSeconds ?? Config.expirationSeconds,
         });
@@ -202,24 +201,21 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         break;
       case Action.cantDo:
         final cantDo = event.getPayload<CantDo>();
-        ref.read(notificationProvider.notifier).showInformation(
-          event.action,
-          values: {
-            'action': cantDo?.cantDoReason.toString(),
-          },
-        );
+        notifProvider.notifyBoth(event.action, values: {
+          'action': cantDo?.cantDoReason.toString(),
+        }, orderId: orderId);
         break;
       case Action.adminSettled:
-        notifProvider.showInformation(event.action, values: {});
+        notifProvider.notifyBoth(event.action, values: {}, orderId: orderId);
         break;
       case Action.paymentFailed:
-        notifProvider.showInformation(event.action, values: {
+        notifProvider.notifyBoth(event.action, values: {
           'payment_attempts': -1,
           'payment_retries_interval': -1000
-        });
+        }, orderId: orderId);
         break;
       default:
-        notifProvider.showInformation(event.action, values: {});
+        notifProvider.showTemporary(event.action, values: {});
         break;
     }
   }

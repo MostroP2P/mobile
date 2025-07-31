@@ -9,6 +9,56 @@ import 'package:mostro_mobile/features/notifications/widgets/notification_type_i
 import 'package:mostro_mobile/shared/utils/datetime_extensions_utils.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
+// Helper function to resolve localization keys
+String _resolveNotificationText(BuildContext context, String key) {
+  final s = S.of(context)!;
+  
+  // Map notification keys to actual localized strings
+  switch (key) {
+    case 'notification_new_order_title':
+      return s.notification_new_order_title;
+    case 'notification_new_order_message':
+      return s.notification_new_order_message;
+    case 'notification_order_taken_title':
+      return s.notification_order_taken_title;
+    case 'notification_sell_order_taken_message':
+      return s.notification_sell_order_taken_message;
+    case 'notification_buy_order_taken_message':
+      return s.notification_buy_order_taken_message;
+    case 'notification_payment_required_title':
+      return s.notification_payment_required_title;
+    case 'notification_payment_required_message':
+      return s.notification_payment_required_message;
+    case 'notification_fiat_sent_title':
+      return s.notification_fiat_sent_title;
+    case 'notification_fiat_sent_message':
+      return s.notification_fiat_sent_message;
+    case 'notification_bitcoin_released_title':
+      return s.notification_bitcoin_released_title;
+    case 'notification_bitcoin_released_message':
+      return s.notification_bitcoin_released_message;
+    case 'notification_dispute_started_title':
+      return s.notification_dispute_started_title;
+    case 'notification_dispute_started_message':
+      return s.notification_dispute_started_message;
+    case 'notification_order_canceled_title':
+      return s.notification_order_canceled_title;
+    case 'notification_order_canceled_message':
+      return s.notification_order_canceled_message;
+    case 'notification_new_message_title':
+      return s.notification_new_message_title;
+    case 'notification_new_message_message':
+      return s.notification_new_message_message;
+    case 'notification_order_update_title':
+      return s.notification_order_update_title;
+    case 'notification_order_update_message':
+      return s.notification_order_update_message;
+    default:
+      // Fallback: if it's not a key, return as is (backward compatibility)
+      return key;
+  }
+}
+
 class NotificationItem extends ConsumerWidget {
   final NotificationModel notification;
 
@@ -124,7 +174,7 @@ class _NotificationHeader extends StatelessWidget {
       children: [
         Expanded(
           child: Text(
-            notification.title,
+            _resolveNotificationText(context, notification.title),
             style: _getTitleStyle(context),
           ),
         ),
@@ -167,7 +217,7 @@ class _NotificationMessage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(
-      notification.message,
+      _resolveNotificationText(context, notification.message),
       style: _getMessageStyle(context),
       maxLines: 2,
       overflow: TextOverflow.ellipsis,
