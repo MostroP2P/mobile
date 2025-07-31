@@ -106,7 +106,6 @@ class _ChatMessagesListState extends State<ChatMessagesList> {
     });
 
     return Container(
-      padding: const EdgeInsets.all(12),
       color: AppTheme.backgroundDark,
       child: ListView.builder(
         controller: _scrollController,
@@ -115,6 +114,13 @@ class _ChatMessagesListState extends State<ChatMessagesList> {
         physics: const AlwaysScrollableScrollPhysics(),
         // Add caching for better performance with many messages
         cacheExtent: 1000,
+        // Add padding to prevent messages from being cut off
+        padding: const EdgeInsets.only(
+          top: 12,
+          left: 12,
+          right: 12,
+          bottom: 100, // Extra space at bottom to prevent cutoff
+        ),
         itemBuilder: (context, index) {
           final message = sortedMessages[index];
           return MessageBubble(

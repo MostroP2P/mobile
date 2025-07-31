@@ -26,21 +26,44 @@ class MessageBubble extends StatelessWidget {
     }
     
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 16),
       alignment: isFromPeer ? Alignment.centerLeft : Alignment.centerRight,
-      child: GestureDetector(
-        onLongPress: () => _copyToClipboard(context, content),
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: isFromPeer ? _getPeerMessageColor(peerPubkey) : AppTheme.purpleAccent,
-            borderRadius: BorderRadius.circular(12),
+      child: Row(
+        mainAxisAlignment: isFromPeer ? MainAxisAlignment.start : MainAxisAlignment.end,
+        children: [
+          Flexible(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.75, // Max 75% of screen width
+                minWidth: 0,
+              ),
+              child: GestureDetector(
+                onLongPress: () => _copyToClipboard(context, content),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: isFromPeer ? _getPeerMessageColor(peerPubkey) : AppTheme.purpleAccent,
+                    borderRadius: BorderRadius.only(
+                      topLeft: const Radius.circular(16),
+                      topRight: const Radius.circular(16),
+                      bottomLeft: Radius.circular(isFromPeer ? 4 : 16),
+                      bottomRight: Radius.circular(isFromPeer ? 16 : 4),
+                    ),
+                  ),
+                  child: Text(
+                    content,
+                    style: const TextStyle(
+                      color: AppTheme.cream1,
+                      fontSize: 16,
+                      height: 1.4, // Better line height for readability
+                    ),
+                    softWrap: true,
+                  ),
+                ),
+              ),
+            ),
           ),
-          child: Text(
-            content,
-            style: const TextStyle(color: AppTheme.cream1),
-          ),
-        ),
+        ],
       ),
     );
   }
