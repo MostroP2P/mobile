@@ -408,10 +408,11 @@ class OrderState {
         ],
       },
       Status.paymentFailed: {
-        Action.paymentFailed: [
+        Action.addInvoice: [
           // Only allow add invoice, no cancel or dispute during retrying
           Action.addInvoice,
         ],
+        Action.paymentFailed: [],
       },
       Status.active: {
         Action.holdInvoicePaymentAccepted: [
