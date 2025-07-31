@@ -122,6 +122,10 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                   InfoButtons(
                     selectedInfoType: _selectedInfoType,
                     onInfoTypeChanged: (type) {
+                      // Dismiss keyboard when selecting info tabs to prevent overlap
+                      if (type != null) {
+                        FocusScope.of(context).unfocus();
+                      }
                       setState(() {
                         _selectedInfoType = type;
                       });
@@ -166,6 +170,10 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                 orderId: widget.orderId,
                 selectedInfoType: _selectedInfoType,
                 onInfoTypeChanged: (type) {
+                  // Dismiss keyboard when selecting info tabs to prevent overlap
+                  if (type != null) {
+                    FocusScope.of(context).unfocus();
+                  }
                   setState(() {
                     _selectedInfoType = type;
                   });
