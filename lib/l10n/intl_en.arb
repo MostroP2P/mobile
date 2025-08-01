@@ -45,6 +45,23 @@
       }
     }
   },
+  "addInvoicePaymentFailed": "The payment to your previous invoice could not be completed. Please send me a new invoice for {amount} satoshis equivalent to {fiat_amount} {fiat_code} to complete the payment.",
+  "@addInvoicePaymentFailed": {
+    "placeholders": {
+      "amount": {
+        "type": "String",
+        "description": "The amount of satoshis"
+      },
+      "fiat_amount": {
+        "type": "String",
+        "description": "The fiat amount"
+      },
+      "fiat_code": {
+        "type": "String",
+        "description": "The fiat currency code"
+      }
+    }
+  },
   "waitingSellerToPay": "Please wait. I’ve sent a payment request to the seller to send the Sats for the order ID {id}. If the seller doesn’t complete the payment within {expiration_seconds} minutes, the trade will be canceled.",
   "@waitingSellerToPay": {
     "placeholders": {
@@ -88,7 +105,8 @@
   "adminCanceledUsers": "Admin has canceled the order ID: {id}.",
   "adminSettledAdmin": "You have completed the order ID: {id}.",
   "adminSettledUsers": "Admin has completed the order ID: {id}.",
-  "paymentFailed": "I couldn’t send the Sats. I will try {payment_attempts} more times in {payment_retries_interval} minutes. Please ensure your node or wallet is online.",
+  "paymentFailed": "The payment attempt to your invoice has failed. I will retry {payment_attempts} more times, with an interval of {payment_retries_interval} minutes between each attempt. Please ensure your wallet is online to complete the payment.",
+  "paymentFailedText": "Payment Failed",
   "invoiceUpdated": "The invoice has been successfully updated!",
   "holdInvoicePaymentCanceled": "The invoice was canceled; your Sats are available in your wallet again.",
   "cantDo": "You are not allowed to {action} for this order!",

@@ -45,6 +45,23 @@
       }
     }
   },
+  "addInvoicePaymentFailed": "Non è stato possibile completare il pagamento alla tua fattura precedente. Ti prego di inviarmi una nuova fattura per {amount} satoshi equivalente a {fiat_amount} {fiat_code} per completare il pagamento.",
+  "@addInvoicePaymentFailed": {
+    "placeholders": {
+      "amount": {
+        "type": "String",
+        "description": "L'importo in satoshi"
+      },
+      "fiat_amount": {
+        "type": "String",
+        "description": "L'importo fiat"
+      },
+      "fiat_code": {
+        "type": "String",
+        "description": "Il codice della valuta fiat"
+      }
+    }
+  },
   "waitingSellerToPay": "Attendi un momento per favore. Ho inviato una richiesta di pagamento al venditore per rilasciare i Sats per l'ordine ID {id}. Una volta effettuato il pagamento, vi connetterò entrambi. Se il venditore non completa il pagamento entro {expiration_seconds} minuti lo scambio sarà annullato.",
   "@waitingSellerToPay": {
     "placeholders": {
@@ -88,7 +105,8 @@
   "adminCanceledUsers": "L'amministratore ha annullato l'ordine ID: {id}!",
   "adminSettledAdmin": "Hai completato l'ordine ID: {id}!",
   "adminSettledUsers": "L'amministratore ha completato l'ordine ID: {id}!",
-  "paymentFailed": "Ho provato a inviarti i Sats ma il pagamento della tua invoice è fallito. Tenterò {payment_attempts} volte ancora ogni {payment_retries_interval} minuti. Per favore assicurati che il tuo nodo/portafoglio lightning sia online.",
+  "paymentFailed": "Il tentativo di pagamento alla tua fattura è fallito. Riproverò {payment_attempts} volte ancora, con un intervallo di {payment_retries_interval} minuti tra ogni tentativo. Per favore, assicurati che il tuo portafoglio sia online per completare il pagamento.",
+  "paymentFailedText": "Pagamento Fallito",
   "invoiceUpdated": "Invoice aggiornata con successo!",
   "holdInvoicePaymentCanceled": "Invoice annullata; i tuoi Sats saranno nuovamente disponibili nel tuo portafoglio.",
   "cantDo": "Non sei autorizzato a {action} per questo ordine!",

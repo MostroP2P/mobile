@@ -45,6 +45,23 @@
       }
     }
   },
+  "addInvoicePaymentFailed": "No fue posible completar el pago a tu factura anterior. Por favor, envíame una nueva factura por {amount} satoshis, equivalente a {fiat_amount} {fiat_code}, para realizar el pago.",
+  "@addInvoicePaymentFailed": {
+    "placeholders": {
+      "amount": {
+        "type": "String",
+        "description": "La cantidad de satoshis"
+      },
+      "fiat_amount": {
+        "type": "String",
+        "description": "La cantidad fiat"
+      },
+      "fiat_code": {
+        "type": "String",
+        "description": "El código de moneda fiat"
+      }
+    }
+  },
   "waitingSellerToPay": "Por favor espera. He enviado una solicitud de pago al vendedor para enviar los Sats para la orden con ID {id}. Si el vendedor no completa el pago dentro de {expiration_seconds} minutos, el intercambio será cancelado.",
   "@waitingSellerToPay": {
     "placeholders": {
@@ -88,7 +105,8 @@
   "adminCanceledUsers": "El administrador ha cancelado la orden ID: {id}.",
   "adminSettledAdmin": "Has completado la orden ID: {id}.",
   "adminSettledUsers": "El administrador ha completado la orden ID: {id}.",
-  "paymentFailed": "No pude enviar los Sats. Intentaré {payment_attempts} veces más en {payment_retries_interval} minutos. Por favor asegúrate de que tu nodo o billetera esté en línea.",
+  "paymentFailed": "El intento de pago a tu factura ha fallado. Volveré a intentarlo {payment_attempts} veces más, con un intervalo de {payment_retries_interval} minutos entre cada intento. Por favor, asegúrate de que tu billetera esté en línea para poder completar el pago.",
+  "paymentFailedText": "Pago Fallido",
   "invoiceUpdated": "¡La factura ha sido actualizada exitosamente!",
   "holdInvoicePaymentCanceled": "La factura fue cancelada; tus Sats están disponibles en tu billetera nuevamente.",
   "cantDo": "¡No tienes permitido {action} para esta orden!",

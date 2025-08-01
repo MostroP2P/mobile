@@ -10,6 +10,7 @@ class OrderState {
   final CantDo? cantDo;
   final Dispute? dispute;
   final Peer? peer;
+  final PaymentFailed? paymentFailed;
   final _logger = Logger();
 
   OrderState({
@@ -20,6 +21,7 @@ class OrderState {
     this.cantDo,
     this.dispute,
     this.peer,
+    this.paymentFailed,
   });
 
   factory OrderState.fromMostroMessage(MostroMessage message) {
@@ -31,12 +33,13 @@ class OrderState {
       cantDo: message.getPayload<CantDo>(),
       dispute: message.getPayload<Dispute>(),
       peer: message.getPayload<Peer>(),
+      paymentFailed: message.getPayload<PaymentFailed>(),
     );
   }
 
   @override
   String toString() =>
-      'OrderState(status: $status, action: $action, order: $order, paymentRequest: $paymentRequest, cantDo: $cantDo, dispute: $dispute, peer: $peer)';
+      'OrderState(status: $status, action: $action, order: $order, paymentRequest: $paymentRequest, cantDo: $cantDo, dispute: $dispute, peer: $peer, paymentFailed: $paymentFailed)';
 
   @override
   bool operator ==(Object other) =>
@@ -48,6 +51,7 @@ class OrderState {
           other.paymentRequest == paymentRequest &&
           other.cantDo == cantDo &&
           other.dispute == dispute &&
+          other.paymentFailed == paymentFailed &&
           other.peer == peer;
 
   @override
@@ -59,6 +63,7 @@ class OrderState {
         cantDo,
         dispute,
         peer,
+        paymentFailed,
       );
 
   OrderState copyWith({
@@ -69,6 +74,7 @@ class OrderState {
     CantDo? cantDo,
     Dispute? dispute,
     Peer? peer,
+    PaymentFailed? paymentFailed,
   }) {
     return OrderState(
       status: status ?? this.status,
@@ -78,6 +84,7 @@ class OrderState {
       cantDo: cantDo ?? this.cantDo,
       dispute: dispute ?? this.dispute,
       peer: peer ?? this.peer,
+      paymentFailed: paymentFailed ?? this.paymentFailed,
     );
   }
 
@@ -135,6 +142,7 @@ class OrderState {
       cantDo: message.getPayload<CantDo>() ?? cantDo,
       dispute: message.getPayload<Dispute>() ?? dispute,
       peer: newPeer,
+      paymentFailed: message.getPayload<PaymentFailed>() ?? paymentFailed,
     );
 
     _logger.i('New state: ${newState.status} - ${newState.action}');
@@ -154,7 +162,14 @@ class OrderState {
 
       // Actions that should set status to waiting-buyer-invoice
       case Action.waitingBuyerInvoice:
+        return Status.waitingBuyerInvoice;
+      
       case Action.addInvoice:
+        // If current status is paymentFailed, maintain it for UI consistency
+        // Otherwise, transition to waitingBuyerInvoice for normal flow
+        if (status == Status.paymentFailed) {
+          return Status.paymentFailed;
+        }
         return Status.waitingBuyerInvoice;
 
       // FIX: Cuando alguien toma una orden, debe cambiar el status inmediatamente
@@ -213,9 +228,12 @@ class OrderState {
       case Action.adminSettled:
         return Status.settledByAdmin;
 
+      // Actions that should set status to payment failed
+      case Action.paymentFailed:
+        return Status.paymentFailed;
+
       // Informational actions that should preserve current status
       case Action.rateUser:
-      case Action.paymentFailed:
       case Action.invoiceUpdated:
       case Action.sendDm:
       case Action.tradePubkey:
@@ -274,6 +292,12 @@ class OrderState {
           Action.cancel,
         ],
       },
+      Status.paymentFailed: {
+        Action.paymentFailed: [
+          // Only allow payment retry, no cancel or dispute during retrying
+          Action.payInvoice,
+        ],
+      },
       Status.active: {
         Action.buyerTookOrder: [
           Action.cancel,
@@ -359,6 +383,12 @@ class OrderState {
           Action.sendDm,
           Action.cancel,
           Action.release,
+        ],
+      },
+      Status.settledHoldInvoice: {
+        Action.addInvoice: [
+          Action.addInvoice,
+          Action.cancel,
         ],
       },
     },
@@ -391,6 +421,13 @@ class OrderState {
           Action.cancel,
         ],
       },
+      Status.paymentFailed: {
+        Action.addInvoice: [
+          // Only allow add invoice, no cancel or dispute during retrying
+          Action.addInvoice,
+        ],
+        Action.paymentFailed: [],
+      },
       Status.active: {
         Action.holdInvoicePaymentAccepted: [
           Action.fiatSent,
@@ -470,6 +507,12 @@ class OrderState {
         ],
         Action.disputeInitiatedByPeer: [
           Action.sendDm,
+          Action.cancel,
+        ],
+      },
+      Status.settledHoldInvoice: {
+        Action.addInvoice: [
+          Action.addInvoice,
           Action.cancel,
         ],
       },

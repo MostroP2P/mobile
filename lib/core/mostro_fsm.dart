@@ -102,10 +102,26 @@ class MostroFSM {
     Status.waitingPayment: {
       Role.seller: {
         Action.payInvoice: Status.active,
+        Action.paymentFailed: Status.paymentFailed,
         Action.cancel: Status.canceled,
       },
       Role.buyer: {
+        Action.paymentFailed: Status.paymentFailed,
         Action.cancel: Status.canceled,
+      },
+      Role.admin: {},
+    },
+    // ───────────────────────── PAYMENT FAILED ────────────────────
+    Status.paymentFailed: {
+      Role.buyer: {
+        Action.addInvoice: Status.waitingPayment,
+        Action.cancel: Status.canceled,
+        Action.dispute: Status.dispute,
+      },
+      Role.seller: {
+        Action.payInvoice: Status.active,
+        Action.cancel: Status.canceled,
+        Action.dispute: Status.dispute,
       },
       Role.admin: {},
     },
