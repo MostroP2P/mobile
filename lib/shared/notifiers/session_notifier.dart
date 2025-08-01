@@ -68,8 +68,8 @@ class SessionNotifier extends StateNotifier<List<Session>> {
   Future<Session> newSession(
       {String? orderId, int? requestId, Role? role}) async {
     final masterKey = ref.read(keyManagerProvider).masterKeyPair!;
-    final keyIndex = await ref.read(keyManagerProvider).getCurrentKeyIndex();
-    final tradeKey = await ref.read(keyManagerProvider).deriveTradeKey();
+    final keyIndex = await ref.read(keyManagerProvider).getCurrentKeyIndex() + 1;
+    final tradeKey = await ref.read(keyManagerProvider).deriveTradeKeyFromIndex(keyIndex);
 
     final session = Session(
       startTime: DateTime.now(),

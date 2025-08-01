@@ -68,6 +68,8 @@ class KeyManager {
     return _storage.readMnemonic();
   }
 
+  /// Derive a trade key for the current index WITHOUT incrementing the index
+  /// This should be used during session creation
   Future<NostrKeyPairs> deriveTradeKey() async {
     final masterKeyHex = await _storage.readMasterKey();
     if (masterKeyHex == null) {
@@ -78,10 +80,14 @@ class KeyManager {
     final tradePrivateHex =
         _derivator.derivePrivateKey(masterKeyHex, currentIndex);
 
-    // increment index
-    await setCurrentKeyIndex(currentIndex + 1);
-
     return NostrKeyPairs(private: tradePrivateHex);
+  }
+
+  /// Increment the trade index after receiving confirmation from Mostrod
+  /// This should only be called after successful order creation or take actions
+  Future<void> incrementTradeIndex() async {
+    final currentIndex = await _storage.readTradeKeyIndex();
+    await setCurrentKeyIndex(currentIndex + 1);
   }
 
   NostrKeyPairs deriveTradeKeyPair(int index) {

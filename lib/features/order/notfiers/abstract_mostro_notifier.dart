@@ -6,6 +6,7 @@ import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
+import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:logger/logger.dart';
 
 class AbstractMostroNotifier extends StateNotifier<OrderState> {
@@ -72,6 +73,10 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
     final notifProvider = ref.read(notificationProvider.notifier);
     final mostroInstance = ref.read(orderRepositoryProvider).mostroInstance;
 
+    // Increment trade index after receiving confirmation from Mostrod
+    // This should happen for actions that confirm successful event transmission
+    _handleTradeIndexIncrement(event.action);
+
     switch (event.action) {
       case Action.newOrder:
         break;
@@ -92,6 +97,12 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         });
         break;
       case Action.canceled:
+        final keyManager = ref.read(keyManagerProvider);
+        keyManager.getCurrentKeyIndex().then((index) {
+          if (index == session.keyIndex) {
+            keyManager.setCurrentKeyIndex(index - 1);
+          }
+        });
         ref.read(mostroStorageProvider).deleteAllMessagesByOrderId(orderId);
         ref.read(sessionNotifierProvider.notifier).deleteSession(orderId);
         navProvider.go('/order_book');
@@ -223,6 +234,33 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         break;
       default:
         notifProvider.showInformation(event.action, values: {});
+        break;
+    }
+  }
+
+  /// Handle trade index increment after receiving confirmation from Mostrod
+  /// This should only increment for actions that confirm successful event transmission
+  void _handleTradeIndexIncrement(Action action) {
+    // Only increment trade index for actions that confirm successful order creation or take actions
+    switch (action) {
+      // Order creation confirmation - when Mostrod confirms the order was created
+      case Action.waitingBuyerInvoice:
+      case Action.waitingSellerToPay:
+      case Action.holdInvoicePaymentAccepted:
+      // Take action confirmations - when Mostrod confirms take buy/sell was successful
+      case Action.buyerTookOrder:
+      case Action.addInvoice:
+        // Increment trade index after successful confirmation
+        logger.i('Incrementing trade index for action: $action');
+        ref
+            .read(keyManagerProvider)
+            .setCurrentKeyIndex(session.keyIndex)
+            .catchError((error) {
+          logger.e('Failed to increment trade index: $error');
+        });
+        break;
+      default:
+        // Don't increment for other actions
         break;
     }
   }
