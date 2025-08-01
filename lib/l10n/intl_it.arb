@@ -75,6 +75,15 @@
       }
     }
   },
+  "orderTakenWaitingCounterpart": "Il tuo ordine è stato preso da un altro utente. Ora devi aspettare che decida se vuole continuare. Se accetta, ti avviserò per completare la tua parte. Per ora non devi fare nulla.\nSe non risponde in {expiration_seconds} minuti, l'ordine sarà nuovamente disponibile per altri utenti.",
+  "@orderTakenWaitingCounterpart": {
+    "placeholders": {
+      "expiration_seconds": {
+        "type": "int",
+        "description": "Il tempo di scadenza in minuti"
+      }
+    }
+  },
   "waitingBuyerInvoice": "Pagamento ricevuto! I tuoi Sats sono ora 'custoditi' nel tuo portafoglio. Attendi un momento per favore. Ho richiesto all'acquirente di fornire una invoice lightning. Una volta ricevuta, vi connetterò entrambi, altrimenti se non la riceviamo entro {expiration_seconds} minuti i tuoi Sats saranno nuovamente disponibili nel tuo portafoglio e lo scambio sarà annullato.",
   "@waitingBuyerInvoice": {
     "placeholders": {
