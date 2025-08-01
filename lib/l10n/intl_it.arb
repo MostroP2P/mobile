@@ -45,6 +45,23 @@
       }
     }
   },
+  "addInvoicePaymentFailed": "Non è stato possibile completare il pagamento alla tua fattura precedente. Ti prego di inviarmi una nuova fattura per {amount} satoshi equivalente a {fiat_amount} {fiat_code} per completare il pagamento.",
+  "@addInvoicePaymentFailed": {
+    "placeholders": {
+      "amount": {
+        "type": "String",
+        "description": "L'importo in satoshi"
+      },
+      "fiat_amount": {
+        "type": "String",
+        "description": "L'importo fiat"
+      },
+      "fiat_code": {
+        "type": "String",
+        "description": "Il codice della valuta fiat"
+      }
+    }
+  },
   "waitingSellerToPay": "Attendi un momento per favore. Ho inviato una richiesta di pagamento al venditore per rilasciare i Sats per l'ordine ID {id}. Una volta effettuato il pagamento, vi connetterò entrambi. Se il venditore non completa il pagamento entro {expiration_seconds} minuti lo scambio sarà annullato.",
   "@waitingSellerToPay": {
     "placeholders": {
@@ -88,7 +105,8 @@
   "adminCanceledUsers": "L'amministratore ha annullato l'ordine ID: {id}!",
   "adminSettledAdmin": "Hai completato l'ordine ID: {id}!",
   "adminSettledUsers": "L'amministratore ha completato l'ordine ID: {id}!",
-  "paymentFailed": "Ho provato a inviarti i Sats ma il pagamento della tua invoice è fallito. Tenterò {payment_attempts} volte ancora ogni {payment_retries_interval} minuti. Per favore assicurati che il tuo nodo/portafoglio lightning sia online.",
+  "paymentFailed": "Il tentativo di pagamento alla tua fattura è fallito. Riproverò {payment_attempts} volte ancora, con un intervallo di {payment_retries_interval} minuti tra ogni tentativo. Per favore, assicurati che il tuo portafoglio sia online per completare il pagamento.",
+  "paymentFailedText": "Pagamento Fallito",
   "invoiceUpdated": "Invoice aggiornata con successo!",
   "holdInvoicePaymentCanceled": "Invoice annullata; i tuoi Sats saranno nuovamente disponibili nel tuo portafoglio.",
   "cantDo": "Non sei autorizzato a {action} per questo ordine!",
@@ -353,7 +371,7 @@
   "priceType": "Tipo di prezzo",
   "fixedPrice": "Prezzo fisso",
   "market": "Mercato",
-  "priceTypeTooltip": "• Seleziona Prezzo di Mercato se vuoi usare il prezzo che ha Bitcoin quando qualcuno prende la tua offerta.\\n• Seleziona Prezzo Fisso se vuoi definire l'importo esatto di Bitcoin che scambierai.",
+  "priceTypeTooltip": "• Seleziona Prezzo di Mercato se vuoi usare il prezzo che ha Bitcoin quando qualcuno prende la tua offerta.\n\n• Seleziona Prezzo Fisso se vuoi definire l'importo esatto di Bitcoin che scambierai.",
   
   "withPremiumPercent": "con un +{premium}% di premio",
   "@withPremiumPercent": {
@@ -652,7 +670,7 @@
   "holdInvoiceExpirationExplanation": "La finestra temporale (in secondi) per la scadenza delle fatture di blocco. Le fatture di blocco vengono utilizzate per assicurare i fondi durante il processo di trading.",
   "holdInvoiceCltvDeltaExplanation": "Il numero di blocchi aggiunti all'altezza attuale del blocco per la scadenza delle fatture di blocco. Questo fornisce tempo per la Lightning Network per elaborare il pagamento.",
   "invoiceExpirationWindowExplanation": "La finestra temporale (in secondi) per la scadenza delle fatture Lightning regolari. Questo garantisce che le fatture non rimangano valide indefinitamente.",
-  "serviceFeeExplanation": "La commissione addebitata da questo nodo Mostro per facilitare gli scambi. Questo è tipicamente una piccola percentuale dell'importo dello scambio.",
+  "serviceFeeExplanation": "La commissione addebitata da questo nodo Mostro per facilitare le transazioni. In genere, si tratta di una piccola percentuale dell'importo della transazione, che viene suddivisa tra acquirente e venditore.",
   "proofOfWorkExplanation": "Il livello di difficoltà richiesto per la prova di lavoro negli eventi Nostr. Questo aiuta a prevenire lo spam e garantisce la qualità del servizio.",
   "lndDaemonVersionExplanation": "La versione del software Lightning Network Daemon (LND) che questo nodo Mostro utilizza per elaborare i pagamenti Bitcoin Lightning.",
   "lndNodePublicKeyExplanation": "La chiave pubblica del nodo Lightning Network che gestisce i pagamenti per questa istanza di Mostro. Viene utilizzata per il routing della Lightning Network.",
@@ -671,7 +689,7 @@
   "@_comment_settings_info_dialogs": "Testo Dialoghi Informazioni Impostazioni",
   "languageInfoText": "Scegli la tua lingua preferita per l'interfaccia dell'applicazione.",
   "currencyInfoText": "Scegli la valuta predefinita per i tuoi ordini.",
-  "relaysInfoText": "• I relay sono server che aiutano a distribuire i tuoi messaggi attraverso la rete Nostr\n\n• Aggiungere più relay può migliorare la connettività e la ridondanza\n\n• I relay non si sincronizzano tra loro, quindi solo quelli a cui sei connesso riceveranno i tuoi messaggi.",
+  "relaysInfoText": "• I relay sono server che aiutano a distribuire i tuoi messaggi attraverso la rete Nostr.\n\n• Aggiungere più relay può migliorare la connettività e la ridondanza.\n\n• I relay non si sincronizzano tra loro, quindi solo quelli a cui sei connesso riceveranno i tuoi messaggi.",
   "mostroInfoText": "• Il Mostro che selezioni sarà quello dove pubblicherai le tue offerte.\n\n• In caso di disputa, una persona assegnata a quel Mostro sarà quella che la risolverà.",
   
   "@_comment_account_info_dialogs": "Testo Dialoghi Informazioni Account",
@@ -691,8 +709,42 @@
   "@_comment_relay_dialogs": "Testo Dialoghi Relay",
   "editRelay": "Modifica Relay",
   "relayUrl": "URL del Relay",
+  "relayErrorNotValid": "Non è un relay Nostr valido - nessuna risposta al test del protocollo",
+  "relayErrorOnlySecure": "Sono consentiti solo websocket sicuri (wss://)",
+  "relayErrorNoHttp": "Gli URL HTTP non sono supportati. Usa URL websocket (wss://)",
+  "relayErrorInvalidDomain": "Formato dominio non valido. Usa formato come: relay.example.com",
+  "relayErrorAlreadyExists": "Questo relay è già nella tua lista",
+  "relayErrorConnectionTimeout": "Relay irraggiungibile - timeout connessione",
+  "relayTestingMessage": "Testando relay...",
+  "relayAddedSuccessfully": "Relay aggiunto con successo: {url}",
+  "@relayAddedSuccessfully": {
+    "description": "Messaggio mostrato quando un relay viene aggiunto con successo",
+    "placeholders": {
+      "url": {
+        "type": "String",
+        "description": "L'URL del relay che è stato aggiunto"
+      }
+    }
+  },
+  "relayAddedUnreachable": "Relay aggiunto ma sembra irraggiungibile: {url}",
+  "@relayAddedUnreachable": {
+    "description": "Messaggio mostrato quando un relay viene aggiunto ma non risponde",
+    "placeholders": {
+      "url": {
+        "type": "String",
+        "description": "L'URL del relay che è stato aggiunto"
+      }
+    }
+  },
+  "invalidRelayTitle": "Relay Non Valido",
+  "relayUrlHint": "relay.esempio.com o wss://relay.esempio.com",
   "add": "Aggiungi",
   "save": "Salva",
+
+  "@_comment_timeout_messages": "Messaggi di notifica timeout",
+  "orderTimeoutTaker": "Non hai risposto in tempo. L'ordine sarà ripubblicato",
+  "orderTimeoutMaker": "La tua controparte non ha risposto in tempo. L'ordine sarà ripubblicato",
+  "orderTimeout": "Timeout dell'ordine verificato"
   
   "@_comment_notifications": "Testo Schermata Notifiche",
   "notifications": "Notifiche",

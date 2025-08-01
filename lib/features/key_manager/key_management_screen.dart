@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -138,7 +139,12 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
               children: [
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.only(
+                      left: 16,
+                      right: 16,
+                      top: 16,
+                      bottom: 16 + MediaQuery.of(context).viewPadding.bottom,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -150,9 +156,12 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                         _buildPrivacyCard(context, settings),
                         const SizedBox(height: 16),
 
-                        // Current Trade Index Card
-                        _buildCurrentTradeIndexCard(context),
-                        const SizedBox(height: 24),
+                        // Current Trade Index Card (Debug only)
+                        if (kDebugMode) ...[
+                          _buildCurrentTradeIndexCard(context),
+                          const SizedBox(height: 16),
+                        ],
+                        const SizedBox(height: 8),
 
                         // Generate New User Button
                         _buildGenerateNewUserButton(context),
@@ -206,10 +215,13 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                     S.of(context)!.secretWordsInfoText,
                   ),
                   borderRadius: BorderRadius.circular(12),
-                  child: const Icon(
-                    Icons.info_outline,
-                    size: 20,
-                    color: AppTheme.textSecondary,
+                  child: const Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Icon(
+                      Icons.info_outline,
+                      size: 20,
+                      color: AppTheme.textSecondary,
+                    ),
                   ),
                 ),
               ],
@@ -320,10 +332,13 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                     S.of(context)!.privacyInfoText,
                   ),
                   borderRadius: BorderRadius.circular(12),
-                  child: const Icon(
-                    Icons.info_outline,
-                    size: 20,
-                    color: AppTheme.textSecondary,
+                  child: const Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Icon(
+                      Icons.info_outline,
+                      size: 20,
+                      color: AppTheme.textSecondary,
+                    ),
                   ),
                 ),
               ],
@@ -430,10 +445,13 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                     S.of(context)!.currentTradeIndexInfoText,
                   ),
                   borderRadius: BorderRadius.circular(12),
-                  child: const Icon(
-                    Icons.info_outline,
-                    size: 20,
-                    color: AppTheme.textSecondary,
+                  child: const Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Icon(
+                      Icons.info_outline,
+                      size: 20,
+                      color: AppTheme.textSecondary,
+                    ),
                   ),
                 ),
               ],
@@ -495,21 +513,26 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
-          padding: const EdgeInsets.symmetric(vertical: 16),
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(
               LucideIcons.userPlus,
               size: 20,
             ),
             const SizedBox(width: 8),
-            Text(
-              S.of(context)!.generateNewUser,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
+            Flexible(
+              child: Text(
+                S.of(context)!.generateNewUser,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+                overflow: TextOverflow.visible,
+                softWrap: true,
               ),
             ),
           ],
@@ -634,8 +657,10 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
                 ),
+                textAlign: TextAlign.center,
               ),
             ),
+            const SizedBox(width: 12),
             ElevatedButton(
               onPressed: () {
                 Navigator.of(dialogContext).pop();
@@ -647,13 +672,15 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               ),
               child: Text(
                 S.of(context)!.continueButton,
                 style: const TextStyle(
                   fontSize: 16,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w500,
                 ),
+                textAlign: TextAlign.center,
               ),
             ),
           ],

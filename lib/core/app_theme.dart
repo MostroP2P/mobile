@@ -110,7 +110,7 @@ class AppTheme {
           foregroundColor: Colors.black,
           backgroundColor: mostroGreen,
           textStyle: GoogleFonts.robotoCondensed(
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w500,
             fontSize: 14.0,
           ),
           padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 30),

@@ -10,6 +10,7 @@ class OrderState {
   final CantDo? cantDo;
   final Dispute? dispute;
   final Peer? peer;
+  final PaymentFailed? paymentFailed;
   final _logger = Logger();
 
   OrderState({
@@ -20,6 +21,7 @@ class OrderState {
     this.cantDo,
     this.dispute,
     this.peer,
+    this.paymentFailed,
   });
 
   factory OrderState.fromMostroMessage(MostroMessage message) {
@@ -31,12 +33,13 @@ class OrderState {
       cantDo: message.getPayload<CantDo>(),
       dispute: message.getPayload<Dispute>(),
       peer: message.getPayload<Peer>(),
+      paymentFailed: message.getPayload<PaymentFailed>(),
     );
   }
 
   @override
   String toString() =>
-      'OrderState(status: $status, action: $action, order: $order, paymentRequest: $paymentRequest, cantDo: $cantDo, dispute: $dispute, peer: $peer)';
+      'OrderState(status: $status, action: $action, order: $order, paymentRequest: $paymentRequest, cantDo: $cantDo, dispute: $dispute, peer: $peer, paymentFailed: $paymentFailed)';
 
   @override
   bool operator ==(Object other) =>
@@ -48,6 +51,7 @@ class OrderState {
           other.paymentRequest == paymentRequest &&
           other.cantDo == cantDo &&
           other.dispute == dispute &&
+          other.paymentFailed == paymentFailed &&
           other.peer == peer;
 
   @override
@@ -59,6 +63,7 @@ class OrderState {
         cantDo,
         dispute,
         peer,
+        paymentFailed,
       );
 
   OrderState copyWith({
@@ -69,6 +74,7 @@ class OrderState {
     CantDo? cantDo,
     Dispute? dispute,
     Peer? peer,
+    PaymentFailed? paymentFailed,
   }) {
     return OrderState(
       status: status ?? this.status,
@@ -78,11 +84,12 @@ class OrderState {
       cantDo: cantDo ?? this.cantDo,
       dispute: dispute ?? this.dispute,
       peer: peer ?? this.peer,
+      paymentFailed: paymentFailed ?? this.paymentFailed,
     );
   }
 
   OrderState updateWith(MostroMessage message) {
-    _logger.i('🔄 Updating OrderState with Action: ${message.action}');
+    _logger.i('Updating OrderState with Action: ${message.action}');
 
     // Preserve the current state entirely for cantDo messages - they are informational only
     if (message.action == Action.cantDo) {
@@ -93,14 +100,14 @@ class OrderState {
     Status newStatus = _getStatusFromAction(
         message.action, message.getPayload<Order>()?.status);
 
-    // 🔍 DEBUG: Log status mapping
-    _logger.i('📊 Status mapping: ${message.action} → $newStatus');
+    // DEBUG: Log status mapping
+    _logger.i('Status mapping: ${message.action} → $newStatus');
 
     // Preserve PaymentRequest correctly
     PaymentRequest? newPaymentRequest;
     if (message.payload is PaymentRequest) {
       newPaymentRequest = message.getPayload<PaymentRequest>();
-      _logger.i('💳 New PaymentRequest found in message');
+      _logger.i('New PaymentRequest found in message');
     } else {
       newPaymentRequest = paymentRequest; // Preserve existing
     }
@@ -135,7 +142,12 @@ class OrderState {
       cantDo: message.getPayload<CantDo>() ?? cantDo,
       dispute: message.getPayload<Dispute>() ?? dispute,
       peer: newPeer,
+      paymentFailed: message.getPayload<PaymentFailed>() ?? paymentFailed,
     );
+
+    _logger.i('New state: ${newState.status} - ${newState.action}');
+    _logger
+        .i('PaymentRequest preserved: ${newState.paymentRequest != null}');
 
     return newState;
   }
@@ -150,10 +162,17 @@ class OrderState {
 
       // Actions that should set status to waiting-buyer-invoice
       case Action.waitingBuyerInvoice:
+        return Status.waitingBuyerInvoice;
+      
       case Action.addInvoice:
+        // If current status is paymentFailed, maintain it for UI consistency
+        // Otherwise, transition to waitingBuyerInvoice for normal flow
+        if (status == Status.paymentFailed) {
+          return Status.paymentFailed;
+        }
         return Status.waitingBuyerInvoice;
 
-      // ✅ FIX: Cuando alguien toma una orden, debe cambiar el status inmediatamente
+      // FIX: Cuando alguien toma una orden, debe cambiar el status inmediatamente
       case Action.takeBuy:
         // Cuando buyer toma sell order, seller debe esperar buyer invoice
         return Status.waitingBuyerInvoice;
@@ -209,9 +228,12 @@ class OrderState {
       case Action.adminSettled:
         return Status.settledByAdmin;
 
+      // Actions that should set status to payment failed
+      case Action.paymentFailed:
+        return Status.paymentFailed;
+
       // Informational actions that should preserve current status
       case Action.rateUser:
-      case Action.paymentFailed:
       case Action.invoiceUpdated:
       case Action.sendDm:
       case Action.tradePubkey:
@@ -221,6 +243,10 @@ class OrderState {
       // For actions that include Order payload, use the payload status
       case Action.newOrder:
         return payloadStatus ?? status;
+
+      // Action for timeout reversal - always use payload status (should be pending)
+      case Action.timeoutReversal:
+        return payloadStatus ?? Status.pending;
 
       // For other actions, keep the current status unless payload has a different one
       default:
@@ -239,6 +265,9 @@ class OrderState {
           Action.cancel,
         ],
         Action.takeBuy: [
+          Action.cancel,
+        ],
+        Action.timeoutReversal: [
           Action.cancel,
         ],
       },
@@ -263,6 +292,12 @@ class OrderState {
           Action.cancel,
         ],
       },
+      Status.paymentFailed: {
+        Action.paymentFailed: [
+          // Only allow payment retry, no cancel or dispute during retrying
+          Action.payInvoice,
+        ],
+      },
       Status.active: {
         Action.buyerTookOrder: [
           Action.cancel,
@@ -350,6 +385,12 @@ class OrderState {
           Action.release,
         ],
       },
+      Status.settledHoldInvoice: {
+        Action.addInvoice: [
+          Action.addInvoice,
+          Action.cancel,
+        ],
+      },
     },
     Role.buyer: {
       Status.pending: {
@@ -357,6 +398,9 @@ class OrderState {
           Action.cancel,
         ],
         Action.takeSell: [
+          Action.cancel,
+        ],
+        Action.timeoutReversal: [
           Action.cancel,
         ],
       },
@@ -377,6 +421,13 @@ class OrderState {
           Action.cancel,
         ],
       },
+      Status.paymentFailed: {
+        Action.addInvoice: [
+          // Only allow add invoice, no cancel or dispute during retrying
+          Action.addInvoice,
+        ],
+        Action.paymentFailed: [],
+      },
       Status.active: {
         Action.holdInvoicePaymentAccepted: [
           Action.fiatSent,
@@ -456,6 +507,12 @@ class OrderState {
         ],
         Action.disputeInitiatedByPeer: [
           Action.sendDm,
+          Action.cancel,
+        ],
+      },
+      Status.settledHoldInvoice: {
+        Action.addInvoice: [
+          Action.addInvoice,
           Action.cancel,
         ],
       },

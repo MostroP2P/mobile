@@ -78,6 +78,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         if (event.payload is PaymentRequest) {
           navProvider.go('/pay_invoice/${event.id!}');
         }
+        ref.read(sessionNotifierProvider.notifier).saveSession(session);
         break;
       case Action.fiatSentOk:
         final peer = event.getPayload<Peer>();
@@ -209,10 +210,14 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         notifProvider.notifyBoth(event.action, values: {}, orderId: orderId);
         break;
       case Action.paymentFailed:
+        final paymentFailed = event.getPayload<PaymentFailed>();
         notifProvider.notifyBoth(event.action, values: {
           'payment_attempts': -1,
           'payment_retries_interval': -1000
         }, orderId: orderId);
+        break;
+      case Action.timeoutReversal:
+        // No automatic notification - handled manually in OrderNotifier
         break;
       default:
         notifProvider.showTemporary(event.action, values: {});

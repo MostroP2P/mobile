@@ -45,6 +45,23 @@
       }
     }
   },
+  "addInvoicePaymentFailed": "The payment to your previous invoice could not be completed. Please send me a new invoice for {amount} satoshis equivalent to {fiat_amount} {fiat_code} to complete the payment.",
+  "@addInvoicePaymentFailed": {
+    "placeholders": {
+      "amount": {
+        "type": "String",
+        "description": "The amount of satoshis"
+      },
+      "fiat_amount": {
+        "type": "String",
+        "description": "The fiat amount"
+      },
+      "fiat_code": {
+        "type": "String",
+        "description": "The fiat currency code"
+      }
+    }
+  },
   "waitingSellerToPay": "Please wait. I’ve sent a payment request to the seller to send the Sats for the order ID {id}. If the seller doesn’t complete the payment within {expiration_seconds} minutes, the trade will be canceled.",
   "@waitingSellerToPay": {
     "placeholders": {
@@ -88,7 +105,8 @@
   "adminCanceledUsers": "Admin has canceled the order ID: {id}.",
   "adminSettledAdmin": "You have completed the order ID: {id}.",
   "adminSettledUsers": "Admin has completed the order ID: {id}.",
-  "paymentFailed": "I couldn’t send the Sats. I will try {payment_attempts} more times in {payment_retries_interval} minutes. Please ensure your node or wallet is online.",
+  "paymentFailed": "The payment attempt to your invoice has failed. I will retry {payment_attempts} more times, with an interval of {payment_retries_interval} minutes between each attempt. Please ensure your wallet is online to complete the payment.",
+  "paymentFailedText": "Payment Failed",
   "invoiceUpdated": "The invoice has been successfully updated!",
   "holdInvoicePaymentCanceled": "The invoice was canceled; your Sats are available in your wallet again.",
   "cantDo": "You are not allowed to {action} for this order!",
@@ -392,7 +410,7 @@
   "priceType": "Price type",
   "fixedPrice": "Fixed price",
   "market": "Market",
-  "priceTypeTooltip": "• Select Market Price if you want to use the price that Bitcoin has when someone takes your offer.\\n• Select Fixed Price if you want to define the exact amount of Bitcoin you will exchange.",
+  "priceTypeTooltip": "• Select Market Price if you want to use the price that Bitcoin has when someone takes your offer.\n\n• Select Fixed Price if you want to define the exact amount of Bitcoin you will exchange.",
   
   "@_comment_take_order_screen": "Take Order Screen Strings",
   "orderDetails": "ORDER DETAILS",
@@ -613,8 +631,8 @@
   "orderExpirationExplanation": "How long (in hours) an order remains active and visible in the order book before it automatically expires and is removed.",
   "holdInvoiceExpirationExplanation": "The time window (in seconds) for hold invoices to expire. Hold invoices are used to secure funds during the trade process.",
   "holdInvoiceCltvDeltaExplanation": "The number of blocks added to the current block height for hold invoice expiration. This provides time for the Lightning Network to process the payment.",
+  "serviceFeeExplanation": "The fee charged by this Mostro node for facilitating trades. This is typically a small percentage of the trade amount, this amount is split between the buyer and seller.",
   "invoiceExpirationWindowExplanation": "The time window (in seconds) for regular Lightning invoices to expire. This ensures invoices don't remain valid indefinitely.",
-  "serviceFeeExplanation": "The fee charged by this Mostro node for facilitating trades. This is typically a small percentage of the trade amount.",
   "proofOfWorkExplanation": "The difficulty level required for proof-of-work in Nostr events. This helps prevent spam and ensures quality of service.",
   "lndDaemonVersionExplanation": "The version of the Lightning Network Daemon (LND) software that this Mostro node uses to process Bitcoin Lightning payments.",
   "lndNodePublicKeyExplanation": "The public key of the Lightning Network node that handles payments for this Mostro instance. This is used for Lightning Network routing.",
@@ -633,7 +651,7 @@
   "@_comment_settings_info_dialogs": "Settings Info Dialog Text",
   "languageInfoText": "Choose your preferred language for the application interface.",
   "currencyInfoText": "Choose the default currency for your orders.",
-  "relaysInfoText": "• Relays are servers that help distribute your messages across the Nostr network\n\n• Adding more relays can improve connectivity and redundancy\n\n• Relays don't sync with each other, so only those you're connected to will receive your messages.",
+  "relaysInfoText": "• Relays are servers that help distribute your messages across the Nostr network.\n\n• Adding more relays can improve connectivity and redundancy.\n\n• Relays don't sync with each other, so only those you're connected to will receive your messages.",
   "mostroInfoText": "• The Mostro you select will be the one where you post your offers.\n\n• In case of a dispute, a human assigned to that Mostro will be the one to resolve it.",
   
   "@_comment_account_info_dialogs": "Account Screen Info Dialog Text",
@@ -653,8 +671,42 @@
   "@_comment_relay_dialogs": "Relay Dialog Text",
   "editRelay": "Edit Relay",
   "relayUrl": "Relay URL",
+  "relayErrorNotValid": "Not a valid Nostr relay - no response to protocol test",
+  "relayErrorOnlySecure": "Only secure websockets (wss://) are allowed",
+  "relayErrorNoHttp": "HTTP URLs are not supported. Use websocket URLs (wss://)",
+  "relayErrorInvalidDomain": "Invalid domain format. Use format like: relay.example.com",
+  "relayErrorAlreadyExists": "This relay is already in your list",
+  "relayErrorConnectionTimeout": "Relay unreachable - connection timeout",
+  "relayTestingMessage": "Testing relay...",
+  "relayAddedSuccessfully": "Relay added successfully: {url}",
+  "@relayAddedSuccessfully": {
+    "description": "Message shown when a relay is successfully added",
+    "placeholders": {
+      "url": {
+        "type": "String",
+        "description": "The relay URL that was added"
+      }
+    }
+  },
+  "relayAddedUnreachable": "Relay added but appears unreachable: {url}",
+  "@relayAddedUnreachable": {
+    "description": "Message shown when a relay is added but not responding",
+    "placeholders": {
+      "url": {
+        "type": "String",
+        "description": "The relay URL that was added"
+      }
+    }
+  },
+  "invalidRelayTitle": "Invalid Relay",
+  "relayUrlHint": "relay.example.com or wss://relay.example.com",
   "add": "Add",
   "save": "Save",
+
+  "@_comment_timeout_messages": "Timeout notification messages",
+  "orderTimeoutTaker": "You didn't respond in time. The order will be republished",
+  "orderTimeoutMaker": "Your counterpart didn't respond in time. The order will be republished",
+  "orderTimeout": "Order timeout occurred"
   
   "@_comment_notifications": "Notifications Screen Text",
   "notifications": "Notifications",

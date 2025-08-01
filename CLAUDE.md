@@ -48,6 +48,35 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Provider pattern for dependency injection
 - FSM pattern for order lifecycle management
 
+## Timeout Detection & Reversal System
+
+### Overview
+Real-time system that detects when orders timeout from `waiting-buyer-invoice` or `waiting-payment` states and handles maker/taker scenarios differently to maintain UI consistency with mostrod state.
+
+### Detection Mechanism
+- **Monitors**: 38383 public events vs latest gift wrap message timestamps
+- **Triggers**: When order is in waiting states and public event shows `pending` status newer than last direct message
+- **Real-time**: Subscribes to `orderEventsProvider` for instant detection
+
+### Maker Scenario (Order Creator)
+When taker doesn't respond and order returns to pending:
+- **Session**: Preserved (keeps order in "My Trades")
+- **State**: Updated to `Status.pending` with `Action.timeoutReversal`
+- **Persistence**: Creates synthetic `MostroMessage.createTimeoutReversal()` stored with unique key
+- **Result**: Order remains visible but shows pending status after app restart
+
+### Taker Scenario (Order Taker)
+When user doesn't respond and order returns to pending:
+- **Session**: Deleted completely via `sessionNotifier.deleteSession()`
+- **State**: Provider invalidated (`ref.invalidateSelf()`)
+- **Result**: Order disappears from "My Trades" and reappears in order book for retaking
+
+### Key Implementation
+- **Race protection**: `_isProcessingTimeout` flag prevents concurrent execution
+- **Role detection**: `_isCreatedByUser()` compares session role with order type
+- **Error resilience**: Timeouts and try-catch blocks prevent app hangs
+- **Notifications**: Differentiated messages for maker vs taker scenarios
+
 ### Testing Structure
 - Unit tests in `test/` directory
 - Integration tests in `integration_test/`
