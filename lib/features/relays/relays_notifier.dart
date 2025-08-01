@@ -11,7 +11,7 @@ class RelayValidationResult {
   final String? normalizedUrl;
   final String? error;
   final bool isHealthy;
-  
+
   RelayValidationResult({
     required this.success,
     this.normalizedUrl,
@@ -55,9 +55,9 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
   /// Smart URL normalization - handles different input formats
   String? normalizeRelayUrl(String input) {
     input = input.trim().toLowerCase();
-    
+
     if (!isValidDomainFormat(input)) return null;
-    
+
     if (input.startsWith('wss://')) {
       return input; // Already properly formatted
     } else if (input.startsWith('ws://') || input.startsWith('http')) {
@@ -66,7 +66,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
       return 'wss://$input'; // Auto-add wss:// prefix
     }
   }
-  
+
   /// Domain validation using RegExp
   bool isValidDomainFormat(String input) {
     // Remove protocol prefix if present
@@ -79,19 +79,18 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
     } else if (input.startsWith('https://')) {
       input = input.substring(8);
     }
-    
+
     // Reject IP addresses (basic check for numbers and dots only)
     if (RegExp(r'^[\d.]+$').hasMatch(input)) {
       return false;
     }
-    
+
     // Domain regex: valid domain format with at least one dot
     final domainRegex = RegExp(
-      r'^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$'
-    );
+        r'^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$');
     return domainRegex.hasMatch(input) && input.contains('.');
   }
-  
+
   /// Test connectivity using proper Nostr protocol validation
   /// Sends REQ message and waits for EVENT + EOSE responses
   Future<bool> testRelayConnectivity(String url) async {
@@ -100,11 +99,11 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
     if (protocolResult) {
       return true;
     }
-    
+
     // If protocol test fails, try basic WebSocket connectivity as fallback
     return await _testBasicWebSocketConnectivity(url);
   }
-  
+
   /// Full Nostr protocol test - preferred method
   Future<bool> _testNostrProtocol(String url) async {
     // Generate unique subscription ID for this test
@@ -112,11 +111,11 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
     bool receivedEvent = false;
     bool receivedEose = false;
     bool isConnected = false;
-    
+
     try {
-      // Create a temporary Nostr instance for testing
-      final testNostr = Nostr.instance;
-      
+      // Create isolated instance for testing
+      final testNostr = Nostr();
+
       // Setup listeners to track EVENT and EOSE responses
       await testNostr.services.relays.init(
         relaysUrl: [url],
@@ -126,16 +125,16 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
         retryOnError: false,
         onRelayListening: (relayUrl, receivedData, channel) {
           // Track EVENT and EOSE responses
-          
+
           // Check for EVENT message with our subscription ID
-          if (receivedData is NostrEvent && 
+          if (receivedData is NostrEvent &&
               receivedData.subscriptionId == testSubId) {
             // Found an event for our subscription
             receivedEvent = true;
           }
-          // Check for EOSE message with our subscription ID  
+          // Check for EOSE message with our subscription ID
           else if (receivedData is NostrRequestEoseCommand &&
-                   receivedData.subscriptionId == testSubId) {
+              receivedData.subscriptionId == testSubId) {
             // Found end of stored events for our subscription
             receivedEose = true;
           }
@@ -151,48 +150,47 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
           isConnected = false;
         },
       );
-      
+
       // Wait for connection establishment (max 5 seconds)
       int connectionWaitCount = 0;
       while (!isConnected && connectionWaitCount < 50) {
         await Future.delayed(const Duration(milliseconds: 100));
         connectionWaitCount++;
       }
-      
+
       if (!isConnected) {
         // Failed to connect within timeout
         await _cleanupTestConnection(testNostr);
         return false;
       }
-      
+
       // Send REQ message to test relay response
       final filter = NostrFilter(kinds: [1], limit: 1);
       final request = NostrRequest(
         subscriptionId: testSubId,
         filters: [filter],
       );
-      
+
       // Send the request
       await testNostr.services.relays.startEventsSubscriptionAsync(
         request: request,
         timeout: const Duration(seconds: 3),
       );
-      
+
       // Wait for EVENT or EOSE responses (max 8 seconds total)
       int waitCount = 0;
       while (!receivedEvent && !receivedEose && waitCount < 80) {
         await Future.delayed(const Duration(milliseconds: 100));
         waitCount++;
       }
-      
+
       // Protocol test completed
-      
+
       // Clean up connection
       await _cleanupTestConnection(testNostr);
-      
+
       // Relay is healthy if we received either EVENT or EOSE (or both)
       return receivedEvent || receivedEose;
-      
     } catch (e) {
       // Protocol test failed with error
       try {
@@ -203,7 +201,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
       return false;
     }
   }
-  
+
   /// Basic WebSocket connectivity test as fallback
   Future<bool> _testBasicWebSocketConnectivity(String url) async {
     try {
@@ -213,11 +211,11 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
         uri.toString(),
         headers: {'User-Agent': 'MostroMobile/1.0'},
       ).timeout(const Duration(seconds: 8));
-      
+
       // Send a basic REQ message to test if it's a Nostr relay
       const testReq = '["REQ", "test_conn", {"kinds":[1], "limit":1}]';
       socket.add(testReq);
-      
+
       // Wait for any response (max 5 seconds)
       bool receivedResponse = false;
       final subscription = socket.listen(
@@ -232,28 +230,27 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
           // WebSocket connection error
         },
       );
-      
+
       // Wait for response
       int waitCount = 0;
       while (!receivedResponse && waitCount < 50) {
         await Future.delayed(const Duration(milliseconds: 100));
         waitCount++;
       }
-      
+
       // WebSocket test completed
-      
+
       // Cleanup
       await subscription.cancel();
       await socket.close();
-      
+
       return receivedResponse;
-      
     } catch (e) {
       // WebSocket test failed
       return false;
     }
   }
-  
+
   /// Helper method to clean up test connections
   Future<void> _cleanupTestConnection(Nostr nostrInstance) async {
     try {
@@ -262,7 +259,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
       // Ignore cleanup errors
     }
   }
-  
+
   /// Smart relay addition with full validation
   /// Only adds relays that pass BOTH format validation AND connectivity test
   Future<RelayValidationResult> addRelayWithSmartValidation(
@@ -293,7 +290,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
         );
       }
     }
-    
+
     // Step 2: Check for duplicates
     if (state.any((relay) => relay.url == normalizedUrl)) {
       return RelayValidationResult(
@@ -301,10 +298,10 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
         error: errorAlreadyExists,
       );
     }
-    
+
     // Step 3: Test connectivity using dart_nostr - MUST PASS to proceed
     final isHealthy = await testRelayConnectivity(normalizedUrl);
-    
+
     // Step 4: Only add relay if it passes connectivity test
     if (!isHealthy) {
       return RelayValidationResult(
@@ -312,12 +309,12 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
         error: errorNotValid,
       );
     }
-    
+
     // Step 5: Add relay only if it's healthy (responds to Nostr protocol)
     final newRelay = Relay(url: normalizedUrl, isHealthy: true);
     state = [...state, newRelay];
     await _saveRelays();
-    
+
     return RelayValidationResult(
       success: true,
       normalizedUrl: normalizedUrl,
@@ -327,12 +324,12 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
 
   Future<void> refreshRelayHealth() async {
     final updatedRelays = <Relay>[];
-    
+
     for (final relay in state) {
       final isHealthy = await testRelayConnectivity(relay.url);
       updatedRelays.add(relay.copyWith(isHealthy: isHealthy));
     }
-    
+
     state = updatedRelays;
     await _saveRelays();
   }
