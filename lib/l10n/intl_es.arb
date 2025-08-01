@@ -691,7 +691,25 @@
   "relayErrorConnectionTimeout": "Relay inalcanzable - tiempo de conexión agotado",
   "relayTestingMessage": "Probando relay...",
   "relayAddedSuccessfully": "Relay agregado exitosamente: {url}",
+  "@relayAddedSuccessfully": {
+    "description": "Mensaje mostrado cuando un relay se agrega exitosamente",
+    "placeholders": {
+      "url": {
+        "type": "String",
+        "description": "La URL del relay que fue agregado"
+      }
+    }
+  },
   "relayAddedUnreachable": "Relay agregado pero parece inalcanzable: {url}",
+  "@relayAddedUnreachable": {
+    "description": "Mensaje mostrado cuando un relay se agrega pero no responde",
+    "placeholders": {
+      "url": {
+        "type": "String",
+        "description": "La URL del relay que fue agregado"
+      }
+    }
+  },
   "invalidRelayTitle": "Relay Inválido",
   "relayUrlHint": "relay.ejemplo.com o wss://relay.ejemplo.com",
   "add": "Agregar",
