@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/models/chat_room.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
+import 'package:mostro_mobile/data/models/session.dart';
 import 'package:sembast/sembast.dart';
 
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
@@ -25,6 +26,7 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
   final String orderId;
   final Ref ref;
   StreamSubscription<NostrEvent>? _subscription;
+  ProviderSubscription<Session?>? _sessionListener;
 
   ChatRoomNotifier(
     super.state,
@@ -41,17 +43,46 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
   void subscribe() {
     final session = ref.read(sessionProvider(orderId));
     if (session == null) {
-      _logger.e('Session is null');
+      // Session not available yet, listen for when it becomes available
+      _listenForSession();
       return;
     }
     if (session.sharedKey == null) {
-      _logger.e('Shared key is null');
+      // Session exists but shared key not available yet, listen for when it becomes available
+      _listenForSession();
       return;
     }
 
     // Use SubscriptionManager to create a subscription for this specific chat room
     final subscriptionManager = ref.read(subscriptionManagerProvider);
     _subscription = subscriptionManager.chat.listen(_onChatEvent);
+  }
+
+  /// Listen for session changes and subscribe when session is ready
+  void _listenForSession() {
+    // Cancel any existing listener
+    _sessionListener?.close();
+    
+    _logger.i('Starting to listen for session changes for orderId: $orderId');
+    
+    _sessionListener = ref.listen<Session?>(
+      sessionProvider(orderId),
+      (previous, next) {
+        _logger.i('Session update received for orderId: $orderId, session is null: ${next == null}, sharedKey is null: ${next?.sharedKey == null}');
+        
+        if (next != null && next.sharedKey != null) {
+          // Session is now ready with shared key, subscribe to chat
+          _sessionListener?.close();
+          _sessionListener = null;
+          
+          _logger.i('Session with shared key is now available, subscribing to chat for orderId: $orderId');
+          
+          // Use SubscriptionManager to create a subscription for this specific chat room
+          final subscriptionManager = ref.read(subscriptionManagerProvider);
+          _subscription = subscriptionManager.chat.listen(_onChatEvent);
+        }
+      },
+    );
   }
 
   void _onChatEvent(NostrEvent event) async {
@@ -114,11 +145,11 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
   Future<void> sendMessage(String text) async {
     final session = ref.read(sessionProvider(orderId));
     if (session == null) {
-      _logger.e('Session is null');
+      _logger.w('Cannot send message: Session is null for orderId: $orderId');
       return;
     }
     if (session.sharedKey == null) {
-      _logger.e('Shared key is null');
+      _logger.w('Cannot send message: Shared key is null for orderId: $orderId');
       return;
     }
     
@@ -285,6 +316,7 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
   @override
   void dispose() {
     _subscription?.cancel();
+    _sessionListener?.close();
     _logger.i('Disposed chat room notifier for orderId: $orderId');
     super.dispose();
   }
