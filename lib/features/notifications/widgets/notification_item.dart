@@ -139,7 +139,46 @@ class NotificationItem extends ConsumerWidget {
       case 'mark_read':
         ref.read(notificationsProvider.notifier).markAsRead(notification.id);
         break;
+      case 'delete':
+        _showDeleteConfirmationDialog(context, ref);
+        break;
     }
+  }
+
+  void _showDeleteConfirmationDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.backgroundDark,
+        title: Text(
+          'Delete notification',
+          style: const TextStyle(color: AppTheme.textPrimary),
+        ),
+        content: Text(
+          'Are you sure you want to delete this notification?',
+          style: const TextStyle(color: AppTheme.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(
+              S.of(context)!.cancel,
+              style: const TextStyle(color: AppTheme.textSecondary),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              ref.read(notificationsProvider.notifier).deleteNotification(notification.id);
+              Navigator.of(context).pop();
+            },
+            child: Text(
+              'Delete',
+              style: const TextStyle(color: AppTheme.statusError),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -315,7 +354,7 @@ class _NotificationMenu extends StatelessWidget {
       onSelected: onMenuAction,
       itemBuilder: (context) => [
         if (!notification.isRead) _buildMarkAsReadMenuItem(context),
-        // TODO: Implement other actions in the menu popup
+        _buildDeleteMenuItem(context),
       ],
       
     );
@@ -336,6 +375,29 @@ class _NotificationMenu extends StatelessWidget {
           Text(
             S.of(context)!.markAsRead,
             style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ],
+      ),
+    );
+  }
+
+  PopupMenuItem<String> _buildDeleteMenuItem(BuildContext context) {
+    return PopupMenuItem(
+      value: 'delete',
+      child: Row(
+        children: [
+          const HeroIcon(
+            HeroIcons.trash,
+            style: HeroIconStyle.outline,
+            size: 16,
+            color: AppTheme.statusError,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            'Delete',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppTheme.statusError,
+            ),
           ),
         ],
       ),

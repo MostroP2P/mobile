@@ -99,6 +99,14 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
     state = state.copyWith(historyNotifications: updatedNotifications);
   }
 
+  Future<void> deleteNotification(String notificationId) async {
+    await _repository.deleteNotification(notificationId);
+    final updatedNotifications = state.historyNotifications.whenData((notifications) => 
+      notifications.where((notification) => notification.id != notificationId).toList()
+    );
+    state = state.copyWith(historyNotifications: updatedNotifications);
+  }
+
   void showTemporary(Action action, {Map<String, dynamic> values = const {}}) {
     state = state.copyWith(
       temporaryNotification: NotificationTemporaryState(

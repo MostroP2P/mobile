@@ -4,7 +4,9 @@ import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/notifications/providers/notifications_provider.dart';
 import 'package:mostro_mobile/features/notifications/widgets/notification_item.dart';
+import 'package:mostro_mobile/features/notifications/widgets/notifications_actions_menu.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_app_bar.dart';
+import 'package:mostro_mobile/shared/widgets/notification_history_bell_widget.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
 class NotificationsScreen extends ConsumerWidget {
@@ -26,6 +28,13 @@ class NotificationsScreen extends ConsumerWidget {
           ),
         ),
         showBackButton: true,
+        showDrawerButton: false,
+        actions: const [
+          NotificationsActionsMenu(),
+          SizedBox(width: 8),
+          NotificationBellWidget(),
+          SizedBox(width: 16),
+        ],
       ),
       body: notifications.when(
         data: (notificationList) {
