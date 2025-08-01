@@ -97,6 +97,8 @@ class RelaySelector extends ConsumerWidget {
               labelStyle: const TextStyle(color: AppTheme.textSecondary),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              hintText: S.of(context)!.relayUrlHint,
+              hintStyle: const TextStyle(color: AppTheme.textSecondary),
             ),
           ),
         ),
@@ -117,12 +119,120 @@ class RelaySelector extends ConsumerWidget {
           ),
           const SizedBox(width: 12),
           ElevatedButton(
-            onPressed: () {
-              final url = controller.text.trim();
-              if (url.isNotEmpty) {
-                final newRelay = Relay(url: url, isHealthy: true);
-                ref.read(relaysProvider.notifier).addRelay(newRelay);
+            onPressed: () async {
+              final input = controller.text.trim();
+              if (input.isEmpty) return;
+              
+              // Show loading state
+              showDialog(
+                context: dialogContext,
+                barrierDismissible: false,
+                builder: (context) => AlertDialog(
+                  backgroundColor: AppTheme.backgroundCard,
+                  content: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const CircularProgressIndicator(color: AppTheme.activeColor),
+                      const SizedBox(width: 16),
+                      Text(
+                        S.of(context)!.relayTestingMessage,
+                        style: const TextStyle(color: AppTheme.textPrimary),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+              
+              // Capture localized strings before async operation
+              final localizedStrings = (
+                errorOnlySecure: S.of(context)!.relayErrorOnlySecure,
+                errorNoHttp: S.of(context)!.relayErrorNoHttp,
+                errorInvalidDomain: S.of(context)!.relayErrorInvalidDomain,
+                errorAlreadyExists: S.of(context)!.relayErrorAlreadyExists,
+                errorNotValid: S.of(context)!.relayErrorNotValid,
+                relayAddedSuccessfully: S.of(context)!.relayAddedSuccessfully,
+                relayAddedUnreachable: S.of(context)!.relayAddedUnreachable,
+              );
+              
+              // Perform validation with localized error messages
+              final result = await ref.read(relaysProvider.notifier)
+                  .addRelayWithSmartValidation(
+                    input,
+                    errorOnlySecure: localizedStrings.errorOnlySecure,
+                    errorNoHttp: localizedStrings.errorNoHttp,
+                    errorInvalidDomain: localizedStrings.errorInvalidDomain,
+                    errorAlreadyExists: localizedStrings.errorAlreadyExists,
+                    errorNotValid: localizedStrings.errorNotValid,
+                  );
+              
+              // Close loading dialog
+              if (dialogContext.mounted) {
                 Navigator.pop(dialogContext);
+              }
+              
+              if (result.success) {
+                // Close add relay dialog
+                if (dialogContext.mounted) {
+                  Navigator.pop(dialogContext);
+                }
+                
+                // Show success message with health status
+                final message = result.isHealthy 
+                    ? localizedStrings.relayAddedSuccessfully(result.normalizedUrl!)
+                    : localizedStrings.relayAddedUnreachable(result.normalizedUrl!);
+                
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(message),
+                      backgroundColor: result.isHealthy 
+                          ? Colors.green.shade700 
+                          : Colors.orange.shade700,
+                    ),
+                  );
+                }
+              } else {
+                // Show specific error dialog
+                if (dialogContext.mounted) {
+                  showDialog(
+                    context: dialogContext,
+                    builder: (context) => AlertDialog(
+                    backgroundColor: AppTheme.backgroundCard,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                    ),
+                    title: Text(
+                      S.of(context)!.invalidRelayTitle,
+                      style: const TextStyle(
+                        color: AppTheme.textPrimary,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    content: Text(
+                      result.error!,
+                      style: const TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 14,
+                      ),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text(
+                          S.of(context)!.ok,
+                          style: const TextStyle(
+                            color: AppTheme.activeColor,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  );
+                }
               }
             },
             style: ElevatedButton.styleFrom(

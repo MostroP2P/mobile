@@ -709,6 +709,35 @@
   "@_comment_relay_dialogs": "Testo Dialoghi Relay",
   "editRelay": "Modifica Relay",
   "relayUrl": "URL del Relay",
+  "relayErrorNotValid": "Non è un relay Nostr valido - nessuna risposta al test del protocollo",
+  "relayErrorOnlySecure": "Sono consentiti solo websocket sicuri (wss://)",
+  "relayErrorNoHttp": "Gli URL HTTP non sono supportati. Usa URL websocket (wss://)",
+  "relayErrorInvalidDomain": "Formato dominio non valido. Usa formato come: relay.example.com",
+  "relayErrorAlreadyExists": "Questo relay è già nella tua lista",
+  "relayErrorConnectionTimeout": "Relay irraggiungibile - timeout connessione",
+  "relayTestingMessage": "Testando relay...",
+  "relayAddedSuccessfully": "Relay aggiunto con successo: {url}",
+  "@relayAddedSuccessfully": {
+    "description": "Messaggio mostrato quando un relay viene aggiunto con successo",
+    "placeholders": {
+      "url": {
+        "type": "String",
+        "description": "L'URL del relay che è stato aggiunto"
+      }
+    }
+  },
+  "relayAddedUnreachable": "Relay aggiunto ma sembra irraggiungibile: {url}",
+  "@relayAddedUnreachable": {
+    "description": "Messaggio mostrato quando un relay viene aggiunto ma non risponde",
+    "placeholders": {
+      "url": {
+        "type": "String",
+        "description": "L'URL del relay che è stato aggiunto"
+      }
+    }
+  },
+  "invalidRelayTitle": "Relay Non Valido",
+  "relayUrlHint": "relay.esempio.com o wss://relay.esempio.com",
   "add": "Aggiungi",
   "save": "Salva",
 

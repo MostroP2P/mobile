@@ -671,6 +671,35 @@
   "@_comment_relay_dialogs": "Relay Dialog Text",
   "editRelay": "Edit Relay",
   "relayUrl": "Relay URL",
+  "relayErrorNotValid": "Not a valid Nostr relay - no response to protocol test",
+  "relayErrorOnlySecure": "Only secure websockets (wss://) are allowed",
+  "relayErrorNoHttp": "HTTP URLs are not supported. Use websocket URLs (wss://)",
+  "relayErrorInvalidDomain": "Invalid domain format. Use format like: relay.example.com",
+  "relayErrorAlreadyExists": "This relay is already in your list",
+  "relayErrorConnectionTimeout": "Relay unreachable - connection timeout",
+  "relayTestingMessage": "Testing relay...",
+  "relayAddedSuccessfully": "Relay added successfully: {url}",
+  "@relayAddedSuccessfully": {
+    "description": "Message shown when a relay is successfully added",
+    "placeholders": {
+      "url": {
+        "type": "String",
+        "description": "The relay URL that was added"
+      }
+    }
+  },
+  "relayAddedUnreachable": "Relay added but appears unreachable: {url}",
+  "@relayAddedUnreachable": {
+    "description": "Message shown when a relay is added but not responding",
+    "placeholders": {
+      "url": {
+        "type": "String",
+        "description": "The relay URL that was added"
+      }
+    }
+  },
+  "invalidRelayTitle": "Invalid Relay",
+  "relayUrlHint": "relay.example.com or wss://relay.example.com",
   "add": "Add",
   "save": "Save",
 
