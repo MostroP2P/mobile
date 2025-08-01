@@ -681,6 +681,7 @@
     }
   },
   "invalidRelayTitle": "Invalid Relay",
+  "relayUrlHint": "relay.example.com or wss://relay.example.com",
   "add": "Add",
   "save": "Save",
 

@@ -97,7 +97,7 @@ class RelaySelector extends ConsumerWidget {
               labelStyle: const TextStyle(color: AppTheme.textSecondary),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              hintText: 'relay.example.com or wss://relay.example.com',
+              hintText: S.of(context)!.relayUrlHint,
               hintStyle: const TextStyle(color: AppTheme.textSecondary),
             ),
           ),

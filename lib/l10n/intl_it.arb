@@ -701,6 +701,7 @@
   "relayAddedSuccessfully": "Relay aggiunto con successo: {url}",
   "relayAddedUnreachable": "Relay aggiunto ma sembra irraggiungibile: {url}",
   "invalidRelayTitle": "Relay Non Valido",
+  "relayUrlHint": "relay.esempio.com o wss://relay.esempio.com",
   "add": "Aggiungi",
   "save": "Salva",
 
