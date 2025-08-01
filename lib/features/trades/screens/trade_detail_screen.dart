@@ -24,6 +24,7 @@ import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/shared/providers/time_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:mostro_mobile/shared/widgets/simple_connection_status.dart';
 
 class TradeDetailScreen extends ConsumerWidget {
   final String orderId;
@@ -63,6 +64,8 @@ class TradeDetailScreen extends ConsumerWidget {
             ),
             child: Column(
               children: [
+                // Connection status banner for critical trade operations
+                const SimpleConnectionBanner(),
                 const SizedBox(height: 16),
                 // Display basic info about the trade:
                 _buildSellerAmount(context, ref, tradeState),

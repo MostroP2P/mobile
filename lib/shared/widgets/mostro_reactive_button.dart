@@ -64,6 +64,8 @@ class _MostroReactiveButtonState extends ConsumerState<MostroReactiveButton> {
   bool _showSuccess = false;
   Timer? _timeoutTimer;
   dynamic _lastSeenAction;
+  DateTime? _lastActionTime;
+  static const Duration _throttleDuration = Duration(milliseconds: 1500);
 
   @override
   void initState() {
@@ -87,6 +89,15 @@ class _MostroReactiveButtonState extends ConsumerState<MostroReactiveButton> {
   }
 
   void _startOperation() {
+    // Basic throttling to prevent rapid-fire button presses
+    final now = DateTime.now();
+    if (_lastActionTime != null && 
+        now.difference(_lastActionTime!) < _throttleDuration) {
+      // Too soon since last action, ignore this press
+      return;
+    }
+    
+    _lastActionTime = now;
     setState(() {
       _loading = true;
       _showSuccess = false;

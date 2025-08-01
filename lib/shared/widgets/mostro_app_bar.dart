@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/shared/providers/drawer_provider.dart';
+import 'package:mostro_mobile/shared/widgets/simple_connection_status.dart';
 import 'dart:async';
 
 /// Animated Mostro logo widget that shows normal logo and switches to happy logo on tap
@@ -96,6 +97,11 @@ class MostroAppBar extends ConsumerWidget implements PreferredSizeWidget {
         ),
       ),
       actions: [
+        // Connection status indicator
+        const SimpleConnectionStatus(
+          showText: true,
+        ),
+        const SizedBox(width: 8),
         // Notification with count indicator
         Stack(
           children: [

@@ -184,7 +184,35 @@ class MostroService {
       keyIndex: session.fullPrivacy ? null : session.keyIndex,
     );
     _logger.i('Sending DM, Event ID: ${event.id} with payload: ${order.toJson()}');
-    await ref.read(nostrServiceProvider).publishEvent(event);
+    
+    // Add basic retry logic for critical message delivery
+    await _publishWithRetry(event, order);
+  }
+  
+  /// Publish event with basic retry logic
+  Future<void> _publishWithRetry(dynamic event, MostroMessage order) async {
+    const maxRetries = 3;
+    const retryDelay = Duration(seconds: 2);
+    
+    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        await ref.read(nostrServiceProvider).publishEvent(event);
+        _logger.i('Message published successfully on attempt $attempt: ${order.action}');
+        return; // Success, exit retry loop
+      } catch (e) {
+        _logger.w('Publish attempt $attempt failed for ${order.action}: $e');
+        
+        if (attempt == maxRetries) {
+          _logger.e('All $maxRetries publish attempts failed for ${order.action}');
+          rethrow; // Re-throw the last error after all retries exhausted
+        }
+        
+        // Wait before retrying (with exponential backoff)
+        final delay = Duration(milliseconds: (retryDelay.inMilliseconds * attempt).toInt());
+        _logger.i('Retrying in ${delay.inSeconds}s (attempt ${attempt + 1}/$maxRetries)');
+        await Future.delayed(delay);
+      }
+    }
   }
 
   Future<Session> _getSession(MostroMessage order) async {
