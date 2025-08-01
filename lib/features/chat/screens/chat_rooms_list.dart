@@ -54,11 +54,11 @@ class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen>
                 // Header with title
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
                   decoration: BoxDecoration(
                     color: AppTheme.backgroundDark,
                     border: Border(
-                      bottom: BorderSide(color: Colors.white24, width: 0.5),
+                      bottom: BorderSide(color: Colors.white.withOpacity(0.1), width: 0.5),
                     ),
                   ),
                   child: Text(
@@ -80,9 +80,13 @@ class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen>
                 // Description text
                 Container(
                   width: double.infinity,
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                  color: AppTheme.backgroundDark,
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.backgroundDark,
+                    border: Border(
+                      bottom: BorderSide(color: Colors.white.withOpacity(0.1), width: 0.5),
+                    ),
+                  ),
                   child: Text(
                     S.of(context)?.conversationsDescription ?? 'Your conversations with other users will appear here.',
                     style: TextStyle(
@@ -93,16 +97,19 @@ class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen>
                 ),
                 // Content area
                 Expanded(
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      // Messages tab
-                      _buildBody(context, chatListState),
-                      // Disputes tab (placeholder for now)
-                      EmptyStateView(
-                        message: S.of(context)?.noDisputesAvailable ?? 'No disputes available',
-                      ),
-                    ],
+                  child: Container(
+                    color: AppTheme.backgroundDark,
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        // Messages tab
+                        _buildBody(context, chatListState),
+                        // Disputes tab (placeholder for now)
+                        EmptyStateView(
+                          message: S.of(context)?.noDisputesAvailable ?? 'No disputes available',
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 // Add bottom padding to prevent content from being covered by BottomNavBar
@@ -146,19 +153,15 @@ class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen>
     });
 
 
-    return Container(
-      color: AppTheme.backgroundDark,
-      child: ListView.builder(
-        itemCount: chatRoomsWithFreshData.length,
-        padding: EdgeInsets.zero,
-        physics: const AlwaysScrollableScrollPhysics(),
-        itemBuilder: (context, index) {
-          return ChatListItem(
-            orderId: chatRoomsWithFreshData[index].orderId,
-          );
-        },
-
-      ),
+    return ListView.builder(
+      itemCount: chatRoomsWithFreshData.length,
+      padding: EdgeInsets.zero,
+      physics: const AlwaysScrollableScrollPhysics(),
+      itemBuilder: (context, index) {
+        return ChatListItem(
+          orderId: chatRoomsWithFreshData[index].orderId,
+        );
+      },
     );
   }
 
