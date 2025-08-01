@@ -6,6 +6,7 @@ import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models.dart';
 import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/shared/providers.dart';
+import 'package:mostro_mobile/features/notifications/providers/notifications_provider.dart';
 import 'package:mostro_mobile/features/order/notfiers/abstract_mostro_notifier.dart';
 import 'package:mostro_mobile/services/mostro_service.dart';
 
@@ -349,17 +350,17 @@ class OrderNotifier extends AbstractMostroNotifier {
   /// Show timeout notification message
   void _showTimeoutNotification({required bool isCreatedByUser}) {
     try {
-      final notificationNotifier = ref.read(notificationProvider.notifier);
+      final notificationNotifier = ref.read(notificationsProvider.notifier);
       
       // Show appropriate message based on user role
       if (isCreatedByUser) {
         // User is maker - counterpart didn't respond
         // Use key for translation lookup in the UI
-        notificationNotifier.showCustomMessage('orderTimeoutMaker');
+        notificationNotifier.showTemporary(Action.timeoutReversal, values: {'type': 'maker'});
       } else {
         // User is taker - user didn't respond
         // Use key for translation lookup in the UI
-        notificationNotifier.showCustomMessage('orderTimeoutTaker');
+        notificationNotifier.showTemporary(Action.timeoutReversal, values: {'type': 'taker'});
       }
     } catch (e, stack) {
       logger.e('Error showing timeout notification', error: e, stackTrace: stack);

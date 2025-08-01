@@ -74,6 +74,8 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
     final mostroInstance = ref.read(orderRepositoryProvider).mostroInstance;
 
     switch (event.action) {
+      case Action.newOrder:
+        break;
       case Action.payInvoice:
         if (event.payload is PaymentRequest) {
           navProvider.go('/pay_invoice/${event.id!}');
@@ -95,7 +97,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         ref.read(mostroStorageProvider).deleteAllMessagesByOrderId(orderId);
         ref.read(sessionNotifierProvider.notifier).deleteSession(orderId);
         navProvider.go('/order_book');
-        notifProvider.showTemporary(event.action, values: {'id': orderId});
+        notifProvider.notifyBoth(event.action, values: {'id': orderId}, orderId: orderId);
         ref.invalidateSelf();
         break;
       case Action.cooperativeCancelInitiatedByYou:
@@ -123,9 +125,9 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         }, orderId: orderId);
         break;
       case Action.cooperativeCancelAccepted:
-        notifProvider.showTemporary(event.action, values: {
+        notifProvider.notifyBoth(event.action, values: {
           'id': event.id!,
-        });
+        }, orderId: orderId);
         break;
       case Action.holdInvoicePaymentAccepted:
         final order = event.getPayload<Order>();
@@ -160,17 +162,17 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         break;
       case Action.waitingSellerToPay:
         navProvider.go('/trade_detail/$orderId');
-        notifProvider.showTemporary(event.action, values: {
+        notifProvider.notifyBoth(event.action, values: {
           'id': event.id,
           'expiration_seconds':
               mostroInstance?.expirationSeconds ?? Config.expirationSeconds,
-        });
+        }, orderId: orderId);
         break;
       case Action.waitingBuyerInvoice:
-        notifProvider.showTemporary(event.action, values: {
+        notifProvider.notifyBoth(event.action, values: {
           'expiration_seconds':
               mostroInstance?.expirationSeconds ?? Config.expirationSeconds,
-        });
+        }, orderId: orderId);
         navProvider.go('/trade_detail/$orderId');
         break;
       case Action.addInvoice:
@@ -212,8 +214,8 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
       case Action.paymentFailed:
         final paymentFailed = event.getPayload<PaymentFailed>();
         notifProvider.notifyBoth(event.action, values: {
-          'payment_attempts': -1,
-          'payment_retries_interval': -1000
+          'payment_attempts': paymentFailed?.paymentAttempts,
+          'payment_retries_interval': paymentFailed?.paymentRetriesInterval,
         }, orderId: orderId);
         break;
       case Action.timeoutReversal:

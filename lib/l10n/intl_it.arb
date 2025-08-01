@@ -744,7 +744,7 @@
   "@_comment_timeout_messages": "Messaggi di notifica timeout",
   "orderTimeoutTaker": "Non hai risposto in tempo. L'ordine sarà ripubblicato",
   "orderTimeoutMaker": "La tua controparte non ha risposto in tempo. L'ordine sarà ripubblicato",
-  "orderTimeout": "Timeout dell'ordine verificato"
+  "orderTimeout": "Timeout dell'ordine verificato",
   
   "@_comment_notifications": "Testo Schermata Notifiche",
   "notifications": "Notifiche",

@@ -99,10 +99,12 @@ class NotificationModel {
       
       case Action.sendDm:
         return NotificationType.message;
-      
       case Action.cantDo:
       case Action.tradePubkey:
         return NotificationType.system;
+      case Action.timeoutReversal:
+        // TODO: Handle this case.
+        throw UnimplementedError();
     }
   }
 }
