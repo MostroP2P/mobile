@@ -11,8 +11,10 @@ import 'package:mostro_mobile/features/order/providers/order_notifier_provider.d
 import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
 import 'package:mostro_mobile/shared/widgets/order_cards.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
+
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
 import 'package:mostro_mobile/shared/utils/currency_utils.dart';
+
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/shared/providers/time_provider.dart';
@@ -71,6 +73,7 @@ class TakeOrderScreen extends ConsumerWidget {
   Widget _buildSellerAmount(WidgetRef ref, NostrEvent order) {
     return Builder(
       builder: (context) {
+
         final currencyData = ref.watch(currencyCodesProvider).asData?.value;
         final currencyFlag = CurrencyUtils.getFlagFromCurrencyData(
             order.currency!, currencyData);
@@ -93,6 +96,7 @@ class TakeOrderScreen extends ConsumerWidget {
             priceText = '${S.of(context)!.atMarketPrice} $premiumDisplay';
           }
         }
+
 
         final hasFixedSatsAmount = order.amount != null && order.amount != '0';
 
@@ -118,10 +122,11 @@ class TakeOrderScreen extends ConsumerWidget {
               const SizedBox(height: 8),
               Row(
                 children: [
+
                   Flexible(
                     child: RichText(
                       text: TextSpan(
-                        text: S.of(context)!.forAmount(amountString),
+                        text: S.of(context)!.forAmount(amountString, order.currency ?? ''),
                         style: const TextStyle(
                           color: Colors.white70,
                           fontSize: 16,
@@ -136,6 +141,7 @@ class TakeOrderScreen extends ConsumerWidget {
                               ),
                             ),
                         ],
+
                       ),
                       softWrap: true,
                       maxLines: 2,

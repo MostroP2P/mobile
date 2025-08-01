@@ -3,8 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
+
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
 import 'package:mostro_mobile/shared/utils/currency_utils.dart';
+
 import 'package:mostro_mobile/generated/l10n.dart';
 
 /// Card that displays the order amount information (selling/buying sats for amount)
@@ -25,11 +27,13 @@ class OrderAmountCard extends ConsumerWidget {
   });
 
   @override
+
   Widget build(BuildContext context, WidgetRef ref) {
     final currencyData = ref.watch(currencyCodesProvider).asData?.value;
     final currencyFlag =
         CurrencyUtils.getFlagFromCurrencyData(currency, currencyData);
     final amountString = '$amount $currency $currencyFlag';
+
 
     return CustomCard(
       padding: const EdgeInsets.all(16),
@@ -47,10 +51,11 @@ class OrderAmountCard extends ConsumerWidget {
           const SizedBox(height: 8),
           Row(
             children: [
+
               Flexible(
                 child: RichText(
                   text: TextSpan(
-                    text: S.of(context)!.forAmount(amountString),
+                    text: S.of(context)!.forAmount(amountString, currency),
                     style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 16,
@@ -65,6 +70,7 @@ class OrderAmountCard extends ConsumerWidget {
                           ),
                         ),
                     ],
+
                   ),
                   softWrap: true,
                   maxLines: 2,

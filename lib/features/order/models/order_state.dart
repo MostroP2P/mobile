@@ -172,13 +172,15 @@ class OrderState {
         }
         return Status.waitingBuyerInvoice;
 
+
       // FIX: Cuando alguien toma una orden, debe cambiar el status inmediatamente
+
       case Action.takeBuy:
-        // Cuando buyer toma sell order, seller debe esperar buyer invoice
+        // When buyer takes sell order, seller must wait for buyer invoice
         return Status.waitingBuyerInvoice;
 
       case Action.takeSell:
-        // Cuando seller toma buy order, seller debe pagar invoice
+        // When seller takes buy order, seller must pay invoice
         return Status.waitingPayment;
 
       // Actions that should set status to active
