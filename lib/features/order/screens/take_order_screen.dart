@@ -1,16 +1,17 @@
 import 'package:circular_countdown/circular_countdown.dart';
 import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter/material.dart';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
+import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/shared/widgets/order_cards.dart';
-import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
 import 'package:mostro_mobile/shared/utils/currency_utils.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
@@ -18,7 +19,7 @@ import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/shared/providers/time_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
-class TakeOrderScreen extends ConsumerWidget {
+class TakeOrderScreen extends ConsumerStatefulWidget {
   final String orderId;
   final OrderType orderType;
   final TextEditingController _fiatAmountController = TextEditingController();
@@ -28,13 +29,39 @@ class TakeOrderScreen extends ConsumerWidget {
   TakeOrderScreen({super.key, required this.orderId, required this.orderType});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final order = ref.watch(eventProvider(orderId));
+  ConsumerState<TakeOrderScreen> createState() => _TakeOrderScreenState();
+}
+
+class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
+  bool _isSubmitting = false;
+  dynamic _lastSeenAction;
+
+  @override
+  Widget build(BuildContext context) {
+    final order = ref.watch(eventProvider(widget.orderId));
+
+    // Listen for messages to reset loading state on CantDo
+    ref.listen(
+      mostroMessageStreamProvider(widget.orderId),
+      (_, next) {
+        next.whenData((msg) {
+          if (msg == null || msg.action == _lastSeenAction) return;
+          _lastSeenAction = msg.action;
+          
+          // Reset loading state only on CantDo message
+          if (msg.action == actions.Action.cantDo && _isSubmitting) {
+            setState(() {
+              _isSubmitting = false;
+            });
+          }
+        });
+      },
+    );
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundDark,
       appBar: OrderAppBar(
-          title: orderType == OrderType.buy
+          title: widget.orderType == OrderType.buy
               ? S.of(context)!.buyOrderDetailsTitle
               : S.of(context)!.sellOrderDetailsTitle),
       body: SingleChildScrollView(
@@ -94,7 +121,7 @@ class TakeOrderScreen extends ConsumerWidget {
           }
         }
 
-        final hasFixedSatsAmount = order.amount != null && order.amount != '0';
+        final hasFixedSatsAmount = order.amount != '0';
 
         return CustomCard(
           padding: const EdgeInsets.all(16),
@@ -103,10 +130,10 @@ class TakeOrderScreen extends ConsumerWidget {
             children: [
               Text(
                 hasFixedSatsAmount
-                    ? (orderType == OrderType.sell
+                    ? (widget.orderType == OrderType.sell
                         ? "${S.of(context)!.someoneIsSellingTitle.replaceAll(' Sats', '')} ${order.amount} Sats"
                         : "${S.of(context)!.someoneIsBuyingTitle.replaceAll(' Sats', '')} ${order.amount} Sats")
-                    : (orderType == OrderType.sell
+                    : (widget.orderType == OrderType.sell
                         ? S.of(context)!.someoneIsSellingTitle
                         : S.of(context)!.someoneIsBuyingTitle),
                 style: const TextStyle(
@@ -153,7 +180,7 @@ class TakeOrderScreen extends ConsumerWidget {
 
   Widget _buildOrderId(BuildContext context) {
     return OrderIdCard(
-      orderId: orderId,
+      orderId: widget.orderId,
     );
   }
 
@@ -194,17 +221,17 @@ class TakeOrderScreen extends ConsumerWidget {
   Widget _buildActionButtons(
       BuildContext context, WidgetRef ref, NostrEvent order) {
     final orderDetailsNotifier =
-        ref.read(orderNotifierProvider(orderId).notifier);
+        ref.read(orderNotifierProvider(widget.orderId).notifier);
 
     final buttonText =
-        orderType == OrderType.buy ? S.of(context)!.sell : S.of(context)!.buy;
+        widget.orderType == OrderType.buy ? S.of(context)!.sell : S.of(context)!.buy;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Expanded(
           child: OutlinedButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => context.pop(),
             style: AppTheme.theme.outlinedButtonTheme.style,
             child: Text(S.of(context)!.close),
           ),
@@ -212,7 +239,10 @@ class TakeOrderScreen extends ConsumerWidget {
         const SizedBox(width: 16),
         Expanded(
           child: ElevatedButton(
-            onPressed: () async {
+            onPressed: _isSubmitting ? null : () async {
+              setState(() {
+                _isSubmitting = true;
+              });
               // Check if this is a range order
               if (order.fiatAmount.maximum != null &&
                   order.fiatAmount.minimum != order.fiatAmount.maximum) {
@@ -226,7 +256,7 @@ class TakeOrderScreen extends ConsumerWidget {
                         return AlertDialog(
                           title: Text(S.of(context)!.enterAmount),
                           content: TextField(
-                            controller: _fiatAmountController,
+                            controller: widget._fiatAmountController,
                             keyboardType: TextInputType.number,
                             decoration: InputDecoration(
                               hintText: S.of(context)!.enterAmountBetween(
@@ -237,14 +267,14 @@ class TakeOrderScreen extends ConsumerWidget {
                           ),
                           actions: [
                             TextButton(
-                              onPressed: () => Navigator.of(context).pop(null),
+                              onPressed: () => context.pop(),
                               child: Text(S.of(context)!.cancel),
                             ),
                             ElevatedButton(
                               key: const Key('submitAmountButton'),
                               onPressed: () {
                                 final inputAmount = int.tryParse(
-                                    _fiatAmountController.text.trim());
+                                  widget._fiatAmountController.text.trim());
                                 if (inputAmount == null) {
                                   setState(() {
                                     errorText =
@@ -264,7 +294,7 @@ class TakeOrderScreen extends ConsumerWidget {
                                                 .toString());
                                   });
                                 } else {
-                                  Navigator.of(context).pop(inputAmount);
+                                  context.pop(inputAmount);
                                 }
                               },
                               child: Text(S.of(context)!.submit),
@@ -277,27 +307,32 @@ class TakeOrderScreen extends ConsumerWidget {
                 );
 
                 if (enteredAmount != null) {
-                  if (orderType == OrderType.buy) {
+                  if (widget.orderType == OrderType.buy) {
                     await orderDetailsNotifier.takeBuyOrder(
                         order.orderId!, enteredAmount);
                   } else {
-                    final lndAddress = _lndAddressController.text.trim();
+                    final lndAddress = widget._lndAddressController.text.trim();
                     await orderDetailsNotifier.takeSellOrder(
                       order.orderId!,
                       enteredAmount,
                       lndAddress.isEmpty ? null : lndAddress,
                     );
                   }
+                } else {
+                  // Dialog was dismissed without entering amount, reset loading state
+                  setState(() {
+                    _isSubmitting = false;
+                  });
                 }
               } else {
                 // Not a range order – use the existing logic.
                 final fiatAmount =
-                    int.tryParse(_fiatAmountController.text.trim());
-                if (orderType == OrderType.buy) {
+                    int.tryParse(widget._fiatAmountController.text.trim());
+                if (widget.orderType == OrderType.buy) {
                   await orderDetailsNotifier.takeBuyOrder(
                       order.orderId!, fiatAmount);
                 } else {
-                  final lndAddress = _lndAddressController.text.trim();
+                  final lndAddress = widget._lndAddressController.text.trim();
                   await orderDetailsNotifier.takeSellOrder(
                     order.orderId!,
                     fiatAmount,
@@ -309,7 +344,16 @@ class TakeOrderScreen extends ConsumerWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.mostroGreen,
             ),
-            child: Text(buttonText),
+            child: _isSubmitting
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : Text(buttonText),
           ),
         ),
       ],
