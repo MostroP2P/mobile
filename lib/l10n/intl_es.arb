@@ -732,6 +732,8 @@
   "relayUrlHint": "relay.ejemplo.com o wss://relay.ejemplo.com",
   "add": "Agregar",
   "save": "Guardar",
+  "selectCurrency": "Seleccionar Moneda",
+  "noCurrencySelected": "Ninguna moneda seleccionada",
 
   "@_comment_timeout_messages": "Mensajes de notificación de timeout",
   "orderTimeoutTaker": "No respondiste a tiempo. La orden será republicada",
