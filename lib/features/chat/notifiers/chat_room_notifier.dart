@@ -32,12 +32,12 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
     super.state,
     this.orderId,
     this.ref,
-  ) {
-    // Load historical messages when the notifier is created
-    _loadHistoricalMessages().then((_) {
-      // Start listening for new messages after loading historical ones
-      subscribe();
-    });
+  );
+
+  /// Initialize the chat room by loading historical messages and subscribing to new events
+  Future<void> initialize() async {
+    await _loadHistoricalMessages();
+    subscribe();
   }
 
   void subscribe() {

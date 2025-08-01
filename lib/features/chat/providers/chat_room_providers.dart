@@ -13,7 +13,7 @@ final chatRoomsNotifierProvider =
 final chatRoomsProvider =
     StateNotifierProvider.family<ChatRoomNotifier, ChatRoom, String>(
         (ref, chatId) {
-  return ChatRoomNotifier(
+  final notifier = ChatRoomNotifier(
     ChatRoom(
       orderId: chatId,
       messages: [],
@@ -21,4 +21,9 @@ final chatRoomsProvider =
     chatId,
     ref,
   );
+  
+  // Initialize the notifier asynchronously
+  notifier.initialize();
+  
+  return notifier;
 });
