@@ -86,7 +86,7 @@ class ActionThrottle {
     
     // Check if we can perform immediately
     if (canPerformAction(action, orderId: orderId)) {
-      final connectionState = ref.read(connectionManagerProvider).currentState;
+      final connectionState = ref.read(connectionManagerProvider);
       
       if (connectionState == ConnectionState.connected) {
         // Execute immediately if connected
@@ -128,7 +128,7 @@ class ActionThrottle {
   /// Get throttle duration for an action based on network conditions
   Duration _getThrottleDuration(Action action) {
     final baseThrottle = _actionThrottles[action] ?? const Duration(seconds: 1);
-    final connectionState = ref.read(connectionManagerProvider).currentState;
+    final connectionState = ref.read(connectionManagerProvider);
     final multiplier = _networkMultipliers[connectionState] ?? 1.0;
     
     return Duration(

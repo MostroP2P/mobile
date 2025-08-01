@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:mostro_mobile/services/connection_manager.dart' as conn;
 
 /// Simple connection status indicator for quick wins implementation
 class SimpleConnectionStatus extends ConsumerWidget {
@@ -12,104 +14,110 @@ class SimpleConnectionStatus extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // For now, we'll show a simple indicator based on NostrService availability
-    // This is a placeholder until the full ConnectionManager is integrated
+    final state = ref.watch(conn.connectionManagerProvider);
     
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Simple connection indicator
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              color: _getConnectionColor(),
-              shape: BoxShape.circle,
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(
+            color: _getConnectionColor(state),
+            shape: BoxShape.circle,
+          ),
+        ),
+        if (showText) ...[
+          const SizedBox(width: 6),
+          Text(
+            _getConnectionText(context, state),
+            style: TextStyle(
+              color: _getConnectionColor(state),
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
             ),
           ),
-          if (showText) ...[
-            const SizedBox(width: 6),
-            Text(
-              _getConnectionText(),
-              style: TextStyle(
-                color: _getConnectionColor(),
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
         ],
-      ),
+      ],
     );
   }
   
-  Color _getConnectionColor() {
-    // For quick wins, we'll assume connected if NostrService is available
-    // In a real implementation, this would check actual connection state
-    return Colors.green;
+  Color _getConnectionColor(conn.ConnectionState state) {
+    switch (state) {
+      case conn.ConnectionState.connected:
+        return Colors.green;
+      case conn.ConnectionState.connecting:
+      case conn.ConnectionState.reconnecting:
+        return Colors.orange;
+      case conn.ConnectionState.disconnected:
+      case conn.ConnectionState.failed:
+        return Colors.red;
+    }
   }
   
-  String _getConnectionText() {
-    // For quick wins, show simple status
-    return 'Online';
+  String _getConnectionText(BuildContext context, conn.ConnectionState state) {
+    switch (state) {
+      case conn.ConnectionState.connected:
+        return S.of(context)!.connectionConnected;
+      case conn.ConnectionState.connecting:
+        return S.of(context)!.connectionConnecting;
+      case conn.ConnectionState.reconnecting:
+        return S.of(context)!.connectionReconnecting;
+      case conn.ConnectionState.disconnected:
+        return S.of(context)!.connectionDisconnected;
+      case conn.ConnectionState.failed:
+        return S.of(context)!.connectionFailed;
+    }
   }
 }
 
-/// Simple connection banner for network issues
-class SimpleConnectionBanner extends StatelessWidget {
-  final bool showOffline;
-  
-  const SimpleConnectionBanner({
-    super.key,
-    this.showOffline = false,
-  });
+/// Simple connection banner for connection issues
+class SimpleConnectionBanner extends ConsumerWidget {
+  const SimpleConnectionBanner({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    if (!showOffline) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(conn.connectionManagerProvider);
+    
+    // Show banner for problematic connection states
+    final hasConnectionIssues = state == conn.ConnectionState.disconnected ||
+        state == conn.ConnectionState.failed ||
+        state == conn.ConnectionState.reconnecting;
+    
+    if (!hasConnectionIssues) {
       return const SizedBox.shrink();
     }
     
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.orange.shade700,
-        border: Border(
-          bottom: BorderSide(
-            color: Colors.orange.shade700.withOpacity(0.3),
-            width: 1,
-          ),
-        ),
-      ),
+      color: Colors.orange.withValues(alpha: 0.1),
       child: Row(
         children: [
-          const Icon(
-            Icons.wifi_off,
-            color: Colors.white,
-            size: 20,
+          Icon(
+            Icons.warning_amber_rounded,
+            color: Colors.orange,
+            size: 16,
           ),
-          const SizedBox(width: 12),
-          const Expanded(
+          const SizedBox(width: 8),
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Connection Issues',
+                  S.of(context)!.connectionIssues,
                   style: TextStyle(
-                    color: Colors.white,
+                    color: Colors.orange.shade700,
                     fontWeight: FontWeight.w600,
-                    fontSize: 14,
+                    fontSize: 12,
                   ),
                 ),
                 Text(
-                  'Some features may not work properly',
+                  S.of(context)!.connectionIssuesDescription,
                   style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
+                    color: Colors.orange.shade600,
+                    fontSize: 11,
                   ),
                 ),
               ],
@@ -117,11 +125,11 @@ class SimpleConnectionBanner extends StatelessWidget {
           ),
           TextButton(
             onPressed: () {
-              // TODO: Trigger manual reconnection
+              ref.read(conn.connectionManagerInstanceProvider).reconnect();
             },
-            child: const Text(
-              'Retry',
-              style: TextStyle(color: Colors.white),
+            child: Text(
+              S.of(context)!.connectionRetry,
+              style: TextStyle(color: Colors.orange.shade700),
             ),
           ),
         ],

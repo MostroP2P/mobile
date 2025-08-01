@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/services/connection_manager.dart';
+import 'package:mostro_mobile/features/settings/settings_provider.dart';
 
 /// Comprehensive diagnostics and metrics for relay connections
 class RelayDiagnostics {
@@ -33,12 +34,12 @@ class RelayDiagnostics {
   /// Start collecting metrics
   void _startMetricsCollection() {
     // Listen to connection state changes
-    ref.read(connectionManagerProvider).connectionState.listen((state) {
+    ref.read(connectionManagerInstanceProvider).connectionState.listen((state) {
       _recordConnectionEvent(state);
     });
     
     // Listen to connection errors
-    ref.read(connectionManagerProvider).connectionErrors.listen((error) {
+    ref.read(connectionManagerInstanceProvider).connectionErrors.listen((error) {
       _recordConnectionError(error);
     });
     
@@ -48,10 +49,13 @@ class RelayDiagnostics {
   
   /// Record connection state change
   void _recordConnectionEvent(ConnectionState state) {
+    final settings = ref.read(settingsProvider);
+    final relayUrl = settings.relays.isNotEmpty ? settings.relays.first : 'wss://relay.mostro.network';
+    
     final event = ConnectionEvent(
       state: state,
       timestamp: DateTime.now(),
-      relayUrl: 'wss://relay.mostro.network', // TODO: Get from settings
+      relayUrl: relayUrl,
     );
     
     _connectionHistory.add(event);
@@ -182,7 +186,7 @@ class RelayDiagnostics {
       connectionsByState[event.state] = (connectionsByState[event.state] ?? 0) + 1;
     }
     
-    final currentState = ref.read(connectionManagerProvider).currentState;
+    final currentState = ref.read(connectionManagerProvider);
     final uptime = _calculateUptime();
     
     return ConnectionStats(
@@ -240,7 +244,7 @@ class RelayDiagnostics {
   
   /// Generate health status
   HealthStatus _generateHealthStatus() {
-    final isConnected = ref.read(connectionManagerProvider).isConnected;
+    final isConnected = ref.read(connectionManagerProvider) == ConnectionState.connected;
     final recentErrors = _errorCounts.values.fold(0, (a, b) => a + b);
     final lastHealthCheck = _lastHealthCheck;
     

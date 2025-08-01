@@ -1,13 +1,13 @@
 class AuthUtils {
   /// Temporary implementation for alpha preview.
   /// WARNING: This is not secure and should not be used in production.
-  /// TODO: Implement secure storage for credentials
+  /// FUTURE: Implement secure storage for credentials in production version
   static Future<void> savePrivateKeyAndPin(
       String privateKey, String pin) async {}
 
   /// Temporary implementation for alpha preview.
   /// WARNING: This always returns null and should not be used in production.
-  /// TODO: Implement secure key retrieval
+  /// FUTURE: Implement secure key retrieval in production version
   static Future<String?> getPrivateKey() async {
     return null;
   }

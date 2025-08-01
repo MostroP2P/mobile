@@ -18,6 +18,8 @@ import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/shared/providers/time_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:mostro_mobile/services/connection_manager.dart' as connection_mgr;
+
 
 class TakeOrderScreen extends ConsumerStatefulWidget {
   final String orderId;
@@ -35,6 +37,19 @@ class TakeOrderScreen extends ConsumerStatefulWidget {
 class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
   bool _isSubmitting = false;
   dynamic _lastSeenAction;
+  DateTime? _lastButtonPress;
+  static const Duration _throttleDuration = Duration(milliseconds: 1500);
+
+  /// Check if button press should be throttled
+  bool _isThrottled() {
+    final now = DateTime.now();
+    if (_lastButtonPress != null && 
+        now.difference(_lastButtonPress!) < _throttleDuration) {
+      return true;
+    }
+    _lastButtonPress = now;
+    return false;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -222,6 +237,10 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
       BuildContext context, WidgetRef ref, NostrEvent order) {
     final orderDetailsNotifier =
         ref.read(orderNotifierProvider(widget.orderId).notifier);
+    // Use reactive ConnectionManager state
+    final connectionState = ref.watch(connection_mgr.connectionManagerProvider);
+    final isConnected = connectionState == connection_mgr.ConnectionState.connected;
+    
 
     final buttonText =
         widget.orderType == OrderType.buy ? S.of(context)!.sell : S.of(context)!.buy;
@@ -239,7 +258,9 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
         const SizedBox(width: 16),
         Expanded(
           child: ElevatedButton(
-            onPressed: _isSubmitting ? null : () async {
+            onPressed: (_isSubmitting || _isThrottled() || !isConnected) 
+                ? null
+                : () async {
               setState(() {
                 _isSubmitting = true;
               });
@@ -272,7 +293,20 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
                             ),
                             ElevatedButton(
                               key: const Key('submitAmountButton'),
-                              onPressed: () {
+                              onPressed: (_isThrottled() || !isConnected) 
+                                  ? () {
+                                      // Show feedback when button is disabled
+                                      if (!isConnected) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text('No connection. Please check your network and try again.'),
+                                            backgroundColor: Colors.orange,
+                                            duration: Duration(seconds: 2),
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  : () {
                                 final inputAmount = int.tryParse(
                                   widget._fiatAmountController.text.trim());
                                 if (inputAmount == null) {
@@ -297,6 +331,14 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
                                   context.pop(inputAmount);
                                 }
                               },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: (_isThrottled() || !isConnected) 
+                                    ? Colors.grey.shade400 
+                                    : AppTheme.mostroGreen,
+                                foregroundColor: (_isThrottled() || !isConnected) 
+                                    ? Colors.grey.shade600 
+                                    : Colors.white,
+                              ),
                               child: Text(S.of(context)!.submit),
                             ),
                           ],
@@ -307,16 +349,34 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
                 );
 
                 if (enteredAmount != null) {
-                  if (widget.orderType == OrderType.buy) {
-                    await orderDetailsNotifier.takeBuyOrder(
-                        order.orderId!, enteredAmount);
-                  } else {
-                    final lndAddress = widget._lndAddressController.text.trim();
-                    await orderDetailsNotifier.takeSellOrder(
-                      order.orderId!,
-                      enteredAmount,
-                      lndAddress.isEmpty ? null : lndAddress,
-                    );
+                  try {
+                    if (widget.orderType == OrderType.buy) {
+                      await orderDetailsNotifier.takeBuyOrder(
+                          order.orderId!, enteredAmount);
+                    } else {
+                      final lndAddress = widget._lndAddressController.text.trim();
+                      await orderDetailsNotifier.takeSellOrder(
+                        order.orderId!,
+                        enteredAmount,
+                        lndAddress.isEmpty ? null : lndAddress,
+                      );
+                    }
+                  } catch (e) {
+                    // Network error or other failure - reset loading state
+                    if (mounted) {
+                      setState(() {
+                        _isSubmitting = false;
+                      });
+                    }
+                    // Optionally show error to user
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Failed to take order. Please check your connection and try again.'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
                   }
                 } else {
                   // Dialog was dismissed without entering amount, reset loading state
@@ -326,23 +386,46 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
                 }
               } else {
                 // Not a range order – use the existing logic.
-                final fiatAmount =
-                    int.tryParse(widget._fiatAmountController.text.trim());
-                if (widget.orderType == OrderType.buy) {
-                  await orderDetailsNotifier.takeBuyOrder(
-                      order.orderId!, fiatAmount);
-                } else {
-                  final lndAddress = widget._lndAddressController.text.trim();
-                  await orderDetailsNotifier.takeSellOrder(
-                    order.orderId!,
-                    fiatAmount,
-                    lndAddress.isEmpty ? null : lndAddress,
-                  );
+                try {
+                  final fiatAmount =
+                      int.tryParse(widget._fiatAmountController.text.trim());
+                  if (widget.orderType == OrderType.buy) {
+                    await orderDetailsNotifier.takeBuyOrder(
+                        order.orderId!, fiatAmount);
+                  } else {
+                    final lndAddress = widget._lndAddressController.text.trim();
+                    await orderDetailsNotifier.takeSellOrder(
+                      order.orderId!,
+                      fiatAmount,
+                      lndAddress.isEmpty ? null : lndAddress,
+                    );
+                  }
+                } catch (e) {
+                  // Network error or other failure - reset loading state
+                  if (mounted) {
+                    setState(() {
+                      _isSubmitting = false;
+                    });
+                  }
+                  // Show error to user
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Failed to take order. Please check your connection and try again.'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
                 }
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.mostroGreen,
+              backgroundColor: (_isSubmitting || _isThrottled() || !isConnected) 
+                  ? Colors.grey.shade400 
+                  : AppTheme.mostroGreen,
+              foregroundColor: (_isSubmitting || _isThrottled() || !isConnected) 
+                  ? Colors.grey.shade600 
+                  : Colors.white,
             ),
             child: _isSubmitting
                 ? const SizedBox(

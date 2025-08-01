@@ -74,8 +74,7 @@ class TradeDetailScreen extends ConsumerWidget {
                 const SizedBox(height: 16),
                 // For pending orders created by the user, show creator's reputation
                 if (isPending && isCreator) ...[
-                  // TODO: Change this to use `orderPayload` after Order model is updated
-                  // with rating information
+                  // Show creator reputation using current Order model
                   _buildCreatorReputation(context, originalOrder),
                   const SizedBox(height: 16),
                 ] else ...[

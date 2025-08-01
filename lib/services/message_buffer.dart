@@ -29,7 +29,7 @@ class MessageBuffer {
   
   /// Listen to connection state changes to process pending messages
   void _listenToConnectionState() {
-    ref.read(connectionManagerProvider).connectionState.listen((state) {
+    ref.read(connectionManagerInstanceProvider).connectionState.listen((state) {
       if (state == ConnectionState.connected) {
         _processPendingMessages();
       }
@@ -60,7 +60,7 @@ class MessageBuffer {
     _logger.i('Buffered message: ${message.action} for order: ${message.id}');
     
     // Try to send immediately if connected
-    if (ref.read(connectionManagerProvider).isConnected) {
+    if (ref.read(connectionManagerProvider) == ConnectionState.connected) {
       _processPendingMessages();
     }
     
@@ -76,7 +76,7 @@ class MessageBuffer {
     final messagesToProcess = List<PendingMessage>.from(_pendingMessages);
     
     for (final pendingMessage in messagesToProcess) {
-      if (!ref.read(connectionManagerProvider).isConnected) {
+      if (ref.read(connectionManagerProvider) != ConnectionState.connected) {
         _logger.w('Connection lost while processing messages');
         break;
       }

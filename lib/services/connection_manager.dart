@@ -2,21 +2,24 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
+import 'package:mostro_mobile/features/subscriptions/subscription_manager_provider.dart';
 
 /// Enhanced connection manager with exponential backoff and fault tolerance
-class ConnectionManager {
+class ConnectionManager extends StateNotifier<ConnectionState> {
   final Ref ref;
   final Logger _logger = Logger();
-  
-  // Connection state
-  ConnectionState _state = ConnectionState.disconnected;
   DateTime? _lastConnectionAttempt;
   int _reconnectAttempts = 0;
   Timer? _reconnectTimer;
   Timer? _healthCheckTimer;
+  
+  // Network monitoring
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+  bool _hasNetworkConnection = true;
   
   // Configuration
   static const int maxReconnectAttempts = 10;
@@ -32,12 +35,134 @@ class ConnectionManager {
   Stream<ConnectionState> get connectionState => _stateController.stream;
   Stream<ConnectionError> get connectionErrors => _errorController.stream;
   
-  ConnectionState get currentState => _state;
-  bool get isConnected => _state == ConnectionState.connected;
-  bool get isConnecting => _state == ConnectionState.connecting;
-  bool get isReconnecting => _state == ConnectionState.reconnecting;
+  ConnectionState get currentState => state;
+  bool get isConnected => state == ConnectionState.connected;
+  bool get isConnecting => state == ConnectionState.connecting;
+  bool get isReconnecting => state == ConnectionState.reconnecting;
   
-  ConnectionManager(this.ref);
+  ConnectionManager(this.ref) : super(ConnectionState.disconnected) {
+    _initializeConnectionMonitoring();
+  }
+  
+  /// Initialize monitoring of actual NostrService connection state
+  void _initializeConnectionMonitoring() {
+    // Check current NostrService state and sync our state
+    _syncWithNostrService();
+    
+    // Start system-level network monitoring
+    _startNetworkMonitoring();
+    
+    // Start periodic health checks to monitor connection
+    _startHealthCheck();
+  }
+  
+  /// Start monitoring system-level network connectivity
+  void _startNetworkMonitoring() {
+    _logger.i('Starting system-level network monitoring');
+    
+    // Get initial connectivity state
+    Connectivity().checkConnectivity().then((result) {
+      _onConnectivityChanged(result);
+    }).catchError((error) {
+      _logger.w('Failed to check initial connectivity: $error');
+    });
+    
+    // Listen to connectivity changes
+    _connectivitySubscription = Connectivity().onConnectivityChanged.listen(
+      _onConnectivityChanged,
+      onError: (error) {
+        _logger.e('Connectivity monitoring error: $error');
+      },
+    );
+  }
+  
+  /// Handle connectivity changes from system
+  void _onConnectivityChanged(List<ConnectivityResult> result) {
+    final wasConnected = _hasNetworkConnection;
+    
+    // Determine if we have any network connection
+    _hasNetworkConnection = result.any((connectivity) => 
+      connectivity != ConnectivityResult.none
+    );
+    
+    _logger.i('Network connectivity changed: $result (hasConnection: $_hasNetworkConnection)');
+    
+    if (!wasConnected && _hasNetworkConnection) {
+      // Network came back online
+      _logger.i('Network connection restored - attempting reconnect');
+      _onNetworkRestored();
+    } else if (wasConnected && !_hasNetworkConnection) {
+      // Network went offline
+      _logger.w('Network connection lost');
+      _onNetworkLost();
+    }
+  }
+  
+  /// Handle network restoration
+  void _onNetworkRestored() {
+    // Cancel any existing reconnect timers
+    _cancelReconnectTimer();
+    
+    // If we were disconnected or reconnecting, try to reconnect immediately
+    if (state == ConnectionState.disconnected || state == ConnectionState.reconnecting) {
+      _logger.i('Network restored - initiating immediate reconnection');
+      
+      // Reset reconnect attempts for network restoration
+      _reconnectAttempts = 0;
+      
+      // Attempt reconnection with current settings
+      _attemptReconnectWithSettings();
+    }
+  }
+  
+  /// Handle network loss
+  void _onNetworkLost() {
+    if (state != ConnectionState.disconnected) {
+      _logger.w('Network lost while connected ($state), disconnecting');
+      _setState(ConnectionState.disconnected);
+      
+      // Don't immediately start reconnecting when network is unavailable
+      _cancelReconnectTimer();
+    }
+  }
+  
+  /// Attempt reconnect with current settings
+  void _attemptReconnectWithSettings() {
+    try {
+      final settings = ref.read(settingsProvider);
+      connect(settings);
+    } catch (e) {
+      _logger.e('Failed to get settings for reconnection: $e');
+      _scheduleReconnect();
+    }
+  }
+  
+  /// Sync ConnectionManager state with actual NostrService state
+  void _syncWithNostrService() {
+    try {
+      final nostrService = ref.read(nostrServiceProvider);
+      
+      if (nostrService.isInitialized) {
+        // NostrService is connected, update our state
+        if (state != ConnectionState.connected) {
+          _logger.i('Syncing with NostrService: Connected');
+          _setState(ConnectionState.connected);
+          _reconnectAttempts = 0;
+        }
+      } else {
+        // NostrService is not connected, update our state
+        if (state == ConnectionState.connected) {
+          _logger.i('Syncing with NostrService: Disconnected');
+          _setState(ConnectionState.disconnected);
+        }
+      }
+    } catch (e) {
+      _logger.w('Error syncing with NostrService: $e');
+      if (state == ConnectionState.connected) {
+        _setState(ConnectionState.disconnected);
+      }
+    }
+  }
   
   /// Calculate exponential backoff delay with jitter
   Duration _calculateBackoffDelay() {
@@ -56,7 +181,7 @@ class ConnectionManager {
   
   /// Start connection with retry logic
   Future<void> connect(Settings settings) async {
-    if (_state == ConnectionState.connecting || _state == ConnectionState.reconnecting) {
+    if (state == ConnectionState.connecting || state == ConnectionState.reconnecting) {
       _logger.w('Connection already in progress, ignoring connect request');
       return;
     }
@@ -106,6 +231,28 @@ class ConnectionManager {
     _setState(ConnectionState.connected);
     _startHealthCheck();
     _cancelReconnectTimer();
+    
+    // Trigger subscription restoration after successful connection
+    _restoreSubscriptions();
+  }
+  
+  /// Restore all active subscriptions after reconnection
+  void _restoreSubscriptions() {
+    try {
+      _logger.i('Restoring subscriptions after reconnection');
+      
+      // Get the subscription manager and force resubscription
+      final subscriptionManager = ref.read(subscriptionManagerProvider);
+      
+      // Force complete subscription refresh - this will unsubscribe all current
+      // subscriptions and resubscribe based on current sessions
+      subscriptionManager.subscribeAll();
+      
+      _logger.i('All subscriptions restored successfully');
+    } catch (e) {
+      _logger.e('Failed to restore subscriptions: $e');
+      // Don't fail the connection for subscription issues
+    }
   }
   
   /// Handle connection failure
@@ -136,7 +283,7 @@ class ConnectionManager {
     _setState(ConnectionState.reconnecting);
     
     _reconnectTimer = Timer(delay, () {
-      if (_state == ConnectionState.reconnecting) {
+      if (state == ConnectionState.reconnecting) {
         // Get current settings and retry
         final settings = ref.read(settingsProvider);
         connect(settings).catchError((e) {
@@ -156,14 +303,23 @@ class ConnectionManager {
   }
   
   /// Perform connection health check
-  void _performHealthCheck() {
-    if (_state != ConnectionState.connected) return;
+  void _performHealthCheck() async {
+    _logger.d('Performing connection health check');
     
-    // Implement actual health check
     try {
-      final nostrService = ref.read(nostrServiceProvider);
+      // First check network connectivity - this is critical!
+      final connectivityResult = await Connectivity().checkConnectivity();
+      if (connectivityResult.contains(ConnectivityResult.none)) {
+        _logger.w('Health check failed: No network connectivity');
+        _onNetworkLost();
+        return;
+      }
+      
+      // Then sync with NostrService state
+      _syncWithNostrService();
       
       // Check if NostrService is still initialized and functional
+      final nostrService = ref.read(nostrServiceProvider);
       if (!nostrService.isInitialized) {
         _logger.w('Health check failed: NostrService not initialized');
         onConnectionLost('NostrService lost initialization');
@@ -184,7 +340,7 @@ class ConnectionManager {
   
   /// Handle connection loss
   void onConnectionLost(dynamic error) {
-    if (_state == ConnectionState.connected) {
+    if (state == ConnectionState.connected) {
       _logger.w('Connection lost: $error');
       _setState(ConnectionState.reconnecting);
       _scheduleReconnect();
@@ -218,9 +374,9 @@ class ConnectionManager {
   
   /// Update connection state
   void _setState(ConnectionState newState) {
-    if (_state != newState) {
-      _logger.d('Connection state: $_state -> $newState');
-      _state = newState;
+    if (state != newState) {
+      _logger.d('Connection state: $state -> $newState');
+      state = newState;
       _stateController.add(newState);
     }
   }
@@ -234,20 +390,23 @@ class ConnectionManager {
   /// Get connection statistics
   ConnectionStats getStats() {
     return ConnectionStats(
-      currentState: _state,
+      currentState: state,
       reconnectAttempts: _reconnectAttempts,
       lastConnectionAttempt: _lastConnectionAttempt,
-      uptime: _state == ConnectionState.connected 
+      uptime: state == ConnectionState.connected 
           ? DateTime.now().difference(_lastConnectionAttempt ?? DateTime.now())
           : null,
     );
   }
   
+  @override
   void dispose() {
     _cancelReconnectTimer();
     _healthCheckTimer?.cancel();
+    _connectivitySubscription?.cancel();
     _stateController.close();
     _errorController.close();
+    super.dispose();
   }
 }
 
@@ -301,4 +460,7 @@ class ConnectionStats {
 
 
 /// Provider for connection manager
-final connectionManagerProvider = Provider((ref) => ConnectionManager(ref));
+final connectionManagerProvider = StateNotifierProvider<ConnectionManager, ConnectionState>((ref) => ConnectionManager(ref));
+
+/// Provider for connection manager instance (for accessing methods)
+final connectionManagerInstanceProvider = Provider<ConnectionManager>((ref) => ref.read(connectionManagerProvider.notifier));
