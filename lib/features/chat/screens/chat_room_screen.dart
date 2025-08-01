@@ -111,7 +111,10 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
             // Main content area
             Padding(
               padding: EdgeInsets.only(
-                  bottom: bottomNavBarHeight), // Add padding to avoid input bar overlap
+                  // Dynamic bottom padding based on device settings
+                  bottom: MediaQuery.of(context).textScaleFactor > 1.0
+                      ? bottomNavBarHeight + 40 // More padding for zoomed-in text
+                      : bottomNavBarHeight + 10), // Normal padding for regular view
               child: Column(
                 children: [
                   // Header with peer information
@@ -166,18 +169,29 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
               bottom: MediaQuery.of(context).viewInsets.bottom > 0
                   ? 0 // When keyboard is open, position at bottom
                   : bottomNavBarHeight, // Use constant for BottomNavBar height
-              child: MessageInput(
-                orderId: widget.orderId,
-                selectedInfoType: _selectedInfoType,
-                onInfoTypeChanged: (type) {
-                  // Dismiss keyboard when selecting info tabs to prevent overlap
-                  if (type != null) {
-                    FocusScope.of(context).unfocus();
-                  }
-                  setState(() {
-                    _selectedInfoType = type;
-                  });
-                },
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppTheme.backgroundDark, // Match background color
+                  border: Border(
+                    top: BorderSide(
+                      color: Colors.grey.withValues(alpha: 8), // 0.03 opacity - extremely subtle
+                      width: 0.3, // Even thinner line
+                    ),
+                  ),
+                ),
+                child: MessageInput(
+                  orderId: widget.orderId,
+                  selectedInfoType: _selectedInfoType,
+                  onInfoTypeChanged: (type) {
+                    // Dismiss keyboard when selecting info tabs to prevent overlap
+                    if (type != null) {
+                      FocusScope.of(context).unfocus();
+                    }
+                    setState(() {
+                      _selectedInfoType = type;
+                    });
+                  },
+                ),
               ),
             ),
 

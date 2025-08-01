@@ -115,11 +115,16 @@ class _ChatMessagesListState extends State<ChatMessagesList> {
         // Add caching for better performance with many messages
         cacheExtent: 1000,
         // Add padding to prevent messages from being cut off
-        padding: const EdgeInsets.only(
+        padding: EdgeInsets.only(
           top: 12,
           left: 12,
           right: 12,
-          bottom: 100, // Extra space at bottom to prevent cutoff
+          // Dynamic bottom padding based on device size and accessibility settings
+          bottom: MediaQuery.of(context).viewInsets.bottom > 0 
+              ? 80 // Less padding when keyboard is open
+              : MediaQuery.of(context).textScaleFactor > 1.0
+                  ? 120 // More padding for zoomed-in text
+                  : 80, // Normal padding for regular view
         ),
         itemBuilder: (context, index) {
           final message = sortedMessages[index];
