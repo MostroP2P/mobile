@@ -329,7 +329,7 @@
   "back": "INDIETRO",
   "typeAMessage": "Scrivi un messaggio...",
   "youAreChattingWith": "Stai chattando con {handle}",
-  "yourHandle": "Il tuo nome: {handle}",
+  "yourHandle": "Il tuo nome:",
   "yourSharedKey": "La tua chiave condivisa:",
   
   "payInvoiceButton": "PAGA FATTURA",

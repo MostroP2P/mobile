@@ -100,7 +100,7 @@ class UserInformationTab extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  S.of(context)!.yourHandle(you),
+                  S.of(context)!.yourHandle,
                   style: TextStyle(
                     color: AppTheme.textSecondary,
                     fontSize: 14,
@@ -109,10 +109,10 @@ class UserInformationTab extends ConsumerWidget {
                 Text(
                   you,
                   style: const TextStyle(
-                    color: AppTheme.cream1,
-                    fontSize: 14,
+                      color: AppTheme.cream1,
+                      fontSize: 14,
+                    ),
                   ),
-                ),
                 const SizedBox(height: 12),
                 Text(
                   S.of(context)!.yourSharedKey,

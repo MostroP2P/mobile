@@ -368,7 +368,7 @@
   "back": "BACK",
   "typeAMessage": "Type a message...",
   "youAreChattingWith": "You are chatting with {handle}",
-  "yourHandle": "Your handle: {handle}",
+  "yourHandle": "Your Handle:",
   "yourSharedKey": "Your shared key:",
   
   "payInvoiceButton": "PAY INVOICE",
@@ -608,7 +608,6 @@
     }
   },
   "yourInformation": "Your Information",
-  "yourHandle": "Your Handle:",
   "yourSharedKey": "Your Shared Key:",
   "peerPublicKey": "Peer Public Key:",
   "notAvailable": "Not available",

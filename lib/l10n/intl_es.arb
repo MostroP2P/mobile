@@ -324,7 +324,7 @@
   "back": "ATRÁS",
   "typeAMessage": "Escribe un mensaje...",
   "youAreChattingWith": "Estás chateando con {handle}",
-  "yourHandle": "Tu nombre: {handle}",
+  "yourHandle": "Tu nombre:",
   "yourSharedKey": "Tu clave compartida:",
   
   "payInvoiceButton": "PAGAR FACTURA",
