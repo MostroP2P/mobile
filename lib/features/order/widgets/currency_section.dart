@@ -4,7 +4,6 @@ import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/features/order/widgets/form_section.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
 import 'package:mostro_mobile/shared/widgets/currency_selection_dialog.dart';
-import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
 class CurrencySection extends ConsumerWidget {
@@ -32,13 +31,17 @@ class CurrencySection extends ConsumerWidget {
         error: (_, __) => Text(S.of(context)!.errorLoadingCurrencies,
             style: const TextStyle(color: Colors.red)),
         data: (currencies) {
-          final currency = currencies[selectedFiatCode];
           String flag = '🏳️';
-          String name = S.of(context)!.usDollar;
+          String name = S.of(context)!.selectCurrency;
+          String displayCode = '';
 
-          if (currency != null) {
-            flag = currency.emoji;
-            name = currency.name;
+          if (selectedFiatCode != null) {
+            final currency = currencies[selectedFiatCode];
+            if (currency != null) {
+              flag = currency.emoji;
+              name = currency.name;
+              displayCode = selectedFiatCode;
+            }
           }
 
           return InkWell(
@@ -51,8 +54,6 @@ class CurrencySection extends ConsumerWidget {
               );
               if (selectedCode != null) {
                 ref.read(selectedFiatCodeProvider.notifier).state = selectedCode;
-                // Also update the settings to keep them synchronized
-                ref.read(settingsProvider.notifier).updateDefaultFiatCode(selectedCode);
                 onCurrencySelected();
               }
             },
@@ -60,12 +61,12 @@ class CurrencySection extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Row(
-                  key: Key('currency_$selectedFiatCode'),
+                  key: Key('currency_${selectedFiatCode ?? 'none'}'),
                   children: [
                     Text(flag, style: const TextStyle(fontSize: 18)),
                     const SizedBox(width: 8),
                     Text(
-                      '$selectedFiatCode - $name',
+                      displayCode.isNotEmpty ? '$displayCode - $name' : name,
                       style: const TextStyle(color: Colors.white),
                     ),
                   ],

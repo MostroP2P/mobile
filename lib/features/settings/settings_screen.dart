@@ -383,7 +383,8 @@ class SettingsScreen extends ConsumerWidget {
 
   Widget _buildCurrencySelector(BuildContext context, WidgetRef ref) {
     final currenciesAsync = ref.watch(currencyCodesProvider);
-    final selectedFiatCode = ref.watch(selectedFiatCodeProvider);
+    final settings = ref.watch(settingsProvider);
+    final selectedFiatCode = settings.defaultFiatCode;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -409,10 +410,15 @@ class SettingsScreen extends ConsumerWidget {
           ],
         ),
         data: (currencies) {
-          final selectedCurrency = currencies[selectedFiatCode];
-          final displayText = selectedCurrency != null
-              ? '${selectedCurrency.emoji.isNotEmpty ? selectedCurrency.emoji : '🏳️'} $selectedFiatCode - ${selectedCurrency.name}'
-              : selectedFiatCode;
+          String displayText;
+          if (selectedFiatCode != null) {
+            final selectedCurrency = currencies[selectedFiatCode];
+            displayText = selectedCurrency != null
+                ? '${selectedCurrency.emoji.isNotEmpty ? selectedCurrency.emoji : '🏳️'} $selectedFiatCode - ${selectedCurrency.name}'
+                : selectedFiatCode;
+          } else {
+            displayText = S.of(context)!.noCurrencySelected;
+          }
 
           return InkWell(
             onTap: () async {

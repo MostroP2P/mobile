@@ -768,6 +768,8 @@
   "relayUrlHint": "relay.esempio.com o wss://relay.esempio.com",
   "add": "Aggiungi",
   "save": "Salva",
+  "selectCurrency": "Seleziona Valuta",
+  "noCurrencySelected": "Nessuna valuta selezionata",
 
   "@_comment_timeout_messages": "Messaggi di notifica timeout",
   "orderTimeoutTaker": "Non hai risposto in tempo. L'ordine sarà ripubblicato",
