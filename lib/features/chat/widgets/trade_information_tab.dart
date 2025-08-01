@@ -15,6 +15,14 @@ class TradeInformationTab extends StatelessWidget {
     required this.orderId,
   });
 
+  /// Format order date safely with fallback for null dates
+  String _formatOrderDate(DateTime? date, BuildContext context) {
+    if (date == null) {
+      return S.of(context)!.unknownDate;
+    }
+    return DateFormat('MMMM d, yyyy').format(date);
+  }
+
   /// Get a valid creation date for the order
   /// Uses order.createdAt if valid, otherwise falls back to current time
   DateTime _getOrderCreationDate() {
@@ -188,7 +196,7 @@ class TradeInformationTab extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  DateFormat('MMMM d, yyyy').format(_getOrderCreationDate()),
+                  _formatOrderDate(_getOrderCreationDate(), context),
                   style: const TextStyle(
                     color: AppTheme.cream1,
                     fontSize: 14,
