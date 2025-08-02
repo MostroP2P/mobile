@@ -75,6 +75,15 @@
       }
     }
   },
+  "orderTakenWaitingCounterpart": "Tu orden ha sido tomada por otro usuario. Debes esperar a que decida si desea continuar. Si acepta, te avisaré para que completes tu parte. Por ahora no necesitas hacer nada.\nSi no responde en {expiration_seconds} minutos, la orden volverá a estar disponible para que otros usuarios puedan tomarla.",
+  "@orderTakenWaitingCounterpart": {
+    "placeholders": {
+      "expiration_seconds": {
+        "type": "int",
+        "description": "El tiempo de expiración en minutos"
+      }
+    }
+  },
   "waitingBuyerInvoice": "¡Pago recibido! Tus Sats ahora están 'retenidos' en tu billetera. He solicitado al comprador que proporcione una factura. Si no lo hace dentro de {expiration_seconds} minutos, tus Sats regresarán a tu billetera y el intercambio será cancelado.",
   "@waitingBuyerInvoice": {
     "placeholders": {

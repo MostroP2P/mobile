@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
+import 'package:mostro_mobile/data/models/session.dart';
+import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
@@ -107,9 +109,20 @@ class MostroMessageDetail extends ConsumerWidget {
                 ?.expirationSeconds ??
             900;
         final expMinutes = (expSecs / 60).round();
-        return S
-            .of(context)!
-            .waitingSellerToPay(expMinutes, orderPayload?.id ?? '');
+        
+        // Check if user is the maker (creator) of the order
+        final session = ref.watch(sessionProvider(orderPayload?.id ?? ''));
+        final isUserCreator = _isUserCreator(session, tradeState);
+        
+        if (isUserCreator) {
+          // Maker scenario: user created a buy order, show waiting for taker message
+          return S.of(context)!.orderTakenWaitingCounterpart(expMinutes).replaceAll('\\n', '\n');
+        } else {
+          // Taker scenario: user took someone's order, show original message
+          return S
+              .of(context)!
+              .waitingSellerToPay(expMinutes, orderPayload?.id ?? '');
+        }
       case actions.Action.waitingBuyerInvoice:
         final expSecs = ref
                 .read(orderRepositoryProvider)
@@ -117,7 +130,19 @@ class MostroMessageDetail extends ConsumerWidget {
                 ?.expirationSeconds ??
             900;
         final expMinutes = (expSecs / 60).round();
-        return S.of(context)!.waitingBuyerInvoice(expMinutes);
+        
+        // Check if user is the maker (creator) of a sell order
+        final session = ref.watch(sessionProvider(orderPayload?.id ?? ''));
+        final isUserCreator = _isUserCreator(session, tradeState);
+        final isSellOrder = tradeState.order?.kind == OrderType.sell;
+        
+        if (isUserCreator && isSellOrder) {
+          // Maker scenario: user created a sell order, show waiting for taker message
+          return S.of(context)!.orderTakenWaitingCounterpart(expMinutes).replaceAll('\\n', '\n');
+        } else {
+          // Taker scenario: user took someone's order, show original message
+          return S.of(context)!.waitingBuyerInvoice(expMinutes);
+        }
       case actions.Action.buyerInvoiceAccepted:
         return S.of(context)!.buyerInvoiceAccepted;
       case actions.Action.holdInvoicePaymentAccepted:
@@ -246,5 +271,14 @@ class MostroMessageDetail extends ConsumerWidget {
       default:
         return '${tradeState.status.toString()} - ${tradeState.action}';
     }
+  }
+
+  bool _isUserCreator(Session? session, OrderState tradeState) {
+    if (session == null || session.role == null || tradeState.order == null) {
+      return false;
+    }
+    return session.role == Role.buyer
+        ? tradeState.order!.kind == OrderType.buy
+        : tradeState.order!.kind == OrderType.sell;
   }
 }

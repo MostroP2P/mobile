@@ -75,6 +75,15 @@
       }
     }
   },
+  "orderTakenWaitingCounterpart": "Your order has been taken by another user. You must wait for them to decide if they want to continue. If they accept, I will notify you to complete your part. For now you don't need to do anything.\nIf they don't respond in {expiration_seconds} minutes, the order will be available again for other users to take.",
+  "@orderTakenWaitingCounterpart": {
+    "placeholders": {
+      "expiration_seconds": {
+        "type": "int",
+        "description": "The expiration time in minutes"
+      }
+    }
+  },
   "waitingBuyerInvoice": "Payment received! Your Sats are now 'held' in your wallet. I’ve requested the buyer to provide an invoice. If they don’t do so within {expiration_seconds} minutes, your Sats will return to your wallet, and the trade will be canceled.",
   "@waitingBuyerInvoice": {
     "placeholders": {
