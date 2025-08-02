@@ -403,7 +403,6 @@
   "loadingCurrencies": "Loading currencies...",
   "errorLoadingCurrencies": "Error loading currencies",
   "usDollar": "US Dollar",
-  "selectCurrency": "Select Currency",
   "searchCurrencies": "Search currencies...",
   "noCurrenciesFound": "No currencies found",
   
