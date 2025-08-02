@@ -403,7 +403,6 @@
   "loadingCurrencies": "Loading currencies...",
   "errorLoadingCurrencies": "Error loading currencies",
   "usDollar": "US Dollar",
-  "selectCurrency": "Select Currency",
   "searchCurrencies": "Search currencies...",
   "noCurrenciesFound": "No currencies found",
   
@@ -702,6 +701,8 @@
   "relayUrlHint": "relay.example.com or wss://relay.example.com",
   "add": "Add",
   "save": "Save",
+  "selectCurrency": "Select Currency",
+  "noCurrencySelected": "No currency selected",
 
   "@_comment_timeout_messages": "Timeout notification messages",
   "orderTimeoutTaker": "You didn't respond in time. The order will be republished",

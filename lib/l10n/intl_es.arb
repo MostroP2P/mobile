@@ -359,7 +359,6 @@
   "loadingCurrencies": "Cargando monedas...",
   "errorLoadingCurrencies": "Error cargando monedas",
   "usDollar": "Dólar Estadounidense",
-  "selectCurrency": "Seleccionar Moneda",
   "searchCurrencies": "Buscar monedas...",
   "noCurrenciesFound": "No se encontraron monedas",
   
@@ -732,6 +731,8 @@
   "relayUrlHint": "relay.ejemplo.com o wss://relay.ejemplo.com",
   "add": "Agregar",
   "save": "Guardar",
+  "selectCurrency": "Seleccionar Moneda",
+  "noCurrencySelected": "Ninguna moneda seleccionada",
 
   "@_comment_timeout_messages": "Mensajes de notificación de timeout",
   "orderTimeoutTaker": "No respondiste a tiempo. La orden será republicada",

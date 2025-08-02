@@ -15,6 +15,7 @@ import 'package:mostro_mobile/features/order/widgets/premium_section.dart';
 import 'package:mostro_mobile/features/order/widgets/price_type_section.dart';
 import 'package:mostro_mobile/features/order/widgets/form_section.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
+import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
@@ -60,6 +61,10 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
           });
         }
       }
+
+      // Reset selectedFiatCodeProvider to default from settings for each new order
+      final settings = ref.read(settingsProvider);
+      ref.read(selectedFiatCodeProvider.notifier).state = settings.defaultFiatCode;
     });
   }
 
@@ -251,7 +256,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
     if (_formKey.currentState?.validate() ?? false) {
       final selectedFiatCode = ref.read(selectedFiatCodeProvider);
 
-      if (selectedFiatCode.isEmpty) {
+      if (selectedFiatCode == null || selectedFiatCode.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(S.of(context)!.pleaseSelectCurrency),
@@ -260,6 +265,9 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
         );
         return;
       }
+
+      // Now we know selectedFiatCode is non-null and non-empty
+      final fiatCode = selectedFiatCode;
 
       if (_selectedPaymentMethods.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -316,7 +324,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
 
         final order = Order(
           kind: _orderType,
-          fiatCode: selectedFiatCode,
+          fiatCode: fiatCode,
           fiatAmount: fiatAmount!,
           minAmount: minAmount,
           maxAmount: maxAmount,
