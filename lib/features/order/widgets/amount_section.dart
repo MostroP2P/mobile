@@ -79,9 +79,13 @@ class _AmountSectionState extends State<AmountSection> {
 
   String _getTitle() {
     if (_isRangeMode) {
-      return S.of(context)!.creatingRangeOrder;
+      return widget.orderType == OrderType.buy
+          ? S.of(context)!.creatingRangeOrderBuySend
+          : S.of(context)!.creatingRangeOrder;
     }
-    return S.of(context)!.enterAmountYouWantToReceive;
+    return widget.orderType == OrderType.buy
+        ? S.of(context)!.enterAmountYouWantToSend
+        : S.of(context)!.enterAmountYouWantToReceive;
   }
 
   Widget? _getTopRightWidget() {
