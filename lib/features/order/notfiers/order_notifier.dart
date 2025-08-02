@@ -22,8 +22,16 @@ class OrderNotifier extends AbstractMostroNotifier {
 
   @override
   void handleEvent(MostroMessage event) {
+    logger.i('OrderNotifier received event: ${event.action} for order $orderId');
+    
     // First handle the event normally
     super.handleEvent(event);
+    
+    // Skip timeout detection if order is being canceled
+    if (event.action == Action.canceled) {
+      logger.i('Skipping timeout detection for canceled order $orderId');
+      return;
+    }
     
     // Then check for timeout if we're in waiting states
     // Only check if we have a valid session (this is a taker scenario)
@@ -160,7 +168,7 @@ class OrderNotifier extends AbstractMostroNotifier {
   /// Check if session should be cleaned up due to timeout
   /// Returns true if session was cleaned up, false otherwise
   Future<bool> _checkTimeoutAndCleanup(OrderState currentState, MostroMessage? latestGiftWrap) async {
-    // Only check for timeout in waiting states
+    // Only check for timeout/cancellation in waiting states
     if (currentState.status != Status.waitingBuyerInvoice && 
         currentState.status != Status.waitingPayment) {
       return false;
@@ -180,22 +188,38 @@ class OrderNotifier extends AbstractMostroNotifier {
 
       final publicEvent = publicEventAsync;
       
-      // Check if public event shows pending status
-      if (publicEvent.status != Status.pending) {
-        // Public event is not pending, no cleanup needed
-        return false;
-      }
-
       // Compare timestamps: public event vs latest gift wrap
       final publicTimestamp = publicEvent.createdAt;
       final giftWrapTimestamp = DateTime.fromMillisecondsSinceEpoch(latestGiftWrap.timestamp ?? 0);
       
       if (publicTimestamp != null && publicTimestamp.isAfter(giftWrapTimestamp)) {
-        // Timeout detected: Public event is newer and shows pending
-        logger.i('Timeout detected for order $orderId: Public event ($publicTimestamp) is newer than gift wrap ($giftWrapTimestamp)');
+        // Check if order was canceled
+        if (publicEvent.status == Status.canceled) {
+          logger.i('CANCELLATION detected for order $orderId via public event');
+          
+          // CANCELED: Always delete session for both maker and taker
+          final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+          await sessionNotifier.deleteSession(orderId);
+          logger.i('Session deleted for canceled order $orderId');
+          
+          // Show cancellation notification
+          final notifProvider = ref.read(notificationProvider.notifier);
+          notifProvider.showInformation(Action.canceled, values: {'id': orderId});
+          
+          // Navigate to order book
+          final navProvider = ref.read(navigationProvider.notifier);
+          navProvider.go('/order_book');
+          
+          return true; // Session was cleaned up
+        }
         
-        // Determine if this is a maker (created by user) or taker (taken by user)
-        final currentSession = ref.read(sessionProvider(orderId));
+        // Check if order timed out (returned to pending)
+        if (publicEvent.status == Status.pending) {
+          // Timeout detected: Public event is newer and shows pending
+          logger.i('Timeout detected for order $orderId: Public event ($publicTimestamp) is newer than gift wrap ($giftWrapTimestamp)');
+        
+          // Determine if this is a maker (created by user) or taker (taken by user)
+          final currentSession = ref.read(sessionProvider(orderId));
         if (currentSession == null) {
           return false;
         }
@@ -255,9 +279,10 @@ class OrderNotifier extends AbstractMostroNotifier {
           // Return true to indicate session was cleaned up
           return true;
         }
+        }
       }
 
-      // No timeout detected, no cleanup needed
+      // No timeout/cancellation detected, no cleanup needed
       return false;
       
     } catch (e, stack) {
