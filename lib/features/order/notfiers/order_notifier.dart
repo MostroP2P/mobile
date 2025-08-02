@@ -204,7 +204,7 @@ class OrderNotifier extends AbstractMostroNotifier {
           
           // Show cancellation notification
           final notifProvider = ref.read(notificationProvider.notifier);
-          notifProvider.showInformation(Action.canceled, values: {'id': orderId});
+          notifProvider.showCustomMessage('orderCanceled');
           
           // Navigate to order book
           final navProvider = ref.read(navigationProvider.notifier);
