@@ -10,6 +10,7 @@ class FormSection extends StatelessWidget {
   final Widget? extraContent;
   final String? infoTooltip;
   final String? infoTitle;
+  final Widget? topRightWidget;
 
   const FormSection({
     super.key,
@@ -20,6 +21,7 @@ class FormSection extends StatelessWidget {
     this.extraContent,
     this.infoTooltip,
     this.infoTitle,
+    this.topRightWidget,
   });
 
   @override
@@ -61,6 +63,10 @@ class FormSection extends StatelessWidget {
                       ),
                     ),
                   ),
+                ],
+                if (topRightWidget != null) ...[
+                  const SizedBox(width: 8),
+                  topRightWidget!,
                 ],
               ],
             ),
