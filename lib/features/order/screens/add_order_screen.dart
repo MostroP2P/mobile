@@ -28,7 +28,6 @@ class AddOrderScreen extends ConsumerStatefulWidget {
 
 class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _fiatAmountController = TextEditingController();
   final _lightningAddressController = TextEditingController();
   final _scrollController = ScrollController();
   final _customPaymentMethodController = TextEditingController();
@@ -71,28 +70,17 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
   @override
   void dispose() {
     _scrollController.dispose();
-    _fiatAmountController.dispose();
     _lightningAddressController.dispose();
     _customPaymentMethodController.dispose();
     _satsAmountController.dispose();
     super.dispose();
   }
 
-  void _parseFiatAmount(String input) {
-    if (input.contains('-')) {
-      final parts = input.split('-');
-      if (parts.length == 2) {
-        setState(() {
-          _minFiatAmount = int.tryParse(parts[0].trim());
-          _maxFiatAmount = int.tryParse(parts[1].trim());
-        });
-      }
-    } else {
-      setState(() {
-        _minFiatAmount = int.tryParse(input);
-        _maxFiatAmount = null;
-      });
-    }
+  void _onAmountChanged(int? minAmount, int? maxAmount) {
+    setState(() {
+      _minFiatAmount = minAmount;
+      _maxFiatAmount = maxAmount;
+    });
   }
 
   @override
@@ -143,8 +131,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
                         const SizedBox(height: 16),
                         AmountSection(
                           orderType: _orderType,
-                          controller: _fiatAmountController,
-                          onAmountChanged: _parseFiatAmount,
+                          onAmountChanged: _onAmountChanged,
                         ),
                         const SizedBox(height: 16),
                         PaymentMethodsSection(
