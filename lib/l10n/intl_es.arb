@@ -359,7 +359,6 @@
   "loadingCurrencies": "Cargando monedas...",
   "errorLoadingCurrencies": "Error cargando monedas",
   "usDollar": "Dólar Estadounidense",
-  "selectCurrency": "Seleccionar Moneda",
   "searchCurrencies": "Buscar monedas...",
   "noCurrenciesFound": "No se encontraron monedas",
   
