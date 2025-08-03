@@ -45,6 +45,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
   @override
   Widget build(BuildContext context) {
     final chatDetailState = ref.watch(chatRoomsProvider(widget.orderId));
+    final chatNotifier = ref.watch(chatRoomsProvider(widget.orderId).notifier);
     final session = ref.read(sessionProvider(widget.orderId));
 
     final peer = session!.peer!.publicKey;
@@ -148,11 +149,13 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                       child: Column(
                         children: [
                           Expanded(
-                            child: ChatMessagesList(
-                              chatRoom: chatDetailState,
-                              peerPubkey: peer,
-                              scrollController: _scrollController,
-                            ),
+                            child: !chatNotifier.isInitialized
+                              ? const Center(child: CircularProgressIndicator())
+                              : ChatMessagesList(
+                                  chatRoom: chatDetailState,
+                                  peerPubkey: peer,
+                                  scrollController: _scrollController,
+                                ),
                           ),
                         ],
                       ),

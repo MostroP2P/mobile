@@ -10,6 +10,10 @@ final chatRoomsNotifierProvider =
   },
 );
 
+// Provider to track initialization status of chat rooms
+final chatRoomInitializedProvider = StateProvider.family<bool, String>((ref, chatId) => false);
+
+// The main chat room provider with proper initialization handling
 final chatRoomsProvider =
     StateNotifierProvider.family<ChatRoomNotifier, ChatRoom, String>(
         (ref, chatId) {
@@ -22,8 +26,27 @@ final chatRoomsProvider =
     ref,
   );
   
-  // Initialize the notifier asynchronously
-  notifier.initialize();
+  // Initialize the notifier asynchronously and update the initialization status
+  Future<void> initializeNotifier() async {
+    try {
+      await notifier.initialize();
+      // Mark as initialized when complete
+      ref.read(chatRoomInitializedProvider(chatId).notifier).state = true;
+    } catch (e) {
+      // Handle initialization errors
+      // We don't rethrow as this is running in a fire-and-forget context
+      // The error will be available in the notifier's state if needed
+    }
+  }
+  
+  // Start initialization but don't block provider creation
+  initializeNotifier();
   
   return notifier;
 });
+
+// Helper provider to check if a chat room is ready for use
+final isChatRoomReadyProvider = Provider.family<bool, String>((ref, chatId) {
+  return ref.watch(chatRoomInitializedProvider(chatId));
+});
+

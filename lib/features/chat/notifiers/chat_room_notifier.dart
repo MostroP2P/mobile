@@ -27,6 +27,8 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
   final Ref ref;
   StreamSubscription<NostrEvent>? _subscription;
   ProviderSubscription<Session?>? _sessionListener;
+  bool _isInitialized = false;
+  bool get isInitialized => _isInitialized;
 
   ChatRoomNotifier(
     super.state,
@@ -38,6 +40,7 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
   Future<void> initialize() async {
     await _loadHistoricalMessages();
     subscribe();
+    _isInitialized = true;
   }
 
   void subscribe() {
