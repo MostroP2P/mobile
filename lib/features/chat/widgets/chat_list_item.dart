@@ -5,18 +5,26 @@ import 'package:intl/intl.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:mostro_mobile/services/chat_read_status_service.dart';
 import 'package:mostro_mobile/shared/providers/avatar_provider.dart';
 import 'package:mostro_mobile/shared/providers/legible_handle_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 
-class ChatListItem extends ConsumerWidget {
+class ChatListItem extends ConsumerStatefulWidget {
   final String orderId;
 
   const ChatListItem({super.key, required this.orderId});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final session = ref.watch(sessionProvider(orderId));
+  ConsumerState<ChatListItem> createState() => _ChatListItemState();
+}
+
+class _ChatListItemState extends ConsumerState<ChatListItem> {
+  bool _isMarkedAsRead = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final session = ref.watch(sessionProvider(widget.orderId));
 
     // Check if session or peer is null and return a placeholder widget
     if (session == null || session.peer == null) {
@@ -28,8 +36,8 @@ class ChatListItem extends ConsumerWidget {
     final handle = ref.read(nickNameProvider(peerPubkey));
 
     // Get actual chat data - use watch to ensure we get the latest state
-    final chatRoom = ref.watch(chatRoomsProvider(orderId));
-    
+    final chatRoom = ref.watch(chatRoomsProvider(widget.orderId));
+
     // Force refresh to ensure we have the latest messages
     // This helps with cases where the state might not be fully synchronized
     final bool isSelling = session.role?.toString() == 'seller';
@@ -46,7 +54,7 @@ class ChatListItem extends ConsumerWidget {
       // So the LAST message in the list is the most recent one
       final lastMessage = chatRoom.messages.last;
       messagePreview = lastMessage.content ?? "";
-      
+
       // Trim message preview if too long
       if (messagePreview.length > 50) {
         messagePreview = '${messagePreview.substring(0, 50)}...';
@@ -67,8 +75,13 @@ class ChatListItem extends ConsumerWidget {
     }
 
     return GestureDetector(
-      onTap: () {
-        context.push('/chat_room/$orderId');
+      onTap: () async {
+        // Mark chat as read when user enters and update state to refresh UI immediately
+        setState(() {
+          _isMarkedAsRead = true;
+        });
+        await ChatReadStatusService.markChatAsRead(widget.orderId);
+        context.push('/chat_room/${widget.orderId}');
       },
       child: Container(
         decoration: BoxDecoration(
@@ -102,22 +115,53 @@ class ChatListItem extends ConsumerWidget {
                             fontSize: 16,
                           ),
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color:
-                                AppTheme.backgroundInput.withValues(alpha: 0.5),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            date,
-                            style: TextStyle(
-                              color: AppTheme.textSecondary,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppTheme.backgroundInput
+                                    .withValues(alpha: 0.5),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                date,
+                                style: TextStyle(
+                                  color: AppTheme.textSecondary,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
                             ),
-                          ),
+                            // Unread indicator positioned below the date
+                            if (!_isMarkedAsRead)
+                              FutureBuilder<bool>(
+                                future: ChatReadStatusService.hasUnreadMessages(
+                                  widget.orderId,
+                                  chatRoom.messages,
+                                  currentUserPubkey,
+                                ),
+                                builder: (context, snapshot) {
+                                  final hasUnread = snapshot.data ?? false;
+                                  if (!hasUnread) {
+                                    return const SizedBox.shrink();
+                                  }
+                                  return Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Container(
+                                      width: 8,
+                                      height: 8,
+                                      decoration: BoxDecoration(
+                                        color: Colors.red,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                          ],
                         ),
                       ],
                     ),
