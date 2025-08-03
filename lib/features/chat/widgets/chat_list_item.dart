@@ -41,7 +41,6 @@ class ChatListItem extends ConsumerWidget {
     String messagePreview = S.of(context)!.noMessagesYet;
     String date =
         S.of(context)!.today; // Default date if no message date is available
-    bool hasUnreadMessages = false;
     if (chatRoom.messages.isNotEmpty) {
       // ChatRoom constructor sorts messages from oldest to newest
       // So the LAST message in the list is the most recent one
@@ -56,26 +55,6 @@ class ChatListItem extends ConsumerWidget {
       // If message is from the current user, prefix with "You: "
       if (lastMessage.pubkey == currentUserPubkey) {
         messagePreview = "${S.of(context)!.youPrefix}$messagePreview";
-      }
-
-      // Check for unread messages from the peer (not from current user)
-      // A message is considered unread if it's from the peer and was sent in the last 2 hours
-      hasUnreadMessages = false;
-      final now = DateTime.now();
-      final twoHoursAgo = now.subtract(const Duration(hours: 2));
-      
-      for (final message in chatRoom.messages) {
-        if (message.pubkey == peerPubkey &&
-            message.createdAt != null &&
-            message.createdAt is int) {
-          final messageTime = DateTime.fromMillisecondsSinceEpoch(
-              (message.createdAt as int) * 1000);
-
-          if (messageTime.isAfter(twoHoursAgo)) {
-            hasUnreadMessages = true;
-            break;
-          }
-        }
       }
 
       // Format the date using the last message (most recent)
@@ -105,49 +84,8 @@ class ChatListItem extends ConsumerWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Avatar with status indicator
-              Stack(
-                children: [
-                  NymAvatar(pubkeyHex: peerPubkey),
-                  // Role indicator (seller)
-                  if (isSelling)
-                    Positioned(
-                      right: 0,
-                      bottom: 0,
-                      child: Container(
-                        width: 10,
-                        height: 10,
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: AppTheme.backgroundDark,
-                            width: 2,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                  // Unread messages indicator (red dot)
-                  if (hasUnreadMessages)
-                    Positioned(
-                      right: isSelling ? 2 : 0, // Adjust position if seller indicator is present
-                      top: 0,
-                      child: Container(
-                        width: 12,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: AppTheme.backgroundDark,
-                            width: 2,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
+              // Avatar without indicators
+              NymAvatar(pubkeyHex: peerPubkey),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
