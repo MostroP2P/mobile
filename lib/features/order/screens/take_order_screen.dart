@@ -294,18 +294,7 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
                             ElevatedButton(
                               key: const Key('submitAmountButton'),
                               onPressed: (_isThrottled() || !isConnected) 
-                                  ? () {
-                                      // Show feedback when button is disabled
-                                      if (!isConnected) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            content: Text('No connection. Please check your network and try again.'),
-                                            backgroundColor: Colors.orange,
-                                            duration: Duration(seconds: 2),
-                                          ),
-                                        );
-                                      }
-                                    }
+                                  ? null  // Properly disable button for correct styling
                                   : () {
                                 final inputAmount = int.tryParse(
                                   widget._fiatAmountController.text.trim());
@@ -332,12 +321,10 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
                                 }
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: (_isThrottled() || !isConnected) 
-                                    ? Colors.grey.shade400 
-                                    : AppTheme.mostroGreen,
-                                foregroundColor: (_isThrottled() || !isConnected) 
-                                    ? Colors.grey.shade600 
-                                    : Colors.white,
+                                backgroundColor: AppTheme.mostroGreen,
+                                foregroundColor: Colors.white,
+                                disabledBackgroundColor: Colors.grey,
+                                disabledForegroundColor: Colors.white,
                               ),
                               child: Text(S.of(context)!.submit),
                             ),
@@ -420,12 +407,10 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: (_isSubmitting || _isThrottled() || !isConnected) 
-                  ? Colors.grey.shade400 
-                  : AppTheme.mostroGreen,
-              foregroundColor: (_isSubmitting || _isThrottled() || !isConnected) 
-                  ? Colors.grey.shade600 
-                  : Colors.white,
+              backgroundColor: AppTheme.mostroGreen,
+              foregroundColor: Colors.white,
+              disabledBackgroundColor: Colors.grey,
+              disabledForegroundColor: Colors.white,
             ),
             child: _isSubmitting
                 ? const SizedBox(

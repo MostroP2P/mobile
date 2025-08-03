@@ -6,6 +6,7 @@ import 'package:mostro_mobile/features/order/providers/order_notifier_provider.d
 import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
+import 'package:mostro_mobile/services/connection_manager.dart' as connection_mgr;
 
 enum ButtonStyleType { raised, outlined, text }
 
@@ -120,6 +121,9 @@ class _MostroReactiveButtonState extends ConsumerState<MostroReactiveButton> {
   Widget build(BuildContext context) {
     final orderState = ref.watch(orderNotifierProvider(widget.orderId));
     final session = ref.watch(sessionProvider(widget.orderId));
+    // Check connection state for connection-aware disabling
+    final connectionState = ref.watch(connection_mgr.connectionManagerProvider);
+    final isConnected = connectionState == connection_mgr.ConnectionState.connected;
 
     if (session != null) {
       final nextStates = orderState.getActions(session.role!);
@@ -166,7 +170,7 @@ class _MostroReactiveButtonState extends ConsumerState<MostroReactiveButton> {
     switch (widget.buttonStyle) {
       case ButtonStyleType.raised:
         button = ElevatedButton(
-          onPressed: _loading ? null : _startOperation,
+          onPressed: (_loading || !isConnected) ? null : _startOperation,
           style: (widget.backgroundColor != null || widget.foregroundColor != null)
               ? AppTheme.theme.elevatedButtonTheme.style?.copyWith(
                   backgroundColor: widget.backgroundColor != null
@@ -182,7 +186,7 @@ class _MostroReactiveButtonState extends ConsumerState<MostroReactiveButton> {
         break;
       case ButtonStyleType.outlined:
         button = OutlinedButton(
-          onPressed: _loading ? null : _startOperation,
+          onPressed: (_loading || !isConnected) ? null : _startOperation,
           style: widget.backgroundColor != null
               ? AppTheme.theme.outlinedButtonTheme.style?.copyWith(
                   backgroundColor: WidgetStateProperty.resolveWith(
@@ -195,7 +199,7 @@ class _MostroReactiveButtonState extends ConsumerState<MostroReactiveButton> {
         break;
       case ButtonStyleType.text:
         button = TextButton(
-          onPressed: _loading ? null : _startOperation,
+          onPressed: (_loading || !isConnected) ? null : _startOperation,
           style: widget.backgroundColor != null
               ? AppTheme.theme.textButtonTheme.style?.copyWith(
                   backgroundColor: WidgetStateProperty.resolveWith(

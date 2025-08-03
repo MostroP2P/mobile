@@ -6,11 +6,13 @@ import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
+import 'package:mostro_mobile/services/connection_manager.dart';
 
 final orderRepositoryProvider = Provider((ref) {
   final nostrService = ref.read(nostrServiceProvider);
+  final connectionManager = ref.read(connectionManagerInstanceProvider);
   final settings = ref.read(settingsProvider);
-  final orderRepo = OpenOrdersRepository(nostrService, settings);
+  final orderRepo = OpenOrdersRepository(nostrService, connectionManager, settings);
 
   ref.listen<Settings>(settingsProvider, (previous, next) {
     orderRepo.updateSettings(next);

@@ -7,12 +7,14 @@ import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/repositories/order_repository_interface.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
+import 'package:mostro_mobile/services/connection_manager.dart' as conn_mgr;
 
 const orderEventKind = 38383;
 const orderFilterDurationHours = 48;
 
 class OpenOrdersRepository implements OrderRepository<NostrEvent> {
   final NostrService _nostrService;
+  final conn_mgr.ConnectionManager _connectionManager;
   NostrEvent? _mostroInstance;
   Settings _settings;
 
@@ -21,14 +23,31 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
   final Map<String, NostrEvent> _events = {};
   final _logger = Logger();
   StreamSubscription<NostrEvent>? _subscription;
+  StreamSubscription<conn_mgr.ConnectionState>? _connectionSubscription;
 
   NostrEvent? get mostroInstance => _mostroInstance;
 
-  OpenOrdersRepository(this._nostrService, this._settings) {
+  OpenOrdersRepository(this._nostrService, this._connectionManager, this._settings) {
     // Subscribe to orders and initialize data
     _subscribeToOrders();
     // Immediately emit current (possibly empty) cache so UI doesn't remain in loading state
     _emitEvents();
+    // Listen for connection state changes to resubscribe when connection is restored
+    _listenToConnectionState();
+  }
+
+  /// Listen to connection state changes to resubscribe when connection is restored
+  void _listenToConnectionState() {
+    _connectionSubscription?.cancel();
+    _connectionSubscription = _connectionManager.connectionState.listen((state) {
+      if (state == conn_mgr.ConnectionState.connected) {
+        _logger.i('Connection restored, resubscribing to orders');
+        _subscribeToOrders();
+      } else if (state == conn_mgr.ConnectionState.disconnected || 
+                 state == conn_mgr.ConnectionState.failed) {
+        _logger.w('Connection lost, orders subscription may be interrupted');
+      }
+    });
   }
 
   /// Subscribes to events matching the given filter.
@@ -75,6 +94,7 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
   @override
   void dispose() {
     _subscription?.cancel();
+    _connectionSubscription?.cancel();
     _eventStreamController.close();
     _events.clear();
   }
