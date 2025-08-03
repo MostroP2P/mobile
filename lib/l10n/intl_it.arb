@@ -584,10 +584,10 @@
       }
     }
   },
-  "cancelPendingButton": "ANNULLAMENTO IN SOSPESO",
+  "cancelPendingTradeButton": "ANNULLAMENTO IN SOSPESO",
   "disputeButton": "DISPUTA",
   "fiatSentButton": "FIAT INVIATO",
-  "completePurchaseButton": "COMPLETA ACQUISTO",
+  "completePurchaseTradeButton": "COMPLETA ACQUISTO",
   "paymentMethodLabel": "Metodo di Pagamento",
   "createdOnLabel": "Creato il",
   "orderIdLabel": "ID Ordine",

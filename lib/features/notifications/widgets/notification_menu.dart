@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:heroicons/heroicons.dart';
-import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/notification.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
@@ -43,7 +42,7 @@ class NotificationMenu extends StatelessWidget {
             HeroIcons.check,
             style: HeroIconStyle.outline,
             size: 16,
-            color: AppTheme.statusSuccess
+            color: Theme.of(context).colorScheme.primary
           ),
           const SizedBox(width: 8),
           Text(
@@ -60,17 +59,17 @@ class NotificationMenu extends StatelessWidget {
       value: 'delete',
       child: Row(
         children: [
-          const HeroIcon(
+          HeroIcon(
             HeroIcons.trash,
             style: HeroIconStyle.outline,
             size: 16,
-            color: AppTheme.statusError,
+            color: Theme.of(context).colorScheme.error,
           ),
           const SizedBox(width: 8),
           Text(
             S.of(context)!.delete,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppTheme.statusError,
+              color: Theme.of(context).colorScheme.error,
             ),
           ),
         ],

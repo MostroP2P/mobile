@@ -71,7 +71,7 @@ class NotificationsScreen extends ConsumerWidget {
 
           return RefreshIndicator(
             onRefresh: () async {
-              return ref.refresh(notificationsProvider);
+              ref.invalidate(notificationsProvider);
             },
             child: ListView.builder(
               padding: AppTheme.mediumPadding,

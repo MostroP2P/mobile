@@ -569,10 +569,10 @@
       }
     }
   },
-  "cancelPendingButton": "CANCELACIÓN PENDIENTE",
+  "cancelPendingTradeButton": "CANCELACIÓN PENDIENTE",
   "disputeButton": "DISPUTA",
   "fiatSentButton": "FIAT ENVIADO",
-  "completePurchaseButton": "COMPLETAR COMPRA",
+  "completePurchaseTradeButton": "COMPLETAR COMPRA",
   "paymentMethodLabel": "Método de Pago",
   "createdOnLabel": "Creado el",
   "orderIdLabel": "ID de Orden",
