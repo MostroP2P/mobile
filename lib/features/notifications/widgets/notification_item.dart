@@ -4,6 +4,7 @@ import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/notification_type.dart';
 import 'package:mostro_mobile/data/models/notification.dart';
+import 'package:mostro_mobile/data/models/enums/action.dart' as mostro_action;
 import 'package:mostro_mobile/features/notifications/providers/notifications_provider.dart';
 import 'package:mostro_mobile/features/notifications/widgets/notification_type_icon.dart';
 import 'package:mostro_mobile/shared/utils/datetime_extensions_utils.dart';
@@ -45,6 +46,90 @@ String _resolveNotificationText(BuildContext context, String key) {
       return s.notification_order_canceled_title;
     case 'notification_order_canceled_message':
       return s.notification_order_canceled_message;
+    case 'notification_cooperative_cancel_initiated_by_you_title':
+      return s.notification_cooperative_cancel_initiated_by_you_title;
+    case 'notification_cooperative_cancel_initiated_by_you_message':
+      return s.notification_cooperative_cancel_initiated_by_you_message;
+    case 'notification_cooperative_cancel_initiated_by_peer_title':
+      return s.notification_cooperative_cancel_initiated_by_peer_title;
+    case 'notification_cooperative_cancel_initiated_by_peer_message':
+      return s.notification_cooperative_cancel_initiated_by_peer_message;
+    case 'notification_cooperative_cancel_accepted_title':
+      return s.notification_cooperative_cancel_accepted_title;
+    case 'notification_cooperative_cancel_accepted_message':
+      return s.notification_cooperative_cancel_accepted_message;
+    case 'notification_fiat_sent_ok_title':
+      return s.notification_fiat_sent_ok_title;
+    case 'notification_fiat_sent_ok_message':
+      return s.notification_fiat_sent_ok_message;
+    case 'notification_release_title':
+      return s.notification_release_title;
+    case 'notification_release_message':
+      return s.notification_release_message;
+    case 'notification_buyer_invoice_accepted_title':
+      return s.notification_buyer_invoice_accepted_title;
+    case 'notification_buyer_invoice_accepted_message':
+      return s.notification_buyer_invoice_accepted_message;
+    case 'notification_purchase_completed_title':
+      return s.notification_purchase_completed_title;
+    case 'notification_purchase_completed_message':
+      return s.notification_purchase_completed_message;
+    case 'notification_hold_invoice_payment_accepted_title':
+      return s.notification_hold_invoice_payment_accepted_title;
+    case 'notification_hold_invoice_payment_accepted_message':
+      return s.notification_hold_invoice_payment_accepted_message;
+    case 'notification_hold_invoice_payment_settled_title':
+      return s.notification_hold_invoice_payment_settled_title;
+    case 'notification_hold_invoice_payment_settled_message':
+      return s.notification_hold_invoice_payment_settled_message;
+    case 'notification_hold_invoice_payment_canceled_title':
+      return s.notification_hold_invoice_payment_canceled_title;
+    case 'notification_hold_invoice_payment_canceled_message':
+      return s.notification_hold_invoice_payment_canceled_message;
+    case 'notification_waiting_seller_to_pay_title':
+      return s.notification_waiting_seller_to_pay_title;
+    case 'notification_waiting_seller_to_pay_message':
+      return s.notification_waiting_seller_to_pay_message;
+    case 'notification_waiting_buyer_invoice_title':
+      return s.notification_waiting_buyer_invoice_title;
+    case 'notification_waiting_buyer_invoice_message':
+      return s.notification_waiting_buyer_invoice_message;
+    case 'notification_add_invoice_title':
+      return s.notification_add_invoice_title;
+    case 'notification_add_invoice_message':
+      return s.notification_add_invoice_message;
+    case 'notification_buyer_took_order_title':
+      return s.notification_buyer_took_order_title;
+    case 'notification_buyer_took_order_message':
+      return s.notification_buyer_took_order_message;
+    case 'notification_rate_title':
+      return s.notification_rate_title;
+    case 'notification_rate_message':
+      return s.notification_rate_message;
+    case 'notification_rate_received_title':
+      return s.notification_rate_received_title;
+    case 'notification_rate_received_message':
+      return s.notification_rate_received_message;
+    case 'notification_dispute_initiated_by_you_title':
+      return s.notification_dispute_initiated_by_you_title;
+    case 'notification_dispute_initiated_by_you_message':
+      return s.notification_dispute_initiated_by_you_message;
+    case 'notification_dispute_initiated_by_peer_title':
+      return s.notification_dispute_initiated_by_peer_title;
+    case 'notification_dispute_initiated_by_peer_message':
+      return s.notification_dispute_initiated_by_peer_message;
+    case 'notification_payment_failed_title':
+      return s.notification_payment_failed_title;
+    case 'notification_payment_failed_message':
+      return s.notification_payment_failed_message;
+    case 'notification_invoice_updated_title':
+      return s.notification_invoice_updated_title;
+    case 'notification_invoice_updated_message':
+      return s.notification_invoice_updated_message;
+    case 'notification_cant_do_title':
+      return s.notification_cant_do_title;
+    case 'notification_cant_do_message':
+      return s.notification_cant_do_message;
     case 'notification_new_message_title':
       return s.notification_new_message_title;
     case 'notification_new_message_message':
@@ -118,7 +203,6 @@ class NotificationItem extends ConsumerWidget {
     }
 
     //TODO: Implement navigation based on notification type
-
     if (notification.orderId != null) {
       switch (notification.type) {
         case NotificationType.orderUpdate:
@@ -151,11 +235,11 @@ class NotificationItem extends ConsumerWidget {
       builder: (context) => AlertDialog(
         backgroundColor: AppTheme.backgroundDark,
         title: Text(
-          'Delete notification',
+          S.of(context)!.delete,
           style: const TextStyle(color: AppTheme.textPrimary),
         ),
         content: Text(
-          'Are you sure you want to delete this notification?',
+          S.of(context)!.confirmDeleteNotification,
           style: const TextStyle(color: AppTheme.textSecondary),
         ),
         actions: [
@@ -172,7 +256,7 @@ class NotificationItem extends ConsumerWidget {
               Navigator.of(context).pop();
             },
             child: Text(
-              'Delete',
+              S.of(context)!.delete,
               style: const TextStyle(color: AppTheme.statusError),
             ),
           ),
@@ -240,8 +324,8 @@ class _UnreadIndicator extends StatelessWidget {
     return Container(
       width: 8,
       height: 8,
-      decoration: BoxDecoration(
-        color: AppTheme.statusPendingBackground,
+      decoration: const BoxDecoration(
+        color: AppTheme.mostroGreen,
         shape: BoxShape.circle,
       ),
     );
@@ -255,11 +339,20 @@ class _NotificationMessage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      _resolveNotificationText(context, notification.message),
-      style: _getMessageStyle(context),
-      maxLines: 2,
-      overflow: TextOverflow.ellipsis,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          _resolveNotificationText(context, notification.message),
+          style: _getMessageStyle(context),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+        if (notification.data.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          _NotificationDetails(notification: notification),
+        ],
+      ],
     );
   }
 
@@ -268,6 +361,248 @@ class _NotificationMessage extends StatelessWidget {
       color: notification.isRead
           ? Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6)
           : Theme.of(context).textTheme.bodyMedium?.color,
+    );
+  }
+}
+
+class _NotificationDetails extends StatelessWidget {
+  final NotificationModel notification;
+
+  const _NotificationDetails({required this.notification});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: AppTheme.smallPadding,
+      decoration: BoxDecoration(
+        color: AppTheme.backgroundInput.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: AppTheme.textInactive.withValues(alpha: 0.2),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: _buildDetailsWidgets(context),
+      ),
+    );
+  }
+
+  List<Widget> _buildDetailsWidgets(BuildContext context) {
+    final widgets = <Widget>[];
+    final data = notification.data;
+
+    switch (notification.action) {
+      case mostro_action.Action.fiatSentOk:
+        if (data.containsKey('buyer_npub')) {
+          widgets.add(_DetailRow(
+            label: S.of(context)!.buyer,
+            value: _formatHashOrId(data['buyer_npub']),
+            icon: HeroIcons.user,
+          ));
+        }
+        break;
+
+      case mostro_action.Action.holdInvoicePaymentAccepted:
+        if (data.containsKey('seller_npub')) {
+          widgets.add(_DetailRow(
+            label: S.of(context)!.seller,
+            value: _formatHashOrId(data['seller_npub']),
+            icon: HeroIcons.user,
+          ));
+        }
+        if (data.containsKey('fiat_amount') && data.containsKey('fiat_code')) {
+          widgets.add(_DetailRow(
+            label: S.of(context)!.amount,
+            value: '${data['fiat_amount']} ${data['fiat_code']}',
+            icon: HeroIcons.banknotes,
+          ));
+        }
+        if (data.containsKey('payment_method')) {
+          widgets.add(_DetailRow(
+            label: S.of(context)!.paymentMethod,
+            value: data['payment_method'].toString(),
+            icon: HeroIcons.creditCard,
+          ));
+        }
+        break;
+
+      case mostro_action.Action.waitingSellerToPay:
+      case mostro_action.Action.waitingBuyerInvoice:
+        if (data.containsKey('expiration_seconds')) {
+          final expirationSeconds = data['expiration_seconds'];
+          final expirationMinutes = (expirationSeconds is int ? expirationSeconds : int.tryParse(expirationSeconds.toString()) ?? 0) ~/ 60;
+          widgets.add(_DetailRow(
+            label: S.of(context)!.timeout,
+            value: '$expirationMinutes ${S.of(context)!.minutes}',
+            icon: HeroIcons.clock,
+          ));
+        }
+        break;
+
+      case mostro_action.Action.disputeInitiatedByYou:
+      case mostro_action.Action.disputeInitiatedByPeer:
+        if (data.containsKey('user_token')) {
+          widgets.add(_DetailRow(
+            label: S.of(context)!.disputeId,
+            value: _formatHashOrId(data['user_token'].toString()),
+            icon: HeroIcons.exclamationTriangle,
+          ));
+        }
+        break;
+
+      case mostro_action.Action.paymentFailed:
+        if (data.containsKey('payment_attempts')) {
+          widgets.add(_DetailRow(
+            label: S.of(context)!.attempts,
+            value: data['payment_attempts'].toString(),
+            icon: HeroIcons.arrowPath,
+          ));
+        }
+        if (data.containsKey('payment_retries_interval')) {
+          widgets.add(_DetailRow(
+            label: S.of(context)!.retryInterval,
+            value: '${data['payment_retries_interval']}s',
+            icon: HeroIcons.clock,
+          ));
+        }
+        break;
+
+      case mostro_action.Action.cantDo:
+        if (data.containsKey('action')) {
+          widgets.add(_DetailRow(
+            label: S.of(context)!.reason,
+            value: data['action'].toString(),
+            icon: HeroIcons.xMark,
+          ));
+        }
+        break;
+
+      case mostro_action.Action.released:
+        if (data.containsKey('seller_npub') && data['seller_npub'].toString().isNotEmpty) {
+          widgets.add(_DetailRow(
+            label: S.of(context)!.seller,
+            value: _formatHashOrId(data['seller_npub']),
+            icon: HeroIcons.user,
+          ));
+        }
+        break;
+
+      case mostro_action.Action.holdInvoicePaymentSettled:
+        if (data.containsKey('buyer_npub') && data['buyer_npub'].toString().isNotEmpty) {
+          widgets.add(_DetailRow(
+            label: S.of(context)!.buyer,
+            value: _formatHashOrId(data['buyer_npub']),
+            icon: HeroIcons.user,
+          ));
+        }
+        break;
+
+      case mostro_action.Action.canceled:
+        if (data.containsKey('id')) {
+          widgets.add(_DetailRow(
+            label: S.of(context)!.orderId,
+            value: _formatHashOrId(data['id'].toString()),
+            icon: HeroIcons.hashtag,
+          ));
+        }
+        break;
+
+      case mostro_action.Action.cooperativeCancelInitiatedByYou:
+      case mostro_action.Action.cooperativeCancelInitiatedByPeer:
+      case mostro_action.Action.cooperativeCancelAccepted:
+        if (data.containsKey('id')) {
+          widgets.add(_DetailRow(
+            label: S.of(context)!.orderId,
+            value: _formatHashOrId(data['id'].toString()),
+            icon: HeroIcons.hashtag,
+          ));
+        }
+        break;
+
+      default:
+        // TODO: Each new action should be handled specifically above with proper localization and formatting
+        // This default case is a fallback for any unhandled actions
+        data.forEach((key, value) {
+          if (value != null && value.toString().isNotEmpty) {
+            widgets.add(_DetailRow(
+              label: _formatKey(key),
+              value: _formatHashOrId(value.toString()),
+              icon: HeroIcons.informationCircle,
+            ));
+          }
+        });
+        break;
+    }
+
+    return widgets;
+  }
+
+  String _formatHashOrId(String value) {
+    if (value.isEmpty) return 'N/A';
+    
+    if (value.length <= 8) {
+      return value; // Show full value if it's short enough
+    }
+    
+    String start = value.substring(0, 8);
+    String end = value.substring(value.length - 5);
+    
+    return '$start...$end';
+  }
+
+  String _formatKey(String key) {
+    return key.replaceAll('_', ' ').split(' ')
+        .map((word) => word.isEmpty ? '' : word[0].toUpperCase() + word.substring(1))
+        .join(' ');
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final HeroIcons icon;
+
+  const _DetailRow({
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          HeroIcon(
+            icon,
+            style: HeroIconStyle.outline,
+            size: 14,
+            color: AppTheme.textSecondary.withValues(alpha: 0.7),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '$label:',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w500,
+              color: AppTheme.textSecondary,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Expanded(
+            child: Text(
+              value,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                fontFamily: value.contains('npub') || value.contains('#') ? 'monospace' : null,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -314,20 +649,27 @@ class _OrderIdChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(8.0),
+      padding: AppTheme.smallPadding,
       decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color?.withValues(alpha: 0.5),
+        color: AppTheme.backgroundInput.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
-        '#${orderId.substring(0, 8)}',
+        '#${_formatOrderId(orderId)}',
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
           fontSize: 10,
-          color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
+          color: AppTheme.textInactive,
           fontFamily: 'monospace',
         ),
       ),
     );
+  }
+
+  String _formatOrderId(String orderId) {
+    if (orderId.length <= 16) {
+      return orderId;
+    }
+    return '${orderId.substring(0, 8)}...${orderId.substring(orderId.length - 5)}';
   }
 }
 
@@ -369,7 +711,7 @@ class _NotificationMenu extends StatelessWidget {
             HeroIcons.check,
             style: HeroIconStyle.outline,
             size: 16,
-            color: AppTheme.statusActive
+            color: AppTheme.statusSuccess
           ),
           const SizedBox(width: 8),
           Text(
@@ -394,7 +736,7 @@ class _NotificationMenu extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Text(
-            'Delete',
+            S.of(context)!.delete,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: AppTheme.statusError,
             ),

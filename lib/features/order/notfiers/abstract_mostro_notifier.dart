@@ -84,12 +84,12 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         break;
       case Action.fiatSentOk:
         final peer = event.getPayload<Peer>();
-        notifProvider.notifyBoth(event.action, values: {
+        notifProvider.notify(event.action, values: {
           'buyer_npub': peer?.publicKey ?? 'Unknown',
         }, orderId: orderId);
         break;
       case Action.released:
-        notifProvider.notifyBoth(event.action, values: {
+        notifProvider.notify(event.action, values: {
           'seller_npub': '',
         }, orderId: orderId);
         break;
@@ -97,41 +97,41 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         ref.read(mostroStorageProvider).deleteAllMessagesByOrderId(orderId);
         ref.read(sessionNotifierProvider.notifier).deleteSession(orderId);
         navProvider.go('/order_book');
-        notifProvider.notifyBoth(event.action, values: {'id': orderId}, orderId: orderId);
+        notifProvider.notify(event.action, values: {'id': orderId}, orderId: orderId);
         ref.invalidateSelf();
         break;
       case Action.cooperativeCancelInitiatedByYou:
-        notifProvider.notifyBoth(event.action, values: {
+        notifProvider.notify(event.action, values: {
           'id': event.id,
         }, orderId: orderId);
         break;
       case Action.cooperativeCancelInitiatedByPeer:
-        notifProvider.notifyBoth(event.action, values: {
+        notifProvider.notify(event.action, values: {
           'id': event.id!,
         }, orderId: orderId);
         break;
       case Action.disputeInitiatedByYou:
         final dispute = event.getPayload<Dispute>()!;
-        notifProvider.notifyBoth(event.action, values: {
+        notifProvider.notify(event.action, values: {
           'id': event.id!,
           'user_token': dispute.disputeId,
         }, orderId: orderId);
         break;
       case Action.disputeInitiatedByPeer:
         final dispute = event.getPayload<Dispute>()!;
-        notifProvider.notifyBoth(event.action, values: {
+        notifProvider.notify(event.action, values: {
           'id': event.id!,
           'user_token': dispute.disputeId,
         }, orderId: orderId);
         break;
       case Action.cooperativeCancelAccepted:
-        notifProvider.notifyBoth(event.action, values: {
+        notifProvider.notify(event.action, values: {
           'id': event.id!,
         }, orderId: orderId);
         break;
       case Action.holdInvoicePaymentAccepted:
         final order = event.getPayload<Order>();
-        notifProvider.notifyBoth(event.action, values: {
+        notifProvider.notify(event.action, values: {
           'seller_npub': order?.sellerTradePubkey ?? 'Unknown',
           'id': order?.id,
           'fiat_code': order?.fiatCode,
@@ -155,21 +155,21 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         chat.subscribe();
         break;
       case Action.holdInvoicePaymentSettled:
-        notifProvider.notifyBoth(event.action, values: {
+        notifProvider.notify(event.action, values: {
           'buyer_npub': state.order?.buyerTradePubkey ?? 'Unknown',
         }, orderId: orderId);
         navProvider.go('/trade_detail/$orderId');
         break;
       case Action.waitingSellerToPay:
         navProvider.go('/trade_detail/$orderId');
-        notifProvider.notifyBoth(event.action, values: {
+        notifProvider.notify(event.action, values: {
           'id': event.id,
           'expiration_seconds':
               mostroInstance?.expirationSeconds ?? Config.expirationSeconds,
         }, orderId: orderId);
         break;
       case Action.waitingBuyerInvoice:
-        notifProvider.notifyBoth(event.action, values: {
+        notifProvider.notify(event.action, values: {
           'expiration_seconds':
               mostroInstance?.expirationSeconds ?? Config.expirationSeconds,
         }, orderId: orderId);
@@ -204,16 +204,16 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         break;
       case Action.cantDo:
         final cantDo = event.getPayload<CantDo>();
-        notifProvider.notifyBoth(event.action, values: {
+        notifProvider.notify(event.action, values: {
           'action': cantDo?.cantDoReason.toString(),
         }, orderId: orderId);
         break;
       case Action.adminSettled:
-        notifProvider.notifyBoth(event.action, values: {}, orderId: orderId);
+        notifProvider.notify(event.action, values: {}, orderId: orderId);
         break;
       case Action.paymentFailed:
         final paymentFailed = event.getPayload<PaymentFailed>();
-        notifProvider.notifyBoth(event.action, values: {
+        notifProvider.notify(event.action, values: {
           'payment_attempts': paymentFailed?.paymentAttempts,
           'payment_retries_interval': paymentFailed?.paymentRetriesInterval,
         }, orderId: orderId);

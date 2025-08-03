@@ -21,8 +21,7 @@ class NotificationsScreen extends ConsumerWidget {
       appBar: MostroAppBar(
         title: Text(
           S.of(context)!.notifications,
-          style: const TextStyle(
-            fontSize: 18,
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.w600,
             color: AppTheme.textPrimary,
           ),
@@ -52,8 +51,7 @@ class NotificationsScreen extends ConsumerWidget {
                   const SizedBox(height: 16),
                   Text(
                     S.of(context)!.noNotifications,
-                    style: const TextStyle(
-                      fontSize: 18,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       color: AppTheme.textSecondary,
                       fontWeight: FontWeight.w500,
                     ),
@@ -61,8 +59,7 @@ class NotificationsScreen extends ConsumerWidget {
                   const SizedBox(height: 8),
                   Text(
                     S.of(context)!.noNotificationsDescription,
-                    style: const TextStyle(
-                      fontSize: 14,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: AppTheme.textSecondary,
                     ),
                     textAlign: TextAlign.center,
@@ -77,7 +74,7 @@ class NotificationsScreen extends ConsumerWidget {
               return ref.refresh(notificationsProvider);
             },
             child: ListView.builder(
-              padding: const EdgeInsets.all(16),
+              padding: AppTheme.mediumPadding,
               itemCount: notificationList.length,
               itemBuilder: (context, index) {
                 final notification = notificationList[index];
@@ -104,14 +101,13 @@ class NotificationsScreen extends ConsumerWidget {
                 HeroIcons.exclamationTriangle,
                 style: HeroIconStyle.outline,
                 size: 64,
-                color: AppTheme.red1,
+                color: AppTheme.statusError,
               ),
               const SizedBox(height: 16),
               Text(
                 S.of(context)!.errorLoadingNotifications,
-                style: const TextStyle(
-                  fontSize: 18,
-                  color: AppTheme.red1,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: AppTheme.statusError,
                   fontWeight: FontWeight.w500,
                 ),
               ),

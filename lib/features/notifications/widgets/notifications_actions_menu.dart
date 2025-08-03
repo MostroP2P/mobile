@@ -97,7 +97,7 @@ class NotificationsActionsMenu extends ConsumerWidget {
           style: const TextStyle(color: AppTheme.textPrimary),
         ),
         content: Text(
-          'This will permanently delete all notifications. This action cannot be undone.',
+          S.of(context)!.confirmClearAll,
           style: const TextStyle(color: AppTheme.textSecondary),
         ),
         actions: [

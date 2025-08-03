@@ -96,7 +96,7 @@ class NotificationTypeIcon extends StatelessWidget {
           case actions.Action.rate:
           case actions.Action.rateUser:
           case actions.Action.rateReceived:
-            return AppTheme.yellow;
+            return AppTheme.statusWarning;
           default:
             return AppTheme.activeColor;
         }
@@ -111,7 +111,7 @@ class NotificationTypeIcon extends StatelessWidget {
           case actions.Action.paymentFailed:
             return AppTheme.statusError;
           default:
-            return AppTheme.yellow;
+            return AppTheme.statusInfo;
         }
       
       case NotificationType.dispute:
