@@ -2,32 +2,46 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
 import 'package:mostro_mobile/generated/l10n.dart';
-import 'package:mostro_mobile/features/notifications/notifiers/notifications_notifier.dart';
+import 'package:mostro_mobile/features/notifications/notifiers/notification_temporary_state.dart';
 import 'package:mostro_mobile/features/notifications/providers/notifications_provider.dart';
-import 'package:mostro_mobile/data/models/enums/action.dart' as mostro_action;
+import 'package:mostro_mobile/features/notifications/utils/notification_message_mapper.dart';
 
-// Helper function to get localized text for SnackBar
-String _getSnackBarText(BuildContext context, mostro_action.Action action) {
+// Helper function to resolve notification keys to localized text
+String _resolveNotificationText(BuildContext context, String key) {
   final s = S.of(context)!;
   
-  switch (action) {
-    case mostro_action.Action.newOrder:
+  // Simple resolver for common notification titles used in SnackBars
+  switch (key) {
+    case 'notification_new_order_title':
       return s.notification_new_order_title;
-    case mostro_action.Action.takeBuy:
-    case mostro_action.Action.takeSell:
+    case 'notification_order_taken_title':
       return s.notification_order_taken_title;
-    case mostro_action.Action.payInvoice:
+    case 'notification_payment_required_title':
       return s.notification_payment_required_title;
-    case mostro_action.Action.fiatSent:
+    case 'notification_fiat_sent_title':
       return s.notification_fiat_sent_title;
-    case mostro_action.Action.released:
+    case 'notification_fiat_sent_ok_title':
+      return s.notification_fiat_sent_ok_title;
+    case 'notification_bitcoin_released_title':
       return s.notification_bitcoin_released_title;
-    case mostro_action.Action.dispute:
+    case 'notification_dispute_started_title':
       return s.notification_dispute_started_title;
-    case mostro_action.Action.canceled:
+    case 'notification_order_canceled_title':
       return s.notification_order_canceled_title;
-    case mostro_action.Action.sendDm:
+    case 'notification_new_message_title':
       return s.notification_new_message_title;
+    case 'notification_cant_do_title':
+      return s.notification_cant_do_title;
+    case 'notification_payment_failed_title':
+      return s.notification_payment_failed_title;
+    case 'notification_buyer_took_order_title':
+      return s.notification_buyer_took_order_title;
+    case 'notification_purchase_completed_title':
+      return s.notification_purchase_completed_title;
+    case 'notification_cooperative_cancel_initiated_by_you_title':
+      return s.notification_cooperative_cancel_initiated_by_you_title;
+    case 'notification_cooperative_cancel_initiated_by_peer_title':
+      return s.notification_cooperative_cancel_initiated_by_peer_title;
     default:
       return s.notification_order_update_title;
   }
@@ -55,7 +69,9 @@ class NotificationListenerWidget extends ConsumerWidget {
             message = S.of(context)!.orderTimeout;
           }
         } else {
-          message = _getSnackBarText(context, next.action!);
+          // Get the title key and resolve it to localized text
+          final titleKey = NotificationMessageMapper.getTitleKey(next.action!);
+          message = _resolveNotificationText(context, titleKey);
         }
         
         ScaffoldMessenger.of(context).showSnackBar(

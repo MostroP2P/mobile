@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/models/notification.dart';
+import 'package:mostro_mobile/features/notifications/notifiers/notification_temporary_state.dart';
 import 'package:mostro_mobile/features/notifications/notifiers/notifications_notifier.dart';
+import 'package:mostro_mobile/features/notifications/notifiers/notifications_state.dart';
 
 final notificationsProvider = 
     StateNotifierProvider<NotificationsNotifier, NotificationsState>(
