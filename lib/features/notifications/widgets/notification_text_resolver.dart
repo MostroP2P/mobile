@@ -1,0 +1,136 @@
+import 'package:flutter/material.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
+
+/// Helper function to resolve localization keys
+String resolveNotificationText(BuildContext context, String key) {
+  final s = S.of(context)!;
+  
+  // Map notification keys to actual localized strings
+  switch (key) {
+    case 'notification_new_order_title':
+      return s.notification_new_order_title;
+    case 'notification_new_order_message':
+      return s.notification_new_order_message;
+    case 'notification_order_taken_title':
+      return s.notification_order_taken_title;
+    case 'notification_sell_order_taken_message':
+      return s.notification_sell_order_taken_message;
+    case 'notification_buy_order_taken_message':
+      return s.notification_buy_order_taken_message;
+    case 'notification_payment_required_title':
+      return s.notification_payment_required_title;
+    case 'notification_payment_required_message':
+      return s.notification_payment_required_message;
+    case 'notification_fiat_sent_title':
+      return s.notification_fiat_sent_title;
+    case 'notification_fiat_sent_message':
+      return s.notification_fiat_sent_message;
+    case 'notification_bitcoin_released_title':
+      return s.notification_bitcoin_released_title;
+    case 'notification_bitcoin_released_message':
+      return s.notification_bitcoin_released_message;
+    case 'notification_dispute_started_title':
+      return s.notification_dispute_started_title;
+    case 'notification_dispute_started_message':
+      return s.notification_dispute_started_message;
+    case 'notification_order_canceled_title':
+      return s.notification_order_canceled_title;
+    case 'notification_order_canceled_message':
+      return s.notification_order_canceled_message;
+    case 'notification_cooperative_cancel_initiated_by_you_title':
+      return s.notification_cooperative_cancel_initiated_by_you_title;
+    case 'notification_cooperative_cancel_initiated_by_you_message':
+      return s.notification_cooperative_cancel_initiated_by_you_message;
+    case 'notification_cooperative_cancel_initiated_by_peer_title':
+      return s.notification_cooperative_cancel_initiated_by_peer_title;
+    case 'notification_cooperative_cancel_initiated_by_peer_message':
+      return s.notification_cooperative_cancel_initiated_by_peer_message;
+    case 'notification_cooperative_cancel_accepted_title':
+      return s.notification_cooperative_cancel_accepted_title;
+    case 'notification_cooperative_cancel_accepted_message':
+      return s.notification_cooperative_cancel_accepted_message;
+    case 'notification_fiat_sent_ok_title':
+      return s.notification_fiat_sent_ok_title;
+    case 'notification_fiat_sent_ok_message':
+      return s.notification_fiat_sent_ok_message;
+    case 'notification_release_title':
+      return s.notification_release_title;
+    case 'notification_release_message':
+      return s.notification_release_message;
+    case 'notification_buyer_invoice_accepted_title':
+      return s.notification_buyer_invoice_accepted_title;
+    case 'notification_buyer_invoice_accepted_message':
+      return s.notification_buyer_invoice_accepted_message;
+    case 'notification_purchase_completed_title':
+      return s.notification_purchase_completed_title;
+    case 'notification_purchase_completed_message':
+      return s.notification_purchase_completed_message;
+    case 'notification_hold_invoice_payment_accepted_title':
+      return s.notification_hold_invoice_payment_accepted_title;
+    case 'notification_hold_invoice_payment_accepted_message':
+      return s.notification_hold_invoice_payment_accepted_message;
+    case 'notification_hold_invoice_payment_settled_title':
+      return s.notification_hold_invoice_payment_settled_title;
+    case 'notification_hold_invoice_payment_settled_message':
+      return s.notification_hold_invoice_payment_settled_message;
+    case 'notification_hold_invoice_payment_canceled_title':
+      return s.notification_hold_invoice_payment_canceled_title;
+    case 'notification_hold_invoice_payment_canceled_message':
+      return s.notification_hold_invoice_payment_canceled_message;
+    case 'notification_waiting_seller_to_pay_title':
+      return s.notification_waiting_seller_to_pay_title;
+    case 'notification_waiting_seller_to_pay_message':
+      return s.notification_waiting_seller_to_pay_message;
+    case 'notification_waiting_buyer_invoice_title':
+      return s.notification_waiting_buyer_invoice_title;
+    case 'notification_waiting_buyer_invoice_message':
+      return s.notification_waiting_buyer_invoice_message;
+    case 'notification_add_invoice_title':
+      return s.notification_add_invoice_title;
+    case 'notification_add_invoice_message':
+      return s.notification_add_invoice_message;
+    case 'notification_buyer_took_order_title':
+      return s.notification_buyer_took_order_title;
+    case 'notification_buyer_took_order_message':
+      return s.notification_buyer_took_order_message;
+    case 'notification_rate_title':
+      return s.notification_rate_title;
+    case 'notification_rate_message':
+      return s.notification_rate_message;
+    case 'notification_rate_received_title':
+      return s.notification_rate_received_title;
+    case 'notification_rate_received_message':
+      return s.notification_rate_received_message;
+    case 'notification_dispute_initiated_by_you_title':
+      return s.notification_dispute_initiated_by_you_title;
+    case 'notification_dispute_initiated_by_you_message':
+      return s.notification_dispute_initiated_by_you_message;
+    case 'notification_dispute_initiated_by_peer_title':
+      return s.notification_dispute_initiated_by_peer_title;
+    case 'notification_dispute_initiated_by_peer_message':
+      return s.notification_dispute_initiated_by_peer_message;
+    case 'notification_payment_failed_title':
+      return s.notification_payment_failed_title;
+    case 'notification_payment_failed_message':
+      return s.notification_payment_failed_message;
+    case 'notification_invoice_updated_title':
+      return s.notification_invoice_updated_title;
+    case 'notification_invoice_updated_message':
+      return s.notification_invoice_updated_message;
+    case 'notification_cant_do_title':
+      return s.notification_cant_do_title;
+    case 'notification_cant_do_message':
+      return s.notification_cant_do_message;
+    case 'notification_new_message_title':
+      return s.notification_new_message_title;
+    case 'notification_new_message_message':
+      return s.notification_new_message_message;
+    case 'notification_order_update_title':
+      return s.notification_order_update_title;
+    case 'notification_order_update_message':
+      return s.notification_order_update_message;
+    default:
+      // Fallback: if it's not a key, return as is (backward compatibility)
+      return key;
+  }
+}
