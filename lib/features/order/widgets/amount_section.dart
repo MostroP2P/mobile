@@ -34,6 +34,9 @@ class _AmountSectionState extends State<AmountSection> {
     // Listen to min amount changes to show/hide second input
     _minAmountController.addListener(_onMinAmountChanged);
 
+    // Listen to max amount changes to update badge display
+    _maxAmountController.addListener(_onMaxAmountChanged);
+
     // Listen to focus changes on max amount field to enter range mode
     _maxAmountFocusNode.addListener(_onMaxAmountFocusChanged);
   }
@@ -59,6 +62,12 @@ class _AmountSectionState extends State<AmountSection> {
         }
       });
     }
+    _notifyAmountChanged();
+  }
+
+  void _onMaxAmountChanged() {
+    // Trigger rebuild to show/hide badge when max amount content changes
+    setState(() {});
     _notifyAmountChanged();
   }
 
@@ -89,7 +98,7 @@ class _AmountSectionState extends State<AmountSection> {
   }
 
   Widget? _getTopRightWidget() {
-    if (_isRangeMode) {
+    if (_isRangeMode && _maxAmountController.text.isNotEmpty) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
@@ -191,7 +200,6 @@ class _AmountSectionState extends State<AmountSection> {
                     keyboardType: TextInputType.number,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     validator: _validateMaxAmount,
-                    onChanged: (_) => _notifyAmountChanged(),
                   ),
                 ),
               ],
