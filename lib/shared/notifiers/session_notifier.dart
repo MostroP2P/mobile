@@ -6,6 +6,10 @@ import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/data/repositories/session_storage.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
+import 'package:logger/logger.dart';
+import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
+import 'package:dart_nostr/dart_nostr.dart';
+import 'package:mostro_mobile/data/models/peer.dart';
 
 class SessionNotifier extends StateNotifier<List<Session>> {
   final Ref ref;
@@ -15,6 +19,7 @@ class SessionNotifier extends StateNotifier<List<Session>> {
   final Map<int, Session> _requestIdToSession = {};
 
   Timer? _cleanupTimer;
+  final Logger _logger = Logger();
 
   List<Session> get sessions => _sessions.values.toList();
 
@@ -150,6 +155,45 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     _sessions.remove(sessionId);
     await _storage.deleteSession(sessionId);
     state = sessions;
+  }
+
+  NostrKeyPairs calculateSharedKey(
+      String tradePrivateKey, String counterpartyPublicKey) {
+    try {
+      final sharedKey =
+          NostrUtils.computeSharedKey(tradePrivateKey, counterpartyPublicKey);
+
+      _logger.d('Shared key calculated: ${sharedKey.public}');
+      return sharedKey;
+    } catch (e) {
+      _logger.e('Error calculating shared key: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> updateSessionWithSharedKey(
+    String orderId,
+    String counterpartyPublicKey,
+  ) async {
+    final session = getSessionByOrderId(orderId);
+    if (session == null) {
+      throw Exception('Session not found for orderId: $orderId');
+    }
+
+    final sharedKey = calculateSharedKey(
+      session.tradeKey.private,
+      counterpartyPublicKey,
+    );
+
+    final peer = Peer(publicKey: counterpartyPublicKey);
+    session.peer = peer;
+
+    await _storage.putSession(session);
+    _sessions[orderId] = session;
+
+    state = sessions;
+
+    _logger.d('Session updated with shared key for orderId: $orderId');
   }
 
   @override

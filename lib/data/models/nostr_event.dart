@@ -86,74 +86,108 @@ extension NostrEventExtensions on NostrEvent {
 
   Future<NostrEvent> mostroUnWrap(NostrKeyPairs receiver) async {
     if (kind != 1059) {
-      throw ArgumentError('Wrong kind: $kind');
+      throw ArgumentError('Expected kind 1059, got: $kind');
     }
 
     if (content == null || content!.isEmpty) {
       throw ArgumentError('Event content is empty');
     }
 
-    final decryptedContent = await NostrUtils.decryptNIP44(
-      content!,
-      receiver.private,
-      pubkey,
-    );
+    try {
+      final decryptedContent = await NostrUtils.decryptNIP44(
+        content!,
+        receiver.private,
+        pubkey,
+      );
 
-    final innerEvent = NostrEvent.deserialized(
-      '["EVENT", "", $decryptedContent]',
-    );
+      final innerEvent = NostrEvent.deserialized(
+        '["EVENT", "", $decryptedContent]',
+      );
 
-    if (innerEvent.kind == 13) {
-      try {
-        final messageContent = await NostrUtils.decryptNIP44(
-          innerEvent.content!,
-          receiver.private,
-          innerEvent.pubkey,
-        );
+      if (innerEvent.kind == 13) {
+        try {
+          final messageContent = await NostrUtils.decryptNIP44(
+            innerEvent.content!,
+            receiver.private,
+            innerEvent.pubkey,
+          );
 
-        final messageEvent = NostrEvent.deserialized(
-          '["EVENT", "", $messageContent]',
-        );
+          final messageEvent = NostrEvent.deserialized(
+            '["EVENT", "", $messageContent]',
+          );
 
-        if (messageEvent.kind != 14) {
-          throw Exception(
-              'Not a NIP-17 direct message: ${messageEvent.toString()}');
+          if (messageEvent.kind != 14) {
+            throw Exception(
+                'Not a NIP-17 direct message: ${messageEvent.toString()}');
+          }
+
+          return messageEvent;
+        } catch (e) {
+          return innerEvent;
         }
-
-        return messageEvent;
-      } catch (e) {
+      } else if (innerEvent.kind == 1) {
+        return innerEvent;
+      } else {
         return innerEvent;
       }
-    } else if (innerEvent.kind == 1) {
-      return innerEvent;
-    } else {
-      return innerEvent;
+    } catch (e) {
+      throw Exception('Failed to unwrap Mostro chat message: $e');
     }
   }
 
   Future<NostrEvent> mostroWrap(NostrKeyPairs sharedKey) async {
     if (kind != 1) {
-      throw ArgumentError('Wrong kind: $kind');
+      throw ArgumentError('Expected kind 1, got: $kind');
     }
 
     if (content == null || content!.isEmpty) {
       throw ArgumentError('Event content is empty');
     }
 
-    final wrapperKeyPair = NostrUtils.generateKeyPair();
+    try {
+      final innerEvent = NostrEvent(
+        id: id,
+        kind: kind,
+        content: content,
+        pubkey: pubkey,
+        sig: sig,
+        createdAt: createdAt,
+        tags: [
+          ["p", sharedKey.public],
+          ...(tags?.where((tag) => tag.isNotEmpty && tag[0] != 'p') ?? []),
+        ],
+      );
 
-    final encryptedContent = await NostrUtils.encryptNIP44(
-      jsonEncode(toMap()),
-      wrapperKeyPair.private,
-      sharedKey.public,
-    );
+      final ephemeralKeyPair = NostrUtils.generateKeyPair();
 
-    final event = NostrUtils.createWrap(
-      wrapperKeyPair,
-      encryptedContent,
-      sharedKey.public,
-    );
-    return event;
+      final innerEventJson = jsonEncode(innerEvent.toMap());
+
+      final encryptedContent = await NostrUtils.encryptNIP44(
+        innerEventJson,
+        ephemeralKeyPair.private,
+        sharedKey.public,
+      );
+
+      final wrapperEvent = NostrEvent.fromPartialData(
+        kind: 1059,
+        content: encryptedContent,
+        keyPairs: ephemeralKeyPair,
+        tags: [
+          ["p", sharedKey.public],
+        ],
+        createdAt: _randomizedTimestamp(),
+      );
+
+      return wrapperEvent;
+    } catch (e) {
+      throw Exception('Failed to wrap Mostro chat message: $e');
+    }
+  }
+
+  DateTime _randomizedTimestamp() {
+    final now = DateTime.now();
+    final randomSeconds = (DateTime.now().millisecondsSinceEpoch % 172800);
+    return now.subtract(Duration(seconds: randomSeconds));
   }
 
   NostrEvent copy() {
