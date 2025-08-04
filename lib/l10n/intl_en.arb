@@ -725,6 +725,7 @@
   "@_comment_settings_info_dialogs": "Settings Info Dialog Text",
   "languageInfoText": "Choose your preferred language for the application interface.",
   "currencyInfoText": "Choose the default currency for your orders.",
+  "lightningAddressInfoText": "A Lightning Address is an email-like identifier (e.g., user@domain.com) that simplifies receiving Bitcoin payments. Setting a default one here will automatically populate it when creating buy orders, making the process faster and more convenient.",
   "relaysInfoText": "• Relays are servers that help distribute your messages across the Nostr network.\n\n• Adding more relays can improve connectivity and redundancy.\n\n• Relays don't sync with each other, so only those you're connected to will receive your messages.",
   "mostroInfoText": "• The Mostro you select will be the one where you post your offers.\n\n• In case of a dispute, a human assigned to that Mostro will be the one to resolve it.",
   
