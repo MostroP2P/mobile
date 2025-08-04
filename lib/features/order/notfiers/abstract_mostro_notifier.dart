@@ -160,7 +160,15 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         navProvider.go('/trade_detail/$orderId');
         break;
       case Action.waitingSellerToPay:
-        navProvider.go('/trade_detail/$orderId');
+        // Check if user is the maker of a buy order - don't auto-navigate in this case
+        final isUserCreator = _isUserCreator();
+        final isBuyOrder = state.order?.kind == OrderType.buy;
+        
+        if (!(isUserCreator && isBuyOrder)) {
+          // Auto-navigate for takers or for makers of sell orders
+          navProvider.go('/trade_detail/$orderId');
+        }
+        
         notifProvider.showInformation(event.action, values: {
           'id': event.id,
           'expiration_seconds':
@@ -172,7 +180,15 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
           'expiration_seconds':
               mostroInstance?.expirationSeconds ?? Config.expirationSeconds,
         });
-        navProvider.go('/trade_detail/$orderId');
+        
+        // Check if user is the maker of a sell order - don't auto-navigate in this case
+        final isUserCreator = _isUserCreator();
+        final isSellOrder = state.order?.kind == OrderType.sell;
+        
+        if (!(isUserCreator && isSellOrder)) {
+          // Auto-navigate for takers or for makers of buy orders
+          navProvider.go('/trade_detail/$orderId');
+        }
         break;
       case Action.addInvoice:
         final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
@@ -227,6 +243,15 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         notifProvider.showInformation(event.action, values: {});
         break;
     }
+  }
+
+  bool _isUserCreator() {
+    if (session.role == null || state.order == null) {
+      return false;
+    }
+    return session.role == Role.buyer
+        ? state.order!.kind == OrderType.buy
+        : state.order!.kind == OrderType.sell;
   }
 
   @override
