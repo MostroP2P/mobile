@@ -29,7 +29,7 @@ class Settings {
       mostroPublicKey: mostroInstance ?? mostroPublicKey,
       defaultFiatCode: defaultFiatCode ?? this.defaultFiatCode,
       selectedLanguage: selectedLanguage,
-      defaultLightningAddress: defaultLightningAddress ?? this.defaultLightningAddress,
+      defaultLightningAddress: defaultLightningAddress,
     );
   }
 
