@@ -4,6 +4,7 @@ class Settings {
   final String mostroPublicKey;
   final String? defaultFiatCode;
   final String? selectedLanguage; // null means use system locale
+  final String? defaultLightningAddress;
 
   Settings({
     required this.relays,
@@ -11,6 +12,7 @@ class Settings {
     required this.mostroPublicKey,
     this.defaultFiatCode,
     this.selectedLanguage,
+    this.defaultLightningAddress,
   });
 
   Settings copyWith({
@@ -19,6 +21,7 @@ class Settings {
     String? mostroInstance,
     String? defaultFiatCode,
     String? selectedLanguage,
+    String? defaultLightningAddress,
   }) {
     return Settings(
       relays: relays ?? this.relays,
@@ -26,6 +29,7 @@ class Settings {
       mostroPublicKey: mostroInstance ?? mostroPublicKey,
       defaultFiatCode: defaultFiatCode ?? this.defaultFiatCode,
       selectedLanguage: selectedLanguage,
+      defaultLightningAddress: defaultLightningAddress,
     );
   }
 
@@ -35,6 +39,7 @@ class Settings {
         'mostroPublicKey': mostroPublicKey,
         'defaultFiatCode': defaultFiatCode,
         'selectedLanguage': selectedLanguage,
+        'defaultLightningAddress': defaultLightningAddress,
       };
 
   factory Settings.fromJson(Map<String, dynamic> json) {
@@ -44,6 +49,7 @@ class Settings {
       mostroPublicKey: json['mostroPublicKey'],
       defaultFiatCode: json['defaultFiatCode'],
       selectedLanguage: json['selectedLanguage'],
+      defaultLightningAddress: json['defaultLightningAddress'],
     );
   }
 }

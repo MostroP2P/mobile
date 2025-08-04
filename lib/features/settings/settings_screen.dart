@@ -11,14 +11,35 @@ import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
 import 'package:mostro_mobile/shared/widgets/language_selector.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
-class SettingsScreen extends ConsumerWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final settings = ref.watch(settingsProvider);
-    final mostroTextContoller =
-        TextEditingController(text: settings.mostroPublicKey);
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  late final TextEditingController _mostroTextController;
+  late final TextEditingController _lightningAddressController;
+
+  @override
+  void initState() {
+    super.initState();
+    final settings = ref.read(settingsProvider);
+    _mostroTextController = TextEditingController(text: settings.mostroPublicKey);
+    _lightningAddressController = TextEditingController(text: settings.defaultLightningAddress ?? '');
+  }
+
+
+  @override
+  void dispose() {
+    _mostroTextController.dispose();
+    _lightningAddressController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
 
     return Scaffold(
       appBar: AppBar(
@@ -57,15 +78,19 @@ class SettingsScreen extends ConsumerWidget {
                   const SizedBox(height: 16),
 
                   // Currency Card
-                  _buildCurrencyCard(context, ref),
+                  _buildCurrencyCard(context),
+                  const SizedBox(height: 16),
+
+                  // Lightning Address Card
+                  _buildLightningAddressCard(context),
                   const SizedBox(height: 16),
 
                   // Relays Card
-                  _buildRelaysCard(context, ref),
+                  _buildRelaysCard(context),
                   const SizedBox(height: 16),
 
                   // Mostro Card
-                  _buildMostroCard(context, ref, mostroTextContoller),
+                  _buildMostroCard(context, _mostroTextController),
                   const SizedBox(height: 16),
                 ],
               ),
@@ -139,7 +164,7 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildCurrencyCard(BuildContext context, WidgetRef ref) {
+  Widget _buildCurrencyCard(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         color: AppTheme.backgroundCard,
@@ -195,14 +220,107 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 16),
-            _buildCurrencySelector(context, ref),
+            _buildCurrencySelector(context),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildRelaysCard(BuildContext context, WidgetRef ref) {
+  Widget _buildLightningAddressCard(BuildContext context) {
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.backgroundCard,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(
+                  LucideIcons.zap,
+                  color: AppTheme.activeColor,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  S.of(context)!.defaultLightningAddress,
+                  style: const TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const Spacer(),
+                InkWell(
+                  onTap: () => _showInfoDialog(
+                    context,
+                    S.of(context)!.defaultLightningAddress,
+                    S.of(context)!.lightningAddressInfoText,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  child: const Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Icon(
+                      Icons.info_outline,
+                      size: 20,
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Text(
+              S.of(context)!.setDefaultLightningAddress,
+              style: const TextStyle(
+                color: AppTheme.textSecondary,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 8,
+              ),
+              decoration: BoxDecoration(
+                color: AppTheme.backgroundInput,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+              ),
+              child: TextFormField(
+                controller: _lightningAddressController,
+                style: const TextStyle(color: AppTheme.textPrimary),
+                onChanged: (value) {
+                  final cleanValue = value.trim().isEmpty ? null : value.trim();
+                  ref.read(settingsProvider.notifier).updateDefaultLightningAddress(cleanValue);
+                },
+                decoration: InputDecoration(
+                  border: InputBorder.none,
+                  labelText: S.of(context)!.lightningAddressOptional,
+                  labelStyle: const TextStyle(color: AppTheme.textSecondary),
+                  hintText: S.of(context)!.enterLightningAddress,
+                  hintStyle: const TextStyle(color: AppTheme.textSecondary),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRelaysCard(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         color: AppTheme.backgroundCard,
@@ -292,7 +410,7 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   Widget _buildMostroCard(
-      BuildContext context, WidgetRef ref, TextEditingController controller) {
+      BuildContext context, TextEditingController controller) {
     return Container(
       decoration: BoxDecoration(
         color: AppTheme.backgroundCard,
@@ -381,7 +499,7 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildCurrencySelector(BuildContext context, WidgetRef ref) {
+  Widget _buildCurrencySelector(BuildContext context) {
     final currenciesAsync = ref.watch(currencyCodesProvider);
     final settings = ref.watch(settingsProvider);
     final selectedFiatCode = settings.defaultFiatCode;

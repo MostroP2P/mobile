@@ -58,15 +58,20 @@ class NotificationListenerWidget extends ConsumerWidget {
       if (next.show) {
         String message;
         
-        // Handle timeout reversal with different messages based on type
-        if (next.action == actions.Action.timeoutReversal) {
-          final type = next.values['type'] as String?;
-          if (type == 'maker') {
-            message = S.of(context)!.orderTimeoutMaker;
-          } else if (type == 'taker') {
-            message = S.of(context)!.orderTimeoutTaker;
-          } else {
-            message = S.of(context)!.orderTimeout;
+        if (next.customMessage != null) {
+          // Handle custom messages with localization
+          switch (next.customMessage) {
+            case 'orderTimeoutTaker':
+              message = S.of(context)!.orderTimeoutTaker;
+              break;
+            case 'orderTimeoutMaker':
+              message = S.of(context)!.orderTimeoutMaker;
+              break;
+            case 'orderCanceled':
+              message = S.of(context)!.orderCanceled;
+              break;
+            default:
+              message = next.customMessage!;
           }
         } else {
           // Get the title key and resolve it to localized text

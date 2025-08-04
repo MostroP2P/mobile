@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0+5]
+
+### Added
+- Info icon and help dialog for Lightning Address settings card
+- Enhanced user guidance for Lightning Address functionality with multi-language support
+
+### Fixed
+- Order cancellation detection for orders in waiting states
+- Localized cancellation notification messages
+- Improved cancellation cleanup and user feedback
+
+### Changed
+- Spanish translation updated: "lightning address" to "dirección lightning"
+- Enhanced Lightning Address settings UI consistency with other settings cards
+
 ## [1.0.0+4]
 
 ### Added

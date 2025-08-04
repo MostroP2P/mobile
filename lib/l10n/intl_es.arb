@@ -75,6 +75,15 @@
       }
     }
   },
+  "orderTakenWaitingCounterpart": "Tu orden ha sido tomada por otro usuario. Debes esperar a que decida si desea continuar. Si acepta, te avisaré para que completes tu parte. Por ahora no necesitas hacer nada.\nSi no responde en {expiration_seconds} minutos, la orden volverá a estar disponible para que otros usuarios puedan tomarla.",
+  "@orderTakenWaitingCounterpart": {
+    "placeholders": {
+      "expiration_seconds": {
+        "type": "int",
+        "description": "El tiempo de expiración en minutos"
+      }
+    }
+  },
   "waitingBuyerInvoice": "¡Pago recibido! Tus Sats ahora están 'retenidos' en tu billetera. He solicitado al comprador que proporcione una factura. Si no lo hace dentro de {expiration_seconds} minutos, tus Sats regresarán a tu billetera y el intercambio será cancelado.",
   "@waitingBuyerInvoice": {
     "placeholders": {
@@ -180,6 +189,8 @@
   "currency": "Moneda",
   "setDefaultFiatCurrency": "Establece tu moneda fiat predeterminada",
   "defaultFiatCurrency": "Moneda Fiat Predeterminada",
+  "setDefaultLightningAddress": "Establece tu dirección Lightning predeterminada",
+  "defaultLightningAddress": "Dirección Lightning",
   "relays": "Relays",
   "selectNostrRelays": "Selecciona los relays Nostr a los que te conectas",
   "addRelay": "Agregar Relay",
@@ -307,8 +318,8 @@
   "@_comment_order_creation": "Cadenas del Formulario de Creación de Orden",
   "youWantToBuyBitcoin": "Quieres comprar Bitcoin",
   "youWantToSellBitcoin": "Quieres vender Bitcoin",
-  "lightningAddressOptional": "Lightning Address (opcional)",
-  "enterLightningAddress": "Introduzca una lightning address",
+  "lightningAddressOptional": "Dirección Lightning (opcional)",
+  "enterLightningAddress": "Introduzca una dirección Lightning",
   "enterAmountHint": "Ingresa cantidad",
   "pleaseEnterAmount": "Por favor ingresa una cantidad",
   "pleaseEnterValidAmount": "Por favor ingresa una cantidad válida",
@@ -348,7 +359,7 @@
   "back": "ATRÁS",
   "typeAMessage": "Escribe un mensaje...",
   "youAreChattingWith": "Estás chateando con {handle}",
-  "yourHandle": "Tu nombre: {handle}",
+  "yourHandle": "Tu nombre:",
   "yourSharedKey": "Tu clave compartida:",
   
   "payInvoiceButton": "PAGAR FACTURA",
@@ -627,6 +638,72 @@
   },
   "deepLinkGoHome": "Ir al Inicio",
   
+
+  "@_comment_order_disabled_messages": "Mensajes de Orden Deshabilitada",
+  "orderCompletedMessagingDisabled": "Orden completada - mensajería deshabilitada",
+  "orderCanceledMessagingDisabled": "Orden cancelada - mensajería deshabilitada",
+  "orderExpiredMessagingDisabled": "Orden expirada - mensajería deshabilitada",
+  "orderSettledMessagingDisabled": "Orden resuelta - mensajería deshabilitada",
+  "orderNotActiveMessagingDisabled": "La orden ya no está activa - mensajería deshabilitada",
+  
+  "@_comment_chat": "Sección de Chat",
+  "messages": "Mensajes",
+  "disputes": "Disputas",
+  "noDisputesAvailable": "No hay disputas disponibles",
+  "youAreChatting": "Estás chateando con {handle}",
+  "@youAreChatting": {
+    "placeholders": {
+      "handle": {
+        "type": "String"
+      }
+    }
+  },
+  "tradeInformation": "Información del Intercambio",
+  "userInformation": "Información del Usuario",
+  "youAreSellingTo": "Estás vendiendo sats a",
+  "youAreBuyingFrom": "Estás comprando sats de",
+  "noMessagesYet": "No hay mensajes aún",
+  "today": "Hoy",
+  "yesterday": "Ayer",
+  "youPrefix": "Tú: ",
+  "conversationsDescription": "Aquí encontrarás tus conversaciones con otros usuarios durante los intercambios.",
+  "orderId": "ID de Orden:",
+  "paymentMethod": "Método de Pago:",
+  "createdOn": "Creado el:",
+  "sellingSats": "Vendiendo {amount} sats",
+  "@sellingSats": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "buyingSats": "Comprando {amount} sats",
+  "@buyingSats": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "forAmount": "por {amount} {currency}",
+  "@forAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "yourInformation": "Tu Información",
+  "peerPublicKey": "Clave Pública del Par:",
+  "notAvailable": "No disponible",
+  "unknownDate": "Fecha desconocida",
+  "messageCopiedToClipboard": "Mensaje copiado al portapapeles",
+
+
   "@_comment_about_screen_new": "About Screen New Strings",
   "documentation": "Documentación",
   "usersDocumentationEnglish": "Documentación de Usuario (Inglés)",
@@ -686,6 +763,7 @@
   "@_comment_settings_info_dialogs": "Texto de Diálogos de Información de Configuración",
   "languageInfoText": "Elige tu idioma preferido para la interfaz de la aplicación.",
   "currencyInfoText": "Elige la moneda predeterminada para tus órdenes.",
+  "lightningAddressInfoText": "Una Dirección Lightning es un identificador similar a un email (ej., usuario@dominio.com) que simplifica recibir pagos de Bitcoin. Establecer una predeterminada aquí la completará automáticamente al crear órdenes de compra, haciendo el proceso más rápido y conveniente.",
   "relaysInfoText": "• Los relays son servidores que ayudan a distribuir tus mensajes a través de la red Nostr.\n\n• Agregar más relays puede mejorar la conectividad y redundancia.\n\n• Los relays no se sincronizan entre sí, por lo que solo aquellos a los que estés conectado recibirán tus mensajes.",
   "mostroInfoText": "• El Mostro que selecciones será donde publiques tus ofertas.\n\n• En caso de disputa, una persona asignada a ese Mostro será quien la resuelva.",
   
@@ -736,6 +814,7 @@
   "invalidRelayTitle": "Relay Inválido",
   "relayUrlHint": "relay.ejemplo.com o wss://relay.ejemplo.com",
   "add": "Agregar",
+
   "save": "Guardar",
   "selectCurrency": "Seleccionar Moneda",
   "noCurrencySelected": "Ninguna moneda seleccionada",
@@ -744,6 +823,7 @@
   "orderTimeoutTaker": "No respondiste a tiempo. La orden será republicada",
   "orderTimeoutMaker": "Tu contraparte no respondió a tiempo. La orden será republicada",
   "orderTimeout": "Tiempo de espera de la orden agotado",
+  "orderCanceled": "La orden fue cancelada"
   
   "@_comment_notifications": "Texto de Pantalla de Notificaciones",
   "notifications": "Notificaciones",

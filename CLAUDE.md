@@ -71,11 +71,20 @@ When user doesn't respond and order returns to pending:
 - **State**: Provider invalidated (`ref.invalidateSelf()`)
 - **Result**: Order disappears from "My Trades" and reappears in order book for retaking
 
+### Cancellation Detection & Cleanup
+When orders are canceled (status changes to `canceled` in public events):
+- **Detection**: Same public event monitoring system as timeouts
+- **Session Cleanup**: Always deletes session for both maker and taker scenarios
+- **UI Behavior**: Order disappears completely from "My Trades"
+- **User Feedback**: Shows cancellation notification and navigates to Order Book
+- **Implementation**: Integrated into `_checkTimeoutAndCleanup()` method in `order_notifier.dart:196-214`
+
 ### Key Implementation
 - **Race protection**: `_isProcessingTimeout` flag prevents concurrent execution
 - **Role detection**: `_isCreatedByUser()` compares session role with order type
 - **Error resilience**: Timeouts and try-catch blocks prevent app hangs
 - **Notifications**: Differentiated messages for maker vs taker scenarios
+- **Unified monitoring**: Both timeout and cancellation detection use same public event system
 
 ### Testing Structure
 - Unit tests in `test/` directory

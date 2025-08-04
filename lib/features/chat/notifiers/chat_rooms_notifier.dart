@@ -38,24 +38,57 @@ class ChatRoomsNotifier extends StateNotifier<List<ChatRoom>> {
       return;
     }
     final now = DateTime.now();
-    final cutoff = now.subtract(const Duration(hours: 36));
 
     try {
       final chats = sessions
           .where(
-        (s) => s.peer != null && s.startTime.isAfter(cutoff),
+        (s) =>
+            s.orderId != null &&
+            (s.peer != null ||
+                s.startTime.isAfter(now.subtract(const Duration(hours: 1)))),
       )
           .map((s) {
         final chat = ref.read(chatRoomsProvider(s.orderId!));
         return chat;
       }).toList();
-      if (chats.isNotEmpty) {
-        state = chats;
-      } else {
-        _logger.i("No chats found for sessions, keeping previous state.");
-      }
+
+      state = chats;
+      _logger.i("Loaded ${chats.length} chats");
     } catch (e) {
-      _logger.e(e);
+      _logger.e("Error loading chats: $e");
+    }
+  }
+
+  /// Refresh the chat list to reflect new messages and updated order
+  Future<void> refreshChatList() async {
+    final sessions = ref.read(sessionNotifierProvider.notifier).sessions;
+    if (sessions.isEmpty) {
+      return;
+    }
+    final now = DateTime.now();
+
+    try {
+      // Add a small delay to ensure state has been updated
+      await Future.delayed(const Duration(milliseconds: 100));
+      
+      final chats = sessions
+          .where(
+        (s) =>
+            s.orderId != null &&
+            (s.peer != null ||
+                s.startTime.isAfter(now.subtract(const Duration(hours: 1)))),
+      )
+          .map((s) {
+        // Force a fresh read of the chat state
+        final chat = ref.read(chatRoomsProvider(s.orderId!));
+        return chat;
+      }).toList();
+
+      // Force update the state to trigger UI refresh
+      state = [...chats];
+      _logger.d("Refreshed ${chats.length} chats with updated messages");
+    } catch (e) {
+      _logger.e("Error refreshing chats: $e");
     }
   }
 
