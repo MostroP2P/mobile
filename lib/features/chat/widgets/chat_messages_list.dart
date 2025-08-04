@@ -122,7 +122,7 @@ class _ChatMessagesListState extends State<ChatMessagesList> {
           // Dynamic bottom padding based on device size and accessibility settings
           bottom: MediaQuery.of(context).viewInsets.bottom > 0 
               ? 80 // Less padding when keyboard is open
-              : MediaQuery.of(context).textScaleFactor > 1.0
+              : MediaQuery.textScalerOf(context).scale(1.0) > 1.0
                   ? 120 // More padding for zoomed-in text
                   : 80, // Normal padding for regular view
         ),

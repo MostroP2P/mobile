@@ -58,7 +58,7 @@ class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen>
                   decoration: BoxDecoration(
                     color: AppTheme.backgroundDark,
                     border: Border(
-                      bottom: BorderSide(color: Colors.white.withOpacity(0.1), width: 0.5),
+                      bottom: BorderSide(color: Colors.white.withValues(alpha: 0.1), width: 0.5),
                     ),
                   ),
                   child: Text(
@@ -84,7 +84,7 @@ class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen>
                   decoration: BoxDecoration(
                     color: AppTheme.backgroundDark,
                     border: Border(
-                      bottom: BorderSide(color: Colors.white.withOpacity(0.1), width: 0.5),
+                      bottom: BorderSide(color: Colors.white.withValues(alpha: 0.1), width: 0.5),
                     ),
                   ),
                   child: Text(

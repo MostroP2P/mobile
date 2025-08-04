@@ -29,6 +29,11 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
   ProviderSubscription<Session?>? _sessionListener;
   bool _isInitialized = false;
   bool get isInitialized => _isInitialized;
+  
+  /// Exposes the mounted status of the notifier
+  /// Returns true if the notifier is still active and hasn't been disposed
+  @override
+  bool get mounted => super.mounted;
 
   ChatRoomNotifier(
     super.state,

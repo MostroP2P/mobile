@@ -80,8 +80,11 @@ class _ChatListItemState extends ConsumerState<ChatListItem> {
         setState(() {
           _isMarkedAsRead = true;
         });
+        final navigator = GoRouter.of(context);
         await ChatReadStatusService.markChatAsRead(widget.orderId);
-        context.push('/chat_room/${widget.orderId}');
+        if (mounted) {
+          navigator.push('/chat_room/${widget.orderId}');
+        }
       },
       child: Container(
         decoration: BoxDecoration(

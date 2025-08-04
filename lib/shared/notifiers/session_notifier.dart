@@ -180,11 +180,6 @@ class SessionNotifier extends StateNotifier<List<Session>> {
       throw Exception('Session not found for orderId: $orderId');
     }
 
-    final sharedKey = calculateSharedKey(
-      session.tradeKey.private,
-      counterpartyPublicKey,
-    );
-
     final peer = Peer(publicKey: counterpartyPublicKey);
     session.peer = peer;
 

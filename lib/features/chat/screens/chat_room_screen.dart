@@ -113,7 +113,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
             Padding(
               padding: EdgeInsets.only(
                   // Dynamic bottom padding based on device settings
-                  bottom: MediaQuery.of(context).textScaleFactor > 1.0
+                  bottom: MediaQuery.textScalerOf(context).scale(1.0) > 1.0
                       ? bottomNavBarHeight + 40 // More padding for zoomed-in text
                       : bottomNavBarHeight + 10), // Normal padding for regular view
               child: Column(
