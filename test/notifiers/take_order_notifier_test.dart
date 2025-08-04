@@ -120,15 +120,16 @@ void main() {
         sessionStorageProvider.overrideWithValue(mockSessionStorage),
         keyManagerProvider.overrideWithValue(mockKeyManager),
         sessionNotifierProvider.overrideWith((ref) => mockSessionNotifier),
-        settingsProvider.overrideWith((ref) => MockSettingsNotifier(
-          Settings(
+        settingsProvider.overrideWith((ref) {
+          final mockSettings = MockSettingsNotifier();
+          mockSettings.state = Settings(
             relays: ['wss://relay.damus.io'],
             fullPrivacyMode: false,
             mostroPublicKey: '9d9d0455a96871f2dc4289b8312429db2e925f167b37c77bf7b28014be235980',
             defaultFiatCode: 'USD',
-          ), 
-          mockPreferences
-        )),
+          );
+          return mockSettings;
+        }),
         mostroStorageProvider.overrideWithValue(mockMostroStorage),
       ]);
 
@@ -188,15 +189,17 @@ void main() {
         sessionStorageProvider.overrideWithValue(mockSessionStorage),
         keyManagerProvider.overrideWithValue(mockKeyManager),
         sessionNotifierProvider.overrideWith((ref) => mockSessionNotifier),
-        settingsProvider.overrideWith((ref) => MockSettingsNotifier(
-            Settings(
-              relays: ['wss://relay.damus.io'],
-              fullPrivacyMode: false,
-              mostroPublicKey:
-                  '6d5c471d0e88c8c688c85dd8a3d84e3c7c5e8a3b6d7a6b2c9e8c5d9a7b3e6c8a',
-              defaultFiatCode: 'USD',
-            ),
-            mockPreferences)),
+        settingsProvider.overrideWith((ref) {
+          final mockSettings = MockSettingsNotifier();
+          mockSettings.state = Settings(
+            relays: ['wss://relay.damus.io'],
+            fullPrivacyMode: false,
+            mostroPublicKey:
+                '6d5c471d0e88c8c688c85dd8a3d84e3c7c5e8a3b6d7a6b2c9e8c5d9a7b3e6c8a',
+            defaultFiatCode: 'USD',
+          );
+          return mockSettings;
+        }),
         mostroStorageProvider.overrideWithValue(mockMostroStorage),
       ]);
 
@@ -254,15 +257,17 @@ void main() {
         sessionStorageProvider.overrideWithValue(mockSessionStorage),
         keyManagerProvider.overrideWithValue(mockKeyManager),
         sessionNotifierProvider.overrideWith((ref) => mockSessionNotifier),
-        settingsProvider.overrideWith((ref) => MockSettingsNotifier(
-            Settings(
-              relays: ['wss://relay.damus.io'],
-              fullPrivacyMode: false,
-              mostroPublicKey:
-                  '6d5c471d0e88c8c688c85dd8a3d84e3c7c5e8a3b6d7a6b2c9e8c5d9a7b3e6c8a',
-              defaultFiatCode: 'USD',
-            ),
-            mockPreferences)),
+        settingsProvider.overrideWith((ref) {
+          final mockSettings = MockSettingsNotifier();
+          mockSettings.state = Settings(
+            relays: ['wss://relay.damus.io'],
+            fullPrivacyMode: false,
+            mostroPublicKey:
+                '6d5c471d0e88c8c688c85dd8a3d84e3c7c5e8a3b6d7a6b2c9e8c5d9a7b3e6c8a',
+            defaultFiatCode: 'USD',
+          );
+          return mockSettings;
+        }),
         mostroStorageProvider.overrideWithValue(mockMostroStorage),
       ]);
 
@@ -307,15 +312,17 @@ void main() {
         sessionStorageProvider.overrideWithValue(mockSessionStorage),
         keyManagerProvider.overrideWithValue(mockKeyManager),
         sessionNotifierProvider.overrideWith((ref) => mockSessionNotifier),
-        settingsProvider.overrideWith((ref) => MockSettingsNotifier(
-            Settings(
-              relays: ['wss://relay.damus.io'],
-              fullPrivacyMode: false,
-              mostroPublicKey:
-                  '6d5c471d0e88c8c688c85dd8a3d84e3c7c5e8a3b6d7a6b2c9e8c5d9a7b3e6c8a',
-              defaultFiatCode: 'USD',
-            ),
-            mockPreferences)),
+        settingsProvider.overrideWith((ref) {
+          final mockSettings = MockSettingsNotifier();
+          mockSettings.state = Settings(
+            relays: ['wss://relay.damus.io'],
+            fullPrivacyMode: false,
+            mostroPublicKey:
+                '6d5c471d0e88c8c688c85dd8a3d84e3c7c5e8a3b6d7a6b2c9e8c5d9a7b3e6c8a',
+            defaultFiatCode: 'USD',
+          );
+          return mockSettings;
+        }),
         mostroStorageProvider.overrideWithValue(mockMostroStorage),
       ]);
 

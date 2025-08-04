@@ -12,6 +12,7 @@ enum Status {
   success('success'),
   waitingBuyerInvoice('waiting-buyer-invoice'),
   waitingPayment('waiting-payment'),
+  paymentFailed('payment-failed'),
   cooperativelyCanceled('cooperatively-canceled'),
   inProgress('in-progress');
 

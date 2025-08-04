@@ -86,6 +86,14 @@ class MostroMessageDetail extends ConsumerWidget {
                 ?.expirationSeconds ??
             900;
         final expMinutes = (expSecs / 60).round();
+        // Check if we're in payment-failed state to show different message
+        if (tradeState.status == Status.paymentFailed) {
+          return S.of(context)!.addInvoicePaymentFailed(
+                orderPayload?.amount.toString() ?? '',
+                orderPayload?.fiatAmount.toString() ?? '',
+                orderPayload?.fiatCode ?? '',
+              );
+        }
         return S.of(context)!.addInvoice(
               orderPayload?.amount.toString() ?? '',
               expMinutes,
@@ -186,7 +194,12 @@ class MostroMessageDetail extends ConsumerWidget {
       case actions.Action.adminSettled:
         return S.of(context)!.adminSettledUsers(orderPayload!.id ?? '');
       case actions.Action.paymentFailed:
-        return S.of(context)!.paymentFailed('{attempts}', '{retries}');
+        final payload = ref.read(orderNotifierProvider(orderId)).paymentFailed;
+        final intervalInMinutes = ((payload?.paymentRetriesInterval ?? 0) / 60).round();
+        return S.of(context)!.paymentFailed(
+              payload?.paymentAttempts ?? 0,
+              intervalInMinutes,
+            );
       case actions.Action.invoiceUpdated:
         return S.of(context)!.invoiceUpdated;
       case actions.Action.holdInvoicePaymentCanceled:

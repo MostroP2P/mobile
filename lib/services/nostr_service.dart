@@ -12,15 +12,29 @@ import 'package:mostro_mobile/services/deep_link_service.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
 class NostrService {
-  late Settings settings;
+  Settings? _settings;
   final Nostr _nostr = Nostr.instance;
   final Logger _logger = Logger();
   bool _isInitialized = false;
 
   NostrService();
+  
+  /// Safe getter for settings with fallback
+  Settings get settings => _settings ?? Settings(
+    relays: [],
+    fullPrivacyMode: false,
+    mostroPublicKey: '',
+  );
 
   Future<void> init(Settings settings) async {
-    this.settings = settings;
+    // Validate settings before initialization
+    if (settings.relays.isEmpty) {
+      throw Exception('Cannot initialize NostrService: No relays provided');
+    }
+    
+    _logger.i('Initializing NostrService with relays: ${settings.relays}');
+    _settings = settings;
+    
     try {
       await _nostr.services.relays.init(
         relaysUrl: settings.relays,
@@ -30,39 +44,69 @@ class NostrService {
         retryOnError: true,
         onRelayListening: (relayUrl, receivedData, channel) {
           if (receivedData is NostrEvent) {
-            _logger.i('Event from $relayUrl: ${receivedData.content}');
+            _logger.d('Event from $relayUrl: ${receivedData.id}');
           } else if (receivedData is NostrNotice) {
             _logger.i('Notice from $relayUrl: ${receivedData.message}');
           } else if (receivedData is NostrEventOkCommand) {
-            _logger.i(
-                'OK from $relayUrl: ${receivedData.eventId} (accepted: ${receivedData.isEventAccepted})');
+            _logger.d('OK from $relayUrl: ${receivedData.eventId} (accepted: ${receivedData.isEventAccepted})');
           } else if (receivedData is NostrRequestEoseCommand) {
-            _logger.i(
-                'EOSE from $relayUrl for subscription: ${receivedData.subscriptionId}');
+            _logger.d('EOSE from $relayUrl for subscription: ${receivedData.subscriptionId}');
           } else if (receivedData is NostrCountResponse) {
-            _logger.i('Count from $relayUrl: ${receivedData.count}');
+            _logger.d('Count from $relayUrl: ${receivedData.count}');
           }
         },
         onRelayConnectionError: (relay, error, channel) {
           _logger.w('Failed to connect to relay $relay: $error');
         },
         onRelayConnectionDone: (relay, socket) {
-          _logger.i('Connection to relay: $relay via $socket is done');
+          _logger.i('Successfully connected to relay: $relay');
         },
       );
+      
       _isInitialized = true;
-      _logger.i('Nostr initialized successfully');
+      _logger.i('NostrService initialized successfully with ${settings.relays.length} relays');
     } catch (e) {
-      _logger.e('Failed to initialize Nostr: $e');
+      _isInitialized = false;
+      _logger.e('Failed to initialize NostrService: $e');
       rethrow;
     }
   }
 
   Future<void> updateSettings(Settings newSettings) async {
-    final relays = Nostr.instance.services.relays.relaysList;
-    if (!ListEquality().equals(relays, newSettings.relays)) {
-      _logger.i('Updating relays...');
-      await init(newSettings);
+    // Compare with current settings instead of relying on dart_nostr internal state
+    if (!ListEquality().equals(settings.relays, newSettings.relays)) {
+      _logger.i('Updating relays from ${settings.relays} to ${newSettings.relays}');
+      
+      // Validate that new relay list is not empty
+      if (newSettings.relays.isEmpty) {
+        _logger.w('Warning: Attempting to update with empty relay list');
+        return;
+      }
+      
+      try {
+        // Set initialization flag to false during update to prevent race conditions
+        _isInitialized = false;
+        
+        // Disconnect from current relays first
+        await _nostr.services.relays.disconnectFromRelays();
+        _logger.i('Disconnected from previous relays');
+        
+        // Initialize with new relay list
+        await init(newSettings);
+        _logger.i('Successfully updated to new relays: ${newSettings.relays}');
+      } catch (e) {
+        _logger.e('Failed to update relays: $e');
+        // Try to restore previous state if update fails
+        try {
+          await init(settings);
+          _logger.i('Restored previous relay configuration');
+        } catch (restoreError) {
+          _logger.e('Failed to restore previous relay configuration: $restoreError');
+          rethrow;
+        }
+      }
+    } else {
+      _logger.d('Relay list unchanged, skipping update');
     }
   }
 
@@ -77,13 +121,28 @@ class NostrService {
       throw Exception('Nostr is not initialized. Call init() first.');
     }
 
+    // Defensive check: ensure relay list is not empty
+    if (settings.relays.isEmpty) {
+      throw Exception('Cannot publish event: No relays configured. Please add at least one relay.');
+    }
+
     try {
+      _logger.i('Publishing event ${event.id} to relays: ${settings.relays}');
+      
       await _nostr.services.relays.sendEventToRelaysAsync(
         event,
         timeout: Config.nostrConnectionTimeout,
       );
+      
+      _logger.i('Successfully published event ${event.id}');
     } catch (e) {
-      _logger.w('Failed to publish event: $e');
+      _logger.w('Failed to publish event ${event.id}: $e');
+      
+      // If it's the empty relay list assertion error, provide better context
+      if (e.toString().contains('relaysUrl.isNotEmpty')) {
+        throw Exception('Cannot publish event: Relay list is empty or not properly initialized. Current relays: ${settings.relays}');
+      }
+      
       rethrow;
     }
   }

@@ -503,6 +503,11 @@ class TradeDetailScreen extends ConsumerWidget {
           widgets.add(_buildContactButton(context));
           break;
 
+        case actions.Action.paymentFailed:
+          // Payment failed - Mostro is still retrying, only show Close button
+          // No additional buttons (Add Invoice, Cancel, Dispute) should appear
+          break;
+
         case actions.Action.holdInvoicePaymentCanceled:
         case actions.Action.buyerInvoiceAccepted:
         case actions.Action.waitingSellerToPay:
@@ -514,7 +519,6 @@ class TradeDetailScreen extends ConsumerWidget {
         case actions.Action.adminAddSolver:
         case actions.Action.adminTakeDispute:
         case actions.Action.adminTookDispute:
-        case actions.Action.paymentFailed:
         case actions.Action.invoiceUpdated:
         case actions.Action.tradePubkey:
         case actions.Action.cantDo:
