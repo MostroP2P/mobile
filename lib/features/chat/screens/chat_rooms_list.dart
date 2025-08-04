@@ -9,8 +9,6 @@ import 'package:mostro_mobile/features/chat/widgets/chat_list_item.dart';
 import 'package:mostro_mobile/features/chat/widgets/chat_tabs.dart';
 import 'package:mostro_mobile/features/chat/widgets/empty_state_view.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
-import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
-
 
 import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
 import 'package:mostro_mobile/shared/widgets/custom_drawer_overlay.dart';
@@ -139,18 +137,9 @@ class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen>
 
 
 
-    // Get fresh chat data for each order to ensure we have the latest messages
-    final chatRoomsWithFreshData = state.map((chatRoom) {
-      // Watch the individual chat provider to get the most up-to-date state
-      return ref.watch(chatRoomsProvider(chatRoom.orderId));
-    }).toList();
-
-    // Sort all chat rooms by session start time (most recently taken order first)
-    chatRoomsWithFreshData.sort((a, b) {
-      final aSessionStartTime = _getSessionStartTime(a);
-      final bSessionStartTime = _getSessionStartTime(b);
-      return bSessionStartTime.compareTo(aSessionStartTime);
-    });
+    // Use the optimized provider that returns sorted chat rooms with fresh data
+    // This prevents excessive rebuilds by memoizing the sorted list
+    final chatRoomsWithFreshData = ref.watch(sortedChatRoomsProvider);
 
 
     return ListView.builder(
@@ -165,19 +154,5 @@ class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen>
     );
   }
 
-  int _getSessionStartTime(ChatRoom chatRoom) {
-    try {
-      // Get the session for this chat room to access startTime
-      final session = ref.read(sessionProvider(chatRoom.orderId));
-      if (session != null) {
-        // Return the session start time (when the order was taken/contacted)
-        return session.startTime.millisecondsSinceEpoch ~/ 1000;
-      }
-    } catch (e) {
-      // If we can't get the session, fall back to current time
-    }
-    
-    // Fallback: use current time so new chats appear at top
-    return DateTime.now().millisecondsSinceEpoch ~/ 1000;
-  }
+
 }
