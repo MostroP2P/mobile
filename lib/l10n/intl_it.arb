@@ -771,6 +771,7 @@
   "@_comment_settings_info_dialogs": "Testo Dialoghi Informazioni Impostazioni",
   "languageInfoText": "Scegli la tua lingua preferita per l'interfaccia dell'applicazione.",
   "currencyInfoText": "Scegli la valuta predefinita per i tuoi ordini.",
+  "lightningAddressInfoText": "Un Indirizzo Lightning è un identificatore simile a un'email (es., utente@dominio.com) che semplifica la ricezione di pagamenti Bitcoin. Impostarne uno predefinito qui lo completerà automaticamente durante la creazione di ordini di acquisto, rendendo il processo più veloce e conveniente.",
   "relaysInfoText": "• I relay sono server che aiutano a distribuire i tuoi messaggi attraverso la rete Nostr.\n\n• Aggiungere più relay può migliorare la connettività e la ridondanza.\n\n• I relay non si sincronizzano tra loro, quindi solo quelli a cui sei connesso riceveranno i tuoi messaggi.",
   "mostroInfoText": "• Il Mostro che selezioni sarà quello dove pubblicherai le tue offerte.\n\n• In caso di disputa, una persona assegnata a quel Mostro sarà quella che la risolverà.",
   
