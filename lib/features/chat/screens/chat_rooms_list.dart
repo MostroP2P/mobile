@@ -87,7 +87,7 @@ class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen>
                     ),
                   ),
                   child: Text(
-                    S.of(context)?.conversationsDescription ?? 'Your conversations with other users will appear here.',
+                    _getTabDescription(context),
                     style: TextStyle(
                       color: AppTheme.textSecondary,
                       fontSize: 14,
@@ -153,5 +153,13 @@ class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen>
     );
   }
 
-
+  String _getTabDescription(BuildContext context) {
+    if (_tabController.index == 0) {
+      // Messages tab
+      return S.of(context)?.conversationsDescription ?? 'Here you\'ll find your conversations with other users during trades.';
+    } else {
+      // Disputes tab
+      return 'These are your open disputes and the chats with the admin helping resolve them.';
+    }
+  }
 }
