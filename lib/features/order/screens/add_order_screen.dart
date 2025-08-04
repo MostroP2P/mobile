@@ -285,10 +285,12 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
 
         final satsAmount = int.tryParse(_satsAmountController.text) ?? 0;
 
+
         List<String> paymentMethods =
             List<String>.from(_selectedPaymentMethods);
         if (_showCustomPaymentMethod &&
             _customPaymentMethodController.text.isNotEmpty) {
+
           paymentMethods.remove("Other");
           
           String sanitizedPaymentMethod = _customPaymentMethodController.text;
@@ -303,6 +305,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
             paymentMethods.add(sanitizedPaymentMethod);
           }
         }
+
 
         final buyerInvoice = _orderType == OrderType.buy &&
                 _lightningAddressController.text.isNotEmpty

@@ -348,7 +348,7 @@
   "back": "ATRÁS",
   "typeAMessage": "Escribe un mensaje...",
   "youAreChattingWith": "Estás chateando con {handle}",
-  "yourHandle": "Tu nombre: {handle}",
+  "yourHandle": "Tu nombre:",
   "yourSharedKey": "Tu clave compartida:",
   
   "payInvoiceButton": "PAGAR FACTURA",
@@ -627,6 +627,72 @@
   },
   "deepLinkGoHome": "Ir al Inicio",
   
+
+  "@_comment_order_disabled_messages": "Mensajes de Orden Deshabilitada",
+  "orderCompletedMessagingDisabled": "Orden completada - mensajería deshabilitada",
+  "orderCanceledMessagingDisabled": "Orden cancelada - mensajería deshabilitada",
+  "orderExpiredMessagingDisabled": "Orden expirada - mensajería deshabilitada",
+  "orderSettledMessagingDisabled": "Orden resuelta - mensajería deshabilitada",
+  "orderNotActiveMessagingDisabled": "La orden ya no está activa - mensajería deshabilitada",
+  
+  "@_comment_chat": "Sección de Chat",
+  "messages": "Mensajes",
+  "disputes": "Disputas",
+  "noDisputesAvailable": "No hay disputas disponibles",
+  "youAreChatting": "Estás chateando con {handle}",
+  "@youAreChatting": {
+    "placeholders": {
+      "handle": {
+        "type": "String"
+      }
+    }
+  },
+  "tradeInformation": "Información del Intercambio",
+  "userInformation": "Información del Usuario",
+  "youAreSellingTo": "Estás vendiendo sats a",
+  "youAreBuyingFrom": "Estás comprando sats de",
+  "noMessagesYet": "No hay mensajes aún",
+  "today": "Hoy",
+  "yesterday": "Ayer",
+  "youPrefix": "Tú: ",
+  "conversationsDescription": "Aquí encontrarás tus conversaciones con otros usuarios durante los intercambios.",
+  "orderId": "ID de Orden:",
+  "paymentMethod": "Método de Pago:",
+  "createdOn": "Creado el:",
+  "sellingSats": "Vendiendo {amount} sats",
+  "@sellingSats": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "buyingSats": "Comprando {amount} sats",
+  "@buyingSats": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "forAmount": "por {amount} {currency}",
+  "@forAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "yourInformation": "Tu Información",
+  "peerPublicKey": "Clave Pública del Par:",
+  "notAvailable": "No disponible",
+  "unknownDate": "Fecha desconocida",
+  "messageCopiedToClipboard": "Mensaje copiado al portapapeles",
+
+
   "@_comment_about_screen_new": "About Screen New Strings",
   "documentation": "Documentación",
   "usersDocumentationEnglish": "Documentación de Usuario (Inglés)",
@@ -736,6 +802,7 @@
   "invalidRelayTitle": "Relay Inválido",
   "relayUrlHint": "relay.ejemplo.com o wss://relay.ejemplo.com",
   "add": "Agregar",
+
   "save": "Guardar",
   "selectCurrency": "Seleccionar Moneda",
   "noCurrencySelected": "Ninguna moneda seleccionada",
@@ -744,4 +811,5 @@
   "orderTimeoutTaker": "No respondiste a tiempo. La orden será republicada",
   "orderTimeoutMaker": "Tu contraparte no respondió a tiempo. La orden será republicada",
   "orderTimeout": "Tiempo de espera de la orden agotado"
+
 }

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:collection/collection.dart';
 import 'package:dart_nostr/dart_nostr.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/enums.dart';
@@ -177,6 +178,7 @@ class MostroService {
 
   Future<void> publishOrder(MostroMessage order) async {
     final session = await _getSession(order);
+    
     final event = await order.wrap(
       tradeKey: session.tradeKey,
       recipientPubKey: _settings.mostroPublicKey,

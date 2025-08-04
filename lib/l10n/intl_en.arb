@@ -392,7 +392,7 @@
   "back": "BACK",
   "typeAMessage": "Type a message...",
   "youAreChattingWith": "You are chatting with {handle}",
-  "yourHandle": "Your handle: {handle}",
+  "yourHandle": "Your Handle:",
   "yourSharedKey": "Your shared key:",
   
   "payInvoiceButton": "PAY INVOICE",
@@ -579,6 +579,64 @@
   "failedToLoadOrder": "Failed to load order",
   "failedToOpenOrder": "Failed to open order",
 
+  "@_comment_chat": "Chat Section",
+  "messages": "Messages",
+  "disputes": "Disputes",
+  "noDisputesAvailable": "No disputes available",
+  "youAreChatting": "You are chatting with {handle}",
+  "@youAreChatting": {
+    "placeholders": {
+      "handle": {
+        "type": "String"
+      }
+    }
+  },
+  "tradeInformation": "Trade Information",
+  "userInformation": "User Information",
+  "youAreSellingTo": "You are selling sats to",
+  "youAreBuyingFrom": "You are buying sats from",
+  "noMessagesYet": "No messages yet",
+  "today": "Today",
+  "yesterday": "Yesterday",
+  "youPrefix": "You: ",
+  "conversationsDescription": "Here you'll find your conversations with other users during trades.",
+  "orderId": "Order ID:",
+  "paymentMethod": "Payment Method:",
+  "createdOn": "Created on:",
+  "sellingSats": "Selling {amount} sats",
+  "@sellingSats": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "buyingSats": "Buying {amount} sats",
+  "@buyingSats": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "forAmount": "for {amount} {currency}",
+  "@forAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "yourInformation": "Your Information",
+  "yourSharedKey": "Your Shared Key:",
+  "peerPublicKey": "Peer Public Key:",
+  "notAvailable": "Not available",
+  "unknownDate": "Unknown date",
+  "messageCopiedToClipboard": "Message copied to clipboard",
+
   "@_comment_deep_link_errors": "Deep Link Error Messages",
   "deepLinkInvalidFormat": "Invalid mostro: URL format",
   "deepLinkParseError": "Failed to parse mostro: URL",
@@ -594,6 +652,15 @@
     }
   },
   "deepLinkGoHome": "Go Home",
+
+  
+  "@_comment_order_disabled_messages": "Order Disabled Messages",
+  "orderCompletedMessagingDisabled": "Order completed - messaging disabled",
+  "orderCanceledMessagingDisabled": "Order canceled - messaging disabled",
+  "orderExpiredMessagingDisabled": "Order expired - messaging disabled",
+  "orderSettledMessagingDisabled": "Order settled - messaging disabled",
+  "orderNotActiveMessagingDisabled": "Order is no longer active - messaging disabled",
+
 
   "@_comment_about_screen_new": "About Screen New Strings",
   "documentation": "Documentation",
@@ -706,6 +773,9 @@
   "invalidRelayTitle": "Invalid Relay",
   "relayUrlHint": "relay.example.com or wss://relay.example.com",
   "add": "Add",
+
+
+
   "save": "Save",
   "selectCurrency": "Select Currency",
   "noCurrencySelected": "No currency selected",
@@ -714,4 +784,5 @@
   "orderTimeoutTaker": "You didn't respond in time. The order will be republished",
   "orderTimeoutMaker": "Your counterpart didn't respond in time. The order will be republished",
   "orderTimeout": "Order timeout occurred"
+
 }
