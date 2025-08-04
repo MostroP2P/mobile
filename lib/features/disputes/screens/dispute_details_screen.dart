@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/disputes/widgets/disputes_list.dart';
+import 'package:mostro_mobile/features/disputes/widgets/dispute_status_badge.dart';
 import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
 
 class DisputeDetailsScreen extends StatelessWidget {
@@ -34,7 +35,7 @@ class DisputeDetailsScreen extends StatelessWidget {
           preferredSize: const Size.fromHeight(1.0),
           child: Container(
             height: 1.0,
-            color: Colors.white.withValues(alpha: 26), // 0.1 opacity
+            color: Colors.white.withValues(alpha: 0.05), // More subtle border
           ),
         ),
       ),
@@ -42,19 +43,20 @@ class DisputeDetailsScreen extends StatelessWidget {
         children: [
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Main dispute info card
                   _buildDisputeInfoCard(),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
                   // Communication section
                   _buildCommunicationSection(),
                 ],
               ),
             ),
           ),
+          // Chat input
+          _buildChatInput(),
           // Bottom padding for nav bar
           SizedBox(height: 80 + MediaQuery.of(context).viewPadding.bottom),
         ],
@@ -65,14 +67,11 @@ class DisputeDetailsScreen extends StatelessWidget {
 
   Widget _buildDisputeInfoCard() {
     return Container(
+      margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppTheme.backgroundDark,
+        color: AppTheme.dark1, // Same background as My Active Trades items
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 26), // 0.1 opacity
-          width: 1,
-        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -80,18 +79,10 @@ class DisputeDetailsScreen extends StatelessWidget {
           // Header with warning icon and title
           Row(
             children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: Colors.amber.withValues(alpha: 51), // 0.2 opacity
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Icon(
-                  Icons.warning,
-                  color: Colors.amber,
-                  size: 20,
-                ),
+              Icon(
+                Icons.warning_amber,
+                color: Colors.amber,
+                size: 32,
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -104,25 +95,8 @@ class DisputeDetailsScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              // Status badge
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: AppTheme.mostroGreen,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Text(
-                  'In-progress',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
+              // Status badge - reuse the component for consistency
+              DisputeStatusBadge(status: dispute.status),
             ],
           ),
           const SizedBox(height: 16),
@@ -351,6 +325,70 @@ class DisputeDetailsScreen extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildChatInput() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.backgroundDark,
+        border: Border(
+          top: BorderSide(
+            color: Colors.white.withValues(alpha: 0.05),
+            width: 1.0,
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: AppTheme.backgroundInput,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: TextField(
+                style: TextStyle(color: AppTheme.cream1),
+                decoration: InputDecoration(
+                  hintText: 'Type a message...',
+                  hintStyle: TextStyle(color: AppTheme.textSecondary),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.zero,
+                ),
+                maxLines: null,
+                textInputAction: TextInputAction.send,
+                onSubmitted: (text) {
+                  // Handle message sending
+                  if (text.trim().isNotEmpty) {
+                    // TODO: Implement message sending logic
+                  }
+                },
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: AppTheme.mostroGreen,
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              onPressed: () {
+                // TODO: Implement message sending logic
+              },
+              icon: const Icon(
+                Icons.send,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
