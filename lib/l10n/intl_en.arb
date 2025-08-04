@@ -796,7 +796,7 @@
   "orderTimeoutTaker": "You didn't respond in time. The order will be republished",
   "orderTimeoutMaker": "Your counterpart didn't respond in time. The order will be republished",
   "orderTimeout": "Order timeout occurred",
-  "orderCanceled": "The order was canceled"
+  "orderCanceled": "The order was canceled",
   
   "@_comment_notifications": "Notifications Screen Text",
   "notifications": "Notifications",

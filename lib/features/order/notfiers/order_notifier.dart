@@ -204,7 +204,7 @@ class OrderNotifier extends AbstractMostroNotifier {
           logger.i('Session deleted for canceled order $orderId');
           
           // Show cancellation notification
-          final notifProvider = ref.read(notificationProvider.notifier);
+          final notifProvider = ref.read(notificationsProvider.notifier);
           notifProvider.showCustomMessage('orderCanceled');
           
           // Navigate to order book

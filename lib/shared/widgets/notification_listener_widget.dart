@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/features/notifications/notifiers/notification_temporary_state.dart';
 import 'package:mostro_mobile/features/notifications/providers/notifications_provider.dart';

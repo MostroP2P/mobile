@@ -88,6 +88,15 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
     );
   }
 
+  void showCustomMessage(String message) {
+    state = state.copyWith(
+      temporaryNotification: NotificationTemporaryState(
+        customMessage: message,
+        show: true,
+      ),
+    );
+  }
+
   void clearTemporary() {
     state = state.copyWith(
       temporaryNotification: const NotificationTemporaryState(),

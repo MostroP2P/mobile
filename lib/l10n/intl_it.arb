@@ -831,7 +831,7 @@
   "orderTimeoutTaker": "Non hai risposto in tempo. L'ordine sarà ripubblicato",
   "orderTimeoutMaker": "La tua controparte non ha risposto in tempo. L'ordine sarà ripubblicato",
   "orderTimeout": "Timeout dell'ordine verificato",
-  "orderCanceled": "L'ordine è stato annullato"
+  "orderCanceled": "L'ordine è stato annullato",
   
   "@_comment_notifications": "Testo Schermata Notifiche",
   "notifications": "Notifiche",
