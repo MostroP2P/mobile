@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mostro_mobile/data/models/notification.dart';
-import 'package:mostro_mobile/features/notifications/widgets/notification_text_resolver.dart';
+import 'package:mostro_mobile/features/notifications/utils/notification_message_mapper.dart';
 import 'package:mostro_mobile/features/notifications/widgets/unread_indicator.dart';
 
 class NotificationHeader extends StatelessWidget {
@@ -14,7 +14,7 @@ class NotificationHeader extends StatelessWidget {
       children: [
         Expanded(
           child: Text(
-            resolveNotificationText(context, notification.title),
+            NotificationMessageMapper.getLocalizedTitle(context, notification.action),
             style: _getTitleStyle(context),
           ),
         ),

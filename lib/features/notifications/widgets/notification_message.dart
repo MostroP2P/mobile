@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mostro_mobile/data/models/notification.dart';
-import 'package:mostro_mobile/features/notifications/widgets/notification_text_resolver.dart';
+import 'package:mostro_mobile/features/notifications/utils/notification_message_mapper.dart';
 import 'package:mostro_mobile/features/notifications/widgets/notification_details.dart';
 
 class NotificationMessage extends StatelessWidget {
@@ -14,7 +14,7 @@ class NotificationMessage extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          resolveNotificationText(context, notification.message),
+          NotificationMessageMapper.getLocalizedMessage(context, notification.action),
           style: _getMessageStyle(context),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,

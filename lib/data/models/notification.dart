@@ -103,6 +103,10 @@ class NotificationModel {
       case Action.tradePubkey:
       case Action.timeoutReversal:
         return NotificationType.system;
+      // ignore: unreachable_switch_default
+      default:
+        // Handle any future Action values that might be added to the enum
+        return NotificationType.system;
     }
   }
 }

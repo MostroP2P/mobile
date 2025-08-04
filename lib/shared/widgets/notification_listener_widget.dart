@@ -5,46 +5,6 @@ import 'package:mostro_mobile/features/notifications/notifiers/notification_temp
 import 'package:mostro_mobile/features/notifications/providers/notifications_provider.dart';
 import 'package:mostro_mobile/features/notifications/utils/notification_message_mapper.dart';
 
-// Helper function to resolve notification keys to localized text
-String _resolveNotificationText(BuildContext context, String key) {
-  final s = S.of(context)!;
-  
-  // Simple resolver for common notification titles used in SnackBars
-  switch (key) {
-    case 'notification_new_order_title':
-      return s.notification_new_order_title;
-    case 'notification_order_taken_title':
-      return s.notification_order_taken_title;
-    case 'notification_payment_required_title':
-      return s.notification_payment_required_title;
-    case 'notification_fiat_sent_title':
-      return s.notification_fiat_sent_title;
-    case 'notification_fiat_sent_ok_title':
-      return s.notification_fiat_sent_ok_title;
-    case 'notification_bitcoin_released_title':
-      return s.notification_bitcoin_released_title;
-    case 'notification_dispute_started_title':
-      return s.notification_dispute_started_title;
-    case 'notification_order_canceled_title':
-      return s.notification_order_canceled_title;
-    case 'notification_new_message_title':
-      return s.notification_new_message_title;
-    case 'notification_cant_do_title':
-      return s.notification_cant_do_title;
-    case 'notification_payment_failed_title':
-      return s.notification_payment_failed_title;
-    case 'notification_buyer_took_order_title':
-      return s.notification_buyer_took_order_title;
-    case 'notification_purchase_completed_title':
-      return s.notification_purchase_completed_title;
-    case 'notification_cooperative_cancel_initiated_by_you_title':
-      return s.notification_cooperative_cancel_initiated_by_you_title;
-    case 'notification_cooperative_cancel_initiated_by_peer_title':
-      return s.notification_cooperative_cancel_initiated_by_peer_title;
-    default:
-      return s.notification_order_update_title;
-  }
-}
 
 class NotificationListenerWidget extends ConsumerWidget {
   final Widget child;
@@ -73,9 +33,8 @@ class NotificationListenerWidget extends ConsumerWidget {
               message = next.customMessage!;
           }
         } else {
-          // Get the title key and resolve it to localized text
-          final titleKey = NotificationMessageMapper.getTitleKey(next.action!);
-          message = _resolveNotificationText(context, titleKey);
+          // Get localized title directly from action
+          message = NotificationMessageMapper.getLocalizedTitle(context, next.action!);
         }
         
         ScaffoldMessenger.of(context).showSnackBar(

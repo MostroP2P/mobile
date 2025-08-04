@@ -164,17 +164,8 @@ class NotificationDetails extends StatelessWidget {
         break;
 
       default:
-        // TODO: Each new action should be handled specifically above with proper localization and formatting
-        // This default case is a fallback for any unhandled actions
-        data.forEach((key, value) {
-          if (value != null && value.toString().isNotEmpty) {
-            widgets.add(DetailRow(
-              label: _formatKey(key),
-              value: _formatHashOrId(value.toString()),
-              icon: HeroIcons.informationCircle,
-            ));
-          }
-        });
+        // TODO: Add specific handler for ${notification.action}
+        // No data displayed for unhandled actions to prevent information exposure
         break;
     }
 
@@ -194,9 +185,4 @@ class NotificationDetails extends StatelessWidget {
     return '$start...$end';
   }
 
-  String _formatKey(String key) {
-    return key.replaceAll('_', ' ').split(' ')
-        .map((word) => word.isEmpty ? '' : word[0].toUpperCase() + word.substring(1))
-        .join(' ');
-  }
 }

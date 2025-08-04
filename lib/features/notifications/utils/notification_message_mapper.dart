@@ -1,141 +1,313 @@
-import 'package:mostro_mobile/data/models/enums/action.dart';
+import 'package:flutter/material.dart';
+import 'package:mostro_mobile/data/models/enums/action.dart' as mostro;
+import 'package:mostro_mobile/generated/l10n.dart';
 
 /// Utility class to map Mostro actions to notification title and message keys
+/// 
+/// This class provides exhaustive switch statements that handle all Action enum values.
+/// The compiler will enforce completeness, causing a compilation error if new enum values
+/// are added without corresponding cases in the switch statements.
 class NotificationMessageMapper {
   /// Maps an action to its corresponding notification title key
-  static String getTitleKey(Action action) {
+  static String getTitleKey(mostro.Action action) {
     switch (action) {
-      case Action.newOrder:
+      case mostro.Action.newOrder:
         return 'notification_new_order_title';
-      case Action.takeBuy:
-      case Action.takeSell:
+      case mostro.Action.takeBuy:
+      case mostro.Action.takeSell:
         return 'notification_order_taken_title';
-      case Action.payInvoice:
+      case mostro.Action.payInvoice:
         return 'notification_payment_required_title';
-      case Action.fiatSent:
+      case mostro.Action.fiatSent:
         return 'notification_fiat_sent_title';
-      case Action.fiatSentOk:
+      case mostro.Action.fiatSentOk:
         return 'notification_fiat_sent_ok_title';
-      case Action.release:
+      case mostro.Action.release:
         return 'notification_release_title';
-      case Action.released:
+      case mostro.Action.released:
         return 'notification_bitcoin_released_title';
-      case Action.buyerInvoiceAccepted:
+      case mostro.Action.buyerInvoiceAccepted:
         return 'notification_buyer_invoice_accepted_title';
-      case Action.purchaseCompleted:
+      case mostro.Action.purchaseCompleted:
         return 'notification_purchase_completed_title';
-      case Action.holdInvoicePaymentAccepted:
+      case mostro.Action.holdInvoicePaymentAccepted:
         return 'notification_hold_invoice_payment_accepted_title';
-      case Action.holdInvoicePaymentSettled:
+      case mostro.Action.holdInvoicePaymentSettled:
         return 'notification_hold_invoice_payment_settled_title';
-      case Action.holdInvoicePaymentCanceled:
+      case mostro.Action.holdInvoicePaymentCanceled:
         return 'notification_hold_invoice_payment_canceled_title';
-      case Action.waitingSellerToPay:
+      case mostro.Action.waitingSellerToPay:
         return 'notification_waiting_seller_to_pay_title';
-      case Action.waitingBuyerInvoice:
+      case mostro.Action.waitingBuyerInvoice:
         return 'notification_waiting_buyer_invoice_title';
-      case Action.addInvoice:
+      case mostro.Action.addInvoice:
         return 'notification_add_invoice_title';
-      case Action.buyerTookOrder:
+      case mostro.Action.buyerTookOrder:
         return 'notification_buyer_took_order_title';
-      case Action.rate:
-      case Action.rateUser:
+      case mostro.Action.rate:
+      case mostro.Action.rateUser:
         return 'notification_rate_title';
-      case Action.rateReceived:
+      case mostro.Action.rateReceived:
         return 'notification_rate_received_title';
-      case Action.dispute:
+      case mostro.Action.dispute:
         return 'notification_dispute_started_title';
-      case Action.disputeInitiatedByYou:
+      case mostro.Action.disputeInitiatedByYou:
         return 'notification_dispute_initiated_by_you_title';
-      case Action.disputeInitiatedByPeer:
+      case mostro.Action.disputeInitiatedByPeer:
         return 'notification_dispute_initiated_by_peer_title';
-      case Action.paymentFailed:
+      case mostro.Action.paymentFailed:
         return 'notification_payment_failed_title';
-      case Action.invoiceUpdated:
+      case mostro.Action.invoiceUpdated:
         return 'notification_invoice_updated_title';
-      case Action.cantDo:
+      case mostro.Action.cantDo:
         return 'notification_cant_do_title';
-      case Action.canceled:
+      case mostro.Action.canceled:
         return 'notification_order_canceled_title';
-      case Action.cooperativeCancelInitiatedByYou:
+      case mostro.Action.cooperativeCancelInitiatedByYou:
         return 'notification_cooperative_cancel_initiated_by_you_title';
-      case Action.cooperativeCancelInitiatedByPeer:
+      case mostro.Action.cooperativeCancelInitiatedByPeer:
         return 'notification_cooperative_cancel_initiated_by_peer_title';
-      case Action.cooperativeCancelAccepted:
+      case mostro.Action.cooperativeCancelAccepted:
         return 'notification_cooperative_cancel_accepted_title';
-      case Action.sendDm:
+      case mostro.Action.sendDm:
         return 'notification_new_message_title';
-      default:
+      case mostro.Action.cancel:
+      case mostro.Action.adminCancel:
+      case mostro.Action.adminCanceled:
+        return 'notification_order_canceled_title';
+      case mostro.Action.adminSettle:
+      case mostro.Action.adminSettled:
+        return 'notification_order_update_title';
+      case mostro.Action.adminAddSolver:
+      case mostro.Action.adminTakeDispute:
+      case mostro.Action.adminTookDispute:
+        return 'notification_dispute_started_title';
+      case mostro.Action.tradePubkey:
+      case mostro.Action.timeoutReversal:
         return 'notification_order_update_title';
     }
   }
 
   /// Maps an action to its corresponding notification message key
-  static String getMessageKey(Action action) {
+  static String getMessageKey(mostro.Action action) {
     switch (action) {
-      case Action.newOrder:
+      case mostro.Action.newOrder:
         return 'notification_new_order_message';
-      case Action.takeBuy:
+      case mostro.Action.takeBuy:
         return 'notification_sell_order_taken_message';
-      case Action.takeSell:
+      case mostro.Action.takeSell:
         return 'notification_buy_order_taken_message';
-      case Action.payInvoice:
+      case mostro.Action.payInvoice:
         return 'notification_payment_required_message';
-      case Action.fiatSent:
+      case mostro.Action.fiatSent:
         return 'notification_fiat_sent_message';
-      case Action.fiatSentOk:
+      case mostro.Action.fiatSentOk:
         return 'notification_fiat_sent_ok_message';
-      case Action.release:
+      case mostro.Action.release:
         return 'notification_release_message';
-      case Action.released:
+      case mostro.Action.released:
         return 'notification_bitcoin_released_message';
-      case Action.buyerInvoiceAccepted:
+      case mostro.Action.buyerInvoiceAccepted:
         return 'notification_buyer_invoice_accepted_message';
-      case Action.purchaseCompleted:
+      case mostro.Action.purchaseCompleted:
         return 'notification_purchase_completed_message';
-      case Action.holdInvoicePaymentAccepted:
+      case mostro.Action.holdInvoicePaymentAccepted:
         return 'notification_hold_invoice_payment_accepted_message';
-      case Action.holdInvoicePaymentSettled:
+      case mostro.Action.holdInvoicePaymentSettled:
         return 'notification_hold_invoice_payment_settled_message';
-      case Action.holdInvoicePaymentCanceled:
+      case mostro.Action.holdInvoicePaymentCanceled:
         return 'notification_hold_invoice_payment_canceled_message';
-      case Action.waitingSellerToPay:
+      case mostro.Action.waitingSellerToPay:
         return 'notification_waiting_seller_to_pay_message';
-      case Action.waitingBuyerInvoice:
+      case mostro.Action.waitingBuyerInvoice:
         return 'notification_waiting_buyer_invoice_message';
-      case Action.addInvoice:
+      case mostro.Action.addInvoice:
         return 'notification_add_invoice_message';
-      case Action.buyerTookOrder:
+      case mostro.Action.buyerTookOrder:
         return 'notification_buyer_took_order_message';
-      case Action.rate:
-      case Action.rateUser:
+      case mostro.Action.rate:
+      case mostro.Action.rateUser:
         return 'notification_rate_message';
-      case Action.rateReceived:
+      case mostro.Action.rateReceived:
         return 'notification_rate_received_message';
-      case Action.dispute:
+      case mostro.Action.dispute:
         return 'notification_dispute_started_message';
-      case Action.disputeInitiatedByYou:
+      case mostro.Action.disputeInitiatedByYou:
         return 'notification_dispute_initiated_by_you_message';
-      case Action.disputeInitiatedByPeer:
+      case mostro.Action.disputeInitiatedByPeer:
         return 'notification_dispute_initiated_by_peer_message';
-      case Action.paymentFailed:
+      case mostro.Action.paymentFailed:
         return 'notification_payment_failed_message';
-      case Action.invoiceUpdated:
+      case mostro.Action.invoiceUpdated:
         return 'notification_invoice_updated_message';
-      case Action.cantDo:
+      case mostro.Action.cantDo:
         return 'notification_cant_do_message';
-      case Action.canceled:
+      case mostro.Action.canceled:
         return 'notification_order_canceled_message';
-      case Action.cooperativeCancelInitiatedByYou:
+      case mostro.Action.cooperativeCancelInitiatedByYou:
         return 'notification_cooperative_cancel_initiated_by_you_message';
-      case Action.cooperativeCancelInitiatedByPeer:
+      case mostro.Action.cooperativeCancelInitiatedByPeer:
         return 'notification_cooperative_cancel_initiated_by_peer_message';
-      case Action.cooperativeCancelAccepted:
+      case mostro.Action.cooperativeCancelAccepted:
         return 'notification_cooperative_cancel_accepted_message';
-      case Action.sendDm:
+      case mostro.Action.sendDm:
         return 'notification_new_message_message';
-      default:
+      case mostro.Action.cancel:
+      case mostro.Action.adminCancel:
+      case mostro.Action.adminCanceled:
+        return 'notification_order_canceled_message';
+      case mostro.Action.adminSettle:
+      case mostro.Action.adminSettled:
         return 'notification_order_update_message';
+      case mostro.Action.adminAddSolver:
+      case mostro.Action.adminTakeDispute:
+      case mostro.Action.adminTookDispute:
+        return 'notification_dispute_started_message';
+      case mostro.Action.tradePubkey:
+      case mostro.Action.timeoutReversal:
+        return 'notification_order_update_message';
+    }
+  }
+
+  /// Get localized title text directly from Action
+  static String getLocalizedTitle(BuildContext context, mostro.Action action) {
+    final s = S.of(context)!;
+    return _resolveLocalizationKey(s, getTitleKey(action));
+  }
+
+  /// Get localized message text directly from Action
+  static String getLocalizedMessage(BuildContext context, mostro.Action action) {
+    final s = S.of(context)!;
+    return _resolveLocalizationKey(s, getMessageKey(action));
+  }
+
+  /// Helper method to resolve localization keys to actual text
+  static String _resolveLocalizationKey(S s, String key) {
+    switch (key) {
+      case 'notification_new_order_title':
+        return s.notification_new_order_title;
+      case 'notification_new_order_message':
+        return s.notification_new_order_message;
+      case 'notification_order_taken_title':
+        return s.notification_order_taken_title;
+      case 'notification_sell_order_taken_message':
+        return s.notification_sell_order_taken_message;
+      case 'notification_buy_order_taken_message':
+        return s.notification_buy_order_taken_message;
+      case 'notification_payment_required_title':
+        return s.notification_payment_required_title;
+      case 'notification_payment_required_message':
+        return s.notification_payment_required_message;
+      case 'notification_fiat_sent_title':
+        return s.notification_fiat_sent_title;
+      case 'notification_fiat_sent_message':
+        return s.notification_fiat_sent_message;
+      case 'notification_fiat_sent_ok_title':
+        return s.notification_fiat_sent_ok_title;
+      case 'notification_fiat_sent_ok_message':
+        return s.notification_fiat_sent_ok_message;
+      case 'notification_release_title':
+        return s.notification_release_title;
+      case 'notification_release_message':
+        return s.notification_release_message;
+      case 'notification_bitcoin_released_title':
+        return s.notification_bitcoin_released_title;
+      case 'notification_bitcoin_released_message':
+        return s.notification_bitcoin_released_message;
+      case 'notification_buyer_invoice_accepted_title':
+        return s.notification_buyer_invoice_accepted_title;
+      case 'notification_buyer_invoice_accepted_message':
+        return s.notification_buyer_invoice_accepted_message;
+      case 'notification_purchase_completed_title':
+        return s.notification_purchase_completed_title;
+      case 'notification_purchase_completed_message':
+        return s.notification_purchase_completed_message;
+      case 'notification_hold_invoice_payment_accepted_title':
+        return s.notification_hold_invoice_payment_accepted_title;
+      case 'notification_hold_invoice_payment_accepted_message':
+        return s.notification_hold_invoice_payment_accepted_message;
+      case 'notification_hold_invoice_payment_settled_title':
+        return s.notification_hold_invoice_payment_settled_title;
+      case 'notification_hold_invoice_payment_settled_message':
+        return s.notification_hold_invoice_payment_settled_message;
+      case 'notification_hold_invoice_payment_canceled_title':
+        return s.notification_hold_invoice_payment_canceled_title;
+      case 'notification_hold_invoice_payment_canceled_message':
+        return s.notification_hold_invoice_payment_canceled_message;
+      case 'notification_waiting_seller_to_pay_title':
+        return s.notification_waiting_seller_to_pay_title;
+      case 'notification_waiting_seller_to_pay_message':
+        return s.notification_waiting_seller_to_pay_message;
+      case 'notification_waiting_buyer_invoice_title':
+        return s.notification_waiting_buyer_invoice_title;
+      case 'notification_waiting_buyer_invoice_message':
+        return s.notification_waiting_buyer_invoice_message;
+      case 'notification_add_invoice_title':
+        return s.notification_add_invoice_title;
+      case 'notification_add_invoice_message':
+        return s.notification_add_invoice_message;
+      case 'notification_buyer_took_order_title':
+        return s.notification_buyer_took_order_title;
+      case 'notification_buyer_took_order_message':
+        return s.notification_buyer_took_order_message;
+      case 'notification_rate_title':
+        return s.notification_rate_title;
+      case 'notification_rate_message':
+        return s.notification_rate_message;
+      case 'notification_rate_received_title':
+        return s.notification_rate_received_title;
+      case 'notification_rate_received_message':
+        return s.notification_rate_received_message;
+      case 'notification_dispute_started_title':
+        return s.notification_dispute_started_title;
+      case 'notification_dispute_started_message':
+        return s.notification_dispute_started_message;
+      case 'notification_dispute_initiated_by_you_title':
+        return s.notification_dispute_initiated_by_you_title;
+      case 'notification_dispute_initiated_by_you_message':
+        return s.notification_dispute_initiated_by_you_message;
+      case 'notification_dispute_initiated_by_peer_title':
+        return s.notification_dispute_initiated_by_peer_title;
+      case 'notification_dispute_initiated_by_peer_message':
+        return s.notification_dispute_initiated_by_peer_message;
+      case 'notification_payment_failed_title':
+        return s.notification_payment_failed_title;
+      case 'notification_payment_failed_message':
+        return s.notification_payment_failed_message;
+      case 'notification_invoice_updated_title':
+        return s.notification_invoice_updated_title;
+      case 'notification_invoice_updated_message':
+        return s.notification_invoice_updated_message;
+      case 'notification_cant_do_title':
+        return s.notification_cant_do_title;
+      case 'notification_cant_do_message':
+        return s.notification_cant_do_message;
+      case 'notification_order_canceled_title':
+        return s.notification_order_canceled_title;
+      case 'notification_order_canceled_message':
+        return s.notification_order_canceled_message;
+      case 'notification_cooperative_cancel_initiated_by_you_title':
+        return s.notification_cooperative_cancel_initiated_by_you_title;
+      case 'notification_cooperative_cancel_initiated_by_you_message':
+        return s.notification_cooperative_cancel_initiated_by_you_message;
+      case 'notification_cooperative_cancel_initiated_by_peer_title':
+        return s.notification_cooperative_cancel_initiated_by_peer_title;
+      case 'notification_cooperative_cancel_initiated_by_peer_message':
+        return s.notification_cooperative_cancel_initiated_by_peer_message;
+      case 'notification_cooperative_cancel_accepted_title':
+        return s.notification_cooperative_cancel_accepted_title;
+      case 'notification_cooperative_cancel_accepted_message':
+        return s.notification_cooperative_cancel_accepted_message;
+      case 'notification_new_message_title':
+        return s.notification_new_message_title;
+      case 'notification_new_message_message':
+        return s.notification_new_message_message;
+      case 'notification_order_update_title':
+        return s.notification_order_update_title;
+      case 'notification_order_update_message':
+        return s.notification_order_update_message;
+      default:
+        return key; // Fallback to key if not found
     }
   }
 }
