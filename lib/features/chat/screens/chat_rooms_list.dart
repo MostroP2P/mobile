@@ -8,6 +8,7 @@ import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/features/chat/widgets/chat_list_item.dart';
 import 'package:mostro_mobile/features/chat/widgets/chat_tabs.dart';
 import 'package:mostro_mobile/features/chat/widgets/empty_state_view.dart';
+import 'package:mostro_mobile/features/disputes/widgets/disputes_list.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
 import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
@@ -102,10 +103,8 @@ class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen>
                       children: [
                         // Messages tab
                         _buildBody(context, chatListState),
-                        // Disputes tab (placeholder for now)
-                        EmptyStateView(
-                          message: S.of(context)?.noDisputesAvailable ?? 'No disputes available',
-                        ),
+                        // Disputes tab
+                        const DisputesList(),
                       ],
                     ),
                   ),
