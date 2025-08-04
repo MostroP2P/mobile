@@ -11,17 +11,26 @@ class Dispute implements Payload {
   final String? orderId;
   final String? status;
   final Order? order;
+  final String? disputeToken;
+  final String? adminPubkey;
+  final DateTime? adminTookAt;
 
   Dispute({
     required this.disputeId,
     this.orderId,
     this.status,
     this.order,
+    this.disputeToken,
+    this.adminPubkey,
+    this.adminTookAt,
   }) {
     if (disputeId.isEmpty) {
       throw ArgumentError('Dispute ID cannot be empty');
     }
   }
+
+  /// Check if an admin has been assigned to this dispute
+  bool get hasAdmin => adminPubkey != null && adminPubkey!.isNotEmpty;
 
   @override
   Map<String, dynamic> toJson() {
@@ -39,6 +48,18 @@ class Dispute implements Payload {
 
     if (order != null) {
       json['order'] = order!.toJson();
+    }
+
+    if (disputeToken != null) {
+      json['dispute_token'] = disputeToken;
+    }
+
+    if (adminPubkey != null) {
+      json['admin_pubkey'] = adminPubkey;
+    }
+
+    if (adminTookAt != null) {
+      json['admin_took_at'] = adminTookAt!.millisecondsSinceEpoch;
     }
 
     return json;
@@ -70,6 +91,17 @@ class Dispute implements Payload {
       // Extract optional fields
       final orderId = json['order_id'] as String?;
       final status = json['status'] as String?;
+      final disputeToken = json['dispute_token'] as String?;
+      final adminPubkey = json['admin_pubkey'] as String?;
+      
+      // Extract admin_took_at timestamp
+      DateTime? adminTookAt;
+      if (json.containsKey('admin_took_at') && json['admin_took_at'] != null) {
+        final timestamp = json['admin_took_at'];
+        if (timestamp is int) {
+          adminTookAt = DateTime.fromMillisecondsSinceEpoch(timestamp);
+        }
+      }
       
       // Extract order if present
       Order? order;
@@ -82,6 +114,9 @@ class Dispute implements Payload {
         orderId: orderId,
         status: status,
         order: order,
+        disputeToken: disputeToken,
+        adminPubkey: adminPubkey,
+        adminTookAt: adminTookAt,
       );
     } catch (e) {
       throw FormatException('Failed to parse Dispute from JSON: $e');
@@ -94,12 +129,18 @@ class Dispute implements Payload {
     String? orderId,
     String? status,
     Order? order,
+    String? disputeToken,
+    String? adminPubkey,
+    DateTime? adminTookAt,
   }) {
     return Dispute(
       disputeId: disputeId ?? this.disputeId,
       orderId: orderId ?? this.orderId,
       status: status ?? this.status,
       order: order ?? this.order,
+      disputeToken: disputeToken ?? this.disputeToken,
+      adminPubkey: adminPubkey ?? this.adminPubkey,
+      adminTookAt: adminTookAt ?? this.adminTookAt,
     );
   }
 
@@ -113,12 +154,15 @@ class Dispute implements Payload {
            other.disputeId == disputeId &&
            other.orderId == orderId &&
            other.status == status &&
-           other.order == order;
+           other.order == order &&
+           other.disputeToken == disputeToken &&
+           other.adminPubkey == adminPubkey &&
+           other.adminTookAt == adminTookAt;
   }
   
   @override
-  int get hashCode => Object.hash(disputeId, orderId, status, order);
+  int get hashCode => Object.hash(disputeId, orderId, status, order, disputeToken, adminPubkey, adminTookAt);
   
   @override
-  String toString() => 'Dispute(disputeId: $disputeId, orderId: $orderId, status: $status)';
+  String toString() => 'Dispute(disputeId: $disputeId, orderId: $orderId, status: $status, disputeToken: $disputeToken, adminPubkey: $adminPubkey, adminTookAt: $adminTookAt)';
 }
