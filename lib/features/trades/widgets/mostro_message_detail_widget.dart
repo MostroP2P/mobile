@@ -40,7 +40,9 @@ class MostroMessageDetail extends ConsumerWidget {
                   text: formatTextWithBoldUsernames(actionText, context),
                 ),
                 const SizedBox(height: 16),
-                Text('${orderState.status} - ${orderState.action}'),
+                Text(orderState.action == actions.Action.timeoutReversal 
+                  ? orderState.status.toString() 
+                  : '${orderState.status} - ${orderState.action}'),
               ],
             ),
           ),
@@ -84,6 +86,14 @@ class MostroMessageDetail extends ConsumerWidget {
                 ?.expirationSeconds ??
             900;
         final expMinutes = (expSecs / 60).round();
+        // Check if we're in payment-failed state to show different message
+        if (tradeState.status == Status.paymentFailed) {
+          return S.of(context)!.addInvoicePaymentFailed(
+                orderPayload?.amount.toString() ?? '',
+                orderPayload?.fiatAmount.toString() ?? '',
+                orderPayload?.fiatCode ?? '',
+              );
+        }
         return S.of(context)!.addInvoice(
               orderPayload?.amount.toString() ?? '',
               expMinutes,
@@ -184,13 +194,20 @@ class MostroMessageDetail extends ConsumerWidget {
       case actions.Action.adminSettled:
         return S.of(context)!.adminSettledUsers(orderPayload!.id ?? '');
       case actions.Action.paymentFailed:
-        return S.of(context)!.paymentFailed('{attempts}', '{retries}');
+        final payload = ref.read(orderNotifierProvider(orderId)).paymentFailed;
+        final intervalInMinutes = ((payload?.paymentRetriesInterval ?? 0) / 60).round();
+        return S.of(context)!.paymentFailed(
+              payload?.paymentAttempts ?? 0,
+              intervalInMinutes,
+            );
       case actions.Action.invoiceUpdated:
         return S.of(context)!.invoiceUpdated;
       case actions.Action.holdInvoicePaymentCanceled:
         return S.of(context)!.holdInvoicePaymentCanceled;
       case actions.Action.cantDo:
         return _getCantDoMessage(context, ref);
+      case actions.Action.timeoutReversal:
+        return S.of(context)!.orderTimeoutMaker; // Counterpart didn't respond, order republished
       default:
         return 'No message found for action ${tradeState.action}'; // This is a fallback message for developers
     }

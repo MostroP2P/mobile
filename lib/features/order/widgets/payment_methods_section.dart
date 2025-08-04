@@ -27,7 +27,7 @@ class PaymentMethodsSection extends ConsumerWidget {
     final paymentMethodsData = ref.watch(paymentMethodsDataProvider);
 
     return FormSection(
-      title: S.of(context)!.paymentMethodsForCurrency(selectedFiatCode),
+      title: S.of(context)!.paymentMethodsForCurrency(selectedFiatCode ?? ''),
       icon: const Icon(Icons.credit_card, color: Color(0xFF8CC63F), size: 18),
       iconBackgroundColor: const Color(0xFF8CC63F).withValues(alpha: 0.3),
       extraContent: showCustomField

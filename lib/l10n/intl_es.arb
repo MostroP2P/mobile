@@ -45,6 +45,23 @@
       }
     }
   },
+  "addInvoicePaymentFailed": "No fue posible completar el pago a tu factura anterior. Por favor, envíame una nueva factura por {amount} satoshis, equivalente a {fiat_amount} {fiat_code}, para realizar el pago.",
+  "@addInvoicePaymentFailed": {
+    "placeholders": {
+      "amount": {
+        "type": "String",
+        "description": "La cantidad de satoshis"
+      },
+      "fiat_amount": {
+        "type": "String",
+        "description": "La cantidad fiat"
+      },
+      "fiat_code": {
+        "type": "String",
+        "description": "El código de moneda fiat"
+      }
+    }
+  },
   "waitingSellerToPay": "Por favor espera. He enviado una solicitud de pago al vendedor para enviar los Sats para la orden con ID {id}. Si el vendedor no completa el pago dentro de {expiration_seconds} minutos, el intercambio será cancelado.",
   "@waitingSellerToPay": {
     "placeholders": {
@@ -88,7 +105,8 @@
   "adminCanceledUsers": "El administrador ha cancelado la orden ID: {id}.",
   "adminSettledAdmin": "Has completado la orden ID: {id}.",
   "adminSettledUsers": "El administrador ha completado la orden ID: {id}.",
-  "paymentFailed": "No pude enviar los Sats. Intentaré {payment_attempts} veces más en {payment_retries_interval} minutos. Por favor asegúrate de que tu nodo o billetera esté en línea.",
+  "paymentFailed": "El intento de pago a tu factura ha fallado. Volveré a intentarlo {payment_attempts} veces más, con un intervalo de {payment_retries_interval} minutos entre cada intento. Por favor, asegúrate de que tu billetera esté en línea para poder completar el pago.",
+  "paymentFailedText": "Pago Fallido",
   "invoiceUpdated": "¡La factura ha sido actualizada exitosamente!",
   "holdInvoicePaymentCanceled": "La factura fue cancelada; tus Sats están disponibles en tu billetera nuevamente.",
   "cantDo": "¡No tienes permitido {action} para esta orden!",
@@ -291,12 +309,18 @@
   "youWantToSellBitcoin": "Quieres vender Bitcoin",
   "lightningAddressOptional": "Lightning Address (opcional)",
   "enterLightningAddress": "Introduzca una lightning address",
-  "enterFiatAmountBuy": "Ingresa la cantidad fiat que quieres pagar (puedes establecer un rango)",
-  "enterFiatAmountSell": "Ingresa la cantidad fiat que quieres recibir (puedes establecer un rango)",
-  "enterAmountHint": "Ingresa cantidad (ejemplo: 100 o 100-500)",
+  "enterAmountHint": "Ingresa cantidad",
   "pleaseEnterAmount": "Por favor ingresa una cantidad",
-  "pleaseEnterValidAmount": "Por favor ingresa una cantidad válida (ej., 100) o rango (ej., 100-500)",
-  "rangeFirstLowerThanSecond": "En un rango, el primer número debe ser menor que el segundo",
+  "pleaseEnterValidAmount": "Por favor ingresa una cantidad válida",
+  "enterAmountYouWantToReceive": "Ingresa la cantidad que quieres recibir",
+  "enterAmountYouWantToSend": "Ingresa la cantidad que quieres enviar",
+  "creatingRangeOrder": "Creando orden de rango (puedes recibir entre cantidades mínima y máxima)",
+  "creatingRangeOrderBuySend": "Creando orden de rango (puedes enviar entre cantidades mínima y máxima)",
+  "rangeOrder": "Orden de Rango",
+  "maxAmount": "Cantidad máxima",
+  "tapSecondFieldForRange": "💡 Toca el segundo campo para crear una orden de rango",
+  "to": "a",
+  "maxMustBeGreaterThanMin": "La cantidad máxima debe ser mayor que la cantidad mínima",
   "paymentMethodsForCurrency": "Métodos de pago para {currency}",
   "enterCustomPaymentMethod": "Ingresa método de pago personalizado",
   "loadingPaymentMethods": "Cargando métodos de pago...",
@@ -324,7 +348,7 @@
   "back": "ATRÁS",
   "typeAMessage": "Escribe un mensaje...",
   "youAreChattingWith": "Estás chateando con {handle}",
-  "yourHandle": "Tu nombre: {handle}",
+  "yourHandle": "Tu nombre:",
   "yourSharedKey": "Tu clave compartida:",
   
   "payInvoiceButton": "PAGAR FACTURA",
@@ -341,7 +365,6 @@
   "loadingCurrencies": "Cargando monedas...",
   "errorLoadingCurrencies": "Error cargando monedas",
   "usDollar": "Dólar Estadounidense",
-  "selectCurrency": "Seleccionar Moneda",
   "searchCurrencies": "Buscar monedas...",
   "noCurrenciesFound": "No se encontraron monedas",
   
@@ -565,7 +588,7 @@
   "disputeTradeDialogContent": "Estás a punto de iniciar una disputa con tu contraparte. ¿Deseas continuar?",
 
   "language": "Idioma",
-  "systemDefault": "Predeterminado del sistema",
+  "systemDefault": "Predeterminado",
   "english": "Inglés",
   "spanish": "Español",
   "italian": "Italiano",
@@ -604,6 +627,72 @@
   },
   "deepLinkGoHome": "Ir al Inicio",
   
+
+  "@_comment_order_disabled_messages": "Mensajes de Orden Deshabilitada",
+  "orderCompletedMessagingDisabled": "Orden completada - mensajería deshabilitada",
+  "orderCanceledMessagingDisabled": "Orden cancelada - mensajería deshabilitada",
+  "orderExpiredMessagingDisabled": "Orden expirada - mensajería deshabilitada",
+  "orderSettledMessagingDisabled": "Orden resuelta - mensajería deshabilitada",
+  "orderNotActiveMessagingDisabled": "La orden ya no está activa - mensajería deshabilitada",
+  
+  "@_comment_chat": "Sección de Chat",
+  "messages": "Mensajes",
+  "disputes": "Disputas",
+  "noDisputesAvailable": "No hay disputas disponibles",
+  "youAreChatting": "Estás chateando con {handle}",
+  "@youAreChatting": {
+    "placeholders": {
+      "handle": {
+        "type": "String"
+      }
+    }
+  },
+  "tradeInformation": "Información del Intercambio",
+  "userInformation": "Información del Usuario",
+  "youAreSellingTo": "Estás vendiendo sats a",
+  "youAreBuyingFrom": "Estás comprando sats de",
+  "noMessagesYet": "No hay mensajes aún",
+  "today": "Hoy",
+  "yesterday": "Ayer",
+  "youPrefix": "Tú: ",
+  "conversationsDescription": "Aquí encontrarás tus conversaciones con otros usuarios durante los intercambios.",
+  "orderId": "ID de Orden:",
+  "paymentMethod": "Método de Pago:",
+  "createdOn": "Creado el:",
+  "sellingSats": "Vendiendo {amount} sats",
+  "@sellingSats": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "buyingSats": "Comprando {amount} sats",
+  "@buyingSats": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "forAmount": "por {amount} {currency}",
+  "@forAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "yourInformation": "Tu Información",
+  "peerPublicKey": "Clave Pública del Par:",
+  "notAvailable": "No disponible",
+  "unknownDate": "Fecha desconocida",
+  "messageCopiedToClipboard": "Mensaje copiado al portapapeles",
+
+
   "@_comment_about_screen_new": "About Screen New Strings",
   "documentation": "Documentación",
   "usersDocumentationEnglish": "Documentación de Usuario (Inglés)",
@@ -683,6 +772,44 @@
   "@_comment_relay_dialogs": "Texto de Diálogos de Relay",
   "editRelay": "Editar Relay",
   "relayUrl": "URL del Relay",
+  "relayErrorNotValid": "No es un relay Nostr válido - sin respuesta al test de protocolo",
+  "relayErrorOnlySecure": "Solo se permiten websockets seguros (wss://)",
+  "relayErrorNoHttp": "Las URLs HTTP no son compatibles. Use URLs websocket (wss://)",
+  "relayErrorInvalidDomain": "Formato de dominio inválido. Use formato como: relay.example.com",
+  "relayErrorAlreadyExists": "Este relay ya está en tu lista",
+  "relayErrorConnectionTimeout": "Relay inalcanzable - tiempo de conexión agotado",
+  "relayTestingMessage": "Probando relay...",
+  "relayAddedSuccessfully": "Relay agregado exitosamente: {url}",
+  "@relayAddedSuccessfully": {
+    "description": "Mensaje mostrado cuando un relay se agrega exitosamente",
+    "placeholders": {
+      "url": {
+        "type": "String",
+        "description": "La URL del relay que fue agregado"
+      }
+    }
+  },
+  "relayAddedUnreachable": "Relay agregado pero parece inalcanzable: {url}",
+  "@relayAddedUnreachable": {
+    "description": "Mensaje mostrado cuando un relay se agrega pero no responde",
+    "placeholders": {
+      "url": {
+        "type": "String",
+        "description": "La URL del relay que fue agregado"
+      }
+    }
+  },
+  "invalidRelayTitle": "Relay Inválido",
+  "relayUrlHint": "relay.ejemplo.com o wss://relay.ejemplo.com",
   "add": "Agregar",
-  "save": "Guardar"
+
+  "save": "Guardar",
+  "selectCurrency": "Seleccionar Moneda",
+  "noCurrencySelected": "Ninguna moneda seleccionada",
+
+  "@_comment_timeout_messages": "Mensajes de notificación de timeout",
+  "orderTimeoutTaker": "No respondiste a tiempo. La orden será republicada",
+  "orderTimeoutMaker": "Tu contraparte no respondió a tiempo. La orden será republicada",
+  "orderTimeout": "Tiempo de espera de la orden agotado"
+
 }

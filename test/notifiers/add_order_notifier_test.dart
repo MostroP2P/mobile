@@ -80,8 +80,11 @@ void main() {
           sessionStorageProvider.overrideWithValue(mockSessionStorage),
           keyManagerProvider.overrideWithValue(mockKeyManager),
           sessionNotifierProvider.overrideWith((ref) => mockSessionNotifier),
-          settingsProvider.overrideWith((ref) =>
-              MockSettingsNotifier(testSettings, mockSharedPreferencesAsync)),
+          settingsProvider.overrideWith((ref) {
+            final mockSettings = MockSettingsNotifier();
+            mockSettings.state = testSettings;
+            return mockSettings;
+          }),
           mostroStorageProvider.overrideWithValue(mockMostroStorage),
         ],
       );

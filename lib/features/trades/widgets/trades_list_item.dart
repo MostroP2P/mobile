@@ -212,6 +212,12 @@ class TradesListItem extends ConsumerWidget {
         textColor = AppTheme.statusWaitingText;
         label = S.of(context)!.waitingInvoice;
         break;
+      case Status.paymentFailed:
+        backgroundColor =
+            AppTheme.statusInactiveBackground.withValues(alpha: 0.3);
+        textColor = AppTheme.statusInactiveText;
+        label = S.of(context)!.paymentFailedText;
+        break;
       case Status.fiatSent:
         backgroundColor =
             AppTheme.statusSuccessBackground.withValues(alpha: 0.3);

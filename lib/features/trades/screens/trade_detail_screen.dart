@@ -503,6 +503,11 @@ class TradeDetailScreen extends ConsumerWidget {
           widgets.add(_buildContactButton(context));
           break;
 
+        case actions.Action.paymentFailed:
+          // Payment failed - Mostro is still retrying, only show Close button
+          // No additional buttons (Add Invoice, Cancel, Dispute) should appear
+          break;
+
         case actions.Action.holdInvoicePaymentCanceled:
         case actions.Action.buyerInvoiceAccepted:
         case actions.Action.waitingSellerToPay:
@@ -514,7 +519,6 @@ class TradeDetailScreen extends ConsumerWidget {
         case actions.Action.adminAddSolver:
         case actions.Action.adminTakeDispute:
         case actions.Action.adminTookDispute:
-        case actions.Action.paymentFailed:
         case actions.Action.invoiceUpdated:
         case actions.Action.tradePubkey:
         case actions.Action.cantDo:
@@ -594,40 +598,36 @@ class TradeDetailScreen extends ConsumerWidget {
               ),
             ),
             actions: [
-              Flexible(
-                child: TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(false),
-                  child: Text(
-                    S.of(context)!.no,
-                    style: const TextStyle(
-                      color: AppTheme.textSecondary,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    textAlign: TextAlign.center,
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: Text(
+                  S.of(context)!.no,
+                  style: const TextStyle(
+                    color: AppTheme.textSecondary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
                   ),
+                  textAlign: TextAlign.center,
                 ),
               ),
-              const SizedBox(width: 8),
-              Flexible(
-                child: ElevatedButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(true),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.activeColor,
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              const SizedBox(width: 12),
+              ElevatedButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.activeColor,
+                  foregroundColor: Colors.black,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Text(
-                    S.of(context)!.yes,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    textAlign: TextAlign.center,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                ),
+                child: Text(
+                  S.of(context)!.yes,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
                   ),
+                  textAlign: TextAlign.center,
                 ),
               ),
             ],
