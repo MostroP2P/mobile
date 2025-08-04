@@ -190,6 +190,8 @@
   "currency": "Valuta",
   "setDefaultFiatCurrency": "Imposta la tua valuta fiat predefinita",
   "defaultFiatCurrency": "Valuta Fiat Predefinita",
+  "setDefaultLightningAddress": "Imposta il tuo indirizzo Lightning predefinito",
+  "defaultLightningAddress": "Indirizzo Lightning Predefinito",
   "relays": "Relay",
   "selectNostrRelays": "Seleziona i relay Nostr a cui connetterti",
   "addRelay": "Aggiungi Relay",

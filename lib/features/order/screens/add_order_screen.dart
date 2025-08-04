@@ -64,6 +64,11 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
       // Reset selectedFiatCodeProvider to default from settings for each new order
       final settings = ref.read(settingsProvider);
       ref.read(selectedFiatCodeProvider.notifier).state = settings.defaultFiatCode;
+      
+      // Pre-populate lightning address from settings if available
+      if (settings.defaultLightningAddress != null && settings.defaultLightningAddress!.isNotEmpty) {
+        _lightningAddressController.text = settings.defaultLightningAddress!;
+      }
     });
   }
 

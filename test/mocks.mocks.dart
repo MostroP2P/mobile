@@ -1886,6 +1886,7 @@ class MockSettings extends _i1.Mock implements _i2.Settings {
     String? mostroInstance,
     String? defaultFiatCode,
     String? selectedLanguage,
+    String? defaultLightningAddress,
   }) =>
       (super.noSuchMethod(
         Invocation.method(
@@ -1897,6 +1898,7 @@ class MockSettings extends _i1.Mock implements _i2.Settings {
             #mostroInstance: mostroInstance,
             #defaultFiatCode: defaultFiatCode,
             #selectedLanguage: selectedLanguage,
+            #defaultLightningAddress: defaultLightningAddress,
           },
         ),
         returnValue: _FakeSettings_0(
@@ -1910,6 +1912,7 @@ class MockSettings extends _i1.Mock implements _i2.Settings {
               #mostroInstance: mostroInstance,
               #defaultFiatCode: defaultFiatCode,
               #selectedLanguage: selectedLanguage,
+              #defaultLightningAddress: defaultLightningAddress,
             },
           ),
         ),
