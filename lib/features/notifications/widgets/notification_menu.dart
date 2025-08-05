@@ -67,7 +67,7 @@ class NotificationMenu extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Text(
-            S.of(context)!.delete,
+            S.of(context)!.notificationDelete,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Theme.of(context).colorScheme.error,
             ),

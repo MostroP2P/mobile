@@ -39,7 +39,7 @@ class NotificationDetails extends StatelessWidget {
       case mostro_action.Action.fiatSentOk:
         if (data.containsKey('buyer_npub')) {
           widgets.add(DetailRow(
-            label: S.of(context)!.buyer,
+            label: S.of(context)!.notificationBuyer,
             value: _formatHashOrId(data['buyer_npub']),
             icon: HeroIcons.user,
           ));
@@ -49,21 +49,21 @@ class NotificationDetails extends StatelessWidget {
       case mostro_action.Action.holdInvoicePaymentAccepted:
         if (data.containsKey('seller_npub')) {
           widgets.add(DetailRow(
-            label: S.of(context)!.seller,
+            label: S.of(context)!.notificationSeller,
             value: _formatHashOrId(data['seller_npub']),
             icon: HeroIcons.user,
           ));
         }
         if (data.containsKey('fiat_amount') && data.containsKey('fiat_code')) {
           widgets.add(DetailRow(
-            label: S.of(context)!.amount,
+            label: S.of(context)!.notificationAmount,
             value: '${data['fiat_amount']} ${data['fiat_code']}',
             icon: HeroIcons.banknotes,
           ));
         }
         if (data.containsKey('payment_method')) {
           widgets.add(DetailRow(
-            label: S.of(context)!.paymentMethod,
+            label: S.of(context)!.notificationPaymentMethod,
             value: data['payment_method'].toString(),
             icon: HeroIcons.creditCard,
           ));
@@ -76,8 +76,8 @@ class NotificationDetails extends StatelessWidget {
           final expirationSeconds = data['expiration_seconds'];
           final expirationMinutes = (expirationSeconds is int ? expirationSeconds : int.tryParse(expirationSeconds.toString()) ?? 0) ~/ 60;
           widgets.add(DetailRow(
-            label: S.of(context)!.timeout,
-            value: '$expirationMinutes ${S.of(context)!.minutes}',
+            label: S.of(context)!.notificationTimeout,
+            value: '$expirationMinutes ${S.of(context)!.notificationMinutes}',
             icon: HeroIcons.clock,
           ));
         }
@@ -87,7 +87,7 @@ class NotificationDetails extends StatelessWidget {
       case mostro_action.Action.disputeInitiatedByPeer:
         if (data.containsKey('user_token')) {
           widgets.add(DetailRow(
-            label: S.of(context)!.disputeId,
+            label: S.of(context)!.notificationDisputeId,
             value: _formatHashOrId(data['user_token'].toString()),
             icon: HeroIcons.exclamationTriangle,
           ));
@@ -97,14 +97,14 @@ class NotificationDetails extends StatelessWidget {
       case mostro_action.Action.paymentFailed:
         if (data.containsKey('payment_attempts')) {
           widgets.add(DetailRow(
-            label: S.of(context)!.attempts,
+            label: S.of(context)!.notificationAttempts,
             value: data['payment_attempts'].toString(),
             icon: HeroIcons.arrowPath,
           ));
         }
         if (data.containsKey('payment_retries_interval')) {
           widgets.add(DetailRow(
-            label: S.of(context)!.retryInterval,
+            label: S.of(context)!.notificationRetryInterval,
             value: '${data['payment_retries_interval']}s',
             icon: HeroIcons.clock,
           ));
@@ -114,7 +114,7 @@ class NotificationDetails extends StatelessWidget {
       case mostro_action.Action.cantDo:
         if (data.containsKey('action')) {
           widgets.add(DetailRow(
-            label: S.of(context)!.reason,
+            label: S.of(context)!.notificationReason,
             value: data['action'].toString(),
             icon: HeroIcons.xMark,
           ));
@@ -124,7 +124,7 @@ class NotificationDetails extends StatelessWidget {
       case mostro_action.Action.released:
         if (data.containsKey('seller_npub') && data['seller_npub'].toString().isNotEmpty) {
           widgets.add(DetailRow(
-            label: S.of(context)!.seller,
+            label: S.of(context)!.notificationSeller,
             value: _formatHashOrId(data['seller_npub']),
             icon: HeroIcons.user,
           ));
@@ -134,7 +134,7 @@ class NotificationDetails extends StatelessWidget {
       case mostro_action.Action.holdInvoicePaymentSettled:
         if (data.containsKey('buyer_npub') && data['buyer_npub'].toString().isNotEmpty) {
           widgets.add(DetailRow(
-            label: S.of(context)!.buyer,
+            label: S.of(context)!.notificationBuyer,
             value: _formatHashOrId(data['buyer_npub']),
             icon: HeroIcons.user,
           ));
@@ -144,7 +144,7 @@ class NotificationDetails extends StatelessWidget {
       case mostro_action.Action.canceled:
         if (data.containsKey('id')) {
           widgets.add(DetailRow(
-            label: S.of(context)!.orderId,
+            label: S.of(context)!.notificationOrderId,
             value: _formatHashOrId(data['id'].toString()),
             icon: HeroIcons.hashtag,
           ));
@@ -156,7 +156,7 @@ class NotificationDetails extends StatelessWidget {
       case mostro_action.Action.cooperativeCancelAccepted:
         if (data.containsKey('id')) {
           widgets.add(DetailRow(
-            label: S.of(context)!.orderId,
+            label: S.of(context)!.notificationOrderId,
             value: _formatHashOrId(data['id'].toString()),
             icon: HeroIcons.hashtag,
           ));

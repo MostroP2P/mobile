@@ -100,7 +100,7 @@ class NotificationItem extends ConsumerWidget {
       builder: (context) => AlertDialog(
         backgroundColor: AppTheme.backgroundDark,
         title: Text(
-          S.of(context)!.delete,
+          S.of(context)!.notificationDelete,
           style: const TextStyle(color: AppTheme.textPrimary),
         ),
         content: Text(
@@ -121,7 +121,7 @@ class NotificationItem extends ConsumerWidget {
               Navigator.of(context).pop();
             },
             child: Text(
-              S.of(context)!.delete,
+              S.of(context)!.notificationDelete,
               style: const TextStyle(color: AppTheme.statusError),
             ),
           ),
