@@ -1,20 +1,68 @@
 import 'package:flutter/material.dart';
-import 'package:mostro_mobile/features/chat/widgets/message_input.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/features/disputes/notifiers/dispute_chat_notifier.dart';
 
-class DisputeInputSection extends StatelessWidget {
-  final String orderId;
+class DisputeInputSection extends ConsumerStatefulWidget {
+  final String disputeId;
   final String? selectedInfoType;
   final ValueChanged<String?> onInfoTypeChanged;
 
   const DisputeInputSection({
     super.key,
-    required this.orderId,
+    required this.disputeId,
     required this.selectedInfoType,
     required this.onInfoTypeChanged,
   });
 
   @override
+  ConsumerState<DisputeInputSection> createState() => _DisputeInputSectionState();
+}
+
+class _DisputeInputSectionState extends ConsumerState<DisputeInputSection> {
+  final TextEditingController _messageController = TextEditingController();
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _messageController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _sendMessage() async {
+    final message = _messageController.text.trim();
+    if (message.isEmpty) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final notifier = ref.read(disputeChatProvider(widget.disputeId).notifier);
+      await notifier.sendMessage(message);
+      _messageController.clear();
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to send message: $error'),
+            backgroundColor: AppTheme.red1,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final disputeChatAsync = ref.watch(disputeChatProvider(widget.disputeId));
+
     return Container(
       decoration: BoxDecoration(
         border: Border(
@@ -24,10 +72,95 @@ class DisputeInputSection extends StatelessWidget {
           ),
         ),
       ),
-      child: MessageInput(
-        orderId: orderId,
-        selectedInfoType: selectedInfoType,
-        onInfoTypeChanged: onInfoTypeChanged,
+      child: disputeChatAsync.when(
+        data: (disputeChat) {
+          // Only show input if admin is assigned
+          if (disputeChat == null) {
+            return Container(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'Waiting for admin assignment...',
+                style: TextStyle(
+                  color: AppTheme.textSecondary,
+                  fontSize: 14,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            );
+          }
+
+          return Container(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _messageController,
+                    enabled: !_isLoading,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: 'Type your message...',
+                      hintStyle: TextStyle(color: AppTheme.textSecondary),
+                      filled: true,
+                      fillColor: AppTheme.dark2,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                    ),
+                    maxLines: null,
+                    textInputAction: TextInputAction.send,
+                    onSubmitted: (_) => _sendMessage(),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppTheme.mostroGreen,
+                    shape: BoxShape.circle,
+                  ),
+                  child: IconButton(
+                    onPressed: _isLoading ? null : _sendMessage,
+                    icon: _isLoading
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                AppTheme.backgroundDark,
+                              ),
+                            ),
+                          )
+                        : Icon(
+                            Icons.send,
+                            color: AppTheme.backgroundDark,
+                          ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+        loading: () => Container(
+          padding: const EdgeInsets.all(16),
+          child: const Center(child: CircularProgressIndicator()),
+        ),
+        error: (error, stack) => Container(
+          padding: const EdgeInsets.all(16),
+          child: Text(
+            'Error loading chat',
+            style: TextStyle(
+              color: AppTheme.red1,
+              fontSize: 14,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
       ),
     );
   }
