@@ -221,7 +221,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         final cantDo = event.getPayload<CantDo>();
         
         // Handle specific case of out_of_range_sats_amount
-        if (cantDo?.cantDoReason.toString() == 'out_of_range_sats_amount') {
+        if (cantDo?.cantDoReason == CantDoReason.outOfRangeSatsAmount) {
           logger.i('Received out_of_range_sats_amount, cleaning up session for retry');
           
           // Clean up temporary session if it exists by requestId

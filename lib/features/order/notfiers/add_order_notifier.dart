@@ -44,7 +44,7 @@ class AddOrderNotifier extends AbstractMostroNotifier {
                 
                 // Reset for retry if out_of_range_sats_amount
                 final cantDo = msg.getPayload<CantDo>();
-                if (cantDo?.cantDoReason.toString() == 'out_of_range_sats_amount') {
+                if (cantDo?.cantDoReason == CantDoReason.outOfRangeSatsAmount) {
                   _resetForRetry();
                 }
               }
