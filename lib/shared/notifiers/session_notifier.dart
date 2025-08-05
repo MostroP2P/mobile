@@ -160,6 +160,18 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     state = sessions;
   }
 
+  /// Clean up temporary session by requestId
+  /// Used when order creation fails and needs retry
+  void cleanupRequestSession(int requestId) {
+    final session = _requestIdToSession.remove(requestId);
+    if (session != null) {
+      // Remove from state list if it was a temporary session
+      final updatedSessions = sessions.where((s) => s != session).toList();
+      state = updatedSessions;
+      _logger.d('Cleaned up temporary session for requestId: $requestId');
+    }
+  }
+
   NostrKeyPairs calculateSharedKey(
       String tradePrivateKey, String counterpartyPublicKey) {
     try {

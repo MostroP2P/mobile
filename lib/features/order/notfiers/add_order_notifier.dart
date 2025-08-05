@@ -5,6 +5,7 @@ import 'package:mostro_mobile/data/models.dart';
 import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/features/order/notfiers/abstract_mostro_notifier.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
+import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/services/mostro_service.dart';
 
 class AddOrderNotifier extends AbstractMostroNotifier {
@@ -40,6 +41,12 @@ class AddOrderNotifier extends AbstractMostroNotifier {
                 }
               } else if (msg.payload is CantDo) {
                 handleEvent(msg);
+                
+                // Reset for retry if out_of_range_sats_amount
+                final cantDo = msg.getPayload<CantDo>();
+                if (cantDo?.cantDoReason.toString() == 'out_of_range_sats_amount') {
+                  _resetForRetry();
+                }
               }
             }
           },
@@ -75,5 +82,24 @@ class AddOrderNotifier extends AbstractMostroNotifier {
     );
     await mostroService.submitOrder(message);
     state = state.updateWith(message);
+  }
+
+  /// Reset notifier state for retry after out_of_range_sats_amount error
+  void _resetForRetry() {
+    logger.i('Resetting AddOrderNotifier for retry after out_of_range_sats_amount');
+    
+    // Generate new requestId for next attempt
+    requestId = _requestIdFromOrderId(orderId);
+    
+    // Reset state to initial clean state
+    state = OrderState(
+      action: Action.newOrder,
+      status: Status.pending,
+      order: null,
+    );
+    
+    // Re-subscribe with new requestId
+    subscription?.close();
+    subscribe();
   }
 }
