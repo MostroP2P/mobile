@@ -9,14 +9,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 const List<String> kAdjectives = [
   'shadowy',
   'orange',
-  'lightning',
-  'p2p',
   'noncustodial',
   'trustless',
   'unbanked',
   'atomic',
   'magic',
-  'tor',
   'hidden',
   'incognito',
   'anonymous',
@@ -44,7 +41,6 @@ const List<String> kAdjectives = [
   'cyber',
   'rusty',
   'nihilistic',
-  'mempool',
   'dark',
   'wicked',
   'spicy',
@@ -79,8 +75,8 @@ const List<String> kNouns = [
   'hodlonaut',
   'satoshi',
   'nakamoto',
-  'gigi',
   'samurai',
+  'sparrow',
   'crusader',
   'tinkerer',
   'nostr',
@@ -94,24 +90,49 @@ const List<String> kNouns = [
   'phoenix',
   'dragon',
   'fiatjaf',
-  'jackmallers',
   'roasbeef',
   'berlin',
   'tokyo',
   'buenosaires',
+  'caracas',
+  'havana',
   'miami',
   'prague',
   'amsterdam',
   'lugano',
   'seoul',
   'bitcoinbeach',
-  'odell',
   'bitcoinkid',
-  'marty',
-  'finney',
   'carnivore',
   'ape',
   'honeybadger',
+  'lnp2pBot',
+  'lunaticoin',
+  'jorgeValenzuela',
+  'javyBastard',
+  'loreOrtiz',
+  'manuFerrari',
+  'pablof7z',
+  'btcAndres',
+  'lacrypta',
+  'niftynei',
+  'gloriaZhao',
+  'stupidrisks',
+  'dolcheVilla',
+  'furszy',
+  'sergi',
+  'jarolrod',
+  'pieterWuille',
+  'edwardSnowden',
+  'libreriadesatoshi',
+  'caracas',
+  'havana',
+  'alexGladstein',
+  'bitkoYinowsky',
+  'alfreMancera',
+  'faixapreta',
+  'laVecinaDeArriba',
+  'mempool',
 ];
 
 /// Convert a 32-byte hex string (64 hex chars) into a fun, deterministic handle.
@@ -121,10 +142,10 @@ String deterministicHandleFromHexKey(String hexKey) {
   if (hexKey.isEmpty) {
     return 'unknown-user';
   }
-  
+
   // Clean the hex string (remove any non-hex characters)
   final cleanHexKey = hexKey.replaceAll(RegExp(r'[^0-9a-fA-F]'), '');
-  
+
   // If the cleaned string is empty or invalid, return a default handle
   if (cleanHexKey.isEmpty) {
     return 'invalid-key';
@@ -140,8 +161,8 @@ String deterministicHandleFromHexKey(String hexKey) {
     final nounsCount = kNouns.length;
 
     final indexAdjective = pubKeyBigInt % BigInt.from(adjectivesCount);
-    final indexNoun =
-        (pubKeyBigInt ~/ BigInt.from(adjectivesCount)) % BigInt.from(nounsCount);
+    final indexNoun = (pubKeyBigInt ~/ BigInt.from(adjectivesCount)) %
+        BigInt.from(nounsCount);
 
     // 3) Return the hyphenated result.
     return '${kAdjectives[indexAdjective.toInt()]}-${kNouns[indexNoun.toInt()]}';
