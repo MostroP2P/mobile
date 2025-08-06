@@ -12,7 +12,8 @@ import 'package:mostro_mobile/services/mostro_service.dart';
 class OrderNotifier extends AbstractMostroNotifier {
   late final MostroService mostroService;
   ProviderSubscription<AsyncValue<List<NostrEvent>>>? _publicEventsSubscription;
-  bool _isProcessingTimeout = false;
+  bool _isSyncing = false;              // Only for sync() method
+  bool _isProcessingTimeout = false;     // Only for public event processing
   OrderNotifier(super.orderId, super.ref) {
     mostroService = ref.read(mostroServiceProvider);
     sync();
@@ -49,10 +50,10 @@ class OrderNotifier extends AbstractMostroNotifier {
   }
 
   Future<void> sync() async {
-    if (_isProcessingTimeout) return;
+    if (_isSyncing) return;
     
     try {
-      _isProcessingTimeout = true;
+      _isSyncing = true;
       
       final storage = ref.read(mostroStorageProvider);
       final messages = await storage.getAllMessagesForOrderId(orderId);
@@ -68,24 +69,10 @@ class OrderNotifier extends AbstractMostroNotifier {
       });
       
       OrderState currentState = state;
-      MostroMessage? latestGiftWrap;
       
       for (final message in messages) {
         if (message.action != Action.cantDo) {
           currentState = currentState.updateWith(message);
-          latestGiftWrap = message; // Keep track of latest gift wrap
-        }
-      }
-      
-      // Check if we should cleanup session due to timeout
-      // Only check if we have a valid session (this is a taker scenario)
-      final currentSession = ref.read(sessionProvider(orderId));
-      if (currentSession != null) {
-        final shouldCleanup = await _checkTimeoutAndCleanup(currentState, latestGiftWrap);
-        if (shouldCleanup) {
-          // Session was cleaned up, this provider should be invalidated
-          ref.invalidateSelf();
-          return;
         }
       }
       
@@ -100,7 +87,7 @@ class OrderNotifier extends AbstractMostroNotifier {
         stackTrace: stack,
       );
     } finally {
-      _isProcessingTimeout = false;
+      _isSyncing = false;
     }
   }
 
@@ -165,15 +152,9 @@ class OrderNotifier extends AbstractMostroNotifier {
     );
   }
 
-  /// Check if session should be cleaned up due to timeout
+  /// Check if session should be cleaned up due to timeout or cancellation
   /// Returns true if session was cleaned up, false otherwise
   Future<bool> _checkTimeoutAndCleanup(OrderState currentState, MostroMessage? latestGiftWrap) async {
-    // Only check for timeout/cancellation in waiting states
-    if (currentState.status != Status.waitingBuyerInvoice && 
-        currentState.status != Status.waitingPayment) {
-      return false;
-    }
-
     if (latestGiftWrap == null) {
       return false;
     }
@@ -188,19 +169,19 @@ class OrderNotifier extends AbstractMostroNotifier {
 
       final publicEvent = publicEventAsync;
       
-      // Compare timestamps: public event vs latest gift wrap
-      final publicTimestamp = publicEvent.createdAt;
-      final giftWrapTimestamp = DateTime.fromMillisecondsSinceEpoch(latestGiftWrap.timestamp ?? 0);
-      
-      if (publicTimestamp != null && publicTimestamp.isAfter(giftWrapTimestamp)) {
-        // Check if order was canceled
-        if (publicEvent.status == Status.canceled) {
-          logger.i('CANCELLATION detected for order $orderId via public event');
+      // FIRST: Check if order was canceled (independent of timestamps)
+      if (publicEvent.status == Status.canceled) {
+        logger.i('CANCELLATION detected for order $orderId via public event');
+        
+        // Only delete session if local state was pending or waiting
+        if (currentState.status == Status.pending ||
+            currentState.status == Status.waitingBuyerInvoice ||
+            currentState.status == Status.waitingPayment) {
           
-          // CANCELED: Always delete session for both maker and taker
+          // CANCELED: Delete session for pending/waiting orders
           final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
           await sessionNotifier.deleteSession(orderId);
-          logger.i('Session deleted for canceled order $orderId');
+          logger.i('Session deleted for canceled order $orderId (was in ${currentState.status})');
           
           // Show cancellation notification
           final notifProvider = ref.read(notificationProvider.notifier);
@@ -211,15 +192,33 @@ class OrderNotifier extends AbstractMostroNotifier {
           navProvider.go('/order_book');
           
           return true; // Session was cleaned up
+        } else {
+          // For active/completed orders - keep session but update state to canceled
+          logger.i('Order canceled but keeping session due to ${currentState.status} state');
+          
+          // Update local state to canceled
+          state = state.copyWith(
+            status: Status.canceled,
+            action: Action.canceled,
+          );
+          
+          // Show cancellation notification
+          final notifProvider = ref.read(notificationProvider.notifier);
+          notifProvider.showCustomMessage('orderCanceled');
+          
+          return false; // Session preserved
         }
-        
-        // Check if order timed out (returned to pending)
-        if (publicEvent.status == Status.pending) {
-          // Timeout detected: Public event is newer and shows pending
-          logger.i('Timeout detected for order $orderId: Public event ($publicTimestamp) is newer than gift wrap ($giftWrapTimestamp)');
-        
-          // Determine if this is a maker (created by user) or taker (taken by user)
-          final currentSession = ref.read(sessionProvider(orderId));
+      }
+      
+      // SECOND: Check for timeout - simplified logic without timestamps
+      if (publicEvent.status == Status.pending && 
+          (currentState.status == Status.waitingBuyerInvoice || 
+           currentState.status == Status.waitingPayment)) {
+        // Timeout detected: Order returned to pending but local state is still waiting
+        logger.i('Timeout detected for order $orderId: Public shows pending but local is ${currentState.status}');
+      
+        // Determine if this is a maker (created by user) or taker (taken by user)
+        final currentSession = ref.read(sessionProvider(orderId));
         if (currentSession == null) {
           return false;
         }
@@ -236,15 +235,16 @@ class OrderNotifier extends AbstractMostroNotifier {
           // CRITICAL: Persist the timeout reversal to maintain pending status after app restart
           try {
             final storage = ref.read(mostroStorageProvider);
+            final publicTimestamp = publicEvent.createdAt?.millisecondsSinceEpoch ?? DateTime.now().millisecondsSinceEpoch;
             final timeoutMessage = MostroMessage.createTimeoutReversal(
               orderId: orderId,
-              timestamp: publicTimestamp.millisecondsSinceEpoch,
+              timestamp: publicTimestamp,
               originalStatus: currentState.status,
               publicEvent: publicEvent,
             );
             
             // Use a unique key that includes timestamp to avoid conflicts
-            final messageKey = '${orderId}_timeout_${publicTimestamp.millisecondsSinceEpoch}';
+            final messageKey = '${orderId}_timeout_$publicTimestamp';
             await storage.addMessage(messageKey, timeoutMessage)
                 .timeout(Config.messageStorageTimeout, onTimeout: () {
                   logger.w('Timeout persisting timeout reversal message for order $orderId - continuing anyway');
@@ -278,7 +278,6 @@ class OrderNotifier extends AbstractMostroNotifier {
           
           // Return true to indicate session was cleaned up
           return true;
-        }
         }
       }
 
@@ -325,19 +324,19 @@ class OrderNotifier extends AbstractMostroNotifier {
         }
         
         try {
-          _isProcessingTimeout = true;
-          
-          // Verify current state (could have changed)
+          // Verify current state BEFORE setting flag to avoid permanent blocking
           final currentSession = ref.read(sessionProvider(orderId));
           if (!mounted || currentSession == null) {
             return;
           }
           
-          // Re-verify state after setting flag
+          // Verify state before setting flag
           if (state.status != Status.waitingBuyerInvoice && 
               state.status != Status.waitingPayment) {
             return;
           }
+          
+          _isProcessingTimeout = true;
           
           final storage = ref.read(mostroStorageProvider);
           final messages = await storage.getAllMessagesForOrderId(orderId)
