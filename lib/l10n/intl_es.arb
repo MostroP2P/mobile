@@ -447,14 +447,20 @@
   "close": "CERRAR",
   "take": "TOMAR",
   "enterAmount": "Ingresa Cantidad",
-  "enterAmountBetween": "Ingresa una cantidad entre {min} y {max}",
+  "enterAmountBetween": "{min} - {max} {currency}",
   "@enterAmountBetween": {
     "placeholders": {
       "min": {
-        "type": "String"
+        "type": "String",
+        "description": "Cantidad mínima que se puede ingresar"
       },
       "max": {
-        "type": "String"
+        "type": "String",
+        "description": "Cantidad máxima que se puede ingresar"
+      },
+      "currency": {
+        "type": "String",
+        "description": "Código o símbolo de moneda mostrado después del rango"
       }
     }
   },
@@ -506,6 +512,7 @@
   "rateCounterpart": "Calificar Contraparte",
   "submitRating": "Enviar Calificación",
   
+  "addLightningInvoice": "Agregar Factura Lightning",
   "payLightningInvoice": "Pagar Factura Lightning",
   "payInvoiceToContinue": "Paga esta factura de {sats} Sats equivalentes a {fiat_amount} {fiat_code} para continuar el intercambio de la orden {order_id}",
   "@payInvoiceToContinue": {

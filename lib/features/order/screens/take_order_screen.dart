@@ -262,22 +262,57 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
                     return StatefulBuilder(
                       builder: (context, setState) {
                         return AlertDialog(
-                          title: Text(S.of(context)!.enterAmount),
-                          content: TextField(
-                            controller: widget._fiatAmountController,
-                            keyboardType: TextInputType.number,
-                            decoration: InputDecoration(
-                              hintText: S.of(context)!.enterAmountBetween(
-                                  order.fiatAmount.minimum.toString(),
-                                  order.fiatAmount.maximum.toString()),
-                              errorText: errorText,
+                          backgroundColor: AppTheme.backgroundCard,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                          ),
+                          title: Text(
+                            S.of(context)!.enterAmount,
+                            style: const TextStyle(
+                              color: AppTheme.textPrimary,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          content: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: AppTheme.backgroundInput,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                            ),
+                            child: TextField(
+                              controller: widget._fiatAmountController,
+                              keyboardType: TextInputType.number,
+                              style: const TextStyle(color: AppTheme.textPrimary),
+                              decoration: InputDecoration(
+                                hintText: S.of(context)!.enterAmountBetween(
+                                    order.fiatAmount.minimum.toString(),
+                                    order.fiatAmount.maximum.toString(),
+                                    order.currency ?? ''),
+                                hintStyle: const TextStyle(color: AppTheme.textSecondary),
+                                errorText: errorText,
+                                errorStyle: const TextStyle(color: AppTheme.statusError),
+                                border: InputBorder.none,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              ),
                             ),
                           ),
                           actions: [
                             TextButton(
                               onPressed: () => context.pop(),
-                              child: Text(S.of(context)!.cancel),
+                              child: Text(
+                                S.of(context)!.cancel,
+                                style: const TextStyle(
+                                  color: AppTheme.textSecondary,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
                             ),
+                            const SizedBox(width: 12),
                             ElevatedButton(
                               key: const Key('submitAmountButton'),
                               onPressed: () {
@@ -305,7 +340,21 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
                                   context.pop(inputAmount);
                                 }
                               },
-                              child: Text(S.of(context)!.submit),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.activeColor,
+                                foregroundColor: Colors.black,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                              ),
+                              child: Text(
+                                S.of(context)!.submit,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
                             ),
                           ],
                         );
