@@ -456,13 +456,16 @@
   "@enterAmountBetween": {
     "placeholders": {
       "min": {
-        "type": "String"
+        "type": "String",
+        "description": "Importo minimo che può essere inserito"
       },
       "max": {
-        "type": "String"
+        "type": "String",
+        "description": "Importo massimo che può essere inserito"
       },
       "currency": {
-        "type": "String"
+        "type": "String",
+        "description": "Codice o simbolo della valuta mostrato dopo l'intervallo"
       }
     }
   },

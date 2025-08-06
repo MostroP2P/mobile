@@ -451,13 +451,16 @@
   "@enterAmountBetween": {
     "placeholders": {
       "min": {
-        "type": "String"
+        "type": "String",
+        "description": "Cantidad mínima que se puede ingresar"
       },
       "max": {
-        "type": "String"
+        "type": "String",
+        "description": "Cantidad máxima que se puede ingresar"
       },
       "currency": {
-        "type": "String"
+        "type": "String",
+        "description": "Código o símbolo de moneda mostrado después del rango"
       }
     }
   },
