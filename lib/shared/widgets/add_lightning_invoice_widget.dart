@@ -41,51 +41,73 @@ class _AddLightningInvoiceWidgetState extends State<AddLightningInvoiceWidget> {
             widget.orderId,
           ),
           style: const TextStyle(
-            color: AppTheme.cream1,
+            color: AppTheme.textPrimary,
             fontSize: 16,
+            fontWeight: FontWeight.w500,
           ),
         ),
         const SizedBox(height: 16),
-        TextFormField(
-          key: const Key('invoiceTextField'),
-          controller: widget.controller,
-          style: const TextStyle(color: AppTheme.cream1),
-          decoration: InputDecoration(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            labelText: S.of(context)!.lightningInvoice,
-            labelStyle: const TextStyle(color: AppTheme.grey2),
-            hintText: S.of(context)!.enterInvoiceHere,
-            hintStyle: const TextStyle(color: AppTheme.grey2),
-            filled: true,
-            fillColor: AppTheme.dark1,
-            alignLabelWithHint: true,
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: AppTheme.backgroundInput,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
           ),
-          maxLines: 6,
+          child: TextFormField(
+            key: const Key('invoiceTextField'),
+            controller: widget.controller,
+            style: const TextStyle(color: AppTheme.textPrimary),
+            decoration: InputDecoration(
+              labelText: S.of(context)!.lightningInvoice,
+              labelStyle: const TextStyle(color: AppTheme.textSecondary),
+              hintText: S.of(context)!.enterInvoiceHere,
+              hintStyle: const TextStyle(color: AppTheme.textSecondary),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              alignLabelWithHint: true,
+            ),
+            maxLines: 6,
+          ),
         ),
         const SizedBox(height: 16),
         Row(
           children: [
             Expanded(
-              child: ElevatedButton(
+              child: TextButton(
                 key: const Key('cancelInvoiceButton'),
                 onPressed: widget.onCancel,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
+                child: Text(
+                  S.of(context)!.cancel,
+                  style: const TextStyle(
+                    color: AppTheme.textSecondary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                child: Text(S.of(context)!.cancel),
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
             Expanded(
               child: ElevatedButton(
                 key: const Key('submitInvoiceButton'),
                 onPressed: widget.onSubmit,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.mostroGreen,
+                  backgroundColor: AppTheme.activeColor,
+                  foregroundColor: Colors.black,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                 ),
-                child: Text(S.of(context)!.submit),
+                child: Text(
+                  S.of(context)!.submit,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ),
             ),
           ],

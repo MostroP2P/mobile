@@ -452,13 +452,16 @@
   "close": "CHIUDI",
   "take": "PRENDI",
   "enterAmount": "Inserisci Importo",
-  "enterAmountBetween": "Inserisci un importo tra {min} e {max}",
+  "enterAmountBetween": "{min} - {max} {currency}",
   "@enterAmountBetween": {
     "placeholders": {
       "min": {
         "type": "String"
       },
       "max": {
+        "type": "String"
+      },
+      "currency": {
         "type": "String"
       }
     }
@@ -511,6 +514,7 @@
   "rateCounterpart": "Valuta Controparte",
   "submitRating": "Invia Valutazione",
   
+  "addLightningInvoice": "Aggiungi Fattura Lightning",
   "payLightningInvoice": "Paga Fattura Lightning",
   "payInvoiceToContinue": "Paga questa fattura di {sats} Sats equivalenti a {fiat_amount} {fiat_code} per continuare lo scambio dell'ordine {order_id}",
   "@payInvoiceToContinue": {

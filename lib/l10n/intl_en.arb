@@ -494,13 +494,16 @@
   "close": "CLOSE",
   "take": "TAKE",
   "enterAmount": "Enter Amount",
-  "enterAmountBetween": "Enter an amount between {min} and {max}",
+  "enterAmountBetween": "{min} - {max} {currency}",
   "@enterAmountBetween": {
     "placeholders": {
       "min": {
         "type": "String"
       },
       "max": {
+        "type": "String"
+      },
+      "currency": {
         "type": "String"
       }
     }
@@ -550,6 +553,7 @@
   "rateCounterpart": "Rate Counterpart",
   "submitRating": "Submit Rating",
   
+  "addLightningInvoice": "Add Lightning Invoice",
   "payLightningInvoice": "Pay Lightning Invoice",
   "payInvoiceToContinue": "Pay this invoice for {sats} Sats equivalent to {fiat_code} {fiat_amount} to continue the exchange for order {order_id}",
   "@payInvoiceToContinue": {
