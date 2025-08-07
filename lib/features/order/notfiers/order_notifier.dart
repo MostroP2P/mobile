@@ -324,19 +324,20 @@ class OrderNotifier extends AbstractMostroNotifier {
         }
         
         try {
-          // Verify current state BEFORE setting flag to avoid permanent blocking
+          _isProcessingTimeout = true;
+          
+          // Verify current state AFTER setting flag to ensure cleanup
           final currentSession = ref.read(sessionProvider(orderId));
           if (!mounted || currentSession == null) {
             return;
           }
           
-          // Verify state before setting flag
-          if (state.status != Status.waitingBuyerInvoice && 
+          // Verify state - include pending for cancellation detection
+          if (state.status != Status.pending &&
+              state.status != Status.waitingBuyerInvoice && 
               state.status != Status.waitingPayment) {
             return;
           }
-          
-          _isProcessingTimeout = true;
           
           final storage = ref.read(mostroStorageProvider);
           final messages = await storage.getAllMessagesForOrderId(orderId)
@@ -349,8 +350,9 @@ class OrderNotifier extends AbstractMostroNotifier {
             messages.sort((a, b) => (a.timestamp ?? 0).compareTo(b.timestamp ?? 0));
             final latestGiftWrap = messages.last;
             
-            // Verify state one more time before cleanup
-            if (mounted && (state.status == Status.waitingBuyerInvoice || 
+            // Verify state one more time before cleanup - include pending for cancellation
+            if (mounted && (state.status == Status.pending ||
+                state.status == Status.waitingBuyerInvoice || 
                 state.status == Status.waitingPayment)) {
               final shouldCleanup = await _checkTimeoutAndCleanup(state, latestGiftWrap)
                   .timeout(Config.timeoutDetectionTimeout, onTimeout: () {
