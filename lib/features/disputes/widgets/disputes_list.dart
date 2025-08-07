@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/data/repositories/dispute_repository.dart';
 import 'package:mostro_mobile/features/disputes/widgets/dispute_list_item.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
@@ -10,70 +11,103 @@ class DisputesList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // For now, we'll use hardcoded dispute data
-    final hardcodedDisputes = _getHardcodedDisputes();
+    final userDisputesAsync = ref.watch(userDisputesProvider);
 
-    if (hardcodedDisputes.isEmpty) {
-      return Center(
+    return userDisputesAsync.when(
+      data: (disputes) {
+        if (disputes.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.gavel,
+                  size: 64,
+                  color: AppTheme.textSecondary,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  S.of(context)?.noDisputesAvailable ?? 'No disputes available',
+                  style: TextStyle(
+                    color: AppTheme.textSecondary,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Disputes will appear here when you open them from your trades',
+                  style: TextStyle(
+                    color: AppTheme.textSecondary,
+                    fontSize: 14,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: disputes.length,
+          itemBuilder: (context, index) {
+            final disputeEvent = disputes[index];
+            final disputeData = DisputeData.fromDisputeEvent(disputeEvent);
+            
+            return DisputeListItem(
+              dispute: disputeData,
+              onTap: () {
+                context.push('/dispute_details', extra: disputeData);
+              },
+            );
+          },
+        );
+      },
+      loading: () => const Center(
+        child: CircularProgressIndicator(),
+      ),
+      error: (error, stack) => Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.gavel,
+              Icons.error_outline,
               size: 64,
-              color: AppTheme.textSecondary,
+              color: AppTheme.red1,
             ),
             const SizedBox(height: 16),
             Text(
-              S.of(context)?.noDisputesAvailable ?? 'No disputes available',
+              'Failed to load disputes',
+              style: TextStyle(
+                color: AppTheme.red1,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              error.toString(),
               style: TextStyle(
                 color: AppTheme.textSecondary,
-                fontSize: 16,
+                fontSize: 14,
               ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                ref.invalidate(userDisputesProvider);
+              },
+              child: const Text('Retry'),
             ),
           ],
         ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: hardcodedDisputes.length,
-      itemBuilder: (context, index) {
-        final dispute = hardcodedDisputes[index];
-        return DisputeListItem(
-          dispute: dispute,
-          onTap: () {
-            context.push('/dispute_details', extra: dispute);
-          },
-        );
-      },
+      ),
     );
-  }
-
-  List<DisputeData> _getHardcodedDisputes() {
-    return [
-      DisputeData(
-        disputeId: 'd38c43d6-3c57-4ff5-89fd-8c4078a3fe0e',
-        orderId: 'd38c43d6-3c57-4ff5-89fd-8c4078a3fe0e',
-        status: 'in-progress',
-        description: 'You opened this dispute. You were selling sats.',
-        counterparty: 'Fiery-Honeybadger',
-        isCreator: true,
-      ),
-      DisputeData(
-        disputeId: 'be54a0c0-ab1a-4478-ad29-d8917ce376a8',
-        orderId: 'be54a0c0-ab1a-4478-ad29-d8917ce376a8',
-        status: 'in-progress',
-        description: 'This dispute was opened against you. You were buying sats.',
-        counterparty: 'Lightning-Trader',
-        isCreator: false,
-      ),
-    ];
   }
 }
 
-// Temporary data class for hardcoded disputes
+// Data class for dispute display - bridges DisputeEvent to UI
 class DisputeData {
   final String disputeId;
   final String orderId;
@@ -81,6 +115,7 @@ class DisputeData {
   final String description;
   final String counterparty;
   final bool isCreator;
+  final DateTime createdAt;
 
   DisputeData({
     required this.disputeId,
@@ -89,5 +124,36 @@ class DisputeData {
     required this.description,
     required this.counterparty,
     required this.isCreator,
+    required this.createdAt,
   });
+
+  /// Create DisputeData from DisputeEvent
+  factory DisputeData.fromDisputeEvent(dynamic disputeEvent) {
+    // For now, we'll create basic data from the dispute event
+    // In a full implementation, this would combine data from multiple sources
+    return DisputeData(
+      disputeId: disputeEvent.disputeId,
+      orderId: disputeEvent.disputeId, // Placeholder - would need order mapping
+      status: disputeEvent.status,
+      description: _getDescriptionForStatus(disputeEvent.status),
+      counterparty: 'Unknown', // Would need to fetch from order data
+      isCreator: true, // Assume user is creator for now
+      createdAt: DateTime.fromMillisecondsSinceEpoch(disputeEvent.createdAt * 1000),
+    );
+  }
+
+  static String _getDescriptionForStatus(String status) {
+    switch (status.toLowerCase()) {
+      case 'initiated':
+        return 'You opened this dispute';
+      case 'in-progress':
+        return 'Dispute is being reviewed by an admin';
+      case 'settled':
+        return 'Dispute has been resolved';
+      case 'seller-refunded':
+        return 'Dispute resolved - seller refunded';
+      default:
+        return 'Dispute status: $status';
+    }
+  }
 }
