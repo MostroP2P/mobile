@@ -54,8 +54,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Real-time system that detects when orders timeout from `waiting-buyer-invoice` or `waiting-payment` states and handles maker/taker scenarios differently to maintain UI consistency with mostrod state.
 
 ### Detection Mechanism
-- **Monitors**: 38383 public events vs latest gift wrap message timestamps
-- **Triggers**: When order is in waiting states and public event shows `pending` status newer than last direct message
+- **Monitors**: 38383 public events for status changes
+- **Triggers**: When public event shows different status than local state (simplified logic without timestamp comparison)
 - **Real-time**: Subscribes to `orderEventsProvider` for instant detection
 
 ### Maker Scenario (Order Creator)
@@ -73,18 +73,21 @@ When user doesn't respond and order returns to pending:
 
 ### Cancellation Detection & Cleanup
 When orders are canceled (status changes to `canceled` in public events):
-- **Detection**: Same public event monitoring system as timeouts
-- **Session Cleanup**: Always deletes session for both maker and taker scenarios
-- **UI Behavior**: Order disappears completely from "My Trades"
-- **User Feedback**: Shows cancellation notification and navigates to Order Book
-- **Implementation**: Integrated into `_checkTimeoutAndCleanup()` method in `order_notifier.dart:196-214`
+- **Detection**: Public event monitoring system (independent of timestamps)
+- **Session Cleanup**: State-based logic - only deletes session for pending/waiting states
+- **Active Orders**: Canceled active orders keep session but update to canceled status
+- **UI Behavior**: Pending/waiting orders disappear, active orders show canceled status
+- **User Feedback**: Shows cancellation notification
+- **Implementation**: `_checkTimeoutAndCleanup()` method in `order_notifier.dart:172-211`
 
 ### Key Implementation
-- **Race protection**: `_isProcessingTimeout` flag prevents concurrent execution
+- **Race protection**: `_isProcessingTimeout` flag prevents concurrent execution (with proper early return handling)
 - **Role detection**: `_isCreatedByUser()` compares session role with order type
 - **Error resilience**: Timeouts and try-catch blocks prevent app hangs
 - **Notifications**: Differentiated messages for maker vs taker scenarios
-- **Unified monitoring**: Both timeout and cancellation detection use same public event system
+- **Simplified Logic**: Status-based detection without timestamp comparison
+- **State-based Rules**: Different session handling based on local order state (pending/waiting vs active)
+- **Timeout Detection**: `public=pending + local=waiting = guaranteed timeout`
 
 ### Testing Structure
 - Unit tests in `test/` directory
