@@ -100,10 +100,10 @@ class DisputeRepository {
         return null;
       }
 
-      // Get the latest event for this dispute
-      final latestEvent = disputeEvents.reduce((a, b) {
-        final aTime = a.createdAt ?? 0;
-        final bTime = b.createdAt ?? 0;
+      // Find the latest event for this dispute
+      final latestEvent = events.reduce((a, b) {
+        final aTime = a.createdAt as int? ?? 0;
+        final bTime = b.createdAt as int? ?? 0;
         return aTime > bTime ? a : b;
       });
 
@@ -127,14 +127,9 @@ class DisputeRepository {
     try {
       _logger.d('Subscribing to dispute events');
 
-      final filter = NostrFilter(
-        kinds: [38383], // Dispute event kind
-        authors: [_mostroPubkey],
-        since: DateTime.now(),
-      );
-
       // Note: This is a simplified implementation
       // In a full implementation, we would need to properly handle the subscription
+      // using NostrFilter with kinds: [38383], authors: [_mostroPubkey], since: DateTime.now()
       // For now, return an empty stream as a placeholder
       _logger.w('Dispute events subscription not fully implemented yet');
       return const Stream.empty();
