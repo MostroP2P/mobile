@@ -186,7 +186,7 @@ class DisputeChatNotifier extends StateNotifier<AsyncValue<DisputeChat?>> {
       final userMessage = NostrEvent(
         id: '', // Will be generated
         pubkey: currentState.userPubkey,
-        createdAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+        createdAt: DateTime.now(),
         kind: 1,
         tags: [
           ['d', disputeId], // Dispute ID tag

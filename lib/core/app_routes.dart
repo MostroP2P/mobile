@@ -21,7 +21,7 @@ import 'package:mostro_mobile/features/order/screens/take_order_screen.dart';
 import 'package:mostro_mobile/features/auth/screens/register_screen.dart';
 import 'package:mostro_mobile/features/walkthrough/screens/walkthrough_screen.dart';
 import 'package:mostro_mobile/features/disputes/screens/dispute_details_screen.dart';
-import 'package:mostro_mobile/features/disputes/widgets/disputes_list.dart';
+
 import 'package:mostro_mobile/features/walkthrough/providers/first_run_provider.dart';
 import 'package:mostro_mobile/shared/widgets/navigation_listener_widget.dart';
 import 'package:mostro_mobile/shared/widgets/notification_listener_widget.dart';
@@ -145,13 +145,13 @@ GoRouter createRouter(WidgetRef ref) {
                     )),
           ),
           GoRoute(
-            path: '/dispute_details',
+            path: '/dispute_details/:disputeId',
             pageBuilder: (context, state) {
-              final dispute = state.extra as DisputeData;
+              final disputeId = state.pathParameters['disputeId']!;
               return buildPageWithDefaultTransition<void>(
                 context: context,
                 state: state,
-                child: DisputeDetailsScreen(dispute: dispute),
+                child: DisputeDetailsScreen(disputeId: disputeId),
               );
             },
           ),
