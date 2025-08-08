@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:circular_countdown/circular_countdown.dart';
 import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter/material.dart';
@@ -38,6 +39,13 @@ class TakeOrderScreen extends ConsumerStatefulWidget {
 class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
   bool _isSubmitting = false;
   dynamic _lastSeenAction;
+  Timer? _timeoutTimer;
+
+  @override
+  void dispose() {
+    _timeoutTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,8 +59,9 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
           if (msg == null || msg.action == _lastSeenAction) return;
           _lastSeenAction = msg.action;
           
-          // Reset loading state only on CantDo message
+          // Reset loading state on CantDo message (timeout also resets via timer)
           if (msg.action == actions.Action.cantDo && _isSubmitting) {
+            _timeoutTimer?.cancel();
             setState(() {
               _isSubmitting = false;
             });
@@ -251,6 +260,16 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
               setState(() {
                 _isSubmitting = true;
               });
+              
+              // Start 10-second timeout timer
+              _timeoutTimer?.cancel();
+              _timeoutTimer = Timer(const Duration(seconds: 10), () {
+                if (_isSubmitting && mounted) {
+                  setState(() {
+                    _isSubmitting = false;
+                  });
+                }
+              });
               // Check if this is a range order
               if (order.fiatAmount.maximum != null &&
                   order.fiatAmount.minimum != order.fiatAmount.maximum) {
@@ -375,8 +394,11 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
                       lndAddress.isEmpty ? null : lndAddress,
                     );
                   }
+                  // Cancel timer after successful operation
+                  _timeoutTimer?.cancel();
                 } else {
                   // Dialog was dismissed without entering amount, reset loading state
+                  _timeoutTimer?.cancel();
                   setState(() {
                     _isSubmitting = false;
                   });
@@ -396,6 +418,8 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
                     lndAddress.isEmpty ? null : lndAddress,
                   );
                 }
+                // Cancel timer after successful operation
+                _timeoutTimer?.cancel();
               }
             },
             style: ElevatedButton.styleFrom(
