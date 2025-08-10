@@ -30,9 +30,11 @@ class DisputeChat {
         .where((msg) => msg.pubkey == adminPubkey)
         .fold<NostrEvent?>(null, (earliest, current) {
       if (earliest == null) return current;
-      final earliestTime = earliest.createdAt as int? ?? 0;
-      final currentTime = current.createdAt as int? ?? 0;
-      return currentTime < earliestTime ? current : earliest;
+      final earliestTime = earliest.createdAt;
+      final currentTime = current.createdAt;
+      if (earliestTime == null) return current;
+      if (currentTime == null) return earliest;
+      return currentTime.isBefore(earliestTime) ? current : earliest;
     });
     
     if (firstAdminMessage == null) return false;
@@ -46,9 +48,11 @@ class DisputeChat {
     if (messages.isEmpty) return null;
     
     return messages.reduce((a, b) {
-      final aTime = a.createdAt as int? ?? 0;
-      final bTime = b.createdAt as int? ?? 0;
-      return aTime > bTime ? a : b;
+      final aTime = a.createdAt;
+      final bTime = b.createdAt;
+      if (aTime == null) return b;
+      if (bTime == null) return a;
+      return aTime.isAfter(bTime) ? a : b;
     });
   }
 
@@ -56,8 +60,11 @@ class DisputeChat {
   List<NostrEvent> get sortedMessages {
     final sorted = List<NostrEvent>.from(messages);
     sorted.sort((a, b) {
-      final aTime = a.createdAt as int? ?? 0;
-      final bTime = b.createdAt as int? ?? 0;
+      final aTime = a.createdAt;
+      final bTime = b.createdAt;
+      if (aTime == null && bTime == null) return 0;
+      if (aTime == null) return -1;
+      if (bTime == null) return 1;
       return aTime.compareTo(bTime);
     });
     return sorted;
@@ -66,8 +73,8 @@ class DisputeChat {
   /// Add a new message to the chat
   DisputeChat addMessage(NostrEvent message) {
     final updatedMessages = [...messages, message];
-    final messageTime = message.createdAt as int? ?? 0;
-    final newLastMessageAt = DateTime.fromMillisecondsSinceEpoch(messageTime * 1000);
+    final messageTime = message.createdAt;
+    final newLastMessageAt = messageTime;
     
     return copyWith(
       messages: updatedMessages,

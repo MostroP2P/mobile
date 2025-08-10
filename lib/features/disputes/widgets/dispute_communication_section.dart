@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/disputes/notifiers/dispute_chat_notifier.dart';
+import 'package:mostro_mobile/data/models/dispute_chat.dart';
 
 class DisputeCommunicationSection extends ConsumerWidget {
   final String disputeId;
@@ -100,6 +101,8 @@ class DisputeCommunicationSection extends ConsumerWidget {
       ),
       child: Column(
         children: [
+          _AdminAndTokenHeader(disputeChat: disputeChat),
+          const SizedBox(height: 12),
           Icon(
             Icons.chat_bubble_outline,
             color: AppTheme.textSecondary,
@@ -123,81 +126,74 @@ class DisputeCommunicationSection extends ConsumerWidget {
             ),
             textAlign: TextAlign.center,
           ),
-          if (disputeChat.disputeToken != null) ...[
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppTheme.mostroGreen.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                'Your dispute token: ${disputeChat.disputeToken}',
-                style: TextStyle(
-                  color: AppTheme.mostroGreen,
-                  fontSize: 12,
-                  fontFamily: 'monospace',
-                ),
-              ),
-            ),
-          ],
+          // token shown in header above
         ],
       ),
     );
   }
 
   Widget _buildChatMessages(disputeChat) {
+    final messages = disputeChat.sortedMessages;
     return Container(
       constraints: const BoxConstraints(maxHeight: 300),
-      child: ListView.builder(
-        shrinkWrap: true,
-        itemCount: disputeChat.messages.length,
-        itemBuilder: (context, index) {
-          final message = disputeChat.messages[index];
-          final isFromAdmin = message.pubkey == disputeChat.adminPubkey;
-          
-          return Container(
-            margin: const EdgeInsets.only(bottom: 8),
-            child: Row(
-              mainAxisAlignment: isFromAdmin 
-                ? MainAxisAlignment.start 
-                : MainAxisAlignment.end,
-              children: [
-                Flexible(
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: isFromAdmin 
-                        ? AppTheme.dark2 
-                        : AppTheme.mostroGreen.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          message.content ?? '',
-                          style: TextStyle(
-                            color: AppTheme.textPrimary,
-                            fontSize: 14,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _AdminAndTokenHeader(disputeChat: disputeChat),
+          const SizedBox(height: 8),
+          Expanded(
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: messages.length,
+              itemBuilder: (context, index) {
+                final message = messages[index];
+                final isFromAdmin = message.pubkey == disputeChat.adminPubkey;
+                
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    mainAxisAlignment: isFromAdmin 
+                      ? MainAxisAlignment.start 
+                      : MainAxisAlignment.end,
+                    children: [
+                      Flexible(
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: isFromAdmin 
+                              ? AppTheme.dark2 
+                              : AppTheme.mostroGreen.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                message.content ?? '',
+                                style: TextStyle(
+                                  color: AppTheme.textPrimary,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                isFromAdmin ? 'Admin' : 'You',
+                                style: TextStyle(
+                                  color: AppTheme.textSecondary,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          isFromAdmin ? 'Admin' : 'You',
-                          style: TextStyle(
-                            color: AppTheme.textSecondary,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
+                );
+              },
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }
@@ -234,6 +230,80 @@ class DisputeCommunicationSection extends ConsumerWidget {
             ),
             textAlign: TextAlign.center,
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AdminAndTokenHeader extends StatelessWidget {
+  final DisputeChat disputeChat;
+  const _AdminAndTokenHeader({required this.disputeChat});
+
+  @override
+  Widget build(BuildContext context) {
+    final hasToken = (disputeChat.disputeToken?.isNotEmpty ?? false);
+    final isVerified = disputeChat.isTokenVerified == true;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppTheme.dark2,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Admin pubkey',
+            style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+          ),
+          const SizedBox(height: 4),
+          SelectableText(
+            disputeChat.adminPubkey,
+            style: const TextStyle(fontFamily: 'monospace', fontSize: 12, color: Colors.white),
+          ),
+          if (hasToken) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: (isVerified ? AppTheme.mostroGreen : Colors.amber).withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(isVerified ? Icons.verified : Icons.security, size: 14, color: isVerified ? AppTheme.mostroGreen : Colors.amber),
+                      const SizedBox(width: 6),
+                      Text(
+                        isVerified ? 'Token verified' : 'Awaiting token verification',
+                        style: TextStyle(color: isVerified ? AppTheme.mostroGreen : Colors.amber, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Ask admin to quote this token:',
+                        style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                      ),
+                      SelectableText(
+                        disputeChat.disputeToken!,
+                        style: const TextStyle(fontFamily: 'monospace', fontSize: 12, color: Colors.white),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
