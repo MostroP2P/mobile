@@ -74,12 +74,20 @@ class Dispute implements Payload {
       }
       
       String disputeIdValue;
+      String? disputeTokenValue;
+      
       if (oid is List) {
         if (oid.isEmpty) {
           throw FormatException('Dispute list cannot be empty');
         }
         disputeIdValue = oid[0]?.toString() ?? 
           (throw FormatException('First element of dispute list is null'));
+        
+        // Extract token from array: [disputeId, userToken, peerToken]
+        // Index 1 is the user's token (who initiated the dispute)
+        if (oid.length > 1 && oid[1] != null) {
+          disputeTokenValue = oid[1].toString();
+        }
       } else {
         disputeIdValue = oid.toString();
       }
@@ -91,7 +99,8 @@ class Dispute implements Payload {
       // Extract optional fields
       final orderId = json['order_id'] as String?;
       final status = json['status'] as String?;
-      final disputeToken = json['dispute_token'] as String?;
+      // Use token from array if available, otherwise fallback to json field
+      final disputeToken = disputeTokenValue ?? json['dispute_token'] as String?;
       final adminPubkey = json['admin_pubkey'] as String?;
       
       // Extract admin_took_at timestamp
