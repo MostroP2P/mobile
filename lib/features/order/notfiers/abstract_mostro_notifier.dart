@@ -230,10 +230,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
           }
         }
         
-        notifProvider.notify(event.action, values: {
-          'action': cantDo?.cantDoReason.toString(),
-        }, orderId: orderId);
-        ref.read(notificationProvider.notifier).showInformation(
+        ref.read(notificationsProvider.notifier).showTemporary(
           event.action,
           values: {
             'action': cantDo?.cantDoReason.toString(),

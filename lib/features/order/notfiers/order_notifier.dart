@@ -204,7 +204,7 @@ class OrderNotifier extends AbstractMostroNotifier {
           );
           
           // Show cancellation notification
-          final notifProvider = ref.read(notificationProvider.notifier);
+          final notifProvider = ref.read(notificationsProvider.notifier);
           notifProvider.showCustomMessage('orderCanceled');
           
           return false; // Session preserved
