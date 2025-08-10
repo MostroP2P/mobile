@@ -452,14 +452,20 @@
   "close": "CHIUDI",
   "take": "PRENDI",
   "enterAmount": "Inserisci Importo",
-  "enterAmountBetween": "Inserisci un importo tra {min} e {max}",
+  "enterAmountBetween": "{min} - {max} {currency}",
   "@enterAmountBetween": {
     "placeholders": {
       "min": {
-        "type": "String"
+        "type": "String",
+        "description": "Importo minimo che può essere inserito"
       },
       "max": {
-        "type": "String"
+        "type": "String",
+        "description": "Importo massimo che può essere inserito"
+      },
+      "currency": {
+        "type": "String",
+        "description": "Codice o simbolo della valuta mostrato dopo l'intervallo"
       }
     }
   },
@@ -511,6 +517,7 @@
   "rateCounterpart": "Valuta Controparte",
   "submitRating": "Invia Valutazione",
   
+  "addLightningInvoice": "Aggiungi Fattura Lightning",
   "payLightningInvoice": "Paga Fattura Lightning",
   "payInvoiceToContinue": "Paga questa fattura di {sats} Sats equivalenti a {fiat_amount} {fiat_code} per continuare lo scambio dell'ordine {order_id}",
   "@payInvoiceToContinue": {

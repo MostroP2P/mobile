@@ -220,9 +220,25 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         break;
       case Action.cantDo:
         final cantDo = event.getPayload<CantDo>();
+        // Handle specific case of out_of_range_sats_amount
+        if (cantDo?.cantDoReason == CantDoReason.outOfRangeSatsAmount) {
+          logger.i('Received out_of_range_sats_amount, cleaning up session for retry');
+          
+          // Clean up temporary session if it exists by requestId
+          if (event.requestId != null) {
+            ref.read(sessionNotifierProvider.notifier).cleanupRequestSession(event.requestId!);
+          }
+        }
+        
         notifProvider.notify(event.action, values: {
           'action': cantDo?.cantDoReason.toString(),
         }, orderId: orderId);
+        ref.read(notificationProvider.notifier).showInformation(
+          event.action,
+          values: {
+            'action': cantDo?.cantDoReason.toString(),
+          },
+        );
         break;
       case Action.adminSettled:
         notifProvider.notify(event.action, values: {}, orderId: orderId);
