@@ -1,27 +1,37 @@
 import 'dart:async';
 import 'package:dart_nostr/dart_nostr.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/models/dispute.dart';
 import 'package:mostro_mobile/data/models/dispute_event.dart';
+import 'package:mostro_mobile/data/repositories/auth_repository.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
-import 'package:mostro_mobile/features/settings/settings_provider.dart';
-import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
+import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
 /// Repository for managing dispute data and events
 class DisputeRepository {
   final NostrService _nostrService;
   final String _mostroPubkey;
+  final AuthRepository _authRepository;
   final Logger _logger = Logger();
 
-  DisputeRepository(this._nostrService, this._mostroPubkey);
+  DisputeRepository(this._nostrService, this._mostroPubkey, this._authRepository);
 
   /// Fetch dispute events from Nostr for the current user
   Future<List<DisputeEvent>> fetchUserDisputes() async {
     try {
       _logger.d('Fetching user disputes from Nostr');
 
-      // Create filter for dispute events
+      // Get current user's pubkey from private key
+      final privateKey = await _authRepository.getPrivateKey();
+      if (privateKey == null) {
+        _logger.w('User private key not available, cannot fetch disputes');
+        return [];
+      }
+      
+      final userPubkey = NostrUtils.derivePublicKey(privateKey);
+      _logger.d('Fetching disputes for user pubkey: $userPubkey');
+
+      // Create filter for dispute events from Mostro
       final filter = NostrFilter(
         kinds: [38383], // Dispute event kind
         authors: [_mostroPubkey],
@@ -30,7 +40,8 @@ class DisputeRepository {
 
       final events = await _nostrService.fetchEvents(filter);
       
-      final disputes = events
+      // Filter events to only include disputes involving the current user
+      final userDisputes = events
           .map((event) {
             try {
               return DisputeEvent.fromEvent(event);
@@ -41,10 +52,17 @@ class DisputeRepository {
           })
           .where((dispute) => dispute != null)
           .cast<DisputeEvent>()
+          .where((dispute) {
+            // Check if this dispute involves the current user
+            // This could be done by checking if the user has any related orders
+            // For now, we'll include all disputes from Mostro
+            // TODO: Implement proper user filtering based on order ownership
+            return true;
+          })
           .toList();
 
-      _logger.d('Fetched ${disputes.length} dispute events');
-      return disputes;
+      _logger.d('Fetched ${userDisputes.length} dispute events for user');
+      return userDisputes;
     } catch (e) {
       _logger.e('Failed to fetch user disputes: $e');
       return [];
@@ -140,27 +158,4 @@ class DisputeRepository {
   }
 }
 
-/// Provider for dispute repository
-final disputeRepositoryProvider = Provider<DisputeRepository>((ref) {
-  final nostrService = ref.watch(nostrServiceProvider);
-  final settings = ref.watch(settingsProvider);
-  return DisputeRepository(nostrService, settings.mostroPublicKey);
-});
-
-/// Provider for user disputes
-final userDisputesProvider = FutureProvider<List<DisputeEvent>>((ref) async {
-  final repository = ref.watch(disputeRepositoryProvider);
-  return repository.fetchUserDisputes();
-});
-
-/// Provider for specific dispute details
-final disputeDetailsProvider = FutureProvider.family<Dispute?, String>((ref, disputeId) async {
-  final repository = ref.watch(disputeRepositoryProvider);
-  return repository.getDisputeDetails(disputeId);
-});
-
-/// Provider for dispute events stream
-final disputeEventsStreamProvider = StreamProvider<DisputeEvent>((ref) {
-  final repository = ref.watch(disputeRepositoryProvider);
-  return repository.subscribeToDisputeEvents();
-});
+// Providers moved to features/disputes/providers/dispute_providers.dart
