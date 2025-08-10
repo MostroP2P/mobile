@@ -92,7 +92,7 @@ class DisputeCommunicationSection extends ConsumerWidget {
     );
   }
 
-  Widget _buildNoMessages(disputeChat) {
+  Widget _buildNoMessages(DisputeChat disputeChat) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -132,7 +132,7 @@ class DisputeCommunicationSection extends ConsumerWidget {
     );
   }
 
-  Widget _buildChatMessages(disputeChat) {
+  Widget _buildChatMessages(DisputeChat disputeChat) {
     final messages = disputeChat.sortedMessages;
     return Container(
       constraints: const BoxConstraints(maxHeight: 300),
