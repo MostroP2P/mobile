@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
-import 'package:mostro_mobile/data/repositories/dispute_repository.dart';
+import 'package:mostro_mobile/features/disputes/providers/dispute_providers.dart';
 import 'package:mostro_mobile/features/disputes/widgets/dispute_list_item.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 

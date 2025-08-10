@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/models/dispute.dart';
 import 'package:mostro_mobile/data/models/dispute_event.dart';
 import 'package:mostro_mobile/data/repositories/dispute_repository.dart';
+import 'package:mostro_mobile/features/auth/providers/auth_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 
@@ -9,9 +10,10 @@ import 'package:mostro_mobile/features/settings/settings_provider.dart';
 final disputeRepositoryProvider = Provider<DisputeRepository>((ref) {
   final nostrService = ref.read(nostrServiceProvider);
   final settings = ref.read(settingsProvider);
+  final authRepository = ref.read(authRepositoryProvider);
   final mostroPubkey = settings.mostroPublicKey;
   
-  return DisputeRepository(nostrService, mostroPubkey);
+  return DisputeRepository(nostrService, mostroPubkey, authRepository);
 });
 
 /// Provider that fetches all user disputes
