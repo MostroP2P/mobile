@@ -681,6 +681,32 @@
   "disputesDescription": "Queste sono le tue dispute aperte e le chat con l'amministratore che aiuta a risolverle.",
   "disputeDetails": "Dettagli della disputa",
   "disputeForOrder": "Disputa per l'ordine",
+  "disputeStatusInProgress": "In corso",
+  "disputeStatusResolved": "Risolta",
+  "disputeStatusClosed": "Chiusa",
+  "disputeResolvedTitle": "Disputa risolta",
+  "disputeResolvedMessage": "Questa disputa è stata risolta. Il risolutore ha preso una decisione sulla base delle prove presentate. Controlla il tuo wallet per eventuali rimborsi o pagamenti.",
+  "disputeOpenedByYou": "Hai aperto questa disputa contro l'acquirente {counterparty}, leggi attentamente di seguito:",
+  "@disputeOpenedByYou": {
+    "placeholders": {
+      "counterparty": { "type": "String" }
+    }
+  },
+  "disputeOpenedAgainstYou": "Questa disputa è stata aperta contro di te da {counterparty}, leggi attentamente di seguito:",
+  "@disputeOpenedAgainstYou": {
+    "placeholders": {
+      "counterparty": { "type": "String" }
+    }
+  },
+  "disputeInstruction1": "Attendi che un risolutore prenda in carico la tua disputa. Una volta arrivato, condividi qualsiasi prova rilevante per aiutare a chiarire la situazione.",
+  "disputeInstruction2": "La decisione finale sarà presa sulla base delle prove presentate.",
+  "disputeInstruction3": "Se non rispondi, il sistema presumerà che tu non voglia collaborare e potresti perdere la disputa.",
+  "disputeInstruction4": "Se desideri condividere la cronologia della chat con {counterparty}, puoi dare al risolutore la chiave condivisa che si trova in Informazioni utente nella tua conversazione con quell'utente.",
+  "@disputeInstruction4": {
+    "placeholders": {
+      "counterparty": { "type": "String" }
+    }
+  },
   "orderId": "ID Ordine:",
   "paymentMethod": "Metodo di Pagamento:",
   "createdOn": "Creato il:",
@@ -700,8 +726,16 @@
       }
     }
   },
-  "forAmount": "per {amount} {currency}",
+  "forAmount": "per {amount}",
   "@forAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "forAmountWithCurrency": "per {amount} {currency}",
+  "@forAmountWithCurrency": {
     "placeholders": {
       "amount": {
         "type": "String"

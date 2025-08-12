@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/dispute.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class DisputeStatusContent extends StatelessWidget {
   final DisputeData dispute;
@@ -40,7 +41,7 @@ class DisputeStatusContent extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Dispute Resolved',
+                    S.of(context)!.disputeResolvedTitle,
                     style: TextStyle(
                       color: AppTheme.mostroGreen,
                       fontSize: 16,
@@ -49,7 +50,7 @@ class DisputeStatusContent extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'This dispute has been resolved. The solver made a decision based on the evidence presented. Check your wallet for any refunds or payments.',
+                    S.of(context)!.disputeResolvedMessage,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 14,
@@ -69,8 +70,8 @@ class DisputeStatusContent extends StatelessWidget {
         children: [
           Text(
             dispute.isCreator 
-              ? 'You opened this dispute against the buyer ${dispute.counterparty}, please read carefully below:'
-              : 'This dispute was opened against you by ${dispute.counterparty}, please read carefully below:',
+              ? S.of(context)!.disputeOpenedByYou(dispute.counterparty)
+              : S.of(context)!.disputeOpenedAgainstYou(dispute.counterparty),
             style: const TextStyle(
               color: Colors.white,
               fontSize: 14,
@@ -78,10 +79,10 @@ class DisputeStatusContent extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          _buildBulletPoint('Wait for a solver to take your dispute. Once they arrive, share any relevant evidence to help clarify the situation.'),
-          _buildBulletPoint('The final decision will be made based on the evidence presented.'),
-          _buildBulletPoint('If you don\'t respond, the system will assume you don\'t want to cooperate and you might lose the dispute.'),
-          _buildBulletPoint('If you want to share your chat history with ${dispute.counterparty}, you can give the solver the shared key found in User Info in your conversation with that user.'),
+          _buildBulletPoint(S.of(context)!.disputeInstruction1),
+          _buildBulletPoint(S.of(context)!.disputeInstruction2),
+          _buildBulletPoint(S.of(context)!.disputeInstruction3),
+          _buildBulletPoint(S.of(context)!.disputeInstruction4(dispute.counterparty)),
         ],
       );
     }

@@ -10,12 +10,9 @@ class DisputeOrderId extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       orderId,
-      style: TextStyle(
-        color: Colors.white,
-        fontWeight: FontWeight.w500,
-        fontSize: 14,
-        fontFamily: 'monospace',
-      ),
+      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w500,
+          ),
     );
   }
 }

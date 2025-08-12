@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 /// Status badge widget for dispute list items
 class DisputeStatusBadge extends StatelessWidget {
@@ -19,7 +20,7 @@ class DisputeStatusBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
-        _getStatusText(status),
+        _getStatusText(context, status),
         style: TextStyle(
           color: _getStatusTextColor(status),
           fontSize: 12,
@@ -55,16 +56,16 @@ class DisputeStatusBadge extends StatelessWidget {
     }
   }
 
-  String _getStatusText(String status) {
+  String _getStatusText(BuildContext context, String status) {
     switch (status.toLowerCase()) {
       case 'in-progress':
-        return 'In-progress';
+        return S.of(context)!.disputeStatusInProgress;
       case 'resolved':
-        return 'Resolved';
+        return S.of(context)!.disputeStatusResolved;
       case 'closed':
-        return 'Closed';
+        return S.of(context)!.disputeStatusClosed;
       default:
-        return 'In-progress';
+        return S.of(context)!.disputeStatusInProgress;
     }
   }
 }
