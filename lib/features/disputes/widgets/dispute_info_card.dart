@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
-import 'package:mostro_mobile/features/disputes/widgets/disputes_list.dart';
 import 'package:mostro_mobile/features/disputes/widgets/dispute_status_badge.dart';
 import 'package:mostro_mobile/features/disputes/widgets/dispute_status_content.dart';
+import 'package:mostro_mobile/data/models/dispute.dart';
 
 class DisputeInfoCard extends StatelessWidget {
   final DisputeData dispute;
@@ -54,11 +54,7 @@ class DisputeInfoCard extends StatelessWidget {
           const SizedBox(height: 8),
           
           // Dispute ID
-          _buildInfoRow('Dispute ID', 'c4f833e9-2695-4c0a-9b8b-f8060fdd036b'),
-          const SizedBox(height: 8),
-          
-          // Token
-          _buildInfoRow('Token', '497'),
+          _buildInfoRow('Dispute ID', dispute.disputeId),
           const SizedBox(height: 16),
           
           // Dispute description - conditional based on status

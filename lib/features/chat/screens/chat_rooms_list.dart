@@ -57,7 +57,9 @@ class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen>
                   decoration: BoxDecoration(
                     color: AppTheme.backgroundDark,
                     border: Border(
-                      bottom: BorderSide(color: Colors.white.withValues(alpha: 0.1), width: 0.5),
+                      bottom: BorderSide(
+                          color: Colors.white.withValues(alpha: 0.1),
+                          width: 0.5),
                     ),
                   ),
                   child: Text(
@@ -83,7 +85,9 @@ class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen>
                   decoration: BoxDecoration(
                     color: AppTheme.backgroundDark,
                     border: Border(
-                      bottom: BorderSide(color: Colors.white.withValues(alpha: 0.1), width: 0.5),
+                      bottom: BorderSide(
+                          color: Colors.white.withValues(alpha: 0.1),
+                          width: 0.5),
                     ),
                   ),
                   child: Text(
@@ -134,12 +138,9 @@ class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen>
       );
     }
 
-
-
     // Use the optimized provider that returns sorted chat rooms with fresh data
     // This prevents excessive rebuilds by memoizing the sorted list
     final chatRoomsWithFreshData = ref.watch(sortedChatRoomsProvider);
-
 
     return ListView.builder(
       itemCount: chatRoomsWithFreshData.length,
@@ -156,10 +157,12 @@ class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen>
   String _getTabDescription(BuildContext context) {
     if (_tabController.index == 0) {
       // Messages tab
-      return S.of(context)?.conversationsDescription ?? 'Here you\'ll find your conversations with other users during trades.';
+      return S.of(context)?.conversationsDescription ??
+          'Here you\'ll find your conversations with other users during trades.';
     } else {
       // Disputes tab
-      return 'These are your open disputes and the chats with the admin helping resolve them.';
+      return S.of(context)?.disputesDescription ??
+          'These are your open disputes and the chats with the admin helping resolve them.';
     }
   }
 }

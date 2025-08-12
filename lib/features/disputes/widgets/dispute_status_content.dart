@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
-import 'package:mostro_mobile/features/disputes/widgets/disputes_list.dart';
+import 'package:mostro_mobile/data/models/dispute.dart';
 
 class DisputeStatusContent extends StatelessWidget {
   final DisputeData dispute;

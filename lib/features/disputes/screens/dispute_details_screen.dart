@@ -3,11 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/dispute.dart';
 import 'package:mostro_mobile/features/disputes/providers/dispute_providers.dart';
-import 'package:mostro_mobile/features/disputes/widgets/disputes_list.dart';
 import 'package:mostro_mobile/features/disputes/widgets/dispute_info_card.dart';
 import 'package:mostro_mobile/features/disputes/widgets/dispute_communication_section.dart';
 import 'package:mostro_mobile/features/disputes/widgets/dispute_input_section.dart';
 import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class DisputeDetailsScreen extends ConsumerStatefulWidget {
   final String disputeId;
@@ -37,9 +37,9 @@ class _DisputeDetailsScreenState extends ConsumerState<DisputeDetailsScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Dispute Details',
-          style: TextStyle(
+        title: Text(
+          S.of(context)?.disputeDetails ?? 'Dispute Details',
+          style: const TextStyle(
             color: Colors.white,
             fontSize: 18,
             fontWeight: FontWeight.w600,

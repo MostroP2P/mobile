@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:mostro_mobile/features/disputes/widgets/disputes_list.dart';
 import 'package:mostro_mobile/features/disputes/widgets/dispute_header.dart';
 import 'package:mostro_mobile/features/disputes/widgets/dispute_order_id.dart';
 import 'package:mostro_mobile/features/disputes/widgets/dispute_description.dart';
+import 'package:mostro_mobile/data/models/dispute.dart';
 
 /// Main content widget for dispute information
 class DisputeContent extends StatelessWidget {

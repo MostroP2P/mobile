@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:mostro_mobile/features/disputes/widgets/disputes_list.dart';
 import 'package:mostro_mobile/features/disputes/widgets/dispute_status_badge.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:mostro_mobile/data/models/dispute.dart';
 
 /// Header widget with title and status badge for dispute list items
 class DisputeHeader extends StatelessWidget {
@@ -14,7 +15,7 @@ class DisputeHeader extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
-          'Dispute for order',
+          S.of(context)?.disputeForOrder ?? 'Dispute for order',
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,

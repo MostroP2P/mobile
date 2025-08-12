@@ -175,3 +175,54 @@ class Dispute implements Payload {
   @override
   String toString() => 'Dispute(disputeId: $disputeId, orderId: $orderId, status: $status, disputeToken: $disputeToken, adminPubkey: $adminPubkey, adminTookAt: $adminTookAt)';
 }
+
+/// UI-facing view model for disputes used across widgets.
+class DisputeData {
+  final String disputeId;
+  final String orderId;
+  final String status;
+  final String description;
+  final String counterparty;
+  final bool isCreator;
+  final DateTime createdAt;
+
+  DisputeData({
+    required this.disputeId,
+    required this.orderId,
+    required this.status,
+    required this.description,
+    required this.counterparty,
+    required this.isCreator,
+    required this.createdAt,
+  });
+
+  /// Create DisputeData from DisputeEvent
+  factory DisputeData.fromDisputeEvent(dynamic disputeEvent) {
+    // For now, we'll create basic data from the dispute event
+    // In a full implementation, this would combine data from multiple sources
+    return DisputeData(
+      disputeId: disputeEvent.disputeId,
+      orderId: disputeEvent.disputeId, // Placeholder - would need order mapping
+      status: disputeEvent.status,
+      description: _getDescriptionForStatus(disputeEvent.status),
+      counterparty: 'Unknown', // Would need to fetch from order data
+      isCreator: true, // Assume user is creator for now
+      createdAt: DateTime.fromMillisecondsSinceEpoch(disputeEvent.createdAt * 1000),
+    );
+  }
+
+  static String _getDescriptionForStatus(String status) {
+    switch (status.toLowerCase()) {
+      case 'initiated':
+        return 'You opened this dispute';
+      case 'in-progress':
+        return 'Dispute is being reviewed by an admin';
+      case 'settled':
+        return 'Dispute has been resolved';
+      case 'seller-refunded':
+        return 'Dispute resolved - seller refunded';
+      default:
+        return 'Dispute status: $status';
+    }
+  }
+}
