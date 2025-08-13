@@ -549,36 +549,11 @@
   "someoneIsSellingTitle": "Alguien está Vendiendo Sats",
   "someoneIsBuyingTitle": "Alguien está Comprando Sats",
   "someoneIsSellingFixedTitle": "Alguien está Vendiendo {sats} Sats",
-  "@someoneIsSellingFixedTitle": {
-    "placeholders": {
-      "sats": {}
-    }
-  },
   "someoneIsBuyingFixedTitle": "Alguien está Comprando {sats} Sats",
-  "@someoneIsBuyingFixedTitle": {
-    "placeholders": {
-      "sats": {}
-    }
-  },
   "youCreatedOfferMessage": "Creaste esta oferta. A continuación se muestran los detalles de tu oferta. Espera a que otro usuario la tome. Se publicará durante 24 horas. Puedes cancelarla en cualquier momento usando el botón 'Cancelar'.",
   "youAreSellingTitle": "Estás vendiendo {sats} sats",
-  "@youAreSellingTitle": {
-    "placeholders": {
-      "sats": {}
-    }
-  },
   "youAreBuyingTitle": "Estás comprando {sats} sats",
-  "@youAreBuyingTitle": {
-    "placeholders": {
-      "sats": {}
-    }
-  },
   "forAmount": "por {amount}",
-  "@forAmount": {
-    "placeholders": {
-      "amount": {}
-    }
-  },
   "timeLeftLabel": "Tiempo restante: {time}",
   "@timeLeftLabel": {
     "placeholders": {

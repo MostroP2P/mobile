@@ -727,13 +727,6 @@
     }
   },
   "forAmount": "per {amount}",
-  "@forAmount": {
-    "placeholders": {
-      "amount": {
-        "type": "String"
-      }
-    }
-  },
   "forAmountWithCurrency": "per {amount} {currency}",
   "@forAmountWithCurrency": {
     "placeholders": {
