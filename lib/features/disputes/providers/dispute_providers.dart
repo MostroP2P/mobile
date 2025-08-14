@@ -33,3 +33,9 @@ final disputeEventsStreamProvider = StreamProvider<DisputeEvent>((ref) {
   final repository = ref.read(disputeRepositoryProvider);
   return repository.subscribeToDisputeEvents();
 });
+
+/// Provider for creating a new dispute
+final createDisputeProvider = FutureProvider.family<bool, String>((ref, orderId) async {
+  final repository = ref.read(disputeRepositoryProvider);
+  return repository.createDispute(orderId);
+});

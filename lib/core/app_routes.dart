@@ -21,6 +21,7 @@ import 'package:mostro_mobile/features/order/screens/take_order_screen.dart';
 import 'package:mostro_mobile/features/auth/screens/register_screen.dart';
 import 'package:mostro_mobile/features/walkthrough/screens/walkthrough_screen.dart';
 import 'package:mostro_mobile/features/disputes/screens/dispute_details_screen.dart';
+import 'package:mostro_mobile/features/disputes/screens/disputes_list_screen.dart';
 
 import 'package:mostro_mobile/features/walkthrough/providers/first_run_provider.dart';
 import 'package:mostro_mobile/shared/widgets/navigation_listener_widget.dart';
@@ -132,6 +133,15 @@ GoRouter createRouter(WidgetRef ref) {
               context: context,
               state: state,
               child: const ChatRoomsScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/disputes',
+            pageBuilder: (context, state) =>
+                buildPageWithDefaultTransition<void>(
+              context: context,
+              state: state,
+              child: const DisputesListScreen(),
             ),
           ),
           GoRoute(
