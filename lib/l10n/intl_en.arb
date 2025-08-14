@@ -801,16 +801,12 @@
   "noCurrencySelected": "No currency selected",
 
   "@_comment_filter_section": "Filter section strings",
-  "fiatCurrencies": "Fiat currencies",
-  "paymentMethods": "Payment methods", 
   "rating": "Rating",
   "reputation": "Reputation",
   "premiumRange": "Premium/Discount",
   "discount": "Discount",
   "premium": "Premium",
   "clear": "Clear",
-  "noneSelected": "None selected",
-  "typeToAdd": "Type to add...",
 
   "@_comment_timeout_messages": "Timeout notification messages",
   "orderTimeoutTaker": "You didn't respond in time. The order will be republished",

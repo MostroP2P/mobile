@@ -826,16 +826,12 @@
   "apply": "Aplicar",
 
   "@_comment_filter_section": "Strings de la sección de filtros",
-  "fiatCurrencies": "Monedas fiat",
-  "paymentMethods": "Métodos de pago",
   "rating": "Calificación",
   "reputation": "Reputación",
   "premiumRange": "Prima/Descuento",
   "discount": "Descuento",
   "premium": "Prima",
   "clear": "Limpiar",
-  "noneSelected": "Ninguna seleccionada",
-  "typeToAdd": "Escribe para agregar...",
   "selectCurrency": "Seleccionar Moneda",
   "noCurrencySelected": "Ninguna moneda seleccionada",
 

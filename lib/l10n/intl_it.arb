@@ -834,16 +834,12 @@
   "apply": "Applica",
 
   "@_comment_filter_section": "Stringhe della sezione filtri",
-  "fiatCurrencies": "Valute fiat",
-  "paymentMethods": "Metodi di pagamento",
   "rating": "Valutazione",
   "reputation": "Reputazione",
   "premiumRange": "Premio/Sconto",
   "discount": "Sconto",
   "premium": "Premio",
   "clear": "Cancella",
-  "noneSelected": "Nessuna selezionata",
-  "typeToAdd": "Digita per aggiungere...",
   "selectCurrency": "Seleziona Valuta",
   "noCurrencySelected": "Nessuna valuta selezionata",
 
