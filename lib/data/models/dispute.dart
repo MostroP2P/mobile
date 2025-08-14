@@ -65,6 +65,25 @@ class Dispute implements Payload {
     return json;
   }
 
+  /// Create Dispute from NostrEvent and parsed content
+  factory Dispute.fromNostrEvent(dynamic event, Map<String, dynamic> content) {
+    try {
+      // Extract dispute data from the event content
+      final disputeId = content['dispute_id'] ?? event.id ?? '';
+      final orderId = content['order_id'] as String?;
+      final status = content['status'] as String? ?? 'initiated';
+      
+      return Dispute(
+        disputeId: disputeId,
+        orderId: orderId,
+        status: status,
+        adminPubkey: content['admin_pubkey'] as String?,
+      );
+    } catch (e) {
+      throw FormatException('Failed to parse Dispute from NostrEvent: $e');
+    }
+  }
+
   factory Dispute.fromJson(Map<String, dynamic> json) {
     try {
       // Extract dispute ID

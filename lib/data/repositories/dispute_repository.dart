@@ -1,86 +1,39 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:dart_nostr/dart_nostr.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/models/dispute.dart';
 import 'package:mostro_mobile/data/models/dispute_event.dart';
-import 'package:mostro_mobile/data/repositories/auth_repository.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
+import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
 /// Repository for managing dispute data and events
 class DisputeRepository {
   final NostrService _nostrService;
   final String _mostroPubkey;
-  final AuthRepository _authRepository;
+  final Ref _ref;
   final Logger _logger = Logger();
 
-  DisputeRepository(this._nostrService, this._mostroPubkey, this._authRepository);
+  DisputeRepository(this._nostrService, this._mostroPubkey, this._ref);
 
-  /// Get order IDs that belong to the current user
-  Future<Set<String>> _getUserOrderIds(String userPubkey) async {
-    try {
-      // Create filter for orders from Mostro that might involve this user
-      final filter = NostrFilter(
-        kinds: [38383], // Order event kind
-        authors: [_mostroPubkey],
-        since: DateTime.now().subtract(const Duration(days: 90)),
-        additionalFilters: {
-          '#z': ['order'], // Filter for order events
-        },
-      );
-
-      final events = await _nostrService.fetchEvents(filter);
-      final userOrderIds = <String>{};
-
-      // Check each order event to see if it involves the user
-      for (final event in events) {
-        try {
-          // Extract order ID from 'd' tag
-          final dTag = event.tags?.firstWhere(
-            (tag) => tag.isNotEmpty && tag[0] == 'd',
-            orElse: () => [],
-          );
-          
-          if (dTag != null && dTag.length > 1) {
-            final orderId = dTag[1];
-            
-            // Check if this order involves the user by looking for their pubkey in tags
-            final userInvolved = event.tags?.any((tag) => 
-              tag.length > 1 && tag[1] == userPubkey
-            ) ?? false;
-            
-            if (userInvolved) {
-              userOrderIds.add(orderId);
-            }
-          }
-        } catch (e) {
-          _logger.w('Failed to parse order event ${event.id}: $e');
-        }
-      }
-
-      _logger.d('Found ${userOrderIds.length} orders for user');
-      return userOrderIds;
-    } catch (e) {
-      _logger.e('Failed to get user order IDs: $e');
-      return <String>{};
-    }
-  }
 
   /// Fetch dispute events from Nostr for the current user
-  Future<List<DisputeEvent>> fetchUserDisputes() async {
+  Future<List<Dispute>> fetchUserDisputes() async {
     try {
       _logger.d('Fetching user disputes from Nostr');
 
-      // Get current user's pubkey from private key
-      final privateKey = await _authRepository.getPrivateKey();
-      if (privateKey == null) {
-        _logger.w('User private key not available, cannot fetch disputes');
+      // Get active sessions to find user's trade keys
+      final sessions = _ref.read(sessionNotifierProvider);
+      if (sessions.isEmpty) {
+        _logger.w('No active sessions found, cannot fetch disputes');
         return [];
       }
       
-      final userPubkey = NostrUtils.derivePublicKey(privateKey);
-      _logger.d('Fetching disputes for user pubkey: $userPubkey');
+      // Get all trade key public keys from active sessions
+      final userPubkeys = sessions.map((s) => s.tradeKey.public).toList();
+      _logger.d('Fetching disputes for user pubkeys: $userPubkeys');
 
       // Create filter for dispute events from Mostro
       final filter = NostrFilter(
@@ -95,30 +48,33 @@ class DisputeRepository {
       final events = await _nostrService.fetchEvents(filter);
       _logger.d('Fetched ${events.length} dispute events from Mostro');
       
-      // Parse dispute events and get user's orders to filter relevant disputes
-      final disputeEvents = <DisputeEvent>[];
-      final userOrderIds = await _getUserOrderIds(userPubkey);
-      
-      for (final event in events) {
+      // Filter events that involve any of the user's pubkeys (from active sessions)
+      final userEvents = events.where((event) {
         try {
-          final disputeEvent = DisputeEvent.fromEvent(event);
-          
-          // Check if this dispute is related to any of the user's orders
-          // In Mostro, dispute ID often corresponds to order ID
-          if (userOrderIds.contains(disputeEvent.disputeId)) {
-            disputeEvents.add(disputeEvent);
-            _logger.d('Found user dispute: ${disputeEvent.disputeId} with status: ${disputeEvent.status}');
-          }
+          final content = jsonDecode(event.content ?? '{}');
+          // Check if this dispute involves any of the user's pubkeys
+          return userPubkeys.any((pubkey) => 
+            content['buyer_pubkey'] == pubkey ||
+            content['seller_pubkey'] == pubkey);
         } catch (e) {
-          _logger.w('Failed to parse dispute event ${event.id}: $e');
+          _logger.w('Failed to parse dispute event content: $e');
+          return false;
         }
-      }
+      }).toList();
 
-      // Sort by creation time (newest first)
-      disputeEvents.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      
-      _logger.d('Fetched ${disputeEvents.length} user disputes');
-      return disputeEvents;
+      // Convert events to Dispute objects
+      final disputes = userEvents.map((event) {
+        try {
+          final content = jsonDecode(event.content ?? '{}');
+          return Dispute.fromNostrEvent(event, content);
+        } catch (e) {
+          _logger.w('Failed to parse dispute event: $e');
+          return null;
+        }
+      }).where((dispute) => dispute != null).cast<Dispute>().toList();
+
+      _logger.d('Found ${disputes.length} disputes for user');
+      return disputes;
     } catch (e) {
       _logger.e('Failed to fetch user disputes: $e');
       return [];
@@ -130,10 +86,21 @@ class DisputeRepository {
     try {
       _logger.d('Creating dispute for order: $orderId');
 
-      // Get user's private key for signing
-      final privateKey = await _authRepository.getPrivateKey();
-      if (privateKey == null) {
-        _logger.e('User private key not available, cannot create dispute');
+      // Get user's session for the order to get the trade key
+      final sessions = _ref.read(sessionNotifierProvider);
+      final session = sessions.cast<dynamic>().firstWhere(
+        (s) => s.orderId == orderId,
+        orElse: () => null,
+      );
+      
+      if (session == null) {
+        _logger.e('No session found for order: $orderId, cannot create dispute');
+        return false;
+      }
+      
+      final privateKey = session.tradeKey.private;
+      if (privateKey.isEmpty) {
+        _logger.e('Session trade key private key is empty for order: $orderId');
         return false;
       }
 
@@ -226,7 +193,7 @@ class DisputeRepository {
   }
 
   /// Subscribe to dispute events for real-time updates
-  Stream<DisputeEvent> subscribeToDisputeEvents() {
+  Stream<Dispute> subscribeToDisputeEvents() {
     try {
       _logger.d('Subscribing to dispute events');
 
@@ -245,11 +212,12 @@ class DisputeRepository {
         subscriptionId: 'dispute-events-${DateTime.now().millisecondsSinceEpoch}',
       );
 
-      // Subscribe to events and transform to DisputeEvent stream
+      // Subscribe to events and transform to Dispute stream
       return _nostrService.subscribeToEvents(request)
           .map((event) {
             try {
-              return DisputeEvent.fromEvent(event);
+              final content = jsonDecode(event.content ?? '{}');
+              return Dispute.fromNostrEvent(event, content);
             } catch (e) {
               _logger.w('Failed to parse dispute event ${event.id}: $e');
               throw e;

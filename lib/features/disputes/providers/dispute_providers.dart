@@ -1,8 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/models/dispute.dart';
-import 'package:mostro_mobile/data/models/dispute_event.dart';
 import 'package:mostro_mobile/data/repositories/dispute_repository.dart';
-import 'package:mostro_mobile/features/auth/providers/auth_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 
@@ -10,14 +8,13 @@ import 'package:mostro_mobile/features/settings/settings_provider.dart';
 final disputeRepositoryProvider = Provider<DisputeRepository>((ref) {
   final nostrService = ref.read(nostrServiceProvider);
   final settings = ref.read(settingsProvider);
-  final authRepository = ref.read(authRepositoryProvider);
   final mostroPubkey = settings.mostroPublicKey;
   
-  return DisputeRepository(nostrService, mostroPubkey, authRepository);
+  return DisputeRepository(nostrService, mostroPubkey, ref);
 });
 
 /// Provider that fetches all user disputes
-final userDisputesProvider = FutureProvider<List<DisputeEvent>>((ref) async {
+final userDisputesProvider = FutureProvider<List<Dispute>>((ref) async {
   final repository = ref.read(disputeRepositoryProvider);
   return repository.fetchUserDisputes();
 });
@@ -29,7 +26,7 @@ final disputeDetailsProvider = FutureProvider.family<Dispute?, String>((ref, dis
 });
 
 /// Provider for dispute events stream (simplified for now)
-final disputeEventsStreamProvider = StreamProvider<DisputeEvent>((ref) {
+final disputeEventsStreamProvider = StreamProvider<Dispute>((ref) {
   final repository = ref.read(disputeRepositoryProvider);
   return repository.subscribeToDisputeEvents();
 });
