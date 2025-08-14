@@ -637,7 +637,7 @@ class OrderFilterState extends ConsumerState<OrderFilter> {
             children: [
               Flexible(
                 flex: 1,
-                child: Container(
+                child: SizedBox(
                   width: double.infinity,
                   height: 50,
                   child: OutlinedButton(
@@ -684,7 +684,7 @@ class OrderFilterState extends ConsumerState<OrderFilter> {
               const SizedBox(width: 12),
               Flexible(
                 flex: 1,
-                child: Container(
+                child: SizedBox(
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
