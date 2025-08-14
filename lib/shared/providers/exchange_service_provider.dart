@@ -27,4 +27,7 @@ final currencyCodesProvider =
   return currencies;
 });
 
-final selectedFiatCodeProvider = StateProvider<String>((ref) => 'USD');
+final selectedFiatCodeProvider = StateProvider<String?>((ref) {
+  // Initialize with null - will be set from settings when needed
+  return null;
+});

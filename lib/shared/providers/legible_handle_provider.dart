@@ -9,14 +9,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 const List<String> kAdjectives = [
   'shadowy',
   'orange',
-  'lightning',
-  'p2p',
-  'noncustodial',
+  'nonCustodial',
   'trustless',
   'unbanked',
   'atomic',
   'magic',
-  'tor',
   'hidden',
   'incognito',
   'anonymous',
@@ -31,7 +28,7 @@ const List<String> kAdjectives = [
   'sovereign',
   'unstoppable',
   'private',
-  'censorshipresistant',
+  'censorshipResistant',
   'hush',
   'defiant',
   'subversive',
@@ -44,7 +41,6 @@ const List<String> kAdjectives = [
   'cyber',
   'rusty',
   'nihilistic',
-  'mempool',
   'dark',
   'wicked',
   'spicy',
@@ -75,12 +71,12 @@ const List<String> kNouns = [
   'frog',
   'gorilla',
   'nostrich',
-  'halfinney',
+  'halFinney',
   'hodlonaut',
   'satoshi',
   'nakamoto',
-  'gigi',
   'samurai',
+  'sparrow',
   'crusader',
   'tinkerer',
   'nostr',
@@ -94,45 +90,83 @@ const List<String> kNouns = [
   'phoenix',
   'dragon',
   'fiatjaf',
-  'jackmallers',
   'roasbeef',
   'berlin',
   'tokyo',
-  'buenosaires',
+  'buenosAires',
+  'caracas',
+  'havana',
   'miami',
   'prague',
   'amsterdam',
   'lugano',
   'seoul',
-  'bitcoinbeach',
-  'odell',
-  'bitcoinkid',
-  'marty',
-  'finney',
+  'bitcoinBeach',
   'carnivore',
   'ape',
-  'honeybadger',
+  'honeyBadger',
+  'lnp2pBot',
+  'lunaticoin',
+  'jorgeValenzuela',
+  'javyBastard',
+  'loreOrtiz',
+  'manuFerrari',
+  'pablof7z',
+  'btcAndres',
+  'laCrypta',
+  'niftynei',
+  'gloriaZhao',
+  'stupidrisks',
+  'dolcheVillarreal',
+  'furszy',
+  'sergi',
+  'jarolRod',
+  'pieterWuille',
+  'edwardSnowden',
+  'libreriaDeSatoshi',
+  'alexGladstein',
+  'bitkoYinowsky',
+  'alfreMancera',
+  'faixaPreta',
+  'laVecinaDeArriba',
+  'mempool',
 ];
 
 /// Convert a 32-byte hex string (64 hex chars) into a fun, deterministic handle.
 /// Example result: "shadowy-wizard", "noKYC-satoshi", etc.
 String deterministicHandleFromHexKey(String hexKey) {
-  // 1) Parse the 64-char hex into a BigInt.
-  //    Because it's 32 bytes, there's up to 256 bits of data here.
-  final pubKeyBigInt = BigInt.parse(hexKey, radix: 16);
+  // Validate that the input is a valid hex string
+  if (hexKey.isEmpty) {
+    return 'unknown-user';
+  }
 
-  // 2) Use modulo arithmetic to pick an adjective and a noun.
-  final adjectivesCount = kAdjectives.length;
-  final nounsCount = kNouns.length;
+  // Clean the hex string (remove any non-hex characters)
+  final cleanHexKey = hexKey.replaceAll(RegExp(r'[^0-9a-fA-F]'), '');
 
-  final indexAdjective = pubKeyBigInt % BigInt.from(adjectivesCount);
-  final indexNoun =
-      (pubKeyBigInt ~/ BigInt.from(adjectivesCount)) % BigInt.from(nounsCount);
+  // If the cleaned string is empty or invalid, return a default handle
+  if (cleanHexKey.isEmpty) {
+    return 'invalid-key';
+  }
 
-  final adjective = kAdjectives[indexAdjective.toInt()];
-  final noun = kNouns[indexNoun.toInt()];
+  try {
+    // 1) Parse the hex into a BigInt.
+    //    Because it's 32 bytes, there's up to 256 bits of data here.
+    final pubKeyBigInt = BigInt.parse(cleanHexKey, radix: 16);
 
-  return '$adjective-$noun';
+    // 2) Use modulo arithmetic to pick an adjective and a noun.
+    final adjectivesCount = kAdjectives.length;
+    final nounsCount = kNouns.length;
+
+    final indexAdjective = pubKeyBigInt % BigInt.from(adjectivesCount);
+    final indexNoun = (pubKeyBigInt ~/ BigInt.from(adjectivesCount)) %
+        BigInt.from(nounsCount);
+
+    // 3) Return the hyphenated result.
+    return '${kAdjectives[indexAdjective.toInt()]}-${kNouns[indexNoun.toInt()]}';
+  } catch (e) {
+    // If parsing fails, return a default handle
+    return 'unparseable-key';
+  }
 }
 
 final nickNameProvider = Provider.family<String, String>(

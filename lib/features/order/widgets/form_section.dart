@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class FormSection extends StatelessWidget {
   final String title;
@@ -8,6 +9,8 @@ class FormSection extends StatelessWidget {
   final Widget child;
   final Widget? extraContent;
   final String? infoTooltip;
+  final String? infoTitle;
+  final Widget? topRightWidget;
 
   const FormSection({
     super.key,
@@ -17,6 +20,8 @@ class FormSection extends StatelessWidget {
     required this.child,
     this.extraContent,
     this.infoTooltip,
+    this.infoTitle,
+    this.topRightWidget,
   });
 
   @override
@@ -46,64 +51,22 @@ class FormSection extends StatelessWidget {
                 ),
                 if (infoTooltip != null) ...[
                   const SizedBox(width: 4),
-                  GestureDetector(
-                    onTap: () {
-                      showDialog(
-                        context: context,
-                        builder: (context) => Dialog(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          backgroundColor: const Color(0xFF1E2230),
-                          child: Padding(
-                            padding: const EdgeInsets.all(20.0),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8.0, vertical: 12.0),
-                                  child: Text(
-                                    infoTooltip!,
-                                    style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                        height: 1.4),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF8CC63F),
-                                      foregroundColor: Colors.black,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 12),
-                                    ),
-                                    onPressed: () =>
-                                        Navigator.of(context).pop(),
-                                    child: const Text('OK',
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.bold)),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                    child: Icon(
-                      Icons.info_outline,
-                      size: 14,
-                      color: AppTheme.textSubtle,
+                  InkWell(
+                    onTap: () => _showInfoDialog(context, infoTitle ?? title, infoTooltip!),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Icon(
+                        Icons.info_outline,
+                        size: 14,
+                        color: AppTheme.textSubtle,
+                      ),
                     ),
                   ),
+                ],
+                if (topRightWidget != null) ...[
+                  const SizedBox(width: 8),
+                  topRightWidget!,
                 ],
               ],
             ),
@@ -134,6 +97,50 @@ class FormSection extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  void _showInfoDialog(BuildContext context, String title, String content) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          backgroundColor: AppTheme.backgroundCard,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+          ),
+          title: Text(
+            title,
+            style: const TextStyle(
+              color: AppTheme.textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          content: Text(
+            content,
+            style: const TextStyle(
+              color: AppTheme.textSecondary,
+              fontSize: 14,
+              height: 1.5,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(
+                S.of(context)!.ok,
+                style: const TextStyle(
+                  color: AppTheme.activeColor,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

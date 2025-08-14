@@ -7,6 +7,7 @@ import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
 import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/shared/widgets/add_lightning_invoice_widget.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class AddLightningInvoiceScreen extends ConsumerStatefulWidget {
   final String orderId;
@@ -36,17 +37,18 @@ class _AddLightningInvoiceScreenState
         final orderIdValue = orderPayload?.id ?? orderId;
 
         return Scaffold(
-          backgroundColor: AppTheme.dark1,
-          appBar: OrderAppBar(title: 'Add Lightning Invoice'),
+          backgroundColor: AppTheme.backgroundDark,
+          appBar: OrderAppBar(title: S.of(context)!.addLightningInvoice),
           body: Column(
             children: [
               Expanded(
                 child: Container(
                   margin: const EdgeInsets.all(16),
-                  padding: EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: AppTheme.dark2,
-                    borderRadius: BorderRadius.circular(20),
+                    color: AppTheme.backgroundCard,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
                   ),
                   child: AddLightningInvoiceWidget(
                     controller: invoiceController,

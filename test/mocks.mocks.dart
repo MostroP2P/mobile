@@ -6,25 +6,29 @@
 import 'dart:async' as _i5;
 
 import 'package:dart_nostr/dart_nostr.dart' as _i3;
-import 'package:dart_nostr/nostr/model/relay_informations.dart' as _i10;
+import 'package:dart_nostr/nostr/model/relay_informations.dart' as _i12;
 import 'package:flutter_riverpod/flutter_riverpod.dart' as _i4;
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:mockito/src/dummies.dart' as _i11;
+import 'package:mockito/src/dummies.dart' as _i13;
 import 'package:mostro_mobile/data/models.dart' as _i7;
-import 'package:mostro_mobile/data/models/order.dart' as _i12;
-import 'package:mostro_mobile/data/repositories/mostro_storage.dart' as _i20;
+import 'package:mostro_mobile/data/models/order.dart' as _i14;
+import 'package:mostro_mobile/data/repositories/mostro_storage.dart' as _i22;
 import 'package:mostro_mobile/data/repositories/open_orders_repository.dart'
-    as _i15;
-import 'package:mostro_mobile/data/repositories/session_storage.dart' as _i18;
-import 'package:mostro_mobile/features/key_manager/key_manager.dart' as _i19;
+    as _i17;
+import 'package:mostro_mobile/data/repositories/session_storage.dart' as _i20;
+import 'package:mostro_mobile/features/key_manager/key_manager.dart' as _i21;
+import 'package:mostro_mobile/features/relays/relay.dart' as _i23;
+import 'package:mostro_mobile/features/relays/relays_notifier.dart' as _i10;
 import 'package:mostro_mobile/features/settings/settings.dart' as _i2;
-import 'package:mostro_mobile/services/deep_link_service.dart' as _i13;
-import 'package:mostro_mobile/services/mostro_service.dart' as _i14;
-import 'package:mostro_mobile/services/nostr_service.dart' as _i9;
+import 'package:mostro_mobile/features/settings/settings_notifier.dart' as _i9;
+import 'package:mostro_mobile/services/deep_link_service.dart' as _i15;
+import 'package:mostro_mobile/services/mostro_service.dart' as _i16;
+import 'package:mostro_mobile/services/nostr_service.dart' as _i11;
 import 'package:riverpod/src/internals.dart' as _i8;
 import 'package:sembast/sembast.dart' as _i6;
-import 'package:sembast/src/api/transaction.dart' as _i17;
-import 'package:shared_preferences/src/shared_preferences_async.dart' as _i16;
+import 'package:sembast/src/api/transaction.dart' as _i19;
+import 'package:shared_preferences/src/shared_preferences_async.dart' as _i18;
+import 'package:state_notifier/state_notifier.dart' as _i24;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -185,10 +189,32 @@ class _FakeNode_13 extends _i1.SmartFake implements _i8.Node {
         );
 }
 
+class _FakeSettingsNotifier_14 extends _i1.SmartFake
+    implements _i9.SettingsNotifier {
+  _FakeSettingsNotifier_14(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
+}
+
+class _FakeRelayValidationResult_15 extends _i1.SmartFake
+    implements _i10.RelayValidationResult {
+  _FakeRelayValidationResult_15(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
+}
+
 /// A class which mocks [NostrService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockNostrService extends _i1.Mock implements _i9.NostrService {
+class MockNostrService extends _i1.Mock implements _i11.NostrService {
   MockNostrService() {
     _i1.throwOnMissingStub(this);
   }
@@ -207,15 +233,6 @@ class MockNostrService extends _i1.Mock implements _i9.NostrService {
         Invocation.getter(#isInitialized),
         returnValue: false,
       ) as bool);
-
-  @override
-  set settings(_i2.Settings? _settings) => super.noSuchMethod(
-        Invocation.setter(
-          #settings,
-          _settings,
-        ),
-        returnValueForMissingStub: null,
-      );
 
   @override
   _i5.Future<void> init(_i2.Settings? settings) => (super.noSuchMethod(
@@ -239,14 +256,14 @@ class MockNostrService extends _i1.Mock implements _i9.NostrService {
       ) as _i5.Future<void>);
 
   @override
-  _i5.Future<_i10.RelayInformations?> getRelayInfo(String? relayUrl) =>
+  _i5.Future<_i12.RelayInformations?> getRelayInfo(String? relayUrl) =>
       (super.noSuchMethod(
         Invocation.method(
           #getRelayInfo,
           [relayUrl],
         ),
-        returnValue: _i5.Future<_i10.RelayInformations?>.value(),
-      ) as _i5.Future<_i10.RelayInformations?>);
+        returnValue: _i5.Future<_i12.RelayInformations?>.value(),
+      ) as _i5.Future<_i12.RelayInformations?>);
 
   @override
   _i5.Future<void> publishEvent(_i3.NostrEvent? event) => (super.noSuchMethod(
@@ -329,7 +346,7 @@ class MockNostrService extends _i1.Mock implements _i9.NostrService {
           #getMostroPubKey,
           [],
         ),
-        returnValue: _i11.dummyValue<String>(
+        returnValue: _i13.dummyValue<String>(
           this,
           Invocation.method(
             #getMostroPubKey,
@@ -408,7 +425,7 @@ class MockNostrService extends _i1.Mock implements _i9.NostrService {
             content,
           ],
         ),
-        returnValue: _i5.Future<String>.value(_i11.dummyValue<String>(
+        returnValue: _i5.Future<String>.value(_i13.dummyValue<String>(
           this,
           Invocation.method(
             #createRumor,
@@ -439,7 +456,7 @@ class MockNostrService extends _i1.Mock implements _i9.NostrService {
             encryptedContent,
           ],
         ),
-        returnValue: _i5.Future<String>.value(_i11.dummyValue<String>(
+        returnValue: _i5.Future<String>.value(_i13.dummyValue<String>(
           this,
           Invocation.method(
             #createSeal,
@@ -491,7 +508,7 @@ class MockNostrService extends _i1.Mock implements _i9.NostrService {
       );
 
   @override
-  _i5.Future<_i12.Order?> fetchEventById(
+  _i5.Future<_i14.Order?> fetchEventById(
     String? eventId, [
     List<String>? specificRelays,
   ]) =>
@@ -503,11 +520,11 @@ class MockNostrService extends _i1.Mock implements _i9.NostrService {
             specificRelays,
           ],
         ),
-        returnValue: _i5.Future<_i12.Order?>.value(),
-      ) as _i5.Future<_i12.Order?>);
+        returnValue: _i5.Future<_i14.Order?>.value(),
+      ) as _i5.Future<_i14.Order?>);
 
   @override
-  _i5.Future<_i13.OrderInfo?> fetchOrderInfoByEventId(
+  _i5.Future<_i15.OrderInfo?> fetchOrderInfoByEventId(
     String? eventId, [
     List<String>? specificRelays,
   ]) =>
@@ -519,14 +536,14 @@ class MockNostrService extends _i1.Mock implements _i9.NostrService {
             specificRelays,
           ],
         ),
-        returnValue: _i5.Future<_i13.OrderInfo?>.value(),
-      ) as _i5.Future<_i13.OrderInfo?>);
+        returnValue: _i5.Future<_i15.OrderInfo?>.value(),
+      ) as _i5.Future<_i15.OrderInfo?>);
 }
 
 /// A class which mocks [MostroService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockMostroService extends _i1.Mock implements _i14.MostroService {
+class MockMostroService extends _i1.Mock implements _i16.MostroService {
   MockMostroService() {
     _i1.throwOnMissingStub(this);
   }
@@ -706,7 +723,7 @@ class MockMostroService extends _i1.Mock implements _i14.MostroService {
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockOpenOrdersRepository extends _i1.Mock
-    implements _i15.OpenOrdersRepository {
+    implements _i17.OpenOrdersRepository {
   MockOpenOrdersRepository() {
     _i1.throwOnMissingStub(this);
   }
@@ -799,7 +816,7 @@ class MockOpenOrdersRepository extends _i1.Mock
 /// See the documentation for Mockito's code generation for more information.
 // ignore: must_be_immutable
 class MockSharedPreferencesAsync extends _i1.Mock
-    implements _i16.SharedPreferencesAsync {
+    implements _i18.SharedPreferencesAsync {
   MockSharedPreferencesAsync() {
     _i1.throwOnMissingStub(this);
   }
@@ -1005,7 +1022,7 @@ class MockDatabase extends _i1.Mock implements _i6.Database {
   @override
   String get path => (super.noSuchMethod(
         Invocation.getter(#path),
-        returnValue: _i11.dummyValue<String>(
+        returnValue: _i13.dummyValue<String>(
           this,
           Invocation.getter(#path),
         ),
@@ -1013,14 +1030,14 @@ class MockDatabase extends _i1.Mock implements _i6.Database {
 
   @override
   _i5.Future<T> transaction<T>(
-          _i5.FutureOr<T> Function(_i17.Transaction)? action) =>
+          _i5.FutureOr<T> Function(_i19.Transaction)? action) =>
       (super.noSuchMethod(
         Invocation.method(
           #transaction,
           [action],
         ),
-        returnValue: _i11.ifNotNull(
-              _i11.dummyValueOrNull<T>(
+        returnValue: _i13.ifNotNull(
+              _i13.dummyValueOrNull<T>(
                 this,
                 Invocation.method(
                   #transaction,
@@ -1051,7 +1068,7 @@ class MockDatabase extends _i1.Mock implements _i6.Database {
 /// A class which mocks [SessionStorage].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockSessionStorage extends _i1.Mock implements _i18.SessionStorage {
+class MockSessionStorage extends _i1.Mock implements _i20.SessionStorage {
   MockSessionStorage() {
     _i1.throwOnMissingStub(this);
   }
@@ -1113,17 +1130,6 @@ class MockSessionStorage extends _i1.Mock implements _i18.SessionStorage {
         Invocation.method(
           #putSession,
           [session],
-        ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
-
-  @override
-  _i5.Future<void> putSessions(Map<String, _i7.Session>? sessions) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #putSessions,
-          [sessions],
         ),
         returnValue: _i5.Future<void>.value(),
         returnValueForMissingStub: _i5.Future<void>.value(),
@@ -1271,17 +1277,6 @@ class MockSessionStorage extends _i1.Mock implements _i18.SessionStorage {
       ) as _i5.Future<List<_i7.Session>>);
 
   @override
-  _i5.Future<void> putAll(Map<String, _i7.Session>? items) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #putAll,
-          [items],
-        ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
-
-  @override
   _i5.Stream<List<_i7.Session>> watch({
     _i6.Filter? filter,
     List<_i6.SortOrder<Object?>>? sort,
@@ -1336,7 +1331,7 @@ class MockSessionStorage extends _i1.Mock implements _i18.SessionStorage {
 /// A class which mocks [KeyManager].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockKeyManager extends _i1.Mock implements _i19.KeyManager {
+class MockKeyManager extends _i1.Mock implements _i21.KeyManager {
   MockKeyManager() {
     _i1.throwOnMissingStub(this);
   }
@@ -1482,28 +1477,12 @@ class MockKeyManager extends _i1.Mock implements _i19.KeyManager {
         returnValue: _i5.Future<void>.value(),
         returnValueForMissingStub: _i5.Future<void>.value(),
       ) as _i5.Future<void>);
-
-  @override
-  List<MapEntry<int, _i3.NostrKeyPairs>> generateTradeKeyBatch(
-    int? startIndex,
-    int? count,
-  ) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #generateTradeKeyBatch,
-          [
-            startIndex,
-            count,
-          ],
-        ),
-        returnValue: <MapEntry<int, _i3.NostrKeyPairs>>[],
-      ) as List<MapEntry<int, _i3.NostrKeyPairs>>);
 }
 
 /// A class which mocks [MostroStorage].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockMostroStorage extends _i1.Mock implements _i20.MostroStorage {
+class MockMostroStorage extends _i1.Mock implements _i22.MostroStorage {
   MockMostroStorage() {
     _i1.throwOnMissingStub(this);
   }
@@ -1819,17 +1798,6 @@ class MockMostroStorage extends _i1.Mock implements _i20.MostroStorage {
       ) as _i5.Future<List<_i7.MostroMessage<_i7.Payload>>>);
 
   @override
-  _i5.Future<void> putAll(Map<String, _i7.MostroMessage<_i7.Payload>>? items) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #putAll,
-          [items],
-        ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
-
-  @override
   _i5.Stream<List<_i7.MostroMessage<_i7.Payload>>> watch({
     _i6.Filter? filter,
     List<_i6.SortOrder<Object?>>? sort,
@@ -1905,7 +1873,7 @@ class MockSettings extends _i1.Mock implements _i2.Settings {
   @override
   String get mostroPublicKey => (super.noSuchMethod(
         Invocation.getter(#mostroPublicKey),
-        returnValue: _i11.dummyValue<String>(
+        returnValue: _i13.dummyValue<String>(
           this,
           Invocation.getter(#mostroPublicKey),
         ),
@@ -1917,7 +1885,8 @@ class MockSettings extends _i1.Mock implements _i2.Settings {
     bool? fullPrivacyMode,
     String? mostroPublicKey,
     String? defaultFiatCode,
-    Object? selectedLanguage = const Object(),
+    String? selectedLanguage,
+    String? defaultLightningAddress,
   }) =>
       (super.noSuchMethod(
         Invocation.method(
@@ -1929,6 +1898,7 @@ class MockSettings extends _i1.Mock implements _i2.Settings {
             #mostroPublicKey: mostroPublicKey,
             #defaultFiatCode: defaultFiatCode,
             #selectedLanguage: selectedLanguage,
+            #defaultLightningAddress: defaultLightningAddress,
           },
         ),
         returnValue: _FakeSettings_0(
@@ -1942,6 +1912,7 @@ class MockSettings extends _i1.Mock implements _i2.Settings {
               #mostroPublicKey: mostroPublicKey,
               #defaultFiatCode: defaultFiatCode,
               #selectedLanguage: selectedLanguage,
+              #defaultLightningAddress: defaultLightningAddress,
             },
           ),
         ),
@@ -1981,7 +1952,7 @@ class MockRef<State extends Object?> extends _i1.Mock
           #refresh,
           [provider],
         ),
-        returnValue: _i11.dummyValue<T>(
+        returnValue: _i13.dummyValue<T>(
           this,
           Invocation.method(
             #refresh,
@@ -2088,7 +2059,7 @@ class MockRef<State extends Object?> extends _i1.Mock
           #read,
           [provider],
         ),
-        returnValue: _i11.dummyValue<T>(
+        returnValue: _i13.dummyValue<T>(
           this,
           Invocation.method(
             #read,
@@ -2112,7 +2083,7 @@ class MockRef<State extends Object?> extends _i1.Mock
           #watch,
           [provider],
         ),
-        returnValue: _i11.dummyValue<T>(
+        returnValue: _i13.dummyValue<T>(
           this,
           Invocation.method(
             #watch,
@@ -2208,7 +2179,7 @@ class MockProviderSubscription<State> extends _i1.Mock
           #read,
           [],
         ),
-        returnValue: _i11.dummyValue<State>(
+        returnValue: _i13.dummyValue<State>(
           this,
           Invocation.method(
             #read,
@@ -2221,6 +2192,221 @@ class MockProviderSubscription<State> extends _i1.Mock
   void close() => super.noSuchMethod(
         Invocation.method(
           #close,
+          [],
+        ),
+        returnValueForMissingStub: null,
+      );
+}
+
+/// A class which mocks [RelaysNotifier].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockRelaysNotifier extends _i1.Mock implements _i10.RelaysNotifier {
+  MockRelaysNotifier() {
+    _i1.throwOnMissingStub(this);
+  }
+
+  @override
+  _i9.SettingsNotifier get settings => (super.noSuchMethod(
+        Invocation.getter(#settings),
+        returnValue: _FakeSettingsNotifier_14(
+          this,
+          Invocation.getter(#settings),
+        ),
+      ) as _i9.SettingsNotifier);
+
+  @override
+  bool get mounted => (super.noSuchMethod(
+        Invocation.getter(#mounted),
+        returnValue: false,
+      ) as bool);
+
+  @override
+  _i5.Stream<List<_i23.Relay>> get stream => (super.noSuchMethod(
+        Invocation.getter(#stream),
+        returnValue: _i5.Stream<List<_i23.Relay>>.empty(),
+      ) as _i5.Stream<List<_i23.Relay>>);
+
+  @override
+  List<_i23.Relay> get state => (super.noSuchMethod(
+        Invocation.getter(#state),
+        returnValue: <_i23.Relay>[],
+      ) as List<_i23.Relay>);
+
+  @override
+  List<_i23.Relay> get debugState => (super.noSuchMethod(
+        Invocation.getter(#debugState),
+        returnValue: <_i23.Relay>[],
+      ) as List<_i23.Relay>);
+
+  @override
+  bool get hasListeners => (super.noSuchMethod(
+        Invocation.getter(#hasListeners),
+        returnValue: false,
+      ) as bool);
+
+  @override
+  set onError(_i4.ErrorListener? _onError) => super.noSuchMethod(
+        Invocation.setter(
+          #onError,
+          _onError,
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  set state(List<_i23.Relay>? value) => super.noSuchMethod(
+        Invocation.setter(
+          #state,
+          value,
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  _i5.Future<void> addRelay(_i23.Relay? relay) => (super.noSuchMethod(
+        Invocation.method(
+          #addRelay,
+          [relay],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> updateRelay(
+    _i23.Relay? oldRelay,
+    _i23.Relay? updatedRelay,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #updateRelay,
+          [
+            oldRelay,
+            updatedRelay,
+          ],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> removeRelay(String? url) => (super.noSuchMethod(
+        Invocation.method(
+          #removeRelay,
+          [url],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+
+  @override
+  String? normalizeRelayUrl(String? input) =>
+      (super.noSuchMethod(Invocation.method(
+        #normalizeRelayUrl,
+        [input],
+      )) as String?);
+
+  @override
+  bool isValidDomainFormat(String? input) => (super.noSuchMethod(
+        Invocation.method(
+          #isValidDomainFormat,
+          [input],
+        ),
+        returnValue: false,
+      ) as bool);
+
+  @override
+  _i5.Future<bool> testRelayConnectivity(String? url) => (super.noSuchMethod(
+        Invocation.method(
+          #testRelayConnectivity,
+          [url],
+        ),
+        returnValue: _i5.Future<bool>.value(false),
+      ) as _i5.Future<bool>);
+
+  @override
+  _i5.Future<_i10.RelayValidationResult> addRelayWithSmartValidation(
+    String? input, {
+    required String? errorOnlySecure,
+    required String? errorNoHttp,
+    required String? errorInvalidDomain,
+    required String? errorAlreadyExists,
+    required String? errorNotValid,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #addRelayWithSmartValidation,
+          [input],
+          {
+            #errorOnlySecure: errorOnlySecure,
+            #errorNoHttp: errorNoHttp,
+            #errorInvalidDomain: errorInvalidDomain,
+            #errorAlreadyExists: errorAlreadyExists,
+            #errorNotValid: errorNotValid,
+          },
+        ),
+        returnValue: _i5.Future<_i10.RelayValidationResult>.value(
+            _FakeRelayValidationResult_15(
+          this,
+          Invocation.method(
+            #addRelayWithSmartValidation,
+            [input],
+            {
+              #errorOnlySecure: errorOnlySecure,
+              #errorNoHttp: errorNoHttp,
+              #errorInvalidDomain: errorInvalidDomain,
+              #errorAlreadyExists: errorAlreadyExists,
+              #errorNotValid: errorNotValid,
+            },
+          ),
+        )),
+      ) as _i5.Future<_i10.RelayValidationResult>);
+
+  @override
+  _i5.Future<void> refreshRelayHealth() => (super.noSuchMethod(
+        Invocation.method(
+          #refreshRelayHealth,
+          [],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+
+  @override
+  bool updateShouldNotify(
+    List<_i23.Relay>? old,
+    List<_i23.Relay>? current,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #updateShouldNotify,
+          [
+            old,
+            current,
+          ],
+        ),
+        returnValue: false,
+      ) as bool);
+
+  @override
+  _i4.RemoveListener addListener(
+    _i24.Listener<List<_i23.Relay>>? listener, {
+    bool? fireImmediately = true,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #addListener,
+          [listener],
+          {#fireImmediately: fireImmediately},
+        ),
+        returnValue: () {},
+      ) as _i4.RemoveListener);
+
+  @override
+  void dispose() => super.noSuchMethod(
+        Invocation.method(
+          #dispose,
           [],
         ),
         returnValueForMissingStub: null,

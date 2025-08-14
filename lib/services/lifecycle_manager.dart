@@ -77,7 +77,7 @@ class LifecycleManager extends WidgetsBindingObserver {
 
       // Force UI update for trades
       _logger.i("Invalidating providers to refresh UI");
-      ref.invalidate(filteredTradesProvider);
+      ref.invalidate(filteredTradesWithOrderStateProvider);
 
       _logger.i("Foreground transition complete");
     } catch (e) {

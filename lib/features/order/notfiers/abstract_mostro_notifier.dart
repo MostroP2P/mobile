@@ -79,6 +79,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         if (event.payload is PaymentRequest) {
           navProvider.go('/pay_invoice/${event.id!}');
         }
+        ref.read(sessionNotifierProvider.notifier).saveSession(session);
         break;
       case Action.fiatSentOk:
         final peer = event.getPayload<Peer>();
@@ -159,7 +160,15 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         navProvider.go('/trade_detail/$orderId');
         break;
       case Action.waitingSellerToPay:
-        navProvider.go('/trade_detail/$orderId');
+        // Check if user is the maker of a buy order - don't auto-navigate in this case
+        final isUserCreator = _isUserCreator();
+        final isBuyOrder = state.order?.kind == OrderType.buy;
+        
+        if (!(isUserCreator && isBuyOrder)) {
+          // Auto-navigate for takers or for makers of sell orders
+          navProvider.go('/trade_detail/$orderId');
+        }
+        
         notifProvider.showInformation(event.action, values: {
           'id': event.id,
           'expiration_seconds':
@@ -171,7 +180,15 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
           'expiration_seconds':
               mostroInstance?.expirationSeconds ?? Config.expirationSeconds,
         });
-        navProvider.go('/trade_detail/$orderId');
+        
+        // Check if user is the maker of a sell order - don't auto-navigate in this case
+        final isUserCreator = _isUserCreator();
+        final isSellOrder = state.order?.kind == OrderType.sell;
+        
+        if (!(isUserCreator && isSellOrder)) {
+          // Auto-navigate for takers or for makers of buy orders
+          navProvider.go('/trade_detail/$orderId');
+        }
         break;
       case Action.addInvoice:
         final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
@@ -202,6 +219,17 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         break;
       case Action.cantDo:
         final cantDo = event.getPayload<CantDo>();
+        
+        // Handle specific case of out_of_range_sats_amount
+        if (cantDo?.cantDoReason == CantDoReason.outOfRangeSatsAmount) {
+          logger.i('Received out_of_range_sats_amount, cleaning up session for retry');
+          
+          // Clean up temporary session if it exists by requestId
+          if (event.requestId != null) {
+            ref.read(sessionNotifierProvider.notifier).cleanupRequestSession(event.requestId!);
+          }
+        }
+        
         ref.read(notificationProvider.notifier).showInformation(
           event.action,
           values: {
@@ -213,15 +241,28 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         notifProvider.showInformation(event.action, values: {});
         break;
       case Action.paymentFailed:
+        final paymentFailed = event.getPayload<PaymentFailed>();
         notifProvider.showInformation(event.action, values: {
-          'payment_attempts': -1,
-          'payment_retries_interval': -1000
+          'payment_attempts': paymentFailed?.paymentAttempts,
+          'payment_retries_interval': paymentFailed?.paymentRetriesInterval,
         });
+        break;
+      case Action.timeoutReversal:
+        // No automatic notification - handled manually in OrderNotifier
         break;
       default:
         notifProvider.showInformation(event.action, values: {});
         break;
     }
+  }
+
+  bool _isUserCreator() {
+    if (session.role == null || state.order == null) {
+      return false;
+    }
+    return session.role == Role.buyer
+        ? state.order!.kind == OrderType.buy
+        : state.order!.kind == OrderType.sell;
   }
 
   @override

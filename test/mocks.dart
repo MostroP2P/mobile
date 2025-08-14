@@ -8,6 +8,7 @@ import 'package:mostro_mobile/data/repositories/open_orders_repository.dart';
 import 'package:mostro_mobile/data/repositories/session_storage.dart';
 import 'package:mostro_mobile/data/repositories/mostro_storage.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager.dart';
+import 'package:mostro_mobile/features/relays/relays_notifier.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/features/settings/settings_notifier.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_manager.dart';
@@ -33,15 +34,19 @@ import 'mocks.mocks.dart';
   Settings,
   Ref,
   ProviderSubscription,
+  RelaysNotifier,
 ])
 
 // Custom mock for SettingsNotifier that returns a specific Settings object
 class MockSettingsNotifier extends SettingsNotifier {
-  final Settings _testSettings;
-
-  MockSettingsNotifier(this._testSettings, MockSharedPreferencesAsync prefs)
-      : super(prefs) {
-    state = _testSettings;
+  MockSettingsNotifier() : super(MockSharedPreferencesAsync()) {
+    state = Settings(
+      relays: [],
+      fullPrivacyMode: false,
+      mostroPublicKey: 'test',
+      defaultFiatCode: 'USD',
+      selectedLanguage: null,
+    );
   }
 }
 

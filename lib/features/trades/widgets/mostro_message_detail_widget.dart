@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
+import 'package:mostro_mobile/data/models/session.dart';
+import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
@@ -40,7 +42,9 @@ class MostroMessageDetail extends ConsumerWidget {
                   text: formatTextWithBoldUsernames(actionText, context),
                 ),
                 const SizedBox(height: 16),
-                Text('${orderState.status} - ${orderState.action}'),
+                Text(orderState.action == actions.Action.timeoutReversal 
+                  ? orderState.status.toString() 
+                  : '${orderState.status} - ${orderState.action}'),
               ],
             ),
           ),
@@ -84,6 +88,14 @@ class MostroMessageDetail extends ConsumerWidget {
                 ?.expirationSeconds ??
             900;
         final expMinutes = (expSecs / 60).round();
+        // Check if we're in payment-failed state to show different message
+        if (tradeState.status == Status.paymentFailed) {
+          return S.of(context)!.addInvoicePaymentFailed(
+                orderPayload?.amount.toString() ?? '',
+                orderPayload?.fiatAmount.toString() ?? '',
+                orderPayload?.fiatCode ?? '',
+              );
+        }
         return S.of(context)!.addInvoice(
               orderPayload?.amount.toString() ?? '',
               expMinutes,
@@ -97,9 +109,20 @@ class MostroMessageDetail extends ConsumerWidget {
                 ?.expirationSeconds ??
             900;
         final expMinutes = (expSecs / 60).round();
-        return S
-            .of(context)!
-            .waitingSellerToPay(expMinutes, orderPayload?.id ?? '');
+        
+        // Check if user is the maker (creator) of the order
+        final session = ref.watch(sessionProvider(orderPayload?.id ?? ''));
+        final isUserCreator = _isUserCreator(session, tradeState);
+        
+        if (isUserCreator) {
+          // Maker scenario: user created a buy order, show waiting for taker message
+          return S.of(context)!.orderTakenWaitingCounterpart(expMinutes).replaceAll('\\n', '\n');
+        } else {
+          // Taker scenario: user took someone's order, show original message
+          return S
+              .of(context)!
+              .waitingSellerToPay(expMinutes, orderPayload?.id ?? '');
+        }
       case actions.Action.waitingBuyerInvoice:
         final expSecs = ref
                 .read(orderRepositoryProvider)
@@ -107,7 +130,19 @@ class MostroMessageDetail extends ConsumerWidget {
                 ?.expirationSeconds ??
             900;
         final expMinutes = (expSecs / 60).round();
-        return S.of(context)!.waitingBuyerInvoice(expMinutes);
+        
+        // Check if user is the maker (creator) of a sell order
+        final session = ref.watch(sessionProvider(orderPayload?.id ?? ''));
+        final isUserCreator = _isUserCreator(session, tradeState);
+        final isSellOrder = tradeState.order?.kind == OrderType.sell;
+        
+        if (isUserCreator && isSellOrder) {
+          // Maker scenario: user created a sell order, show waiting for taker message
+          return S.of(context)!.orderTakenWaitingCounterpart(expMinutes).replaceAll('\\n', '\n');
+        } else {
+          // Taker scenario: user took someone's order, show original message
+          return S.of(context)!.waitingBuyerInvoice(expMinutes);
+        }
       case actions.Action.buyerInvoiceAccepted:
         return S.of(context)!.buyerInvoiceAccepted;
       case actions.Action.holdInvoicePaymentAccepted:
@@ -184,13 +219,20 @@ class MostroMessageDetail extends ConsumerWidget {
       case actions.Action.adminSettled:
         return S.of(context)!.adminSettledUsers(orderPayload!.id ?? '');
       case actions.Action.paymentFailed:
-        return S.of(context)!.paymentFailed('{attempts}', '{retries}');
+        final payload = ref.read(orderNotifierProvider(orderId)).paymentFailed;
+        final intervalInMinutes = ((payload?.paymentRetriesInterval ?? 0) / 60).round();
+        return S.of(context)!.paymentFailed(
+              payload?.paymentAttempts ?? 0,
+              intervalInMinutes,
+            );
       case actions.Action.invoiceUpdated:
         return S.of(context)!.invoiceUpdated;
       case actions.Action.holdInvoicePaymentCanceled:
         return S.of(context)!.holdInvoicePaymentCanceled;
       case actions.Action.cantDo:
         return _getCantDoMessage(context, ref);
+      case actions.Action.timeoutReversal:
+        return S.of(context)!.orderTimeoutMaker; // Counterpart didn't respond, order republished
       default:
         return 'No message found for action ${tradeState.action}'; // This is a fallback message for developers
     }
@@ -229,5 +271,14 @@ class MostroMessageDetail extends ConsumerWidget {
       default:
         return '${tradeState.status.toString()} - ${tradeState.action}';
     }
+  }
+
+  bool _isUserCreator(Session? session, OrderState tradeState) {
+    if (session == null || session.role == null || tradeState.order == null) {
+      return false;
+    }
+    return session.role == Role.buyer
+        ? tradeState.order!.kind == OrderType.buy
+        : tradeState.order!.kind == OrderType.sell;
   }
 }

@@ -10,3 +10,5 @@ export 'package:mostro_mobile/data/models/peer.dart';
 export 'package:mostro_mobile/data/models/rating_user.dart';
 export 'package:mostro_mobile/data/models/rating.dart';
 export 'package:mostro_mobile/data/models/session.dart';
+export 'package:mostro_mobile/data/models/payment_failed.dart';
+export 'package:mostro_mobile/data/models/next_trade.dart';

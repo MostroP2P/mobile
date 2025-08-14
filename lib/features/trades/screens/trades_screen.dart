@@ -6,6 +6,7 @@ import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/features/trades/providers/trades_provider.dart';
 import 'package:mostro_mobile/features/trades/widgets/trades_list.dart';
+import 'package:mostro_mobile/features/trades/widgets/status_filter_widget.dart';
 import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_app_bar.dart';
 import 'package:mostro_mobile/shared/widgets/custom_drawer_overlay.dart';
@@ -16,7 +17,7 @@ class TradesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Watch the async trades data
-    final tradesAsync = ref.watch(filteredTradesProvider);
+    final tradesAsync = ref.watch(filteredTradesWithOrderStateProvider);
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundDark,
@@ -27,14 +28,14 @@ class TradesScreen extends ConsumerWidget {
             // Force reload the orders repository first
             ref.read(orderRepositoryProvider).reloadData();
             // Then refresh the filtered trades provider
-            ref.invalidate(filteredTradesProvider);
+            ref.invalidate(filteredTradesWithOrderStateProvider);
           },
           child: Column(
             children: [
               Expanded(
                 child: Column(
                   children: [
-                    // Header with dark background
+                    // Header with dark background and status filter
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(16.0),
@@ -44,13 +45,20 @@ class TradesScreen extends ConsumerWidget {
                           bottom: BorderSide(color: Colors.white24, width: 0.5),
                         ),
                       ),
-                      child: Text(
-                        S.of(context)!.myActiveTrades,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            S.of(context)!.myTrades,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          // Status Filter Dropdown
+                          const StatusFilterWidget(),
+                        ],
                       ),
                     ),
                     // Content area with dark background
@@ -58,6 +66,10 @@ class TradesScreen extends ConsumerWidget {
                       child: Container(
                         decoration: const BoxDecoration(
                           color: AppTheme.backgroundDark,
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(20),
+                            topRight: Radius.circular(20),
+                          ),
                         ),
                         child: Column(
                           children: [
@@ -66,29 +78,27 @@ class TradesScreen extends ConsumerWidget {
                               child: tradesAsync.when(
                                 data: (trades) =>
                                     _buildOrderList(context, trades),
-                                loading: () => const Center(
-                                  child: CircularProgressIndicator(),
+                                loading: () => Center(
+                                  child: CircularProgressIndicator(
+                                    color: AppTheme.cream1,
+                                  ),
                                 ),
-                                error: (error, _) => Center(
+                                error: (error, stackTrace) => Center(
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       const Icon(
                                         Icons.error_outline,
                                         color: Colors.red,
-                                        size: 60,
+                                        size: 48,
                                       ),
                                       const SizedBox(height: 16),
                                       Text(
                                         S.of(context)!.errorLoadingTrades,
-                                        style:
-                                            TextStyle(color: AppTheme.cream1),
-                                      ),
-                                      Text(
-                                        error.toString(),
-                                        style: TextStyle(
-                                            color: AppTheme.cream1,
-                                            fontSize: 12),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                        ),
                                         textAlign: TextAlign.center,
                                       ),
                                       const SizedBox(height: 16),
@@ -96,7 +106,7 @@ class TradesScreen extends ConsumerWidget {
                                         onPressed: () {
                                           ref.invalidate(orderEventsProvider);
                                           ref.invalidate(
-                                              filteredTradesProvider);
+                                              filteredTradesWithOrderStateProvider);
                                         },
                                         child: Text(S.of(context)!.retry),
                                       ),

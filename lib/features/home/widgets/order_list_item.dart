@@ -1,11 +1,14 @@
+import 'package:collection/collection.dart';
 import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
-import 'package:mostro_mobile/data/models/enums/order_type.dart';
+import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
+import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/time_provider.dart';
+import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
 import 'package:mostro_mobile/shared/utils/currency_utils.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
@@ -17,6 +20,7 @@ class OrderListItem extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(timeProvider);
+    final currencyData = ref.watch(currencyCodesProvider).asData?.value;
 
     // Determine if this is a fixed order (has specific sats amount and is not zero)
     final bool isFixedOrder =
@@ -32,6 +36,18 @@ class OrderListItem extends ConsumerWidget {
         : isPremiumPositive
             ? "(+$premiumValue%)"
             : "($premiumValue%)";
+
+    String orderLabel = order.orderType == OrderType.buy
+        ? S.of(context)!.buying.toUpperCase()
+        : S.of(context)!.selling.toUpperCase();
+
+    final session = ref.watch(sessionProvider(order.orderId!));
+    if (session != null && session.role != null) {
+      final selling = session.role == Role.seller
+          ? S.of(context)!.youAreSelling.toUpperCase()
+          : S.of(context)!.youAreBuying.toUpperCase();
+      orderLabel = selling;
+    }
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
@@ -50,6 +66,12 @@ class OrderListItem extends ConsumerWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(20),
           onTap: () {
+            final sessions = ref.watch(sessionNotifierProvider);
+            final session = sessions.firstWhereOrNull((s) => s.orderId == order.orderId);
+            if (session != null && session.role != null) {
+              context.push('/trade_detail/${session.orderId}');
+              return;
+            }
             order.orderType == OrderType.buy
                 ? context.push('/take_buy/${order.orderId}')
                 : context.push('/take_sell/${order.orderId}');
@@ -88,9 +110,7 @@ class OrderListItem extends ConsumerWidget {
                         ],
                       ),
                       child: Text(
-                        order.orderType == OrderType.buy
-                            ? S.of(context)!.buying
-                            : S.of(context)!.selling,
+                        orderLabel,
                         style: const TextStyle(
                           color: Colors.white70,
                           fontSize: 12,
@@ -147,9 +167,8 @@ class OrderListItem extends ConsumerWidget {
                         Text(
                           () {
                             final String currencyCode = order.currency ?? 'CUP';
-                            return CurrencyUtils.getFlagFromCurrency(
-                                    currencyCode) ??
-                                '';
+                            return CurrencyUtils.getFlagFromCurrencyData(
+                                currencyCode, currencyData);
                           }(),
                           style: const TextStyle(fontSize: 18),
                         ),
@@ -169,26 +188,35 @@ class OrderListItem extends ConsumerWidget {
                                 fontWeight: FontWeight.w500,
                               ),
                             )
-                          : Row(
-                              children: [
-                                Text(
-                                  '${S.of(context)!.marketPrice} ',
+                          : premiumValue == 0
+                              ? Text(
+                                  S.of(context)!.marketPrice,
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: Colors.white70,
                                     fontWeight: FontWeight.w500,
                                   ),
+                                )
+                              : Row(
+                                  children: [
+                                    Text(
+                                      '${S.of(context)!.marketPrice} ',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.white70,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    Text(
+                                      premiumText,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: premiumColor,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                Text(
-                                  premiumText,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: premiumColor,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
                     ),
                   ],
                 ),

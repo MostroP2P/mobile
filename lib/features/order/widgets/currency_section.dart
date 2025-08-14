@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/features/order/widgets/form_section.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
+import 'package:mostro_mobile/shared/widgets/currency_selection_dialog.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
 class CurrencySection extends ConsumerWidget {
@@ -30,30 +31,42 @@ class CurrencySection extends ConsumerWidget {
         error: (_, __) => Text(S.of(context)!.errorLoadingCurrencies,
             style: const TextStyle(color: Colors.red)),
         data: (currencies) {
-          final currency = currencies[selectedFiatCode];
           String flag = '🏳️';
-          String name = S.of(context)!.usDollar;
+          String name = S.of(context)!.selectCurrency;
+          String displayCode = '';
 
-          if (currency != null) {
-            flag = currency.emoji;
-            name = currency.name;
+          if (selectedFiatCode != null) {
+            final currency = currencies[selectedFiatCode];
+            if (currency != null) {
+              flag = currency.emoji;
+              name = currency.name;
+              displayCode = selectedFiatCode;
+            }
           }
 
           return InkWell(
             key: const Key('fiatCodeDropdown'),
-            onTap: () {
-              _showCurrencySelectionDialog(context, ref, onCurrencySelected);
+            onTap: () async {
+              final selectedCode = await CurrencySelectionDialog.show(
+                context,
+                ref,
+                currentSelection: selectedFiatCode,
+              );
+              if (selectedCode != null) {
+                ref.read(selectedFiatCodeProvider.notifier).state = selectedCode;
+                onCurrencySelected();
+              }
             },
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Row(
-                  key: Key('currency_$selectedFiatCode'),
+                  key: Key('currency_${selectedFiatCode ?? 'none'}'),
                   children: [
                     Text(flag, style: const TextStyle(fontSize: 18)),
                     const SizedBox(width: 8),
                     Text(
-                      '$selectedFiatCode - $name',
+                      displayCode.isNotEmpty ? '$displayCode - $name' : name,
                       style: const TextStyle(color: Colors.white),
                     ),
                   ],
@@ -67,152 +80,4 @@ class CurrencySection extends ConsumerWidget {
     );
   }
 
-  void _showCurrencySelectionDialog(
-      BuildContext context, WidgetRef ref, VoidCallback onCurrencySelected) {
-    // State for search query
-    String searchQuery = '';
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return Dialog(
-              backgroundColor: const Color(0xFF1E2230),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  AppBar(
-                    backgroundColor: const Color(0xFF252a3a),
-                    title: Text(S.of(context)!.selectCurrency,
-                        style: const TextStyle(color: Colors.white)),
-                    leading: IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                    centerTitle: true,
-                    elevation: 0,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                    child: Container(
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF252a3a),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                            color:
-                                const Color(0xFF8CC63F).withValues(alpha: 0.3),
-                            width: 1),
-                      ),
-                      child: TextField(
-                        textAlign: TextAlign.left,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: InputDecoration(
-                          hintText: S.of(context)!.searchCurrencies,
-                          hintStyle: const TextStyle(color: Colors.grey),
-                          prefixIcon: const Icon(Icons.search,
-                              color: Colors.grey, size: 20),
-                          filled: false,
-                          border: InputBorder.none,
-                          contentPadding:
-                              const EdgeInsets.symmetric(vertical: 14.0),
-                        ),
-                        onChanged: (value) {
-                          setState(() {
-                            searchQuery = value.toLowerCase();
-                          });
-                        },
-                      ),
-                    ),
-                  ),
-                  Flexible(
-                    child: Consumer(
-                      builder: (context, ref, child) {
-                        final currenciesAsync =
-                            ref.watch(currencyCodesProvider);
-                        return currenciesAsync.when(
-                          loading: () =>
-                              const Center(child: CircularProgressIndicator()),
-                          error: (_, __) => Center(
-                            child: Text(
-                              'Error loading currencies',
-                              style: TextStyle(color: Colors.red.shade300),
-                            ),
-                          ),
-                          data: (currencies) {
-                            final selectedCode =
-                                ref.watch(selectedFiatCodeProvider);
-                            final filteredCurrencies =
-                                currencies.entries.where((entry) {
-                              final code = entry.key.toLowerCase();
-                              final name = entry.value.name.toLowerCase();
-                              return searchQuery.isEmpty ||
-                                  code.contains(searchQuery) ||
-                                  name.contains(searchQuery);
-                            }).toList()
-                                  ..sort((a, b) => a.key.compareTo(b.key));
-
-                            return filteredCurrencies.isEmpty
-                                ? Center(
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(16.0),
-                                      child: Text(
-                                        S.of(context)!.noCurrenciesFound,
-                                        style: const TextStyle(
-                                            color: Colors.white70),
-                                      ),
-                                    ),
-                                  )
-                                : ListView.builder(
-                                    itemCount: filteredCurrencies.length,
-                                    itemBuilder: (context, index) {
-                                      final entry = filteredCurrencies[index];
-                                      final code = entry.key;
-                                      final currency = entry.value;
-                                      final isSelected = code == selectedCode;
-
-                                      return ListTile(
-                                        key: Key('currency_$code'),
-                                        leading: Text(
-                                          currency.emoji.isNotEmpty
-                                              ? currency.emoji
-                                              : '🏳️',
-                                          style: const TextStyle(fontSize: 20),
-                                        ),
-                                        title: Text(
-                                          '$code - ${currency.name}',
-                                          style: const TextStyle(
-                                              color: Colors.white),
-                                        ),
-                                        trailing: isSelected
-                                            ? const Icon(Icons.check,
-                                                color: Color(0xFF8CC63F))
-                                            : null,
-                                        onTap: () {
-                                          ref
-                                              .read(selectedFiatCodeProvider
-                                                  .notifier)
-                                              .state = code;
-                                          onCurrencySelected();
-                                          Navigator.of(context).pop();
-                                        },
-                                      );
-                                    },
-                                  );
-                          },
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
 }

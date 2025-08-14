@@ -24,6 +24,6 @@ final sessionNotifierProvider =
 });
 
 final sessionProvider = StateProvider.family<Session?, String>((ref, id) {
-  final notifier = ref.watch(sessionNotifierProvider.notifier);
-  return notifier.getSessionByOrderId(id);
+  final notifier = ref.watch(sessionNotifierProvider);
+  return notifier.where((s) => s.orderId == id).firstOrNull;
 });

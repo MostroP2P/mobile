@@ -28,6 +28,7 @@ class PriceTypeSection extends StatelessWidget {
       iconBackgroundColor: AppTheme.purpleAccent.withValues(
           alpha: 0.3), // Purple color consistent with other sections
       infoTooltip: S.of(context)!.priceTypeTooltip,
+      infoTitle: S.of(context)!.priceType,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [

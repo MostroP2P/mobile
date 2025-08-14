@@ -58,6 +58,11 @@ class SettingsNotifier extends StateNotifier<Settings> {
     await _saveToPrefs();
   }
 
+  Future<void> updateDefaultLightningAddress(String? newValue) async {
+    state = state.copyWith(defaultLightningAddress: newValue);
+    await _saveToPrefs();
+  }
+
   Future<void> _saveToPrefs() async {
     final jsonString = jsonEncode(state.toJson());
     await _prefs.setString(_storageKey, jsonString);

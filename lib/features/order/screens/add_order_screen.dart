@@ -15,6 +15,7 @@ import 'package:mostro_mobile/features/order/widgets/premium_section.dart';
 import 'package:mostro_mobile/features/order/widgets/price_type_section.dart';
 import 'package:mostro_mobile/features/order/widgets/form_section.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
+import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
@@ -27,7 +28,6 @@ class AddOrderScreen extends ConsumerStatefulWidget {
 
 class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _fiatAmountController = TextEditingController();
   final _lightningAddressController = TextEditingController();
   final _scrollController = ScrollController();
   final _customPaymentMethodController = TextEditingController();
@@ -60,34 +60,32 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
           });
         }
       }
+
+      // Reset selectedFiatCodeProvider to default from settings for each new order
+      final settings = ref.read(settingsProvider);
+      ref.read(selectedFiatCodeProvider.notifier).state = settings.defaultFiatCode;
+      
+      // Pre-populate lightning address from settings if available
+      if (settings.defaultLightningAddress != null && settings.defaultLightningAddress!.isNotEmpty) {
+        _lightningAddressController.text = settings.defaultLightningAddress!;
+      }
     });
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
-    _fiatAmountController.dispose();
     _lightningAddressController.dispose();
     _customPaymentMethodController.dispose();
     _satsAmountController.dispose();
     super.dispose();
   }
 
-  void _parseFiatAmount(String input) {
-    if (input.contains('-')) {
-      final parts = input.split('-');
-      if (parts.length == 2) {
-        setState(() {
-          _minFiatAmount = int.tryParse(parts[0].trim());
-          _maxFiatAmount = int.tryParse(parts[1].trim());
-        });
-      }
-    } else {
-      setState(() {
-        _minFiatAmount = int.tryParse(input);
-        _maxFiatAmount = null;
-      });
-    }
+  void _onAmountChanged(int? minAmount, int? maxAmount) {
+    setState(() {
+      _minFiatAmount = minAmount;
+      _maxFiatAmount = maxAmount;
+    });
   }
 
   @override
@@ -118,7 +116,12 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
               Expanded(
                 child: SingleChildScrollView(
                   controller: _scrollController,
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.fromLTRB(
+                    16,
+                    16,
+                    16,
+                    16 + MediaQuery.of(context).viewPadding.bottom,
+                  ),
                   child: Form(
                     key: _formKey,
                     child: Column(
@@ -133,8 +136,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
                         const SizedBox(height: 16),
                         AmountSection(
                           orderType: _orderType,
-                          controller: _fiatAmountController,
-                          onAmountChanged: _parseFiatAmount,
+                          onAmountChanged: _onAmountChanged,
                         ),
                         const SizedBox(height: 16),
                         PaymentMethodsSection(
@@ -246,7 +248,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
     if (_formKey.currentState?.validate() ?? false) {
       final selectedFiatCode = ref.read(selectedFiatCodeProvider);
 
-      if (selectedFiatCode.isEmpty) {
+      if (selectedFiatCode == null || selectedFiatCode.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(S.of(context)!.pleaseSelectCurrency),
@@ -255,6 +257,9 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
         );
         return;
       }
+
+      // Now we know selectedFiatCode is non-null and non-empty
+      final fiatCode = selectedFiatCode;
 
       if (_selectedPaymentMethods.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -285,10 +290,12 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
 
         final satsAmount = int.tryParse(_satsAmountController.text) ?? 0;
 
+
         List<String> paymentMethods =
             List<String>.from(_selectedPaymentMethods);
         if (_showCustomPaymentMethod &&
             _customPaymentMethodController.text.isNotEmpty) {
+
           paymentMethods.remove("Other");
           
           String sanitizedPaymentMethod = _customPaymentMethodController.text;
@@ -304,6 +311,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
           }
         }
 
+
         final buyerInvoice = _orderType == OrderType.buy &&
                 _lightningAddressController.text.isNotEmpty
             ? _lightningAddressController.text
@@ -311,7 +319,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
 
         final order = Order(
           kind: _orderType,
-          fiatCode: selectedFiatCode,
+          fiatCode: fiatCode,
           fiatAmount: fiatAmount!,
           minAmount: minAmount,
           maxAmount: maxAmount,

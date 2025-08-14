@@ -1,5 +1,6 @@
 {
   "@@locale": "es",
+  "backToHome": "Volver al inicio",
   "newOrder": "¡Tu oferta ha sido publicada! Por favor espera hasta que otro usuario elija tu orden. Estará disponible durante {expiration_hours} horas. Puedes cancelar esta orden antes de que otro usuario la tome ejecutando: cancel.",
   "canceled": "Has cancelado la orden ID: {id}.",
   "payInvoice": "Por favor paga esta factura retenida de {amount} Sats por {fiat_amount} {fiat_code} para iniciar la operación. Si no la pagas antes de {expiration_seconds} minutos, el intercambio será cancelado.",
@@ -44,6 +45,23 @@
       }
     }
   },
+  "addInvoicePaymentFailed": "No fue posible completar el pago a tu factura anterior. Por favor, envíame una nueva factura por {amount} satoshis, equivalente a {fiat_amount} {fiat_code}, para realizar el pago.",
+  "@addInvoicePaymentFailed": {
+    "placeholders": {
+      "amount": {
+        "type": "String",
+        "description": "La cantidad de satoshis"
+      },
+      "fiat_amount": {
+        "type": "String",
+        "description": "La cantidad fiat"
+      },
+      "fiat_code": {
+        "type": "String",
+        "description": "El código de moneda fiat"
+      }
+    }
+  },
   "waitingSellerToPay": "Por favor espera. He enviado una solicitud de pago al vendedor para enviar los Sats para la orden con ID {id}. Si el vendedor no completa el pago dentro de {expiration_seconds} minutos, el intercambio será cancelado.",
   "@waitingSellerToPay": {
     "placeholders": {
@@ -54,6 +72,15 @@
       "id": {
         "type": "String",
         "description": "El ID del pedido"
+      }
+    }
+  },
+  "orderTakenWaitingCounterpart": "Tu orden ha sido tomada por otro usuario. Debes esperar a que decida si desea continuar. Si acepta, te avisaré para que completes tu parte. Por ahora no necesitas hacer nada.\nSi no responde en {expiration_seconds} minutos, la orden volverá a estar disponible para que otros usuarios puedan tomarla.",
+  "@orderTakenWaitingCounterpart": {
+    "placeholders": {
+      "expiration_seconds": {
+        "type": "int",
+        "description": "El tiempo de expiración en minutos"
       }
     }
   },
@@ -74,7 +101,7 @@
   "released": "¡{seller_name} ha liberado los Sats! Espera que tu factura sea pagada pronto. Asegúrate de que tu billetera esté en línea para recibir a través de Lightning Network.",
   "purchaseCompleted": "Tu compra de Bitcoin ha sido completada exitosamente. He pagado tu factura; ¡disfruta del dinero sólido!",
   "holdInvoicePaymentSettled": "Tu venta de Sats ha sido completada después de confirmar el pago de {buyer_name}.",
-  "rate": "Por favor califica a tu contraparte",
+  "rate": "CALIFICAR",
   "rateReceived": "¡Calificación guardada exitosamente!",
   "cooperativeCancelInitiatedByYou": "Has iniciado la cancelación de la orden ID: {id}. Tu contraparte debe estar de acuerdo. Si no responden, puedes abrir una disputa. Ten en cuenta que ningún administrador te contactará sobre esta cancelación a menos que abras una disputa primero.",
   "cooperativeCancelInitiatedByPeer": "Tu contraparte quiere cancelar la orden ID: {id}. Si estás de acuerdo, por favor envíame cancel-order-message. Ten en cuenta que ningún administrador te contactará sobre esta cancelación a menos que abras una disputa primero.",
@@ -87,7 +114,8 @@
   "adminCanceledUsers": "El administrador ha cancelado la orden ID: {id}.",
   "adminSettledAdmin": "Has completado la orden ID: {id}.",
   "adminSettledUsers": "El administrador ha completado la orden ID: {id}.",
-  "paymentFailed": "No pude enviar los Sats. Intentaré {payment_attempts} veces más en {payment_retries_interval} minutos. Por favor asegúrate de que tu nodo o billetera esté en línea.",
+  "paymentFailed": "El intento de pago a tu factura ha fallado. Volveré a intentarlo {payment_attempts} veces más, con un intervalo de {payment_retries_interval} minutos entre cada intento. Por favor, asegúrate de que tu billetera esté en línea para poder completar el pago.",
+  "paymentFailedText": "Pago Fallido",
   "invoiceUpdated": "¡La factura ha sido actualizada exitosamente!",
   "holdInvoicePaymentCanceled": "La factura fue cancelada; tus Sats están disponibles en tu billetera nuevamente.",
   "cantDo": "¡No tienes permitido {action} para esta orden!",
@@ -161,6 +189,8 @@
   "currency": "Moneda",
   "setDefaultFiatCurrency": "Establece tu moneda fiat predeterminada",
   "defaultFiatCurrency": "Moneda Fiat Predeterminada",
+  "setDefaultLightningAddress": "Establece tu dirección Lightning predeterminada",
+  "defaultLightningAddress": "Dirección Lightning",
   "relays": "Relays",
   "selectNostrRelays": "Selecciona los relays Nostr a los que te conectas",
   "addRelay": "Agregar Relay",
@@ -178,7 +208,7 @@
   "welcomeToMostroMobile": "Opera Bitcoin libremente — sin KYC",
   "discoverSecurePlatform": "Mostro es un intercambio peer-to-peer que te permite operar Bitcoin por cualquier moneda y método de pago — sin KYC, y sin necesidad de entregar tus datos a nadie.\n\nEstá construido en Nostr, lo que lo hace resistente a la censura. Nadie puede evitar que operes.",
   "easyOnboarding": "Privacidad por defecto",
-  "guidedWalkthroughSimple": "Mostro genera una nueva identidad para cada intercambio, por lo que tus operaciones no pueden ser vinculadas.\n\nTambién puedes decidir qué tan privado quieres ser:\n\n• Modo reputación – Permite que otros vean tus intercambios exitosos y nivel de confianza.\n• Modo privacidad completa – No se construye reputación, pero tu actividad es completamente anónima.\n\nCambia de modo en cualquier momento desde la pantalla de Cuenta, donde también deberías guardar tus palabras secretas — son la única forma de recuperar tu cuenta.",
+  "guidedWalkthroughSimple": "Mostro genera una nueva identidad para cada intercambio, por lo que tus operaciones no pueden ser vinculadas.\n\nTambién puedes decidir qué tan privado quieres ser:\n\n• Modo reputación – Permite que otros vean tus intercambios exitosos y nivel de confianza.\n\n• Modo privacidad completa – No se construye reputación, pero tu actividad es completamente anónima.\n\nCambia de modo en cualquier momento desde la pantalla de Cuenta, donde también deberías guardar tus palabras secretas — son la única forma de recuperar tu cuenta.",
   "tradeWithConfidence": "Seguridad en cada paso",
   "seamlessPeerToPeer": "Mostro utiliza Facturas Retenidas: los sats permanecen en la billetera del vendedor hasta el final del intercambio. Esto protege a ambas partes.\n\nLa aplicación también está diseñada para ser intuitiva y fácil para todo tipo de usuarios.",
   "encryptedChat": "Chat completamente encriptado",
@@ -223,6 +253,8 @@
   "areYouSureCancel": "¿Estás seguro de que quieres cancelar este intercambio?",
   "cooperativeCancelMessage": "Si confirmas, iniciarás una cancelación cooperativa con tu contraparte.",
   "acceptCancelMessage": "Si confirmas, aceptarás la cancelación cooperativa iniciada por tu contraparte.",
+  "releaseTradeDialogTitle": "Liberar Bitcoin",
+  "areYouSureRelease": "¿Estás seguro de que quieres liberar los Satoshis al comprador?",
   "confirm": "Confirmar",
   "yes": "Sí",
   "no": "No",
@@ -230,6 +262,8 @@
   "sell": "VENDER",
   "buying": "COMPRANDO",
   "selling": "VENDIENDO",
+  "youAreBuying": "ESTÁS COMPRANDO",
+  "youAreSelling": "ESTÁS VENDIENDO",
   "marketPrice": "Precio de Mercado",
   "forSats": "Por {amount} sats",
   "@forSats": {
@@ -284,14 +318,20 @@
   "@_comment_order_creation": "Cadenas del Formulario de Creación de Orden",
   "youWantToBuyBitcoin": "Quieres comprar Bitcoin",
   "youWantToSellBitcoin": "Quieres vender Bitcoin",
-  "lightningAddressOptional": "Lightning Address (opcional)",
-  "enterLightningAddress": "Introduzca una lightning address",
-  "enterFiatAmountBuy": "Ingresa la cantidad fiat que quieres pagar (puedes establecer un rango)",
-  "enterFiatAmountSell": "Ingresa la cantidad fiat que quieres recibir (puedes establecer un rango)",
-  "enterAmountHint": "Ingresa cantidad (ejemplo: 100 o 100-500)",
+  "lightningAddressOptional": "Dirección Lightning (opcional)",
+  "enterLightningAddress": "Introduzca una dirección Lightning",
+  "enterAmountHint": "Ingresa cantidad",
   "pleaseEnterAmount": "Por favor ingresa una cantidad",
-  "pleaseEnterValidAmount": "Por favor ingresa una cantidad válida (ej., 100) o rango (ej., 100-500)",
-  "rangeFirstLowerThanSecond": "En un rango, el primer número debe ser menor que el segundo",
+  "pleaseEnterValidAmount": "Por favor ingresa una cantidad válida",
+  "enterAmountYouWantToReceive": "Ingresa la cantidad que quieres recibir",
+  "enterAmountYouWantToSend": "Ingresa la cantidad que quieres enviar",
+  "creatingRangeOrder": "Creando orden de rango (puedes recibir entre cantidades mínima y máxima)",
+  "creatingRangeOrderBuySend": "Creando orden de rango (puedes enviar entre cantidades mínima y máxima)",
+  "rangeOrder": "Orden de Rango",
+  "maxAmount": "Cantidad máxima",
+  "tapSecondFieldForRange": "💡 Toca el segundo campo para crear una orden de rango",
+  "to": "a",
+  "maxMustBeGreaterThanMin": "La cantidad máxima debe ser mayor que la cantidad mínima",
   "paymentMethodsForCurrency": "Métodos de pago para {currency}",
   "enterCustomPaymentMethod": "Ingresa método de pago personalizado",
   "loadingPaymentMethods": "Cargando métodos de pago...",
@@ -326,7 +366,7 @@
   "back": "ATRÁS",
   "typeAMessage": "Escribe un mensaje...",
   "youAreChattingWith": "Estás chateando con {handle}",
-  "yourHandle": "Tu nombre: {handle}",
+  "yourHandle": "Tu nombre:",
   "yourSharedKey": "Tu clave compartida:",
   
   "payInvoiceButton": "PAGAR FACTURA",
@@ -343,14 +383,13 @@
   "loadingCurrencies": "Cargando monedas...",
   "errorLoadingCurrencies": "Error cargando monedas",
   "usDollar": "Dólar Estadounidense",
-  "selectCurrency": "Seleccionar Moneda",
   "searchCurrencies": "Buscar monedas...",
   "noCurrenciesFound": "No se encontraron monedas",
   
   "priceType": "Tipo de precio",
   "fixedPrice": "Precio fijo",
   "market": "Mercado",
-  "priceTypeTooltip": "• Selecciona Precio de Mercado si quieres usar el precio que tiene Bitcoin cuando alguien tome tu oferta.\\n• Selecciona Precio Fijo si quieres definir la cantidad exacta de Bitcoin que intercambiarás.",
+  "priceTypeTooltip": "• Selecciona Precio de Mercado si quieres usar el precio que tiene Bitcoin cuando alguien tome tu oferta.\n\n• Selecciona Precio Fijo si quieres definir la cantidad exacta de Bitcoin que intercambiarás.",
   
   "withPremiumPercent": "con un +{premium}% de premio",
   "@withPremiumPercent": {
@@ -415,14 +454,20 @@
   "close": "CERRAR",
   "take": "TOMAR",
   "enterAmount": "Ingresa Cantidad",
-  "enterAmountBetween": "Ingresa una cantidad entre {min} y {max}",
+  "enterAmountBetween": "{min} - {max} {currency}",
   "@enterAmountBetween": {
     "placeholders": {
       "min": {
-        "type": "String"
+        "type": "String",
+        "description": "Cantidad mínima que se puede ingresar"
       },
       "max": {
-        "type": "String"
+        "type": "String",
+        "description": "Cantidad máxima que se puede ingresar"
+      },
+      "currency": {
+        "type": "String",
+        "description": "Código o símbolo de moneda mostrado después del rango"
       }
     }
   },
@@ -466,7 +511,7 @@
   "enterInvoiceHere": "Ingresa la factura aquí",
   
   "cancelPendingButton": "CANCELACIÓN PENDIENTE",
-  "acceptCancelButton": "ACEPTAR CANCELACIÓN",
+  "acceptCancelButton": "CANCELAR",
   "completePurchaseButton": "COMPLETAR COMPRA",
   "rateButton": "CALIFICAR",
   "contactButton": "CONTACTAR",
@@ -474,6 +519,7 @@
   "rateCounterpart": "Calificar Contraparte",
   "submitRating": "Enviar Calificación",
   
+  "addLightningInvoice": "Agregar Factura Lightning",
   "payLightningInvoice": "Pagar Factura Lightning",
   "payInvoiceToContinue": "Paga esta factura de {sats} Sats equivalentes a {fiat_amount} {fiat_code} para continuar el intercambio de la orden {order_id}",
   "@payInvoiceToContinue": {
@@ -502,7 +548,7 @@
   "copy": "Copiar",
   "share": "Compartir",
   "failedToShareInvoice": "Error al compartir factura. Por favor intenta copiarla en su lugar.",
-
+  
   "@_comment_trade_detail_screen_new": "Nuevas cadenas de Pantalla de Detalles de Intercambio",
   "orderDetailsTitle": "DETALLES DE ORDEN",
   "buyOrderDetailsTitle": "DETALLES DE ORDEN DE COMPRA",
@@ -549,7 +595,6 @@
     }
   },
   "cancelPendingButton": "CANCELACIÓN PENDIENTE",
-  "acceptCancelButton": "ACEPTAR CANCELACIÓN",
   "disputeButton": "DISPUTA",
   "fiatSentButton": "FIAT ENVIADO",
   "completePurchaseButton": "COMPLETAR COMPRA",
@@ -564,39 +609,33 @@
   "cooperativeCancelDialogMessage": "Si confirmas, iniciarás una cancelación cooperativa con tu contraparte.",
   "acceptCancelDialogMessage": "Si confirmas, aceptarás la cancelación cooperativa iniciada por tu contraparte.",
   "orderIdCopiedMessage": "ID de orden copiado al portapapeles",
+  "disputeTradeDialogTitle": "Iniciar Disputa",
+  "disputeTradeDialogContent": "Estás a punto de iniciar una disputa con tu contraparte. ¿Deseas continuar?",
 
   "language": "Idioma",
-  "systemDefault": "Predeterminado del sistema",
-  "tradeHistoryRestored": "Historial de operaciones restaurado hasta el índice de clave {index}",
-  "@tradeHistoryRestored": {
-    "placeholders": {
-      "index": {
-        "type": "String"
-      }
-    }
-  },
-  "tradeHistoryRestorationFailed": "La restauración del historial de operaciones falló: {error}",
-  "@tradeHistoryRestorationFailed": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
+  "systemDefault": "Predeterminado",
   "english": "Inglés",
   "spanish": "Español",
   "italian": "Italiano",
   "chooseLanguageDescription": "Elige tu idioma preferido o usa el predeterminado del sistema",
-
-
-
+  
+  "statusFilter": "Estado",
+  "allStatuses": "Todos",
+  "statusPending": "Pendiente",
+  "statusWaitingPayment": "Esperando-Pago",
+  "statusWaitingBuyerInvoice": "Esperando-Factura-Comprador",
+  "statusActive": "Activo",
+  "statusFiatSent": "Fiat-Enviado",
+  "statusSuccess": "Éxito",
+  "statusCanceled": "Cancelado",
+  "statusSettledHoldInvoice": "Factura-Retenida-Liquidada",
+  
   "loadingOrder": "Cargando orden...",
-  "done": "HECHO",
   "unsupportedLinkFormat": "Formato de enlace no compatible",
   "failedToOpenLink": "Error al abrir enlace",
   "failedToLoadOrder": "Error al cargar orden",
   "failedToOpenOrder": "Error al abrir orden",
-
+  
   "@_comment_deep_link_errors": "Mensajes de Error de Enlaces Profundos",
   "deepLinkInvalidFormat": "Formato de URL mostro: inválido",
   "deepLinkParseError": "Error al analizar la URL mostro:",
@@ -612,6 +651,72 @@
     }
   },
   "deepLinkGoHome": "Ir al Inicio",
+  
+
+  "@_comment_order_disabled_messages": "Mensajes de Orden Deshabilitada",
+  "orderCompletedMessagingDisabled": "Orden completada - mensajería deshabilitada",
+  "orderCanceledMessagingDisabled": "Orden cancelada - mensajería deshabilitada",
+  "orderExpiredMessagingDisabled": "Orden expirada - mensajería deshabilitada",
+  "orderSettledMessagingDisabled": "Orden resuelta - mensajería deshabilitada",
+  "orderNotActiveMessagingDisabled": "La orden ya no está activa - mensajería deshabilitada",
+  
+  "@_comment_chat": "Sección de Chat",
+  "messages": "Mensajes",
+  "disputes": "Disputas",
+  "noDisputesAvailable": "No hay disputas disponibles",
+  "youAreChatting": "Estás chateando con {handle}",
+  "@youAreChatting": {
+    "placeholders": {
+      "handle": {
+        "type": "String"
+      }
+    }
+  },
+  "tradeInformation": "Información del Intercambio",
+  "userInformation": "Información del Usuario",
+  "youAreSellingTo": "Estás vendiendo sats a",
+  "youAreBuyingFrom": "Estás comprando sats de",
+  "noMessagesYet": "No hay mensajes aún",
+  "today": "Hoy",
+  "yesterday": "Ayer",
+  "youPrefix": "Tú: ",
+  "conversationsDescription": "Aquí encontrarás tus conversaciones con otros usuarios durante los intercambios.",
+  "orderId": "ID de Orden:",
+  "paymentMethod": "Método de Pago:",
+  "createdOn": "Creado el:",
+  "sellingSats": "Vendiendo {amount} sats",
+  "@sellingSats": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "buyingSats": "Comprando {amount} sats",
+  "@buyingSats": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "forAmount": "por {amount} {currency}",
+  "@forAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "yourInformation": "Tu Información",
+  "peerPublicKey": "Clave Pública del Par:",
+  "notAvailable": "No disponible",
+  "unknownDate": "Fecha desconocida",
+  "messageCopiedToClipboard": "Mensaje copiado al portapapeles",
+
 
   "@_comment_about_screen_new": "About Screen New Strings",
   "documentation": "Documentación",
@@ -653,7 +758,7 @@
   "holdInvoiceExpirationExplanation": "El período de tiempo (en segundos) para que expiren las facturas de retención. Las facturas de retención se utilizan para asegurar fondos durante el proceso de comercio.",
   "holdInvoiceCltvDeltaExplanation": "El número de bloques agregados a la altura actual del bloque para la expiración de facturas de retención. Esto proporciona tiempo para que la Lightning Network procese el pago.",
   "invoiceExpirationWindowExplanation": "El período de tiempo (en segundos) para que expiren las facturas regulares de Lightning. Esto asegura que las facturas no permanezcan válidas indefinidamente.",
-  "serviceFeeExplanation": "La tarifa cobrada por este nodo Mostro por facilitar intercambios. Esto es típicamente un pequeño porcentaje del monto del intercambio.",
+  "serviceFeeExplanation": "La tarifa cobrada por este nodo Mostro por facilitar intercambios. Esto es típicamente un pequeño porcentaje del monto del intercambio, este monto se divide entre el comprador y el vendedor.",
   "proofOfWorkExplanation": "El nivel de dificultad requerido para la prueba de trabajo en eventos Nostr. Esto ayuda a prevenir spam y asegura calidad de servicio.",
   "lndDaemonVersionExplanation": "La versión del software Lightning Network Daemon (LND) que este nodo Mostro utiliza para procesar pagos de Bitcoin Lightning.",
   "lndNodePublicKeyExplanation": "La clave pública del nodo de Lightning Network que maneja pagos para esta instancia de Mostro. Se utiliza para enrutamiento de Lightning Network.",
@@ -672,7 +777,8 @@
   "@_comment_settings_info_dialogs": "Texto de Diálogos de Información de Configuración",
   "languageInfoText": "Elige tu idioma preferido para la interfaz de la aplicación.",
   "currencyInfoText": "Elige la moneda predeterminada para tus órdenes.",
-  "relaysInfoText": "• Los relays son servidores que ayudan a distribuir tus mensajes a través de la red Nostr\n\n• Agregar más relays puede mejorar la conectividad y redundancia\n\n• Los relays no se sincronizan entre sí, por lo que solo aquellos a los que estés conectado recibirán tus mensajes.",
+  "lightningAddressInfoText": "Una Dirección Lightning es un identificador similar a un email (ej., usuario@dominio.com) que simplifica recibir pagos de Bitcoin. Establecer una predeterminada aquí la completará automáticamente al crear órdenes de compra, haciendo el proceso más rápido y conveniente.",
+  "relaysInfoText": "• Los relays son servidores que ayudan a distribuir tus mensajes a través de la red Nostr.\n\n• Agregar más relays puede mejorar la conectividad y redundancia.\n\n• Los relays no se sincronizan entre sí, por lo que solo aquellos a los que estés conectado recibirán tus mensajes.",
   "mostroInfoText": "• El Mostro que selecciones será donde publiques tus ofertas.\n\n• En caso de disputa, una persona asignada a ese Mostro será quien la resuelva.",
   
   "@_comment_account_info_dialogs": "Texto de Diálogos de Información de Cuenta",
@@ -692,7 +798,44 @@
   "@_comment_relay_dialogs": "Texto de Diálogos de Relay",
   "editRelay": "Editar Relay",
   "relayUrl": "URL del Relay",
+  "relayErrorNotValid": "No es un relay Nostr válido - sin respuesta al test de protocolo",
+  "relayErrorOnlySecure": "Solo se permiten websockets seguros (wss://)",
+  "relayErrorNoHttp": "Las URLs HTTP no son compatibles. Use URLs websocket (wss://)",
+  "relayErrorInvalidDomain": "Formato de dominio inválido. Use formato como: relay.example.com",
+  "relayErrorAlreadyExists": "Este relay ya está en tu lista",
+  "relayErrorConnectionTimeout": "Relay inalcanzable - tiempo de conexión agotado",
+  "relayTestingMessage": "Probando relay...",
+  "relayAddedSuccessfully": "Relay agregado exitosamente: {url}",
+  "@relayAddedSuccessfully": {
+    "description": "Mensaje mostrado cuando un relay se agrega exitosamente",
+    "placeholders": {
+      "url": {
+        "type": "String",
+        "description": "La URL del relay que fue agregado"
+      }
+    }
+  },
+  "relayAddedUnreachable": "Relay agregado pero parece inalcanzable: {url}",
+  "@relayAddedUnreachable": {
+    "description": "Mensaje mostrado cuando un relay se agrega pero no responde",
+    "placeholders": {
+      "url": {
+        "type": "String",
+        "description": "La URL del relay que fue agregado"
+      }
+    }
+  },
+  "invalidRelayTitle": "Relay Inválido",
+  "relayUrlHint": "relay.ejemplo.com o wss://relay.ejemplo.com",
   "add": "Agregar",
+
   "save": "Guardar",
-  "doneButton": "Listo"
-  }
+  "selectCurrency": "Seleccionar Moneda",
+  "noCurrencySelected": "Ninguna moneda seleccionada",
+
+  "@_comment_timeout_messages": "Mensajes de notificación de timeout",
+  "orderTimeoutTaker": "No respondiste a tiempo. La orden será republicada",
+  "orderTimeoutMaker": "Tu contraparte no respondió a tiempo. La orden será republicada",
+  "orderTimeout": "Tiempo de espera de la orden agotado",
+  "orderCanceled": "La orden fue cancelada"
+}

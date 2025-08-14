@@ -3,6 +3,63 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/shared/providers/drawer_provider.dart';
+import 'dart:async';
+
+/// Animated Mostro logo widget that shows normal logo and switches to happy logo on tap
+class AnimatedMostroLogo extends StatefulWidget {
+  const AnimatedMostroLogo({super.key});
+
+  @override
+  State<AnimatedMostroLogo> createState() => _AnimatedMostroLogoState();
+}
+
+class _AnimatedMostroLogoState extends State<AnimatedMostroLogo> {
+  bool _isHappy = false;
+  Timer? _timer;
+
+  void _onTap() {
+    if (_timer?.isActive == true) {
+      return; // Prevent multiple taps during animation
+    }
+
+    setState(() {
+      _isHappy = true;
+    });
+
+    _timer = Timer(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        setState(() {
+          _isHappy = false;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: _onTap,
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 150),
+        child: Image.asset(
+          _isHappy
+              ? 'assets/images/mostro-happy-100.png'
+              : 'assets/images/mostro-100.png',
+          key: ValueKey(_isHappy),
+          height: 32,
+          width: 32,
+          fit: BoxFit.contain,
+        ),
+      ),
+    );
+  }
+}
 
 class MostroAppBar extends ConsumerWidget implements PreferredSizeWidget {
   const MostroAppBar({super.key});
@@ -13,6 +70,8 @@ class MostroAppBar extends ConsumerWidget implements PreferredSizeWidget {
       backgroundColor: AppTheme.backgroundDark,
       elevation: 0,
       leadingWidth: 70,
+      title: const AnimatedMostroLogo(),
+      centerTitle: true,
       // Add bottom border similar to bottom navbar
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(1.0),

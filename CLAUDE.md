@@ -48,6 +48,47 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Provider pattern for dependency injection
 - FSM pattern for order lifecycle management
 
+## Timeout Detection & Reversal System
+
+### Overview
+Real-time system that detects when orders timeout from `waiting-buyer-invoice` or `waiting-payment` states and handles maker/taker scenarios differently to maintain UI consistency with mostrod state.
+
+### Detection Mechanism
+- **Monitors**: 38383 public events for status changes
+- **Triggers**: When public event shows different status than local state (simplified logic without timestamp comparison)
+- **Real-time**: Subscribes to `orderEventsProvider` for instant detection
+
+### Maker Scenario (Order Creator)
+When taker doesn't respond and order returns to pending:
+- **Session**: Preserved (keeps order in "My Trades")
+- **State**: Updated to `Status.pending` with `Action.timeoutReversal`
+- **Persistence**: Creates synthetic `MostroMessage.createTimeoutReversal()` stored with unique key
+- **Result**: Order remains visible but shows pending status after app restart
+
+### Taker Scenario (Order Taker)
+When user doesn't respond and order returns to pending:
+- **Session**: Deleted completely via `sessionNotifier.deleteSession()`
+- **State**: Provider invalidated (`ref.invalidateSelf()`)
+- **Result**: Order disappears from "My Trades" and reappears in order book for retaking
+
+### Cancellation Detection & Cleanup
+When orders are canceled (status changes to `canceled` in public events):
+- **Detection**: Public event monitoring system (independent of timestamps)
+- **Session Cleanup**: State-based logic - only deletes session for pending/waiting states
+- **Active Orders**: Canceled active orders keep session but update to canceled status
+- **UI Behavior**: Pending/waiting orders disappear, active orders show canceled status
+- **User Feedback**: Shows cancellation notification
+- **Implementation**: `_checkTimeoutAndCleanup()` method in `order_notifier.dart:172-211`
+
+### Key Implementation
+- **Race protection**: `_isProcessingTimeout` flag prevents concurrent execution (with proper early return handling)
+- **Role detection**: `_isCreatedByUser()` compares session role with order type
+- **Error resilience**: Timeouts and try-catch blocks prevent app hangs
+- **Notifications**: Differentiated messages for maker vs taker scenarios
+- **Simplified Logic**: Status-based detection without timestamp comparison
+- **State-based Rules**: Different session handling based on local order state (pending/waiting vs active)
+- **Timeout Detection**: `public=pending + local=waiting = guaranteed timeout`
+
 ### Testing Structure
 - Unit tests in `test/` directory
 - Integration tests in `integration_test/`
