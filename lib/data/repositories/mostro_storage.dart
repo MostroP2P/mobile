@@ -3,6 +3,7 @@ import 'package:mostro_mobile/data/models/payload.dart';
 import 'package:sembast/sembast.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/repositories/base_storage.dart';
+import 'package:mostro_mobile/data/models/restore_session_payload.dart';
 
 class MostroStorage extends BaseStorage<MostroMessage> {
   final Logger _logger = Logger();
@@ -34,6 +35,25 @@ class MostroStorage extends BaseStorage<MostroMessage> {
       );
       rethrow;
     }
+  }
+
+  /// Stream the latest restore-session payload message if present
+  Stream<MostroMessage?> watchLatestRestorePayload() {
+    final query = store.query(
+      finder: Finder(
+        sortOrders: _getDefaultSort(),
+      ),
+    );
+
+    return query.onSnapshots(db).map((snaps) {
+      for (final snap in snaps) {
+        final msg = MostroMessage.fromJson(snap.value);
+        if (msg.payload is RestoreSessionPayload) {
+          return msg;
+        }
+      }
+      return null;
+    });
   }
 
   /// Get all messages

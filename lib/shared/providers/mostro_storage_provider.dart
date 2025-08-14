@@ -28,3 +28,10 @@ final mostroOrderStreamProvider =
   final storage = ref.read(mostroStorageProvider);
   return storage.watchLatestMessageOfType<Order>(orderId);
 });
+
+// Latest restore-session payload message (if any)
+final restorePayloadStreamProvider =
+    StreamProvider<MostroMessage?>((ref) {
+  final storage = ref.read(mostroStorageProvider);
+  return storage.watchLatestRestorePayload();
+});

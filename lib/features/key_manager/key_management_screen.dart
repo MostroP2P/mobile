@@ -8,6 +8,7 @@ import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/providers.dart';
+import 'package:mostro_mobile/features/restore/restore_session_notifier.dart';
 import 'package:mostro_mobile/shared/providers/session_storage_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
@@ -178,29 +179,25 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
       await keyManager.importMnemonic(mnemonic);
       await _loadKeys();
 
-      final restorationService = ref.read(tradeHistoryRestorationProvider);
-      restorationService.restoreTradeHistory().then((result) {
-        sessionStorage
-            .putSessions(
-                result.$2.map((key, value) => MapEntry(value.orderId!, value)))
-            .then((_) {
-          sessionNotifer.init();
-        });
-
-        setState(() {
-          _tradeKeyIndex = result.$1 + 1;
-          _loadingKeys = false;
-        });
-
-      }).catchError((error) {
-        debugPrint('Trade history restoration failed: $error');
-        
+      // Protocol-based restore-session flow
+      final restorer = RestoreSessionNotifier(ref);
+      restorer.restore().then((nextIndex) async {
+        await sessionNotifer.init();
         if (mounted) {
+          setState(() {
+            _tradeKeyIndex = nextIndex;
+            _loadingKeys = false;
+          });
+        }
+      }).catchError((error) {
+        debugPrint('Restore-session failed: $error');
+        if (mounted) {
+          setState(() {
+            _loadingKeys = false;
+          });
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(S.of(context)!.tradeHistoryRestorationFailed(
-                    error.toString(),
-                  )),
+              content: Text('Restore session failed: ${error.toString()}'),
               backgroundColor: AppTheme.red2,
             ),
           );

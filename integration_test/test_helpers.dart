@@ -308,6 +308,9 @@ class FakeMostroService implements MostroService {
   Future<void> submitRating(String orderId, int rating) async {}
 
   @override
+  Future<void> sendRestoreRequest() async {}
+
+  @override
   Future<Session> publishOrder(MostroMessage order) =>
       throw UnimplementedError();
 
