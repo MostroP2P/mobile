@@ -796,8 +796,19 @@
 
 
   "save": "Save",
+  "apply": "Apply",
   "selectCurrency": "Select Currency",
   "noCurrencySelected": "No currency selected",
+
+  "@_comment_filter_section": "Filter section strings",
+  "rating": "Rating",
+  "reputation": "Reputation",
+  "premiumRange": "Premium/Discount",
+  "discount": "Discount",
+  "premium": "Premium",
+  "clear": "Clear",
+  "min": "Min",
+  "max": "Max",
 
   "@_comment_timeout_messages": "Timeout notification messages",
   "orderTimeoutTaker": "You didn't respond in time. The order will be republished",

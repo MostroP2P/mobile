@@ -831,6 +831,17 @@
   "add": "Aggiungi",
 
   "save": "Salva",
+  "apply": "Applica",
+
+  "@_comment_filter_section": "Stringhe della sezione filtri",
+  "rating": "Valutazione",
+  "reputation": "Reputazione",
+  "premiumRange": "Premio/Sconto",
+  "discount": "Sconto",
+  "premium": "Premio",
+  "clear": "Cancella",
+  "min": "Min",
+  "max": "Max",
   "selectCurrency": "Seleziona Valuta",
   "noCurrencySelected": "Nessuna valuta selezionata",
 

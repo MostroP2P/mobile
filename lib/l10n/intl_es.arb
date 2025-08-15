@@ -823,6 +823,17 @@
   "add": "Agregar",
 
   "save": "Guardar",
+  "apply": "Aplicar",
+
+  "@_comment_filter_section": "Strings de la sección de filtros",
+  "rating": "Calificación",
+  "reputation": "Reputación",
+  "premiumRange": "Prima/Descuento",
+  "discount": "Descuento",
+  "premium": "Prima",
+  "clear": "Limpiar",
+  "min": "Mín",
+  "max": "Máx",
   "selectCurrency": "Seleccionar Moneda",
   "noCurrencySelected": "Ninguna moneda seleccionada",
 
