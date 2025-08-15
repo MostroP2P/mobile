@@ -304,6 +304,7 @@ class OrderFilterState extends ConsumerState<OrderFilter> {
     
     return Container(
       width: 320,
+      height: MediaQuery.of(context).size.height * 0.8, // 80% of screen height
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppTheme.backgroundCard,
@@ -316,7 +317,6 @@ class OrderFilterState extends ConsumerState<OrderFilter> {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
         children: [
           // Header with title and close button.
           Row(
@@ -354,8 +354,14 @@ class OrderFilterState extends ConsumerState<OrderFilter> {
             ],
           ),
           const SizedBox(height: 20),
-          // Fiat currencies using Autocomplete multi-select.
-          currenciesAsync.when(
+          // Scrollable content area
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Fiat currencies using Autocomplete multi-select.
+                  currenciesAsync.when(
             data: (currencies) => MultiSelectAutocomplete(
               label: S.of(context)!.fiatCurrencies,
               options: currencies.keys.toList()..sort(),
@@ -634,8 +640,12 @@ class OrderFilterState extends ConsumerState<OrderFilter> {
               ),
             ],
           ),
+                ],
+              ),
+            ),
+          ),
           const SizedBox(height: 20),
-          // Apply and Clear buttons
+          // Apply and Clear buttons (always visible at bottom)
           Row(
             children: [
               Flexible(

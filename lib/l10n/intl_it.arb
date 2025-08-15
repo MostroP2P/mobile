@@ -840,8 +840,6 @@
   "discount": "Sconto",
   "premium": "Premio",
   "clear": "Cancella",
-  "loadingCurrencies": "Caricamento valute...",
-  "loadingPaymentMethods": "Caricamento metodi di pagamento...",
   "min": "Min",
   "max": "Max",
   "selectCurrency": "Seleziona Valuta",
