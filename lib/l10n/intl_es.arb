@@ -832,6 +832,10 @@
   "discount": "Descuento",
   "premium": "Prima",
   "clear": "Limpiar",
+  "loadingCurrencies": "Cargando monedas...",
+  "loadingPaymentMethods": "Cargando métodos de pago...",
+  "min": "Mín",
+  "max": "Máx",
   "selectCurrency": "Seleccionar Moneda",
   "noCurrencySelected": "Ninguna moneda seleccionada",
 

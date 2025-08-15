@@ -807,6 +807,10 @@
   "discount": "Discount",
   "premium": "Premium",
   "clear": "Clear",
+  "loadingCurrencies": "Loading currencies...",
+  "loadingPaymentMethods": "Loading payment methods...",
+  "min": "Min",
+  "max": "Max",
 
   "@_comment_timeout_messages": "Timeout notification messages",
   "orderTimeoutTaker": "You didn't respond in time. The order will be republished",

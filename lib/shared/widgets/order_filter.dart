@@ -390,10 +390,10 @@ class OrderFilterState extends ConsumerState<OrderFilter> {
                       width: 1,
                     ),
                   ),
-                  child: const Center(
+                  child: Center(
                     child: Text(
-                      'Loading currencies...',
-                      style: TextStyle(
+                      S.of(context)!.loadingCurrencies,
+                      style: const TextStyle(
                         color: AppTheme.textInactive,
                         fontSize: 14,
                       ),
@@ -466,10 +466,10 @@ class OrderFilterState extends ConsumerState<OrderFilter> {
                       width: 1,
                     ),
                   ),
-                  child: const Center(
+                  child: Center(
                     child: Text(
-                      'Loading payment methods...',
-                      style: TextStyle(
+                      S.of(context)!.loadingPaymentMethods,
+                      style: const TextStyle(
                         color: AppTheme.textInactive,
                         fontSize: 14,
                       ),
@@ -580,7 +580,7 @@ class OrderFilterState extends ConsumerState<OrderFilter> {
               Row(
                 children: [
                   Text(
-                    "Min: ${ratingMin.toInt()}",
+                    "${S.of(context)!.min}: ${ratingMin.toInt()}",
                     style: const TextStyle(
                       color: AppTheme.sellColor,
                       fontSize: 12,
@@ -589,7 +589,7 @@ class OrderFilterState extends ConsumerState<OrderFilter> {
                   ),
                   const Spacer(),
                   Text(
-                    "Max: ${ratingMax.toInt()}",
+                    "${S.of(context)!.max}: ${ratingMax.toInt()}",
                     style: const TextStyle(
                       color: AppTheme.buyColor,
                       fontSize: 12,
