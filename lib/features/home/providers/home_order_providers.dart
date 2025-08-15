@@ -39,14 +39,18 @@ final filteredOrdersProvider = Provider<List<NostrEvent>>((ref) {
 
       // Apply payment method filter
       if (selectedPaymentMethods.isNotEmpty) {
-        filtered = filtered.where((o) => 
-          o.paymentMethods.isNotEmpty && 
-          selectedPaymentMethods.any((method) => 
-            o.paymentMethods.any((pm) => 
-              pm.toLowerCase().contains(method.toLowerCase())
-            )
-          )
-        );
+        final methodsLower = selectedPaymentMethods
+            .where((m) => m.trim().isNotEmpty)
+            .map((m) => m.toLowerCase())
+            .toSet();
+        filtered = filtered.where((o) {
+          final pms = o.paymentMethods;
+          if (pms == null || pms.isEmpty) return false;
+          return pms.any((pm) {
+            final pmLower = pm.toLowerCase();
+            return methodsLower.any(pmLower.contains);
+          });
+        });
       }
 
       // Apply rating filter
