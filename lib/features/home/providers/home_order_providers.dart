@@ -45,7 +45,7 @@ final filteredOrdersProvider = Provider<List<NostrEvent>>((ref) {
             .toSet();
         filtered = filtered.where((o) {
           final pms = o.paymentMethods;
-          if (pms == null || pms.isEmpty) return false;
+          if (pms.isEmpty) return false;
           return pms.any((pm) {
             final pmLower = pm.toLowerCase();
             return methodsLower.any(pmLower.contains);
