@@ -278,6 +278,8 @@ class OrderFilterState extends ConsumerState<OrderFilter> {
     super.initState();
     // Load current filter values from providers
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      
       final currencies = ref.read(currencyFilterProvider);
       final paymentMethods = ref.read(paymentMethodFilterProvider);
       final currentRatingRange = ref.read(ratingFilterProvider);
@@ -286,8 +288,9 @@ class OrderFilterState extends ConsumerState<OrderFilter> {
       setState(() {
         selectedFiatCurrencies = List.from(currencies);
         selectedPaymentMethods = List.from(paymentMethods);
-        ratingMin = currentRatingRange is double ? 0.0 : currentRatingRange.min;
-        ratingMax = currentRatingRange is double ? currentRatingRange as double : currentRatingRange.max;
+        final (min: rMin, max: rMax) = currentRatingRange;
+        ratingMin = rMin;
+        ratingMax = rMax;
         premiumMin = currentPremiumRange.min;
         premiumMax = currentPremiumRange.max;
       });
