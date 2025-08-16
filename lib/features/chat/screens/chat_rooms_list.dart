@@ -8,6 +8,7 @@ import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/features/chat/widgets/chat_list_item.dart';
 import 'package:mostro_mobile/features/chat/widgets/chat_tabs.dart';
 import 'package:mostro_mobile/features/chat/widgets/empty_state_view.dart';
+import 'package:mostro_mobile/features/disputes/widgets/disputes_list.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
 import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
@@ -86,7 +87,7 @@ class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen>
                     ),
                   ),
                   child: Text(
-                    S.of(context)?.conversationsDescription ?? 'Your conversations with other users will appear here.',
+                    _getTabDescription(context),
                     style: TextStyle(
                       color: AppTheme.textSecondary,
                       fontSize: 14,
@@ -102,10 +103,8 @@ class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen>
                       children: [
                         // Messages tab
                         _buildBody(context, chatListState),
-                        // Disputes tab (placeholder for now)
-                        EmptyStateView(
-                          message: S.of(context)?.noDisputesAvailable ?? 'No disputes available',
-                        ),
+                        // Disputes tab
+                        const DisputesList(),
                       ],
                     ),
                   ),
@@ -154,5 +153,13 @@ class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen>
     );
   }
 
-
+  String _getTabDescription(BuildContext context) {
+    if (_tabController.index == 0) {
+      // Messages tab
+      return S.of(context)?.conversationsDescription ?? 'Here you\'ll find your conversations with other users during trades.';
+    } else {
+      // Disputes tab
+      return 'These are your open disputes and the chats with the admin helping resolve them.';
+    }
+  }
 }
