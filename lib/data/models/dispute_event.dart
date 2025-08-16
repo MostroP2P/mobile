@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dart_nostr/dart_nostr.dart';
 
 /// Represents a dispute event (kind 38383) with status information.
@@ -10,6 +11,7 @@ class DisputeEvent {
   final String status;
   final int createdAt;
   final String pubkey;
+  final String? orderId;
 
   DisputeEvent({
     required this.id,
@@ -17,6 +19,7 @@ class DisputeEvent {
     required this.status,
     required this.createdAt,
     required this.pubkey,
+    this.orderId,
   });
 
   /// Creates a DisputeEvent from a NostrEvent.
@@ -65,13 +68,34 @@ class DisputeEvent {
       timestamp = createdAt as int;
     }
     
+    // Extract order ID from event content
+    String? orderId = _extractOrderIdFromContent(event.content);
+    
     return DisputeEvent(
       id: event.id!,
       disputeId: dTag[1],
       status: sTag[1],
       createdAt: timestamp,
       pubkey: event.pubkey,
+      orderId: orderId,
     );
+  }
+
+  /// Extract order ID from event content
+  /// Based on Mostro event structure: {"order":{"id":"order-id",...}}
+  static String? _extractOrderIdFromContent(String? content) {
+    if (content == null || content.isEmpty) {
+      return null;
+    }
+    
+    try {
+      final Map<String, dynamic> parsed = jsonDecode(content);
+      final order = parsed['order'] as Map<String, dynamic>?;
+      return order?['id'] as String?;
+    } catch (e) {
+      // If parsing fails, return null
+      return null;
+    }
   }
 
   /// Checks if the event is from the specified Mostro pubkey.
@@ -92,9 +116,10 @@ class DisputeEvent {
         other.disputeId == disputeId &&
         other.status == status &&
         other.createdAt == createdAt &&
-        other.pubkey == pubkey;
+        other.pubkey == pubkey &&
+        other.orderId == orderId;
   }
 
   @override
-  int get hashCode => Object.hash(id, disputeId, status, createdAt, pubkey);
+  int get hashCode => Object.hash(id, disputeId, status, createdAt, pubkey, orderId);
 }

@@ -129,7 +129,7 @@ class _DisputeDetailsScreenState extends ConsumerState<DisputeDetailsScreen> {
   DisputeData _disputeToDisputeData(Dispute dispute) {
     return DisputeData(
       disputeId: dispute.disputeId,
-      orderId: dispute.orderId ?? dispute.disputeId,
+      orderId: dispute.orderId ?? 'Unknown Order ID', // Don't fallback to disputeId
       status: dispute.status ?? 'unknown',
       description: _getDescriptionForStatus(dispute.status ?? 'unknown'),
       counterparty: 'Unknown', // Would need order data to determine counterparty
