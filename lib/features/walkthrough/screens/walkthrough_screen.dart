@@ -20,6 +20,7 @@ class _WalkthroughScreenState extends ConsumerState<WalkthroughScreen> {
     bool isSecurityStep = false,
     bool isChatStep = false,
     bool isOrderBookStep = false,
+    bool isCreateOfferStep = false,
   }) {
     const defaultStyle = TextStyle(fontSize: 16, color: Color(0xFF9aa1b6));
     const highlightStyle = TextStyle(
@@ -39,9 +40,15 @@ class _WalkthroughScreenState extends ConsumerState<WalkthroughScreen> {
                 ? HighlightConfig.chat
                 : isOrderBookStep
                     ? HighlightConfig.orderBook
-                    : HighlightConfig.firstStep;
+                    : isCreateOfferStep
+                        ? HighlightConfig.createOffer
+                        : HighlightConfig.firstStep;
 
-    final RegExp highlightRegex = RegExp(config.pattern, caseSensitive: true);
+    final RegExp highlightRegex = RegExp(
+      config.pattern,
+      caseSensitive: false,
+      unicode: true,
+    );
 
     int start = 0;
     for (final match in highlightRegex.allMatches(text)) {
@@ -149,7 +156,8 @@ class _WalkthroughScreenState extends ConsumerState<WalkthroughScreen> {
       ),
       PageViewModel(
         title: S.of(context)!.cantFindWhatYouNeed,
-        bodyWidget: _buildHighlightedText(S.of(context)!.createYourOwnOffer),
+        bodyWidget: _buildHighlightedText(S.of(context)!.createYourOwnOffer,
+            isCreateOfferStep: true),
         image: buildPageImage("assets/images/wt-6.png"),
         decoration: pageDecoration,
       ),

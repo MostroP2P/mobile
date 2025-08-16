@@ -236,6 +236,8 @@
   "buyingBitcoin": "Comprando Bitcoin",
   "sellingBitcoin": "Vendendo Bitcoin",
   "bankTransfer": "Bonifico Bancario",
+  "cashInPerson": "Contanti di persona",
+  "other": "Altro",
   "createdByYou": "Creato da te",
   "takenByYou": "Preso da te",
   "active": "Attivo",

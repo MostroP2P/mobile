@@ -275,6 +275,8 @@
   "buyingBitcoin": "Buying Bitcoin",
   "sellingBitcoin": "Selling Bitcoin",
   "bankTransfer": "Bank Transfer",
+  "cashInPerson": "Cash in person",
+  "other": "Other",
   "createdByYou": "Created by you",
   "takenByYou": "Taken by you",
   "active": "Active",

@@ -296,7 +296,11 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
         if (_showCustomPaymentMethod &&
             _customPaymentMethodController.text.isNotEmpty) {
 
-          paymentMethods.remove("Other");
+          // Remove localized "Other" (case-insensitive, trimmed) from the list
+          final localizedOther = S.of(context)!.other.trim().toLowerCase();
+          paymentMethods.removeWhere(
+            (method) => method.trim().toLowerCase() == localizedOther,
+          );
           
           String sanitizedPaymentMethod = _customPaymentMethodController.text;
           
