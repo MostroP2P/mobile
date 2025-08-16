@@ -17,16 +17,16 @@ class Settings {
 
   Settings copyWith({
     List<String>? relays,
-    bool? privacyModeSetting,
-    String? mostroInstance,
+    bool? fullPrivacyMode,
+    String? mostroPublicKey,
     String? defaultFiatCode,
     String? selectedLanguage,
     String? defaultLightningAddress,
   }) {
     return Settings(
       relays: relays ?? this.relays,
-      fullPrivacyMode: privacyModeSetting ?? fullPrivacyMode,
-      mostroPublicKey: mostroInstance ?? mostroPublicKey,
+      fullPrivacyMode: fullPrivacyMode ?? this.fullPrivacyMode,
+      mostroPublicKey: mostroPublicKey ?? this.mostroPublicKey,
       defaultFiatCode: defaultFiatCode ?? this.defaultFiatCode,
       selectedLanguage: selectedLanguage,
       defaultLightningAddress: defaultLightningAddress,

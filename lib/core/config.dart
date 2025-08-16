@@ -46,4 +46,7 @@ class Config {
   // Timeouts for timeout detection (new critical operations)
   static const Duration timeoutDetectionTimeout = Duration(seconds: 8);
   static const Duration messageStorageTimeout = Duration(seconds: 5);
+
+  // Timeout for restore-session flow
+  static const Duration restoreSessionTimeout = Duration(seconds: 20);
 }

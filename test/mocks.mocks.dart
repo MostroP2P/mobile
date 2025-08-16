@@ -1882,8 +1882,8 @@ class MockSettings extends _i1.Mock implements _i2.Settings {
   @override
   _i2.Settings copyWith({
     List<String>? relays,
-    bool? privacyModeSetting,
-    String? mostroInstance,
+    bool? fullPrivacyMode,
+    String? mostroPublicKey,
     String? defaultFiatCode,
     String? selectedLanguage,
     String? defaultLightningAddress,
@@ -1894,8 +1894,8 @@ class MockSettings extends _i1.Mock implements _i2.Settings {
           [],
           {
             #relays: relays,
-            #privacyModeSetting: privacyModeSetting,
-            #mostroInstance: mostroInstance,
+            #fullPrivacyMode: fullPrivacyMode,
+            #mostroPublicKey: mostroPublicKey,
             #defaultFiatCode: defaultFiatCode,
             #selectedLanguage: selectedLanguage,
             #defaultLightningAddress: defaultLightningAddress,
@@ -1908,8 +1908,8 @@ class MockSettings extends _i1.Mock implements _i2.Settings {
             [],
             {
               #relays: relays,
-              #privacyModeSetting: privacyModeSetting,
-              #mostroInstance: mostroInstance,
+              #fullPrivacyMode: fullPrivacyMode,
+              #mostroPublicKey: mostroPublicKey,
               #defaultFiatCode: defaultFiatCode,
               #selectedLanguage: selectedLanguage,
               #defaultLightningAddress: defaultLightningAddress,

@@ -52,6 +52,10 @@ class SessionStorage extends BaseStorage<Session> {
     await putItem(session.orderId!, session);
   }
 
+  Future<void> putSessions(Map<String, Session> sessions) async {
+    await putAll(sessions);
+  }
+
   /// Shortcut to get a single session by its ID.
   Future<Session?> getSession(String sessionId) => getItem(sessionId);
 
