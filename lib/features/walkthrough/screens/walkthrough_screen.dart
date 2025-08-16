@@ -44,7 +44,11 @@ class _WalkthroughScreenState extends ConsumerState<WalkthroughScreen> {
                         ? HighlightConfig.createOffer
                         : HighlightConfig.firstStep;
 
-    final RegExp highlightRegex = RegExp(config.pattern, caseSensitive: true);
+    final RegExp highlightRegex = RegExp(
+      config.pattern,
+      caseSensitive: false,
+      unicode: true,
+    );
 
     int start = 0;
     for (final match in highlightRegex.allMatches(text)) {
