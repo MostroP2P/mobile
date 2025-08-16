@@ -132,7 +132,11 @@ class PaymentMethodsSection extends ConsumerWidget {
       availableMethods = [...availableMethods, translatedOther];
     }
 
-    List<String> dialogSelectedMethods = List<String>.from(selectedMethods);
+    // Normalize to current locale so checkbox states align with localized labels
+    final localizedSelected = selectedMethods
+        .map((m) => _translatePaymentMethod(m, context))
+        .toList();
+    List<String> dialogSelectedMethods = List<String>.from(localizedSelected);
     bool dialogShowOtherField = dialogSelectedMethods.contains(translatedOther);
 
     showDialog(
