@@ -86,8 +86,16 @@ class DisputeService {
       return;
     }
 
-    // In Mostro's implementation, the dispute ID is the order ID
-    final orderId = disputeId;
+    // Extract order ID from the dispute event
+    // The DisputeEvent now contains the orderId extracted from the event content
+    String? orderId = disputeEvent.orderId;
+    
+    if (orderId == null) {
+      _logger.warning('Could not extract order ID from dispute event $disputeId');
+      return;
+    }
+
+    _logger.info('Processing dispute event $disputeId for order $orderId');
 
     // Check if the order notifier exists for this order
     final orderNotifierExists = _ref.exists(orderNotifierProvider(orderId));
@@ -162,6 +170,7 @@ class DisputeService {
       _logger.severe('Error updating order state: $e', e, stackTrace);
     }
   }
+
 
   /// Dispose of subscriptions when the service is no longer needed
   void dispose() {

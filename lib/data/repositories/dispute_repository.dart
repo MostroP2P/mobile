@@ -18,7 +18,6 @@ class DisputeRepository {
 
   DisputeRepository(this._nostrService, this._mostroPubkey, this._ref);
 
-
   /// Fetch dispute events from Nostr for the current user
   Future<List<Dispute>> fetchUserDisputes() async {
     try {
@@ -30,48 +29,315 @@ class DisputeRepository {
         _logger.w('No active sessions found, cannot fetch disputes');
         return [];
       }
-      
+
       // Get all trade key public keys from active sessions
       final userPubkeys = sessions.map((s) => s.tradeKey.public).toList();
       _logger.d('Fetching disputes for user pubkeys: $userPubkeys');
+      
+      // Log detailed session information
+      for (final session in sessions) {
+        _logger.d('Session: orderId=${session.orderId}, tradeKey=${session.tradeKey.public}');
+      }
 
-      // Create filter for dispute events from Mostro
-      final filter = NostrFilter(
+      // Try multiple approaches: encrypted DMs (kind 1059), regular DMs (kind 4), and dispute events (kind 38383)
+      // Encrypted direct messages to user (from any author, not just Mostro)
+      final encryptedDmFilter = NostrFilter(
+        kinds: [1059], // Encrypted direct message kind
+        since: DateTime.now().subtract(const Duration(days: 90)),
+        additionalFilters: {
+          '#p': userPubkeys, // Messages sent to user's pubkeys
+        },
+      );
+      
+      // Regular direct messages from Mostro
+      final dmFilter = NostrFilter(
+        kinds: [4], // Direct message kind
+        authors: [_mostroPubkey],
+        since: DateTime.now().subtract(const Duration(days: 90)),
+        additionalFilters: {
+          '#p': userPubkeys, // Messages sent to user's pubkeys
+        },
+      );
+      
+      // Also try dispute events (original approach)
+      final disputeFilter = NostrFilter(
         kinds: [38383], // Dispute event kind
         authors: [_mostroPubkey],
-        since: DateTime.now().subtract(const Duration(days: 90)), // Last 90 days
+        since: DateTime.now().subtract(const Duration(days: 90)),
         additionalFilters: {
           '#z': ['dispute'], // Filter for dispute events
         },
       );
 
-      final events = await _nostrService.fetchEvents(filter);
-      _logger.d('Fetched ${events.length} dispute events from Mostro');
+      // Fetch all types of events
+      final encryptedDmEvents = await _nostrService.fetchEvents(encryptedDmFilter);
+      final dmEvents = await _nostrService.fetchEvents(dmFilter);
+      final disputeEvents = await _nostrService.fetchEvents(disputeFilter);
+      final events = [...encryptedDmEvents, ...dmEvents, ...disputeEvents];
       
-      // Filter events that involve any of the user's pubkeys (from active sessions)
-      final userEvents = events.where((event) {
+      _logger.d('Fetched ${encryptedDmEvents.length} encrypted DMs, ${dmEvents.length} regular DMs, and ${disputeEvents.length} dispute events from Mostro (total: ${events.length})');
+
+      // Log each event for debugging
+      for (final event in events) {
+        _logger.d('=== DISPUTE EVENT ${event.id} ===');
+        _logger.d('Content: ${event.content}');
+        _logger.d('Tags: ${event.tags}');
+        
+        // Try to parse content and extract dispute info
         try {
-          final content = jsonDecode(event.content ?? '{}');
-          // Check if this dispute involves any of the user's pubkeys
-          return userPubkeys.any((pubkey) => 
-            content['buyer_pubkey'] == pubkey ||
-            content['seller_pubkey'] == pubkey);
+          if (event.content != null && event.content!.isNotEmpty) {
+            // Handle encrypted messages (kind 1059)
+            if (event.kind == 1059) {
+              _logger.d('Found encrypted message (kind 1059), attempting to decrypt...');
+              
+              // Try to decrypt with each session's private key
+              for (final session in sessions) {
+                try {
+                  final decryptedEvent = await NostrUtils.decryptNIP59Event(event, session.tradeKey.private);
+                  _logger.d('Successfully decrypted message with session ${session.orderId}');
+                  _logger.d('Decrypted content: ${decryptedEvent.content}');
+                  
+                  // Parse the decrypted content
+                  final content = jsonDecode(decryptedEvent.content!);
+                  if (content is List && content.isNotEmpty) {
+                    final orderData = content[0];
+                    if (orderData is Map<String, dynamic>) {
+                      final order = orderData['order'] as Map<String, dynamic>?;
+                      final orderId = order?['id'] as String?;
+                      final action = order?['action'] as String?;
+                      final payload = order?['payload'] as Map<String, dynamic>?;
+                      final disputeId = payload?['dispute'] as String?;
+                      _logger.d('Extracted from decrypted - orderId: $orderId, action: $action, disputeId: $disputeId');
+                    }
+                  }
+                  break; // Successfully decrypted, stop trying other keys
+                } catch (e) {
+                  _logger.d('Failed to decrypt with session ${session.orderId}: $e');
+                  continue; // Try next session key
+                }
+              }
+            } else {
+              // Handle unencrypted messages
+              final content = jsonDecode(event.content!);
+              if (content is List && content.isNotEmpty) {
+                final orderData = content[0];
+                if (orderData is Map<String, dynamic>) {
+                  final order = orderData['order'] as Map<String, dynamic>?;
+                  final orderId = order?['id'] as String?;
+                  final action = order?['action'] as String?;
+                  final payload = order?['payload'] as Map<String, dynamic>?;
+                  final disputeId = payload?['dispute'] as String?;
+                  _logger.d('Extracted - orderId: $orderId, action: $action, disputeId: $disputeId');
+                }
+              }
+            }
+          }
         } catch (e) {
-          _logger.w('Failed to parse dispute event content: $e');
-          return false;
+          _logger.d('Failed to parse event content: $e');
         }
-      }).toList();
+        _logger.d('=== END EVENT ===');
+      }
+
+      _logger.d(
+          'User sessions: ${sessions.map((s) => 'orderId=${s.orderId}, tradeKey=${s.tradeKey.public}').toList()}');
+
+      // Filter events to only include those involving the user
+      final List<NostrEvent> userEvents = [];
+      
+      for (final event in events) {
+        try {
+          bool isUserInvolved = false;
+          
+          // Check if user is in p tags (for encrypted messages)
+          final pTags = event.tags?.where((tag) => tag.isNotEmpty && tag[0] == 'p') ?? [];
+          final hasUserInPTags = userPubkeys.any((pubkey) => 
+            pTags.any((tag) => tag.length > 1 && tag[1] == pubkey));
+          
+          if (hasUserInPTags) {
+            isUserInvolved = true;
+          }
+          
+          // For encrypted messages (kind 1059), try to decrypt and check content
+          if (event.kind == 1059 && !isUserInvolved) {
+            for (final session in sessions) {
+              try {
+                final decryptedEvent = await NostrUtils.decryptNIP59Event(event, session.tradeKey.private);
+                final decryptedContent = jsonDecode(decryptedEvent.content!);
+                
+                if (decryptedContent is List && decryptedContent.isNotEmpty) {
+                  final orderData = decryptedContent[0];
+                  if (orderData is Map<String, dynamic>) {
+                    final order = orderData['order'] as Map<String, dynamic>?;
+                    if (order != null) {
+                      final orderId = order['id'] as String?;
+                      final action = order['action'] as String?;
+                      
+                      if (orderId != null && (action == 'dispute-initiated-by-you' || action == 'dispute-initiated-by-peer')) {
+                        final hasOrder = sessions.any((s) => s.orderId == orderId);
+                        if (hasOrder) {
+                          _logger.d('Found dispute message for user order $orderId');
+                          isUserInvolved = true;
+                          break;
+                        }
+                      }
+                    }
+                  }
+                }
+              } catch (e) {
+                continue; // Try next session key
+              }
+            }
+          }
+          
+          // For unencrypted messages, check content directly
+          else if (event.kind != 1059) {
+            try {
+              final contentStr = event.content?.trim();
+              if (contentStr != null && contentStr.isNotEmpty) {
+                final content = jsonDecode(contentStr);
+                if (content is List && content.isNotEmpty) {
+                  final orderData = content[0];
+                  if (orderData is Map<String, dynamic>) {
+                    final order = orderData['order'] as Map<String, dynamic>?;
+                    if (order != null) {
+                      final orderId = order['id'] as String?;
+                      final action = order['action'] as String?;
+                      
+                      if (orderId != null && (action == 'dispute-initiated-by-you' || action == 'dispute-initiated-by-peer')) {
+                        final hasOrder = sessions.any((s) => s.orderId == orderId);
+                        if (hasOrder) {
+                          _logger.d('Found dispute message for user order $orderId');
+                          isUserInvolved = true;
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            } catch (e) {
+              _logger.d('Failed to parse unencrypted content: $e');
+            }
+          }
+          
+          if (isUserInvolved) {
+            userEvents.add(event);
+            _logger.d('Event ${event.id} involves user');
+          }
+        } catch (e) {
+          _logger.w('Failed to process dispute event ${event.id}: $e');
+        }
+      }
 
       // Convert events to Dispute objects
-      final disputes = userEvents.map((event) {
+      final List<Dispute> disputes = [];
+      
+      for (final event in userEvents) {
         try {
-          final content = jsonDecode(event.content ?? '{}');
-          return Dispute.fromNostrEvent(event, content);
+          // Handle encrypted messages (kind 1059)
+          if (event.kind == 1059) {
+            for (final session in sessions) {
+              try {
+                final decryptedEvent = await NostrUtils.decryptNIP59Event(event, session.tradeKey.private);
+                final decryptedContent = jsonDecode(decryptedEvent.content!);
+                
+                if (decryptedContent is List && decryptedContent.isNotEmpty) {
+                  final orderData = decryptedContent[0];
+                  if (orderData is Map<String, dynamic>) {
+                    final order = orderData['order'] as Map<String, dynamic>?;
+                    if (order != null) {
+                      final orderId = order['id'] as String?;
+                      final action = order['action'] as String?;
+                      final payload = order['payload'] as Map<String, dynamic>?;
+                      final disputeId = payload?['dispute'] as String?;
+                      
+                      if (orderId != null && disputeId != null && 
+                          (action == 'dispute-initiated-by-you' || action == 'dispute-initiated-by-peer')) {
+                        _logger.d('Creating dispute from encrypted DM: disputeId=$disputeId, orderId=$orderId');
+                        disputes.add(Dispute(
+                          disputeId: disputeId,
+                          orderId: orderId,
+                          status: 'initiated',
+                        ));
+                        break; // Found and processed, stop trying other keys
+                      }
+                    }
+                  }
+                }
+              } catch (e) {
+                continue; // Try next session key
+              }
+            }
+          }
+          // Handle unencrypted messages
+          else {
+            final contentStr = event.content?.trim();
+            if (contentStr != null && contentStr.isNotEmpty) {
+              final content = jsonDecode(contentStr);
+              
+              // Handle direct message format: [{"order": {...}}, null]
+              if (content is List && content.isNotEmpty) {
+                final orderData = content[0];
+                if (orderData is Map<String, dynamic>) {
+                  final order = orderData['order'] as Map<String, dynamic>?;
+                  if (order != null) {
+                    final orderId = order['id'] as String?;
+                    final action = order['action'] as String?;
+                    final payload = order['payload'] as Map<String, dynamic>?;
+                    final disputeId = payload?['dispute'] as String?;
+                    
+                    if (orderId != null && disputeId != null && 
+                        (action == 'dispute-initiated-by-you' || action == 'dispute-initiated-by-peer')) {
+                      _logger.d('Creating dispute from unencrypted DM: disputeId=$disputeId, orderId=$orderId');
+                      disputes.add(Dispute(
+                        disputeId: disputeId,
+                        orderId: orderId,
+                        status: 'initiated',
+                      ));
+                    }
+                  }
+                }
+              }
+              // Handle dispute event format (kind 38383)
+              else if (content is Map<String, dynamic>) {
+                final dispute = Dispute.fromNostrEvent(event, content);
+                disputes.add(dispute);
+              }
+            }
+            // Handle empty content events (kind 38383)
+            else {
+              final dTag = event.tags?.firstWhere(
+                (tag) => tag.isNotEmpty && tag[0] == 'd',
+                orElse: () => [],
+              );
+              final sTag = event.tags?.firstWhere(
+                (tag) => tag.isNotEmpty && tag[0] == 's',
+                orElse: () => [],
+              );
+              
+              if (dTag != null && dTag.length > 1 && sTag != null && sTag.length > 1) {
+                final disputeId = dTag[1];
+                final status = sTag[1];
+                
+                // Try to find associated orderId from sessions
+                for (final session in sessions) {
+                  final sessionOrderId = session.orderId;
+                  if (sessionOrderId != null) {
+                    _logger.d('Creating dispute from empty event: disputeId=$disputeId, orderId=$sessionOrderId');
+                    disputes.add(Dispute(
+                      disputeId: disputeId,
+                      orderId: sessionOrderId,
+                      status: status,
+                    ));
+                    break;
+                  }
+                }
+              }
+            }
+          }
         } catch (e) {
-          _logger.w('Failed to parse dispute event: $e');
-          return null;
+          _logger.w('Failed to create dispute from event ${event.id}: $e');
         }
-      }).where((dispute) => dispute != null).cast<Dispute>().toList();
+      }
 
       _logger.d('Found ${disputes.length} disputes for user');
       return disputes;
@@ -89,15 +355,16 @@ class DisputeRepository {
       // Get user's session for the order to get the trade key
       final sessions = _ref.read(sessionNotifierProvider);
       final session = sessions.cast<dynamic>().firstWhere(
-        (s) => s.orderId == orderId,
-        orElse: () => null,
-      );
-      
+            (s) => s.orderId == orderId,
+            orElse: () => null,
+          );
+
       if (session == null) {
-        _logger.e('No session found for order: $orderId, cannot create dispute');
+        _logger
+            .e('No session found for order: $orderId, cannot create dispute');
         return false;
       }
-      
+
       final privateKey = session.tradeKey.private;
       if (privateKey.isEmpty) {
         _logger.e('Session trade key private key is empty for order: $orderId');
@@ -126,10 +393,10 @@ class DisputeRepository {
           ['p', _mostroPubkey], // Send to Mostro
         ],
       );
-      
+
       // Send the event to Mostro
       await _nostrService.publishEvent(signedEvent);
-      
+
       _logger.d('Successfully sent dispute creation for order: $orderId');
       return true;
     } catch (e) {
@@ -150,7 +417,7 @@ class DisputeRepository {
       );
 
       final events = await _nostrService.fetchEvents(filter);
-      
+
       if (events.isEmpty) {
         _logger.w('No dispute found with ID: $disputeId');
         return null;
@@ -159,7 +426,11 @@ class DisputeRepository {
       // Filter events by dispute ID and get the latest event
       final disputeEvents = events.where((event) {
         final dTag = event.tags?.firstWhere(
-          (tag) => tag.isNotEmpty && tag[0] == 'd' && tag.length > 1 && tag[1] == disputeId,
+          (tag) =>
+              tag.isNotEmpty &&
+              tag[0] == 'd' &&
+              tag.length > 1 &&
+              tag[1] == disputeId,
           orElse: () => [],
         );
         return dTag != null && dTag.isNotEmpty;
@@ -178,7 +449,7 @@ class DisputeRepository {
       });
 
       final disputeEvent = DisputeEvent.fromEvent(latestEvent);
-      
+
       // Convert DisputeEvent to Dispute model
       // Note: We may need additional data from Mostro messages
       return Dispute(
@@ -209,23 +480,22 @@ class DisputeRepository {
 
       final request = NostrRequest(
         filters: [filter],
-        subscriptionId: 'dispute-events-${DateTime.now().millisecondsSinceEpoch}',
+        subscriptionId:
+            'dispute-events-${DateTime.now().millisecondsSinceEpoch}',
       );
 
       // Subscribe to events and transform to Dispute stream
-      return _nostrService.subscribeToEvents(request)
-          .map((event) {
-            try {
-              final content = jsonDecode(event.content ?? '{}');
-              return Dispute.fromNostrEvent(event, content);
-            } catch (e) {
-              _logger.w('Failed to parse dispute event ${event.id}: $e');
-              throw e;
-            }
-          })
-          .handleError((error) {
-            _logger.e('Error in dispute events stream: $error');
-          });
+      return _nostrService.subscribeToEvents(request).map((event) {
+        try {
+          final content = jsonDecode(event.content ?? '{}');
+          return Dispute.fromNostrEvent(event, content);
+        } catch (e) {
+          _logger.w('Failed to parse dispute event ${event.id}: $e');
+          throw e;
+        }
+      }).handleError((error) {
+        _logger.e('Error in dispute events stream: $error');
+      });
     } catch (e) {
       _logger.e('Failed to subscribe to dispute events: $e');
       return const Stream.empty();
