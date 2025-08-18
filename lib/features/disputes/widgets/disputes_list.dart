@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/disputes/providers/dispute_providers.dart';
 import 'package:mostro_mobile/features/disputes/widgets/dispute_list_item.dart';
+import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/data/models/dispute.dart';
 
@@ -52,13 +53,19 @@ class DisputesList extends ConsumerWidget {
           padding: const EdgeInsets.all(16),
           itemCount: disputes.length,
           itemBuilder: (context, index) {
-            final disputeEvent = disputes[index];
-            final disputeData = DisputeData.fromDisputeEvent(disputeEvent);
+            final dispute = disputes[index];
+            
+            // Get OrderState to determine who initiated the dispute
+            final orderState = dispute.orderId != null 
+              ? ref.watch(orderNotifierProvider(dispute.orderId!))
+              : null;
+            
+            final disputeData = DisputeData.fromDispute(dispute, orderState: orderState);
             
             return DisputeListItem(
               dispute: disputeData,
               onTap: () {
-                context.push('/dispute_details', extra: disputeData);
+                context.push('/dispute_details/${dispute.disputeId}');
               },
             );
           },

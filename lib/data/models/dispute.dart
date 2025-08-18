@@ -14,6 +14,8 @@ class Dispute implements Payload {
   final String? disputeToken;
   final String? adminPubkey;
   final DateTime? adminTookAt;
+  final DateTime? createdAt;
+  final String? action;
 
   Dispute({
     required this.disputeId,
@@ -23,6 +25,8 @@ class Dispute implements Payload {
     this.disputeToken,
     this.adminPubkey,
     this.adminTookAt,
+    this.createdAt,
+    this.action,
   }) {
     if (disputeId.isEmpty) {
       throw ArgumentError('Dispute ID cannot be empty');
@@ -62,6 +66,14 @@ class Dispute implements Payload {
       json['admin_took_at'] = adminTookAt!.millisecondsSinceEpoch;
     }
 
+    if (createdAt != null) {
+      json['created_at'] = createdAt!.millisecondsSinceEpoch;
+    }
+
+    if (action != null) {
+      json['action'] = action;
+    }
+
     return json;
   }
 
@@ -78,6 +90,8 @@ class Dispute implements Payload {
         orderId: orderId,
         status: status,
         adminPubkey: content['admin_pubkey'] as String?,
+        createdAt: DateTime.now(), // Default to current time for events
+        action: content['action'] as String?,
       );
     } catch (e) {
       throw FormatException('Failed to parse Dispute from NostrEvent: $e');
@@ -137,6 +151,15 @@ class Dispute implements Payload {
         order = Order.fromJson(json['order'] as Map<String, dynamic>);
       }
       
+      // Extract created_at timestamp
+      DateTime? createdAt;
+      if (json.containsKey('created_at') && json['created_at'] != null) {
+        final timestamp = json['created_at'];
+        if (timestamp is int) {
+          createdAt = DateTime.fromMillisecondsSinceEpoch(timestamp);
+        }
+      }
+      
       return Dispute(
         disputeId: disputeIdValue,
         orderId: orderId,
@@ -145,6 +168,8 @@ class Dispute implements Payload {
         disputeToken: disputeToken,
         adminPubkey: adminPubkey,
         adminTookAt: adminTookAt,
+        createdAt: createdAt,
+        action: json['action'] as String?,
       );
     } catch (e) {
       throw FormatException('Failed to parse Dispute from JSON: $e');
@@ -160,6 +185,8 @@ class Dispute implements Payload {
     String? disputeToken,
     String? adminPubkey,
     DateTime? adminTookAt,
+    DateTime? createdAt,
+    String? action,
   }) {
     return Dispute(
       disputeId: disputeId ?? this.disputeId,
@@ -169,6 +196,8 @@ class Dispute implements Payload {
       disputeToken: disputeToken ?? this.disputeToken,
       adminPubkey: adminPubkey ?? this.adminPubkey,
       adminTookAt: adminTookAt ?? this.adminTookAt,
+      createdAt: createdAt ?? this.createdAt,
+      action: action ?? this.action,
     );
   }
 
@@ -185,14 +214,16 @@ class Dispute implements Payload {
            other.order == order &&
            other.disputeToken == disputeToken &&
            other.adminPubkey == adminPubkey &&
-           other.adminTookAt == adminTookAt;
+           other.adminTookAt == adminTookAt &&
+           other.createdAt == createdAt &&
+           other.action == action;
   }
   
   @override
-  int get hashCode => Object.hash(disputeId, orderId, status, order, disputeToken, adminPubkey, adminTookAt);
+  int get hashCode => Object.hash(disputeId, orderId, status, order, disputeToken, adminPubkey, adminTookAt, createdAt, action);
   
   @override
-  String toString() => 'Dispute(disputeId: $disputeId, orderId: $orderId, status: $status, disputeToken: $disputeToken, adminPubkey: $adminPubkey, adminTookAt: $adminTookAt)';
+  String toString() => 'Dispute(disputeId: $disputeId, orderId: $orderId, status: $status, disputeToken: $disputeToken, adminPubkey: $adminPubkey, adminTookAt: $adminTookAt, createdAt: $createdAt, action: $action)';
 }
 
 /// UI-facing view model for disputes used across widgets.
@@ -215,25 +246,84 @@ class DisputeData {
     required this.createdAt,
   });
 
-  /// Create DisputeData from DisputeEvent
-  factory DisputeData.fromDisputeEvent(dynamic disputeEvent) {
-    // For now, we'll create basic data from the dispute event
-    // In a full implementation, this would combine data from multiple sources
+  /// Create DisputeData from Dispute object with OrderState context
+  factory DisputeData.fromDispute(Dispute dispute, {dynamic orderState}) {
+    // Determine if user is the creator based on the OrderState action if available
+    bool isUserCreator = false;
+    
+    print('🔍 DisputeData.fromDispute DEBUG:');
+    print('   disputeId: ${dispute.disputeId}');
+    print('   orderId: ${dispute.orderId}');
+    print('   dispute.action: ${dispute.action}');
+    print('   orderState: $orderState');
+    print('   orderState?.action: ${orderState?.action}');
+    print('   orderState?.action.toString(): ${orderState?.action.toString()}');
+    
+    if (orderState != null && orderState.action != null) {
+      // Use OrderState action which has the correct dispute initiation info
+      final actionString = orderState.action.toString();
+      isUserCreator = actionString == 'dispute-initiated-by-you';
+      print('   Using OrderState action: $actionString → isUserCreator: $isUserCreator');
+    } else if (dispute.action != null) {
+      // Fallback to dispute action
+      isUserCreator = dispute.action == 'dispute-initiated-by-you';
+      print('   Using dispute action: ${dispute.action} → isUserCreator: $isUserCreator');
+    } else {
+      print('   No action available, defaulting to false');
+    }
+    
+    print('   Final isUserCreator: $isUserCreator');
+    
     return DisputeData(
-      disputeId: disputeEvent.disputeId,
-      orderId: disputeEvent.disputeId, // Placeholder - would need order mapping
-      status: disputeEvent.status,
-      description: _getDescriptionForStatus(disputeEvent.status),
+      disputeId: dispute.disputeId,
+      orderId: dispute.orderId ?? dispute.disputeId, // Use orderId if available, fallback to disputeId
+      status: dispute.status ?? 'unknown',
+      description: _getDescriptionForStatus(dispute.status ?? 'unknown', isUserCreator),
       counterparty: 'Unknown', // Would need to fetch from order data
-      isCreator: true, // Assume user is creator for now
-      createdAt: DateTime.fromMillisecondsSinceEpoch(disputeEvent.createdAt * 1000),
+      isCreator: isUserCreator,
+      createdAt: dispute.createdAt ?? DateTime.now(),
     );
   }
 
-  static String _getDescriptionForStatus(String status) {
+  /// Create DisputeData from DisputeEvent (legacy method)
+  factory DisputeData.fromDisputeEvent(dynamic disputeEvent, {String? userAction}) {
+    // Determine if user is the creator based on the action or other indicators
+    bool isUserCreator = _determineIfUserIsCreator(disputeEvent, userAction);
+    
+    return DisputeData(
+      disputeId: disputeEvent.disputeId,
+      orderId: disputeEvent.orderId ?? disputeEvent.disputeId, // Use orderId if available, fallback to disputeId
+      status: disputeEvent.status,
+      description: _getDescriptionForStatus(disputeEvent.status, isUserCreator),
+      counterparty: 'Unknown', // Would need to fetch from order data
+      isCreator: isUserCreator,
+      createdAt: DateTime.fromMillisecondsSinceEpoch(
+        disputeEvent.createdAt is int 
+          ? disputeEvent.createdAt * 1000 
+          : DateTime.now().millisecondsSinceEpoch
+      ),
+    );
+  }
+
+  /// Determine if the user is the creator of the dispute
+  static bool _determineIfUserIsCreator(dynamic disputeEvent, String? userAction) {
+    // If we have userAction information, use it to determine creator
+    if (userAction != null) {
+      return userAction == 'dispute-initiated-by-you';
+    }
+    
+    // Fallback: try to infer from dispute event properties
+    // This is a simplified approach - in practice, you might need more context
+    // from the order data or session information
+    return false; // Conservative default - assume user received the dispute
+  }
+
+  static String _getDescriptionForStatus(String status, bool isUserCreator) {
     switch (status.toLowerCase()) {
       case 'initiated':
-        return 'You opened this dispute';
+        return isUserCreator 
+          ? 'You opened this dispute' 
+          : 'A dispute was opened against you';
       case 'in-progress':
         return 'Dispute is being reviewed by an admin';
       case 'settled':
