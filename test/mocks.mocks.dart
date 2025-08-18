@@ -1880,6 +1880,12 @@ class MockSettings extends _i1.Mock implements _i2.Settings {
       ) as String);
 
   @override
+  List<String> get blacklistedRelays => (super.noSuchMethod(
+        Invocation.getter(#blacklistedRelays),
+        returnValue: <String>[],
+      ) as List<String>);
+
+  @override
   _i2.Settings copyWith({
     List<String>? relays,
     bool? privacyModeSetting,
@@ -1887,6 +1893,7 @@ class MockSettings extends _i1.Mock implements _i2.Settings {
     String? defaultFiatCode,
     String? selectedLanguage,
     String? defaultLightningAddress,
+    List<String>? blacklistedRelays,
   }) =>
       (super.noSuchMethod(
         Invocation.method(
@@ -1899,6 +1906,7 @@ class MockSettings extends _i1.Mock implements _i2.Settings {
             #defaultFiatCode: defaultFiatCode,
             #selectedLanguage: selectedLanguage,
             #defaultLightningAddress: defaultLightningAddress,
+            #blacklistedRelays: blacklistedRelays,
           },
         ),
         returnValue: _FakeSettings_0(
@@ -1913,6 +1921,7 @@ class MockSettings extends _i1.Mock implements _i2.Settings {
               #defaultFiatCode: defaultFiatCode,
               #selectedLanguage: selectedLanguage,
               #defaultLightningAddress: defaultLightningAddress,
+              #blacklistedRelays: blacklistedRelays,
             },
           ),
         ),
@@ -2216,6 +2225,21 @@ class MockRelaysNotifier extends _i1.Mock implements _i10.RelaysNotifier {
       ) as _i9.SettingsNotifier);
 
   @override
+  _i4.Ref<Object?> get ref => (super.noSuchMethod(
+        Invocation.getter(#ref),
+        returnValue: _FakeRef_3<Object?>(
+          this,
+          Invocation.getter(#ref),
+        ),
+      ) as _i4.Ref<Object?>);
+
+  @override
+  List<String> get blacklistedRelays => (super.noSuchMethod(
+        Invocation.getter(#blacklistedRelays),
+        returnValue: <String>[],
+      ) as List<String>);
+
+  @override
   bool get mounted => (super.noSuchMethod(
         Invocation.getter(#mounted),
         returnValue: false,
@@ -2374,6 +2398,64 @@ class MockRelaysNotifier extends _i1.Mock implements _i10.RelaysNotifier {
       ) as _i5.Future<void>);
 
   @override
+  _i5.Future<void> syncWithMostroInstance() => (super.noSuchMethod(
+        Invocation.method(
+          #syncWithMostroInstance,
+          [],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> removeRelayWithBlacklist(String? url) => (super.noSuchMethod(
+        Invocation.method(
+          #removeRelayWithBlacklist,
+          [url],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> removeRelayWithSource(String? url) => (super.noSuchMethod(
+        Invocation.method(
+          #removeRelayWithSource,
+          [url],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+
+  @override
+  bool isRelayBlacklisted(String? url) => (super.noSuchMethod(
+        Invocation.method(
+          #isRelayBlacklisted,
+          [url],
+        ),
+        returnValue: false,
+      ) as bool);
+
+  @override
+  _i5.Future<void> clearBlacklistAndResync() => (super.noSuchMethod(
+        Invocation.method(
+          #clearBlacklistAndResync,
+          [],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+
+  @override
+  void dispose() => super.noSuchMethod(
+        Invocation.method(
+          #dispose,
+          [],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
   bool updateShouldNotify(
     List<_i23.Relay>? old,
     List<_i23.Relay>? current,
@@ -2402,13 +2484,4 @@ class MockRelaysNotifier extends _i1.Mock implements _i10.RelaysNotifier {
         ),
         returnValue: () {},
       ) as _i4.RemoveListener);
-
-  @override
-  void dispose() => super.noSuchMethod(
-        Invocation.method(
-          #dispose,
-          [],
-        ),
-        returnValueForMissingStub: null,
-      );
 }

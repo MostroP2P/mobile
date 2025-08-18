@@ -7,5 +7,5 @@ final relaysProvider =
     StateNotifierProvider<RelaysNotifier, List<Relay>>((ref) {
   final settings = ref.watch(
       settingsProvider.notifier); // Assume you have this provider defined.
-  return RelaysNotifier(settings);
+  return RelaysNotifier(settings, ref);
 });

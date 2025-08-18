@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logger/logger.dart';
 import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/enums/storage_keys.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
@@ -7,9 +8,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsNotifier extends StateNotifier<Settings> {
   final SharedPreferencesAsync _prefs;
+  final Ref? ref;
+  final _logger = Logger();
   static final String _storageKey = SharedPreferencesKeys.appSettings.value;
 
-  SettingsNotifier(this._prefs) : super(_defaultSettings());
+  SettingsNotifier(this._prefs, {this.ref}) : super(_defaultSettings());
 
   static Settings _defaultSettings() {
     return Settings(
@@ -44,8 +47,15 @@ class SettingsNotifier extends StateNotifier<Settings> {
   }
 
   Future<void> updateMostroInstance(String newValue) async {
+    final oldPubkey = state.mostroPublicKey;
     state = state.copyWith(mostroInstance: newValue);
     await _saveToPrefs();
+    
+    // Log the change - the RelaysNotifier will watch for settings changes
+    if (oldPubkey != newValue) {
+      _logger.i('Mostro pubkey changed from $oldPubkey to $newValue');
+      _logger.i('RelaysNotifier should automatically sync with new instance');
+    }
   }
 
   Future<void> updateDefaultFiatCode(String newValue) async {
@@ -61,6 +71,44 @@ class SettingsNotifier extends StateNotifier<Settings> {
   Future<void> updateDefaultLightningAddress(String? newValue) async {
     state = state.copyWith(defaultLightningAddress: newValue);
     await _saveToPrefs();
+  }
+
+  /// Add a relay URL to the blacklist to prevent it from being auto-synced from Mostro
+  Future<void> addToBlacklist(String relayUrl) async {
+    final currentBlacklist = List<String>.from(state.blacklistedRelays);
+    if (!currentBlacklist.contains(relayUrl)) {
+      currentBlacklist.add(relayUrl);
+      state = state.copyWith(blacklistedRelays: currentBlacklist);
+      await _saveToPrefs();
+      _logger.i('Added relay to blacklist: $relayUrl');
+    }
+  }
+
+  /// Remove a relay URL from the blacklist, allowing it to be auto-synced again
+  Future<void> removeFromBlacklist(String relayUrl) async {
+    final currentBlacklist = List<String>.from(state.blacklistedRelays);
+    if (currentBlacklist.remove(relayUrl)) {
+      state = state.copyWith(blacklistedRelays: currentBlacklist);
+      await _saveToPrefs();
+      _logger.i('Removed relay from blacklist: $relayUrl');
+    }
+  }
+
+  /// Check if a relay URL is blacklisted
+  bool isRelayBlacklisted(String relayUrl) {
+    return state.blacklistedRelays.contains(relayUrl);
+  }
+
+  /// Get all blacklisted relay URLs
+  List<String> get blacklistedRelays => List<String>.from(state.blacklistedRelays);
+
+  /// Clear all blacklisted relays (reset to allow all auto-sync)
+  Future<void> clearBlacklist() async {
+    if (state.blacklistedRelays.isNotEmpty) {
+      state = state.copyWith(blacklistedRelays: const []);
+      await _saveToPrefs();
+      _logger.i('Cleared all blacklisted relays');
+    }
   }
 
   Future<void> _saveToPrefs() async {

@@ -5,6 +5,7 @@ class Settings {
   final String? defaultFiatCode;
   final String? selectedLanguage; // null means use system locale
   final String? defaultLightningAddress;
+  final List<String> blacklistedRelays; // Relays blocked by user from auto-sync
 
   Settings({
     required this.relays,
@@ -13,6 +14,7 @@ class Settings {
     this.defaultFiatCode,
     this.selectedLanguage,
     this.defaultLightningAddress,
+    this.blacklistedRelays = const [],
   });
 
   Settings copyWith({
@@ -22,6 +24,7 @@ class Settings {
     String? defaultFiatCode,
     String? selectedLanguage,
     String? defaultLightningAddress,
+    List<String>? blacklistedRelays,
   }) {
     return Settings(
       relays: relays ?? this.relays,
@@ -30,6 +33,7 @@ class Settings {
       defaultFiatCode: defaultFiatCode ?? this.defaultFiatCode,
       selectedLanguage: selectedLanguage,
       defaultLightningAddress: defaultLightningAddress,
+      blacklistedRelays: blacklistedRelays ?? this.blacklistedRelays,
     );
   }
 
@@ -40,6 +44,7 @@ class Settings {
         'defaultFiatCode': defaultFiatCode,
         'selectedLanguage': selectedLanguage,
         'defaultLightningAddress': defaultLightningAddress,
+        'blacklistedRelays': blacklistedRelays,
       };
 
   factory Settings.fromJson(Map<String, dynamic> json) {
@@ -50,6 +55,7 @@ class Settings {
       defaultFiatCode: json['defaultFiatCode'],
       selectedLanguage: json['selectedLanguage'],
       defaultLightningAddress: json['defaultLightningAddress'],
+      blacklistedRelays: (json['blacklistedRelays'] as List<dynamic>?)?.cast<String>() ?? [],
     );
   }
 }
