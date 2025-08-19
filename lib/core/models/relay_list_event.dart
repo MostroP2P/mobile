@@ -58,12 +58,17 @@ class RelayListEvent {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is RelayListEvent &&
-        other.authorPubkey == authorPubkey &&
-        other.relays.length == relays.length &&
-        other.relays.every((relay) => relays.contains(relay));
+    if (other is! RelayListEvent) return false;
+    final a = relays.toSet();
+    final b = other.relays.toSet();
+    return other.authorPubkey == authorPubkey &&
+        a.length == b.length &&
+        a.containsAll(b);
   }
 
   @override
-  int get hashCode => Object.hash(authorPubkey, relays);
+  int get hashCode => Object.hash(
+        authorPubkey,
+        Object.hashAllUnordered(relays.toSet()),
+      );
 }
