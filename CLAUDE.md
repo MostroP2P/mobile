@@ -17,6 +17,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Run `dart run build_runner build -d` after installing dependencies or updating localization files
 - This generates files needed by `flutter_intl` and other code generators
 
+### Essential Commands for Code Changes
+- **`flutter analyze`** - ✅ **ALWAYS run after any code change** - Mandatory before commits
+- **`flutter test`** - ✅ **ALWAYS run after any code change** - Mandatory before commits  
+- **`dart run build_runner build -d`** - 🟡 **Only when code generation needed** (models, providers, mocks, localization)
+- **`flutter test integration_test/`** - 🟡 **Only for significant changes** (core services, main flows)
+
 ## Architecture Overview
 
 ### State Management: Riverpod
@@ -47,6 +53,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Repository pattern for data access
 - Provider pattern for dependency injection
 - FSM pattern for order lifecycle management
+
+### Relay Management System
+- **Automatic Sync**: Real-time synchronization with Mostro instance relay lists via kind 10002 events
+- **User Control**: Sophisticated blacklist system allowing permanent blocking of auto-discovered relays
+- **Smart Re-enablement**: Manual relay addition automatically removes from blacklist
+- **Source Tracking**: Relays tagged by source (user, mostro, default) for appropriate handling
+- **Implementation**: Located in `features/relays/` with core logic in `RelaysNotifier`
 
 ## Timeout Detection & Reversal System
 
@@ -116,6 +129,12 @@ When orders are canceled (status changes to `canceled` in public events):
 - Use `S.of(context).yourKey` for all user-facing strings
 - Refer to existing features (order, chat, auth) for implementation patterns
 
+### Code Comments and Documentation
+- **All code comments must be in English** - No Spanish, Italian, or other languages
+- Use clear, concise English for variable names, function names, and comments
+- Documentation and technical explanations should be in English
+- User-facing strings use localization system (`S.of(context).keyName`)
+
 ### Key Services and Components
 - **MostroService** - Core business logic and Mostro protocol handling
 - **NostrService** - Nostr protocol connectivity
@@ -146,6 +165,93 @@ When orders are canceled (status changes to `canceled` in public events):
 - **Setup**: Locales configured in `main.dart` with `timeago.setLocaleMessages()`
 - **Implementation**: Custom `timeAgoWithLocale()` method in NostrEvent extension
 - **Usage**: Automatically uses app's current locale for "hace X horas" vs "hours ago"
+
+## Relay Synchronization System
+
+### Overview
+Comprehensive system that automatically synchronizes the app's relay list with the configured Mostro instance while providing users full control through an intelligent blacklist mechanism.
+
+### Core Components
+
+#### **RelayListEvent Model** (`lib/core/models/relay_list_event.dart`)
+- Parses NIP-65 (kind 10002) events from Mostro instances
+- Validates relay URLs (WebSocket only)
+- Robust handling of different timestamp formats
+- Null-safe parsing for malformed events
+
+#### **Enhanced Relay Model** (`lib/features/relays/relay.dart`)
+```dart
+enum RelaySource {
+  user,           // Manually added by user
+  mostro,         // Auto-discovered from Mostro
+  defaultConfig,  // App default relay
+}
+
+class Relay {
+  final RelaySource source;
+  bool get canDelete;      // User relays only
+  bool get canBlacklist;   // Mostro/default relays
+}
+```
+
+#### **Settings with Blacklist** (`lib/features/settings/settings.dart`)
+- New `blacklistedRelays: List<String>` field
+- Backward-compatible serialization
+- Automatic migration for existing users
+
+#### **RelaysNotifier** (`lib/features/relays/relays_notifier.dart`)
+- **`syncWithMostroInstance()`**: Manual sync trigger
+- **`removeRelayWithBlacklist(String url)`**: Smart removal with blacklisting
+- **`addRelayWithSmartValidation(...)`**: Auto-removes from blacklist when user manually adds
+- **`_handleMostroRelayListUpdate()`**: Filters blacklisted relays during sync
+
+### Synchronization Flow
+
+#### **Real-time Sync**
+1. **App Launch**: Automatic subscription to kind 10002 events from configured Mostro
+2. **Event Reception**: Parse relay list and filter against blacklist
+3. **State Update**: Merge new relays while preserving user relays
+4. **NostrService**: Automatic reconnection to updated relay list
+
+#### **Blacklist System**
+```
+User removes Mostro relay → Added to blacklist → Never re-added during sync
+User manually adds relay → Removed from blacklist → Works as user relay
+```
+
+### Key Features
+
+#### **User Experience**
+- **Transparent Operation**: Sync happens automatically in background
+- **Full User Control**: Can permanently block problematic Mostro relays
+- **Reversible Decisions**: Manual addition re-enables previously blocked relays
+- **Preserved Preferences**: User relays always maintained across syncs
+
+#### **Technical Robustness**
+- **Real-time Updates**: WebSocket subscriptions for instant sync
+- **Error Resilience**: Graceful fallbacks and comprehensive error handling
+- **Race Protection**: Prevents concurrent sync operations
+- **Logging**: Detailed logging for debugging and monitoring
+
+#### **API Methods**
+```dart
+// SettingsNotifier blacklist management
+Future<void> addToBlacklist(String relayUrl);
+Future<void> removeFromBlacklist(String relayUrl);
+bool isRelayBlacklisted(String relayUrl);
+
+// RelaysNotifier smart operations
+Future<void> removeRelayWithBlacklist(String url);
+Future<void> clearBlacklistAndResync();
+```
+
+### Implementation Notes
+- **Subscription Management**: Uses `SubscriptionManager` with dedicated relay list stream
+- **State Persistence**: Blacklist automatically saved to SharedPreferences
+- **Backward Compatibility**: Existing relay configurations preserved and migrated
+- **Testing**: Comprehensive unit tests in `test/features/relays/` (currently disabled due to complex mocking requirements)
+
+For complete technical documentation, see `RELAY_SYNC_IMPLEMENTATION.md`.
 
 ## Code Quality Standards
 
@@ -279,6 +385,15 @@ When orders are canceled (status changes to `canceled` in public events):
 - `lib/l10n/` - Internationalization files
 - `test/` - Unit and integration tests
 
+### Relay System Files
+- `lib/core/models/relay_list_event.dart` - NIP-65 event parser for kind 10002
+- `lib/features/relays/relay.dart` - Enhanced relay model with source tracking
+- `lib/features/relays/relays_notifier.dart` - Core relay management and sync logic
+- `lib/features/relays/relays_provider.dart` - Riverpod provider configuration
+- `lib/features/settings/settings.dart` - Settings model with blacklist support
+- `lib/features/subscriptions/subscription_manager.dart` - Extended with relay list subscriptions
+- `RELAY_SYNC_IMPLEMENTATION.md` - Complete technical documentation
+
 ### Generated Files (Don't Edit Manually)
 - `lib/generated/` - Generated localization files
 - `*.g.dart` - Generated Riverpod and other code
@@ -315,10 +430,10 @@ When orders are canceled (status changes to `canceled` in public events):
 
 ---
 
-**Last Updated**: 2025-07-20  
+**Last Updated**: 2025-08-18  
 **Flutter Version**: Latest stable  
 **Dart Version**: Latest stable  
-**Key Dependencies**: Riverpod, GoRouter, flutter_intl, timeago, dart_nostr
+**Key Dependencies**: Riverpod, GoRouter, flutter_intl, timeago, dart_nostr, logger, shared_preferences
 
 ## Current Project Status
 
@@ -337,6 +452,7 @@ When orders are canceled (status changes to `canceled` in public events):
 - ⚡ **Lightning**: Seamless Lightning Network integration
 - 🌐 **Multi-Platform**: Android and iOS native performance
 - 📱 **Real-Time**: Live updates via Nostr protocol
+- 🔗 **Smart Relay Management**: Automatic sync with blacklist control
 
 ### Recent Achievements
 - **UI Modernization**: Complete settings and account screen redesign
@@ -344,3 +460,4 @@ When orders are canceled (status changes to `canceled` in public events):
 - **Localization Excellence**: 73+ new translation keys across 3 languages
 - **Code Quality**: Zero analyzer issues with modern Flutter standards
 - **Documentation**: Comprehensive NOSTR.md and updated README.md
+- **Relay Sync System**: Automatic synchronization with intelligent blacklist management
