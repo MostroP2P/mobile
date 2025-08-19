@@ -398,6 +398,14 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
       }
 
       _logger.i('Syncing relays with Mostro instance: $mostroPubkey');
+      
+      // Cancel any existing relay list subscription before creating new one
+      _subscriptionManager?.unsubscribeFromMostroRelayList();
+      
+      // Clean existing Mostro relays from state to prevent contamination
+      _cleanMostroRelaysFromState();
+      
+      // Subscribe to the new Mostro instance
       _subscriptionManager?.subscribeToMostroRelayList(mostroPubkey);
     } catch (e, stackTrace) {
       _logger.e('Failed to sync with Mostro instance',
@@ -408,7 +416,22 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
   /// Handle relay list updates from Mostro instance
   void _handleMostroRelayListUpdate(RelayListEvent event) {
     try {
-      _logger.i('Received relay list from Mostro: ${event.relays}');
+      final currentMostroPubkey = settings.state.mostroPublicKey;
+      
+      // Validate that this event is from the currently configured Mostro instance
+      if (event.authorPubkey != currentMostroPubkey) {
+        _logger.w('Ignoring relay list event from wrong Mostro instance. '
+            'Expected: $currentMostroPubkey, Got: ${event.authorPubkey}');
+        return;
+      }
+      
+      _logger.i('Received relay list from Mostro ${event.authorPubkey}: ${event.relays}');
+      
+      // Normalize relay URLs to prevent duplicates
+      final normalizedRelays = event.validRelays
+          .map((url) => _normalizeRelayUrl(url))
+          .toSet() // Remove duplicates
+          .toList();
       
       // Get current relays grouped by source
       final currentRelays = <String, Relay>{
@@ -422,7 +445,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
       final updatedRelays = state.where((relay) => relay.source != RelaySource.mostro).toList();
       
       // Add new Mostro relays (filtering out blacklisted ones)
-      for (final relayUrl in event.validRelays) {
+      for (final relayUrl in normalizedRelays) {
         // Skip if blacklisted by user
         if (blacklistedUrls.contains(relayUrl)) {
           _logger.i('Skipping blacklisted Mostro relay: $relayUrl');
@@ -524,6 +547,26 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
     await settings.clearBlacklist();
     _logger.i('Cleared blacklist, triggering relay re-sync');
     await syncWithMostroInstance();
+  }
+
+  /// Clean existing Mostro relays from state when switching instances
+  void _cleanMostroRelaysFromState() {
+    final cleanedRelays = state.where((relay) => relay.source != RelaySource.mostro).toList();
+    if (cleanedRelays.length != state.length) {
+      state = cleanedRelays;
+      _saveRelays();
+      _logger.i('Cleaned ${state.length - cleanedRelays.length} Mostro relays from state');
+    }
+  }
+
+  /// Normalize relay URL to prevent duplicates (removes trailing slash)
+  String _normalizeRelayUrl(String url) {
+    url = url.trim();
+    // Remove trailing slash if present
+    if (url.endsWith('/')) {
+      url = url.substring(0, url.length - 1);
+    }
+    return url;
   }
 
   @override

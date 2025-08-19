@@ -44,9 +44,12 @@ class RelayListEvent {
   }
 
   /// Validates that all relay URLs are properly formatted WebSocket URLs
+  /// Also normalizes URLs by removing trailing slashes to prevent duplicates
   List<String> get validRelays {
     return relays
         .where((url) => url.startsWith('wss://') || url.startsWith('ws://'))
+        .map((url) => url.trim())
+        .map((url) => url.endsWith('/') ? url.substring(0, url.length - 1) : url)
         .toList();
   }
 

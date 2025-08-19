@@ -48,7 +48,7 @@ class SettingsNotifier extends StateNotifier<Settings> {
 
   Future<void> updateMostroInstance(String newValue) async {
     final oldPubkey = state.mostroPublicKey;
-    state = state.copyWith(mostroInstance: newValue);
+    state = state.copyWith(mostroPublicKey: newValue);
     await _saveToPrefs();
     
     // Log the change - the RelaysNotifier will watch for settings changes
