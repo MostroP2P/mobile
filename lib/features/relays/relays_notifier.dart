@@ -29,6 +29,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
   final _logger = Logger();
   SubscriptionManager? _subscriptionManager;
   StreamSubscription<RelayListEvent>? _relayListSubscription;
+  Timer? _settingsWatchTimer;
 
   RelaysNotifier(this.settings, this.ref) : super([]) {
     _loadRelays();
@@ -500,7 +501,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
     
     // Use a simple timer to periodically check for changes
     // This avoids circular dependency issues with provider watching
-    Timer.periodic(const Duration(seconds: 5), (timer) {
+    _settingsWatchTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
       final newPubkey = settings.state.mostroPublicKey;
       if (newPubkey != currentPubkey) {
         _logger.i('Detected Mostro pubkey change: $currentPubkey -> $newPubkey');
@@ -529,6 +530,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
   void dispose() {
     _relayListSubscription?.cancel();
     _subscriptionManager?.dispose();
+    _settingsWatchTimer?.cancel();
     super.dispose();
   }
 }
