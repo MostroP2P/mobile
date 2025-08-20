@@ -53,7 +53,7 @@ class PriceTypeSection extends StatelessWidget {
               Switch(
                 key: const Key('fixedSwitch'),
                 value: isMarketRate,
-                activeColor:
+                activeThumbColor:
                     AppTheme.purpleAccent, // Keep the purple accent color
                 onChanged: onToggle,
               ),

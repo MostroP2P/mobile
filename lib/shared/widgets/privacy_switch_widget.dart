@@ -45,7 +45,7 @@ class _PrivacySwitchState extends State<PrivacySwitch> {
             });
             widget.onChanged(value);
           },
-          activeColor: AppTheme.mostroGreen,
+          activeThumbColor: AppTheme.mostroGreen,
           inactiveThumbColor: Colors.grey,
         ),
         const SizedBox(width: 8),
