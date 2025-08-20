@@ -57,8 +57,8 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
   }
 
   Future<void> _generateNewMasterKey() async {
-    final sessionNotifer = ref.read(sessionNotifierProvider.notifier);
-    await sessionNotifer.reset();
+    final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+    await sessionNotifier.reset();
 
     final mostroStorage = ref.read(mostroStorageProvider);
     await mostroStorage.deleteAll();
@@ -672,7 +672,8 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               ),
               child: Text(
                 S.of(context)!.continueButton,
