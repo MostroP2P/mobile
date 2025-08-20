@@ -6,7 +6,7 @@ import 'package:mostro_mobile/generated/l10n.dart';
 
 class ActionButtons extends StatelessWidget {
   final VoidCallback onCancel;
-  final VoidCallback onSubmit;
+  final VoidCallback? onSubmit;
   final int? currentRequestId;
 
   const ActionButtons({
@@ -50,9 +50,9 @@ class ActionButtons extends StatelessWidget {
               action: nostr_action.Action.newOrder,
               onPressed: onSubmit,
               timeout: const Duration(seconds: 5),
-              showSuccessIndicator: true,
-              backgroundColor: AppTheme.purpleButton,
-              foregroundColor: Colors.white,
+              showSuccessIndicator: onSubmit != null, // Only show success indicator when enabled
+              backgroundColor: onSubmit != null ? AppTheme.purpleButton : AppTheme.backgroundInactive,
+              foregroundColor: onSubmit != null ? Colors.white : AppTheme.textInactive,
             ),
           ),
         ),

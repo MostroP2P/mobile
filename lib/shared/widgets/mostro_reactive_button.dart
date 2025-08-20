@@ -29,7 +29,7 @@ class MostroReactiveButtonController {
 class MostroReactiveButton extends ConsumerStatefulWidget {
   final String label;
   final ButtonStyleType buttonStyle;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final String orderId;
   final actions.Action action;
   final Duration timeout;
@@ -87,11 +87,13 @@ class _MostroReactiveButtonState extends ConsumerState<MostroReactiveButton> {
   }
 
   void _startOperation() {
+    if (widget.onPressed == null) return;
+    
     setState(() {
       _loading = true;
       _showSuccess = false;
     });
-    widget.onPressed();
+    widget.onPressed!();
     _timeoutTimer?.cancel();
     _timeoutTimer = Timer(widget.timeout, _handleTimeout);
   }
@@ -155,7 +157,7 @@ class _MostroReactiveButtonState extends ConsumerState<MostroReactiveButton> {
     switch (widget.buttonStyle) {
       case ButtonStyleType.raised:
         button = ElevatedButton(
-          onPressed: _loading ? null : _startOperation,
+          onPressed: (_loading || widget.onPressed == null) ? null : _startOperation,
           style: (widget.backgroundColor != null || widget.foregroundColor != null)
               ? AppTheme.theme.elevatedButtonTheme.style?.copyWith(
                   backgroundColor: widget.backgroundColor != null
@@ -171,7 +173,7 @@ class _MostroReactiveButtonState extends ConsumerState<MostroReactiveButton> {
         break;
       case ButtonStyleType.outlined:
         button = OutlinedButton(
-          onPressed: _loading ? null : _startOperation,
+          onPressed: (_loading || widget.onPressed == null) ? null : _startOperation,
           style: widget.backgroundColor != null
               ? AppTheme.theme.outlinedButtonTheme.style?.copyWith(
                   backgroundColor: WidgetStateProperty.resolveWith(
@@ -184,7 +186,7 @@ class _MostroReactiveButtonState extends ConsumerState<MostroReactiveButton> {
         break;
       case ButtonStyleType.text:
         button = TextButton(
-          onPressed: _loading ? null : _startOperation,
+          onPressed: (_loading || widget.onPressed == null) ? null : _startOperation,
           style: widget.backgroundColor != null
               ? AppTheme.theme.textButtonTheme.style?.copyWith(
                   backgroundColor: WidgetStateProperty.resolveWith(

@@ -332,7 +332,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
                           child: ActionButtons(
                             key: const Key('addOrderButtons'),
                             onCancel: () => context.pop(),
-                            onSubmit: _submitOrder,
+                            onSubmit: _getSubmitCallback(),
                             currentRequestId: _currentRequestId,
                           ),
                         ),
@@ -346,6 +346,31 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
         ],
       ),
     );
+  }
+
+  /// Returns submit callback only when form is valid, null otherwise
+  /// This prevents button loading state when validation errors exist
+  VoidCallback? _getSubmitCallback() {
+    // Don't allow submission if validation errors exist
+    if (_validationError != null) {
+      return null; // Disables button, prevents loading state
+    }
+    
+    // Check other basic conditions that would prevent submission
+    final selectedFiatCode = ref.read(selectedFiatCodeProvider);
+    if (selectedFiatCode == null || selectedFiatCode.isEmpty) {
+      return null;
+    }
+    
+    if (_selectedPaymentMethods.isEmpty) {
+      return null;
+    }
+    
+    if (_validationError != null) {
+      return null;
+    }
+    
+    return _submitOrder; // Form is valid - allow submission
   }
 
   void _submitOrder() {
