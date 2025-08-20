@@ -227,6 +227,8 @@
   "buyingBitcoin": "Comprando Bitcoin",
   "sellingBitcoin": "Vendiendo Bitcoin",
   "bankTransfer": "Transferencia Bancaria",
+  "cashInPerson": "Efectivo",
+  "other": "Otro",
   "createdByYou": "Creado por ti",
   "takenByYou": "Tomado por ti",
   "active": "Activo",
@@ -823,6 +825,17 @@
   "add": "Agregar",
 
   "save": "Guardar",
+  "apply": "Aplicar",
+
+  "@_comment_filter_section": "Strings de la sección de filtros",
+  "rating": "Calificación",
+  "reputation": "Reputación",
+  "premiumRange": "Prima/Descuento",
+  "discount": "Descuento",
+  "premium": "Prima",
+  "clear": "Limpiar",
+  "min": "Mín",
+  "max": "Máx",
   "selectCurrency": "Seleccionar Moneda",
   "noCurrencySelected": "Ninguna moneda seleccionada",
 

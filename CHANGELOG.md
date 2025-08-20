@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0+6]
+
+### Added
+- Enhanced UI/UX for order amount input and lightning invoice screens
+- Improved timeout detection system for better order state management
+- Additional Latin nouns to randomized user pseudonyms (nym generation)
+- Placeholder descriptions to ARB files for metadata compliance
+
+### Fixed
+- Pending status inclusion in cancellation detection logic
+- Canceled order cleanup and timeout detection improvements
+- Out-of-range sats amount error handling with session cleanup and retry mechanism
+- Direct enum comparison for CantDoReason checks
+
+### Changed
+- Camel case formatting for compound words in codebase
+- Enhanced error handling for amount validation flows
+
 ## [1.0.0+5]
 
 ### Added

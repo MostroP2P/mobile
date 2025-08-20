@@ -12,6 +12,20 @@ class PaymentMethodsSection extends ConsumerWidget {
   final TextEditingController customController;
   final Function(List<String>, bool) onMethodsChanged;
 
+  /// Helper function to translate payment method names
+  String _translatePaymentMethod(String method, BuildContext context) {
+    switch (method) {
+      case 'Bank Transfer':
+        return S.of(context)!.bankTransfer;
+      case 'Cash in person':
+        return S.of(context)!.cashInPerson;
+      case 'Other':
+        return S.of(context)!.other;
+      default:
+        return method;
+    }
+  }
+
   const PaymentMethodsSection({
     super.key,
     required this.selectedMethods,
@@ -63,10 +77,13 @@ class PaymentMethodsSection extends ConsumerWidget {
 
           List<String> availableMethods = [];
           if (data.containsKey(selectedFiatCode)) {
-            availableMethods = List<String>.from(data[selectedFiatCode]);
+            availableMethods = List<String>.from(data[selectedFiatCode])
+                .map((method) => _translatePaymentMethod(method, context))
+                .toList();
           } else {
-            availableMethods = List<String>.from(data['default'] ??
-                ['Bank Transfer', 'Cash in person', 'Other']);
+            availableMethods = List<String>.from(data['default'] ?? ['Bank Transfer', 'Cash in person', 'Other'])
+                .map((method) => _translatePaymentMethod(method, context))
+                .toList();
           }
 
           return InkWell(
@@ -110,12 +127,17 @@ class PaymentMethodsSection extends ConsumerWidget {
     Function(List<String>, bool) onMethodsChanged,
     TextEditingController customController,
   ) {
-    if (!availableMethods.contains('Other')) {
-      availableMethods = [...availableMethods, 'Other'];
+    final translatedOther = _translatePaymentMethod('Other', context);
+    if (!availableMethods.contains(translatedOther)) {
+      availableMethods = [...availableMethods, translatedOther];
     }
 
-    List<String> dialogSelectedMethods = List<String>.from(selectedMethods);
-    bool dialogShowOtherField = dialogSelectedMethods.contains('Other');
+    // Normalize to current locale so checkbox states align with localized labels
+    final localizedSelected = selectedMethods
+        .map((m) => _translatePaymentMethod(m, context))
+        .toList();
+    List<String> dialogSelectedMethods = List<String>.from(localizedSelected);
+    bool dialogShowOtherField = dialogSelectedMethods.contains(translatedOther);
 
     showDialog(
       context: context,
@@ -145,12 +167,12 @@ class PaymentMethodsSection extends ConsumerWidget {
                               setDialogState(() {
                                 if (selected == true) {
                                   dialogSelectedMethods.add(method);
-                                  if (method == 'Other') {
+                                  if (method == translatedOther) {
                                     dialogShowOtherField = true;
                                   }
                                 } else {
                                   dialogSelectedMethods.remove(method);
-                                  if (method == 'Other') {
+                                  if (method == translatedOther) {
                                     dialogShowOtherField = false;
                                   }
                                 }

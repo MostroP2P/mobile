@@ -13,7 +13,7 @@ class HighlightConfig {
   );
 
   static const security = HighlightConfig(
-    pattern: r'\b(Hold Invoices|Facturas de Retención|Fatture di Blocco)\b',
+    pattern: r'\b(Hold Invoices|Facturas Retenidas|Fatture di Blocco)\b',
   );
 
   static const chat = HighlightConfig(
@@ -23,5 +23,9 @@ class HighlightConfig {
 
   static const orderBook = HighlightConfig(
     pattern: r'\b(order book|libro de órdenes|libro ordini)\b',
+  );
+
+  static const createOffer = HighlightConfig(
+    pattern: r'\b(create your own offer|crear tu propia oferta|creare la tua offerta)\b',
   );
 }
