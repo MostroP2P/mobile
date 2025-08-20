@@ -161,11 +161,6 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
   /// Comprehensive validation for all fiat amount inputs
   /// Returns error message if validation fails, null if all validations pass
   String? _validateAllAmounts() {
-    // Check for empty required fields - min amount is always required
-    if (_minFiatAmount == null) {
-      return S.of(context)!.pleaseEnterAmount;
-    }
-
     // Check min/max relationship for range orders
     if (_minFiatAmount != null && _maxFiatAmount != null) {
       if (_maxFiatAmount! <= _minFiatAmount!) {
