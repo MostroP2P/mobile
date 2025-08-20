@@ -12,15 +12,15 @@ enum ButtonStyleType { raised, outlined, text }
 /// Controller for managing MostroReactiveButton state externally
 class MostroReactiveButtonController {
   _MostroReactiveButtonState? _state;
-  
+
   void _attach(_MostroReactiveButtonState state) {
     _state = state;
   }
-  
+
   void _detach() {
     _state = null;
   }
-  
+
   void resetLoading() {
     _state?.resetLoading();
   }
@@ -44,7 +44,7 @@ class MostroReactiveButton extends ConsumerStatefulWidget {
     super.key,
     required this.label,
     required this.buttonStyle,
-    required this.onPressed,
+    this.onPressed,
     required this.orderId,
     required this.action,
     this.timeout = const Duration(seconds: 5),
@@ -88,7 +88,7 @@ class _MostroReactiveButtonState extends ConsumerState<MostroReactiveButton> {
 
   void _startOperation() {
     if (widget.onPressed == null) return;
-    
+
     setState(() {
       _loading = true;
       _showSuccess = false;
@@ -157,23 +157,28 @@ class _MostroReactiveButtonState extends ConsumerState<MostroReactiveButton> {
     switch (widget.buttonStyle) {
       case ButtonStyleType.raised:
         button = ElevatedButton(
-          onPressed: (_loading || widget.onPressed == null) ? null : _startOperation,
-          style: (widget.backgroundColor != null || widget.foregroundColor != null)
-              ? AppTheme.theme.elevatedButtonTheme.style?.copyWith(
-                  backgroundColor: widget.backgroundColor != null
-                      ? WidgetStateProperty.resolveWith((_) => widget.backgroundColor!)
-                      : null,
-                  foregroundColor: widget.foregroundColor != null
-                      ? WidgetStateProperty.resolveWith((_) => widget.foregroundColor!)
-                      : null,
-                )
-              : AppTheme.theme.elevatedButtonTheme.style,
+          onPressed:
+              (_loading || widget.onPressed == null) ? null : _startOperation,
+          style:
+              (widget.backgroundColor != null || widget.foregroundColor != null)
+                  ? AppTheme.theme.elevatedButtonTheme.style?.copyWith(
+                      backgroundColor: widget.backgroundColor != null
+                          ? WidgetStateProperty.resolveWith(
+                              (_) => widget.backgroundColor!)
+                          : null,
+                      foregroundColor: widget.foregroundColor != null
+                          ? WidgetStateProperty.resolveWith(
+                              (_) => widget.foregroundColor!)
+                          : null,
+                    )
+                  : AppTheme.theme.elevatedButtonTheme.style,
           child: childWidget,
         );
         break;
       case ButtonStyleType.outlined:
         button = OutlinedButton(
-          onPressed: (_loading || widget.onPressed == null) ? null : _startOperation,
+          onPressed:
+              (_loading || widget.onPressed == null) ? null : _startOperation,
           style: widget.backgroundColor != null
               ? AppTheme.theme.outlinedButtonTheme.style?.copyWith(
                   backgroundColor: WidgetStateProperty.resolveWith(
@@ -186,7 +191,8 @@ class _MostroReactiveButtonState extends ConsumerState<MostroReactiveButton> {
         break;
       case ButtonStyleType.text:
         button = TextButton(
-          onPressed: (_loading || widget.onPressed == null) ? null : _startOperation,
+          onPressed:
+              (_loading || widget.onPressed == null) ? null : _startOperation,
           style: widget.backgroundColor != null
               ? AppTheme.theme.textButtonTheme.style?.copyWith(
                   backgroundColor: WidgetStateProperty.resolveWith(

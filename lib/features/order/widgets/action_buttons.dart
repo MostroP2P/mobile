@@ -12,7 +12,7 @@ class ActionButtons extends StatelessWidget {
   const ActionButtons({
     super.key,
     required this.onCancel,
-    required this.onSubmit,
+    this.onSubmit,
     required this.currentRequestId,
   });
 
@@ -50,9 +50,13 @@ class ActionButtons extends StatelessWidget {
               action: nostr_action.Action.newOrder,
               onPressed: onSubmit,
               timeout: const Duration(seconds: 5),
-              showSuccessIndicator: onSubmit != null, // Only show success indicator when enabled
-              backgroundColor: onSubmit != null ? AppTheme.purpleButton : AppTheme.backgroundInactive,
-              foregroundColor: onSubmit != null ? Colors.white : AppTheme.textInactive,
+              showSuccessIndicator:
+                  onSubmit != null, // Only show success indicator when enabled
+              backgroundColor: onSubmit != null
+                  ? AppTheme.purpleButton
+                  : AppTheme.backgroundInactive,
+              foregroundColor:
+                  onSubmit != null ? Colors.white : AppTheme.textInactive,
             ),
           ),
         ),

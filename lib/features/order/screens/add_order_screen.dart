@@ -90,7 +90,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
     setState(() {
       _minFiatAmount = minAmount;
       _maxFiatAmount = maxAmount;
-      
+
       // Use comprehensive validation to check all error conditions
       _validationError = _validateAllAmounts();
     });
@@ -138,19 +138,20 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
     final maxAllowed = mostroInstance.maxOrderAmount;
 
     // Debug logging
-    debugPrint('Validation: fiat=$fiatAmount, rate=$exchangeRate, sats=$satsAmount, min=$minAllowed, max=$maxAllowed');
+    debugPrint(
+        'Validation: fiat=$fiatAmount, rate=$exchangeRate, sats=$satsAmount, min=$minAllowed, max=$maxAllowed');
 
     // Check if sats amount is outside range
     if (satsAmount < minAllowed) {
       return S.of(context)!.fiatAmountTooLow(
-        minAllowed.toString(),
-        maxAllowed.toString(),
-      );
+            minAllowed.toString(),
+            maxAllowed.toString(),
+          );
     } else if (satsAmount > maxAllowed) {
       return S.of(context)!.fiatAmountTooHigh(
-        minAllowed.toString(),
-        maxAllowed.toString(),
-      );
+            minAllowed.toString(),
+            maxAllowed.toString(),
+          );
     }
 
     // Validation passed
@@ -165,7 +166,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
       return S.of(context)!.pleaseEnterAmount;
     }
 
-    // Check min/max relationship for range orders  
+    // Check min/max relationship for range orders
     if (_minFiatAmount != null && _maxFiatAmount != null) {
       if (_maxFiatAmount! <= _minFiatAmount!) {
         return S.of(context)!.maxMustBeGreaterThanMin;
@@ -178,7 +179,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
       if (minError != null) return minError;
     }
 
-    // Check sats range validation for max amount  
+    // Check sats range validation for max amount
     if (_maxFiatAmount != null) {
       final maxError = _validateSatsRange(_maxFiatAmount!.toDouble());
       if (maxError != null) return maxError;
@@ -230,8 +231,8 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
                           orderType: _orderType,
                           onCurrencySelected: () {
                             setState(() {
-                              // Clear validation error when currency changes since rates may be different
-                              _validationError = null;
+                              // Re-validate after currency change since rates/limits differ
+                              _validationError = _validateAllAmounts();
                             });
                           },
                         ),
@@ -355,21 +356,21 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
     if (_validationError != null) {
       return null; // Disables button, prevents loading state
     }
-    
+
     // Check other basic conditions that would prevent submission
     final selectedFiatCode = ref.read(selectedFiatCodeProvider);
     if (selectedFiatCode == null || selectedFiatCode.isEmpty) {
       return null;
     }
-    
+
     if (_selectedPaymentMethods.isEmpty) {
       return null;
     }
-    
+
     if (_validationError != null) {
       return null;
     }
-    
+
     return _submitOrder; // Form is valid - allow submission
   }
 
@@ -403,7 +404,8 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
       // Enhanced validation: check sats range for both min and max amounts
       // This is a critical final validation before submission
       if (_validationError != null) {
-        debugPrint('Submission blocked: Validation error present: $_validationError');
+        debugPrint(
+            'Submission blocked: Validation error present: $_validationError');
         // Validation error is already displayed inline, just prevent submission
         return;
       }
@@ -411,9 +413,10 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
       // Additional safety check: ensure we have valid data for submission
       final exchangeRateAsync = ref.read(exchangeRateProvider(fiatCode));
       final mostroInstance = ref.read(orderRepositoryProvider).mostroInstance;
-      
+
       if (!exchangeRateAsync.hasValue || mostroInstance == null) {
-        debugPrint('Submission blocked: Required data not available - Exchange rate: ${exchangeRateAsync.hasValue}, Mostro instance: ${mostroInstance != null}');
+        debugPrint(
+            'Submission blocked: Required data not available - Exchange rate: ${exchangeRateAsync.hasValue}, Mostro instance: ${mostroInstance != null}');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(S.of(context)!.exchangeRateNotAvailable),
