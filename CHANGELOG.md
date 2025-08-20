@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0+7]
+
+### Added
+- Comprehensive sats range validation for add order screen with real-time error messages
+- Enhanced form validation system with centralized error handling and proper error display
+- Flutter gen-l10n step to GitHub Actions CI/CD pipeline for consistent localization builds
+- Proper null callback handling in MostroReactiveButton for improved button state management
+
+### Fixed
+- Submit button loading state when validation errors are present (now properly disabled)
+- MostroReactiveButton null callback handling to prevent unintended loading states
+- Unnecessary 'this.' qualifier removed from mostro_message.dart for code quality
+- Conditional assignment optimization in mostro_storage.dart for cleaner code
+- Deprecated `activeColor` parameters replaced with `activeThumbColor` in Switch widgets (4 files)
+- Deprecated `synthetic-package` argument removed from l10n.yaml configuration
+- Missing localization getters regenerated for validation error messages
+- All Flutter analyzer issues resolved maintaining zero-issue codebase
+
+### Changed
+- Enhanced validation system now follows payment method validation pattern for consistency
+- Improved button state management to prevent loading when form is invalid
+- Code quality improvements with modern Flutter best practices implementation
+
+### Removed
+- Unused privacy_switch_widget.dart file (dead code cleanup)
+
 ## [1.0.0+6]
 
 ### Added
