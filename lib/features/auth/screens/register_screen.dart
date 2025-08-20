@@ -182,7 +182,14 @@ class RegisterScreen extends HookConsumerWidget {
                           ref.read(useBiometricsProvider.notifier).state =
                               value;
                         },
-                        activeThumbColor: AppTheme.activeColor,
+                        thumbColor: WidgetStateProperty.resolveWith<Color?>(
+                          (Set<WidgetState> states) {
+                            if (states.contains(WidgetState.selected)) {
+                              return AppTheme.activeColor;
+                            }
+                            return null;
+                          },
+                        ),
                       )
                     : const SizedBox.shrink();
               }),

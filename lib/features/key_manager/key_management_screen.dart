@@ -396,9 +396,22 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                           .watch(settingsProvider.notifier)
                           .updatePrivacyMode(value);
                     },
-                    activeThumbColor: AppTheme.activeColor,
-                    inactiveThumbColor: AppTheme.textSecondary,
-                    inactiveTrackColor: AppTheme.backgroundInactive,
+                    thumbColor: WidgetStateProperty.resolveWith<Color?>(
+                      (Set<WidgetState> states) {
+                        if (states.contains(WidgetState.selected)) {
+                          return AppTheme.activeColor;
+                        }
+                        return AppTheme.textSecondary;
+                      },
+                    ),
+                    trackColor: WidgetStateProperty.resolveWith<Color?>(
+                      (Set<WidgetState> states) {
+                        if (!states.contains(WidgetState.selected)) {
+                          return AppTheme.backgroundInactive;
+                        }
+                        return null;
+                      },
+                    ),
                   ),
                 ],
               ),
