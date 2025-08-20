@@ -7,11 +7,13 @@ import 'package:mostro_mobile/generated/l10n.dart';
 class AmountSection extends StatefulWidget {
   final OrderType orderType;
   final Function(int? minAmount, int? maxAmount) onAmountChanged;
+  final String? Function(double)? validateSatsRange;
 
   const AmountSection({
     super.key,
     required this.orderType,
     required this.onAmountChanged,
+    this.validateSatsRange,
   });
 
   @override
@@ -125,6 +127,18 @@ class _AmountSectionState extends State<AmountSection> {
     if (int.tryParse(value) == null) {
       return S.of(context)!.pleaseEnterValidAmount;
     }
+
+    // Check sats range validation if callback provided
+    if (widget.validateSatsRange != null) {
+      final fiatAmount = double.tryParse(value);
+      if (fiatAmount != null) {
+        final rangeError = widget.validateSatsRange!(fiatAmount);
+        if (rangeError != null) {
+          return rangeError;
+        }
+      }
+    }
+    
     return null;
   }
 
@@ -141,6 +155,18 @@ class _AmountSectionState extends State<AmountSection> {
     if (minAmount != null && maxAmount != null && maxAmount <= minAmount) {
       return S.of(context)!.maxMustBeGreaterThanMin;
     }
+
+    // Check sats range validation if callback provided
+    if (widget.validateSatsRange != null) {
+      final fiatAmount = double.tryParse(value);
+      if (fiatAmount != null) {
+        final rangeError = widget.validateSatsRange!(fiatAmount);
+        if (rangeError != null) {
+          return rangeError;
+        }
+      }
+    }
+
     return null;
   }
 
