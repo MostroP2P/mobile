@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/features/order/widgets/form_section.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
@@ -8,12 +9,14 @@ class AmountSection extends StatefulWidget {
   final OrderType orderType;
   final Function(int? minAmount, int? maxAmount) onAmountChanged;
   final String? Function(double)? validateSatsRange;
+  final String? validationError;
 
   const AmountSection({
     super.key,
     required this.orderType,
     required this.onAmountChanged,
     this.validateSatsRange,
+    this.validationError,
   });
 
   @override
@@ -121,53 +124,55 @@ class _AmountSectionState extends State<AmountSection> {
   }
 
   String? _validateMinAmount(String? value) {
-    if (value == null || value.isEmpty) {
-      return S.of(context)!.pleaseEnterAmount;
+    // Only validate format - all error messages handled by validationError widget
+    if (value != null && value.isNotEmpty && int.tryParse(value) == null) {
+      return ''; // Return empty string to trigger form validation but not show message
     }
-    if (int.tryParse(value) == null) {
-      return S.of(context)!.pleaseEnterValidAmount;
-    }
-
-    // Check sats range validation if callback provided
-    if (widget.validateSatsRange != null) {
-      final fiatAmount = double.tryParse(value);
-      if (fiatAmount != null) {
-        final rangeError = widget.validateSatsRange!(fiatAmount);
-        if (rangeError != null) {
-          return rangeError;
-        }
-      }
-    }
-    
     return null;
   }
 
   String? _validateMaxAmount(String? value) {
-    if (value == null || value.isEmpty) {
-      return null; // Max amount is optional
+    // Only validate format - all error messages handled by validationError widget
+    if (value != null && value.isNotEmpty && int.tryParse(value) == null) {
+      return ''; // Return empty string to trigger form validation but not show message
     }
-    if (int.tryParse(value) == null) {
-      return S.of(context)!.pleaseEnterValidAmount;
-    }
-
-    final minAmount = int.tryParse(_minAmountController.text);
-    final maxAmount = int.tryParse(value);
-    if (minAmount != null && maxAmount != null && maxAmount <= minAmount) {
-      return S.of(context)!.maxMustBeGreaterThanMin;
-    }
-
-    // Check sats range validation if callback provided
-    if (widget.validateSatsRange != null) {
-      final fiatAmount = double.tryParse(value);
-      if (fiatAmount != null) {
-        final rangeError = widget.validateSatsRange!(fiatAmount);
-        if (rangeError != null) {
-          return rangeError;
-        }
-      }
-    }
-
     return null;
+  }
+
+  Widget _buildValidationMessage() {
+    if (widget.validationError == null) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppTheme.statusError.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: AppTheme.statusError.withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.warning_amber_rounded,
+            color: AppTheme.statusError,
+            size: 18,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              widget.validationError!,
+              style: const TextStyle(
+                color: AppTheme.statusError,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -242,6 +247,12 @@ class _AmountSectionState extends State<AmountSection> {
                 fontSize: 12,
               ),
             ),
+          ],
+
+          // Validation message (shown inside card when there's an error)
+          if (widget.validationError != null) ...[
+            const SizedBox(height: 12),
+            _buildValidationMessage(),
           ],
         ],
       ),

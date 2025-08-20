@@ -42,6 +42,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
 
   int? _minFiatAmount;
   int? _maxFiatAmount;
+  String? _validationError;
 
   List<String> _selectedPaymentMethods = [];
   bool _showCustomPaymentMethod = false;
@@ -89,6 +90,9 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
     setState(() {
       _minFiatAmount = minAmount;
       _maxFiatAmount = maxAmount;
+      
+      // Use comprehensive validation to check all error conditions
+      _validationError = _validateAllAmounts();
     });
   }
 
@@ -153,6 +157,36 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
     return null;
   }
 
+  /// Comprehensive validation for all fiat amount inputs
+  /// Returns error message if validation fails, null if all validations pass
+  String? _validateAllAmounts() {
+    // Check for empty required fields - min amount is always required
+    if (_minFiatAmount == null) {
+      return S.of(context)!.pleaseEnterAmount;
+    }
+
+    // Check min/max relationship for range orders  
+    if (_minFiatAmount != null && _maxFiatAmount != null) {
+      if (_maxFiatAmount! <= _minFiatAmount!) {
+        return S.of(context)!.maxMustBeGreaterThanMin;
+      }
+    }
+
+    // Check sats range validation for min amount
+    if (_minFiatAmount != null) {
+      final minError = _validateSatsRange(_minFiatAmount!.toDouble());
+      if (minError != null) return minError;
+    }
+
+    // Check sats range validation for max amount  
+    if (_maxFiatAmount != null) {
+      final maxError = _validateSatsRange(_maxFiatAmount!.toDouble());
+      if (maxError != null) return maxError;
+    }
+
+    return null; // All validations passed
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -195,7 +229,10 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
                         CurrencySection(
                           orderType: _orderType,
                           onCurrencySelected: () {
-                            setState(() {});
+                            setState(() {
+                              // Clear validation error when currency changes since rates may be different
+                              _validationError = null;
+                            });
                           },
                         ),
                         const SizedBox(height: 16),
@@ -203,6 +240,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
                           orderType: _orderType,
                           onAmountChanged: _onAmountChanged,
                           validateSatsRange: _validateSatsRange,
+                          validationError: _validationError,
                         ),
                         const SizedBox(height: 16),
                         PaymentMethodsSection(
@@ -339,34 +377,10 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
 
       // Enhanced validation: check sats range for both min and max amounts
       // This is a critical final validation before submission
-      if (_minFiatAmount != null) {
-        final minRangeError = _validateSatsRange(_minFiatAmount!.toDouble());
-        if (minRangeError != null) {
-          debugPrint('Submission blocked: Min amount validation failed: $minRangeError');
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(minRangeError),
-              duration: const Duration(seconds: 4),
-              backgroundColor: Colors.red.withValues(alpha: 0.8),
-            ),
-          );
-          return;
-        }
-      }
-
-      if (_maxFiatAmount != null) {
-        final maxRangeError = _validateSatsRange(_maxFiatAmount!.toDouble());
-        if (maxRangeError != null) {
-          debugPrint('Submission blocked: Max amount validation failed: $maxRangeError');
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(maxRangeError),
-              duration: const Duration(seconds: 4),
-              backgroundColor: Colors.red.withValues(alpha: 0.8),
-            ),
-          );
-          return;
-        }
+      if (_validationError != null) {
+        debugPrint('Submission blocked: Validation error present: $_validationError');
+        // Validation error is already displayed inline, just prevent submission
+        return;
       }
 
       // Additional safety check: ensure we have valid data for submission
