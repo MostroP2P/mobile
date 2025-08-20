@@ -819,6 +819,27 @@
     }
   },
   "relayAddedUnreachable": "Relay aggiunto ma sembra irraggiungibile: {url}",
+  "addRelayDialogTitle": "Aggiungi Relay",
+  "addRelayDialogDescription": "Inserisci un URL di relay per aggiungerlo alla tua lista di relay. Il relay verrà testato per la connettività.",
+  "addRelayDialogPlaceholder": "URL del Relay",
+  "addRelayDialogTesting": "Testing della connettività...",
+  "addRelayDialogCancel": "Annulla",
+  "addRelayDialogAdd": "Aggiungi",
+  "addRelayErrorOnlySecure": "Solo websocket sicuri (wss://) sono permessi",
+  "addRelayErrorNoHttp": "Gli URL HTTP non sono supportati. Usa URL websocket (wss://)",
+  "addRelayErrorInvalidDomain": "Formato dominio non valido. Usa formato come: relay.example.com",
+  "addRelayErrorAlreadyExists": "Questo relay è già nella tua lista",
+  "addRelayErrorNotValid": "Non è un relay Nostr valido - nessuna risposta al test del protocollo",
+  "addRelayErrorGeneric": "Errore nell'aggiunta del relay. Per favore riprova.",
+  "addRelaySuccessMessage": "Relay aggiunto con successo: {url}",
+  "@addRelaySuccessMessage": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "mostroChangedResetMessage": "Istanza Mostro cambiata. Le impostazioni dei relay sono state reimpostate per la nuova istanza.",
   "@relayAddedUnreachable": {
     "description": "Messaggio mostrato quando un relay viene aggiunto ma non risponde",
     "placeholders": {
@@ -851,5 +872,22 @@
   "orderTimeoutTaker": "Non hai risposto in tempo. L'ordine sarà ripubblicato",
   "orderTimeoutMaker": "La tua controparte non ha risposto in tempo. L'ordine sarà ripubblicato",
   "orderTimeout": "Timeout dell'ordine verificato",
-  "orderCanceled": "L'ordine è stato annullato"
+  "orderCanceled": "L'ordine è stato annullato",
+
+  "@_comment_relay_status": "Messaggi di stato relay",
+  "inUse": "In Uso",
+  "notInUse": "Non In Uso",
+  "noMostroRelaysAvailable": "Nessun relay disponibile dall'istanza Mostro configurata. Per favore controlla la tua configurazione Mostro.",
+  "relaysDescription": "Attiva o disattiva secondo le tue preferenze, o aggiungi nuovi.",
+  "activated": "Attivato",
+  "deactivated": "Disattivato",
+
+  "blacklistDefaultRelayTitle": "Bloccare Relay Predefinito?",
+  "blacklistDefaultRelayMessage": "Sei sicuro di voler bloccare il relay predefinito di Mostro? Questo potrebbe influire sulla connettività con l'istanza di Mostro.",
+  "blacklistDefaultRelayConfirm": "Blocca",
+  "blacklistDefaultRelayCancel": "Annulla",
+
+  "cannotBlacklistLastRelayTitle": "Non Puoi Bloccare l'Ultimo Relay",
+  "cannotBlacklistLastRelayMessage": "Non puoi bloccare questo relay perché è l'ultimo attivo. L'app ha bisogno di almeno un relay per funzionare correttamente.",
+  "cannotBlacklistLastRelayOk": "OK"
 }

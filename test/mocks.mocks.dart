@@ -1886,6 +1886,12 @@ class MockSettings extends _i1.Mock implements _i2.Settings {
       ) as List<String>);
 
   @override
+  List<Map<String, dynamic>> get userRelays => (super.noSuchMethod(
+        Invocation.getter(#userRelays),
+        returnValue: <Map<String, dynamic>>[],
+      ) as List<Map<String, dynamic>>);
+
+  @override
   _i2.Settings copyWith({
     List<String>? relays,
     bool? privacyModeSetting,
@@ -1894,6 +1900,7 @@ class MockSettings extends _i1.Mock implements _i2.Settings {
     String? selectedLanguage,
     String? defaultLightningAddress,
     List<String>? blacklistedRelays,
+    List<Map<String, dynamic>>? userRelays,
   }) =>
       (super.noSuchMethod(
         Invocation.method(
@@ -1907,6 +1914,7 @@ class MockSettings extends _i1.Mock implements _i2.Settings {
             #selectedLanguage: selectedLanguage,
             #defaultLightningAddress: defaultLightningAddress,
             #blacklistedRelays: blacklistedRelays,
+            #userRelays: userRelays,
           },
         ),
         returnValue: _FakeSettings_0(
@@ -1922,6 +1930,7 @@ class MockSettings extends _i1.Mock implements _i2.Settings {
               #selectedLanguage: selectedLanguage,
               #defaultLightningAddress: defaultLightningAddress,
               #blacklistedRelays: blacklistedRelays,
+              #userRelays: userRelays,
             },
           ),
         ),
@@ -2240,6 +2249,12 @@ class MockRelaysNotifier extends _i1.Mock implements _i10.RelaysNotifier {
       ) as List<String>);
 
   @override
+  List<_i23.MostroRelayInfo> get mostroRelaysWithStatus => (super.noSuchMethod(
+        Invocation.getter(#mostroRelaysWithStatus),
+        returnValue: <_i23.MostroRelayInfo>[],
+      ) as List<_i23.MostroRelayInfo>);
+
+  @override
   bool get mounted => (super.noSuchMethod(
         Invocation.getter(#mounted),
         returnValue: false,
@@ -2418,16 +2433,6 @@ class MockRelaysNotifier extends _i1.Mock implements _i10.RelaysNotifier {
       ) as _i5.Future<void>);
 
   @override
-  _i5.Future<void> removeRelayWithSource(String? url) => (super.noSuchMethod(
-        Invocation.method(
-          #removeRelayWithSource,
-          [url],
-        ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
-
-  @override
   bool isRelayBlacklisted(String? url) => (super.noSuchMethod(
         Invocation.method(
           #isRelayBlacklisted,
@@ -2435,6 +2440,26 @@ class MockRelaysNotifier extends _i1.Mock implements _i10.RelaysNotifier {
         ),
         returnValue: false,
       ) as bool);
+
+  @override
+  bool wouldLeaveNoActiveRelays(String? urlToBlacklist) => (super.noSuchMethod(
+        Invocation.method(
+          #wouldLeaveNoActiveRelays,
+          [urlToBlacklist],
+        ),
+        returnValue: false,
+      ) as bool);
+
+  @override
+  _i5.Future<void> toggleMostroRelayBlacklist(String? url) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #toggleMostroRelayBlacklist,
+          [url],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
 
   @override
   _i5.Future<void> clearBlacklistAndResync() => (super.noSuchMethod(

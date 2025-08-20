@@ -4,7 +4,7 @@ enum RelaySource {
   user,
   /// Relay discovered from Mostro instance kind 10002 event
   mostro,
-  /// Default relay from app configuration
+  /// Default relay from app configuration (needed for initial connection)
   defaultConfig,
 }
 
@@ -99,5 +99,32 @@ class Relay {
   @override
   String toString() {
     return 'Relay(url: $url, healthy: $isHealthy, source: $source)';
+  }
+}
+
+/// Information about a Mostro relay for the settings UI
+class MostroRelayInfo {
+  final String url;
+  final bool isActive; // true if currently being used, false if blacklisted
+  final bool isHealthy; // health status (for active relays)
+
+  MostroRelayInfo({
+    required this.url,
+    required this.isActive,
+    required this.isHealthy,
+  });
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is MostroRelayInfo && other.url == url;
+  }
+
+  @override
+  int get hashCode => url.hashCode;
+
+  @override
+  String toString() {
+    return 'MostroRelayInfo(url: $url, active: $isActive, healthy: $isHealthy)';
   }
 }

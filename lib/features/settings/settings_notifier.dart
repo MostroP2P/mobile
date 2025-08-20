@@ -48,14 +48,24 @@ class SettingsNotifier extends StateNotifier<Settings> {
 
   Future<void> updateMostroInstance(String newValue) async {
     final oldPubkey = state.mostroPublicKey;
-    state = state.copyWith(mostroPublicKey: newValue);
-    await _saveToPrefs();
     
-    // Log the change - the RelaysNotifier will watch for settings changes
     if (oldPubkey != newValue) {
-      _logger.i('Mostro pubkey changed from $oldPubkey to $newValue');
-      _logger.i('RelaysNotifier should automatically sync with new instance');
+      _logger.i('Mostro change detected: $oldPubkey → $newValue');
+      
+      // 🔥 RESET COMPLETO: Limpiar blacklist y user relays al cambiar Mostro
+      state = state.copyWith(
+        mostroPublicKey: newValue,
+        blacklistedRelays: const [], // Blacklist vacío
+        userRelays: const [],         // User relays vacíos
+      );
+      
+      _logger.i('Reset blacklist and user relays for new Mostro instance');
+    } else {
+      // Solo actualizar pubkey si es el mismo (sin reset)
+      state = state.copyWith(mostroPublicKey: newValue);
     }
+    
+    await _saveToPrefs();
   }
 
   Future<void> updateDefaultFiatCode(String newValue) async {
@@ -109,6 +119,13 @@ class SettingsNotifier extends StateNotifier<Settings> {
       await _saveToPrefs();
       _logger.i('Cleared all blacklisted relays');
     }
+  }
+
+  /// Update user relays list (user-added relays with metadata)
+  Future<void> updateUserRelays(List<Map<String, dynamic>> newUserRelays) async {
+    state = state.copyWith(userRelays: newUserRelays);
+    await _saveToPrefs();
+    _logger.i('Updated user relays: ${newUserRelays.length} relays');
   }
 
   Future<void> _saveToPrefs() async {

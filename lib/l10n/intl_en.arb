@@ -397,6 +397,11 @@
   "generateNewUser": "Generate New User",
   "importMostroUser": "Import Mostro User",
   "keyImportedSuccessfully": "Key imported successfully",
+  
+  "blacklistDefaultRelayTitle": "Blacklist Default Relay?",
+  "blacklistDefaultRelayMessage": "You're about to blacklist relay.mostro.network, which is the default relay for basic connectivity and automatic relay synchronization.\n\nThis may affect:\n• Automatic relay updates\n• Connection reliability\n• Event synchronization\n\nAre you sure you want to continue?",
+  "blacklistDefaultRelayConfirm": "Yes, blacklist",
+  "blacklistDefaultRelayCancel": "Cancel",
   "importFailed": "Import failed: {error}",
   "noMnemonicFound": "No mnemonic found",
   "errorLoadingMnemonic": "Error: {error}",
@@ -782,6 +787,27 @@
     }
   },
   "relayAddedUnreachable": "Relay added but appears unreachable: {url}",
+  "addRelayDialogTitle": "Add Relay",
+  "addRelayDialogDescription": "Enter a relay URL to add it to your relay list. The relay will be tested for connectivity.",
+  "addRelayDialogPlaceholder": "Relay URL",
+  "addRelayDialogTesting": "Testing connectivity...",
+  "addRelayDialogCancel": "Cancel", 
+  "addRelayDialogAdd": "Add",
+  "addRelayErrorOnlySecure": "Only secure websockets (wss://) are allowed",
+  "addRelayErrorNoHttp": "HTTP URLs are not supported. Use websocket URLs (wss://)",
+  "addRelayErrorInvalidDomain": "Invalid domain format. Use format like: relay.example.com",
+  "addRelayErrorAlreadyExists": "This relay is already in your list",
+  "addRelayErrorNotValid": "Not a valid Nostr relay - no response to protocol test",
+  "addRelayErrorGeneric": "Failed to add relay. Please try again.",
+  "addRelaySuccessMessage": "Relay added successfully: {url}",
+  "@addRelaySuccessMessage": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "mostroChangedResetMessage": "Mostro instance changed. Relay settings have been reset for the new instance.",
   "@relayAddedUnreachable": {
     "description": "Message shown when a relay is added but not responding",
     "placeholders": {
@@ -816,5 +842,24 @@
   "orderTimeoutTaker": "You didn't respond in time. The order will be republished",
   "orderTimeoutMaker": "Your counterpart didn't respond in time. The order will be republished",
   "orderTimeout": "Order timeout occurred",
-  "orderCanceled": "The order was canceled"
+  "orderCanceled": "The order was canceled",
+
+  "@_comment_relay_status": "Relay status messages",
+  "inUse": "In Use",
+  "notInUse": "Not In Use",
+  "noMostroRelaysAvailable": "No relays available from the configured Mostro instance. Please check your Mostro configuration.",
+  "relaysDescription": "Toggle on or off as you prefer, or add new ones.",
+  "activated": "Activated",
+  "deactivated": "Deactivated",
+
+  "@_comment_blacklist_dialog": "Blacklist default relay dialog strings",
+  "blacklistDefaultRelayTitle": "Blacklist Default Relay?",
+  "blacklistDefaultRelayMessage": "Are you sure you want to blacklist the default Mostro relay? This may affect connectivity to the Mostro instance.",
+  "blacklistDefaultRelayConfirm": "Blacklist",
+  "blacklistDefaultRelayCancel": "Cancel",
+
+  "@_comment_last_relay_dialog": "Last relay protection dialog strings",
+  "cannotBlacklistLastRelayTitle": "Cannot Blacklist Last Relay",
+  "cannotBlacklistLastRelayMessage": "You cannot blacklist this relay because it's the last active one. The app needs at least one relay to function properly.",
+  "cannotBlacklistLastRelayOk": "OK"
 }

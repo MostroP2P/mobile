@@ -6,6 +6,7 @@ class Settings {
   final String? selectedLanguage; // null means use system locale
   final String? defaultLightningAddress;
   final List<String> blacklistedRelays; // Relays blocked by user from auto-sync
+  final List<Map<String, dynamic>> userRelays; // User-added relays with metadata
 
   Settings({
     required this.relays,
@@ -15,6 +16,7 @@ class Settings {
     this.selectedLanguage,
     this.defaultLightningAddress,
     this.blacklistedRelays = const [],
+    this.userRelays = const [],
   });
 
   Settings copyWith({
@@ -25,6 +27,7 @@ class Settings {
     String? selectedLanguage,
     String? defaultLightningAddress,
     List<String>? blacklistedRelays,
+    List<Map<String, dynamic>>? userRelays,
   }) {
     return Settings(
       relays: relays ?? this.relays,
@@ -34,6 +37,7 @@ class Settings {
       selectedLanguage: selectedLanguage,
       defaultLightningAddress: defaultLightningAddress,
       blacklistedRelays: blacklistedRelays ?? this.blacklistedRelays,
+      userRelays: userRelays ?? this.userRelays,
     );
   }
 
@@ -45,6 +49,7 @@ class Settings {
         'selectedLanguage': selectedLanguage,
         'defaultLightningAddress': defaultLightningAddress,
         'blacklistedRelays': blacklistedRelays,
+        'userRelays': userRelays,
       };
 
   factory Settings.fromJson(Map<String, dynamic> json) {
@@ -56,6 +61,8 @@ class Settings {
       selectedLanguage: json['selectedLanguage'],
       defaultLightningAddress: json['defaultLightningAddress'],
       blacklistedRelays: (json['blacklistedRelays'] as List<dynamic>?)?.cast<String>() ?? [],
+      userRelays: (json['userRelays'] as List<dynamic>?)
+          ?.cast<Map<String, dynamic>>() ?? [],
     );
   }
 }
