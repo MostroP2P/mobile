@@ -85,28 +85,38 @@ class SettingsNotifier extends StateNotifier<Settings> {
 
   /// Add a relay URL to the blacklist to prevent it from being auto-synced from Mostro
   Future<void> addToBlacklist(String relayUrl) async {
+    final normalized = _normalizeUrl(relayUrl);
     final currentBlacklist = List<String>.from(state.blacklistedRelays);
-    if (!currentBlacklist.contains(relayUrl)) {
-      currentBlacklist.add(relayUrl);
+    if (!currentBlacklist.contains(normalized)) {
+      currentBlacklist.add(normalized);
       state = state.copyWith(blacklistedRelays: currentBlacklist);
       await _saveToPrefs();
-      _logger.i('Added relay to blacklist: $relayUrl');
+      _logger.i('Added relay to blacklist: $normalized');
     }
   }
 
   /// Remove a relay URL from the blacklist, allowing it to be auto-synced again
   Future<void> removeFromBlacklist(String relayUrl) async {
+    final normalized = _normalizeUrl(relayUrl);
     final currentBlacklist = List<String>.from(state.blacklistedRelays);
-    if (currentBlacklist.remove(relayUrl)) {
+    if (currentBlacklist.remove(normalized)) {
       state = state.copyWith(blacklistedRelays: currentBlacklist);
       await _saveToPrefs();
-      _logger.i('Removed relay from blacklist: $relayUrl');
+      _logger.i('Removed relay from blacklist: $normalized');
     }
   }
 
   /// Check if a relay URL is blacklisted
   bool isRelayBlacklisted(String relayUrl) {
-    return state.blacklistedRelays.contains(relayUrl);
+    return state.blacklistedRelays.contains(_normalizeUrl(relayUrl));
+  }
+
+  /// Normalize relay URL for consistent comparison
+  /// Trims whitespace, converts to lowercase, and removes trailing slash
+  String _normalizeUrl(String url) {
+    var u = url.trim().toLowerCase();
+    if (u.endsWith('/')) u = u.substring(0, u.length - 1);
+    return u;
   }
 
   /// Get all blacklisted relay URLs
