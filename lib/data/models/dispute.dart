@@ -235,6 +235,7 @@ class DisputeData {
   final String counterparty;
   final bool isCreator;
   final DateTime createdAt;
+  final bool userIsBuyer;
 
   DisputeData({
     required this.disputeId,
@@ -244,6 +245,7 @@ class DisputeData {
     required this.counterparty,
     required this.isCreator,
     required this.createdAt,
+    required this.userIsBuyer,
   });
 
   /// Create DisputeData from Dispute object with OrderState context
@@ -251,37 +253,46 @@ class DisputeData {
     // Determine if user is the creator based on the OrderState action if available
     bool isUserCreator = false;
     
-    print('🔍 DisputeData.fromDispute DEBUG:');
-    print('   disputeId: ${dispute.disputeId}');
-    print('   orderId: ${dispute.orderId}');
-    print('   dispute.action: ${dispute.action}');
-    print('   orderState: $orderState');
-    print('   orderState?.action: ${orderState?.action}');
-    print('   orderState?.action.toString(): ${orderState?.action.toString()}');
-    
     if (orderState != null && orderState.action != null) {
       // Use OrderState action which has the correct dispute initiation info
       final actionString = orderState.action.toString();
       isUserCreator = actionString == 'dispute-initiated-by-you';
-      print('   Using OrderState action: $actionString → isUserCreator: $isUserCreator');
     } else if (dispute.action != null) {
-      // Fallback to dispute action
+      // Fallback to dispute action - this should now be set correctly
       isUserCreator = dispute.action == 'dispute-initiated-by-you';
-      print('   Using dispute action: ${dispute.action} → isUserCreator: $isUserCreator');
     } else {
-      print('   No action available, defaulting to false');
+      // If no action info, assume user is creator (since they can see the dispute)
+      isUserCreator = true;
     }
     
-    print('   Final isUserCreator: $isUserCreator');
+    // Try to get counterparty info from order state and determine correct role
+    String counterpartyName = 'Unknown';
+    bool userIsBuyer = false;
     
+    if (orderState != null) {
+      // Get the counterparty nym using the same approach as chat
+      if (orderState.peer != null) {
+        counterpartyName = orderState.peer!.publicKey; // This will be resolved by nickNameProvider in the UI
+      }
+      
+      // Determine if user is buyer or seller based on order type
+      if (orderState.order != null) {
+        // If order type is 'buy', then the order creator is buying (user is buyer)
+        // If order type is 'sell', then the order creator is selling (user is seller)
+        // The peer is always the opposite role
+        userIsBuyer = orderState.order!.kind.value == 'buy';
+      }
+    }
+
     return DisputeData(
       disputeId: dispute.disputeId,
-      orderId: dispute.orderId ?? dispute.disputeId, // Use orderId if available, fallback to disputeId
+      orderId: dispute.orderId ?? 'Unknown Order ID', // Do not fallback to disputeId
       status: dispute.status ?? 'unknown',
       description: _getDescriptionForStatus(dispute.status ?? 'unknown', isUserCreator),
-      counterparty: 'Unknown', // Would need to fetch from order data
+      counterparty: counterpartyName,
       isCreator: isUserCreator,
       createdAt: dispute.createdAt ?? DateTime.now(),
+      userIsBuyer: userIsBuyer, // Add this field to track user role
     );
   }
 
@@ -292,7 +303,7 @@ class DisputeData {
     
     return DisputeData(
       disputeId: disputeEvent.disputeId,
-      orderId: disputeEvent.orderId ?? disputeEvent.disputeId, // Use orderId if available, fallback to disputeId
+      orderId: disputeEvent.orderId ?? 'Unknown Order ID', // Do not fallback to disputeId
       status: disputeEvent.status,
       description: _getDescriptionForStatus(disputeEvent.status, isUserCreator),
       counterparty: 'Unknown', // Would need to fetch from order data
@@ -302,6 +313,7 @@ class DisputeData {
           ? disputeEvent.createdAt * 1000 
           : DateTime.now().millisecondsSinceEpoch
       ),
+      userIsBuyer: false, // Default value for legacy method
     );
   }
 

@@ -18,6 +18,35 @@ class DisputeRepository {
 
   DisputeRepository(this._nostrService, this._mostroPubkey, this._ref);
 
+  /// Debug method to check dispute fetching status
+  Future<void> debugDisputeFetching() async {
+    _logger.d('🔍 DEBUGGING DISPUTE FETCHING');
+    
+    // Check sessions
+    final sessions = _ref.read(sessionNotifierProvider);
+    _logger.d('Sessions count: ${sessions.length}');
+    for (final session in sessions) {
+      _logger.d('  Session: orderId=${session.orderId}, tradeKey=${session.tradeKey.public}');
+    }
+    
+    // Check Mostro pubkey
+    _logger.d('Mostro pubkey: $_mostroPubkey');
+    
+    // Try a simple dispute event fetch
+    final simpleFilter = NostrFilter(
+      kinds: [38383],
+      authors: [_mostroPubkey],
+      since: DateTime.now().subtract(const Duration(days: 30)),
+    );
+    
+    final simpleEvents = await _nostrService.fetchEvents(simpleFilter);
+    _logger.d('Simple dispute events found: ${simpleEvents.length}');
+    
+    for (final event in simpleEvents.take(3)) {
+      _logger.d('Event ${event.id}: kind=${event.kind}, content=${event.content}, tags=${event.tags}');
+    }
+  }
+
   /// Fetch dispute events from Nostr for the current user
   Future<List<Dispute>> fetchUserDisputes() async {
     try {
@@ -76,6 +105,16 @@ class DisputeRepository {
       final events = [...encryptedDmEvents, ...dmEvents, ...disputeEvents];
       
       _logger.d('Fetched ${encryptedDmEvents.length} encrypted DMs, ${dmEvents.length} regular DMs, and ${disputeEvents.length} dispute events from Mostro (total: ${events.length})');
+      
+      // Log if no events found at all
+      if (events.isEmpty) {
+        _logger.w('⚠️ NO EVENTS FOUND! This could mean:');
+        _logger.w('  - No disputes exist for this user');
+        _logger.w('  - Nostr connection issues');
+        _logger.w('  - Wrong Mostro pubkey: $_mostroPubkey');
+        _logger.w('  - User pubkeys not matching: $userPubkeys');
+        return [];
+      }
 
       // Log each event for debugging
       for (final event in events) {
@@ -146,18 +185,73 @@ class DisputeRepository {
       
       _logger.d('Processing ${userEvents.length} events for dispute extraction');
 
-      // Convert events to Dispute objects - simplified logic
-      final List<Dispute> disputes = [];
+      // Convert events to Dispute objects - keep latest per disputeId to avoid duplicates
+      final Map<String, Dispute> latestByDisputeId = {};
+      final Map<String, DateTime> timeByDisputeId = {};
       final userOrderIds = sessions.map((s) => s.orderId).where((id) => id != null).toSet();
       
       _logger.d('User order IDs: $userOrderIds');
+      _logger.d('Processing ${userEvents.length} events for disputes');
       
       for (final event in userEvents) {
         try {
+          // Try to parse as DisputeEvent first (kind 38383)
+          if (event.kind == 38383) {
+            try {
+              final disputeEvent = DisputeEvent.fromEvent(event);
+              final eventTime = DateTime.fromMillisecondsSinceEpoch(disputeEvent.createdAt * 1000);
+              
+              _logger.d('Parsed DisputeEvent: disputeId=${disputeEvent.disputeId}, orderId=${disputeEvent.orderId}, status=${disputeEvent.status}');
+              
+              // Try to match orderId from sessions if not in event content
+              String? finalOrderId = disputeEvent.orderId;
+              String? disputeAction;
+              
+              // If no orderId in event content, try to match with user sessions
+              if (finalOrderId == null && userOrderIds.isNotEmpty) {
+                // For now, assume it's related to the user's order since they created the dispute
+                finalOrderId = userOrderIds.first;
+                disputeAction = 'dispute-initiated-by-you'; // User created this dispute
+                _logger.d('Matched dispute ${disputeEvent.disputeId} to user order: $finalOrderId');
+              } else if (finalOrderId != null && userOrderIds.contains(finalOrderId)) {
+                disputeAction = 'dispute-initiated-by-you'; // User created this dispute
+              }
+              
+              final existingTime = timeByDisputeId[disputeEvent.disputeId];
+              if (existingTime == null || eventTime.isAfter(existingTime)) {
+                latestByDisputeId[disputeEvent.disputeId] = Dispute(
+                  disputeId: disputeEvent.disputeId,
+                  orderId: finalOrderId,
+                  status: disputeEvent.status,
+                  createdAt: eventTime,
+                  action: disputeAction,
+                );
+                timeByDisputeId[disputeEvent.disputeId] = eventTime;
+                _logger.d('✅ Added dispute: ${disputeEvent.disputeId} with orderId: $finalOrderId, action: $disputeAction');
+              }
+              continue; // Skip to next event
+            } catch (e) {
+              _logger.d('Failed to parse as DisputeEvent: $e');
+              // Fall through to legacy parsing
+            }
+          }
+          
+          // Legacy parsing for other event types
           String? extractedOrderId;
           String? extractedDisputeId;
           String? extractedStatus = 'initiated';
           String? extractedAction;
+          // Determine event timestamp
+          final dynamic createdAtRaw = event.createdAt;
+          DateTime eventTime;
+          if (createdAtRaw is DateTime) {
+            eventTime = createdAtRaw;
+          } else if (createdAtRaw is int) {
+            // Assume seconds since epoch
+            eventTime = DateTime.fromMillisecondsSinceEpoch(createdAtRaw * 1000);
+          } else {
+            eventTime = DateTime.now();
+          }
           
           // Handle encrypted messages (kind 1059)
           if (event.kind == 1059) {
@@ -192,8 +286,24 @@ class DisputeRepository {
               try {
                 final content = jsonDecode(contentStr);
                 
-                // Handle direct message format: [{"order": {...}}, null]
-                if (content is List && content.isNotEmpty) {
+                // Handle direct message format from Mostro: {"order": {...}}
+                if (content is Map<String, dynamic>) {
+                  final order = content['order'] as Map<String, dynamic>?;
+                  if (order != null) {
+                    extractedOrderId = order['id'] as String?;
+                    extractedAction = order['action'] as String?;
+                    final payload = order['payload'] as Map<String, dynamic>?;
+                    if (payload != null && payload['dispute'] is List) {
+                      final disputeArray = payload['dispute'] as List;
+                      if (disputeArray.isNotEmpty) {
+                        extractedDisputeId = disputeArray[0] as String?;
+                      }
+                    }
+                    _logger.d('Extracted from Mostro DM: orderId=$extractedOrderId, disputeId=$extractedDisputeId, action=$extractedAction');
+                  }
+                }
+                // Handle legacy format: [{"order": {...}}, null]
+                else if (content is List && content.isNotEmpty) {
                   final orderData = content[0];
                   if (orderData is Map<String, dynamic>) {
                     final order = orderData['order'] as Map<String, dynamic>?;
@@ -202,16 +312,33 @@ class DisputeRepository {
                       extractedAction = order['action'] as String?;
                       final payload = order['payload'] as Map<String, dynamic>?;
                       extractedDisputeId = payload?['dispute'] as String?;
-                      _logger.d('Extracted from unencrypted event: orderId=$extractedOrderId, disputeId=$extractedDisputeId, action=$extractedAction');
+                      _logger.d('Extracted from legacy format: orderId=$extractedOrderId, disputeId=$extractedDisputeId, action=$extractedAction');
                     }
                   }
                 }
                 // Handle dispute event format (kind 38383)
                 else if (content is Map<String, dynamic>) {
-                  final dispute = Dispute.fromNostrEvent(event, content);
-                  if (userOrderIds.contains(dispute.orderId)) {
-                    _logger.d('Adding dispute from kind 38383: ${dispute.disputeId} for order ${dispute.orderId}');
-                    disputes.add(dispute);
+                  // For kind 38383 with JSON content, parse using DisputeEvent to reliably get tags
+                  try {
+                    final de = DisputeEvent.fromEvent(event);
+                    if (de.orderId != null && userOrderIds.contains(de.orderId)) {
+                      final dId = de.disputeId;
+                      final eTime = eventTime;
+                      final existingTime = timeByDisputeId[dId];
+                      if (existingTime == null || eTime.isAfter(existingTime)) {
+                        latestByDisputeId[dId] = Dispute(
+                          disputeId: dId,
+                          orderId: de.orderId,
+                          status: de.status,
+                          createdAt: DateTime.fromMillisecondsSinceEpoch(de.createdAt * 1000),
+                          action: extractedAction,
+                        );
+                        timeByDisputeId[dId] = eTime;
+                      }
+                      _logger.d('Upserted dispute from kind 38383: $dId for order ${de.orderId}');
+                    }
+                  } catch (e) {
+                    _logger.d('Failed to parse dispute event from kind 38383: $e');
                   }
                   continue; // Skip to next event
                 }
@@ -220,7 +347,7 @@ class DisputeRepository {
               }
             }
             
-            // Handle empty content events (kind 38383) - fallback
+            // Handle empty content events (kind 38383)
             if (extractedOrderId == null && event.kind == 38383) {
               final dTag = event.tags?.firstWhere(
                 (tag) => tag.isNotEmpty && tag[0] == 'd',
@@ -234,34 +361,44 @@ class DisputeRepository {
               if (dTag != null && dTag.length > 1) {
                 extractedDisputeId = dTag[1];
                 extractedStatus = sTag != null && sTag.length > 1 ? sTag[1] : 'unknown';
-                
-                // For empty content events, try to match with any user order
-                if (userOrderIds.isNotEmpty) {
-                  extractedOrderId = userOrderIds.first; // Use first available order as fallback
-                  _logger.d('Fallback association for empty event: disputeId=$extractedDisputeId, orderId=$extractedOrderId');
-                }
               }
             }
           }
           
-          // Create dispute if we have both IDs and the order belongs to the user
-          if (extractedOrderId != null && extractedDisputeId != null && userOrderIds.contains(extractedOrderId)) {
-            _logger.d('Creating dispute: disputeId=$extractedDisputeId, orderId=$extractedOrderId, status=$extractedStatus, action=$extractedAction');
-            disputes.add(Dispute(
-              disputeId: extractedDisputeId,
-              orderId: extractedOrderId,
-              status: extractedStatus,
-              createdAt: DateTime.now(),
-              action: extractedAction,
-            ));
+          // Create/update dispute if we have dispute ID (relax order matching for now)
+          if (extractedDisputeId != null) {
+            _logger.d('Processing dispute: disputeId=$extractedDisputeId, orderId=$extractedOrderId, status=$extractedStatus, action=$extractedAction, time=$eventTime');
+            _logger.d('User order IDs: $userOrderIds');
+            _logger.d('Order match: ${extractedOrderId != null ? userOrderIds.contains(extractedOrderId) : "no orderId"}');
+            
+            // Accept dispute if we have disputeId, even without perfect order matching
+            final existingTime = timeByDisputeId[extractedDisputeId];
+            if (existingTime == null || eventTime.isAfter(existingTime)) {
+              latestByDisputeId[extractedDisputeId] = Dispute(
+                disputeId: extractedDisputeId,
+                orderId: extractedOrderId, // May be null
+                status: extractedStatus,
+                createdAt: eventTime,
+                action: extractedAction,
+              );
+              timeByDisputeId[extractedDisputeId] = eventTime;
+              _logger.d('Upserted dispute: $extractedDisputeId');
+            } else {
+              _logger.d('Skipped older dispute event for: $extractedDisputeId');
+            }
+          } else {
+            _logger.d('Skipping event without disputeId: orderId=$extractedOrderId');
           }
         } catch (e) {
           _logger.w('Failed to process event ${event.id}: $e');
         }
       }
 
-      _logger.d('Found ${disputes.length} disputes for user');
-      return disputes;
+      final result = latestByDisputeId.values.toList()
+        ..sort((a, b) => (b.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0))
+            .compareTo(a.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0)));
+      _logger.d('Found ${result.length} disputes for user after de-duplication');
+      return result;
     } catch (e) {
       _logger.e('Failed to fetch user disputes: $e');
       return [];
@@ -331,21 +468,141 @@ class DisputeRepository {
     try {
       _logger.d('Fetching dispute details for: $disputeId');
 
-      // Create filter for specific dispute
-      final filter = NostrFilter(
+      // Get user sessions to search for DMs
+      final sessions = _ref.read(sessionNotifierProvider);
+      final userPubkeys = sessions.map((s) => s.tradeKey.public).toList();
+      final userOrderIds = sessions.map((s) => s.orderId).where((id) => id != null).toSet();
+      
+      _logger.d('User sessions: ${sessions.length}, orderIds: $userOrderIds, pubkeys: $userPubkeys');
+
+      // Create filters for dispute events AND DMs that might contain dispute info
+      final disputeEventFilter = NostrFilter(
         kinds: [38383], // Dispute event kind
         authors: [_mostroPubkey],
+        additionalFilters: {
+          '#d': [disputeId],
+          '#z': ['dispute'],
+        },
       );
 
-      final events = await _nostrService.fetchEvents(filter);
+      // Also search for DMs from Mostro that might contain dispute info
+      final dmFilter = NostrFilter(
+        kinds: [4], // Direct message kind
+        authors: [_mostroPubkey],
+        since: DateTime.now().subtract(const Duration(days: 90)),
+        additionalFilters: {
+          '#p': userPubkeys, // Messages sent to user's pubkeys
+        },
+      );
 
-      if (events.isEmpty) {
+      // Search encrypted DMs as well
+      final encryptedDmFilter = NostrFilter(
+        kinds: [1059], // Encrypted direct message kind
+        since: DateTime.now().subtract(const Duration(days: 90)),
+        additionalFilters: {
+          '#p': userPubkeys, // Messages sent to user's pubkeys
+        },
+      );
+
+      final disputeEvents = await _nostrService.fetchEvents(disputeEventFilter);
+      final dmEvents = await _nostrService.fetchEvents(dmFilter);
+      final encryptedDmEvents = await _nostrService.fetchEvents(encryptedDmFilter);
+      final allEvents = [...disputeEvents, ...dmEvents, ...encryptedDmEvents];
+
+      if (allEvents.isEmpty) {
         _logger.w('No dispute found with ID: $disputeId');
         return null;
       }
 
-      // Filter events by dispute ID and get the latest event
-      final disputeEvents = events.where((event) {
+      // Try to find orderId from DM events first
+      String? foundOrderId;
+      String? foundAction;
+      
+      _logger.d('Searching for disputeId $disputeId in ${dmEvents.length} DMs and ${encryptedDmEvents.length} encrypted DMs');
+      
+      // Search regular DMs
+      for (final event in dmEvents) {
+        try {
+          if (event.content != null && event.content!.isNotEmpty) {
+            final content = jsonDecode(event.content!);
+            if (content is Map<String, dynamic>) {
+              final order = content['order'] as Map<String, dynamic>?;
+              if (order != null) {
+                final payload = order['payload'] as Map<String, dynamic>?;
+                if (payload != null && payload['dispute'] is List) {
+                  final disputeArray = payload['dispute'] as List;
+                  _logger.d('Checking DM event: disputeArray=$disputeArray, looking for $disputeId');
+                  if (disputeArray.isNotEmpty && disputeArray[0] == disputeId) {
+                    foundOrderId = order['id'] as String?;
+                    foundAction = order['action'] as String?;
+                    _logger.d('✅ Found orderId from DM: $foundOrderId, action: $foundAction');
+                    break;
+                  }
+                } else if (payload != null && payload['dispute'] is String && payload['dispute'] == disputeId) {
+                  // Handle case where dispute is a string instead of array
+                  foundOrderId = order['id'] as String?;
+                  foundAction = order['action'] as String?;
+                  _logger.d('✅ Found orderId from DM (string format): $foundOrderId, action: $foundAction');
+                  break;
+                } else {
+                  _logger.d('DM event payload structure: ${payload?.keys}');
+                }
+              }
+            }
+          }
+        } catch (e) {
+          _logger.d('Failed to parse DM event: $e');
+        }
+      }
+      
+      // Search encrypted DMs if not found in regular DMs
+      if (foundOrderId == null) {
+        _logger.d('Searching encrypted DMs for dispute $disputeId');
+        for (final event in encryptedDmEvents) {
+          for (final session in sessions) {
+            try {
+              final decryptedEvent = await NostrUtils.decryptNIP59Event(event, session.tradeKey.private);
+              final content = jsonDecode(decryptedEvent.content!);
+              
+              if (content is List && content.isNotEmpty) {
+                final orderData = content[0];
+                if (orderData is Map<String, dynamic>) {
+                  final order = orderData['order'] as Map<String, dynamic>?;
+                  if (order != null) {
+                    final payload = order['payload'] as Map<String, dynamic>?;
+                    final payloadDisputeId = payload?['dispute'] as String?;
+                    if (payloadDisputeId == disputeId) {
+                      foundOrderId = order['id'] as String?;
+                      foundAction = order['action'] as String?;
+                      _logger.d('✅ Found orderId from encrypted DM: $foundOrderId, action: $foundAction');
+                      break;
+                    }
+                  }
+                }
+              }
+            } catch (e) {
+              continue; // Try next session key
+            }
+          }
+          if (foundOrderId != null) break;
+        }
+      }
+      
+      // If still no orderId found, try to match with user sessions based on timing or other heuristics
+      if (foundOrderId == null && userOrderIds.isNotEmpty) {
+        _logger.d('No orderId found in events, attempting session matching for dispute $disputeId');
+        // For now, if user has only one active order, assume it's related to that order
+        if (userOrderIds.length == 1) {
+          foundOrderId = userOrderIds.first;
+          foundAction = 'dispute-initiated-by-you';
+          _logger.d('🔍 Matched dispute $disputeId to single user order: $foundOrderId');
+        } else {
+          _logger.w('Multiple user orders found, cannot determine which order dispute $disputeId belongs to');
+        }
+      }
+
+      // Filter dispute events by dispute ID and get the latest event
+      final filteredDisputeEvents = disputeEvents.where((event) {
         final dTag = event.tags?.firstWhere(
           (tag) =>
               tag.isNotEmpty &&
@@ -357,26 +614,41 @@ class DisputeRepository {
         return dTag != null && dTag.isNotEmpty;
       }).toList();
 
-      if (disputeEvents.isEmpty) {
+      if (filteredDisputeEvents.isEmpty) {
         _logger.w('No dispute found with ID: $disputeId');
         return null;
       }
 
-      // Find the latest event for this dispute
-      final latestEvent = events.reduce((a, b) {
-        final aTime = a.createdAt?.millisecondsSinceEpoch ?? 0;
-        final bTime = b.createdAt?.millisecondsSinceEpoch ?? 0;
+      // Find the latest event for this dispute among the filtered list
+      final latestEvent = filteredDisputeEvents.reduce((a, b) {
+        int aTime;
+        if (a.createdAt is DateTime) {
+          aTime = (a.createdAt as DateTime).millisecondsSinceEpoch;
+        } else if (a.createdAt is int) {
+          aTime = (a.createdAt as int) * 1000;
+        } else {
+          aTime = 0;
+        }
+        int bTime;
+        if (b.createdAt is DateTime) {
+          bTime = (b.createdAt as DateTime).millisecondsSinceEpoch;
+        } else if (b.createdAt is int) {
+          bTime = (b.createdAt as int) * 1000;
+        } else {
+          bTime = 0;
+        }
         return aTime > bTime ? a : b;
       });
 
       final disputeEvent = DisputeEvent.fromEvent(latestEvent);
 
-      // Convert DisputeEvent to Dispute model
-      // Note: We may need additional data from Mostro messages
+      // Convert DisputeEvent to Dispute model, using orderId from DM if found
       return Dispute(
         disputeId: disputeEvent.disputeId,
         status: disputeEvent.status,
-        // orderId and other fields would come from additional queries
+        orderId: foundOrderId ?? disputeEvent.orderId, // Use orderId from DM if available
+        createdAt: DateTime.fromMillisecondsSinceEpoch(disputeEvent.createdAt * 1000),
+        action: foundAction, // Include action from DM
       );
     } catch (e) {
       _logger.e('Failed to get dispute details: $e');
@@ -408,11 +680,23 @@ class DisputeRepository {
       // Subscribe to events and transform to Dispute stream
       return _nostrService.subscribeToEvents(request).map((event) {
         try {
-          final content = jsonDecode(event.content ?? '{}');
-          return Dispute.fromNostrEvent(event, content);
+          final de = DisputeEvent.fromEvent(event);
+          return Dispute(
+            disputeId: de.disputeId,
+            orderId: de.orderId,
+            status: de.status,
+            createdAt: DateTime.fromMillisecondsSinceEpoch(de.createdAt * 1000),
+          );
         } catch (e) {
-          _logger.w('Failed to parse dispute event ${event.id}: $e');
-          throw e;
+          _logger.w('Failed to parse DisputeEvent for ${event.id}: $e');
+          // Fallback to legacy parser if available
+          try {
+            final content = jsonDecode(event.content ?? '{}');
+            return Dispute.fromNostrEvent(event, content);
+          } catch (e2) {
+            _logger.w('Fallback parse also failed for ${event.id}: $e2');
+            rethrow;
+          }
         }
       }).handleError((error) {
         _logger.e('Error in dispute events stream: $error');

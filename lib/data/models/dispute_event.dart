@@ -40,32 +40,33 @@ class DisputeEvent {
       throw ArgumentError('Invalid dispute ID in "d" tag');
     }
     
-    // Extract the status from the 's' tag
-    final sTag = event.tags!.firstWhere(
+    // Extract the status from the 's' tag (optional; default to 'unknown' if missing)
+    final sTag = event.tags?.firstWhere(
       (tag) => tag.isNotEmpty && tag[0] == 's',
-      orElse: () => throw ArgumentError('Event must have an "s" tag with status'),
+      orElse: () => [],
     );
-    
-    if (sTag.length < 2 || sTag[1].isEmpty) {
-      throw ArgumentError('Invalid status in "s" tag');
-    }
+    final statusValue = (sTag != null && sTag.length > 1 && sTag[1].toString().isNotEmpty)
+        ? sTag[1]
+        : 'unknown';
 
-    // Verify this is a dispute event with the 'z' tag
-    event.tags!.firstWhere(
-      (tag) => tag.isNotEmpty && tag[0] == 'z' && tag[1] == 'dispute',
-      orElse: () => throw ArgumentError('Event must have a "z" tag with value "dispute"'),
+    // Optionally verify 'z' tag indicates dispute; do not throw if absent
+    event.tags?.firstWhere(
+      (tag) => tag.isNotEmpty && tag[0] == 'z' && tag.length > 1 && tag[1] == 'dispute',
+      orElse: () => [],
     );
 
-    // Handle createdAt which could be int or null
-    final createdAt = event.createdAt;
+    // Handle createdAt which could be int, DateTime or null
+    final dynamic createdAtRaw = event.createdAt;
     final int timestamp;
     
-    if (createdAt == null) {
-      // Fallback to current time if createdAt is null
+    if (createdAtRaw == null) {
       timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    } else if (createdAtRaw is int) {
+      timestamp = createdAtRaw;
+    } else if (createdAtRaw is DateTime) {
+      timestamp = createdAtRaw.millisecondsSinceEpoch ~/ 1000;
     } else {
-      // In dart_nostr package, createdAt should be an int, but we cast it to be safe
-      timestamp = createdAt as int;
+      timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     }
     
     // Extract order ID from event content
@@ -74,7 +75,7 @@ class DisputeEvent {
     return DisputeEvent(
       id: event.id!,
       disputeId: dTag[1],
-      status: sTag[1],
+      status: statusValue,
       createdAt: timestamp,
       pubkey: event.pubkey,
       orderId: orderId,
