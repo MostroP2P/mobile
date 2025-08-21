@@ -201,6 +201,37 @@ class RelaySelector extends ConsumerWidget {
 
   /// Show confirmation dialog for deleting user relay
   Future<void> _showDeleteUserRelayDialog(BuildContext context, WidgetRef ref, MostroRelayInfo relayInfo) async {
+    final relaysNotifier = ref.read(relaysProvider.notifier);
+    
+    // Check if this would leave no active relays
+    if (relaysNotifier.wouldLeaveNoActiveRelays(relayInfo.url)) {
+      await showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: AppTheme.dark2,
+          title: Text(
+            S.of(ctx)!.cannotBlacklistLastRelayTitle,
+            style: const TextStyle(color: AppTheme.cream1),
+          ),
+          content: Text(
+            S.of(ctx)!.cannotBlacklistLastRelayMessage,
+            style: const TextStyle(color: AppTheme.textSecondary),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text(
+                S.of(ctx)!.cannotBlacklistLastRelayOk,
+                style: const TextStyle(color: AppTheme.cream1),
+              ),
+            ),
+          ],
+        ),
+      );
+      return; // Exit early - don't proceed with deletion
+    }
+    
+    // If not the last relay, show confirmation dialog
     final shouldDelete = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
@@ -236,7 +267,6 @@ class RelaySelector extends ConsumerWidget {
 
     // If user confirmed deletion, remove the relay
     if (shouldDelete == true) {
-      final relaysNotifier = ref.read(relaysProvider.notifier);
       await relaysNotifier.removeRelay(relayInfo.url);
     }
   }
