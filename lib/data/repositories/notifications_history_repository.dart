@@ -14,6 +14,7 @@ abstract class NotificationsRepository {
   Future<void> clearAll();
   Stream<List<NotificationModel>> watchNotifications();
   Future<List<NotificationModel>> getUnreadNotifications();
+  Future<bool> notificationExists(String notificationId);
 }
 
 /// Sembast-based implementation using BaseStorage
@@ -111,6 +112,12 @@ class NotificationsStorage extends BaseStorage<NotificationModel>
       filter: eq('isRead', false),
       sort: [SortOrder('timestamp', false)],
     );
+  }
+
+  @override
+  Future<bool> notificationExists(String notificationId) async {
+    final record = await getItem(notificationId);
+    return record != null;
   }
 }
 

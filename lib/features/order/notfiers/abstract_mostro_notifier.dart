@@ -68,9 +68,18 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
     logger.e(err);
   }
 
+  void sendNotification(Action action, {Map<String, dynamic>? values, bool isTemporary = false, String? eventId}) {
+    final notifProvider = ref.read(notificationsProvider.notifier);
+    
+    if (isTemporary) {
+      notifProvider.showTemporary(action, values: values ?? {});
+    } else {
+      notifProvider.notify(action, values: values ?? {}, orderId: orderId, eventId: eventId);
+    }
+  }
+
   void handleEvent(MostroMessage event) {
     final navProvider = ref.read(navigationProvider.notifier);
-    final notifProvider = ref.read(notificationsProvider.notifier);
     final mostroInstance = ref.read(orderRepositoryProvider).mostroInstance;
 
     switch (event.action) {
@@ -84,60 +93,59 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         break;
       case Action.fiatSentOk:
         final peer = event.getPayload<Peer>();
-        notifProvider.notify(event.action, values: {
-          'buyer_npub': peer?.publicKey ?? 'Unknown',
-        }, orderId: orderId);
+        
+        // Only notify the seller
+        final isSeller = (session.role == Role.seller);
+        
+        if (isSeller) {
+          sendNotification(event.action, values: {
+            'buyer_npub': peer?.publicKey ?? 'Unknown',
+                      }, eventId: event.id);
+        }
         break;
       case Action.released:
-        notifProvider.notify(event.action, values: {
-          'seller_npub': '',
-        }, orderId: orderId);
+        // Notify about Bitcoin being released
+        sendNotification(event.action, values: {
+          'seller_npub': state.order?.sellerTradePubkey ?? 'Unknown',
+                  }, eventId: event.id);
+        
+        // Request rating from both parties after successful completion
+        sendNotification(Action.rate, values: {
+                  }, eventId: event.id);
         break;
       case Action.canceled:
         ref.read(mostroStorageProvider).deleteAllMessagesByOrderId(orderId);
         ref.read(sessionNotifierProvider.notifier).deleteSession(orderId);
         navProvider.go('/order_book');
-        notifProvider.notify(event.action, values: {'id': orderId}, orderId: orderId);
+        // Note: Notification is handled by OrderNotifier via public event detection for better state logic
         ref.invalidateSelf();
         break;
       case Action.cooperativeCancelInitiatedByYou:
-        notifProvider.notify(event.action, values: {
-          'id': event.id,
-        }, orderId: orderId);
+        sendNotification(event.action, eventId: event.id);
         break;
       case Action.cooperativeCancelInitiatedByPeer:
-        notifProvider.notify(event.action, values: {
-          'id': event.id!,
-        }, orderId: orderId);
+        sendNotification(event.action, eventId: event.id);
         break;
       case Action.disputeInitiatedByYou:
         final dispute = event.getPayload<Dispute>()!;
-        notifProvider.notify(event.action, values: {
-          'id': event.id!,
-          'user_token': dispute.disputeId,
-        }, orderId: orderId);
+        sendNotification(event.action, values: {
+                    'user_token': dispute.disputeId,
+        }, eventId: event.id);
         break;
       case Action.disputeInitiatedByPeer:
         final dispute = event.getPayload<Dispute>()!;
-        notifProvider.notify(event.action, values: {
-          'id': event.id!,
-          'user_token': dispute.disputeId,
-        }, orderId: orderId);
-        break;
-      case Action.cooperativeCancelAccepted:
-        notifProvider.notify(event.action, values: {
-          'id': event.id!,
-        }, orderId: orderId);
+        sendNotification(event.action, values: {
+                    'user_token': dispute.disputeId,
+        }, eventId: event.id);
         break;
       case Action.holdInvoicePaymentAccepted:
         final order = event.getPayload<Order>();
-        notifProvider.notify(event.action, values: {
+        sendNotification(event.action, values: {
           'seller_npub': order?.sellerTradePubkey ?? 'Unknown',
-          'id': order?.id,
           'fiat_code': order?.fiatCode,
           'fiat_amount': order?.fiatAmount,
           'payment_method': order?.paymentMethod,
-        }, orderId: orderId);
+        }, eventId: event.id);
         // add seller tradekey to session
         // open chat
         final sessionProvider = ref.read(sessionNotifierProvider.notifier);
@@ -155,9 +163,9 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         chat.subscribe();
         break;
       case Action.holdInvoicePaymentSettled:
-        notifProvider.notify(event.action, values: {
+        sendNotification(event.action, values: {
           'buyer_npub': state.order?.buyerTradePubkey ?? 'Unknown',
-        }, orderId: orderId);
+                  }, eventId: event.id);
         navProvider.go('/trade_detail/$orderId');
         break;
       case Action.waitingSellerToPay:
@@ -170,17 +178,16 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
           navProvider.go('/trade_detail/$orderId');
         }
         
-        notifProvider.notify(event.action, values: {
-          'id': event.id,
-          'expiration_seconds':
+        sendNotification(event.action, values: {
+                    'expiration_seconds':
               mostroInstance?.expirationSeconds ?? Config.expirationSeconds,
-        }, orderId: orderId);
+        }, eventId: event.id);
         break;
       case Action.waitingBuyerInvoice:
-        notifProvider.notify(event.action, values: {
-          'expiration_seconds':
+        sendNotification(event.action, values: {
+                    'expiration_seconds':
               mostroInstance?.expirationSeconds ?? Config.expirationSeconds,
-        }, orderId: orderId);
+        }, eventId: event.id);
         
         // Check if user is the maker of a sell order - don't auto-navigate in this case
         final isUserCreator = _isUserCreator();
@@ -195,6 +202,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
         sessionNotifier.saveSession(session);
 
+        sendNotification(event.action, eventId: event.id);
         navProvider.go('/add_invoice/$orderId');
         break;
       case Action.buyerTookOrder:
@@ -203,6 +211,9 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
           logger.e('Buyer took order, but order is null');
           break;
         }
+        sendNotification(event.action, values: {
+          'buyer_npub': order.buyerTradePubkey ?? 'Unknown',
+                  }, eventId: event.id);
         final sessionProvider = ref.read(sessionNotifierProvider.notifier);
         final peer = order.buyerTradePubkey != null
             ? Peer(publicKey: order.buyerTradePubkey!)
@@ -230,28 +241,39 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
           }
         }
         
-        ref.read(notificationsProvider.notifier).showTemporary(
+        sendNotification(
           event.action,
           values: {
             'action': cantDo?.cantDoReason.toString(),
           },
+          isTemporary: true,
         );
         break;
       case Action.adminSettled:
-        notifProvider.notify(event.action, values: {}, orderId: orderId);
+        sendNotification(event.action, eventId: event.id);
         break;
       case Action.paymentFailed:
         final paymentFailed = event.getPayload<PaymentFailed>();
-        notifProvider.notify(event.action, values: {
+        sendNotification(event.action, values: {
           'payment_attempts': paymentFailed?.paymentAttempts,
           'payment_retries_interval': paymentFailed?.paymentRetriesInterval,
-        }, orderId: orderId);
+        }, eventId: event.id);
+        break;
+      case Action.purchaseCompleted:
+        // Notify about purchase completion
+        sendNotification(event.action, eventId: event.id);
+        
+        // Request rating from both parties after successful completion
+        sendNotification(Action.rate, eventId: event.id);
+        break;
+      case Action.rateReceived:
+        // Do not show notification for rating received - it's internal feedback
         break;
       case Action.timeoutReversal:
         // No automatic notification - handled manually in OrderNotifier
         break;
       default:
-        notifProvider.showTemporary(event.action, values: {});
+        sendNotification(event.action, isTemporary: true);
         break;
     }
   }
