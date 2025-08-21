@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0+12]
+## [1.0.0+13]
 
 ### Added
 - Comprehensive sats range validation for add order screen with real-time error messages
@@ -23,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Missing localization getters regenerated for validation error messages
 - All Flutter analyzer issues resolved maintaining zero-issue codebase
 - Resolved the Flutter build error by updating all deprecated Switch properties
-- Resolved GitHub Actions iOS 18.0 Platform issue
+- GitHub Actions workflow simplified
 
 ### Changed
 - Enhanced validation system now follows payment method validation pattern for consistency
