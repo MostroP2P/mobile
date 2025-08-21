@@ -56,9 +56,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Relay Management System
 - **Automatic Sync**: Real-time synchronization with Mostro instance relay lists via kind 10002 events
-- **User Control**: Sophisticated blacklist system allowing permanent blocking of auto-discovered relays
-- **Smart Re-enablement**: Manual relay addition automatically removes from blacklist
-- **Source Tracking**: Relays tagged by source (user, mostro, default) for appropriate handling
+- **Dual Storage Strategy**: Mostro/default relays are stored in `settings.relays` and managed via blacklist system, while user relays are stored in `settings.userRelays` with full metadata preservation
+- **Differentiated Deletion**: Mostro/default relays when deactivated are added to blacklist and remain for potential re-activation, user relays when deleted are permanently removed from storage
+- **Source Tracking**: Relays tagged by source (user, mostro, default) for appropriate handling and storage strategy
+- **Smart Re-enablement**: Manual relay addition automatically removes from blacklist, Mostro relay re-activation removes from blacklist during sync
+- **URL Normalization**: All relay URLs are normalized by removing trailing slashes before blacklist comparison to ensure consistent matching regardless of input format
+- **Smart Validation**: Relay connectivity testing uses Nostr protocol validation (REQ/EVENT/EOSE cycle) with WebSocket fallback for unreachable relays
+- **Settings Persistence**: The Settings copyWith() method preserves existing selectedLanguage and defaultLightningAddress values when other fields are updated
 - **Implementation**: Located in `features/relays/` with core logic in `RelaysNotifier`
 
 ## Timeout Detection & Reversal System
@@ -292,7 +296,7 @@ For complete technical documentation, see `RELAY_SYNC_IMPLEMENTATION.md`.
 - **Card-Based Settings**: Clean, organized settings interface with visual hierarchy
 - **Enhanced Account Screen**: Streamlined user profile and preferences
 - **Currency Integration**: Visual currency flags for international trading
-- **Relay Management**: Localized relay dialog strings and improved UX
+- **Relay Management**: Enhanced relay synchronization with URL normalization and settings persistence mechanisms
 
 #### 3. Code Quality Excellence
 - **Zero Analyzer Issues**: Resolved 54+ Flutter analyze issues, maintaining clean codebase
@@ -307,6 +311,15 @@ For complete technical documentation, see `RELAY_SYNC_IMPLEMENTATION.md`.
 - **Improved Error Handling**: Better user feedback and error recovery
 - **Background Services**: Reliable notification processing
 - **Mock File Management**: Comprehensive documentation to prevent generated file issues
+
+#### 5. Relay Management System Architecture
+- **Dual Storage Implementation**: Mostro/default relays persist in `settings.relays` and use blacklist for deactivation, user relays persist in `settings.userRelays` with complete JSON metadata via `toJson()`/`fromJson()`
+- **Differentiated Lifecycle Management**: `removeRelayWithBlacklist()` adds Mostro/default relays to blacklist for potential restoration, `removeRelay()` permanently deletes user relays from both state and storage
+- **Storage Synchronization**: `_saveRelays()` method saves all active relays to `settings.relays` while separately preserving user relay metadata in `settings.userRelays`
+- **URL Normalization Process**: Relay URLs undergo normalization by trimming whitespace and removing trailing slashes using `_normalizeRelayUrl()` method throughout blacklist operations in `_handleMostroRelayListUpdate()`
+- **Settings Persistence Mechanism**: The Settings `copyWith()` method uses null-aware operators (`??`) to preserve existing values for selectedLanguage and defaultLightningAddress when not explicitly overridden
+- **Relay Validation Protocol**: Connectivity testing follows a two-tier approach: primary Nostr protocol test (sends REQ, waits for EVENT/EOSE) via `_testNostrProtocol()`, fallback WebSocket test via `_testBasicWebSocketConnectivity()`
+- **Blacklist Matching Logic**: All blacklist operations normalize both stored blacklist URLs and incoming relay URLs to ensure consistent string matching regardless of format variations
 
 ### Recent File Modifications
 
@@ -323,7 +336,7 @@ For complete technical documentation, see `RELAY_SYNC_IMPLEMENTATION.md`.
 #### UI Components
 - **`lib/shared/widgets/bottom_nav_bar.dart`**: Enhanced navigation with notification badges
 - **`lib/features/home/screens/home_screen.dart`**: Modern order book interface
-- **`lib/features/relays/widgets/relay_selector.dart`**: Localized relay management
+- **`lib/features/relays/widgets/relay_selector.dart`**: Relay management interface with comprehensive validation protocol and localization support
 - **Settings screens**: Card-based layout with improved accessibility
 
 #### Notification System
@@ -430,7 +443,7 @@ For complete technical documentation, see `RELAY_SYNC_IMPLEMENTATION.md`.
 
 ---
 
-**Last Updated**: 2025-08-18  
+**Last Updated**: 2025-08-21  
 **Flutter Version**: Latest stable  
 **Dart Version**: Latest stable  
 **Key Dependencies**: Riverpod, GoRouter, flutter_intl, timeago, dart_nostr, logger, shared_preferences
@@ -460,4 +473,4 @@ For complete technical documentation, see `RELAY_SYNC_IMPLEMENTATION.md`.
 - **Localization Excellence**: 73+ new translation keys across 3 languages
 - **Code Quality**: Zero analyzer issues with modern Flutter standards
 - **Documentation**: Comprehensive NOSTR.md and updated README.md
-- **Relay Sync System**: Automatic synchronization with intelligent blacklist management
+- **Relay System Architecture**: URL normalization using trailing slash removal, Settings persistence with null-aware operators, two-tier validation protocol (Nostr + WebSocket), and comprehensive multilingual support

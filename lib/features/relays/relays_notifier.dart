@@ -702,6 +702,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
               // Check if this relay is blacklisted (even if it's still in state)
               isActive: !blacklistedUrls.contains(r.url),
               isHealthy: r.isHealthy,
+              source: r.source,
             ))
         .toList();
     
@@ -712,6 +713,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
               url: url,
               isActive: false,
               isHealthy: false,
+              source: null, // Unknown source for blacklisted-only relays
             ))
         .toList();
     
@@ -727,6 +729,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
               url: r.url,
               isActive: !blacklistedUrls.contains(r.url), // User relays can also be blacklisted
               isHealthy: r.isHealthy,
+              source: r.source,
             ))
         .toList();
     

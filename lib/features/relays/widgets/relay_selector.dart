@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/relays/relay.dart';
 import 'package:mostro_mobile/features/relays/relays_provider.dart';
@@ -105,12 +106,12 @@ class RelaySelector extends ConsumerWidget {
       ),
       child: Row(
         children: [
-          // Grey dot
+          // Status dot - green if active, grey if inactive
           Container(
             width: 8,
             height: 8,
             decoration: BoxDecoration(
-              color: Colors.grey,
+              color: relayInfo.isActive ? AppTheme.activeColor : Colors.grey,
               borderRadius: BorderRadius.circular(4),
             ),
           ),
@@ -130,26 +131,33 @@ class RelaySelector extends ConsumerWidget {
           
           const SizedBox(width: 12),
           
-          // Switch and label - aligned with overflow protection
-          Container(
-            width: 140, // Increased width to show full text
-            padding: const EdgeInsets.only(right: 16), // Prevent overflow
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                _buildRelaySwitch(context, ref, relayInfo),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    relayInfo.isActive ? S.of(context)!.activated : S.of(context)!.deactivated,
-                    style: const TextStyle(
-                      color: AppTheme.textSecondary, // Use same grey as description
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+          // Control - Switch for Mostro/default relays, Delete button for user relays
+          relayInfo.source == RelaySource.user
+              ? _buildDeleteButton(context, ref, relayInfo)
+              : Container(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: _buildRelaySwitch(context, ref, relayInfo),
                 ),
-              ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDeleteButton(BuildContext context, WidgetRef ref, MostroRelayInfo relayInfo) {
+    return Container(
+      width: 140,
+      padding: const EdgeInsets.only(right: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          GestureDetector(
+            onTap: () async {
+              await _showDeleteUserRelayDialog(context, ref, relayInfo);
+            },
+            child: const Icon(
+              Icons.delete,
+              color: Colors.white,
+              size: 24,
             ),
           ),
         ],
@@ -190,6 +198,48 @@ class RelaySelector extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  /// Show confirmation dialog for deleting user relay
+  Future<void> _showDeleteUserRelayDialog(BuildContext context, WidgetRef ref, MostroRelayInfo relayInfo) async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: AppTheme.dark2,
+          title: Text(
+            S.of(context)!.deleteUserRelayTitle,
+            style: const TextStyle(color: AppTheme.cream1),
+          ),
+          content: Text(
+            S.of(context)!.deleteUserRelayMessage,
+            style: const TextStyle(color: AppTheme.textSecondary),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(
+                S.of(context)!.deleteUserRelayCancel,
+                style: const TextStyle(color: AppTheme.textSecondary),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(
+                S.of(context)!.deleteUserRelayConfirm,
+                style: const TextStyle(color: AppTheme.activeColor),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    // If user confirmed deletion, remove the relay
+    if (shouldDelete == true) {
+      final relaysNotifier = ref.read(relaysProvider.notifier);
+      await relaysNotifier.removeRelay(relayInfo.url);
+    }
   }
 
   /// Handle relay toggle with safety checks and confirmation dialogs
@@ -305,39 +355,48 @@ class RelaySelector extends ConsumerWidget {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              backgroundColor: AppTheme.dark2,
+              backgroundColor: AppTheme.backgroundCard,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+              ),
               title: Text(
                 S.of(context)!.addRelayDialogTitle,
-                style: const TextStyle(color: AppTheme.cream1),
+                style: const TextStyle(
+                  color: AppTheme.textPrimary,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    S.of(context)!.addRelayDialogDescription,
-                    style: const TextStyle(color: AppTheme.textSecondary),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: textController,
-                    enabled: !isLoading,
-                    style: const TextStyle(color: AppTheme.cream1),
-                    decoration: InputDecoration(
-                      labelText: S.of(context)!.addRelayDialogPlaceholder,
-                      labelStyle: const TextStyle(color: AppTheme.textSecondary),
-                      hintText: 'relay.example.com',
-                      hintStyle: const TextStyle(color: AppTheme.textSecondary),
-                      enabledBorder: const UnderlineInputBorder(
-                        borderSide: BorderSide(color: AppTheme.textSecondary),
-                      ),
-                      focusedBorder: const UnderlineInputBorder(
-                        borderSide: BorderSide(color: AppTheme.cream1),
-                      ),
-                      errorText: errorMessage,
-                      errorStyle: const TextStyle(color: Colors.red),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.backgroundInput,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
                     ),
-                    autofocus: true,
+                    child: TextField(
+                      controller: textController,
+                      enabled: !isLoading,
+                      style: const TextStyle(color: AppTheme.textPrimary),
+                      decoration: InputDecoration(
+                        labelText: S.of(context)!.addRelayDialogPlaceholder,
+                        labelStyle: const TextStyle(color: AppTheme.textSecondary),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        hintText: 'relay.example.com or wss://relay.example.com',
+                        hintStyle: const TextStyle(color: AppTheme.textSecondary),
+                        errorText: errorMessage,
+                        errorStyle: const TextStyle(color: Colors.red),
+                      ),
+                      autofocus: true,
+                    ),
                   ),
                   if (isLoading) ...[
                     const SizedBox(height: 16),
@@ -360,18 +419,25 @@ class RelaySelector extends ConsumerWidget {
                     ),
                   ],
                 ],
+                ),
               ),
               actions: [
-                TextButton(
-                  onPressed: isLoading ? null : () => Navigator.of(dialogContext).pop(),
-                  child: Text(
-                    S.of(context)!.addRelayDialogCancel,
-                    style: TextStyle(
-                      color: isLoading ? AppTheme.textSecondary : AppTheme.textSecondary,
+                if (!isLoading) ...[
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                    child: Text(
+                      S.of(context)!.addRelayDialogCancel,
+                      style: const TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
                   ),
-                ),
-                TextButton(
+                  const SizedBox(width: 12),
+                ],
+                ElevatedButton(
                   onPressed: isLoading
                       ? null
                       : () async {
@@ -424,11 +490,21 @@ class RelaySelector extends ConsumerWidget {
                             });
                           }
                         },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.activeColor,
+                    foregroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  ),
                   child: Text(
                     S.of(context)!.addRelayDialogAdd,
-                    style: TextStyle(
-                      color: isLoading ? AppTheme.textSecondary : AppTheme.cream1,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
                     ),
+                    textAlign: TextAlign.center,
                   ),
                 ),
               ],

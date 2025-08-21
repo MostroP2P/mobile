@@ -881,5 +881,11 @@
 
   "cannotBlacklistLastRelayTitle": "No Puedes Desconectarte del Último Relay",
   "cannotBlacklistLastRelayMessage": "No puedes desconectarte de este relay porque es el último conectado. La app necesita al menos un relay para funcionar correctamente.",
-  "cannotBlacklistLastRelayOk": "OK"
+  "cannotBlacklistLastRelayOk": "OK",
+
+  "@_comment_delete_user_relay_dialog": "Delete user relay confirmation dialog strings",
+  "deleteUserRelayTitle": "¿Seguro que quieres desconectarte de este relay?",
+  "deleteUserRelayMessage": "Si más adelante deseas volver a usarlo, deberás añadirlo manualmente.",
+  "deleteUserRelayConfirm": "Sí",
+  "deleteUserRelayCancel": "No"
 }

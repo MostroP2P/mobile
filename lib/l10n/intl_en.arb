@@ -856,5 +856,11 @@
   "@_comment_last_relay_dialog": "Last relay protection dialog strings",
   "cannotBlacklistLastRelayTitle": "Cannot Disconnect from Last Relay",
   "cannotBlacklistLastRelayMessage": "You cannot disconnect from this relay because it's the last connected one. The app needs at least one relay to function properly.",
-  "cannotBlacklistLastRelayOk": "OK"
+  "cannotBlacklistLastRelayOk": "OK",
+
+  "@_comment_delete_user_relay_dialog": "Delete user relay confirmation dialog strings",
+  "deleteUserRelayTitle": "Sure you want to disconnect from this relay?",
+  "deleteUserRelayMessage": "If you want to use it again later, you'll need to add it manually.",
+  "deleteUserRelayConfirm": "Yes",
+  "deleteUserRelayCancel": "No"
 }

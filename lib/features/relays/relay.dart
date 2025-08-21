@@ -107,11 +107,13 @@ class MostroRelayInfo {
   final String url;
   final bool isActive; // true if currently being used, false if blacklisted
   final bool isHealthy; // health status (for active relays)
+  final RelaySource? source; // source of the relay (user, mostro, defaultConfig)
 
   MostroRelayInfo({
     required this.url,
     required this.isActive,
     required this.isHealthy,
+    this.source,
   });
 
   @override
