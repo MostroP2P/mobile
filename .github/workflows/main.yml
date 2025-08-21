@@ -1,6 +1,8 @@
 name: "Build"
 
-description: "Build and release Flutter application for Android"
+# .github/workflows/main.yml
+
+name: "Build"
 
 on:
   push:
