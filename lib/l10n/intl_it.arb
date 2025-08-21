@@ -879,15 +879,15 @@
   "notInUse": "Non In Uso",
   "noMostroRelaysAvailable": "Nessun relay disponibile dall'istanza Mostro configurata. Per favore controlla la tua configurazione Mostro.",
   "relaysDescription": "Attiva o disattiva secondo le tue preferenze, o aggiungi nuovi.",
-  "activated": "Attivato",
-  "deactivated": "Disattivato",
+  "activated": "Connesso",
+  "deactivated": "Disconnesso",
 
-  "blacklistDefaultRelayTitle": "Bloccare Relay Predefinito?",
-  "blacklistDefaultRelayMessage": "Sei sicuro di voler bloccare il relay predefinito di Mostro? Questo potrebbe influire sulla connettività con l'istanza di Mostro.",
-  "blacklistDefaultRelayConfirm": "Blocca",
+  "blacklistDefaultRelayTitle": "Disconnettersi dal Relay Predefinito?",
+  "blacklistDefaultRelayMessage": "Sei sicuro di volerti disconnettere dal relay predefinito? Questo potrebbe influire sulla connettività con l'istanza di Mostro.",
+  "blacklistDefaultRelayConfirm": "Disconnetti",
   "blacklistDefaultRelayCancel": "Annulla",
 
-  "cannotBlacklistLastRelayTitle": "Non Puoi Bloccare l'Ultimo Relay",
-  "cannotBlacklistLastRelayMessage": "Non puoi bloccare questo relay perché è l'ultimo attivo. L'app ha bisogno di almeno un relay per funzionare correttamente.",
+  "cannotBlacklistLastRelayTitle": "Non Puoi Disconnetterti dall'Ultimo Relay",
+  "cannotBlacklistLastRelayMessage": "Non puoi disconnetterti da questo relay perché è l'ultimo connesso. L'app ha bisogno di almeno un relay per funzionare correttamente.",
   "cannotBlacklistLastRelayOk": "OK"
 }

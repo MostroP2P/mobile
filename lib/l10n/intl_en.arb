@@ -397,11 +397,6 @@
   "generateNewUser": "Generate New User",
   "importMostroUser": "Import Mostro User",
   "keyImportedSuccessfully": "Key imported successfully",
-  
-  "blacklistDefaultRelayTitle": "Blacklist Default Relay?",
-  "blacklistDefaultRelayMessage": "You're about to blacklist relay.mostro.network, which is the default relay for basic connectivity and automatic relay synchronization.\n\nThis may affect:\n• Automatic relay updates\n• Connection reliability\n• Event synchronization\n\nAre you sure you want to continue?",
-  "blacklistDefaultRelayConfirm": "Yes, blacklist",
-  "blacklistDefaultRelayCancel": "Cancel",
   "importFailed": "Import failed: {error}",
   "noMnemonicFound": "No mnemonic found",
   "errorLoadingMnemonic": "Error: {error}",
@@ -849,17 +844,17 @@
   "notInUse": "Not In Use",
   "noMostroRelaysAvailable": "No relays available from the configured Mostro instance. Please check your Mostro configuration.",
   "relaysDescription": "Toggle on or off as you prefer, or add new ones.",
-  "activated": "Activated",
-  "deactivated": "Deactivated",
+  "activated": "Connected",
+  "deactivated": "Disconnected",
 
   "@_comment_blacklist_dialog": "Blacklist default relay dialog strings",
-  "blacklistDefaultRelayTitle": "Blacklist Default Relay?",
-  "blacklistDefaultRelayMessage": "Are you sure you want to blacklist the default Mostro relay? This may affect connectivity to the Mostro instance.",
-  "blacklistDefaultRelayConfirm": "Blacklist",
+  "blacklistDefaultRelayTitle": "Disconnect from Default Relay?",
+  "blacklistDefaultRelayMessage": "Are you sure you want to disconnect from the default relay? This may affect connectivity to the Mostro instance.",
+  "blacklistDefaultRelayConfirm": "Disconnect",
   "blacklistDefaultRelayCancel": "Cancel",
 
   "@_comment_last_relay_dialog": "Last relay protection dialog strings",
-  "cannotBlacklistLastRelayTitle": "Cannot Blacklist Last Relay",
-  "cannotBlacklistLastRelayMessage": "You cannot blacklist this relay because it's the last active one. The app needs at least one relay to function properly.",
+  "cannotBlacklistLastRelayTitle": "Cannot Disconnect from Last Relay",
+  "cannotBlacklistLastRelayMessage": "You cannot disconnect from this relay because it's the last connected one. The app needs at least one relay to function properly.",
   "cannotBlacklistLastRelayOk": "OK"
 }

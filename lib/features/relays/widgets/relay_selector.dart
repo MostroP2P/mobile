@@ -169,7 +169,7 @@ class RelaySelector extends ConsumerWidget {
         height: 26,
         padding: const EdgeInsets.all(2),
         decoration: BoxDecoration(
-          color: isActive ? Colors.green : Colors.red,
+          color: isActive ? AppTheme.activeColor : AppTheme.red1,
           borderRadius: BorderRadius.circular(13),
         ),
         child: AnimatedAlign(
@@ -181,6 +181,10 @@ class RelaySelector extends ConsumerWidget {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(11),
+              border: Border.all(
+                color: Colors.black,
+                width: 2,
+              ),
             ),
           ),
         ),
@@ -193,6 +197,14 @@ class RelaySelector extends ConsumerWidget {
     final isCurrentlyBlacklisted = !relayInfo.isActive;
     final isDefaultMostroRelay = relayInfo.url.startsWith('wss://relay.mostro.network');
     final relaysNotifier = ref.read(relaysProvider.notifier);
+    
+    // Detect relay type (user vs mostro/default)
+    final currentRelays = ref.read(relaysProvider);
+    final relay = currentRelays.firstWhere(
+      (r) => r.url == relayInfo.url, 
+      orElse: () => Relay(url: ''), // Empty relay if not found
+    );
+    final isUserRelay = relay.url.isNotEmpty && relay.source == RelaySource.user;
     
     // If removing from blacklist, proceed directly
     if (isCurrentlyBlacklisted) {
@@ -230,8 +242,12 @@ class RelaySelector extends ConsumerWidget {
       return; // Block the action - do NOT proceed
     }
     
-    // If it's the default relay, show confirmation dialog
-    if (isDefaultMostroRelay) {
+    // Handle deactivation based on relay type
+    if (isUserRelay) {
+      // User relay: Delete completely (no blacklisting needed)
+      await relaysNotifier.removeRelay(relayInfo.url);
+    } else if (isDefaultMostroRelay) {
+      // Default relay: Show confirmation dialog before blacklisting
       final shouldProceed = await showDialog<bool>(
         context: context,
         builder: (BuildContext context) {
@@ -270,7 +286,7 @@ class RelaySelector extends ConsumerWidget {
         await relaysNotifier.toggleMostroRelayBlacklist(relayInfo.url);
       }
     } else {
-      // Regular relay - proceed directly
+      // Regular Mostro relay - proceed directly with blacklisting
       await relaysNotifier.toggleMostroRelayBlacklist(relayInfo.url);
     }
   }

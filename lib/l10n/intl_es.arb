@@ -871,15 +871,15 @@
   "notInUse": "Sin Uso",
   "noMostroRelaysAvailable": "No hay relays disponibles de la instancia Mostro configurada. Por favor verifica tu configuración de Mostro.",
   "relaysDescription": "Activa o desactiva según prefieras, o agrega nuevos.",
-  "activated": "Activado",
-  "deactivated": "Desactivado",
+  "activated": "Conectado",
+  "deactivated": "Desconectado",
 
-  "blacklistDefaultRelayTitle": "¿Bloquear Relay por Defecto?",
-  "blacklistDefaultRelayMessage": "¿Estás seguro de que quieres bloquear el relay por defecto de Mostro? Esto puede afectar la conectividad con la instancia de Mostro.",
-  "blacklistDefaultRelayConfirm": "Bloquear",
+  "blacklistDefaultRelayTitle": "¿Desconectarte del Relay por Defecto?",
+  "blacklistDefaultRelayMessage": "¿Estás seguro de que quieres desconectarte del relay por defecto? Esto puede afectar la conectividad con la instancia de Mostro.",
+  "blacklistDefaultRelayConfirm": "Desconectar",
   "blacklistDefaultRelayCancel": "Cancelar",
 
-  "cannotBlacklistLastRelayTitle": "No Puedes Bloquear el Último Relay",
-  "cannotBlacklistLastRelayMessage": "No puedes bloquear este relay porque es el último activo. La app necesita al menos un relay para funcionar correctamente.",
+  "cannotBlacklistLastRelayTitle": "No Puedes Desconectarte del Último Relay",
+  "cannotBlacklistLastRelayMessage": "No puedes desconectarte de este relay porque es el último conectado. La app necesita al menos un relay para funcionar correctamente.",
   "cannotBlacklistLastRelayOk": "OK"
 }

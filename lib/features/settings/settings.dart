@@ -34,8 +34,8 @@ class Settings {
       fullPrivacyMode: privacyModeSetting ?? fullPrivacyMode,
       mostroPublicKey: mostroPublicKey ?? this.mostroPublicKey,
       defaultFiatCode: defaultFiatCode ?? this.defaultFiatCode,
-      selectedLanguage: selectedLanguage,
-      defaultLightningAddress: defaultLightningAddress,
+      selectedLanguage: selectedLanguage ?? this.selectedLanguage,
+      defaultLightningAddress: defaultLightningAddress ?? this.defaultLightningAddress,
       blacklistedRelays: blacklistedRelays ?? this.blacklistedRelays,
       userRelays: userRelays ?? this.userRelays,
     );
