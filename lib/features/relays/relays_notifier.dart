@@ -781,10 +781,16 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
 
   /// Clean existing Mostro relays from state when switching instances
   Future<void> _cleanMostroRelaysFromState() async {
-    // Keep default config relays AND user relays, remove only Mostro relays
+    // Get blacklisted relays for filtering
+    final blacklistedUrls = settings.state.blacklistedRelays
+        .map((url) => _normalizeRelayUrl(url))
+        .toSet();
+    
+    // Keep default config relays, user relays, AND non-blacklisted Mostro relays
     final cleanedRelays = state.where((relay) => 
         relay.source == RelaySource.defaultConfig || 
-        relay.source == RelaySource.user
+        relay.source == RelaySource.user ||
+        (relay.source == RelaySource.mostro && !blacklistedUrls.contains(_normalizeRelayUrl(relay.url)))
     ).toList();
     if (cleanedRelays.length != state.length) {
       final removedCount = state.length - cleanedRelays.length;
