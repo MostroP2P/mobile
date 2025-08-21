@@ -1,9 +1,5 @@
 name: "Build"
 
-# .github/workflows/main.yml
-
-name: "Build"
-
 on:
   push:
     branches:
@@ -111,8 +107,6 @@ jobs:
       - name: Build appBundle
         if: steps.should_build.outputs.SHOULD_BUILD == 'true'
         run: flutter build appbundle --release --dart-define=APP_VERSION=${{ env.VERSION }} --dart-define=GIT_COMMIT=${{ github.sha }}
-
-
 
       - name: Upload Artifacts
         if: steps.should_build.outputs.SHOULD_BUILD == 'true'
