@@ -526,18 +526,22 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
       // Normalize relay URLs to prevent duplicates
       final normalizedRelays = event.validRelays
           .map((url) => _normalizeRelayUrl(url))
+          .whereType<String>()  // Filter out any null results
           .toSet() // Remove duplicates
           .toList();
       
-      // Get blacklisted relays from settings
-      final blacklistedUrls = settings.state.blacklistedRelays;
+      // Get blacklisted relays from settings and normalize them for consistent matching
+      final blacklistedUrls = settings.state.blacklistedRelays
+          .map((url) => _normalizeRelayUrl(url))
+          .whereType<String>()  // Filter out any null results
+          .toSet();
 
       // Start with user relays (they stay at the end and are never affected by Mostro sync)
       final userRelays = state.where((relay) => relay.source == RelaySource.user).toList();
       
       // Keep default relays ONLY if they are not blacklisted
       final updatedRelays = state
-          .where((relay) => relay.source == RelaySource.defaultConfig && !blacklistedUrls.contains(relay.url))
+          .where((relay) => relay.source == RelaySource.defaultConfig && !blacklistedUrls.contains(_normalizeRelayUrl(relay.url)))
           .toList();
       
       _logger.i('Kept ${updatedRelays.length} default relays and ${userRelays.length} user relays');
@@ -552,13 +556,13 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
 
         // Check if this relay was previously a user relay (PROMOTION case)
         final existingUserRelay = userRelays.firstWhere(
-          (r) => r.url == relayUrl, 
+          (r) => _normalizeRelayUrl(r.url) == relayUrl, 
           orElse: () => Relay(url: ''), // Empty relay if not found
         );
         
         if (existingUserRelay.url.isNotEmpty) {
           // PROMOTION: User relay → Mostro relay (move to beginning)
-          userRelays.removeWhere((r) => r.url == relayUrl);
+          userRelays.removeWhere((r) => _normalizeRelayUrl(r.url) == relayUrl);
           final promotedRelay = Relay.fromMostro(relayUrl);
           updatedRelays.insert(0, promotedRelay); // Insert at beginning
           _logger.i('Promoted user relay to Mostro relay: $relayUrl');
@@ -566,7 +570,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
         }
 
         // Skip if already in updatedRelays (avoid duplicates with default relays)
-        if (updatedRelays.any((r) => r.url == relayUrl)) {
+        if (updatedRelays.any((r) => _normalizeRelayUrl(r.url) == relayUrl)) {
           _logger.i('Skipping duplicate relay: $relayUrl');
           continue;
         }
@@ -580,7 +584,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
       // Remove Mostro relays that are no longer in the 10002 event (ELIMINATION case)
       final currentMostroRelays = state.where((relay) => relay.source == RelaySource.mostro).toList();
       for (final mostroRelay in currentMostroRelays) {
-        if (!normalizedRelays.contains(mostroRelay.url)) {
+        if (!normalizedRelays.contains(_normalizeRelayUrl(mostroRelay.url))) {
           _logger.i('Removing Mostro relay no longer in 10002: ${mostroRelay.url}');
           // Relay is eliminated completely - no reverting to user relay
         }
