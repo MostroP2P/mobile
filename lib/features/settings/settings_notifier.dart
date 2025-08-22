@@ -52,7 +52,7 @@ class SettingsNotifier extends StateNotifier<Settings> {
     if (oldPubkey != newValue) {
       _logger.i('Mostro change detected: $oldPubkey → $newValue');
       
-      // 🔥 RESET COMPLETO: Limpiar blacklist y user relays al cambiar Mostro
+      // COMPLETE RESET: Clear blacklist and user relays when changing Mostro
       state = state.copyWith(
         mostroPublicKey: newValue,
         blacklistedRelays: const [], // Blacklist vacío
@@ -61,7 +61,7 @@ class SettingsNotifier extends StateNotifier<Settings> {
       
       _logger.i('Reset blacklist and user relays for new Mostro instance');
     } else {
-      // Solo actualizar pubkey si es el mismo (sin reset)
+      // Only update pubkey if it's the same (without reset)
       state = state.copyWith(mostroPublicKey: newValue);
     }
     

@@ -693,7 +693,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
     try {
       _logger.i('Cleaning all relays and performing fresh sync...');
       
-      // 🔥 LIMPIAR TODOS los relays (solo mantener default)
+      // CLEAR ALL relays (only keep default)
       final defaultRelay = Relay.fromDefault('wss://relay.mostro.network');
       state = [defaultRelay];
       await _saveRelays();
@@ -704,7 +704,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
       _lastRelayListHash = null;
       _lastProcessedEventTime = null;
       
-      // Iniciar sync completamente fresco con nuevo Mostro
+      // Start completely fresh sync with new Mostro
       await syncWithMostroInstance();
       
     } catch (e, stackTrace) {
