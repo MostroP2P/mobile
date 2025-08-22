@@ -163,6 +163,16 @@ class NotificationDetails extends StatelessWidget {
         }
         break;
 
+      case mostro_action.Action.buyerTookOrder:
+        if (data.containsKey('buyer_npub') && data['buyer_npub'].toString().isNotEmpty) {
+          widgets.add(DetailRow(
+            label: S.of(context)!.notificationBuyer,
+            value: _formatHashOrId(data['buyer_npub']),
+            icon: HeroIcons.user,
+          ));
+        }
+        break;
+
       default:
         // TODO: Add specific handler for ${notification.action}
         // No data displayed for unhandled actions to prevent information exposure
@@ -175,14 +185,26 @@ class NotificationDetails extends StatelessWidget {
   String _formatHashOrId(String value) {
     if (value.isEmpty) return 'N/A';
     
-    if (value.length <= 8) {
-      return value; // Show full value if it's short enough
+    // Check if it's a nym (contains hyphen) vs a hash
+    if (value.contains('-')) {
+      // It's a nym handle, truncate differently
+      const maxLength = 20;
+      if (value.length <= maxLength) {
+        return value; // Show full nym if short enough
+      }
+      // Truncate at the end only for nyms
+      return '${value.substring(0, maxLength - 3)}...';
+    } else {
+      // It's a hash/ID, use original logic
+      if (value.length <= 8) {
+        return value; // Show full value if it's short enough
+      }
+      
+      String start = value.substring(0, 8);
+      String end = value.substring(value.length - 5);
+      
+      return '$start...$end';
     }
-    
-    String start = value.substring(0, 8);
-    String end = value.substring(value.length - 5);
-    
-    return '$start...$end';
   }
 
 }

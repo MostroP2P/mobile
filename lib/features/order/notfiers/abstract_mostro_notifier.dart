@@ -7,6 +7,7 @@ import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/features/notifications/providers/notifications_provider.dart';
+import 'package:mostro_mobile/shared/providers/legible_handle_provider.dart';
 import 'package:logger/logger.dart';
 
 class AbstractMostroNotifier extends StateNotifier<OrderState> {
@@ -90,6 +91,9 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
           navProvider.go('/pay_invoice/${event.id!}');
         }
         ref.read(sessionNotifierProvider.notifier).saveSession(session);
+        
+        // Simple notification for seller to pay
+        sendNotification(event.action, eventId: event.id);
         break;
       case Action.fiatSentOk:
         final peer = event.getPayload<Peer>();
@@ -98,15 +102,21 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         final isSeller = (session.role == Role.seller);
         
         if (isSeller) {
+          final buyerNym = peer?.publicKey != null 
+              ? ref.read(nickNameProvider(peer!.publicKey)) 
+              : 'Unknown';
           sendNotification(event.action, values: {
-            'buyer_npub': peer?.publicKey ?? 'Unknown',
+            'buyer_npub': buyerNym,
                       }, eventId: event.id);
         }
         break;
       case Action.released:
         // Notify about Bitcoin being released
+        final sellerNym = state.order?.sellerTradePubkey != null 
+            ? ref.read(nickNameProvider(state.order!.sellerTradePubkey!)) 
+            : 'Unknown';
         sendNotification(event.action, values: {
-          'seller_npub': state.order?.sellerTradePubkey ?? 'Unknown',
+          'seller_npub': sellerNym,
                   }, eventId: event.id);
         
         // Request rating from both parties after successful completion
@@ -140,8 +150,11 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         break;
       case Action.holdInvoicePaymentAccepted:
         final order = event.getPayload<Order>();
+        final sellerNym = order?.sellerTradePubkey != null 
+            ? ref.read(nickNameProvider(order!.sellerTradePubkey!)) 
+            : 'Unknown';
         sendNotification(event.action, values: {
-          'seller_npub': order?.sellerTradePubkey ?? 'Unknown',
+          'seller_npub': sellerNym,
           'fiat_code': order?.fiatCode,
           'fiat_amount': order?.fiatAmount,
           'payment_method': order?.paymentMethod,
@@ -163,8 +176,11 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         chat.subscribe();
         break;
       case Action.holdInvoicePaymentSettled:
+        final buyerNym = state.order?.buyerTradePubkey != null 
+            ? ref.read(nickNameProvider(state.order!.buyerTradePubkey!)) 
+            : 'Unknown';
         sendNotification(event.action, values: {
-          'buyer_npub': state.order?.buyerTradePubkey ?? 'Unknown',
+          'buyer_npub': buyerNym,
                   }, eventId: event.id);
         navProvider.go('/trade_detail/$orderId');
         break;
@@ -203,6 +219,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         sessionNotifier.saveSession(session);
 
         sendNotification(event.action, eventId: event.id);
+        
         navProvider.go('/add_invoice/$orderId');
         break;
       case Action.buyerTookOrder:
@@ -211,8 +228,11 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
           logger.e('Buyer took order, but order is null');
           break;
         }
+        final buyerNym = order.buyerTradePubkey != null 
+            ? ref.read(nickNameProvider(order.buyerTradePubkey!)) 
+            : 'Unknown';
         sendNotification(event.action, values: {
-          'buyer_npub': order.buyerTradePubkey ?? 'Unknown',
+          'buyer_npub': buyerNym,
                   }, eventId: event.id);
         final sessionProvider = ref.read(sessionNotifierProvider.notifier);
         final peer = order.buyerTradePubkey != null
