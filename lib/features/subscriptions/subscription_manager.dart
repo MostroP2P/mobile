@@ -39,7 +39,7 @@ class SubscriptionManager {
       (previous, current) {
         _updateAllSubscriptions(current);
       },
-      fireImmediately: true,
+      fireImmediately: false,
       onError: (error, stackTrace) {
         _logger.e('Error in session listener',
             error: error, stackTrace: stackTrace);

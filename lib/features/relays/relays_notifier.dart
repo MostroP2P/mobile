@@ -31,6 +31,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
   SubscriptionManager? _subscriptionManager;
   StreamSubscription<RelayListEvent>? _relayListSubscription;
   Timer? _settingsWatchTimer;
+  Timer? _retryTimer;  // Store retry timer to prevent leaks
   
   // Hash-based deduplication to prevent processing identical relay lists
   String? _lastRelayListHash;
@@ -477,7 +478,10 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
 
   /// Schedule a retry of the sync operation after a delay
   void _scheduleRetrySync(String mostroPubkey) {
-    Timer(const Duration(seconds: 10), () async {
+    // Cancel any existing retry timer to prevent leaks
+    _retryTimer?.cancel();
+    
+    _retryTimer = Timer(const Duration(seconds: 10), () async {
       try {
         if (settings.state.mostroPublicKey == mostroPubkey) {
           _logger.i('Retrying relay sync for Mostro: $mostroPubkey');
@@ -485,6 +489,8 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
         }
       } catch (e) {
         _logger.w('Retry sync failed: $e');
+      } finally {
+        _retryTimer = null;  // Clear reference after execution
       }
     });
   }
@@ -852,6 +858,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
     _relayListSubscription?.cancel();
     _subscriptionManager?.dispose();
     _settingsWatchTimer?.cancel();
+    _retryTimer?.cancel();  // Cancel retry timer to prevent leak
     super.dispose();
   }
 }
