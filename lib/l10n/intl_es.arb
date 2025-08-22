@@ -325,6 +325,34 @@
   "enterAmountHint": "Ingresa cantidad",
   "pleaseEnterAmount": "Por favor ingresa una cantidad",
   "pleaseEnterValidAmount": "Por favor ingresa una cantidad válida",
+  "fiatAmountTooHigh": "La cantidad fiat es demasiado alta, por favor ingresa una nueva cantidad fiat, el rango permitido está entre {minAmount} y {maxAmount} sats",
+  "@fiatAmountTooHigh": {
+    "placeholders": {
+      "minAmount": {
+        "type": "String",
+        "description": "The minimum allowed sats amount"
+      },
+      "maxAmount": {
+        "type": "String",
+        "description": "The maximum allowed sats amount"
+      }
+    }
+  },
+  "fiatAmountTooLow": "La cantidad fiat es demasiado baja, por favor ingresa una nueva cantidad fiat, el rango permitido está entre {minAmount} y {maxAmount} sats",
+  "@fiatAmountTooLow": {
+    "placeholders": {
+      "minAmount": {
+        "type": "String",
+        "description": "The minimum allowed sats amount"
+      },
+      "maxAmount": {
+        "type": "String",
+        "description": "The maximum allowed sats amount"
+      }
+    }
+  },
+  "exchangeRateNotAvailable": "Tasa de cambio no disponible, por favor espera o actualiza",
+  "mostroInstanceNotAvailable": "Datos de instancia Mostro no disponibles, por favor espera",
   "enterAmountYouWantToReceive": "Ingresa la cantidad que quieres recibir",
   "enterAmountYouWantToSend": "Ingresa la cantidad que quieres enviar",
   "creatingRangeOrder": "Creando orden de rango (puedes recibir entre cantidades mínima y máxima)",

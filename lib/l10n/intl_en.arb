@@ -369,6 +369,34 @@
   "enterAmountHint": "Enter amount",
   "pleaseEnterAmount": "Please enter an amount",
   "pleaseEnterValidAmount": "Please enter a valid amount",
+  "fiatAmountTooHigh": "The fiat amount is too high, please add a new fiat amount, the allowed range is between {minAmount} and {maxAmount} sats",
+  "@fiatAmountTooHigh": {
+    "placeholders": {
+      "minAmount": {
+        "type": "String",
+        "description": "The minimum allowed sats amount"
+      },
+      "maxAmount": {
+        "type": "String",
+        "description": "The maximum allowed sats amount"
+      }
+    }
+  },
+  "fiatAmountTooLow": "The fiat amount is too low, please add a new fiat amount, the allowed range is between {minAmount} and {maxAmount} sats",
+  "@fiatAmountTooLow": {
+    "placeholders": {
+      "minAmount": {
+        "type": "String",
+        "description": "The minimum allowed sats amount"
+      },
+      "maxAmount": {
+        "type": "String",
+        "description": "The maximum allowed sats amount"
+      }
+    }
+  },
+  "exchangeRateNotAvailable": "Exchange rate not available, please wait or refresh",
+  "mostroInstanceNotAvailable": "Mostro instance data not available, please wait",
   "enterAmountYouWantToReceive": "Enter amount you want to receive",
   "enterAmountYouWantToSend": "Enter amount you want to send",
   "creatingRangeOrder": "Creating a range order (you can receive between min and max amounts)",

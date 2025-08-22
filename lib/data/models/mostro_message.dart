@@ -175,7 +175,7 @@ class MostroMessage<T extends Payload> {
     NostrKeyPairs? masterKey,
     int? keyIndex,
   }) async {
-    this.tradeIndex = keyIndex;
+    tradeIndex = keyIndex;
     final content = serialize(keyPair: masterKey != null ? tradeKey : null);
     final keySet = masterKey ?? tradeKey;
 
