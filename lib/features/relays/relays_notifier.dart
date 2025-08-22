@@ -31,6 +31,12 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
   SubscriptionManager? _subscriptionManager;
   StreamSubscription<RelayListEvent>? _relayListSubscription;
   Timer? _settingsWatchTimer;
+  
+  // Hash-based deduplication to prevent processing identical relay lists
+  String? _lastRelayListHash;
+  
+  // Timestamp validation to ignore older events
+  DateTime? _lastProcessedEventTime;
 
   RelaysNotifier(this.settings, this.ref) : super([]) {
     _loadRelays();
@@ -521,6 +527,21 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
         return;
       }
       
+      // Timestamp validation: ignore events older than the last processed event
+      if (_lastProcessedEventTime != null && 
+          event.publishedAt.isBefore(_lastProcessedEventTime!)) {
+        _logger.i('Ignoring older relay list event from ${event.publishedAt} '
+            '(last processed: $_lastProcessedEventTime)');
+        return;
+      }
+      
+      // Hash-based deduplication: ignore identical relay lists
+      final relayListHash = event.validRelays.join(',');
+      if (_lastRelayListHash == relayListHash) {
+        _logger.i('Relay list unchanged (hash match), skipping update');
+        return;
+      }
+      
       _logger.i('Received relay list from Mostro ${event.authorPubkey}: ${event.relays}');
       
       // Normalize relay URLs to prevent duplicates
@@ -600,6 +621,10 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
         await _saveRelays();
         _logger.i('Updated relay list with ${finalRelays.length} relays (${blacklistedUrls.length} blacklisted)');
       }
+      
+      // Update tracking variables after successful processing
+      _lastProcessedEventTime = event.publishedAt;
+      _lastRelayListHash = relayListHash;
     } catch (e, stackTrace) {
       _logger.e('Error handling Mostro relay list update',
           error: e, stackTrace: stackTrace);
@@ -668,6 +693,10 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
       await _saveRelays();
       
       _logger.i('Reset to default relay only, starting fresh sync');
+      
+      // Reset hash and timestamp for completely fresh sync with new Mostro
+      _lastRelayListHash = null;
+      _lastProcessedEventTime = null;
       
       // Iniciar sync completamente fresco con nuevo Mostro
       await syncWithMostroInstance();
@@ -763,6 +792,10 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
       // Remove from blacklist and trigger sync to add back
       await settings.removeFromBlacklist(url);
       _logger.i('Removed $url from blacklist, triggering re-sync');
+      
+      // Reset hash to allow re-processing of the same relay list with updated blacklist context
+      _lastRelayListHash = null;
+      
       await syncWithMostroInstance();
     } else {
       // Add to blacklist and remove from current state
@@ -776,6 +809,10 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
   Future<void> clearBlacklistAndResync() async {
     await settings.clearBlacklist();
     _logger.i('Cleared blacklist, triggering relay re-sync');
+    
+    // Reset hash to allow re-processing of relay lists with cleared blacklist
+    _lastRelayListHash = null;
+    
     await syncWithMostroInstance();
   }
 
