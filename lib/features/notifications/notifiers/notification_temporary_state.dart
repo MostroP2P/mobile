@@ -1,25 +1,25 @@
 import 'package:mostro_mobile/data/enums.dart';
 
-class NotificationTemporaryState {
+class TemporaryNotification {
   final Action? action;
   final Map<String, dynamic> values;
   final bool show;
   final String? customMessage;
 
-  const NotificationTemporaryState({
+  const TemporaryNotification({
     this.action,
     this.values = const {},
     this.show = false,
     this.customMessage,
   });
 
-  NotificationTemporaryState copyWith({
+  TemporaryNotification copyWith({
     Action? action,
     Map<String, dynamic>? values,
     bool? show,
     String? customMessage,
   }) {
-    return NotificationTemporaryState(
+    return TemporaryNotification(
       action: action ?? this.action,
       values: values ?? this.values,
       show: show ?? this.show,
@@ -30,7 +30,7 @@ class NotificationTemporaryState {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is NotificationTemporaryState &&
+      other is TemporaryNotification &&
           runtimeType == other.runtimeType &&
           action == other.action &&
           values == other.values &&
@@ -42,6 +42,6 @@ class NotificationTemporaryState {
 
   @override
   String toString() {
-    return 'NotificationTemporaryState(action: $action, values: $values, show: $show, customMessage: $customMessage)';
+    return 'TemporaryNotification(action: $action, values: $values, show: $show, customMessage: $customMessage)';
   }
 }

@@ -70,7 +70,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
   }
 
   void sendNotification(Action action, {Map<String, dynamic>? values, bool isTemporary = false, String? eventId}) {
-    final notifProvider = ref.read(notificationsProvider.notifier);
+    final notifProvider = ref.read(notificationActionsProvider.notifier);
     
     if (isTemporary) {
       notifProvider.showTemporary(action, values: values ?? {});
@@ -280,17 +280,12 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         }, eventId: event.id);
         break;
       case Action.purchaseCompleted:
-        // Notify about purchase completion
         sendNotification(event.action, eventId: event.id);
-        
-        // Request rating from both parties after successful completion
         sendNotification(Action.rate, eventId: event.id);
         break;
       case Action.rateReceived:
-        // Do not show notification for rating received - it's internal feedback
         break;
       case Action.timeoutReversal:
-        // No automatic notification - handled manually in OrderNotifier
         break;
       default:
         sendNotification(event.action, isTemporary: true);

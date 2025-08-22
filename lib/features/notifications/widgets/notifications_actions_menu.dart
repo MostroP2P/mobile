@@ -69,11 +69,11 @@ class NotificationsActionsMenu extends ConsumerWidget {
   }
 
   void _handleMenuAction(BuildContext context, WidgetRef ref, String action) {
-    final notificationsNotifier = ref.read(notificationsProvider.notifier);
+    final repository = ref.read(notificationsDatabaseProvider);
     
     switch (action) {
       case 'mark_all_read':
-        notificationsNotifier.markAllAsRead();
+        repository.markAllAsRead();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(S.of(context)!.markAllAsRead),
@@ -110,7 +110,7 @@ class NotificationsActionsMenu extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () {
-              ref.read(notificationsProvider.notifier).clearAll();
+              ref.read(notificationsDatabaseProvider).clearAll();
               Navigator.of(context).pop();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
