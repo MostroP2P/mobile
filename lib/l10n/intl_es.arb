@@ -839,6 +839,27 @@
     }
   },
   "relayAddedUnreachable": "Relay agregado pero parece inalcanzable: {url}",
+  "addRelayDialogTitle": "Agregar Relay",
+  "addRelayDialogDescription": "Ingresa una URL de relay para agregarlo a tu lista de relays. El relay será probado por conectividad.",
+  "addRelayDialogPlaceholder": "URL del Relay",
+  "addRelayDialogTesting": "Probando conectividad...",
+  "addRelayDialogCancel": "Cancelar",
+  "addRelayDialogAdd": "Agregar",
+  "addRelayErrorOnlySecure": "Solo se permiten websockets seguros (wss://)",
+  "addRelayErrorNoHttp": "Las URLs HTTP no son compatibles. Use URLs websocket (wss://)",
+  "addRelayErrorInvalidDomain": "Formato de dominio inválido. Use formato como: relay.example.com",
+  "addRelayErrorAlreadyExists": "Este relay ya está en tu lista",
+  "addRelayErrorNotValid": "No es un relay Nostr válido - sin respuesta al test de protocolo",
+  "addRelayErrorGeneric": "Error al agregar relay. Por favor intenta de nuevo.",
+  "addRelaySuccessMessage": "Relay agregado exitosamente: {url}",
+  "@addRelaySuccessMessage": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "mostroChangedResetMessage": "Instancia de Mostro cambiada. La configuración de relays se ha reiniciado para la nueva instancia.",
   "@relayAddedUnreachable": {
     "description": "Mensaje mostrado cuando un relay se agrega pero no responde",
     "placeholders": {
@@ -871,5 +892,28 @@
   "orderTimeoutTaker": "No respondiste a tiempo. La orden será republicada",
   "orderTimeoutMaker": "Tu contraparte no respondió a tiempo. La orden será republicada",
   "orderTimeout": "Tiempo de espera de la orden agotado",
-  "orderCanceled": "La orden fue cancelada"
+  "orderCanceled": "La orden fue cancelada",
+
+  "@_comment_relay_status": "Mensajes de estado de relays",
+  "inUse": "En Uso",
+  "notInUse": "Sin Uso",
+  "noMostroRelaysAvailable": "No hay relays disponibles de la instancia Mostro configurada. Por favor verifica tu configuración de Mostro.",
+  "relaysDescription": "Activa o desactiva según prefieras, o agrega nuevos.",
+  "activated": "Conectado",
+  "deactivated": "Desconectado",
+
+  "blacklistDefaultRelayTitle": "¿Desconectarte del Relay por Defecto?",
+  "blacklistDefaultRelayMessage": "¿Estás seguro de que quieres desconectarte del relay por defecto? Esto puede afectar la conectividad con la instancia de Mostro.",
+  "blacklistDefaultRelayConfirm": "Desconectar",
+  "blacklistDefaultRelayCancel": "Cancelar",
+
+  "cannotBlacklistLastRelayTitle": "No Puedes Desconectarte del Último Relay",
+  "cannotBlacklistLastRelayMessage": "No puedes desconectarte de este relay porque es el último conectado. La app necesita al menos un relay para funcionar correctamente.",
+  "cannotBlacklistLastRelayOk": "OK",
+
+  "@_comment_delete_user_relay_dialog": "Delete user relay confirmation dialog strings",
+  "deleteUserRelayTitle": "¿Seguro que quieres desconectarte de este relay?",
+  "deleteUserRelayMessage": "Si más adelante deseas volver a usarlo, deberás añadirlo manualmente.",
+  "deleteUserRelayConfirm": "Sí",
+  "deleteUserRelayCancel": "No"
 }

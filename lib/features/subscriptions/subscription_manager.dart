@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
+import 'package:mostro_mobile/core/models/relay_list_event.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_type.dart';
@@ -22,9 +23,11 @@ class SubscriptionManager {
 
   final _ordersController = StreamController<NostrEvent>.broadcast();
   final _chatController = StreamController<NostrEvent>.broadcast();
+  final _relayListController = StreamController<RelayListEvent>.broadcast();
 
   Stream<NostrEvent> get orders => _ordersController.stream;
   Stream<NostrEvent> get chat => _chatController.stream;
+  Stream<RelayListEvent> get relayList => _relayListController.stream;
 
   SubscriptionManager(this.ref) {
     _initSessionListener();
@@ -36,7 +39,7 @@ class SubscriptionManager {
       (previous, current) {
         _updateAllSubscriptions(current);
       },
-      fireImmediately: true,
+      fireImmediately: false,
       onError: (error, stackTrace) {
         _logger.e('Error in session listener',
             error: error, stackTrace: stackTrace);
@@ -113,6 +116,9 @@ class SubscriptionManager {
               .map((s) => s.sharedKey!.public)
               .toList(),
         );
+      case SubscriptionType.relayList:
+        // Relay list subscriptions are handled separately via subscribeToMostroRelayList
+        return null;
     }
   }
 
@@ -124,6 +130,12 @@ class SubscriptionManager {
           break;
         case SubscriptionType.chat:
           _chatController.add(event);
+          break;
+        case SubscriptionType.relayList:
+          final relayListEvent = RelayListEvent.fromEvent(event);
+          if (relayListEvent != null) {
+            _relayListController.add(relayListEvent);
+          }
           break;
       }
     } catch (e, stackTrace) {
@@ -170,6 +182,9 @@ class SubscriptionManager {
         return orders;
       case SubscriptionType.chat:
         return chat;
+      case SubscriptionType.relayList:
+        // RelayList subscriptions should use subscribeToMostroRelayList() instead
+        throw UnsupportedError('Use subscribeToMostroRelayList() for relay list subscriptions');
     }
   }
 
@@ -218,10 +233,76 @@ class SubscriptionManager {
     }
   }
 
+  /// Subscribes to kind 10002 relay list events from a specific Mostro instance.
+  /// This is used to automatically sync relays with the configured Mostro instance.
+  void subscribeToMostroRelayList(String mostroPubkey) {
+    try {
+      final filter = NostrFilter(
+        kinds: [10002],
+        authors: [mostroPubkey],
+        limit: 1, // Only get the most recent relay list
+      );
+
+      _subscribeToRelayList(filter);
+
+      _logger.i('Subscribed to relay list for Mostro: $mostroPubkey');
+    } catch (e, stackTrace) {
+      _logger.e('Failed to subscribe to Mostro relay list',
+          error: e, stackTrace: stackTrace);
+    }
+  }
+
+  /// Internal method to handle relay list subscriptions
+  void _subscribeToRelayList(NostrFilter filter) {
+    final nostrService = ref.read(nostrServiceProvider);
+
+    final request = NostrRequest(
+      filters: [filter],
+    );
+
+    final stream = nostrService.subscribeToEvents(request);
+    final streamSubscription = stream.listen(
+      (event) {
+        // Handle relay list events directly
+        final relayListEvent = RelayListEvent.fromEvent(event);
+        if (relayListEvent != null) {
+          _relayListController.add(relayListEvent);
+        }
+      },
+      onError: (error, stackTrace) {
+        _logger.e('Error in relay list subscription',
+            error: error, stackTrace: stackTrace);
+      },
+      cancelOnError: false,
+    );
+
+    final subscription = Subscription(
+      request: request,
+      streamSubscription: streamSubscription,
+      onCancel: () {
+        ref.read(nostrServiceProvider).unsubscribe(request.subscriptionId!);
+      },
+    );
+
+    // Cancel existing relay list subscription if any
+    if (_subscriptions.containsKey(SubscriptionType.relayList)) {
+      _subscriptions[SubscriptionType.relayList]!.cancel();
+    }
+
+    _subscriptions[SubscriptionType.relayList] = subscription;
+  }
+
+  /// Unsubscribes from Mostro relay list events
+  void unsubscribeFromMostroRelayList() {
+    unsubscribeByType(SubscriptionType.relayList);
+    _logger.i('Unsubscribed from Mostro relay list');
+  }
+
   void dispose() {
     _sessionListener.close();
     unsubscribeAll();
     _ordersController.close();
     _chatController.close();
+    _relayListController.close();
   }
 }
