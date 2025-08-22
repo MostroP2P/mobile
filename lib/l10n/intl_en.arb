@@ -275,6 +275,8 @@
   "buyingBitcoin": "Buying Bitcoin",
   "sellingBitcoin": "Selling Bitcoin",
   "bankTransfer": "Bank Transfer",
+  "cashInPerson": "Cash in person",
+  "other": "Other",
   "createdByYou": "Created by you",
   "takenByYou": "Taken by you",
   "active": "Active",
@@ -367,6 +369,34 @@
   "enterAmountHint": "Enter amount",
   "pleaseEnterAmount": "Please enter an amount",
   "pleaseEnterValidAmount": "Please enter a valid amount",
+  "fiatAmountTooHigh": "The fiat amount is too high, please add a new fiat amount, the allowed range is between {minAmount} and {maxAmount} sats",
+  "@fiatAmountTooHigh": {
+    "placeholders": {
+      "minAmount": {
+        "type": "String",
+        "description": "The minimum allowed sats amount"
+      },
+      "maxAmount": {
+        "type": "String",
+        "description": "The maximum allowed sats amount"
+      }
+    }
+  },
+  "fiatAmountTooLow": "The fiat amount is too low, please add a new fiat amount, the allowed range is between {minAmount} and {maxAmount} sats",
+  "@fiatAmountTooLow": {
+    "placeholders": {
+      "minAmount": {
+        "type": "String",
+        "description": "The minimum allowed sats amount"
+      },
+      "maxAmount": {
+        "type": "String",
+        "description": "The maximum allowed sats amount"
+      }
+    }
+  },
+  "exchangeRateNotAvailable": "Exchange rate not available, please wait or refresh",
+  "mostroInstanceNotAvailable": "Mostro instance data not available, please wait",
   "enterAmountYouWantToReceive": "Enter amount you want to receive",
   "enterAmountYouWantToSend": "Enter amount you want to send",
   "creatingRangeOrder": "Creating a range order (you can receive between min and max amounts)",
@@ -796,8 +826,19 @@
 
 
   "save": "Save",
+  "apply": "Apply",
   "selectCurrency": "Select Currency",
   "noCurrencySelected": "No currency selected",
+
+  "@_comment_filter_section": "Filter section strings",
+  "rating": "Rating",
+  "reputation": "Reputation",
+  "premiumRange": "Premium/Discount",
+  "discount": "Discount",
+  "premium": "Premium",
+  "clear": "Clear",
+  "min": "Min",
+  "max": "Max",
 
   "@_comment_timeout_messages": "Timeout notification messages",
   "orderTimeoutTaker": "You didn't respond in time. The order will be republished",
@@ -841,8 +882,8 @@
   "notification_release_message": "Bitcoin release has been requested",
   "notification_buyer_invoice_accepted_title": "Invoice accepted",
   "notification_buyer_invoice_accepted_message": "Your invoice has been accepted",
-  "notification_purchase_completed_title": "Purchase completed",
-  "notification_purchase_completed_message": "The purchase has been completed successfully",
+  "notification_purchase_completed_title": "Payment received!",
+  "notification_purchase_completed_message": "Your Bitcoin payment has been successfully completed and received",
   "notification_hold_invoice_payment_accepted_title": "Payment accepted",
   "notification_hold_invoice_payment_accepted_message": "The hold invoice payment has been accepted",
   "notification_hold_invoice_payment_settled_title": "Payment settled",

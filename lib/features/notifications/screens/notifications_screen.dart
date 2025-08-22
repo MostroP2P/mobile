@@ -71,7 +71,7 @@ class NotificationsScreen extends ConsumerWidget {
 
           return RefreshIndicator(
             onRefresh: () async {
-              ref.invalidate(notificationsProvider);
+              ref.invalidate(notificationsHistoryProvider);
             },
             child: ListView.builder(
               padding: AppTheme.mediumPadding,
@@ -113,7 +113,7 @@ class NotificationsScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () => ref.refresh(notificationsProvider),
+                onPressed: () => ref.refresh(notificationsHistoryProvider),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.mostroGreen,
                 ),

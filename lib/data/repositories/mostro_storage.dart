@@ -17,9 +17,7 @@ class MostroStorage extends BaseStorage<MostroMessage> {
       if (await hasItem(id)) return;
       // Add metadata for easier querying
       final Map<String, dynamic> dbMap = message.toJson();
-      if (message.timestamp == null) {
-        message.timestamp = DateTime.now().millisecondsSinceEpoch;
-      }
+      message.timestamp ??= DateTime.now().millisecondsSinceEpoch;
       dbMap['timestamp'] = message.timestamp;
 
       await store.record(id).put(db, dbMap);

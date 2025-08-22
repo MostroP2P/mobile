@@ -13,7 +13,7 @@ class NotificationListenerWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.listen<NotificationTemporaryState>(temporaryNotificationProvider, (previous, next) {
+    ref.listen<TemporaryNotification>(currentTemporaryNotificationProvider, (previous, next) {
       if (next.show) {
         String message;
         
@@ -44,7 +44,7 @@ class NotificationListenerWidget extends ConsumerWidget {
           ),
         );
         // Clear notification after showing to prevent repetition
-        ref.read(notificationsProvider.notifier).clearTemporary();
+        ref.read(notificationActionsProvider.notifier).clearTemporary();
       }
     });
     return child;

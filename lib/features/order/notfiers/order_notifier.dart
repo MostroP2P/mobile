@@ -184,9 +184,8 @@ class OrderNotifier extends AbstractMostroNotifier {
           await sessionNotifier.deleteSession(orderId);
           logger.i('Session deleted for canceled order $orderId (was in ${currentState.status})');
           
-          // Show cancellation notification
-          final notifProvider = ref.read(notificationsProvider.notifier);
-          notifProvider.showCustomMessage('orderCanceled');
+          // Send cancellation notification using centralized function
+          sendNotification(Action.canceled);
           
           // Navigate to order book
           final navProvider = ref.read(navigationProvider.notifier);
@@ -203,9 +202,8 @@ class OrderNotifier extends AbstractMostroNotifier {
             action: Action.canceled,
           );
           
-          // Show cancellation notification
-          final notifProvider = ref.read(notificationsProvider.notifier);
-          notifProvider.showCustomMessage('orderCanceled');
+          // Send cancellation notification using centralized function
+          sendNotification(Action.canceled);
           
           return false; // Session preserved
         }
@@ -376,7 +374,7 @@ class OrderNotifier extends AbstractMostroNotifier {
   /// Show timeout notification message
   void _showTimeoutNotification({required bool isCreatedByUser}) {
     try {
-      final notificationNotifier = ref.read(notificationsProvider.notifier);
+      final notificationNotifier = ref.read(notificationActionsProvider.notifier);
       
       // Show appropriate message based on user role
       if (isCreatedByUser) {

@@ -64,7 +64,7 @@ class NotificationItem extends ConsumerWidget {
   void _handleNotificationTap(BuildContext context, WidgetRef ref) {
     // Mark as read when tapped
     if (!notification.isRead) {
-      ref.read(notificationsProvider.notifier).markAsRead(notification.id);
+      ref.read(notificationsDatabaseProvider).markAsRead(notification.id);
     }
 
     //TODO: Implement navigation based on notification type
@@ -86,7 +86,7 @@ class NotificationItem extends ConsumerWidget {
   void _handleMenuAction(BuildContext context, WidgetRef ref, String action) {
     switch (action) {
       case 'mark_read':
-        ref.read(notificationsProvider.notifier).markAsRead(notification.id);
+        ref.read(notificationsDatabaseProvider).markAsRead(notification.id);
         break;
       case 'delete':
         _showDeleteConfirmationDialog(context, ref);
@@ -117,7 +117,7 @@ class NotificationItem extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () {
-              ref.read(notificationsProvider.notifier).deleteNotification(notification.id);
+              ref.read(notificationsDatabaseProvider).deleteNotification(notification.id);
               Navigator.of(context).pop();
             },
             child: Text(

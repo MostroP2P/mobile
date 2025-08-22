@@ -236,6 +236,8 @@
   "buyingBitcoin": "Comprando Bitcoin",
   "sellingBitcoin": "Vendendo Bitcoin",
   "bankTransfer": "Bonifico Bancario",
+  "cashInPerson": "Contanti di persona",
+  "other": "Altro",
   "createdByYou": "Creato da te",
   "takenByYou": "Preso da te",
   "active": "Attivo",
@@ -328,6 +330,34 @@
   "enterAmountHint": "Inserisci importo",
   "pleaseEnterAmount": "Per favore inserisci un importo",
   "pleaseEnterValidAmount": "Per favore inserisci un importo valido",
+  "fiatAmountTooHigh": "L'importo fiat è troppo alto, per favore inserisci un nuovo importo fiat, l'intervallo consentito è tra {minAmount} e {maxAmount} sats",
+  "@fiatAmountTooHigh": {
+    "placeholders": {
+      "minAmount": {
+        "type": "String",
+        "description": "The minimum allowed sats amount"
+      },
+      "maxAmount": {
+        "type": "String",
+        "description": "The maximum allowed sats amount"
+      }
+    }
+  },
+  "fiatAmountTooLow": "L'importo fiat è troppo basso, per favore inserisci un nuovo importo fiat, l'intervallo consentito è tra {minAmount} e {maxAmount} sats",
+  "@fiatAmountTooLow": {
+    "placeholders": {
+      "minAmount": {
+        "type": "String",
+        "description": "The minimum allowed sats amount"
+      },
+      "maxAmount": {
+        "type": "String",
+        "description": "The maximum allowed sats amount"
+      }
+    }
+  },
+  "exchangeRateNotAvailable": "Tasso di cambio non disponibile, per favore attendi o aggiorna",
+  "mostroInstanceNotAvailable": "Dati dell'istanza Mostro non disponibili, per favore attendi",
   "enterAmountYouWantToReceive": "Inserisci l'importo che vuoi ricevere",
   "enterAmountYouWantToSend": "Inserisci l'importo che vuoi inviare",
   "creatingRangeOrder": "Creazione ordine intervallo (puoi ricevere tra importi minimo e massimo)",
@@ -831,6 +861,17 @@
   "add": "Aggiungi",
 
   "save": "Salva",
+  "apply": "Applica",
+
+  "@_comment_filter_section": "Stringhe della sezione filtri",
+  "rating": "Valutazione",
+  "reputation": "Reputazione",
+  "premiumRange": "Premio/Sconto",
+  "discount": "Sconto",
+  "premium": "Premio",
+  "clear": "Cancella",
+  "min": "Min",
+  "max": "Max",
   "selectCurrency": "Seleziona Valuta",
   "noCurrencySelected": "Nessuna valuta selezionata",
 
@@ -875,8 +916,8 @@
   "notification_release_message": "È stato richiesto il rilascio di Bitcoin",
   "notification_buyer_invoice_accepted_title": "Fattura accettata",
   "notification_buyer_invoice_accepted_message": "La tua fattura è stata accettata",
-  "notification_purchase_completed_title": "Acquisto completato",
-  "notification_purchase_completed_message": "L'acquisto è stato completato con successo",
+  "notification_purchase_completed_title": "Pagamento ricevuto!",
+  "notification_purchase_completed_message": "Il tuo pagamento Bitcoin è stato completato e ricevuto con successo",
   "notification_hold_invoice_payment_accepted_title": "Pagamento accettato",
   "notification_hold_invoice_payment_accepted_message": "Il pagamento della fattura hold è stato accettato",
   "notification_hold_invoice_payment_settled_title": "Pagamento liquidato",

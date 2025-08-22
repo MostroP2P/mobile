@@ -3,19 +3,28 @@ import 'package:mostro_mobile/data/models/notification.dart';
 import 'package:mostro_mobile/features/notifications/notifiers/notification_temporary_state.dart';
 import 'package:mostro_mobile/features/notifications/notifiers/notifications_notifier.dart';
 import 'package:mostro_mobile/features/notifications/notifiers/notifications_state.dart';
+import 'package:mostro_mobile/shared/providers/notifications_history_repository_provider.dart';
 
-final notificationsProvider = 
-    StateNotifierProvider<NotificationsNotifier, NotificationsState>(
+// Notification actions (shows toasts + saves to DB)
+final notificationActionsProvider = 
+    StateNotifierProvider<NotificationsNotifier, TemporaryNotificationsState>(
   (ref) => NotificationsNotifier(ref),
 );
 
-final notificationsHistoryProvider = Provider<AsyncValue<List<NotificationModel>>>((ref) {
-  final state = ref.watch(notificationsProvider);
-  return state.historyNotifications;
+// Persistent notifications from database - single source of truth
+final notificationsHistoryProvider = StreamProvider<List<NotificationModel>>((ref) {
+  final repository = ref.read(notificationsRepositoryProvider);
+  return repository.watchNotifications();
 });
 
-final temporaryNotificationProvider = Provider<NotificationTemporaryState>((ref) {
-  final state = ref.watch(notificationsProvider);
+// Direct database operations (mark read, delete, etc.)
+final notificationsDatabaseProvider = Provider((ref) {
+  return ref.read(notificationsRepositoryProvider);
+});
+
+// Current temporary notification state (for toasts/snackbars)
+final currentTemporaryNotificationProvider = Provider<TemporaryNotification>((ref) {
+  final state = ref.watch(notificationActionsProvider);
   return state.temporaryNotification;
 });
 

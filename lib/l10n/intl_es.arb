@@ -227,6 +227,8 @@
   "buyingBitcoin": "Comprando Bitcoin",
   "sellingBitcoin": "Vendiendo Bitcoin",
   "bankTransfer": "Transferencia Bancaria",
+  "cashInPerson": "Efectivo",
+  "other": "Otro",
   "createdByYou": "Creado por ti",
   "takenByYou": "Tomado por ti",
   "active": "Activo",
@@ -323,6 +325,34 @@
   "enterAmountHint": "Ingresa cantidad",
   "pleaseEnterAmount": "Por favor ingresa una cantidad",
   "pleaseEnterValidAmount": "Por favor ingresa una cantidad válida",
+  "fiatAmountTooHigh": "La cantidad fiat es demasiado alta, por favor ingresa una nueva cantidad fiat, el rango permitido está entre {minAmount} y {maxAmount} sats",
+  "@fiatAmountTooHigh": {
+    "placeholders": {
+      "minAmount": {
+        "type": "String",
+        "description": "The minimum allowed sats amount"
+      },
+      "maxAmount": {
+        "type": "String",
+        "description": "The maximum allowed sats amount"
+      }
+    }
+  },
+  "fiatAmountTooLow": "La cantidad fiat es demasiado baja, por favor ingresa una nueva cantidad fiat, el rango permitido está entre {minAmount} y {maxAmount} sats",
+  "@fiatAmountTooLow": {
+    "placeholders": {
+      "minAmount": {
+        "type": "String",
+        "description": "The minimum allowed sats amount"
+      },
+      "maxAmount": {
+        "type": "String",
+        "description": "The maximum allowed sats amount"
+      }
+    }
+  },
+  "exchangeRateNotAvailable": "Tasa de cambio no disponible, por favor espera o actualiza",
+  "mostroInstanceNotAvailable": "Datos de instancia Mostro no disponibles, por favor espera",
   "enterAmountYouWantToReceive": "Ingresa la cantidad que quieres recibir",
   "enterAmountYouWantToSend": "Ingresa la cantidad que quieres enviar",
   "creatingRangeOrder": "Creando orden de rango (puedes recibir entre cantidades mínima y máxima)",
@@ -823,6 +853,17 @@
   "add": "Agregar",
 
   "save": "Guardar",
+  "apply": "Aplicar",
+
+  "@_comment_filter_section": "Strings de la sección de filtros",
+  "rating": "Calificación",
+  "reputation": "Reputación",
+  "premiumRange": "Prima/Descuento",
+  "discount": "Descuento",
+  "premium": "Prima",
+  "clear": "Limpiar",
+  "min": "Mín",
+  "max": "Máx",
   "selectCurrency": "Seleccionar Moneda",
   "noCurrencySelected": "Ninguna moneda seleccionada",
 
@@ -867,8 +908,8 @@
   "notification_release_message": "Se ha solicitado la liberación de Bitcoin",
   "notification_buyer_invoice_accepted_title": "Factura aceptada",
   "notification_buyer_invoice_accepted_message": "Tu factura ha sido aceptada",
-  "notification_purchase_completed_title": "Compra completada",
-  "notification_purchase_completed_message": "La compra se ha completado exitosamente",
+  "notification_purchase_completed_title": "¡Pago recibido!",
+  "notification_purchase_completed_message": "Tu pago de Bitcoin ha sido completado y recibido exitosamente",
   "notification_hold_invoice_payment_accepted_title": "Pago aceptado",
   "notification_hold_invoice_payment_accepted_message": "El pago de la factura hold ha sido aceptado",
   "notification_hold_invoice_payment_settled_title": "Pago liquidado",
