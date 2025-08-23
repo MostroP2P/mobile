@@ -3,15 +3,14 @@ import 'package:flutter/foundation.dart';
 class Config {
   // Nostr configuration
   static const List<String> nostrRelays = [
-    //'wss://relay.mostro.network',
+    'wss://relay.mostro.network',
     //'ws://127.0.0.1:7000',
     //'ws://192.168.1.103:7000',
-    'ws://10.0.2.2:7000', // mobile emulator
+    //'ws://10.0.2.2:7000', // mobile emulator
   ];
 
   // Mostro hexkey
   static const String mostroPubKey =
-      '0000007b23c14bacf58bc787cf94a3a0734b9c6e8ac01e03079a2cbed711956b';
   //'9d9d0455a96871f2dc4289b8312429db2e925f167b37c77bf7b28014be235980';
 
   static const String dBName = 'mostro.db';
