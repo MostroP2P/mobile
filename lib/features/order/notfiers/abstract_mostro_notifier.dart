@@ -92,7 +92,6 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         }
         ref.read(sessionNotifierProvider.notifier).saveSession(session);
         
-        // Simple notification for seller to pay
         sendNotification(event.action, eventId: event.id);
         break;
       case Action.fiatSentOk:
@@ -117,10 +116,6 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
             : 'Unknown';
         sendNotification(event.action, values: {
           'seller_npub': sellerNym,
-                  }, eventId: event.id);
-        
-        // Request rating from both parties after successful completion
-        sendNotification(Action.rate, values: {
                   }, eventId: event.id);
         break;
       case Action.canceled:
@@ -281,7 +276,9 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         break;
       case Action.purchaseCompleted:
         sendNotification(event.action, eventId: event.id);
-        sendNotification(Action.rate, eventId: event.id);
+        break;
+      case Action.rate:
+        sendNotification(event.action, eventId: event.id);
         break;
       case Action.rateReceived:
         break;
