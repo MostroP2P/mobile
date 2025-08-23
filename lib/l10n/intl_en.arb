@@ -810,6 +810,27 @@
     }
   },
   "relayAddedUnreachable": "Relay added but appears unreachable: {url}",
+  "addRelayDialogTitle": "Add Relay",
+  "addRelayDialogDescription": "Enter a relay URL to add it to your relay list. The relay will be tested for connectivity.",
+  "addRelayDialogPlaceholder": "Relay URL",
+  "addRelayDialogTesting": "Testing connectivity...",
+  "addRelayDialogCancel": "Cancel", 
+  "addRelayDialogAdd": "Add",
+  "addRelayErrorOnlySecure": "Only secure websockets (wss://) are allowed",
+  "addRelayErrorNoHttp": "HTTP URLs are not supported. Use websocket URLs (wss://)",
+  "addRelayErrorInvalidDomain": "Invalid domain format. Use format like: relay.example.com",
+  "addRelayErrorAlreadyExists": "This relay is already in your list",
+  "addRelayErrorNotValid": "Not a valid Nostr relay - no response to protocol test",
+  "addRelayErrorGeneric": "Failed to add relay. Please try again.",
+  "addRelaySuccessMessage": "Relay added successfully: {url}",
+  "@addRelaySuccessMessage": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "mostroChangedResetMessage": "Mostro instance changed. Relay settings have been reset for the new instance.",
   "@relayAddedUnreachable": {
     "description": "Message shown when a relay is added but not responding",
     "placeholders": {
@@ -932,4 +953,29 @@
   "notificationDelete": "Delete",
   "confirmDeleteNotification": "Are you sure you want to delete this notification?",
   "confirmClearAll": "This will permanently delete all notifications. This action cannot be undone."
+
+  "@_comment_relay_status": "Relay status messages",
+  "inUse": "In Use",
+  "notInUse": "Not In Use",
+  "noMostroRelaysAvailable": "No relays available from the configured Mostro instance. Please check your Mostro configuration.",
+  "relaysDescription": "Toggle on or off as you prefer, or add new ones.",
+  "activated": "Connected",
+  "deactivated": "Disconnected",
+
+  "@_comment_blacklist_dialog": "Blacklist default relay dialog strings",
+  "blacklistDefaultRelayTitle": "Disconnect from Default Relay?",
+  "blacklistDefaultRelayMessage": "Are you sure you want to disconnect from the default relay? This may affect connectivity to the Mostro instance.",
+  "blacklistDefaultRelayConfirm": "Disconnect",
+  "blacklistDefaultRelayCancel": "Cancel",
+
+  "@_comment_last_relay_dialog": "Last relay protection dialog strings",
+  "cannotBlacklistLastRelayTitle": "Cannot Disconnect from Last Relay",
+  "cannotBlacklistLastRelayMessage": "You cannot disconnect from this relay because it's the last connected one. The app needs at least one relay to function properly.",
+  "cannotBlacklistLastRelayOk": "OK",
+
+  "@_comment_delete_user_relay_dialog": "Delete user relay confirmation dialog strings",
+  "deleteUserRelayTitle": "Sure you want to disconnect from this relay?",
+  "deleteUserRelayMessage": "If you want to use it again later, you'll need to add it manually.",
+  "deleteUserRelayConfirm": "Yes",
+  "deleteUserRelayCancel": "No"
 }
