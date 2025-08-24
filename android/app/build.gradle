@@ -5,6 +5,11 @@ plugins {
     id "dev.flutter.flutter-gradle-plugin"
 }
 
+// Suppress obsolete options warnings emitted by transitive JavaCompile tasks
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs.add("-Xlint:-options")
+}
+
 android {
     namespace = "network.mostro.app"
     compileSdk = flutter.compileSdkVersion
@@ -19,10 +24,6 @@ android {
 
     kotlinOptions {
         jvmTarget = "11"
-    }
-
-    tasks.withType(JavaCompile) {
-        options.compilerArgs += ["-Xlint:-options"]
     }
 
     defaultConfig {
