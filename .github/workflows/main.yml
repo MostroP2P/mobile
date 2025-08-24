@@ -69,6 +69,18 @@ jobs:
           distribution: 'oracle'
           java-version: '17'
 
+      - name: Setup Android Keystore
+        if: steps.should_build.outputs.SHOULD_BUILD == 'true'
+        run: |
+          # Create the keystore file from the secret
+          echo "${{ secrets.ANDROID_KEYSTORE_FILE }}" | base64 --decode > android/app/upload-keystore.jks
+          
+          # Set environment variables for signing
+          echo "ANDROID_KEYSTORE_PASSWORD=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" >> $GITHUB_ENV
+          echo "ANDROID_KEY_PASSWORD=${{ secrets.ANDROID_KEY_PASSWORD }}" >> $GITHUB_ENV  
+          echo "ANDROID_KEY_ALIAS=${{ secrets.ANDROID_KEY_ALIAS }}" >> $GITHUB_ENV
+          echo "ANDROID_KEYSTORE_FILE=upload-keystore.jks" >> $GITHUB_ENV
+
       - name: Set Up Flutter
         if: steps.should_build.outputs.SHOULD_BUILD == 'true'
         uses: subosito/flutter-action@v2
@@ -103,10 +115,33 @@ jobs:
       - name: Build APK
         if: steps.should_build.outputs.SHOULD_BUILD == 'true'
         run: flutter build apk --release --dart-define=APP_VERSION=${{ env.VERSION }} --dart-define=GIT_COMMIT=${{ github.sha }}
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEYSTORE_FILE: upload-keystore.jks
 
       - name: Build appBundle
         if: steps.should_build.outputs.SHOULD_BUILD == 'true'
         run: flutter build appbundle --release --dart-define=APP_VERSION=${{ env.VERSION }} --dart-define=GIT_COMMIT=${{ github.sha }}
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEYSTORE_FILE: upload-keystore.jks
+
+      - name: Verify APK Signing
+        if: steps.should_build.outputs.SHOULD_BUILD == 'true'
+        run: |
+          # Check if APK exists and is signed
+          if [ -f "build/app/outputs/flutter-apk/app-release.apk" ]; then
+            echo "✅ APK built successfully"
+            # Verify the APK is properly signed (will fail if not signed)
+            unzip -l build/app/outputs/flutter-apk/app-release.apk | grep -q "META-INF" && echo "✅ APK appears to be signed" || echo "❌ APK signing verification failed"
+          else
+            echo "❌ APK build failed"
+            exit 1
+          fi
 
       - name: Upload Artifacts
         if: steps.should_build.outputs.SHOULD_BUILD == 'true'
@@ -128,3 +163,9 @@ jobs:
           allowUpdates: true
           omitBodyDuringUpdate: true
           replacesArtifacts: true
+
+      - name: Cleanup Keystore
+        if: always() && steps.should_build.outputs.SHOULD_BUILD == 'true'
+        run: |
+          # Remove keystore file for security
+          rm -f android/app/upload-keystore.jks

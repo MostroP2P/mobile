@@ -5,6 +5,21 @@ plugins {
     id "dev.flutter.flutter-gradle-plugin"
 }
 
+// Load keystore properties for release signing
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file('key.properties')
+def hasKeystore = false
+
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+    // Check if all required properties are available
+    hasKeystore = keystoreProperties['keyAlias'] != null && 
+                  keystoreProperties['keyPassword'] != null && 
+                  keystoreProperties['storePassword'] != null && 
+                  keystoreProperties['storeFile'] != null &&
+                  keystoreProperties['keyAlias'] != '${ANDROID_KEY_ALIAS}' // Not placeholder
+}
+
 // Suppress obsolete options warnings emitted by transitive JavaCompile tasks
 tasks.withType(JavaCompile).configureEach {
     options.compilerArgs.add("-Xlint:-options")
@@ -26,6 +41,17 @@ android {
         jvmTarget = "11"
     }
 
+    signingConfigs {
+        if (hasKeystore) {
+            release {
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+            }
+        }
+    }
+
     defaultConfig {
         applicationId = "network.mostro.app"
         // You can update the following values to match your application needs.
@@ -38,9 +64,13 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.debug
+            if (hasKeystore) {
+                signingConfig signingConfigs.release
+            } else {
+                // Fallback to debug signing for development
+                signingConfig signingConfigs.debug
+                logger.warn("Release build using debug signing - keystore not available")
+            }
         }
     }
 }
