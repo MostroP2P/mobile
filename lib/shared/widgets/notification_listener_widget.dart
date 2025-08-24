@@ -32,9 +32,12 @@ class NotificationListenerWidget extends ConsumerWidget {
             default:
               message = next.customMessage!;
           }
-        } else {
-          // Get localized title directly from action
+        } else if (next.action != null) {
+          // Get localized title directly from action when available
           message = NotificationMessageMapper.getLocalizedTitle(context, next.action!);
+        } else {
+          // Fallback to generic notification title when no action or custom message
+          message = S.of(context)!.notificationGenericTitle;
         }
         
         ScaffoldMessenger.of(context).showSnackBar(

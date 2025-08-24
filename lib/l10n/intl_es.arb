@@ -904,6 +904,8 @@
   "clearAll": "Limpiar todo",
   "notification_new_order_title": "Nueva orden disponible",
   "notification_new_order_message": "Nueva orden publicada en el libro",
+  "notAvailable": "N/D",
+  "notificationGenericTitle": "Notificación",
   "notification_order_taken_title": "Orden tomada",
   "notification_sell_order_taken_message": "Tu orden de venta fue tomada",
   "notification_buy_order_taken_message": "Tu orden de compra fue tomada",
@@ -978,7 +980,7 @@
   "notificationOrderId": "ID de Orden",
   "notificationDelete": "Eliminar",
   "confirmDeleteNotification": "¿Estás seguro de que quieres eliminar esta notificación?",
-  "confirmClearAll": "Esto eliminará permanentemente todas las notificaciones. Esta acción no se puede deshacer."
+  "confirmClearAll": "Esto eliminará permanentemente todas las notificaciones. Esta acción no se puede deshacer.",
 
   "@_comment_relay_status": "Mensajes de estado de relays",
   "inUse": "En Uso",

@@ -28,9 +28,22 @@ class NotificationsStorage extends BaseStorage<NotificationModel>
   NotificationModel fromDbMap(String key, Map<String, dynamic> json) {
     return NotificationModel(
       id: key,
-      type: NotificationType.values.firstWhere((type) => 
-          type.toString() == json['type']),
-      action: actions.Action.fromString(json['action']),
+      type: (() {
+        final raw = json['type'] as String?;
+        if (raw == null) return NotificationType.system;
+        return NotificationType.values.firstWhere(
+          (t) => t.name == raw,
+          orElse: () => NotificationType.system,
+        );
+      })(),
+      action: (() {
+        final raw = json['action'] as String?;
+        try {
+          return actions.Action.fromString(raw ?? '');
+        } catch (_) {
+          return actions.Action.cantDo;
+        }
+      })(),
       title: json['title'],
       message: json['message'],
       timestamp: DateTime.parse(json['timestamp']),
@@ -43,7 +56,7 @@ class NotificationsStorage extends BaseStorage<NotificationModel>
   @override
   Map<String, dynamic> toDbMap(NotificationModel notification) {
     return {
-      'type': notification.type.toString(),
+      'type': notification.type.name,
       'action': notification.action.value,
       'title': notification.title,
       'message': notification.message,
@@ -79,12 +92,17 @@ class NotificationsStorage extends BaseStorage<NotificationModel>
   @override
   Future<void> markAllAsRead() async {
     await db.transaction((txn) async {
-      final notifications = await getAllNotifications();
-      for (final notification in notifications) {
-        if (!notification.isRead) {
-          final updatedNotification = notification.copyWith(isRead: true);
-          await store.record(notification.id).put(txn, toDbMap(updatedNotification));
-        }
+      // Find only unread notifications within the transaction
+      final finder = Finder(filter: Filter.equals('isRead', false));
+      final unreadRecords = await store.find(txn, finder: finder);
+      
+      if (unreadRecords.isNotEmpty) {
+        // Batch update all unread notifications to read status
+        await store.update(
+          txn, 
+          {'isRead': true}, 
+          finder: finder,
+        );
       }
     });
   }

@@ -40,7 +40,7 @@ class NotificationDetails extends StatelessWidget {
         if (data.containsKey('buyer_npub')) {
           widgets.add(DetailRow(
             label: S.of(context)!.notificationBuyer,
-            value: _formatHashOrId(data['buyer_npub']),
+            value: _formatHashOrId(context, data['buyer_npub']),
             icon: HeroIcons.user,
           ));
         }
@@ -50,7 +50,7 @@ class NotificationDetails extends StatelessWidget {
         if (data.containsKey('seller_npub')) {
           widgets.add(DetailRow(
             label: S.of(context)!.notificationSeller,
-            value: _formatHashOrId(data['seller_npub']),
+            value: _formatHashOrId(context, data['seller_npub']),
             icon: HeroIcons.user,
           ));
         }
@@ -88,7 +88,7 @@ class NotificationDetails extends StatelessWidget {
         if (data.containsKey('user_token')) {
           widgets.add(DetailRow(
             label: S.of(context)!.notificationDisputeId,
-            value: _formatHashOrId(data['user_token'].toString()),
+            value: _formatHashOrId(context, data['user_token']),
             icon: HeroIcons.exclamationTriangle,
           ));
         }
@@ -125,7 +125,7 @@ class NotificationDetails extends StatelessWidget {
         if (data.containsKey('seller_npub') && data['seller_npub'].toString().isNotEmpty) {
           widgets.add(DetailRow(
             label: S.of(context)!.notificationSeller,
-            value: _formatHashOrId(data['seller_npub']),
+            value: _formatHashOrId(context, data['seller_npub']),
             icon: HeroIcons.user,
           ));
         }
@@ -135,7 +135,7 @@ class NotificationDetails extends StatelessWidget {
         if (data.containsKey('buyer_npub') && data['buyer_npub'].toString().isNotEmpty) {
           widgets.add(DetailRow(
             label: S.of(context)!.notificationBuyer,
-            value: _formatHashOrId(data['buyer_npub']),
+            value: _formatHashOrId(context, data['buyer_npub']),
             icon: HeroIcons.user,
           ));
         }
@@ -145,7 +145,7 @@ class NotificationDetails extends StatelessWidget {
         if (data.containsKey('id')) {
           widgets.add(DetailRow(
             label: S.of(context)!.notificationOrderId,
-            value: _formatHashOrId(data['id'].toString()),
+            value: _formatHashOrId(context, data['id']),
             icon: HeroIcons.hashtag,
           ));
         }
@@ -157,7 +157,7 @@ class NotificationDetails extends StatelessWidget {
         if (data.containsKey('id')) {
           widgets.add(DetailRow(
             label: S.of(context)!.notificationOrderId,
-            value: _formatHashOrId(data['id'].toString()),
+            value: _formatHashOrId(context, data['id']),
             icon: HeroIcons.hashtag,
           ));
         }
@@ -167,7 +167,7 @@ class NotificationDetails extends StatelessWidget {
         if (data.containsKey('buyer_npub') && data['buyer_npub'].toString().isNotEmpty) {
           widgets.add(DetailRow(
             label: S.of(context)!.notificationBuyer,
-            value: _formatHashOrId(data['buyer_npub']),
+            value: _formatHashOrId(context, data['buyer_npub']),
             icon: HeroIcons.user,
           ));
         }
@@ -182,29 +182,24 @@ class NotificationDetails extends StatelessWidget {
     return widgets;
   }
 
-  String _formatHashOrId(String value) {
-    if (value.isEmpty) return 'N/A';
+  String _formatHashOrId(BuildContext context, Object? value) {
+    // Safe string conversion with null/empty handling
+    final stringValue = value?.toString().trim() ?? '';
+    if (stringValue.isEmpty) {
+      return S.of(context)!.notAvailable;
+    }
     
-    // Check if it's a nym (contains hyphen) vs a hash
-    if (value.contains('-')) {
-      // It's a nym handle, truncate differently
-      const maxLength = 20;
-      if (value.length <= maxLength) {
-        return value; // Show full nym if short enough
-      }
-      // Truncate at the end only for nyms
-      return '${value.substring(0, maxLength - 3)}...';
-    } else {
-      // It's a hash/ID, use original logic
-      if (value.length <= 8) {
-        return value; // Show full value if it's short enough
-      }
-      
-      String start = value.substring(0, 8);
-      String end = value.substring(value.length - 5);
-      
+    // Let UI handle overflow with ellipsis, but provide smart truncation for better UX
+    // For hashes, show start+end is more useful than just start+ellipsis
+    if (!stringValue.contains('-') && stringValue.length > 16) {
+      // It's likely a hash/ID - show meaningful parts (start+end)
+      String start = stringValue.substring(0, 8);
+      String end = stringValue.substring(stringValue.length - 5);
       return '$start...$end';
     }
+    
+    // For nyms and short values, return as-is and let UI handle overflow
+    return stringValue;
   }
 
 }

@@ -872,12 +872,13 @@
   "noNotifications": "No notifications",
   "noNotificationsDescription": "You don't have any notifications yet. New trade alerts and updates will appear here.",
   "errorLoadingNotifications": "Error loading notifications",
-  "retry": "Retry",
   "markAsRead": "Mark as read",
   "markAllAsRead": "Mark all as read",
   "clearAll": "Clear all",
   "notification_new_order_title": "New order available",
   "notification_new_order_message": "New order published in the book",
+  "notAvailable": "N/A",
+  "notificationGenericTitle": "Notification",
   "notification_order_taken_title": "Order taken",
   "notification_sell_order_taken_message": "Your sell order was taken",
   "notification_buy_order_taken_message": "Your buy order was taken",
@@ -952,7 +953,7 @@
   "notificationOrderId": "Order ID",
   "notificationDelete": "Delete",
   "confirmDeleteNotification": "Are you sure you want to delete this notification?",
-  "confirmClearAll": "This will permanently delete all notifications. This action cannot be undone."
+  "confirmClearAll": "This will permanently delete all notifications. This action cannot be undone.",
 
   "@_comment_relay_status": "Relay status messages",
   "inUse": "In Use",

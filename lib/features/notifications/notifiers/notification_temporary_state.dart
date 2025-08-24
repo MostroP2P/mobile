@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:mostro_mobile/data/enums.dart';
 
 class TemporaryNotification {
@@ -33,12 +34,12 @@ class TemporaryNotification {
       other is TemporaryNotification &&
           runtimeType == other.runtimeType &&
           action == other.action &&
-          values == other.values &&
+          const DeepCollectionEquality().equals(values, other.values) &&
           show == other.show &&
           customMessage == other.customMessage;
 
   @override
-  int get hashCode => Object.hash(action, values, show, customMessage);
+  int get hashCode => Object.hash(action, const DeepCollectionEquality().hash(values), show, customMessage);
 
   @override
   String toString() {

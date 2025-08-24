@@ -33,11 +33,16 @@ class DetailRow extends StatelessWidget {
             color: Theme.of(context).iconTheme.color?.withValues(alpha: 0.7),
           ),
           const SizedBox(width: 8),
-          Text(
-            '$label:',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              fontWeight: FontWeight.w500,
-              color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.8),
+          Flexible(
+            flex: 0,
+            child: Text(
+              '$label:',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w500,
+                color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.8),
+              ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
             ),
           ),
           const SizedBox(width: 4),
@@ -48,6 +53,9 @@ class DetailRow extends StatelessWidget {
                 fontFamily: _shouldUseMonospace(value) ? 'monospace' : null,
                 color: Theme.of(context).textTheme.bodySmall?.color,
               ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+              softWrap: false,
             ),
           ),
         ],
