@@ -5,6 +5,11 @@ plugins {
     id "dev.flutter.flutter-gradle-plugin"
 }
 
+// Suppress obsolete options warnings emitted by transitive JavaCompile tasks
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs.add("-Xlint:-options")
+}
+
 android {
     namespace = "network.mostro.app"
     compileSdk = flutter.compileSdkVersion
@@ -22,7 +27,6 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "network.mostro.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
