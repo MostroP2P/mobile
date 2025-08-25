@@ -113,14 +113,14 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         final dispute = event.getPayload<Dispute>()!;
         notifProvider.showInformation(event.action, values: {
           'id': event.id!,
-          'user_token': dispute.disputeId,
+          'user_token': dispute.disputeToken ?? dispute.disputeId,
         });
         break;
       case Action.disputeInitiatedByPeer:
         final dispute = event.getPayload<Dispute>()!;
         notifProvider.showInformation(event.action, values: {
           'id': event.id!,
-          'user_token': dispute.disputeId,
+          'user_token': dispute.disputeToken ?? dispute.disputeId,
         });
         break;
       case Action.cooperativeCancelAccepted:
