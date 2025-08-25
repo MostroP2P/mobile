@@ -143,8 +143,15 @@ EOF
           # Check if APK exists and is signed
           if [ -f "build/app/outputs/flutter-apk/app-release.apk" ]; then
             echo "✅ APK built successfully"
-            # Verify the APK is properly signed (will fail if not signed)
-            unzip -l build/app/outputs/flutter-apk/app-release.apk | grep -q "META-INF" && echo "✅ APK appears to be signed" || echo "❌ APK signing verification failed"
+            set -e
+            echo "Verifying with jarsigner..."
+            jarsigner -verify -verbose -certs build/app/outputs/flutter-apk/app-release.apk | sed -n '1,120p'
+            # Try apksigner if available to print certs/fingerprint
+            APKSIGNER=$(find "$ANDROID_HOME"/build-tools -name apksigner -type f | sort -V | tail -1 || true)
+            if [ -n "$APKSIGNER" ]; then
+              echo "Verifying with apksigner..."
+              "$APKSIGNER" verify --print-certs build/app/outputs/flutter-apk/app-release.apk
+            fi
           else
             echo "❌ APK build failed"
             exit 1
