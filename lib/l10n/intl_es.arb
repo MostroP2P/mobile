@@ -415,8 +415,6 @@
   "priceTypeTooltip": "• Selecciona Precio de Mercado si quieres usar el precio que tiene Bitcoin cuando alguien tome tu oferta.\n\n• Selecciona Precio Fijo si quieres definir la cantidad exacta de Bitcoin que intercambiarás.",
   
   "@_comment_take_order_screen": "Take Order Screen Strings",
-  "orderDetails": "DETALLES DE LA ORDEN",
-  "atMarketPrice": "a precio de mercado",
   "withPremiumPercent": "con un +{premium}% de premio",
   "@withPremiumPercent": {
     "placeholders": {
@@ -620,10 +618,8 @@
       }
     }
   },
-  "cancelPendingTradeButton": "CANCELACIÓN PENDIENTE",
   "disputeButton": "DISPUTA",
   "fiatSentButton": "FIAT ENVIADO",
-  "completePurchaseTradeButton": "COMPLETAR COMPRA",
   "paymentMethodLabel": "Método de Pago",
   "createdOnLabel": "Creado el",
   "orderIdLabel": "ID de Orden",
