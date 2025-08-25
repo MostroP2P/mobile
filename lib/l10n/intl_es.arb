@@ -835,5 +835,57 @@
   "orderTimeoutTaker": "No respondiste a tiempo. La orden será republicada",
   "orderTimeoutMaker": "Tu contraparte no respondió a tiempo. La orden será republicada",
   "orderTimeout": "Tiempo de espera de la orden agotado",
-  "orderCanceled": "La orden fue cancelada"
+  "orderCanceled": "La orden fue cancelada",
+  
+  "@_comment_dispute_communication": "Texto de Comunicación de Disputas",
+  "disputeCommunication": "Comunicación",
+  "waitingAdminAssignment": "Esperando asignación de administrador",
+  "adminAssignmentDescription": "Se asignará un administrador a tu disputa pronto. Una vez asignado, podrás comunicarte directamente con él aquí.",
+  "adminAssigned": "Administrador asignado",
+  "adminAssignedDescription": "Ahora puedes comunicarte con el administrador. Inicia la conversación enviando un mensaje a continuación.",
+  "admin": "Administrador",
+  "you": "Tú",
+  "errorLoadingChat": "Error cargando el chat",
+  "adminPubkey": "Pubkey del administrador",
+  "tokenVerified": "Token verificado",
+  "awaitingTokenVerification": "Esperando verificación del token",
+  "askAdminQuoteToken": "Pide al administrador que cite este token:",
+  
+  "@_comment_dispute_input": "Texto de Entrada de Disputas",
+  "failedSendMessage": "Error al enviar mensaje: {error}",
+  "@failedSendMessage": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "waitingAdminAssignmentInput": "Esperando asignación de administrador...",
+  "typeYourMessage": "Escribe tu mensaje...",
+  
+  "@_comment_dispute_list": "Texto de Lista de Disputas",
+  "disputesWillAppear": "Las disputas aparecerán aquí cuando las abras desde tus intercambios",
+  "failedLoadDisputes": "Error al cargar disputas",
+  "retry": "Reintentar",
+  
+  "@_comment_dispute_info": "Texto de Información de Disputas",
+  "unknown": "Desconocido",
+  "disputeWith": "Disputa con {role}: {counterparty}",
+  "@disputeWith": {
+    "placeholders": {
+      "role": { "type": "String" },
+      "counterparty": { "type": "String" }
+    }
+  },
+  "orderIdLabel": "ID de Orden",
+  "disputeIdLabel": "ID de Disputa",
+  "seller": "Vendedor",
+  "buyer": "Comprador",
+  
+  "@_comment_dispute_screen": "Texto de Pantalla de Disputas",
+  "disputeNotFound": "Disputa no encontrada",
+  "errorLoadingDispute": "Error cargando disputa: {error}",
+  "@errorLoadingDispute": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  }
 }

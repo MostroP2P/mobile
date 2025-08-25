@@ -56,10 +56,10 @@ class _DisputeChatScreenState extends ConsumerState<DisputeChatScreen> {
       body: disputeDetailsAsync.when(
         data: (dispute) {
           if (dispute == null) {
-            return const Center(
+            return Center(
               child: Text(
-                'Dispute not found',
-                style: TextStyle(color: Colors.white),
+                S.of(context)!.disputeNotFound,
+                style: const TextStyle(color: Colors.white),
               ),
             );
           }
@@ -137,7 +137,7 @@ class _DisputeChatScreenState extends ConsumerState<DisputeChatScreen> {
               ),
               const SizedBox(height: 16),
               Text(
-                'Error loading dispute: $error',
+                S.of(context)!.errorLoadingDispute(error.toString()),
                 style: const TextStyle(color: Colors.white),
                 textAlign: TextAlign.center,
               ),
@@ -146,7 +146,7 @@ class _DisputeChatScreenState extends ConsumerState<DisputeChatScreen> {
                 onPressed: () {
                   ref.invalidate(disputeDetailsProvider(widget.disputeId));
                 },
-                child: const Text('Retry'),
+                child: Text(S.of(context)!.retry),
               ),
             ],
           ),

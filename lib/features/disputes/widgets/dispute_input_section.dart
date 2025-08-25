@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/disputes/notifiers/dispute_chat_notifier.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class DisputeInputSection extends ConsumerStatefulWidget {
   final String disputeId;
@@ -41,7 +42,7 @@ class _DisputeInputSectionState extends ConsumerState<DisputeInputSection> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to send message: $error'),
+            content: Text(S.of(context)!.failedSendMessage(error.toString())),
             backgroundColor: AppTheme.red1,
           ),
         );
@@ -75,7 +76,7 @@ class _DisputeInputSectionState extends ConsumerState<DisputeInputSection> {
             return Container(
               padding: const EdgeInsets.all(16),
               child: Text(
-                'Waiting for admin assignment...',
+                S.of(context)!.waitingAdminAssignmentInput,
                 style: TextStyle(
                   color: AppTheme.textSecondary,
                   fontSize: 14,
@@ -95,7 +96,7 @@ class _DisputeInputSectionState extends ConsumerState<DisputeInputSection> {
                     enabled: !_isLoading,
                     style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(
-                      hintText: 'Type your message...',
+                      hintText: S.of(context)!.typeYourMessage,
                       hintStyle: TextStyle(color: AppTheme.textSecondary),
                       filled: true,
                       fillColor: AppTheme.dark2,
@@ -149,7 +150,7 @@ class _DisputeInputSectionState extends ConsumerState<DisputeInputSection> {
         error: (error, stack) => Container(
           padding: const EdgeInsets.all(16),
           child: Text(
-            'Error loading chat',
+            S.of(context)!.errorLoadingChat,
             style: TextStyle(
               color: AppTheme.red1,
               fontSize: 14,

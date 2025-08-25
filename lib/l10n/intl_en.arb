@@ -797,6 +797,58 @@
   "relayErrorNoHttp": "HTTP URLs are not supported. Use websocket URLs (wss://)",
   "relayErrorInvalidDomain": "Invalid domain format. Use format like: relay.example.com",
   "relayErrorAlreadyExists": "This relay is already in your list",
+  
+  "@_comment_dispute_communication": "Dispute Communication Text",
+  "disputeCommunication": "Communication",
+  "waitingAdminAssignment": "Waiting for admin assignment",
+  "adminAssignmentDescription": "An admin will be assigned to your dispute soon. Once assigned, you can communicate directly with them here.",
+  "adminAssigned": "Admin assigned",
+  "adminAssignedDescription": "You can now communicate with the admin. Start the conversation by sending a message below.",
+  "admin": "Admin",
+  "you": "You",
+  "errorLoadingChat": "Error loading chat",
+  "adminPubkey": "Admin pubkey",
+  "tokenVerified": "Token verified",
+  "awaitingTokenVerification": "Awaiting token verification",
+  "askAdminQuoteToken": "Ask admin to quote this token:",
+  
+  "@_comment_dispute_input": "Dispute Input Text",
+  "failedSendMessage": "Failed to send message: {error}",
+  "@failedSendMessage": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "waitingAdminAssignmentInput": "Waiting for admin assignment...",
+  "typeYourMessage": "Type your message...",
+  
+  "@_comment_dispute_list": "Dispute List Text",
+  "disputesWillAppear": "Disputes will appear here when you open them from your trades",
+  "failedLoadDisputes": "Failed to load disputes",
+  "retry": "Retry",
+  
+  "@_comment_dispute_info": "Dispute Info Text",
+  "unknown": "Unknown",
+  "disputeWith": "Dispute with {role}: {counterparty}",
+  "@disputeWith": {
+    "placeholders": {
+      "role": { "type": "String" },
+      "counterparty": { "type": "String" }
+    }
+  },
+  "orderIdLabel": "Order ID",
+  "disputeIdLabel": "Dispute ID",
+  "seller": "Seller",
+  "buyer": "Buyer",
+  
+  "@_comment_dispute_screen": "Dispute Screen Text",
+  "disputeNotFound": "Dispute not found",
+  "errorLoadingDispute": "Error loading dispute: {error}",
+  "@errorLoadingDispute": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
   "relayErrorConnectionTimeout": "Relay unreachable - connection timeout",
   "relayTestingMessage": "Testing relay...",
   "relayAddedSuccessfully": "Relay added successfully: {url}",

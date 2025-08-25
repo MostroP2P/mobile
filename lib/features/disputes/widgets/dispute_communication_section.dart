@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/disputes/notifiers/dispute_chat_notifier.dart';
 import 'package:mostro_mobile/data/models/dispute_chat.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class DisputeCommunicationSection extends ConsumerWidget {
   final String disputeId;
@@ -22,7 +23,7 @@ class DisputeCommunicationSection extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Communication',
+            S.of(context)!.disputeCommunication,
             style: TextStyle(
               color: AppTheme.textSecondary,
               fontSize: 16,
@@ -33,14 +34,14 @@ class DisputeCommunicationSection extends ConsumerWidget {
           disputeChatAsync.when(
             data: (disputeChat) {
               if (disputeChat == null) {
-                return _buildWaitingForAdmin();
+                return _buildWaitingForAdmin(context);
               }
 
               if (disputeChat.messages.isEmpty) {
-                return _buildNoMessages(disputeChat);
+                return _buildNoMessages(context, disputeChat);
               }
 
-              return _buildChatMessages(disputeChat);
+              return _buildChatMessages(context, disputeChat);
             },
             loading: () => const Center(
               child: Padding(
@@ -48,14 +49,14 @@ class DisputeCommunicationSection extends ConsumerWidget {
                 child: CircularProgressIndicator(),
               ),
             ),
-            error: (error, stack) => _buildError(error),
+            error: (error, stack) => _buildError(context, error),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildWaitingForAdmin() {
+  Widget _buildWaitingForAdmin(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -71,7 +72,7 @@ class DisputeCommunicationSection extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'Waiting for admin assignment',
+            S.of(context)!.waitingAdminAssignment,
             style: TextStyle(
               color: AppTheme.textPrimary,
               fontSize: 16,
@@ -80,7 +81,7 @@ class DisputeCommunicationSection extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'An admin will be assigned to your dispute soon. Once assigned, you can communicate directly with them here.',
+            S.of(context)!.adminAssignmentDescription,
             style: TextStyle(
               color: AppTheme.textSecondary,
               fontSize: 14,
@@ -92,7 +93,7 @@ class DisputeCommunicationSection extends ConsumerWidget {
     );
   }
 
-  Widget _buildNoMessages(DisputeChat disputeChat) {
+  Widget _buildNoMessages(BuildContext context, DisputeChat disputeChat) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -110,7 +111,7 @@ class DisputeCommunicationSection extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'Admin assigned',
+            S.of(context)!.adminAssigned,
             style: TextStyle(
               color: AppTheme.textPrimary,
               fontSize: 16,
@@ -119,7 +120,7 @@ class DisputeCommunicationSection extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'You can now communicate with the admin. Start the conversation by sending a message below.',
+            S.of(context)!.adminAssignedDescription,
             style: TextStyle(
               color: AppTheme.textSecondary,
               fontSize: 14,
@@ -132,7 +133,7 @@ class DisputeCommunicationSection extends ConsumerWidget {
     );
   }
 
-  Widget _buildChatMessages(DisputeChat disputeChat) {
+  Widget _buildChatMessages(BuildContext context, DisputeChat disputeChat) {
     final messages = disputeChat.sortedMessages;
     return Container(
       constraints: const BoxConstraints(maxHeight: 300),
@@ -177,7 +178,7 @@ class DisputeCommunicationSection extends ConsumerWidget {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                isFromAdmin ? 'Admin' : 'You',
+                                isFromAdmin ? S.of(context)!.admin : S.of(context)!.you,
                                 style: TextStyle(
                                   color: AppTheme.textSecondary,
                                   fontSize: 12,
@@ -198,7 +199,7 @@ class DisputeCommunicationSection extends ConsumerWidget {
     );
   }
 
-  Widget _buildError(Object error) {
+  Widget _buildError(BuildContext context, Object error) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -214,7 +215,7 @@ class DisputeCommunicationSection extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'Error loading chat',
+            S.of(context)!.errorLoadingChat,
             style: TextStyle(
               color: AppTheme.red1,
               fontSize: 16,
@@ -255,7 +256,7 @@ class _AdminAndTokenHeader extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Admin pubkey',
+            S.of(context)!.adminPubkey,
             style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
           ),
           const SizedBox(height: 4),
@@ -279,7 +280,7 @@ class _AdminAndTokenHeader extends StatelessWidget {
                       Icon(isVerified ? Icons.verified : Icons.security, size: 14, color: isVerified ? AppTheme.mostroGreen : Colors.amber),
                       const SizedBox(width: 6),
                       Text(
-                        isVerified ? 'Token verified' : 'Awaiting token verification',
+                        isVerified ? S.of(context)!.tokenVerified : S.of(context)!.awaitingTokenVerification,
                         style: TextStyle(color: isVerified ? AppTheme.mostroGreen : Colors.amber, fontSize: 12),
                       ),
                     ],
@@ -291,7 +292,7 @@ class _AdminAndTokenHeader extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Ask admin to quote this token:',
+                        S.of(context)!.askAdminQuoteToken,
                         style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
                       ),
                       SelectableText(

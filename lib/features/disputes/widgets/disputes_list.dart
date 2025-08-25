@@ -37,7 +37,7 @@ class DisputesList extends ConsumerWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Disputes will appear here when you open them from your trades',
+                  S.of(context)!.disputesWillAppear,
                   style: TextStyle(
                     color: AppTheme.textSecondary,
                     fontSize: 14,
@@ -85,7 +85,7 @@ class DisputesList extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Failed to load disputes',
+              S.of(context)!.failedLoadDisputes,
               style: TextStyle(
                 color: AppTheme.red1,
                 fontSize: 16,
@@ -106,7 +106,7 @@ class DisputesList extends ConsumerWidget {
               onPressed: () {
                 ref.invalidate(userDisputesProvider);
               },
-              child: const Text('Retry'),
+              child: Text(S.of(context)!.retry),
             ),
           ],
         ),

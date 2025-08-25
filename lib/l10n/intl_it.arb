@@ -869,5 +869,57 @@
   "orderTimeoutTaker": "Non hai risposto in tempo. L'ordine sarà ripubblicato",
   "orderTimeoutMaker": "La tua controparte non ha risposto in tempo. L'ordine sarà ripubblicato",
   "orderTimeout": "Timeout dell'ordine verificato",
-  "orderCanceled": "L'ordine è stato annullato"
+  "orderCanceled": "L'ordine è stato annullato",
+  
+  "@_comment_dispute_communication": "Testo Comunicazione Controversie",
+  "disputeCommunication": "Comunicazione",
+  "waitingAdminAssignment": "In attesa dell'assegnazione dell'amministratore",
+  "adminAssignmentDescription": "Un amministratore verrà assegnato alla tua controversia a breve. Una volta assegnato, potrai comunicare direttamente con lui qui.",
+  "adminAssigned": "Amministratore assegnato",
+  "adminAssignedDescription": "Ora puoi comunicare con l'amministratore. Inizia la conversazione inviando un messaggio qui sotto.",
+  "admin": "Amministratore",
+  "you": "Tu",
+  "errorLoadingChat": "Errore nel caricamento della chat",
+  "adminPubkey": "Pubkey dell'amministratore",
+  "tokenVerified": "Token verificato",
+  "awaitingTokenVerification": "In attesa della verifica del token",
+  "askAdminQuoteToken": "Chiedi all'amministratore di citare questo token:",
+  
+  "@_comment_dispute_input": "Testo Input Controversie",
+  "failedSendMessage": "Invio messaggio fallito: {error}",
+  "@failedSendMessage": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "waitingAdminAssignmentInput": "In attesa dell'assegnazione dell'amministratore...",
+  "typeYourMessage": "Scrivi il tuo messaggio...",
+  
+  "@_comment_dispute_list": "Testo Lista Controversie",
+  "disputesWillAppear": "Le controversie appariranno qui quando le apri dai tuoi scambi",
+  "failedLoadDisputes": "Impossibile caricare le controversie",
+  "retry": "Riprova",
+  
+  "@_comment_dispute_info": "Testo Informazioni Controversie",
+  "unknown": "Sconosciuto",
+  "disputeWith": "Controversia con {role}: {counterparty}",
+  "@disputeWith": {
+    "placeholders": {
+      "role": { "type": "String" },
+      "counterparty": { "type": "String" }
+    }
+  },
+  "orderIdLabel": "ID Ordine",
+  "disputeIdLabel": "ID Controversia",
+  "seller": "Venditore",
+  "buyer": "Compratore",
+  
+  "@_comment_dispute_screen": "Testo Schermata Controversie",
+  "disputeNotFound": "Controversia non trovata",
+  "errorLoadingDispute": "Errore nel caricamento della controversia: {error}",
+  "@errorLoadingDispute": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  }
 }

@@ -5,6 +5,7 @@ import 'package:mostro_mobile/features/disputes/widgets/dispute_status_badge.dar
 import 'package:mostro_mobile/features/disputes/widgets/dispute_status_content.dart';
 import 'package:mostro_mobile/data/models/dispute.dart';
 import 'package:mostro_mobile/shared/providers/legible_handle_provider.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class DisputeInfoCard extends ConsumerWidget {
   final DisputeData dispute;
@@ -17,9 +18,9 @@ class DisputeInfoCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Resolve counterparty pubkey to readable nym
-    final counterpartyNym = dispute.counterparty != 'Unknown' 
+    final counterpartyNym = dispute.counterparty != S.of(context)!.unknown 
         ? ref.watch(nickNameProvider(dispute.counterparty))
-        : 'Unknown';
+        : S.of(context)!.unknown;
     
     return Container(
       padding: const EdgeInsets.all(16),
@@ -35,7 +36,10 @@ class DisputeInfoCard extends ConsumerWidget {
             children: [
               Expanded(
                 child: Text(
-                  'Dispute with ${dispute.userIsBuyer ? 'Seller' : 'Buyer'}: $counterpartyNym',
+                  S.of(context)!.disputeWith(
+                    dispute.userIsBuyer ? S.of(context)!.seller : S.of(context)!.buyer,
+                    counterpartyNym,
+                  ),
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -49,11 +53,11 @@ class DisputeInfoCard extends ConsumerWidget {
           const SizedBox(height: 16),
           
           // Order ID
-          _buildInfoRow('Order ID', dispute.orderId),
+          _buildInfoRow(context, S.of(context)!.orderIdLabel, dispute.orderId),
           const SizedBox(height: 8),
           
           // Dispute ID
-          _buildInfoRow('Dispute ID', dispute.disputeId),
+          _buildInfoRow(context, S.of(context)!.disputeIdLabel, dispute.disputeId),
           const SizedBox(height: 16),
           
           // Dispute description - conditional based on status
@@ -63,7 +67,7 @@ class DisputeInfoCard extends ConsumerWidget {
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildInfoRow(BuildContext context, String label, String value) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
