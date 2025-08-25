@@ -293,8 +293,13 @@ Convert your keystore file to base64 for secure storage in GitHub:
 # Navigate to your project directory
 cd /path/to/your/flutter/project
 
-# Generate base64 (this creates one very long string)
+# Generate base64 (one very long line; choose your platform)
+# Linux (GNU coreutils):
 base64 -w 0 android/app/upload-keystore.jks
+# macOS (BSD base64):
+base64 -b 0 android/app/upload-keystore.jks
+# Portable (OpenSSL, works everywhere):
+openssl base64 -A -in android/app/upload-keystore.jks
 ```
 
 **Copy the entire output** - it will be thousands of characters long. Save it temporarily in a text file.
@@ -307,8 +312,13 @@ Test that your base64 conversion works:
 # Save your base64 string to test (replace with your actual long string)
 BASE64_STRING="your_very_long_base64_string_here"
 
-# Test decoding
-echo "$BASE64_STRING" | base64 --decode > test-keystore.jks
+# Test decoding (choose your platform)
+# Linux (GNU coreutils):
+echo "$BASE64_STRING" | base64 -d > test-keystore.jks
+# macOS (BSD base64):
+echo "$BASE64_STRING" | base64 -D > test-keystore.jks
+# Portable (OpenSSL):
+echo "$BASE64_STRING" | openssl base64 -d -A > test-keystore.jks
 
 # Verify it works with your credentials
 keytool -list -v -keystore test-keystore.jks -alias YOUR_ALIAS -storepass YOUR_STORE_PASSWORD
