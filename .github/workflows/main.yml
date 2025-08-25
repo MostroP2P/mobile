@@ -85,7 +85,7 @@ jobs:
           echo "storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" > android/key.properties
           echo "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}" >> android/key.properties
           echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" >> android/key.properties
-          echo "storeFile=app/${{ env.ANDROID_KEYSTORE_FILE }}" >> android/key.properties
+          echo "storeFile=${{ env.ANDROID_KEYSTORE_FILE }}" >> android/key.properties
       - name: Set Up Flutter
         if: steps.should_build.outputs.SHOULD_BUILD == 'true'
         uses: subosito/flutter-action@v2
