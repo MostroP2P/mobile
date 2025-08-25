@@ -73,9 +73,9 @@ Before creating the keystore, decide on these values:
 - **CN (Common Name)**: Your app name or organization (e.g., `MyApp`, `My Company`)
 - **OU (Organizational Unit)**: Your department (e.g., `Mobile Development`, `Engineering`)
 - **O (Organization)**: Your company name (e.g., `MyCompany Inc`)
-- **L (Locality)**: Your city (e.g., `San Francisco`)
-- **ST (State)**: Your state/province (e.g., `California`)
-- **C (Country)**: Your country code (e.g., `US`, `GB`, `CA`)
+- **L (Locality)**: Your city (e.g., `Tucupita`)
+- **ST (State)**: Your state/province (e.g., `Detal Amacuro`)
+- **C (Country)**: Your country code (e.g., `VE`, `CO`, `BR`)
 
 #### Create the Keystore File
 
@@ -383,21 +383,99 @@ Should complete without errors about keystore or signing.
 Should show:
 ```
 ✅ APK built successfully
-✅ APK appears to be signed
+Verifying with jarsigner...
+jar verified.
+✅ Certificate details displayed
 ```
 
-### Verify Certificate Consistency
+### Strong APK Signature Verification
 
-Compare certificates between local and GitHub builds:
+The build process now uses comprehensive signature verification beyond just checking for META-INF presence (which can exist in debug builds). Here's how to verify signatures manually and understand the automated checks:
 
-**Local certificate fingerprint:**
+#### Manual Signature Verification
+
+**Step 1: Verify signature integrity with jarsigner**
 ```bash
-keytool -list -v -keystore android/app/upload-keystore.jks -alias YOUR_ALIAS -storepass YOUR_STORE_PASSWORD | grep -A1 "Certificate fingerprints"
+# Navigate to your project root
+cd /path/to/your/flutter/project
+
+# Verify APK signature (exits non-zero if signature invalid)
+jarsigner -verify -verbose -certs build/app/outputs/flutter-apk/app-release.apk
+
+# For detailed certificate information
+jarsigner -verify -verbose -certs -strict build/app/outputs/flutter-apk/app-release.apk
 ```
 
-**GitHub Actions certificate:**
-- Download the APK artifact from GitHub Actions
-- The fingerprints should match exactly
+**Expected output for valid signature:**
+```
+jar verified.
+Certificate details displayed...
+```
+
+**Step 2: Alternative verification with apksigner (if available)**
+```bash
+# Find apksigner in your Android SDK build-tools
+find $ANDROID_HOME/build-tools -name apksigner -type f | sort -V | tail -1
+
+# Verify with apksigner
+apksigner verify --print-certs build/app/outputs/flutter-apk/app-release.apk
+
+# Verbose verification
+apksigner verify --verbose build/app/outputs/flutter-apk/app-release.apk
+```
+
+#### Certificate Fingerprint Verification
+
+**Extract keystore certificate SHA-256 fingerprint:**
+```bash
+keytool -list -v -keystore android/app/upload-keystore.jks -alias YOUR_ALIAS -storepass YOUR_STORE_PASSWORD | grep "SHA256:"
+```
+
+**Extract APK certificate fingerprint:**
+```bash
+# Method 1: Using jarsigner
+jarsigner -verify -verbose -certs build/app/outputs/flutter-apk/app-release.apk | grep "SHA256:"
+
+# Method 2: Using apksigner (if available)
+apksigner verify --print-certs build/app/outputs/flutter-apk/app-release.apk | grep "SHA256:"
+```
+
+**Compare and verify:**
+- Both keystore and APK should show identical SHA-256 fingerprints
+- This ensures the APK is signed with your expected certificate
+- Prevents signing with wrong certificates or debug keys
+
+#### Automated CI Verification
+
+The GitHub Actions workflow performs these verification steps automatically:
+
+1. **Signature validation**: Uses `jarsigner -verify -verbose -certs` to validate signature integrity
+2. **Certificate display**: Shows certificate details in build logs for verification
+3. **apksigner fallback**: Uses `apksigner verify --print-certs` when build-tools are available
+4. **Build failure**: Non-zero exit codes from verification tools fail the build
+
+**What the CI checks prevent:**
+- Unsigned APKs reaching production
+- APKs signed with debug certificates
+- APKs signed with wrong/compromised certificates
+- Signature corruption during build process
+
+#### Troubleshooting Signature Issues
+
+**"jar verified." not shown**: APK signature is invalid or corrupted
+- Check that keystore file exists and is not corrupted
+- Verify all signing credentials (passwords, alias) are correct
+- Ensure Flutter build completed successfully
+
+**Fingerprint mismatch**: APK signed with different certificate
+- Check that correct keystore file is being used
+- Verify keystore alias matches your configuration
+- Ensure no debug/temporary certificates are being used
+
+**"Certificate fingerprints" not found**: Keystore or APK access issues
+- Verify keystore file path and permissions
+- Check that keystore password and alias are correct
+- Ensure APK file exists and is not corrupted
 
 ## Step 5: Local Development Setup
 
