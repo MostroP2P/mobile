@@ -88,6 +88,18 @@ class NotificationMessageMapper {
     }
   }
 
+  /// Maps an action to its corresponding notification message key with context values
+  static String getMessageKeyWithContext(mostro.Action action, Map<String, dynamic>? values) {
+    // Handle special cases with context
+    if (values != null && action == mostro.Action.addInvoice) {
+      if (values.containsKey('fiat_amount') && values.containsKey('failed_at')) {
+        return 'notification_add_invoice_after_failure_message';
+      }
+    }
+    // Fall back to normal message key
+    return getMessageKey(action);
+  }
+
   /// Maps an action to its corresponding notification message key
   static String getMessageKey(mostro.Action action) {
     switch (action) {
@@ -175,11 +187,13 @@ class NotificationMessageMapper {
     return _resolveLocalizationKey(s, getTitleKey(action));
   }
 
-  /// Get localized message text directly from Action
-  static String getLocalizedMessage(BuildContext context, mostro.Action action) {
+  /// Get localized message text directly from Action  
+  static String getLocalizedMessage(BuildContext context, mostro.Action action, {Map<String, dynamic>? values}) {
     final s = S.of(context)!;
-    return _resolveLocalizationKey(s, getMessageKey(action));
+    final messageKey = getMessageKeyWithContext(action, values);
+    return _resolveLocalizationKey(s, messageKey);
   }
+
 
   /// Helper method to resolve localization keys to actual text
   static String _resolveLocalizationKey(S s, String key) {
@@ -306,6 +320,8 @@ class NotificationMessageMapper {
         return s.notification_order_update_title;
       case 'notification_order_update_message':
         return s.notification_order_update_message;
+      case 'notification_add_invoice_after_failure_message':
+        return s.notification_add_invoice_after_failure_message;
       default:
         return key; // Fallback to key if not found
     }

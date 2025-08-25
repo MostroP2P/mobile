@@ -414,6 +414,9 @@
   "market": "Mercado",
   "priceTypeTooltip": "• Selecciona Precio de Mercado si quieres usar el precio que tiene Bitcoin cuando alguien tome tu oferta.\n\n• Selecciona Precio Fijo si quieres definir la cantidad exacta de Bitcoin que intercambiarás.",
   
+  "@_comment_take_order_screen": "Take Order Screen Strings",
+  "orderDetails": "DETALLES DE LA ORDEN",
+  "atMarketPrice": "a precio de mercado",
   "withPremiumPercent": "con un +{premium}% de premio",
   "@withPremiumPercent": {
     "placeholders": {
@@ -904,7 +907,7 @@
   "clearAll": "Limpiar todo",
   "notification_new_order_title": "Nueva orden disponible",
   "notification_new_order_message": "Nueva orden publicada en el libro",
-  "notAvailable": "N/D",
+  "notAvailableShort": "N/D",
   "notificationGenericTitle": "Notificación",
   "notification_order_taken_title": "Orden tomada",
   "notification_sell_order_taken_message": "Tu orden de venta fue tomada",
@@ -945,6 +948,7 @@
   "notification_waiting_buyer_invoice_message": "Esperando que el comprador proporcione la factura",
   "notification_add_invoice_title": "Factura requerida",
   "notification_add_invoice_message": "Por favor agrega tu factura Lightning",
+  "notification_add_invoice_after_failure_message": "El pago de la factura anterior falló. Por favor agrega una nueva factura Lightning",
   "notification_buyer_took_order_title": "Orden tomada",
   "notification_buyer_took_order_message": "Un comprador ha tomado tu orden",
   "notification_rate_title": "Calificación solicitada",
@@ -974,13 +978,17 @@
   "notificationTimeout": "Tiempo límite",
   "notificationMinutes": "minutos",
   "notificationDisputeId": "ID de Disputa",
-  "notificationAttempts": "Intentos",
+  "notificationAttempts": "Intentos restantes",
   "notificationRetryInterval": "Intervalo de Reintento",
+  "notificationFailedAt": "Falló a las",
   "notificationReason": "Razón",
   "notificationOrderId": "ID de Orden",
   "notificationDelete": "Eliminar",
   "confirmDeleteNotification": "¿Estás seguro de que quieres eliminar esta notificación?",
   "confirmClearAll": "Esto eliminará permanentemente todas las notificaciones. Esta acción no se puede deshacer.",
+
+  "@_comment_notification_units": "Notification time units",
+  "notificationSeconds": "segundos",
 
   "@_comment_relay_status": "Mensajes de estado de relays",
   "inUse": "En Uso",
@@ -990,11 +998,13 @@
   "activated": "Conectado",
   "deactivated": "Desconectado",
 
+  "@_comment_blacklist_dialog": "Blacklist default relay dialog strings",
   "blacklistDefaultRelayTitle": "¿Desconectarte del Relay por Defecto?",
   "blacklistDefaultRelayMessage": "¿Estás seguro de que quieres desconectarte del relay por defecto? Esto puede afectar la conectividad con la instancia de Mostro.",
   "blacklistDefaultRelayConfirm": "Desconectar",
   "blacklistDefaultRelayCancel": "Cancelar",
 
+  "@_comment_last_relay_dialog": "Last relay protection dialog strings",
   "cannotBlacklistLastRelayTitle": "No Puedes Desconectarte del Último Relay",
   "cannotBlacklistLastRelayMessage": "No puedes desconectarte de este relay porque es el último conectado. La app necesita al menos un relay para funcionar correctamente.",
   "cannotBlacklistLastRelayOk": "OK",
@@ -1004,4 +1014,5 @@
   "deleteUserRelayMessage": "Si más adelante deseas volver a usarlo, deberás añadirlo manualmente.",
   "deleteUserRelayConfirm": "Sí",
   "deleteUserRelayCancel": "No"
+
 }

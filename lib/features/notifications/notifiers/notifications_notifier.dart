@@ -74,7 +74,7 @@ class NotificationsNotifier extends StateNotifier<TemporaryNotificationsState> {
       type: NotificationModel.getNotificationTypeFromAction(action),
       action: action,
       title: NotificationMessageMapper.getTitleKey(action),
-      message: NotificationMessageMapper.getMessageKey(action),
+      message: NotificationMessageMapper.getMessageKeyWithContext(action, values),
       timestamp: DateTime.now(),
       orderId: orderId,
       data: values,

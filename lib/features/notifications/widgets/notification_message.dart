@@ -14,7 +14,7 @@ class NotificationMessage extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          NotificationMessageMapper.getLocalizedMessage(context, notification.action),
+          NotificationMessageMapper.getLocalizedMessage(context, notification.action, values: notification.data),
           style: _getMessageStyle(context),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,

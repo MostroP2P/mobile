@@ -105,7 +105,7 @@ class NotificationDetails extends StatelessWidget {
         if (data.containsKey('payment_retries_interval')) {
           widgets.add(DetailRow(
             label: S.of(context)!.notificationRetryInterval,
-            value: '${data['payment_retries_interval']}s',
+            value: '${data['payment_retries_interval']} ${S.of(context)!.notificationSeconds}',
             icon: HeroIcons.clock,
           ));
         }
@@ -169,6 +169,23 @@ class NotificationDetails extends StatelessWidget {
             label: S.of(context)!.notificationBuyer,
             value: _formatHashOrId(context, data['buyer_npub']),
             icon: HeroIcons.user,
+          ));
+        }
+        break;
+
+      case mostro_action.Action.addInvoice:
+        if (data.containsKey('fiat_amount') && data.containsKey('fiat_code')) {
+          widgets.add(DetailRow(
+            label: S.of(context)!.notificationAmount,
+            value: '${data['fiat_amount']} ${data['fiat_code']}',
+            icon: HeroIcons.banknotes,
+          ));
+        }
+        if (data.containsKey('failed_at')) {
+          widgets.add(DetailRow(
+            label: S.of(context)!.notificationFailedAt,
+            value: data['failed_at'].toString(),
+            icon: HeroIcons.clock,
           ));
         }
         break;

@@ -419,6 +419,9 @@
   "market": "Mercato",
   "priceTypeTooltip": "• Seleziona Prezzo di Mercato se vuoi usare il prezzo che ha Bitcoin quando qualcuno prende la tua offerta.\n\n• Seleziona Prezzo Fisso se vuoi definire l'importo esatto di Bitcoin che scambierai.",
   
+  "@_comment_take_order_screen": "Take Order Screen Strings",
+  "orderDetails": "DETTAGLI ORDINE",
+  "atMarketPrice": "a prezzo di mercato",
   "withPremiumPercent": "con un +{premium}% di premio",
   "@withPremiumPercent": {
     "placeholders": {
@@ -620,6 +623,7 @@
   "@forAmount": {
     "placeholders": {
       "amount": {
+        "type": "String",
         "description": "Fiat amount for the transaction"
       }
     }
@@ -710,7 +714,6 @@
   "conversationsDescription": "Qui troverai le tue conversazioni con altri utenti durante gli scambi.",
   "orderId": "ID Ordine:",
   "paymentMethod": "Metodo di Pagamento:",
-  "createdOn": "Creato il:",
   "sellingSats": "Vendendo {amount} sats",
   "@sellingSats": {
     "placeholders": {
@@ -727,8 +730,8 @@
       }
     }
   },
-  "forAmount": "per {amount} {currency}",
-  "@forAmount": {
+  "forAmountWithCurrency": "per {amount} {currency}",
+  "@forAmountWithCurrency": {
     "placeholders": {
       "amount": {
         "type": "String"
@@ -758,7 +761,6 @@
   "holdInvoiceExpiration": "Scadenza Fattura di Blocco",
   "holdInvoiceCltvDelta": "Delta CLTV Fattura di Blocco",
   "invoiceExpirationWindow": "Finestra di Scadenza Fattura",
-  "proofOfWork": "Prova di Lavoro",
   "lightningNetwork": "Lightning Network",
   "lndDaemonVersion": "Versione di LND",
   "lndNodePublicKey": "Chiave Pubblica Nodo LND",
@@ -912,7 +914,7 @@
   "clearAll": "Cancella tutto",
   "notification_new_order_title": "Nuovo ordine disponibile",
   "notification_new_order_message": "Nuovo ordine pubblicato nel libro",
-  "notAvailable": "N/D",
+  "notAvailableShort": "N/D",
   "notificationGenericTitle": "Notifica",
   "notification_order_taken_title": "Ordine preso",
   "notification_sell_order_taken_message": "Il tuo ordine di vendita è stato preso",
@@ -953,6 +955,7 @@
   "notification_waiting_buyer_invoice_message": "In attesa che l'acquirente fornisca la fattura",
   "notification_add_invoice_title": "Fattura richiesta",
   "notification_add_invoice_message": "Per favore aggiungi la tua fattura Lightning",
+  "notification_add_invoice_after_failure_message": "Il pagamento della fattura precedente è fallito. Per favore aggiungi una nuova fattura Lightning",
   "notification_buyer_took_order_title": "Ordine preso",
   "notification_buyer_took_order_message": "Un acquirente ha preso il tuo ordine",
   "notification_rate_title": "Valutazione richiesta",
@@ -982,13 +985,17 @@
   "notificationTimeout": "Tempo scaduto",
   "notificationMinutes": "minuti",
   "notificationDisputeId": "ID Disputa",
-  "notificationAttempts": "Tentativi",
+  "notificationAttempts": "Tentativi restanti",
   "notificationRetryInterval": "Intervallo di Ripetizione",
+  "notificationFailedAt": "Fallito alle",
   "notificationReason": "Ragione",
   "notificationOrderId": "ID Ordine",
   "notificationDelete": "Elimina",
   "confirmDeleteNotification": "Sei sicuro di voler eliminare questa notifica?",
   "confirmClearAll": "Questo eliminerà permanentemente tutte le notifiche. Questa azione non può essere annullata.",
+
+ "@_comment_notification_units": "Notification time units",
+  "notificationSeconds": "secondi",
 
   "@_comment_relay_status": "Messaggi di stato relay",
   "inUse": "In Uso",
@@ -998,11 +1005,13 @@
   "activated": "Connesso",
   "deactivated": "Disconnesso",
 
+  "@_comment_blacklist_dialog": "Blacklist default relay dialog strings",
   "blacklistDefaultRelayTitle": "Disconnettersi dal Relay Predefinito?",
   "blacklistDefaultRelayMessage": "Sei sicuro di volerti disconnettere dal relay predefinito? Questo potrebbe influire sulla connettività con l'istanza di Mostro.",
   "blacklistDefaultRelayConfirm": "Disconnetti",
   "blacklistDefaultRelayCancel": "Annulla",
 
+  "@_comment_last_relay_dialog": "Last relay protection dialog strings",
   "cannotBlacklistLastRelayTitle": "Non Puoi Disconnetterti dall'Ultimo Relay",
   "cannotBlacklistLastRelayMessage": "Non puoi disconnetterti da questo relay perché è l'ultimo connesso. L'app ha bisogno di almeno un relay per funzionare correttamente.",
   "cannotBlacklistLastRelayOk": "OK",

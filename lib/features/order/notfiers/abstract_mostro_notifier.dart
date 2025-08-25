@@ -91,15 +91,15 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
           navProvider.go('/pay_invoice/${event.id!}');
         }
         ref.read(sessionNotifierProvider.notifier).saveSession(session);
-        
+
         sendNotification(event.action, eventId: event.id);
+
         break;
       case Action.fiatSentOk:
         final peer = event.getPayload<Peer>();
-        
+    
         // Only notify the seller
         final isSeller = (session.role == Role.seller);
-        
         if (isSeller) {
           final buyerNym = peer?.publicKey != null 
               ? ref.read(nickNameProvider(peer!.publicKey)) 
@@ -108,8 +108,10 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
             'buyer_npub': buyerNym,
                       }, eventId: event.id);
         }
+
         break;
       case Action.released:
+
         // Notify about Bitcoin being released
         final sellerNym = state.order?.sellerTradePubkey != null 
             ? ref.read(nickNameProvider(state.order!.sellerTradePubkey!)) 
@@ -117,6 +119,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         sendNotification(event.action, values: {
           'seller_npub': sellerNym,
                   }, eventId: event.id);
+
         break;
       case Action.canceled:
         ref.read(mostroStorageProvider).deleteAllMessagesByOrderId(orderId);
@@ -145,6 +148,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         break;
       case Action.holdInvoicePaymentAccepted:
         final order = event.getPayload<Order>();
+
         final sellerNym = order?.sellerTradePubkey != null 
             ? ref.read(nickNameProvider(order!.sellerTradePubkey!)) 
             : 'Unknown';
@@ -154,6 +158,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
           'fiat_amount': order?.fiatAmount,
           'payment_method': order?.paymentMethod,
         }, eventId: event.id);
+
         // add seller tradekey to session
         // open chat
         final sessionProvider = ref.read(sessionNotifierProvider.notifier);
@@ -177,6 +182,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         sendNotification(event.action, values: {
           'buyer_npub': buyerNym,
                   }, eventId: event.id);
+
         navProvider.go('/trade_detail/$orderId');
         break;
       case Action.waitingSellerToPay:
@@ -193,8 +199,10 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
                     'expiration_seconds':
               mostroInstance?.expirationSeconds ?? Config.expirationSeconds,
         }, eventId: event.id);
+
         break;
       case Action.waitingBuyerInvoice:
+
         sendNotification(event.action, values: {
                     'expiration_seconds':
               mostroInstance?.expirationSeconds ?? Config.expirationSeconds,
@@ -213,7 +221,29 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
         sessionNotifier.saveSession(session);
 
-        sendNotification(event.action, eventId: event.id);
+        // Check if this is due to payment failure (settled-hold-invoice status)
+        bool isAfterPaymentFailure = false;
+        final order = event.getPayload<Order>();
+
+        if (order != null){
+          final order = event.payload as Order;
+          isAfterPaymentFailure = order.status == Status.settledHoldInvoice;
+          
+        }
+        if (isAfterPaymentFailure) {   
+          // Use the special notification for payment failure recovery       
+          final now = DateTime.now();
+          final formattedTime = "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
+          
+          sendNotification(event.action, values: {
+            'fiat_amount': order?.fiatAmount,
+            'fiat_code': order?.fiatCode,
+            'failed_at': formattedTime,
+          }, eventId: event.id);
+        } else {
+          // Use normal add invoice notification
+          sendNotification(event.action, eventId: event.id);
+        }
         
         navProvider.go('/add_invoice/$orderId');
         break;
@@ -223,12 +253,14 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
           logger.e('Buyer took order, but order is null');
           break;
         }
+
         final buyerNym = order.buyerTradePubkey != null 
             ? ref.read(nickNameProvider(order.buyerTradePubkey!)) 
             : 'Unknown';
         sendNotification(event.action, values: {
           'buyer_npub': buyerNym,
                   }, eventId: event.id);
+
         final sessionProvider = ref.read(sessionNotifierProvider.notifier);
         final peer = order.buyerTradePubkey != null
             ? Peer(publicKey: order.buyerTradePubkey!)
@@ -247,9 +279,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
       case Action.cantDo:
         final cantDo = event.getPayload<CantDo>();
         // Handle specific case of out_of_range_sats_amount
-        if (cantDo?.cantDoReason == CantDoReason.outOfRangeSatsAmount) {
-          logger.i('Received out_of_range_sats_amount, cleaning up session for retry');
-          
+        if (cantDo?.cantDoReason == CantDoReason.outOfRangeSatsAmount) {          
           // Clean up temporary session if it exists by requestId
           if (event.requestId != null) {
             ref.read(sessionNotifierProvider.notifier).cleanupRequestSession(event.requestId!);
@@ -263,19 +293,22 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
           },
           isTemporary: true,
         );
+
         break;
       case Action.adminSettled:
         sendNotification(event.action, eventId: event.id);
         break;
       case Action.paymentFailed:
         final paymentFailed = event.getPayload<PaymentFailed>();
+
         sendNotification(event.action, values: {
           'payment_attempts': paymentFailed?.paymentAttempts,
           'payment_retries_interval': paymentFailed?.paymentRetriesInterval,
         }, eventId: event.id);
+        
         break;
       case Action.purchaseCompleted:
-        sendNotification(event.action, eventId: event.id);
+          sendNotification(event.action, eventId: event.id);
         break;
       case Action.rate:
         sendNotification(event.action, eventId: event.id);
