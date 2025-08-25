@@ -82,12 +82,10 @@ jobs:
           echo "ANDROID_KEYSTORE_FILE=upload-keystore.jks" >> $GITHUB_ENV
 
           # Write key.properties so Gradle can pick it up without extra config
-          cat > android/key.properties <<EOF
-storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
-keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
-storeFile=app/${{ env.ANDROID_KEYSTORE_FILE }}
-EOF
+          echo "storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" > android/key.properties
+          echo "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}" >> android/key.properties
+          echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" >> android/key.properties
+          echo "storeFile=app/${{ env.ANDROID_KEYSTORE_FILE }}" >> android/key.properties
       - name: Set Up Flutter
         if: steps.should_build.outputs.SHOULD_BUILD == 'true'
         uses: subosito/flutter-action@v2
