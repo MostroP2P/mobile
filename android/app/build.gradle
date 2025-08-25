@@ -8,17 +8,37 @@ plugins {
 // Load keystore properties for release signing
 def keystoreProperties = new Properties()
 def keystorePropertiesFile = rootProject.file('key.properties')
-def hasKeystore = false
+def hasKeystoreFromFile = false
+def hasKeystoreFromEnv = false
+def envKeystore = [:]
 
 if (keystorePropertiesFile.exists()) {
-    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
-    // Check if all required properties are available
-    hasKeystore = keystoreProperties['keyAlias'] != null && 
-                  keystoreProperties['keyPassword'] != null && 
-                  keystoreProperties['storePassword'] != null && 
-                  keystoreProperties['storeFile'] != null &&
-                  keystoreProperties['keyAlias'] != '${ANDROID_KEY_ALIAS}' // Not placeholder
+    keystorePropertiesFile.withInputStream { keystoreProperties.load(it) }
+    // Basic validation + reject known placeholders
+    def invalids = ['REPLACE_ME_KEY_ALIAS', 'your_key_alias_here', '${ANDROID_KEY_ALIAS}'] as Set
+    hasKeystoreFromFile =
+        keystoreProperties['keyAlias'] &&
+        !invalids.contains(keystoreProperties['keyAlias']) &&
+        keystoreProperties['keyPassword'] &&
+        keystoreProperties['storePassword'] &&
+        keystoreProperties['storeFile']
 }
+
+// Fallback: read from environment if file is absent/invalid (for CI)
+if (!hasKeystoreFromFile) {
+    def req = ['ANDROID_KEY_ALIAS','ANDROID_KEY_PASSWORD','ANDROID_KEYSTORE_PASSWORD','ANDROID_KEYSTORE_FILE']
+    hasKeystoreFromEnv = req.every { System.getenv(it) }
+    if (hasKeystoreFromEnv) {
+        envKeystore = [
+            keyAlias     : System.getenv('ANDROID_KEY_ALIAS'),
+            keyPassword  : System.getenv('ANDROID_KEY_PASSWORD'),
+            storePassword: System.getenv('ANDROID_KEYSTORE_PASSWORD'),
+            storeFile    : System.getenv('ANDROID_KEYSTORE_FILE'),
+        ]
+    }
+}
+
+def hasKeystore = hasKeystoreFromFile || hasKeystoreFromEnv
 
 // Suppress obsolete options warnings emitted by transitive JavaCompile tasks
 tasks.withType(JavaCompile).configureEach {
