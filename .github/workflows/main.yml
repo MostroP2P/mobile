@@ -74,13 +74,20 @@ jobs:
         run: |
           # Create the keystore file from the secret
           echo "${{ secrets.ANDROID_KEYSTORE_FILE }}" | base64 --decode > android/app/upload-keystore.jks
-          
+
           # Set environment variables for signing
           echo "ANDROID_KEYSTORE_PASSWORD=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" >> $GITHUB_ENV
-          echo "ANDROID_KEY_PASSWORD=${{ secrets.ANDROID_KEY_PASSWORD }}" >> $GITHUB_ENV  
+          echo "ANDROID_KEY_PASSWORD=${{ secrets.ANDROID_KEY_PASSWORD }}" >> $GITHUB_ENV
           echo "ANDROID_KEY_ALIAS=${{ secrets.ANDROID_KEY_ALIAS }}" >> $GITHUB_ENV
           echo "ANDROID_KEYSTORE_FILE=upload-keystore.jks" >> $GITHUB_ENV
 
+          # Write key.properties so Gradle can pick it up without extra config
+          cat > android/key.properties <<EOF
+storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
+keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
+storeFile=app/${{ env.ANDROID_KEYSTORE_FILE }}
+EOF
       - name: Set Up Flutter
         if: steps.should_build.outputs.SHOULD_BUILD == 'true'
         uses: subosito/flutter-action@v2
