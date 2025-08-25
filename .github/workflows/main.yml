@@ -141,14 +141,27 @@ jobs:
           # Check if APK exists and is signed
           if [ -f "build/app/outputs/flutter-apk/app-release.apk" ]; then
             echo "✅ APK built successfully"
-            set -e
+            set -euo pipefail
             echo "Verifying with jarsigner..."
-            jarsigner -verify -verbose -certs build/app/outputs/flutter-apk/app-release.apk | sed -n '1,120p'
+            APK="build/app/outputs/flutter-apk/app-release.apk"
+            # Capture jarsigner result; print excerpt separately so failures propagate
+            jarsigner -verify -verbose -certs "$APK" > /tmp/jarsigner.out
+            sed -n '1,120p' /tmp/jarsigner.out
             # Try apksigner if available to print certs/fingerprint
-            APKSIGNER=$(find "$ANDROID_HOME"/build-tools -name apksigner -type f | sort -V | tail -1 || true)
+            SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+            APKSIGNER=$(find "$SDK_ROOT"/build-tools -name apksigner -type f 2>/dev/null | sort -V | tail -1 || true)
             if [ -n "$APKSIGNER" ]; then
               echo "Verifying with apksigner..."
-              "$APKSIGNER" verify --print-certs build/app/outputs/flutter-apk/app-release.apk
+              "$APKSIGNER" verify --print-certs "$APK"
+              # Optional: enforce signer fingerprint if provided
+              if [ -n "${{ secrets.ANDROID_CERT_SHA256 }}" ]; then
+                FPR=$("$APKSIGNER" verify --print-certs "$APK" 2>/dev/null \
+                  | awk -F': ' '/SHA-256 digest/{print $2}' | tr -d ' ')
+                if [ "$FPR" != "${{ secrets.ANDROID_CERT_SHA256 }}" ]; then
+                  echo "❌ APK cert SHA-256 mismatch"
+                  exit 1
+                fi
+              fi
             fi
           else
             echo "❌ APK build failed"
