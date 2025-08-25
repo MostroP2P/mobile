@@ -134,8 +134,8 @@ Key Alias: [the alias you chose]
 
 **Store this information securely:**
 - Add to your password manager
-- Write in a secure note/document
-- Email to yourself with encryption
+- Store in an encrypted vault (e.g., Bitwarden, 1Password, KeePass, gopass)
+- Maintain an offline encrypted backup (e.g., VeraCrypt/LUKS) in a separate location
 - **Never lose these values** - you cannot recover them!
 
 #### Verify Keystore Creation
