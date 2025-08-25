@@ -118,7 +118,7 @@ keytool -genkey \
     -storetype JKS \
     -storepass MySecurePassword123 \
     -keypass MySecurePassword123 \
-    -dname "CN=My Mobile App, OU=Development, O=My Company, L=San Francisco, ST=California, C=US"
+    -dname "CN=My Mobile App, OU=Development, O=My Company, L=Tucupita, ST=Delta Amacuro, C=VE"
 ```
 
 #### Record Your Credentials
