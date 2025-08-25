@@ -64,10 +64,17 @@ android {
     signingConfigs {
         if (hasKeystore) {
             release {
-                keyAlias keystoreProperties['keyAlias']
-                keyPassword keystoreProperties['keyPassword']
-                storeFile file(keystoreProperties['storeFile'])
-                storePassword keystoreProperties['storePassword']
+                if (hasKeystoreFromFile) {
+                    keyAlias     keystoreProperties['keyAlias']
+                    keyPassword  keystoreProperties['keyPassword']
+                    storeFile    file(keystoreProperties['storeFile'])
+                    storePassword keystoreProperties['storePassword']
+                } else if (hasKeystoreFromEnv) {
+                    keyAlias     envKeystore.keyAlias
+                    keyPassword  envKeystore.keyPassword
+                    storeFile    file(envKeystore.storeFile)
+                    storePassword envKeystore.storePassword
+                }
             }
         }
     }
