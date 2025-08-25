@@ -440,21 +440,21 @@ apksigner verify --verbose build/app/outputs/flutter-apk/app-release.apk
 
 #### Certificate Fingerprint Verification
 
-**Extract keystore certificate SHA-256 fingerprint:**
+##### Extract keystore certificate SHA-256 fingerprint:
 ```bash
 keytool -list -v -keystore android/app/upload-keystore.jks -alias YOUR_ALIAS -storepass YOUR_STORE_PASSWORD | grep "SHA256:"
 ```
 
-**Extract APK certificate fingerprint:**
+##### Extract APK certificate fingerprint:
 ```bash
 # Method 1: Using jarsigner
 jarsigner -verify -verbose -certs build/app/outputs/flutter-apk/app-release.apk | grep "SHA256:"
 
 # Method 2: Using apksigner (if available)
-apksigner verify --print-certs build/app/outputs/flutter-apk/app-release.apk | grep "SHA256:"
+apksigner verify --print-certs build/app/outputs/flutter-apk/app-release.apk 2>&1 | grep 'SHA-256'
 ```
 
-**Compare and verify:**
+##### Compare and verify:
 - Both keystore and APK should show identical SHA-256 fingerprints
 - This ensures the APK is signed with your expected certificate
 - Prevents signing with wrong certificates or debug keys
