@@ -2,6 +2,7 @@ export 'package:mostro_mobile/data/models/amount.dart';
 export 'package:mostro_mobile/data/models/cant_do.dart';
 export 'package:mostro_mobile/data/models/dispute.dart';
 export 'package:mostro_mobile/data/models/mostro_message.dart';
+export 'package:mostro_mobile/data/models/notification.dart';
 export 'package:mostro_mobile/data/models/nostr_event.dart';
 export 'package:mostro_mobile/data/models/order.dart';
 export 'package:mostro_mobile/data/models/payload.dart';
