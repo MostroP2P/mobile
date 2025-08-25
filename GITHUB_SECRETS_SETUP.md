@@ -74,7 +74,7 @@ Before creating the keystore, decide on these values:
 - **OU (Organizational Unit)**: Your department (e.g., `Mobile Development`, `Engineering`)
 - **O (Organization)**: Your company name (e.g., `MyCompany Inc`)
 - **L (Locality)**: Your city (e.g., `Tucupita`)
-- **ST (State)**: Your state/province (e.g., `Detal Amacuro`)
+- **ST (State)**: Your state/province (e.g., `Delta Amacuro`)
 - **C (Country)**: Your country code (e.g., `VE`, `CO`, `BR`)
 
 #### Create the Keystore File
@@ -404,7 +404,8 @@ The build process now uses comprehensive signature verification beyond just chec
 
 #### Manual Signature Verification
 
-**Step 1: Verify signature integrity with jarsigner**
+##### Step 1: Verify signature integrity with jarsigner
+
 ```bash
 # Navigate to your project root
 cd /path/to/your/flutter/project
@@ -416,13 +417,16 @@ jarsigner -verify -verbose -certs build/app/outputs/flutter-apk/app-release.apk
 jarsigner -verify -verbose -certs -strict build/app/outputs/flutter-apk/app-release.apk
 ```
 
+Note: jarsigner validates only V1 (JAR) signatures. Many Android builds use V2/V3/V4. Prefer apksigner for full Android signature verification when available.
+
 **Expected output for valid signature:**
 ```
 jar verified.
 Certificate details displayed...
 ```
 
-**Step 2: Alternative verification with apksigner (if available)**
+##### Step 2: Verification with apksigner (preferred, if available)
+
 ```bash
 # Find apksigner in your Android SDK build-tools
 find $ANDROID_HOME/build-tools -name apksigner -type f | sort -V | tail -1
@@ -560,3 +564,4 @@ If you suspect your keystore or passwords are compromised:
 1. Immediately change GitHub secrets
 2. Generate new keystore for future releases
 3. Review GitHub Actions history for unauthorized builds
+4. If you use Google Play App Signing, rotate the upload key via Play Console and reconfigure CI with the new upload key. Document the new fingerprints.
