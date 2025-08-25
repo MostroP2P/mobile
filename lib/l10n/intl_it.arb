@@ -681,6 +681,7 @@
   "disputesDescription": "Queste sono le tue dispute aperte e le chat con l'amministratore che aiuta a risolverle.",
   "disputeDetails": "Dettagli della disputa",
   "disputeForOrder": "Disputa per l'ordine",
+  "disputeStatusInitiated": "Avviata",
   "disputeStatusInProgress": "In corso",
   "disputeStatusResolved": "Risolta",
   "disputeStatusClosed": "Chiusa",

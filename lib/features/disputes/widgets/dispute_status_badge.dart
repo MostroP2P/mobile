@@ -32,6 +32,8 @@ class DisputeStatusBadge extends StatelessWidget {
 
   Color _getStatusBackgroundColor(String status) {
     switch (status.toLowerCase()) {
+      case 'initiated':
+        return AppTheme.statusPendingBackground.withValues(alpha: 0.3);
       case 'in-progress':
         return AppTheme.statusSuccessBackground.withValues(alpha: 0.3);
       case 'resolved':
@@ -45,6 +47,8 @@ class DisputeStatusBadge extends StatelessWidget {
 
   Color _getStatusTextColor(String status) {
     switch (status.toLowerCase()) {
+      case 'initiated':
+        return AppTheme.statusPendingText;
       case 'in-progress':
         return AppTheme.statusSuccessText;
       case 'resolved':
@@ -58,6 +62,8 @@ class DisputeStatusBadge extends StatelessWidget {
 
   String _getStatusText(BuildContext context, String status) {
     switch (status.toLowerCase()) {
+      case 'initiated':
+        return S.of(context)!.disputeStatusInitiated;
       case 'in-progress':
         return S.of(context)!.disputeStatusInProgress;
       case 'resolved':
@@ -65,7 +71,7 @@ class DisputeStatusBadge extends StatelessWidget {
       case 'closed':
         return S.of(context)!.disputeStatusClosed;
       default:
-        return S.of(context)!.disputeStatusInProgress;
+        return S.of(context)!.disputeStatusInitiated;
     }
   }
 }

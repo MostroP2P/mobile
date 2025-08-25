@@ -5,14 +5,10 @@ import 'package:mostro_mobile/features/disputes/notifiers/dispute_chat_notifier.
 
 class DisputeInputSection extends ConsumerStatefulWidget {
   final String disputeId;
-  final String? selectedInfoType;
-  final ValueChanged<String?> onInfoTypeChanged;
 
   const DisputeInputSection({
     super.key,
     required this.disputeId,
-    required this.selectedInfoType,
-    required this.onInfoTypeChanged,
   });
 
   @override

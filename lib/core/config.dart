@@ -11,13 +11,11 @@ class Config {
 
   // Mostro hexkey
   static const String mostroPubKey =
-      '82fa8cb978b43c79b2156585bac2c011176a21d2aead6d9f7c575c005be88390';
+      'b0690b32cd580cd417cd63865c5ba6e40467c187999a35c6f62e2bccbbc22bcd';
   //'9d9d0455a96871f2dc4289b8312429db2e925f167b37c77bf7b28014be235980';
 
   static const String dBName = 'mostro.db';
   static const String dBPassword = 'mostro';
-
-
 
   // Timeout for relay connections
 
@@ -35,8 +33,6 @@ class Config {
   static const int expirationHours = 24;
   static const int cleanupIntervalMinutes = 30;
   static const int sessionExpirationHours = 36;
-  
-
 
   // Notification configuration
 

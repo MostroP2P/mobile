@@ -63,19 +63,59 @@ class MostroService {
 
     try {
       final decryptedEvent = await event.unWrap(privateKey);
-      if (decryptedEvent.content == null) return;
+      if (decryptedEvent.content == null) {
+        _logger.w('Received empty content in decrypted event');
+        return;
+      }
 
-      final result = jsonDecode(decryptedEvent.content!);
-      if (result is! List) return;
+      _logger.d('Processing decrypted event. ID: ${decryptedEvent.id}, Kind: ${decryptedEvent.kind}');
+      _logger.d('Event content: ${decryptedEvent.content}');
+      
+      try {
+        final result = jsonDecode(decryptedEvent.content!);
+        if (result is! List || result.isEmpty) {
+          _logger.w('Invalid message format: Expected non-empty list, got $result');
+          return;
+        }
 
-      final msg = MostroMessage.fromJson(result[0]);
-      final messageStorage = ref.read(mostroStorageProvider);
-      await messageStorage.addMessage(decryptedEvent.id!, msg);
-      _logger.i(
-        'Received DM, Event ID: ${decryptedEvent.id} with payload: ${decryptedEvent.content}',
+        // Safely parse the message
+        final messageJson = result[0];
+        if (messageJson is! Map<String, dynamic>) {
+          _logger.w('Invalid message format: Expected Map, got ${messageJson.runtimeType}');
+          return;
+        }
+
+        // Check for peer data and validate public key if present
+        if (messageJson.containsKey('peer')) {
+          final peerData = messageJson['peer'];
+          if (peerData is Map<String, dynamic> && 
+              (!peerData.containsKey('pubkey') || peerData['pubkey']?.toString().isEmpty == true)) {
+            _logger.w('Invalid peer data: Missing or empty public key in $peerData');
+            // Optionally handle this case, e.g., by skipping or using a default
+            return;
+          }
+        }
+
+        final msg = MostroMessage.fromJson(messageJson);
+        final messageStorage = ref.read(mostroStorageProvider);
+        await messageStorage.addMessage(decryptedEvent.id!, msg);
+        
+        _logger.i(
+          'Successfully processed DM. Event ID: ${decryptedEvent.id}, Action: ${msg.action}',
+        );
+      } catch (e, stackTrace) {
+        _logger.e(
+          'Error parsing message content: ${decryptedEvent.content}',
+          error: e,
+          stackTrace: stackTrace,
+        );
+      }
+    } catch (e, stackTrace) {
+      _logger.e(
+        'Error decrypting or processing event',
+        error: e,
+        stackTrace: stackTrace,
       );
-    } catch (e) {
-      _logger.e('Error processing event', error: e);
     }
   }
 

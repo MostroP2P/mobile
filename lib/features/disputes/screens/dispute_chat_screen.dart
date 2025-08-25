@@ -23,7 +23,6 @@ class DisputeChatScreen extends ConsumerStatefulWidget {
 }
 
 class _DisputeChatScreenState extends ConsumerState<DisputeChatScreen> {
-  String? _selectedInfoType;
 
   @override
   Widget build(BuildContext context) {
@@ -73,68 +72,41 @@ class _DisputeChatScreenState extends ConsumerState<DisputeChatScreen> {
                     children: [
                       Builder(
                         builder: (context) {
-                          // Debug logging for dispute data flow
-                          print('🐛 DisputeChatScreen - Building DisputeInfoCard');
-                          print('🐛 DisputeChatScreen - dispute.orderId: ${dispute.orderId}');
-                          print('🐛 DisputeChatScreen - dispute.disputeId: ${dispute.disputeId}');
-                          print('🐛 DisputeChatScreen - dispute.action: ${dispute.action}');
-                          print('🐛 DisputeChatScreen - dispute.status: ${dispute.status}');
-                          print('🐛 DisputeChatScreen - dispute.createdAt: ${dispute.createdAt}');
-                          
                           // If orderId is missing or unknown, fetch enhanced dispute details
                           final needsEnhancedLookup = dispute.orderId == null || dispute.orderId == 'Unknown Order ID';
                           
                           if (needsEnhancedLookup) {
-                            print('🐛 DisputeChatScreen - orderId is null/unknown, fetching enhanced dispute details!');
-                            
                             final enhancedDisputeAsync = ref.watch(disputeDetailsProvider(dispute.disputeId));
                             
                             return enhancedDisputeAsync.when(
-                              loading: () {
-                                print('🐛 DisputeChatScreen - Loading enhanced dispute details...');
-                                return const Center(child: CircularProgressIndicator());
-                              },
+                              loading: () => const Center(child: CircularProgressIndicator()),
                               error: (error, stack) {
-                                print('🐛 DisputeChatScreen - Error fetching enhanced dispute details: $error');
                                 // Fallback to original dispute data
                                 final disputeData = DisputeData.fromDispute(dispute);
                                 return DisputeInfoCard(dispute: disputeData);
                               },
                               data: (enhancedDispute) {
-                                print('🐛 DisputeChatScreen - Enhanced dispute loaded: ${enhancedDispute?.orderId}');
                                 
                                 final finalDispute = enhancedDispute ?? dispute;
                                 final orderState = finalDispute.orderId != null && finalDispute.orderId != 'Unknown Order ID'
                                   ? ref.watch(orderNotifierProvider(finalDispute.orderId!))
                                   : null;
                                 
-                                print('🐛 DisputeChatScreen - Using enhanced dispute orderId: ${finalDispute.orderId}');
-                                print('🐛 DisputeChatScreen - orderState: $orderState');
-                                print('🐛 DisputeChatScreen - orderState?.order?.id: ${orderState?.order?.id}');
                                 
                                 final disputeData = DisputeData.fromDispute(finalDispute, orderState: orderState);
                                 
-                                print('🐛 DisputeChatScreen - Final disputeData.orderId: ${disputeData.orderId}');
-                                print('🐛 DisputeChatScreen - Final disputeData.status: ${disputeData.status}');
                                 
                                 return DisputeInfoCard(dispute: disputeData);
                               },
                             );
                           } else {
                             // Use original dispute data if orderId is available
-                            print('🐛 DisputeChatScreen - Using original dispute orderId: ${dispute.orderId}');
                             
                             final orderState = ref.watch(orderNotifierProvider(dispute.orderId!));
                             
-                            print('🐛 DisputeChatScreen - orderState: $orderState');
-                            print('🐛 DisputeChatScreen - orderState.order.id: ${orderState.order?.id}');
-                            print('🐛 DisputeChatScreen - orderState.order.kind: ${orderState.order?.kind}');
                             
                             final disputeData = DisputeData.fromDispute(dispute, orderState: orderState);
                             
-                            print('🐛 DisputeChatScreen - Final disputeData.orderId: ${disputeData.orderId}');
-                            print('🐛 DisputeChatScreen - Final disputeData.disputeId: ${disputeData.disputeId}');
-                            print('🐛 DisputeChatScreen - Final disputeData.status: ${disputeData.status}');
                             
                             return DisputeInfoCard(dispute: disputeData);
                           }
@@ -149,15 +121,6 @@ class _DisputeChatScreenState extends ConsumerState<DisputeChatScreen> {
               // Chat input positioned right above bottom nav bar
               DisputeInputSection(
                 disputeId: widget.disputeId,
-                selectedInfoType: _selectedInfoType,
-                onInfoTypeChanged: (type) {
-                  if (type != null) {
-                    FocusScope.of(context).unfocus();
-                  }
-                  setState(() {
-                    _selectedInfoType = type;
-                  });
-                },
               ),
             ],
           );

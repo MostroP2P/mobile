@@ -621,6 +621,7 @@
   "disputesDescription": "These are your open disputes and the chats with the admin helping resolve them.",
   "disputeDetails": "Dispute Details",
   "disputeForOrder": "Dispute for order",
+  "disputeStatusInitiated": "Initiated",
   "disputeStatusInProgress": "In-progress",
   "disputeStatusResolved": "Resolved",
   "disputeStatusClosed": "Closed",

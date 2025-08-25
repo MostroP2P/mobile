@@ -1,10 +1,13 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:logging/logging.dart';
+import 'package:logger/logger.dart';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:mostro_mobile/data/models/dispute_chat.dart';
+import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/features/disputes/providers/dispute_providers.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
+import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
+import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
 /// Provider for dispute chat notifier
 final disputeChatProvider = StateNotifierProvider.family<DisputeChatNotifier, AsyncValue<DisputeChat?>, String>((ref, disputeId) {
@@ -15,7 +18,7 @@ final disputeChatProvider = StateNotifierProvider.family<DisputeChatNotifier, As
 class DisputeChatNotifier extends StateNotifier<AsyncValue<DisputeChat?>> {
   final String disputeId;
   final Ref _ref;
-  final Logger _logger = Logger('DisputeChatNotifier');
+  final Logger _logger = Logger();
   
   StreamSubscription<NostrEvent>? _chatSubscription;
   StreamSubscription<NostrEvent>? _disputeSubscription;
@@ -27,7 +30,7 @@ class DisputeChatNotifier extends StateNotifier<AsyncValue<DisputeChat?>> {
   /// Initialize the dispute chat
   Future<void> _initialize() async {
     try {
-      _logger.info('Initializing dispute chat for dispute: $disputeId');
+      _logger.i('Initializing dispute chat for dispute: $disputeId');
       
       // Get dispute details first
       final disputeDetails = await _ref.read(disputeDetailsProvider(disputeId).future);
@@ -39,13 +42,18 @@ class DisputeChatNotifier extends StateNotifier<AsyncValue<DisputeChat?>> {
 
       // Check if admin is assigned
       if (disputeDetails.hasAdmin) {
-        _logger.info('Admin assigned to dispute: ${disputeDetails.adminPubkey}');
+        _logger.i('Admin assigned to dispute: ${disputeDetails.adminPubkey}');
+        
+        // Get user pubkey from session (find session for this dispute's order)
+        final sessions = _ref.read(sessionNotifierProvider);
+        final userSession = sessions.where((s) => s.orderId == disputeDetails.orderId).firstOrNull;
+        final userPubkey = userSession?.tradeKey.public ?? '';
         
         // Create dispute chat with admin info
         final disputeChat = DisputeChat(
           disputeId: disputeId,
           adminPubkey: disputeDetails.adminPubkey!,
-          userPubkey: '', // TODO: Get user pubkey from session/settings
+          userPubkey: userPubkey,
           disputeToken: disputeDetails.disputeToken,
           messages: [],
         );
@@ -55,14 +63,14 @@ class DisputeChatNotifier extends StateNotifier<AsyncValue<DisputeChat?>> {
         // Subscribe to chat messages
         await _subscribeToChatMessages();
       } else {
-        _logger.info('No admin assigned yet, waiting...');
+        _logger.i('No admin assigned yet, waiting...');
         state = const AsyncValue.data(null);
         
         // Subscribe to dispute events to detect admin assignment
         await _subscribeToDisputeEvents();
       }
     } catch (error, stackTrace) {
-      _logger.severe('Error initializing dispute chat: $error', error, stackTrace);
+      _logger.e('Error initializing dispute chat: $error');
       state = AsyncValue.error(error, stackTrace);
     }
   }
@@ -87,17 +95,17 @@ class DisputeChatNotifier extends StateNotifier<AsyncValue<DisputeChat?>> {
         subscriptionId: 'dispute-chat-$disputeId-${DateTime.now().millisecondsSinceEpoch}',
       );
 
-      _logger.info('Subscribing to dispute chat messages with ID: ${request.subscriptionId}');
+      _logger.i('Subscribing to dispute chat messages with ID: ${request.subscriptionId}');
       
       final stream = nostrService.subscribeToEvents(request);
       _chatSubscription = stream.listen(
         _handleChatMessage,
         onError: (error) {
-          _logger.severe('Error in chat message subscription: $error');
+          _logger.e('Error in chat message subscription: $error');
         },
       );
     } catch (error) {
-      _logger.severe('Error subscribing to chat messages: $error');
+      _logger.e('Error subscribing to chat messages: $error');
     }
   }
 
@@ -120,24 +128,24 @@ class DisputeChatNotifier extends StateNotifier<AsyncValue<DisputeChat?>> {
         subscriptionId: 'dispute-events-$disputeId-${DateTime.now().millisecondsSinceEpoch}',
       );
 
-      _logger.info('Subscribing to dispute events with ID: ${request.subscriptionId}');
+      _logger.i('Subscribing to dispute events with ID: ${request.subscriptionId}');
       
       final stream = nostrService.subscribeToEvents(request);
       _disputeSubscription = stream.listen(
         _handleDisputeEvent,
         onError: (error) {
-          _logger.severe('Error in dispute event subscription: $error');
+          _logger.e('Error in dispute event subscription: $error');
         },
       );
     } catch (error) {
-      _logger.severe('Error subscribing to dispute events: $error');
+      _logger.e('Error subscribing to dispute events: $error');
     }
   }
 
   /// Handle incoming chat messages
   void _handleChatMessage(NostrEvent event) {
     try {
-      _logger.info('Received chat message for dispute: $disputeId');
+      _logger.i('Received chat message for dispute: $disputeId');
       
       final currentState = state.value;
       if (currentState == null) return;
@@ -149,16 +157,16 @@ class DisputeChatNotifier extends StateNotifier<AsyncValue<DisputeChat?>> {
       final updatedChat = currentState.copyWith(messages: updatedMessages);
       state = AsyncValue.data(updatedChat);
       
-      _logger.info('Added message to dispute chat, total messages: ${updatedMessages.length}');
+      _logger.i('Added message to dispute chat, total messages: ${updatedMessages.length}');
     } catch (error) {
-      _logger.severe('Error handling chat message: $error');
+      _logger.e('Error handling chat message: $error');
     }
   }
 
   /// Handle dispute events (e.g., admin assignment)
   void _handleDisputeEvent(NostrEvent event) {
     try {
-      _logger.info('Received dispute event for dispute: $disputeId');
+      _logger.i('Received dispute event for dispute: $disputeId');
       
       // TODO: Parse dispute event and check for admin assignment
       // If admin is assigned, initialize chat
@@ -167,11 +175,11 @@ class DisputeChatNotifier extends StateNotifier<AsyncValue<DisputeChat?>> {
       _ref.invalidate(disputeDetailsProvider(disputeId));
       _initialize();
     } catch (error) {
-      _logger.severe('Error handling dispute event: $error');
+      _logger.e('Error handling dispute event: $error');
     }
   }
 
-  /// Send a message to the admin
+  /// Send a message to the admin using NIP-17 encryption
   Future<void> sendMessage(String content) async {
     try {
       final currentState = state.value;
@@ -179,36 +187,77 @@ class DisputeChatNotifier extends StateNotifier<AsyncValue<DisputeChat?>> {
         throw Exception('No admin assigned to dispute');
       }
 
-      _logger.info('Sending message to admin for dispute: $disputeId');
+      if (currentState.userPubkey.isEmpty) {
+        throw Exception('User pubkey not available');
+      }
+
+      _logger.i('Sending message to admin for dispute: $disputeId');
       
-      // TODO: Implement actual gift wrap message sending
-      // For now, we'll add it to local messages as a placeholder
-      final userMessage = NostrEvent(
-        id: '', // Will be generated
-        pubkey: currentState.userPubkey,
-        createdAt: DateTime.now(),
-        kind: 1,
-        tags: [
-          ['d', disputeId], // Dispute ID tag
-        ],
+      // Get user's trade key from session
+      final sessions = _ref.read(sessionNotifierProvider);
+      final disputeDetails = await _ref.read(disputeDetailsProvider(disputeId).future);
+      
+      if (disputeDetails == null) {
+        throw Exception('Dispute details not available');
+      }
+      
+      final userSession = sessions.where((s) => s.orderId == disputeDetails.orderId).firstOrNull;
+      if (userSession == null) {
+        throw Exception('User session not found for dispute');
+      }
+
+      // Create the inner message event (kind 14 for NIP-17 chat)
+      final innerMessage = NostrEvent.fromPartialData(
+        keyPairs: userSession.tradeKey,
         content: content,
-        sig: '', // Will be generated when signing
+        kind: 14, // NIP-17 chat message kind
+        tags: [
+          ['p', currentState.adminPubkey], // Recipient (admin)
+        ],
       );
 
-      final updatedMessages = [...currentState.messages, userMessage];
-      final updatedChat = currentState.copyWith(messages: updatedMessages);
+      // Add to local state immediately for optimistic UI update
+      final updatedMessages = [...currentState.messages, innerMessage];
+      final updatedChat = currentState.copyWith(
+        messages: updatedMessages,
+        lastMessageAt: DateTime.now(),
+      );
       state = AsyncValue.data(updatedChat);
-      
-      _logger.info('Message sent and added to local chat');
+
+      // Compute shared key between user's trade key and admin's public key
+      final sharedKey = NostrUtils.computeSharedKey(
+        userSession.tradeKey.private,
+        currentState.adminPubkey,
+      );
+
+      try {
+        // Wrap the message using NIP-17 encryption
+        final wrappedEvent = await innerMessage.mostroWrap(sharedKey);
+        
+        // Send to network
+        final nostrService = _ref.read(nostrServiceProvider);
+        await nostrService.publishEvent(wrappedEvent);
+        
+        _logger.i('Message successfully sent to admin via NIP-17');
+      } catch (networkError) {
+        _logger.e('Failed to send message to network: $networkError');
+        
+        // Remove from local state if network send failed
+        final revertedMessages = currentState.messages;
+        final revertedChat = currentState.copyWith(messages: revertedMessages);
+        state = AsyncValue.data(revertedChat);
+        
+        rethrow;
+      }
     } catch (error) {
-      _logger.severe('Error sending message: $error');
+      _logger.e('Error sending message: $error');
       rethrow;
     }
   }
 
   @override
   void dispose() {
-    _logger.info('Disposing dispute chat notifier for dispute: $disputeId');
+    _logger.i('Disposing dispute chat notifier for dispute: $disputeId');
     _chatSubscription?.cancel();
     _disputeSubscription?.cancel();
     super.dispose();
