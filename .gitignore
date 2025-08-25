@@ -36,7 +36,8 @@ ios/.dart_tool/
 android/.gradle/
 #android/app/proguard-rules.pro
 android/local.properties
-android/*.keystore
+android/key.properties
+android/app/upload-keystore.jks
 
 # Android Studio
 *.jks
