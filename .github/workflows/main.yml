@@ -193,4 +193,4 @@ jobs:
         if: always() && steps.should_build.outputs.SHOULD_BUILD == 'true'
         run: |
           # Remove keystore file for security
-          rm -f android/app/upload-keystore.jks
+          rm -f android/app/upload-keystore.jks android/key.properties
