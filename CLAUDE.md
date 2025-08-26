@@ -431,6 +431,12 @@ For complete technical documentation, see `RELAY_SYNC_IMPLEMENTATION.md`.
 - `lib/core/app_routes.dart` - Navigation configuration
 - `lib/core/app_theme.dart` - UI theme and styling
 
+### Android Configuration Files
+- `android/local.properties` - Flutter/Android build configuration (includes `flutter.minSdkVersion=23` to prevent build.gradle auto-modifications)
+- `android/app/build.gradle` - Android app-specific build configuration
+- `android/gradle.properties` - Gradle build properties and JVM settings
+- `android/key.properties` - Keystore configuration for APK signing (generated during CI/CD)
+
 ### Key Directories
 - `lib/features/` - Feature-based organization
 - `lib/shared/` - Shared utilities and components

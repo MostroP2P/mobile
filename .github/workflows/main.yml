@@ -93,6 +93,12 @@ jobs:
           flutter-version: '3.32.2'
           channel: 'stable'
 
+      - name: Configure Flutter minSdkVersion
+        if: steps.should_build.outputs.SHOULD_BUILD == 'true'
+        run: |
+          # Ensure flutter.minSdkVersion is set to prevent build.gradle auto-modifications
+          echo "flutter.minSdkVersion=23" >> android/local.properties
+
       - name: Cache Dart & Pub artifacts
         if: steps.should_build.outputs.SHOULD_BUILD == 'true'
         uses: actions/cache@v3
