@@ -96,8 +96,16 @@ jobs:
       - name: Configure Flutter minSdkVersion
         if: steps.should_build.outputs.SHOULD_BUILD == 'true'
         run: |
-          # Ensure flutter.minSdkVersion is set to prevent build.gradle auto-modifications
-          echo "flutter.minSdkVersion=23" >> android/local.properties
+          set -euo pipefail
+          mkdir -p android
+          touch android/local.properties
+          if grep -qE '^flutter\.minSdkVersion=' android/local.properties; then
+            sed -i 's/^flutter\.minSdkVersion=.*/flutter.minSdkVersion=23/' android/local.properties
+          else
+            echo "flutter.minSdkVersion=23" >> android/local.properties
+          fi
+          echo "Resulting android/local.properties:"
+          sed -n '1,120p' android/local.properties
 
       - name: Cache Dart & Pub artifacts
         if: steps.should_build.outputs.SHOULD_BUILD == 'true'
