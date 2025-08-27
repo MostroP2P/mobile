@@ -5,34 +5,42 @@ import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 
 /// Provider for the dispute repository
-final disputeRepositoryProvider = Provider<DisputeRepository>((ref) {
-  final nostrService = ref.read(nostrServiceProvider);
-  final settings = ref.read(settingsProvider);
+final disputeRepositoryProvider = Provider.autoDispose<DisputeRepository>((ref) {
+  final nostrService = ref.watch(nostrServiceProvider);
+  final settings = ref.watch(settingsProvider);
   final mostroPubkey = settings.mostroPublicKey;
   
-  return DisputeRepository(nostrService, mostroPubkey, ref);
+  final repository = DisputeRepository(nostrService, mostroPubkey, ref);
+  
+  // Register cleanup when provider is disposed
+  ref.onDispose(() {
+    // No explicit cleanup method in DisputeRepository, but we can add null safety
+    // for future implementations
+  });
+  
+  return repository;
 });
 
 /// Provider that fetches all user disputes
-final userDisputesProvider = FutureProvider<List<Dispute>>((ref) async {
-  final repository = ref.read(disputeRepositoryProvider);
+final userDisputesProvider = FutureProvider.autoDispose<List<Dispute>>((ref) async {
+  final repository = ref.watch(disputeRepositoryProvider);
   return repository.fetchUserDisputes();
 });
 
 /// Provider that fetches details for a specific dispute
-final disputeDetailsProvider = FutureProvider.family<Dispute?, String>((ref, disputeId) async {
-  final repository = ref.read(disputeRepositoryProvider);
+final disputeDetailsProvider = FutureProvider.autoDispose.family<Dispute?, String>((ref, disputeId) async {
+  final repository = ref.watch(disputeRepositoryProvider);
   return repository.getDisputeDetails(disputeId);
 });
 
 /// Provider for dispute events stream (simplified for now)
-final disputeEventsStreamProvider = StreamProvider<Dispute>((ref) {
-  final repository = ref.read(disputeRepositoryProvider);
+final disputeEventsStreamProvider = StreamProvider.autoDispose<Dispute>((ref) {
+  final repository = ref.watch(disputeRepositoryProvider);
   return repository.subscribeToDisputeEvents();
 });
 
 /// Provider for creating a new dispute
-final createDisputeProvider = FutureProvider.family<bool, String>((ref, orderId) async {
-  final repository = ref.read(disputeRepositoryProvider);
+final createDisputeProvider = FutureProvider.autoDispose.family<bool, String>((ref, orderId) async {
+  final repository = ref.watch(disputeRepositoryProvider);
   return repository.createDispute(orderId);
 });

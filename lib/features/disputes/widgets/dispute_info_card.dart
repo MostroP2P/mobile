@@ -18,8 +18,8 @@ class DisputeInfoCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Resolve counterparty pubkey to readable nym
-    final counterpartyNym = dispute.counterparty != S.of(context)!.unknown 
-        ? ref.watch(nickNameProvider(dispute.counterparty))
+    final counterpartyNym = dispute.counterpartyDisplay != S.of(context)!.unknown 
+        ? ref.watch(nickNameProvider(dispute.counterpartyDisplay))
         : S.of(context)!.unknown;
     
     return Container(
@@ -53,7 +53,7 @@ class DisputeInfoCard extends ConsumerWidget {
           const SizedBox(height: 16),
           
           // Order ID
-          _buildInfoRow(context, S.of(context)!.orderIdLabel, dispute.orderId),
+          _buildInfoRow(context, S.of(context)!.orderIdLabel, dispute.orderIdDisplay),
           const SizedBox(height: 8),
           
           // Dispute ID

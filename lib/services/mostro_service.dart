@@ -68,8 +68,7 @@ class MostroService {
         return;
       }
 
-      _logger.d('Processing decrypted event. ID: ${decryptedEvent.id}, Kind: ${decryptedEvent.kind}');
-      _logger.d('Event content: ${decryptedEvent.content}');
+      _logger.d('Processing decrypted event. ID: ${decryptedEvent.id}, Kind: ${decryptedEvent.kind}, Content size: ${decryptedEvent.content?.length ?? 0} bytes');
       
       try {
         final result = jsonDecode(decryptedEvent.content!);

@@ -657,6 +657,9 @@
   "disputeStatusClosed": "Closed",
   "disputeResolvedTitle": "Dispute Resolved",
   "disputeResolvedMessage": "This dispute has been resolved. The solver made a decision based on the evidence presented. Check your wallet for any refunds or payments.",
+  "disputeInProgress": "This dispute is currently in progress. A solver is reviewing your case.",
+  "disputeSellerRefunded": "This dispute has been resolved with the seller being refunded.",
+  "disputeUnknownStatus": "The status of this dispute is unknown.",
   "disputeOpenedByYou": "You opened this dispute against the buyer {counterparty}, please read carefully below:",
   "@disputeOpenedByYou": {
     "placeholders": {

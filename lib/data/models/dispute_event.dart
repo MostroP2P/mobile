@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:dart_nostr/dart_nostr.dart';
 
 /// Represents a dispute event (kind 38383) with status information.
-/// 
+///
 /// Dispute events are used to track the status of disputes in the Mostro system.
 /// They contain tags that indicate the dispute ID, status, and other metadata.
 class DisputeEvent {
@@ -23,7 +23,7 @@ class DisputeEvent {
   });
 
   /// Creates a DisputeEvent from a NostrEvent.
-  /// 
+  ///
   /// The NostrEvent must be kind 38383 and have the appropriate tags.
   factory DisputeEvent.fromEvent(NostrEvent event) {
     if (event.kind != 38383) {
@@ -31,34 +31,40 @@ class DisputeEvent {
     }
 
     // Extract the dispute ID from the 'd' tag
-    final dTag = event.tags!.firstWhere(
+    final dTag = (event.tags ?? const <List<dynamic>>[]).firstWhere(
       (tag) => tag.isNotEmpty && tag[0] == 'd',
-      orElse: () => throw ArgumentError('Event must have a "d" tag with dispute ID'),
+      orElse: () =>
+          throw ArgumentError('Event must have a "d" tag with dispute ID'),
     );
-    
+
     if (dTag.length < 2 || dTag[1].isEmpty) {
       throw ArgumentError('Invalid dispute ID in "d" tag');
     }
-    
+
     // Extract the status from the 's' tag (optional; default to 'unknown' if missing)
     final sTag = event.tags?.firstWhere(
       (tag) => tag.isNotEmpty && tag[0] == 's',
       orElse: () => [],
     );
-    final statusValue = (sTag != null && sTag.length > 1 && sTag[1].toString().isNotEmpty)
-        ? sTag[1]
-        : 'unknown';
+    final statusValue =
+        (sTag != null && sTag.length > 1 && sTag[1].toString().isNotEmpty)
+            ? sTag[1]
+            : 'unknown';
 
     // Optionally verify 'z' tag indicates dispute; do not throw if absent
     event.tags?.firstWhere(
-      (tag) => tag.isNotEmpty && tag[0] == 'z' && tag.length > 1 && tag[1] == 'dispute',
+      (tag) =>
+          tag.isNotEmpty &&
+          tag[0] == 'z' &&
+          tag.length > 1 &&
+          tag[1] == 'dispute',
       orElse: () => [],
     );
 
     // Handle createdAt which could be int, DateTime or null
     final dynamic createdAtRaw = event.createdAt;
     final int timestamp;
-    
+
     if (createdAtRaw == null) {
       timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     } else if (createdAtRaw is int) {
@@ -68,10 +74,10 @@ class DisputeEvent {
     } else {
       timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     }
-    
+
     // Extract order ID from event content
     String? orderId = _extractOrderIdFromContent(event.content);
-    
+
     return DisputeEvent(
       id: event.id!,
       disputeId: dTag[1],
@@ -88,7 +94,7 @@ class DisputeEvent {
     if (content == null || content.isEmpty) {
       return null;
     }
-    
+
     try {
       final Map<String, dynamic> parsed = jsonDecode(content);
       final order = parsed['order'] as Map<String, dynamic>?;
@@ -122,5 +128,6 @@ class DisputeEvent {
   }
 
   @override
-  int get hashCode => Object.hash(id, disputeId, status, createdAt, pubkey, orderId);
+  int get hashCode =>
+      Object.hash(id, disputeId, status, createdAt, pubkey, orderId);
 }

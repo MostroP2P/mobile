@@ -17,7 +17,7 @@ class DisputeContent extends StatelessWidget {
       children: [
         DisputeHeader(dispute: dispute),
         const SizedBox(height: 4),
-        DisputeOrderId(orderId: dispute.orderId),
+        DisputeOrderId(orderId: dispute.orderIdDisplay),
         const SizedBox(height: 2),
         DisputeDescription(description: dispute.description),
       ],

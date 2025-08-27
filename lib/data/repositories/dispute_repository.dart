@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:collection/collection.dart';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
@@ -154,9 +155,8 @@ class DisputeRepository {
 
       // Get user's session for the order to get the trade key
       final sessions = _ref.read(sessionNotifierProvider);
-      final session = sessions.cast<dynamic>().firstWhere(
+      final session = sessions.firstWhereOrNull(
             (s) => s.orderId == orderId,
-            orElse: () => null,
           );
 
       if (session == null) {
@@ -184,17 +184,27 @@ class DisputeRepository {
         null // Signature placeholder
       ];
 
-      // Create and sign the Nostr event using NostrUtils
+      // Convert the dispute message to JSON string
+      final messageJson = jsonEncode(disputeMessage);
+      
+      // Encrypt the message using NIP-44 encryption
+      final encryptedContent = await NostrUtils.encryptNIP44(
+        messageJson,
+        privateKey,
+        _mostroPubkey
+      );
+
+      // Create and sign the Nostr event using NostrUtils with encrypted content
       final signedEvent = NostrUtils.createEvent(
         kind: 4, // Direct message kind
-        content: jsonEncode(disputeMessage),
+        content: encryptedContent,
         privateKey: privateKey,
         tags: [
           ['p', _mostroPubkey], // Send to Mostro
         ],
       );
 
-      // Send the event to Mostro
+      // Send the encrypted event to Mostro
       await _nostrService.publishEvent(signedEvent);
 
       _logger.d('Successfully sent dispute creation for order: $orderId');

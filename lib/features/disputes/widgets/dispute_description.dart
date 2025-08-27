@@ -14,8 +14,8 @@ class DisputeDescription extends StatelessWidget {
       style: TextStyle(
         color: AppTheme.textSecondary,
         fontSize: 13,
-        overflow: TextOverflow.ellipsis,
       ),
+      overflow: TextOverflow.ellipsis,
       maxLines: 1,
     );
   }

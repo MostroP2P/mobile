@@ -13,7 +13,14 @@ import '../shared/providers/nostr_service_provider.dart';
 
 /// Provider for the DisputeService
 final disputeServiceProvider = Provider<DisputeService>((ref) {
-  return DisputeService(ref);
+  final service = DisputeService(ref);
+  
+  // Ensure the service is disposed when the provider is disposed
+  ref.onDispose(() {
+    service.dispose();
+  });
+  
+  return service;
 });
 
 /// Service responsible for handling dispute events and updating the app state

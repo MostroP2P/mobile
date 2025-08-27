@@ -69,9 +69,7 @@ class DisputeStatusContent extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            dispute.isCreator 
-              ? S.of(context)!.disputeOpenedByYou(dispute.counterparty)
-              : S.of(context)!.disputeOpenedAgainstYou(dispute.counterparty),
+            _getDisputeStatusText(context),
             style: const TextStyle(
               color: Colors.white,
               fontSize: 14,
@@ -82,7 +80,7 @@ class DisputeStatusContent extends StatelessWidget {
           _buildBulletPoint(S.of(context)!.disputeInstruction1),
           _buildBulletPoint(S.of(context)!.disputeInstruction2),
           _buildBulletPoint(S.of(context)!.disputeInstruction3),
-          _buildBulletPoint(S.of(context)!.disputeInstruction4(dispute.counterparty)),
+          _buildBulletPoint(S.of(context)!.disputeInstruction4(dispute.counterpartyDisplay)),
         ],
       );
     }
@@ -117,5 +115,26 @@ class DisputeStatusContent extends StatelessWidget {
         ],
       ),
     );
+  }
+  
+  /// Get the appropriate localized text based on the dispute description key
+  String _getDisputeStatusText(BuildContext context) {
+    switch (dispute.descriptionKey) {
+      case DisputeDescriptionKey.initiatedByUser:
+        return S.of(context)!.disputeOpenedByYou(dispute.counterpartyDisplay);
+      case DisputeDescriptionKey.initiatedByPeer:
+        return S.of(context)!.disputeOpenedAgainstYou(dispute.counterpartyDisplay);
+      case DisputeDescriptionKey.inProgress:
+        // Use status text with a descriptive message
+        return "${S.of(context)!.disputeStatusInProgress}: ${dispute.description}";
+      case DisputeDescriptionKey.resolved:
+        return S.of(context)!.disputeResolvedMessage;
+      case DisputeDescriptionKey.sellerRefunded:
+        // Use resolved message with additional context
+        return "${S.of(context)!.disputeResolvedMessage} ${S.of(context)!.seller} refunded.";
+      case DisputeDescriptionKey.unknown:
+        // Use a generic message with the status
+        return "${S.of(context)!.unknown} ${S.of(context)!.disputeStatusResolved}";
+    }
   }
 }

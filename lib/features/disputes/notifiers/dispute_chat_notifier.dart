@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:dart_nostr/dart_nostr.dart';
@@ -10,7 +11,7 @@ import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
 /// Provider for dispute chat notifier
-final disputeChatProvider = StateNotifierProvider.family<DisputeChatNotifier, AsyncValue<DisputeChat?>, String>((ref, disputeId) {
+final disputeChatProvider = StateNotifierProvider.autoDispose.family<DisputeChatNotifier, AsyncValue<DisputeChat?>, String>((ref, disputeId) {
   return DisputeChatNotifier(disputeId, ref);
 });
 
@@ -22,6 +23,7 @@ class DisputeChatNotifier extends StateNotifier<AsyncValue<DisputeChat?>> {
   
   StreamSubscription<NostrEvent>? _chatSubscription;
   StreamSubscription<NostrEvent>? _disputeSubscription;
+  bool _isInitializing = false;
 
   DisputeChatNotifier(this.disputeId, this._ref) : super(const AsyncValue.loading()) {
     _initialize();
@@ -29,8 +31,19 @@ class DisputeChatNotifier extends StateNotifier<AsyncValue<DisputeChat?>> {
 
   /// Initialize the dispute chat
   Future<void> _initialize() async {
+    // Prevent concurrent initialization
+    if (_isInitializing) {
+      _logger.i('Initialization already in progress for dispute: $disputeId');
+      return;
+    }
+    
+    _isInitializing = true;
+    
     try {
       _logger.i('Initializing dispute chat for dispute: $disputeId');
+      
+      // Cancel any existing subscriptions first
+      await _cancelSubscriptions();
       
       // Get dispute details first
       final disputeDetails = await _ref.read(disputeDetailsProvider(disputeId).future);
@@ -46,7 +59,7 @@ class DisputeChatNotifier extends StateNotifier<AsyncValue<DisputeChat?>> {
         
         // Get user pubkey from session (find session for this dispute's order)
         final sessions = _ref.read(sessionNotifierProvider);
-        final userSession = sessions.where((s) => s.orderId == disputeDetails.orderId).firstOrNull;
+        final userSession = sessions.firstWhereOrNull((s) => s.orderId == disputeDetails.orderId);
         final userPubkey = userSession?.tradeKey.public ?? '';
         
         // Create dispute chat with admin info
@@ -60,6 +73,18 @@ class DisputeChatNotifier extends StateNotifier<AsyncValue<DisputeChat?>> {
         
         state = AsyncValue.data(disputeChat);
         
+        // Cancel dispute events subscription since we now have an admin
+        try {
+          if (_disputeSubscription != null) {
+            _logger.i('Cancelling dispute events subscription since admin is assigned');
+            await _disputeSubscription?.cancel();
+            _disputeSubscription = null;
+          }
+        } catch (error) {
+          _logger.e('Error cancelling dispute subscription: $error');
+          // Continue with chat subscription even if cancellation fails
+        }
+        
         // Subscribe to chat messages
         await _subscribeToChatMessages();
       } else {
@@ -72,6 +97,27 @@ class DisputeChatNotifier extends StateNotifier<AsyncValue<DisputeChat?>> {
     } catch (error, stackTrace) {
       _logger.e('Error initializing dispute chat: $error');
       state = AsyncValue.error(error, stackTrace);
+    } finally {
+      _isInitializing = false;
+    }
+  }
+  
+  /// Cancel any existing subscriptions
+  Future<void> _cancelSubscriptions() async {
+    try {
+      if (_chatSubscription != null) {
+        _logger.i('Cancelling existing chat subscription');
+        await _chatSubscription?.cancel();
+        _chatSubscription = null;
+      }
+      
+      if (_disputeSubscription != null) {
+        _logger.i('Cancelling existing dispute subscription');
+        await _disputeSubscription?.cancel();
+        _disputeSubscription = null;
+      }
+    } catch (error) {
+      _logger.e('Error cancelling subscriptions: $error');
     }
   }
 
@@ -87,6 +133,7 @@ class DisputeChatNotifier extends StateNotifier<AsyncValue<DisputeChat?>> {
       final filter = NostrFilter(
         kinds: [1059], // Gift wrap messages
         authors: [currentState.adminPubkey], // Messages from admin
+        p: [currentState.userPubkey], // Messages intended for this user
         since: DateTime.now().subtract(const Duration(days: 7)), // Last 7 days
       );
 
@@ -118,7 +165,7 @@ class DisputeChatNotifier extends StateNotifier<AsyncValue<DisputeChat?>> {
       final filter = NostrFilter(
         kinds: [38383], // Dispute events
         additionalFilters: {
-          '#d': [disputeId], // Filter by dispute ID
+          'd': [disputeId], // Filter by dispute ID
         },
         since: DateTime.now(),
       );
@@ -201,7 +248,7 @@ class DisputeChatNotifier extends StateNotifier<AsyncValue<DisputeChat?>> {
         throw Exception('Dispute details not available');
       }
       
-      final userSession = sessions.where((s) => s.orderId == disputeDetails.orderId).firstOrNull;
+      final userSession = sessions.firstWhereOrNull((s) => s.orderId == disputeDetails.orderId);
       if (userSession == null) {
         throw Exception('User session not found for dispute');
       }

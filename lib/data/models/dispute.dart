@@ -1,6 +1,30 @@
 import 'package:mostro_mobile/data/models/payload.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 
+/// Enum representing semantic keys for dispute descriptions
+/// These keys will be used for localization in the UI
+enum DisputeDescriptionKey {
+  initiatedByUser,      // You opened this dispute
+  initiatedByPeer,      // A dispute was opened against you
+  inProgress,           // Dispute is being reviewed by an admin
+  resolved,             // Dispute has been resolved
+  sellerRefunded,       // Dispute resolved - seller refunded
+  unknown               // Unknown status
+}
+
+/// Enum representing the user's role in a dispute
+enum UserRole {
+  buyer,
+  seller,
+  unknown
+}
+
+/// Semantic keys for missing or unknown values
+class DisputeSemanticKeys {
+  static const String unknownOrderId = 'unknownOrderId';
+  static const String unknownCounterparty = 'unknownCounterparty';
+}
+
 /// Represents a dispute in the Mostro system.
 /// 
 /// A dispute can be initiated by either buyer or seller when there's a problem
@@ -77,20 +101,76 @@ class Dispute implements Payload {
     return json;
   }
 
+  /// Extract tag value from a Nostr event
+  /// Returns the value of the tag with the given name, or null if not found
+  static String? _extractTag(dynamic event, String name) {
+    try {
+      final tags = event.tags ?? const <List<dynamic>>[];
+      final tag = tags.firstWhere(
+        (tag) => tag.isNotEmpty && tag[0] == name,
+        orElse: () => [],
+      );
+      
+      if (tag.length > 1 && tag[1] != null && tag[1].toString().isNotEmpty) {
+        return tag[1].toString();
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Extract created_at timestamp from a Nostr event and convert to milliseconds
+  /// Handles both seconds and milliseconds formats
+  static int _extractCreatedAtMillis(dynamic event) {
+    try {
+      final createdAtRaw = event.createdAt;
+      
+      if (createdAtRaw == null) {
+        return DateTime.now().millisecondsSinceEpoch;
+      } else if (createdAtRaw is int) {
+        // Nostr timestamps are in seconds, convert to milliseconds if needed
+        return createdAtRaw < 10000000000 
+            ? createdAtRaw * 1000 // Convert seconds to milliseconds
+            : createdAtRaw;       // Already in milliseconds
+      } else if (createdAtRaw is DateTime) {
+        return createdAtRaw.millisecondsSinceEpoch;
+      }
+      return DateTime.now().millisecondsSinceEpoch;
+    } catch (e) {
+      return DateTime.now().millisecondsSinceEpoch;
+    }
+  }
+
   /// Create Dispute from NostrEvent and parsed content
   factory Dispute.fromNostrEvent(dynamic event, Map<String, dynamic> content) {
     try {
-      // Extract dispute data from the event content
-      final disputeId = content['dispute_id'] ?? event.id ?? '';
+      // Extract dispute ID from 'd' tag, fallback to content or event ID
+      final disputeId = _extractTag(event, 'd') ?? 
+                        content['dispute_id'] ?? 
+                        content['dispute'] ?? 
+                        event.id ?? 
+                        '';
+      
+      // Extract order ID from content
       final orderId = content['order_id'] as String?;
-      final status = content['status'] as String? ?? 'initiated';
+      
+      // Extract status from 's' tag or content, default to 'initiated'
+      final status = _extractTag(event, 's') ?? 
+                     content['status'] as String? ?? 
+                     'initiated';
+      
+      // Extract creation timestamp from event
+      final createdAt = DateTime.fromMillisecondsSinceEpoch(
+        _extractCreatedAtMillis(event)
+      );
       
       return Dispute(
         disputeId: disputeId,
         orderId: orderId,
         status: status,
         adminPubkey: content['admin_pubkey'] as String?,
-        createdAt: DateTime.now(), // Default to current time for events
+        createdAt: createdAt,
         action: content['action'] as String?,
       );
     } catch (e) {
@@ -229,23 +309,23 @@ class Dispute implements Payload {
 /// UI-facing view model for disputes used across widgets.
 class DisputeData {
   final String disputeId;
-  final String orderId;
+  final String? orderId;
   final String status;
-  final String description;
-  final String counterparty;
+  final DisputeDescriptionKey descriptionKey;
+  final String? counterparty;
   final bool isCreator;
   final DateTime createdAt;
-  final bool userIsBuyer;
+  final UserRole userRole;
 
   DisputeData({
     required this.disputeId,
-    required this.orderId,
+    this.orderId,
     required this.status,
-    required this.description,
-    required this.counterparty,
+    required this.descriptionKey,
+    this.counterparty,
     required this.isCreator,
     required this.createdAt,
-    required this.userIsBuyer,
+    required this.userRole,
   });
 
   /// Create DisputeData from Dispute object with OrderState context
@@ -266,8 +346,8 @@ class DisputeData {
     }
     
     // Try to get counterparty info from order state and determine correct role
-    String counterpartyName = 'Unknown';
-    bool userIsBuyer = false;
+    String? counterpartyName;
+    UserRole userRole = UserRole.unknown;
     
     if (orderState != null) {
       // Get the counterparty nym using the same approach as chat
@@ -280,19 +360,22 @@ class DisputeData {
         // If order type is 'buy', then the order creator is buying (user is buyer)
         // If order type is 'sell', then the order creator is selling (user is seller)
         // The peer is always the opposite role
-        userIsBuyer = orderState.order!.kind.value == 'buy';
+        userRole = orderState.order!.kind.value == 'buy' ? UserRole.buyer : UserRole.seller;
       }
     }
 
+    // Get the appropriate description key based on status and creator
+    final descriptionKey = _getDescriptionKeyForStatus(dispute.status ?? 'unknown', isUserCreator);
+
     return DisputeData(
       disputeId: dispute.disputeId,
-      orderId: dispute.orderId ?? 'Unknown Order ID', // Do not fallback to disputeId
+      orderId: dispute.orderId, // No fallback to hardcoded string
       status: dispute.status ?? 'unknown',
-      description: _getDescriptionForStatus(dispute.status ?? 'unknown', isUserCreator),
+      descriptionKey: descriptionKey,
       counterparty: counterpartyName,
       isCreator: isUserCreator,
       createdAt: dispute.createdAt ?? DateTime.now(),
-      userIsBuyer: userIsBuyer, // Add this field to track user role
+      userRole: userRole,
     );
   }
 
@@ -301,19 +384,22 @@ class DisputeData {
     // Determine if user is the creator based on the action or other indicators
     bool isUserCreator = _determineIfUserIsCreator(disputeEvent, userAction);
     
+    // Get the appropriate description key based on status and creator
+    final descriptionKey = _getDescriptionKeyForStatus(disputeEvent.status, isUserCreator);
+    
     return DisputeData(
       disputeId: disputeEvent.disputeId,
-      orderId: disputeEvent.orderId ?? 'Unknown Order ID', // Do not fallback to disputeId
+      orderId: disputeEvent.orderId, // No fallback to hardcoded string
       status: disputeEvent.status,
-      description: _getDescriptionForStatus(disputeEvent.status, isUserCreator),
-      counterparty: 'Unknown', // Would need to fetch from order data
+      descriptionKey: descriptionKey,
+      counterparty: null, // Would need to fetch from order data
       isCreator: isUserCreator,
       createdAt: DateTime.fromMillisecondsSinceEpoch(
         disputeEvent.createdAt is int 
           ? disputeEvent.createdAt * 1000 
           : DateTime.now().millisecondsSinceEpoch
       ),
-      userIsBuyer: false, // Default value for legacy method
+      userRole: UserRole.unknown, // Default value for legacy method
     );
   }
 
@@ -324,26 +410,54 @@ class DisputeData {
       return userAction == 'dispute-initiated-by-you';
     }
     
-    // Fallback: try to infer from dispute event properties
-    // This is a simplified approach - in practice, you might need more context
-    // from the order data or session information
-    return false; // Conservative default - assume user received the dispute
+    // Otherwise, try to determine from the event itself
+    // This is a fallback and may not be accurate
+    return true; // Default to true for now
   }
 
-  static String _getDescriptionForStatus(String status, bool isUserCreator) {
+  /// Get a description key for the dispute status
+  static DisputeDescriptionKey _getDescriptionKeyForStatus(String status, bool isUserCreator) {
     switch (status.toLowerCase()) {
       case 'initiated':
         return isUserCreator 
-          ? 'You opened this dispute' 
-          : 'A dispute was opened against you';
+          ? DisputeDescriptionKey.initiatedByUser 
+          : DisputeDescriptionKey.initiatedByPeer;
       case 'in-progress':
-        return 'Dispute is being reviewed by an admin';
-      case 'settled':
-        return 'Dispute has been resolved';
+        return DisputeDescriptionKey.inProgress;
+      case 'resolved':
+      case 'solved':
+        return DisputeDescriptionKey.resolved;
       case 'seller-refunded':
-        return 'Dispute resolved - seller refunded';
+        return DisputeDescriptionKey.sellerRefunded;
       default:
-        return 'Dispute status: $status';
+        return DisputeDescriptionKey.unknown;
     }
   }
+  
+  /// Backward compatibility getter for description
+  String get description {
+    switch (descriptionKey) {
+      case DisputeDescriptionKey.initiatedByUser:
+        return 'You opened this dispute';
+      case DisputeDescriptionKey.initiatedByPeer:
+        return 'A dispute was opened against you';
+      case DisputeDescriptionKey.inProgress:
+        return 'Dispute is being reviewed by an admin';
+      case DisputeDescriptionKey.resolved:
+        return 'Dispute has been resolved';
+      case DisputeDescriptionKey.sellerRefunded:
+        return 'Dispute resolved - seller refunded';
+      case DisputeDescriptionKey.unknown:
+        return 'Unknown status';
+    }
+  }
+  
+  /// Backward compatibility getter for userIsBuyer
+  bool get userIsBuyer => userRole == UserRole.buyer;
+  
+  /// Convenience getter for orderId with fallback
+  String get orderIdDisplay => orderId ?? DisputeSemanticKeys.unknownOrderId;
+  
+  /// Convenience getter for counterparty with fallback
+  String get counterpartyDisplay => counterparty ?? DisputeSemanticKeys.unknownCounterparty;
 }

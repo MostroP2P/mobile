@@ -135,8 +135,8 @@ class DisputeCommunicationSection extends ConsumerWidget {
 
   Widget _buildChatMessages(BuildContext context, DisputeChat disputeChat) {
     final messages = disputeChat.sortedMessages;
-    return Container(
-      constraints: const BoxConstraints(maxHeight: 300),
+    return SizedBox(
+      height: 300,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -144,7 +144,6 @@ class DisputeCommunicationSection extends ConsumerWidget {
           const SizedBox(height: 8),
           Expanded(
             child: ListView.builder(
-              shrinkWrap: true,
               itemCount: messages.length,
               itemBuilder: (context, index) {
                 final message = messages[index];
