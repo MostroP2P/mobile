@@ -410,6 +410,7 @@ void main() {
     late TestableReleaseOrderService svc;
     late NostrKeyPairs masterKey;
     late NostrKeyPairs tradeKey;
+    late NostrKeyPairs nextTradeKey;
 
     setUp(() {
       capturedMessages = [];
@@ -420,8 +421,11 @@ void main() {
       final extendedPrivKey = keyDerivator.extendedKeyFromMnemonic(mnemonic);
       final masterPrivKey = keyDerivator.derivePrivateKey(extendedPrivKey, 0);
       final tradePrivKey = keyDerivator.derivePrivateKey(extendedPrivKey, 1);
+      final nextPrivKey = keyDerivator.derivePrivateKey(extendedPrivKey, 5);
+
       masterKey = NostrKeyPairs(private: masterPrivKey);
       tradeKey = NostrKeyPairs(private: tradePrivKey);
+      nextTradeKey = NostrKeyPairs(private: nextPrivKey);
 
       // Ensure a mock session with masterKey and tradeKey is set on mockSessionNotifier
       final session = Session(
@@ -445,7 +449,7 @@ void main() {
 
       // Stub mockKeyManager.deriveTradeKeyFromIndex to return a mock key pair
       when(mockKeyManager.deriveTradeKeyFromIndex(5))
-          .thenAnswer((_) async => masterKey);
+          .thenAnswer((_) async => nextTradeKey);
 
       // Stub mockNostrService.publishEvent
       when(mockNostrService.publishEvent(any))
@@ -490,7 +494,7 @@ void main() {
 
       final payload = message.toJson()['payload'];
       expect(payload, contains('next_trade'));
-      expect(payload['next_trade'], equals([masterKey.public, 5]));
+      expect(payload['next_trade'], equals([nextTradeKey.public, 5]));
     });
 
     test(
