@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
-import 'package:mostro_mobile/data/models/enums/notification_type.dart';
+import 'package:mostro_mobile/data/models/enums/action.dart' as mostro_action;
 import 'package:mostro_mobile/data/models/notification.dart';
 import 'package:mostro_mobile/features/notifications/providers/notifications_provider.dart';
 import 'package:mostro_mobile/features/notifications/widgets/notification_type_icon.dart';
 import 'package:mostro_mobile/features/notifications/widgets/notification_content.dart';
 import 'package:mostro_mobile/features/notifications/widgets/notification_menu.dart';
+import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
 class NotificationItem extends ConsumerWidget {
@@ -67,20 +68,46 @@ class NotificationItem extends ConsumerWidget {
       ref.read(notificationsDatabaseProvider).markAsRead(notification.id);
     }
 
-    //TODO: Implement navigation based on notification type
+    final navProvider = ref.read(navigationProvider.notifier);
+
     if (notification.orderId != null) {
-      switch (notification.type) {
-        case NotificationType.orderUpdate:
-        case NotificationType.tradeUpdate:
-        case NotificationType.payment:
-        case NotificationType.dispute:
-        case NotificationType.cancellation:
-        case NotificationType.message:
-        case NotificationType.system:
+      switch (notification.action) {
+        case mostro_action.Action.addInvoice:
+          navProvider.go('/add_invoice/${notification.orderId}');
+          break;
+        case mostro_action.Action.canceled:
+        case mostro_action.Action.adminCanceled:
+          navProvider.go('/order_book');
+          break;
+        case mostro_action.Action.rate:
+          navProvider.go('/rate_user/${notification.orderId}');
+          break;
+        case mostro_action.Action.payInvoice:
+        case mostro_action.Action.fiatSentOk:
+        case mostro_action.Action.released:
+        case mostro_action.Action.holdInvoicePaymentAccepted:
+        case mostro_action.Action.holdInvoicePaymentSettled:
+        case mostro_action.Action.waitingSellerToPay:
+        case mostro_action.Action.waitingBuyerInvoice:
+        case mostro_action.Action.buyerTookOrder:
+        case mostro_action.Action.disputeInitiatedByYou:
+        case mostro_action.Action.disputeInitiatedByPeer:
+        case mostro_action.Action.adminSettled:
+        case mostro_action.Action.paymentFailed:
+        case mostro_action.Action.purchaseCompleted:
+        case mostro_action.Action.cooperativeCancelInitiatedByYou:
+        case mostro_action.Action.cooperativeCancelInitiatedByPeer:
+        case mostro_action.Action.sendDm:
+          navProvider.go('/trade_detail/${notification.orderId}');
+          break;
+        case mostro_action.Action.cantDo:
+        case mostro_action.Action.timeoutReversal:
+        case mostro_action.Action.rateReceived:
+          break;
+        default:
           break;
       }
     }
-   
   }
 
   void _handleMenuAction(BuildContext context, WidgetRef ref, String action) {
