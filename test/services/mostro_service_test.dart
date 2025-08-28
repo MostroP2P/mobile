@@ -2,11 +2,9 @@ import 'dart:convert';
 import 'package:convert/convert.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
-import 'package:matcher/matcher.dart';
 import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/features/key_manager/key_derivator.dart';
-import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_manager.dart';
@@ -20,11 +18,7 @@ import 'package:mostro_mobile/data/repositories/mostro_storage.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
-import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
-import 'package:mostro_mobile/data/models/enums/action.dart';
-import 'package:mostro_mobile/data/models/next_trade.dart';
-import 'package:mostro_mobile/data/models/payload.dart';
 
 import '../mocks.dart';
 import '../mocks.mocks.dart';
@@ -45,7 +39,7 @@ void main() {
 
   // Add dummy for NostrService
   provideDummy<NostrService>(MockNostrService());
-  
+
   // Add dummy for KeyManager
   provideDummy<KeyManager>(MockKeyManager());
 
@@ -392,8 +386,6 @@ void main() {
       expect(isValid, isTrue,
           reason: 'Server should accept valid messages in full privacy mode');
     });
-
-
   });
 }
 
@@ -409,4 +401,3 @@ class TestableReleaseOrderService extends MostroService {
     capturedMessages.add(order);
   }
 }
-
