@@ -99,6 +99,9 @@ void main() {
     mockServerTradeIndex = MockServerTradeIndex();
     keyDerivator = KeyDerivator("m/44'/1237'/38383'/0");
 
+    // Stub mockKeyManager.getNextKeyIndex() to return deterministic value
+    when(mockKeyManager.getNextKeyIndex()).thenAnswer((_) async => 5);
+
     // Setup all stubs before creating any objects that use them
     final testSettings = MockSettings();
     when(testSettings.mostroPublicKey).thenReturn(
@@ -440,9 +443,6 @@ void main() {
       // Stub keyManagerProvider to return our mock
       when(mockRef.read(keyManagerProvider)).thenReturn(mockKeyManager);
 
-      // Stub mockKeyManager.getNextKeyIndex() to return 5
-      when(mockKeyManager.getNextKeyIndex()).thenAnswer((_) async => 5);
-
       // Stub mockKeyManager.deriveTradeKeyFromIndex to return a mock key pair
       when(mockKeyManager.deriveTradeKeyFromIndex(5))
           .thenAnswer((_) async => masterKey);
@@ -501,9 +501,6 @@ void main() {
 
       // Stub keyManagerProvider to return our mock
       when(mockRef.read(keyManagerProvider)).thenReturn(mockKeyManager);
-
-      // Stub mockKeyManager.getNextKeyIndex() to return 5
-      when(mockKeyManager.getNextKeyIndex()).thenAnswer((_) async => 5);
 
       // Stub mockKeyManager.deriveTradeKeyFromIndex to return a mock key pair
       when(mockKeyManager.deriveTradeKeyFromIndex(5))
