@@ -17,9 +17,6 @@ import 'package:mostro_mobile/data/repositories/mostro_storage.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
-import 'package:mostro_mobile/data/models/next_trade.dart';
-import 'package:mostro_mobile/data/models/mostro_message.dart';
-import 'package:mostro_mobile/data/models/enums/action.dart';
 
 import '../mocks.dart';
 import '../mocks.mocks.dart';
