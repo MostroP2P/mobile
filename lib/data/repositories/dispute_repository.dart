@@ -99,6 +99,15 @@ class DisputeRepository {
                 }
               });
             }
+          } else if (action == 'admin-settled') {
+            // Update existing disputes when admin resolves them
+            disputeMap.forEach((disputeId, dispute) {
+              if (dispute.orderId == orderId) {
+                disputeMap[disputeId] = dispute.copyWith(
+                  status: 'resolved',
+                );
+              }
+            });
           }
         }
       }
@@ -222,8 +231,10 @@ class DisputeRepository {
 
       // Get user sessions to search for DMs
       final sessions = _ref.read(sessionNotifierProvider);
-      final userPubkeys = sessions.map((s) => s.tradeKey.public).toList();
-      final userOrderIds = sessions.map((s) => s.orderId).where((id) => id != null).toSet();
+      // Create copies to avoid concurrent modification during iteration
+      final sessionsCopy = List<dynamic>.from(sessions);
+      final userPubkeys = sessionsCopy.map((s) => s.tradeKey.public).toList();
+      final userOrderIds = sessionsCopy.map((s) => s.orderId).where((id) => id != null).toSet();
       
       _logger.d('User sessions: ${sessions.length}, orderIds: $userOrderIds, pubkeys: $userPubkeys');
 
@@ -259,7 +270,10 @@ class DisputeRepository {
       final disputeEvents = await _nostrService.fetchEvents(disputeEventFilter);
       final dmEvents = await _nostrService.fetchEvents(dmFilter);
       final encryptedDmEvents = await _nostrService.fetchEvents(encryptedDmFilter);
-      final allEvents = [...disputeEvents, ...dmEvents, ...encryptedDmEvents];
+      // Create copies to avoid concurrent modification during iteration
+      final dmEventsCopy = List<dynamic>.from(dmEvents);
+      final encryptedDmEventsCopy = List<dynamic>.from(encryptedDmEvents);
+      final allEvents = [...disputeEvents, ...dmEventsCopy, ...encryptedDmEventsCopy];
 
       if (allEvents.isEmpty) {
         _logger.w('No dispute found with ID: $disputeId');
@@ -271,10 +285,10 @@ class DisputeRepository {
       String? foundAction;
       String? foundToken;
       
-      _logger.d('Searching for disputeId $disputeId in ${dmEvents.length} DMs and ${encryptedDmEvents.length} encrypted DMs');
+      _logger.d('Searching for disputeId $disputeId in ${dmEventsCopy.length} DMs and ${encryptedDmEventsCopy.length} encrypted DMs');
       
       // Search regular DMs
-      for (final event in dmEvents) {
+      for (final event in dmEventsCopy) {
         try {
           if (event.content != null && event.content!.isNotEmpty) {
             final content = jsonDecode(event.content!);
@@ -315,8 +329,8 @@ class DisputeRepository {
       // Search encrypted DMs if not found in regular DMs
       if (foundOrderId == null) {
         _logger.d('Searching encrypted DMs for dispute $disputeId');
-        for (final event in encryptedDmEvents) {
-          for (final session in sessions) {
+        for (final event in encryptedDmEventsCopy) {
+          for (final session in sessionsCopy) {
             try {
               final decryptedEvent = await NostrUtils.decryptNIP59Event(event, session.tradeKey.private);
               final content = jsonDecode(decryptedEvent.content!);
