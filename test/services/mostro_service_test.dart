@@ -5,6 +5,7 @@ import 'package:mockito/mockito.dart';
 import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/features/key_manager/key_derivator.dart';
+import 'package:mostro_mobile/features/key_manager/key_manager.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_manager.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_manager_provider.dart';
@@ -17,6 +18,14 @@ import 'package:mostro_mobile/data/repositories/mostro_storage.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
+import 'package:mostro_mobile/data/models/mostro_message.dart';
+import 'package:mostro_mobile/data/models/order.dart';
+import 'package:mostro_mobile/features/order/models/order_state.dart';
+import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
+import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
+import 'package:mostro_mobile/data/models/enums/status.dart';
+import 'package:mostro_mobile/data/models/enums/order_type.dart';
+import 'package:mostro_mobile/data/models/enums/action.dart';
 
 import '../mocks.dart';
 import '../mocks.mocks.dart';
@@ -37,13 +46,23 @@ void main() {
 
   // Add dummy for NostrService
   provideDummy<NostrService>(MockNostrService());
-  
+
+  // Add dummy for KeyManager
+  provideDummy<KeyManager>(MockKeyManager());
+
+  // Add dummy for OrderState
+  provideDummy<OrderState>(OrderState(
+    status: Status.pending,
+    action: Action.newOrder,
+    order: null,
+  ));
+
   // Create dummy values for Mockito
   final dummyRef = MockRef();
   final dummyKeyManager = MockKeyManager();
   final dummySessionStorage = MockSessionStorage();
   final dummySettings = MockSettings();
-  
+
   // Stub listen on dummyRef to prevent errors when creating MockSubscriptionManager
   when(dummyRef.listen<List<Session>>(
     any,
@@ -51,13 +70,12 @@ void main() {
     onError: anyNamed('onError'),
     fireImmediately: anyNamed('fireImmediately'),
   )).thenReturn(MockProviderSubscription<List<Session>>());
-  
+
   // Create and provide dummy values
   final dummySessionNotifier = MockSessionNotifier(
-    dummyRef, dummyKeyManager, dummySessionStorage, dummySettings
-  );
+      dummyRef, dummyKeyManager, dummySessionStorage, dummySettings);
   provideDummy<SessionNotifier>(dummySessionNotifier);
-  
+
   // Provide dummy for SubscriptionManager
   final dummySubscriptionManagerForMockito = MockSubscriptionManager(dummyRef);
   provideDummy<SubscriptionManager>(dummySubscriptionManagerForMockito);
@@ -80,7 +98,10 @@ void main() {
     mockNostrService = MockNostrService();
     mockServerTradeIndex = MockServerTradeIndex();
     keyDerivator = KeyDerivator("m/44'/1237'/38383'/0");
-    
+
+    // Stub mockKeyManager.getNextKeyIndex() to return deterministic value
+    when(mockKeyManager.getNextKeyIndex()).thenAnswer((_) async => 5);
+
     // Setup all stubs before creating any objects that use them
     final testSettings = MockSettings();
     when(testSettings.mostroPublicKey).thenReturn(
@@ -88,7 +109,7 @@ void main() {
     when(mockRef.read(settingsProvider)).thenReturn(testSettings);
     when(mockRef.read(mostroStorageProvider)).thenReturn(MockMostroStorage());
     when(mockRef.read(nostrServiceProvider)).thenReturn(mockNostrService);
-    
+
     // Stub the listen method before creating SubscriptionManager
     when(mockRef.listen<List<Session>>(
       any,
@@ -96,7 +117,7 @@ void main() {
       onError: anyNamed('onError'),
       fireImmediately: anyNamed('fireImmediately'),
     )).thenReturn(MockProviderSubscription<List<Session>>());
-    
+
     // Create mockSessionNotifier
     mockSessionNotifier = MockSessionNotifier(
       mockRef,
@@ -104,12 +125,14 @@ void main() {
       mockSessionStorage,
       testSettings,
     );
-    when(mockRef.read(sessionNotifierProvider.notifier)).thenReturn(mockSessionNotifier);
-    
+    when(mockRef.read(sessionNotifierProvider.notifier))
+        .thenReturn(mockSessionNotifier);
+
     // Create mockSubscriptionManager with the stubbed mockRef
     mockSubscriptionManager = MockSubscriptionManager(mockRef);
-    when(mockRef.read(subscriptionManagerProvider)).thenReturn(mockSubscriptionManager);
-    
+    when(mockRef.read(subscriptionManagerProvider))
+        .thenReturn(mockSubscriptionManager);
+
     // Finally create the service under test
     mostroService = MostroService(mockRef);
   });
@@ -139,9 +162,9 @@ void main() {
 
     // Compute SHA-256 hash of the message JSON
     final jsonString = jsonEncode(messageContent);
-    final messageBase64 = hex.encode(jsonString.codeUnits);
+    final messageHex = hex.encode(jsonString.codeUnits);
 
-    return NostrKeyPairs.verify(userPubKey, messageBase64, signatureHex);
+    return NostrKeyPairs.verify(userPubKey, messageHex, signatureHex);
   }
 
   group('MostroService Integration Tests', () {
@@ -233,9 +256,6 @@ void main() {
       when(mockNostrService.publishEvent(any))
           .thenAnswer((_) async => Future<void>.value());
 
-      when(mockNostrService.publishEvent(any))
-          .thenAnswer((_) async => Future.value());
-
       // Act
       await mostroService.takeSellOrder(orderId, 200, 'lnbc5678invoice');
 
@@ -295,9 +315,6 @@ void main() {
       // Mock NostrService's publishEvent only - other methods are now static in NostrUtils
       when(mockNostrService.publishEvent(any))
           .thenAnswer((_) async => Future<void>.value());
-
-      when(mockNostrService.publishEvent(any))
-          .thenAnswer((_) async => Future.value());
 
       // Act
       await mostroService.takeSellOrder(orderId, 300, 'lnbc91011invoice');
@@ -387,4 +404,168 @@ void main() {
           reason: 'Server should accept valid messages in full privacy mode');
     });
   });
+
+  group('ReleaseOrder Tests with Captured Messages', () {
+    late List<MostroMessage> capturedMessages;
+    late TestableReleaseOrderService svc;
+    late NostrKeyPairs masterKey;
+    late NostrKeyPairs tradeKey;
+    late NostrKeyPairs nextTradeKey;
+
+    setUp(() {
+      capturedMessages = [];
+      svc = TestableReleaseOrderService(mockRef, capturedMessages);
+
+      // Create key pairs for testing
+      final mnemonic = keyDerivator.generateMnemonic();
+      final extendedPrivKey = keyDerivator.extendedKeyFromMnemonic(mnemonic);
+      final masterPrivKey = keyDerivator.derivePrivateKey(extendedPrivKey, 0);
+      final tradePrivKey = keyDerivator.derivePrivateKey(extendedPrivKey, 1);
+      final nextPrivKey = keyDerivator.derivePrivateKey(extendedPrivKey, 5);
+
+      masterKey = NostrKeyPairs(private: masterPrivKey);
+      tradeKey = NostrKeyPairs(private: tradePrivKey);
+      nextTradeKey = NostrKeyPairs(private: nextPrivKey);
+
+      // Ensure a mock session with masterKey and tradeKey is set on mockSessionNotifier
+      final session = Session(
+        startTime: DateTime.now(),
+        masterKey: masterKey,
+        keyIndex: 1,
+        tradeKey: tradeKey,
+        orderId: 'test-order-id',
+        fullPrivacy: false,
+      );
+      mockSessionNotifier.setMockSession(session);
+    });
+
+    test('releaseOrder with range amounts includes next_trade payload',
+        () async {
+      // Arrange
+      const orderId = 'range-order-id';
+
+      // Stub keyManagerProvider to return our mock
+      when(mockRef.read(keyManagerProvider)).thenReturn(mockKeyManager);
+
+      // Stub mockKeyManager.deriveTradeKeyFromIndex to return a mock key pair
+      when(mockKeyManager.deriveTradeKeyFromIndex(5))
+          .thenAnswer((_) async => nextTradeKey);
+
+      // Stub mockNostrService.publishEvent
+      when(mockNostrService.publishEvent(any))
+          .thenAnswer((_) async => Future<void>.value());
+
+      // Mock order state with range amounts
+      final mockOrder = Order(
+        id: orderId,
+        status: Status.active,
+        kind: OrderType.sell,
+        fiatCode: 'USD',
+        fiatAmount: 100,
+        paymentMethod: 'Lightning',
+        amount: 100,
+        minAmount: 50,
+        maxAmount: 150,
+        premium: 0,
+        createdAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+        expiresAt:
+            DateTime.now().add(Duration(hours: 1)).millisecondsSinceEpoch ~/
+                1000,
+      );
+
+      final mockOrderState = OrderState(
+        status: Status.active,
+        action: Action.release,
+        order: mockOrder,
+      );
+
+      // Stub the order notifier provider to return our mock
+      when(mockRef.read(orderNotifierProvider(orderId)))
+          .thenReturn(mockOrderState);
+
+      // Act
+      await svc.releaseOrder(orderId);
+
+      // Assert
+      expect(capturedMessages, hasLength(1));
+      final message = capturedMessages.first;
+      expect(message.action, equals(Action.release));
+      expect(message.id, equals(orderId));
+
+      final payload = message.toJson()['payload'];
+      expect(payload, contains('next_trade'));
+      expect(payload['next_trade'], equals([nextTradeKey.public, 5]));
+    });
+
+    test(
+        'releaseOrder with equal min and max amounts does not include next_trade payload',
+        () async {
+      // Arrange
+      const orderId = 'fixed-order-id';
+
+      // Stub keyManagerProvider to return our mock
+      when(mockRef.read(keyManagerProvider)).thenReturn(mockKeyManager);
+
+      // Stub mockKeyManager.deriveTradeKeyFromIndex to return a mock key pair
+      when(mockKeyManager.deriveTradeKeyFromIndex(5))
+          .thenAnswer((_) async => masterKey);
+
+      // Stub mockNostrService.publishEvent
+      when(mockNostrService.publishEvent(any))
+          .thenAnswer((_) async => Future<void>.value());
+
+      // Mock order state with fixed amount
+      final mockOrder = Order(
+        id: orderId,
+        status: Status.active,
+        kind: OrderType.sell,
+        fiatCode: 'USD',
+        fiatAmount: 100,
+        paymentMethod: 'Lightning',
+        amount: 100,
+        minAmount: 100,
+        maxAmount: 100,
+        premium: 0,
+        createdAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+        expiresAt:
+            DateTime.now().add(Duration(hours: 1)).millisecondsSinceEpoch ~/
+                1000,
+      );
+
+      final mockOrderState = OrderState(
+        status: Status.active,
+        action: Action.release,
+        order: mockOrder,
+      );
+
+      // Stub the order notifier provider to return our mock
+      when(mockRef.read(orderNotifierProvider(orderId)))
+          .thenReturn(mockOrderState);
+
+      // Act
+      await svc.releaseOrder(orderId);
+
+      // Assert
+      expect(capturedMessages, hasLength(1));
+      final message = capturedMessages.first;
+      expect(message.action, equals(Action.release));
+      expect(message.id, equals(orderId));
+
+      final payload = message.toJson()['payload'];
+      expect(payload, isNull);
+    });
+  });
+}
+
+// Testable service that captures publishOrder calls
+class TestableReleaseOrderService extends MostroService {
+  final List<MostroMessage> capturedMessages;
+
+  TestableReleaseOrderService(super.ref, this.capturedMessages);
+
+  @override
+  Future<void> publishOrder(MostroMessage order) async {
+    // Capture the message instead of actually publishing
+    capturedMessages.add(order);
+  }
 }
