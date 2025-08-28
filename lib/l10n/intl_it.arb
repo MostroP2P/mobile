@@ -236,6 +236,8 @@
   "buyingBitcoin": "Comprando Bitcoin",
   "sellingBitcoin": "Vendendo Bitcoin",
   "bankTransfer": "Bonifico Bancario",
+  "cashInPerson": "Contanti di persona",
+  "other": "Altro",
   "createdByYou": "Creato da te",
   "takenByYou": "Preso da te",
   "active": "Attivo",
@@ -328,6 +330,34 @@
   "enterAmountHint": "Inserisci importo",
   "pleaseEnterAmount": "Per favore inserisci un importo",
   "pleaseEnterValidAmount": "Per favore inserisci un importo valido",
+  "fiatAmountTooHigh": "L'importo fiat è troppo alto, per favore inserisci un nuovo importo fiat, l'intervallo consentito è tra {minAmount} e {maxAmount} sats",
+  "@fiatAmountTooHigh": {
+    "placeholders": {
+      "minAmount": {
+        "type": "String",
+        "description": "The minimum allowed sats amount"
+      },
+      "maxAmount": {
+        "type": "String",
+        "description": "The maximum allowed sats amount"
+      }
+    }
+  },
+  "fiatAmountTooLow": "L'importo fiat è troppo basso, per favore inserisci un nuovo importo fiat, l'intervallo consentito è tra {minAmount} e {maxAmount} sats",
+  "@fiatAmountTooLow": {
+    "placeholders": {
+      "minAmount": {
+        "type": "String",
+        "description": "The minimum allowed sats amount"
+      },
+      "maxAmount": {
+        "type": "String",
+        "description": "The maximum allowed sats amount"
+      }
+    }
+  },
+  "exchangeRateNotAvailable": "Tasso di cambio non disponibile, per favore attendi o aggiorna",
+  "mostroInstanceNotAvailable": "Dati dell'istanza Mostro non disponibili, per favore attendi",
   "enterAmountYouWantToReceive": "Inserisci l'importo che vuoi ricevere",
   "enterAmountYouWantToSend": "Inserisci l'importo che vuoi inviare",
   "creatingRangeOrder": "Creazione ordine intervallo (puoi ricevere tra importi minimo e massimo)",
@@ -848,6 +878,27 @@
     }
   },
   "relayAddedUnreachable": "Relay aggiunto ma sembra irraggiungibile: {url}",
+  "addRelayDialogTitle": "Aggiungi Relay",
+  "addRelayDialogDescription": "Inserisci un URL di relay per aggiungerlo alla tua lista di relay. Il relay verrà testato per la connettività.",
+  "addRelayDialogPlaceholder": "URL del Relay",
+  "addRelayDialogTesting": "Testing della connettività...",
+  "addRelayDialogCancel": "Annulla",
+  "addRelayDialogAdd": "Aggiungi",
+  "addRelayErrorOnlySecure": "Solo websocket sicuri (wss://) sono permessi",
+  "addRelayErrorNoHttp": "Gli URL HTTP non sono supportati. Usa URL websocket (wss://)",
+  "addRelayErrorInvalidDomain": "Formato dominio non valido. Usa formato come: relay.example.com",
+  "addRelayErrorAlreadyExists": "Questo relay è già nella tua lista",
+  "addRelayErrorNotValid": "Non è un relay Nostr valido - nessuna risposta al test del protocollo",
+  "addRelayErrorGeneric": "Errore nell'aggiunta del relay. Per favore riprova.",
+  "addRelaySuccessMessage": "Relay aggiunto con successo: {url}",
+  "@addRelaySuccessMessage": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "mostroChangedResetMessage": "Istanza Mostro cambiata. Le impostazioni dei relay sono state reimpostate per la nuova istanza.",
   "@relayAddedUnreachable": {
     "description": "Messaggio mostrato quando un relay viene aggiunto ma non risponde",
     "placeholders": {
@@ -862,6 +913,17 @@
   "add": "Aggiungi",
 
   "save": "Salva",
+  "apply": "Applica",
+
+  "@_comment_filter_section": "Stringhe della sezione filtri",
+  "rating": "Valutazione",
+  "reputation": "Reputazione",
+  "premiumRange": "Premio/Sconto",
+  "discount": "Sconto",
+  "premium": "Premio",
+  "clear": "Cancella",
+  "min": "Min",
+  "max": "Max",
   "selectCurrency": "Seleziona Valuta",
   "noCurrencySelected": "Nessuna valuta selezionata",
 
@@ -870,6 +932,7 @@
   "orderTimeoutMaker": "La tua controparte non ha risposto in tempo. L'ordine sarà ripubblicato",
   "orderTimeout": "Timeout dell'ordine verificato",
   "orderCanceled": "L'ordine è stato annullato",
+
   
   "@_comment_dispute_communication": "Testo Comunicazione Controversie",
   "disputeCommunication": "Comunicazione",
@@ -922,4 +985,29 @@
       "error": { "type": "String" }
     }
   }
+
+
+  "@_comment_relay_status": "Messaggi di stato relay",
+  "inUse": "In Uso",
+  "notInUse": "Non In Uso",
+  "noMostroRelaysAvailable": "Nessun relay disponibile dall'istanza Mostro configurata. Per favore controlla la tua configurazione Mostro.",
+  "relaysDescription": "Attiva o disattiva secondo le tue preferenze, o aggiungi nuovi.",
+  "activated": "Connesso",
+  "deactivated": "Disconnesso",
+
+  "blacklistDefaultRelayTitle": "Disconnettersi dal Relay Predefinito?",
+  "blacklistDefaultRelayMessage": "Sei sicuro di volerti disconnettere dal relay predefinito? Questo potrebbe influire sulla connettività con l'istanza di Mostro.",
+  "blacklistDefaultRelayConfirm": "Disconnetti",
+  "blacklistDefaultRelayCancel": "Annulla",
+
+  "cannotBlacklistLastRelayTitle": "Non Puoi Disconnetterti dall'Ultimo Relay",
+  "cannotBlacklistLastRelayMessage": "Non puoi disconnetterti da questo relay perché è l'ultimo connesso. L'app ha bisogno di almeno un relay per funzionare correttamente.",
+  "cannotBlacklistLastRelayOk": "OK",
+
+  "@_comment_delete_user_relay_dialog": "Delete user relay confirmation dialog strings",
+  "deleteUserRelayTitle": "Sicuro di volerti disconnettere da questo relay?",
+  "deleteUserRelayMessage": "Se vorrai usarlo di nuovo in futuro, dovrai aggiungerlo manualmente.",
+  "deleteUserRelayConfirm": "Sì",
+  "deleteUserRelayCancel": "No"
+
 }

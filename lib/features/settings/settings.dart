@@ -5,6 +5,8 @@ class Settings {
   final String? defaultFiatCode;
   final String? selectedLanguage; // null means use system locale
   final String? defaultLightningAddress;
+  final List<String> blacklistedRelays; // Relays blocked by user from auto-sync
+  final List<Map<String, dynamic>> userRelays; // User-added relays with metadata
 
   Settings({
     required this.relays,
@@ -13,23 +15,29 @@ class Settings {
     this.defaultFiatCode,
     this.selectedLanguage,
     this.defaultLightningAddress,
+    this.blacklistedRelays = const [],
+    this.userRelays = const [],
   });
 
   Settings copyWith({
     List<String>? relays,
     bool? privacyModeSetting,
-    String? mostroInstance,
+    String? mostroPublicKey,
     String? defaultFiatCode,
     String? selectedLanguage,
     String? defaultLightningAddress,
+    List<String>? blacklistedRelays,
+    List<Map<String, dynamic>>? userRelays,
   }) {
     return Settings(
       relays: relays ?? this.relays,
       fullPrivacyMode: privacyModeSetting ?? fullPrivacyMode,
-      mostroPublicKey: mostroInstance ?? mostroPublicKey,
+      mostroPublicKey: mostroPublicKey ?? this.mostroPublicKey,
       defaultFiatCode: defaultFiatCode ?? this.defaultFiatCode,
-      selectedLanguage: selectedLanguage,
-      defaultLightningAddress: defaultLightningAddress,
+      selectedLanguage: selectedLanguage ?? this.selectedLanguage,
+      defaultLightningAddress: defaultLightningAddress ?? this.defaultLightningAddress,
+      blacklistedRelays: blacklistedRelays ?? this.blacklistedRelays,
+      userRelays: userRelays ?? this.userRelays,
     );
   }
 
@@ -40,6 +48,8 @@ class Settings {
         'defaultFiatCode': defaultFiatCode,
         'selectedLanguage': selectedLanguage,
         'defaultLightningAddress': defaultLightningAddress,
+        'blacklistedRelays': blacklistedRelays,
+        'userRelays': userRelays,
       };
 
   factory Settings.fromJson(Map<String, dynamic> json) {
@@ -50,6 +60,9 @@ class Settings {
       defaultFiatCode: json['defaultFiatCode'],
       selectedLanguage: json['selectedLanguage'],
       defaultLightningAddress: json['defaultLightningAddress'],
+      blacklistedRelays: (json['blacklistedRelays'] as List<dynamic>?)?.cast<String>() ?? [],
+      userRelays: (json['userRelays'] as List<dynamic>?)
+          ?.cast<Map<String, dynamic>>() ?? [],
     );
   }
 }

@@ -19,18 +19,16 @@ class RelaysScreen extends ConsumerWidget {
           onPressed: () => context.pop(),
         ),
         title: Text(
-          'RELAYS',
+          'Configuración',
           style: TextStyle(
             color: AppTheme.cream1,
           ),
         ),
       ),
       backgroundColor: AppTheme.dark1,
-      body: RelaySelector(),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: AppTheme.mostroGreen,
-        child: const Icon(Icons.add),
-        onPressed: () => RelaySelector.showAddDialog(context, ref),
+      body: const SingleChildScrollView(
+        padding: EdgeInsets.all(16.0),
+        child: RelaySelector(),
       ),
     );
   }

@@ -1,7 +1,5 @@
 name: "Build"
 
-description: "Build and release Flutter application for Android and iOS"
-
 on:
   push:
     branches:
@@ -11,7 +9,7 @@ on:
 jobs:  
   build:      
     name: Build & Release 
-    runs-on: macos-latest 
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Repository
@@ -71,12 +69,43 @@ jobs:
           distribution: 'oracle'
           java-version: '17'
 
+      - name: Setup Android Keystore
+        if: steps.should_build.outputs.SHOULD_BUILD == 'true'
+        run: |
+          # Create the keystore file from the secret
+          echo "${{ secrets.ANDROID_KEYSTORE_FILE }}" | base64 --decode > android/app/upload-keystore.jks
+
+          # Set environment variables for signing
+          echo "ANDROID_KEYSTORE_PASSWORD=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" >> $GITHUB_ENV
+          echo "ANDROID_KEY_PASSWORD=${{ secrets.ANDROID_KEY_PASSWORD }}" >> $GITHUB_ENV
+          echo "ANDROID_KEY_ALIAS=${{ secrets.ANDROID_KEY_ALIAS }}" >> $GITHUB_ENV
+          echo "ANDROID_KEYSTORE_FILE=upload-keystore.jks" >> $GITHUB_ENV
+
+          # Write key.properties so Gradle can pick it up without extra config
+          echo "storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" > android/key.properties
+          echo "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}" >> android/key.properties
+          echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" >> android/key.properties
+          echo "storeFile=${{ env.ANDROID_KEYSTORE_FILE }}" >> android/key.properties
       - name: Set Up Flutter
         if: steps.should_build.outputs.SHOULD_BUILD == 'true'
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.32.2'
           channel: 'stable'
+
+      - name: Configure Flutter minSdkVersion
+        if: steps.should_build.outputs.SHOULD_BUILD == 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p android
+          touch android/local.properties
+          if grep -qE '^flutter\.minSdkVersion=' android/local.properties; then
+            sed -i 's/^flutter\.minSdkVersion=.*/flutter.minSdkVersion=23/' android/local.properties
+          else
+            echo "flutter.minSdkVersion=23" >> android/local.properties
+          fi
+          echo "Resulting android/local.properties:"
+          sed -n '1,120p' android/local.properties
 
       - name: Cache Dart & Pub artifacts
         if: steps.should_build.outputs.SHOULD_BUILD == 'true'
@@ -105,20 +134,53 @@ jobs:
       - name: Build APK
         if: steps.should_build.outputs.SHOULD_BUILD == 'true'
         run: flutter build apk --release --dart-define=APP_VERSION=${{ env.VERSION }} --dart-define=GIT_COMMIT=${{ github.sha }}
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEYSTORE_FILE: upload-keystore.jks
 
       - name: Build appBundle
         if: steps.should_build.outputs.SHOULD_BUILD == 'true'
         run: flutter build appbundle --release --dart-define=APP_VERSION=${{ env.VERSION }} --dart-define=GIT_COMMIT=${{ github.sha }}
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEYSTORE_FILE: upload-keystore.jks
 
-      - name: Build IPA
-        if: steps.should_build.outputs.SHOULD_BUILD == 'true'
-        run: flutter build ipa --no-codesign --dart-define=APP_VERSION=${{ env.VERSION }} --dart-define=GIT_COMMIT=${{ github.sha }}
-
-      - name: Compress Archives and IPAs
+      - name: Verify APK Signing
         if: steps.should_build.outputs.SHOULD_BUILD == 'true'
         run: |
-          cd build
-          tar -czf ios_build.tar.gz ios
+          # Check if APK exists and is signed
+          if [ -f "build/app/outputs/flutter-apk/app-release.apk" ]; then
+            echo "✅ APK built successfully"
+            set -euo pipefail
+            echo "Verifying with jarsigner..."
+            APK="build/app/outputs/flutter-apk/app-release.apk"
+            # Capture jarsigner result; print excerpt separately so failures propagate
+            jarsigner -verify -verbose -certs "$APK" > /tmp/jarsigner.out
+            sed -n '1,120p' /tmp/jarsigner.out
+            # Try apksigner if available to print certs/fingerprint
+            SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+            APKSIGNER=$(find "$SDK_ROOT"/build-tools -name apksigner -type f 2>/dev/null | sort -V | tail -1 || true)
+            if [ -n "$APKSIGNER" ]; then
+              echo "Verifying with apksigner..."
+              "$APKSIGNER" verify --print-certs "$APK"
+              # Optional: enforce signer fingerprint if provided
+              if [ -n "${{ secrets.ANDROID_CERT_SHA256 }}" ]; then
+                FPR=$("$APKSIGNER" verify --print-certs "$APK" 2>/dev/null \
+                  | awk -F': ' '/SHA-256 digest/{print $2}' | tr -d ' ')
+                if [ "$FPR" != "${{ secrets.ANDROID_CERT_SHA256 }}" ]; then
+                  echo "❌ APK cert SHA-256 mismatch"
+                  exit 1
+                fi
+              fi
+            fi
+          else
+            echo "❌ APK build failed"
+            exit 1
+          fi
 
       - name: Upload Artifacts
         if: steps.should_build.outputs.SHOULD_BUILD == 'true'
@@ -128,28 +190,21 @@ jobs:
           path: |
             build/app/outputs/flutter-apk/app-release.apk
             build/app/outputs/bundle/release/app-release.aab
-            build/ios_build.tar.gz
 
-      - name: Check if Tag Exists
-        if: steps.should_build.outputs.SHOULD_BUILD == 'true'
-        id: check_tag
-        run: |
-          if git rev-parse "v${{ env.VERSION }}" >/dev/null 2>&1; then
-            echo "TAG_EXISTS=true" >> $GITHUB_ENV
-          else
-            echo "TAG_EXISTS=false" >> $GITHUB_ENV
-          fi
 
-      - name: Modify Tag
-        if: steps.should_build.outputs.SHOULD_BUILD == 'true' && env.TAG_EXISTS == 'true'
-        id: modify_tag
-        run: |
-          new_version="${{ env.VERSION }}-alpha-${{ github.run_number }}"
-          echo "VERSION=$new_version" >> $GITHUB_ENV
 
       - name: Create Release
         if: steps.should_build.outputs.SHOULD_BUILD == 'true'
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "build/app/outputs/flutter-apk/app-release.apk,build/app/outputs/bundle/release/app-release.aab,build/ios_build.tar.gz"
+          artifacts: "build/app/outputs/flutter-apk/app-release.apk,build/app/outputs/bundle/release/app-release.aab"
           tag: v${{ env.VERSION }}
+          allowUpdates: true
+          omitBodyDuringUpdate: true
+          replacesArtifacts: true
+
+      - name: Cleanup Keystore
+        if: always() && steps.should_build.outputs.SHOULD_BUILD == 'true'
+        run: |
+          # Remove keystore file for security
+          rm -f android/app/upload-keystore.jks android/key.properties

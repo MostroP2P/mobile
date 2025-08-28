@@ -5,10 +5,50 @@ plugins {
     id "dev.flutter.flutter-gradle-plugin"
 }
 
+// Load keystore properties for release signing
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file('key.properties')
+def hasKeystoreFromFile = false
+def hasKeystoreFromEnv = false
+def envKeystore = [:]
+
+if (keystorePropertiesFile.exists()) {
+    keystorePropertiesFile.withInputStream { keystoreProperties.load(it) }
+    // Basic validation + reject known placeholders
+    def invalids = ['REPLACE_ME_KEY_ALIAS', 'your_key_alias_here', '${ANDROID_KEY_ALIAS}'] as Set
+    hasKeystoreFromFile =
+        keystoreProperties['keyAlias'] &&
+        !invalids.contains(keystoreProperties['keyAlias']) &&
+        keystoreProperties['keyPassword'] &&
+        keystoreProperties['storePassword'] &&
+        keystoreProperties['storeFile']
+}
+
+// Fallback: read from environment if file is absent/invalid (for CI)
+if (!hasKeystoreFromFile) {
+    def req = ['ANDROID_KEY_ALIAS','ANDROID_KEY_PASSWORD','ANDROID_KEYSTORE_PASSWORD','ANDROID_KEYSTORE_FILE']
+    hasKeystoreFromEnv = req.every { System.getenv(it) }
+    if (hasKeystoreFromEnv) {
+        envKeystore = [
+            keyAlias     : System.getenv('ANDROID_KEY_ALIAS'),
+            keyPassword  : System.getenv('ANDROID_KEY_PASSWORD'),
+            storePassword: System.getenv('ANDROID_KEYSTORE_PASSWORD'),
+            storeFile    : System.getenv('ANDROID_KEYSTORE_FILE'),
+        ]
+    }
+}
+
+def hasKeystore = hasKeystoreFromFile || hasKeystoreFromEnv
+
+// Suppress obsolete options warnings emitted by transitive JavaCompile tasks
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs.add("-Xlint:-options")
+}
+
 android {
     namespace = "network.mostro.app"
-    compileSdk = 35 // flutter.compileSdkVersion
-    ndkVersion = "26.3.11579264" //flutter.ndkVersion
+    compileSdk = flutter.compileSdkVersion
+    ndkVersion = flutter.ndkVersion
 
     compileOptions {
         coreLibraryDesugaringEnabled true
@@ -21,12 +61,29 @@ android {
         jvmTarget = "11"
     }
 
+    signingConfigs {
+        if (hasKeystore) {
+            release {
+                if (hasKeystoreFromFile) {
+                    keyAlias     keystoreProperties['keyAlias']
+                    keyPassword  keystoreProperties['keyPassword']
+                    storeFile    file(keystoreProperties['storeFile'])
+                    storePassword keystoreProperties['storePassword']
+                } else if (hasKeystoreFromEnv) {
+                    keyAlias     envKeystore.keyAlias
+                    keyPassword  envKeystore.keyPassword
+                    storeFile    file(envKeystore.storeFile)
+                    storePassword envKeystore.storePassword
+                }
+            }
+        }
+    }
+
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "network.mostro.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = 23 // flutter.minSdkVersion
+        minSdkVersion 23 // Required by flutter_secure_storage
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -34,9 +91,13 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.debug
+            if (hasKeystore) {
+                signingConfig signingConfigs.release
+            } else {
+                // Fallback to debug signing for development
+                signingConfig signingConfigs.debug
+                logger.warn("Release build using debug signing - keystore not available")
+            }
         }
     }
 }

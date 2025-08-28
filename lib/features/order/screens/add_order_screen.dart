@@ -15,6 +15,8 @@ import 'package:mostro_mobile/features/order/widgets/premium_section.dart';
 import 'package:mostro_mobile/features/order/widgets/price_type_section.dart';
 import 'package:mostro_mobile/features/order/widgets/form_section.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
+import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
+import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
@@ -40,6 +42,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
 
   int? _minFiatAmount;
   int? _maxFiatAmount;
+  String? _validationError;
 
   List<String> _selectedPaymentMethods = [];
   bool _showCustomPaymentMethod = false;
@@ -63,10 +66,12 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
 
       // Reset selectedFiatCodeProvider to default from settings for each new order
       final settings = ref.read(settingsProvider);
-      ref.read(selectedFiatCodeProvider.notifier).state = settings.defaultFiatCode;
-      
+      ref.read(selectedFiatCodeProvider.notifier).state =
+          settings.defaultFiatCode;
+
       // Pre-populate lightning address from settings if available
-      if (settings.defaultLightningAddress != null && settings.defaultLightningAddress!.isNotEmpty) {
+      if (settings.defaultLightningAddress != null &&
+          settings.defaultLightningAddress!.isNotEmpty) {
         _lightningAddressController.text = settings.defaultLightningAddress!;
       }
     });
@@ -85,7 +90,97 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
     setState(() {
       _minFiatAmount = minAmount;
       _maxFiatAmount = maxAmount;
+
+      // Use comprehensive validation to check all error conditions
+      _validationError = _validateAllAmounts();
     });
+  }
+
+  /// Converts fiat amount to sats using exchange rate
+  /// Formula: fiatAmount / exchangeRate * 100000000 (sats per BTC)
+  int _calculateSatsFromFiat(double fiatAmount, double exchangeRate) {
+    if (exchangeRate <= 0) return 0;
+    return (fiatAmount / exchangeRate * 100000000).round();
+  }
+
+  /// Validates if sats amount is within mostro instance allowed range
+  /// Returns error message if validation fails or data is missing
+  String? _validateSatsRange(double fiatAmount) {
+    // Ensure fiat code is selected
+    final selectedFiatCode = ref.read(selectedFiatCodeProvider);
+    if (selectedFiatCode == null || selectedFiatCode.isEmpty) {
+      return S.of(context)!.pleaseSelectCurrency;
+    }
+
+    // Get exchange rate - return error if not available
+    final exchangeRateAsync = ref.read(exchangeRateProvider(selectedFiatCode));
+    final exchangeRate = exchangeRateAsync.asData?.value;
+    if (exchangeRate == null) {
+      // Check if it's loading or error
+      if (exchangeRateAsync.isLoading) {
+        return S.of(context)!.exchangeRateNotAvailable;
+      } else if (exchangeRateAsync.hasError) {
+        return S.of(context)!.exchangeRateNotAvailable;
+      }
+      // Fallback for any other case where rate is null
+      return S.of(context)!.exchangeRateNotAvailable;
+    }
+
+    // Get mostro instance limits - return error if not available
+    final mostroInstance = ref.read(orderRepositoryProvider).mostroInstance;
+    if (mostroInstance == null) {
+      return S.of(context)!.mostroInstanceNotAvailable;
+    }
+
+    // Calculate sats equivalent
+    final satsAmount = _calculateSatsFromFiat(fiatAmount, exchangeRate);
+    final minAllowed = mostroInstance.minOrderAmount;
+    final maxAllowed = mostroInstance.maxOrderAmount;
+
+    // Debug logging
+    debugPrint(
+        'Validation: fiat=$fiatAmount, rate=$exchangeRate, sats=$satsAmount, min=$minAllowed, max=$maxAllowed');
+
+    // Check if sats amount is outside range
+    if (satsAmount < minAllowed) {
+      return S.of(context)!.fiatAmountTooLow(
+            minAllowed.toString(),
+            maxAllowed.toString(),
+          );
+    } else if (satsAmount > maxAllowed) {
+      return S.of(context)!.fiatAmountTooHigh(
+            minAllowed.toString(),
+            maxAllowed.toString(),
+          );
+    }
+
+    // Validation passed
+    return null;
+  }
+
+  /// Comprehensive validation for all fiat amount inputs
+  /// Returns error message if validation fails, null if all validations pass
+  String? _validateAllAmounts() {
+    // Check min/max relationship for range orders
+    if (_minFiatAmount != null && _maxFiatAmount != null) {
+      if (_maxFiatAmount! <= _minFiatAmount!) {
+        return S.of(context)!.maxMustBeGreaterThanMin;
+      }
+    }
+
+    // Check sats range validation for min amount
+    if (_minFiatAmount != null) {
+      final minError = _validateSatsRange(_minFiatAmount!.toDouble());
+      if (minError != null) return minError;
+    }
+
+    // Check sats range validation for max amount
+    if (_maxFiatAmount != null) {
+      final maxError = _validateSatsRange(_maxFiatAmount!.toDouble());
+      if (maxError != null) return maxError;
+    }
+
+    return null; // All validations passed
   }
 
   @override
@@ -130,13 +225,18 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
                         CurrencySection(
                           orderType: _orderType,
                           onCurrencySelected: () {
-                            setState(() {});
+                            setState(() {
+                              // Re-validate after currency change since rates/limits differ
+                              _validationError = _validateAllAmounts();
+                            });
                           },
                         ),
                         const SizedBox(height: 16),
                         AmountSection(
                           orderType: _orderType,
                           onAmountChanged: _onAmountChanged,
+                          validateSatsRange: _validateSatsRange,
+                          validationError: _validationError,
                         ),
                         const SizedBox(height: 16),
                         PaymentMethodsSection(
@@ -228,7 +328,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
                           child: ActionButtons(
                             key: const Key('addOrderButtons'),
                             onCancel: () => context.pop(),
-                            onSubmit: _submitOrder,
+                            onSubmit: _getSubmitCallback(),
                             currentRequestId: _currentRequestId,
                           ),
                         ),
@@ -242,6 +342,31 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
         ],
       ),
     );
+  }
+
+  /// Returns submit callback only when form is valid, null otherwise
+  /// This prevents button loading state when validation errors exist
+  VoidCallback? _getSubmitCallback() {
+    // Don't allow submission if validation errors exist
+    if (_validationError != null) {
+      return null; // Disables button, prevents loading state
+    }
+
+    // Check other basic conditions that would prevent submission
+    final selectedFiatCode = ref.read(selectedFiatCodeProvider);
+    if (selectedFiatCode == null || selectedFiatCode.isEmpty) {
+      return null;
+    }
+
+    if (_selectedPaymentMethods.isEmpty) {
+      return null;
+    }
+
+    if (_validationError != null) {
+      return null;
+    }
+
+    return _submitOrder; // Form is valid - allow submission
   }
 
   void _submitOrder() {
@@ -271,6 +396,32 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
         return;
       }
 
+      // Enhanced validation: check sats range for both min and max amounts
+      // This is a critical final validation before submission
+      if (_validationError != null) {
+        debugPrint(
+            'Submission blocked: Validation error present: $_validationError');
+        // Validation error is already displayed inline, just prevent submission
+        return;
+      }
+
+      // Additional safety check: ensure we have valid data for submission
+      final exchangeRateAsync = ref.read(exchangeRateProvider(fiatCode));
+      final mostroInstance = ref.read(orderRepositoryProvider).mostroInstance;
+
+      if (!exchangeRateAsync.hasValue || mostroInstance == null) {
+        debugPrint(
+            'Submission blocked: Required data not available - Exchange rate: ${exchangeRateAsync.hasValue}, Mostro instance: ${mostroInstance != null}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(S.of(context)!.exchangeRateNotAvailable),
+            duration: const Duration(seconds: 3),
+            backgroundColor: Colors.orange.withValues(alpha: 0.8),
+          ),
+        );
+        return;
+      }
+
       try {
         final uuid = const Uuid();
         final tempOrderId = uuid.v4();
@@ -290,27 +441,28 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
 
         final satsAmount = int.tryParse(_satsAmountController.text) ?? 0;
 
-
         List<String> paymentMethods =
             List<String>.from(_selectedPaymentMethods);
         if (_showCustomPaymentMethod &&
             _customPaymentMethodController.text.isNotEmpty) {
+          // Remove localized "Other" (case-insensitive, trimmed) from the list
+          final localizedOther = S.of(context)!.other.trim().toLowerCase();
+          paymentMethods.removeWhere(
+            (method) => method.trim().toLowerCase() == localizedOther,
+          );
 
-          paymentMethods.remove("Other");
-          
           String sanitizedPaymentMethod = _customPaymentMethodController.text;
-          
+
           final problematicChars = RegExp(r'[,"\\\[\]{}]');
           sanitizedPaymentMethod = sanitizedPaymentMethod
               .replaceAll(problematicChars, ' ')
               .replaceAll(RegExp(r'\s+'), ' ')
               .trim();
-              
+
           if (sanitizedPaymentMethod.isNotEmpty) {
             paymentMethods.add(sanitizedPaymentMethod);
           }
         }
-
 
         final buyerInvoice = _orderType == OrderType.buy &&
                 _lightningAddressController.text.isNotEmpty

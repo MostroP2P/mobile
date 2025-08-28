@@ -8,6 +8,7 @@ import 'package:mostro_mobile/features/home/widgets/order_list_item.dart';
 import 'package:mostro_mobile/shared/widgets/add_order_button.dart';
 import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_app_bar.dart';
+import 'package:mostro_mobile/shared/widgets/order_filter.dart';
 import 'package:mostro_mobile/shared/widgets/custom_drawer_overlay.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
@@ -196,7 +197,6 @@ class HomeScreen extends ConsumerWidget {
       child: Align(
         alignment: Alignment.centerLeft,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
             color: AppTheme.backgroundInput,
             borderRadius: BorderRadius.circular(30),
@@ -209,40 +209,62 @@ class HomeScreen extends ConsumerWidget {
               ),
             ],
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const HeroIcon(
-                HeroIcons.funnel,
-                style: HeroIconStyle.outline,
-                color: Colors.white70,
-                size: 18,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                S.of(context)!.filter,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: 0.5,
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(30),
+            child: InkWell(
+              onTap: () {
+                showDialog<void>(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return const Dialog(
+                      child: OrderFilter(),
+                    );
+                  },
+                );
+              },
+              borderRadius: BorderRadius.circular(30),
+              splashColor: AppTheme.activeColor.withValues(alpha: 0.3),
+              highlightColor: AppTheme.activeColor.withValues(alpha: 0.15),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const HeroIcon(
+                      HeroIcons.funnel,
+                      style: HeroIconStyle.outline,
+                      color: Colors.white70,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      S.of(context)!.filter,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 8),
+                      height: 16,
+                      width: 1,
+                      color: Colors.white.withValues(alpha: 0.2),
+                    ),
+                    Text(
+                      S.of(context)!.offersCount(filteredOrders.length.toString()),
+                      style: const TextStyle(
+                        color: Colors.grey,
+                        fontSize: 12,
+                        fontWeight: FontWeight.normal,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 8),
-                height: 16,
-                width: 1,
-                color: Colors.white.withValues(alpha: 0.2),
-              ),
-              Text(
-                S.of(context)!.offersCount(filteredOrders.length.toString()),
-                style: const TextStyle(
-                  color: Colors.grey,
-                  fontSize: 12,
-                  fontWeight: FontWeight.normal,
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
