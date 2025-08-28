@@ -19,6 +19,13 @@ import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
+import 'package:mostro_mobile/data/models/order.dart';
+import 'package:mostro_mobile/features/order/models/order_state.dart';
+import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
+import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
+import 'package:mostro_mobile/data/models/enums/status.dart';
+import 'package:mostro_mobile/data/models/enums/order_type.dart';
+import 'package:mostro_mobile/data/models/enums/action.dart';
 
 import '../mocks.dart';
 import '../mocks.mocks.dart';
@@ -42,6 +49,13 @@ void main() {
 
   // Add dummy for KeyManager
   provideDummy<KeyManager>(MockKeyManager());
+
+  // Add dummy for OrderState
+  provideDummy<OrderState>(OrderState(
+    status: Status.pending,
+    action: Action.newOrder,
+    order: null,
+  ));
 
   // Create dummy values for Mockito
   final dummyRef = MockRef();
@@ -385,6 +399,159 @@ void main() {
 
       expect(isValid, isTrue,
           reason: 'Server should accept valid messages in full privacy mode');
+    });
+  });
+
+  group('ReleaseOrder Tests with Captured Messages', () {
+    late List<MostroMessage> capturedMessages;
+    late TestableReleaseOrderService svc;
+    late NostrKeyPairs masterKey;
+    late NostrKeyPairs tradeKey;
+
+    setUp(() {
+      capturedMessages = [];
+      svc = TestableReleaseOrderService(mockRef, capturedMessages);
+
+      // Create key pairs for testing
+      final mnemonic = keyDerivator.generateMnemonic();
+      final extendedPrivKey = keyDerivator.extendedKeyFromMnemonic(mnemonic);
+      final masterPrivKey = keyDerivator.derivePrivateKey(extendedPrivKey, 0);
+      final tradePrivKey = keyDerivator.derivePrivateKey(extendedPrivKey, 1);
+      masterKey = NostrKeyPairs(private: masterPrivKey);
+      tradeKey = NostrKeyPairs(private: tradePrivKey);
+
+      // Ensure a mock session with masterKey and tradeKey is set on mockSessionNotifier
+      final session = Session(
+        startTime: DateTime.now(),
+        masterKey: masterKey,
+        keyIndex: 1,
+        tradeKey: tradeKey,
+        orderId: 'test-order-id',
+        fullPrivacy: false,
+      );
+      mockSessionNotifier.setMockSession(session);
+    });
+
+    test('releaseOrder with range amounts includes next_trade payload',
+        () async {
+      // Arrange
+      const orderId = 'range-order-id';
+
+      // Stub keyManagerProvider to return our mock
+      when(mockRef.read(keyManagerProvider)).thenReturn(mockKeyManager);
+
+      // Stub mockKeyManager.getNextKeyIndex() to return 5
+      when(mockKeyManager.getNextKeyIndex()).thenAnswer((_) async => 5);
+
+      // Stub mockKeyManager.deriveTradeKeyFromIndex to return a mock key pair
+      when(mockKeyManager.deriveTradeKeyFromIndex(5))
+          .thenAnswer((_) async => masterKey);
+
+      // Stub mockNostrService.publishEvent
+      when(mockNostrService.publishEvent(any))
+          .thenAnswer((_) async => Future<void>.value());
+
+      // Mock order state with range amounts
+      final mockOrder = Order(
+        id: orderId,
+        status: Status.active,
+        kind: OrderType.sell,
+        fiatCode: 'USD',
+        fiatAmount: 100,
+        paymentMethod: 'Lightning',
+        amount: 100,
+        minAmount: 50,
+        maxAmount: 150,
+        premium: 0,
+        createdAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+        expiresAt:
+            DateTime.now().add(Duration(hours: 1)).millisecondsSinceEpoch ~/
+                1000,
+      );
+
+      final mockOrderState = OrderState(
+        status: Status.active,
+        action: Action.release,
+        order: mockOrder,
+      );
+
+      // Stub the order notifier provider to return our mock
+      when(mockRef.read(orderNotifierProvider(orderId)))
+          .thenReturn(mockOrderState);
+
+      // Act
+      await svc.releaseOrder(orderId);
+
+      // Assert
+      expect(capturedMessages, hasLength(1));
+      final message = capturedMessages.first;
+      expect(message.action, equals(Action.release));
+      expect(message.id, equals(orderId));
+
+      final payload = message.toJson()['payload'];
+      expect(payload, contains('next_trade'));
+      expect(payload['next_trade'], equals([masterKey.public, 5]));
+    });
+
+    test(
+        'releaseOrder with equal min and max amounts does not include next_trade payload',
+        () async {
+      // Arrange
+      const orderId = 'fixed-order-id';
+
+      // Stub keyManagerProvider to return our mock
+      when(mockRef.read(keyManagerProvider)).thenReturn(mockKeyManager);
+
+      // Stub mockKeyManager.getNextKeyIndex() to return 5
+      when(mockKeyManager.getNextKeyIndex()).thenAnswer((_) async => 5);
+
+      // Stub mockKeyManager.deriveTradeKeyFromIndex to return a mock key pair
+      when(mockKeyManager.deriveTradeKeyFromIndex(5))
+          .thenAnswer((_) async => masterKey);
+
+      // Stub mockNostrService.publishEvent
+      when(mockNostrService.publishEvent(any))
+          .thenAnswer((_) async => Future<void>.value());
+
+      // Mock order state with fixed amount
+      final mockOrder = Order(
+        id: orderId,
+        status: Status.active,
+        kind: OrderType.sell,
+        fiatCode: 'USD',
+        fiatAmount: 100,
+        paymentMethod: 'Lightning',
+        amount: 100,
+        minAmount: 100,
+        maxAmount: 100,
+        premium: 0,
+        createdAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+        expiresAt:
+            DateTime.now().add(Duration(hours: 1)).millisecondsSinceEpoch ~/
+                1000,
+      );
+
+      final mockOrderState = OrderState(
+        status: Status.active,
+        action: Action.release,
+        order: mockOrder,
+      );
+
+      // Stub the order notifier provider to return our mock
+      when(mockRef.read(orderNotifierProvider(orderId)))
+          .thenReturn(mockOrderState);
+
+      // Act
+      await svc.releaseOrder(orderId);
+
+      // Assert
+      expect(capturedMessages, hasLength(1));
+      final message = capturedMessages.first;
+      expect(message.action, equals(Action.release));
+      expect(message.id, equals(orderId));
+
+      final payload = message.toJson()['payload'];
+      expect(payload, isNull);
     });
   });
 }
