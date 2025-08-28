@@ -341,8 +341,16 @@ class DisputeData {
       // Fallback to dispute action - this should now be set correctly
       isUserCreator = dispute.action == 'dispute-initiated-by-you';
     } else {
-      // If no action info, assume user is creator (since they can see the dispute)
-      isUserCreator = true;
+      // If no action info, check if this is a resolved dispute
+      // For resolved disputes, we need to be more careful about determining creator
+      if (dispute.status?.toLowerCase() == 'resolved' || dispute.status?.toLowerCase() == 'solved') {
+        // For resolved disputes, if we can't determine creator, assume user created it
+        // since they're viewing their own dispute list
+        isUserCreator = true;
+      } else {
+        // If no action info, assume user is creator (since they can see the dispute)
+        isUserCreator = true;
+      }
     }
     
     // Try to get counterparty info from order state and determine correct role
@@ -354,14 +362,18 @@ class DisputeData {
       if (orderState.peer != null) {
         counterpartyName = orderState.peer!.publicKey; // This will be resolved by nickNameProvider in the UI
       }
+    } else if (dispute.adminPubkey != null && dispute.status != 'resolved') {
+      // Only use admin pubkey as counterparty if dispute is not resolved and no peer info
+      // For resolved disputes, we don't want to show admin as counterparty
+      counterpartyName = dispute.adminPubkey;
+    }
       
-      // Determine if user is buyer or seller based on order type
-      if (orderState.order != null) {
-        // If order type is 'buy', then the order creator is buying (user is buyer)
-        // If order type is 'sell', then the order creator is selling (user is seller)
-        // The peer is always the opposite role
-        userRole = orderState.order!.kind.value == 'buy' ? UserRole.buyer : UserRole.seller;
-      }
+    // Determine if user is buyer or seller based on order type
+    if (orderState != null && orderState.order != null) {
+      // If order type is 'buy', then the order creator is buying (user is buyer)
+      // If order type is 'sell', then the order creator is selling (user is seller)
+      // The peer is always the opposite role
+      userRole = orderState.order!.kind.value == 'buy' ? UserRole.buyer : UserRole.seller;
     }
 
     // Get the appropriate description key based on status and creator
