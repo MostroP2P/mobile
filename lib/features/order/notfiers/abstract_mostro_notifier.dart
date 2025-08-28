@@ -128,21 +128,16 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         sessionNotifier.saveSession(session);
 
         // Check if payment failure recovery
-        bool isAfterPaymentFailure = false;
         final order = event.getPayload<Order>();
-        if (order != null) {
-          final order = event.payload as Order;
-          isAfterPaymentFailure = order.status == Status.settledHoldInvoice;
-        }
+        final isAfterPaymentFailure = order?.status == Status.settledHoldInvoice;
         
         // Notification
         if (isAfterPaymentFailure) {
           final now = DateTime.now();
-          final formattedTime = "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
           sendNotification(event.action, values: {
             'fiat_amount': order?.fiatAmount,
             'fiat_code': order?.fiatCode,
-            'failed_at': formattedTime,
+            'failed_at_epoch': now.millisecondsSinceEpoch,
           }, eventId: event.id);
         } else {
           sendNotification(event.action, eventId: event.id);
@@ -153,21 +148,25 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
 
       case Action.holdInvoicePaymentAccepted:
         final order = event.getPayload<Order>();
+        if (order == null) return;
 
         // Notification
-        final sellerNym = order?.sellerTradePubkey != null 
-            ? ref.read(nickNameProvider(order!.sellerTradePubkey!)) 
-            : 'Unknown';
-        sendNotification(event.action, values: {
-          'seller_npub': sellerNym,
-          'fiat_code': order?.fiatCode,
-          'fiat_amount': order?.fiatAmount,
-          'payment_method': order?.paymentMethod,
-        }, eventId: event.id);
+        final notificationValues = <String, dynamic>{
+          'fiat_code': order.fiatCode,
+          'fiat_amount': order.fiatAmount,
+          'payment_method': order.paymentMethod,
+        };
+        
+        if (order.sellerTradePubkey != null) {
+          final sellerNym = ref.read(nickNameProvider(order.sellerTradePubkey!));
+          notificationValues['seller_npub'] = sellerNym;
+        }
+        
+        sendNotification(event.action, values: notificationValues, eventId: event.id);
 
         // Update session and state
         final sessionProvider = ref.read(sessionNotifierProvider.notifier);
-        final peer = order!.sellerTradePubkey != null
+        final peer = order.sellerTradePubkey != null
             ? Peer(publicKey: order.sellerTradePubkey!)
             : null;
         sessionProvider.updateSession(orderId, (s) => s.peer = peer);
@@ -274,14 +273,22 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         break;
 
       case Action.disputeInitiatedByYou:
-        final dispute = event.getPayload<Dispute>()!;
+        final dispute = event.getPayload<Dispute>();
+        if (dispute == null) {
+          logger.e('disputeInitiatedByYou: Missing Dispute payload for event ${event.id} with action ${event.action}');
+          return;
+        }
         sendNotification(event.action, values: {
           'user_token': dispute.disputeId,
         }, eventId: event.id);
         break;
 
       case Action.disputeInitiatedByPeer:
-        final dispute = event.getPayload<Dispute>()!;
+        final dispute = event.getPayload<Dispute>();
+        if (dispute == null) {
+          logger.e('disputeInitiatedByPeer: Missing Dispute payload for event ${event.id} with action ${event.action}');
+          return;
+        }
         sendNotification(event.action, values: {
           'user_token': dispute.disputeId,
         }, eventId: event.id);

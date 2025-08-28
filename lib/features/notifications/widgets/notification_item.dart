@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as mostro_action;
 import 'package:mostro_mobile/data/models/notification.dart';
@@ -7,7 +8,6 @@ import 'package:mostro_mobile/features/notifications/providers/notifications_pro
 import 'package:mostro_mobile/features/notifications/widgets/notification_type_icon.dart';
 import 'package:mostro_mobile/features/notifications/widgets/notification_content.dart';
 import 'package:mostro_mobile/features/notifications/widgets/notification_menu.dart';
-import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
 class NotificationItem extends ConsumerWidget {
@@ -57,9 +57,11 @@ class NotificationItem extends ConsumerWidget {
   }
 
   BorderRadius _getCardBorderRadius(BuildContext context) {
-    return Theme.of(context).cardTheme.shape is RoundedRectangleBorder
-        ? (Theme.of(context).cardTheme.shape as RoundedRectangleBorder).borderRadius as BorderRadius
-        : BorderRadius.circular(12);
+    final shape = Theme.of(context).cardTheme.shape;
+    if (shape is RoundedRectangleBorder) {
+      return shape.borderRadius.resolve(Directionality.of(context));
+    }
+    return BorderRadius.circular(12);
   }
 
   void _handleNotificationTap(BuildContext context, WidgetRef ref) {
@@ -68,19 +70,17 @@ class NotificationItem extends ConsumerWidget {
       ref.read(notificationsDatabaseProvider).markAsRead(notification.id);
     }
 
-    final navProvider = ref.read(navigationProvider.notifier);
-
     if (notification.orderId != null) {
       switch (notification.action) {
         case mostro_action.Action.addInvoice:
-          navProvider.go('/add_invoice/${notification.orderId}');
+          context.push('/add_invoice/${notification.orderId}');
           break;
         case mostro_action.Action.canceled:
         case mostro_action.Action.adminCanceled:
-          navProvider.go('/order_book');
+          context.push('/order_book');
           break;
         case mostro_action.Action.rate:
-          navProvider.go('/rate_user/${notification.orderId}');
+          context.push('/rate_user/${notification.orderId}');
           break;
         case mostro_action.Action.payInvoice:
         case mostro_action.Action.fiatSentOk:
@@ -98,13 +98,29 @@ class NotificationItem extends ConsumerWidget {
         case mostro_action.Action.cooperativeCancelInitiatedByYou:
         case mostro_action.Action.cooperativeCancelInitiatedByPeer:
         case mostro_action.Action.sendDm:
-          navProvider.go('/trade_detail/${notification.orderId}');
+          context.push('/trade_detail/${notification.orderId}');
           break;
         case mostro_action.Action.cantDo:
         case mostro_action.Action.timeoutReversal:
         case mostro_action.Action.rateReceived:
-          break;
-        default:
+        case mostro_action.Action.newOrder:
+        case mostro_action.Action.takeSell:
+        case mostro_action.Action.takeBuy:
+        case mostro_action.Action.fiatSent:
+        case mostro_action.Action.release:
+        case mostro_action.Action.cancel:
+        case mostro_action.Action.cooperativeCancelAccepted:
+        case mostro_action.Action.buyerInvoiceAccepted:
+        case mostro_action.Action.holdInvoicePaymentCanceled:
+        case mostro_action.Action.rateUser:
+        case mostro_action.Action.dispute:
+        case mostro_action.Action.adminCancel:
+        case mostro_action.Action.adminSettle:
+        case mostro_action.Action.adminAddSolver:
+        case mostro_action.Action.adminTakeDispute:
+        case mostro_action.Action.adminTookDispute:
+        case mostro_action.Action.invoiceUpdated:
+        case mostro_action.Action.tradePubkey:
           break;
       }
     }
@@ -143,9 +159,16 @@ class NotificationItem extends ConsumerWidget {
             ),
           ),
           TextButton(
-            onPressed: () {
-              ref.read(notificationsDatabaseProvider).deleteNotification(notification.id);
-              Navigator.of(context).pop();
+            onPressed: () async {
+              try {
+                await ref.read(notificationsDatabaseProvider).deleteNotification(notification.id);
+              } catch (e) {
+                // Error handling - silently continue
+              } finally {
+                if (context.mounted) {
+                  Navigator.of(context).pop();
+                }
+              }
             },
             child: Text(
               S.of(context)!.notificationDelete,
