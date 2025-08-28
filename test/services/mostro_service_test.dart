@@ -140,9 +140,9 @@ void main() {
 
     // Compute SHA-256 hash of the message JSON
     final jsonString = jsonEncode(messageContent);
-    final messageBase64 = hex.encode(jsonString.codeUnits);
+    final messageHex = hex.encode(jsonString.codeUnits);
 
-    return NostrKeyPairs.verify(userPubKey, messageBase64, signatureHex);
+    return NostrKeyPairs.verify(userPubKey, messageHex, signatureHex);
   }
 
   group('MostroService Integration Tests', () {
@@ -234,9 +234,6 @@ void main() {
       when(mockNostrService.publishEvent(any))
           .thenAnswer((_) async => Future<void>.value());
 
-      when(mockNostrService.publishEvent(any))
-          .thenAnswer((_) async => Future.value());
-
       // Act
       await mostroService.takeSellOrder(orderId, 200, 'lnbc5678invoice');
 
@@ -296,9 +293,6 @@ void main() {
       // Mock NostrService's publishEvent only - other methods are now static in NostrUtils
       when(mockNostrService.publishEvent(any))
           .thenAnswer((_) async => Future<void>.value());
-
-      when(mockNostrService.publishEvent(any))
-          .thenAnswer((_) async => Future.value());
 
       // Act
       await mostroService.takeSellOrder(orderId, 300, 'lnbc91011invoice');
