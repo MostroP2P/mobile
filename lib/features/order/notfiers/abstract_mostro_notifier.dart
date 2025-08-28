@@ -137,7 +137,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
           sendNotification(event.action, values: {
             'fiat_amount': order?.fiatAmount,
             'fiat_code': order?.fiatCode,
-            'failed_at_epoch': now.millisecondsSinceEpoch,
+            'failed_at': now.millisecondsSinceEpoch,
           }, eventId: event.id);
         } else {
           sendNotification(event.action, eventId: event.id);
