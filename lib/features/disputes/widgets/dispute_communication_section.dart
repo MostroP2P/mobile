@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/disputes/notifiers/dispute_chat_notifier.dart';
+import 'package:mostro_mobile/features/disputes/providers/dispute_providers.dart';
 import 'package:mostro_mobile/data/models/dispute_chat.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
@@ -16,6 +17,7 @@ class DisputeCommunicationSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final disputeChatAsync = ref.watch(disputeChatProvider(disputeId));
+    final disputeDetailsAsync = ref.watch(disputeDetailsProvider(disputeId));
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -33,15 +35,46 @@ class DisputeCommunicationSection extends ConsumerWidget {
           const SizedBox(height: 16),
           disputeChatAsync.when(
             data: (disputeChat) {
-              if (disputeChat == null) {
-                return _buildWaitingForAdmin(context);
-              }
+              // Check dispute details to see if admin is assigned
+              return disputeDetailsAsync.when(
+                data: (dispute) {
+                  if (dispute == null) {
+                    return _buildWaitingForAdmin(context);
+                  }
+                  
+                  // If no admin assigned yet, show waiting message
+                  if (!dispute.hasAdmin) {
+                    return _buildWaitingForAdmin(context);
+                  }
+                  
+                  // Admin is assigned but no chat yet
+                  if (disputeChat == null) {
+                    return _buildAdminAssigned(context, dispute.adminPubkey!);
+                  }
 
-              if (disputeChat.messages.isEmpty) {
-                return _buildNoMessages(context, disputeChat);
-              }
+                  if (disputeChat.messages.isEmpty) {
+                    return _buildNoMessages(context, disputeChat);
+                  }
 
-              return _buildChatMessages(context, disputeChat);
+                  return _buildChatMessages(context, disputeChat);
+                },
+                loading: () => const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(20),
+                    child: CircularProgressIndicator(),
+                  ),
+                ),
+                error: (error, stack) {
+                  // Fallback to original logic if dispute details fail
+                  if (disputeChat == null) {
+                    return _buildWaitingForAdmin(context);
+                  }
+                  if (disputeChat.messages.isEmpty) {
+                    return _buildNoMessages(context, disputeChat);
+                  }
+                  return _buildChatMessages(context, disputeChat);
+                },
+              );
             },
             loading: () => const Center(
               child: Padding(
@@ -82,6 +115,52 @@ class DisputeCommunicationSection extends ConsumerWidget {
           const SizedBox(height: 8),
           Text(
             S.of(context)!.adminAssignmentDescription,
+            style: TextStyle(
+              color: AppTheme.textSecondary,
+              fontSize: 14,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAdminAssigned(BuildContext context, String adminPubkey) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.dark1,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.person_outline,
+            color: AppTheme.mostroGreen,
+            size: 32,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            S.of(context)!.adminAssigned,
+            style: TextStyle(
+              color: AppTheme.textPrimary,
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '${S.of(context)!.admin}: ${adminPubkey.substring(0, 16)}...',
+            style: TextStyle(
+              color: AppTheme.textSecondary,
+              fontSize: 14,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            S.of(context)!.adminAssignedDescription,
             style: TextStyle(
               color: AppTheme.textSecondary,
               fontSize: 14,
