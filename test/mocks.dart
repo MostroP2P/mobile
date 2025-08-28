@@ -17,6 +17,8 @@ import 'package:mostro_mobile/features/subscriptions/subscription.dart';
 import 'package:mostro_mobile/services/mostro_service.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
 import 'package:mostro_mobile/shared/notifiers/session_notifier.dart';
+import 'package:mostro_mobile/features/order/models/order_state.dart';
+import 'package:mostro_mobile/features/order/notfiers/order_notifier.dart';
 import 'package:sembast/sembast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -35,6 +37,9 @@ import 'mocks.mocks.dart';
   Ref,
   ProviderSubscription,
   RelaysNotifier,
+  OrderState,
+  OrderNotifier,
+  NostrKeyPairs,
 ])
 
 // Custom mock for SettingsNotifier that returns a specific Settings object

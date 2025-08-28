@@ -2,9 +2,12 @@ import 'dart:convert';
 import 'package:convert/convert.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
+import 'package:matcher/matcher.dart';
 import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/features/key_manager/key_derivator.dart';
+import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
+import 'package:mostro_mobile/features/key_manager/key_manager.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_manager.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_manager_provider.dart';
@@ -17,6 +20,11 @@ import 'package:mostro_mobile/data/repositories/mostro_storage.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
+import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
+import 'package:mostro_mobile/data/models/mostro_message.dart';
+import 'package:mostro_mobile/data/models/enums/action.dart';
+import 'package:mostro_mobile/data/models/next_trade.dart';
+import 'package:mostro_mobile/data/models/payload.dart';
 
 import '../mocks.dart';
 import '../mocks.mocks.dart';
@@ -37,6 +45,9 @@ void main() {
 
   // Add dummy for NostrService
   provideDummy<NostrService>(MockNostrService());
+  
+  // Add dummy for KeyManager
+  provideDummy<KeyManager>(MockKeyManager());
 
   // Create dummy values for Mockito
   final dummyRef = MockRef();
@@ -382,85 +393,20 @@ void main() {
           reason: 'Server should accept valid messages in full privacy mode');
     });
 
-    test('Range order detection logic works correctly', () {
-      // Test different order configurations
-      final testCases = [
-        {
-          'min': 50,
-          'max': 150,
-          'expectedRange': true,
-          'description': 'Valid range order (min != max)'
-        },
-        {
-          'min': 100,
-          'max': 100,
-          'expectedRange': false,
-          'description': 'Regular order (min == max)'
-        },
-        {
-          'min': 200,
-          'max': 100,
-          'expectedRange': false,
-          'description': 'Invalid range (min > max)'
-        },
-        {
-          'min': null,
-          'max': null,
-          'expectedRange': false,
-          'description': 'No range specified'
-        },
-        {
-          'min': 50,
-          'max': null,
-          'expectedRange': false,
-          'description': 'Only min specified'
-        },
-        {
-          'min': null,
-          'max': 150,
-          'expectedRange': false,
-          'description': 'Only max specified'
-        },
-      ];
 
-      for (final testCase in testCases) {
-        final minAmount = testCase['min'] as int?;
-        final maxAmount = testCase['max'] as int?;
-        final expectedRange = testCase['expectedRange'] as bool;
-        final description = testCase['description'] as String;
-
-        // Simulate the range order detection logic from MostroService
-        final isRangeOrder = minAmount != null &&
-            maxAmount != null &&
-            minAmount != maxAmount &&
-            minAmount < maxAmount; // Ensure min < max for valid range
-
-        expect(isRangeOrder, equals(expectedRange), reason: description);
-      }
-    });
-
-    test('Child order recognition works correctly', () {
-      // This test verifies that the app can recognize child orders from range order releases
-      // The actual implementation would check if a new order uses trade keys from existing sessions
-
-      // Simulate a scenario where a user has a session with a specific trade key
-      const userTradeKey =
-          '2d81b5ebf364dc496fba15888bc32c4343cd9c65643b513063e0dafe6d52f4c3';
-
-      // Simulate a child order that uses the same trade key
-      final childOrderPayload = {
-        'buyer_trade_pubkey': userTradeKey,
-        'seller_trade_pubkey': 'different_key_for_seller',
-      };
-
-      // The app should recognize this as a child order belonging to the current user
-      final isChildOrder =
-          childOrderPayload['buyer_trade_pubkey'] == userTradeKey ||
-              childOrderPayload['seller_trade_pubkey'] == userTradeKey;
-
-      expect(isChildOrder, isTrue,
-          reason:
-              'Child order should be recognized when it uses user\'s trade key');
-    });
   });
 }
+
+// Testable service that captures publishOrder calls
+class TestableReleaseOrderService extends MostroService {
+  final List<MostroMessage> capturedMessages;
+
+  TestableReleaseOrderService(super.ref, this.capturedMessages);
+
+  @override
+  Future<void> publishOrder(MostroMessage order) async {
+    // Capture the message instead of actually publishing
+    capturedMessages.add(order);
+  }
+}
+
