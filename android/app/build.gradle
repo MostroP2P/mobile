@@ -83,7 +83,13 @@ android {
         applicationId = "network.mostro.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdkVersion 23 // Required by flutter_secure_storage
+        // Required by flutter_secure_storage (needs API 23+)
+        def _requested = flutter.minSdkVersion as int
+        def _effective = Math.max(_requested, 23)
+        if (_effective > _requested) {
+            logger.lifecycle("minSdkVersion raised from ${_requested} to ${_effective} to satisfy flutter_secure_storage (API 23+).")
+        }
+        minSdkVersion _effective
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName

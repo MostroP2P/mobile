@@ -12,15 +12,18 @@ class NextTrade implements Payload {
   @override
   Map<String, dynamic> toJson() {
     return {
-      type: {'key': key, 'index': index},
+      type: [key, index],
     };
   }
 
-  factory NextTrade.fromJson(Map<String, dynamic> json) {
-    return NextTrade(
-      key: json['key'] as String,
-      index: json['index'] as int,
-    );
+  factory NextTrade.fromJson(dynamic json) {
+    if (json is List && json.length == 2) {
+      return NextTrade(
+        key: json[0] as String,
+        index: json[1] as int,
+      );
+    } else {
+      throw FormatException('Invalid NextTrade format: $json');
+    }
   }
-  
 }

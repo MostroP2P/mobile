@@ -1,3 +1,7 @@
+import 'package:mostro_mobile/data/models/order.dart';
+import 'package:mostro_mobile/data/models/enums/order_type.dart';
+import 'package:mostro_mobile/data/models/enums/status.dart';
+
 /// Mock server's trade index storage
 class MockServerTradeIndex {
   final Map<String, int> userTradeIndices = {};
@@ -27,4 +31,19 @@ bool validateMessageStructure(Map<String, dynamic> message) {
   }
 
   return true;
+}
+
+Order createTestOrder({int? minAmount, int? maxAmount}) {
+  return Order(
+    id: 'test-order-id',
+    kind: OrderType.buy,
+    status: Status.active,
+    amount: 1000,
+    fiatCode: 'USD',
+    minAmount: minAmount,
+    maxAmount: maxAmount,
+    fiatAmount: 100,
+    paymentMethod: 'Bank transfer',
+    premium: 5,
+  );
 }

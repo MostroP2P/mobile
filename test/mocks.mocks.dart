@@ -6,29 +6,34 @@
 import 'dart:async' as _i5;
 
 import 'package:dart_nostr/dart_nostr.dart' as _i3;
-import 'package:dart_nostr/nostr/model/relay_informations.dart' as _i12;
+import 'package:dart_nostr/nostr/model/relay_informations.dart' as _i15;
 import 'package:flutter_riverpod/flutter_riverpod.dart' as _i4;
+import 'package:logger/logger.dart' as _i13;
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:mockito/src/dummies.dart' as _i13;
+import 'package:mockito/src/dummies.dart' as _i16;
+import 'package:mostro_mobile/data/enums.dart' as _i27;
 import 'package:mostro_mobile/data/models.dart' as _i7;
-import 'package:mostro_mobile/data/models/order.dart' as _i14;
-import 'package:mostro_mobile/data/repositories/mostro_storage.dart' as _i22;
+import 'package:mostro_mobile/data/models/order.dart' as _i17;
+import 'package:mostro_mobile/data/repositories/mostro_storage.dart' as _i24;
 import 'package:mostro_mobile/data/repositories/open_orders_repository.dart'
-    as _i17;
-import 'package:mostro_mobile/data/repositories/session_storage.dart' as _i20;
-import 'package:mostro_mobile/features/key_manager/key_manager.dart' as _i21;
-import 'package:mostro_mobile/features/relays/relay.dart' as _i23;
+    as _i19;
+import 'package:mostro_mobile/data/repositories/session_storage.dart' as _i22;
+import 'package:mostro_mobile/features/key_manager/key_manager.dart' as _i23;
+import 'package:mostro_mobile/features/order/models/order_state.dart' as _i11;
+import 'package:mostro_mobile/features/order/notfiers/order_notifier.dart'
+    as _i28;
+import 'package:mostro_mobile/features/relays/relay.dart' as _i25;
 import 'package:mostro_mobile/features/relays/relays_notifier.dart' as _i10;
 import 'package:mostro_mobile/features/settings/settings.dart' as _i2;
 import 'package:mostro_mobile/features/settings/settings_notifier.dart' as _i9;
-import 'package:mostro_mobile/services/deep_link_service.dart' as _i15;
-import 'package:mostro_mobile/services/mostro_service.dart' as _i16;
-import 'package:mostro_mobile/services/nostr_service.dart' as _i11;
+import 'package:mostro_mobile/services/deep_link_service.dart' as _i18;
+import 'package:mostro_mobile/services/mostro_service.dart' as _i12;
+import 'package:mostro_mobile/services/nostr_service.dart' as _i14;
 import 'package:riverpod/src/internals.dart' as _i8;
 import 'package:sembast/sembast.dart' as _i6;
-import 'package:sembast/src/api/transaction.dart' as _i19;
-import 'package:shared_preferences/src/shared_preferences_async.dart' as _i18;
-import 'package:state_notifier/state_notifier.dart' as _i24;
+import 'package:sembast/src/api/transaction.dart' as _i21;
+import 'package:shared_preferences/src/shared_preferences_async.dart' as _i20;
+import 'package:state_notifier/state_notifier.dart' as _i26;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -211,10 +216,41 @@ class _FakeRelayValidationResult_15 extends _i1.SmartFake
         );
 }
 
+class _FakeOrderState_16 extends _i1.SmartFake implements _i11.OrderState {
+  _FakeOrderState_16(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
+}
+
+class _FakeMostroService_17 extends _i1.SmartFake
+    implements _i12.MostroService {
+  _FakeMostroService_17(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
+}
+
+class _FakeLogger_18 extends _i1.SmartFake implements _i13.Logger {
+  _FakeLogger_18(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
+}
+
 /// A class which mocks [NostrService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockNostrService extends _i1.Mock implements _i11.NostrService {
+class MockNostrService extends _i1.Mock implements _i14.NostrService {
   MockNostrService() {
     _i1.throwOnMissingStub(this);
   }
@@ -256,14 +292,14 @@ class MockNostrService extends _i1.Mock implements _i11.NostrService {
       ) as _i5.Future<void>);
 
   @override
-  _i5.Future<_i12.RelayInformations?> getRelayInfo(String? relayUrl) =>
+  _i5.Future<_i15.RelayInformations?> getRelayInfo(String? relayUrl) =>
       (super.noSuchMethod(
         Invocation.method(
           #getRelayInfo,
           [relayUrl],
         ),
-        returnValue: _i5.Future<_i12.RelayInformations?>.value(),
-      ) as _i5.Future<_i12.RelayInformations?>);
+        returnValue: _i5.Future<_i15.RelayInformations?>.value(),
+      ) as _i5.Future<_i15.RelayInformations?>);
 
   @override
   _i5.Future<void> publishEvent(_i3.NostrEvent? event) => (super.noSuchMethod(
@@ -346,7 +382,7 @@ class MockNostrService extends _i1.Mock implements _i11.NostrService {
           #getMostroPubKey,
           [],
         ),
-        returnValue: _i13.dummyValue<String>(
+        returnValue: _i16.dummyValue<String>(
           this,
           Invocation.method(
             #getMostroPubKey,
@@ -425,7 +461,7 @@ class MockNostrService extends _i1.Mock implements _i11.NostrService {
             content,
           ],
         ),
-        returnValue: _i5.Future<String>.value(_i13.dummyValue<String>(
+        returnValue: _i5.Future<String>.value(_i16.dummyValue<String>(
           this,
           Invocation.method(
             #createRumor,
@@ -456,7 +492,7 @@ class MockNostrService extends _i1.Mock implements _i11.NostrService {
             encryptedContent,
           ],
         ),
-        returnValue: _i5.Future<String>.value(_i13.dummyValue<String>(
+        returnValue: _i5.Future<String>.value(_i16.dummyValue<String>(
           this,
           Invocation.method(
             #createSeal,
@@ -508,7 +544,7 @@ class MockNostrService extends _i1.Mock implements _i11.NostrService {
       );
 
   @override
-  _i5.Future<_i14.Order?> fetchEventById(
+  _i5.Future<_i17.Order?> fetchEventById(
     String? eventId, [
     List<String>? specificRelays,
   ]) =>
@@ -520,11 +556,11 @@ class MockNostrService extends _i1.Mock implements _i11.NostrService {
             specificRelays,
           ],
         ),
-        returnValue: _i5.Future<_i14.Order?>.value(),
-      ) as _i5.Future<_i14.Order?>);
+        returnValue: _i5.Future<_i17.Order?>.value(),
+      ) as _i5.Future<_i17.Order?>);
 
   @override
-  _i5.Future<_i15.OrderInfo?> fetchOrderInfoByEventId(
+  _i5.Future<_i18.OrderInfo?> fetchOrderInfoByEventId(
     String? eventId, [
     List<String>? specificRelays,
   ]) =>
@@ -536,14 +572,14 @@ class MockNostrService extends _i1.Mock implements _i11.NostrService {
             specificRelays,
           ],
         ),
-        returnValue: _i5.Future<_i15.OrderInfo?>.value(),
-      ) as _i5.Future<_i15.OrderInfo?>);
+        returnValue: _i5.Future<_i18.OrderInfo?>.value(),
+      ) as _i5.Future<_i18.OrderInfo?>);
 }
 
 /// A class which mocks [MostroService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockMostroService extends _i1.Mock implements _i16.MostroService {
+class MockMostroService extends _i1.Mock implements _i12.MostroService {
   MockMostroService() {
     _i1.throwOnMissingStub(this);
   }
@@ -723,7 +759,7 @@ class MockMostroService extends _i1.Mock implements _i16.MostroService {
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockOpenOrdersRepository extends _i1.Mock
-    implements _i17.OpenOrdersRepository {
+    implements _i19.OpenOrdersRepository {
   MockOpenOrdersRepository() {
     _i1.throwOnMissingStub(this);
   }
@@ -816,7 +852,7 @@ class MockOpenOrdersRepository extends _i1.Mock
 /// See the documentation for Mockito's code generation for more information.
 // ignore: must_be_immutable
 class MockSharedPreferencesAsync extends _i1.Mock
-    implements _i18.SharedPreferencesAsync {
+    implements _i20.SharedPreferencesAsync {
   MockSharedPreferencesAsync() {
     _i1.throwOnMissingStub(this);
   }
@@ -1022,7 +1058,7 @@ class MockDatabase extends _i1.Mock implements _i6.Database {
   @override
   String get path => (super.noSuchMethod(
         Invocation.getter(#path),
-        returnValue: _i13.dummyValue<String>(
+        returnValue: _i16.dummyValue<String>(
           this,
           Invocation.getter(#path),
         ),
@@ -1030,14 +1066,14 @@ class MockDatabase extends _i1.Mock implements _i6.Database {
 
   @override
   _i5.Future<T> transaction<T>(
-          _i5.FutureOr<T> Function(_i19.Transaction)? action) =>
+          _i5.FutureOr<T> Function(_i21.Transaction)? action) =>
       (super.noSuchMethod(
         Invocation.method(
           #transaction,
           [action],
         ),
-        returnValue: _i13.ifNotNull(
-              _i13.dummyValueOrNull<T>(
+        returnValue: _i16.ifNotNull(
+              _i16.dummyValueOrNull<T>(
                 this,
                 Invocation.method(
                   #transaction,
@@ -1068,7 +1104,7 @@ class MockDatabase extends _i1.Mock implements _i6.Database {
 /// A class which mocks [SessionStorage].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockSessionStorage extends _i1.Mock implements _i20.SessionStorage {
+class MockSessionStorage extends _i1.Mock implements _i22.SessionStorage {
   MockSessionStorage() {
     _i1.throwOnMissingStub(this);
   }
@@ -1331,7 +1367,7 @@ class MockSessionStorage extends _i1.Mock implements _i20.SessionStorage {
 /// A class which mocks [KeyManager].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockKeyManager extends _i1.Mock implements _i21.KeyManager {
+class MockKeyManager extends _i1.Mock implements _i23.KeyManager {
   MockKeyManager() {
     _i1.throwOnMissingStub(this);
   }
@@ -1469,6 +1505,15 @@ class MockKeyManager extends _i1.Mock implements _i21.KeyManager {
       ) as _i5.Future<int>);
 
   @override
+  _i5.Future<int> getNextKeyIndex() => (super.noSuchMethod(
+        Invocation.method(
+          #getNextKeyIndex,
+          [],
+        ),
+        returnValue: _i5.Future<int>.value(0),
+      ) as _i5.Future<int>);
+
+  @override
   _i5.Future<void> setCurrentKeyIndex(int? index) => (super.noSuchMethod(
         Invocation.method(
           #setCurrentKeyIndex,
@@ -1482,7 +1527,7 @@ class MockKeyManager extends _i1.Mock implements _i21.KeyManager {
 /// A class which mocks [MostroStorage].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockMostroStorage extends _i1.Mock implements _i22.MostroStorage {
+class MockMostroStorage extends _i1.Mock implements _i24.MostroStorage {
   MockMostroStorage() {
     _i1.throwOnMissingStub(this);
   }
@@ -1873,7 +1918,7 @@ class MockSettings extends _i1.Mock implements _i2.Settings {
   @override
   String get mostroPublicKey => (super.noSuchMethod(
         Invocation.getter(#mostroPublicKey),
-        returnValue: _i13.dummyValue<String>(
+        returnValue: _i16.dummyValue<String>(
           this,
           Invocation.getter(#mostroPublicKey),
         ),
@@ -1970,7 +2015,7 @@ class MockRef<State extends Object?> extends _i1.Mock
           #refresh,
           [provider],
         ),
-        returnValue: _i13.dummyValue<T>(
+        returnValue: _i16.dummyValue<T>(
           this,
           Invocation.method(
             #refresh,
@@ -2077,7 +2122,7 @@ class MockRef<State extends Object?> extends _i1.Mock
           #read,
           [provider],
         ),
-        returnValue: _i13.dummyValue<T>(
+        returnValue: _i16.dummyValue<T>(
           this,
           Invocation.method(
             #read,
@@ -2101,7 +2146,7 @@ class MockRef<State extends Object?> extends _i1.Mock
           #watch,
           [provider],
         ),
-        returnValue: _i13.dummyValue<T>(
+        returnValue: _i16.dummyValue<T>(
           this,
           Invocation.method(
             #watch,
@@ -2197,7 +2242,7 @@ class MockProviderSubscription<State> extends _i1.Mock
           #read,
           [],
         ),
-        returnValue: _i13.dummyValue<State>(
+        returnValue: _i16.dummyValue<State>(
           this,
           Invocation.method(
             #read,
@@ -2249,10 +2294,10 @@ class MockRelaysNotifier extends _i1.Mock implements _i10.RelaysNotifier {
       ) as List<String>);
 
   @override
-  List<_i23.MostroRelayInfo> get mostroRelaysWithStatus => (super.noSuchMethod(
+  List<_i25.MostroRelayInfo> get mostroRelaysWithStatus => (super.noSuchMethod(
         Invocation.getter(#mostroRelaysWithStatus),
-        returnValue: <_i23.MostroRelayInfo>[],
-      ) as List<_i23.MostroRelayInfo>);
+        returnValue: <_i25.MostroRelayInfo>[],
+      ) as List<_i25.MostroRelayInfo>);
 
   @override
   bool get mounted => (super.noSuchMethod(
@@ -2261,22 +2306,22 @@ class MockRelaysNotifier extends _i1.Mock implements _i10.RelaysNotifier {
       ) as bool);
 
   @override
-  _i5.Stream<List<_i23.Relay>> get stream => (super.noSuchMethod(
+  _i5.Stream<List<_i25.Relay>> get stream => (super.noSuchMethod(
         Invocation.getter(#stream),
-        returnValue: _i5.Stream<List<_i23.Relay>>.empty(),
-      ) as _i5.Stream<List<_i23.Relay>>);
+        returnValue: _i5.Stream<List<_i25.Relay>>.empty(),
+      ) as _i5.Stream<List<_i25.Relay>>);
 
   @override
-  List<_i23.Relay> get state => (super.noSuchMethod(
+  List<_i25.Relay> get state => (super.noSuchMethod(
         Invocation.getter(#state),
-        returnValue: <_i23.Relay>[],
-      ) as List<_i23.Relay>);
+        returnValue: <_i25.Relay>[],
+      ) as List<_i25.Relay>);
 
   @override
-  List<_i23.Relay> get debugState => (super.noSuchMethod(
+  List<_i25.Relay> get debugState => (super.noSuchMethod(
         Invocation.getter(#debugState),
-        returnValue: <_i23.Relay>[],
-      ) as List<_i23.Relay>);
+        returnValue: <_i25.Relay>[],
+      ) as List<_i25.Relay>);
 
   @override
   bool get hasListeners => (super.noSuchMethod(
@@ -2294,7 +2339,7 @@ class MockRelaysNotifier extends _i1.Mock implements _i10.RelaysNotifier {
       );
 
   @override
-  set state(List<_i23.Relay>? value) => super.noSuchMethod(
+  set state(List<_i25.Relay>? value) => super.noSuchMethod(
         Invocation.setter(
           #state,
           value,
@@ -2303,7 +2348,7 @@ class MockRelaysNotifier extends _i1.Mock implements _i10.RelaysNotifier {
       );
 
   @override
-  _i5.Future<void> addRelay(_i23.Relay? relay) => (super.noSuchMethod(
+  _i5.Future<void> addRelay(_i25.Relay? relay) => (super.noSuchMethod(
         Invocation.method(
           #addRelay,
           [relay],
@@ -2314,8 +2359,8 @@ class MockRelaysNotifier extends _i1.Mock implements _i10.RelaysNotifier {
 
   @override
   _i5.Future<void> updateRelay(
-    _i23.Relay? oldRelay,
-    _i23.Relay? updatedRelay,
+    _i25.Relay? oldRelay,
+    _i25.Relay? updatedRelay,
   ) =>
       (super.noSuchMethod(
         Invocation.method(
@@ -2482,8 +2527,8 @@ class MockRelaysNotifier extends _i1.Mock implements _i10.RelaysNotifier {
 
   @override
   bool updateShouldNotify(
-    List<_i23.Relay>? old,
-    List<_i23.Relay>? current,
+    List<_i25.Relay>? old,
+    List<_i25.Relay>? current,
   ) =>
       (super.noSuchMethod(
         Invocation.method(
@@ -2498,7 +2543,7 @@ class MockRelaysNotifier extends _i1.Mock implements _i10.RelaysNotifier {
 
   @override
   _i4.RemoveListener addListener(
-    _i24.Listener<List<_i23.Relay>>? listener, {
+    _i26.Listener<List<_i25.Relay>>? listener, {
     bool? fireImmediately = true,
   }) =>
       (super.noSuchMethod(
@@ -2509,4 +2554,479 @@ class MockRelaysNotifier extends _i1.Mock implements _i10.RelaysNotifier {
         ),
         returnValue: () {},
       ) as _i4.RemoveListener);
+}
+
+/// A class which mocks [OrderState].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockOrderState extends _i1.Mock implements _i11.OrderState {
+  MockOrderState() {
+    _i1.throwOnMissingStub(this);
+  }
+
+  @override
+  _i27.Status get status => (super.noSuchMethod(
+        Invocation.getter(#status),
+        returnValue: _i27.Status.active,
+      ) as _i27.Status);
+
+  @override
+  _i27.Action get action => (super.noSuchMethod(
+        Invocation.getter(#action),
+        returnValue: _i27.Action.newOrder,
+      ) as _i27.Action);
+
+  @override
+  _i11.OrderState copyWith({
+    _i27.Status? status,
+    _i27.Action? action,
+    _i17.Order? order,
+    _i7.PaymentRequest? paymentRequest,
+    _i7.CantDo? cantDo,
+    _i7.Dispute? dispute,
+    _i7.Peer? peer,
+    _i7.PaymentFailed? paymentFailed,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #copyWith,
+          [],
+          {
+            #status: status,
+            #action: action,
+            #order: order,
+            #paymentRequest: paymentRequest,
+            #cantDo: cantDo,
+            #dispute: dispute,
+            #peer: peer,
+            #paymentFailed: paymentFailed,
+          },
+        ),
+        returnValue: _FakeOrderState_16(
+          this,
+          Invocation.method(
+            #copyWith,
+            [],
+            {
+              #status: status,
+              #action: action,
+              #order: order,
+              #paymentRequest: paymentRequest,
+              #cantDo: cantDo,
+              #dispute: dispute,
+              #peer: peer,
+              #paymentFailed: paymentFailed,
+            },
+          ),
+        ),
+      ) as _i11.OrderState);
+
+  @override
+  _i11.OrderState updateWith(_i7.MostroMessage<_i7.Payload>? message) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #updateWith,
+          [message],
+        ),
+        returnValue: _FakeOrderState_16(
+          this,
+          Invocation.method(
+            #updateWith,
+            [message],
+          ),
+        ),
+      ) as _i11.OrderState);
+
+  @override
+  List<_i27.Action> getActions(_i27.Role? role) => (super.noSuchMethod(
+        Invocation.method(
+          #getActions,
+          [role],
+        ),
+        returnValue: <_i27.Action>[],
+      ) as List<_i27.Action>);
+}
+
+/// A class which mocks [OrderNotifier].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockOrderNotifier extends _i1.Mock implements _i28.OrderNotifier {
+  MockOrderNotifier() {
+    _i1.throwOnMissingStub(this);
+  }
+
+  @override
+  _i12.MostroService get mostroService => (super.noSuchMethod(
+        Invocation.getter(#mostroService),
+        returnValue: _FakeMostroService_17(
+          this,
+          Invocation.getter(#mostroService),
+        ),
+      ) as _i12.MostroService);
+
+  @override
+  set mostroService(_i12.MostroService? _mostroService) => super.noSuchMethod(
+        Invocation.setter(
+          #mostroService,
+          _mostroService,
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  String get orderId => (super.noSuchMethod(
+        Invocation.getter(#orderId),
+        returnValue: _i16.dummyValue<String>(
+          this,
+          Invocation.getter(#orderId),
+        ),
+      ) as String);
+
+  @override
+  _i4.Ref<Object?> get ref => (super.noSuchMethod(
+        Invocation.getter(#ref),
+        returnValue: _FakeRef_3<Object?>(
+          this,
+          Invocation.getter(#ref),
+        ),
+      ) as _i4.Ref<Object?>);
+
+  @override
+  _i13.Logger get logger => (super.noSuchMethod(
+        Invocation.getter(#logger),
+        returnValue: _FakeLogger_18(
+          this,
+          Invocation.getter(#logger),
+        ),
+      ) as _i13.Logger);
+
+  @override
+  _i7.Session get session => (super.noSuchMethod(
+        Invocation.getter(#session),
+        returnValue: _FakeSession_7(
+          this,
+          Invocation.getter(#session),
+        ),
+      ) as _i7.Session);
+
+  @override
+  set session(_i7.Session? _session) => super.noSuchMethod(
+        Invocation.setter(
+          #session,
+          _session,
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  set subscription(
+          _i4.ProviderSubscription<
+                  _i4.AsyncValue<_i7.MostroMessage<_i7.Payload>?>>?
+              _subscription) =>
+      super.noSuchMethod(
+        Invocation.setter(
+          #subscription,
+          _subscription,
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  bool get mounted => (super.noSuchMethod(
+        Invocation.getter(#mounted),
+        returnValue: false,
+      ) as bool);
+
+  @override
+  _i5.Stream<_i11.OrderState> get stream => (super.noSuchMethod(
+        Invocation.getter(#stream),
+        returnValue: _i5.Stream<_i11.OrderState>.empty(),
+      ) as _i5.Stream<_i11.OrderState>);
+
+  @override
+  _i11.OrderState get state => (super.noSuchMethod(
+        Invocation.getter(#state),
+        returnValue: _FakeOrderState_16(
+          this,
+          Invocation.getter(#state),
+        ),
+      ) as _i11.OrderState);
+
+  @override
+  _i11.OrderState get debugState => (super.noSuchMethod(
+        Invocation.getter(#debugState),
+        returnValue: _FakeOrderState_16(
+          this,
+          Invocation.getter(#debugState),
+        ),
+      ) as _i11.OrderState);
+
+  @override
+  bool get hasListeners => (super.noSuchMethod(
+        Invocation.getter(#hasListeners),
+        returnValue: false,
+      ) as bool);
+
+  @override
+  set onError(_i4.ErrorListener? _onError) => super.noSuchMethod(
+        Invocation.setter(
+          #onError,
+          _onError,
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  set state(_i11.OrderState? value) => super.noSuchMethod(
+        Invocation.setter(
+          #state,
+          value,
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void handleEvent(_i7.MostroMessage<_i7.Payload>? event) => super.noSuchMethod(
+        Invocation.method(
+          #handleEvent,
+          [event],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  _i5.Future<void> sync() => (super.noSuchMethod(
+        Invocation.method(
+          #sync,
+          [],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> takeSellOrder(
+    String? orderId,
+    int? amount,
+    String? lnAddress,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #takeSellOrder,
+          [
+            orderId,
+            amount,
+            lnAddress,
+          ],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> takeBuyOrder(
+    String? orderId,
+    int? amount,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #takeBuyOrder,
+          [
+            orderId,
+            amount,
+          ],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> sendInvoice(
+    String? orderId,
+    String? invoice,
+    int? amount,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #sendInvoice,
+          [
+            orderId,
+            invoice,
+            amount,
+          ],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> cancelOrder() => (super.noSuchMethod(
+        Invocation.method(
+          #cancelOrder,
+          [],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> sendFiatSent() => (super.noSuchMethod(
+        Invocation.method(
+          #sendFiatSent,
+          [],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> releaseOrder() => (super.noSuchMethod(
+        Invocation.method(
+          #releaseOrder,
+          [],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> disputeOrder() => (super.noSuchMethod(
+        Invocation.method(
+          #disputeOrder,
+          [],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> submitRating(int? rating) => (super.noSuchMethod(
+        Invocation.method(
+          #submitRating,
+          [rating],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+
+  @override
+  void dispose() => super.noSuchMethod(
+        Invocation.method(
+          #dispose,
+          [],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void subscribe() => super.noSuchMethod(
+        Invocation.method(
+          #subscribe,
+          [],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void handleError(
+    Object? err,
+    StackTrace? stack,
+  ) =>
+      super.noSuchMethod(
+        Invocation.method(
+          #handleError,
+          [
+            err,
+            stack,
+          ],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  bool updateShouldNotify(
+    _i11.OrderState? old,
+    _i11.OrderState? current,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #updateShouldNotify,
+          [
+            old,
+            current,
+          ],
+        ),
+        returnValue: false,
+      ) as bool);
+
+  @override
+  _i4.RemoveListener addListener(
+    _i26.Listener<_i11.OrderState>? listener, {
+    bool? fireImmediately = true,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #addListener,
+          [listener],
+          {#fireImmediately: fireImmediately},
+        ),
+        returnValue: () {},
+      ) as _i4.RemoveListener);
+}
+
+/// A class which mocks [NostrKeyPairs].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockNostrKeyPairs extends _i1.Mock implements _i3.NostrKeyPairs {
+  MockNostrKeyPairs() {
+    _i1.throwOnMissingStub(this);
+  }
+
+  @override
+  String get private => (super.noSuchMethod(
+        Invocation.getter(#private),
+        returnValue: _i16.dummyValue<String>(
+          this,
+          Invocation.getter(#private),
+        ),
+      ) as String);
+
+  @override
+  String get public => (super.noSuchMethod(
+        Invocation.getter(#public),
+        returnValue: _i16.dummyValue<String>(
+          this,
+          Invocation.getter(#public),
+        ),
+      ) as String);
+
+  @override
+  List<Object?> get props => (super.noSuchMethod(
+        Invocation.getter(#props),
+        returnValue: <Object?>[],
+      ) as List<Object?>);
+
+  @override
+  set public(String? _public) => super.noSuchMethod(
+        Invocation.setter(
+          #public,
+          _public,
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  String sign(String? message) => (super.noSuchMethod(
+        Invocation.method(
+          #sign,
+          [message],
+        ),
+        returnValue: _i16.dummyValue<String>(
+          this,
+          Invocation.method(
+            #sign,
+            [message],
+          ),
+        ),
+      ) as String);
 }

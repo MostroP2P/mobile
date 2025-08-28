@@ -11,6 +11,8 @@ import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_manager_provider.dart';
 import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
+import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
+import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 
 class MostroService {
   final Ref ref;
@@ -53,8 +55,8 @@ class MostroService {
 
     final sessions = ref.read(sessionNotifierProvider);
     final matchingSession = sessions.firstWhereOrNull(
-        (s) => s.tradeKey.public == event.recipient,
-      );
+      (s) => s.tradeKey.public == event.recipient,
+    );
     if (matchingSession == null) {
       _logger.w('No matching session found for recipient: ${event.recipient}');
       return;
@@ -149,10 +151,35 @@ class MostroService {
   }
 
   Future<void> releaseOrder(String orderId) async {
+    // Get the current order state to check if it's a range order
+    final orderState = ref.read(orderNotifierProvider(orderId));
+    final order = orderState.order;
+
+    // Check if this is a range order (has min and max amounts that are different and valid)
+    final isRangeOrder = order?.minAmount != null &&
+        order?.maxAmount != null &&
+        order!.minAmount! < order.maxAmount!;
+
+    Payload? payload;
+
+    if (isRangeOrder) {
+      // For range orders, we need to generate the next trade key and index
+      final keyManager = ref.read(keyManagerProvider);
+      final nextKeyIndex = await keyManager.getNextKeyIndex();
+      final nextTradeKey =
+          await keyManager.deriveTradeKeyFromIndex(nextKeyIndex);
+
+      payload = NextTrade(
+        key: nextTradeKey.public,
+        index: nextKeyIndex,
+      );
+    }
+
     await publishOrder(
       MostroMessage(
         action: Action.release,
         id: orderId,
+        payload: payload,
       ),
     );
   }
@@ -178,14 +205,15 @@ class MostroService {
 
   Future<void> publishOrder(MostroMessage order) async {
     final session = await _getSession(order);
-    
+
     final event = await order.wrap(
       tradeKey: session.tradeKey,
       recipientPubKey: _settings.mostroPublicKey,
       masterKey: session.fullPrivacy ? null : session.masterKey,
       keyIndex: session.fullPrivacy ? null : session.keyIndex,
     );
-    _logger.i('Sending DM, Event ID: ${event.id} with payload: ${order.toJson()}');
+    _logger
+        .i('Sending DM, Event ID: ${event.id} with payload: ${order.toJson()}');
     await ref.read(nostrServiceProvider).publishEvent(event);
   }
 
