@@ -107,6 +107,13 @@ class KeyManager {
     return await _storage.readTradeKeyIndex();
   }
 
+  Future<int> getNextKeyIndex() async {
+    final currentIndex = await getCurrentKeyIndex();
+    await setCurrentKeyIndex(currentIndex + 1);
+
+    return currentIndex + 1;
+  }
+
   Future<void> setCurrentKeyIndex(int index) async {
     if (index < 1) {
       throw InvalidTradeKeyIndexException(
