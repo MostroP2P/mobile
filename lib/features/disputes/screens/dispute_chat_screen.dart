@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mostro_mobile/data/models/dispute.dart';
 import 'package:mostro_mobile/features/disputes/widgets/dispute_info_card.dart';
+import 'package:mostro_mobile/features/disputes/widgets/dispute_communication_section.dart';
+import 'package:mostro_mobile/features/disputes/widgets/dispute_input_section.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 
 class DisputeChatScreen extends StatelessWidget {
@@ -13,15 +15,16 @@ class DisputeChatScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Mock dispute data for UI demonstration
+    // Mock dispute data for UI demonstration - vary based on disputeId
+    final isResolvedDispute = disputeId == 'dispute_003';
     final mockDispute = DisputeData(
       disputeId: disputeId,
       orderId: 'order_${disputeId.substring(0, 8)}',
-      status: 'in-progress',
-      descriptionKey: DisputeDescriptionKey.inProgress,
+      status: isResolvedDispute ? 'resolved' : 'in-progress',
+      descriptionKey: isResolvedDispute ? DisputeDescriptionKey.resolved : DisputeDescriptionKey.inProgress,
       counterparty: 'admin_123',
       isCreator: true,
-      createdAt: DateTime.now().subtract(const Duration(hours: 2)),
+      createdAt: DateTime.now().subtract(Duration(hours: isResolvedDispute ? 72 : 2)),
       userRole: UserRole.buyer,
     );
 
@@ -48,79 +51,24 @@ class DisputeChatScreen extends StatelessWidget {
           // Dispute info card
           DisputeInfoCard(dispute: mockDispute),
           
-          // Mock communication section
+          // Communication section with mock messages
           Expanded(
-            child: Container(
-              margin: const EdgeInsets.all(16),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey[850],
-                borderRadius: BorderRadius.circular(12),
-              ),
+            child: SingleChildScrollView(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Communication',
-                    style: TextStyle(
-                      color: AppTheme.textSecondary,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        'Dispute chat interface - UI only demo',
-                        style: TextStyle(
-                          color: AppTheme.textSecondary,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
+                  const SizedBox(height: 24),
+                  DisputeCommunicationSection(
+                    disputeId: disputeId,
+                    status: mockDispute.status,
                   ),
                 ],
               ),
             ),
           ),
           
-          // Mock input section
-          Container(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    style: const TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      hintText: 'Type your message...',
-                      hintStyle: TextStyle(color: AppTheme.textSecondary),
-                      filled: true,
-                      fillColor: Colors.grey[850],
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(25),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                CircleAvatar(
-                  backgroundColor: Colors.blue,
-                  child: const Icon(
-                    Icons.send,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ),
-              ],
-            ),
-          ),
+          // Input section for sending messages (only show if not resolved)
+          if (mockDispute.status != 'resolved')
+            DisputeInputSection(disputeId: disputeId),
         ],
       ),
     );

@@ -155,7 +155,7 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
                   Flexible(
                     child: RichText(
                       text: TextSpan(
-                        text: S.of(context)!.forAmount(amountString, order.currency ?? ''),
+                        text: S.of(context)!.forAmountWithCurrency(amountString, order.currency ?? ''),
                         style: const TextStyle(
                           color: Colors.white70,
                           fontSize: 16,

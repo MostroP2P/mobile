@@ -950,8 +950,7 @@
     "placeholders": {
       "error": { "type": "String" }
     }
-  }
-
+  },
 
   "@_comment_relay_status": "Mensajes de estado de relays",
   "inUse": "En Uso",

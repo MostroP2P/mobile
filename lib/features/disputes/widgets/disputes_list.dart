@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/disputes/widgets/dispute_list_item.dart';
 import 'package:mostro_mobile/data/models/dispute.dart';
@@ -83,12 +84,7 @@ class DisputesList extends StatelessWidget {
         return DisputeListItem(
           dispute: disputeData,
           onTap: () {
-            // For now, just show a snackbar since we don't have full navigation
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Dispute ${disputeData.disputeId} tapped'),
-              ),
-            );
+            context.push('/dispute_details/${disputeData.disputeId}');
           },
         );
       },

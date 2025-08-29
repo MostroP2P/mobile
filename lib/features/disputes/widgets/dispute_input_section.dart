@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
-import 'package:mostro_mobile/features/disputes/notifiers/dispute_chat_notifier.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
-class DisputeInputSection extends ConsumerStatefulWidget {
+class DisputeInputSection extends StatefulWidget {
   final String disputeId;
 
   const DisputeInputSection({
@@ -13,10 +11,10 @@ class DisputeInputSection extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<DisputeInputSection> createState() => _DisputeInputSectionState();
+  State<DisputeInputSection> createState() => _DisputeInputSectionState();
 }
 
-class _DisputeInputSectionState extends ConsumerState<DisputeInputSection> {
+class _DisputeInputSectionState extends State<DisputeInputSection> {
   final TextEditingController _messageController = TextEditingController();
   bool _isLoading = false;
 
@@ -26,24 +24,122 @@ class _DisputeInputSectionState extends ConsumerState<DisputeInputSection> {
     super.dispose();
   }
 
-  Future<void> _sendMessage() async {
-    final message = _messageController.text.trim();
-    if (message.isEmpty) return;
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: AppTheme.backgroundDark,
+        border: Border(
+          top: BorderSide(
+            color: Colors.white.withValues(alpha: 0.05),
+            width: 1.0,
+          ),
+        ),
+      ),
+      child: SafeArea(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Expanded(
+              child: Container(
+                constraints: const BoxConstraints(
+                  minHeight: 40,
+                  maxHeight: 120,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.grey[850],
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    width: 1,
+                  ),
+                ),
+                child: TextField(
+                  controller: _messageController,
+                  maxLines: null,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: S.of(context)?.typeYourMessage ?? 'Type your message...',
+                    hintStyle: TextStyle(
+                      color: AppTheme.textSecondary,
+                      fontSize: 16,
+                    ),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: _isLoading ? null : _sendMessage,
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: _canSend() ? Colors.blue : Colors.grey[600],
+                  shape: BoxShape.circle,
+                ),
+                child: _isLoading
+                    ? Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Icon(
+                        Icons.send,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
+  bool _canSend() {
+    return _messageController.text.trim().isNotEmpty && !_isLoading;
+  }
+
+  void _sendMessage() async {
+    if (!_canSend()) return;
+
+    final message = _messageController.text.trim();
+    _messageController.clear();
+    
     setState(() {
       _isLoading = true;
     });
 
     try {
-      final notifier = ref.read(disputeChatProvider(widget.disputeId).notifier);
-      await notifier.sendMessage(message);
-      _messageController.clear();
+      // Mock sending - just simulate delay
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Message sent: $message'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(S.of(context)!.failedSendMessage(error.toString())),
-            backgroundColor: AppTheme.red1,
+            content: Text('Failed to send message: $error'),
+            backgroundColor: Colors.red,
           ),
         );
       }
@@ -54,111 +150,5 @@ class _DisputeInputSectionState extends ConsumerState<DisputeInputSection> {
         });
       }
     }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final disputeChatAsync = ref.watch(disputeChatProvider(widget.disputeId));
-
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(
-          top: BorderSide(
-            color: Colors.white.withValues(alpha: 0.05),
-            width: 1.0,
-          ),
-        ),
-      ),
-      child: disputeChatAsync.when(
-        data: (disputeChat) {
-          // Only show input if admin is assigned
-          if (disputeChat == null) {
-            return Container(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                S.of(context)!.waitingAdminAssignmentInput,
-                style: TextStyle(
-                  color: AppTheme.textSecondary,
-                  fontSize: 14,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            );
-          }
-
-          return Container(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    enabled: !_isLoading,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      hintText: S.of(context)!.typeYourMessage,
-                      hintStyle: TextStyle(color: AppTheme.textSecondary),
-                      filled: true,
-                      fillColor: AppTheme.dark2,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                    ),
-                    maxLines: null,
-                    textInputAction: TextInputAction.send,
-                    onSubmitted: (_) => _sendMessage(),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Container(
-                  decoration: BoxDecoration(
-                    color: AppTheme.mostroGreen,
-                    shape: BoxShape.circle,
-                  ),
-                  child: IconButton(
-                    onPressed: _isLoading ? null : _sendMessage,
-                    icon: _isLoading
-                        ? SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                AppTheme.backgroundDark,
-                              ),
-                            ),
-                          )
-                        : Icon(
-                            Icons.send,
-                            color: AppTheme.backgroundDark,
-                          ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-        loading: () => Container(
-          padding: const EdgeInsets.all(16),
-          child: const Center(child: CircularProgressIndicator()),
-        ),
-        error: (error, stack) => Container(
-          padding: const EdgeInsets.all(16),
-          child: Text(
-            S.of(context)!.errorLoadingChat,
-            style: TextStyle(
-              color: AppTheme.red1,
-              fontSize: 14,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ),
-      ),
-    );
   }
 }

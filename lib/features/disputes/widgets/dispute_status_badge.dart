@@ -46,7 +46,7 @@ class DisputeStatusBadge extends StatelessWidget {
         return AppTheme.statusSuccessBackground.withValues(alpha: 0.3);
       case 'resolved':
       case 'solved':
-        return AppTheme.statusSettledBackground.withValues(alpha: 0.3);
+        return Colors.blue.withValues(alpha: 0.3);
       case 'closed':
         return AppTheme.statusInactiveBackground.withValues(alpha: 0.3);
       default:
@@ -63,7 +63,7 @@ class DisputeStatusBadge extends StatelessWidget {
         return AppTheme.statusSuccessText;
       case 'resolved':
       case 'solved':
-        return AppTheme.statusSettledText;
+        return Colors.blue;
       case 'closed':
         return AppTheme.statusInactiveText;
       default:
