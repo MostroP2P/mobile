@@ -178,7 +178,8 @@ class SessionNotifier extends StateNotifier<List<Session>> {
       final sharedKey =
           NostrUtils.computeSharedKey(tradePrivateKey, counterpartyPublicKey);
 
-      _logger.d('Shared key calculated: ${sharedKey.public}');
+      // Avoid logging any part of the shared key to prevent leaking sensitive information
+      _logger.d('Shared key calculated successfully');
       return sharedKey;
     } catch (e) {
       _logger.e('Error calculating shared key: $e');

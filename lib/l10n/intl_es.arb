@@ -579,36 +579,11 @@
   "someoneIsSellingTitle": "Alguien está Vendiendo Sats",
   "someoneIsBuyingTitle": "Alguien está Comprando Sats",
   "someoneIsSellingFixedTitle": "Alguien está Vendiendo {sats} Sats",
-  "@someoneIsSellingFixedTitle": {
-    "placeholders": {
-      "sats": {}
-    }
-  },
   "someoneIsBuyingFixedTitle": "Alguien está Comprando {sats} Sats",
-  "@someoneIsBuyingFixedTitle": {
-    "placeholders": {
-      "sats": {}
-    }
-  },
   "youCreatedOfferMessage": "Creaste esta oferta. A continuación se muestran los detalles de tu oferta. Espera a que otro usuario la tome. Se publicará durante 24 horas. Puedes cancelarla en cualquier momento usando el botón 'Cancelar'.",
   "youAreSellingTitle": "Estás vendiendo {sats} sats",
-  "@youAreSellingTitle": {
-    "placeholders": {
-      "sats": {}
-    }
-  },
   "youAreBuyingTitle": "Estás comprando {sats} sats",
-  "@youAreBuyingTitle": {
-    "placeholders": {
-      "sats": {}
-    }
-  },
   "forAmount": "por {amount}",
-  "@forAmount": {
-    "placeholders": {
-      "amount": {}
-    }
-  },
   "timeLeftLabel": "Tiempo restante: {time}",
   "@timeLeftLabel": {
     "placeholders": {
@@ -704,6 +679,36 @@
   "yesterday": "Ayer",
   "youPrefix": "Tú: ",
   "conversationsDescription": "Aquí encontrarás tus conversaciones con otros usuarios durante los intercambios.",
+  "disputesDescription": "Estas son tus disputas abiertas y los chats con el administrador que ayuda a resolverlas.",
+  "disputeDetails": "Detalles de la disputa",
+  "disputeForOrder": "Disputa de la orden",
+  "disputeStatusInitiated": "Iniciada",
+  "disputeStatusInProgress": "En progreso",
+  "disputeStatusResolved": "Resuelta",
+  "disputeStatusClosed": "Cerrada",
+  "disputeResolvedTitle": "Disputa resuelta",
+  "disputeResolvedMessage": "Esta disputa ha sido resuelta. El mediador tomó una decisión basada en la evidencia presentada. Revisa tu billetera para ver reembolsos o pagos.",
+  "disputeOpenedByYou": "Abriste esta disputa contra el comprador {counterparty}, lee atentamente a continuación:",
+  "@disputeOpenedByYou": {
+    "placeholders": {
+      "counterparty": { "type": "String" }
+    }
+  },
+  "disputeOpenedAgainstYou": "Esta disputa fue abierta contra ti por {counterparty}, lee atentamente a continuación:",
+  "@disputeOpenedAgainstYou": {
+    "placeholders": {
+      "counterparty": { "type": "String" }
+    }
+  },
+  "disputeInstruction1": "Espera a que un mediador tome tu disputa. Una vez que llegue, comparte cualquier evidencia relevante para ayudar a aclarar la situación.",
+  "disputeInstruction2": "La decisión final se tomará en base a la evidencia presentada.",
+  "disputeInstruction3": "Si no respondes, el sistema asumirá que no deseas cooperar y podrías perder la disputa.",
+  "disputeInstruction4": "Si quieres compartir tu historial de chat con {counterparty}, puedes darle al mediador la clave compartida que se encuentra en Información del usuario en tu conversación con ese usuario.",
+  "@disputeInstruction4": {
+    "placeholders": {
+      "counterparty": { "type": "String" }
+    }
+  },
   "orderId": "ID de Orden:",
   "paymentMethod": "Método de Pago:",
   "createdOn": "Creado el:",
@@ -723,8 +728,8 @@
       }
     }
   },
-  "forAmount": "por {amount} {currency}",
-  "@forAmount": {
+  "forAmountWithCurrency": "por {amount} {currency}",
+  "@forAmountWithCurrency": {
     "placeholders": {
       "amount": {
         "type": "String"
@@ -894,6 +899,60 @@
   "orderTimeout": "Tiempo de espera de la orden agotado",
   "orderCanceled": "La orden fue cancelada",
 
+  
+  "@_comment_dispute_communication": "Texto de Comunicación de Disputas",
+  "disputeCommunication": "Comunicación",
+  "waitingAdminAssignment": "Esperando asignación de administrador",
+  "adminAssignmentDescription": "Se asignará un administrador a tu disputa pronto. Una vez asignado, podrás comunicarte directamente con él aquí.",
+  "adminAssigned": "Administrador asignado",
+  "adminAssignedDescription": "Ahora puedes comunicarte con el administrador. Inicia la conversación enviando un mensaje a continuación.",
+  "admin": "Administrador",
+  "you": "Tú",
+  "errorLoadingChat": "Error cargando el chat",
+  "adminPubkey": "Pubkey del administrador",
+  "tokenVerified": "Token verificado",
+  "awaitingTokenVerification": "Esperando verificación del token",
+  "askAdminQuoteToken": "Pide al administrador que cite este token:",
+  
+  "@_comment_dispute_input": "Texto de Entrada de Disputas",
+  "failedSendMessage": "Error al enviar mensaje: {error}",
+  "@failedSendMessage": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "waitingAdminAssignmentInput": "Esperando asignación de administrador...",
+  "typeYourMessage": "Escribe tu mensaje...",
+  
+  "@_comment_dispute_list": "Texto de Lista de Disputas",
+  "disputesWillAppear": "Las disputas aparecerán aquí cuando las abras desde tus intercambios",
+  "failedLoadDisputes": "Error al cargar disputas",
+  "retry": "Reintentar",
+  
+  "@_comment_dispute_info": "Texto de Información de Disputas",
+  "unknown": "Desconocido",
+  "disputeWith": "Disputa con {role}: {counterparty}",
+  "@disputeWith": {
+    "placeholders": {
+      "role": { "type": "String" },
+      "counterparty": { "type": "String" }
+    }
+  },
+  "orderIdLabel": "ID de Orden",
+  "disputeIdLabel": "ID de Disputa",
+  "seller": "Vendedor",
+  "buyer": "Comprador",
+  
+  "@_comment_dispute_screen": "Texto de Pantalla de Disputas",
+  "disputeNotFound": "Disputa no encontrada",
+  "errorLoadingDispute": "Error cargando disputa: {error}",
+  "@errorLoadingDispute": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  }
+
+
   "@_comment_relay_status": "Mensajes de estado de relays",
   "inUse": "En Uso",
   "notInUse": "Sin Uso",
@@ -916,4 +975,5 @@
   "deleteUserRelayMessage": "Si más adelante deseas volver a usarlo, deberás añadirlo manualmente.",
   "deleteUserRelayConfirm": "Sí",
   "deleteUserRelayCancel": "No"
+
 }

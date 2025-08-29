@@ -17,8 +17,6 @@ class Config {
   static const String dBName = 'mostro.db';
   static const String dBPassword = 'mostro';
 
-
-
   // Timeout for relay connections
 
   static const Duration nostrConnectionTimeout = Duration(seconds: 30);
@@ -35,8 +33,6 @@ class Config {
   static const int expirationHours = 24;
   static const int cleanupIntervalMinutes = 30;
   static const int sessionExpirationHours = 36;
-  
-
 
   // Notification configuration
 

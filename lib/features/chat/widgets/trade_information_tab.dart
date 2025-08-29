@@ -132,7 +132,7 @@ class TradeInformationTab extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  S.of(context)!.forAmount(order!.fiatAmount.toString(), order!.fiatCode),
+                  S.of(context)!.forAmountWithCurrency(order!.fiatAmount.toString(), order!.fiatCode),
                   style: TextStyle(
                     color: AppTheme.textSecondary,
                     fontSize: 14,
