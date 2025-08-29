@@ -214,6 +214,63 @@ final mostroMessageStreamProvider =
 });
 ```
 
+#### Purpose and Functionality
+
+The `mostroMessageStreamProvider` serves several critical purposes in the order management system:
+
+1. **Real-time Message Monitoring**: 
+   - Continuously watches for new messages related to a specific order
+   - Provides reactive updates when new messages arrive
+   - Enables immediate UI updates without polling
+
+2. **State Synchronization**:
+   - Ensures all components observing an order receive the same message updates
+   - Maintains consistency across different parts of the application
+   - Prevents race conditions in state updates
+
+3. **Memory Efficiency**:
+   - Uses Riverpod's family provider pattern to create separate streams per order
+   - Automatically manages stream lifecycle based on order ID
+   - Prevents memory leaks by cleaning up unused streams
+
+4. **Decoupled Architecture**:
+   - Separates message storage from message consumption
+   - Allows multiple components to subscribe to the same message stream
+   - Enables easy testing and mocking of message flows
+
+5. **Error Handling**:
+   - Provides error states for failed message retrievals
+   - Enables graceful degradation when storage operations fail
+   - Maintains application stability during network issues
+
+#### Stream Behavior
+
+The provider returns the latest message for a given order ID:
+- **Initial State**: Returns `null` if no messages exist for the order
+- **Message Updates**: Emits new values when messages are added to storage
+- **Ordering**: Messages are sorted by timestamp (newest first)
+- **Deduplication**: Prevents duplicate message emissions
+
+#### Usage Pattern
+
+Components typically consume the stream like this:
+
+```dart
+// Example usage in a widget
+class OrderWidget extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final messageStream = ref.watch(mostroMessageStreamProvider(orderId));
+    
+    return messageStream.when(
+      data: (message) => _buildOrderUI(message),
+      loading: () => CircularProgressIndicator(),
+      error: (error, stack) => ErrorWidget(error),
+    );
+  }
+}
+```
+
 ### 10. State Update Processing
 
 When a `new-order` confirmation message arrives, the state is updated:
@@ -303,7 +360,7 @@ Mostro also publishes the order as a public NIP-69 event (kind 38383) that other
     ["d", "<Order id>"],
     ["k", "sell"],
     ["f", "USD"],
-    ["s", "pending"], // Only 4 basic statuses: pending, active, completed, canceled
+    ["s", "pending"], // Only 4 basic statuses: pending, canceled, in-progress, success
     ["amt", "0"],
     ["fa", "100"],
     ["pm", "Lightning"],
@@ -319,9 +376,9 @@ Mostro also publishes the order as a public NIP-69 event (kind 38383) that other
 
 The NIP-69 protocol limits order statuses to only 4 basic states:
 - **pending**: Order is available for taking
-- **active**: Order is in progress
-- **completed**: Order finished successfully  
 - **canceled**: Order was canceled
+- **in-progress**: Order is in progress
+- **success**: Order finished successfully  
 
 This design prevents:
 - **Order correlation**: Users cannot link orders to specific users
@@ -349,13 +406,57 @@ Orders are associated with sessions that contain:
 
 Sessions are managed by `SessionNotifier` and persist throughout the order lifecycle.
 
-## UI Updates
+## UI Updates and Order Display
 
-When the confirmation message is received:
-1. The order state is updated to `pending`
-2. The UI reflects that the order was created successfully
-3. The order appears in the user's order list
-4. The order becomes visible to other users in the public order book
+When the confirmation message is received, the order appears in multiple UI locations with different contexts:
+
+### 1. Order State Update
+- The order state is updated to `pending`
+- The UI reflects that the order was created successfully
+
+### 2. My Trades Tab
+The order appears in the "My Trades" tab, which shows all orders where the user is a participant (either as maker or taker). This includes:
+- Orders created by the user (maker)
+- Orders taken by the user (taker)
+- Orders in various states (pending, active, fiat-sent, etc.)
+
+### 3. Orders Tab with User Distinction
+The order also appears in the "Orders" tab (public order book) with a special distinction that indicates the user is the creator:
+
+#### Visual Indicators
+- **"You are selling"** - For sell orders created by the user
+- **"You are buying"** - For buy orders created by the user
+
+#### Implementation Details
+The UI distinguishes user-created orders by:
+1. **Order Ownership Check**: The app compares the order's creator pubkey with the user's master key
+2. **Visual Labeling**: Orders created by the user show ownership indicators
+3. **Different Actions**: User-created orders may have different action buttons (e.g., "Cancel" instead of "Take")
+
+#### Code Implementation
+The ownership check is typically implemented in the order display widgets:
+
+```dart
+// Example logic for determining order ownership
+bool isUserOrder = order.masterBuyerPubkey == userMasterKey.public || 
+                   order.masterSellerPubkey == userMasterKey.public;
+
+// UI conditional rendering
+if (isUserOrder) {
+  Text(order.kind == OrderType.sell ? "You are selling" : "You are buying");
+} else {
+  // Show normal order display for other users' orders
+}
+```
+
+### 4. Public Order Book Visibility
+The order becomes visible to other users in the public order book (Orders tab) without the ownership indicators, showing only the basic order information.
+
+### 5. Order Management
+User-created orders provide additional management options:
+- **Cancel Order**: Users can cancel their own pending orders
+- **Order Details**: Access to detailed order information
+- **Trade History**: Track the order through its lifecycle
 
 ## Key Dependencies
 
