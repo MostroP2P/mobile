@@ -834,6 +834,7 @@
   "@_comment_dispute_communication": "Dispute Communication Text",
   "disputeCommunication": "Communication",
   "waitingAdminAssignment": "Waiting for admin assignment",
+  "waitingAdminDescription": "Your dispute has been submitted. An admin will be assigned to help resolve this issue.",
   "adminAssignmentDescription": "An admin will be assigned to your dispute soon. Once assigned, you can communicate directly with them here.",
   "adminAssigned": "Admin assigned",
   "adminAssignedDescription": "You can now communicate with the admin. Start the conversation by sending a message below.",

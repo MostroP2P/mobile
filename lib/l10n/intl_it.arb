@@ -937,6 +937,7 @@
   "@_comment_dispute_communication": "Testo Comunicazione Controversie",
   "disputeCommunication": "Comunicazione",
   "waitingAdminAssignment": "In attesa dell'assegnazione dell'amministratore",
+  "waitingAdminDescription": "La tua controversia è stata inviata. Un amministratore verrà assegnato per aiutare a risolvere questo problema.",
   "adminAssignmentDescription": "Un amministratore verrà assegnato alla tua controversia a breve. Una volta assegnato, potrai comunicare direttamente con lui qui.",
   "adminAssigned": "Amministratore assegnato",
   "adminAssignedDescription": "Ora puoi comunicare con l'amministratore. Inizia la conversazione inviando un messaggio qui sotto.",
@@ -999,6 +1000,7 @@
   "blacklistDefaultRelayConfirm": "Disconnetti",
   "blacklistDefaultRelayCancel": "Annulla",
 
+  "@_comment_last_relay_dialog": "Last relay protection dialog strings",
   "cannotBlacklistLastRelayTitle": "Non Puoi Disconnetterti dall'Ultimo Relay",
   "cannotBlacklistLastRelayMessage": "Non puoi disconnetterti da questo relay perché è l'ultimo connesso. L'app ha bisogno di almeno un relay per funzionare correttamente.",
   "cannotBlacklistLastRelayOk": "OK",
@@ -1008,5 +1010,4 @@
   "deleteUserRelayMessage": "Se vorrai usarlo di nuovo in futuro, dovrai aggiungerlo manualmente.",
   "deleteUserRelayConfirm": "Sì",
   "deleteUserRelayCancel": "No"
-
 }

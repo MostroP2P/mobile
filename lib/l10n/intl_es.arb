@@ -903,6 +903,7 @@
   "@_comment_dispute_communication": "Texto de Comunicación de Disputas",
   "disputeCommunication": "Comunicación",
   "waitingAdminAssignment": "Esperando asignación de administrador",
+  "waitingAdminDescription": "Tu disputa ha sido enviada. Se asignará un administrador para ayudar a resolver este problema.",
   "adminAssignmentDescription": "Se asignará un administrador a tu disputa pronto. Una vez asignado, podrás comunicarte directamente con él aquí.",
   "adminAssigned": "Administrador asignado",
   "adminAssignedDescription": "Ahora puedes comunicarte con el administrador. Inicia la conversación enviando un mensaje a continuación.",
@@ -965,6 +966,7 @@
   "blacklistDefaultRelayConfirm": "Desconectar",
   "blacklistDefaultRelayCancel": "Cancelar",
 
+  "@_comment_last_relay_dialog": "Last relay protection dialog strings",
   "cannotBlacklistLastRelayTitle": "No Puedes Desconectarte del Último Relay",
   "cannotBlacklistLastRelayMessage": "No puedes desconectarte de este relay porque es el último conectado. La app necesita al menos un relay para funcionar correctamente.",
   "cannotBlacklistLastRelayOk": "OK",
@@ -974,5 +976,4 @@
   "deleteUserRelayMessage": "Si más adelante deseas volver a usarlo, deberás añadirlo manualmente.",
   "deleteUserRelayConfirm": "Sí",
   "deleteUserRelayCancel": "No"
-
 }

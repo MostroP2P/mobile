@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mostro_mobile/data/models/dispute.dart';
-import 'package:mostro_mobile/features/disputes/widgets/dispute_info_card.dart';
 import 'package:mostro_mobile/features/disputes/widgets/dispute_communication_section.dart';
-import 'package:mostro_mobile/features/disputes/widgets/dispute_input_section.dart';
+import 'package:mostro_mobile/features/disputes/widgets/dispute_message_input.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 
 class DisputeChatScreen extends StatelessWidget {
@@ -16,15 +15,41 @@ class DisputeChatScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Mock dispute data for UI demonstration - vary based on disputeId
-    final isResolvedDispute = disputeId == 'dispute_003';
+    String status;
+    DisputeDescriptionKey descriptionKey;
+    int hoursAgo;
+    
+    switch (disputeId) {
+      case 'dispute_001':
+        status = 'initiated';
+        descriptionKey = DisputeDescriptionKey.initiatedByUser;
+        hoursAgo = 2;
+        break;
+      case 'dispute_002':
+        status = 'in-progress';
+        descriptionKey = DisputeDescriptionKey.inProgress;
+        hoursAgo = 24;
+        break;
+      case 'dispute_003':
+        status = 'resolved';
+        descriptionKey = DisputeDescriptionKey.resolved;
+        hoursAgo = 72;
+        break;
+      default:
+        status = 'in-progress';
+        descriptionKey = DisputeDescriptionKey.inProgress;
+        hoursAgo = 2;
+        break;
+    }
+    
     final mockDispute = DisputeData(
       disputeId: disputeId,
       orderId: 'order_${disputeId.substring(0, 8)}',
-      status: isResolvedDispute ? 'resolved' : 'in-progress',
-      descriptionKey: isResolvedDispute ? DisputeDescriptionKey.resolved : DisputeDescriptionKey.inProgress,
-      counterparty: 'admin_123',
+      status: status,
+      descriptionKey: descriptionKey,
+      counterparty: status == 'initiated' ? null : 'admin_123',
       isCreator: true,
-      createdAt: DateTime.now().subtract(Duration(hours: isResolvedDispute ? 72 : 2)),
+      createdAt: DateTime.now().subtract(Duration(hours: hoursAgo)),
       userRole: UserRole.buyer,
     );
 
@@ -48,27 +73,16 @@ class DisputeChatScreen extends StatelessWidget {
       ),
       body: Column(
         children: [
-          // Dispute info card
-          DisputeInfoCard(dispute: mockDispute),
-          
-          // Communication section with mock messages
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  const SizedBox(height: 24),
-                  DisputeCommunicationSection(
-                    disputeId: disputeId,
-                    status: mockDispute.status,
-                  ),
-                ],
-              ),
-            ),
+          // Communication section with messages (includes info card in scroll)
+          DisputeCommunicationSection(
+            disputeId: disputeId,
+            disputeData: mockDispute,
+            status: mockDispute.status,
           ),
           
-          // Input section for sending messages (only show if not resolved)
-          if (mockDispute.status != 'resolved')
-            DisputeInputSection(disputeId: disputeId),
+          // Input section for sending messages (only show if not resolved and not initiated)
+          if (mockDispute.status != 'resolved' && mockDispute.status != 'initiated')
+            DisputeMessageInput(disputeId: disputeId),
         ],
       ),
     );
