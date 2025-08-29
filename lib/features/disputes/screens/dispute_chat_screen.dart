@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:mostro_mobile/data/models/dispute.dart';
 import 'package:mostro_mobile/features/disputes/widgets/dispute_communication_section.dart';
 import 'package:mostro_mobile/features/disputes/widgets/dispute_message_input.dart';
+import 'package:mostro_mobile/features/disputes/data/dispute_mock_data.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 
 class DisputeChatScreen extends StatelessWidget {
@@ -14,44 +14,27 @@ class DisputeChatScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Mock dispute data for UI demonstration - vary based on disputeId
-    String status;
-    DisputeDescriptionKey descriptionKey;
-    int hoursAgo;
+    // Get dispute data from mock file
+    final mockDispute = DisputeMockData.isMockEnabled 
+        ? DisputeMockData.getDisputeById(disputeId)
+        : null;
     
-    switch (disputeId) {
-      case 'dispute_001':
-        status = 'initiated';
-        descriptionKey = DisputeDescriptionKey.initiatedByUser;
-        hoursAgo = 2;
-        break;
-      case 'dispute_002':
-        status = 'in-progress';
-        descriptionKey = DisputeDescriptionKey.inProgress;
-        hoursAgo = 24;
-        break;
-      case 'dispute_003':
-        status = 'resolved';
-        descriptionKey = DisputeDescriptionKey.resolved;
-        hoursAgo = 72;
-        break;
-      default:
-        status = 'in-progress';
-        descriptionKey = DisputeDescriptionKey.inProgress;
-        hoursAgo = 2;
-        break;
+    // Fallback if no mock data found
+    if (mockDispute == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Dispute Chat'),
+          backgroundColor: AppTheme.backgroundDark,
+        ),
+        backgroundColor: AppTheme.backgroundDark,
+        body: const Center(
+          child: Text(
+            'Dispute not found',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
     }
-    
-    final mockDispute = DisputeData(
-      disputeId: disputeId,
-      orderId: 'order_${disputeId.substring(0, 8)}',
-      status: status,
-      descriptionKey: descriptionKey,
-      counterparty: status == 'initiated' ? null : 'admin_123',
-      isCreator: true,
-      createdAt: DateTime.now().subtract(Duration(hours: hoursAgo)),
-      userRole: UserRole.buyer,
-    );
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundDark,

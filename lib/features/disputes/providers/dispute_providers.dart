@@ -2,22 +2,45 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/models/dispute.dart';
 import 'package:mostro_mobile/data/models/dispute_chat.dart';
 import 'package:mostro_mobile/features/disputes/notifiers/dispute_chat_notifier.dart';
+import 'package:mostro_mobile/features/disputes/data/dispute_mock_data.dart';
 
-/// Stub provider for dispute details - UI only implementation
+/// Provider for dispute details - uses mock data when enabled
 final disputeDetailsProvider = FutureProvider.family<Dispute?, String>((ref, disputeId) async {
   // Simulate loading time
   await Future.delayed(const Duration(milliseconds: 300));
   
-  // Return a mock dispute for UI testing
+  if (!DisputeMockData.isMockEnabled) {
+    // TODO: Implement real dispute loading here
+    return null;
+  }
+  
+  // Get mock dispute data
+  final disputeData = DisputeMockData.getDisputeById(disputeId);
+  if (disputeData == null) return null;
+  
   return Dispute(
-    disputeId: disputeId,
-    orderId: 'order_${disputeId.substring(0, 8)}',
-    status: 'initiated',
-    createdAt: DateTime.now().subtract(const Duration(hours: 2)),
-    action: 'dispute-initiated-by-you',
-    adminPubkey: null,
+    disputeId: disputeData.disputeId,
+    orderId: disputeData.orderId,
+    status: disputeData.status,
+    createdAt: disputeData.createdAt,
+    action: _getActionFromStatus(disputeData.status, disputeData.userRole.name),
+    adminPubkey: disputeData.status != 'initiated' ? 'admin_123' : null,
   );
 });
+
+/// Helper function to convert status to action
+String _getActionFromStatus(String status, String initiatorRole) {
+  switch (status) {
+    case 'initiated':
+      return 'dispute-initiated-by-you';
+    case 'in-progress':
+      return initiatorRole == 'buyer' ? 'dispute-initiated-by-you' : 'dispute-initiated-by-peer';
+    case 'resolved':
+      return 'dispute-resolved';
+    default:
+      return 'dispute-initiated-by-you';
+  }
+}
 
 /// Stub provider for dispute chat messages - UI only implementation
 final disputeChatProvider = StateNotifierProvider.family<DisputeChatNotifier, List<DisputeChat>, String>(
@@ -26,34 +49,23 @@ final disputeChatProvider = StateNotifierProvider.family<DisputeChatNotifier, Li
   },
 );
 
-/// Stub provider for user disputes list - UI only implementation  
+/// Provider for user disputes list - uses mock data when enabled
 final userDisputesProvider = FutureProvider<List<Dispute>>((ref) async {
   // Simulate loading time
   await Future.delayed(const Duration(milliseconds: 500));
   
-  // Return mock disputes for UI testing
-  return [
-    Dispute(
-      disputeId: 'dispute_001',
-      orderId: 'order_001',
-      status: 'initiated',
-      createdAt: DateTime.now().subtract(const Duration(hours: 1)),
-      action: 'dispute-initiated-by-you',
-    ),
-    Dispute(
-      disputeId: 'dispute_002',
-      orderId: 'order_002',
-      status: 'in-progress',
-      createdAt: DateTime.now().subtract(const Duration(days: 1)),
-      action: 'dispute-initiated-by-peer',
-      adminPubkey: 'admin_123',
-    ),
-    Dispute(
-      disputeId: 'dispute_003',
-      orderId: 'order_003',
-      status: 'resolved',
-      createdAt: DateTime.now().subtract(const Duration(days: 3)),
-      action: 'dispute-resolved',
-    ),
-  ];
+  if (!DisputeMockData.isMockEnabled) {
+    // TODO: Implement real disputes loading here
+    return [];
+  }
+  
+  // Convert mock dispute data to Dispute objects
+  return DisputeMockData.mockDisputes.map((disputeData) => Dispute(
+    disputeId: disputeData.disputeId,
+    orderId: disputeData.orderId,
+    status: disputeData.status,
+    createdAt: disputeData.createdAt,
+    action: _getActionFromStatus(disputeData.status, disputeData.userRole.name),
+    adminPubkey: disputeData.status != 'initiated' ? 'admin_123' : null,
+  )).toList();
 });

@@ -4,6 +4,7 @@ import 'package:mostro_mobile/data/models/dispute_chat.dart';
 import 'package:mostro_mobile/data/models/dispute.dart';
 import 'package:mostro_mobile/features/disputes/widgets/dispute_message_bubble.dart';
 import 'package:mostro_mobile/features/disputes/widgets/dispute_info_card.dart';
+import 'package:mostro_mobile/features/disputes/data/dispute_mock_data.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
 class DisputeMessagesList extends StatefulWidget {
@@ -196,7 +197,7 @@ class _DisputeMessagesListState extends State<DisputeMessagesList> {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'Dispute resolved - Payment completed successfully',
+              S.of(context)?.disputeResolvedMessage ?? 'This dispute has been resolved. Check your wallet for any refunds or payments.',
               style: TextStyle(
                 color: Colors.green[300],
                 fontSize: 12,
@@ -210,63 +211,12 @@ class _DisputeMessagesListState extends State<DisputeMessagesList> {
   }
 
   List<DisputeChat> _getMockMessages() {
-    // If dispute is in initiated state, show no messages (waiting for admin)
-    if (widget.status == 'initiated') {
+    if (!DisputeMockData.isMockEnabled) {
+      // TODO: Load real messages here when mock is disabled
       return [];
     }
     
-    if (widget.status == 'resolved') {
-      return [
-        DisputeChat(
-          id: '1',
-          message: 'Hello, I need help with this order. The seller hasn\'t responded to my messages.',
-          timestamp: DateTime.now().subtract(const Duration(days: 3, hours: 2)),
-          isFromUser: true,
-        ),
-        DisputeChat(
-          id: '2',
-          message: 'I understand your concern. Let me review the order details and contact the seller.',
-          timestamp: DateTime.now().subtract(const Duration(days: 3, hours: 1, minutes: 45)),
-          isFromUser: false,
-          adminPubkey: 'admin_123',
-        ),
-        DisputeChat(
-          id: '3',
-          message: 'I\'ve contacted the seller and they confirmed they will complete the payment within 2 hours.',
-          timestamp: DateTime.now().subtract(const Duration(days: 2, hours: 12)),
-          isFromUser: false,
-          adminPubkey: 'admin_123',
-        ),
-        DisputeChat(
-          id: '4',
-          message: 'Thank you for your help. I\'ll wait for the payment.',
-          timestamp: DateTime.now().subtract(const Duration(days: 2, hours: 11, minutes: 30)),
-          isFromUser: true,
-        ),
-      ];
-    } else {
-      return [
-        DisputeChat(
-          id: '1',
-          message: 'Hello, I need help with this order. The seller hasn\'t responded to my messages.',
-          timestamp: DateTime.now().subtract(const Duration(hours: 2)),
-          isFromUser: true,
-        ),
-        DisputeChat(
-          id: '2',
-          message: 'I understand your concern. Let me review the order details and contact the seller.',
-          timestamp: DateTime.now().subtract(const Duration(hours: 1, minutes: 45)),
-          isFromUser: false,
-          adminPubkey: 'admin_123',
-        ),
-        DisputeChat(
-          id: '3',
-          message: 'Thank you for your patience. I\'m working on resolving this issue.',
-          timestamp: DateTime.now().subtract(const Duration(minutes: 30)),
-          isFromUser: false,
-          adminPubkey: 'admin_123',
-        ),
-      ];
-    }
+    // Use mock data from the centralized mock file
+    return DisputeMockData.getMockMessages(widget.disputeId, widget.status);
   }
 }
