@@ -919,7 +919,7 @@
   "notification_add_invoice_title": "Invoice required",
   "notification_add_invoice_message": "Please add your Lightning invoice",
   "notification_add_invoice_after_failure_message": "Previous invoice payment failed. Please add a new Lightning invoice",
-  "notification_buyer_took_order_title": "Order taken",
+  "notification_buyer_took_order_title": "Contact Buyer",
   "notification_buyer_took_order_message": "A buyer has taken your order",
   "notification_rate_title": "Rating requested",
   "notification_rate_message": "Please rate your trading counterparty",

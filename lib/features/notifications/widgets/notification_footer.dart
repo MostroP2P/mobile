@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mostro_mobile/data/models/notification.dart';
 import 'package:mostro_mobile/features/notifications/widgets/timestamp_text.dart';
-import 'package:mostro_mobile/features/notifications/widgets/order_id_chip.dart';
 
 class NotificationFooter extends StatelessWidget {
   final NotificationModel notification;
@@ -13,9 +12,6 @@ class NotificationFooter extends StatelessWidget {
     return Row(
       children: [
         TimestampText(notification: notification),
-        const Spacer(),
-        if (notification.orderId != null)
-          OrderIdChip(orderId: notification.orderId!),
       ],
     );
   }

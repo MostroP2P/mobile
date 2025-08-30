@@ -945,7 +945,7 @@
   "notification_add_invoice_title": "Factura requerida",
   "notification_add_invoice_message": "Por favor agrega tu factura Lightning",
   "notification_add_invoice_after_failure_message": "El pago de la factura anterior falló. Por favor agrega una nueva factura Lightning",
-  "notification_buyer_took_order_title": "Orden tomada",
+  "notification_buyer_took_order_title": "Contacta al Comprador",
   "notification_buyer_took_order_message": "Un comprador ha tomado tu orden",
   "notification_rate_title": "Calificación solicitada",
   "notification_rate_message": "Por favor califica a tu contraparte comercial",

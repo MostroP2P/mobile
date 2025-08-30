@@ -10,7 +10,7 @@ class TimestampText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(
-      notification.timestamp.timeAgoWithLocale(context),
+      notification.timestamp.preciseTimeAgo(context),
       style: Theme.of(context).textTheme.bodySmall?.copyWith(
         color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
       ),
