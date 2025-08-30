@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
 import 'package:mostro_mobile/generated/l10n.dart';
-import 'package:mostro_mobile/shared/notifiers/notification_notifier.dart';
-import 'package:mostro_mobile/shared/providers/notification_notifier_provider.dart';
+import 'package:mostro_mobile/features/notifications/notifiers/notification_temporary_state.dart';
+import 'package:mostro_mobile/features/notifications/providers/notifications_provider.dart';
+import 'package:mostro_mobile/features/notifications/utils/notification_message_mapper.dart';
+
 
 class NotificationListenerWidget extends ConsumerWidget {
   final Widget child;
@@ -13,8 +13,8 @@ class NotificationListenerWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.listen<NotificationState>(notificationProvider, (previous, next) {
-      if (next.informational) {
+    ref.listen<TemporaryNotification>(currentTemporaryNotificationProvider, (previous, next) {
+      if (next.show) {
         String message;
         
         if (next.customMessage != null) {
@@ -32,16 +32,12 @@ class NotificationListenerWidget extends ConsumerWidget {
             default:
               message = next.customMessage!;
           }
+        } else if (next.action != null) {
+          // Get localized title directly from action when available
+          message = NotificationMessageMapper.getLocalizedTitle(context, next.action!);
         } else {
-          // Handle specific actions with proper localization
-          if (next.action == actions.Action.timeoutReversal) {
-            // For timeoutReversal without custom message, use generic timeout message
-            final l10n = S.of(context);
-            message = l10n?.orderTimeout ?? 'Order timeout occurred';
-          } else {
-            final l10n = S.of(context);
-            message = next.action?.toString() ?? l10n?.error ?? 'An error occurred';
-          }
+          // Fallback to generic notification title when no action or custom message
+          message = S.of(context)!.notificationGenericTitle;
         }
         
         ScaffoldMessenger.of(context).showSnackBar(
@@ -51,28 +47,7 @@ class NotificationListenerWidget extends ConsumerWidget {
           ),
         );
         // Clear notification after showing to prevent repetition
-        ref.read(notificationProvider.notifier).clearNotification();
-      } else if (next.actionRequired) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text(S.of(context)!.error),
-            content: Text(next.action?.toString() ?? S.of(context)!.error),
-            actions: [
-              TextButton(
-                onPressed: () => context.go('/'),
-                child: Text(S.of(context)!.cancel),
-              ),
-              TextButton(
-                onPressed: () {
-                  // Perform the required action
-                  Navigator.of(context).pop();
-                },
-                child: Text(S.of(context)!.ok),
-              ),
-            ],
-          ),
-        );
+        ref.read(notificationActionsProvider.notifier).clearTemporary();
       }
     });
     return child;

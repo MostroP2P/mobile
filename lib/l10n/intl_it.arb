@@ -419,6 +419,7 @@
   "market": "Mercato",
   "priceTypeTooltip": "• Seleziona Prezzo di Mercato se vuoi usare il prezzo che ha Bitcoin quando qualcuno prende la tua offerta.\n\n• Seleziona Prezzo Fisso se vuoi definire l'importo esatto di Bitcoin che scambierai.",
   
+  "@_comment_take_order_screen": "Take Order Screen Strings",
   "withPremiumPercent": "con un +{premium}% di premio",
   "@withPremiumPercent": {
     "placeholders": {
@@ -620,6 +621,7 @@
   "@forAmount": {
     "placeholders": {
       "amount": {
+        "type": "String",
         "description": "Fiat amount for the transaction"
       }
     }
@@ -632,10 +634,8 @@
       }
     }
   },
-  "cancelPendingButton": "ANNULLAMENTO IN SOSPESO",
   "disputeButton": "DISPUTA",
   "fiatSentButton": "FIAT INVIATO",
-  "completePurchaseButton": "COMPLETA ACQUISTO",
   "paymentMethodLabel": "Metodo di Pagamento",
   "createdOnLabel": "Creato il",
   "orderIdLabel": "ID Ordine",
@@ -710,7 +710,6 @@
   "conversationsDescription": "Qui troverai le tue conversazioni con altri utenti durante gli scambi.",
   "orderId": "ID Ordine:",
   "paymentMethod": "Metodo di Pagamento:",
-  "createdOn": "Creato il:",
   "sellingSats": "Vendendo {amount} sats",
   "@sellingSats": {
     "placeholders": {
@@ -727,8 +726,8 @@
       }
     }
   },
-  "forAmount": "per {amount} {currency}",
-  "@forAmount": {
+  "forAmountWithCurrency": "per {amount} {currency}",
+  "@forAmountWithCurrency": {
     "placeholders": {
       "amount": {
         "type": "String"
@@ -739,7 +738,6 @@
     }
   },
   "yourInformation": "Le Tue Informazioni",
-  "yourSharedKey": "La Tua Chiave Condivisa:",
   "peerPublicKey": "Chiave Pubblica del Peer:",
   "notAvailable": "Non disponibile",
   "unknownDate": "Data sconosciuta",
@@ -758,7 +756,6 @@
   "holdInvoiceExpiration": "Scadenza Fattura di Blocco",
   "holdInvoiceCltvDelta": "Delta CLTV Fattura di Blocco",
   "invoiceExpirationWindow": "Finestra di Scadenza Fattura",
-  "proofOfWork": "Prova di Lavoro",
   "lightningNetwork": "Lightning Network",
   "lndDaemonVersion": "Versione di LND",
   "lndNodePublicKey": "Chiave Pubblica Nodo LND",
@@ -901,6 +898,99 @@
   "orderTimeoutMaker": "La tua controparte non ha risposto in tempo. L'ordine sarà ripubblicato",
   "orderTimeout": "Timeout dell'ordine verificato",
   "orderCanceled": "L'ordine è stato annullato",
+  
+  "@_comment_notifications": "Testo Schermata Notifiche",
+  "notifications": "Notifiche",
+  "noNotifications": "Nessuna notifica",
+  "noNotificationsDescription": "Non hai ancora notifiche. I nuovi avvisi di scambio e gli aggiornamenti appariranno qui.",
+  "errorLoadingNotifications": "Errore nel caricamento delle notifiche",
+  "markAsRead": "Segna come letto",
+  "markAllAsRead": "Segna tutto come letto",
+  "clearAll": "Cancella tutto",
+  "notification_new_order_title": "Nuovo ordine disponibile",
+  "notification_new_order_message": "Nuovo ordine pubblicato nel libro",
+  "notAvailableShort": "N/D",
+  "notificationGenericTitle": "Notifica",
+  "notification_order_taken_title": "Ordine preso",
+  "notification_sell_order_taken_message": "Il tuo ordine di vendita è stato preso",
+  "notification_buy_order_taken_message": "Il tuo ordine di acquisto è stato preso",
+  "notification_payment_required_title": "Pagamento richiesto",
+  "notification_payment_required_message": "È richiesto il pagamento della fattura",
+  "notification_fiat_sent_title": "Fiat inviato",
+  "notification_fiat_sent_message": "Il peer ha contrassegnato il fiat come inviato",
+  "notification_bitcoin_released_title": "Bitcoin rilasciato",
+  "notification_bitcoin_released_message": "I sats sono stati rilasciati",
+  "notification_dispute_started_title": "Disputa iniziata",
+  "notification_dispute_started_message": "È stata avviata una disputa",
+  "notification_order_canceled_title": "Ordine annullato",
+  "notification_order_canceled_message": "L'ordine è stato annullato",
+  "notification_cooperative_cancel_initiated_by_you_title": "Cancellazione richiesta",
+  "notification_cooperative_cancel_initiated_by_you_message": "Hai richiesto di annullare l'ordine, in attesa della conferma del peer",
+  "notification_cooperative_cancel_initiated_by_peer_title": "Richiesta di cancellazione",
+  "notification_cooperative_cancel_initiated_by_peer_message": "La tua controparte vuole annullare l'ordine",
+  "notification_cooperative_cancel_accepted_title": "Cancellazione accettata",
+  "notification_cooperative_cancel_accepted_message": "La cancellazione cooperativa è stata accettata",
+  "notification_fiat_sent_ok_title": "Pagamento fiat confermato",
+  "notification_fiat_sent_ok_message": "Il pagamento fiat è stato confermato dalla tua controparte",
+  "notification_release_title": "Rilascio richiesto",
+  "notification_release_message": "È stato richiesto il rilascio di Bitcoin",
+  "notification_buyer_invoice_accepted_title": "Fattura accettata",
+  "notification_buyer_invoice_accepted_message": "La tua fattura è stata accettata",
+  "notification_purchase_completed_title": "Pagamento ricevuto!",
+  "notification_purchase_completed_message": "Il tuo pagamento Bitcoin è stato completato e ricevuto con successo",
+  "notification_hold_invoice_payment_accepted_title": "Pagamento accettato",
+  "notification_hold_invoice_payment_accepted_message": "Il pagamento della fattura hold è stato accettato",
+  "notification_hold_invoice_payment_settled_title": "Pagamento liquidato",
+  "notification_hold_invoice_payment_settled_message": "Il pagamento della fattura hold è stato liquidato",
+  "notification_hold_invoice_payment_canceled_title": "Pagamento annullato",
+  "notification_hold_invoice_payment_canceled_message": "Il pagamento della fattura hold è stato annullato",
+  "notification_waiting_seller_to_pay_title": "In attesa del venditore",
+  "notification_waiting_seller_to_pay_message": "In attesa che il venditore effettui il pagamento",
+  "notification_waiting_buyer_invoice_title": "In attesa della fattura",
+  "notification_waiting_buyer_invoice_message": "In attesa che l'acquirente fornisca la fattura",
+  "notification_add_invoice_title": "Fattura richiesta",
+  "notification_add_invoice_message": "Per favore aggiungi la tua fattura Lightning",
+  "notification_add_invoice_after_failure_message": "Il pagamento della fattura precedente è fallito. Per favore aggiungi una nuova fattura Lightning",
+  "notification_buyer_took_order_title": "Contatta l'Acquirente",
+  "notification_buyer_took_order_message": "Un acquirente ha preso il tuo ordine",
+  "notification_rate_title": "Valutazione richiesta",
+  "notification_rate_message": "Per favore valuta la tua controparte commerciale",
+  "notification_rate_received_title": "Valutazione ricevuta",
+  "notification_rate_received_message": "Hai ricevuto una valutazione dalla tua controparte",
+  "notification_dispute_initiated_by_you_title": "Disputa iniziata",
+  "notification_dispute_initiated_by_you_message": "Hai iniziato una disputa per questo ordine",
+  "notification_dispute_initiated_by_peer_title": "Disputa iniziata",
+  "notification_dispute_initiated_by_peer_message": "La tua controparte ha iniziato una disputa",
+  "notification_payment_failed_title": "Pagamento fallito",
+  "notification_payment_failed_message": "Il tentativo di pagamento è fallito",
+  "notification_invoice_updated_title": "Fattura aggiornata",
+  "notification_invoice_updated_message": "La fattura Lightning è stata aggiornata",
+  "notification_cant_do_title": "Azione non consentita",
+  "notification_cant_do_message": "L'azione richiesta non può essere eseguita",
+  "notification_new_message_title": "Nuovo messaggio",
+  "notification_new_message_message": "Hai ricevuto un nuovo messaggio",
+  "notification_order_update_title": "Aggiornamento ordine",
+  "notification_order_update_message": "Il tuo ordine è stato aggiornato",
+
+  "@_comment_notification_details": "Etichette dei dettagli delle notifiche",
+  "notificationBuyer": "Compratore",
+  "notificationSeller": "Venditore",
+  "notificationAmount": "Importo",
+  "notificationPaymentMethod": "Metodo di Pagamento",
+  "notificationTimeout": "Tempo scaduto",
+  "notificationMinutes": "minuti",
+  "notificationDisputeId": "ID Disputa",
+  "notificationAttempts": "Tentativi restanti",
+  "notificationRetryInterval": "Intervallo di Ripetizione",
+  "notificationFailedAt": "Fallito alle",
+  "notificationReason": "Ragione",
+  "notificationOrderId": "ID Ordine",
+  "notificationDelete": "Elimina",
+  "confirmDeleteNotification": "Sei sicuro di voler eliminare questa notifica?",
+  "confirmClearAll": "Questo eliminerà permanentemente tutte le notifiche. Questa azione non può essere annullata.",
+
+ "@_comment_notification_units": "Notification time units",
+  "notificationSeconds": "secondi",
 
   "@_comment_relay_status": "Messaggi di stato relay",
   "inUse": "In Uso",
@@ -910,11 +1000,13 @@
   "activated": "Connesso",
   "deactivated": "Disconnesso",
 
+  "@_comment_blacklist_dialog": "Blacklist default relay dialog strings",
   "blacklistDefaultRelayTitle": "Disconnettersi dal Relay Predefinito?",
   "blacklistDefaultRelayMessage": "Sei sicuro di volerti disconnettere dal relay predefinito? Questo potrebbe influire sulla connettività con l'istanza di Mostro.",
   "blacklistDefaultRelayConfirm": "Disconnetti",
   "blacklistDefaultRelayCancel": "Annulla",
 
+  "@_comment_last_relay_dialog": "Last relay protection dialog strings",
   "cannotBlacklistLastRelayTitle": "Non Puoi Disconnetterti dall'Ultimo Relay",
   "cannotBlacklistLastRelayMessage": "Non puoi disconnetterti da questo relay perché è l'ultimo connesso. L'app ha bisogno di almeno un relay per funzionare correttamente.",
   "cannotBlacklistLastRelayOk": "OK",
