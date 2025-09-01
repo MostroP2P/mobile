@@ -20,7 +20,7 @@ class DisputeEvent {
       disputeId: json['disputeId'] ?? '',
       orderId: json['orderId'] ?? '',
       status: json['status'] ?? 'unknown',
-      createdAt: json['createdAt'] ?? DateTime.now().millisecondsSinceEpoch,
+      createdAt: _parseCreatedAt(json['createdAt']),
     );
   }
 
@@ -32,5 +32,18 @@ class DisputeEvent {
       'status': status,
       'createdAt': createdAt,
     };
+  }
+
+  static int _parseCreatedAt(dynamic v) {
+    if (v is int) {
+      // Treat values < 1_000_000_000_000 as seconds and multiply by 1000
+      return v < 1000000000000 ? v * 1000 : v;
+    }
+    if (v is String) {
+      DateTime? parsed = DateTime.tryParse(v);
+      if (parsed != null) return parsed.millisecondsSinceEpoch;
+    }
+    // Default fallback
+    return DateTime.now().millisecondsSinceEpoch;
   }
 }

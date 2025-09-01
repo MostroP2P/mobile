@@ -37,7 +37,7 @@ class DisputesList extends StatelessWidget {
         status: 'resolved',
         descriptionKey: DisputeDescriptionKey.resolved,
         counterparty: 'user_123',
-        isCreator: true,
+        isCreator: null, // Unknown creator state for resolved dispute
         createdAt: DateTime.now().subtract(const Duration(days: 3)),
         userRole: UserRole.buyer,
       ),

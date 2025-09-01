@@ -18,7 +18,7 @@ class DisputeChat {
     return DisputeChat(
       id: json['id'] ?? '',
       message: json['message'] ?? '',
-      timestamp: DateTime.tryParse(json['timestamp'] ?? '') ?? DateTime.now(),
+      timestamp: _parseTimestamp(json['timestamp']),
       isFromUser: json['isFromUser'] ?? false,
       adminPubkey: json['adminPubkey'],
     );
@@ -32,5 +32,19 @@ class DisputeChat {
       'isFromUser': isFromUser,
       'adminPubkey': adminPubkey,
     };
+  }
+
+  static DateTime _parseTimestamp(dynamic v) {
+    if (v is int) {
+      // Treat values < 1e12 as seconds, convert to milliseconds
+      int milliseconds = v < 1e12 ? v * 1000 : v;
+      return DateTime.fromMillisecondsSinceEpoch(milliseconds);
+    }
+    if (v is String && v.isNotEmpty) {
+      DateTime? parsed = DateTime.tryParse(v);
+      if (parsed != null) return parsed;
+    }
+    // Final fallback
+    return DateTime.now();
   }
 }

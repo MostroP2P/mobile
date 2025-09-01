@@ -34,7 +34,7 @@ class DisputeMockData {
       status: 'resolved',
       descriptionKey: DisputeDescriptionKey.resolved,
       counterparty: 'admin_123',
-      isCreator: true,
+      isCreator: null, // Unknown creator state for resolved dispute
       userRole: UserRole.buyer,
     ),
   ];
@@ -122,7 +122,7 @@ class DisputeMockData {
       status: 'in-progress',
       descriptionKey: DisputeDescriptionKey.inProgress,
       counterparty: 'admin_123',
-      isCreator: true,
+      isCreator: null, // Unknown creator state for default mock
       userRole: UserRole.buyer,
     );
   }

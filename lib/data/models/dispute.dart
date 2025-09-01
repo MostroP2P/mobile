@@ -31,6 +31,7 @@ class DisputeSemanticKeys {
 /// with an order. The dispute is identified by a unique ID and is associated
 /// with a specific order.
 class Dispute implements Payload {
+  static const _sentinel = Object();
   final String disputeId;
   final String? orderId;
   final String? status;
@@ -220,8 +221,17 @@ class Dispute implements Payload {
       DateTime? adminTookAt;
       if (json.containsKey('admin_took_at') && json['admin_took_at'] != null) {
         final timestamp = json['admin_took_at'];
-        if (timestamp is int) {
-          adminTookAt = DateTime.fromMillisecondsSinceEpoch(timestamp);
+        if (timestamp is int || timestamp is double) {
+          final timestampInt = timestamp is double ? timestamp.toInt() : timestamp as int;
+          final normalizedTimestamp = timestampInt < 10000000000 
+              ? timestampInt * 1000 // Convert seconds to milliseconds
+              : timestampInt;       // Already in milliseconds
+          adminTookAt = DateTime.fromMillisecondsSinceEpoch(normalizedTimestamp);
+        } else if (timestamp is String) {
+          final parsed = DateTime.tryParse(timestamp);
+          if (parsed != null) {
+            adminTookAt = parsed;
+          }
         }
       }
       
@@ -235,8 +245,17 @@ class Dispute implements Payload {
       DateTime? createdAt;
       if (json.containsKey('created_at') && json['created_at'] != null) {
         final timestamp = json['created_at'];
-        if (timestamp is int) {
-          createdAt = DateTime.fromMillisecondsSinceEpoch(timestamp);
+        if (timestamp is int || timestamp is double) {
+          final timestampInt = timestamp is double ? timestamp.toInt() : timestamp as int;
+          final normalizedTimestamp = timestampInt < 10000000000 
+              ? timestampInt * 1000 // Convert seconds to milliseconds
+              : timestampInt;       // Already in milliseconds
+          createdAt = DateTime.fromMillisecondsSinceEpoch(normalizedTimestamp);
+        } else if (timestamp is String) {
+          final parsed = DateTime.tryParse(timestamp);
+          if (parsed != null) {
+            createdAt = parsed;
+          }
         }
       }
       
@@ -257,27 +276,28 @@ class Dispute implements Payload {
   }
 
   /// Creates a copy of this Dispute with the given fields replaced with the new values.
+  /// Pass explicit null to clear nullable fields.
   Dispute copyWith({
-    String? disputeId,
-    String? orderId,
-    String? status,
-    Order? order,
-    String? disputeToken,
-    String? adminPubkey,
-    DateTime? adminTookAt,
-    DateTime? createdAt,
-    String? action,
+    Object? disputeId = _sentinel,
+    Object? orderId = _sentinel,
+    Object? status = _sentinel,
+    Object? order = _sentinel,
+    Object? disputeToken = _sentinel,
+    Object? adminPubkey = _sentinel,
+    Object? adminTookAt = _sentinel,
+    Object? createdAt = _sentinel,
+    Object? action = _sentinel,
   }) {
     return Dispute(
-      disputeId: disputeId ?? this.disputeId,
-      orderId: orderId ?? this.orderId,
-      status: status ?? this.status,
-      order: order ?? this.order,
-      disputeToken: disputeToken ?? this.disputeToken,
-      adminPubkey: adminPubkey ?? this.adminPubkey,
-      adminTookAt: adminTookAt ?? this.adminTookAt,
-      createdAt: createdAt ?? this.createdAt,
-      action: action ?? this.action,
+      disputeId: disputeId == _sentinel ? this.disputeId : disputeId as String,
+      orderId: orderId == _sentinel ? this.orderId : orderId as String?,
+      status: status == _sentinel ? this.status : status as String?,
+      order: order == _sentinel ? this.order : order as Order?,
+      disputeToken: disputeToken == _sentinel ? this.disputeToken : disputeToken as String?,
+      adminPubkey: adminPubkey == _sentinel ? this.adminPubkey : adminPubkey as String?,
+      adminTookAt: adminTookAt == _sentinel ? this.adminTookAt : adminTookAt as DateTime?,
+      createdAt: createdAt == _sentinel ? this.createdAt : createdAt as DateTime?,
+      action: action == _sentinel ? this.action : action as String?,
     );
   }
 
@@ -313,7 +333,7 @@ class DisputeData {
   final String status;
   final DisputeDescriptionKey descriptionKey;
   final String? counterparty;
-  final bool isCreator;
+  final bool? isCreator;
   final DateTime createdAt;
   final UserRole userRole;
 
@@ -323,7 +343,7 @@ class DisputeData {
     required this.status,
     required this.descriptionKey,
     this.counterparty,
-    required this.isCreator,
+    this.isCreator,
     required this.createdAt,
     required this.userRole,
   });
@@ -331,7 +351,7 @@ class DisputeData {
   /// Create DisputeData from Dispute object with OrderState context
   factory DisputeData.fromDispute(Dispute dispute, {dynamic orderState}) {
     // Determine if user is the creator based on the OrderState action if available
-    bool isUserCreator = false;
+    bool? isUserCreator;
     
     if (orderState != null && orderState.action != null) {
       // Use OrderState action which has the correct dispute initiation info
@@ -341,16 +361,9 @@ class DisputeData {
       // Fallback to dispute action - this should now be set correctly
       isUserCreator = dispute.action == 'dispute-initiated-by-you';
     } else {
-      // If no action info, check if this is a resolved dispute
-      // For resolved disputes, we need to be more careful about determining creator
-      if (dispute.status?.toLowerCase() == 'resolved' || dispute.status?.toLowerCase() == 'solved') {
-        // For resolved disputes, if we can't determine creator, assume user created it
-        // since they're viewing their own dispute list
-        isUserCreator = true;
-      } else {
-        // If no action info, assume user is creator (since they can see the dispute)
-        isUserCreator = true;
-      }
+      // If no action info is available, leave as null (unknown state)
+      // This removes the assumption that user is creator by default
+      isUserCreator = null;
     }
     
     // Try to get counterparty info from order state and determine correct role
@@ -394,7 +407,7 @@ class DisputeData {
   /// Create DisputeData from DisputeEvent (legacy method)
   factory DisputeData.fromDisputeEvent(dynamic disputeEvent, {String? userAction}) {
     // Determine if user is the creator based on the action or other indicators
-    bool isUserCreator = _determineIfUserIsCreator(disputeEvent, userAction);
+    bool? isUserCreator = _determineIfUserIsCreator(disputeEvent, userAction);
     
     // Get the appropriate description key based on status and creator
     final descriptionKey = _getDescriptionKeyForStatus(disputeEvent.status, isUserCreator);
@@ -416,21 +429,24 @@ class DisputeData {
   }
 
   /// Determine if the user is the creator of the dispute
-  static bool _determineIfUserIsCreator(dynamic disputeEvent, String? userAction) {
+  static bool? _determineIfUserIsCreator(dynamic disputeEvent, String? userAction) {
     // If we have userAction information, use it to determine creator
     if (userAction != null) {
       return userAction == 'dispute-initiated-by-you';
     }
     
-    // Otherwise, try to determine from the event itself
-    // This is a fallback and may not be accurate
-    return true; // Default to true for now
+    // Otherwise, return null for unknown state instead of assuming
+    // This removes the fallback assumption that user is creator
+    return null;
   }
 
   /// Get a description key for the dispute status
-  static DisputeDescriptionKey _getDescriptionKeyForStatus(String status, bool isUserCreator) {
+  static DisputeDescriptionKey _getDescriptionKeyForStatus(String status, bool? isUserCreator) {
     switch (status.toLowerCase()) {
       case 'initiated':
+        if (isUserCreator == null) {
+          return DisputeDescriptionKey.unknown; // Unknown creator state
+        }
         return isUserCreator 
           ? DisputeDescriptionKey.initiatedByUser 
           : DisputeDescriptionKey.initiatedByPeer;
