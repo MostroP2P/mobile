@@ -421,7 +421,9 @@ class DisputeData {
       isCreator: isUserCreator,
       createdAt: DateTime.fromMillisecondsSinceEpoch(
         disputeEvent.createdAt is int 
-          ? disputeEvent.createdAt * 1000 
+          ? (disputeEvent.createdAt <= 9999999999 
+              ? disputeEvent.createdAt * 1000  // Convert seconds to milliseconds
+              : disputeEvent.createdAt)        // Already in milliseconds
           : DateTime.now().millisecondsSinceEpoch
       ),
       userRole: UserRole.unknown, // Default value for legacy method

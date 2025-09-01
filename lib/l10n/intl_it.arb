@@ -717,6 +717,9 @@
   "disputeStatusClosed": "Chiusa",
   "disputeResolvedTitle": "Disputa risolta",
   "disputeResolvedMessage": "Questa disputa è stata risolta. Il risolutore ha preso una decisione sulla base delle prove presentate. Controlla il tuo wallet per eventuali rimborsi o pagamenti.",
+  "disputeInProgress": "Questa disputa è attualmente in corso. Un risolutore sta esaminando il tuo caso.",
+  "disputeSellerRefunded": "Questa disputa è stata risolta con il venditore che è stato rimborsato.",
+  "disputeUnknownStatus": "Lo stato di questa disputa è sconosciuto.",
   "disputeOpenedByYou": "Hai aperto questa disputa contro l'acquirente {counterparty}, leggi attentamente di seguito:",
   "@disputeOpenedByYou": {
     "placeholders": {
@@ -1052,7 +1055,6 @@
   "@_comment_dispute_list": "Testo Lista Controversie",
   "disputesWillAppear": "Le controversie appariranno qui quando le apri dai tuoi scambi",
   "failedLoadDisputes": "Impossibile caricare le controversie",
-  "retry": "Riprova",
   
   "@_comment_dispute_info": "Testo Informazioni Controversie",
   "unknown": "Sconosciuto",
@@ -1063,7 +1065,6 @@
       "counterparty": { "type": "String" }
     }
   },
-  "orderIdLabel": "ID Ordine",
   "disputeIdLabel": "ID Controversia",
   "seller": "Venditore",
   "buyer": "Compratore",

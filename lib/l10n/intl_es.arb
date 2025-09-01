@@ -687,6 +687,9 @@
   "disputeStatusClosed": "Cerrada",
   "disputeResolvedTitle": "Disputa resuelta",
   "disputeResolvedMessage": "Esta disputa ha sido resuelta. El mediador tomó una decisión basada en la evidencia presentada. Revisa tu billetera para ver reembolsos o pagos.",
+  "disputeInProgress": "Esta disputa está actualmente en progreso. Un mediador está revisando tu caso.",
+  "disputeSellerRefunded": "Esta disputa ha sido resuelta con el vendedor siendo reembolsado.",
+  "disputeUnknownStatus": "El estado de esta disputa es desconocido.",
   "disputeOpenedByYou": "Abriste esta disputa contra el comprador {counterparty}, lee atentamente a continuación:",
   "@disputeOpenedByYou": {
     "placeholders": {
