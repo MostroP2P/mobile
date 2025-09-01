@@ -621,7 +621,7 @@
   "@forAmount": {
     "placeholders": {
       "amount": {
-        "type": "String",
+        "type": "Object",
         "description": "Fiat amount for the transaction"
       }
     }
@@ -756,8 +756,6 @@
       }
     }
   },
-
-  "forAmount": "per {amount}",
 
   "forAmountWithCurrency": "per {amount} {currency}",
   "@forAmountWithCurrency": {
