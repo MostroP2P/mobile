@@ -6,6 +6,8 @@ import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
+import 'package:mostro_mobile/features/notifications/providers/notifications_provider.dart';
+import 'package:mostro_mobile/shared/providers/legible_handle_provider.dart';
 import 'package:logger/logger.dart';
 
 class AbstractMostroNotifier extends StateNotifier<OrderState> {
@@ -67,134 +69,22 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
     logger.e(err);
   }
 
+  void sendNotification(Action action, {Map<String, dynamic>? values, bool isTemporary = false, String? eventId}) {
+    final notifProvider = ref.read(notificationActionsProvider.notifier);
+    
+    if (isTemporary) {
+      notifProvider.showTemporary(action, values: values ?? {});
+    } else {
+      notifProvider.notify(action, values: values ?? {}, orderId: orderId, eventId: eventId);
+    }
+  }
+
   void handleEvent(MostroMessage event) {
     final navProvider = ref.read(navigationProvider.notifier);
-    final notifProvider = ref.read(notificationProvider.notifier);
     final mostroInstance = ref.read(orderRepositoryProvider).mostroInstance;
 
     switch (event.action) {
       case Action.newOrder:
-        break;
-      case Action.payInvoice:
-        if (event.payload is PaymentRequest) {
-          navProvider.go('/pay_invoice/${event.id!}');
-        }
-        ref.read(sessionNotifierProvider.notifier).saveSession(session);
-        break;
-      case Action.fiatSentOk:
-        final peer = event.getPayload<Peer>();
-        notifProvider.showInformation(event.action, values: {
-          'buyer_npub': peer?.publicKey ?? 'Unknown',
-        });
-        break;
-      case Action.released:
-        notifProvider.showInformation(event.action, values: {
-          'seller_npub': '',
-        });
-        break;
-      case Action.canceled:
-        ref.read(mostroStorageProvider).deleteAllMessagesByOrderId(orderId);
-        ref.read(sessionNotifierProvider.notifier).deleteSession(orderId);
-        navProvider.go('/order_book');
-        notifProvider.showInformation(event.action, values: {'id': orderId});
-        ref.invalidateSelf();
-        break;
-      case Action.cooperativeCancelInitiatedByYou:
-        notifProvider.showInformation(event.action, values: {
-          'id': event.id,
-        });
-        break;
-      case Action.cooperativeCancelInitiatedByPeer:
-        notifProvider.showInformation(event.action, values: {
-          'id': event.id!,
-        });
-        break;
-      case Action.disputeInitiatedByYou:
-        final dispute = event.getPayload<Dispute>()!;
-        notifProvider.showInformation(event.action, values: {
-          'id': event.id!,
-          'user_token': dispute.disputeId,
-        });
-        break;
-      case Action.disputeInitiatedByPeer:
-        final dispute = event.getPayload<Dispute>()!;
-        notifProvider.showInformation(event.action, values: {
-          'id': event.id!,
-          'user_token': dispute.disputeId,
-        });
-        break;
-      case Action.cooperativeCancelAccepted:
-        notifProvider.showInformation(event.action, values: {
-          'id': event.id!,
-        });
-        break;
-      case Action.holdInvoicePaymentAccepted:
-        final order = event.getPayload<Order>();
-        notifProvider.showInformation(event.action, values: {
-          'seller_npub': order?.sellerTradePubkey ?? 'Unknown',
-          'id': order?.id,
-          'fiat_code': order?.fiatCode,
-          'fiat_amount': order?.fiatAmount,
-          'payment_method': order?.paymentMethod,
-        });
-        // add seller tradekey to session
-        // open chat
-        final sessionProvider = ref.read(sessionNotifierProvider.notifier);
-        final peer = order!.sellerTradePubkey != null
-            ? Peer(publicKey: order.sellerTradePubkey!)
-            : null;
-        sessionProvider.updateSession(
-          orderId,
-          (s) => s.peer = peer,
-        );
-        state = state.copyWith(
-          peer: peer,
-        );
-        final chat = ref.read(chatRoomsProvider(orderId).notifier);
-        chat.subscribe();
-        break;
-      case Action.holdInvoicePaymentSettled:
-        notifProvider.showInformation(event.action, values: {
-          'buyer_npub': state.order?.buyerTradePubkey ?? 'Unknown',
-        });
-        navProvider.go('/trade_detail/$orderId');
-        break;
-      case Action.waitingSellerToPay:
-        // Check if user is the maker of a buy order - don't auto-navigate in this case
-        final isUserCreator = _isUserCreator();
-        final isBuyOrder = state.order?.kind == OrderType.buy;
-        
-        if (!(isUserCreator && isBuyOrder)) {
-          // Auto-navigate for takers or for makers of sell orders
-          navProvider.go('/trade_detail/$orderId');
-        }
-        
-        notifProvider.showInformation(event.action, values: {
-          'id': event.id,
-          'expiration_seconds':
-              mostroInstance?.expirationSeconds ?? Config.expirationSeconds,
-        });
-        break;
-      case Action.waitingBuyerInvoice:
-        notifProvider.showInformation(event.action, values: {
-          'expiration_seconds':
-              mostroInstance?.expirationSeconds ?? Config.expirationSeconds,
-        });
-        
-        // Check if user is the maker of a sell order - don't auto-navigate in this case
-        final isUserCreator = _isUserCreator();
-        final isSellOrder = state.order?.kind == OrderType.sell;
-        
-        if (!(isUserCreator && isSellOrder)) {
-          // Auto-navigate for takers or for makers of buy orders
-          navProvider.go('/trade_detail/$orderId');
-        }
-        break;
-      case Action.addInvoice:
-        final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
-        sessionNotifier.saveSession(session);
-
-        navProvider.go('/add_invoice/$orderId');
         break;
       case Action.buyerTookOrder:
         final order = event.getPayload<Order>();
@@ -202,56 +92,240 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
           logger.e('Buyer took order, but order is null');
           break;
         }
+
+        // Notification
+        final buyerNym = order.buyerTradePubkey != null 
+            ? ref.read(nickNameProvider(order.buyerTradePubkey!)) 
+            : 'Unknown';
+        sendNotification(event.action, values: {
+          'buyer_npub': buyerNym,
+        }, eventId: event.id);
+
+        // Update session and state
         final sessionProvider = ref.read(sessionNotifierProvider.notifier);
         final peer = order.buyerTradePubkey != null
             ? Peer(publicKey: order.buyerTradePubkey!)
             : null;
-        sessionProvider.updateSession(
-          orderId,
-          (s) => s.peer = peer,
-        );
-        state = state.copyWith(
-          peer: peer,
-        );
+        sessionProvider.updateSession(orderId, (s) => s.peer = peer);
+        state = state.copyWith(peer: peer);
+        
+        // Enable chat and navigate
         final chat = ref.read(chatRoomsProvider(orderId).notifier);
         chat.subscribe();
         navProvider.go('/trade_detail/$orderId');
         break;
+
+      case Action.payInvoice:
+        if (event.payload is PaymentRequest) {
+          navProvider.go('/pay_invoice/${event.id!}');
+        }
+        ref.read(sessionNotifierProvider.notifier).saveSession(session);
+        sendNotification(event.action, eventId: event.id);
+        break;
+
+      case Action.addInvoice:
+        final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+        sessionNotifier.saveSession(session);
+
+        // Check if payment failure recovery
+        final order = event.getPayload<Order>();
+        final isAfterPaymentFailure = order?.status == Status.settledHoldInvoice;
+        
+        // Notification
+        if (isAfterPaymentFailure) {
+          final now = DateTime.now();
+          sendNotification(event.action, values: {
+            'fiat_amount': order?.fiatAmount,
+            'fiat_code': order?.fiatCode,
+            'failed_at': now.millisecondsSinceEpoch,
+          }, eventId: event.id);
+        } else {
+          sendNotification(event.action, eventId: event.id);
+        }
+        
+        navProvider.go('/add_invoice/$orderId');
+        break;
+
+      case Action.holdInvoicePaymentAccepted:
+        final order = event.getPayload<Order>();
+        if (order == null) return;
+
+        // Notification
+        final notificationValues = <String, dynamic>{
+          'fiat_code': order.fiatCode,
+          'fiat_amount': order.fiatAmount,
+          'payment_method': order.paymentMethod,
+        };
+        
+        if (order.sellerTradePubkey != null) {
+          final sellerNym = ref.read(nickNameProvider(order.sellerTradePubkey!));
+          notificationValues['seller_npub'] = sellerNym;
+        }
+        
+        sendNotification(event.action, values: notificationValues, eventId: event.id);
+
+        // Update session and state
+        final sessionProvider = ref.read(sessionNotifierProvider.notifier);
+        final peer = order.sellerTradePubkey != null
+            ? Peer(publicKey: order.sellerTradePubkey!)
+            : null;
+        sessionProvider.updateSession(orderId, (s) => s.peer = peer);
+        state = state.copyWith(peer: peer);
+        
+        // Enable chat
+        final chat = ref.read(chatRoomsProvider(orderId).notifier);
+        chat.subscribe();
+        break;
+
+      case Action.holdInvoicePaymentSettled:
+        // Notification
+        final buyerNym = state.order?.buyerTradePubkey != null 
+            ? ref.read(nickNameProvider(state.order!.buyerTradePubkey!)) 
+            : 'Unknown';
+        sendNotification(event.action, values: {
+          'buyer_npub': buyerNym,
+        }, eventId: event.id);
+
+        navProvider.go('/trade_detail/$orderId');
+        break;
+
+      case Action.paymentFailed:
+        final paymentFailed = event.getPayload<PaymentFailed>();
+        sendNotification(event.action, values: {
+          'payment_attempts': paymentFailed?.paymentAttempts,
+          'payment_retries_interval': paymentFailed?.paymentRetriesInterval,
+        }, eventId: event.id);
+        break;
+
+      case Action.waitingSellerToPay:
+        // Navigation logic
+        final isUserCreator = _isUserCreator();
+        final isBuyOrder = state.order?.kind == OrderType.buy;
+        if (!(isUserCreator && isBuyOrder)) {
+          navProvider.go('/trade_detail/$orderId');
+        }
+        
+        // Notification
+        sendNotification(event.action, values: {
+          'expiration_seconds': mostroInstance?.expirationSeconds ?? Config.expirationSeconds,
+        }, eventId: event.id);
+        break;
+
+      case Action.waitingBuyerInvoice:
+        // Notification
+        sendNotification(event.action, values: {
+          'expiration_seconds': mostroInstance?.expirationSeconds ?? Config.expirationSeconds,
+        }, eventId: event.id);
+        
+        // Navigation logic
+        final isUserCreator = _isUserCreator();
+        final isSellOrder = state.order?.kind == OrderType.sell;
+        if (!(isUserCreator && isSellOrder)) {
+          navProvider.go('/trade_detail/$orderId');
+        }
+        break;
+
+      case Action.fiatSentOk:
+        final peer = event.getPayload<Peer>();
+        final isSeller = (session.role == Role.seller);
+        
+        // Notification (seller only)
+        if (isSeller) {
+          final buyerNym = peer?.publicKey != null 
+              ? ref.read(nickNameProvider(peer!.publicKey)) 
+              : 'Unknown';
+          sendNotification(event.action, values: {
+            'buyer_npub': buyerNym,
+          }, eventId: event.id);
+        }
+        break;
+
+      case Action.released:
+        // Notification
+        final sellerNym = state.order?.sellerTradePubkey != null 
+            ? ref.read(nickNameProvider(state.order!.sellerTradePubkey!)) 
+            : 'Unknown';
+        sendNotification(event.action, values: {
+          'seller_npub': sellerNym,
+        }, eventId: event.id);
+        break;
+
+      case Action.purchaseCompleted:
+        sendNotification(event.action, eventId: event.id);
+        break;
+
+      case Action.canceled:
+        // Cleanup
+        ref.read(mostroStorageProvider).deleteAllMessagesByOrderId(orderId);
+        ref.read(sessionNotifierProvider.notifier).deleteSession(orderId);
+        
+        // Navigate and invalidate
+        navProvider.go('/order_book');
+        ref.invalidateSelf();
+        break;
+
+      case Action.cooperativeCancelInitiatedByYou:
+        sendNotification(event.action, eventId: event.id);
+        break;
+
+      case Action.cooperativeCancelInitiatedByPeer:
+        sendNotification(event.action, eventId: event.id);
+        break;
+
+      case Action.disputeInitiatedByYou:
+        final dispute = event.getPayload<Dispute>();
+        if (dispute == null) {
+          logger.e('disputeInitiatedByYou: Missing Dispute payload for event ${event.id} with action ${event.action}');
+          return;
+        }
+        sendNotification(event.action, values: {
+          'user_token': dispute.disputeId,
+        }, eventId: event.id);
+        break;
+
+      case Action.disputeInitiatedByPeer:
+        final dispute = event.getPayload<Dispute>();
+        if (dispute == null) {
+          logger.e('disputeInitiatedByPeer: Missing Dispute payload for event ${event.id} with action ${event.action}');
+          return;
+        }
+        sendNotification(event.action, values: {
+          'user_token': dispute.disputeId,
+        }, eventId: event.id);
+        break;
+
+      case Action.adminSettled:
+        sendNotification(event.action, eventId: event.id);
+        break;
+
       case Action.cantDo:
         final cantDo = event.getPayload<CantDo>();
         
-        // Handle specific case of out_of_range_sats_amount
+        // Cleanup for specific errors
         if (cantDo?.cantDoReason == CantDoReason.outOfRangeSatsAmount) {
-          logger.i('Received out_of_range_sats_amount, cleaning up session for retry');
-          
-          // Clean up temporary session if it exists by requestId
           if (event.requestId != null) {
             ref.read(sessionNotifierProvider.notifier).cleanupRequestSession(event.requestId!);
           }
         }
-        
-        ref.read(notificationProvider.notifier).showInformation(
-          event.action,
-          values: {
-            'action': cantDo?.cantDoReason.toString(),
-          },
-        );
+        // Temp Notification 
+        sendNotification(event.action, values: {
+          'action': cantDo?.cantDoReason.toString(),
+        }, isTemporary: true);
         break;
-      case Action.adminSettled:
-        notifProvider.showInformation(event.action, values: {});
+
+      case Action.rate:
+        sendNotification(event.action, eventId: event.id);
         break;
-      case Action.paymentFailed:
-        final paymentFailed = event.getPayload<PaymentFailed>();
-        notifProvider.showInformation(event.action, values: {
-          'payment_attempts': paymentFailed?.paymentAttempts,
-          'payment_retries_interval': paymentFailed?.paymentRetriesInterval,
-        });
+
+      case Action.rateReceived:
         break;
+
       case Action.timeoutReversal:
-        // No automatic notification - handled manually in OrderNotifier
         break;
+
+      // Default
       default:
-        notifProvider.showInformation(event.action, values: {});
+        sendNotification(event.action, isTemporary: true);
         break;
     }
   }
