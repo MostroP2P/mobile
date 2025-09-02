@@ -648,6 +648,39 @@
   "yesterday": "Yesterday",
   "youPrefix": "You: ",
   "conversationsDescription": "Here you'll find your conversations with other users during trades.",
+  "disputesDescription": "These are your open disputes and the chats with the admin helping resolve them.",
+  "disputeDetails": "Dispute Details",
+  "disputeForOrder": "Dispute for order",
+  "disputeStatusInitiated": "Initiated",
+  "disputeStatusInProgress": "In-progress",
+  "disputeStatusResolved": "Resolved",
+  "disputeStatusClosed": "Closed",
+  "disputeResolvedTitle": "Dispute Resolved",
+  "disputeResolvedMessage": "This dispute has been resolved. The solver made a decision based on the evidence presented. Check your wallet for any refunds or payments.",
+  "disputeInProgress": "This dispute is currently in progress. A solver is reviewing your case.",
+  "disputeSellerRefunded": "This dispute has been resolved with the seller being refunded.",
+  "disputeUnknownStatus": "The status of this dispute is unknown.",
+  "disputeOpenedByYou": "You opened this dispute against the buyer {counterparty}, please read carefully below:",
+  "@disputeOpenedByYou": {
+    "placeholders": {
+      "counterparty": { "type": "String" }
+    }
+  },
+  "disputeOpenedAgainstYou": "This dispute was opened against you by {counterparty}, please read carefully below:",
+  "@disputeOpenedAgainstYou": {
+    "placeholders": {
+      "counterparty": { "type": "String" }
+    }
+  },
+  "disputeInstruction1": "Wait for a solver to take your dispute. Once they arrive, share any relevant evidence to help clarify the situation.",
+  "disputeInstruction2": "The final decision will be made based on the evidence presented.",
+  "disputeInstruction3": "If you don't respond, the system will assume you don't want to cooperate and you might lose the dispute.",
+  "disputeInstruction4": "If you want to share your chat history with {counterparty}, you can give the solver the shared key found in User Info in your conversation with that user.",
+  "@disputeInstruction4": {
+    "placeholders": {
+      "counterparty": { "type": "String" }
+    }
+  },
   "orderId": "Order ID:",
   "paymentMethod": "Payment Method:",
   "createdOn": "Created on:",
@@ -667,8 +700,8 @@
       }
     }
   },
-  "forAmount": "for {amount} {currency}",
-  "@forAmount": {
+  "forAmountWithCurrency": "for {amount} {currency}",
+  "@forAmountWithCurrency": {
     "placeholders": {
       "amount": {
         "type": "String"
@@ -797,6 +830,61 @@
   "relayErrorNoHttp": "HTTP URLs are not supported. Use websocket URLs (wss://)",
   "relayErrorInvalidDomain": "Invalid domain format. Use format like: relay.example.com",
   "relayErrorAlreadyExists": "This relay is already in your list",
+  
+  "@_comment_dispute_communication": "Dispute Communication Text",
+  "disputeCommunication": "Communication",
+  "waitingAdminAssignment": "Waiting for admin assignment",
+  "waitingAdminDescription": "Your dispute has been submitted. An admin will be assigned to help resolve this issue.",
+  "adminAssignmentDescription": "An admin will be assigned to your dispute soon. Once assigned, you can communicate directly with them here.",
+  "adminAssigned": "Admin assigned",
+  "adminAssignedDescription": "You can now communicate with the admin. Start the conversation by sending a message below.",
+  "admin": "Admin",
+  "you": "You",
+  "errorLoadingChat": "Error loading chat",
+  "adminPubkey": "Admin pubkey",
+  "tokenVerified": "Token verified",
+  "awaitingTokenVerification": "Awaiting token verification",
+  "askAdminQuoteToken": "Ask admin to quote this token:",
+  
+  "@_comment_dispute_input": "Dispute Input Text",
+  "failedSendMessage": "Failed to send message: {error}",
+  "@failedSendMessage": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "waitingAdminAssignmentInput": "Waiting for admin assignment...",
+  "typeYourMessage": "Type your message...",
+  
+  "@_comment_dispute_list": "Dispute List Text",
+  "disputesWillAppear": "Disputes will appear here when you open them from your trades",
+  "failedLoadDisputes": "Failed to load disputes",
+  "disputesNotAvailable": "Disputes not available",
+  "disputesComingSoon": "This feature is coming soon",
+  "retry": "Retry",
+  
+  "@_comment_dispute_info": "Dispute Info Text",
+  "unknown": "Unknown",
+  "disputeWith": "Dispute with {role}: {counterparty}",
+  "@disputeWith": {
+    "placeholders": {
+      "role": { "type": "String" },
+      "counterparty": { "type": "String" }
+    }
+  },
+  "orderIdLabel": "Order ID",
+  "disputeIdLabel": "Dispute ID",
+  "seller": "Seller",
+  "buyer": "Buyer",
+  
+  "@_comment_dispute_screen": "Dispute Screen Text",
+  "disputeNotFound": "Dispute not found",
+  "errorLoadingDispute": "Error loading dispute: {error}",
+  "@errorLoadingDispute": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
   "relayErrorConnectionTimeout": "Relay unreachable - connection timeout",
   "relayTestingMessage": "Testing relay...",
   "relayAddedSuccessfully": "Relay added successfully: {url}",

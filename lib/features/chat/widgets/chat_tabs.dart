@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/features/chat/providers/chat_tab_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
-class ChatTabs extends StatelessWidget {
-  final TabController tabController;
-  final VoidCallback onTabChanged;
+class ChatTabs extends ConsumerWidget {
+  final ChatTabType currentTab;
 
   const ChatTabs({
     super.key,
-    required this.tabController,
-    required this.onTabChanged,
+    required this.currentTab,
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       decoration: BoxDecoration(
         color: AppTheme.backgroundDark,
@@ -26,20 +26,19 @@ class ChatTabs extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _buildTabButton(context, 0, S.of(context)!.messages, tabController.index == 0),
-          _buildTabButton(context, 1, S.of(context)!.disputes, tabController.index == 1),
+          _buildTabButton(context, ref, ChatTabType.messages, S.of(context)!.messages, currentTab == ChatTabType.messages),
+          _buildTabButton(context, ref, ChatTabType.disputes, S.of(context)!.disputes, currentTab == ChatTabType.disputes),
         ],
       ),
     );
   }
 
   Widget _buildTabButton(
-      BuildContext context, int index, String text, bool isActive) {
+      BuildContext context, WidgetRef ref, ChatTabType tabType, String text, bool isActive) {
     return Expanded(
       child: InkWell(
         onTap: () {
-          tabController.animateTo(index);
-          onTabChanged();
+          ref.read(chatTabProvider.notifier).state = tabType;
         },
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 16),
