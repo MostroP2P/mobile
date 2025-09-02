@@ -35,27 +35,27 @@ class NotificationListenerWidget extends ConsumerWidget {
           }
         } else if (next.action != null) {
           // Handle specific cant-do reasons with custom messages
-          if (next.action == mostro.Action.cantDo && next.values.containsKey('action')) {
+          if (next.action == mostro.Action.cantDo && next.values['action'] != null) {
             final cantDoReason = next.values['action'] as String?;
-            if (cantDoReason == 'pending_order_exists') {
+            if (cantDoReason != null && cantDoReason == 'pending_order_exists') {
               message = S.of(context)!.pendingOrderExists;
-            } else if (cantDoReason == 'not_allowed_by_status') {
+            } else if (cantDoReason != null && cantDoReason == 'not_allowed_by_status') {
               message = S.of(context)!.notAllowedByStatus;
-            } else if (cantDoReason == 'invalid_invoice') {
+            } else if (cantDoReason != null && cantDoReason == 'invalid_invoice') {
               message = S.of(context)!.invalidInvoice;
-            } else if (cantDoReason == 'invalid_trade_index') {
+            } else if (cantDoReason != null && cantDoReason == 'invalid_trade_index') {
               message = S.of(context)!.invalidTradeIndex;
-            } else if (cantDoReason == 'is_not_your_order') {
+            } else if (cantDoReason != null && cantDoReason == 'is_not_your_order') {
               message = S.of(context)!.isNotYourOrder;
-            } else if (cantDoReason == 'invalid_signature') {
+            } else if (cantDoReason != null && cantDoReason == 'invalid_signature') {
               message = S.of(context)!.invalidSignature;
-            } else if (cantDoReason == 'invalid_peer') {
+            } else if (cantDoReason != null && cantDoReason == 'invalid_peer') {
               message = S.of(context)!.invalidPeer;
-            } else if (cantDoReason == 'invalid_pubkey') {
+            } else if (cantDoReason != null && cantDoReason == 'invalid_pubkey') {
               message = S.of(context)!.invalidPubkey;
-            } else if (cantDoReason == 'order_already_canceled') {
+            } else if (cantDoReason != null && cantDoReason == 'order_already_canceled') {
               message = S.of(context)!.orderAlreadyCanceled;
-            } else if (cantDoReason == 'out_of_range_sats_amount') {
+            } else if (cantDoReason != null && cantDoReason == 'out_of_range_sats_amount') {
               message = S.of(context)!.outOfRangeSatsAmount;
             } else {
               // Use generic cant-do message for other reasons
