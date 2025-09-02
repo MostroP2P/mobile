@@ -9,38 +9,20 @@ import 'package:mostro_mobile/features/chat/widgets/chat_list_item.dart';
 import 'package:mostro_mobile/features/chat/widgets/chat_tabs.dart';
 import 'package:mostro_mobile/features/chat/widgets/empty_state_view.dart';
 import 'package:mostro_mobile/features/disputes/widgets/disputes_list.dart';
+import 'package:mostro_mobile/features/chat/providers/chat_tab_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
 import 'package:mostro_mobile/shared/widgets/bottom_nav_bar.dart';
 import 'package:mostro_mobile/shared/widgets/custom_drawer_overlay.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_app_bar.dart';
 
-class ChatRoomsScreen extends ConsumerStatefulWidget {
+class ChatRoomsScreen extends ConsumerWidget {
   const ChatRoomsScreen({super.key});
 
   @override
-  ConsumerState<ChatRoomsScreen> createState() => _ChatRoomsScreenState();
-}
-
-class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final chatListState = ref.watch(chatRoomsNotifierProvider);
+    final currentTab = ref.watch(chatTabProvider);
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundDark,
@@ -72,12 +54,7 @@ class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen>
                   ),
                 ),
                 // Tab bar
-                ChatTabs(
-                  tabController: _tabController,
-                  onTabChanged: () {
-                    setState(() {});
-                  },
-                ),
+                ChatTabs(currentTab: currentTab),
                 // Description text
                 Container(
                   width: double.infinity,
@@ -91,25 +68,32 @@ class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen>
                     ),
                   ),
                   child: Text(
-                    _getTabDescription(context),
+                    _getTabDescription(context, currentTab),
                     style: TextStyle(
                       color: AppTheme.textSecondary,
                       fontSize: 14,
                     ),
                   ),
                 ),
-                // Content area
+                // Content area with gesture detection
                 Expanded(
-                  child: Container(
-                    color: AppTheme.backgroundDark,
-                    child: TabBarView(
-                      controller: _tabController,
-                      children: [
-                        // Messages tab
-                        _buildBody(context, chatListState),
-                        // Disputes tab
-                        const DisputesList(),
-                      ],
+                  child: GestureDetector(
+                    onHorizontalDragEnd: (details) {
+                      if (details.primaryVelocity != null &&
+                          details.primaryVelocity! < 0) {
+                        // Swipe left - go to disputes
+                        ref.read(chatTabProvider.notifier).state = ChatTabType.disputes;
+                      } else if (details.primaryVelocity != null &&
+                          details.primaryVelocity! > 0) {
+                        // Swipe right - go to messages
+                        ref.read(chatTabProvider.notifier).state = ChatTabType.messages;
+                      }
+                    },
+                    child: Container(
+                      color: AppTheme.backgroundDark,
+                      child: currentTab == ChatTabType.messages
+                          ? _buildBody(context, ref, chatListState)
+                          : const DisputesList(),
                     ),
                   ),
                 ),
@@ -131,7 +115,7 @@ class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen>
     );
   }
 
-  Widget _buildBody(BuildContext context, List<ChatRoom> state) {
+  Widget _buildBody(BuildContext context, WidgetRef ref, List<ChatRoom> state) {
     if (state.isEmpty) {
       return EmptyStateView(
         message: S.of(context)?.noMessagesAvailable ?? 'No messages available',
@@ -154,8 +138,8 @@ class _ChatRoomsScreenState extends ConsumerState<ChatRoomsScreen>
     );
   }
 
-  String _getTabDescription(BuildContext context) {
-    if (_tabController.index == 0) {
+  String _getTabDescription(BuildContext context, ChatTabType currentTab) {
+    if (currentTab == ChatTabType.messages) {
       // Messages tab
       return S.of(context)?.conversationsDescription ??
           'Here you\'ll find your conversations with other users during trades.';
