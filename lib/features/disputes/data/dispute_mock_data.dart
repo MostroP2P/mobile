@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:mostro_mobile/data/models/dispute_chat.dart';
 import 'package:mostro_mobile/data/models/dispute.dart';
 
@@ -5,8 +6,8 @@ import 'package:mostro_mobile/data/models/dispute.dart';
 /// This file can be easily removed when real dispute data is implemented
 class DisputeMockData {
   
-  /// Mock dispute list for the disputes screen
-  static List<DisputeData> get mockDisputes => [
+  /// Mock dispute list for the disputes screen - only available in debug mode
+  static List<DisputeData> get mockDisputes => kDebugMode ? [
     DisputeData(
       disputeId: 'dispute_001',
       orderId: 'order_123',
@@ -37,7 +38,7 @@ class DisputeMockData {
       isCreator: null, // Unknown creator state for resolved dispute
       userRole: UserRole.buyer,
     ),
-  ];
+  ] : <DisputeData>[];
 
   /// Mock dispute details based on dispute ID
   static DisputeData? getDisputeById(String disputeId) {
@@ -141,6 +142,6 @@ class DisputeMockData {
     return newDisputeId;
   }
 
-  /// Check if mock data is enabled (can be used to toggle mock vs real data)
-  static const bool isMockEnabled = true;
+  /// Check if mock data is enabled (only in debug mode)
+  static bool get isMockEnabled => kDebugMode;
 }

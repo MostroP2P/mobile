@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
@@ -9,8 +10,8 @@ class DisputesList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Hardcoded mock disputes for UI demonstration
-    final mockDisputes = [
+    // Only show hardcoded mock disputes in debug mode
+    final mockDisputes = kDebugMode ? [
       DisputeData(
         disputeId: 'dispute_001',
         orderId: 'order_abc123',
@@ -41,7 +42,7 @@ class DisputesList extends StatelessWidget {
         createdAt: DateTime.now().subtract(const Duration(days: 3)),
         userRole: UserRole.buyer,
       ),
-    ];
+    ] : <DisputeData>[];
 
     if (mockDisputes.isEmpty) {
       return Center(
@@ -55,7 +56,7 @@ class DisputesList extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'No disputes available',
+              kDebugMode ? 'No disputes available' : 'Disputes not available',
               style: TextStyle(
                 color: AppTheme.textSecondary,
                 fontSize: 16,
@@ -63,7 +64,9 @@ class DisputesList extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Disputes will appear here when created',
+              kDebugMode 
+                ? 'Disputes will appear here when created'
+                : 'This feature is coming soon',
               style: TextStyle(
                 color: AppTheme.textSecondary,
                 fontSize: 14,
