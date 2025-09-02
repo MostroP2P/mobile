@@ -1055,6 +1055,8 @@
   "@_comment_dispute_list": "Testo Lista Controversie",
   "disputesWillAppear": "Le controversie appariranno qui quando le apri dai tuoi scambi",
   "failedLoadDisputes": "Impossibile caricare le controversie",
+  "disputesNotAvailable": "Controversie non disponibili",
+  "disputesComingSoon": "Questa funzione sarà disponibile presto",
   
   "@_comment_dispute_info": "Testo Informazioni Controversie",
   "unknown": "Sconosciuto",

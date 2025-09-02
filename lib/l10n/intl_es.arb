@@ -1023,6 +1023,8 @@
   "@_comment_dispute_list": "Texto de Lista de Disputas",
   "disputesWillAppear": "Las disputas aparecerán aquí cuando las abras desde tus intercambios",
   "failedLoadDisputes": "Error al cargar disputas",
+  "disputesNotAvailable": "Disputas no disponibles",
+  "disputesComingSoon": "Esta función estará disponible pronto",
   "retry": "Reintentar",
   
   "@_comment_dispute_info": "Texto de Información de Disputas",

@@ -859,6 +859,8 @@
   "@_comment_dispute_list": "Dispute List Text",
   "disputesWillAppear": "Disputes will appear here when you open them from your trades",
   "failedLoadDisputes": "Failed to load disputes",
+  "disputesNotAvailable": "Disputes not available",
+  "disputesComingSoon": "This feature is coming soon",
   "retry": "Retry",
   
   "@_comment_dispute_info": "Dispute Info Text",

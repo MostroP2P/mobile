@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/disputes/widgets/dispute_list_item.dart';
 import 'package:mostro_mobile/data/models/dispute.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class DisputesList extends StatelessWidget {
   const DisputesList({super.key});
@@ -56,7 +57,7 @@ class DisputesList extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              kDebugMode ? 'No disputes available' : 'Disputes not available',
+              kDebugMode ? S.of(context)!.noDisputesAvailable : S.of(context)!.disputesNotAvailable,
               style: TextStyle(
                 color: AppTheme.textSecondary,
                 fontSize: 16,
@@ -65,8 +66,8 @@ class DisputesList extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               kDebugMode 
-                ? 'Disputes will appear here when created'
-                : 'This feature is coming soon',
+                ? S.of(context)!.disputesWillAppear
+                : S.of(context)!.disputesComingSoon,
               style: TextStyle(
                 color: AppTheme.textSecondary,
                 fontSize: 14,
