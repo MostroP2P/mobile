@@ -2944,6 +2944,26 @@ class MockOrderNotifier extends _i1.Mock implements _i28.OrderNotifier {
       );
 
   @override
+  void sendNotification(
+    _i27.Action? action, {
+    Map<String, dynamic>? values,
+    bool? isTemporary = false,
+    String? eventId,
+  }) =>
+      super.noSuchMethod(
+        Invocation.method(
+          #sendNotification,
+          [action],
+          {
+            #values: values,
+            #isTemporary: isTemporary,
+            #eventId: eventId,
+          },
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
   bool updateShouldNotify(
     _i11.OrderState? old,
     _i11.OrderState? current,

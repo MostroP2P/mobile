@@ -248,16 +248,11 @@ class MostroMessageDetail extends ConsumerWidget {
       case CantDoReason.invalidSignature:
         return S.of(context)!.invalidSignature;
       case CantDoReason.notAllowedByStatus:
-        return S.of(context)!.notAllowedByStatus(
-              orderId,
-              tradeState.status,
-            );
+        return S.of(context)!.notAllowedByStatus;
       case CantDoReason.outOfRangeFiatAmount:
         return S.of(context)!.outOfRangeFiatAmount('{fiat_min}', '{fiat_max}');
       case CantDoReason.outOfRangeSatsAmount:
-        final mostroInstance = ref.read(orderRepositoryProvider).mostroInstance;
-        return S.of(context)!.outOfRangeSatsAmount(
-            mostroInstance!.maxOrderAmount, mostroInstance.minOrderAmount);
+        return S.of(context)!.outOfRangeSatsAmount;
       case CantDoReason.isNotYourDispute:
         return S.of(context)!.isNotYourDispute;
       case CantDoReason.disputeCreationError:
