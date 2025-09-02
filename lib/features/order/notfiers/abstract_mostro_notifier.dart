@@ -307,6 +307,11 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
             ref.read(sessionNotifierProvider.notifier).cleanupRequestSession(event.requestId!);
           }
         }
+        
+        // Cleanup for order taking failures - delete session by orderId
+        if (cantDo?.cantDoReason == CantDoReason.pendingOrderExists) {
+          ref.read(sessionNotifierProvider.notifier).deleteSession(orderId);
+        }
         // Temp Notification 
         sendNotification(event.action, values: {
           'action': cantDo?.cantDoReason.toString(),
