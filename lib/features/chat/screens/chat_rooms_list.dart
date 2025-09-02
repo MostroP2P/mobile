@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
-import 'package:mostro_mobile/data/models/chat_room.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 
 import 'package:mostro_mobile/features/chat/widgets/chat_list_item.dart';
@@ -21,7 +20,6 @@ class ChatRoomsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final chatListState = ref.watch(chatRoomsNotifierProvider);
     final currentTab = ref.watch(chatTabProvider);
 
     return Scaffold(
@@ -92,7 +90,7 @@ class ChatRoomsScreen extends ConsumerWidget {
                     child: Container(
                       color: AppTheme.backgroundDark,
                       child: currentTab == ChatTabType.messages
-                          ? _buildBody(context, ref, chatListState)
+                          ? _buildBody(context, ref)
                           : const DisputesList(),
                     ),
                   ),
@@ -115,16 +113,16 @@ class ChatRoomsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildBody(BuildContext context, WidgetRef ref, List<ChatRoom> state) {
-    if (state.isEmpty) {
+  Widget _buildBody(BuildContext context, WidgetRef ref) {
+    // Use the optimized provider that returns sorted chat rooms with fresh data
+    // This prevents excessive rebuilds by memoizing the sorted list
+    final chatRoomsWithFreshData = ref.watch(sortedChatRoomsProvider);
+
+    if (chatRoomsWithFreshData.isEmpty) {
       return EmptyStateView(
         message: S.of(context)?.noMessagesAvailable ?? 'No messages available',
       );
     }
-
-    // Use the optimized provider that returns sorted chat rooms with fresh data
-    // This prevents excessive rebuilds by memoizing the sorted list
-    final chatRoomsWithFreshData = ref.watch(sortedChatRoomsProvider);
 
     return ListView.builder(
       itemCount: chatRoomsWithFreshData.length,
