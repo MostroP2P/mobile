@@ -739,7 +739,7 @@ class TradeDetailScreen extends ConsumerWidget {
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(S.of(context)!.disputeCreationError(e.toString())),
+                  content: Text(S.of(context)!.disputeCreationErrorWithMessage(e.toString())),
                   backgroundColor: AppTheme.red1,
                 ),
               );
