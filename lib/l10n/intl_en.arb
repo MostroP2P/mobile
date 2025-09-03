@@ -295,6 +295,7 @@
   "disputeCreationFailed": "Failed to create dispute",
   "disputeCreationErrorWithMessage": "Error creating dispute: {error}",
   "@disputeCreationErrorWithMessage": {
+<<<<<<< HEAD
     "placeholders": {
       "error": {
         "type": "String"
@@ -305,6 +306,8 @@
   "disputeCreationFailed": "Failed to create dispute",
   "disputeCreationError": "Error creating dispute: {error}",
   "@disputeCreationError": {
+=======
+>>>>>>> 4dfe38ce (refactor: simplify dispute creation using MostroMessage wrapper and NIP-17 protocol)
     "placeholders": {
       "error": {
         "type": "String"
