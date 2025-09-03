@@ -301,6 +301,16 @@
       }
     }
   },
+  "disputeCreatedSuccessfully": "Dispute created successfully",
+  "disputeCreationFailed": "Failed to create dispute",
+  "disputeCreationError": "Error creating dispute: {error}",
+  "@disputeCreationError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "typeToAdd": "Type to add...",
   "noneSelected": "None selected",
   "fiatCurrencies": "Fiat currencies",

@@ -675,8 +675,8 @@
   "disputeTradeDialogContent": "Stai per iniziare una disputa con la tua controparte. Vuoi continuare?",
   "disputeCreatedSuccessfully": "Disputa creata con successo",
   "disputeCreationFailed": "Creazione della disputa fallita",
-  "disputeCreationErrorWithMessage": "Errore nella creazione della disputa: {error}",
-  "@disputeCreationErrorWithMessage": {
+  "disputeCreationError": "Errore nella creazione della disputa: {error}",
+  "@disputeCreationError": {
     "placeholders": {
       "error": {
         "type": "String"

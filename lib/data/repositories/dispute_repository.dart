@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
@@ -6,6 +7,9 @@ import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
+import 'package:mostro_mobile/services/nostr_service.dart';
+import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
+import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
 /// Repository for managing dispute creation
 class DisputeRepository {
@@ -33,26 +37,47 @@ class DisputeRepository {
         return false;
       }
 
-      // Validate trade key is present
-      if (session.tradeKey.private.isEmpty) {
-        _logger.e('Trade key is empty for order: $orderId, cannot create dispute');
+      final privateKey = session.tradeKey.private;
+      if (privateKey.isEmpty) {
+        _logger.e('Session trade key private key is empty for order: $orderId');
         return false;
       }
 
-      // Create dispute message using Gift Wrap protocol (NIP-59)
-      final disputeMessage = MostroMessage(
-        action: Action.dispute,
-        id: orderId,
+      // Create dispute message according to Mostro protocol
+      final disputeMessage = [
+        {
+          'order': {
+            'version': 1,
+            'id': orderId,
+            'action': 'dispute',
+            'payload': null,
+          }
+        },
+        null // Signature placeholder
+      ];
+
+      // Convert the dispute message to JSON string
+      final messageJson = jsonEncode(disputeMessage);
+      
+      // Encrypt the message using NIP-44 encryption
+      final encryptedContent = await NostrUtils.encryptNIP44(
+        messageJson,
+        privateKey,
+        _mostroPubkey
       );
 
-      // Wrap message using Gift Wrap protocol (NIP-59)
-      final event = await disputeMessage.wrap(
-        tradeKey: session.tradeKey,
-        recipientPubKey: _mostroPubkey,
+      // Create and sign the Nostr event using NostrUtils with encrypted content
+      final signedEvent = NostrUtils.createEvent(
+        kind: 4, // Direct message kind
+        content: encryptedContent,
+        privateKey: privateKey,
+        tags: [
+          ['p', _mostroPubkey], // Send to Mostro
+        ],
       );
 
-      // Send the wrapped event to Mostro
-      await _nostrService.publishEvent(event);
+      // Send the encrypted event to Mostro
+      await _nostrService.publishEvent(signedEvent);
 
       _logger.d('Successfully sent dispute creation for order: $orderId');
       return true;

@@ -24,6 +24,7 @@ import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/shared/providers/time_provider.dart';
 import 'package:mostro_mobile/features/disputes/providers/dispute_providers.dart';
+import 'package:mostro_mobile/features/disputes/providers/dispute_providers.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
 class TradeDetailScreen extends ConsumerWidget {
@@ -718,6 +719,9 @@ class TradeDetailScreen extends ConsumerWidget {
             final success = await repository.createDispute(orderId);
             
             if (success && context.mounted) {
+              // Also notify the order notifier
+              ref.read(orderNotifierProvider(orderId).notifier).disputeOrder();
+              
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(S.of(context)!.disputeCreatedSuccessfully),
@@ -736,7 +740,7 @@ class TradeDetailScreen extends ConsumerWidget {
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(S.of(context)!.disputeCreationErrorWithMessage(e.toString())),
+                  content: Text(S.of(context)!.disputeCreationError(e.toString())),
                   backgroundColor: AppTheme.red1,
                 ),
               );
