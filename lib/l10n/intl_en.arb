@@ -267,6 +267,16 @@
   "orderIdCopiedMessage": "Order ID copied to clipboard",
   "disputeTradeDialogTitle": "Start Dispute",
   "disputeTradeDialogContent": "You are about to start a dispute with your counterparty. Do you want to continue?",
+  "disputeCreatedSuccessfully": "Dispute created successfully",
+  "disputeCreationFailed": "Failed to create dispute",
+  "disputeCreationError": "Error creating dispute: {error}",
+  "@disputeCreationError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "typeToAdd": "Type to add...",
   "noneSelected": "None selected",
   "fiatCurrencies": "Fiat currencies",

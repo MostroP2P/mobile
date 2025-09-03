@@ -649,6 +649,16 @@
   "orderIdCopiedMessage": "ID ordine copiato negli appunti",
   "disputeTradeDialogTitle": "Inizia Disputa",
   "disputeTradeDialogContent": "Stai per iniziare una disputa con la tua controparte. Vuoi continuare?",
+  "disputeCreatedSuccessfully": "Disputa creata con successo",
+  "disputeCreationFailed": "Creazione della disputa fallita",
+  "disputeCreationError": "Errore nella creazione della disputa: {error}",
+  "@disputeCreationError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
 
   "language": "Lingua",
   "systemDefault": "Predefinito di sistema",
