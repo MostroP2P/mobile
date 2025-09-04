@@ -1,5 +1,8 @@
 # Mostro Mobile Client
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/MostroP2P/mobile)   
+  *Ask questions about this project using DeepWiki AI*  
+
 A modern, secure mobile client for the [Mostro](https://github.com/MostroP2P/mostro) peer-to-peer Bitcoin trading platform.
 
 This is a fully-featured mobile application that enables secure, private, and decentralized Bitcoin trading over the Lightning Network using the Nostr protocol. Built with Flutter, it provides a native mobile experience for conducting peer-to-peer trades with advanced privacy features and modern UI/UX design.
@@ -307,4 +310,3 @@ This project is licensed under the MIT License. See the `LICENSE` file for detai
 - ✅ **Localization**: Complete translation coverage for supported languages
 - ✅ **Documentation**: Comprehensive technical and user documentation
 
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/MostroP2P/mobile)
