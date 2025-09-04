@@ -54,9 +54,13 @@ class DisputeService {
     // Mock implementation
     await Future.delayed(const Duration(milliseconds: 300));
     
+    // Safe prefix extraction to avoid RangeError
+    final prefixLen = min(8, disputeId.length);
+    final orderIdSuffix = disputeId.isEmpty ? 'unknown' : disputeId.substring(0, prefixLen);
+    
     return Dispute(
       disputeId: disputeId,
-      orderId: 'order_${disputeId.substring(0, 8)}',
+      orderId: 'order_$orderIdSuffix',
       status: 'initiated',
       createdAt: DateTime.now().subtract(const Duration(hours: 2)),
       action: 'dispute-initiated-by-you',
