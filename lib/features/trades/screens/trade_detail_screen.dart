@@ -718,9 +718,6 @@ class TradeDetailScreen extends ConsumerWidget {
             final success = await repository.createDispute(orderId);
             
             if (success && context.mounted) {
-              // Also notify the order notifier
-              ref.read(orderNotifierProvider(orderId).notifier).disputeOrder();
-              
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(S.of(context)!.disputeCreatedSuccessfully),
