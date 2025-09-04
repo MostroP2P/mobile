@@ -1,5 +1,8 @@
 # Mostro Mobile Client
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/MostroP2P/mobile)   
+  *Ask questions about this project using DeepWiki AI*  
+
 A modern, secure mobile client for the [Mostro](https://github.com/MostroP2P/mostro) peer-to-peer Bitcoin trading platform.
 
 This is a fully-featured mobile application that enables secure, private, and decentralized Bitcoin trading over the Lightning Network using the Nostr protocol. Built with Flutter, it provides a native mobile experience for conducting peer-to-peer trades with advanced privacy features and modern UI/UX design.
@@ -170,7 +173,7 @@ Mobile App ←→ Nostr Relays ←→ Mostro Daemon ←→ Lightning Network
   UI Layer    WebSocket Conn.  Order Matching  Bitcoin Payments
 ```
 
-For detailed technical documentation, see **[NOSTR.md](NOSTR.md)** - Complete Nostr integration guide.
+For detailed technical documentation, see **[docs/architecture/](docs/architecture/)**.
 
 ## 🔧 Development Commands
 
@@ -225,7 +228,7 @@ This project maintains **zero Flutter analyze issues** and follows modern Flutte
 - **[CLAUDE.md](CLAUDE.md)** - Development environment setup and project conventions
 
 ### Technical Documentation
-- **[NOSTR.md](NOSTR.md)** - Nostr protocol integration and architecture
+- **[docs/architecture/](docs/architecture/)** - Complete technical documentation and system architecture
 - **Code Documentation**: Inline documentation following Dart conventions
 
 ## 🚀 Contributing
@@ -294,10 +297,10 @@ This project is licensed under the MIT License. See the `LICENSE` file for detai
 - [x] **Background Services**: Reliable background processing for notifications
 
 ### 🚧 Planned Features
-- [ ] **Invoice Recovery**: Add new invoice if payment fails
+- [x] **Invoice Recovery**: Add new invoice if payment fails
+- [x] **Multi-Relay Support**: Advanced relay management and failover
 - [ ] **Dispute Resolution**: User-initiated dispute flow
 - [ ] **Admin Tools**: Dispute management interface for administrators
-- [ ] **Multi-Relay Support**: Advanced relay management and failover
 - [ ] **Tor Integration**: Anonymous relay connections
 
 ### 📊 Platform Status
@@ -306,3 +309,4 @@ This project is licensed under the MIT License. See the `LICENSE` file for detai
 - ✅ **Security**: Production-ready cryptographic implementation
 - ✅ **Localization**: Complete translation coverage for supported languages
 - ✅ **Documentation**: Comprehensive technical and user documentation
+
