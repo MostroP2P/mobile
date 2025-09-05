@@ -250,7 +250,7 @@ class MostroMessageDetail extends ConsumerWidget {
       case CantDoReason.notAllowedByStatus:
         return S.of(context)!.notAllowedByStatus;
       case CantDoReason.outOfRangeFiatAmount:
-        return S.of(context)!.outOfRangeFiatAmount('{fiat_min}', '{fiat_max}');
+        return S.of(context)!.outOfRangeFiatAmount;
       case CantDoReason.outOfRangeSatsAmount:
         return S.of(context)!.outOfRangeSatsAmount;
       case CantDoReason.isNotYourDispute:
