@@ -33,13 +33,19 @@ class DisputeRepository {
         return false;
       }
 
+      // Validate trade key is present
+      if (session.tradeKey.private.isEmpty) {
+        _logger.e('Trade key is empty for order: $orderId, cannot create dispute');
+        return false;
+      }
+
       // Create dispute message using Gift Wrap protocol (NIP-59)
       final disputeMessage = MostroMessage(
         action: Action.dispute,
         id: orderId,
       );
 
-      // Wrap message using NIP-59 Gift Wrap protocol
+      // Wrap message using Gift Wrap protocol (NIP-59)
       final event = await disputeMessage.wrap(
         tradeKey: session.tradeKey,
         recipientPubKey: _mostroPubkey,
