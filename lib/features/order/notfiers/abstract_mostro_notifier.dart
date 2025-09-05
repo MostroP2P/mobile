@@ -330,7 +330,10 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
 
       // Default
       default:
-        sendNotification(event.action, isTemporary: true);
+        // Skip cant-do events as they are already handled in explicit case above.
+        if (event.action != Action.cantDo) {
+          sendNotification(event.action, isTemporary: true);
+        }
         break;
     }
   }
