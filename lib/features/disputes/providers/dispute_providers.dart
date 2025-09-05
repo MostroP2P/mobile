@@ -1,11 +1,13 @@
+import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/models/dispute.dart';
 import 'package:mostro_mobile/data/models/dispute_chat.dart';
 import 'package:mostro_mobile/data/repositories/dispute_repository.dart';
 import 'package:mostro_mobile/features/disputes/notifiers/dispute_chat_notifier.dart';
-import 'package:mostro_mobile/features/disputes/data/dispute_mock_data.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
+import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
+import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 
 /// Provider for the dispute repository
 final disputeRepositoryProvider = Provider.autoDispose<DisputeRepository>((ref) {
@@ -16,43 +18,12 @@ final disputeRepositoryProvider = Provider.autoDispose<DisputeRepository>((ref) 
   return DisputeRepository(nostrService, mostroPubkey, ref);
 });
 
-/// Provider for dispute details - uses mock data when enabled
+/// Provider for dispute details - uses real data from repository
 final disputeDetailsProvider = FutureProvider.family<Dispute?, String>((ref, disputeId) async {
-  // Simulate loading time
-  await Future.delayed(const Duration(milliseconds: 300));
-  
-  if (!DisputeMockData.isMockEnabled) {
-    // TODO: Implement real dispute loading here
-    return null;
-  }
-  
-  // Get mock dispute data
-  final disputeData = DisputeMockData.getDisputeById(disputeId);
-  if (disputeData == null) return null;
-  
-  return Dispute(
-    disputeId: disputeData.disputeId,
-    orderId: disputeData.orderId,
-    status: disputeData.status,
-    createdAt: disputeData.createdAt,
-    action: _getActionFromStatus(disputeData.status, disputeData.userRole.name),
-    adminPubkey: disputeData.status != 'initiated' ? 'admin_123' : null,
-  );
+  final repository = ref.watch(disputeRepositoryProvider);
+  return repository.getDispute(disputeId);
 });
 
-/// Helper function to convert status to action
-String _getActionFromStatus(String status, String initiatorRole) {
-  switch (status) {
-    case 'initiated':
-      return 'dispute-initiated-by-you';
-    case 'in-progress':
-      return initiatorRole == 'buyer' ? 'dispute-initiated-by-you' : 'dispute-initiated-by-peer';
-    case 'resolved':
-      return 'dispute-resolved';
-    default:
-      return 'dispute-initiated-by-you';
-  }
-}
 
 /// Stub provider for dispute chat messages - UI only implementation
 final disputeChatProvider = StateNotifierProvider.family<DisputeChatNotifier, List<DisputeChat>, String>(
@@ -61,23 +32,35 @@ final disputeChatProvider = StateNotifierProvider.family<DisputeChatNotifier, Li
   },
 );
 
-/// Provider for user disputes list - uses mock data when enabled
+/// Provider for user disputes list - uses real data from repository
 final userDisputesProvider = FutureProvider<List<Dispute>>((ref) async {
-  // Simulate loading time
-  await Future.delayed(const Duration(milliseconds: 500));
+  final repository = ref.watch(disputeRepositoryProvider);
+  return repository.getUserDisputes();
+});
+
+/// Provider for user disputes as DisputeData (UI view models)
+final userDisputeDataProvider = FutureProvider<List<DisputeData>>((ref) async {
+  final disputes = await ref.watch(userDisputesProvider.future);
+  final sessions = ref.read(sessionNotifierProvider);
   
-  if (!DisputeMockData.isMockEnabled) {
-    // TODO: Implement real disputes loading here
-    return [];
-  }
-  
-  // Convert mock dispute data to Dispute objects
-  return DisputeMockData.mockDisputes.map((disputeData) => Dispute(
-    disputeId: disputeData.disputeId,
-    orderId: disputeData.orderId,
-    status: disputeData.status,
-    createdAt: disputeData.createdAt,
-    action: _getActionFromStatus(disputeData.status, disputeData.userRole.name),
-    adminPubkey: disputeData.status != 'initiated' ? 'admin_123' : null,
-  )).toList();
+  return disputes.map((dispute) {
+    // Find the session that contains this dispute to get OrderState context
+    final session = sessions.firstWhereOrNull(
+      (s) => s.orderId != null,
+    );
+    
+    if (session?.orderId != null) {
+      try {
+        final orderState = ref.read(orderNotifierProvider(session!.orderId!));
+        
+        if (orderState.dispute?.disputeId == dispute.disputeId) {
+          return DisputeData.fromDispute(dispute, orderState: orderState);
+        }
+      } catch (e) {
+        // If we can't get the order state, create DisputeData without context
+      }
+    }
+    
+    return DisputeData.fromDispute(dispute);
+  }).toList();
 });
