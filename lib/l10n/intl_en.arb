@@ -133,7 +133,7 @@
     }
   },
   "adminTookDisputeAdmin": "Here are the details of the dispute order you have taken: {details}. You need to determine which user is correct and decide whether to cancel or complete the order. Please note that your decision will be final and cannot be reversed.",
-  "adminTookDisputeUsers": "The solver {admin_npub} will handle your dispute. You can contact them directly.",
+  "adminTookDisputeUsers": "A dispute resolver has been assigned to handle your dispute. They will contact you through the app.",
   "adminCanceledAdmin": "You have canceled the order ID: {id}.",
   "adminCanceledUsers": "Admin has canceled the order ID: {id}.",
   "adminSettledAdmin": "You have completed the order ID: {id}.",

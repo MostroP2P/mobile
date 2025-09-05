@@ -33,13 +33,13 @@ class DisputeRepository {
         return false;
       }
 
-      // Create dispute message using Gift Wrap protocol (NIP-17)
+      // Create dispute message using Gift Wrap protocol (NIP-59)
       final disputeMessage = MostroMessage(
         action: Action.dispute,
         id: orderId,
       );
 
-      // Wrap message using NIP-17 Gift Wrap protocol
+      // Wrap message using NIP-59 Gift Wrap protocol
       final event = await disputeMessage.wrap(
         tradeKey: session.tradeKey,
         recipientPubKey: _mostroPubkey,
