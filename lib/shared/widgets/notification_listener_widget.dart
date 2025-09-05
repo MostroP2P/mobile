@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logger/logger.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as mostro;
 import 'package:mostro_mobile/features/notifications/notifiers/notification_temporary_state.dart';
@@ -7,6 +8,8 @@ import 'package:mostro_mobile/features/notifications/providers/notifications_pro
 import 'package:mostro_mobile/features/notifications/utils/notification_message_mapper.dart';
 
 class CantDoNotificationMapper {
+  static final _logger = Logger();
+  
   static final _messageMap = <String, String Function(BuildContext)>{
     'pending_order_exists': (context) => S.of(context)!.pendingOrderExists,
     'not_allowed_by_status': (context) => S.of(context)!.notAllowedByStatus,
@@ -31,6 +34,9 @@ class CantDoNotificationMapper {
     if (messageGetter != null) {
       return messageGetter(context);
     }
+    
+    _logger.w('Unhandled cant-do reason: $cantDoReason. Consider adding to CantDoNotificationMapper.');
+    
     // Fallback to generic cant-do message
     return NotificationMessageMapper.getLocalizedTitle(context, mostro.Action.cantDo);
   }
@@ -65,9 +71,14 @@ class NotificationListenerWidget extends ConsumerWidget {
           }
         } else if (next.action != null) {
           // Handle specific cant-do reasons with custom messages
-          if (next.action == mostro.Action.cantDo && next.values['action'] != null) {
-            final cantDoReason = next.values['action'] as String;
-            message = CantDoNotificationMapper.getMessage(context, cantDoReason);
+          if (next.action == mostro.Action.cantDo) {
+            final reason = next.values['action'];
+            if (reason is String && reason.isNotEmpty) {
+              message = CantDoNotificationMapper.getMessage(context, reason);
+            } else {
+              // Fallback if the payload is malformed or type changes
+              message = NotificationMessageMapper.getLocalizedTitle(context, mostro.Action.cantDo);
+            }
           } else {
             // Get localized title directly from action when available
             message = NotificationMessageMapper.getLocalizedTitle(context, next.action!);
