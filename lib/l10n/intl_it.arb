@@ -1072,9 +1072,6 @@
   "you": "Tu",
   "errorLoadingChat": "Errore nel caricamento della chat",
   "adminPubkey": "Pubkey dell'amministratore",
-  "tokenVerified": "Token verificato",
-  "awaitingTokenVerification": "In attesa della verifica del token",
-  "askAdminQuoteToken": "Chiedi all'amministratore di citare questo token:",
   
   "@_comment_dispute_input": "Testo Input Controversie",
   "failedSendMessage": "Invio messaggio fallito: {error}",

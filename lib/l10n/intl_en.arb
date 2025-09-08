@@ -876,9 +876,6 @@
   "you": "You",
   "errorLoadingChat": "Error loading chat",
   "adminPubkey": "Admin pubkey",
-  "tokenVerified": "Token verified",
-  "awaitingTokenVerification": "Awaiting token verification",
-  "askAdminQuoteToken": "Ask admin to quote this token:",
   
   "@_comment_dispute_input": "Dispute Input Text",
   "failedSendMessage": "Failed to send message: {error}",
