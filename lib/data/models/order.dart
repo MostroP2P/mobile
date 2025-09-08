@@ -23,7 +23,7 @@ class Order implements Payload {
   final int? createdAt;
   final int? expiresAt;
 
-  Order({
+  const Order({
     this.id,
     required this.kind,
     this.status = Status.pending,
@@ -64,7 +64,9 @@ class Order implements Payload {
     if (buyerInvoice != null) data[type]['buyer_invoice'] = buyerInvoice;
 
     data[type]['created_at'] = createdAt;
-    data[type]['expires_at'] = expiresAt;
+    if (expiresAt != null) {
+      data[type]['expires_at'] = expiresAt;
+    }
 
     if (buyerTradePubkey != null) {
       data[type]['buyer_trade_pubkey'] = buyerTradePubkey;
@@ -110,7 +112,7 @@ class Order implements Payload {
         if (stringValue.isEmpty) {
           throw FormatException('Field $field cannot be empty');
         }
-        return stringValue; // ignore: return_of_null
+        return stringValue;
       }
 
       // Parse optional string fields
