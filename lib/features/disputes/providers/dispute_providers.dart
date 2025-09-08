@@ -1,8 +1,20 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/models/dispute.dart';
 import 'package:mostro_mobile/data/models/dispute_chat.dart';
+import 'package:mostro_mobile/data/repositories/dispute_repository.dart';
 import 'package:mostro_mobile/features/disputes/notifiers/dispute_chat_notifier.dart';
 import 'package:mostro_mobile/features/disputes/data/dispute_mock_data.dart';
+import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
+import 'package:mostro_mobile/features/settings/settings_provider.dart';
+
+/// Provider for the dispute repository
+final disputeRepositoryProvider = Provider.autoDispose<DisputeRepository>((ref) {
+  final nostrService = ref.watch(nostrServiceProvider);
+  final settings = ref.watch(settingsProvider);
+  final mostroPubkey = settings.mostroPublicKey;
+  
+  return DisputeRepository(nostrService, mostroPubkey, ref);
+});
 
 /// Provider for dispute details - uses mock data when enabled
 final disputeDetailsProvider = FutureProvider.family<Dispute?, String>((ref, disputeId) async {

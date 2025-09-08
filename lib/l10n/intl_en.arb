@@ -106,10 +106,34 @@
   "cooperativeCancelInitiatedByYou": "You have initiated the cancellation of the order ID: {id}. Your counterparty must agree. If they do not respond, you can open a dispute. Note that no administrator will contact you regarding this cancellation unless you open a dispute first.",
   "cooperativeCancelInitiatedByPeer": "Your counterparty wants to cancel order ID: {id}. If you agree, please send me cancel-order-message. Note that no administrator will contact you regarding this cancellation unless you open a dispute first.",
   "cooperativeCancelAccepted": "Order {id} has been successfully canceled!",
-  "disputeInitiatedByYou": "You have initiated a dispute for order Id: {id}. A solver will be assigned soon. Once assigned, I will share their npub with you, and only they will be able to assist you. Your dispute token is: {user_token}.",
-  "disputeInitiatedByPeer": "Your counterparty has initiated a dispute for order Id: {id}. A solver will be assigned soon. Once assigned, I will share their npub with you, and only they will be able to assist you. Your dispute token is: {user_token}.",
+  "disputeInitiatedByYou": "You have initiated a dispute for order ID: {id}. A solver will be assigned soon. Once assigned, I will share their npub with you, and only they will be able to assist you. Your dispute ID is: {dispute_id}.",
+  "@disputeInitiatedByYou": {
+    "placeholders": {
+      "id": {
+        "type": "String",
+        "example": "abc123"
+      },
+      "dispute_id": {
+        "type": "String",
+        "example": "dispute-456"
+      }
+    }
+  },
+  "disputeInitiatedByPeer": "Your counterparty has initiated a dispute for order ID: {id}. A solver will be assigned soon. Once assigned, I will share their npub with you, and only they will be able to assist you. Your dispute ID is: {dispute_id}.",
+  "@disputeInitiatedByPeer": {
+    "placeholders": {
+      "id": {
+        "type": "String",
+        "example": "abc123"
+      },
+      "dispute_id": {
+        "type": "String",
+        "example": "dispute-456"
+      }
+    }
+  },
   "adminTookDisputeAdmin": "Here are the details of the dispute order you have taken: {details}. You need to determine which user is correct and decide whether to cancel or complete the order. Please note that your decision will be final and cannot be reversed.",
-  "adminTookDisputeUsers": "The solver {admin_npub} will handle your dispute. You can contact them directly, but if they reach out to you first, make sure to ask them for your dispute token.",
+  "adminTookDisputeUsers": "A dispute resolver has been assigned to handle your dispute. They will contact you through the app.",
   "adminCanceledAdmin": "You have canceled the order ID: {id}.",
   "adminCanceledUsers": "Admin has canceled the order ID: {id}.",
   "adminSettledAdmin": "You have completed the order ID: {id}.",
@@ -267,6 +291,16 @@
   "orderIdCopiedMessage": "Order ID copied to clipboard",
   "disputeTradeDialogTitle": "Start Dispute",
   "disputeTradeDialogContent": "You are about to start a dispute with your counterparty. Do you want to continue?",
+  "disputeCreatedSuccessfully": "Dispute created successfully",
+  "disputeCreationFailed": "Failed to create dispute",
+  "disputeCreationErrorWithMessage": "Error creating dispute: {error}",
+  "@disputeCreationErrorWithMessage": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "typeToAdd": "Type to add...",
   "noneSelected": "None selected",
   "fiatCurrencies": "Fiat currencies",

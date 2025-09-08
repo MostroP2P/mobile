@@ -1,10 +1,66 @@
+import 'package:collection/collection.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/models/dispute.dart';
+import 'package:mostro_mobile/data/models/mostro_message.dart';
+import 'package:mostro_mobile/data/models/enums/action.dart';
+import 'package:mostro_mobile/services/nostr_service.dart';
+import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 
-/// Stub repository for disputes - UI only implementation
+/// Repository for managing dispute creation
 class DisputeRepository {
-  static final DisputeRepository _instance = DisputeRepository._internal();
-  factory DisputeRepository() => _instance;
-  DisputeRepository._internal();
+  final NostrService _nostrService;
+  final String _mostroPubkey;
+  final Ref _ref;
+  final Logger _logger = Logger();
+
+  DisputeRepository(this._nostrService, this._mostroPubkey, this._ref);
+
+  /// Create a new dispute for an order
+  Future<bool> createDispute(String orderId) async {
+    try {
+      _logger.d('Creating dispute for order: $orderId');
+
+      // Get user's session for the order to get the trade key
+      final sessions = _ref.read(sessionNotifierProvider);
+      final session = sessions.firstWhereOrNull(
+            (s) => s.orderId == orderId,
+          );
+
+      if (session == null) {
+        _logger
+            .e('No session found for order: $orderId, cannot create dispute');
+        return false;
+      }
+
+      // Validate trade key is present
+      if (session.tradeKey.private.isEmpty) {
+        _logger.e('Trade key is empty for order: $orderId, cannot create dispute');
+        return false;
+      }
+
+      // Create dispute message using Gift Wrap protocol (NIP-59)
+      final disputeMessage = MostroMessage(
+        action: Action.dispute,
+        id: orderId,
+      );
+
+      // Wrap message using Gift Wrap protocol (NIP-59)
+      final event = await disputeMessage.wrap(
+        tradeKey: session.tradeKey,
+        recipientPubKey: _mostroPubkey,
+      );
+
+      // Send the wrapped event to Mostro
+      await _nostrService.publishEvent(event);
+
+      _logger.d('Successfully sent dispute creation for order: $orderId');
+      return true;
+    } catch (e) {
+      _logger.e('Failed to create dispute: $e');
+      return false;
+    }
+  }
 
   Future<List<Dispute>> getUserDisputes() async {
     // Mock implementation for UI testing

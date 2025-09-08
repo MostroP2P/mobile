@@ -23,6 +23,7 @@ import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/shared/providers/time_provider.dart';
+import 'package:mostro_mobile/features/disputes/providers/dispute_providers.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
 class TradeDetailScreen extends ConsumerWidget {
@@ -711,7 +712,36 @@ class TradeDetailScreen extends ConsumerWidget {
 
         // Only proceed with dispute if user confirmed
         if (result == true) {
-          ref.read(orderNotifierProvider(orderId).notifier).disputeOrder();
+          try {
+            // Create dispute using the repository
+            final repository = ref.read(disputeRepositoryProvider);
+            final success = await repository.createDispute(orderId);
+            
+            if (success && context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(S.of(context)!.disputeCreatedSuccessfully),
+                  backgroundColor: AppTheme.mostroGreen,
+                ),
+              );
+            } else if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(S.of(context)!.disputeCreationFailed),
+                  backgroundColor: AppTheme.red1,
+                ),
+              );
+            }
+          } catch (e) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(S.of(context)!.disputeCreationErrorWithMessage(e.toString())),
+                  backgroundColor: AppTheme.red1,
+                ),
+              );
+            }
+          }
         }
       },
       style: ElevatedButton.styleFrom(
