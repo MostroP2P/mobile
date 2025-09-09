@@ -68,7 +68,13 @@ class NotificationsNotifier extends StateNotifier<TemporaryNotificationsState> {
 
   Future<void> addToHistory(Action action, {Map<String, dynamic> values = const {}, String? orderId, String? eventId}) async {
     final notificationId = _generateDeterministicId(action, orderId, values, eventId);
+
+    // Check if notification already exists in database
+    final alreadyExists = await _repository.notificationExists(notificationId);
     
+    if (alreadyExists) {
+      return;
+    }
     final notification = NotificationModel(
       id: notificationId,
       type: NotificationModel.getNotificationTypeFromAction(action),
@@ -104,19 +110,7 @@ class NotificationsNotifier extends StateNotifier<TemporaryNotificationsState> {
   }
 
   Future<void> notify(Action action, {Map<String, dynamic> values = const {}, String? orderId, String? eventId}) async {
-    // Generate deterministic ID to check for duplicates
-    final notificationId = _generateDeterministicId(action, orderId, values, eventId);
     
-    // Check if notification already exists in database
-    final alreadyExists = await _repository.notificationExists(notificationId);
-    
-    if (alreadyExists) {
-      // Show temporary notification but don't add to history
-      showTemporary(action, values: values);
-      return;
-    }
-    
-    // Not a duplicate, proceed with normal notification
     showTemporary(action, values: values);
     await addToHistory(action, values: values, orderId: orderId, eventId: eventId);
   }
