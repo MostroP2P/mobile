@@ -64,9 +64,7 @@ class Order implements Payload {
     if (buyerInvoice != null) data[type]['buyer_invoice'] = buyerInvoice;
 
     data[type]['created_at'] = createdAt;
-    if (expiresAt != null) {
-      data[type]['expires_at'] = expiresAt;
-    }
+    data[type]['expires_at'] = expiresAt;
 
     if (buyerTradePubkey != null) {
       data[type]['buyer_trade_pubkey'] = buyerTradePubkey;
