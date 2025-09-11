@@ -6,11 +6,12 @@ import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/models/nostr_filter.dart';
 import 'package:mostro_mobile/data/repositories/event_storage.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
-import 'package:mostro_mobile/notifications/notification_service.dart';
+import 'package:mostro_mobile/features/notifications/services/background_notification_service.dart' as notification_service;
 import 'package:mostro_mobile/services/nostr_service.dart';
 import 'package:mostro_mobile/shared/providers/mostro_database_provider.dart';
 
 bool isAppForeground = true;
+String currentLanguage = 'en';
 
 @pragma('vm:entry-point')
 Future<void> serviceMain(ServiceInstance service) async {
@@ -31,6 +32,7 @@ Future<void> serviceMain(ServiceInstance service) async {
     if (settingsMap == null) return;
 
     final settings = Settings.fromJson(settingsMap);
+    currentLanguage = settings.selectedLanguage ?? 'en';
     await nostrService.init(settings);
 
     service.invoke('service-ready', {});
@@ -43,6 +45,7 @@ Future<void> serviceMain(ServiceInstance service) async {
     if (settingsMap == null) return;
 
     final settings = Settings.fromJson(settingsMap);
+    currentLanguage = settings.selectedLanguage ?? 'en';
     await nostrService.updateSettings(settings);
 
     service.invoke('service-ready', {});
@@ -67,7 +70,7 @@ Future<void> serviceMain(ServiceInstance service) async {
     subscription.listen((event) async {
       try {
         if (await eventStore.hasItem(event.id!)) return;
-        await retryNotification(event);
+        await notification_service.retryNotification(event);
       } catch (e) {
         Logger().e('Error processing event', error: e);
       }

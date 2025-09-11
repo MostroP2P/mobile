@@ -9,7 +9,6 @@ import 'package:mostro_mobile/shared/providers.dart';
 
 class NotificationDataExtractor {
   /// Extract notification data from MostroMessage
-  /// This contains the EXACT same logic as AbstractMostroNotifier.handleEvent() switch
   static NotificationData? extractFromMostroMessage(MostroMessage event, Ref? ref) {
     Map<String, dynamic> values = {};
     bool isTemporary = false;
@@ -67,9 +66,13 @@ class NotificationDataExtractor {
         break;
         
       case Action.holdInvoicePaymentSettled:
-        // Note: This requires buyer trade pubkey from current state
-        // For sync scenario, we'll use a fallback
-        values['buyer_npub'] = 'Unknown';
+        final order = event.getPayload<Order>();
+        if (order?.buyerTradePubkey != null) {
+          final buyerNym = ref != null
+              ? ref.read(nickNameProvider(order!.buyerTradePubkey!))
+              : order!.buyerTradePubkey!;
+          values['buyer_npub'] = buyerNym;
+        }
         break;
         
       case Action.paymentFailed:
@@ -115,9 +118,13 @@ class NotificationDataExtractor {
         break;
         
       case Action.released:
-        // Note: This requires seller trade pubkey from current state
-        // For sync scenario, we'll use a fallback
-        values['seller_npub'] = 'Unknown';
+        final order = event.getPayload<Order>();
+        if (order?.sellerTradePubkey != null) {
+          final sellerNym = ref != null
+              ? ref.read(nickNameProvider(order!.sellerTradePubkey!))
+              : order!.sellerTradePubkey!;
+          values['seller_npub'] = sellerNym;
+        }
         break;
         
       case Action.purchaseCompleted:
