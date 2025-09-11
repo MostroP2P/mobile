@@ -279,7 +279,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
           return;
         }
         sendNotification(event.action, values: {
-          'user_token': dispute.disputeId,
+          'dispute_id': dispute.disputeId,
         }, eventId: event.id);
         break;
 
@@ -290,7 +290,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
           return;
         }
         sendNotification(event.action, values: {
-          'user_token': dispute.disputeId,
+          'dispute_id': dispute.disputeId,
         }, eventId: event.id);
         break;
 

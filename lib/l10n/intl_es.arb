@@ -1016,9 +1016,6 @@
   "you": "Tú",
   "errorLoadingChat": "Error cargando el chat",
   "adminPubkey": "Pubkey del administrador",
-  "tokenVerified": "Token verificado",
-  "awaitingTokenVerification": "Esperando verificación del token",
-  "askAdminQuoteToken": "Pide al administrador que cite este token:",
   
   "@_comment_dispute_input": "Texto de Entrada de Disputas",
   "failedSendMessage": "Error al enviar mensaje: {error}",
