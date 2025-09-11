@@ -47,8 +47,10 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
               if (mounted) {
                 state = state.updateWith(msg);
               }
-              if (msg.timestamp != null &&
-                  msg.timestamp! >
+              // Call handleEvent for recent messages (within last 60 seconds)
+              // or if timestamp is null (treat as recent)
+              if (msg.timestamp == null ||
+                  msg.timestamp! >=
                       DateTime.now()
                           .subtract(const Duration(seconds: 60))
                           .millisecondsSinceEpoch) {

@@ -37,9 +37,10 @@ class SubscriptionManager {
     _sessionListener = ref.listen<List<Session>>(
       sessionNotifierProvider,
       (previous, current) {
+        _logger.i('Sessions changed: ${current.length} sessions available');
         _updateAllSubscriptions(current);
       },
-      fireImmediately: false,
+      fireImmediately: true,
       onError: (error, stackTrace) {
         _logger.e('Error in session listener',
             error: error, stackTrace: stackTrace);
@@ -78,6 +79,8 @@ class SubscriptionManager {
       if (filter == null) {
         return;
       }
+      
+      _logger.i('Creating $type subscription with filter: kinds=${filter.kinds}, p=${filter.p}');
       subscribe(
         type: type,
         filter: filter,
@@ -124,12 +127,14 @@ class SubscriptionManager {
 
   void _handleEvent(SubscriptionType type, NostrEvent event) {
     try {
+      _logger.d('Received $type event: ${event.id} from ${event.pubkey}');
       switch (type) {
         case SubscriptionType.orders:
+          _logger.d('Adding event to orders stream: ${event.id}');
           _ordersController.add(event);
           break;
         case SubscriptionType.chat:
-          _chatController.add(event);
+          _ordersController.add(event);
           break;
         case SubscriptionType.relayList:
           final relayListEvent = RelayListEvent.fromEvent(event);

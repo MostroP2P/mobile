@@ -42,9 +42,16 @@ class MostroService {
   }
 
   Future<void> _onData(NostrEvent event) async {
+    _logger.i('Received DM, Event ID: ${event.id} from ${event.pubkey} to ${event.recipient}');
+    
+    // Check if event is already processed to prevent duplicates
     final eventStore = ref.read(eventStorageProvider);
-
-    if (await eventStore.hasItem(event.id!)) return;
+    if (await eventStore.hasItem(event.id!)) {
+      _logger.d('Event ${event.id} already processed, skipping');
+      return;
+    }
+    
+    // Store the event to prevent future duplicates
     await eventStore.putItem(
       event.id!,
       {
@@ -52,30 +59,69 @@ class MostroService {
         'created_at': event.createdAt!.millisecondsSinceEpoch ~/ 1000,
       },
     );
-
+    
+    // Log all available sessions for debugging
     final sessions = ref.read(sessionNotifierProvider);
+    _logger.d('Available sessions count: ${sessions.length}');
+    for (final session in sessions) {
+      _logger.d('Session tradeKey.public: ${session.tradeKey.public}, orderId: ${session.orderId}');
+    }
+
     final matchingSession = sessions.firstWhereOrNull(
       (s) => s.tradeKey.public == event.recipient,
     );
     if (matchingSession == null) {
       _logger.w('No matching session found for recipient: ${event.recipient}');
+      _logger.w('Available sessions: ${sessions.map((s) => s.tradeKey.public).join(', ')}');
+      _logger.w('Event recipient: ${event.recipient}');
       return;
     }
     final privateKey = matchingSession.tradeKey.private;
 
     try {
       final decryptedEvent = await event.unWrap(privateKey);
-      if (decryptedEvent.content == null) return;
+      try {
+        final result = jsonDecode(decryptedEvent.content!);
+        if (result is! List) return;
 
-      final result = jsonDecode(decryptedEvent.content!);
-      if (result is! List) return;
-
-      final msg = MostroMessage.fromJson(result[0]);
-      final messageStorage = ref.read(mostroStorageProvider);
-      await messageStorage.addMessage(decryptedEvent.id!, msg);
-      _logger.i(
-        'Received DM, Event ID: ${decryptedEvent.id} with payload: ${decryptedEvent.content}',
-      );
+        // Log the raw decrypted content for debugging
+        _logger.d('Raw decrypted content: ${result[0]}');
+        
+        // Check for empty pubkey in peer payload before parsing
+        final messageData = result[0] as Map<String, dynamic>;
+        if (messageData.containsKey('payload') && 
+            messageData['payload'] != null &&
+            messageData['payload'].containsKey('peer')) {
+          final peerData = messageData['payload']['peer'];
+          if (peerData is Map<String, dynamic> && 
+              (peerData['pubkey'] == null || peerData['pubkey'].toString().isEmpty)) {
+            _logger.w('🚨 EVENT WITH EMPTY PUBKEY DETECTED:');
+            _logger.w('Event ID: ${decryptedEvent.id}');
+            _logger.w('Full decrypted content: ${decryptedEvent.content}');
+            _logger.w('Action: ${messageData['action']}');
+            _logger.w('Order ID: ${messageData['id']}');
+            _logger.w('Peer data: $peerData');
+          }
+        }
+        
+        final msg = MostroMessage.fromJson(result[0]);
+        final messageStorage = ref.read(mostroStorageProvider);
+        
+        // Check if message already exists to prevent duplicate processing
+        if (await messageStorage.hasMessageByKey(decryptedEvent.id!)) {
+          _logger.d('Message ${decryptedEvent.id} already processed, skipping');
+          return;
+        }
+        
+        await messageStorage.addMessage(decryptedEvent.id!, msg);
+        _logger.i(
+          'Received DM, Event ID: ${decryptedEvent.id} with payload: ${decryptedEvent.content}',
+        );
+      } catch (e) {
+        _logger.e('Error processing event', error: e);
+        // Log the problematic content for debugging
+        _logger.e('Problematic content: ${decryptedEvent.content}');
+      }
     } catch (e) {
       _logger.e('Error processing event', error: e);
     }

@@ -19,7 +19,13 @@ abstract class Payload {
     } else if (json.containsKey('cant_do')) {
       return CantDo.fromJson(json);
     } else if (json.containsKey('peer')) {
-      return Peer.fromJson(json['peer']);
+      final peerData = json['peer'];
+      // Skip peer parsing if pubkey is null or empty to prevent FormatException
+      if (peerData is Map<String, dynamic> && 
+          (peerData['pubkey'] == null || peerData['pubkey'].toString().isEmpty)) {
+        throw FormatException('Peer has empty or null pubkey, skipping message');
+      }
+      return Peer.fromJson(peerData);
     } else if (json.containsKey('dispute')) {
       return Dispute.fromJson(json);
     } else if (json.containsKey('rating_user')) {
