@@ -4,11 +4,6 @@ import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/models/dispute.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
-<<<<<<< HEAD
-import 'package:mostro_mobile/services/nostr_service.dart';
-import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
-=======
->>>>>>> 4dfe38ce (refactor: simplify dispute creation using MostroMessage wrapper and NIP-17 protocol)
 import 'package:mostro_mobile/services/nostr_service.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';

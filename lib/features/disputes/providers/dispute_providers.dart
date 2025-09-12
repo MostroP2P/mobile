@@ -1,7 +1,7 @@
-import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/models/dispute.dart';
 import 'package:mostro_mobile/data/models/dispute_chat.dart';
+import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/data/repositories/dispute_repository.dart';
 import 'package:mostro_mobile/features/disputes/notifiers/dispute_chat_notifier.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
@@ -42,25 +42,37 @@ final userDisputesProvider = FutureProvider<List<Dispute>>((ref) async {
 final userDisputeDataProvider = FutureProvider<List<DisputeData>>((ref) async {
   final disputes = await ref.watch(userDisputesProvider.future);
   final sessions = ref.read(sessionNotifierProvider);
-  
+
   return disputes.map((dispute) {
-    // Find the session that contains this dispute to get OrderState context
-    final session = sessions.firstWhereOrNull(
-      (s) => s.orderId != null,
-    );
-    
-    if (session?.orderId != null) {
-      try {
-        final orderState = ref.read(orderNotifierProvider(session!.orderId!));
-        
-        if (orderState.dispute?.disputeId == dispute.disputeId) {
-          return DisputeData.fromDispute(dispute, orderState: orderState);
+    // Find the specific session for this dispute's order
+    Session? matchingSession;
+    dynamic matchingOrderState;
+
+    // Try to find the session and order state that contains this dispute
+    for (final session in sessions) {
+      if (session.orderId != null) {
+        try {
+          final orderState = ref.read(orderNotifierProvider(session.orderId!));
+
+          // Check if this order state contains our dispute
+          if (orderState.dispute?.disputeId == dispute.disputeId) {
+            matchingSession = session;
+            matchingOrderState = orderState;
+            break;
+          }
+        } catch (e) {
+          // Continue checking other sessions
+          continue;
         }
-      } catch (e) {
-        // If we can't get the order state, create DisputeData without context
       }
     }
-    
+
+    // If we found matching order state, use it for context
+    if (matchingSession != null && matchingOrderState != null) {
+      return DisputeData.fromDispute(dispute, orderState: matchingOrderState);
+    }
+
+    // Fallback: create DisputeData without order context
     return DisputeData.fromDispute(dispute);
   }).toList();
 });

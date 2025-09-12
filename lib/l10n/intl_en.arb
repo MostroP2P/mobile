@@ -293,21 +293,9 @@
   "disputeTradeDialogContent": "You are about to start a dispute with your counterparty. Do you want to continue?",
   "disputeCreatedSuccessfully": "Dispute created successfully",
   "disputeCreationFailed": "Failed to create dispute",
+  "disputeCreationError": "Error creating dispute",
   "disputeCreationErrorWithMessage": "Error creating dispute: {error}",
   "@disputeCreationErrorWithMessage": {
-<<<<<<< HEAD
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "disputeCreatedSuccessfully": "Dispute created successfully",
-  "disputeCreationFailed": "Failed to create dispute",
-  "disputeCreationError": "Error creating dispute: {error}",
-  "@disputeCreationError": {
-=======
->>>>>>> 4dfe38ce (refactor: simplify dispute creation using MostroMessage wrapper and NIP-17 protocol)
     "placeholders": {
       "error": {
         "type": "String"
@@ -719,6 +707,12 @@
       "counterparty": { "type": "String" }
     }
   },
+  "disputeWaitingForAdmin": "Waiting for admin assignment",
+  "disputeYouOpened": "You opened this dispute",
+  "disputeOpenedAgainstUser": "A dispute was opened against you",
+  "disputeInProgress": "Dispute is being reviewed by an admin",
+  "disputeResolved": "Dispute has been resolved",
+  "disputeSellerRefunded": "Dispute resolved - seller refunded",
   "disputeInstruction1": "Wait for a solver to take your dispute. Once they arrive, share any relevant evidence to help clarify the situation.",
   "disputeInstruction2": "The final decision will be made based on the evidence presented.",
   "disputeInstruction3": "If you don't respond, the system will assume you don't want to cooperate and you might lose the dispute.",

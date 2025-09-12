@@ -278,6 +278,13 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
           logger.e('disputeInitiatedByYou: Missing Dispute payload for event ${event.id} with action ${event.action}');
           return;
         }
+
+        // Ensure dispute has the orderId for proper association
+        final disputeWithOrderId = dispute.copyWith(orderId: orderId);
+
+        // Save dispute in state for listing
+        state = state.copyWith(dispute: disputeWithOrderId);
+
         sendNotification(event.action, values: {
           'dispute_id': dispute.disputeId,
         }, eventId: event.id);
@@ -289,6 +296,13 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
           logger.e('disputeInitiatedByPeer: Missing Dispute payload for event ${event.id} with action ${event.action}');
           return;
         }
+
+        // Ensure dispute has the orderId for proper association
+        final disputeWithOrderId = dispute.copyWith(orderId: orderId);
+
+        // Save dispute in state for listing
+        state = state.copyWith(dispute: disputeWithOrderId);
+
         sendNotification(event.action, values: {
           'dispute_id': dispute.disputeId,
         }, eventId: event.id);

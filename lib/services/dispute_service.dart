@@ -28,26 +28,6 @@ class DisputeService {
         adminPubkey: 'admin_123',
       ),
     ];
-    // Mock implementation for UI testing
-    await Future.delayed(const Duration(milliseconds: 500));
-    
-    return [
-      Dispute(
-        disputeId: 'dispute_001',
-        orderId: 'order_001',
-        status: 'initiated',
-        createdAt: DateTime.now().subtract(const Duration(hours: 1)),
-        action: 'dispute-initiated-by-you',
-      ),
-      Dispute(
-        disputeId: 'dispute_002',
-        orderId: 'order_002',
-        status: 'in-progress',
-        createdAt: DateTime.now().subtract(const Duration(days: 1)),
-        action: 'dispute-initiated-by-peer',
-        adminPubkey: 'admin_123',
-      ),
-    ];
   }
 
   Future<Dispute?> getDispute(String disputeId) async {
