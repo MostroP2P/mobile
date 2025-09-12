@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models.dart';
@@ -16,6 +18,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
   late Session session;
 
   ProviderSubscription<AsyncValue<MostroMessage?>>? subscription;
+  final Set<String> _processedEventIds = <String>{};
 
   AbstractMostroNotifier(
     this.orderId,
@@ -50,7 +53,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
                       DateTime.now()
                           .subtract(const Duration(seconds: 60))
                           .millisecondsSinceEpoch) {
-                handleEvent(msg);
+                unawaited(handleEvent(msg));
               }
             }
           },
@@ -77,11 +80,19 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
     }
   }
 
-  void handleEvent(MostroMessage event) {
+  Future<void> handleEvent(MostroMessage event) async {
+    // Skip if we've already processed this exact event
+    final eventKey = '${event.id}_${event.action}_${event.timestamp}';
+    if (_processedEventIds.contains(eventKey)) {
+      logger.d('Skipping duplicate event: $eventKey');
+      return;
+    }
+    _processedEventIds.add(eventKey);
+    
     final navProvider = ref.read(navigationProvider.notifier);
 
     // Extract notification data using the centralized extractor
-    final notificationData = NotificationDataExtractor.extractFromMostroMessage(event, ref);
+    final notificationData = await NotificationDataExtractor.extractFromMostroMessage(event, ref, session: session);
     
     // Send notification if data was extracted
     if (notificationData != null) {
@@ -176,13 +187,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         break;
 
       case Action.fiatSentOk:
-        // Special case: Only send notification for sellers
-        final isSeller = (session.role == Role.seller);
-        if (!isSeller && notificationData != null) {
-          // Override: Don't send notification if user is not seller
-          // This maintains original behavior
-          return;
-        }
+        // The extractor already handles role filtering for fiatSentOk
         break;
 
       case Action.released:

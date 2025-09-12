@@ -23,12 +23,12 @@ class OrderNotifier extends AbstractMostroNotifier {
   }
 
   @override
-  void handleEvent(MostroMessage event) {
+  Future<void> handleEvent(MostroMessage event) async {
     logger
         .i('OrderNotifier received event: ${event.action} for order $orderId');
 
     // First handle the event normally
-    super.handleEvent(event);
+    await super.handleEvent(event);
 
     // Skip timeout detection if order is being canceled
     if (event.action == Action.canceled) {

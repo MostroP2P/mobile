@@ -9,14 +9,8 @@ import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:mostro_mobile/core/app.dart';
-import 'package:mostro_mobile/core/config.dart';
-import 'package:mostro_mobile/data/enums.dart';
-import 'package:mostro_mobile/data/models/dispute.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
-import 'package:mostro_mobile/data/models/order.dart';
-import 'package:mostro_mobile/data/models/payment_failed.dart';
-import 'package:mostro_mobile/data/models/peer.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as mostro_action;
 import 'package:mostro_mobile/data/repositories/session_storage.dart';
@@ -29,7 +23,6 @@ import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/generated/l10n_en.dart';
 import 'package:mostro_mobile/generated/l10n_es.dart';
 import 'package:mostro_mobile/generated/l10n_it.dart';
-import 'package:mostro_mobile/shared/providers/legible_handle_provider.dart';
 import 'package:mostro_mobile/background/background.dart' as bg;
 import 'package:mostro_mobile/shared/providers/mostro_database_provider.dart';
 
@@ -68,7 +61,7 @@ Future<void> showLocalNotification(NostrEvent event) async {
       orElse: () => null,
     );
     
-    final notificationData = await _extractNotificationDataWithContext(mostroMessage, matchingSession);
+    final notificationData = await NotificationDataExtractor.extractFromMostroMessage(mostroMessage, null, session: matchingSession);
     if (notificationData == null || notificationData.isTemporary) return;
 
     final notificationText = await _getLocalizedNotificationText(notificationData.action, notificationData.values);
@@ -192,116 +185,6 @@ Future<NotificationText> _getLocalizedNotificationText(mostro_action.Action acti
 }
 
 
-// Extract notification data with enhanced context for background notifications
-Future<NotificationData?> _extractNotificationDataWithContext(MostroMessage event, Session? session) async {
-  Map<String, dynamic> values = {};
-  
-  switch (event.action) {
-    case mostro_action.Action.buyerTookOrder:
-      final order = event.getPayload<Order>();
-      if (order == null) return null;
-      
-      // Get buyer nickname from database or use fallback
-      values['buyer_npub'] = await _getNicknameFromDatabase(order.buyerTradePubkey) ?? 'Unknown';
-      break;
-      
-    case mostro_action.Action.holdInvoicePaymentAccepted:
-      final order = event.getPayload<Order>();
-      if (order == null) return null;
-      
-      values = {
-        'fiat_code': order.fiatCode,
-        'fiat_amount': order.fiatAmount,
-        'payment_method': order.paymentMethod,
-      };
-      
-      if (order.sellerTradePubkey != null) {
-        values['seller_npub'] = await _getNicknameFromDatabase(order.sellerTradePubkey) ?? 'Unknown';
-      }
-      break;
-      
-    case mostro_action.Action.holdInvoicePaymentSettled:
-      final order = event.getPayload<Order>();
-      if (order?.buyerTradePubkey != null) {
-        values['buyer_npub'] = await _getNicknameFromDatabase(order!.buyerTradePubkey) ?? 'Unknown';
-      }
-      break;
-      
-    case mostro_action.Action.fiatSentOk:
-      if (session?.role != Role.seller) return null;
-      
-      final peer = event.getPayload<Peer>();
-      if (peer?.publicKey != null) {
-        values['buyer_npub'] = await _getNicknameFromDatabase(peer!.publicKey) ?? 'Unknown';
-      }
-      break;
-      
-    case mostro_action.Action.released:
-      final order = event.getPayload<Order>();
-      if (order?.sellerTradePubkey != null) {
-        values['seller_npub'] = await _getNicknameFromDatabase(order!.sellerTradePubkey) ?? 'Unknown';
-      }
-      break;
-      
-    case mostro_action.Action.waitingSellerToPay:
-      values['expiration_seconds'] = Config.expirationSeconds;
-      break;
-      
-    case mostro_action.Action.waitingBuyerInvoice:
-      values['expiration_seconds'] = Config.expirationSeconds;
-      break;
-      
-    case mostro_action.Action.paymentFailed:
-      final paymentFailed = event.getPayload<PaymentFailed>();
-      values = {
-        'payment_attempts': paymentFailed?.paymentAttempts,
-        'payment_retries_interval': paymentFailed?.paymentRetriesInterval,
-      };
-      break;
-      
-    case mostro_action.Action.disputeInitiatedByYou:
-    case mostro_action.Action.disputeInitiatedByPeer:
-      final dispute = event.getPayload<Dispute>();
-      if (dispute == null) return null;
-      values['user_token'] = dispute.disputeId;
-      break;
-      
-    case mostro_action.Action.addInvoice:
-      final order = event.getPayload<Order>();
-      if (order?.status == Status.settledHoldInvoice) {
-        final now = DateTime.now();
-        values = {
-          'fiat_amount': order?.fiatAmount,
-          'fiat_code': order?.fiatCode,
-          'failed_at': now.millisecondsSinceEpoch,
-        };
-      }
-      break;
-      
-    case mostro_action.Action.cantDo:
-    case mostro_action.Action.canceled:
-      return null;
-      
-    default:
-      return NotificationDataExtractor.extractFromMostroMessage(event, null);
-  }
-  
-  return NotificationData(
-    action: event.action,
-    values: values,
-    isTemporary: false,
-  );
-}
-
-// Get nickname using the same deterministic method as foreground
-Future<String?> _getNicknameFromDatabase(String? publicKey) async {
-  if (publicKey == null) return null;
-  try {
-    return deterministicHandleFromHexKey(publicKey);
-  } catch (e) {
-    return 'unknown-user';
-  }
-}
 
 // Get expanded text showing additional values
 String? _getExpandedText(Map<String, dynamic> values) {
@@ -309,18 +192,53 @@ String? _getExpandedText(Map<String, dynamic> values) {
   
   final List<String> details = [];
   
+  // Contact buyer/seller information
+  if (values.containsKey('buyer_npub') && values['buyer_npub'] != null) {
+    details.add('Buyer: ${values['buyer_npub']}');
+  }
+  
+  if (values.containsKey('seller_npub') && values['seller_npub'] != null) {
+    details.add('Seller: ${values['seller_npub']}');
+  }
+  
+  // Payment information
+  if (values.containsKey('fiat_amount') && values.containsKey('fiat_code')) {
+    details.add('Amount: ${values['fiat_amount']} ${values['fiat_code']}');
+  }
+  
+  if (values.containsKey('payment_method') && values['payment_method'] != null) {
+    details.add('Method: ${values['payment_method']}');
+  }
+  
+  // Expiration information
   if (values.containsKey('expiration_seconds')) {
     final seconds = values['expiration_seconds'];
     final minutes = seconds ~/ 60;
     details.add('Expires in: ${minutes}m ${seconds % 60}s');
   }
   
+  // Lightning amount
   if (values.containsKey('amount_msat')) {
     final msat = values['amount_msat'];
     final sats = msat ~/ 1000;
     details.add('Amount: $sats sats');
   }
   
+  // Payment retry information  
+  if (values.containsKey('payment_attempts') && values['payment_attempts'] != null) {
+    details.add('Attempts: ${values['payment_attempts']}');
+  }
+  
+  if (values.containsKey('payment_retries_interval') && values['payment_retries_interval'] != null) {
+    details.add('Retry interval: ${values['payment_retries_interval']}s');
+  }
+  
+  // Dispute information
+  if (values.containsKey('user_token') && values['user_token'] != null) {
+    details.add('Token: ${values['user_token']}');
+  }
+  
+  // Other information
   if (values.containsKey('reason')) {
     details.add('Reason: ${values['reason']}');
   }

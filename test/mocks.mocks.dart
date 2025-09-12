@@ -2786,13 +2786,15 @@ class MockOrderNotifier extends _i1.Mock implements _i28.OrderNotifier {
       );
 
   @override
-  void handleEvent(_i7.MostroMessage<_i7.Payload>? event) => super.noSuchMethod(
+  _i5.Future<void> handleEvent(_i7.MostroMessage<_i7.Payload>? event) =>
+      (super.noSuchMethod(
         Invocation.method(
           #handleEvent,
           [event],
         ),
-        returnValueForMissingStub: null,
-      );
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
 
   @override
   _i5.Future<void> sync() => (super.noSuchMethod(

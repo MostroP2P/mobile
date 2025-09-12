@@ -9,7 +9,8 @@ import 'package:mostro_mobile/shared/providers.dart';
 
 class NotificationDataExtractor {
   /// Extract notification data from MostroMessage
-  static NotificationData? extractFromMostroMessage(MostroMessage event, Ref? ref) {
+  /// If ref is null, will use fallback methods for nickname resolution
+  static Future<NotificationData?> extractFromMostroMessage(MostroMessage event, Ref? ref, {Session? session}) async {
     Map<String, dynamic> values = {};
     bool isTemporary = false;
     
@@ -22,10 +23,12 @@ class NotificationDataExtractor {
         final order = event.getPayload<Order>();
         if (order == null) return null;
         
-        // Extract buyer nym if available and ref is provided
-        final buyerNym = order.buyerTradePubkey != null && ref != null
-            ? ref.read(nickNameProvider(order.buyerTradePubkey!)) 
-            : (order.buyerTradePubkey ?? 'Unknown');
+        // Extract buyer nym using provider or fallback
+        final buyerNym = order.buyerTradePubkey != null
+            ? (ref != null 
+                ? ref.read(nickNameProvider(order.buyerTradePubkey!))
+                : await _getNicknameFromDatabase(order.buyerTradePubkey))
+            : 'Unknown';
         values['buyer_npub'] = buyerNym;
         break;
         
@@ -60,7 +63,7 @@ class NotificationDataExtractor {
         if (order.sellerTradePubkey != null) {
           final sellerNym = ref != null
               ? ref.read(nickNameProvider(order.sellerTradePubkey!))
-              : order.sellerTradePubkey!;
+              : await _getNicknameFromDatabase(order.sellerTradePubkey);
           values['seller_npub'] = sellerNym;
         }
         break;
@@ -70,7 +73,7 @@ class NotificationDataExtractor {
         if (order?.buyerTradePubkey != null) {
           final buyerNym = ref != null
               ? ref.read(nickNameProvider(order!.buyerTradePubkey!))
-              : order!.buyerTradePubkey!;
+              : await _getNicknameFromDatabase(order!.buyerTradePubkey);
           values['buyer_npub'] = buyerNym;
         }
         break;
@@ -106,15 +109,16 @@ class NotificationDataExtractor {
         break;
         
       case Action.fiatSentOk:
+        // Only sellers should receive fiat confirmed notifications
+        if (session?.role != Role.seller) return null;
+        
         final peer = event.getPayload<Peer>();
         if (peer?.publicKey != null) {
           final buyerNym = ref != null
               ? ref.read(nickNameProvider(peer!.publicKey))
-              : peer!.publicKey;
+              : await _getNicknameFromDatabase(peer!.publicKey);
           values['buyer_npub'] = buyerNym;
         }
-        // Note: In the original logic, this notification is only sent for sellers
-        // We'll need to handle this in the calling context
         break;
         
       case Action.released:
@@ -122,7 +126,7 @@ class NotificationDataExtractor {
         if (order?.sellerTradePubkey != null) {
           final sellerNym = ref != null
               ? ref.read(nickNameProvider(order!.sellerTradePubkey!))
-              : order!.sellerTradePubkey!;
+              : await _getNicknameFromDatabase(order!.sellerTradePubkey);
           values['seller_npub'] = sellerNym;
         }
         break;
@@ -192,6 +196,18 @@ class NotificationDataExtractor {
       eventId: event.id,
       isTemporary: isTemporary,
     );
+  }
+
+  /// Get nickname using the same deterministic method as foreground
+  static Future<String> _getNicknameFromDatabase(String? publicKey) async {
+    if (publicKey == null) return 'Unknown';
+    if (publicKey.isEmpty) return 'Unknown';
+    try {
+      final result = deterministicHandleFromHexKey(publicKey);
+      return result.isNotEmpty ? result : 'Unknown';
+    } catch (e) {
+      return 'Unknown';
+    }
   }
 }
 
