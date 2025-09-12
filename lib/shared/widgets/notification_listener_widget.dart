@@ -1,10 +1,46 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logger/logger.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as mostro;
 import 'package:mostro_mobile/features/notifications/notifiers/notification_temporary_state.dart';
 import 'package:mostro_mobile/features/notifications/providers/notifications_provider.dart';
 import 'package:mostro_mobile/features/notifications/utils/notification_message_mapper.dart';
+
+class CantDoNotificationMapper {
+  static final _logger = Logger();
+  
+  static final _messageMap = <String, String Function(BuildContext)>{
+    'pending_order_exists': (context) => S.of(context)!.pendingOrderExists,
+    'not_allowed_by_status': (context) => S.of(context)!.notAllowedByStatus,
+    'invalid_invoice': (context) => S.of(context)!.invalidInvoice,
+    'invalid_trade_index': (context) => S.of(context)!.invalidTradeIndex,
+    'is_not_your_order': (context) => S.of(context)!.isNotYourOrder,
+    'invalid_signature': (context) => S.of(context)!.invalidSignature,
+    'invalid_peer': (context) => S.of(context)!.invalidPeer,
+    'invalid_pubkey': (context) => S.of(context)!.invalidPubkey,
+    'order_already_canceled': (context) => S.of(context)!.orderAlreadyCanceled,
+    'out_of_range_sats_amount': (context) => S.of(context)!.outOfRangeSatsAmount,
+    'cant_create_user': (context) => S.of(context)!.cantCreateUser,
+    'out_of_range_fiat_amount': (context) => S.of(context)!.outOfRangeFiatAmount,
+    'invalid_amount': (context) => S.of(context)!.invalidAmount,
+    'invalid_rating': (context) => S.of(context)!.invalidRating,
+    'invalid_order_kind': (context) => S.of(context)!.invalidOrderKind,
+    'invalid_order_status': (context) => S.of(context)!.invalidOrderStatus,
+  };
+  
+  static String getMessage(BuildContext context, String cantDoReason) {
+    final messageGetter = _messageMap[cantDoReason];
+    if (messageGetter != null) {
+      return messageGetter(context);
+    }
+    
+    _logger.w('Unhandled cant-do reason: $cantDoReason. Consider adding to CantDoNotificationMapper.');
+    
+    // Fallback to generic cant-do message
+    return NotificationMessageMapper.getLocalizedTitle(context, mostro.Action.cantDo);
+  }
+}
 
 
 class NotificationListenerWidget extends ConsumerWidget {
@@ -35,31 +71,13 @@ class NotificationListenerWidget extends ConsumerWidget {
           }
         } else if (next.action != null) {
           // Handle specific cant-do reasons with custom messages
-          if (next.action == mostro.Action.cantDo && next.values['action'] != null) {
-            final cantDoReason = next.values['action'] as String?;
-            if (cantDoReason != null && cantDoReason == 'pending_order_exists') {
-              message = S.of(context)!.pendingOrderExists;
-            } else if (cantDoReason != null && cantDoReason == 'not_allowed_by_status') {
-              message = S.of(context)!.notAllowedByStatus;
-            } else if (cantDoReason != null && cantDoReason == 'invalid_invoice') {
-              message = S.of(context)!.invalidInvoice;
-            } else if (cantDoReason != null && cantDoReason == 'invalid_trade_index') {
-              message = S.of(context)!.invalidTradeIndex;
-            } else if (cantDoReason != null && cantDoReason == 'is_not_your_order') {
-              message = S.of(context)!.isNotYourOrder;
-            } else if (cantDoReason != null && cantDoReason == 'invalid_signature') {
-              message = S.of(context)!.invalidSignature;
-            } else if (cantDoReason != null && cantDoReason == 'invalid_peer') {
-              message = S.of(context)!.invalidPeer;
-            } else if (cantDoReason != null && cantDoReason == 'invalid_pubkey') {
-              message = S.of(context)!.invalidPubkey;
-            } else if (cantDoReason != null && cantDoReason == 'order_already_canceled') {
-              message = S.of(context)!.orderAlreadyCanceled;
-            } else if (cantDoReason != null && cantDoReason == 'out_of_range_sats_amount') {
-              message = S.of(context)!.outOfRangeSatsAmount;
+          if (next.action == mostro.Action.cantDo) {
+            final reason = next.values['action'];
+            if (reason is String && reason.isNotEmpty) {
+              message = CantDoNotificationMapper.getMessage(context, reason);
             } else {
-              // Use generic cant-do message for other reasons
-              message = NotificationMessageMapper.getLocalizedTitle(context, next.action!);
+              // Fallback if the payload is malformed or type changes
+              message = NotificationMessageMapper.getLocalizedTitle(context, mostro.Action.cantDo);
             }
           } else {
             // Get localized title directly from action when available

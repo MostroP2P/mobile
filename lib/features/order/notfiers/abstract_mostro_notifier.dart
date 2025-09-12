@@ -217,19 +217,11 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         break;
 
       case Action.disputeInitiatedByYou:
-        final dispute = event.getPayload<Dispute>();
-        if (dispute == null) {
-          logger.e('disputeInitiatedByYou: Missing Dispute payload for event ${event.id} with action ${event.action}');
-          return;
-        }
+        // No additional logic needed beyond notification
         break;
 
       case Action.disputeInitiatedByPeer:
-        final dispute = event.getPayload<Dispute>();
-        if (dispute == null) {
-          logger.e('disputeInitiatedByPeer: Missing Dispute payload for event ${event.id} with action ${event.action}');
-          return;
-        }
+          // No additional logic needed beyond notification
         break;
 
       case Action.adminSettled:

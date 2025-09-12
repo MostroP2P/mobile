@@ -36,7 +36,6 @@ class Dispute implements Payload {
   final String? orderId;
   final String? status;
   final Order? order;
-  final String? disputeToken;
   final String? adminPubkey;
   final DateTime? adminTookAt;
   final DateTime? createdAt;
@@ -47,7 +46,6 @@ class Dispute implements Payload {
     this.orderId,
     this.status,
     this.order,
-    this.disputeToken,
     this.adminPubkey,
     this.adminTookAt,
     this.createdAt,
@@ -79,9 +77,6 @@ class Dispute implements Payload {
       json['order'] = order!.toJson();
     }
 
-    if (disputeToken != null) {
-      json['dispute_token'] = disputeToken;
-    }
 
     if (adminPubkey != null) {
       json['admin_pubkey'] = adminPubkey;
@@ -188,20 +183,12 @@ class Dispute implements Payload {
       }
       
       String disputeIdValue;
-      String? disputeTokenValue;
-      
       if (oid is List) {
         if (oid.isEmpty) {
           throw FormatException('Dispute list cannot be empty');
         }
         disputeIdValue = oid[0]?.toString() ?? 
           (throw FormatException('First element of dispute list is null'));
-        
-        // Extract token from array: [disputeId, userToken, peerToken]
-        // Index 1 is the user's token (who initiated the dispute)
-        if (oid.length > 1 && oid[1] != null) {
-          disputeTokenValue = oid[1].toString();
-        }
       } else {
         disputeIdValue = oid.toString();
       }
@@ -213,8 +200,6 @@ class Dispute implements Payload {
       // Extract optional fields
       final orderId = json['order_id'] as String?;
       final status = json['status'] as String?;
-      // Use token from array if available, otherwise fallback to json field
-      final disputeToken = disputeTokenValue ?? json['dispute_token'] as String?;
       final adminPubkey = json['admin_pubkey'] as String?;
       
       // Extract admin_took_at timestamp
@@ -264,7 +249,6 @@ class Dispute implements Payload {
         orderId: orderId,
         status: status,
         order: order,
-        disputeToken: disputeToken,
         adminPubkey: adminPubkey,
         adminTookAt: adminTookAt,
         createdAt: createdAt,
@@ -282,7 +266,6 @@ class Dispute implements Payload {
     Object? orderId = _sentinel,
     Object? status = _sentinel,
     Object? order = _sentinel,
-    Object? disputeToken = _sentinel,
     Object? adminPubkey = _sentinel,
     Object? adminTookAt = _sentinel,
     Object? createdAt = _sentinel,
@@ -293,7 +276,6 @@ class Dispute implements Payload {
       orderId: orderId == _sentinel ? this.orderId : orderId as String?,
       status: status == _sentinel ? this.status : status as String?,
       order: order == _sentinel ? this.order : order as Order?,
-      disputeToken: disputeToken == _sentinel ? this.disputeToken : disputeToken as String?,
       adminPubkey: adminPubkey == _sentinel ? this.adminPubkey : adminPubkey as String?,
       adminTookAt: adminTookAt == _sentinel ? this.adminTookAt : adminTookAt as DateTime?,
       createdAt: createdAt == _sentinel ? this.createdAt : createdAt as DateTime?,
@@ -312,7 +294,6 @@ class Dispute implements Payload {
            other.orderId == orderId &&
            other.status == status &&
            other.order == order &&
-           other.disputeToken == disputeToken &&
            other.adminPubkey == adminPubkey &&
            other.adminTookAt == adminTookAt &&
            other.createdAt == createdAt &&
@@ -320,10 +301,10 @@ class Dispute implements Payload {
   }
   
   @override
-  int get hashCode => Object.hash(disputeId, orderId, status, order, disputeToken, adminPubkey, adminTookAt, createdAt, action);
+  int get hashCode => Object.hash(disputeId, orderId, status, order, adminPubkey, adminTookAt, createdAt, action);
   
   @override
-  String toString() => 'Dispute(disputeId: $disputeId, orderId: $orderId, status: $status, disputeToken: $disputeToken, adminPubkey: $adminPubkey, adminTookAt: $adminTookAt, createdAt: $createdAt, action: $action)';
+  String toString() => 'Dispute(disputeId: $disputeId, orderId: $orderId, status: $status, adminPubkey: $adminPubkey, adminTookAt: $adminTookAt, createdAt: $createdAt, action: $action)';
 }
 
 /// UI-facing view model for disputes used across widgets.

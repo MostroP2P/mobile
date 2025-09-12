@@ -85,10 +85,10 @@ class NotificationDetails extends StatelessWidget {
 
       case mostro_action.Action.disputeInitiatedByYou:
       case mostro_action.Action.disputeInitiatedByPeer:
-        if (data.containsKey('user_token')) {
+        if (data.containsKey('dispute_id')) {
           widgets.add(DetailRow(
             label: S.of(context)!.notificationDisputeId,
-            value: _formatHashOrId(context, data['user_token']),
+            value: _formatHashOrId(context, data['dispute_id']),
             icon: HeroIcons.exclamationTriangle,
           ));
         }
