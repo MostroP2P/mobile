@@ -32,9 +32,13 @@ All keys in the system follow the derivation path: **`m/44'/1237'/38383'/0/N`**
 - `0` - External chain (hardcoded)
 - `N` - Key index (0 for identity, 1+ for trades)
 
-This path is defined in the `KeyDerivator` constructor (`lib/features/key_manager/key_manager_provider.dart:13`):
+This path is defined in the `Config` class (`lib/core/config.dart`) and used in the `KeyDerivator` constructor (`lib/features/key_manager/key_manager_provider.dart:14`):
 ```dart
-final keyDerivator = KeyDerivator("m/44'/1237'/38383'/0");
+// In Config class
+static const String keyDerivationPath = "m/44'/1237'/38383'/0";
+
+// In key_manager_provider.dart
+final keyDerivator = KeyDerivator(Config.keyDerivationPath);
 ```
 
 ## Identity Key System
