@@ -15,7 +15,7 @@ This document provides a detailed explanation of how order creation works in the
 - **`lib/features/order/models/order_state.dart`** - Order state management
 - **`lib/shared/providers/mostro_storage_provider.dart`** - Riverpod providers for message streams
 
-## Order Creation Flow
+## Complete Order Creation Flow
 
 ### 1. User Initiates Order Creation
 
@@ -26,24 +26,73 @@ The user creates an order through the UI (sell or buy order). This typically hap
 - Premium percentage
 - Other order parameters
 
-### 2. Order Message Construction
+**Code Reference**: `lib/features/order/screens/add_order_screen.dart`
 
-The app constructs a `MostroMessage` with the order details:
+### 2. Order Submission and Session Creation
+
+When the user submits the order, the `AddOrderNotifier` handles the complete flow:
 
 ```dart
-// Example from lib/services/mostro_service.dart
-Future<void> submitOrder(MostroMessage order) async {
-  await publishOrder(order);
+// lib/features/order/notfiers/add_order_notifier.dart:71-85
+Future<void> submitOrder(Order order) async {
+  // 1. Create MostroMessage with new-order action
+  final message = MostroMessage<Order>(
+    action: Action.newOrder,
+    id: null,                    // Will be assigned by mostrod
+    requestId: requestId,        // Unique request identifier
+    payload: order,
+  );
+  
+  // 2. Create new session with fresh trade key
+  final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+  session = await sessionNotifier.newSession(
+    requestId: requestId,
+    role: order.kind == OrderType.buy ? Role.buyer : Role.seller,
+  );
+  
+  // 3. Send wrapped message to mostrod
+  await mostroService.submitOrder(message);
+  state = state.updateWith(message);
 }
 ```
 
-The message follows the Mostro protocol specification (see [Mostro Protocol Documentation](https://mostro.network/protocol/new_sell_order.html)):
+**Key Steps**:
+1. **Message Creation**: Creates `MostroMessage` with `Action.newOrder` and order payload
+2. **Session Creation**: Creates new session with fresh trade key for this order
+3. **Message Submission**: Sends the message to MostroService for processing
 
+### 3. Message Encryption and Publishing
+
+The order message is processed through the `publishOrder` method in `MostroService`:
+
+```dart
+// lib/services/mostro_service.dart:206-218
+Future<void> publishOrder(MostroMessage order) async {
+  // 1. Retrieve session by requestId
+  final session = await _getSession(order);
+
+  // 2. Create NIP-59 gift wrap with session keys
+  final event = await order.wrap(
+    tradeKey: session.tradeKey,              // Trade key for rumor
+    recipientPubKey: _settings.mostroPublicKey,
+    masterKey: session.fullPrivacy ? null : session.masterKey,  // Identity key for seal (if not full privacy)
+    keyIndex: session.fullPrivacy ? null : session.keyIndex,    // Trade index for protocol
+  );
+  
+  _logger.i('Sending DM, Event ID: ${event.id} with payload: ${order.toJson()}');
+  
+  // 3. Publish encrypted event to Nostr relays
+  await ref.read(nostrServiceProvider).publishEvent(event);
+}
+```
+
+**Message Structure Sent to Mostrod**:
 ```json
 {
   "order": {
     "version": 1,
     "action": "new-order",
+    "request_id": "unique-request-id",
     "trade_index": 1,
     "payload": {
       "order": {
@@ -63,75 +112,191 @@ The message follows the Mostro protocol specification (see [Mostro Protocol Docu
 }
 ```
 
-### 3. Message Encryption and Publishing
-
-The order message is processed through the `publishOrder` method in `MostroService`:
-
-```dart
-// lib/services/mostro_service.dart lines 200-220
-Future<void> publishOrder(MostroMessage order) async {
-  final session = await _getSession(order);
-
-  final event = await order.wrap(
-    tradeKey: session.tradeKey,
-    recipientPubKey: _settings.mostroPublicKey,
-    masterKey: session.fullPrivacy ? null : session.masterKey,
-    keyIndex: session.fullPrivacy ? null : session.keyIndex,
-  );
-  
-  _logger.i('Sending DM, Event ID: ${event.id} with payload: ${order.toJson()}');
-  await ref.read(nostrServiceProvider).publishEvent(event);
-}
-```
-
-Key steps:
-1. **Session Retrieval**: Gets the current session for the order
+**Key Steps**:
+1. **Session Retrieval**: Gets the current session for the order using `requestId`
 2. **Message Wrapping**: Encrypts the message using NIP-59 (Gift wrap) with the trade key
 3. **Event Publishing**: Sends the encrypted event to Mostro via Nostr relays
 
 ### 4. Mostro Network Processing
 
 Mostro receives the encrypted order message and:
-1. Decrypts the message using the trade key
-2. Validates the order parameters
-3. Generates a unique order ID
-4. Publishes the order as a public NIP-69 event (kind 38383)
-5. Sends a confirmation message back to the user
+1. **Decrypts** the message using the trade key
+2. **Validates** the order parameters
+3. **Generates** a unique order ID
+4. **Publishes** the order as a public NIP-69 event (kind 38383)
+5. **Sends** a confirmation message back to the user's trade key
 
 ### 5. Confirmation Message Reception
 
 The app continuously monitors for incoming messages through the `MostroService`:
 
 ```dart
-// lib/services/mostro_service.dart lines 40-80
-void init() {
-  _ordersSubscription = ref.read(subscriptionManagerProvider).orders.listen(
-    _onData,
-    onError: (error, stackTrace) {
-      _logger.e('Error in orders subscription', error: error, stackTrace: stackTrace);
-    },
-    cancelOnError: false,
-  );
-}
-
+// lib/services/mostro_service.dart:44-82
 Future<void> _onData(NostrEvent event) async {
-  // ... event validation and storage ...
+  // 1. Check for duplicate events
+  final eventStore = ref.read(eventStorageProvider);
+  if (await eventStore.hasItem(event.id!)) return;
   
-  final decryptedEvent = await event.unWrap(privateKey);
-  final result = jsonDecode(decryptedEvent.content!);
-  final msg = MostroMessage.fromJson(result[0]);
+  // 2. Store event metadata
+  await eventStore.putItem(
+    event.id!,
+    {
+      'id': event.id,
+      'created_at': event.createdAt!.millisecondsSinceEpoch ~/ 1000,
+    },
+  );
+
+  // 3. Find matching session by trade key
+  final sessions = ref.read(sessionNotifierProvider);
+  final matchingSession = sessions.firstWhereOrNull(
+    (s) => s.tradeKey.public == event.recipient,
+  );
+  if (matchingSession == null) {
+    _logger.w('No matching session found for recipient: ${event.recipient}');
+    return;
+  }
   
-  final messageStorage = ref.read(mostroStorageProvider);
-  await messageStorage.addMessage(decryptedEvent.id!, msg);
+  // 4. Decrypt the message using trade key
+  final privateKey = matchingSession.tradeKey.private;
+  try {
+    final decryptedEvent = await event.unWrap(privateKey);
+    if (decryptedEvent.content == null) return;
+
+    final result = jsonDecode(decryptedEvent.content!);
+    if (result is! List) return;
+
+    // 5. Parse and store the MostroMessage
+    final msg = MostroMessage.fromJson(result[0]);
+    final messageStorage = ref.read(mostroStorageProvider);
+    await messageStorage.addMessage(decryptedEvent.id!, msg);
+    
+    _logger.i(
+      'Received DM, Event ID: ${decryptedEvent.id} with payload: ${decryptedEvent.content}',
+    );
+  } catch (e) {
+    _logger.e('Error processing event', error: e);
+  }
 }
 ```
 
-### 6. Message Storage
+**Key Steps**:
+1. **Deduplication**: Prevents processing duplicate events
+2. **Session Matching**: Finds the correct session using the trade key
+3. **Decryption**: Unwraps the NIP-59 gift wrap using the trade key
+4. **Message Storage**: Stores the decrypted MostroMessage locally
+5. **Logging**: Logs the received message for debugging
+
+### 6. Order Confirmation Handling
+
+When Mostro sends the confirmation message back with the order ID, the `AddOrderNotifier` processes it:
+
+```dart
+// lib/features/order/notfiers/add_order_notifier.dart:28-58
+@override
+void subscribe() {
+  subscription = ref.listen(
+    addOrderEventsProvider(requestId),
+    (_, next) {
+      next.when(
+        data: (msg) {
+          if (msg != null) {
+            if (msg.payload is Order) {
+              if (msg.action == Action.newOrder) {
+                _confirmOrder(msg);  // Handle confirmation
+              } else {
+                logger.i('AddOrderNotifier: received ${msg.action}');
+              }
+            } else if (msg.payload is CantDo) {
+              handleEvent(msg);
+              
+              // Reset for retry if out_of_range_sats_amount
+              final cantDo = msg.getPayload<CantDo>();
+              if (cantDo?.cantDoReason == CantDoReason.outOfRangeSatsAmount) {
+                _resetForRetry();
+              }
+            }
+          }
+        },
+        error: (error, stack) => handleError(error, stack),
+        loading: () {},
+      );
+    },
+  );
+}
+```
+
+**Confirmation Processing**:
+```dart
+// lib/features/order/notfiers/add_order_notifier.dart:60-69
+Future<void> _confirmOrder(MostroMessage message) async {
+  // 1. Update state with confirmed order
+  state = state.updateWith(message);
+  
+  // 2. Link session to confirmed order ID
+  session.orderId = message.id;
+  
+  // 3. Persist session with order ID
+  ref.read(sessionNotifierProvider.notifier).saveSession(session);
+  
+  // 4. Create order-specific notifier for ongoing trade management
+  ref.read(orderNotifierProvider(message.id!).notifier).subscribe();
+  
+  // 5. Navigate to confirmation screen
+  ref.read(navigationProvider.notifier).go('/order_confirmed/${message.id!}');
+  
+  // 6. Clean up AddOrderNotifier
+  ref.invalidateSelf();
+}
+```
+
+**Key Steps in Confirmation**:
+1. **State Update**: Updates the order state with the confirmed order data
+2. **Session Linking**: Links the session to the confirmed order ID
+3. **Session Persistence**: Saves the session to local storage
+4. **Order Notifier Creation**: Creates a new `OrderNotifier` for ongoing trade management
+5. **Navigation**: Navigates to the order confirmation screen
+6. **Cleanup**: Invalidates the `AddOrderNotifier` as it's no longer needed
+
+### 7. Confirmation Message Structure
+
+The confirmation message from Mostro contains the order ID and full order details:
+
+```json
+{
+  "order": {
+    "version": 1,
+    "id": "confirmed-order-id-12345",    // ← Order ID assigned by mostrod
+    "action": "new-order",
+    "request_id": "unique-request-id",   // ← Matches the original request
+    "payload": {
+      "order": {
+        "id": "confirmed-order-id-12345", // ← Same order ID
+        "kind": "sell",
+        "status": "pending",
+        "amount": 0,
+        "fiat_code": "USD",
+        "fiat_amount": 100,
+        "payment_method": "Lightning",
+        "premium": 1,
+        "created_at": 1698870173
+      }
+    }
+  }
+}
+```
+
+**Critical Elements**:
+- **`id`**: The order ID assigned by Mostro (was `null` in the original request)
+- **`request_id`**: Matches the original request ID for correlation
+- **`action`**: Still `"new-order"` but now with confirmed order data
+- **`payload.order`**: Contains the full order details with the assigned ID
+
+### 8. Message Storage
 
 The confirmation message is stored locally using `MostroStorage`:
 
 ```dart
-// lib/data/repositories/mostro_storage.dart lines 13-30
+// lib/data/repositories/mostro_storage.dart:13-30
 Future<void> addMessage(String key, MostroMessage message) async {
   final id = key;
   try {
@@ -150,12 +315,12 @@ Future<void> addMessage(String key, MostroMessage message) async {
 }
 ```
 
-### 7. Order State Management
+### 9. Order State Management
 
-The `OrderNotifier` manages the order state and subscribes to message updates:
+After confirmation, the `OrderNotifier` takes over for ongoing trade management:
 
 ```dart
-// lib/features/order/notfiers/order_notifier.dart lines 15-25
+// lib/features/order/notfiers/order_notifier.dart:15-25
 class OrderNotifier extends AbstractMostroNotifier {
   late final MostroService mostroService;
   
@@ -168,12 +333,18 @@ class OrderNotifier extends AbstractMostroNotifier {
 }
 ```
 
-### 8. Message Stream Subscription
+**Purpose**: The `OrderNotifier` manages the order throughout its entire lifecycle after creation, handling:
+- Trade progression (buyer taking order, payment requests, etc.)
+- State updates from Mostro messages
+- Public event monitoring for timeout detection
+- UI updates and navigation
+
+### 10. Message Stream Subscription
 
 The notifier subscribes to message streams using Riverpod providers:
 
 ```dart
-// lib/features/order/notfiers/abstract_mostro_notifier.dart lines 35-55
+// lib/features/order/notfiers/abstract_mostro_notifier.dart:35-55
 void subscribe() {
   subscription = ref.listen(
     mostroMessageStreamProvider(orderId),
@@ -201,12 +372,12 @@ void subscribe() {
 }
 ```
 
-### 9. Message Stream Provider
+### 11. Message Stream Provider
 
 The message stream is provided by `mostroMessageStreamProvider`:
 
 ```dart
-// lib/shared/providers/mostro_storage_provider.dart lines 11-15
+// lib/shared/providers/mostro_storage_provider.dart:11-15
 final mostroMessageStreamProvider =
     StreamProvider.family<MostroMessage?, String>((ref, orderId) {
   final storage = ref.read(mostroStorageProvider);
@@ -465,13 +636,74 @@ User-created orders provide additional management options:
 - **dart_nostr**: Nostr protocol implementation
 - **Logger**: Logging and debugging
 
-## Summary
+## Complete Order Creation Flow Summary
 
-The order creation process is a multi-step flow that ensures:
-1. **Reliability**: Messages are encrypted and stored locally
-2. **Consistency**: State is managed centrally through Riverpod
+The order creation process follows a sophisticated multi-step flow that ensures reliability, security, and real-time updates:
+
+### **Phase 1: Order Submission**
+1. **User Input**: User creates order through UI (`add_order_screen.dart`)
+2. **Message Creation**: `AddOrderNotifier` creates `MostroMessage` with `Action.newOrder`
+3. **Session Creation**: New session created with fresh trade key
+4. **Message Submission**: Message sent to `MostroService`
+
+### **Phase 2: Message Processing**
+5. **Session Retrieval**: `MostroService` retrieves session by `requestId`
+6. **Message Wrapping**: NIP-59 gift wrap encryption with trade key
+7. **Event Publishing**: Encrypted event sent to Mostro via Nostr relays
+
+### **Phase 3: Mostro Processing**
+8. **Message Reception**: Mostro receives and decrypts the message
+9. **Order Validation**: Mostro validates order parameters
+10. **Order ID Generation**: Mostro assigns unique order ID
+11. **Public Publication**: Order published as NIP-69 event (kind 38383)
+12. **Confirmation Response**: Mostro sends confirmation back to user's trade key
+
+### **Phase 4: Confirmation Handling**
+13. **Message Reception**: App receives encrypted confirmation via `MostroService._onData()`
+14. **Session Matching**: App finds matching session using trade key
+15. **Message Decryption**: NIP-59 gift wrap unwrapped using trade key
+16. **Message Storage**: Confirmation stored in `MostroStorage`
+17. **Confirmation Processing**: `AddOrderNotifier._confirmOrder()` handles confirmation
+18. **Session Linking**: Session linked to confirmed order ID
+19. **Order Notifier Creation**: New `OrderNotifier` created for ongoing management
+20. **Navigation**: User navigated to order confirmation screen
+
+### **Key Technical Details**
+
+#### **Message Flow**:
+```
+User → AddOrderNotifier → MostroService → Nostr Relays → Mostro
+                                                              ↓
+User ← AddOrderNotifier ← MostroService ← Nostr Relays ← Mostro (confirmation)
+```
+
+#### **Key Components**:
+- **`AddOrderNotifier`**: Handles order creation and confirmation
+- **`MostroService`**: Manages message encryption/decryption and Nostr communication
+- **`SessionNotifier`**: Manages trading sessions and key derivation
+- **`OrderNotifier`**: Handles ongoing order management after confirmation
+- **`MostroStorage`**: Local storage for encrypted messages
+
+#### **Security Features**:
+- **NIP-59 Gift Wrap**: Triple-layer encryption (rumor, seal, wrapper)
+- **Trade Key Rotation**: Each order uses a unique trade key
+- **Session Management**: Secure session linking and persistence
+- **Message Deduplication**: Prevents duplicate message processing
+
+#### **State Management**:
+- **Riverpod Providers**: Reactive state management throughout the flow
+- **Stream-based Updates**: Real-time message processing and UI updates
+- **Error Handling**: Comprehensive error handling and recovery
+- **Navigation Integration**: Seamless UI transitions based on order state
+
+### **Critical Success Factors**
+
+1. **Reliability**: Messages are encrypted, stored locally, and processed reliably
+2. **Consistency**: State is managed centrally through Riverpod providers
 3. **Real-time Updates**: Stream-based architecture for immediate UI updates
-4. **Error Recovery**: Comprehensive error handling and logging
-5. **Protocol Compliance**: Follows the Mostro protocol specification
+4. **Error Recovery**: Comprehensive error handling and logging throughout
+5. **Protocol Compliance**: Follows the Mostro protocol specification exactly
+6. **Security**: End-to-end encryption with proper key management
+7. **User Experience**: Seamless flow from order creation to confirmation
 
-This architecture provides a robust foundation for order management while maintaining security and user experience.
+This architecture provides a robust foundation for order management while maintaining security, reliability, and excellent user experience. The clear separation of concerns between order creation (`AddOrderNotifier`) and ongoing management (`OrderNotifier`) ensures maintainable and scalable code.
