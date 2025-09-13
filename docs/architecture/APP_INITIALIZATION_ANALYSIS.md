@@ -55,6 +55,100 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
 
 ---
 
+## First-Run Detection and User Experience
+
+### First-Run Detection System
+
+The app implements a sophisticated first-run detection system that determines whether to show the walkthrough or proceed directly to the main app.
+
+#### **First-Run Detection Process**:
+```dart
+// lib/features/walkthrough/providers/first_run_provider.dart:23-28
+Future<bool> _checkIfFirstRun() async {
+  final firstRunComplete = await _sharedPreferences.getBool(
+    SharedPreferencesKeys.firstRunComplete.value,
+  );
+  return firstRunComplete != true; // Returns true if first run
+}
+```
+
+#### **Navigation Flow**:
+```dart
+// lib/core/app_routes.dart:44-59
+return firstRunState.when(
+  data: (isFirstRun) {
+    if (isFirstRun && state.matchedLocation != '/walkthrough') {
+      return '/walkthrough'; // Redirect to walkthrough
+    }
+    return null; // Proceed to requested route
+  },
+  loading: () {
+    return state.matchedLocation == '/walkthrough' ? null : '/walkthrough';
+  },
+  error: (_, __) => null,
+);
+```
+
+### First-Time User Experience
+
+#### **Complete First-Run Flow**:
+1. **App Launch**: User opens app for the first time
+2. **First-Run Detection**: `firstRunProvider` detects no `firstRunComplete` flag
+3. **Walkthrough Display**: App redirects to `/walkthrough` route
+4. **Key Generation**: During `appInitializerProvider`, `KeyManager.init()` creates new mnemonic
+5. **Walkthrough Completion**: User completes or skips walkthrough
+6. **Flag Setting**: `markFirstRunComplete()` sets `firstRunComplete = true`
+7. **Navigation**: App redirects to home screen (`/`)
+
+```dart
+// lib/features/walkthrough/screens/walkthrough_screen.dart:167-172
+Future<void> _onIntroEnd(BuildContext context) async {
+  await ref.read(firstRunProvider.notifier).markFirstRunComplete();
+  if (context.mounted) {
+    context.go('/'); // Navigate to home
+  }
+}
+```
+
+### Returning User Experience
+
+#### **Returning User Flow**:
+1. **App Launch**: User opens app (not first time)
+2. **First-Run Detection**: `firstRunProvider` detects `firstRunComplete = true`
+3. **Direct Navigation**: App proceeds directly to requested route (usually `/`)
+4. **Key Loading**: During `appInitializerProvider`, `KeyManager.init()` loads existing keys
+5. **Session Restoration**: Active trading sessions are restored from storage
+6. **Ready State**: App is immediately ready for trading operations
+
+### Key Generation Timing
+
+#### **When Mnemonic is Created**:
+- **First-time users**: Mnemonic is generated during `KeyManager.init()` in `appInitializerProvider`
+- **Timing**: Happens **before** the walkthrough is shown to the user
+- **Storage**: Immediately stored in Flutter Secure Storage
+- **User awareness**: User is not explicitly shown the mnemonic during first run
+
+#### **Mnemonic Access**:
+- **User can view**: Through Settings → Key Management screen
+- **User can regenerate**: Through Key Management → Generate New Key
+- **User can import**: Through Key Management → Import Key
+- **Backup responsibility**: User must manually backup their mnemonic
+
+### Security Considerations
+
+#### **First-Run Security**:
+- **Automatic generation**: No user input required for key generation
+- **Secure storage**: Uses Flutter Secure Storage (encrypted at rest)
+- **No network transmission**: Mnemonic never leaves the device
+- **Immediate availability**: Keys ready for use without additional setup
+
+#### **Key Recovery**:
+- **Mnemonic backup**: User's responsibility to backup 12/24 word phrase
+- **Import capability**: Users can restore from existing mnemonic
+- **Reset functionality**: Users can generate new keys (clears all data)
+
+---
+
 ## Detailed Component Analysis
 
 ### 1. NostrService Initialization
@@ -78,7 +172,7 @@ await nostrService.init(settings);
 
 ### 2. KeyManager Initialization
 
-**Purpose**: Initializes cryptographic key management system.
+**Purpose**: Initializes cryptographic key management system and handles mnemonic seed creation for first-time users.
 
 **Process**:
 ```dart
@@ -87,13 +181,75 @@ await keyManager.init();
 ```
 
 **What Happens**:
-- Loads master keys from secure storage
-- Initializes hierarchical key derivation
-- Sets up trade-specific key generation
-- Validates key integrity
 
-**Dependencies**: Secure storage access
-**Duration**: ~50ms
+#### **First-Time User Flow**:
+```dart
+// lib/features/key_manager/key_manager.dart:16-23
+Future<void> init() async {
+  if (!await hasMasterKey()) {
+    await generateAndStoreMasterKey(); // Creates new mnemonic seed
+  } else {
+    masterKeyPair = await _getMasterKey(); // Loads existing keys
+    tradeKeyIndex = await getCurrentKeyIndex();
+  }
+}
+```
+
+**For First-Time Users**:
+1. **Check for existing master key**: `hasMasterKey()` returns `false`
+2. **Generate new mnemonic**: Uses BIP-39 to create 12/24 word seed phrase
+3. **Derive master key**: Converts mnemonic to BIP-32 extended private key
+4. **Store securely**: Saves both mnemonic and master key in Flutter Secure Storage
+5. **Initialize key index**: Sets current trade key index to 1
+6. **Create key pair**: Generates NostrKeyPairs for immediate use
+
+```dart
+// lib/features/key_manager/key_manager.dart:31-46
+Future<void> generateAndStoreMasterKey() async {
+  final mnemonic = _derivator.generateMnemonic(); // BIP-39 generation
+  await generateAndStoreMasterKeyFromMnemonic(mnemonic);
+}
+
+Future<void> generateAndStoreMasterKeyFromMnemonic(String mnemonic) async {
+  final masterKeyHex = _derivator.extendedKeyFromMnemonic(mnemonic);
+  
+  await _storage.clear(); // Clear any existing data
+  await _storage.storeMnemonic(mnemonic); // Store in secure storage
+  await _storage.storeMasterKey(masterKeyHex); // Store derived master key
+  await setCurrentKeyIndex(1); // Initialize trade key index
+  masterKeyPair = await _getMasterKey(); // Create NostrKeyPairs
+  tradeKeyIndex = await getCurrentKeyIndex();
+}
+```
+
+#### **Returning User Flow**:
+**For Returning Users**:
+1. **Check for existing master key**: `hasMasterKey()` returns `true`
+2. **Load master key**: Retrieves stored master key from secure storage
+3. **Load key index**: Gets current trade key index from SharedPreferences
+4. **Create key pair**: Generates NostrKeyPairs from stored master key
+5. **Ready for trading**: System is immediately ready for trade operations
+
+```dart
+// lib/features/key_manager/key_manager.dart:54-61
+Future<NostrKeyPairs> _getMasterKey() async {
+  final masterKeyHex = await _storage.readMasterKey();
+  if (masterKeyHex == null) {
+    throw MasterKeyNotFoundException('No master key found in secure storage');
+  }
+  final privKey = _derivator.derivePrivateKey(masterKeyHex, 0);
+  return NostrKeyPairs(private: privKey);
+}
+```
+
+#### **Key Storage Architecture**:
+- **Mnemonic**: Stored in Flutter Secure Storage (encrypted at rest)
+- **Master Key**: Extended private key stored in Flutter Secure Storage
+- **Key Index**: Current trade key index stored in SharedPreferences
+- **Trade Keys**: Derived on-demand, never persisted
+
+**Dependencies**: Secure storage access, BIP-39/BIP-32 libraries
+**Duration**: ~50ms (first-time), ~20ms (returning users)
 
 ### 3. SessionNotifier Initialization (CRITICAL)
 
@@ -135,7 +291,7 @@ Future<void> init() async {
 **Dependencies**: Session storage (Sembast database)
 **Duration**: ~100ms (database I/O dependent)
 
-### 4. SubscriptionManager Creation (THE FIX)
+### 4. SubscriptionManager Creation
 
 **Purpose**: Manages Nostr event subscriptions based on active sessions.
 
@@ -152,7 +308,7 @@ void _initSessionListener() {
     (previous, current) {
       _updateAllSubscriptions(current);
     },
-    fireImmediately: false, // ← THE FIX: Was 'true', causing race condition
+    fireImmediately: false, // Wait for proper initialization
     onError: (error, stackTrace) {
       _logger.e('Error in session listener', error: error, stackTrace: stackTrace);
     },
@@ -160,25 +316,12 @@ void _initSessionListener() {
 }
 ```
 
-**What The Fix Changes**:
+**How This Works**:
 
-**BEFORE (Problematic - fireImmediately: true)**:
+**Initialization Sequence with fireImmediately: false**:
 ```
 1. SubscriptionManager constructor called
 2. _initSessionListener() runs
-3. fireImmediately: true → Listener executes IMMEDIATELY
-4. sessionNotifierProvider.state is still [] (empty - SessionNotifier.init() hasn't run yet)
-5. _updateAllSubscriptions([]) called
-6. "No sessions available, clearing all subscriptions" logged
-7. All subscriptions cleared
-8. SessionNotifier.init() runs later and loads sessions
-9. UI shows empty orders because subscriptions were cleared
-```
-
-**AFTER (Fixed - fireImmediately: false)**:
-```
-1. SubscriptionManager constructor called
-2. _initSessionListener() runs  
 3. fireImmediately: false → Listener registered but NOT executed
 4. SessionNotifier.init() runs and loads sessions
 5. sessionNotifierProvider.state updated to [session1, session2, ...]
@@ -187,6 +330,12 @@ void _initSessionListener() {
 8. "Subscription created for SubscriptionType.orders with X sessions" logged
 9. UI shows orders correctly
 ```
+
+**Why fireImmediately: false is Used**:
+- Prevents the listener from executing before SessionNotifier.init() completes
+- Ensures subscriptions are created with valid session data
+- Avoids creating subscriptions with empty session lists
+- Maintains proper initialization order dependencies
 
 **Dependencies**: SessionNotifier state
 **Duration**: Instantaneous (just creates listener)
@@ -262,7 +411,7 @@ _sessionListener = ref.listen<List<Session>>(
 );
 ```
 
-**Why this pattern matters**: Using `fireImmediately: true` would cause the listener to execute immediately with potentially empty session data, before `SessionNotifier.init()` completes. This can result in subscriptions being created with incorrect filters, causing UI inconsistencies like missing orders in "My Trades" screen.
+**Why this pattern matters**: Using `fireImmediately: true` would cause the listener to execute immediately with potentially empty session data, before `SessionNotifier.init()` completes. This would result in subscriptions being created with incorrect filters, causing UI inconsistencies like missing orders in "My Trades" screen.
 
 #### **Sequential Async Initialization**
 ```dart
@@ -527,7 +676,7 @@ Future<void> _onData(NostrEvent event) async {
 }
 ```
 
-**Impact of Fix**: ✅ **Positive** - MostroService now receives private encrypted events (Kind 1059) from properly initialized subscriptions, NOT public events (Kind 38383).
+**Integration Result**: ✅ **Proper Event Handling** - MostroService receives private encrypted events (Kind 1059) from properly initialized subscriptions, NOT public events (Kind 38383).
 
 ### 2. Relay Synchronization System
 
@@ -539,7 +688,7 @@ Future<void> _onData(NostrEvent event) async {
 _subscriptionManager?.subscribeToMostroRelayList(mostroPubkey);
 ```
 
-**Impact of Fix**: ✅ **No Impact** - Relay sync uses separate subscription methods.
+**Integration Result**: ✅ **Independent Operation** - Relay sync uses separate subscription methods and operates independently.
 
 ### 3. Public Order Systems (Separate from SubscriptionManager)
 
@@ -575,7 +724,7 @@ final orderEventsProvider = StreamProvider<List<NostrEvent>>((ref) {
 // - State synchronization between public announcements and private sessions
 ```
 
-**Impact of Fix**: ✅ **No Impact** - Public order systems operate independently of SubscriptionManager initialization.
+**Integration Result**: ✅ **Independent Operation** - Public order systems operate independently of SubscriptionManager initialization.
 
 ### 4. Chat System
 
@@ -583,7 +732,7 @@ final orderEventsProvider = StreamProvider<List<NostrEvent>>((ref) {
 
 **Integration**: Uses SubscriptionManager chat stream for private messages between trading partners.
 
-**Impact of Fix**: ✅ **Positive** - Chat messages now properly initialized with session data.
+**Integration Result**: ✅ **Proper Initialization** - Chat messages are properly initialized with session data.
 
 ---
 
@@ -632,21 +781,22 @@ Verify that systems integrate correctly:
 - **Background Services**: Notifications and sync services activate correctly
 - **Relay Connectivity**: All configured relays establish connections
 
-### Performance Impact (Estimated)
+### Performance Characteristics
 
 ⚠️ **Note**: These are rough estimates based on typical Flutter operations. Actual performance varies significantly based on network conditions, device performance, UI complexity, and relay responsiveness.
 
-**Before Fix** (Estimated):
-- Initial subscription creation: ~10-50ms (network dependent)
-- Subscription recreation after SessionNotifier.init(): ~20-100ms (includes UI re-render overhead)
-- Total: ~30-150ms + UI flickering
-
-**After Fix** (Estimated):
+**Current Implementation Performance**:
 - Single subscription creation: ~10-50ms (network dependent)  
 - No recreation needed: Eliminates secondary overhead
 - Total: ~10-50ms + no UI flickering
 
-**Result**: ✅ **Eliminates UI flickering** + reduces initialization complexity. The exact performance gain varies by environment, but the architectural improvement is consistent.
+**Architectural Benefits**:
+- ✅ **Eliminates UI flickering** during initialization
+- ✅ **Reduces initialization complexity** 
+- ✅ **Prevents race conditions** between components
+- ✅ **Maintains proper dependency order**
+
+The exact performance characteristics vary by environment, but the architectural approach ensures consistent behavior across different conditions.
 
 ---
 
