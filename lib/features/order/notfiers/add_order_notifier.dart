@@ -40,7 +40,7 @@ class AddOrderNotifier extends AbstractMostroNotifier {
                   logger.i('AddOrderNotifier: received ${msg.action}');
                 }
               } else if (msg.payload is CantDo) {
-                handleEvent(msg);
+                unawaited(handleEvent(msg));
                 
                 // Reset for retry if out_of_range_sats_amount
                 final cantDo = msg.getPayload<CantDo>();

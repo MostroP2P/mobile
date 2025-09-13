@@ -118,7 +118,7 @@ class NotificationMessageMapper {
       case mostro.Action.release:
         return 'notification_release_message';
       case mostro.Action.released:
-        return 'notification_bitcoin_released_message';
+        return 'released';
       case mostro.Action.buyerInvoiceAccepted:
         return 'notification_buyer_invoice_accepted_message';
       case mostro.Action.purchaseCompleted:
@@ -126,7 +126,7 @@ class NotificationMessageMapper {
       case mostro.Action.holdInvoicePaymentAccepted:
         return 'notification_hold_invoice_payment_accepted_message';
       case mostro.Action.holdInvoicePaymentSettled:
-        return 'notification_hold_invoice_payment_settled_message';
+        return 'holdInvoicePaymentSettled';
       case mostro.Action.holdInvoicePaymentCanceled:
         return 'notification_hold_invoice_payment_canceled_message';
       case mostro.Action.waitingSellerToPay:
@@ -191,9 +191,19 @@ class NotificationMessageMapper {
   static String getLocalizedMessage(BuildContext context, mostro.Action action, {Map<String, dynamic>? values}) {
     final s = S.of(context)!;
     final messageKey = getMessageKeyWithContext(action, values);
-    return _resolveLocalizationKey(s, messageKey);
+    
+    // Handle special keys that require parameters
+    switch (messageKey) {
+      case 'released':
+        final sellerName = values?['seller_npub'] ?? '';
+        return s.released(sellerName);
+      case 'holdInvoicePaymentSettled':
+        final buyerName = values?['buyer_npub'] ?? '';
+        return s.holdInvoicePaymentSettled(buyerName);
+      default:
+        return _resolveLocalizationKey(s, messageKey);
+    }
   }
-
 
   /// Helper method to resolve localization keys to actual text
   static String _resolveLocalizationKey(S s, String key) {
@@ -324,6 +334,29 @@ class NotificationMessageMapper {
         return s.notification_add_invoice_after_failure_message;
       default:
         return key; // Fallback to key if not found
+    }
+  }
+  
+  /// Get localized title using S instance directly (for background notifications)
+  static String getLocalizedTitleWithInstance(S localizations, mostro.Action action) {
+    final titleKey = getTitleKey(action);
+    return _resolveLocalizationKey(localizations, titleKey);
+  }
+  
+  /// Get localized message using S instance directly (for background notifications)
+  static String getLocalizedMessageWithInstance(S localizations, mostro.Action action, {Map<String, dynamic>? values}) {
+    final messageKey = getMessageKeyWithContext(action, values);
+    
+    // Handle special keys that require parameters
+    switch (messageKey) {
+      case 'released':
+        final sellerName = values?['seller_npub'] ?? '';
+        return localizations.released(sellerName);
+      case 'holdInvoicePaymentSettled':
+        final buyerName = values?['buyer_npub'] ?? '';
+        return localizations.holdInvoicePaymentSettled(buyerName);
+      default:
+        return _resolveLocalizationKey(localizations, messageKey);
     }
   }
 }
