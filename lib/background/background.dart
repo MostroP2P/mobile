@@ -32,7 +32,7 @@ Future<void> serviceMain(ServiceInstance service) async {
     if (settingsMap == null) return;
 
     final settings = Settings.fromJson(settingsMap);
-    currentLanguage = settings.selectedLanguage ?? 'en';
+    currentLanguage = settings.selectedLanguage ?? PlatformDispatcher.instance.locale.languageCode;
     await nostrService.init(settings);
 
     service.invoke('service-ready', {});
@@ -45,7 +45,7 @@ Future<void> serviceMain(ServiceInstance service) async {
     if (settingsMap == null) return;
 
     final settings = Settings.fromJson(settingsMap);
-    currentLanguage = settings.selectedLanguage ?? 'en';
+    currentLanguage = settings.selectedLanguage ?? PlatformDispatcher.instance.locale.languageCode;
     await nostrService.updateSettings(settings);
 
     service.invoke('service-ready', {});

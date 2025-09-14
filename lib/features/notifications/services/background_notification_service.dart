@@ -214,7 +214,8 @@ String? _getExpandedText(Map<String, dynamic> values) {
   if (values.containsKey('expiration_seconds')) {
     final seconds = values['expiration_seconds'];
     final minutes = seconds ~/ 60;
-    details.add('Expires in: ${minutes}m ${seconds % 60}s');
+    final expiresText = _getLocalizedExpiresText();
+    details.add('$expiresText: ${minutes}m ${seconds % 60}s');
   }
   
   // Lightning amount
@@ -248,6 +249,19 @@ String? _getExpandedText(Map<String, dynamic> values) {
   }
   
   return details.isNotEmpty ? details.join('\n') : null;
+}
+
+// Get localized "Expires" text based on current language
+String _getLocalizedExpiresText() {
+  switch (bg.currentLanguage) {
+    case 'es':
+      return 'Expira en';
+    case 'it':
+      return 'Scade tra';
+    case 'en':
+    default:
+      return 'Expires in';
+  }
 }
 
 Future<void> retryNotification(NostrEvent event, {int maxAttempts = 3}) async {  
