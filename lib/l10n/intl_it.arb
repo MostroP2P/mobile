@@ -106,10 +106,34 @@
   "cooperativeCancelInitiatedByYou": "Hai iniziato l'annullamento dell'ordine ID: {id}. La tua controparte deve anche concordare l'annullamento. Se non risponde, puoi aprire una disputa. Nota che nessun amministratore ti contatterà MAI riguardo questo annullamento a meno che tu non apra prima una disputa.",
   "cooperativeCancelInitiatedByPeer": "La tua controparte vuole annullare l'ordine ID: {id}. Nota che nessun amministratore ti contatterà MAI riguardo questo annullamento a meno che tu non apra prima una disputa. Se concordi su tale annullamento, premi: Annulla Ordine.",
   "cooperativeCancelAccepted": "L'ordine {id} è stato annullato con successo!",
-  "disputeInitiatedByYou": "Hai iniziato una disputa per l'ordine ID: {id}. Un amministratore sarà assegnato presto alla tua disputa. Una volta assegnato, riceverai il suo npub e solo questo account potrà assisterti. Devi contattare l'amministratore direttamente, ma se qualcuno ti contatta prima, assicurati di chiedergli di fornirti il token per la tua disputa. Il token di questa disputa è: {user_token}.",
-  "disputeInitiatedByPeer": "La tua controparte ha iniziato una disputa per l'ordine ID: {id}. Un amministratore sarà assegnato presto alla tua disputa. Una volta assegnato, ti condividerò il loro npub e solo loro potranno assisterti. Devi contattare l'amministratore direttamente, ma se qualcuno ti contatta prima, assicurati di chiedergli di fornirti il token per la tua disputa. Il token di questa disputa è: {user_token}.",
+  "disputeInitiatedByYou": "Hai iniziato una disputa per l'ordine ID: {id}. Un amministratore sarà assegnato presto alla tua disputa. Una volta assegnato, riceverai il suo npub e solo questo account potrà assisterti. Devi contattare l'amministratore direttamente, ma se qualcuno ti contatta prima, assicurati di chiedergli di fornirti l'ID per la tua disputa. L'ID di questa disputa è: {dispute_id}.",
+  "disputeInitiatedByPeer": "La tua controparte ha iniziato una disputa per l'ordine ID: {id}. Un amministratore sarà assegnato presto alla tua disputa. Una volta assegnato, ti condividerò il loro npub e solo loro potranno assisterti. Devi contattare l'amministratore direttamente, ma se qualcuno ti contatta prima, assicurati di chiedergli di fornirti l'ID per la tua disputa. L'ID di questa disputa è: {dispute_id}.",
+  "@disputeInitiatedByPeer": {
+    "placeholders": {
+      "id": {
+        "type": "String",
+        "description": "ID dell'ordine"
+      },
+      "dispute_id": {
+        "type": "String",
+        "description": "ID della disputa"
+      }
+    }
+  },
+  "@disputeInitiatedByYou": {
+    "placeholders": {
+      "id": {
+        "type": "String",
+        "description": "ID dell'ordine"
+      },
+      "dispute_id": {
+        "type": "String",
+        "description": "ID della disputa"
+      }
+    }
+  },
   "adminTookDisputeAdmin": "Ecco i dettagli dell'ordine della disputa che hai preso: {details}. Devi determinare quale utente ha ragione e decidere se annullare o completare l'ordine. Nota che la tua decisione sarà finale e non può essere annullata.",
-  "adminTookDisputeUsers": "L'amministratore {admin_npub} gestirà la tua disputa. Devi contattare l'amministratore direttamente, ma se qualcuno ti contatta prima, assicurati di chiedergli di fornirti il token per la tua disputa..",
+  "adminTookDisputeUsers": "È stato assegnato un risolutore di controversie per gestire il tuo caso. Ti contatteranno attraverso l'applicazione.",
   "adminCanceledAdmin": "Hai annullato l'ordine ID: {id}!",
   "adminCanceledUsers": "L'amministratore ha annullato l'ordine ID: {id}!",
   "adminSettledAdmin": "Hai completato l'ordine ID: {id}!",
@@ -133,10 +157,10 @@
   "invalidPubkey": "L'azione non può essere completata perché la chiave pubblica non è valida.",
   "invalidParameters": "L'azione non può essere completata a causa di parametri non validi. Rivedi i valori forniti e riprova.",
   "orderAlreadyCanceled": "L'azione non può essere completata perché l'ordine è già stato annullato.",
-  "cantCreateUser": "L'azione non può essere completata perché l'utente non può essere creato.",
+  "cantCreateUser": "L'istanza di Mostro non è riuscita a creare il tuo nuovo utente, riprova più tardi.",
   "isNotYourOrder": "Questo ordine non appartiene a te.",
   "notAllowedByStatus": "Questa azione non è consentita nello stato attuale.",
-  "outOfRangeFiatAmount": "L'importo richiesto è errato e potrebbe essere fuori dai limiti accettabili. Il limite minimo è {min_amount} e il limite massimo è {max_amount}.",
+  "outOfRangeFiatAmount": "L'importo fiat richiesto è fuori dal range accettabile.",
   "outOfRangeSatsAmount": "L'importo di Sats è fuori dal range consentito.",
   "isNotYourDispute": "Questa disputa non è assegnata a te!",
   "disputeCreationError": "Non è possibile avviare una disputa per questo ordine.",
@@ -649,6 +673,16 @@
   "orderIdCopiedMessage": "ID ordine copiato negli appunti",
   "disputeTradeDialogTitle": "Inizia Disputa",
   "disputeTradeDialogContent": "Stai per iniziare una disputa con la tua controparte. Vuoi continuare?",
+  "disputeCreatedSuccessfully": "Disputa creata con successo",
+  "disputeCreationFailed": "Creazione della disputa fallita",
+  "disputeCreationErrorWithMessage": "Errore nella creazione della disputa: {error}",
+  "@disputeCreationErrorWithMessage": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
 
   "language": "Lingua",
   "systemDefault": "Predefinito di sistema",
@@ -1041,9 +1075,6 @@
   "you": "Tu",
   "errorLoadingChat": "Errore nel caricamento della chat",
   "adminPubkey": "Pubkey dell'amministratore",
-  "tokenVerified": "Token verificato",
-  "awaitingTokenVerification": "In attesa della verifica del token",
-  "askAdminQuoteToken": "Chiedi all'amministratore di citare questo token:",
   
   "@_comment_dispute_input": "Testo Input Controversie",
   "failedSendMessage": "Invio messaggio fallito: {error}",

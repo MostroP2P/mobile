@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/features/key_manager/key_derivator.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager.dart';
 import 'package:mostro_mobile/features/key_manager/key_storage.dart';
@@ -10,6 +11,6 @@ final keyManagerProvider = Provider<KeyManager>((ref) {
 
   final keyStorage =
       KeyStorage(secureStorage: secureStorage, sharedPrefs: sharedPrefs);
-  final keyDerivator = KeyDerivator("m/44'/1237'/38383'/0");
+  final keyDerivator = KeyDerivator(Config.keyDerivationPath);
   return KeyManager(keyStorage, keyDerivator);
 });

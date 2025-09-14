@@ -22,10 +22,8 @@ class Order implements Payload {
   final String? buyerInvoice;
   final int? createdAt;
   final int? expiresAt;
-  final int? buyerToken;
-  final int? sellerToken;
 
-  Order({
+  const Order({
     this.id,
     required this.kind,
     this.status = Status.pending,
@@ -43,8 +41,6 @@ class Order implements Payload {
     this.buyerInvoice,
     this.createdAt = 0,
     this.expiresAt,
-    this.buyerToken,
-    this.sellerToken,
   });
 
   @override
@@ -69,8 +65,6 @@ class Order implements Payload {
 
     data[type]['created_at'] = createdAt;
     data[type]['expires_at'] = expiresAt;
-    data[type]['buyer_token'] = buyerToken;
-    data[type]['seller_token'] = sellerToken;
 
     if (buyerTradePubkey != null) {
       data[type]['buyer_trade_pubkey'] = buyerTradePubkey;
@@ -116,7 +110,7 @@ class Order implements Payload {
         if (stringValue.isEmpty) {
           throw FormatException('Field $field cannot be empty');
         }
-        return stringValue; // ignore: return_of_null 
+        return stringValue;
       }
 
       // Parse optional string fields
@@ -139,7 +133,7 @@ class Order implements Payload {
       final amount = parseIntField('amount');
       final fiatAmount = parseIntField('fiat_amount');
       final premium = parseIntField('premium');
-      
+
       // Validate amounts are not negative
       if (amount < 0) {
         throw FormatException('Amount cannot be negative: $amount');
@@ -150,7 +144,7 @@ class Order implements Payload {
 
       final minAmount = parseOptionalIntField('min_amount');
       final maxAmount = parseOptionalIntField('max_amount');
-      
+
       // Validate min/max amount relationship
       if (minAmount != null && minAmount < 0) {
         throw FormatException('Min amount cannot be negative: $minAmount');
@@ -159,7 +153,8 @@ class Order implements Payload {
         throw FormatException('Max amount cannot be negative: $maxAmount');
       }
       if (minAmount != null && maxAmount != null && minAmount > maxAmount) {
-        throw FormatException('Min amount ($minAmount) cannot be greater than max amount ($maxAmount)');
+        throw FormatException(
+            'Min amount ($minAmount) cannot be greater than max amount ($maxAmount)');
       }
 
       return Order(
@@ -180,8 +175,6 @@ class Order implements Payload {
         buyerInvoice: parseOptionalStringField('buyer_invoice'),
         createdAt: parseOptionalIntField('created_at'),
         expiresAt: parseOptionalIntField('expires_at'),
-        buyerToken: parseOptionalIntField('buyer_token'),
-        sellerToken: parseOptionalIntField('seller_token'),
       );
     } catch (e) {
       throw FormatException('Failed to parse Order from JSON: $e');
@@ -220,8 +213,6 @@ class Order implements Payload {
       'buyerInvoice': buyerInvoice,
       'createdAt': createdAt,
       'expiresAt': expiresAt,
-      'buyerToken': buyerToken,
-      'sellerToken': sellerToken,
     };
   }
 
@@ -243,8 +234,6 @@ class Order implements Payload {
       buyerInvoice: map['buyerInvoice'] as String?,
       createdAt: map['createdAt'] as int?,
       expiresAt: map['expiresAt'] as int?,
-      buyerToken: map['buyerToken'] as int?,
-      sellerToken: map['sellerToken'] as int?,
     );
   }
 
@@ -268,8 +257,6 @@ class Order implements Payload {
       buyerTradePubkey: buyerTradePubkey,
       sellerTradePubkey: sellerTradePubkey,
       buyerInvoice: buyerInvoice ?? this.buyerInvoice,
-      buyerToken: buyerToken,
-      sellerToken: sellerToken,
       expiresAt: expiresAt,
       createdAt: createdAt,
     );

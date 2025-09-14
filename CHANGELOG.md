@@ -5,6 +5,55 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0+14]
+
+### Added
+- **Documentation System Overhaul** (#296): Complete reorganization of project documentation with improved structure
+- **Protocol Documentation Integration**: Added comprehensive docs/protocol/ subtree with complete Mostro protocol specifications
+- **Session and Key Management Documentation**: Detailed technical documentation for cryptographic key handling and session management
+- **Automatic Relay Synchronization**: Complete relay management system with real-time sync to Mostro instances, blacklist support, and URL normalization
+- **Enhanced Notifications Screen** (#257): Brand new notifications interface with improved user experience
+- **Dispute System UI** (#285, #289): Enhanced dispute creation and management interface for active orders
+- **Secure APK Signing for CI/CD**: Comprehensive GitHub Actions setup for secure release builds with proper certificate management
+- **Enhanced Message Signing and Verification**: Comprehensive logging system for cryptographic operations with protocol compliance verification
+- **Technical Architecture Documentation**: Complete system documentation including timeout detection, session cleanup, and order creation processes
+
+### Fixed
+- **Message Structure Protocol Compliance** (#295): Fixed message formatting to properly follow Mostro protocol specifications
+- **Session Cleanup for Error Responses** (#287): Proper session cleanup for pending_order_exists cant-do responses
+- **Range Order Release Payload** (#283): Correct next trade key handling for range order releases using proper trade pubkey instead of master key
+- **Android Compilation Warnings** (#278): Resolved multiple Android build warnings and compilation issues
+- **Relay Management Issues**: Fixed URL normalization, duplicate prevention, blacklist bypass prevention, and proper relay persistence
+- **Key Derivation in Tests**: Added proper KeyManager stubbing for deterministic test results
+- **Relay Synchronization Race Conditions**: Improved relay sync with proper deduplication and blacklist handling
+- **Relay URL Normalization**: Consistent trailing slash removal and format standardization across all relay operations
+- **User Relay Deletion**: Fixed duplicate keys and proper settings preservation during relay management operations
+
+### Changed
+- **Optimized Error Handling** (#292): Enhanced cant-do error processing with better user feedback and custom error messages
+- **Improved Relay Selection UI**: Redesigned relay screen with switch toggles and enhanced user experience
+- **Enhanced Relay Validation**: Two-tier validation system with Nostr protocol testing and WebSocket fallback connectivity checks
+- **Streamlined Documentation Structure**: Reorganized technical documentation with improved accessibility and cross-references
+- **Enhanced Message Logging**: Comprehensive cryptographic operation logging with verification status and debugging information
+
+### Removed
+- **Dispute Token Functionality** (#294): Removed unused dispute token system and related translations for code cleanup
+- **Seller/Buyer Token System** (#293): Streamlined token handling by removing redundant seller/buyer token functionality
+- **Relay Timer Leaks**: Proper cleanup of periodic timers in RelaysNotifier to prevent memory leaks
+- **Instance Contamination**: Prevention of relay contamination between different Mostro instances with proper isolation
+
+### Security
+- **Enhanced Key Management**: Improved cryptographic key derivation and storage with comprehensive session isolation
+- **Relay Instance Isolation**: Prevention of cross-contamination between different Mostro instances
+- **Secure Build Pipeline**: Complete APK signing infrastructure with certificate fingerprint verification
+- **Session Privacy**: Enhanced session cleanup and timeout detection to prevent data leakage
+
+### Documentation
+- **Complete Protocol Specifications**: Added comprehensive protocol documentation covering all Mostro operations
+- **Technical Architecture Guides**: Detailed system documentation for developers including key management, session handling, and relay synchronization
+- **Development Guidelines**: Updated development practices and code quality standards
+- **Security Documentation**: Enhanced security practices and key management guidelines
+
 ## [1.0.0+13]
 
 ### Added

@@ -97,7 +97,7 @@ void main() {
     mockSessionStorage = MockSessionStorage();
     mockNostrService = MockNostrService();
     mockServerTradeIndex = MockServerTradeIndex();
-    keyDerivator = KeyDerivator("m/44'/1237'/38383'/0");
+    keyDerivator = KeyDerivator(Config.keyDerivationPath);
 
     // Stub mockKeyManager.getNextKeyIndex() to return deterministic value
     when(mockKeyManager.getNextKeyIndex()).thenAnswer((_) async => 5);

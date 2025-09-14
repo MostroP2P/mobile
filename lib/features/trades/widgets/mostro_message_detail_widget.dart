@@ -213,7 +213,7 @@ class MostroMessageDetail extends ConsumerWidget {
             .of(context)!
             .disputeInitiatedByPeer(orderPayload!.id!, payload!.disputeId);
       case actions.Action.adminTookDispute:
-        return S.of(context)!.adminTookDisputeUsers('{admin token}');
+        return S.of(context)!.adminTookDisputeUsers;
       case actions.Action.adminCanceled:
         return S.of(context)!.adminCanceledUsers(orderPayload!.id ?? '');
       case actions.Action.adminSettled:
@@ -250,7 +250,7 @@ class MostroMessageDetail extends ConsumerWidget {
       case CantDoReason.notAllowedByStatus:
         return S.of(context)!.notAllowedByStatus;
       case CantDoReason.outOfRangeFiatAmount:
-        return S.of(context)!.outOfRangeFiatAmount('{fiat_min}', '{fiat_max}');
+        return S.of(context)!.outOfRangeFiatAmount;
       case CantDoReason.outOfRangeSatsAmount:
         return S.of(context)!.outOfRangeSatsAmount;
       case CantDoReason.isNotYourDispute:
