@@ -118,7 +118,7 @@ class NotificationMessageMapper {
       case mostro.Action.release:
         return 'notification_release_message';
       case mostro.Action.released:
-        return 'released';
+        return 'notification_bitcoin_released_message';
       case mostro.Action.buyerInvoiceAccepted:
         return 'notification_buyer_invoice_accepted_message';
       case mostro.Action.purchaseCompleted:
@@ -194,9 +194,6 @@ class NotificationMessageMapper {
     
     // Handle special keys that require parameters
     switch (messageKey) {
-      case 'released':
-        final sellerName = values?['seller_npub'] ?? '';
-        return s.released(sellerName);
       case 'holdInvoicePaymentSettled':
         final buyerName = values?['buyer_npub'] ?? '';
         return s.holdInvoicePaymentSettled(buyerName);
@@ -349,9 +346,6 @@ class NotificationMessageMapper {
     
     // Handle special keys that require parameters
     switch (messageKey) {
-      case 'released':
-        final sellerName = values?['seller_npub'] ?? '';
-        return localizations.released(sellerName);
       case 'holdInvoicePaymentSettled':
         final buyerName = values?['buyer_npub'] ?? '';
         return localizations.holdInvoicePaymentSettled(buyerName);
