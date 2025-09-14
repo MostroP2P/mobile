@@ -191,78 +191,72 @@ String? _getExpandedText(Map<String, dynamic> values) {
   if (values.isEmpty) return null;
   
   final List<String> details = [];
+  final languageCode = bg.currentLanguage;
+  
+  final S localizations = switch (languageCode) {
+    'es' => SEs(),
+    'it' => SIt(),
+    _ => SEn(),
+  };
   
   // Contact buyer/seller information
   if (values.containsKey('buyer_npub') && values['buyer_npub'] != null) {
-    details.add('Buyer: ${values['buyer_npub']}');
+    details.add('${localizations.notificationBuyer}: ${values['buyer_npub']}');
   }
   
   if (values.containsKey('seller_npub') && values['seller_npub'] != null) {
-    details.add('Seller: ${values['seller_npub']}');
+    details.add('${localizations.notificationSeller}: ${values['seller_npub']}');
   }
   
   // Payment information
   if (values.containsKey('fiat_amount') && values.containsKey('fiat_code')) {
-    details.add('Amount: ${values['fiat_amount']} ${values['fiat_code']}');
+    details.add('${localizations.notificationAmount}: ${values['fiat_amount']} ${values['fiat_code']}');
   }
   
   if (values.containsKey('payment_method') && values['payment_method'] != null) {
-    details.add('Method: ${values['payment_method']}');
+    details.add('${localizations.notificationPaymentMethod}: ${values['payment_method']}');
   }
   
   // Expiration information
   if (values.containsKey('expiration_seconds')) {
     final seconds = values['expiration_seconds'];
     final minutes = seconds ~/ 60;
-    final expiresText = _getLocalizedExpiresText();
-    details.add('$expiresText: ${minutes}m ${seconds % 60}s');
+    details.add('${localizations.notificationExpiresIn}: ${minutes}m ${seconds % 60}s');
   }
   
   // Lightning amount
   if (values.containsKey('amount_msat')) {
     final msat = values['amount_msat'];
     final sats = msat ~/ 1000;
-    details.add('Amount: $sats sats');
+    details.add('${localizations.notificationAmount}: $sats sats');
   }
   
   // Payment retry information  
   if (values.containsKey('payment_attempts') && values['payment_attempts'] != null) {
-    details.add('Attempts: ${values['payment_attempts']}');
+    details.add('${localizations.notificationAttempts}: ${values['payment_attempts']}');
   }
   
   if (values.containsKey('payment_retries_interval') && values['payment_retries_interval'] != null) {
-    details.add('Retry interval: ${values['payment_retries_interval']}s');
+    details.add('${localizations.notificationRetryInterval}: ${values['payment_retries_interval']}s');
   }
   
   // Dispute information
   if (values.containsKey('user_token') && values['user_token'] != null) {
-    details.add('Token: ${values['user_token']}');
+    details.add('${localizations.notificationToken}: ${values['user_token']}');
   }
   
   // Other information
   if (values.containsKey('reason')) {
-    details.add('Reason: ${values['reason']}');
+    details.add('${localizations.notificationReason}: ${values['reason']}');
   }
   
   if (values.containsKey('rate')) {
-    details.add('Rate: ${values['rate']}/5');
+    details.add('${localizations.notificationRate}: ${values['rate']}/5');
   }
   
   return details.isNotEmpty ? details.join('\n') : null;
 }
 
-// Get localized "Expires" text based on current language
-String _getLocalizedExpiresText() {
-  switch (bg.currentLanguage) {
-    case 'es':
-      return 'Expira en';
-    case 'it':
-      return 'Scade tra';
-    case 'en':
-    default:
-      return 'Expires in';
-  }
-}
 
 Future<void> retryNotification(NostrEvent event, {int maxAttempts = 3}) async {  
   int attempt = 0;  
