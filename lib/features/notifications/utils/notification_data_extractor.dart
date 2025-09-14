@@ -167,7 +167,7 @@ class NotificationDataExtractor {
         
       case Action.cantDo:
         final cantDo = event.getPayload<CantDo>();
-        values['action'] = cantDo?.cantDoReason.toString();
+        values['reason'] = cantDo?.cantDoReason.toString();
         isTemporary = true; // cantDo notifications are temporary
         break;
         
