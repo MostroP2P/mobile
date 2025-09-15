@@ -109,24 +109,46 @@ The app follows a specific initialization order in `appInitializerProvider`:
 - SubscriptionManager uses `fireImmediately: false` to prevent premature execution
 - Proper sequence ensures orders appear consistently in UI across app restarts
 
-## Timeout Detection & Reversal System
+## Timeout Detection & Orphan Session Prevention
 
 ### Overview
-Real-time system that detects when orders timeout from `waiting-buyer-invoice` or `waiting-payment` states and handles maker/taker scenarios differently to maintain UI consistency with mostrod state.
 
-### Detection Mechanism
+Comprehensive system that prevents orphan sessions and detects order timeouts through dual protection mechanisms: 30-second cleanup timers and real-time timeout detection via public events.
+
+### Orphan Session Prevention
+
+#### **30-Second Cleanup Timer**
+Automatic cleanup system that prevents sessions from becoming orphaned when Mostro instances are unresponsive:
+
+- **Activation**: Started automatically when users take orders (`takeSellOrder`, `takeBuyOrder`)
+- **Purpose**: Prevents orphan sessions when Mostro doesn't respond within 30 seconds
+- **Cleanup**: Deletes session, shows localized notification, navigates to order book
+- **Cancellation**: Timer automatically cancelled when any response received from Mostro
+- **Implementation**: `AbstractMostroNotifier.startSessionTimeoutCleanup()` in `abstract_mostro_notifier.dart:359-378`
+
+#### **Localized User Feedback**
+```
+English: "No response received, check your connection and try again later"
+Spanish: "No hubo respuesta, verifica tu conexión e inténtalo más tarde"  
+Italian: "Nessuna risposta ricevuta, verifica la tua connessione e riprova più tardi"
+```
+
+### Real-Time Timeout Detection
+
+#### **Detection Mechanism**
 - **Monitors**: 38383 public events for status changes
 - **Triggers**: When public event shows different status than local state (simplified logic without timestamp comparison)
 - **Real-time**: Subscribes to `orderEventsProvider` for instant detection
+- **Integration**: Works alongside 30-second cleanup for comprehensive protection
 
-### Maker Scenario (Order Creator)
+#### **Maker Scenario (Order Creator)**
 When taker doesn't respond and order returns to pending:
 - **Session**: Preserved (keeps order in "My Trades")
 - **State**: Updated to `Status.pending` with `Action.timeoutReversal`
 - **Persistence**: Creates synthetic `MostroMessage.createTimeoutReversal()` stored with unique key
 - **Result**: Order remains visible but shows pending status after app restart
 
-### Taker Scenario (Order Taker)
+#### **Taker Scenario (Order Taker)**
 When user doesn't respond and order returns to pending:
 - **Session**: Deleted completely via `sessionNotifier.deleteSession()`
 - **State**: Provider invalidated (`ref.invalidateSelf()`)
@@ -142,12 +164,14 @@ When orders are canceled (status changes to `canceled` in public events):
 - **Implementation**: `_checkTimeoutAndCleanup()` method in `order_notifier.dart:172-211`
 
 ### Key Implementation
+- **Dual Protection**: 30-second cleanup + real-time detection provide comprehensive coverage
 - **Race protection**: `_isProcessingTimeout` flag prevents concurrent execution (with proper early return handling)
 - **Role detection**: `_isCreatedByUser()` compares session role with order type
+- **Timer management**: Static timer storage with proper cleanup on disposal
 - **Error resilience**: Timeouts and try-catch blocks prevent app hangs
 - **Notifications**: Differentiated messages for maker vs taker scenarios
 - **Simplified Logic**: Status-based detection without timestamp comparison
-- **State-based Rules**: Different session handling based on local order state (pending/waiting vs active)
+- **State-based Rules**: Different session handling based on local order state
 - **Timeout Detection**: `public=pending + local=waiting = guaranteed timeout`
 
 ### Testing Structure
@@ -491,7 +515,7 @@ For complete technical documentation, see `RELAY_SYNC_IMPLEMENTATION.md`.
 
 ---
 
-**Last Updated**: September 17, 2025  
+**Last Updated**: September 17, 2025
 **Flutter Version**: Latest stable  
 **Dart Version**: Latest stable  
 **Key Dependencies**: Riverpod, GoRouter, flutter_intl, timeago, dart_nostr, logger, shared_preferences
