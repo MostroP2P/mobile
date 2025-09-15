@@ -1105,5 +1105,8 @@
   "deleteUserRelayTitle": "Sure you want to disconnect from this relay?",
   "deleteUserRelayMessage": "If you want to use it again later, you'll need to add it manually.",
   "deleteUserRelayConfirm": "Yes",
-  "deleteUserRelayCancel": "No"
+  "deleteUserRelayCancel": "No",
+
+  "@_comment_session_timeout": "Session timeout message",
+  "sessionTimeoutMessage": "No response received, check your connection and try again later"
 }

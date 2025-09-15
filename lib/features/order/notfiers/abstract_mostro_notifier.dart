@@ -19,6 +19,9 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
 
   ProviderSubscription<AsyncValue<MostroMessage?>>? subscription;
   final Set<String> _processedEventIds = <String>{};
+  
+  // Timer storage for orphan session cleanup
+  static final Map<String, Timer> _sessionTimeouts = {};
 
   AbstractMostroNotifier(
     this.orderId,
@@ -88,6 +91,11 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
       return;
     }
     _processedEventIds.add(eventKey);
+    
+    // Cancel timer on ANY response from Mostro for this orderId
+    if (event.id != null) {
+      _cancelSessionTimeoutCleanup(event.id!);
+    }
     
     final navProvider = ref.read(navigationProvider.notifier);
 
@@ -203,8 +211,8 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         ref.read(mostroStorageProvider).deleteAllMessagesByOrderId(orderId);
         ref.read(sessionNotifierProvider.notifier).deleteSession(orderId);
         
-        // Navigate and invalidate
-        navProvider.go('/order_book');
+        // Navigate to main order book screen and invalidate
+        navProvider.go('/');
         ref.invalidateSelf();
         break;
 
@@ -277,9 +285,58 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         : state.order!.kind == OrderType.sell;
   }
 
+  /// Starts a 30-second timer to cleanup orphan sessions if no response from Mostro
+  static void startSessionTimeoutCleanup(String orderId, Ref ref) {
+    // Cancel existing timer if any
+    _sessionTimeouts[orderId]?.cancel();
+    
+    _sessionTimeouts[orderId] = Timer(const Duration(seconds: 30), () {
+      try {
+        ref.read(sessionNotifierProvider.notifier).deleteSession(orderId);
+        Logger().i('Session cleaned up after 30s timeout: $orderId');
+        
+        // Show timeout message to user and navigate to order book
+        _showTimeoutNotificationAndNavigate(ref);
+      } catch (e) {
+        Logger().e('Failed to cleanup session: $orderId', error: e);
+      }
+      _sessionTimeouts.remove(orderId);
+    });
+    
+    Logger().i('Started 30s timeout timer for order: $orderId');
+  }
+  
+  /// Shows timeout notification and navigates to order book
+  static void _showTimeoutNotificationAndNavigate(Ref ref) {
+    try {
+      // Show snackbar with localized timeout message
+      final notificationNotifier = ref.read(notificationActionsProvider.notifier);
+      notificationNotifier.showCustomMessage('sessionTimeoutMessage');
+      
+      // Navigate to main order book screen (home)
+      final navProvider = ref.read(navigationProvider.notifier);
+      navProvider.go('/');
+    } catch (e) {
+      Logger().e('Failed to show timeout notification or navigate', error: e);
+    }
+  }
+  
+  /// Cancels the timeout timer for a specific orderId
+  static void _cancelSessionTimeoutCleanup(String orderId) {
+    final timer = _sessionTimeouts[orderId];
+    if (timer != null) {
+      timer.cancel();
+      _sessionTimeouts.remove(orderId);
+      Logger().i('Cancelled timeout timer for order: $orderId - Mostro responded');
+    }
+  }
+
   @override
   void dispose() {
     subscription?.close();
+    // Cancel timer for this specific orderId if it exists
+    _sessionTimeouts[orderId]?.cancel();
+    _sessionTimeouts.remove(orderId);
     super.dispose();
   }
 }

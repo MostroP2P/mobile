@@ -103,6 +103,10 @@ class OrderNotifier extends AbstractMostroNotifier {
       orderId: orderId,
       role: Role.buyer,
     );
+    
+    // Start 30s timeout cleanup timer for orphan session prevention
+    AbstractMostroNotifier.startSessionTimeoutCleanup(orderId, ref);
+    
     await mostroService.takeSellOrder(
       orderId,
       amount,
@@ -116,6 +120,10 @@ class OrderNotifier extends AbstractMostroNotifier {
       orderId: orderId,
       role: Role.seller,
     );
+    
+    // Start 30s timeout cleanup timer for orphan session prevention
+    AbstractMostroNotifier.startSessionTimeoutCleanup(orderId, ref);
+    
     await mostroService.takeBuyOrder(
       orderId,
       amount,
@@ -192,9 +200,9 @@ class OrderNotifier extends AbstractMostroNotifier {
           // Send cancellation notification using centralized function
           sendNotification(Action.canceled);
 
-          // Navigate to order book
+          // Navigate to main order book screen
           final navProvider = ref.read(navigationProvider.notifier);
-          navProvider.go('/order_book');
+          navProvider.go('/');
 
           return true; // Session was cleaned up
         } else {
