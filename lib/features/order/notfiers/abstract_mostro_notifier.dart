@@ -92,10 +92,8 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
     }
     _processedEventIds.add(eventKey);
     
-    // Cancel timer on ANY response from Mostro for this orderId
-    if (event.id != null) {
-      _cancelSessionTimeoutCleanup(event.id!);
-    }
+    // Cancel timer on ANY response from Mostro for this order
+    _cancelSessionTimeoutCleanup(orderId);
     
     final navProvider = ref.read(navigationProvider.notifier);
 
