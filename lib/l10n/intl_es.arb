@@ -610,7 +610,6 @@
   "disputeTradeDialogContent": "Estás a punto de iniciar una disputa con tu contraparte. ¿Deseas continuar?",
   "disputeCreatedSuccessfully": "Disputa creada exitosamente",
   "disputeCreationFailed": "Falló la creación de la disputa",
-  "disputeCreationError": "Error al crear la disputa",
   "disputeCreationErrorWithMessage": "Error al crear la disputa: {error}",
   "@disputeCreationErrorWithMessage": {
     "placeholders": {
@@ -716,9 +715,7 @@
   "disputeWaitingForAdmin": "Esperando asignación de administrador",
   "disputeYouOpened": "Tú abriste esta disputa",
   "disputeOpenedAgainstUser": "Se abrió una disputa contra ti",
-  "disputeInProgress": "La disputa está siendo revisada por un administrador",
   "disputeResolved": "La disputa ha sido resuelta",
-  "disputeSellerRefunded": "Disputa resuelta - vendedor reembolsado",
   "disputeInstruction1": "Espera a que un mediador tome tu disputa. Una vez que llegue, comparte cualquier evidencia relevante para ayudar a aclarar la situación.",
   "disputeInstruction2": "La decisión final se tomará en base a la evidencia presentada.",
   "disputeInstruction3": "Si no respondes, el sistema asumirá que no deseas cooperar y podrías perder la disputa.",
@@ -1050,7 +1047,6 @@
       "counterparty": { "type": "String" }
     }
   },
-  "orderIdLabel": "ID de Orden",
   "disputeIdLabel": "ID de Disputa",
   "seller": "Vendedor",
   "buyer": "Comprador",

@@ -56,39 +56,7 @@ class ChatRoomsScreen extends ConsumerWidget {
                 if (kDebugMode)
                   ChatTabs(currentTab: currentTab)
                 else
-                  // In release mode, just show Messages tab header
-                  Container(
-                    decoration: BoxDecoration(
-                      color: AppTheme.backgroundDark,
-                      border: Border(
-                        bottom: BorderSide(
-                          color: Colors.white.withValues(alpha: 0.1),
-                          width: 1.0,
-                        ),
-                      ),
-                    ),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      decoration: BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(
-                            color: AppTheme.mostroGreen,
-                            width: 3.0,
-                          ),
-                        ),
-                      ),
-                      child: Text(
-                        S.of(context)!.messages,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: AppTheme.mostroGreen,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 15,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ),
-                  ),
+                  _buildMessagesTabHeader(context),
                 // Description text
                 Container(
                   width: double.infinity,
@@ -176,6 +144,41 @@ class ChatRoomsScreen extends ConsumerWidget {
           orderId: chatRoomsWithFreshData[index].orderId,
         );
       },
+    );
+  }
+
+  Widget _buildMessagesTabHeader(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.backgroundDark,
+        border: Border(
+          bottom: BorderSide(
+            color: Colors.white.withValues(alpha: 0.1),
+            width: 1.0,
+          ),
+        ),
+      ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: AppTheme.mostroGreen,
+              width: 3.0,
+            ),
+          ),
+        ),
+        child: Text(
+          S.of(context)!.messages,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: AppTheme.mostroGreen,
+            fontWeight: FontWeight.w600,
+            fontSize: 15,
+            letterSpacing: 0.5,
+          ),
+        ),
+      ),
     );
   }
 

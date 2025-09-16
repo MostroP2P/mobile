@@ -675,7 +675,6 @@
   "disputeTradeDialogContent": "Stai per iniziare una disputa con la tua controparte. Vuoi continuare?",
   "disputeCreatedSuccessfully": "Disputa creata con successo",
   "disputeCreationFailed": "Creazione della disputa fallita",
-  "disputeCreationError": "Errore nella creazione della disputa",
   "disputeCreationErrorWithMessage": "Errore nella creazione della disputa: {error}",
   "@disputeCreationErrorWithMessage": {
     "placeholders": {
@@ -770,9 +769,7 @@
   "disputeWaitingForAdmin": "In attesa di assegnazione amministratore",
   "disputeYouOpened": "Hai aperto questa disputa",
   "disputeOpenedAgainstUser": "È stata aperta una disputa contro di te",
-  "disputeInProgress": "La disputa è in corso di revisione da un amministratore",
   "disputeResolved": "La disputa è stata risolta",
-  "disputeSellerRefunded": "Disputa risolta - venditore rimborsato",
   "disputeInstruction1": "Attendi che un risolutore prenda in carico la tua disputa. Una volta arrivato, condividi qualsiasi prova rilevante per aiutare a chiarire la situazione.",
   "disputeInstruction2": "La decisione finale sarà presa sulla base delle prove presentate.",
   "disputeInstruction3": "Se non rispondi, il sistema presumerà che tu non voglia collaborare e potresti perdere la disputa.",
