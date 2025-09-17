@@ -1,13 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models.dart';
 import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
-import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/features/notifications/providers/notifications_provider.dart';
-import 'package:mostro_mobile/shared/providers/legible_handle_provider.dart';
+import 'package:mostro_mobile/features/notifications/utils/notification_data_extractor.dart';
 import 'package:logger/logger.dart';
 
 class AbstractMostroNotifier extends StateNotifier<OrderState> {
@@ -18,6 +18,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
   late Session session;
 
   ProviderSubscription<AsyncValue<MostroMessage?>>? subscription;
+  final Set<String> _processedEventIds = <String>{};
 
   AbstractMostroNotifier(
     this.orderId,
@@ -52,7 +53,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
                       DateTime.now()
                           .subtract(const Duration(seconds: 60))
                           .millisecondsSinceEpoch) {
-                handleEvent(msg);
+                unawaited(handleEvent(msg));
               }
             }
           },
@@ -79,27 +80,41 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
     }
   }
 
-  void handleEvent(MostroMessage event) {
+  Future<void> handleEvent(MostroMessage event) async {
+    // Skip if we've already processed this exact event
+    final eventKey = '${event.id}_${event.action}_${event.timestamp}';
+    if (_processedEventIds.contains(eventKey)) {
+      logger.d('Skipping duplicate event: $eventKey');
+      return;
+    }
+    _processedEventIds.add(eventKey);
+    
     final navProvider = ref.read(navigationProvider.notifier);
-    final mostroInstance = ref.read(orderRepositoryProvider).mostroInstance;
 
+    // Extract notification data using the centralized extractor
+    final notificationData = await NotificationDataExtractor.extractFromMostroMessage(event, ref, session: session);
+    
+    // Send notification if data was extracted
+    if (notificationData != null) {
+      sendNotification(
+        notificationData.action,
+        values: notificationData.values,
+        isTemporary: notificationData.isTemporary,
+        eventId: notificationData.eventId,
+      );
+    }
+
+    // Handle navigation and business logic for each action
     switch (event.action) {
       case Action.newOrder:
         break;
+        
       case Action.buyerTookOrder:
         final order = event.getPayload<Order>();
         if (order == null) {
           logger.e('Buyer took order, but order is null');
           break;
         }
-
-        // Notification
-        final buyerNym = order.buyerTradePubkey != null 
-            ? ref.read(nickNameProvider(order.buyerTradePubkey!)) 
-            : 'Unknown';
-        sendNotification(event.action, values: {
-          'buyer_npub': buyerNym,
-        }, eventId: event.id);
 
         // Update session and state
         final sessionProvider = ref.read(sessionNotifierProvider.notifier);
@@ -120,49 +135,17 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
           navProvider.go('/pay_invoice/${event.id!}');
         }
         ref.read(sessionNotifierProvider.notifier).saveSession(session);
-        sendNotification(event.action, eventId: event.id);
         break;
 
       case Action.addInvoice:
         final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
         sessionNotifier.saveSession(session);
-
-        // Check if payment failure recovery
-        final order = event.getPayload<Order>();
-        final isAfterPaymentFailure = order?.status == Status.settledHoldInvoice;
-        
-        // Notification
-        if (isAfterPaymentFailure) {
-          final now = DateTime.now();
-          sendNotification(event.action, values: {
-            'fiat_amount': order?.fiatAmount,
-            'fiat_code': order?.fiatCode,
-            'failed_at': now.millisecondsSinceEpoch,
-          }, eventId: event.id);
-        } else {
-          sendNotification(event.action, eventId: event.id);
-        }
-        
         navProvider.go('/add_invoice/$orderId');
         break;
 
       case Action.holdInvoicePaymentAccepted:
         final order = event.getPayload<Order>();
         if (order == null) return;
-
-        // Notification
-        final notificationValues = <String, dynamic>{
-          'fiat_code': order.fiatCode,
-          'fiat_amount': order.fiatAmount,
-          'payment_method': order.paymentMethod,
-        };
-        
-        if (order.sellerTradePubkey != null) {
-          final sellerNym = ref.read(nickNameProvider(order.sellerTradePubkey!));
-          notificationValues['seller_npub'] = sellerNym;
-        }
-        
-        sendNotification(event.action, values: notificationValues, eventId: event.id);
 
         // Update session and state
         final sessionProvider = ref.read(sessionNotifierProvider.notifier);
@@ -178,23 +161,11 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         break;
 
       case Action.holdInvoicePaymentSettled:
-        // Notification
-        final buyerNym = state.order?.buyerTradePubkey != null 
-            ? ref.read(nickNameProvider(state.order!.buyerTradePubkey!)) 
-            : 'Unknown';
-        sendNotification(event.action, values: {
-          'buyer_npub': buyerNym,
-        }, eventId: event.id);
-
         navProvider.go('/trade_detail/$orderId');
         break;
 
       case Action.paymentFailed:
-        final paymentFailed = event.getPayload<PaymentFailed>();
-        sendNotification(event.action, values: {
-          'payment_attempts': paymentFailed?.paymentAttempts,
-          'payment_retries_interval': paymentFailed?.paymentRetriesInterval,
-        }, eventId: event.id);
+        // No additional logic needed beyond notification
         break;
 
       case Action.waitingSellerToPay:
@@ -204,19 +175,9 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         if (!(isUserCreator && isBuyOrder)) {
           navProvider.go('/trade_detail/$orderId');
         }
-        
-        // Notification
-        sendNotification(event.action, values: {
-          'expiration_seconds': mostroInstance?.expirationSeconds ?? Config.expirationSeconds,
-        }, eventId: event.id);
         break;
 
       case Action.waitingBuyerInvoice:
-        // Notification
-        sendNotification(event.action, values: {
-          'expiration_seconds': mostroInstance?.expirationSeconds ?? Config.expirationSeconds,
-        }, eventId: event.id);
-        
         // Navigation logic
         final isUserCreator = _isUserCreator();
         final isSellOrder = state.order?.kind == OrderType.sell;
@@ -226,32 +187,15 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         break;
 
       case Action.fiatSentOk:
-        final peer = event.getPayload<Peer>();
-        final isSeller = (session.role == Role.seller);
-        
-        // Notification (seller only)
-        if (isSeller) {
-          final buyerNym = peer?.publicKey != null 
-              ? ref.read(nickNameProvider(peer!.publicKey)) 
-              : 'Unknown';
-          sendNotification(event.action, values: {
-            'buyer_npub': buyerNym,
-          }, eventId: event.id);
-        }
+        // The extractor already handles role filtering for fiatSentOk
         break;
 
       case Action.released:
-        // Notification
-        final sellerNym = state.order?.sellerTradePubkey != null 
-            ? ref.read(nickNameProvider(state.order!.sellerTradePubkey!)) 
-            : 'Unknown';
-        sendNotification(event.action, values: {
-          'seller_npub': sellerNym,
-        }, eventId: event.id);
+        // No additional logic needed beyond notification
         break;
 
       case Action.purchaseCompleted:
-        sendNotification(event.action, eventId: event.id);
+        // No additional logic needed beyond notification
         break;
 
       case Action.canceled:
@@ -265,11 +209,11 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         break;
 
       case Action.cooperativeCancelInitiatedByYou:
-        sendNotification(event.action, eventId: event.id);
+        // No additional logic needed beyond notification
         break;
 
       case Action.cooperativeCancelInitiatedByPeer:
-        sendNotification(event.action, eventId: event.id);
+        // No additional logic needed beyond notification
         break;
 
       case Action.disputeInitiatedByYou:
@@ -278,9 +222,6 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
           logger.e('disputeInitiatedByYou: Missing Dispute payload for event ${event.id} with action ${event.action}');
           return;
         }
-        sendNotification(event.action, values: {
-          'dispute_id': dispute.disputeId,
-        }, eventId: event.id);
         break;
 
       case Action.disputeInitiatedByPeer:
@@ -289,13 +230,10 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
           logger.e('disputeInitiatedByPeer: Missing Dispute payload for event ${event.id} with action ${event.action}');
           return;
         }
-        sendNotification(event.action, values: {
-          'dispute_id': dispute.disputeId,
-        }, eventId: event.id);
         break;
 
       case Action.adminSettled:
-        sendNotification(event.action, eventId: event.id);
+        // No additional logic needed beyond notification
         break;
 
       case Action.cantDo:
@@ -312,14 +250,10 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         if (cantDo?.cantDoReason == CantDoReason.pendingOrderExists) {
           ref.read(sessionNotifierProvider.notifier).deleteSession(orderId);
         }
-        // Temp Notification 
-        sendNotification(event.action, values: {
-          'action': cantDo?.cantDoReason.toString(),
-        }, isTemporary: true);
         break;
 
       case Action.rate:
-        sendNotification(event.action, eventId: event.id);
+        // No additional logic needed beyond notification
         break;
 
       case Action.rateReceived:
@@ -330,11 +264,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
 
       // Default
       default:
-        // Skip cant-do events as they are already handled in explicit case above.
-        if (event.action != Action.cantDo) {
-          sendNotification(event.action, isTemporary: true);
-        }
-        break;
+         break;
     }
   }
 
