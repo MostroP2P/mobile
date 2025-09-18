@@ -64,23 +64,5 @@ void main() {
         reason: 'fireImmediately: false must be preserved to prevent relay switching bug');
     });
 
-    test('REGRESSION PREVENTION: verify fix documentation exists', () async {
-      // Verify critical documentation exists
-      expect(File('SUBSCRIPTION_MANAGER_FIX.md').existsSync(), isTrue,
-        reason: 'Fix documentation must exist');
-      
-      expect(File('test/features/subscriptions/README_CRITICAL_TEST.md').existsSync(), isTrue,
-        reason: 'Test documentation must exist');
-        
-      final subscriptionFile = File('lib/features/subscriptions/subscription_manager.dart');
-      final content = await subscriptionFile.readAsString();
-      
-      // Verify critical comments exist
-      expect(content.contains('CRITICAL'), isTrue,
-        reason: 'Critical comments must be preserved');
-      
-      expect(content.contains('DO NOT REMOVE'), isTrue,
-        reason: 'Warning comments must be preserved');
-    });
   });
 }

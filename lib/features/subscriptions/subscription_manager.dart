@@ -31,6 +31,8 @@ class SubscriptionManager {
 
   SubscriptionManager(this.ref) {
     _initSessionListener();
+    // Ensure resources are released with provider/container lifecycle
+    ref.onDispose(dispose);
     _initializeExistingSessions();
   }
 
