@@ -90,10 +90,9 @@ class SubscriptionManager {
   }
 
   void _updateSubscription(SubscriptionType type, List<Session> sessions) {
-    unsubscribeByType(type);
-
     if (sessions.isEmpty) {
       _logger.i('No sessions for $type subscription');
+      unsubscribeByType(type);
       return;
     }
 
@@ -102,6 +101,8 @@ class SubscriptionManager {
       if (filter == null) {
         return;
       }
+      // Replace existing subscription only when we have a new filter to apply
+      unsubscribeByType(type);
       subscribe(
         type: type,
         filter: filter,

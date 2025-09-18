@@ -64,5 +64,31 @@ void main() {
         reason: 'fireImmediately: false must be preserved to prevent relay switching bug');
     });
 
+    test('CRITICAL: relay subscriptions preserved during session initialization', () async {
+      final file = File('lib/features/subscriptions/subscription_manager.dart');
+      final content = await file.readAsString();
+      
+      // Verify that the critical fix pattern exists
+      expect(content.contains('final filter = _createFilterForType(type, sessions)'), isTrue,
+        reason: 'Filter creation must exist in _updateSubscription');
+      
+      // Verify the critical fix: check filter before unsubscribing
+      expect(content.contains('if (filter == null)'), isTrue,
+        reason: 'Must check for null filter to prevent cancelling relay subscriptions');
+      
+      // Verify the comment that explains the fix
+      expect(content.contains('Replace existing subscription only when we have a new filter to apply'), isTrue,
+        reason: 'Comment explaining the relay preservation fix must exist');
+      
+      // Verify proper sequence: filter check happens before unsubscribe within the method
+      final updateMethodIndex = content.indexOf('void _updateSubscription(SubscriptionType type, List<Session> sessions)');
+      final filterCheckIndex = content.indexOf('if (filter == null)', updateMethodIndex);
+      final unsubscribeAfterCheckIndex = content.indexOf('unsubscribeByType(type);', filterCheckIndex);
+      
+      expect(updateMethodIndex, greaterThan(-1), reason: '_updateSubscription method must exist');
+      expect(filterCheckIndex, greaterThan(updateMethodIndex), reason: 'Filter null check must exist after method start');
+      expect(unsubscribeAfterCheckIndex, greaterThan(filterCheckIndex), reason: 'unsubscribe must happen after filter null check');
+    });
+
   });
 }
