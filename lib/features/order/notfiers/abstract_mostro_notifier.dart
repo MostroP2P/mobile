@@ -283,15 +283,15 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         : state.order!.kind == OrderType.sell;
   }
 
-  /// Starts a 30-second timer to cleanup orphan sessions if no response from Mostro
+  /// Starts a 10-second timer to cleanup orphan sessions if no response from Mostro
   static void startSessionTimeoutCleanup(String orderId, Ref ref) {
     // Cancel existing timer if any
     _sessionTimeouts[orderId]?.cancel();
     
-    _sessionTimeouts[orderId] = Timer(const Duration(seconds: 30), () {
+    _sessionTimeouts[orderId] = Timer(const Duration(seconds: 10), () {
       try {
         ref.read(sessionNotifierProvider.notifier).deleteSession(orderId);
-        Logger().i('Session cleaned up after 30s timeout: $orderId');
+        Logger().i('Session cleaned up after 10s timeout: $orderId');
         
         // Show timeout message to user and navigate to order book
         _showTimeoutNotificationAndNavigate(ref);
@@ -301,7 +301,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
       _sessionTimeouts.remove(orderId);
     });
     
-    Logger().i('Started 30s timeout timer for order: $orderId');
+    Logger().i('Started 10s timeout timer for order: $orderId');
   }
   
   /// Shows timeout notification and navigates to order book
@@ -325,7 +325,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
     if (timer != null) {
       timer.cancel();
       _sessionTimeouts.remove(orderId);
-      Logger().i('Cancelled timeout timer for order: $orderId - Mostro responded');
+      Logger().i('Cancelled 10s timeout timer for order: $orderId - Mostro responded');
     }
   }
 

@@ -104,7 +104,7 @@ class OrderNotifier extends AbstractMostroNotifier {
       role: Role.buyer,
     );
     
-    // Start 30s timeout cleanup timer for orphan session prevention
+    // Start 10s timeout cleanup timer for orphan session prevention
     AbstractMostroNotifier.startSessionTimeoutCleanup(orderId, ref);
     
     await mostroService.takeSellOrder(
@@ -121,7 +121,7 @@ class OrderNotifier extends AbstractMostroNotifier {
       role: Role.seller,
     );
     
-    // Start 30s timeout cleanup timer for orphan session prevention
+    // Start 10s timeout cleanup timer for orphan session prevention
     AbstractMostroNotifier.startSessionTimeoutCleanup(orderId, ref);
     
     await mostroService.takeBuyOrder(

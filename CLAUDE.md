@@ -113,18 +113,18 @@ The app follows a specific initialization order in `appInitializerProvider`:
 
 ### Overview
 
-Comprehensive system that prevents orphan sessions and detects order timeouts through dual protection mechanisms: 30-second cleanup timers and real-time timeout detection via public events.
+Comprehensive system that prevents orphan sessions and detects order timeouts through dual protection mechanisms: 10-second cleanup timers and real-time timeout detection via public events.
 
 ### Orphan Session Prevention
 
-#### **30-Second Cleanup Timer**
+#### **10-Second Cleanup Timer**
 Automatic cleanup system that prevents sessions from becoming orphaned when Mostro instances are unresponsive:
 
 - **Activation**: Started automatically when users take orders (`takeSellOrder`, `takeBuyOrder`)
-- **Purpose**: Prevents orphan sessions when Mostro doesn't respond within 30 seconds
+- **Purpose**: Prevents orphan sessions when Mostro doesn't respond within 10 seconds
 - **Cleanup**: Deletes session, shows localized notification, navigates to order book
 - **Cancellation**: Timer automatically cancelled when any response received from Mostro
-- **Implementation**: `AbstractMostroNotifier.startSessionTimeoutCleanup()` in `abstract_mostro_notifier.dart:359-378`
+- **Implementation**: `AbstractMostroNotifier.startSessionTimeoutCleanup()` in `abstract_mostro_notifier.dart:286-305`
 
 #### **Localized User Feedback**
 ```
@@ -164,7 +164,7 @@ When orders are canceled (status changes to `canceled` in public events):
 - **Implementation**: `_checkTimeoutAndCleanup()` method in `order_notifier.dart:172-211`
 
 ### Key Implementation
-- **Dual Protection**: 30-second cleanup + real-time detection provide comprehensive coverage
+- **Dual Protection**: 10-second cleanup + real-time detection provide comprehensive coverage
 - **Race protection**: `_isProcessingTimeout` flag prevents concurrent execution (with proper early return handling)
 - **Role detection**: `_isCreatedByUser()` compares session role with order type
 - **Timer management**: Static timer storage with proper cleanup on disposal

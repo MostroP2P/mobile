@@ -931,24 +931,24 @@ final session = ref.read(sessionNotifierProvider.notifier).getSessionByOrderId(o
 
 ### Overview
 
-A 30-second timeout cleanup system that prevents orphan sessions when Mostro instances are unresponsive or offline. This system works alongside the real-time timeout detection to provide comprehensive session management.
+A 10-second timeout cleanup system that prevents orphan sessions when Mostro instances are unresponsive or offline. This system works alongside the real-time timeout detection to provide comprehensive session management.
 
 ### Implementation
 
-#### **30-Second Cleanup Timer**
+#### **10-Second Cleanup Timer**
 
 When users take orders, a cleanup timer is automatically started to prevent sessions from becoming orphaned if Mostro doesn't respond:
 
 ```dart
-// lib/features/order/notfiers/abstract_mostro_notifier.dart:359-378
+// lib/features/order/notfiers/abstract_mostro_notifier.dart:286-305
 static void startSessionTimeoutCleanup(String orderId, Ref ref) {
   // Cancel existing timer if any
   _sessionTimeouts[orderId]?.cancel();
   
-  _sessionTimeouts[orderId] = Timer(const Duration(seconds: 30), () {
+  _sessionTimeouts[orderId] = Timer(const Duration(seconds: 10), () {
     try {
       ref.read(sessionNotifierProvider.notifier).deleteSession(orderId);
-      Logger().i('Session cleaned up after 30s timeout: $orderId');
+      Logger().i('Session cleaned up after 10s timeout: $orderId');
       
       // Show timeout message to user and navigate to order book
       _showTimeoutNotificationAndNavigate(ref);
@@ -958,7 +958,7 @@ static void startSessionTimeoutCleanup(String orderId, Ref ref) {
     _sessionTimeouts.remove(orderId);
   });
   
-  Logger().i('Started 30s timeout timer for order: $orderId');
+  Logger().i('Started 10s timeout timer for order: $orderId');
 }
 ```
 
@@ -967,12 +967,10 @@ static void startSessionTimeoutCleanup(String orderId, Ref ref) {
 The cleanup timer is automatically cancelled when any response is received from Mostro:
 
 ```dart
-// lib/features/order/notfiers/abstract_mostro_notifier.dart:86-90
+// lib/features/order/notfiers/abstract_mostro_notifier.dart:92-93
 void handleEvent(MostroMessage event) {
-  // Cancel timer on ANY response from Mostro for this orderId
-  if (event.id != null) {
-    _cancelSessionTimeoutCleanup(event.id!);
-  }
+  // Cancel timer on ANY response from Mostro for this order
+  _cancelSessionTimeoutCleanup(orderId);
   // ... rest of event handling
 }
 ```
@@ -986,7 +984,7 @@ The cleanup timer is started automatically when users take orders:
 Future<void> takeSellOrder(String orderId, int? amount, String? lnAddress) async {
   // ... session creation
   
-  // Start 30s timeout cleanup timer for phantom session prevention
+  // Start 10s timeout cleanup timer for phantom session prevention
   AbstractMostroNotifier.startSessionTimeoutCleanup(orderId, ref);
   
   await mostroService.takeSellOrder(orderId, amount, lnAddress);
@@ -997,7 +995,7 @@ Future<void> takeSellOrder(String orderId, int? amount, String? lnAddress) async
 
 #### **Timeout Notification and Navigation**
 
-When the 30-second timer expires, users receive a localized notification and are automatically navigated back to the order book:
+When the 10-second timer expires, users receive a localized notification and are automatically navigated back to the order book:
 
 ```dart
 // lib/features/order/notfiers/abstract_mostro_notifier.dart:381-393

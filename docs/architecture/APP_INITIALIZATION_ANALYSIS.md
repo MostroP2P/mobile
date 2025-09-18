@@ -341,6 +341,12 @@ void _initializeExistingSessions() {
 - The implementation creates subscriptions for existing sessions manually during constructor execution
 - **Protected by regression test**: `test/features/subscriptions/subscription_manager_initialization_test.dart`
 
+**Why fireImmediately: false is Used**:
+- Prevents the listener from executing before SessionNotifier.init() completes
+- Ensures subscriptions are created with valid session data
+- Avoids creating subscriptions with empty session lists
+- Maintains proper initialization order dependencies
+
 **Historical Context**:
 - **Commit 63dc124e** set `fireImmediately: false` to fix relay switching issues where changing between Mostro instances would lose orders
 - This created a new bug where existing sessions wouldn't get subscriptions on app restart, causing orders to appear stuck in old states
