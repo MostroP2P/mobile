@@ -300,6 +300,7 @@ Future<void> init() async {
 // lib/features/subscriptions/subscription_manager.dart:32
 SubscriptionManager(this.ref) {
   _initSessionListener();
+  _initializeExistingSessions(); // CRITICAL: DO NOT REMOVE - Prevents stuck orders bug
 }
 
 void _initSessionListener() {
@@ -316,29 +317,55 @@ void _initSessionListener() {
 }
 ```
 
+#### **Manual Initialization for Existing Sessions**
+
+The SubscriptionManager includes manual initialization to prevent orders from getting stuck in previous states after app restart:
+
+```dart
+void _initializeExistingSessions() {
+  try {
+    final existingSessions = ref.read(sessionNotifierProvider);
+    if (existingSessions.isNotEmpty) {
+      _logger.i('Initializing subscriptions for ${existingSessions.length} existing sessions');
+      _updateAllSubscriptions(existingSessions);
+    }
+  } catch (e, stackTrace) {
+    _logger.e('Error initializing existing sessions', error: e, stackTrace: stackTrace);
+  }
+}
+```
+
+**Why This Implementation is Required**:
+- `fireImmediately: false` prevents automatic subscription creation for existing sessions on app startup
+- Without this implementation, orders remain stuck in previous states (like `waiting-buyer-invoice`) when they should show current states (like `waiting-payment`) after app restart
+- The implementation creates subscriptions for existing sessions manually during constructor execution
+- **Protected by regression test**: `test/features/subscriptions/subscription_manager_initialization_test.dart`
+
+**Historical Context**:
+- **Commit 63dc124e** set `fireImmediately: false` to fix relay switching issues where changing between Mostro instances would lose orders
+- This created a new bug where existing sessions wouldn't get subscriptions on app restart, causing orders to appear stuck in old states
+- **Manual initialization pattern** was implemented to solve both problems: preserve relay switching fix while ensuring existing sessions get proper subscriptions
+
 **How This Works**:
 
-**Initialization Sequence with fireImmediately: false**:
+**Initialization Sequence with Manual Implementation**:
 ```
 1. SubscriptionManager constructor called
-2. _initSessionListener() runs
-3. fireImmediately: false → Listener registered but NOT executed
-4. SessionNotifier.init() runs and loads sessions
-5. sessionNotifierProvider.state updated to [session1, session2, ...]
-6. Listener triggers for first time with actual sessions
-7. _updateAllSubscriptions([session1, session2, ...]) called
-8. "Subscription created for SubscriptionType.orders with X sessions" logged
-9. UI shows orders correctly
+2. _initSessionListener() runs → Listener registered with fireImmediately: false
+3. _initializeExistingSessions() runs → Creates subscriptions for loaded sessions immediately
+4. SessionNotifier.init() runs and loads sessions (already handled by step 3)
+5. Future session changes trigger listener normally
+6. Both existing and new sessions handled correctly
+7. UI shows orders in correct states after app restart
 ```
 
-**Why fireImmediately: false is Used**:
-- Prevents the listener from executing before SessionNotifier.init() completes
-- Ensures subscriptions are created with valid session data
-- Avoids creating subscriptions with empty session lists
-- Maintains proper initialization order dependencies
+**Dual-Path Architecture**:
+- **Listener Path**: Handles future session changes (new trades, session deletions)  
+- **Manual Path**: Handles existing sessions during app initialization
+- **Result**: Complete coverage of all session lifecycle scenarios
 
-**Dependencies**: SessionNotifier state
-**Duration**: Instantaneous (just creates listener)
+**Dependencies**: SessionNotifier state  
+**Duration**: ~10ms (manual initialization) + instantaneous (listener registration)
 
 ### 5. Background Services Setup
 
@@ -885,4 +912,4 @@ The Mostro Mobile app initialization process represents a sophisticated bootstra
 This initialization system provides a robust foundation for the app's trading operations while maintaining clear architectural boundaries and extensible patterns for future development.
 
 ---
-**Last Updated**: 2025-08-28  
+**Last Updated**: September 17, 2025  

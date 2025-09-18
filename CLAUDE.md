@@ -30,6 +30,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Providers are organized by feature in `features/{feature}/providers/`
 - **Notifier pattern** for complex state logic (authentication, order management)
 - Notifiers encapsulate business logic and expose state via providers
+- **SubscriptionManager Enhancement**: Includes manual initialization (`_initializeExistingSessions()`) to prevent orders getting stuck in previous states after app restart - protected by regression test
 
 ### Data Layer
 - **Sembast** NoSQL database for local persistence
@@ -490,7 +491,7 @@ For complete technical documentation, see `RELAY_SYNC_IMPLEMENTATION.md`.
 
 ---
 
-**Last Updated**: 2025-08-22  
+**Last Updated**: September 17, 2025  
 **Flutter Version**: Latest stable  
 **Dart Version**: Latest stable  
 **Key Dependencies**: Riverpod, GoRouter, flutter_intl, timeago, dart_nostr, logger, shared_preferences
