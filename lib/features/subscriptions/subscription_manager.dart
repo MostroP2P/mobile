@@ -31,6 +31,7 @@ class SubscriptionManager {
 
   SubscriptionManager(this.ref) {
     _initSessionListener();
+    _initializeExistingSessions();
   }
 
   void _initSessionListener() {
@@ -45,6 +46,27 @@ class SubscriptionManager {
             error: error, stackTrace: stackTrace);
       },
     );
+  }
+
+  /// CRITICAL: Initialize subscriptions for existing sessions
+  /// DO NOT REMOVE: Fixes stuck orders bug when app restarts with existing sessions
+  /// 
+  /// This method ensures that subscriptions are created for sessions that already 
+  /// exist when SubscriptionManager is created, since fireImmediately: false 
+  /// prevents automatic initialization.
+  void _initializeExistingSessions() {
+    try {
+      final existingSessions = ref.read(sessionNotifierProvider);
+      if (existingSessions.isNotEmpty) {
+        _logger.i('Initializing subscriptions for ${existingSessions.length} existing sessions');
+        _updateAllSubscriptions(existingSessions);
+      } else {
+        _logger.i('No existing sessions found during SubscriptionManager initialization');
+      }
+    } catch (e, stackTrace) {
+      _logger.e('Error initializing existing sessions',
+          error: e, stackTrace: stackTrace);
+    }
   }
 
   void _updateAllSubscriptions(List<Session> sessions) {
