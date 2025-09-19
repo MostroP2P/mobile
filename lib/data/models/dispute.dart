@@ -448,7 +448,9 @@ class DisputeData {
         }
         return isUserCreator
           ? DisputeDescriptionKey.initiatedByUser
+
           : DisputeDescriptionKey.initiatedPendingAdmin;
+
       case 'in-progress':
         return DisputeDescriptionKey.inProgress;
       case 'resolved':
@@ -468,9 +470,11 @@ class DisputeData {
       case DisputeDescriptionKey.initiatedByUser:
         return l10n.disputeDescriptionInitiatedByUser;
       case DisputeDescriptionKey.initiatedByPeer:
+
         return l10n.disputeDescriptionInitiatedByPeer;
       case DisputeDescriptionKey.initiatedPendingAdmin:
         return l10n.disputeDescriptionInitiatedPendingAdmin;
+
       case DisputeDescriptionKey.inProgress:
         return l10n.disputeDescriptionInProgress;
       case DisputeDescriptionKey.resolved:

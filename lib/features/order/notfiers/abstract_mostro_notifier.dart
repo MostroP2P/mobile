@@ -279,6 +279,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
           return;
         }
 
+
         logger.i('disputeInitiatedByPeer: Dispute details - ID: ${dispute.disputeId}, Status: ${dispute.status}, Action: ${dispute.action}');
         // Ensure dispute has the orderId for proper association and correct status/action
         final disputeWithOrderId = dispute.copyWith(
@@ -287,6 +288,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
           action: 'dispute-initiated-by-peer', // Store the action for UI logic
         );
         logger.i('disputeInitiatedByPeer: Final dispute - ID: ${disputeWithOrderId.disputeId}, Status: ${disputeWithOrderId.status}, Action: ${disputeWithOrderId.action}');
+
 
         // Save dispute in state for listing
         state = state.copyWith(dispute: disputeWithOrderId);
