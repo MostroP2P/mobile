@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models.dart';
@@ -43,7 +44,11 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
       (_, next) {
         next.when(
           data: (MostroMessage? msg) {
-            logger.i('Received message: ${msg?.toJson()}');
+            if (kDebugMode) {
+              logger.i('Received message: ${msg?.toJson()}');
+            } else {
+              logger.i('Received message with action: ${msg?.action}');
+            }
             if (msg != null) {
               if (mounted) {
                 state = state.updateWith(msg);
@@ -58,10 +63,11 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
               } else {
                 logger.w('Message timestamp check failed for ${msg.action}. Timestamp: ${msg.timestamp}, Current: ${DateTime.now().millisecondsSinceEpoch}, Threshold: ${DateTime.now().subtract(const Duration(seconds: 60)).millisecondsSinceEpoch}');
                 
-                // Handle dispute actions even if timestamp is old, since they're critical for UI
+                // Handle dispute actions even if timestamp is old, since they're critical for UI state
+                // but bypass navigation/notification side effects
                 if (msg.action == Action.disputeInitiatedByPeer || msg.action == Action.disputeInitiatedByYou) {
-                  logger.i('Processing dispute action ${msg.action} despite old timestamp');
-                  unawaited(handleEvent(msg));
+                  logger.i('Processing dispute action ${msg.action} despite old timestamp (state update only)');
+                  unawaited(handleEvent(msg, bypassTimestampGate: true));
                 }
               }
             }
@@ -89,7 +95,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
     }
   }
 
-  Future<void> handleEvent(MostroMessage event) async {
+  Future<void> handleEvent(MostroMessage event, {bool bypassTimestampGate = false}) async {
     // Skip if we've already processed this exact event
     final eventKey = '${event.id}_${event.action}_${event.timestamp}';
     if (_processedEventIds.contains(eventKey)) {
@@ -100,21 +106,30 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
     
     final navProvider = ref.read(navigationProvider.notifier);
 
+    // Check if this is a recent event for notification/navigation purposes
+    final isRecent = event.timestamp != null &&
+        event.timestamp! >
+            DateTime.now()
+                .subtract(const Duration(seconds: 60))
+                .millisecondsSinceEpoch;
+
     // Extract notification data using the centralized extractor
     final notificationData = await NotificationDataExtractor.extractFromMostroMessage(event, ref, session: session);
     
-    // Send notification if data was extracted
-    if (notificationData != null) {
+    // Only notify for recent events; old disputes still update state below
+    if (notificationData != null && (isRecent || !bypassTimestampGate)) {
       sendNotification(
         notificationData.action,
         values: notificationData.values,
         isTemporary: notificationData.isTemporary,
         eventId: notificationData.eventId,
       );
+    } else if (notificationData != null && bypassTimestampGate) {
+      logger.i('Skipping notification for old event: ${event.action} (timestamp: ${event.timestamp})');
     }
 
     /// Handle incoming events and update state accordingly
-    logger.i('handleEvent: Processing action ${event.action} for order $orderId');
+    logger.i('handleEvent: Processing action ${event.action} for order $orderId (bypassTimestampGate: $bypassTimestampGate)');
     switch (event.action) {
       case Action.newOrder:
         break;
@@ -234,8 +249,12 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         }
 
 
-        // Ensure dispute has the orderId for proper association
-        final disputeWithOrderId = dispute.copyWith(orderId: orderId);
+        // Ensure dispute has the orderId for proper association and correct status
+        final disputeWithOrderId = dispute.copyWith(
+          orderId: orderId,
+          status: dispute.status ?? 'initiated', // Ensure status is set for user-initiated disputes
+          action: 'dispute-initiated-by-you', // Store the action for UI logic
+        );
 
         // Save dispute in state for listing
         state = state.copyWith(dispute: disputeWithOrderId);
@@ -247,16 +266,22 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         break;
 
       case Action.disputeInitiatedByPeer:
-        logger.i('disputeInitiatedByPeer: Raw payload: ${event.payload}');
+        if (kDebugMode) {
+          logger.i('disputeInitiatedByPeer: Raw payload: ${event.payload}');
+        }
         var dispute = event.getPayload<Dispute>();
-        logger.i('disputeInitiatedByPeer: Parsed dispute: $dispute');
+        if (kDebugMode) {
+          logger.i('disputeInitiatedByPeer: Parsed dispute: $dispute');
+        }
         
         // If payload is not a Dispute object, try to create one from the payload map
         if (dispute == null && event.payload != null) {
           try {
             // Try to create Dispute from payload map (e.g., {dispute: "id"})
             final payloadMap = event.payload as Map<String, dynamic>;
-            logger.i('disputeInitiatedByPeer: Payload map: $payloadMap');
+            if (kDebugMode) {
+              logger.i('disputeInitiatedByPeer: Payload map: $payloadMap');
+            }
             
             if (payloadMap.containsKey('dispute')) {
               final disputeId = payloadMap['dispute'] as String;

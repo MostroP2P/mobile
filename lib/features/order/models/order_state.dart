@@ -132,30 +132,38 @@ class OrderState {
 
     // Handle dispute status updates based on action
     Dispute? updatedDispute = message.getPayload<Dispute>() ?? dispute;
-    if (message.action == Action.adminTookDispute && dispute != null) {
+    
+    // Add defensive null check - if both message payload and existing dispute are null,
+    // we cannot perform dispute updates
+    if (updatedDispute == null && 
+        (message.action == Action.adminTookDispute || 
+         message.action == Action.adminSettled || 
+         message.action == Action.adminCanceled)) {
+      _logger.w('Cannot update dispute for action ${message.action}: no dispute found in message payload or existing state');
+    } else if (message.action == Action.adminTookDispute && updatedDispute != null) {
       // When admin takes dispute, update status to in-progress and set admin info
-      updatedDispute = dispute!.copyWith(
+      updatedDispute = updatedDispute.copyWith(
         status: 'in-progress',
         adminTookAt: DateTime.now(),
         // Set admin pubkey if not already set
-        adminPubkey: dispute!.adminPubkey ?? 'admin',
+        adminPubkey: updatedDispute.adminPubkey ?? 'admin',
       );
       _logger.i('Updated dispute status to in-progress for adminTookDispute action');
-    } else if (message.action == Action.adminSettled && dispute != null) {
+    } else if (message.action == Action.adminSettled && updatedDispute != null) {
       // When admin settles dispute, update status to resolved with settlement info
-      updatedDispute = dispute!.copyWith(
+      updatedDispute = updatedDispute.copyWith(
         status: 'resolved',
         action: 'admin-settled', // Store the resolution type
       );
       _logger.i('Updated dispute status to resolved for adminSettled action');
-    } else if (message.action == Action.adminCanceled && dispute != null) {
+    } else if (message.action == Action.adminCanceled && updatedDispute != null) {
       // When admin cancels order, update dispute status to seller-refunded
-      updatedDispute = dispute!.copyWith(
+      updatedDispute = updatedDispute.copyWith(
         status: 'seller-refunded',
         action: 'admin-canceled', // Store the resolution type
       );
       _logger.i('Updated dispute status to seller-refunded for adminCanceled action');
-      _logger.i('Dispute before update: ${dispute!.status}, after update: ${updatedDispute.status}');
+      _logger.i('Dispute status updated to: ${updatedDispute.status}');
     }
 
     final newState = copyWith(

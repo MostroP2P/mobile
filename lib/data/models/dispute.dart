@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/data/models/payload.dart';
@@ -343,13 +344,22 @@ class DisputeData {
     if (orderState != null) {
       // Use OrderState action which has the correct dispute initiation info
       final actionString = orderState.action.toString();
+      if (kDebugMode) {
+        debugPrint('DisputeData.fromDispute: orderState.action = ${orderState.action}, actionString = "$actionString"');
+      }
       isUserCreator = actionString == 'dispute-initiated-by-you';
     } else if (dispute.action != null) {
       // Fallback to dispute action - this should now be set correctly
+      if (kDebugMode) {
+        debugPrint('DisputeData.fromDispute: dispute.action = "${dispute.action}"');
+      }
       isUserCreator = dispute.action == 'dispute-initiated-by-you';
     } else {
       // If no action info is available, leave as null (unknown state)
       // This removes the assumption that user is creator by default
+      if (kDebugMode) {
+        debugPrint('DisputeData.fromDispute: No action info available, setting isUserCreator = null');
+      }
       isUserCreator = null;
     }
     
@@ -437,18 +447,25 @@ class DisputeData {
 
   /// Get a description key for the dispute status
   static DisputeDescriptionKey _getDescriptionKeyForStatus(String status, bool? isUserCreator, {bool hasAdmin = false}) {
+    if (kDebugMode) {
+      debugPrint('_getDescriptionKeyForStatus: status="$status", isUserCreator=$isUserCreator, hasAdmin=$hasAdmin');
+    }
     switch (status.toLowerCase()) {
       case 'initiated':
         // If admin has been assigned, it's in progress even if status says initiated
         if (hasAdmin) {
+          if (kDebugMode) {
+            debugPrint('_getDescriptionKeyForStatus: returning inProgress (hasAdmin=true)');
+          }
           return DisputeDescriptionKey.inProgress;
         }
-        if (isUserCreator == null) {
-          return DisputeDescriptionKey.initiatedPendingAdmin; // Waiting for admin assignment
+        // For 'initiated' status, always show "admin will take this dispute soon"
+        // regardless of who created it, since the key info is that it's waiting for admin
+        if (kDebugMode) {
+          debugPrint('_getDescriptionKeyForStatus: returning initiatedPendingAdmin (status=initiated, waiting for admin)');
         }
-        return isUserCreator
+        return isUserCreator == true
           ? DisputeDescriptionKey.initiatedByUser
-
           : DisputeDescriptionKey.initiatedPendingAdmin;
 
       case 'in-progress':
@@ -459,6 +476,9 @@ class DisputeData {
       case 'seller-refunded':
         return DisputeDescriptionKey.sellerRefunded;
       default:
+        if (kDebugMode) {
+          debugPrint('_getDescriptionKeyForStatus: returning UNKNOWN for status="$status"');
+        }
         return DisputeDescriptionKey.unknown;
     }
   }
