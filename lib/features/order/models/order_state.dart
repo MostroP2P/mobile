@@ -130,6 +130,25 @@ class OrderState {
       newPeer = peer; // Preserve existing
     }
 
+    // Handle dispute status updates based on action
+    Dispute? updatedDispute = message.getPayload<Dispute>() ?? dispute;
+    if (message.action == Action.adminTookDispute && dispute != null) {
+      // When admin takes dispute, update status to in-progress and set admin info
+      updatedDispute = dispute!.copyWith(
+        status: 'in-progress',
+        adminTookAt: DateTime.now(),
+        // Set admin pubkey if not already set
+        adminPubkey: dispute!.adminPubkey ?? 'admin',
+      );
+      _logger.i('Updated dispute status to in-progress for adminTookDispute action');
+    } else if (message.action == Action.adminSettled && dispute != null) {
+      // When admin settles dispute, update status to resolved
+      updatedDispute = dispute!.copyWith(
+        status: 'resolved',
+      );
+      _logger.i('Updated dispute status to resolved for adminSettled action');
+    }
+
     final newState = copyWith(
       status: newStatus,
       action: message.action,
@@ -140,7 +159,7 @@ class OrderState {
               : order,
       paymentRequest: newPaymentRequest,
       cantDo: message.getPayload<CantDo>() ?? cantDo,
-      dispute: message.getPayload<Dispute>() ?? dispute,
+      dispute: updatedDispute,
       peer: newPeer,
       paymentFailed: message.getPayload<PaymentFailed>() ?? paymentFailed,
     );

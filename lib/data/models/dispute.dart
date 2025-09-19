@@ -372,7 +372,11 @@ class DisputeData {
     }
 
     // Get the appropriate description key based on status and creator
-    final descriptionKey = _getDescriptionKeyForStatus(dispute.status ?? 'unknown', isUserCreator);
+    final descriptionKey = _getDescriptionKeyForStatus(
+      dispute.status ?? 'unknown', 
+      isUserCreator,
+      hasAdmin: dispute.hasAdmin,
+    );
 
     return DisputeData(
       disputeId: dispute.disputeId,
@@ -425,9 +429,13 @@ class DisputeData {
   }
 
   /// Get a description key for the dispute status
-  static DisputeDescriptionKey _getDescriptionKeyForStatus(String status, bool? isUserCreator) {
+  static DisputeDescriptionKey _getDescriptionKeyForStatus(String status, bool? isUserCreator, {bool hasAdmin = false}) {
     switch (status.toLowerCase()) {
       case 'initiated':
+        // If admin has been assigned, it's in progress even if status says initiated
+        if (hasAdmin) {
+          return DisputeDescriptionKey.inProgress;
+        }
         if (isUserCreator == null) {
           return DisputeDescriptionKey.initiatedPendingAdmin; // Waiting for admin assignment
         }
@@ -454,9 +462,9 @@ class DisputeData {
       case DisputeDescriptionKey.initiatedByPeer:
         return 'A dispute was opened against you';
       case DisputeDescriptionKey.initiatedPendingAdmin:
-        return 'Waiting for admin assignment';
+        return 'An admin will take this dispute soon';
       case DisputeDescriptionKey.inProgress:
-        return 'Dispute is being reviewed by an admin';
+        return 'No messages yet';
       case DisputeDescriptionKey.resolved:
         return 'Dispute has been resolved';
       case DisputeDescriptionKey.sellerRefunded:
