@@ -66,6 +66,9 @@ class NotificationListenerWidget extends ConsumerWidget {
             case 'orderCanceled':
               message = S.of(context)!.orderCanceled;
               break;
+            case 'sessionTimeoutMessage':
+              message = S.of(context)!.sessionTimeoutMessage;
+              break;
             default:
               message = next.customMessage!;
           }
