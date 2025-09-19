@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:mostro_mobile/data/enums.dart' as enums;
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/data/models/payload.dart';
 import 'package:mostro_mobile/features/order/models/order_state.dart';
@@ -343,17 +344,18 @@ class DisputeData {
     
     if (orderState != null) {
       // Use OrderState action which has the correct dispute initiation info
-      final actionString = orderState.action.toString();
       if (kDebugMode) {
-        debugPrint('DisputeData.fromDispute: orderState.action = ${orderState.action}, actionString = "$actionString"');
+        debugPrint('DisputeData.fromDispute: orderState.action = ${orderState.action}');
       }
-      isUserCreator = actionString == 'dispute-initiated-by-you';
+      isUserCreator = orderState.action == enums.Action.disputeInitiatedByYou;
     } else if (dispute.action != null) {
-      // Fallback to dispute action - this should now be set correctly
+      // Fallback to dispute action - convert string to enum for comparison
       if (kDebugMode) {
         debugPrint('DisputeData.fromDispute: dispute.action = "${dispute.action}"');
       }
-      isUserCreator = dispute.action == 'dispute-initiated-by-you';
+      // Parse the action string to enum for proper comparison
+      final disputeAction = _parseActionFromString(dispute.action!);
+      isUserCreator = disputeAction == enums.Action.disputeInitiatedByYou;
     } else {
       // If no action info is available, leave as null (unknown state)
       // This removes the assumption that user is creator by default
@@ -515,4 +517,25 @@ class DisputeData {
   
   /// Convenience getter for counterparty with fallback
   String get counterpartyDisplay => counterparty ?? DisputeSemanticKeys.unknownCounterparty;
+  
+  /// Parse action string to Action enum
+  /// This handles the conversion from stored string actions to enum values
+  static enums.Action? _parseActionFromString(String actionString) {
+    // Map common action strings to enum values
+    switch (actionString.toLowerCase()) {
+      case 'dispute-initiated-by-you':
+        return enums.Action.disputeInitiatedByYou;
+      case 'dispute-initiated-by-peer':
+        return enums.Action.disputeInitiatedByPeer;
+      case 'admin-took-dispute':
+        return enums.Action.adminTookDispute;
+      case 'admin-settled':
+        return enums.Action.adminSettled;
+      default:
+        if (kDebugMode) {
+          debugPrint('_parseActionFromString: Unknown action string "$actionString"');
+        }
+        return null;
+    }
+  }
 }

@@ -259,9 +259,10 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         // Save dispute in state for listing
         state = state.copyWith(dispute: disputeWithOrderId);
 
-        sendNotification(event.action, values: {
-          'dispute_id': dispute.disputeId,
-        }, eventId: event.id);
+        // Notification handled by centralized NotificationDataExtractor path
+        if (kDebugMode) {
+          logger.i('disputeInitiatedByYou: Dispute saved in state, notification handled centrally');
+        }
 
         break;
 
@@ -318,9 +319,10 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         // Save dispute in state for listing
         state = state.copyWith(dispute: disputeWithOrderId);
 
-        sendNotification(event.action, values: {
-          'dispute_id': dispute.disputeId,
-        }, eventId: event.id);
+        // Notification handled by centralized NotificationDataExtractor path
+        if (kDebugMode) {
+          logger.i('disputeInitiatedByPeer: Dispute saved in state, notification handled centrally');
+        }
 
         break;
 
