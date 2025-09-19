@@ -35,6 +35,23 @@ final disputeChatProvider = StateNotifierProvider.family<DisputeChatNotifier, Li
 /// Provider for user disputes list - uses real data from repository
 final userDisputesProvider = FutureProvider<List<Dispute>>((ref) async {
   final repository = ref.watch(disputeRepositoryProvider);
+
+  
+  // Watch all sessions to invalidate when order states change
+  final sessions = ref.watch(sessionNotifierProvider);
+  
+  // Watch order states for all sessions to trigger refresh when disputes update
+  for (final session in sessions) {
+    if (session.orderId != null) {
+      try {
+        ref.watch(orderNotifierProvider(session.orderId!));
+      } catch (e) {
+        // Continue if order state doesn't exist yet
+      }
+    }
+  }
+  
+
   return repository.getUserDisputes();
 });
 

@@ -127,13 +127,15 @@ class DisputeStatusContent extends StatelessWidget {
       case DisputeDescriptionKey.initiatedPendingAdmin:
         return S.of(context)!.disputeWaitingForAdmin;
       case DisputeDescriptionKey.inProgress:
-        // Use status text with a descriptive message
-        return "${S.of(context)!.disputeStatusInProgress}: ${dispute.description}";
+        return dispute.getLocalizedDescription(context); // "No messages yet"
       case DisputeDescriptionKey.resolved:
+        // Show specific resolution message based on action
+        if (dispute.action == 'admin-settled') {
+          return S.of(context)!.disputeAdminSettledMessage;
+        }
         return S.of(context)!.disputeResolvedMessage;
       case DisputeDescriptionKey.sellerRefunded:
-        // Use resolved message with additional context
-        return "${S.of(context)!.disputeResolvedMessage} ${S.of(context)!.seller} refunded.";
+        return S.of(context)!.disputeSellerRefundedMessage;
       case DisputeDescriptionKey.unknown:
         // Use a generic message with the status
         return "${S.of(context)!.unknown} ${S.of(context)!.disputeStatusResolved}";

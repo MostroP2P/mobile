@@ -19,7 +19,7 @@ class DisputeContent extends StatelessWidget {
         const SizedBox(height: 4),
         DisputeOrderId(orderId: dispute.orderIdDisplay),
         const SizedBox(height: 2),
-        DisputeDescription(description: dispute.description),
+        DisputeDescription(description: dispute.getLocalizedDescription(context)),
       ],
     );
   }

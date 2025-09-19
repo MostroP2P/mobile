@@ -2786,11 +2786,15 @@ class MockOrderNotifier extends _i1.Mock implements _i28.OrderNotifier {
       );
 
   @override
-  _i5.Future<void> handleEvent(_i7.MostroMessage<_i7.Payload>? event) =>
+  _i5.Future<void> handleEvent(
+    _i7.MostroMessage<_i7.Payload>? event, {
+    bool? bypassTimestampGate = false,
+  }) =>
       (super.noSuchMethod(
         Invocation.method(
           #handleEvent,
           [event],
+          {#bypassTimestampGate: bypassTimestampGate},
         ),
         returnValue: _i5.Future<void>.value(),
         returnValueForMissingStub: _i5.Future<void>.value(),
