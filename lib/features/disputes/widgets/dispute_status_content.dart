@@ -124,6 +124,8 @@ class DisputeStatusContent extends StatelessWidget {
         return S.of(context)!.disputeOpenedByYou(dispute.counterpartyDisplay);
       case DisputeDescriptionKey.initiatedByPeer:
         return S.of(context)!.disputeOpenedAgainstYou(dispute.counterpartyDisplay);
+      case DisputeDescriptionKey.initiatedPendingAdmin:
+        return S.of(context)!.disputeWaitingForAdmin;
       case DisputeDescriptionKey.inProgress:
         // Use status text with a descriptive message
         return "${S.of(context)!.disputeStatusInProgress}: ${dispute.description}";

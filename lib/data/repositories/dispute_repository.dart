@@ -6,6 +6,7 @@ import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
+import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 
 /// Repository for managing dispute creation
 class DisputeRepository {
@@ -63,39 +64,57 @@ class DisputeRepository {
   }
 
   Future<List<Dispute>> getUserDisputes() async {
-    // Mock implementation for UI testing
-    await Future.delayed(const Duration(milliseconds: 500));
-    
-    return [
-      Dispute(
-        disputeId: 'dispute_001',
-        orderId: 'order_001',
-        status: 'initiated',
-        createdAt: DateTime.now().subtract(const Duration(hours: 1)),
-        action: 'dispute-initiated-by-you',
-      ),
-      Dispute(
-        disputeId: 'dispute_002',
-        orderId: 'order_002',
-        status: 'in-progress',
-        createdAt: DateTime.now().subtract(const Duration(days: 1)),
-        action: 'dispute-initiated-by-peer',
-        adminPubkey: 'admin_123',
-      ),
-    ];
+    try {
+      _logger.d('Getting user disputes from sessions');
+
+      // Get all user sessions and check their order states for disputes
+      final sessions = _ref.read(sessionNotifierProvider);
+      final disputes = <Dispute>[];
+
+      for (final session in sessions) {
+        if (session.orderId != null) {
+          try {
+            // Get the order state for this session
+            final orderState = _ref.read(orderNotifierProvider(session.orderId!));
+            
+            if (orderState.dispute != null) {
+              disputes.add(orderState.dispute!);
+            }
+          } catch (e) {
+            _logger.w('Failed to get order state for order ${session.orderId}: $e');
+          }
+        }
+      }
+
+      _logger.d('Found ${disputes.length} disputes from sessions');
+      return disputes;
+    } catch (e) {
+      _logger.e('Failed to get user disputes: $e');
+      return [];
+    }
   }
 
   Future<Dispute?> getDispute(String disputeId) async {
-    // Mock implementation
-    await Future.delayed(const Duration(milliseconds: 300));
-    
-    return Dispute(
-      disputeId: disputeId,
-      orderId: 'order_${disputeId.substring(0, 8)}',
-      status: 'initiated',
-      createdAt: DateTime.now().subtract(const Duration(hours: 2)),
-      action: 'dispute-initiated-by-you',
-    );
+    try {
+      _logger.d('Getting dispute by ID: $disputeId');
+      
+      // Get all user disputes and find the one with matching ID
+      final disputes = await getUserDisputes();
+      final dispute = disputes.firstWhereOrNull(
+        (d) => d.disputeId == disputeId,
+      );
+      
+      if (dispute != null) {
+        _logger.d('Found dispute with ID: $disputeId');
+      } else {
+        _logger.w('No dispute found with ID: $disputeId');
+      }
+      
+      return dispute;
+    } catch (e) {
+      _logger.e('Failed to get dispute by ID $disputeId: $e');
+      return null;
+    }
   }
 
   Future<void> sendDisputeMessage(String disputeId, String message) async {

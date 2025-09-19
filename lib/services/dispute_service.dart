@@ -50,6 +50,8 @@ class DisputeService {
   Future<void> sendDisputeMessage(String disputeId, String message) async {
     // Mock implementation
     await Future.delayed(const Duration(milliseconds: 200));
+    // Mock implementation
+    await Future.delayed(const Duration(milliseconds: 200));
   }
 
   Future<void> initiateDispute(String orderId, String reason) async {

@@ -1,5 +1,6 @@
 // NostrEvent is now accessed through ChatRoom model
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
@@ -51,8 +52,11 @@ class ChatRoomsScreen extends ConsumerWidget {
                     ),
                   ),
                 ),
-                // Tab bar
-                ChatTabs(currentTab: currentTab),
+                // Tab bar - only show disputes tab in debug mode
+                if (kDebugMode)
+                  ChatTabs(currentTab: currentTab)
+                else
+                  _buildMessagesTabHeader(context),
                 // Description text
                 Container(
                   width: double.infinity,
@@ -66,7 +70,9 @@ class ChatRoomsScreen extends ConsumerWidget {
                     ),
                   ),
                   child: Text(
-                    _getTabDescription(context, currentTab),
+                    kDebugMode ? _getTabDescription(context, currentTab) :
+                      S.of(context)?.conversationsDescription ??
+                      'Here you\'ll find your conversations with other users during trades.',
                     style: TextStyle(
                       color: AppTheme.textSecondary,
                       fontSize: 14,
@@ -75,25 +81,30 @@ class ChatRoomsScreen extends ConsumerWidget {
                 ),
                 // Content area with gesture detection
                 Expanded(
-                  child: GestureDetector(
-                    onHorizontalDragEnd: (details) {
-                      if (details.primaryVelocity != null &&
-                          details.primaryVelocity! < 0) {
-                        // Swipe left - go to disputes
-                        ref.read(chatTabProvider.notifier).state = ChatTabType.disputes;
-                      } else if (details.primaryVelocity != null &&
-                          details.primaryVelocity! > 0) {
-                        // Swipe right - go to messages
-                        ref.read(chatTabProvider.notifier).state = ChatTabType.messages;
-                      }
-                    },
-                    child: Container(
-                      color: AppTheme.backgroundDark,
-                      child: currentTab == ChatTabType.messages
-                          ? _buildBody(context, ref)
-                          : const DisputesList(),
-                    ),
-                  ),
+                  child: kDebugMode
+                      ? GestureDetector(
+                          onHorizontalDragEnd: (details) {
+                            if (details.primaryVelocity != null &&
+                                details.primaryVelocity! < 0) {
+                              // Swipe left - go to disputes
+                              ref.read(chatTabProvider.notifier).state = ChatTabType.disputes;
+                            } else if (details.primaryVelocity != null &&
+                                details.primaryVelocity! > 0) {
+                              // Swipe right - go to messages
+                              ref.read(chatTabProvider.notifier).state = ChatTabType.messages;
+                            }
+                          },
+                          child: Container(
+                            color: AppTheme.backgroundDark,
+                            child: currentTab == ChatTabType.messages
+                                ? _buildBody(context, ref)
+                                : const DisputesList(),
+                          ),
+                        )
+                      : Container(
+                          color: AppTheme.backgroundDark,
+                          child: _buildBody(context, ref),
+                        ),
                 ),
                 // Add bottom padding to prevent content from being covered by BottomNavBar
                 SizedBox(
@@ -133,6 +144,41 @@ class ChatRoomsScreen extends ConsumerWidget {
           orderId: chatRoomsWithFreshData[index].orderId,
         );
       },
+    );
+  }
+
+  Widget _buildMessagesTabHeader(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.backgroundDark,
+        border: Border(
+          bottom: BorderSide(
+            color: Colors.white.withValues(alpha: 0.1),
+            width: 1.0,
+          ),
+        ),
+      ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: AppTheme.mostroGreen,
+              width: 3.0,
+            ),
+          ),
+        ),
+        child: Text(
+          S.of(context)!.messages,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: AppTheme.mostroGreen,
+            fontWeight: FontWeight.w600,
+            fontSize: 15,
+            letterSpacing: 0.5,
+          ),
+        ),
+      ),
     );
   }
 

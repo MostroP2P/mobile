@@ -6,6 +6,7 @@ import 'package:mostro_mobile/data/models/order.dart';
 enum DisputeDescriptionKey {
   initiatedByUser,      // You opened this dispute
   initiatedByPeer,      // A dispute was opened against you
+  initiatedPendingAdmin,// Dispute initiated, waiting for admin assignment
   inProgress,           // Dispute is being reviewed by an admin
   resolved,             // Dispute has been resolved
   sellerRefunded,       // Dispute resolved - seller refunded
@@ -375,8 +376,8 @@ class DisputeData {
 
     return DisputeData(
       disputeId: dispute.disputeId,
-      orderId: dispute.orderId, // No fallback to hardcoded string
-      status: dispute.status ?? 'unknown',
+      orderId: dispute.orderId ?? (orderState?.order?.id), // Use order from orderState if dispute.orderId is null
+      status: dispute.status ?? 'initiated',
       descriptionKey: descriptionKey,
       counterparty: counterpartyName,
       isCreator: isUserCreator,
@@ -428,10 +429,10 @@ class DisputeData {
     switch (status.toLowerCase()) {
       case 'initiated':
         if (isUserCreator == null) {
-          return DisputeDescriptionKey.unknown; // Unknown creator state
+          return DisputeDescriptionKey.initiatedPendingAdmin; // Waiting for admin assignment
         }
-        return isUserCreator 
-          ? DisputeDescriptionKey.initiatedByUser 
+        return isUserCreator
+          ? DisputeDescriptionKey.initiatedByUser
           : DisputeDescriptionKey.initiatedByPeer;
       case 'in-progress':
         return DisputeDescriptionKey.inProgress;
@@ -452,6 +453,8 @@ class DisputeData {
         return 'You opened this dispute';
       case DisputeDescriptionKey.initiatedByPeer:
         return 'A dispute was opened against you';
+      case DisputeDescriptionKey.initiatedPendingAdmin:
+        return 'Waiting for admin assignment';
       case DisputeDescriptionKey.inProgress:
         return 'Dispute is being reviewed by an admin';
       case DisputeDescriptionKey.resolved:
