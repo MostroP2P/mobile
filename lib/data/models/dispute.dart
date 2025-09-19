@@ -318,6 +318,7 @@ class DisputeData {
   final bool? isCreator;
   final DateTime createdAt;
   final UserRole userRole;
+  final String? action; // Store the action that resolved the dispute
 
   DisputeData({
     required this.disputeId,
@@ -328,6 +329,7 @@ class DisputeData {
     this.isCreator,
     required this.createdAt,
     required this.userRole,
+    this.action,
   });
 
   /// Create DisputeData from Dispute object with OrderState context
@@ -387,6 +389,7 @@ class DisputeData {
       isCreator: isUserCreator,
       createdAt: dispute.createdAt ?? DateTime.now(),
       userRole: userRole,
+      action: dispute.action, // Pass the action to determine resolution type
     );
   }
 
@@ -413,6 +416,7 @@ class DisputeData {
           : DateTime.now().millisecondsSinceEpoch
       ),
       userRole: UserRole.unknown, // Default value for legacy method
+      action: null, // Legacy method doesn't have action info
     );
   }
 
@@ -466,9 +470,13 @@ class DisputeData {
       case DisputeDescriptionKey.inProgress:
         return 'No messages yet';
       case DisputeDescriptionKey.resolved:
+        // Check if we have action info to provide more specific message
+        if (action == 'admin-settled') {
+          return 'Order was settled by admin';
+        }
         return 'Dispute has been resolved';
       case DisputeDescriptionKey.sellerRefunded:
-        return 'Dispute resolved - seller refunded';
+        return 'Order was canceled - seller refunded';
       case DisputeDescriptionKey.unknown:
         return 'Unknown status';
     }

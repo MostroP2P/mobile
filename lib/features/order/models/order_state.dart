@@ -142,11 +142,20 @@ class OrderState {
       );
       _logger.i('Updated dispute status to in-progress for adminTookDispute action');
     } else if (message.action == Action.adminSettled && dispute != null) {
-      // When admin settles dispute, update status to resolved
+      // When admin settles dispute, update status to resolved with settlement info
       updatedDispute = dispute!.copyWith(
         status: 'resolved',
+        action: 'admin-settled', // Store the resolution type
       );
       _logger.i('Updated dispute status to resolved for adminSettled action');
+    } else if (message.action == Action.adminCanceled && dispute != null) {
+      // When admin cancels order, update dispute status to seller-refunded
+      updatedDispute = dispute!.copyWith(
+        status: 'seller-refunded',
+        action: 'admin-canceled', // Store the resolution type
+      );
+      _logger.i('Updated dispute status to seller-refunded for adminCanceled action');
+      _logger.i('Dispute before update: ${dispute!.status}, after update: ${updatedDispute.status}');
     }
 
     final newState = copyWith(
