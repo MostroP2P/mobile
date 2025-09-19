@@ -1,5 +1,8 @@
-import 'package:mostro_mobile/data/models/payload.dart';
+import 'package:flutter/material.dart';
 import 'package:mostro_mobile/data/models/order.dart';
+import 'package:mostro_mobile/data/models/payload.dart';
+import 'package:mostro_mobile/features/order/models/order_state.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 /// Enum representing semantic keys for dispute descriptions
 /// These keys will be used for localization in the UI
@@ -333,11 +336,11 @@ class DisputeData {
   });
 
   /// Create DisputeData from Dispute object with OrderState context
-  factory DisputeData.fromDispute(Dispute dispute, {dynamic orderState}) {
+  factory DisputeData.fromDispute(Dispute dispute, {OrderState? orderState}) {
     // Determine if user is the creator based on the OrderState action if available
     bool? isUserCreator;
     
-    if (orderState != null && orderState.action != null) {
+    if (orderState != null) {
       // Use OrderState action which has the correct dispute initiation info
       final actionString = orderState.action.toString();
       isUserCreator = actionString == 'dispute-initiated-by-you';
@@ -458,29 +461,27 @@ class DisputeData {
     }
   }
   
-  /// Backward compatibility getter for description
-  String get description {
+  /// Get localized description message
+  String getLocalizedDescription(BuildContext context) {
+    final l10n = S.of(context)!;
     switch (descriptionKey) {
       case DisputeDescriptionKey.initiatedByUser:
-        return 'You opened this dispute';
+        return l10n.disputeDescriptionInitiatedByUser;
       case DisputeDescriptionKey.initiatedByPeer:
-        return 'A dispute was opened against you';
+        return l10n.disputeDescriptionInitiatedByPeer;
       case DisputeDescriptionKey.initiatedPendingAdmin:
-        return 'An admin will take this dispute soon';
+        return l10n.disputeDescriptionInitiatedPendingAdmin;
       case DisputeDescriptionKey.inProgress:
-        return 'No messages yet';
+        return l10n.disputeDescriptionInProgress;
       case DisputeDescriptionKey.resolved:
-        // Check if we have action info to provide more specific message
-        if (action == 'admin-settled') {
-          return 'Order was settled by admin';
-        }
-        return 'Dispute has been resolved';
+        return l10n.disputeDescriptionResolved;
       case DisputeDescriptionKey.sellerRefunded:
-        return 'Order was canceled - seller refunded';
+        return l10n.disputeDescriptionSellerRefunded;
       case DisputeDescriptionKey.unknown:
-        return 'Unknown status';
+        return l10n.disputeDescriptionUnknown;
     }
   }
+
   
   /// Backward compatibility getter for userIsBuyer
   bool get userIsBuyer => userRole == UserRole.buyer;
