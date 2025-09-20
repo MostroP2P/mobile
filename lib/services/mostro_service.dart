@@ -76,9 +76,36 @@ class MostroService {
       _logger.i(
         'Received DM, Event ID: ${decryptedEvent.id} with payload: ${decryptedEvent.content}',
       );
+
+      await _maybeLinkChildOrder(msg, matchingSession);
     } catch (e) {
       _logger.e('Error processing event', error: e);
     }
+  }
+
+  Future<void> _maybeLinkChildOrder(
+    MostroMessage message,
+    Session session,
+  ) async {
+    if (message.action != Action.newOrder || message.id == null) {
+      return;
+    }
+
+    if (session.orderId != null || session.parentOrderId == null) {
+      return;
+    }
+
+    final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+    await sessionNotifier.linkChildSessionToOrderId(
+      message.id!,
+      session.tradeKey.public,
+    );
+
+    ref.read(orderNotifierProvider(message.id!).notifier).subscribe();
+
+    _logger.i(
+      'Linked child order ${message.id} to parent ${session.parentOrderId}',
+    );
   }
 
   Future<void> submitOrder(MostroMessage order) async {
@@ -168,6 +195,21 @@ class MostroService {
       final nextKeyIndex = await keyManager.getNextKeyIndex();
       final nextTradeKey =
           await keyManager.deriveTradeKeyFromIndex(nextKeyIndex);
+
+      final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+      final currentSession = sessionNotifier.getSessionByOrderId(orderId);
+      if (currentSession != null && currentSession.role != null) {
+        await sessionNotifier.createChildOrderSession(
+          tradeKey: nextTradeKey,
+          keyIndex: nextKeyIndex,
+          parentOrderId: orderId,
+          role: currentSession.role!,
+        );
+      } else {
+        _logger.w(
+          'Release invoked for $orderId but session role missing; child session will not be pre-created.',
+        );
+      }
 
       payload = NextTrade(
         key: nextTradeKey.public,
