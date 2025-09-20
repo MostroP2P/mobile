@@ -8,6 +8,7 @@ import 'package:mostro_mobile/features/notifications/providers/notifications_pro
 import 'package:mostro_mobile/features/notifications/widgets/notification_type_icon.dart';
 import 'package:mostro_mobile/features/notifications/widgets/notification_content.dart';
 import 'package:mostro_mobile/features/notifications/widgets/notification_menu.dart';
+import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
 class NotificationItem extends ConsumerWidget {
@@ -80,7 +81,7 @@ class NotificationItem extends ConsumerWidget {
           context.push('/order_book');
           break;
         case mostro_action.Action.rate:
-          context.push('/rate_user/${notification.orderId}');
+          _handleRateNotificationTap(context, ref);
           break;
         case mostro_action.Action.payInvoice:
         case mostro_action.Action.fiatSentOk:
@@ -123,6 +124,20 @@ class NotificationItem extends ConsumerWidget {
         case mostro_action.Action.tradePubkey:
           break;
       }
+    }
+  }
+
+  void _handleRateNotificationTap(BuildContext context, WidgetRef ref) {
+    final orderId = notification.orderId;
+    if (orderId == null) return;
+    
+    // Check the current order state to see if rating has already been received
+    final orderState = ref.read(orderNotifierProvider(orderId));
+    
+    if (orderState.action == mostro_action.Action.rateReceived) {
+      context.push('/trade_detail/$orderId');
+    } else {
+      context.push('/rate_user/$orderId');
     }
   }
 
