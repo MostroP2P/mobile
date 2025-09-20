@@ -13,6 +13,9 @@ class Session {
   final bool fullPrivacy;
   final DateTime startTime;
   String? orderId;
+  /// Tracks the order that originated this session when it represents
+  /// the preemptive child generated from a range order release.
+  String? parentOrderId;
   Role? role;
   Peer? _peer;
   NostrKeyPairs? _sharedKey;
@@ -24,6 +27,7 @@ class Session {
     required this.fullPrivacy,
     required this.startTime,
     this.orderId,
+    this.parentOrderId,
     this.role,
     Peer? peer,
   }) {
@@ -42,6 +46,7 @@ class Session {
         'full_privacy': fullPrivacy,
         'start_time': startTime.toIso8601String(),
         'order_id': orderId,
+        'parent_order_id': parentOrderId,
         'role': role?.value,
         'peer': peer?.publicKey,
       };
@@ -128,6 +133,19 @@ class Session {
         }
       }
 
+      // Parent order reference (only set for range order child sessions)
+      String? parentOrderId;
+      final parentOrderValue = json['parent_order_id'];
+      if (parentOrderValue != null) {
+        if (parentOrderValue is String && parentOrderValue.isNotEmpty) {
+          parentOrderId = parentOrderValue;
+        } else if (parentOrderValue is! String) {
+          throw FormatException(
+            'Invalid parent_order_id type: ${parentOrderValue.runtimeType}',
+          );
+        }
+      }
+
       return Session(
         masterKey: masterKeyValue,
         tradeKey: tradeKeyValue,
@@ -135,6 +153,7 @@ class Session {
         fullPrivacy: fullPrivacy,
         startTime: startTime,
         orderId: json['order_id']?.toString(),
+        parentOrderId: parentOrderId,
         role: role,
         peer: peer,
       );

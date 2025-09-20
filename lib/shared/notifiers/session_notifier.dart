@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/enums/role.dart';
@@ -17,6 +18,11 @@ class SessionNotifier extends StateNotifier<List<Session>> {
   Settings _settings;
   final Map<String, Session> _sessions = {};
   final Map<int, Session> _requestIdToSession = {};
+  // Holds sessions that represent the soon-to-arrive child order created
+  // when releasing a range order. These do not have a definitive orderId yet
+  // but we must start listening for messages encrypted to their trade key
+  // immediately.
+  final Map<String, Session> _pendingChildSessions = {};
 
   Timer? _cleanupTimer;
   final Logger _logger = Logger();
@@ -41,8 +47,16 @@ class SessionNotifier extends StateNotifier<List<Session>> {
         _sessions.remove(session.orderId!);
       }
     }
-    state = sessions;
+    _emitState();
     _scheduleCleanup();
+  }
+
+  void _emitState() {
+    final combined = <Session>[];
+    combined.addAll(_sessions.values);
+    combined.addAll(_requestIdToSession.values);
+    combined.addAll(_pendingChildSessions.values);
+    state = combined;
   }
 
   void _scheduleCleanup() {
@@ -63,7 +77,12 @@ class SessionNotifier extends StateNotifier<List<Session>> {
         _sessions.remove(session.orderId!);
       }
     }
-    state = sessions;
+
+    _pendingChildSessions.removeWhere(
+      (_, session) => session.startTime.isBefore(cutoff),
+    );
+
+    _emitState();
   }
 
   void updateSettings(Settings settings) {
@@ -91,18 +110,20 @@ class SessionNotifier extends StateNotifier<List<Session>> {
 
     if (orderId != null) {
       _sessions[orderId] = session;
-      state = sessions;
     } else if (requestId != null) {
       _requestIdToSession[requestId] = session;
-      state = [...sessions, session];
     }
+
+    _emitState();
     return session;
   }
 
   Future<void> saveSession(Session session) async {
     _sessions[session.orderId!] = session;
+    _requestIdToSession.removeWhere((_, value) => identical(value, session));
+    _pendingChildSessions.remove(session.tradeKey.public);
     await _storage.putSession(session);
-    state = sessions;
+    _emitState();
   }
 
   Future<void> updateSession(
@@ -111,7 +132,7 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     if (session != null) {
       update(session);
       await _storage.putSession(session);
-      state = sessions;
+      _emitState();
     }
   }
 
@@ -132,13 +153,11 @@ class SessionNotifier extends StateNotifier<List<Session>> {
   }
 
   Session? getSessionByTradeKey(String tradeKey) {
-    try {
-      return state.firstWhere(
-        (s) => s.tradeKey.public == tradeKey,
-      );
-    } on StateError {
-      return null;
-    }
+    return _sessions.values
+            .firstWhereOrNull((s) => s.tradeKey.public == tradeKey) ??
+        _pendingChildSessions[tradeKey] ??
+        _requestIdToSession.values
+            .firstWhereOrNull((s) => s.tradeKey.public == tradeKey);
   }
 
   Future<Session?> loadSession(int keyIndex) async {
@@ -151,13 +170,21 @@ class SessionNotifier extends StateNotifier<List<Session>> {
   Future<void> reset() async {
     await _storage.deleteAll();
     _sessions.clear();
+    _pendingChildSessions.clear();
+    _requestIdToSession.clear();
     state = [];
   }
 
   Future<void> deleteSession(String sessionId) async {
-    _sessions.remove(sessionId);
+    final removed = _sessions.remove(sessionId);
+    if (removed != null) {
+      _pendingChildSessions
+          .removeWhere((_, session) => identical(session, removed));
+      _requestIdToSession
+          .removeWhere((_, session) => identical(session, removed));
+    }
     await _storage.deleteSession(sessionId);
-    state = sessions;
+    _emitState();
   }
 
   /// Clean up temporary session by requestId
@@ -165,11 +192,66 @@ class SessionNotifier extends StateNotifier<List<Session>> {
   void cleanupRequestSession(int requestId) {
     final session = _requestIdToSession.remove(requestId);
     if (session != null) {
-      // Remove from state list if it was a temporary session
-      final updatedSessions = sessions.where((s) => s != session).toList();
-      state = updatedSessions;
+      _pendingChildSessions
+          .removeWhere((_, pending) => identical(pending, session));
+      _sessions.removeWhere((_, stored) => identical(stored, session));
+      _emitState();
       _logger.d('Cleaned up temporary session for requestId: $requestId');
     }
+  }
+
+  /// Create and register a child session that will represent the upcoming
+  /// child order generated from a range order release.
+  Future<Session> createChildOrderSession({
+    required NostrKeyPairs tradeKey,
+    required int keyIndex,
+    required String parentOrderId,
+    required Role role,
+  }) async {
+    final masterKey = ref.read(keyManagerProvider).masterKeyPair!;
+
+    final session = Session(
+      startTime: DateTime.now(),
+      masterKey: masterKey,
+      keyIndex: keyIndex,
+      tradeKey: tradeKey,
+      fullPrivacy: _settings.fullPrivacyMode,
+      parentOrderId: parentOrderId,
+      role: role,
+    );
+
+    _pendingChildSessions[tradeKey.public] = session;
+    _emitState();
+
+    _logger.i(
+      'Prepared child session for parent order $parentOrderId using key index $keyIndex',
+    );
+
+    return session;
+  }
+
+  /// Link a previously prepared child session to the concrete child order id
+  /// delivered by mostrod when the new child order arrives.
+  Future<void> linkChildSessionToOrderId(
+    String childOrderId,
+    String tradeKeyPublic,
+  ) async {
+    final session = _pendingChildSessions.remove(tradeKeyPublic);
+    if (session == null) {
+      _logger.w(
+        'No pending child session found for trade key $tradeKeyPublic; nothing to link.',
+      );
+      return;
+    }
+
+    session.orderId = childOrderId;
+    _sessions[childOrderId] = session;
+    await _storage.putSession(session);
+    _emitState();
+
+    _logger.i(
+      'Linked child order $childOrderId to prepared session (parent: ${session.parentOrderId})',
+    );
   }
 
   NostrKeyPairs calculateSharedKey(
@@ -201,7 +283,7 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     await _storage.putSession(session);
     _sessions[orderId] = session;
 
-    state = sessions;
+    _emitState();
 
     _logger.d('Session updated with shared key for orderId: $orderId');
   }

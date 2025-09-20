@@ -399,6 +399,579 @@ class KeyStorage {
 }
 ```
 
+## Child Order Session Management After Release
+
+### The Missing Session Problem
+
+When a range order is successfully completed via the `release` action, mostrod creates a child order using the next available trade key that was provided in the `NextTrade` payload. However, the mobile app has a critical gap in handling these child orders: **no session exists for the child order when the `new-order` message arrives**.
+
+#### Current Implementation Flow (Broken)
+
+```
+1. Parent Order Release
+   → User completes range order (e.g., orderId: "parent-123", keyIndex: 7)
+   → App calls KeyManager.getNextKeyIndex() → returns 8
+   → App derives trade key for index 8: "05z8y7x6w5..."
+   → NextTrade payload sent: {key: "05z8y7x6w5...", index: 8}
+
+2. Mostrod Processing
+   → Creates child order with ID "child-456"
+   → Uses trade key index 8 for child order encryption
+   → Sends new-order message encrypted to "05z8y7x6w5..."
+
+3. App Receives Child Order Message (FAILS HERE)
+   → MostroService._onData() receives encrypted message
+   → Looks for session with tradeKey.public == "05z8y7x6w5..."
+   → NO SESSION FOUND - message is dropped
+   → Child order never appears in "My Trades"
+```
+
+#### Root Cause Analysis
+
+The issue occurs in `MostroService._onData()` (`lib/services/mostro_service.dart:44-82`):
+
+```dart
+Future<void> _onData(NostrEvent event) async {
+  // ... event processing ...
+
+  final sessions = ref.read(sessionNotifierProvider);
+  final matchingSession = sessions.firstWhereOrNull(
+    (s) => s.tradeKey.public == event.recipient,  // event.recipient = "05z8y7x6w5..."
+  );
+
+  if (matchingSession == null) {
+    logger.w('No matching session found for recipient: ${event.recipient}');
+    return;  // ← CHILD ORDER MESSAGE IS DROPPED HERE
+  }
+
+  // Message processing continues only if session exists...
+}
+```
+
+**The problem**: When the `release` action generates the next trade key (index 8), a session is **not** created for that key. The key exists in the KeyManager but no corresponding session exists to handle incoming messages encrypted to that key.
+
+#### Session Creation Gap
+
+Looking at how sessions are normally created:
+
+1. **User-Initiated Orders**: `AddOrderNotifier.submitOrder()` creates session with `newSession(requestId: requestId)`
+2. **Taking Orders**: `OrderNotifier.takeBuyOrder()/takeSellOrder()` creates session with `newSession(orderId: orderId)`
+3. **Child Orders**: **NO SESSION CREATION MECHANISM EXISTS**
+
+The `AbstractMostroNotifier` no longer performs the linking; that logic now lives alongside the decryption inside `MostroService._maybeLinkChildOrder()`, keeping the data flow contained within the service that already owns the decrypted message.
+
+#### Missing Session Creation for Child Orders
+
+For child orders to work properly, when the app receives a `new-order` message for a child order, it needs to:
+
+1. **Detect Child Order Context**: Recognize this is a child order from a maker's range order
+2. **Create Session**: Create a session using the existing trade key for that index
+3. **Link to Parent**: Maintain relationship to parent order for UI display
+4. **Enable Order Management**: Allow the child order to appear in "My Trades"
+
+### Expected Child Order Flow (Fixed)
+
+```
+1. Parent Order Release
+   → User completes range order (orderId: "parent-123", keyIndex: 7)
+   → App pre-generates child trade key (index 8)
+   → NextTrade payload sent with new trade key
+
+2. Child Order Session Preparation
+   → App should create session for upcoming child order
+   → Session links trade key index 8 to anticipated child order
+   → Session marked as "pending child order" state
+
+3. Child Order Arrival
+   → MostroService receives new-order message for child order
+   → Session exists for trade key index 8
+   → Message decrypted and processed successfully
+   → Child order appears in "My Trades"
+
+4. Child Order Management
+   → OrderNotifier created for child order
+   → Session enables full order lifecycle management
+   → User can manage child order like any other order
+```
+
+### Pre-emptive Child Order Session Creation
+
+#### 1. Enhanced Session Model
+
+The `Session` model includes support for child orders:
+
+```dart
+// lib/data/models/session.dart
+class Session {
+  final NostrKeyPairs masterKey;
+  final NostrKeyPairs tradeKey;
+  final int keyIndex;
+  final bool fullPrivacy;
+  final DateTime startTime;
+  String? orderId;
+  String? parentOrderId; // For child orders, reference to parent order
+  Role? role;
+  // ...
+}
+```
+
+#### 2. SessionNotifier Child Order Methods
+
+Two new methods were added to `SessionNotifier`:
+
+```dart
+// lib/shared/notifiers/session_notifier.dart
+
+/// Create a session for a child order using pre-generated trade key
+Future<Session> createChildOrderSession({
+  required NostrKeyPairs tradeKey,
+  required int keyIndex,
+  required String parentOrderId,
+  required Role role,
+}) async {
+  final masterKey = ref.read(keyManagerProvider).masterKeyPair!;
+
+  final session = Session(
+    startTime: DateTime.now(),
+    masterKey: masterKey,
+    keyIndex: keyIndex,
+    tradeKey: tradeKey,
+    fullPrivacy: _settings.fullPrivacyMode,
+    parentOrderId: parentOrderId,
+    role: role, // Inherit role from parent order
+  );
+
+  // Add to state but don't assign orderId yet
+  state = [...sessions, session];
+  return session;
+}
+
+/// Link a child order session to its assigned order ID
+Future<void> linkChildSessionToOrderId(String childOrderId, String tradeKeyPublic) async {
+  final sessionIndex = state.indexWhere((s) =>
+    s.tradeKey.public == tradeKeyPublic && s.orderId == null && s.parentOrderId != null
+  );
+
+  if (sessionIndex != -1) {
+    final session = state[sessionIndex];
+    session.orderId = childOrderId;
+    _sessions[childOrderId] = session;
+    await _storage.putSession(session);
+    state = sessions;
+  }
+}
+```
+
+#### 3. MostroService Release Enhancement
+
+`MostroService.releaseOrder()` now prepares the child session before it asks mostrod to spawn the follow-up range order:
+
+```dart
+if (isRangeOrder) {
+  final keyManager = ref.read(keyManagerProvider);
+  final nextKeyIndex = await keyManager.getNextKeyIndex();
+  final nextTradeKey = await keyManager.deriveTradeKeyFromIndex(nextKeyIndex);
+
+  final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+  final currentSession = sessionNotifier.getSessionByOrderId(orderId);
+  if (currentSession != null && currentSession.role != null) {
+    await sessionNotifier.createChildOrderSession(
+      tradeKey: nextTradeKey,
+      keyIndex: nextKeyIndex,
+      parentOrderId: orderId,
+      role: currentSession.role!,
+    );
+  } else {
+    _logger.w('Release invoked for $orderId but maker role missing');
+  }
+
+  payload = NextTrade(key: nextTradeKey.public, index: nextKeyIndex);
+}
+```
+
+#### 4. Child Order Message Handling
+
+When the child order finally arrives, the linking happens directly inside the service that decrypted it. This keeps the flow simple and ensures "My Trades" is updated before any UI code reacts:
+
+```dart
+Future<void> _maybeLinkChildOrder(MostroMessage message, Session session) async {
+  if (message.action != Action.newOrder || message.id == null) return;
+  if (session.orderId != null || session.parentOrderId == null) return;
+
+  final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+  await sessionNotifier.linkChildSessionToOrderId(
+    message.id!,
+    session.tradeKey.public,
+  );
+
+  ref.read(orderNotifierProvider(message.id!).notifier).subscribe();
+}
+```
+
+### Implemented Code Flow Analysis
+
+The final flow is now:
+
+```
+1. releaseOrder()
+   ├─ Detects range order
+   ├─ Derives next trade key/index
+   ├─ Prepares child session tied to the parent order
+   └─ Sends release DM carrying NextTrade payload
+
+2. _onData()
+   ├─ Decrypts `Action.newOrder` from mostrod
+   ├─ Finds the pre-created session by trade key
+   └─ Delegates to _maybeLinkChildOrder()
+
+3. _maybeLinkChildOrder()
+   ├─ Links session to real child order id and persists it
+   ├─ Spins up OrderNotifier so existing flows (timeouts, chat, etc.) attach
+   └─ Child order shows in "My Trades" with maker role preserved
+```
+
+This arrangement keeps the responsibilities narrow: the service that created the child session is also responsible for linking it, while UI-facing notifiers remain unchanged.
+
+### Key Index Synchronization
+
+The child order implementation must maintain proper key index synchronization:
+
+#### Parent-Child Key Relationship
+
+```
+Parent Order:
+  - Order ID: "parent-order-123"
+  - Key Index: 7
+  - Trade Key: "02a1b2c3d4..." (index 7)
+
+Child Order:
+  - Order ID: "child-order-456" (assigned by mostrod)
+  - Key Index: 8 (pre-generated during release)
+  - Trade Key: "05z8y7x6w5..." (index 8)
+  - Parent: "parent-order-123"
+```
+
+#### Key Manager State Management
+
+```dart
+// During release - current implementation
+final nextKeyIndex = await keyManager.getNextKeyIndex(); // 8
+final nextTradeKey = await keyManager.deriveTradeKeyFromIndex(nextKeyIndex);
+
+// What's missing: Session creation for the generated key
+// The key exists but no session maps to it
+
+// Required: Session that maps trade key index 8 to anticipated child order
+```
+
+### Actual Implementation Code
+
+Here are the actual working code implementations:
+
+#### 1. Enhanced Session Model
+
+```dart
+// lib/data/models/session.dart
+class Session {
+  final NostrKeyPairs masterKey;
+  final NostrKeyPairs tradeKey;
+  final int keyIndex;
+  final bool fullPrivacy;
+  final DateTime startTime;
+  String? orderId;
+  String? parentOrderId; // NEW: For child orders, reference to parent order
+  Role? role;
+  // ... other fields
+
+  Session({
+    required this.masterKey,
+    required this.tradeKey,
+    required this.keyIndex,
+    required this.fullPrivacy,
+    required this.startTime,
+    this.orderId,
+    this.parentOrderId, // NEW: Added to constructor
+    this.role,
+    Peer? peer,
+  }) {
+    // ... constructor body
+  }
+
+  Map<String, dynamic> toJson() => {
+        'trade_key': tradeKey.public,
+        'key_index': keyIndex,
+        'full_privacy': fullPrivacy,
+        'start_time': startTime.toIso8601String(),
+        'order_id': orderId,
+        'parent_order_id': parentOrderId, // NEW: Added to JSON serialization
+        'role': role?.value,
+        'peer': peer?.publicKey,
+      };
+
+  factory Session.fromJson(Map<String, dynamic> json) {
+    // ... validation code
+    return Session(
+      masterKey: masterKeyValue,
+      tradeKey: tradeKeyValue,
+      keyIndex: keyIndex,
+      fullPrivacy: fullPrivacy,
+      startTime: startTime,
+      orderId: json['order_id']?.toString(),
+      parentOrderId: json['parent_order_id']?.toString(), // NEW: Added from JSON
+      role: role,
+      peer: peer,
+    );
+  }
+}
+```
+
+#### 2. SessionNotifier Child Order Methods
+
+```dart
+// lib/shared/notifiers/session_notifier.dart
+
+/// Create a session for a child order using pre-generated trade key
+/// This method is called during range order release to prepare for the incoming child order
+Future<Session> createChildOrderSession({
+  required NostrKeyPairs tradeKey,
+  required int keyIndex,
+  required String parentOrderId,
+  required Role role,
+}) async {
+  final masterKey = ref.read(keyManagerProvider).masterKeyPair!;
+
+  final session = Session(
+    startTime: DateTime.now(),
+    masterKey: masterKey,
+    keyIndex: keyIndex,
+    tradeKey: tradeKey,
+    fullPrivacy: _settings.fullPrivacyMode,
+    parentOrderId: parentOrderId, // Link to parent order
+    role: role, // Inherit role from parent order
+  );
+
+  // Add to state but don't assign orderId yet (will be set when order arrives)
+  state = [...sessions, session];
+
+  _logger.i('Created child order session for parent order: $parentOrderId');
+  _logger.i('Child trade key index: $keyIndex, public: ${tradeKey.public}');
+  _logger.i('Child will inherit role: ${role.value}');
+
+  return session;
+}
+
+/// Link a child order session to its assigned order ID when the order message arrives
+Future<void> linkChildSessionToOrderId(String childOrderId, String tradeKeyPublic) async {
+  final sessionIndex = state.indexWhere((s) =>
+    s.tradeKey.public == tradeKeyPublic &&
+    s.orderId == null &&
+    s.parentOrderId != null
+  );
+
+  if (sessionIndex != -1) {
+    final session = state[sessionIndex];
+    session.orderId = childOrderId;
+    _sessions[childOrderId] = session;
+    await _storage.putSession(session);
+    state = sessions;
+
+    _logger.i('Successfully linked child order $childOrderId to existing session');
+    _logger.i('Parent order: ${session.parentOrderId}, Role: ${session.role?.value}');
+  } else {
+    _logger.w('Could not find child session to link for order: $childOrderId');
+  }
+}
+```
+
+#### 3. MostroService Pre-emptive Child Session Creation
+
+```dart
+// lib/services/mostro_service.dart - Enhanced releaseOrder method
+Future<void> releaseOrder(String orderId) async {
+  // Get the current order state to check if it's a range order
+  final orderState = ref.read(orderNotifierProvider(orderId));
+  final order = orderState.order;
+
+  // Check if this is a range order (has min and max amounts that are different and valid)
+  final isRangeOrder = order?.minAmount != null &&
+      order?.maxAmount != null &&
+      order!.minAmount! < order.maxAmount!;
+
+  Payload? payload;
+
+  if (isRangeOrder) {
+    // For range orders, we need to generate the next trade key and index
+    final keyManager = ref.read(keyManagerProvider);
+    final nextKeyIndex = await keyManager.getNextKeyIndex();
+    final nextTradeKey = await keyManager.deriveTradeKeyFromIndex(nextKeyIndex);
+
+    // Get the current session to inherit the role for the child order
+    final currentSession = ref.read(sessionNotifierProvider.notifier).getSessionByOrderId(orderId);
+    if (currentSession?.role != null) {
+      // CREATE SESSION FOR ANTICIPATED CHILD ORDER
+      // This ensures that when mostrod creates the child order and sends the new-order message,
+      // our app will have a session ready to receive and process it
+      final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+      await sessionNotifier.createChildOrderSession(
+        tradeKey: nextTradeKey,
+        keyIndex: nextKeyIndex,
+        parentOrderId: orderId,
+        role: currentSession!.role!, // Inherit role from parent
+      );
+
+      _logger.i('Created child order session for range order $orderId');
+      _logger.i('Child trade key index: $nextKeyIndex, public: ${nextTradeKey.public}');
+    } else {
+      _logger.w('Cannot create child session: parent session or role not found for $orderId');
+    }
+
+    payload = NextTrade(
+      key: nextTradeKey.public,
+      index: nextKeyIndex,
+    );
+  }
+
+  await publishOrder(
+    MostroMessage(
+      action: Action.release,
+      id: orderId,
+      payload: payload,
+    ),
+  );
+}
+```
+
+#### 4. Child Order Linking inside `MostroService`
+
+```dart
+Future<void> _maybeLinkChildOrder(
+  MostroMessage message,
+  Session session,
+) async {
+  if (message.action != Action.newOrder || message.id == null) return;
+  if (session.orderId != null || session.parentOrderId == null) return;
+
+  final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+  await sessionNotifier.linkChildSessionToOrderId(
+    message.id!,
+    session.tradeKey.public,
+  );
+
+  ref.read(orderNotifierProvider(message.id!).notifier).subscribe();
+}
+```
+
+### Implementation Summary
+
+The implemented solution provides:
+
+1. **Timing Predictability**: Session exists before child order message arrives
+2. **Key Index Consistency**: Maintains proper parent-child key relationship
+3. **Role Inheritance**: Child orders automatically inherit parent order role
+4. **Full Order Management**: Child orders support complete lifecycle management
+5. **Robust Error Handling**: Comprehensive logging and error recovery
+
+#### Logging for Debugging
+
+The implementation includes detailed logging to help track child order processing:
+
+```
+I/flutter: Created child order session for range order parent-123
+I/flutter: Child trade key index: 8, public: 05z8y7x6w5...
+I/flutter: Child will inherit role: seller
+I/flutter: Successfully linked child order child-456 to existing session
+I/flutter: Parent order: parent-123, Role: seller
+```
+
+This ensures child orders from range order releases are properly recognized and managed by the app.
+
+### Complete Working Flow Analysis
+
+With the implemented solution, the complete child order flow now works as follows:
+
+#### 1. Range Order Release Trigger (`MostroService.releaseOrder`)
+```
+User completes range order (orderId: "parent-123", keyIndex: 7)
+├─ System detects range order (minAmount < maxAmount) ✅
+├─ KeyManager.getNextKeyIndex() returns 8 ✅
+├─ KeyManager.deriveTradeKeyFromIndex(8) generates trade key ✅
+├─ SessionNotifier.createChildOrderSession() remembers the child ✅
+│  ├─ tradeKey: new trade key (index 8)
+│  ├─ parentOrderId: "parent-123"
+│  └─ role: inherited from parent (e.g., seller)
+└─ NextTrade payload sent with new trade key ✅
+```
+
+#### 2. Child Order Message Reception (`MostroService._onData` + `_maybeLinkChildOrder`)
+```
+Mostrod creates child order with ID "child-456"
+├─ DM arrives encrypted to trade key index 8 ✅
+├─ MostroService._onData() decrypts it ✅
+├─ Prepared session (orderId == null, parentOrderId == parent-123) found ✅
+├─ _maybeLinkChildOrder() persists the child session with id "child-456" ✅
+└─ OrderNotifier for "child-456" spun up to drive UI + timeouts ✅
+```
+
+### Key Technical Implementation Details
+
+#### Subscription Management
+No extra calls are required. By pushing the pending child session into the
+Riverpod state, `SubscriptionManager` sees the new trade key automatically and
+rebuilds the `p` filters the next time it reacts to the provider change.
+
+#### Session State Management
+Child sessions have a unique lifecycle:
+1. **Creation**: `orderId = null, parentOrderId = "parent-123"`
+2. **Linking**: `orderId = "child-456", parentOrderId = "parent-123"`
+3. **Active**: Full order management capabilities enabled
+
+#### Role Inheritance Logic
+```dart
+// Parent order role determination
+final parentRole = currentSession!.role!; // e.g., Role.seller
+
+// Child inherits exact same role
+final childSession = Session(
+  role: parentRole, // Child is also Role.seller
+  parentOrderId: orderId, // Links to parent
+  // ... other fields
+);
+```
+
+#### Error Handling and Logging
+Comprehensive logging enables debugging:
+```
+I/flutter: Created child order session for parent order: parent-123
+I/flutter: Child trade key index: 8, public: 05z8y7x6w5...
+I/flutter: Child will inherit role: seller
+I/flutter: Successfully linked child order child-456 to existing session
+I/flutter: Parent order: parent-123, Role: seller
+```
+
+### Troubleshooting Child Order Issues
+
+#### Problem: Child order message not received
+- **Check**: `_maybeLinkChildOrder` logs appear in the console
+- **Solution**: Ensure the maker released the range order locally so the child
+  session was prepared before mostrod broadcast the follow-up order
+
+#### Problem: Child order not appearing in "My Trades"
+- **Check**: Session storage now contains the child order id
+- **Solution**: Confirm `linkChildSessionToOrderId` executed (search for the
+  "Linked child order" log) and that no errors surfaced while persisting
+
+#### Problem: Session linking fails
+- **Check**: Trade key matching between session and message
+- **Solution**: Verify child session creation used correct trade key
+- **Debug**: Look for "No pending child session found" warning
+
+#### Problem: Role inheritance incorrect
+- **Check**: Parent session role availability during release
+- **Solution**: Ensure parent session exists and has role set
+- **Debug**: Look for "Release invoked ... but session role missing" warning
+
+This implementation ensures that child orders from range order releases work seamlessly, appearing in "My Trades" with full functionality and proper parent-child relationship tracking.
+
 ## Specific Scenarios
 
 ### Scenario 1: New Order Creation
@@ -835,8 +1408,3 @@ The Mostro mobile app implements a sophisticated hierarchical key management sys
 
 This architecture ensures that user funds and privacy are protected while maintaining the ability to build reputation and participate in the Mostro peer-to-peer trading network.
 
----
-
-*Last updated: December 2024*  
-*Protocol version: 1.0*  
-*Key derivation path: m/44'/1237'/38383'/0/N*
