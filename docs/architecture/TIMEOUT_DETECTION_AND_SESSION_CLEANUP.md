@@ -927,5 +927,139 @@ final session = ref.read(sessionNotifierProvider.notifier).getSessionByOrderId(o
 
 ---
 
-**Last Updated**: 2025-08-28 
+## Orphan Session Prevention System
+
+### Overview
+
+A 10-second timeout cleanup system that prevents orphan sessions when Mostro instances are unresponsive or offline. This system works alongside the real-time timeout detection to provide comprehensive session management.
+
+### Implementation
+
+#### **10-Second Cleanup Timer**
+
+When users take orders, a cleanup timer is automatically started to prevent sessions from becoming orphaned if Mostro doesn't respond:
+
+```dart
+// lib/features/order/notfiers/abstract_mostro_notifier.dart:286-305
+static void startSessionTimeoutCleanup(String orderId, Ref ref) {
+  // Cancel existing timer if any
+  _sessionTimeouts[orderId]?.cancel();
+  
+  _sessionTimeouts[orderId] = Timer(const Duration(seconds: 10), () {
+    try {
+      ref.read(sessionNotifierProvider.notifier).deleteSession(orderId);
+      Logger().i('Session cleaned up after 10s timeout: $orderId');
+      
+      // Show timeout message to user and navigate to order book
+      _showTimeoutNotificationAndNavigate(ref);
+    } catch (e) {
+      Logger().e('Failed to cleanup session: $orderId', error: e);
+    }
+    _sessionTimeouts.remove(orderId);
+  });
+  
+  Logger().i('Started 10s timeout timer for order: $orderId');
+}
+```
+
+#### **Timer Cancellation on Response**
+
+The cleanup timer is automatically cancelled when any response is received from Mostro:
+
+```dart
+// lib/features/order/notfiers/abstract_mostro_notifier.dart:92-93
+void handleEvent(MostroMessage event) {
+  // Cancel timer on ANY response from Mostro for this order
+  _cancelSessionTimeoutCleanup(orderId);
+  // ... rest of event handling
+}
+```
+
+#### **Timer Integration in Order Taking**
+
+The cleanup timer is started automatically when users take orders:
+
+```dart
+// lib/features/order/notfiers/order_notifier.dart:107-108
+Future<void> takeSellOrder(String orderId, int? amount, String? lnAddress) async {
+  // ... session creation
+  
+  // Start 10s timeout cleanup timer for phantom session prevention
+  AbstractMostroNotifier.startSessionTimeoutCleanup(orderId, ref);
+  
+  await mostroService.takeSellOrder(orderId, amount, lnAddress);
+}
+```
+
+### User Experience
+
+#### **Timeout Notification and Navigation**
+
+When the 10-second timer expires, users receive a localized notification and are automatically navigated back to the order book:
+
+```dart
+// lib/features/order/notfiers/abstract_mostro_notifier.dart:381-393
+static void _showTimeoutNotificationAndNavigate(Ref ref) {
+  try {
+    // Show snackbar with localized timeout message
+    final notificationNotifier = ref.read(notificationActionsProvider.notifier);
+    notificationNotifier.showCustomMessage('sessionTimeoutMessage');
+    
+    // Navigate to main order book screen (home)
+    final navProvider = ref.read(navigationProvider.notifier);
+    navProvider.go('/');
+  } catch (e) {
+    Logger().e('Failed to show timeout notification or navigate', error: e);
+  }
+}
+```
+
+#### **Localized Messages**
+
+The system includes localized timeout messages in all supported languages:
+
+```json
+// English
+"sessionTimeoutMessage": "No response received, check your connection and try again later"
+
+// Spanish  
+"sessionTimeoutMessage": "No hubo respuesta, verifica tu conexión e inténtalo más tarde"
+
+// Italian
+"sessionTimeoutMessage": "Nessuna risposta ricevuta, verifica la tua connessione e riprova più tardi"
+```
+
+### Integration with Real-Time Detection
+
+The orphan session prevention system works in conjunction with the real-time timeout detection:
+
+1. **Real-time detection**: Monitors public events for status changes and handles timeouts immediately when detected
+2. **30-second cleanup**: Acts as a fallback to prevent orphan sessions when Mostro is completely unresponsive
+3. **Dual protection**: Ensures sessions are cleaned up either through real-time detection or automatic timeout
+
+### Timer Management
+
+#### **Static Timer Storage**
+
+```dart
+// Timer storage for phantom session cleanup
+static final Map<String, Timer> _sessionTimeouts = {};
+```
+
+#### **Proper Cleanup on Disposal**
+
+```dart
+@override
+void dispose() {
+  subscription?.close();
+  // Cancel timer for this specific orderId if it exists
+  _sessionTimeouts[orderId]?.cancel();
+  _sessionTimeouts.remove(orderId);
+  super.dispose();
+}
+```
+
+This ensures that timers are properly cleaned up when notifiers are disposed to prevent memory leaks.
+
+**Last Updated**: September 15, 2025 
 
