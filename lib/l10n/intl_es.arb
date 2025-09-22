@@ -706,7 +706,7 @@
   "disputeDescriptionInitiatedByPeer": "Se abrió una disputa en tu contra",
   "disputeDescriptionInitiatedPendingAdmin": "Un administrador tomará esta disputa pronto",
   "disputeDescriptionInProgress": "Aún no hay mensajes",
-  "disputeDescriptionResolved": "Esta disputa ha sido resuelta",
+  "disputeDescriptionResolved": "Orden completada - el comprador recibió los sats",
   "disputeDescriptionSellerRefunded": "Orden cancelada - vendedor reembolsado",
   "disputeDescriptionUnknown": "Estado desconocido",
   "disputeAdminSettledMessage": "El administrador resolvió la orden a favor de una de las partes. Revisa tu billetera para ver los pagos.",

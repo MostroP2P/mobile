@@ -760,7 +760,7 @@
   "disputeDescriptionInitiatedByPeer": "È stata aperta una disputa contro di te",
   "disputeDescriptionInitiatedPendingAdmin": "Un amministratore prenderà presto questa disputa",
   "disputeDescriptionInProgress": "Nessun messaggio ancora",
-  "disputeDescriptionResolved": "Questa disputa è stata risolta",
+  "disputeDescriptionResolved": "Ordine completato - l'acquirente ha ricevuto i sats",
   "disputeDescriptionSellerRefunded": "Ordine cancellato - venditore rimborsato",
   "disputeDescriptionUnknown": "Stato sconosciuto",
   "disputeAdminSettledMessage": "L'amministratore ha risolto l'ordine a favore di una delle parti. Controlla il tuo wallet per eventuali pagamenti.",

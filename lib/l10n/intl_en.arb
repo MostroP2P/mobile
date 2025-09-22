@@ -700,7 +700,7 @@
   "disputeDescriptionInitiatedByPeer": "A dispute was opened against you",
   "disputeDescriptionInitiatedPendingAdmin": "An admin will take this dispute soon",
   "disputeDescriptionInProgress": "No messages yet",
-  "disputeDescriptionResolved": "This dispute has been resolved",
+  "disputeDescriptionResolved": "Order was completed - buyer received the sats",
   "disputeDescriptionSellerRefunded": "Order was canceled - seller refunded",
   "disputeDescriptionUnknown": "Unknown status",
   "disputeAdminSettledMessage": "The admin settled the order in favor of one party. Check your wallet for any payments.",
