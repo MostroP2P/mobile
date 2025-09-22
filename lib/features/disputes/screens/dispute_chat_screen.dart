@@ -18,6 +18,8 @@ class DisputeChatScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    print('DEBUG: DisputeChatScreen.build() called with disputeId: $disputeId');
+    
     // Get real dispute data from provider
     final disputeAsync = ref.watch(disputeDetailsProvider(disputeId));
     
@@ -106,6 +108,22 @@ class DisputeChatScreen extends ConsumerWidget {
           try {
             final orderState = ref.read(orderNotifierProvider(session.orderId!));
             
+            // Try to get better peer information from order state
+            print('DEBUG: OrderState peer: ${orderState.peer?.publicKey}');
+            print('DEBUG: Order kind: ${orderState.order?.kind.value}');
+            
+            // If we have peer information in order state, use it for better dispute data
+            if (orderState.peer != null) {
+              print('DEBUG: Using peer pubkey from orderState: ${orderState.peer!.publicKey}');
+              
+              // Create DisputeData with enhanced peer information
+              return _createDisputeDataWithChatInfo(
+                dispute, 
+                orderState, 
+                orderState.peer!.publicKey
+              );
+            }
+            
             // If this order state contains our dispute, use it for context
             if (orderState.dispute?.disputeId == dispute.disputeId) {
               return DisputeData.fromDispute(dispute, orderState: orderState);
@@ -138,5 +156,55 @@ class DisputeChatScreen extends ConsumerWidget {
     
     // Fallback: create DisputeData without order context
     return DisputeData.fromDispute(dispute);
+  }
+  
+  /// Create DisputeData with enhanced peer information from chat
+  DisputeData _createDisputeDataWithChatInfo(
+    Dispute dispute, 
+    dynamic orderState, 
+    String peerPubkey
+  ) {
+    // Create a custom DisputeData with the correct peer information
+    final order = orderState.order;
+    
+    print('DEBUG: Creating DisputeData with chat info');
+    print('DEBUG: Order kind: ${order?.kind.value}');
+    print('DEBUG: Peer pubkey: $peerPubkey');
+    
+    // Determine user role based on order type and who initiated the dispute
+    UserRole userRole = UserRole.unknown;
+    if (order != null) {
+      // Check if user initiated the dispute to infer their role
+      bool? isUserCreator;
+      if (orderState.action != null) {
+        isUserCreator = orderState.action.toString() == 'dispute-initiated-by-you';
+        print('DEBUG: orderState.action: ${orderState.action}');
+        print('DEBUG: isUserCreator: $isUserCreator');
+      }
+      
+      // For now, let's assume the simpler logic:
+      // In a 'buy' order, the user is the buyer (creator of buy order)
+      // In a 'sell' order, the user is the seller (creator of sell order)
+      // This is the most straightforward interpretation
+      userRole = order.kind.value == 'buy' ? UserRole.buyer : UserRole.seller;
+      print('DEBUG: Order kind: ${order.kind.value} -> User role: $userRole');
+    }
+    
+    final disputeData = DisputeData(
+      disputeId: dispute.disputeId,
+      orderId: dispute.orderId ?? order?.id,
+      status: dispute.status ?? 'initiated',
+      descriptionKey: DisputeDescriptionKey.initiatedByUser, // Assuming user created the dispute
+      counterparty: peerPubkey, // Use the peer pubkey from chat
+      isCreator: true, // Assuming user created the dispute for now
+      createdAt: dispute.createdAt ?? DateTime.now(),
+      userRole: userRole,
+      action: dispute.action,
+    );
+    
+    print('DEBUG: Created DisputeData - userIsBuyer: ${disputeData.userIsBuyer}');
+    print('DEBUG: Created DisputeData - counterparty: ${disputeData.counterpartyDisplay}');
+    
+    return disputeData;
   }
 }

@@ -121,7 +121,14 @@ class DisputeStatusContent extends StatelessWidget {
   String _getDisputeStatusText(BuildContext context) {
     switch (dispute.descriptionKey) {
       case DisputeDescriptionKey.initiatedByUser:
-        return S.of(context)!.disputeOpenedByYou(dispute.counterpartyDisplay);
+        // Use the appropriate message based on whether user is buyer or seller
+        if (dispute.userIsBuyer) {
+          // User is buyer, so dispute is against seller
+          return S.of(context)!.disputeOpenedByYouAgainstSeller(dispute.counterpartyDisplay);
+        } else {
+          // User is seller, so dispute is against buyer
+          return S.of(context)!.disputeOpenedByYouAgainstBuyer(dispute.counterpartyDisplay);
+        }
       case DisputeDescriptionKey.initiatedByPeer:
         return S.of(context)!.disputeOpenedAgainstYou(dispute.counterpartyDisplay);
       case DisputeDescriptionKey.initiatedPendingAdmin:

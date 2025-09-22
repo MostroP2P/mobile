@@ -717,6 +717,18 @@
       "counterparty": { "type": "String" }
     }
   },
+  "disputeOpenedByYouAgainstSeller": "Abriste esta disputa contra el vendedor {counterparty}, lee atentamente a continuación:",
+  "@disputeOpenedByYouAgainstSeller": {
+    "placeholders": {
+      "counterparty": { "type": "String" }
+    }
+  },
+  "disputeOpenedByYouAgainstBuyer": "Abriste esta disputa contra el comprador {counterparty}, lee atentamente a continuación:",
+  "@disputeOpenedByYouAgainstBuyer": {
+    "placeholders": {
+      "counterparty": { "type": "String" }
+    }
+  },
   "disputeOpenedAgainstYou": "Esta disputa fue abierta contra ti por {counterparty}, lee atentamente a continuación:",
   "@disputeOpenedAgainstYou": {
     "placeholders": {
