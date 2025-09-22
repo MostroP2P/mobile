@@ -184,7 +184,46 @@ Sessions are persisted using `SessionStorage` (`lib/data/repositories/session_st
 
 - **Active Sessions**: Stored in memory (`SessionNotifier._sessions` map)
 - **Persistent Storage**: Serialized to Sembast for app restart recovery
-- **Cleanup**: Automatic cleanup of expired sessions (24 hours default)
+- **Cleanup**: Automatic cleanup of expired sessions (72 hours default)
+
+### Session Lifecycle and Cleanup
+
+#### **Orphan Session Prevention**
+When users take orders, a 30-second cleanup timer is automatically started to prevent orphan sessions:
+
+```dart
+// Automatically started when taking orders
+AbstractMostroNotifier.startSessionTimeoutCleanup(orderId, ref);
+```
+
+**Purpose**: Prevents sessions from becoming orphaned when Mostro instances are unresponsive or offline.
+
+#### **Session Deletion**
+Sessions can be deleted through several mechanisms:
+
+1. **Automatic Cleanup**: 30-second timer when no response from Mostro
+2. **Timeout Detection**: Real-time detection via public events (taker scenarios)
+3. **Cancellation**: When orders are cancelled (pending/waiting states only)
+4. **Expiration**: Periodic cleanup of sessions older than 72 hours
+5. **Manual**: User-initiated session cleanup through settings
+
+#### **Session Cleanup Implementation**
+```dart
+// lib/shared/notifiers/session_notifier.dart:157-161
+Future<void> deleteSession(String sessionId) async {
+  _sessions.remove(sessionId);
+  await _storage.deleteSession(sessionId);
+  state = sessions; // Update state to trigger UI updates
+}
+```
+
+#### **Timer Management**
+The orphan session prevention system uses static timer storage for proper resource management:
+
+- **Timer Storage**: `Map<String, Timer> _sessionTimeouts`
+- **Automatic Cancellation**: Timers cancelled when Mostro responds
+- **Disposal Cleanup**: Timers cleaned up when notifiers are disposed
+- **Memory Safety**: Prevents timer-related memory leaks
 
 ## Order Creation Flow
 
@@ -837,6 +876,6 @@ This architecture ensures that user funds and privacy are protected while mainta
 
 ---
 
-*Last updated: December 2024*  
+*Last updated: September 15, 2025*  
 *Protocol version: 1.0*  
 *Key derivation path: m/44'/1237'/38383'/0/N*
