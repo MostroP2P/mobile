@@ -211,12 +211,16 @@ class _DisputeMessagesListState extends State<DisputeMessagesList> {
   }
 
   List<DisputeChat> _getMockMessages() {
-    if (!DisputeMockData.isMockEnabled) {
-      // TODO: Load real messages here when mock is disabled
-      return [];
+    // For now, return empty list for real implementation
+    // In the future, this should load real dispute chat messages
+    // from the dispute chat provider or repository
+    
+    // Only use mock data in debug mode for UI development
+    if (DisputeMockData.isMockEnabled && widget.status != 'initiated') {
+      return DisputeMockData.getMockMessages(widget.disputeId, widget.status);
     }
     
-    // Use mock data from the centralized mock file
-    return DisputeMockData.getMockMessages(widget.disputeId, widget.status);
+    // Return empty list for initiated status or when mock is disabled
+    return [];
   }
 }
