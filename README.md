@@ -107,6 +107,23 @@ Connect your device and run:
 flutter run
 ```
 
+### Using Custom Mostro Public Key
+
+By default, the app uses the production Mostro public key. For development or testing with a different Mostro daemon, you can specify a custom public key using the `MOSTRO_PUB_KEY` environment variable:
+
+```bash
+# For development/testing
+flutter run --dart-define=MOSTRO_PUB_KEY=your_custom_mostro_public_key
+
+# Example with a test key
+flutter run --dart-define=MOSTRO_PUB_KEY=0a537332f2d569059add3fd2e376e1d6b8c1e1b9f7a999ac2592b4afbba74a00
+```
+
+This is particularly useful when:
+- Testing with a local Mostro daemon
+- Using different Mostro instances for development
+- Running integration tests with specific configurations
+
 ## Setting up Mostro Daemon
 
 1. Clone the Mostro repository:
@@ -309,4 +326,3 @@ This project is licensed under the MIT License. See the `LICENSE` file for detai
 - ✅ **Security**: Production-ready cryptographic implementation
 - ✅ **Localization**: Complete translation coverage for supported languages
 - ✅ **Documentation**: Comprehensive technical and user documentation
-
