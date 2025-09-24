@@ -698,8 +698,19 @@
   "disputeResolvedTitle": "Disputa resuelta",
   "disputeResolvedMessage": "Esta disputa ha sido resuelta. El mediador tomó una decisión basada en la evidencia presentada. Revisa tu billetera para ver reembolsos o pagos.",
   "disputeInProgress": "Esta disputa está actualmente en progreso. Un mediador está revisando tu caso.",
-  "disputeSellerRefunded": "Esta disputa ha sido resuelta con el vendedor siendo reembolsado.",
+  "disputeSellerRefunded": "Esta disputa se ha resuelto con el vendedor siendo reembolsado.",
   "disputeUnknownStatus": "El estado de esta disputa es desconocido.",
+  
+  "@_comment_dispute_descriptions": "Mensajes de Descripción de Disputas",
+  "disputeDescriptionInitiatedByUser": "Tú abriste esta disputa",
+  "disputeDescriptionInitiatedByPeer": "Se abrió una disputa en tu contra",
+  "disputeDescriptionInitiatedPendingAdmin": "Un administrador tomará esta disputa pronto",
+  "disputeDescriptionInProgress": "Aún no hay mensajes",
+  "disputeDescriptionResolved": "Orden completada - el comprador recibió los sats",
+  "disputeDescriptionSellerRefunded": "Orden cancelada - vendedor reembolsado",
+  "disputeDescriptionUnknown": "Estado desconocido",
+  "disputeAdminSettledMessage": "El administrador resolvió la orden a favor de una de las partes. Revisa tu billetera para ver los pagos.",
+  "disputeSellerRefundedMessage": "El administrador canceló la orden y reembolsó al vendedor. La disputa está ahora cerrada.",
   "disputeOpenedByYou": "Abriste esta disputa contra el comprador {counterparty}, lee atentamente a continuación:",
   "@disputeOpenedByYou": {
     "placeholders": {

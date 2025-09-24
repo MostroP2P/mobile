@@ -1,5 +1,10 @@
-import 'package:mostro_mobile/data/models/payload.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:mostro_mobile/data/enums.dart' as enums;
 import 'package:mostro_mobile/data/models/order.dart';
+import 'package:mostro_mobile/data/models/payload.dart';
+import 'package:mostro_mobile/features/order/models/order_state.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 /// Enum representing semantic keys for dispute descriptions
 /// These keys will be used for localization in the UI
@@ -318,6 +323,7 @@ class DisputeData {
   final bool? isCreator;
   final DateTime createdAt;
   final UserRole userRole;
+  final String? action; // Store the action that resolved the dispute
 
   DisputeData({
     required this.disputeId,
@@ -328,23 +334,34 @@ class DisputeData {
     this.isCreator,
     required this.createdAt,
     required this.userRole,
+    this.action,
   });
 
   /// Create DisputeData from Dispute object with OrderState context
-  factory DisputeData.fromDispute(Dispute dispute, {dynamic orderState}) {
+  factory DisputeData.fromDispute(Dispute dispute, {OrderState? orderState}) {
     // Determine if user is the creator based on the OrderState action if available
     bool? isUserCreator;
     
-    if (orderState != null && orderState.action != null) {
+    if (orderState != null) {
       // Use OrderState action which has the correct dispute initiation info
-      final actionString = orderState.action.toString();
-      isUserCreator = actionString == 'dispute-initiated-by-you';
+      if (kDebugMode) {
+        debugPrint('DisputeData.fromDispute: orderState.action = ${orderState.action}');
+      }
+      isUserCreator = orderState.action == enums.Action.disputeInitiatedByYou;
     } else if (dispute.action != null) {
-      // Fallback to dispute action - this should now be set correctly
-      isUserCreator = dispute.action == 'dispute-initiated-by-you';
+      // Fallback to dispute action - convert string to enum for comparison
+      if (kDebugMode) {
+        debugPrint('DisputeData.fromDispute: dispute.action = "${dispute.action}"');
+      }
+      // Parse the action string to enum for proper comparison
+      final disputeAction = _parseActionFromString(dispute.action!);
+      isUserCreator = disputeAction == enums.Action.disputeInitiatedByYou;
     } else {
       // If no action info is available, leave as null (unknown state)
       // This removes the assumption that user is creator by default
+      if (kDebugMode) {
+        debugPrint('DisputeData.fromDispute: No action info available, setting isUserCreator = null');
+      }
       isUserCreator = null;
     }
     
@@ -372,7 +389,11 @@ class DisputeData {
     }
 
     // Get the appropriate description key based on status and creator
-    final descriptionKey = _getDescriptionKeyForStatus(dispute.status ?? 'unknown', isUserCreator);
+    final descriptionKey = _getDescriptionKeyForStatus(
+      dispute.status ?? 'unknown', 
+      isUserCreator,
+      hasAdmin: dispute.hasAdmin,
+    );
 
     return DisputeData(
       disputeId: dispute.disputeId,
@@ -383,6 +404,7 @@ class DisputeData {
       isCreator: isUserCreator,
       createdAt: dispute.createdAt ?? DateTime.now(),
       userRole: userRole,
+      action: dispute.action, // Pass the action to determine resolution type
     );
   }
 
@@ -409,6 +431,7 @@ class DisputeData {
           : DateTime.now().millisecondsSinceEpoch
       ),
       userRole: UserRole.unknown, // Default value for legacy method
+      action: null, // Legacy method doesn't have action info
     );
   }
 
@@ -425,15 +448,28 @@ class DisputeData {
   }
 
   /// Get a description key for the dispute status
-  static DisputeDescriptionKey _getDescriptionKeyForStatus(String status, bool? isUserCreator) {
+  static DisputeDescriptionKey _getDescriptionKeyForStatus(String status, bool? isUserCreator, {bool hasAdmin = false}) {
+    if (kDebugMode) {
+      debugPrint('_getDescriptionKeyForStatus: status="$status", isUserCreator=$isUserCreator, hasAdmin=$hasAdmin');
+    }
     switch (status.toLowerCase()) {
       case 'initiated':
-        if (isUserCreator == null) {
-          return DisputeDescriptionKey.initiatedPendingAdmin; // Waiting for admin assignment
+        // If admin has been assigned, it's in progress even if status says initiated
+        if (hasAdmin) {
+          if (kDebugMode) {
+            debugPrint('_getDescriptionKeyForStatus: returning inProgress (hasAdmin=true)');
+          }
+          return DisputeDescriptionKey.inProgress;
         }
-        return isUserCreator
+        // For 'initiated' status, always show "admin will take this dispute soon"
+        // regardless of who created it, since the key info is that it's waiting for admin
+        if (kDebugMode) {
+          debugPrint('_getDescriptionKeyForStatus: returning initiatedPendingAdmin (status=initiated, waiting for admin)');
+        }
+        return isUserCreator == true
           ? DisputeDescriptionKey.initiatedByUser
-          : DisputeDescriptionKey.initiatedByPeer;
+          : DisputeDescriptionKey.initiatedPendingAdmin;
+
       case 'in-progress':
         return DisputeDescriptionKey.inProgress;
       case 'resolved':
@@ -442,29 +478,36 @@ class DisputeData {
       case 'seller-refunded':
         return DisputeDescriptionKey.sellerRefunded;
       default:
+        if (kDebugMode) {
+          debugPrint('_getDescriptionKeyForStatus: returning UNKNOWN for status="$status"');
+        }
         return DisputeDescriptionKey.unknown;
     }
   }
   
-  /// Backward compatibility getter for description
-  String get description {
+  /// Get localized description message
+  String getLocalizedDescription(BuildContext context) {
+    final l10n = S.of(context)!;
     switch (descriptionKey) {
       case DisputeDescriptionKey.initiatedByUser:
-        return 'You opened this dispute';
+        return l10n.disputeDescriptionInitiatedByUser;
       case DisputeDescriptionKey.initiatedByPeer:
-        return 'A dispute was opened against you';
+
+        return l10n.disputeDescriptionInitiatedByPeer;
       case DisputeDescriptionKey.initiatedPendingAdmin:
-        return 'Waiting for admin assignment';
+        return l10n.disputeDescriptionInitiatedPendingAdmin;
+
       case DisputeDescriptionKey.inProgress:
-        return 'Dispute is being reviewed by an admin';
+        return l10n.disputeDescriptionInProgress;
       case DisputeDescriptionKey.resolved:
-        return 'Dispute has been resolved';
+        return l10n.disputeDescriptionResolved;
       case DisputeDescriptionKey.sellerRefunded:
-        return 'Dispute resolved - seller refunded';
+        return l10n.disputeDescriptionSellerRefunded;
       case DisputeDescriptionKey.unknown:
-        return 'Unknown status';
+        return l10n.disputeDescriptionUnknown;
     }
   }
+
   
   /// Backward compatibility getter for userIsBuyer
   bool get userIsBuyer => userRole == UserRole.buyer;
@@ -474,4 +517,25 @@ class DisputeData {
   
   /// Convenience getter for counterparty with fallback
   String get counterpartyDisplay => counterparty ?? DisputeSemanticKeys.unknownCounterparty;
+  
+  /// Parse action string to Action enum
+  /// This handles the conversion from stored string actions to enum values
+  static enums.Action? _parseActionFromString(String actionString) {
+    // Map common action strings to enum values
+    switch (actionString.toLowerCase()) {
+      case 'dispute-initiated-by-you':
+        return enums.Action.disputeInitiatedByYou;
+      case 'dispute-initiated-by-peer':
+        return enums.Action.disputeInitiatedByPeer;
+      case 'admin-took-dispute':
+        return enums.Action.adminTookDispute;
+      case 'admin-settled':
+        return enums.Action.adminSettled;
+      default:
+        if (kDebugMode) {
+          debugPrint('_parseActionFromString: Unknown action string "$actionString"');
+        }
+        return null;
+    }
+  }
 }
