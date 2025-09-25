@@ -141,11 +141,20 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
           break;
         }
 
-        // Update session and state
+        // Update session and state with correct peer based on session role
         final sessionProvider = ref.read(sessionNotifierProvider.notifier);
-        final peer = order.buyerTradePubkey != null
-            ? Peer(publicKey: order.buyerTradePubkey!)
-            : null;
+
+        // Get the correct peer public key based on current user's role
+        String? peerPubkey;
+        if (session.role == Role.buyer) {
+          // If I'm the buyer, the seller is my peer
+          peerPubkey = order.sellerTradePubkey;
+        } else if (session.role == Role.seller) {
+          // If I'm the seller, the buyer is my peer
+          peerPubkey = order.buyerTradePubkey;
+        }
+
+        final peer = peerPubkey != null ? Peer(publicKey: peerPubkey) : null;
         sessionProvider.updateSession(orderId, (s) => s.peer = peer);
         state = state.copyWith(peer: peer);
         
@@ -172,11 +181,20 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         final order = event.getPayload<Order>();
         if (order == null) return;
 
-        // Update session and state
+        // Update session and state with correct peer based on session role
         final sessionProvider = ref.read(sessionNotifierProvider.notifier);
-        final peer = order.sellerTradePubkey != null
-            ? Peer(publicKey: order.sellerTradePubkey!)
-            : null;
+
+        // Get the correct peer public key based on current user's role
+        String? peerPubkey;
+        if (session.role == Role.buyer) {
+          // If I'm the buyer, the seller is my peer
+          peerPubkey = order.sellerTradePubkey;
+        } else if (session.role == Role.seller) {
+          // If I'm the seller, the buyer is my peer
+          peerPubkey = order.buyerTradePubkey;
+        }
+
+        final peer = peerPubkey != null ? Peer(publicKey: peerPubkey) : null;
         sessionProvider.updateSession(orderId, (s) => s.peer = peer);
         state = state.copyWith(peer: peer);
         

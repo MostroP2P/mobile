@@ -17,16 +17,10 @@ class DisputeInfoCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Debug logging
-    print('DEBUG: DisputeInfoCard - counterpartyDisplay: ${dispute.counterpartyDisplay}');
-    print('DEBUG: DisputeInfoCard - userIsBuyer: ${dispute.userIsBuyer}');
-    
     // Resolve counterparty pubkey to readable nym
-    final counterpartyNym = dispute.counterpartyDisplay != S.of(context)!.unknown 
+    final counterpartyNym = dispute.counterpartyDisplay != S.of(context)!.unknown
         ? ref.watch(nickNameProvider(dispute.counterpartyDisplay))
         : S.of(context)!.unknown;
-        
-    print('DEBUG: DisputeInfoCard - resolved nym: $counterpartyNym');
     
     return Container(
       padding: const EdgeInsets.all(16),

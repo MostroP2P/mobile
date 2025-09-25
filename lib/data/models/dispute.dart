@@ -368,13 +368,12 @@ class DisputeData {
     // Try to get counterparty info from order state and determine correct role
     String? counterpartyName;
     UserRole userRole = UserRole.unknown;
-    
-    if (orderState != null) {
-      // Get the counterparty nym using the same approach as chat
-      if (orderState.peer != null) {
-        counterpartyName = orderState.peer!.publicKey; // This will be resolved by nickNameProvider in the UI
-      }
-    } else if (dispute.adminPubkey != null && dispute.status != 'resolved') {
+
+    if (orderState?.peer != null) {
+      counterpartyName = orderState!.peer!.publicKey; // This will be resolved by nickNameProvider in the UI
+    }
+
+    if (dispute.adminPubkey != null && dispute.status != 'resolved') {
       // Only use admin pubkey as counterparty if dispute is not resolved and no peer info
       // For resolved disputes, we don't want to show admin as counterparty
       counterpartyName = dispute.adminPubkey;
@@ -384,12 +383,6 @@ class DisputeData {
     if (orderState != null && orderState.order != null) {
       final order = orderState.order!;
       
-      if (kDebugMode) {
-        debugPrint('DEBUG: DisputeData.fromDispute - order.kind: ${order.kind.value}');
-        debugPrint('DEBUG: DisputeData.fromDispute - isUserCreator: $isUserCreator');
-        debugPrint('DEBUG: DisputeData.fromDispute - masterBuyerPubkey: ${order.masterBuyerPubkey}');
-        debugPrint('DEBUG: DisputeData.fromDispute - masterSellerPubkey: ${order.masterSellerPubkey}');
-      }
       
       // Try to determine user role by checking master pubkeys first
       // This is the most accurate way to determine the user's role
@@ -419,10 +412,6 @@ class DisputeData {
         // In a 'buy' order, the user is typically the buyer
         // In a 'sell' order, the user is typically the seller
         userRole = order.kind.value == 'buy' ? UserRole.buyer : UserRole.seller;
-      }
-      
-      if (kDebugMode) {
-        debugPrint('DEBUG: DisputeData.fromDispute - determined userRole: $userRole');
       }
     }
 
