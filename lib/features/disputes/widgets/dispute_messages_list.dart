@@ -4,7 +4,6 @@ import 'package:mostro_mobile/data/models/dispute_chat.dart';
 import 'package:mostro_mobile/data/models/dispute.dart';
 import 'package:mostro_mobile/features/disputes/widgets/dispute_message_bubble.dart';
 import 'package:mostro_mobile/features/disputes/widgets/dispute_info_card.dart';
-import 'package:mostro_mobile/features/disputes/data/dispute_mock_data.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
 class DisputeMessagesList extends StatefulWidget {
@@ -79,7 +78,13 @@ class _DisputeMessagesListState extends State<DisputeMessagesList> {
               ? Column(
                   children: [
                     DisputeInfoCard(dispute: widget.disputeData),
-                    Expanded(child: _buildWaitingForAdmin(context)),
+                    // Only show waiting message if dispute is in 'initiated' status
+                    // If it's 'in-progress', admin is already assigned, so show empty chat area
+                    Expanded(
+                      child: widget.status == 'initiated' 
+                        ? _buildWaitingForAdmin(context)
+                        : _buildEmptyChatArea(context)
+                    ),
                   ],
                 )
               : ListView.builder(
@@ -138,6 +143,23 @@ class _DisputeMessagesListState extends State<DisputeMessagesList> {
               textAlign: TextAlign.center,
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyChatArea(BuildContext context) {
+    // Empty chat area for when admin is assigned but no messages yet
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Text(
+          S.of(context)?.noMessagesYet ?? 'No messages yet',
+          style: TextStyle(
+            color: AppTheme.textInactive,
+            fontSize: 16,
+          ),
+          textAlign: TextAlign.center,
         ),
       ),
     );
@@ -215,12 +237,8 @@ class _DisputeMessagesListState extends State<DisputeMessagesList> {
     // In the future, this should load real dispute chat messages
     // from the dispute chat provider or repository
     
-    // Only use mock data in debug mode for UI development
-    if (DisputeMockData.isMockEnabled && widget.status != 'initiated') {
-      return DisputeMockData.getMockMessages(widget.disputeId, widget.status);
-    }
-    
-    // Return empty list for initiated status or when mock is disabled
+    // Always return empty list - no mock messages should appear
+    // Mock messages were causing confusion in the UI
     return [];
   }
 }

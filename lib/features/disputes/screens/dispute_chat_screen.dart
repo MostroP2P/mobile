@@ -106,9 +106,10 @@ class DisputeChatScreen extends ConsumerWidget {
           try {
             final orderState = ref.read(orderNotifierProvider(session.orderId!));
 
-            // If we have peer information in session, use it for better dispute data
-            if (orderState.peer != null && session.peer != null) {
-              // Create DisputeData with enhanced peer information
+            // Always prioritize session.peer information when available
+            // This ensures consistent peer information across all dispute states
+            if (session.peer != null) {
+              // Create DisputeData with enhanced peer information from session
               return _createDisputeDataWithChatInfo(
                 dispute,
                 orderState,
@@ -116,10 +117,22 @@ class DisputeChatScreen extends ConsumerWidget {
               );
             }
 
+            // If no session.peer but orderState.peer exists, use that
+            if (orderState.peer != null) {
+              return _createDisputeDataWithChatInfo(
+                dispute,
+                orderState,
+                orderState.peer!.publicKey
+              );
+            }
+
             // If this order state contains our dispute, use it for context
             if (orderState.dispute?.disputeId == dispute.disputeId) {
               return DisputeData.fromDispute(dispute, orderState: orderState);
             }
+
+            // Use order state even if it doesn't contain the dispute yet
+            return DisputeData.fromDispute(dispute, orderState: orderState);
           } catch (e) {
             // Continue checking other sessions
             continue;
@@ -127,15 +140,18 @@ class DisputeChatScreen extends ConsumerWidget {
         }
       }
 
-      // If we didn't find a matching order state, try to find any session with the same orderId
-      // This helps when the dispute exists but the order state doesn't have the dispute yet
+      // If we didn't find exact match, try to find any session with peer info
+      // This is a fallback to ensure we get peer information when possible
       for (final session in sessions) {
-        if (session.orderId == dispute.orderId) {
+        if (session.peer != null) {
           try {
             final orderState = ref.read(orderNotifierProvider(session.orderId!));
-            // Use this order state even if it doesn't contain the dispute
-            // This will help get the correct orderId and peer information
-            return DisputeData.fromDispute(dispute, orderState: orderState);
+            // Use this session's peer info as fallback
+            return _createDisputeDataWithChatInfo(
+              dispute,
+              orderState,
+              session.peer!.publicKey
+            );
           } catch (e) {
             // Continue checking other sessions
             continue;
@@ -144,24 +160,6 @@ class DisputeChatScreen extends ConsumerWidget {
       }
     } catch (e) {
       // Fallback to basic conversion
-    }
-
-    // Fallback: create DisputeData without order context, but try to find any orderState
-    try {
-      final sessions = ref.read(sessionNotifierProvider);
-      if (sessions.isNotEmpty) {
-        // Try to use the first session's orderState as a fallback
-        for (final session in sessions) {
-          try {
-            final orderState = ref.read(orderNotifierProvider(session.orderId!));
-            return DisputeData.fromDispute(dispute, orderState: orderState);
-          } catch (e) {
-            continue;
-          }
-        }
-      }
-    } catch (e) {
-      // Continue with final fallback
     }
 
     return DisputeData.fromDispute(dispute);
@@ -173,29 +171,23 @@ class DisputeChatScreen extends ConsumerWidget {
     dynamic orderState, 
     String peerPubkey
   ) {
-    // Create a custom DisputeData with the correct peer information
-    final order = orderState.order;
-
-    // Determine user role based on order type and who initiated the dispute
-    UserRole userRole = UserRole.unknown;
-    if (order != null) {
-      // For now, let's assume the simpler logic:
-      // In a 'buy' order, the user is the buyer (creator of buy order)
-      // In a 'sell' order, the user is the seller (creator of sell order)
-      // This is the most straightforward interpretation
-      userRole = order.kind.value == 'buy' ? UserRole.buyer : UserRole.seller;
-    }
-
+    // Use the same logic as DisputeData.fromDispute but with custom peer information
+    // This ensures consistency across all dispute states
+    
+    // First, create the dispute data using the standard method
+    final standardDisputeData = DisputeData.fromDispute(dispute, orderState: orderState);
+    
+    // Then override the counterparty with the correct peer information
     final disputeData = DisputeData(
-      disputeId: dispute.disputeId,
-      orderId: dispute.orderId ?? order?.id,
-      status: dispute.status ?? 'initiated',
-      descriptionKey: DisputeDescriptionKey.initiatedByUser, // Assuming user created the dispute
-      counterparty: peerPubkey, // Use the peer pubkey from chat
-      isCreator: true, // Assuming user created the dispute for now
-      createdAt: dispute.createdAt ?? DateTime.now(),
-      userRole: userRole,
-      action: dispute.action,
+      disputeId: standardDisputeData.disputeId,
+      orderId: standardDisputeData.orderId,
+      status: standardDisputeData.status,
+      descriptionKey: standardDisputeData.descriptionKey,
+      counterparty: peerPubkey, // Use the peer pubkey from session/chat
+      isCreator: standardDisputeData.isCreator,
+      createdAt: standardDisputeData.createdAt,
+      userRole: standardDisputeData.userRole,
+      action: standardDisputeData.action,
     );
     
     return disputeData;
