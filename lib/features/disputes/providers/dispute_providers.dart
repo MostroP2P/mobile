@@ -21,6 +21,42 @@ final disputeRepositoryProvider = Provider.autoDispose<DisputeRepository>((ref) 
 /// Provider for dispute details - uses real data from repository
 final disputeDetailsProvider = FutureProvider.family<Dispute?, String>((ref, disputeId) async {
   final repository = ref.watch(disputeRepositoryProvider);
+  
+  // Watch all sessions to invalidate when they change
+  final sessions = ref.watch(sessionNotifierProvider);
+  
+  // First try to find the specific order that contains this dispute
+  String? targetOrderId;
+  for (final session in sessions) {
+    if (session.orderId != null) {
+      try {
+        final orderState = ref.read(orderNotifierProvider(session.orderId!));
+        if (orderState.dispute?.disputeId == disputeId) {
+          targetOrderId = session.orderId;
+          break;
+        }
+      } catch (e) {
+        // Continue checking other sessions
+      }
+    }
+  }
+  
+  // If we found the specific order, watch only that one for optimal performance
+  if (targetOrderId != null) {
+    ref.watch(orderNotifierProvider(targetOrderId));
+  } else {
+    // Fallback: watch all order states to ensure we catch the dispute when it appears
+    for (final session in sessions) {
+      if (session.orderId != null) {
+        try {
+          ref.watch(orderNotifierProvider(session.orderId!));
+        } catch (e) {
+          // Continue if order state doesn't exist yet
+        }
+      }
+    }
+  }
+  
   return repository.getDispute(disputeId);
 });
 
@@ -60,7 +96,7 @@ final userDisputeDataProvider = FutureProvider<List<DisputeData>>((ref) async {
   final disputes = await ref.watch(userDisputesProvider.future);
   final sessions = ref.read(sessionNotifierProvider);
 
-  return disputes.map((dispute) {
+  final disputeDataList = disputes.map((dispute) {
     // Find the specific session for this dispute's order
     Session? matchingSession;
     dynamic matchingOrderState;
@@ -92,4 +128,9 @@ final userDisputeDataProvider = FutureProvider<List<DisputeData>>((ref) async {
     // Fallback: create DisputeData without order context
     return DisputeData.fromDispute(dispute);
   }).toList();
+
+  // Sort disputes by creation date - most recent first
+  disputeDataList.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  
+  return disputeDataList;
 });

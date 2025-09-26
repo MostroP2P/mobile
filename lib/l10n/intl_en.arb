@@ -694,6 +694,9 @@
   "disputeInProgress": "This dispute is currently in progress. A solver is reviewing your case.",
   "disputeSellerRefunded": "This dispute has been resolved with the seller being refunded.",
   "disputeUnknownStatus": "The status of this dispute is unknown.",
+
+  "disputeChatClosed": "This dispute has been resolved. The chat is now closed.",
+
   
   "@_comment_dispute_descriptions": "Dispute Description Messages",
   "disputeDescriptionInitiatedByUser": "You opened this dispute",
@@ -707,6 +710,18 @@
   "disputeSellerRefundedMessage": "The admin canceled the order and refunded the seller. The dispute is now closed.",
   "disputeOpenedByYou": "You opened this dispute against the buyer {counterparty}, please read carefully below:",
   "@disputeOpenedByYou": {
+    "placeholders": {
+      "counterparty": { "type": "String" }
+    }
+  },
+  "disputeOpenedByYouAgainstSeller": "You opened this dispute against the seller {counterparty}, please read carefully below:",
+  "@disputeOpenedByYouAgainstSeller": {
+    "placeholders": {
+      "counterparty": { "type": "String" }
+    }
+  },
+  "disputeOpenedByYouAgainstBuyer": "You opened this dispute against the buyer {counterparty}, please read carefully below:",
+  "@disputeOpenedByYouAgainstBuyer": {
     "placeholders": {
       "counterparty": { "type": "String" }
     }
