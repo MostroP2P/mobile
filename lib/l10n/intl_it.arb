@@ -754,7 +754,9 @@
   "disputeInProgress": "Questa disputa è attualmente in corso. Un risolutore sta esaminando il tuo caso.",
   "disputeSellerRefunded": "Questa disputa è stata risolta con il venditore che è stato rimborsato.",
   "disputeUnknownStatus": "Lo stato di questa disputa è sconosciuto.",
+
   "disputeChatClosed": "Questa disputa è stata risolta. La chat è ora chiusa.",
+
   
   "@_comment_dispute_descriptions": "Messaggi di Descrizione delle Dispute",
   "disputeDescriptionInitiatedByUser": "Hai aperto questa disputa",
@@ -1165,5 +1167,8 @@
   "deleteUserRelayTitle": "Sicuro di volerti disconnettere da questo relay?",
   "deleteUserRelayMessage": "Se vorrai usarlo di nuovo in futuro, dovrai aggiungerlo manualmente.",
   "deleteUserRelayConfirm": "Sì",
-  "deleteUserRelayCancel": "No"
+  "deleteUserRelayCancel": "No",
+
+  "@_comment_session_timeout": "Session timeout message",
+  "sessionTimeoutMessage": "Nessuna risposta ricevuta, verifica la tua connessione e riprova più tardi"
 }

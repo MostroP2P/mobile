@@ -700,7 +700,9 @@
   "disputeInProgress": "Esta disputa está actualmente en progreso. Un mediador está revisando tu caso.",
   "disputeSellerRefunded": "Esta disputa se ha resuelto con el vendedor siendo reembolsado.",
   "disputeUnknownStatus": "El estado de esta disputa es desconocido.",
+
   "disputeChatClosed": "Esta disputa ha sido resuelta. El chat está cerrado.",
+
   
   "@_comment_dispute_descriptions": "Mensajes de Descripción de Disputas",
   "disputeDescriptionInitiatedByUser": "Tú abriste esta disputa",
@@ -1110,6 +1112,9 @@
   "deleteUserRelayTitle": "¿Seguro que quieres desconectarte de este relay?",
   "deleteUserRelayMessage": "Si más adelante deseas volver a usarlo, deberás añadirlo manualmente.",
   "deleteUserRelayConfirm": "Sí",
-  "deleteUserRelayCancel": "No"
+  "deleteUserRelayCancel": "No",
+
+  "@_comment_session_timeout": "Session timeout message",
+  "sessionTimeoutMessage": "No hubo respuesta, verifica tu conexión e inténtalo más tarde"
 
 }

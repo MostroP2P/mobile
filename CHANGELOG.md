@@ -5,6 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1]
+
+### Added
+- **Enhanced Child Order Session Management** (#311): Complete implementation of pre-emptive session creation for range order child orders with proper session lifecycle management
+- **Dispute System Enhancements** (#304): Full dispute listing and management system with comprehensive UI for active orders
+- **Background Push Notifications** (#297): Complete push notification integration with background support for real-time order updates
+- **Orphan Session Cleanup System** (#305): 10-second timeout detection and automatic cleanup to prevent orphaned sessions when Mostro instances are unresponsive
+- **Subscription Initialization Fix** (#309): Critical fix ensuring existing sessions properly load and display after app restart
+- **Rating Validation System** (#312): Enhanced rating system with proper validation in notification navigation flow
+- **Request ID Analysis Documentation** (#306): Comprehensive debugging documentation for troubleshooting order flow issues
+- **Zapstore Distribution Support** (#302): Added zapstore spec file for alternative app distribution
+- **Malawi Kwacha Currency Support** (#300): Added MWK fiat currency for Malawi users
+- **Centralized Key Derivation Configuration** (#301): Improved key management architecture with centralized derivation path handling
+
+### Fixed
+- **Hold Invoice Payment Status Mapping** (#314): Correct status mapping for hold-invoice-payment-settled action to success status
+- **Child Range Order Recognition** (#311): Complete fix for child orders not appearing in "My Trades" after range order completion - child orders now seamlessly link to parent sessions
+- **Session Timeout Detection** (#305): Proper cleanup of orphaned sessions with 10-second timeout when no response from Mostro
+- **Rating Navigation Flow** (#312): Fixed rating validation preventing proper navigation in notification flows
+- **Subscription Manager Initialization** (#309): Fixed critical issue where existing sessions weren't properly loaded on app startup, causing orders to disappear from "My Trades"
+- **Session State Persistence**: Enhanced session state management to prevent data loss during app lifecycle events
+
+### Changed
+- **Session Management Architecture**: Complete overhaul with pending child session tracking, proper lifecycle management, and automatic cleanup mechanisms
+- **Child Order Flow**: Seamless transition from parent range orders to child orders with proper session linking and role inheritance
+- **Error Handling**: Improved cant-do error processing with better user feedback and custom error messages
+- **Order State Management**: Enhanced order state transitions with proper session cleanup and timeout detection
+- **Subscription Management**: Improved subscription handling with automatic session-based subscription updates
+
+### Security
+- **Session Isolation**: Enhanced session cleanup to prevent data leakage between different order sessions
+- **Timeout Protection**: Automatic cleanup of unresponsive sessions to prevent security vulnerabilities
+- **Key Management**: Centralized key derivation path configuration with improved security practices
+- **Session Privacy**: Enhanced session cleanup and timeout detection to prevent sensitive data persistence
+
+### Documentation
+- **Child Order Implementation Guide**: Comprehensive documentation of pre-emptive child order session creation system
+- **Session Management Documentation**: Detailed technical documentation covering session lifecycle, cleanup, and timeout detection
+- **Request ID Analysis**: Complete troubleshooting guide for debugging order flow issues
+- **Technical Architecture Updates**: Enhanced system documentation including timeout detection and session cleanup processes
+
 ## [1.0.0+14]
 
 ### Added

@@ -222,7 +222,6 @@ class OrderState {
       // Actions that should set status to active
       case Action.buyerTookOrder:
       case Action.holdInvoicePaymentAccepted:
-      case Action.holdInvoicePaymentSettled:
       case Action.buyerInvoiceAccepted:
         return Status.active;
 
@@ -237,6 +236,7 @@ class OrderState {
       case Action.release:
       case Action.rate:
       case Action.rateReceived:
+      case Action.holdInvoicePaymentSettled:
         return Status.success;
 
       // Actions that should set status to canceled
@@ -347,11 +347,6 @@ class OrderState {
           Action.dispute,
           Action.sendDm,
         ],
-        Action.holdInvoicePaymentSettled: [
-          Action.cancel,
-          Action.dispute,
-          Action.sendDm,
-        ],
         Action.cooperativeCancelInitiatedByPeer: [
           Action.cancel,
           Action.dispute,
@@ -389,6 +384,9 @@ class OrderState {
           Action.rate,
         ],
         Action.released: [
+          Action.rate,
+        ],
+        Action.holdInvoicePaymentSettled: [
           Action.rate,
         ],
         Action.rateReceived: [],
@@ -468,12 +466,6 @@ class OrderState {
       },
       Status.active: {
         Action.holdInvoicePaymentAccepted: [
-          Action.fiatSent,
-          Action.cancel,
-          Action.dispute,
-          Action.sendDm,
-        ],
-        Action.holdInvoicePaymentSettled: [
           Action.fiatSent,
           Action.cancel,
           Action.dispute,

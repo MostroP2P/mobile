@@ -76,9 +76,36 @@ class MostroService {
       _logger.i(
         'Received DM, Event ID: ${decryptedEvent.id} with payload: ${decryptedEvent.content}',
       );
+
+      await _maybeLinkChildOrder(msg, matchingSession);
     } catch (e) {
       _logger.e('Error processing event', error: e);
     }
+  }
+
+  Future<void> _maybeLinkChildOrder(
+    MostroMessage message,
+    Session session,
+  ) async {
+    if (message.action != Action.newOrder || message.id == null) {
+      return;
+    }
+
+    if (session.orderId != null || session.parentOrderId == null) {
+      return;
+    }
+
+    final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+    await sessionNotifier.linkChildSessionToOrderId(
+      message.id!,
+      session.tradeKey.public,
+    );
+
+    ref.read(orderNotifierProvider(message.id!).notifier).subscribe();
+
+    _logger.i(
+      'Linked child order ${message.id} to parent ${session.parentOrderId}',
+    );
   }
 
   Future<void> submitOrder(MostroMessage order) async {
@@ -142,38 +169,25 @@ class MostroService {
   }
 
   Future<void> sendFiatSent(String orderId) async {
+    final payload = await _prepareChildOrderIfNeeded(
+      orderId,
+      callerLabel: 'fiatSent',
+    );
+
     await publishOrder(
       MostroMessage(
         action: Action.fiatSent,
         id: orderId,
+        payload: payload,
       ),
     );
   }
 
   Future<void> releaseOrder(String orderId) async {
-    // Get the current order state to check if it's a range order
-    final orderState = ref.read(orderNotifierProvider(orderId));
-    final order = orderState.order;
-
-    // Check if this is a range order (has min and max amounts that are different and valid)
-    final isRangeOrder = order?.minAmount != null &&
-        order?.maxAmount != null &&
-        order!.minAmount! < order.maxAmount!;
-
-    Payload? payload;
-
-    if (isRangeOrder) {
-      // For range orders, we need to generate the next trade key and index
-      final keyManager = ref.read(keyManagerProvider);
-      final nextKeyIndex = await keyManager.getNextKeyIndex();
-      final nextTradeKey =
-          await keyManager.deriveTradeKeyFromIndex(nextKeyIndex);
-
-      payload = NextTrade(
-        key: nextTradeKey.public,
-        index: nextKeyIndex,
-      );
-    }
+    final payload = await _prepareChildOrderIfNeeded(
+      orderId,
+      callerLabel: 'release',
+    );
 
     await publishOrder(
       MostroMessage(
@@ -181,6 +195,57 @@ class MostroService {
         id: orderId,
         payload: payload,
       ),
+    );
+  }
+
+  Future<Payload?> _prepareChildOrderIfNeeded(
+    String orderId, {
+    required String callerLabel,
+  }) async {
+    final order = ref.read(orderNotifierProvider(orderId)).order;
+    if (order?.minAmount == null ||
+        order?.maxAmount == null ||
+        order!.minAmount! >= order.maxAmount!) {
+      return null;
+    }
+
+    final minAmount = order.minAmount!;
+    final maxAmount = order.maxAmount!;
+    final selectedAmount = order.fiatAmount;
+    final remaining = maxAmount - selectedAmount;
+
+    if (remaining < minAmount) {
+      _logger.i(
+        '[$callerLabel] Range order $orderId exhausted (remaining $remaining < min $minAmount); skipping child preparation.',
+      );
+      return null;
+    }
+
+    final keyManager = ref.read(keyManagerProvider);
+    final nextKeyIndex = await keyManager.getNextKeyIndex();
+    final nextTradeKey = await keyManager.deriveTradeKeyFromIndex(nextKeyIndex);
+
+    final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+    final currentSession = sessionNotifier.getSessionByOrderId(orderId);
+    if (currentSession != null && currentSession.role != null) {
+      await sessionNotifier.createChildOrderSession(
+        tradeKey: nextTradeKey,
+        keyIndex: nextKeyIndex,
+        parentOrderId: orderId,
+        role: currentSession.role!,
+      );
+      _logger.i(
+        '[$callerLabel] Prepared child session for $orderId using key index $nextKeyIndex',
+      );
+    } else {
+      _logger.w(
+        '[$callerLabel] Unable to prepare child session for $orderId; session or role missing.',
+      );
+    }
+
+    return NextTrade(
+      key: nextTradeKey.public,
+      index: nextKeyIndex,
     );
   }
 
