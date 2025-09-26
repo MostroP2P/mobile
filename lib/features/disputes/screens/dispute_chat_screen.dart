@@ -4,6 +4,7 @@ import 'package:mostro_mobile/features/disputes/widgets/dispute_communication_se
 import 'package:mostro_mobile/features/disputes/widgets/dispute_message_input.dart';
 import 'package:mostro_mobile/features/disputes/providers/dispute_providers.dart';
 import 'package:mostro_mobile/data/models/dispute.dart';
+import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
@@ -62,9 +63,11 @@ class DisputeChatScreen extends ConsumerWidget {
                 status: disputeData.status,
               ),
               
-              // Input section for sending messages (only show if not resolved and not initiated)
-              if (disputeData.status != 'resolved' && disputeData.status != 'initiated')
-                DisputeMessageInput(disputeId: disputeId),
+              // Input section for sending messages (only show if in-progress)
+              if (disputeData.status == 'in-progress')
+                DisputeMessageInput(disputeId: disputeId)
+              // For 'initiated' and 'resolved' status, don't show input
+              // Chat closed message is now shown within the messages area
             ],
           );
         },
@@ -101,38 +104,16 @@ class DisputeChatScreen extends ConsumerWidget {
       final sessions = ref.read(sessionNotifierProvider);
 
       // Find the session that matches this dispute's order
+      Session? matchingSession;
+      dynamic matchingOrderState;
+      
       for (final session in sessions) {
         if (session.orderId == dispute.orderId) {
           try {
             final orderState = ref.read(orderNotifierProvider(session.orderId!));
-
-            // Always prioritize session.peer information when available
-            // This ensures consistent peer information across all dispute states
-            if (session.peer != null) {
-              // Create DisputeData with enhanced peer information from session
-              return _createDisputeDataWithChatInfo(
-                dispute,
-                orderState,
-                session.peer!.publicKey // Use session.peer for correct counterparty
-              );
-            }
-
-            // If no session.peer but orderState.peer exists, use that
-            if (orderState.peer != null) {
-              return _createDisputeDataWithChatInfo(
-                dispute,
-                orderState,
-                orderState.peer!.publicKey
-              );
-            }
-
-            // If this order state contains our dispute, use it for context
-            if (orderState.dispute?.disputeId == dispute.disputeId) {
-              return DisputeData.fromDispute(dispute, orderState: orderState);
-            }
-
-            // Use order state even if it doesn't contain the dispute yet
-            return DisputeData.fromDispute(dispute, orderState: orderState);
+            matchingSession = session;
+            matchingOrderState = orderState;
+            break;
           } catch (e) {
             // Continue checking other sessions
             continue;
@@ -140,8 +121,68 @@ class DisputeChatScreen extends ConsumerWidget {
         }
       }
 
-      // If we didn't find exact match, try to find any session with peer info
-      // This is a fallback to ensure we get peer information when possible
+      // If we found a matching session, use it
+      if (matchingSession != null && matchingOrderState != null) {
+        // Always prioritize session.peer information when available
+        // This ensures consistent peer information across all dispute states
+        if (matchingSession.peer != null) {
+          // Create DisputeData with enhanced peer information from session
+          return _createDisputeDataWithChatInfo(
+            dispute,
+            matchingOrderState,
+            matchingSession.peer!.publicKey // Use session.peer for correct counterparty
+          );
+        }
+
+        // If no session.peer but orderState.peer exists, use that
+        if (matchingOrderState.peer != null) {
+          return _createDisputeDataWithChatInfo(
+            dispute,
+            matchingOrderState,
+            matchingOrderState.peer!.publicKey
+          );
+        }
+
+        // Use order state for context even without peer info
+        return DisputeData.fromDispute(dispute, orderState: matchingOrderState);
+      }
+
+      // If we didn't find exact match by orderId, try to find the dispute by disputeId
+      // This is important for resolved disputes where the orderId might not match exactly
+      for (final session in sessions) {
+        if (session.orderId != null) {
+          try {
+            final orderState = ref.read(orderNotifierProvider(session.orderId!));
+            
+            // Check if this order state contains our dispute
+            if (orderState.dispute?.disputeId == dispute.disputeId) {
+              // Found the order state that contains this dispute
+              if (session.peer != null) {
+                return _createDisputeDataWithChatInfo(
+                  dispute,
+                  orderState,
+                  session.peer!.publicKey
+                );
+              }
+              
+              if (orderState.peer != null) {
+                return _createDisputeDataWithChatInfo(
+                  dispute,
+                  orderState,
+                  orderState.peer!.publicKey
+                );
+              }
+              
+              return DisputeData.fromDispute(dispute, orderState: orderState);
+            }
+          } catch (e) {
+            // Continue checking other sessions
+            continue;
+          }
+        }
+      }
+
+      // Final fallback: try to find any session with peer info
       for (final session in sessions) {
         if (session.peer != null) {
           try {
@@ -192,4 +233,5 @@ class DisputeChatScreen extends ConsumerWidget {
     
     return disputeData;
   }
+
 }

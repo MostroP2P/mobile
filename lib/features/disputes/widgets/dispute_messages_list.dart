@@ -65,6 +65,7 @@ class _DisputeMessagesListState extends State<DisputeMessagesList> {
     // Generate mock messages based on status
     final messages = _getMockMessages();
     
+    
     return Container(
       color: AppTheme.backgroundDark,
       child: Column(
@@ -78,27 +79,42 @@ class _DisputeMessagesListState extends State<DisputeMessagesList> {
               ? Column(
                   children: [
                     DisputeInfoCard(dispute: widget.disputeData),
-                    // Only show waiting message if dispute is in 'initiated' status
-                    // If it's 'in-progress', admin is already assigned, so show empty chat area
+                    // Show appropriate content based on status
                     Expanded(
-                      child: widget.status == 'initiated' 
-                        ? _buildWaitingForAdmin(context)
-                        : _buildEmptyChatArea(context)
+                      child: _buildEmptyAreaContent(context)
                     ),
                   ],
                 )
               : ListView.builder(
                   controller: _scrollController,
                   padding: const EdgeInsets.symmetric(vertical: 8),
-                  itemCount: messages.length + 1, // +1 for info card
+                  itemCount: _getItemCount(messages),
                   itemBuilder: (context, index) {
                     if (index == 0) {
                       // First item is the dispute info card
                       return DisputeInfoCard(dispute: widget.disputeData);
                     }
                     
-                    // Rest are messages (adjust index)
-                    final message = messages[index - 1];
+                    // Check if this is the last item and we need to show chat closed message
+                    final isLastItem = index == _getItemCount(messages) - 1;
+                    final normalizedStatus = _normalizeStatus(widget.status);
+                    final isResolvedStatus = normalizedStatus == 'resolved' || normalizedStatus == 'solved' || normalizedStatus == 'seller-refunded';
+                    
+                    if (isLastItem && isResolvedStatus && messages.isNotEmpty) {
+                      // Show chat closed message at the end
+                      return _buildChatClosedMessage(context);
+                    }
+                    
+                    // Regular message (adjust index for messages)
+                    final messageIndex = isResolvedStatus && messages.isNotEmpty 
+                        ? index - 1  // Account for info card
+                        : index - 1; // Account for info card
+                    
+                    if (messageIndex >= messages.length) {
+                      return _buildChatClosedMessage(context);
+                    }
+                    
+                    final message = messages[messageIndex];
                     return DisputeMessageBubble(
                       message: message.message,
                       isFromUser: message.isFromUser,
@@ -166,8 +182,10 @@ class _DisputeMessagesListState extends State<DisputeMessagesList> {
   }
 
   Widget _buildAdminAssignmentNotification(BuildContext context) {
-    // Only show admin assignment notification if not in initiated state
-    if (widget.status == 'initiated') {
+    // Only show admin assignment notification for 'in-progress' status
+    // Don't show for 'initiated' (no admin yet) or 'resolved' (dispute finished)
+    final normalizedStatus = _normalizeStatus(widget.status);
+    if (normalizedStatus != 'in-progress') {
       return const SizedBox.shrink();
     }
     
@@ -240,5 +258,100 @@ class _DisputeMessagesListState extends State<DisputeMessagesList> {
     // Always return empty list - no mock messages should appear
     // Mock messages were causing confusion in the UI
     return [];
+  }
+
+  /// Normalizes status string by trimming, lowercasing, and replacing spaces/underscores with hyphens
+  String _normalizeStatus(String status) {
+    if (status.isEmpty) return '';
+    // Trim, lowercase, and replace spaces/underscores with hyphens
+    return status.trim().toLowerCase().replaceAll(RegExp(r'[\s_]+'), '-');
+  }
+
+  /// Build content for empty message area based on status
+  Widget _buildEmptyAreaContent(BuildContext context) {
+    final normalizedStatus = _normalizeStatus(widget.status);
+    
+    if (normalizedStatus == 'initiated') {
+      return _buildWaitingForAdmin(context);
+    } else if (normalizedStatus == 'resolved' || normalizedStatus == 'solved' || normalizedStatus == 'seller-refunded') {
+      return _buildChatClosedArea(context);
+    } else {
+      // in-progress or other status
+      return _buildEmptyChatArea(context);
+    }
+  }
+
+  /// Get the total item count for ListView (info card + messages + chat closed message if needed)
+  int _getItemCount(List<DisputeChat> messages) {
+    int count = 1; // Always include info card
+    count += messages.length; // Add messages
+    
+    // Add chat closed message for resolved disputes
+    final normalizedStatus = _normalizeStatus(widget.status);
+    if (normalizedStatus == 'resolved' || normalizedStatus == 'solved' || normalizedStatus == 'seller-refunded') {
+      count += 1;
+    }
+    
+    return count;
+  }
+
+  /// Build chat closed area for when there are no messages but dispute is resolved
+  Widget _buildChatClosedArea(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              S.of(context)?.noMessagesYet ?? 'No messages yet',
+              style: TextStyle(
+                color: AppTheme.textInactive,
+                fontSize: 16,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            _buildChatClosedMessage(context),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Build message indicating that chat is closed for resolved disputes
+  Widget _buildChatClosedMessage(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.dark1,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.grey[700]!,
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.lock_outline,
+            color: Colors.grey[400],
+            size: 20,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              S.of(context)!.disputeChatClosed,
+              style: TextStyle(
+                color: Colors.grey[400],
+                fontSize: 14,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
