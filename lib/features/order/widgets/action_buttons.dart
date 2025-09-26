@@ -49,7 +49,7 @@ class ActionButtons extends StatelessWidget {
               orderId: currentRequestId?.toString() ?? '',
               action: nostr_action.Action.newOrder,
               onPressed: onSubmit,
-              timeout: const Duration(seconds: 5),
+              timeout: const Duration(seconds: 10),
               showSuccessIndicator:
                   onSubmit != null, // Only show success indicator when enabled
               backgroundColor: onSubmit != null
