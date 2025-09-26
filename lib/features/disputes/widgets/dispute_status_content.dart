@@ -121,13 +121,16 @@ class DisputeStatusContent extends StatelessWidget {
   String _getDisputeStatusText(BuildContext context) {
     switch (dispute.descriptionKey) {
       case DisputeDescriptionKey.initiatedByUser:
-        // Use the appropriate message based on whether user is buyer or seller
-        if (dispute.userIsBuyer) {
+        // Use the appropriate message based on user role
+        if (dispute.userRole == UserRole.buyer) {
           // User is buyer, so dispute is against seller
           return S.of(context)!.disputeOpenedByYouAgainstSeller(dispute.counterpartyDisplay);
-        } else {
+        } else if (dispute.userRole == UserRole.seller) {
           // User is seller, so dispute is against buyer
           return S.of(context)!.disputeOpenedByYouAgainstBuyer(dispute.counterpartyDisplay);
+        } else {
+          // Unknown role, use generic message
+          return S.of(context)!.disputeOpenedByYou(dispute.counterpartyDisplay);
         }
       case DisputeDescriptionKey.initiatedByPeer:
         return S.of(context)!.disputeOpenedAgainstYou(dispute.counterpartyDisplay);

@@ -87,8 +87,7 @@ class _DisputeMessagesListState extends State<DisputeMessagesList> {
 
                     // Check if this is the last item and we need to show chat closed message
                     final isLastItem = index == _getItemCount(messages) - 1;
-                    final normalizedStatus = _normalizeStatus(widget.status);
-                    final isResolvedStatus = normalizedStatus == 'resolved' || normalizedStatus == 'solved' || normalizedStatus == 'seller-refunded';
+                    final isResolvedStatus = _isResolvedStatus(widget.status);
 
                     if (isLastItem && isResolvedStatus && messages.isNotEmpty) {
                       // Show chat closed message at the end
@@ -116,7 +115,7 @@ class _DisputeMessagesListState extends State<DisputeMessagesList> {
                 ),
               ),
               // Resolution notification (if resolved)
-              if (widget.status == 'resolved')
+              if (_isResolvedStatus(widget.status))
                 SliverToBoxAdapter(
                   child: _buildResolutionNotification(context),
                 ),
@@ -127,8 +126,7 @@ class _DisputeMessagesListState extends State<DisputeMessagesList> {
 
   /// Build layout for when there are no messages - optimized to show all content without scrolling
   Widget _buildEmptyMessagesLayout(BuildContext context) {
-    final normalizedStatus = _normalizeStatus(widget.status);
-    final isResolvedStatus = normalizedStatus == 'resolved' || normalizedStatus == 'solved' || normalizedStatus == 'seller-refunded';
+    final isResolvedStatus = _isResolvedStatus(widget.status);
     
     return Column(
       children: [
@@ -158,7 +156,7 @@ class _DisputeMessagesListState extends State<DisputeMessagesList> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              S.of(context)?.waitingAdminAssignment ?? 'Waiting for admin assignment',
+              S.of(context)!.waitingAdminAssignment,
               style: TextStyle(
                 color: AppTheme.textSecondary,
                 fontSize: 18,
@@ -168,7 +166,7 @@ class _DisputeMessagesListState extends State<DisputeMessagesList> {
             ),
             const SizedBox(height: 16),
             Text(
-              S.of(context)?.waitingAdminDescription ?? 'Your dispute has been submitted. An admin will be assigned to help resolve this issue.',
+              S.of(context)!.waitingAdminDescription,
               style: TextStyle(
                 color: AppTheme.textInactive,
                 fontSize: 14,
@@ -187,7 +185,7 @@ class _DisputeMessagesListState extends State<DisputeMessagesList> {
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Text(
-          S.of(context)?.noMessagesYet ?? 'No messages yet',
+          S.of(context)!.noMessagesYet,
           style: TextStyle(
             color: AppTheme.textInactive,
             fontSize: 16,
@@ -223,7 +221,7 @@ class _DisputeMessagesListState extends State<DisputeMessagesList> {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              S.of(context)?.adminAssigned ?? 'Admin has been assigned to this dispute',
+              S.of(context)!.adminAssigned,
               style: TextStyle(
                 color: Colors.blue[300],
                 fontSize: 12,
@@ -254,7 +252,7 @@ class _DisputeMessagesListState extends State<DisputeMessagesList> {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              S.of(context)?.disputeResolvedMessage ?? 'This dispute has been resolved. Check your wallet for any refunds or payments.',
+              S.of(context)!.disputeResolvedMessage,
               style: TextStyle(
                 color: Colors.green[300],
                 fontSize: 12,
@@ -284,13 +282,23 @@ class _DisputeMessagesListState extends State<DisputeMessagesList> {
     return status.trim().toLowerCase().replaceAll(RegExp(r'[\s_]+'), '-');
   }
 
+  /// Checks if the status represents a resolved/terminal dispute state
+  bool _isResolvedStatus(String status) {
+    final normalizedStatus = _normalizeStatus(status);
+    // Terminal states: resolved, closed, solved, seller-refunded
+    return normalizedStatus == 'resolved' || 
+           normalizedStatus == 'closed' || 
+           normalizedStatus == 'solved' || 
+           normalizedStatus == 'seller-refunded';
+  }
+
   /// Build content for empty message area based on status
   Widget _buildEmptyAreaContent(BuildContext context) {
     final normalizedStatus = _normalizeStatus(widget.status);
     
     if (normalizedStatus == 'initiated') {
       return _buildWaitingForAdmin(context);
-    } else if (normalizedStatus == 'resolved' || normalizedStatus == 'solved' || normalizedStatus == 'seller-refunded') {
+    } else if (_isResolvedStatus(widget.status)) {
       return _buildChatClosedArea(context);
     } else {
       // in-progress or other status
@@ -304,8 +312,7 @@ class _DisputeMessagesListState extends State<DisputeMessagesList> {
     count += messages.length; // Add messages
     
     // Add chat closed message for resolved disputes
-    final normalizedStatus = _normalizeStatus(widget.status);
-    if (normalizedStatus == 'resolved' || normalizedStatus == 'solved' || normalizedStatus == 'seller-refunded') {
+    if (_isResolvedStatus(widget.status)) {
       count += 1;
     }
     
@@ -321,7 +328,7 @@ class _DisputeMessagesListState extends State<DisputeMessagesList> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              S.of(context)?.noMessagesYet ?? 'No messages yet',
+              S.of(context)!.noMessagesYet,
               style: TextStyle(
                 color: AppTheme.textInactive,
                 fontSize: 16,

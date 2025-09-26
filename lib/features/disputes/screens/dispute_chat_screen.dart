@@ -8,6 +8,7 @@ import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class DisputeChatScreen extends ConsumerWidget {
   final String disputeId;
@@ -27,9 +28,9 @@ class DisputeChatScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: AppTheme.backgroundDark,
         elevation: 0,
-        title: const Text(
-          'Dispute Chat',
-          style: TextStyle(
+        title: Text(
+          S.of(context)?.disputeDetails ?? 'Dispute Details',
+          style: const TextStyle(
             color: Colors.white,
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -43,10 +44,10 @@ class DisputeChatScreen extends ConsumerWidget {
       body: disputeAsync.when(
         data: (dispute) {
           if (dispute == null) {
-            return const Center(
+            return Center(
               child: Text(
-                'Dispute not found',
-                style: TextStyle(color: Colors.white),
+                S.of(context)?.disputeNotFound ?? 'Dispute not found',
+                style: const TextStyle(color: Colors.white),
               ),
             );
           }
@@ -77,20 +78,10 @@ class DisputeChatScreen extends ConsumerWidget {
           ),
         ),
         error: (error, stack) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text(
-                'Error loading dispute',
-                style: TextStyle(color: Colors.white),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                error.toString(),
-                style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
-                textAlign: TextAlign.center,
-              ),
-            ],
+          child: Text(
+            S.of(context)?.errorLoadingDispute(error.toString()) ?? 'Error loading dispute: ${error.toString()}',
+            style: const TextStyle(color: Colors.white),
+            textAlign: TextAlign.center,
           ),
         ),
       ),

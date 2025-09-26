@@ -149,6 +149,14 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
 
         // Update session and state with correct peer based on session role
         final sessionProvider = ref.read(sessionNotifierProvider.notifier);
+        
+        // Re-fetch session to ensure it's initialized
+        final fetchedSession = sessionProvider.getSessionByOrderId(orderId);
+        if (fetchedSession == null) {
+          logger.e('Session not found for order $orderId in buyerTookOrder');
+          break;
+        }
+        session = fetchedSession;
 
         // Get the correct peer public key based on current user's role
         String? peerPubkey;
@@ -189,6 +197,14 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
 
         // Update session and state with correct peer based on session role
         final sessionProvider = ref.read(sessionNotifierProvider.notifier);
+        
+        // Re-fetch session to ensure it's initialized
+        final fetchedSession = sessionProvider.getSessionByOrderId(orderId);
+        if (fetchedSession == null) {
+          logger.e('Session not found for order $orderId in holdInvoicePaymentAccepted');
+          break;
+        }
+        session = fetchedSession;
 
         // Get the correct peer public key based on current user's role
         String? peerPubkey;

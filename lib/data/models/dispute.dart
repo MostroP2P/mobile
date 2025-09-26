@@ -369,13 +369,20 @@ class DisputeData {
     String? counterpartyName;
     UserRole userRole = UserRole.unknown;
 
+    // Terminal dispute states where admin should not be used as counterparty
+    final terminalStatusList = ['resolved', 'closed'];
+
     if (orderState?.peer != null) {
       counterpartyName = orderState!.peer!.publicKey; // This will be resolved by nickNameProvider in the UI
     }
 
-    if (dispute.adminPubkey != null && dispute.status != 'resolved') {
-      // Only use admin pubkey as counterparty if dispute is not resolved and no peer info
-      // For resolved disputes, we don't want to show admin as counterparty
+    // Only use admin pubkey as counterparty if:
+    // 1. There is no peer information available
+    // 2. Admin pubkey exists
+    // 3. Dispute is not in a terminal state
+    if (orderState?.peer == null && 
+        dispute.adminPubkey != null && 
+        !terminalStatusList.contains(dispute.status)) {
       counterpartyName = dispute.adminPubkey;
     }
       
