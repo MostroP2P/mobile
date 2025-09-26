@@ -64,56 +64,46 @@ class _DisputeMessagesListState extends State<DisputeMessagesList> {
   Widget build(BuildContext context) {
     // Generate mock messages based on status
     final messages = _getMockMessages();
-    
-    
+
     return Container(
       color: AppTheme.backgroundDark,
-      child: Column(
-        children: [
-          // Admin assignment notification (if applicable)
-          _buildAdminAssignmentNotification(context),
-          
-          // Messages list with info card at top (scrolleable)
-          Expanded(
-            child: messages.isEmpty 
-              ? Column(
-                  children: [
-                    DisputeInfoCard(dispute: widget.disputeData),
-                    // Show appropriate content based on status
-                    Expanded(
-                      child: _buildEmptyAreaContent(context)
-                    ),
-                  ],
-                )
-              : ListView.builder(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  itemCount: _getItemCount(messages),
-                  itemBuilder: (context, index) {
+      child: messages.isEmpty
+        ? _buildEmptyMessagesLayout(context)
+        : CustomScrollView(
+            controller: _scrollController,
+            slivers: [
+              // Admin assignment notification (if applicable)
+              SliverToBoxAdapter(
+                child: _buildAdminAssignmentNotification(context),
+              ),
+              // Messages list with dispute info card as first item
+              SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
                     if (index == 0) {
                       // First item is the dispute info card
                       return DisputeInfoCard(dispute: widget.disputeData);
                     }
-                    
+
                     // Check if this is the last item and we need to show chat closed message
                     final isLastItem = index == _getItemCount(messages) - 1;
                     final normalizedStatus = _normalizeStatus(widget.status);
                     final isResolvedStatus = normalizedStatus == 'resolved' || normalizedStatus == 'solved' || normalizedStatus == 'seller-refunded';
-                    
+
                     if (isLastItem && isResolvedStatus && messages.isNotEmpty) {
                       // Show chat closed message at the end
                       return _buildChatClosedMessage(context);
                     }
-                    
+
                     // Regular message (adjust index for messages)
-                    final messageIndex = isResolvedStatus && messages.isNotEmpty 
+                    final messageIndex = isResolvedStatus && messages.isNotEmpty
                         ? index - 1  // Account for info card
                         : index - 1; // Account for info card
-                    
+
                     if (messageIndex >= messages.length) {
                       return _buildChatClosedMessage(context);
                     }
-                    
+
                     final message = messages[messageIndex];
                     return DisputeMessageBubble(
                       message: message.message,
@@ -122,14 +112,41 @@ class _DisputeMessagesListState extends State<DisputeMessagesList> {
                       adminPubkey: message.adminPubkey,
                     );
                   },
+                  childCount: _getItemCount(messages),
                 ),
+              ),
+              // Resolution notification (if resolved)
+              if (widget.status == 'resolved')
+                SliverToBoxAdapter(
+                  child: _buildResolutionNotification(context),
+                ),
+            ],
           ),
-          
-          // Resolution notification (if resolved)
-          if (widget.status == 'resolved')
-            _buildResolutionNotification(context),
-        ],
-      ),
+    );
+  }
+
+  /// Build layout for when there are no messages - optimized to show all content without scrolling
+  Widget _buildEmptyMessagesLayout(BuildContext context) {
+    final normalizedStatus = _normalizeStatus(widget.status);
+    final isResolvedStatus = normalizedStatus == 'resolved' || normalizedStatus == 'solved' || normalizedStatus == 'seller-refunded';
+    
+    return Column(
+      children: [
+        // Admin assignment notification (if applicable)
+        _buildAdminAssignmentNotification(context),
+        
+        // Dispute info card
+        DisputeInfoCard(dispute: widget.disputeData),
+        
+        // Flexible content area
+        Expanded(
+          child: _buildEmptyAreaContent(context),
+        ),
+        
+        // Resolution notification at bottom (if resolved) - always visible
+        if (isResolvedStatus)
+          _buildResolutionNotification(context),
+      ],
     );
   }
 

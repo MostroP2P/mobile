@@ -50,10 +50,10 @@ class DisputeChatScreen extends ConsumerWidget {
               ),
             );
           }
-          
+
           // Convert Dispute to DisputeData for UI
           final disputeData = _convertToDisputeData(dispute, ref);
-          
+
           return Column(
             children: [
               // Communication section with messages (includes info card in scroll)
@@ -62,7 +62,7 @@ class DisputeChatScreen extends ConsumerWidget {
                 disputeData: disputeData,
                 status: disputeData.status,
               ),
-              
+
               // Input section for sending messages (only show if in-progress)
               if (disputeData.status == 'in-progress')
                 DisputeMessageInput(disputeId: disputeId)
