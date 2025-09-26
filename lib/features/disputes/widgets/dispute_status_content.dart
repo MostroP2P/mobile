@@ -134,7 +134,9 @@ class DisputeStatusContent extends StatelessWidget {
       case DisputeDescriptionKey.initiatedPendingAdmin:
         return S.of(context)!.disputeWaitingForAdmin;
       case DisputeDescriptionKey.inProgress:
-        return dispute.getLocalizedDescription(context); // "No messages yet"
+        // For in-progress disputes, admin is already assigned, so show appropriate message
+        // Instead of "No messages yet", show a message indicating the dispute is active
+        return S.of(context)!.disputeInProgress;
       case DisputeDescriptionKey.resolved:
         // Show specific resolution message based on action
         if (dispute.action == 'admin-settled') {
