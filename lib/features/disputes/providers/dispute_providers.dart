@@ -96,7 +96,7 @@ final userDisputeDataProvider = FutureProvider<List<DisputeData>>((ref) async {
   final disputes = await ref.watch(userDisputesProvider.future);
   final sessions = ref.read(sessionNotifierProvider);
 
-  return disputes.map((dispute) {
+  final disputeDataList = disputes.map((dispute) {
     // Find the specific session for this dispute's order
     Session? matchingSession;
     dynamic matchingOrderState;
@@ -128,4 +128,9 @@ final userDisputeDataProvider = FutureProvider<List<DisputeData>>((ref) async {
     // Fallback: create DisputeData without order context
     return DisputeData.fromDispute(dispute);
   }).toList();
+
+  // Sort disputes by creation date - most recent first
+  disputeDataList.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  
+  return disputeDataList;
 });
