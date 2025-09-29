@@ -173,25 +173,10 @@ class DisputeChatScreen extends ConsumerWidget {
         }
       }
 
-      // Final fallback: try to find any session with peer info
-      for (final session in sessions) {
-        if (session.peer != null) {
-          try {
-            final orderState = ref.read(orderNotifierProvider(session.orderId!));
-            // Use this session's peer info as fallback
-            return _createDisputeDataWithChatInfo(
-              dispute,
-              orderState,
-              session.peer!.publicKey
-            );
-          } catch (e) {
-            // Continue checking other sessions
-            continue;
-          }
-        }
-      }
+      // No matching session or order state found with peer info
+      // Fall back to basic dispute conversion without peer context
     } catch (e) {
-      // Fallback to basic conversion
+      // Fallback to basic conversion on error
     }
 
     return DisputeData.fromDispute(dispute);
