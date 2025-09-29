@@ -415,7 +415,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
   
   /// Starts a 10-second timer to cleanup orphan sessions for create orders (by requestId)
   static void startSessionTimeoutCleanupForRequestId(int requestId, Ref ref) {
-    final key = requestId.toString();
+    final key = 'request:$requestId';
     // Cancel existing timer if any
     _sessionTimeouts[key]?.cancel();
     
@@ -447,7 +447,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
   
   /// Cancels the timeout timer for a specific requestId
   static void cancelSessionTimeoutCleanupForRequestId(int requestId) {
-    final key = requestId.toString();
+    final key = 'request:$requestId';
     final timer = _sessionTimeouts[key];
     if (timer != null) {
       timer.cancel();

@@ -188,26 +188,53 @@ Sessions are persisted using `SessionStorage` (`lib/data/repositories/session_st
 
 ### Session Lifecycle and Cleanup
 
-#### **Orphan Session Prevention**
-When users take orders, a 30-second cleanup timer is automatically started to prevent orphan sessions:
+The system manages two distinct types of sessions with different lifecycles and cleanup mechanisms:
 
+#### **Session Types**
+
+**Temporary Sessions (Order Creation)**:
+- **Identification**: By `requestId` in `_requestIdToSession` map  
+- **Purpose**: Handle new order creation before confirmation
+- **Storage**: Memory only, not persisted until order confirmation
+- **Cleanup Method**: `deleteSessionByRequestId(requestId)` - memory cleanup only
+- **Timer Key**: `'request:${requestId}'` to prevent collisions with orderId keys
+
+**Permanent Sessions (Order Taking)**:
+- **Identification**: By `orderId` in `_sessions` map
+- **Purpose**: Handle confirmed orders and active trades
+- **Storage**: Persisted immediately in Sembast database
+- **Cleanup Method**: `deleteSession(orderId)` - memory + storage cleanup
+- **Timer Key**: `${orderId}` for direct identification
+
+#### **Orphan Session Prevention**
+The system provides dual protection against orphan sessions for both session types:
+
+**Order Taking Protection**:
 ```dart
 // Automatically started when taking orders
 AbstractMostroNotifier.startSessionTimeoutCleanup(orderId, ref);
 ```
 
-**Purpose**: Prevents sessions from becoming orphaned when Mostro instances are unresponsive or offline.
+**Order Creation Protection**:
+```dart
+// Automatically started when creating orders
+AbstractMostroNotifier.startSessionTimeoutCleanupForRequestId(requestId, ref);
+```
+
+**Purpose**: Prevents sessions from becoming orphaned when Mostro instances are unresponsive or offline during both order creation and order taking operations.
 
 #### **Session Deletion**
 Sessions can be deleted through several mechanisms:
 
-1. **Automatic Cleanup**: 30-second timer when no response from Mostro
+1. **Automatic Cleanup**: 10-second timer when no response from Mostro (both session types)
 2. **Timeout Detection**: Real-time detection via public events (taker scenarios)
 3. **Cancellation**: When orders are cancelled (pending/waiting states only)
 4. **Expiration**: Periodic cleanup of sessions older than 72 hours
 5. **Manual**: User-initiated session cleanup through settings
 
 #### **Session Cleanup Implementation**
+
+**Permanent Session Cleanup**:
 ```dart
 // lib/shared/notifiers/session_notifier.dart:157-161
 Future<void> deleteSession(String sessionId) async {
@@ -217,13 +244,24 @@ Future<void> deleteSession(String sessionId) async {
 }
 ```
 
+**Temporary Session Cleanup**:
+```dart
+// lib/shared/notifiers/session_notifier.dart
+Future<void> deleteSessionByRequestId(int requestId) async {
+  _requestIdToSession.remove(requestId);
+  // Note: No storage deletion - these are temporary sessions in memory only
+  _emitState();
+}
+```
+
 #### **Timer Management**
-The orphan session prevention system uses static timer storage for proper resource management:
+The orphan session prevention system uses static timer storage with differentiated keys for proper resource management:
 
 - **Timer Storage**: `Map<String, Timer> _sessionTimeouts`
+- **Key Strategy**: `orderId` for order taking, `'request:requestId'` for order creation
 - **Automatic Cancellation**: Timers cancelled when Mostro responds
 - **Disposal Cleanup**: Timers cleaned up when notifiers are disposed
-- **Memory Safety**: Prevents timer-related memory leaks
+- **Memory Safety**: Prevents timer-related memory leaks and key collisions
 
 ## Order Creation Flow
 
@@ -1118,5 +1156,5 @@ The Mostro mobile app implements a sophisticated hierarchical key management sys
 
 This architecture ensures that user funds and privacy are protected while maintaining the ability to build reputation and participate in the Mostro peer-to-peer trading network.
 
-*Last updated: September 15, 2025*  
+*Last updated: September 29, 2025*  
 *Protocol version: 1.0*  
