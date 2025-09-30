@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/order.dart';
+import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/utils/currency_utils.dart';
 
@@ -34,6 +35,112 @@ class TradeInformationTab extends StatelessWidget {
     // Fallback: use current time minus a reasonable amount
     // This is better than showing "Unknown date"
     return DateTime.now().subtract(const Duration(hours: 1));
+  }
+
+  Widget _buildStatusChip(BuildContext context, Status status) {
+    Color backgroundColor;
+    Color textColor;
+    String label;
+
+    switch (status) {
+      case Status.active:
+        backgroundColor =
+            AppTheme.statusActiveBackground.withValues(alpha: 0.3);
+        textColor = AppTheme.statusActiveText;
+        label = S.of(context)!.active;
+        break;
+      case Status.pending:
+        backgroundColor =
+            AppTheme.statusPendingBackground.withValues(alpha: 0.3);
+        textColor = AppTheme.statusPendingText;
+        label = S.of(context)!.pending;
+        break;
+      case Status.waitingPayment:
+        backgroundColor =
+            AppTheme.statusWaitingBackground.withValues(alpha: 0.3);
+        textColor = AppTheme.statusWaitingText;
+        label = S.of(context)!.waitingPayment;
+        break;
+      case Status.waitingBuyerInvoice:
+        backgroundColor =
+            AppTheme.statusWaitingBackground.withValues(alpha: 0.3);
+        textColor = AppTheme.statusWaitingText;
+        label = S.of(context)!.waitingInvoice;
+        break;
+      case Status.paymentFailed:
+        backgroundColor =
+            AppTheme.statusInactiveBackground.withValues(alpha: 0.3);
+        textColor = AppTheme.statusInactiveText;
+        label = S.of(context)!.paymentFailedText;
+        break;
+      case Status.fiatSent:
+        backgroundColor =
+            AppTheme.statusSuccessBackground.withValues(alpha: 0.3);
+        textColor = AppTheme.statusSuccessText;
+        label = S.of(context)!.fiatSent;
+        break;
+      case Status.canceled:
+      case Status.canceledByAdmin:
+      case Status.cooperativelyCanceled:
+        backgroundColor =
+            AppTheme.statusInactiveBackground.withValues(alpha: 0.3);
+        textColor = AppTheme.statusInactiveText;
+        label = S.of(context)!.cancel;
+        break;
+      case Status.settledByAdmin:
+      case Status.settledHoldInvoice:
+        backgroundColor =
+            AppTheme.statusSettledBackground.withValues(alpha: 0.3);
+        textColor = AppTheme.statusSettledText;
+        label = S.of(context)!.settled;
+        break;
+      case Status.completedByAdmin:
+        backgroundColor =
+            AppTheme.statusSuccessBackground.withValues(alpha: 0.3);
+        textColor = AppTheme.statusSuccessText;
+        label = S.of(context)!.completed;
+        break;
+      case Status.dispute:
+        backgroundColor =
+            AppTheme.statusDisputeBackground.withValues(alpha: 0.3);
+        textColor = AppTheme.statusDisputeText;
+        label = S.of(context)!.dispute;
+        break;
+      case Status.expired:
+        backgroundColor =
+            AppTheme.statusInactiveBackground.withValues(alpha: 0.3);
+        textColor = AppTheme.statusInactiveText;
+        label = S.of(context)!.expired;
+        break;
+      case Status.success:
+        backgroundColor =
+            AppTheme.statusSuccessBackground.withValues(alpha: 0.3);
+        textColor = AppTheme.statusSuccessText;
+        label = S.of(context)!.success;
+        break;
+      default:
+        backgroundColor =
+            AppTheme.statusInactiveBackground.withValues(alpha: 0.3);
+        textColor = AppTheme.statusInactiveText;
+        label = status.toString();
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: textColor,
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
   }
 
   @override
@@ -98,36 +205,20 @@ class TradeInformationTab extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      order!.kind.value == 'sell'
-                          ? S.of(context)!.sellingSats(CurrencyUtils.formatSats(order!.amount))
-                          : S.of(context)!.buyingSats(CurrencyUtils.formatSats(order!.amount)),
-                      style: const TextStyle(
-                        color: AppTheme.cream1,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: order!.status.value == 'active'
-                            ? AppTheme.statusActiveBackground
-                            : AppTheme.statusPendingBackground,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                    Flexible(
                       child: Text(
-                        order!.status.value.toUpperCase(),
-                        style: TextStyle(
-                          color: order!.status.value == 'active'
-                              ? AppTheme.statusActiveText
-                              : AppTheme.statusPendingText,
-                          fontSize: 12,
+                        order!.kind.value == 'sell'
+                            ? S.of(context)!.sellingSats(CurrencyUtils.formatSats(order!.amount))
+                            : S.of(context)!.buyingSats(CurrencyUtils.formatSats(order!.amount)),
+                        style: const TextStyle(
+                          color: AppTheme.cream1,
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
+                    const SizedBox(width: 8),
+                    _buildStatusChip(context, order!.status),
                   ],
                 ),
                 const SizedBox(height: 8),
