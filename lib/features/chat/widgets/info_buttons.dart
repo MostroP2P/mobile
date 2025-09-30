@@ -60,6 +60,7 @@ class InfoButtons extends StatelessWidget {
           elevation: 0,
           minimumSize: const Size(0, 44), // Minimum tap target size
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          animationDuration: Duration.zero,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
