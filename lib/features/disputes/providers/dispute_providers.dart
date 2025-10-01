@@ -1,3 +1,4 @@
+import 'package:mostro_mobile/data/enums.dart' as enums;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/models/dispute.dart';
 import 'package:mostro_mobile/data/models/dispute_chat.dart';
@@ -120,13 +121,33 @@ final userDisputeDataProvider = FutureProvider<List<DisputeData>>((ref) async {
       }
     }
 
+    // Convert session role to UserRole
+    UserRole? userRole;
+    if (matchingSession?.role != null) {
+      userRole = matchingSession!.role == enums.Role.buyer 
+          ? UserRole.buyer 
+          : matchingSession.role == enums.Role.seller
+              ? UserRole.seller
+              : UserRole.unknown;
+      print('DisputeProvider: For dispute ${dispute.disputeId}, session.role = ${matchingSession.role}, converted to userRole = $userRole');
+    } else {
+      print('DisputeProvider: No session role found for dispute ${dispute.disputeId}');
+    }
+
     // If we found matching order state, use it for context
     if (matchingSession != null && matchingOrderState != null) {
-      return DisputeData.fromDispute(dispute, orderState: matchingOrderState);
+      return DisputeData.fromDispute(
+        dispute, 
+        orderState: matchingOrderState,
+        userRole: userRole,
+      );
     }
 
     // Fallback: create DisputeData without order context
-    return DisputeData.fromDispute(dispute);
+    return DisputeData.fromDispute(
+      dispute,
+      userRole: userRole,
+    );
   }).toList();
 
   // Sort disputes by creation date - most recent first

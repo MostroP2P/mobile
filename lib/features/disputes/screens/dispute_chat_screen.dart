@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mostro_mobile/data/enums.dart' as enums;
 import 'package:mostro_mobile/features/disputes/widgets/dispute_communication_section.dart';
 import 'package:mostro_mobile/features/disputes/widgets/dispute_message_input.dart';
 import 'package:mostro_mobile/features/disputes/providers/dispute_providers.dart';
@@ -112,6 +113,19 @@ class DisputeChatScreen extends ConsumerWidget {
         }
       }
 
+      // Convert session role to UserRole
+      UserRole? userRole;
+      if (matchingSession?.role != null) {
+        userRole = matchingSession!.role == enums.Role.buyer 
+            ? UserRole.buyer 
+            : matchingSession.role == enums.Role.seller
+                ? UserRole.seller
+                : UserRole.unknown;
+        debugPrint('DisputeChatScreen: session.role = ${matchingSession.role}, converted to userRole = $userRole');
+      } else {
+        debugPrint('DisputeChatScreen: No session role found for dispute ${dispute.disputeId}');
+      }
+
       // If we found a matching session, use it
       if (matchingSession != null && matchingOrderState != null) {
         // Always prioritize session.peer information when available
@@ -121,7 +135,8 @@ class DisputeChatScreen extends ConsumerWidget {
           return _createDisputeDataWithChatInfo(
             dispute,
             matchingOrderState,
-            matchingSession.peer!.publicKey // Use session.peer for correct counterparty
+            matchingSession.peer!.publicKey, // Use session.peer for correct counterparty
+            userRole,
           );
         }
 
@@ -130,12 +145,17 @@ class DisputeChatScreen extends ConsumerWidget {
           return _createDisputeDataWithChatInfo(
             dispute,
             matchingOrderState,
-            matchingOrderState.peer!.publicKey
+            matchingOrderState.peer!.publicKey,
+            userRole,
           );
         }
 
         // Use order state for context even without peer info
-        return DisputeData.fromDispute(dispute, orderState: matchingOrderState);
+        return DisputeData.fromDispute(
+          dispute, 
+          orderState: matchingOrderState,
+          userRole: userRole,
+        );
       }
 
       // If we didn't find exact match by orderId, try to find the dispute by disputeId
@@ -147,12 +167,26 @@ class DisputeChatScreen extends ConsumerWidget {
             
             // Check if this order state contains our dispute
             if (orderState.dispute?.disputeId == dispute.disputeId) {
+              // Convert session role to UserRole
+              UserRole? userRole;
+              if (session.role != null) {
+                userRole = session.role == enums.Role.buyer 
+                    ? UserRole.buyer 
+                    : session.role == enums.Role.seller
+                        ? UserRole.seller
+                        : UserRole.unknown;
+                debugPrint('DisputeChatScreen (fallback): session.role = ${session.role}, converted to userRole = $userRole');
+              } else {
+                debugPrint('DisputeChatScreen (fallback): No session role found for dispute ${dispute.disputeId}');
+              }
+              
               // Found the order state that contains this dispute
               if (session.peer != null) {
                 return _createDisputeDataWithChatInfo(
                   dispute,
                   orderState,
-                  session.peer!.publicKey
+                  session.peer!.publicKey,
+                  userRole,
                 );
               }
               
@@ -160,11 +194,16 @@ class DisputeChatScreen extends ConsumerWidget {
                 return _createDisputeDataWithChatInfo(
                   dispute,
                   orderState,
-                  orderState.peer!.publicKey
+                  orderState.peer!.publicKey,
+                  userRole,
                 );
               }
               
-              return DisputeData.fromDispute(dispute, orderState: orderState);
+              return DisputeData.fromDispute(
+                dispute, 
+                orderState: orderState,
+                userRole: userRole,
+              );
             }
           } catch (e) {
             // Continue checking other sessions
@@ -186,13 +225,18 @@ class DisputeChatScreen extends ConsumerWidget {
   DisputeData _createDisputeDataWithChatInfo(
     Dispute dispute, 
     dynamic orderState, 
-    String peerPubkey
+    String peerPubkey,
+    UserRole? userRole,
   ) {
     // Use the same logic as DisputeData.fromDispute but with custom peer information
     // This ensures consistency across all dispute states
     
     // First, create the dispute data using the standard method
-    final standardDisputeData = DisputeData.fromDispute(dispute, orderState: orderState);
+    final standardDisputeData = DisputeData.fromDispute(
+      dispute, 
+      orderState: orderState,
+      userRole: userRole,
+    );
     
     // Then override the counterparty with the correct peer information
     final disputeData = DisputeData(
