@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/features/disputes/notifiers/dispute_chat_notifier.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
-class DisputeMessageInput extends StatefulWidget {
+class DisputeMessageInput extends ConsumerStatefulWidget {
   final String disputeId;
 
   const DisputeMessageInput({
@@ -11,10 +13,10 @@ class DisputeMessageInput extends StatefulWidget {
   });
 
   @override
-  State<DisputeMessageInput> createState() => _DisputeMessageInputState();
+  ConsumerState<DisputeMessageInput> createState() => _DisputeMessageInputState();
 }
 
-class _DisputeMessageInputState extends State<DisputeMessageInput> {
+class _DisputeMessageInputState extends ConsumerState<DisputeMessageInput> {
   final TextEditingController _textController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
 
@@ -28,14 +30,8 @@ class _DisputeMessageInputState extends State<DisputeMessageInput> {
   void _sendMessage() {
     final text = _textController.text.trim();
     if (text.isNotEmpty) {
-      // Mock sending - just simulate with a snackbar
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Message sent: $text'),
-          backgroundColor: Colors.green,
-          duration: const Duration(seconds: 1),
-        ),
-      );
+      // Send message through the dispute chat notifier
+      ref.read(disputeChatNotifierProvider(widget.disputeId).notifier).sendMessage(text);
       _textController.clear();
     }
   }

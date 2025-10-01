@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/dispute_chat.dart';
 import 'package:mostro_mobile/data/models/dispute.dart';
+import 'package:mostro_mobile/features/disputes/notifiers/dispute_chat_notifier.dart';
 import 'package:mostro_mobile/features/disputes/widgets/dispute_message_bubble.dart';
 import 'package:mostro_mobile/features/disputes/widgets/dispute_info_card.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
-class DisputeMessagesList extends StatefulWidget {
+class DisputeMessagesList extends ConsumerStatefulWidget {
   final String disputeId;
   final String status;
   final DisputeData disputeData;
@@ -21,10 +23,10 @@ class DisputeMessagesList extends StatefulWidget {
   });
 
   @override
-  State<DisputeMessagesList> createState() => _DisputeMessagesListState();
+  ConsumerState<DisputeMessagesList> createState() => _DisputeMessagesListState();
 }
 
-class _DisputeMessagesListState extends State<DisputeMessagesList> {
+class _DisputeMessagesListState extends ConsumerState<DisputeMessagesList> {
   late ScrollController _scrollController;
 
   @override
@@ -62,8 +64,9 @@ class _DisputeMessagesListState extends State<DisputeMessagesList> {
 
   @override
   Widget build(BuildContext context) {
-    // Generate mock messages based on status
-    final messages = _getMockMessages();
+    // Get real messages from provider
+    final chatState = ref.watch(disputeChatNotifierProvider(widget.disputeId));
+    final messages = chatState.messages;
 
     return Container(
       color: AppTheme.backgroundDark,
@@ -275,16 +278,6 @@ class _DisputeMessagesListState extends State<DisputeMessagesList> {
         ],
       ),
     );
-  }
-
-  List<DisputeChat> _getMockMessages() {
-    // For now, return empty list for real implementation
-    // In the future, this should load real dispute chat messages
-    // from the dispute chat provider or repository
-    
-    // Always return empty list - no mock messages should appear
-    // Mock messages were causing confusion in the UI
-    return [];
   }
 
   /// Normalizes status string by trimming, lowercasing, and replacing spaces/underscores with hyphens
