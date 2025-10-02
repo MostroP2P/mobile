@@ -539,6 +539,7 @@
   "completePurchaseButton": "COMPLETAR COMPRA",
   "rateButton": "CALIFICAR",
   "contactButton": "CONTACTAR",
+  "viewDisputeButton": "VER DISPUTA",
   
   "rateCounterpart": "Calificar Contraparte",
   "submitRating": "Enviar Calificación",
