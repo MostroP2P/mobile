@@ -288,12 +288,18 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
           return;
         }
 
-
         // Ensure dispute has the orderId for proper association and correct status
+        // Also ensure createdAt is set from event timestamp if not already present
+        final createdAt = dispute.createdAt ?? 
+            (event.timestamp != null 
+                ? DateTime.fromMillisecondsSinceEpoch(event.timestamp! * 1000)
+                : DateTime.now());
+        
         final disputeWithOrderId = dispute.copyWith(
           orderId: orderId,
           status: dispute.status ?? 'initiated', // Ensure status is set for user-initiated disputes
           action: 'dispute-initiated-by-you', // Store the action for UI logic
+          createdAt: createdAt, // Ensure timestamp is preserved
         );
 
         // Save dispute in state for listing
@@ -326,14 +332,21 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
             
             if (payloadMap.containsKey('dispute')) {
               final disputeId = payloadMap['dispute'] as String;
+              
+              // Use the event timestamp (from gift-wrapped message) if available,
+              // otherwise fall back to DateTime.now(). The timestamp is in seconds.
+              final createdAt = event.timestamp != null
+                  ? DateTime.fromMillisecondsSinceEpoch(event.timestamp! * 1000)
+                  : DateTime.now();
+              
               dispute = Dispute(
                 disputeId: disputeId,
                 orderId: orderId,
                 status: 'initiated',
                 action: 'dispute-initiated-by-peer',
-                createdAt: DateTime.now(),
+                createdAt: createdAt,
               );
-              logger.i('disputeInitiatedByPeer: Created dispute from ID: $disputeId');
+              logger.i('disputeInitiatedByPeer: Created dispute from ID: $disputeId with timestamp: $createdAt');
             }
           } catch (e) {
             logger.e('disputeInitiatedByPeer: Failed to create dispute from payload: $e');
@@ -346,14 +359,22 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         }
 
 
-        logger.i('disputeInitiatedByPeer: Dispute details - ID: ${dispute.disputeId}, Status: ${dispute.status}, Action: ${dispute.action}');
+        logger.i('disputeInitiatedByPeer: Dispute details - ID: ${dispute.disputeId}, Status: ${dispute.status}, Action: ${dispute.action}, createdAt: ${dispute.createdAt}');
+        
         // Ensure dispute has the orderId for proper association and correct status/action
+        // Also ensure createdAt is set from event timestamp if not already present
+        final createdAt = dispute.createdAt ?? 
+            (event.timestamp != null 
+                ? DateTime.fromMillisecondsSinceEpoch(event.timestamp! * 1000)
+                : DateTime.now());
+        
         final disputeWithOrderId = dispute.copyWith(
           orderId: orderId,
           status: dispute.status ?? 'initiated', // Ensure status is set
           action: 'dispute-initiated-by-peer', // Store the action for UI logic
+          createdAt: createdAt, // Ensure timestamp is preserved
         );
-        logger.i('disputeInitiatedByPeer: Final dispute - ID: ${disputeWithOrderId.disputeId}, Status: ${disputeWithOrderId.status}, Action: ${disputeWithOrderId.action}');
+        logger.i('disputeInitiatedByPeer: Final dispute - ID: ${disputeWithOrderId.disputeId}, Status: ${disputeWithOrderId.status}, Action: ${disputeWithOrderId.action}, createdAt: ${disputeWithOrderId.createdAt}');
 
 
         // Save dispute in state for listing

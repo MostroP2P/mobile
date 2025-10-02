@@ -93,65 +93,73 @@ final userDisputesProvider = FutureProvider<List<Dispute>>((ref) async {
 });
 
 /// Provider for user disputes as DisputeData (UI view models)
-final userDisputeDataProvider = FutureProvider<List<DisputeData>>((ref) async {
-  final disputes = await ref.watch(userDisputesProvider.future);
-  final sessions = ref.read(sessionNotifierProvider);
-
-  final disputeDataList = disputes.map((dispute) {
-    // Find the specific session for this dispute's order
-    Session? matchingSession;
-    dynamic matchingOrderState;
-
-    // Try to find the session and order state that contains this dispute
-    for (final session in sessions) {
-      if (session.orderId != null) {
-        try {
-          final orderState = ref.read(orderNotifierProvider(session.orderId!));
-
-          // Check if this order state contains our dispute
-          if (orderState.dispute?.disputeId == dispute.disputeId) {
-            matchingSession = session;
-            matchingOrderState = orderState;
-            break;
-          }
-        } catch (e) {
-          // Continue checking other sessions
-          continue;
-        }
-      }
-    }
-
-    // Convert session role to UserRole
-    UserRole? userRole;
-    if (matchingSession?.role != null) {
-      userRole = matchingSession!.role == enums.Role.buyer 
-          ? UserRole.buyer 
-          : matchingSession.role == enums.Role.seller
-              ? UserRole.seller
-              : UserRole.unknown;
-      print('DisputeProvider: For dispute ${dispute.disputeId}, session.role = ${matchingSession.role}, converted to userRole = $userRole');
-    } else {
-      print('DisputeProvider: No session role found for dispute ${dispute.disputeId}');
-    }
-
-    // If we found matching order state, use it for context
-    if (matchingSession != null && matchingOrderState != null) {
-      return DisputeData.fromDispute(
-        dispute, 
-        orderState: matchingOrderState,
-        userRole: userRole,
-      );
-    }
-
-    // Fallback: create DisputeData without order context
-    return DisputeData.fromDispute(
-      dispute,
-      userRole: userRole,
-    );
-  }).toList();
-
-  // Sort disputes by creation date - most recent first
-  disputeDataList.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+/// This provider automatically updates when disputes change
+final userDisputeDataProvider = Provider<AsyncValue<List<DisputeData>>>((ref) {
+  final disputesAsync = ref.watch(userDisputesProvider);
   
-  return disputeDataList;
+  return disputesAsync.when(
+    data: (disputes) {
+      final sessions = ref.read(sessionNotifierProvider);
+
+      final disputeDataList = disputes.map((dispute) {
+        // Find the specific session for this dispute's order
+        Session? matchingSession;
+        dynamic matchingOrderState;
+
+        // Try to find the session and order state that contains this dispute
+        for (final session in sessions) {
+          if (session.orderId != null) {
+            try {
+              final orderState = ref.read(orderNotifierProvider(session.orderId!));
+
+              // Check if this order state contains our dispute
+              if (orderState.dispute?.disputeId == dispute.disputeId) {
+                matchingSession = session;
+                matchingOrderState = orderState;
+                break;
+              }
+            } catch (e) {
+              // Continue checking other sessions
+              continue;
+            }
+          }
+        }
+
+        // Convert session role to UserRole
+        UserRole? userRole;
+        if (matchingSession?.role != null) {
+          userRole = matchingSession!.role == enums.Role.buyer 
+              ? UserRole.buyer 
+              : matchingSession.role == enums.Role.seller
+                  ? UserRole.seller
+                  : UserRole.unknown;
+          print('DisputeProvider: For dispute ${dispute.disputeId}, session.role = ${matchingSession.role}, converted to userRole = $userRole');
+        } else {
+          print('DisputeProvider: No session role found for dispute ${dispute.disputeId}');
+        }
+
+        // If we found matching order state, use it for context
+        if (matchingSession != null && matchingOrderState != null) {
+          return DisputeData.fromDispute(
+            dispute, 
+            orderState: matchingOrderState,
+            userRole: userRole,
+          );
+        }
+
+        // Fallback: create DisputeData without order context
+        return DisputeData.fromDispute(
+          dispute,
+          userRole: userRole,
+        );
+      }).toList();
+
+      // Sort disputes by creation date - most recent first
+      disputeDataList.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      
+      return AsyncValue.data(disputeDataList);
+    },
+    loading: () => const AsyncValue.loading(),
+    error: (error, stack) => AsyncValue.error(error, stack),
+  );
 });
