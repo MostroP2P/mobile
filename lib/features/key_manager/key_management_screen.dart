@@ -7,6 +7,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
+import 'package:mostro_mobile/features/subscriptions/subscription_manager_provider.dart';
 import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
@@ -84,6 +85,9 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
   Future<void> _importKeyAndRestore() async {
     try {
       await _importKey();
+
+      ref.read(subscriptionManagerProvider).reinitializeMasterKeySubscription();
+
       await ref.read(mostroServiceProvider).requestRestoreSession();
 
       if (mounted) {

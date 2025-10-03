@@ -97,6 +97,12 @@ class SubscriptionManager {
     }
   }
 
+  /// Reinitialize master key subscription after importing new key
+  void reinitializeMasterKeySubscription() {
+    unsubscribeByType(SubscriptionType.masterKey);
+    _initializeMasterKeySubscription();
+  }
+
   /// Session-based subscription types that depend on active sessions
   static const _sessionBasedTypes = [
     SubscriptionType.orders,
