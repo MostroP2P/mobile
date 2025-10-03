@@ -72,25 +72,38 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
     await _loadKeys();
   }
 
-  // ignore: unused_element
   Future<void> _importKey() async {
     final keyManager = ref.read(keyManagerProvider);
     final importValue = _importController.text.trim();
     if (importValue.isNotEmpty) {
-      try {
-        await keyManager.importMnemonic(importValue);
-        await _loadKeys();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(S.of(context)!.keyImportedSuccessfully)),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(S.of(context)!.importFailed(e.toString()))),
-          );
-        }
+      await keyManager.importMnemonic(importValue);
+      await _loadKeys();
+    }
+  }
+
+  Future<void> _importKeyAndRestore() async {
+    try {
+      await _importKey();
+      await ref.read(mostroServiceProvider).requestRestoreSession();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(S.of(context)!.keyImportedSuccessfully),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(S.of(context)!.importFailed(e.toString())),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
       }
     }
   }
@@ -558,10 +571,9 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton(
-        onPressed: null, // Keep disabled as requested
+        onPressed: () => _showImportDialog(context),
         style: OutlinedButton.styleFrom(
-          side:
-              BorderSide(color: AppTheme.textSecondary.withValues(alpha: 0.3)),
+          side: const BorderSide(color: AppTheme.activeColor),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
@@ -570,22 +582,118 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
+            const Icon(
               LucideIcons.download,
               size: 20,
-              color: AppTheme.textSecondary.withValues(alpha: 0.5),
+              color: AppTheme.activeColor,
             ),
             const SizedBox(width: 8),
             Text(
               S.of(context)!.importMostroUser,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
-                color: AppTheme.textSecondary.withValues(alpha: 0.5),
+                color: AppTheme.activeColor,
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showImportDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: AppTheme.backgroundCard,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+        ),
+        title: Text(
+          S.of(context)!.importMostroUser,
+          style: const TextStyle(
+            color: AppTheme.textPrimary,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              S.of(context)!.secretWordsInfoText,
+              style: const TextStyle(
+                color: AppTheme.textSecondary,
+                fontSize: 14,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _importController,
+              decoration: InputDecoration(
+                hintText: S.of(context)!.secretWords,
+                hintStyle: const TextStyle(color: AppTheme.textSecondary),
+                filled: true,
+                fillColor: AppTheme.backgroundInput,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: AppTheme.activeColor),
+                ),
+              ),
+              style: const TextStyle(color: AppTheme.textPrimary),
+              maxLines: 3,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              _importController.clear();
+              Navigator.of(dialogContext).pop();
+            },
+            child: Text(
+              S.of(context)!.cancel,
+              style: const TextStyle(
+                color: AppTheme.textSecondary,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              _importKeyAndRestore();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.activeColor,
+              foregroundColor: Colors.black,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            ),
+            child: Text(
+              S.of(context)!.importMostroUser,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

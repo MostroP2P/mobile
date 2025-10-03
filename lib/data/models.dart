@@ -13,3 +13,4 @@ export 'package:mostro_mobile/data/models/rating.dart';
 export 'package:mostro_mobile/data/models/session.dart';
 export 'package:mostro_mobile/data/models/payment_failed.dart';
 export 'package:mostro_mobile/data/models/next_trade.dart';
+export 'package:mostro_mobile/data/models/restore_data.dart';

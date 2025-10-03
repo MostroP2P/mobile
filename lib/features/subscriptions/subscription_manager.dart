@@ -9,6 +9,7 @@ import 'package:mostro_mobile/features/subscriptions/subscription.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_type.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
+import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 
 /// Manages Nostr subscriptions across different parts of the application.
 ///
@@ -24,16 +25,19 @@ class SubscriptionManager {
   final _ordersController = StreamController<NostrEvent>.broadcast();
   final _chatController = StreamController<NostrEvent>.broadcast();
   final _relayListController = StreamController<RelayListEvent>.broadcast();
+  final _masterKeyController = StreamController<NostrEvent>.broadcast();
 
   Stream<NostrEvent> get orders => _ordersController.stream;
   Stream<NostrEvent> get chat => _chatController.stream;
   Stream<RelayListEvent> get relayList => _relayListController.stream;
+  Stream<NostrEvent> get masterKey => _masterKeyController.stream;
 
   SubscriptionManager(this.ref) {
     _initSessionListener();
     // Ensure resources are released with provider/container lifecycle
     ref.onDispose(dispose);
     _initializeExistingSessions();
+    _initializeMasterKeySubscription();
   }
 
   void _initSessionListener() {
@@ -71,20 +75,48 @@ class SubscriptionManager {
     }
   }
 
+  /// Initialize master key subscription for restore session responses
+  void _initializeMasterKeySubscription() {
+    try {
+      final keyManager = ref.read(keyManagerProvider);
+      final masterKey = keyManager.masterKeyPair;
+      if (masterKey != null) {
+        final filter = NostrFilter(
+          kinds: [1059],
+          p: [masterKey.public],
+        );
+        subscribe(
+          type: SubscriptionType.masterKey,
+          filter: filter,
+        );
+        _logger.i('Master key subscription initialized');
+      }
+    } catch (e, stackTrace) {
+      _logger.e('Error initializing master key subscription',
+          error: e, stackTrace: stackTrace);
+    }
+  }
+
+  /// Session-based subscription types that depend on active sessions
+  static const _sessionBasedTypes = [
+    SubscriptionType.orders,
+    SubscriptionType.chat,
+  ];
+
   void _updateAllSubscriptions(List<Session> sessions) {
     if (sessions.isEmpty) {
-      _logger.i('No sessions available, clearing all subscriptions');
-      _clearAllSubscriptions();
+      _logger.i('No sessions available, clearing session-based subscriptions');
+      _clearSessionBasedSubscriptions();
       return;
     }
 
-    for (final type in SubscriptionType.values) {
+    for (final type in _sessionBasedTypes) {
       _updateSubscription(type, sessions);
     }
   }
 
-  void _clearAllSubscriptions() {
-    for (final type in SubscriptionType.values) {
+  void _clearSessionBasedSubscriptions() {
+    for (final type in _sessionBasedTypes) {
       unsubscribeByType(type);
     }
   }
@@ -144,6 +176,16 @@ class SubscriptionManager {
       case SubscriptionType.relayList:
         // Relay list subscriptions are handled separately via subscribeToMostroRelayList
         return null;
+      case SubscriptionType.masterKey:
+        final keyManager = ref.read(keyManagerProvider);
+        final masterKey = keyManager.masterKeyPair;
+        if (masterKey == null) {
+          return null;
+        }
+        return NostrFilter(
+          kinds: [1059],
+          p: [masterKey.public],
+        );
     }
   }
 
@@ -161,6 +203,9 @@ class SubscriptionManager {
           if (relayListEvent != null) {
             _relayListController.add(relayListEvent);
           }
+          break;
+        case SubscriptionType.masterKey:
+          _masterKeyController.add(event);
           break;
       }
     } catch (e, stackTrace) {
@@ -210,6 +255,8 @@ class SubscriptionManager {
       case SubscriptionType.relayList:
         // RelayList subscriptions should use subscribeToMostroRelayList() instead
         throw UnsupportedError('Use subscribeToMostroRelayList() for relay list subscriptions');
+      case SubscriptionType.masterKey:
+        return masterKey;
     }
   }
 
@@ -329,5 +376,6 @@ class SubscriptionManager {
     _ordersController.close();
     _chatController.close();
     _relayListController.close();
+    _masterKeyController.close();
   }
 }

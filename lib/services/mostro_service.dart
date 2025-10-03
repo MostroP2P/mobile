@@ -20,6 +20,7 @@ class MostroService {
 
   Settings _settings;
   StreamSubscription<NostrEvent>? _ordersSubscription;
+  StreamSubscription<NostrEvent>? _masterKeySubscription;
 
   MostroService(this.ref) : _settings = ref.read(settingsProvider);
 
@@ -34,10 +35,21 @@ class MostroService {
       },
       cancelOnError: false,
     );
+
+    // Subscribe to master key messages for restore session responses
+    _masterKeySubscription = ref.read(subscriptionManagerProvider).masterKey.listen(
+      _onData,
+      onError: (error, stackTrace) {
+        _logger.e('Error in master key subscription',
+            error: error, stackTrace: stackTrace);
+      },
+      cancelOnError: false,
+    );
   }
 
   void dispose() {
     _ordersSubscription?.cancel();
+    _masterKeySubscription?.cancel();
     _logger.i('MostroService disposed');
   }
 
@@ -54,14 +66,24 @@ class MostroService {
     );
 
     final sessions = ref.read(sessionNotifierProvider);
-    final matchingSession = sessions.firstWhereOrNull(
+    Session? matchingSession = sessions.firstWhereOrNull(
       (s) => s.tradeKey.public == event.recipient,
     );
-    if (matchingSession == null) {
-      _logger.w('No matching session found for recipient: ${event.recipient}');
-      return;
+
+    String privateKey;
+    if (matchingSession != null) {
+      privateKey = matchingSession.tradeKey.private;
+    } else {
+      // Check if this is a master key message (for restore session responses)
+      final keyManager = ref.read(keyManagerProvider);
+      final masterKey = keyManager.masterKeyPair;
+      if (masterKey != null && event.recipient != null && event.recipient == masterKey.public) {
+        privateKey = masterKey.private;
+      } else {
+        _logger.w('No matching session found for recipient: ${event.recipient}');
+        return;
+      }
     }
-    final privateKey = matchingSession.tradeKey.private;
 
     try {
       final decryptedEvent = await event.unWrap(privateKey);
@@ -71,15 +93,25 @@ class MostroService {
       if (result is! List) return;
 
       final msg = MostroMessage.fromJson(result[0]);
-      final messageStorage = ref.read(mostroStorageProvider);
-      await messageStorage.addMessage(decryptedEvent.id!, msg);
-      _logger.i(
-        'Received DM, Event ID: ${decryptedEvent.id} with payload: ${decryptedEvent.content}',
-      );
 
-      await _maybeLinkChildOrder(msg, matchingSession);
-    } catch (e) {
-      _logger.e('Error processing event', error: e);
+      // Handle restore session response
+      if (msg.action == Action.restoreSession) {
+        await _handleRestoreResponse(msg);
+        return;
+      }
+
+      // Only store and link for non-restore messages
+      if (matchingSession != null) {
+        final messageStorage = ref.read(mostroStorageProvider);
+        await messageStorage.addMessage(decryptedEvent.id!, msg);
+        _logger.i(
+          'Received DM, Event ID: ${decryptedEvent.id} with payload: ${decryptedEvent.content}',
+        );
+
+        await _maybeLinkChildOrder(msg, matchingSession);
+      }
+    } catch (e, stackTrace) {
+      _logger.e('Error processing event', error: e, stackTrace: stackTrace);
     }
   }
 
@@ -266,6 +298,49 @@ class MostroService {
         payload: RatingUser(userRating: rating),
       ),
     );
+  }
+
+  Future<void> requestRestoreSession() async {
+    _logger.i('Requesting restore session from Mostro');
+
+    final keyManager = ref.read(keyManagerProvider);
+    final masterKey = keyManager.masterKeyPair!;
+
+    final message = MostroMessage(
+      action: Action.restoreSession,
+    );
+
+    final event = await message.wrap(
+      tradeKey: masterKey,
+      recipientPubKey: _settings.mostroPublicKey,
+      masterKey: masterKey,
+      keyIndex: null,
+    );
+
+    await ref.read(nostrServiceProvider).publishEvent(event);
+  }
+
+  Future<void> _handleRestoreResponse(MostroMessage message) async {
+    try {
+      if (message.payload == null) {
+        _logger.w('Received empty restore response');
+        return;
+      }
+
+      if (message.payload is! RestoreData) {
+        _logger.w('Invalid restore payload type: ${message.payload.runtimeType}');
+        return;
+      }
+
+      final restoreData = message.payload as RestoreData;
+      _logger.i(
+        'Restore session received ${restoreData.orders.length} orders, ${restoreData.disputes.length} disputes'
+      );
+
+      // TODO: Implement session restoration logic here
+    } catch (e, stackTrace) {
+      _logger.e('Failed to handle restore response', error: e, stackTrace: stackTrace);
+    }
   }
 
   Future<void> publishOrder(MostroMessage order) async {

@@ -85,6 +85,8 @@ class NotificationMessageMapper {
       case mostro.Action.tradePubkey:
       case mostro.Action.timeoutReversal:
         return 'notification_order_update_title';
+      case mostro.Action.restoreSession:
+        return 'notification_order_update_title';
     }
   }
 
@@ -177,6 +179,8 @@ class NotificationMessageMapper {
         return 'notification_dispute_started_message';
       case mostro.Action.tradePubkey:
       case mostro.Action.timeoutReversal:
+        return 'notification_order_update_message';
+      case mostro.Action.restoreSession:
         return 'notification_order_update_message';
     }
   }
