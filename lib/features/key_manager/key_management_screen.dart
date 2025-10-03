@@ -602,98 +602,36 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
     );
   }
 
+  String? _validateMnemonic(String value) {
+    final trimmed = value.trim();
+
+    if (trimmed.isEmpty) {
+      return S.of(context)!.mnemonicValidationEmpty;
+    }
+
+    final validCharacters = RegExp(r'^[a-zA-Z\s]+$');
+    if (!validCharacters.hasMatch(trimmed)) {
+      return S.of(context)!.mnemonicValidationInvalidFormat;
+    }
+
+    final words = trimmed.split(RegExp(r'\s+'));
+    if (words.length != 12 && words.length != 24) {
+      return S.of(context)!.mnemonicValidationInvalidWordCount;
+    }
+
+    return null;
+  }
+
   void _showImportDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: AppTheme.backgroundCard,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
-        ),
-        title: Text(
-          S.of(context)!.importMostroUser,
-          style: const TextStyle(
-            color: AppTheme.textPrimary,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              S.of(context)!.secretWordsInfoText,
-              style: const TextStyle(
-                color: AppTheme.textSecondary,
-                fontSize: 14,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _importController,
-              decoration: InputDecoration(
-                hintText: S.of(context)!.secretWords,
-                hintStyle: const TextStyle(color: AppTheme.textSecondary),
-                filled: true,
-                fillColor: AppTheme.backgroundInput,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: AppTheme.activeColor),
-                ),
-              ),
-              style: const TextStyle(color: AppTheme.textPrimary),
-              maxLines: 3,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              _importController.clear();
-              Navigator.of(dialogContext).pop();
-            },
-            child: Text(
-              S.of(context)!.cancel,
-              style: const TextStyle(
-                color: AppTheme.textSecondary,
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(dialogContext).pop();
-              _importKeyAndRestore();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.activeColor,
-              foregroundColor: Colors.black,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-            ),
-            child: Text(
-              S.of(context)!.importMostroUser,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
+      builder: (dialogContext) => _ImportDialog(
+        importController: _importController,
+        onImport: () {
+          Navigator.of(dialogContext).pop();
+          _importKeyAndRestore();
+        },
+        validateMnemonic: _validateMnemonic,
       ),
     );
   }
@@ -808,6 +746,150 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
           ],
         );
       },
+    );
+  }
+}
+
+class _ImportDialog extends StatefulWidget {
+  final TextEditingController importController;
+  final VoidCallback onImport;
+  final String? Function(String) validateMnemonic;
+
+  const _ImportDialog({
+    required this.importController,
+    required this.onImport,
+    required this.validateMnemonic,
+  });
+
+  @override
+  State<_ImportDialog> createState() => _ImportDialogState();
+}
+
+class _ImportDialogState extends State<_ImportDialog> {
+  String? _errorText;
+
+  void _validateAndImport() {
+    final error = widget.validateMnemonic(widget.importController.text);
+    if (error == null) {
+      widget.onImport();
+    } else {
+      setState(() {
+        _errorText = error;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: AppTheme.backgroundCard,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+      ),
+      title: Text(
+        S.of(context)!.importMostroUser,
+        style: const TextStyle(
+          color: AppTheme.textPrimary,
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            S.of(context)!.secretWordsInfoText,
+            style: const TextStyle(
+              color: AppTheme.textSecondary,
+              fontSize: 14,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: widget.importController,
+            decoration: InputDecoration(
+              hintText: S.of(context)!.secretWords,
+              hintStyle: const TextStyle(color: AppTheme.textSecondary),
+              filled: true,
+              fillColor: AppTheme.backgroundInput,
+              errorText: _errorText,
+              errorStyle: const TextStyle(
+                color: Colors.redAccent,
+                fontSize: 12,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(
+                  color: _errorText != null
+                      ? Colors.redAccent
+                      : Colors.white.withValues(alpha: 0.1),
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(
+                  color: _errorText != null
+                      ? Colors.redAccent
+                      : Colors.white.withValues(alpha: 0.1),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(
+                  color:
+                      _errorText != null ? Colors.redAccent : AppTheme.activeColor,
+                ),
+              ),
+            ),
+            style: const TextStyle(color: AppTheme.textPrimary),
+            maxLines: 3,
+            onChanged: (_) {
+              if (_errorText != null) {
+                setState(() {
+                  _errorText = null;
+                });
+              }
+            },
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            widget.importController.clear();
+            Navigator.of(context).pop();
+          },
+          child: Text(
+            S.of(context)!.cancel,
+            style: const TextStyle(
+              color: AppTheme.textSecondary,
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        ElevatedButton(
+          onPressed: _validateAndImport,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppTheme.activeColor,
+            foregroundColor: Colors.black,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          ),
+          child: Text(
+            S.of(context)!.importMostroUser,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

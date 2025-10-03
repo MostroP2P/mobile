@@ -74,7 +74,6 @@ class MostroService {
     if (matchingSession != null) {
       privateKey = matchingSession.tradeKey.private;
     } else {
-      // Check if this is a master key message (for restore session responses)
       final keyManager = ref.read(keyManagerProvider);
       final masterKey = keyManager.masterKeyPair;
       if (masterKey != null && event.recipient != null && event.recipient == masterKey.public) {
@@ -87,20 +86,24 @@ class MostroService {
 
     try {
       final decryptedEvent = await event.unWrap(privateKey);
-      if (decryptedEvent.content == null) return;
+      if (decryptedEvent.content == null) {
+        _logger.w('Decrypted event has no content');
+        return;
+      }
 
       final result = jsonDecode(decryptedEvent.content!);
-      if (result is! List) return;
+      if (result is! List) {
+        _logger.w('Decoded result is not a List: ${result.runtimeType}');
+        return;
+      }
 
       final msg = MostroMessage.fromJson(result[0]);
 
-      // Handle restore session response
       if (msg.action == Action.restoreSession) {
         await _handleRestoreResponse(msg);
         return;
       }
 
-      // Only store and link for non-restore messages
       if (matchingSession != null) {
         final messageStorage = ref.read(mostroStorageProvider);
         await messageStorage.addMessage(decryptedEvent.id!, msg);
@@ -333,11 +336,41 @@ class MostroService {
       }
 
       final restoreData = message.payload as RestoreData;
-      _logger.i(
-        'Restore session received ${restoreData.orders.length} orders, ${restoreData.disputes.length} disputes'
-      );
 
-      // TODO: Implement session restoration logic here
+      final keyManager = ref.read(keyManagerProvider);
+      final masterKey = keyManager.masterKeyPair;
+      if (masterKey == null) {
+        _logger.e('No master key available for restore');
+        return;
+      }
+
+      final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+      int restoredCount = 0;
+
+      for (final orderInfo in restoreData.orders) {
+        try {
+          final tradeKey = await keyManager.deriveTradeKeyFromIndex(orderInfo.tradeIndex);
+
+          final session = Session(
+            masterKey: masterKey,
+            tradeKey: tradeKey,
+            keyIndex: orderInfo.tradeIndex,
+            fullPrivacy: _settings.fullPrivacyMode,
+            startTime: DateTime.now(),
+            orderId: orderInfo.orderId,
+            role: Role.seller,
+          );
+
+          await sessionNotifier.saveSession(session);
+          restoredCount++;
+        } catch (e) {
+          _logger.e('Failed to restore order ${orderInfo.orderId}', error: e);
+        }
+      }
+
+      _logger.i(
+        'Restored $restoredCount orders, ${restoreData.disputes.length} disputes'
+      );
     } catch (e, stackTrace) {
       _logger.e('Failed to handle restore response', error: e, stackTrace: stackTrace);
     }
