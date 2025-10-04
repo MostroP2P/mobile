@@ -187,6 +187,14 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     _emitState();
   }
 
+  /// Delete session by requestId for timeout cleanup
+  /// Used when create order timeout expires after 10s with no Mostro response
+  Future<void> deleteSessionByRequestId(int requestId) async {
+    _requestIdToSession.remove(requestId);
+    // Note: No storage deletion - these are temporary sessions in memory only
+    _emitState();
+  }
+
   /// Clean up temporary session by requestId
   /// Used when order creation fails and needs retry
   void cleanupRequestSession(int requestId) {

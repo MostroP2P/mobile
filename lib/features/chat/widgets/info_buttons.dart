@@ -48,7 +48,7 @@ class InfoButtons extends StatelessWidget {
           backgroundColor: isSelected
               ? AppTheme.mostroGreen.withValues(alpha: 51) // 0.2 opacity
               : AppTheme.backgroundCard,
-          foregroundColor: isSelected ? AppTheme.mostroGreen : AppTheme.textSecondary,
+          foregroundColor: isSelected ? const Color(0xFF1A1A1A) : AppTheme.textSecondary,
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
@@ -60,6 +60,7 @@ class InfoButtons extends StatelessWidget {
           elevation: 0,
           minimumSize: const Size(0, 44), // Minimum tap target size
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          animationDuration: Duration.zero,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,

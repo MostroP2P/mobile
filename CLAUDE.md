@@ -120,11 +120,19 @@ Comprehensive system that prevents orphan sessions and detects order timeouts th
 #### **10-Second Cleanup Timer**
 Automatic cleanup system that prevents sessions from becoming orphaned when Mostro instances are unresponsive:
 
+**Order Taking Protection**:
 - **Activation**: Started automatically when users take orders (`takeSellOrder`, `takeBuyOrder`)
 - **Purpose**: Prevents orphan sessions when Mostro doesn't respond within 10 seconds
 - **Cleanup**: Deletes session, shows localized notification, navigates to order book
 - **Cancellation**: Timer automatically cancelled when any response received from Mostro
 - **Implementation**: `AbstractMostroNotifier.startSessionTimeoutCleanup()` in `abstract_mostro_notifier.dart:286-305`
+
+**Order Creation Protection**:
+- **Activation**: Started automatically when users create orders (`AddOrderNotifier.submitOrder`)
+- **Purpose**: Prevents orphan sessions when Mostro doesn't respond to new order creation within 10 seconds
+- **Cleanup**: Deletes temporary session, shows localized notification, navigates to order book
+- **Cancellation**: Timer automatically cancelled when any response received from Mostro
+- **Implementation**: `AbstractMostroNotifier.startSessionTimeoutCleanupForRequestId()` in `abstract_mostro_notifier.dart`
 
 #### **Localized User Feedback**
 ```
@@ -139,7 +147,7 @@ Italian: "Nessuna risposta ricevuta, verifica la tua connessione e riprova più 
 - **Monitors**: 38383 public events for status changes
 - **Triggers**: When public event shows different status than local state (simplified logic without timestamp comparison)
 - **Real-time**: Subscribes to `orderEventsProvider` for instant detection
-- **Integration**: Works alongside 30-second cleanup for comprehensive protection
+- **Integration**: Works alongside 10-second cleanup for comprehensive protection
 
 #### **Maker Scenario (Order Creator)**
 When taker doesn't respond and order returns to pending:
@@ -167,12 +175,13 @@ When orders are canceled (status changes to `canceled` in public events):
 - **Dual Protection**: 10-second cleanup + real-time detection provide comprehensive coverage
 - **Race protection**: `_isProcessingTimeout` flag prevents concurrent execution (with proper early return handling)
 - **Role detection**: `_isCreatedByUser()` compares session role with order type
-- **Timer management**: Static timer storage with proper cleanup on disposal
+- **Timer management**: Static timer storage with proper cleanup on disposal, differentiated keys (`orderId` vs `request:requestId`)
 - **Error resilience**: Timeouts and try-catch blocks prevent app hangs
 - **Notifications**: Differentiated messages for maker vs taker scenarios
 - **Simplified Logic**: Status-based detection without timestamp comparison
 - **State-based Rules**: Different session handling based on local order state
 - **Timeout Detection**: `public=pending + local=waiting = guaranteed timeout`
+- **Session Differentiation**: Permanent sessions (orderId) vs temporary sessions (requestId) with appropriate cleanup methods
 
 ### Testing Structure
 - Unit tests in `test/` directory
@@ -515,7 +524,7 @@ For complete technical documentation, see `RELAY_SYNC_IMPLEMENTATION.md`.
 
 ---
 
-**Last Updated**: September 17, 2025
+**Last Updated**: September 29, 2025
 **Flutter Version**: Latest stable  
 **Dart Version**: Latest stable  
 **Key Dependencies**: Riverpod, GoRouter, flutter_intl, timeago, dart_nostr, logger, shared_preferences

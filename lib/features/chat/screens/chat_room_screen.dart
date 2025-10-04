@@ -138,7 +138,10 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
 
                   // Selected info content
                   if (_selectedInfoType == 'trade')
-                    TradeInformationTab(order: order, orderId: widget.orderId),
+                    TradeInformationTab(
+                      order: order?.copyWith(status: orderState.status),
+                      orderId: widget.orderId,
+                    ),
                   if (_selectedInfoType == 'user')
                     UserInformationTab(peerPubkey: peer, session: session),
 

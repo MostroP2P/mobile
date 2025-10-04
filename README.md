@@ -107,6 +107,21 @@ Connect your device and run:
 flutter run
 ```
 
+### Linux Desktop
+
+If you want to run it on a Linux Desktop install this dependencies (ubuntu):
+
+```bash
+sudo apt update
+sudo apt install -y build-essential g++ gcc cmake ninja-build pkg-config libgtk-3-dev binutils libsecret-1-dev
+```
+
+Then run:
+
+```bash
+flutter run -d linux
+```
+
 ### Using Custom Mostro Public Key
 
 By default, the app uses the production Mostro public key. For development or testing with a different Mostro daemon, you can specify a custom public key using the `MOSTRO_PUB_KEY` environment variable:
@@ -141,13 +156,7 @@ This is particularly useful when:
 
    Edit `settings.toml` with your specific configurations.
 
-3. Initialize the database:
-
-   ```bash
-   ./init_db.sh
-   ```
-
-4. Run the Mostro daemon:
+3. Run the Mostro daemon:
 
    ```bash
    cargo run
