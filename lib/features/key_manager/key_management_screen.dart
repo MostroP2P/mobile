@@ -77,17 +77,26 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
     await _loadKeys();
   }
 
-  Future<void> _importKey() async {
-    final keyManager = ref.read(keyManagerProvider);
+  Future<void> _importKeyAndRestore() async {
     final importValue = _importController.text.trim();
-    if (importValue.isNotEmpty) {
+    if (importValue.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(S.of(context)!.mnemonicValidationEmpty),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+      return;
+    }
+
+    try {
+      final keyManager = ref.read(keyManagerProvider);
       await keyManager.importMnemonic(importValue);
       await _loadKeys();
-    }
-  }
 
-  Future<void> _importKeyAndRestore() async {
-    try {
       final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
       await sessionNotifier.reset();
 
@@ -99,8 +108,6 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
 
       final notificationsRepo = ref.read(notificationsRepositoryProvider);
       await notificationsRepo.clearAll();
-
-      await _importKey();
 
       ref.read(subscriptionManagerProvider).reinitializeMasterKeySubscription();
 

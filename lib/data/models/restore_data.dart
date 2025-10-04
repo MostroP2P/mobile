@@ -12,10 +12,46 @@ class RestoreOrderInfo {
   });
 
   factory RestoreOrderInfo.fromJson(Map<String, dynamic> json) {
+    final orderId = json['order_id'];
+    if (orderId == null || orderId is! String) {
+      throw FormatException(
+        'Invalid or missing order_id: expected String, got ${orderId.runtimeType}'
+      );
+    }
+
+    final tradeIndexValue = json['trade_index'];
+    if (tradeIndexValue == null) {
+      throw FormatException('Missing required field: trade_index');
+    }
+
+    final int tradeIndex;
+    if (tradeIndexValue is int) {
+      tradeIndex = tradeIndexValue;
+    } else if (tradeIndexValue is String) {
+      final parsed = int.tryParse(tradeIndexValue);
+      if (parsed == null) {
+        throw FormatException(
+          'Invalid trade_index: cannot parse "$tradeIndexValue" as int'
+        );
+      }
+      tradeIndex = parsed;
+    } else {
+      throw FormatException(
+        'Invalid trade_index type: expected int or String, got ${tradeIndexValue.runtimeType}'
+      );
+    }
+
+    final status = json['status'];
+    if (status == null || status is! String) {
+      throw FormatException(
+        'Invalid or missing status: expected String, got ${status.runtimeType}'
+      );
+    }
+
     return RestoreOrderInfo(
-      orderId: json['order_id'] as String,
-      tradeIndex: json['trade_index'] as int,
-      status: json['status'] as String,
+      orderId: orderId,
+      tradeIndex: tradeIndex,
+      status: status,
     );
   }
 
@@ -42,11 +78,54 @@ class RestoreDisputeInfo {
   });
 
   factory RestoreDisputeInfo.fromJson(Map<String, dynamic> json) {
+    final disputeId = json['dispute_id'];
+    if (disputeId == null || disputeId is! String) {
+      throw FormatException(
+        'Invalid or missing dispute_id: expected String, got ${disputeId.runtimeType}'
+      );
+    }
+
+    final orderId = json['order_id'];
+    if (orderId == null || orderId is! String) {
+      throw FormatException(
+        'Invalid or missing order_id: expected String, got ${orderId.runtimeType}'
+      );
+    }
+
+    final tradeIndexValue = json['trade_index'];
+    if (tradeIndexValue == null) {
+      throw FormatException('Missing required field: trade_index');
+    }
+
+    final int tradeIndex;
+    if (tradeIndexValue is int) {
+      tradeIndex = tradeIndexValue;
+    } else if (tradeIndexValue is String) {
+      final parsed = int.tryParse(tradeIndexValue);
+      if (parsed == null) {
+        throw FormatException(
+          'Invalid trade_index: cannot parse "$tradeIndexValue" as int'
+        );
+      }
+      tradeIndex = parsed;
+    } else {
+      throw FormatException(
+        'Invalid trade_index type: expected int or String, got ${tradeIndexValue.runtimeType}'
+      );
+    }
+
+    final status = json['status'];
+    if (status == null || status is! String) {
+      throw FormatException(
+        'Invalid or missing status: expected String, got ${status.runtimeType}'
+      );
+    }
+
     return RestoreDisputeInfo(
-      disputeId: json['dispute_id'] as String,
-      orderId: json['order_id'] as String,
-      tradeIndex: json['trade_index'] as int,
-      status: json['status'] as String,
+      disputeId: disputeId,
+      orderId: orderId,
+      tradeIndex: tradeIndex,
+      status: status,
     );
   }
 

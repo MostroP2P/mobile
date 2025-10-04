@@ -373,7 +373,7 @@ class MostroService {
         }
       }
 
-      if (maxTradeIndex > 0) {
+      if (restoredCount > 0) {
         await keyManager.setCurrentKeyIndex(maxTradeIndex + 1);
       }
 
