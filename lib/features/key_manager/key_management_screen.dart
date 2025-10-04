@@ -9,6 +9,7 @@ import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_manager_provider.dart';
 import 'package:mostro_mobile/shared/providers.dart';
+import 'package:mostro_mobile/shared/providers/notifications_history_repository_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
 class KeyManagementScreen extends ConsumerStatefulWidget {
@@ -67,6 +68,9 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
     final eventStorage = ref.read(eventStorageProvider);
     await eventStorage.deleteAll();
 
+    final notificationsRepo = ref.read(notificationsRepositoryProvider);
+    await notificationsRepo.clearAll();
+
     final keyManager = ref.read(keyManagerProvider);
     await keyManager.generateAndStoreMasterKey();
 
@@ -84,6 +88,18 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
 
   Future<void> _importKeyAndRestore() async {
     try {
+      final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+      await sessionNotifier.reset();
+
+      final mostroStorage = ref.read(mostroStorageProvider);
+      await mostroStorage.deleteAll();
+
+      final eventStorage = ref.read(eventStorageProvider);
+      await eventStorage.deleteAll();
+
+      final notificationsRepo = ref.read(notificationsRepositoryProvider);
+      await notificationsRepo.clearAll();
+
       await _importKey();
 
       ref.read(subscriptionManagerProvider).reinitializeMasterKeySubscription();
@@ -621,6 +637,12 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
     final words = trimmed.split(RegExp(r'\s+'));
     if (words.length != 12 && words.length != 24) {
       return S.of(context)!.mnemonicValidationInvalidWordCount;
+    }
+
+    for (final word in words) {
+      if (word.length < 3) {
+        return S.of(context)!.mnemonicValidationWordTooShort;
+      }
     }
 
     return null;

@@ -862,6 +862,7 @@
   "mnemonicValidationEmpty": "Secret words cannot be empty",
   "mnemonicValidationInvalidFormat": "Only letters and spaces are allowed",
   "mnemonicValidationInvalidWordCount": "Must contain exactly 12 or 24 words",
+  "mnemonicValidationWordTooShort": "Each word must have at least 3 letters",
   "privacyInfoText": "• Reputation Mode protects your privacy from third parties while allowing you to build a reputation with each completed trade.\n\n• Full privacy mode provides maximum anonymity but limits reputation building features.",
   "currentTradeIndexInfoText": "With each new trade, a unique Trade Key is generated to ensure your transactions remain private. The trade index indicates how many keys you've used. If you're in 'Reputation Mode,' you allow Mostro to link all your Trade Keys to calculate and maintain your reputation.",
   "generateNewUserDialogTitle": "Generate a new user?",
