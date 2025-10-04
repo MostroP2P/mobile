@@ -346,6 +346,7 @@ class MostroService {
 
       final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
       int restoredCount = 0;
+      int maxTradeIndex = 0;
 
       for (final orderInfo in restoreData.orders) {
         try {
@@ -363,9 +364,17 @@ class MostroService {
 
           await sessionNotifier.saveSession(session);
           restoredCount++;
+
+          if (orderInfo.tradeIndex > maxTradeIndex) {
+            maxTradeIndex = orderInfo.tradeIndex;
+          }
         } catch (e) {
           _logger.e('Failed to restore order ${orderInfo.orderId}', error: e);
         }
+      }
+
+      if (maxTradeIndex > 0) {
+        await keyManager.setCurrentKeyIndex(maxTradeIndex + 1);
       }
 
       _logger.i(
