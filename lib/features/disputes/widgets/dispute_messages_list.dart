@@ -124,74 +124,86 @@ class _DisputeMessagesListState extends State<DisputeMessagesList> {
     );
   }
 
-  /// Build layout for when there are no messages - optimized to show all content without scrolling
+  /// Build layout for when there are no messages - with scrolling support
   Widget _buildEmptyMessagesLayout(BuildContext context) {
     final isResolvedStatus = _isResolvedStatus(widget.status);
     
-    return Column(
-      children: [
-        // Admin assignment notification (if applicable)
-        _buildAdminAssignmentNotification(context),
-        
-        // Dispute info card
-        DisputeInfoCard(dispute: widget.disputeData),
-        
-        // Flexible content area
-        Expanded(
-          child: _buildEmptyAreaContent(context),
-        ),
-        
-        // Resolution notification at bottom (if resolved) - always visible
-        if (isResolvedStatus)
-          _buildResolutionNotification(context),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          controller: _scrollController,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: constraints.maxHeight,
+            ),
+            child: IntrinsicHeight(
+              child: Column(
+                children: [
+                  // Admin assignment notification (if applicable)
+                  _buildAdminAssignmentNotification(context),
+                  
+                  // Dispute info card
+                  DisputeInfoCard(dispute: widget.disputeData),
+                  
+                  // Content area
+                  _buildEmptyAreaContent(context),
+                  
+                  // Spacer to push resolution notification to bottom
+                  if (isResolvedStatus)
+                    const Spacer(),
+                  
+                  // Resolution notification at bottom (if resolved) - always at bottom
+                  if (isResolvedStatus)
+                    _buildResolutionNotification(context),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
   Widget _buildWaitingForAdmin(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              S.of(context)!.waitingAdminAssignment,
-              style: TextStyle(
-                color: AppTheme.textSecondary,
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
-              textAlign: TextAlign.center,
+    return Padding(
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            S.of(context)!.waitingAdminAssignment,
+            style: TextStyle(
+              color: AppTheme.textSecondary,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
             ),
-            const SizedBox(height: 16),
-            Text(
-              S.of(context)!.waitingAdminDescription,
-              style: TextStyle(
-                color: AppTheme.textInactive,
-                fontSize: 14,
-              ),
-              textAlign: TextAlign.center,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            S.of(context)!.waitingAdminDescription,
+            style: TextStyle(
+              color: AppTheme.textInactive,
+              fontSize: 14,
             ),
-          ],
-        ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildEmptyChatArea(BuildContext context) {
     // Empty chat area for when admin is assigned but no messages yet
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Text(
-          S.of(context)!.noMessagesYet,
-          style: TextStyle(
-            color: AppTheme.textInactive,
-            fontSize: 16,
-          ),
-          textAlign: TextAlign.center,
+    return Padding(
+      padding: const EdgeInsets.all(32),
+      child: Text(
+        S.of(context)!.noMessagesYet,
+        style: TextStyle(
+          color: AppTheme.textInactive,
+          fontSize: 16,
         ),
+        textAlign: TextAlign.center,
       ),
     );
   }
@@ -321,24 +333,22 @@ class _DisputeMessagesListState extends State<DisputeMessagesList> {
 
   /// Build chat closed area for when there are no messages but dispute is resolved
   Widget _buildChatClosedArea(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              S.of(context)!.noMessagesYet,
-              style: TextStyle(
-                color: AppTheme.textInactive,
-                fontSize: 16,
-              ),
-              textAlign: TextAlign.center,
+    return Padding(
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            S.of(context)!.noMessagesYet,
+            style: TextStyle(
+              color: AppTheme.textInactive,
+              fontSize: 16,
             ),
-            const SizedBox(height: 16),
-            _buildChatClosedMessage(context),
-          ],
-        ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          _buildChatClosedMessage(context),
+        ],
       ),
     );
   }
