@@ -292,7 +292,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         // Also ensure createdAt is set from event timestamp if not already present
         final createdAt = dispute.createdAt ?? 
             (event.timestamp != null 
-                ? DateTime.fromMillisecondsSinceEpoch(event.timestamp! * 1000)
+                ? DateTime.fromMillisecondsSinceEpoch(event.timestamp!)
                 : DateTime.now());
         
         final disputeWithOrderId = dispute.copyWith(
@@ -334,9 +334,9 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
               final disputeId = payloadMap['dispute'] as String;
               
               // Use the event timestamp (from gift-wrapped message) if available,
-              // otherwise fall back to DateTime.now(). The timestamp is in seconds.
+              // otherwise fall back to DateTime.now().
               final createdAt = event.timestamp != null
-                  ? DateTime.fromMillisecondsSinceEpoch(event.timestamp! * 1000)
+                  ? DateTime.fromMillisecondsSinceEpoch(event.timestamp!)
                   : DateTime.now();
               
               dispute = Dispute(
@@ -365,7 +365,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         // Also ensure createdAt is set from event timestamp if not already present
         final createdAt = dispute.createdAt ?? 
             (event.timestamp != null 
-                ? DateTime.fromMillisecondsSinceEpoch(event.timestamp! * 1000)
+                ? DateTime.fromMillisecondsSinceEpoch(event.timestamp!)
                 : DateTime.now());
         
         final disputeWithOrderId = dispute.copyWith(

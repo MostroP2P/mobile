@@ -139,9 +139,9 @@ class OrderState {
       // Use message timestamp if dispute doesn't have a createdAt or if message has a timestamp
       if (message.timestamp != null && 
           (updatedDispute.createdAt == null || 
-           updatedDispute.createdAt!.millisecondsSinceEpoch ~/ 1000 != message.timestamp)) {
+           updatedDispute.createdAt!.millisecondsSinceEpoch != message.timestamp)) {
         updatedDispute = updatedDispute.copyWith(
-          createdAt: DateTime.fromMillisecondsSinceEpoch(message.timestamp! * 1000),
+          createdAt: DateTime.fromMillisecondsSinceEpoch(message.timestamp!),
         );
         _logger.i('Updated dispute ${updatedDispute.disputeId} createdAt from message timestamp: ${updatedDispute.createdAt}');
       }
