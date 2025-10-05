@@ -399,5 +399,4 @@ class NostrUtils {
     }
   }
 
-
 }
