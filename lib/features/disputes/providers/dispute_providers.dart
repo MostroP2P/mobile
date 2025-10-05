@@ -128,14 +128,11 @@ final userDisputeDataProvider = Provider<AsyncValue<List<DisputeData>>>((ref) {
         // Convert session role to UserRole
         UserRole? userRole;
         if (matchingSession?.role != null) {
-          userRole = matchingSession!.role == enums.Role.buyer 
-              ? UserRole.buyer 
+          userRole = matchingSession!.role == enums.Role.buyer
+              ? UserRole.buyer
               : matchingSession.role == enums.Role.seller
                   ? UserRole.seller
                   : UserRole.unknown;
-          print('DisputeProvider: For dispute ${dispute.disputeId}, session.role = ${matchingSession.role}, converted to userRole = $userRole');
-        } else {
-          print('DisputeProvider: No session role found for dispute ${dispute.disputeId}');
         }
 
         // If we found matching order state, use it for context

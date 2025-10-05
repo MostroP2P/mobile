@@ -21,10 +21,40 @@ class DisputeStatusContent extends ConsumerWidget {
     final counterpartyNym = hasCounterparty
         ? ref.watch(nickNameProvider(dispute.counterpartyDisplay))
         : S.of(context)!.unknown;
-    bool isResolved = dispute.status.toLowerCase() == 'resolved' || dispute.status.toLowerCase() == 'closed';
+    
+    // Check if dispute is in a resolved/closed state
+    final status = dispute.status.toLowerCase();
+    bool isResolved = status == 'resolved' || status == 'closed' || status == 'seller-refunded';
     
     if (isResolved) {
       // Show resolution message for resolved/completed disputes
+      // Get the appropriate message based on the resolution type and user role
+      String message;
+      
+      if (status == 'seller-refunded') {
+        // Admin canceled the order and refunded the seller
+        // This means the buyer doesn't get the sats, seller gets refunded
+        if (dispute.userRole == UserRole.buyer) {
+          message = S.of(context)!.disputeCanceledBuyerMessage;
+        } else if (dispute.userRole == UserRole.seller) {
+          message = S.of(context)!.disputeCanceledSellerMessage;
+        } else {
+          message = S.of(context)!.disputeSellerRefundedMessage;
+        }
+      } else if (dispute.action == 'admin-settled') {
+        // Admin settled in favor of one party - order completed successfully
+        // The buyer receives the sats, seller gets paid
+        if (dispute.userRole == UserRole.buyer) {
+          message = S.of(context)!.disputeSettledBuyerMessage;
+        } else if (dispute.userRole == UserRole.seller) {
+          message = S.of(context)!.disputeSettledSellerMessage;
+        } else {
+          message = S.of(context)!.disputeAdminSettledMessage;
+        }
+      } else {
+        message = S.of(context)!.disputeResolvedMessage;
+      }
+      
       return Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -58,7 +88,7 @@ class DisputeStatusContent extends ConsumerWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    S.of(context)!.disputeResolvedMessage,
+                    message,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 14,
