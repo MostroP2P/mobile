@@ -616,6 +616,7 @@
   
   "rateButton": "RATE",
   "contactButton": "CONTACT",
+  "viewDisputeButton": "VIEW DISPUTE",
   
   "rateCounterpart": "Rate Counterpart",
   "submitRating": "Submit Rating",
