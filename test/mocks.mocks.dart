@@ -735,6 +735,16 @@ class MockMostroService extends _i1.Mock implements _i12.MostroService {
       ) as _i5.Future<void>);
 
   @override
+  _i5.Future<void> requestRestoreSession() => (super.noSuchMethod(
+        Invocation.method(
+          #requestRestoreSession,
+          [],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+
+  @override
   _i5.Future<void> publishOrder(_i7.MostroMessage<_i7.Payload>? order) =>
       (super.noSuchMethod(
         Invocation.method(
