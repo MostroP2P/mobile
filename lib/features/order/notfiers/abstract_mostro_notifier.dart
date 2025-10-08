@@ -389,9 +389,6 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
       case Action.rateReceived:
         break;
 
-      case Action.timeoutReversal:
-        break;
-
       // Default
       default:
          break;

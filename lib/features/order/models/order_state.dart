@@ -282,9 +282,6 @@ class OrderState {
       case Action.newOrder:
         return payloadStatus ?? status;
 
-      // Action for timeout reversal - always use payload status (should be pending)
-      case Action.timeoutReversal:
-        return payloadStatus ?? Status.pending;
 
       // For other actions, keep the current status unless payload has a different one
       default:
@@ -303,9 +300,6 @@ class OrderState {
           Action.cancel,
         ],
         Action.takeBuy: [
-          Action.cancel,
-        ],
-        Action.timeoutReversal: [
           Action.cancel,
         ],
       },
@@ -439,9 +433,6 @@ class OrderState {
           Action.cancel,
         ],
         Action.takeSell: [
-          Action.cancel,
-        ],
-        Action.timeoutReversal: [
           Action.cancel,
         ],
       },
