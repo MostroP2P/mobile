@@ -269,16 +269,6 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         // No additional logic needed beyond notification
         break;
 
-      case Action.canceled:
-        // Cleanup
-        ref.read(mostroStorageProvider).deleteAllMessagesByOrderId(orderId);
-        ref.read(sessionNotifierProvider.notifier).deleteSession(orderId);
-        
-        // Navigate to main order book screen and invalidate
-        navProvider.go('/');
-        ref.invalidateSelf();
-        break;
-
       case Action.cooperativeCancelInitiatedByYou:
         // No additional logic needed beyond notification
         break;
