@@ -114,11 +114,6 @@ class _DisputeMessagesListState extends State<DisputeMessagesList> {
                   childCount: _getItemCount(messages),
                 ),
               ),
-              // Resolution notification (if resolved)
-              if (_isResolvedStatus(widget.status))
-                SliverToBoxAdapter(
-                  child: _buildResolutionNotification(context),
-                ),
             ],
           ),
     );
@@ -148,13 +143,9 @@ class _DisputeMessagesListState extends State<DisputeMessagesList> {
                   // Content area
                   _buildEmptyAreaContent(context),
                   
-                  // Spacer to push resolution notification to bottom
+                  // Spacer for better layout
                   if (isResolvedStatus)
                     const Spacer(),
-                  
-                  // Resolution notification at bottom (if resolved) - always at bottom
-                  if (isResolvedStatus)
-                    _buildResolutionNotification(context),
                 ],
               ),
             ),
@@ -246,36 +237,6 @@ class _DisputeMessagesListState extends State<DisputeMessagesList> {
     );
   }
 
-  Widget _buildResolutionNotification(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.green[900],
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.check_circle,
-            color: Colors.green[300],
-            size: 16,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              S.of(context)!.disputeResolvedMessage,
-              style: TextStyle(
-                color: Colors.green[300],
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   List<DisputeChat> _getMockMessages() {
     // For now, return empty list for real implementation
