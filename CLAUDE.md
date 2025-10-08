@@ -141,46 +141,46 @@ Spanish: "No hubo respuesta, verifica tu conexión e inténtalo más tarde"
 Italian: "Nessuna risposta ricevuta, verifica la tua connessione e riprova più tardi"
 ```
 
-### Real-Time Timeout Detection
+### Gift Wrap-Based Timeout Detection
 
 #### **Detection Mechanism**
-- **Monitors**: 38383 public events for status changes
-- **Triggers**: When public event shows different status than local state (simplified logic without timestamp comparison)
-- **Real-time**: Subscribes to `orderEventsProvider` for instant detection
+- **Direct Instructions**: Receives explicit timeout/cancellation instructions from Mostro via encrypted gift wrap messages (kind 1059)
+- **No Monitoring Required**: No need to monitor public events or compare timestamps
+- **Real-time**: Gift wrap messages delivered through existing SubscriptionManager system
 - **Integration**: Works alongside 10-second cleanup for comprehensive protection
 
 #### **Maker Scenario (Order Creator)**
-When taker doesn't respond and order returns to pending:
+When taker doesn't respond, Mostro sends `Action.newOrder` gift wrap:
 - **Session**: Preserved (keeps order in "My Trades")
-- **State**: Updated to `Status.pending` with `Action.timeoutReversal`
-- **Persistence**: Creates synthetic `MostroMessage.createTimeoutReversal()` stored with unique key
-- **Result**: Order remains visible but shows pending status after app restart
+- **State**: Updated to `Status.pending` with `Action.newOrder`
+- **Persistence**: Real gift wrap message automatically persisted by message storage system
+- **Result**: Order remains visible and shows pending status after app restart
+- **Notification**: "Your counterpart didn't respond in time"
 
 #### **Taker Scenario (Order Taker)**
-When user doesn't respond and order returns to pending:
+When user doesn't respond, Mostro sends `Action.canceled` gift wrap:
 - **Session**: Deleted completely via `sessionNotifier.deleteSession()`
-- **State**: Provider invalidated (`ref.invalidateSelf()`)
+- **State**: Provider invalidated and session removed
 - **Result**: Order disappears from "My Trades" and reappears in order book for retaking
+- **Notification**: "Order was canceled"
 
 ### Cancellation Detection & Cleanup
-When orders are canceled (status changes to `canceled` in public events):
-- **Detection**: Public event monitoring system (independent of timestamps)
-- **Session Cleanup**: State-based logic - only deletes session for pending/waiting states
+When orders are canceled, Mostro sends `Action.canceled` gift wrap:
+- **Detection**: Direct gift wrap instruction processing in `AbstractMostroNotifier.handleEvent()`
+- **Session Cleanup**: Universal cancellation handling for both timeout and manual cancellation scenarios
 - **Active Orders**: Canceled active orders keep session but update to canceled status
 - **UI Behavior**: Pending/waiting orders disappear, active orders show canceled status
 - **User Feedback**: Shows cancellation notification
-- **Implementation**: `_checkTimeoutAndCleanup()` method in `order_notifier.dart:172-211`
+- **Implementation**: Gift wrap handling in `abstract_mostro_notifier.dart`
 
 ### Key Implementation
-- **Dual Protection**: 10-second cleanup + real-time detection provide comprehensive coverage
-- **Race protection**: `_isProcessingTimeout` flag prevents concurrent execution (with proper early return handling)
-- **Role detection**: `_isCreatedByUser()` compares session role with order type
+- **Dual Protection**: 10-second cleanup + gift wrap instructions provide comprehensive coverage
+- **Simplified Logic**: Direct instruction processing eliminates complex event monitoring
 - **Timer management**: Static timer storage with proper cleanup on disposal, differentiated keys (`orderId` vs `request:requestId`)
 - **Error resilience**: Timeouts and try-catch blocks prevent app hangs
 - **Notifications**: Differentiated messages for maker vs taker scenarios
-- **Simplified Logic**: Status-based detection without timestamp comparison
-- **State-based Rules**: Different session handling based on local order state
-- **Timeout Detection**: `public=pending + local=waiting = guaranteed timeout`
+- **Direct Communication**: Mostro decides and instructs directly via encrypted messages
+- **No Synthetic Messages**: Real gift wrap messages contain all needed information
 - **Session Differentiation**: Permanent sessions (orderId) vs temporary sessions (requestId) with appropriate cleanup methods
 
 ### Testing Structure
@@ -524,7 +524,7 @@ For complete technical documentation, see `RELAY_SYNC_IMPLEMENTATION.md`.
 
 ---
 
-**Last Updated**: September 29, 2025
+**Last Updated**: October 8, 2025
 **Flutter Version**: Latest stable  
 **Dart Version**: Latest stable  
 **Key Dependencies**: Riverpod, GoRouter, flutter_intl, timeago, dart_nostr, logger, shared_preferences
