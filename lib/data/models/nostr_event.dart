@@ -84,101 +84,172 @@ extension NostrEventExtensions on NostrEvent {
     );
   }
 
+  /// Unwraps a Gift Wrap (kind 1059) following NIP-59 for Mostro dispute chat
+  /// 
+  /// Flow (as per mostro-cli):
+  /// 1. Decrypt Gift Wrap (1059) with ephemeral_pubkey + receiver_private_key → SEAL (13)
+  /// 2. Decrypt SEAL (13) with sender_pubkey + receiver_private_key → RUMOR (1, unsigned)
+  /// 3. Return RUMOR with Mostro message content
+  /// Helper to sanitize JSON for NostrEvent.deserialized
+  /// Ensures required fields have default values if null
+  String _sanitizeEventJson(String eventJson) {
+    try {
+      final Map<String, dynamic> eventMap = jsonDecode(eventJson);
+      
+      // Ensure required string fields have defaults if null
+      eventMap['id'] = eventMap['id'] ?? '';
+      eventMap['sig'] = eventMap['sig'] ?? '';
+      eventMap['pubkey'] = eventMap['pubkey'] ?? '';
+      eventMap['content'] = eventMap['content'] ?? '';
+      
+      return jsonEncode(eventMap);
+    } catch (e) {
+      // If parsing fails, return original
+      return eventJson;
+    }
+  }
+
   Future<NostrEvent> mostroUnWrap(NostrKeyPairs receiver) async {
     if (kind != 1059) {
-      throw ArgumentError('Expected kind 1059, got: $kind');
+      throw ArgumentError('Expected kind 1059 (Gift Wrap), got: $kind');
     }
 
     if (content == null || content!.isEmpty) {
-      throw ArgumentError('Event content is empty');
+      throw ArgumentError('Gift Wrap content is empty');
     }
 
     try {
-      final decryptedContent = await NostrUtils.decryptNIP44(
-        content!,
-        receiver.private,
-        pubkey,
-      );
+      // STEP 1: Decrypt Gift Wrap with ephemeral key
+      // The Gift Wrap pubkey is the ephemeral public key
+      final ephemeralPubkey = pubkey; // From the Gift Wrap event
+      
+      try {
+        final decryptedSeal = await NostrUtils.decryptNIP44(
+          content!,
+          receiver.private,
+          ephemeralPubkey,
+        );
 
-      final innerEvent = NostrEvent.deserialized(
-        '["EVENT", "", $decryptedContent]',
-      );
+        final sanitizedSeal = _sanitizeEventJson(decryptedSeal);
+        final sealEvent = NostrEvent.deserialized(
+          '["EVENT", "", $sanitizedSeal]',
+        );
 
-      if (innerEvent.kind == 13) {
-        try {
-          final messageContent = await NostrUtils.decryptNIP44(
-            innerEvent.content!,
-            receiver.private,
-            innerEvent.pubkey,
-          );
-
-          final messageEvent = NostrEvent.deserialized(
-            '["EVENT", "", $messageContent]',
-          );
-
-          if (messageEvent.kind != 14) {
-            throw Exception(
-                'Not a NIP-17 direct message: ${messageEvent.toString()}');
-          }
-
-          return messageEvent;
-        } catch (e) {
-          return innerEvent;
+        // STEP 2: Verify it's a SEAL (kind 13)
+        if (sealEvent.kind != 13) {
+          throw Exception('Expected SEAL (kind 13), got: ${sealEvent.kind}');
         }
-      } else if (innerEvent.kind == 1) {
-        return innerEvent;
-      } else {
-        return innerEvent;
+
+        if (sealEvent.content == null || sealEvent.content!.isEmpty) {
+          throw Exception('SEAL content is empty');
+        }
+
+        // STEP 3: Decrypt SEAL with sender's pubkey (from SEAL)
+        // The SEAL pubkey identifies the actual sender (admin or user)
+        final senderPubkey = sealEvent.pubkey;
+        
+        final decryptedRumor = await NostrUtils.decryptNIP44(
+          sealEvent.content!,
+          receiver.private,
+          senderPubkey,
+        );
+
+        final sanitizedRumor = _sanitizeEventJson(decryptedRumor);
+        final rumorEvent = NostrEvent.deserialized(
+          '["EVENT", "", $sanitizedRumor]',
+        );
+
+        // STEP 4: Verify it's a RUMOR (kind 1, unsigned)
+        if (rumorEvent.kind != 1) {
+          throw Exception('Expected RUMOR (kind 1), got: ${rumorEvent.kind}');
+        }
+
+        return rumorEvent;
+      } catch (e) {
+        // Add more context about which step failed
+        if (e.toString().contains('type cast')) {
+          throw Exception('Type cast error during unwrap - likely null value in event structure: $e');
+        }
+        rethrow;
       }
     } catch (e) {
       throw Exception('Failed to unwrap Mostro chat message: $e');
     }
   }
 
-  Future<NostrEvent> mostroWrap(NostrKeyPairs sharedKey) async {
+  /// Wraps a RUMOR (kind 1) into a Gift Wrap (kind 1059) following NIP-59
+  /// 
+  /// Flow (as per mostro-cli):
+  /// 1. Create RUMOR (kind 1, unsigned) with Mostro message content
+  /// 2. Encrypt RUMOR with sender_private_key + receiver_pubkey → SEAL (13)
+  /// 3. Encrypt SEAL with ephemeral_key + receiver_pubkey → Gift Wrap (1059)
+  /// 
+  /// Parameters:
+  /// - senderKeys: The sender's key pair (trade keys)
+  /// - receiverPubkey: The receiver's public key (admin pubkey for disputes)
+  Future<NostrEvent> mostroWrap(NostrKeyPairs senderKeys, String receiverPubkey) async {
     if (kind != 1) {
-      throw ArgumentError('Expected kind 1, got: $kind');
+      throw ArgumentError('Expected kind 1 (RUMOR), got: $kind');
     }
 
     if (content == null || content!.isEmpty) {
-      throw ArgumentError('Event content is empty');
+      throw ArgumentError('RUMOR content is empty');
     }
 
     try {
-      final innerEvent = NostrEvent(
-        id: id,
-        kind: kind,
-        content: content,
-        pubkey: pubkey,
-        sig: sig,
-        createdAt: createdAt,
-        tags: [
-          ["p", sharedKey.public],
-          ...(tags?.where((tag) => tag.isNotEmpty && tag[0] != 'p') ?? []),
-        ],
+      // STEP 1: Prepare the RUMOR (already a kind 1 event, unsigned)
+      // The rumor should NOT have an 'id' or 'sig' field
+      final rumorMap = {
+        'kind': 1,
+        'content': content,
+        'pubkey': senderKeys.public,
+        'created_at': ((createdAt ?? DateTime.now()).millisecondsSinceEpoch ~/ 1000),
+        'tags': tags ?? [],
+      };
+
+      final rumorJson = jsonEncode(rumorMap);
+
+      // STEP 2: Create SEAL (kind 13)
+      // Encrypt the rumor with sender's private key + receiver's public key
+      final encryptedRumor = await NostrUtils.encryptNIP44(
+        rumorJson,
+        senderKeys.private,
+        receiverPubkey,
       );
 
+      final seal = NostrEvent.fromPartialData(
+        kind: 13,
+        content: encryptedRumor,
+        keyPairs: senderKeys,
+        tags: [], // SEAL always has empty tags
+        createdAt: DateTime.now(),
+      );
+
+      final sealJson = jsonEncode(seal.toMap());
+
+      // STEP 3: Create Gift Wrap (kind 1059)
+      // Generate ephemeral key pair (single-use)
       final ephemeralKeyPair = NostrUtils.generateKeyPair();
 
-      final innerEventJson = jsonEncode(innerEvent.toMap());
-
-      final encryptedContent = await NostrUtils.encryptNIP44(
-        innerEventJson,
+      // Encrypt the seal with ephemeral key + receiver's public key
+      final encryptedSeal = await NostrUtils.encryptNIP44(
+        sealJson,
         ephemeralKeyPair.private,
-        sharedKey.public,
+        receiverPubkey,
       );
 
-      final wrapperEvent = NostrEvent.fromPartialData(
+      // Create Gift Wrap with randomized timestamp (±2 days)
+      final giftWrap = NostrEvent.fromPartialData(
         kind: 1059,
-        content: encryptedContent,
+        content: encryptedSeal,
         keyPairs: ephemeralKeyPair,
         tags: [
-          ["p", sharedKey.public],
+          ["p", receiverPubkey], // Identifies the receiver
         ],
         createdAt: _randomizedTimestamp(),
       );
 
-      return wrapperEvent;
+      return giftWrap;
     } catch (e) {
       throw Exception('Failed to wrap Mostro chat message: $e');
     }

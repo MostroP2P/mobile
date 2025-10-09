@@ -14,7 +14,6 @@ import 'package:mostro_mobile/features/order/providers/order_notifier_provider.d
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
-import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 import 'package:sembast/sembast.dart';
 
 /// State for dispute chat messages
@@ -129,18 +128,13 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
       
       // Check if this message belongs to this dispute
       final dispute = await ref.read(disputeDetailsProvider(disputeId).future);
-      if (dispute == null || dispute.adminPubkey == null) {
+      if (dispute == null) {
         return;
       }
       
-      // Derive shared key with admin
-      final adminSharedKey = NostrUtils.computeSharedKey(
-        session.tradeKey.private,
-        dispute.adminPubkey!,
-      );
-      
-      // Unwrap the gift wrap using adminSharedKey
-      final unwrappedEvent = await event.mostroUnWrap(adminSharedKey);
+      // Unwrap the gift wrap using trade key (following NIP-59)
+      // The mostroUnWrap will handle the two-layer decryption automatically
+      final unwrappedEvent = await event.mostroUnWrap(session.tradeKey);
 
       // Parse the Mostro message from the rumor content
       String messageText = '';
@@ -148,25 +142,41 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
       bool isFromAdmin = false;
       
       try {
-        // Content should be in format: [{"order": {...}}, null]
+        // Content can be in two formats:
+        // 1. CLI format: [{"dm": {"version": 1, "action": "send-dm", "payload": {"text_message": "..."}}}, null]
+        // 2. Old format: [{"order": {...}}, null] or [{"version": 1, "action": "send-dm", ...}, null]
         final contentData = jsonDecode(unwrappedEvent.content ?? '[]');
         if (contentData is List && contentData.isNotEmpty) {
           final messageData = contentData[0];
-          final mostroMessage = MostroMessage.fromJson(messageData);
           
-          // Only process send-dm actions
-          if (mostroMessage.action != Action.sendDm) {
-            return;
-          }
-          
-          // Extract text from TextMessage payload
-          if (mostroMessage.payload != null) {
-            final textPayload = mostroMessage.getPayload<TextMessage>();
-            if (textPayload != null) {
-              messageText = textPayload.message;
-              senderPubkey = unwrappedEvent.pubkey;
-              // Check if from admin by comparing with our tradeKey
-              isFromAdmin = senderPubkey != session.tradeKey.public;
+          // Check if it's the CLI format with Message enum (has "dm" key)
+          if (messageData is Map && messageData.containsKey('dm')) {
+            final dmData = messageData['dm'];
+            if (dmData is Map && dmData.containsKey('payload')) {
+              final payload = dmData['payload'];
+              if (payload is Map && payload.containsKey('text_message')) {
+                messageText = payload['text_message'] as String;
+                senderPubkey = unwrappedEvent.pubkey;
+                isFromAdmin = senderPubkey != session.tradeKey.public;
+              }
+            }
+          } else {
+            // Try parsing as old MostroMessage format
+            final mostroMessage = MostroMessage.fromJson(messageData);
+            
+            // Only process send-dm actions
+            if (mostroMessage.action != Action.sendDm) {
+              return;
+            }
+            
+            // Extract text from TextMessage payload
+            if (mostroMessage.payload != null) {
+              final textPayload = mostroMessage.getPayload<TextMessage>();
+              if (textPayload != null) {
+                messageText = textPayload.message;
+                senderPubkey = unwrappedEvent.pubkey;
+                isFromAdmin = senderPubkey != session.tradeKey.public;
+              }
             }
           }
         }
@@ -180,14 +190,18 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
         return;
       }
 
+      // Generate event ID if not present (can happen with admin messages)
+      final eventId = unwrappedEvent.id ?? event.id ?? 'chat_${DateTime.now().millisecondsSinceEpoch}_${messageText.hashCode}';
+      final eventTimestamp = unwrappedEvent.createdAt ?? DateTime.now();
+      
       // Store the event
       final eventStore = ref.read(eventStorageProvider);
       await eventStore.putItem(
-        unwrappedEvent.id!,
+        eventId,
         {
-          'id': unwrappedEvent.id,
+          'id': eventId,
           'content': messageText,
-          'created_at': unwrappedEvent.createdAt!.millisecondsSinceEpoch ~/ 1000,
+          'created_at': eventTimestamp.millisecondsSinceEpoch ~/ 1000,
           'kind': unwrappedEvent.kind,
           'pubkey': senderPubkey,
           'sig': unwrappedEvent.sig,
@@ -200,9 +214,9 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
 
       // Add to state
       final disputeChat = DisputeChat(
-        id: unwrappedEvent.id!,
+        id: eventId,
         message: messageText,
-        timestamp: unwrappedEvent.createdAt!,
+        timestamp: eventTimestamp,
         isFromUser: !isFromAdmin,
         adminPubkey: isFromAdmin ? senderPubkey : null,
       );
@@ -292,16 +306,21 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
     try {
       _logger.i('Sending Gift Wrap DM to admin: ${dispute.adminPubkey}');
       
-      // Create Mostro message with TextMessage payload
-      final mostroMessage = MostroMessage<TextMessage>(
-        action: Action.sendDm,
-        id: orderId,
-        payload: TextMessage(message: text),
-      );
-
-      // Serialize as JSON with format: [{"order": {...}}, null]
-      final messageMap = {'order': mostroMessage.toJson()};
-      final content = jsonEncode([messageMap, null]);
+      // For dispute chat, the CLI expects format matching Message enum from mostro-core
+      // Message::Dm(MessageKind) where MessageKind has version, action, and payload
+      // Note: Rust uses snake_case for enum variants in JSON serialization
+      final content = jsonEncode([
+        {
+          "dm": {
+            "version": 1,
+            "action": "send-dm",
+            "payload": {
+              "text_message": text
+            }
+          }
+        },
+        null
+      ]);
       
       // Create rumor (kind 1) with the serialized content
       final rumor = NostrEvent.fromPartialData(
@@ -311,34 +330,23 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
         tags: [],
       );
 
-      // Create gift wrap to send directly to admin
-      // Encrypt rumor with NIP-44 using ephemeral key
-      final rumorJson = jsonEncode(rumor.toMap());
-      final ephemeralKeyPair = NostrUtils.generateKeyPair();
-      
-      final encryptedRumor = await NostrUtils.encryptNIP44(
-        rumorJson,
-        ephemeralKeyPair.private,
-        dispute.adminPubkey!, // Admin's pubkey
-      );
-
-      // Create wrapper event (kind 1059) with p tag pointing to admin
-      final wrappedEvent = NostrEvent.fromPartialData(
-        kind: 1059,
-        content: encryptedRumor,
-        keyPairs: ephemeralKeyPair,
-        tags: [
-          ["p", dispute.adminPubkey!], // Send directly to admin
-        ],
+      // Wrap the rumor using the new mostroWrap method (creates SEAL + Gift Wrap)
+      final wrappedEvent = await rumor.mostroWrap(
+        session.tradeKey,
+        dispute.adminPubkey!,
       );
 
       _logger.i('Sending gift wrap from ${session.tradeKey.public} to ${dispute.adminPubkey}');
 
+      // Generate ID for local storage
+      final rumorId = rumor.id ?? 'rumor_${DateTime.now().millisecondsSinceEpoch}';
+      final rumorTimestamp = rumor.createdAt ?? DateTime.now();
+
       // Add to local state immediately
       final disputeChat = DisputeChat(
-        id: rumor.id!,
+        id: rumorId,
         message: text,
-        timestamp: rumor.createdAt!,
+        timestamp: rumorTimestamp,
         isFromUser: true,
       );
 
@@ -354,11 +362,11 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
       // Store in local storage
       final eventStore = ref.read(eventStorageProvider);
       await eventStore.putItem(
-        rumor.id!,
+        rumorId,
         {
-          'id': rumor.id,
+          'id': rumorId,
           'content': text,
-          'created_at': rumor.createdAt!.millisecondsSinceEpoch ~/ 1000,
+          'created_at': rumorTimestamp.millisecondsSinceEpoch ~/ 1000,
           'kind': rumor.kind,
           'pubkey': rumor.pubkey,
           'sig': rumor.sig,

@@ -188,7 +188,10 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
     );
 
     try {
-      final wrappedEvent = await innerEvent.mostroWrap(session.sharedKey!);
+      final wrappedEvent = await innerEvent.mostroWrap(
+        session.tradeKey,
+        session.sharedKey!.public,
+      );
 
       final allMessages = [...state.messages, innerEvent];
       final deduped = {for (var m in allMessages) m.id: m}.values.toList();
