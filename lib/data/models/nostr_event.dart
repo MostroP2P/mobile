@@ -91,16 +91,20 @@ extension NostrEventExtensions on NostrEvent {
   /// 2. Decrypt SEAL (13) with sender_pubkey + receiver_private_key → RUMOR (1, unsigned)
   /// 3. Return RUMOR with Mostro message content
   /// Helper to sanitize JSON for NostrEvent.deserialized
-  /// Ensures required fields have default values if null
+  /// Only sets empty strings for id and sig (which can be null in unsigned events)
+  /// Preserves other fields as-is to avoid breaking validation
   String _sanitizeEventJson(String eventJson) {
     try {
       final Map<String, dynamic> eventMap = jsonDecode(eventJson);
       
-      // Ensure required string fields have defaults if null
-      eventMap['id'] = eventMap['id'] ?? '';
-      eventMap['sig'] = eventMap['sig'] ?? '';
-      eventMap['pubkey'] = eventMap['pubkey'] ?? '';
-      eventMap['content'] = eventMap['content'] ?? '';
+      // Only sanitize id and sig - these can be null in RUMORs (unsigned events)
+      // Don't touch pubkey or content as they have validation that requires real values
+      if (eventMap['id'] == null) {
+        eventMap['id'] = '';
+      }
+      if (eventMap['sig'] == null) {
+        eventMap['sig'] = '';
+      }
       
       return jsonEncode(eventMap);
     } catch (e) {
