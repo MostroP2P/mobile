@@ -709,8 +709,8 @@
   "disputeAdminSettledMessage": "The admin settled the order in favor of one party. Check your wallet for any payments.",
   "disputeSellerRefundedMessage": "The admin canceled the order and refunded the seller. The dispute is now closed.",
   "disputeSettledBuyerMessage": "The dispute was resolved in your favor. The order was completed successfully and you received the sats. Check your wallet.",
-  "disputeSettledSellerMessage": "The dispute was resolved. The order was completed successfully and the buyer received the sats. Check your wallet for the payment.",
-  "disputeCanceledBuyerMessage": "The admin canceled the order. The seller was refunded and you did not receive the sats. Check your wallet for any refunds.",
+  "disputeSettledSellerMessage": "The dispute was resolved. The order was completed successfully and the buyer received the sats.",
+  "disputeCanceledBuyerMessage": "The admin canceled the order. The seller was refunded and you did not receive the sats.",
   "disputeCanceledSellerMessage": "The admin canceled the order and refunded you. The buyer did not receive the sats. Check your wallet for the refund.",
   "disputeOpenedByYou": "You opened this dispute against the buyer {counterparty}, please read carefully below:",
   "@disputeOpenedByYou": {
