@@ -6,7 +6,7 @@ This document provides comprehensive technical documentation for Mostro Mobile's
 
 **Purpose**: Technical reference for understanding the complete lifecycle management of trading sessions and orders.
 
-**Scope**: Covers timeout detection system, session management patterns, countdown timer architecture, and the dual-channel approach for handling private sessions vs public order events.
+**Scope**: Covers timeout detection system, session management patterns, countdown timer architecture, and gift wrap-based communication handling.
 
 ---
 
@@ -14,195 +14,149 @@ This document provides comprehensive technical documentation for Mostro Mobile's
 
 ### Core Components
 
-The lifecycle management system consists of five main components:
+The lifecycle management system consists of four main components:
 
-1. **OrderNotifier** - Real-time timeout detection and session cleanup
+1. **OrderNotifier** - Direct gift wrap handling and session cleanup
 2. **SessionNotifier** - Session lifecycle management and storage
 3. **Time Provider System** - Optimized countdown timers
-4. **Event Provider Architecture** - Dual-channel Nostr event handling
-5. **UI Integration** - Real-time countdown display and notifications
+4. **UI Integration** - Real-time countdown display and notifications
 
-### Dual-Channel Architecture
+### Communication Architecture
 
-The system uses two separate channels for different types of data:
+The system uses encrypted gift wrap messages for all timeout and cancellation handling:
 
-#### **Private Channel (SubscriptionManager)**
-- **Purpose**: Handles encrypted user sessions and private communications
+#### **Gift Wrap Channel (SubscriptionManager)**
+- **Purpose**: Handles all encrypted communications including timeout/cancellation instructions
 - **Events**: Kind 1059 (encrypted gift-wrapped messages)
-- **Usage**: "My Trades" data, private messaging, session state updates
+- **Usage**: "My Trades" data, private messaging, session state updates, timeout/cancellation notifications
 
-#### **Public Channel (OrderNotifier + OpenOrdersRepository)**  
-- **Purpose**: Handles public order discovery and timeout detection
+#### **Public Channel (OpenOrdersRepository)**  
+- **Purpose**: Handles public order discovery for Order Book display
 - **Events**: Kind 38383 (public Mostro order events)
-- **Usage**: Order Book display, timeout detection, cancellation monitoring
+- **Usage**: Order Book display only (no timeout detection)
 
 ---
 
 ## Timeout Detection System
 
-### Real-time Detection Architecture
+### Gift Wrap-Based Detection Architecture
 
-The timeout detection system monitors orders in waiting states and automatically handles timeouts based on user role (maker vs taker).
+The timeout detection system receives direct instructions from Mostro via encrypted gift wrap messages (kind 1059) and automatically handles timeouts and cancellations based on user role (maker vs taker).
 
 #### **OrderNotifier Implementation**
 
 ```dart
 // lib/features/order/notfiers/order_notifier.dart
 class OrderNotifier extends AbstractMostroNotifier {
-  bool _isSyncing = false;              // Sync operation protection
-  bool _isProcessingTimeout = false;     // Timeout processing protection
-  ProviderSubscription<AsyncValue<List<NostrEvent>>>? _publicEventsSubscription;
+  // Simplified implementation - timeout/cancellation logic moved to AbstractMostroNotifier
+  @override
+  Future<void> handleEvent(MostroMessage event, {bool bypassTimestampGate = false}) async {
+    // Handle the event normally - timeout/cancellation logic is now in AbstractMostroNotifier
+    await super.handleEvent(event, bypassTimestampGate: bypassTimestampGate);
+  }
 }
 ```
 
 **Key Features**:
-- **Race condition protection**: Separate flags for different operations
-- **Real-time monitoring**: Subscribes to orderEventsProvider (38383 events)
+- **Direct gift wrap handling**: Receives explicit timeout/cancellation instructions from Mostro
 - **Automatic cleanup**: Handles session deletion vs preservation based on user role
+- **Simplified logic**: No complex public event monitoring or timestamp comparisons
 
-#### **Public Event Subscription**
+### Direct Gift Wrap Handling
+
+The system processes timeout and cancellation instructions directly from Mostro via gift wrap messages:
+
+#### **AbstractMostroNotifier Gift Wrap Processing**
 
 ```dart
-// Lines 316-373: Real-time event monitoring
-void _subscribeToPublicEvents() {
-  _publicEventsSubscription = ref.listen(
-    orderEventsProvider, // Stream of public 38383 events
-    (_, next) async {
-      if (_isProcessingTimeout) return; // Prevent concurrent processing
-      
-      try {
-        _isProcessingTimeout = true;
+// lib/features/order/notfiers/abstract_mostro_notifier.dart
+Future<void> handleEvent(MostroMessage event, {bool bypassTimestampGate = false}) async {
+  switch (event.action) {
+    case Action.newOrder:
+      // Check if this is a timeout reactivation from Mostro
+      final currentSession = ref.read(sessionProvider(orderId));
+      if (currentSession != null && 
+          (state.status == Status.waitingBuyerInvoice || state.status == Status.waitingPayment)) {
+        // This is a maker receiving order reactivation after taker timeout
+        logger.i('MAKER: Received order reactivation from Mostro - taker timed out, order returned to pending');
         
-        // Validate current state
-        final currentSession = ref.read(sessionProvider(orderId));
-        if (!mounted || currentSession == null) return;
-        
-        // Only monitor specific waiting states
-        if (state.status != Status.pending &&
-            state.status != Status.waitingBuyerInvoice && 
-            state.status != Status.waitingPayment) return;
-        
-        // Process timeout/cancellation
-        final shouldCleanup = await _checkTimeoutAndCleanup(state, latestGiftWrap);
-        if (shouldCleanup) {
-          ref.invalidateSelf(); // Invalidate provider to update UI
+        // Show notification: counterpart didn't respond, order will be republished
+        if (isRecent || !bypassTimestampGate) {
+          final notifProvider = ref.read(notificationActionsProvider.notifier);
+          notifProvider.showCustomMessage('orderTimeoutMaker');
         }
-      } finally {
-        _isProcessingTimeout = false; // Always clean up flag
       }
-    }
-  );
+      break;
+      
+    case Action.canceled:
+      // Handle cancellation sent by Mostro (for both timeout and cancellation scenarios)
+      final currentSession = ref.read(sessionProvider(orderId));
+      if (currentSession != null) {
+        logger.i('CANCELLATION: Received cancellation message from Mostro for order $orderId');
+        
+        // Delete session - this applies to both maker and taker scenarios
+        final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+        await sessionNotifier.deleteSession(orderId);
+        
+        logger.i('Session deleted for canceled order $orderId');
+        
+        // Show cancellation notification
+        if (isRecent || !bypassTimestampGate) {
+          final notifProvider = ref.read(notificationActionsProvider.notifier);
+          notifProvider.showCustomMessage('orderCanceled');
+        }
+        
+        // Navigate to main order book screen
+        if (isRecent && !bypassTimestampGate) {
+          navProvider.go('/');
+        }
+        
+        return; // Session was deleted, no further processing needed
+      }
+      break;
+  }
 }
 ```
 
-### Timeout Detection Logic
+### Gift Wrap-Based Detection Logic
 
-The system uses simplified business logic instead of timestamp comparisons for reliability:
+The system receives explicit instructions from Mostro instead of inferring timeouts from public events:
 
-#### **Simplified Detection Algorithm**
+#### **Direct Instruction Processing**
 
-```dart
-// Lines 157-296: _checkTimeoutAndCleanup() implementation
-Future<bool> _checkTimeoutAndCleanup(OrderState currentState, MostroMessage? latestGiftWrap) async {
-  final publicEvent = ref.read(eventProvider(orderId));
-  
-  // PHASE 1: Cancellation Detection (independent of timestamps)
-  if (publicEvent.status == Status.canceled) {
-    if (currentState.status == Status.pending ||
-        currentState.status == Status.waitingBuyerInvoice ||
-        currentState.status == Status.waitingPayment) {
-      // CANCELLED: Delete session for pending/waiting orders
-      await sessionNotifier.deleteSession(orderId);
-      return true; // Session cleaned up
-    } else {
-      // For active/completed orders: preserve session but update state
-      state = state.copyWith(status: Status.canceled, action: Action.canceled);
-      return false; // Session preserved
-    }
-  }
-  
-  // PHASE 2: Timeout Detection (simplified logic)
-  if (publicEvent.status == Status.pending && 
-      (currentState.status == Status.waitingBuyerInvoice || 
-       currentState.status == Status.waitingPayment)) {
-    // Timeout detected: Public=pending but local=waiting = guaranteed timeout
-    
-    final isCreatedByUser = _isCreatedByUser(currentSession, publicEvent);
-    
-    if (isCreatedByUser) {
-      // MAKER SCENARIO: Preserve session, update state to pending
-      
-      // CRITICAL: Persist reversal to maintain pending state after app restart
-      final timeoutMessage = MostroMessage.createTimeoutReversal(
-        orderId: orderId,
-        timestamp: publicTimestamp,
-        originalStatus: currentState.status,
-        publicEvent: publicEvent,
-      );
-      
-      final messageKey = '${orderId}_timeout_$publicTimestamp';
-      await storage.addMessage(messageKey, timeoutMessage);
-      
-      state = state.copyWith(status: Status.pending, action: Action.timeoutReversal);
-      return false; // Session preserved
-      
-    } else {
-      // TAKER SCENARIO: Delete session completely
-      await sessionNotifier.deleteSession(orderId);
-      return true; // Session cleaned up
-    }
-  }
-  
-  return false; // No timeout/cancellation detected
-}
-```
+**Timeout Detection**:
+- **Mostro sends `Action.newOrder`** to makers when taker times out
+- **Mostro sends `Action.canceled`** to takers when they time out
+- **No timestamp comparison needed** - Mostro decides and instructs directly
+- **No synthetic message creation** - real gift wrap messages contain all needed information
 
-**Why This Approach Works**:
-- **No timestamp dependency**: Eliminates clock synchronization issues
-- **Status-based detection**: `public=pending + local=waiting = guaranteed timeout`
-- **Independent cancellation**: Handles cancellations regardless of timing
-- **State-based session rules**: Different behaviors based on local order state
+**Cancellation Detection**:
+- **Mostro sends `Action.canceled`** for all cancellation scenarios
+- **Session handling based on current state** - preserves active orders, deletes pending/waiting orders
+- **Universal handling** - same logic applies to timeouts and manual cancellations
 
 ### Maker vs Taker Differentiation
 
-The system handles timeout scenarios differently based on whether the user created the order (maker) or took someone else's order (taker):
+The system handles timeout scenarios differently based on the gift wrap action received:
 
-#### **Role Determination Logic**
+#### **Behavior by Gift Wrap Action**
 
-```dart
-// Lines 299-313: User role detection
-bool _isCreatedByUser(Session session, NostrEvent publicEvent) {
-  final userRole = session.role;
-  final orderType = publicEvent.orderType;
-  
-  // User is creator if role matches order type
-  if (userRole == Role.buyer && orderType == OrderType.buy) return true;
-  if (userRole == Role.seller && orderType == OrderType.sell) return true;
-  
-  return false; // User took someone else's order (taker)
-}
-```
-
-#### **Behavior by User Role**
-
-**MAKER (Order Creator)**:
+**MAKER (Order Creator) - Receives `Action.newOrder`**:
 ```
 1. User creates order → Someone takes it → waiting state in My Trades
-2. Taker doesn't respond → Mostro publishes 38383 with status=pending
-3. System detects timeout automatically
-4. Session preserved + state updated to pending
-5. Notification: "Your counterpart didn't respond in time"
-6. Order stays in My Trades as pending, ready for someone else to take
+2. Taker doesn't respond → Mostro sends Action.newOrder gift wrap to maker
+3. System preserves session and updates state to pending
+4. Notification: "Your counterpart didn't respond in time"
+5. Order stays in My Trades as pending, ready for someone else to take
 ```
 
-**TAKER (Order Accepter)**:
+**TAKER (Order Accepter) - Receives `Action.canceled`**:
 ```
 1. User takes order → Order appears in My Trades with waiting state
-2. User doesn't respond in time → Mostro publishes 38383 with status=pending  
-3. System detects timeout automatically
-4. Session deleted + order disappears from My Trades
-5. Notification: "You didn't respond in time"
-6. Order returns to Order Book for others to take
+2. User doesn't respond in time → Mostro sends Action.canceled gift wrap to taker
+3. System deletes session completely
+4. Notification: "Order was canceled"
+5. Order disappears from My Trades and returns to Order Book for others to take
 ```
 
 ---
@@ -482,39 +436,30 @@ MostroMessage? _findMessageForState(List<MostroMessage> messages, Status status)
 
 ---
 
-## Event Provider Architecture
+## Gift Wrap Communication Architecture
 
-### Dual-Channel Event Handling
+### Direct Mostro Communication
 
-The system uses separate providers for different types of Nostr events:
+The system receives timeout and cancellation instructions directly from Mostro via encrypted gift wrap messages:
 
-#### **Public Event Providers**
+#### **Gift Wrap Message Handling**
+
+```dart
+// All timeout/cancellation handling flows through SubscriptionManager
+// which processes encrypted Kind 1059 events and delivers them to OrderNotifier
+// via the existing mostroMessageStreamProvider system
+```
+
+#### **Public Event Providers (Order Book Only)**
+
+Public events are now only used for Order Book display, not timeout detection:
 
 ```dart
 // lib/shared/providers/order_repository_provider.dart
 final orderEventsProvider = StreamProvider<List<NostrEvent>>((ref) {
   final orderRepository = ref.read(orderRepositoryProvider);
-  return orderRepository.eventsStream; // Stream of 38383 public events
+  return orderRepository.eventsStream; // Stream of 38383 public events - ORDER BOOK ONLY
 });
-
-final eventProvider = Provider.family<NostrEvent?, String>((ref, orderId) {
-  final allEventsAsync = ref.watch(orderEventsProvider);
-  final allEvents = allEventsAsync.maybeWhen(
-    data: (data) => data,
-    orElse: () => [],
-  );
-  return allEvents.lastWhereOrNull((evt) => evt.orderId == orderId);
-});
-```
-
-#### **Private Event Handling**
-
-The SubscriptionManager handles encrypted private events (Kind 1059) separately:
-
-```dart
-// Used by MostroService for processing private session messages
-// Handles encrypted gift-wrapped messages for active trading sessions
-// Separate from public event monitoring system
 ```
 
 ### Order Notifier Provider
@@ -528,34 +473,35 @@ final orderNotifierProvider =
 ```
 
 **Integration Points**:
-- **OrderNotifier**: Handles timeout detection and session cleanup
+- **OrderNotifier**: Handles gift wrap message processing and session cleanup
 - **OrderState**: Maintains current order state and action
-- **Event Providers**: Supply real-time public event data for monitoring
+- **SubscriptionManager**: Delivers encrypted timeout/cancellation messages
 
 ---
 
 ## Data Flow and Integration
 
-### Complete Detection Flow
+### Complete Gift Wrap Flow
 
 ```
 1. Order in waiting state (waitingBuyerInvoice or waitingPayment)
-2. OrderNotifier subscribes to orderEventsProvider (38383 events)
-3. Mostro publishes new 38383 event: orderId + pending/canceled + newer timestamp
-4. _subscribeToPublicEvents() detects change automatically via Riverpod listener
-5. _checkTimeoutAndCleanup() processes the detected change
-6. System determines maker vs taker role using _isCreatedByUser()
-7. Applies appropriate action: update state (maker) or delete session (taker)
-8. UI updates automatically through Riverpod reactive system
+2. Timeout occurs on Mostro server
+3. Mostro sends direct gift wrap message:
+   - Action.newOrder to maker (timeout reactivation)
+   - Action.canceled to taker (timeout cancellation)
+4. SubscriptionManager receives and decrypts gift wrap
+5. OrderNotifier.handleEvent() processes the instruction
+6. System applies appropriate action based on gift wrap content
+7. UI updates automatically through Riverpod reactive system
 ```
 
 ### State Management Flow
 
 ```dart
 // Complete reactive chain
-NostrEvent (38383) → orderEventsProvider → eventProvider → OrderNotifier listener
-                                                          ↓
-Session state ← sessionNotifier.deleteSession() ← timeout detection logic
+Gift Wrap (1059) → SubscriptionManager → mostroMessageStreamProvider → OrderNotifier
+                                                                      ↓
+Session state ← sessionNotifier.deleteSession() ← gift wrap instruction processing
      ↓
 sessionProvider(orderId) → UI components → automatic updates
 ```
@@ -564,169 +510,8 @@ sessionProvider(orderId) → UI components → automatic updates
 
 **Session Persistence**: Sessions are stored in Sembast database and survive app restarts.
 
-**Timeout State Persistence**: For maker scenarios, synthetic timeout messages are persisted:
+**Gift Wrap Message Persistence**: All gift wrap messages (including timeout/cancellation instructions) are automatically persisted by the existing message storage system, ensuring proper state recovery after app restart without requiring synthetic messages.
 
-```dart
-final timeoutMessage = MostroMessage.createTimeoutReversal(
-  orderId: orderId,
-  timestamp: publicTimestamp,
-  originalStatus: currentState.status,
-  publicEvent: publicEvent,
-);
-
-final messageKey = '${orderId}_timeout_$publicTimestamp';
-await storage.addMessage(messageKey, timeoutMessage);
-```
-
-This ensures that timeout-reverted orders maintain their pending state and show the cancel button after app restart.
-
----
-
-## Synthetic Event Architecture (The "Fake Message Trick")
-
-### What is a Synthetic Event?
-
-A **synthetic event** is an **ARTIFICIAL/FAKE** `MostroMessage` created entirely by the mobile app that **never actually occurred** in the Nostr network. It is a local persistence technique used to simulate receiving a timeout reversal message that would otherwise not exist.
-
-#### Key Characteristics of Synthetic Events
-
-- **🚫 NOT REAL**: Never transmitted via Nostr protocol - exists only in local storage
-- **🎭 ARTIFICIAL**: Completely fabricated by the mobile app, not by Mostro server
-- **💾 LOCAL ONLY**: Stored in local Sembast database with unique keys
-- **🎯 MAKER-SPECIFIC**: Only created for order creators (makers), never for takers
-- **⏰ FAKE TIMESTAMP**: Uses the public event timestamp for consistency, but message itself is synthetic
-
-### Why This "Trick" is Necessary
-
-Without synthetic events, **maker orders would disappear** from "My Trades" after app restart:
-
-#### The Problem Without Synthetic Events:
-```
-1. Maker creates order → appears in "My Trades"
-2. Taker takes order → order moves to waiting state  
-3. Timeout occurs → Mostro publishes public 38383 event (status=pending)
-4. App detects timeout → updates local state to pending
-5. 🚨 USER RESTARTS APP
-6. ❌ App loads: NO persisted message indicating "pending due to timeout"  
-7. ❌ Order disappears from "My Trades" (looks like it was never taken)
-8. ❌ User confused: "Where did my order go?"
-```
-
-#### The Solution With Synthetic Events:
-```
-1-4. (Same as above)
-5. 🎭 App creates FAKE timeout reversal message
-6. 💾 Synthetic message stored: "order went pending due to timeout"
-7. 🚨 USER RESTARTS APP  
-8. ✅ App loads synthetic message: "Oh, this order timed out!"
-9. ✅ Order stays in "My Trades" with correct pending status
-10. ✅ User sees order with cancel button available
-```
-
-### How the "Fake Message" Works
-
-#### 1. **Synthetic Message Creation**
-
-The `MostroMessage.createTimeoutReversal()` factory creates a **completely artificial message**:
-
-```dart
-/// Creates an ARTIFICIAL message that simulates a timeout reversal
-/// 
-/// IMPORTANT: This message is FAKE - it never came from Nostr!
-/// It's a local persistence trick to maintain UI state consistency.
-factory MostroMessage.createTimeoutReversal({
-  required String orderId,
-  required int timestamp,        // ← Uses real public event timestamp
-  required Status originalStatus, // ← The waiting state that timed out  
-  required NostrEvent publicEvent, // ← Real 38383 event for order data
-}) {
-  return MostroMessage(
-    action: Action.timeoutReversal, // ← Special action marking it as synthetic
-    id: orderId,
-    timestamp: timestamp,          // ← "Pretends" to have this timestamp
-    payload: Order(
-      status: Status.pending,      // ← The reverted state
-      // ... complete order data extracted from real public event
-    ),
-  );
-}
-```
-
-#### 2. **Unique Storage Key Pattern**
-
-```dart
-final messageKey = '${orderId}_timeout_$publicTimestamp';
-//                    ^        ^        ^
-//                    |        |        └─ Ensures uniqueness per timeout
-//                    |        └─ Marks as synthetic timeout event  
-//                    └─ Identifies the specific order
-```
-
-#### 3. **Database Storage Deception**
-
-```dart
-await storage.addMessage(messageKey, timeoutMessage);
-```
-
-The synthetic message is stored **exactly like a real message** in the Sembast database. When the app restarts:
-
-1. **App loads all messages** from local storage
-2. **Finds synthetic message** with `Action.timeoutReversal`
-3. **"Thinks" it received** this message from Mostro
-4. **Reconstructs order state** as pending due to timeout
-5. **UI displays correctly** with cancel button enabled
-
-### When Synthetic Events Are Created
-
-#### ✅ **MAKER Scenario (Creates Synthetic Event)**
-```
-User Role: Order Creator
-Timeout: waiting-buyer-invoice → pending
-Action: 
-  - Preserve session (keep in "My Trades")
-  - Create synthetic timeout reversal message  
-  - Update state to Status.pending + Action.timeoutReversal
-Result: Order remains visible as pending after app restart
-```
-
-#### ❌ **TAKER Scenario (NO Synthetic Event)**
-```  
-User Role: Order Accepter
-Timeout: waiting-payment → pending
-Action:
-  - Delete session completely
-  - NO synthetic message created
-  - Order disappears from "My Trades"
-Result: Order returns to public Order Book for others to take
-```
-
-### Technical Implementation Details
-
-#### **Storage Architecture**
-- **Real Messages**: `${orderId}_${messageTimestamp}` keys
-- **Synthetic Messages**: `${orderId}_timeout_${publicTimestamp}` keys  
-- **Conflict Prevention**: Unique timeout prefix prevents key collisions
-
-#### **Message Content**
-The synthetic message contains **complete order information** extracted from the real public 38383 event:
-- All order details (amount, payment method, premium)
-- Original creation and expiration timestamps  
-- Master pubkeys for reputation display
-- Everything needed for proper UI rendering
-
-#### **Recovery Process**
-On app restart, synthetic messages are loaded and processed identically to real messages, ensuring seamless state recovery without any special handling required.
-
-### Why It's Called a "Trick"
-
-This approach is considered a "trick" because:
-
-1. **🎭 Deception**: The app "lies" to itself about receiving a message
-2. **🔄 Workaround**: Solves a persistence problem through simulation  
-3. **💡 Clever**: Uses existing message infrastructure for artificial data
-4. **🎯 Invisible**: Users never know the message is fake - it just works
-
-The synthetic event system demonstrates how clever local state management can solve complex user experience problems in distributed systems where not all state transitions are explicitly communicated by the server.
 
 ---
 
@@ -1075,13 +860,13 @@ The system includes localized timeout messages in all supported languages:
 "sessionTimeoutMessage": "Nessuna risposta ricevuta, verifica la tua connessione e riprova più tardi"
 ```
 
-### Integration with Real-Time Detection
+### Integration with Gift Wrap Detection
 
-The orphan session prevention system works in conjunction with the real-time timeout detection:
+The orphan session prevention system works in conjunction with the gift wrap-based timeout detection:
 
-1. **Real-time detection**: Monitors public events for status changes and handles timeouts immediately when detected
+1. **Gift wrap detection**: Processes direct timeout/cancellation instructions from Mostro via encrypted messages
 2. **10-second cleanup**: Acts as a fallback to prevent orphan sessions when Mostro is completely unresponsive
-3. **Dual protection**: Ensures sessions are cleaned up either through real-time detection or automatic timeout
+3. **Dual protection**: Ensures sessions are cleaned up either through gift wrap instructions or automatic timeout
 4. **Differentiated handling**: Order creation uses `requestId`-based cleanup while order taking uses `orderId`-based cleanup
 
 ### Timer Management
@@ -1129,5 +914,5 @@ This ensures that timers are properly cleaned up when notifiers are disposed to 
 | **Storage Impact** | Deletes from Sembast database | Removes from memory map only |
 | **Use Case** | Taking existing orders | Creating new orders |
 
-**Last Updated**: September 29, 2025 
+**Last Updated**: October 8, 2025 
 

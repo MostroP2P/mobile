@@ -102,7 +102,6 @@ class NotificationItem extends ConsumerWidget {
           context.push('/trade_detail/${notification.orderId}');
           break;
         case mostro_action.Action.cantDo:
-        case mostro_action.Action.timeoutReversal:
         case mostro_action.Action.rateReceived:
         case mostro_action.Action.newOrder:
         case mostro_action.Action.takeSell:

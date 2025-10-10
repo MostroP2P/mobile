@@ -101,7 +101,6 @@ class NotificationModel {
         return NotificationType.message;
       case Action.cantDo:
       case Action.tradePubkey:
-      case Action.timeoutReversal:
         return NotificationType.system;
       // ignore: unreachable_switch_default
       default:

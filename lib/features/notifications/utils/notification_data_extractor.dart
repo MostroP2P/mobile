@@ -179,10 +179,6 @@ class NotificationDataExtractor {
         // This action doesn't generate notifications
         return null;
         
-      case Action.timeoutReversal:
-        // This action doesn't generate notifications
-        return null;
-        
       default:
         // Unknown actions generate temporary notifications
         isTemporary = true;
