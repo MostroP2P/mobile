@@ -18,7 +18,10 @@ class DisputeInfoCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Resolve counterparty pubkey to readable nym
-    final counterpartyNym = dispute.counterpartyDisplay != S.of(context)!.unknown 
+    // Only lookup nickname if we have a meaningful counterparty (not the semantic unknown key)
+    final hasCounterparty = dispute.counterpartyDisplay != DisputeSemanticKeys.unknownCounterparty && 
+                            dispute.counterpartyDisplay.trim().isNotEmpty;
+    final counterpartyNym = hasCounterparty
         ? ref.watch(nickNameProvider(dispute.counterpartyDisplay))
         : S.of(context)!.unknown;
     

@@ -133,6 +133,20 @@ class OrderState {
     // Handle dispute status updates based on action
     Dispute? updatedDispute = message.getPayload<Dispute>() ?? dispute;
     
+    // If we got a dispute from the message payload, ensure it has the message timestamp
+    // This is critical for correct sorting in the dispute list
+    if (updatedDispute != null && message.getPayload<Dispute>() != null) {
+      // Use message timestamp if dispute doesn't have a createdAt or if message has a timestamp
+      if (message.timestamp != null && 
+          (updatedDispute.createdAt == null || 
+           updatedDispute.createdAt!.millisecondsSinceEpoch != message.timestamp)) {
+        updatedDispute = updatedDispute.copyWith(
+          createdAt: DateTime.fromMillisecondsSinceEpoch(message.timestamp!),
+        );
+        _logger.i('Updated dispute ${updatedDispute.disputeId} createdAt from message timestamp: ${updatedDispute.createdAt}');
+      }
+    }
+    
     // Add defensive null check - if both message payload and existing dispute are null,
     // we cannot perform dispute updates
     if (updatedDispute == null && 
@@ -142,11 +156,20 @@ class OrderState {
       _logger.w('Cannot update dispute for action ${message.action}: no dispute found in message payload or existing state');
     } else if (message.action == Action.adminTookDispute && updatedDispute != null) {
       // When admin takes dispute, update status to in-progress and set admin info
+      // Extract admin pubkey from Peer payload if available
+      String? adminPubkey = updatedDispute.adminPubkey;
+      if (message.payload is Peer) {
+        final peerPayload = message.getPayload<Peer>();
+        if (peerPayload != null && peerPayload.publicKey.isNotEmpty) {
+          adminPubkey = peerPayload.publicKey;
+          _logger.i('Extracted admin pubkey from Peer payload: $adminPubkey');
+        }
+      }
+      
       updatedDispute = updatedDispute.copyWith(
         status: 'in-progress',
         adminTookAt: DateTime.now(),
-        // Set admin pubkey if not already set
-        adminPubkey: updatedDispute.adminPubkey ?? 'admin',
+        adminPubkey: adminPubkey,
       );
       _logger.i('Updated dispute status to in-progress for adminTookDispute action');
     } else if (message.action == Action.adminSettled && updatedDispute != null) {

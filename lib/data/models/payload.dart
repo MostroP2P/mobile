@@ -6,6 +6,7 @@ import 'package:mostro_mobile/data/models/payment_failed.dart';
 import 'package:mostro_mobile/data/models/payment_request.dart';
 import 'package:mostro_mobile/data/models/peer.dart';
 import 'package:mostro_mobile/data/models/rating_user.dart';
+import 'package:mostro_mobile/data/models/text_message.dart';
 
 abstract class Payload {
   String get type;
@@ -28,6 +29,8 @@ abstract class Payload {
       return PaymentFailed.fromJson(json['payment_failed']);
     } else if (json.containsKey('next_trade')) {
       return NextTrade.fromJson(json['next_trade']);
+    } else if (json.containsKey('text_message')) {
+      return TextMessage.fromJson(json);
     } else {
       throw UnsupportedError('Unknown payload type');
     }
