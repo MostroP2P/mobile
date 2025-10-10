@@ -1,18 +1,23 @@
+import 'package:dart_nostr/dart_nostr.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models.dart';
 import 'package:mostro_mobile/features/order/models/order_state.dart';
+import 'package:mostro_mobile/features/notifications/providers/notifications_provider.dart';
 import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/features/order/notfiers/abstract_mostro_notifier.dart';
 import 'package:mostro_mobile/services/mostro_service.dart';
 
 class OrderNotifier extends AbstractMostroNotifier {
   late final MostroService mostroService;
+  ProviderSubscription<AsyncValue<List<NostrEvent>>>? _publicEventsSubscription;
   bool _isSyncing = false; // Only for sync() method
   
   OrderNotifier(super.orderId, super.ref) {
     mostroService = ref.read(mostroServiceProvider);
     sync();
     subscribe();
+    _subscribeToPublicEvents();
   }
 
   @override
@@ -132,6 +137,41 @@ class OrderNotifier extends AbstractMostroNotifier {
       orderId,
       rating,
     );
+  }
+
+  /// Subscribe to public events (38383) to detect automatic order cancellation
+  void _subscribeToPublicEvents() {
+    _publicEventsSubscription = ref.listen(
+      orderEventsProvider,
+      (_, next) async {
+        // Only detect automatic cancellation for pending orders
+        final publicEvent = ref.read(eventProvider(orderId));
+        final currentSession = ref.read(sessionProvider(orderId));
+        
+        if (publicEvent?.status == Status.canceled && 
+            state.status == Status.pending &&
+            currentSession != null) {
+          
+          logger.i('AUTOMATIC EXPIRATION: Order $orderId expired, removing from My Trades');
+          
+          // Delete session - order disappears from My Trades
+          final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+          await sessionNotifier.deleteSession(orderId);
+          
+          // Show expiration notification
+          final notifProvider = ref.read(notificationActionsProvider.notifier);
+          notifProvider.showCustomMessage('orderCanceled');
+          
+          ref.invalidateSelf();
+        }
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _publicEventsSubscription?.close();
+    super.dispose();
   }
 
 }
