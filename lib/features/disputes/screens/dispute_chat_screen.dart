@@ -100,7 +100,9 @@ class DisputeChatScreen extends ConsumerWidget {
       dynamic matchingOrderState;
       
       for (final session in sessions) {
-        if (session.orderId == dispute.orderId) {
+        if (session.orderId != null && 
+            dispute.orderId != null && 
+            session.orderId == dispute.orderId) {
           try {
             final orderState = ref.read(orderNotifierProvider(session.orderId!));
             matchingSession = session;

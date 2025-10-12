@@ -68,7 +68,12 @@ class MostroService {
       if (decryptedEvent.content == null) return;
 
       final result = jsonDecode(decryptedEvent.content!);
-      if (result is! List) return;
+      
+      // Ensure result is a non-empty List before accessing elements
+      if (result is! List || result.isEmpty) {
+        _logger.w('Received empty or invalid payload, skipping');
+        return;
+      }
 
       // Skip dispute chat messages (they have "dm" key and are handled by DisputeChatNotifier)
       if (result[0] is Map && (result[0] as Map).containsKey('dm')) {

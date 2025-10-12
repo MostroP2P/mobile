@@ -137,13 +137,16 @@ class OrderState {
     // This is critical for correct sorting in the dispute list
     if (updatedDispute != null && message.getPayload<Dispute>() != null) {
       // Use message timestamp if dispute doesn't have a createdAt or if message has a timestamp
-      if (message.timestamp != null && 
-          (updatedDispute.createdAt == null || 
-           updatedDispute.createdAt!.millisecondsSinceEpoch != message.timestamp)) {
-        updatedDispute = updatedDispute.copyWith(
-          createdAt: DateTime.fromMillisecondsSinceEpoch(message.timestamp!),
-        );
-        _logger.i('Updated dispute ${updatedDispute.disputeId} createdAt from message timestamp: ${updatedDispute.createdAt}');
+      // Note: Nostr timestamps are in seconds, so convert to milliseconds
+      if (message.timestamp != null) {
+        final tsMs = message.timestamp! * 1000;
+        if (updatedDispute.createdAt == null || 
+            updatedDispute.createdAt!.millisecondsSinceEpoch != tsMs) {
+          updatedDispute = updatedDispute.copyWith(
+            createdAt: DateTime.fromMillisecondsSinceEpoch(tsMs),
+          );
+          _logger.i('Updated dispute ${updatedDispute.disputeId} createdAt from message timestamp: ${updatedDispute.createdAt}');
+        }
       }
     }
     

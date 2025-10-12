@@ -48,7 +48,7 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
   final _logger = Logger();
   
   StreamSubscription<NostrEvent>? _subscription;
-  ProviderSubscription<Session?>? _sessionListener;
+  ProviderSubscription<dynamic>? _sessionListener;
   bool _isInitialized = false;
 
   DisputeChatNotifier(this.disputeId, this.ref) : super(const DisputeChatState());
@@ -89,24 +89,25 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
 
   /// Listen for session changes and subscribe when session is ready
   void _listenForSession() {
+    // Cancel any previous listener to avoid leaks
     _sessionListener?.close();
+    _sessionListener = null;
     
-    final session = _getSessionForDispute();
-    if (session == null) {
-      _logger.w('Cannot listen for session: no session found for dispute $disputeId');
-      return;
-    }
+    _logger.i('Starting to listen for session list changes for dispute: $disputeId');
 
-    _logger.i('Starting to listen for session changes for dispute: $disputeId');
-
-    _sessionListener = ref.listen<Session?>(
-      sessionProvider(session.orderId!),
+    // Watch the entire session list for changes
+    _sessionListener = ref.listen<List<Session>>(
+      sessionNotifierProvider,
       (previous, next) {
-        if (next != null) {
+        _logger.i('Session list changed, checking for dispute $disputeId match');
+        
+        // Try to find a session that matches this dispute
+        final session = _getSessionForDispute();
+        if (session != null) {
+          // Found a matching session, cancel listener and subscribe
+          _logger.i('Session found for dispute $disputeId, canceling listener and subscribing');
           _sessionListener?.close();
           _sessionListener = null;
-          _logger.i('Session is now available, subscribing to kind 14 for dispute: $disputeId');
-          
           _subscribe();
         }
       },
