@@ -6,6 +6,9 @@ import 'package:mostro_mobile/features/disputes/widgets/dispute_message_bubble.d
 import 'package:mostro_mobile/features/disputes/widgets/dispute_info_card.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
+/// Enum representing the type of item in the dispute messages list
+enum _ListItemType { infoCard, message, chatClosed }
+
 class DisputeMessagesList extends StatefulWidget {
   final String disputeId;
   final String status;
@@ -80,36 +83,24 @@ class _DisputeMessagesListState extends State<DisputeMessagesList> {
               SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
-                    if (index == 0) {
-                      // First item is the dispute info card
-                      return DisputeInfoCard(dispute: widget.disputeData);
+                    final itemInfo = _getItemType(index, messages);
+                    
+                    switch (itemInfo.type) {
+                      case _ListItemType.infoCard:
+                        return DisputeInfoCard(dispute: widget.disputeData);
+                      
+                      case _ListItemType.chatClosed:
+                        return _buildChatClosedMessage(context);
+                      
+                      case _ListItemType.message:
+                        final message = messages[itemInfo.messageIndex!];
+                        return DisputeMessageBubble(
+                          message: message.message,
+                          isFromUser: message.isFromUser,
+                          timestamp: message.timestamp,
+                          adminPubkey: message.adminPubkey,
+                        );
                     }
-
-                    // Check if this is the last item and we need to show chat closed message
-                    final isLastItem = index == _getItemCount(messages) - 1;
-                    final isResolvedStatus = _isResolvedStatus(widget.status);
-
-                    if (isLastItem && isResolvedStatus && messages.isNotEmpty) {
-                      // Show chat closed message at the end
-                      return _buildChatClosedMessage(context);
-                    }
-
-                    // Regular message (adjust index for messages)
-                    final messageIndex = isResolvedStatus && messages.isNotEmpty
-                        ? index - 1  // Account for info card
-                        : index - 1; // Account for info card
-
-                    if (messageIndex >= messages.length) {
-                      return _buildChatClosedMessage(context);
-                    }
-
-                    final message = messages[messageIndex];
-                    return DisputeMessageBubble(
-                      message: message.message,
-                      isFromUser: message.isFromUser,
-                      timestamp: message.timestamp,
-                      adminPubkey: message.adminPubkey,
-                    );
                   },
                   childCount: _getItemCount(messages),
                 ),
@@ -117,6 +108,23 @@ class _DisputeMessagesListState extends State<DisputeMessagesList> {
             ],
           ),
     );
+  }
+
+  /// Determine the type of item at the given index
+  /// Returns a record with the item type and optional message index
+  ({_ListItemType type, int? messageIndex}) _getItemType(int index, List<DisputeChat> messages) {
+    if (index == 0) {
+      return (type: _ListItemType.infoCard, messageIndex: null);
+    }
+    
+    final messageIndex = index - 1;
+    
+    if (messageIndex >= messages.length) {
+      // Beyond messages, must be chat closed (only added for resolved)
+      return (type: _ListItemType.chatClosed, messageIndex: null);
+    }
+    
+    return (type: _ListItemType.message, messageIndex: messageIndex);
   }
 
   /// Build layout for when there are no messages - with scrolling support
