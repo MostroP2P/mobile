@@ -19,8 +19,6 @@ class DisputeContent extends ConsumerStatefulWidget {
 }
 
 class _DisputeContentState extends ConsumerState<DisputeContent> {
-  bool _isMarkedAsRead = false;
-
   /// Normalizes status string by trimming, lowercasing, and replacing spaces/underscores with hyphens
   String _normalizeStatus(String status) {
     if (status.isEmpty) return '';
@@ -58,7 +56,7 @@ class _DisputeContentState extends ConsumerState<DisputeContent> {
               child: DisputeHeader(dispute: widget.dispute),
             ),
             // Unread indicator for in-progress disputes
-            if (normalizedStatus == 'in-progress' && !_isMarkedAsRead)
+            if (normalizedStatus == 'in-progress')
               FutureBuilder<bool>(
                 future: DisputeReadStatusService.hasUnreadMessages(
                   widget.dispute.disputeId,
