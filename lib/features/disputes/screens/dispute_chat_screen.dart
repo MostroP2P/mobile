@@ -116,17 +116,7 @@ class DisputeChatScreen extends ConsumerWidget {
       }
 
       // Convert session role to UserRole
-      UserRole? userRole;
-      if (matchingSession?.role != null) {
-        userRole = matchingSession!.role == enums.Role.buyer 
-            ? UserRole.buyer 
-            : matchingSession.role == enums.Role.seller
-                ? UserRole.seller
-                : UserRole.unknown;
-        debugPrint('DisputeChatScreen: session.role = ${matchingSession.role}, converted to userRole = $userRole');
-      } else {
-        debugPrint('DisputeChatScreen: No session role found for dispute ${dispute.disputeId}');
-      }
+      final userRole = _convertSessionRoleToUserRole(matchingSession?.role, dispute.disputeId);
 
       // If we found a matching session, use it
       if (matchingSession != null && matchingOrderState != null) {
@@ -170,17 +160,7 @@ class DisputeChatScreen extends ConsumerWidget {
             // Check if this order state contains our dispute
             if (orderState.dispute?.disputeId == dispute.disputeId) {
               // Convert session role to UserRole
-              UserRole? userRole;
-              if (session.role != null) {
-                userRole = session.role == enums.Role.buyer 
-                    ? UserRole.buyer 
-                    : session.role == enums.Role.seller
-                        ? UserRole.seller
-                        : UserRole.unknown;
-                debugPrint('DisputeChatScreen (fallback): session.role = ${session.role}, converted to userRole = $userRole');
-              } else {
-                debugPrint('DisputeChatScreen (fallback): No session role found for dispute ${dispute.disputeId}');
-              }
+              final userRole = _convertSessionRoleToUserRole(session.role, dispute.disputeId);
               
               // Found the order state that contains this dispute
               if (session.peer != null) {
@@ -254,6 +234,26 @@ class DisputeChatScreen extends ConsumerWidget {
     );
     
     return disputeData;
+  }
+
+  /// Convert session role to UserRole with logging
+  UserRole? _convertSessionRoleToUserRole(enums.Role? sessionRole, String disputeId) {
+    if (sessionRole == null) {
+      debugPrint('DisputeChatScreen: No session role found for dispute $disputeId');
+      return null;
+    }
+
+    final UserRole userRole;
+    if (sessionRole == enums.Role.buyer) {
+      userRole = UserRole.buyer;
+    } else if (sessionRole == enums.Role.seller) {
+      userRole = UserRole.seller;
+    } else {
+      userRole = UserRole.unknown;
+    }
+
+    debugPrint('DisputeChatScreen: session.role = $sessionRole, converted to userRole = $userRole');
+    return userRole;
   }
 
 }
