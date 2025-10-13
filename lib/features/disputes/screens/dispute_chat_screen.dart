@@ -9,9 +9,11 @@ import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
+import 'package:mostro_mobile/services/dispute_read_status_service.dart';
+import 'package:mostro_mobile/features/disputes/providers/dispute_read_status_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
-class DisputeChatScreen extends ConsumerWidget {
+class DisputeChatScreen extends ConsumerStatefulWidget {
   final String disputeId;
 
   const DisputeChatScreen({
@@ -20,9 +22,26 @@ class DisputeChatScreen extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DisputeChatScreen> createState() => _DisputeChatScreenState();
+}
+
+class _DisputeChatScreenState extends ConsumerState<DisputeChatScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Mark dispute as read when screen is opened
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      DisputeReadStatusService.markDisputeAsRead(widget.disputeId);
+      // Notify that the dispute has been marked as read
+      ref.read(disputeReadStatusProvider(widget.disputeId).notifier).state = 
+          DateTime.now().millisecondsSinceEpoch;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     // Get real dispute data from provider
-    final disputeAsync = ref.watch(disputeDetailsProvider(disputeId));
+    final disputeAsync = ref.watch(disputeDetailsProvider(widget.disputeId));
     
     return Scaffold(
       backgroundColor: AppTheme.backgroundDark,
@@ -60,14 +79,14 @@ class DisputeChatScreen extends ConsumerWidget {
             children: [
               // Communication section with messages (includes info card in scroll)
               DisputeCommunicationSection(
-                disputeId: disputeId,
+                disputeId: widget.disputeId,
                 disputeData: disputeData,
                 status: disputeData.status,
               ),
 
               // Input section for sending messages (only show if in-progress)
               if (disputeData.status == 'in-progress')
-                DisputeMessageInput(disputeId: disputeId)
+                DisputeMessageInput(disputeId: widget.disputeId)
               // For 'initiated' and 'resolved' status, don't show input
               // Chat closed message is now shown within the messages area
             ],

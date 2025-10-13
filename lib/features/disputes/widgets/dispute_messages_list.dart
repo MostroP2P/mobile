@@ -213,9 +213,19 @@ class _DisputeMessagesListState extends ConsumerState<DisputeMessagesList> {
 
   Widget _buildAdminAssignmentNotification(BuildContext context) {
     // Only show admin assignment notification for 'in-progress' status
+    // AND only when there are no messages yet
     // Don't show for 'initiated' (no admin yet) or 'resolved' (dispute finished)
     final normalizedStatus = _normalizeStatus(widget.status);
     if (normalizedStatus != 'in-progress') {
+      return const SizedBox.shrink();
+    }
+    
+    // Get messages to check if we should hide the notification
+    final chatState = ref.watch(disputeChatNotifierProvider(widget.disputeId));
+    final messages = chatState.messages;
+    
+    // Hide notification if there are already messages
+    if (messages.isNotEmpty) {
       return const SizedBox.shrink();
     }
     
