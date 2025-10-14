@@ -138,11 +138,11 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
     logger.i('handleEvent: Processing action ${event.action} for order $orderId (bypassTimestampGate: $bypassTimestampGate)');
     switch (event.action) {
       case Action.newOrder:
-        // Check if this is a timeout reactivation from Mostro
+        // Check if Mostro is republishing the order after timeout
         final currentSession = ref.read(sessionProvider(orderId));
         if (currentSession != null && 
             (state.status == Status.waitingBuyerInvoice || state.status == Status.waitingPayment)) {
-          // This is a maker receiving order reactivation after taker timeout
+          // This is a maker receiving order republication after taker timeout
           logger.i('MAKER: Received order reactivation from Mostro - taker timed out, order returned to pending');
           
           // Show notification: counterpart didn't respond, order will be republished

@@ -144,25 +144,33 @@ class OrderNotifier extends AbstractMostroNotifier {
     _publicEventsSubscription = ref.listen(
       orderEventsProvider,
       (_, next) async {
-        // Only detect automatic cancellation for pending orders
-        final publicEvent = ref.read(eventProvider(orderId));
-        final currentSession = ref.read(sessionProvider(orderId));
-        
-        if (publicEvent?.status == Status.canceled && 
-            state.status == Status.pending &&
-            currentSession != null) {
+        try {
+          // Only detect automatic cancellation for pending orders
+          final publicEvent = ref.read(eventProvider(orderId));
+          final currentSession = ref.read(sessionProvider(orderId));
           
-          logger.i('AUTOMATIC EXPIRATION: Order $orderId expired, removing from My Trades');
-          
-          // Delete session - order disappears from My Trades
-          final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
-          await sessionNotifier.deleteSession(orderId);
-          
-          // Show expiration notification
-          final notifProvider = ref.read(notificationActionsProvider.notifier);
-          notifProvider.showCustomMessage('orderCanceled');
-          
-          ref.invalidateSelf();
+          if (publicEvent?.status == Status.canceled && 
+              state.status == Status.pending &&
+              currentSession != null) {
+            
+            logger.i('AUTOMATIC EXPIRATION: Order $orderId expired, removing from My Trades');
+            
+            // Delete session - order disappears from My Trades
+            final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+            await sessionNotifier.deleteSession(orderId);
+            
+            // Show expiration notification
+            final notifProvider = ref.read(notificationActionsProvider.notifier);
+            notifProvider.showCustomMessage('orderCanceled');
+            
+            ref.invalidateSelf();
+          }
+        } catch (e, stack) {
+          logger.e(
+            'Error handling automatic cancellation for order $orderId',
+            error: e,
+            stackTrace: stack,
+          );
         }
       },
     );
