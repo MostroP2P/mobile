@@ -71,18 +71,36 @@ class _DisputeMessagesListState extends ConsumerState<DisputeMessagesList> {
   Widget build(BuildContext context) {
     // Get real messages from provider
     final chatState = ref.watch(disputeChatNotifierProvider(widget.disputeId));
+    
+    // Handle loading state
+    if (chatState.isLoading) {
+      return Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+    
+    // Handle error state
+    if (chatState.error != null) {
+      return Center(
+        child: Text(
+          S.of(context)!.errorLoadingChat,
+          style: TextStyle(color: AppTheme.textSecondary),
+        ),
+      );
+    }
+    
     final messages = chatState.messages;
 
     return Container(
       color: AppTheme.backgroundDark,
       child: messages.isEmpty
-        ? _buildEmptyMessagesLayout(context)
+        ? _buildEmptyMessagesLayout(context, messages)
         : CustomScrollView(
             controller: _scrollController,
             slivers: [
               // Admin assignment notification (if applicable)
               SliverToBoxAdapter(
-                child: _buildAdminAssignmentNotification(context),
+                child: _buildAdminAssignmentNotification(context, messages),
               ),
               // Messages list with dispute info card as first item
               SliverList(
@@ -133,7 +151,7 @@ class _DisputeMessagesListState extends ConsumerState<DisputeMessagesList> {
   }
 
   /// Build layout for when there are no messages - with scrolling support
-  Widget _buildEmptyMessagesLayout(BuildContext context) {
+  Widget _buildEmptyMessagesLayout(BuildContext context, List<DisputeChat> messages) {
     final isResolvedStatus = _isResolvedStatus(widget.status);
     
     return LayoutBuilder(
@@ -148,7 +166,7 @@ class _DisputeMessagesListState extends ConsumerState<DisputeMessagesList> {
               child: Column(
                 children: [
                   // Admin assignment notification (if applicable)
-                  _buildAdminAssignmentNotification(context),
+                  _buildAdminAssignmentNotification(context, messages),
                   
                   // Dispute info card
                   DisputeInfoCard(dispute: widget.disputeData),
@@ -212,7 +230,7 @@ class _DisputeMessagesListState extends ConsumerState<DisputeMessagesList> {
     );
   }
 
-  Widget _buildAdminAssignmentNotification(BuildContext context) {
+  Widget _buildAdminAssignmentNotification(BuildContext context, List<DisputeChat> messages) {
     // Only show admin assignment notification for 'in-progress' status
     // AND only when there are no messages yet
     // Don't show for 'initiated' (no admin yet) or 'resolved' (dispute finished)
@@ -220,10 +238,6 @@ class _DisputeMessagesListState extends ConsumerState<DisputeMessagesList> {
     if (normalizedStatus != 'in-progress') {
       return const SizedBox.shrink();
     }
-    
-    // Get messages to check if we should hide the notification
-    final chatState = ref.watch(disputeChatNotifierProvider(widget.disputeId));
-    final messages = chatState.messages;
     
     // Hide notification if there are already messages
     if (messages.isNotEmpty) {
