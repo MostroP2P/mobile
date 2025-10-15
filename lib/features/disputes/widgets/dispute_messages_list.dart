@@ -12,7 +12,7 @@ import 'package:mostro_mobile/generated/l10n.dart';
 /// Enum representing the type of item in the dispute messages list
 enum _ListItemType { infoCard, message, chatClosed }
 
-class DisputeMessagesList extends StatefulWidget {
+class DisputeMessagesList extends ConsumerStatefulWidget {
 
   final String disputeId;
   final String status;
