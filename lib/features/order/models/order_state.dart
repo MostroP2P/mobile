@@ -446,6 +446,11 @@ class OrderState {
           Action.cancel,
           Action.release,
         ],
+        Action.adminTookDispute: [
+          Action.sendDm,
+          Action.cancel,
+          Action.release,
+        ],
       },
       Status.settledHoldInvoice: {
         Action.addInvoice: [
@@ -562,6 +567,10 @@ class OrderState {
           Action.cancel,
         ],
         Action.disputeInitiatedByPeer: [
+          Action.sendDm,
+          Action.cancel,
+        ],
+        Action.adminTookDispute: [
           Action.sendDm,
           Action.cancel,
         ],

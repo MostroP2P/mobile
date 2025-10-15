@@ -40,6 +40,9 @@ class AddOrderNotifier extends AbstractMostroNotifier {
                   logger.i('AddOrderNotifier: received ${msg.action}');
                 }
               } else if (msg.payload is CantDo) {
+                // Cancel timer on ANY response from Mostro
+                AbstractMostroNotifier.cancelSessionTimeoutCleanupForRequestId(requestId);
+                
                 unawaited(handleEvent(msg));
                 
                 // Reset for retry if out_of_range_sats_amount
@@ -58,6 +61,9 @@ class AddOrderNotifier extends AbstractMostroNotifier {
   }
 
   Future<void> _confirmOrder(MostroMessage message) async {
+    // Cancel timeout timer - order was successfully created
+    AbstractMostroNotifier.cancelSessionTimeoutCleanupForRequestId(requestId);
+    
     state = state.updateWith(message);
     session.orderId = message.id;
     ref.read(sessionNotifierProvider.notifier).saveSession(session);
@@ -80,6 +86,10 @@ class AddOrderNotifier extends AbstractMostroNotifier {
       requestId: requestId,
       role: order.kind == OrderType.buy ? Role.buyer : Role.seller,
     );
+    
+    // Start 10s timeout cleanup timer for create orders
+    AbstractMostroNotifier.startSessionTimeoutCleanupForRequestId(requestId, ref);
+    
     await mostroService.submitOrder(message);
     state = state.updateWith(message);
   }
@@ -101,5 +111,12 @@ class AddOrderNotifier extends AbstractMostroNotifier {
     // Re-subscribe with new requestId
     subscription?.close();
     subscribe();
+  }
+  
+  @override
+  void dispose() {
+    // Cancel timer for requestId when notifier is disposed
+    AbstractMostroNotifier.cancelSessionTimeoutCleanupForRequestId(requestId);
+    super.dispose();
   }
 }

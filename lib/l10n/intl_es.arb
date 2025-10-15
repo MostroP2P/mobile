@@ -539,6 +539,7 @@
   "completePurchaseButton": "COMPLETAR COMPRA",
   "rateButton": "CALIFICAR",
   "contactButton": "CONTACTAR",
+  "viewDisputeButton": "VER DISPUTA",
   
   "rateCounterpart": "Calificar Contraparte",
   "submitRating": "Enviar Calificación",
@@ -715,8 +716,8 @@
   "disputeAdminSettledMessage": "El administrador resolvió la orden a favor de una de las partes. Revisa tu billetera para ver los pagos.",
   "disputeSellerRefundedMessage": "El administrador canceló la orden y reembolsó al vendedor. La disputa está ahora cerrada.",
   "disputeSettledBuyerMessage": "La disputa se resolvió a tu favor. La orden se completó exitosamente y recibiste los sats. Revisa tu billetera.",
-  "disputeSettledSellerMessage": "La disputa fue resuelta. La orden se completó exitosamente y el comprador recibió los sats. Revisa tu billetera para ver el pago.",
-  "disputeCanceledBuyerMessage": "El administrador canceló la orden. Se reembolsó al vendedor y no recibiste los sats. Revisa tu billetera para ver reembolsos.",
+  "disputeSettledSellerMessage": "La disputa fue resuelta. La orden se completó exitosamente y el comprador recibió los sats.",
+  "disputeCanceledBuyerMessage": "El administrador canceló la orden. Se reembolsó al vendedor y no recibiste los sats.",
   "disputeCanceledSellerMessage": "El administrador canceló la orden y te reembolsó. El comprador no recibió los sats. Revisa tu billetera para ver el reembolso.",
   "disputeOpenedByYou": "Abriste esta disputa contra el comprador {counterparty}, lee atentamente a continuación:",
   "@disputeOpenedByYou": {

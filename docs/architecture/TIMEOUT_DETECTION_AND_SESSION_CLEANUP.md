@@ -931,12 +931,15 @@ final session = ref.read(sessionNotifierProvider.notifier).getSessionByOrderId(o
 
 ### Overview
 
-A 10-second timeout cleanup system that prevents orphan sessions when Mostro instances are unresponsive or offline. This system works alongside the real-time timeout detection to provide comprehensive session management.
+A comprehensive 10-second timeout cleanup system that prevents orphan sessions when Mostro instances are unresponsive or offline. This system provides dual protection for both order creation and order taking scenarios, working alongside the real-time timeout detection to provide comprehensive session management.
 
 ### Implementation
 
 #### **10-Second Cleanup Timer**
 
+The system automatically starts cleanup timers for both order creation and order taking scenarios to prevent sessions from becoming orphaned if Mostro doesn't respond:
+
+**Order Taking Protection**:
 When users take orders, a cleanup timer is automatically started to prevent sessions from becoming orphaned if Mostro doesn't respond:
 
 ```dart
@@ -975,8 +978,36 @@ void handleEvent(MostroMessage event) {
 }
 ```
 
-#### **Timer Integration in Order Taking**
+**Order Creation Protection**:
+When users create new orders, a similar cleanup timer prevents orphan sessions if Mostro doesn't respond to the order creation request:
 
+```dart
+// lib/features/order/notfiers/abstract_mostro_notifier.dart
+static void startSessionTimeoutCleanupForRequestId(int requestId, Ref ref) {
+  final key = 'request:$requestId';
+  // Cancel existing timer if any
+  _sessionTimeouts[key]?.cancel();
+  
+  _sessionTimeouts[key] = Timer(const Duration(seconds: 10), () {
+    try {
+      ref.read(sessionNotifierProvider.notifier).deleteSessionByRequestId(requestId);
+      Logger().i('Session cleaned up after 10s timeout for requestId: $requestId');
+      
+      // Show timeout message to user and navigate to order book
+      _showTimeoutNotificationAndNavigate(ref);
+    } catch (e) {
+      Logger().e('Failed to cleanup session for requestId: $requestId', error: e);
+    }
+    _sessionTimeouts.remove(key);
+  });
+  
+  Logger().i('Started 10s timeout timer for requestId: $requestId');
+}
+```
+
+#### **Timer Integration**
+
+**Order Taking**:
 The cleanup timer is started automatically when users take orders:
 
 ```dart
@@ -988,6 +1019,21 @@ Future<void> takeSellOrder(String orderId, int? amount, String? lnAddress) async
   AbstractMostroNotifier.startSessionTimeoutCleanup(orderId, ref);
   
   await mostroService.takeSellOrder(orderId, amount, lnAddress);
+}
+```
+
+**Order Creation**:
+The cleanup timer is started automatically when users create orders:
+
+```dart
+// lib/features/order/notfiers/add_order_notifier.dart
+Future<void> submitOrder(Order order) async {
+  // ... session creation
+  
+  // Start 10s timeout cleanup timer for create orders
+  AbstractMostroNotifier.startSessionTimeoutCleanupForRequestId(requestId, ref);
+  
+  await mostroService.submitOrder(message);
 }
 ```
 
@@ -1034,8 +1080,9 @@ The system includes localized timeout messages in all supported languages:
 The orphan session prevention system works in conjunction with the real-time timeout detection:
 
 1. **Real-time detection**: Monitors public events for status changes and handles timeouts immediately when detected
-2. **30-second cleanup**: Acts as a fallback to prevent orphan sessions when Mostro is completely unresponsive
+2. **10-second cleanup**: Acts as a fallback to prevent orphan sessions when Mostro is completely unresponsive
 3. **Dual protection**: Ensures sessions are cleaned up either through real-time detection or automatic timeout
+4. **Differentiated handling**: Order creation uses `requestId`-based cleanup while order taking uses `orderId`-based cleanup
 
 ### Timer Management
 
@@ -1043,12 +1090,14 @@ The orphan session prevention system works in conjunction with the real-time tim
 
 ```dart
 // Timer storage for phantom session cleanup
+// Keys: orderId for order taking, 'request:requestId' for order creation
 static final Map<String, Timer> _sessionTimeouts = {};
 ```
 
 #### **Proper Cleanup on Disposal**
 
 ```dart
+// For OrderNotifier (order taking)
 @override
 void dispose() {
   subscription?.close();
@@ -1057,9 +1106,28 @@ void dispose() {
   _sessionTimeouts.remove(orderId);
   super.dispose();
 }
+
+// For AddOrderNotifier (order creation)
+@override
+void dispose() {
+  // Cancel timer for requestId when notifier is disposed
+  AbstractMostroNotifier.cancelSessionTimeoutCleanupForRequestId(requestId);
+  super.dispose();
+}
 ```
 
-This ensures that timers are properly cleaned up when notifiers are disposed to prevent memory leaks.
+This ensures that timers are properly cleaned up when notifiers are disposed to prevent memory leaks, with differentiated cleanup methods for each session type.
 
-**Last Updated**: September 15, 2025 
+### Key Differences: Order Creation vs Order Taking
+
+| **Aspect** | **Order Taking** | **Order Creation** |
+|------------|------------------|-------------------|
+| **Timer Method** | `startSessionTimeoutCleanup(orderId, ref)` | `startSessionTimeoutCleanupForRequestId(requestId, ref)` |
+| **Cleanup Method** | `deleteSession(orderId)` | `deleteSessionByRequestId(requestId)` |
+| **Timer Key** | `orderId` | `'request:${requestId}'` |
+| **Session Type** | Permanent (stored in database) | Temporary (memory only) |
+| **Storage Impact** | Deletes from Sembast database | Removes from memory map only |
+| **Use Case** | Taking existing orders | Creating new orders |
+
+**Last Updated**: September 29, 2025 
 

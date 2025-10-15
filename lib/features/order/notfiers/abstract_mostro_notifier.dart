@@ -53,6 +53,9 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
               logger.i('Received message with action: ${msg?.action}');
             }
             if (msg != null) {
+              // Cancel timer on ANY response from Mostro for this order
+              cancelSessionTimeoutCleanup(orderId);
+              
               if (mounted) {
                 state = state.updateWith(msg);
               }
@@ -106,9 +109,6 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
       return;
     }
     _processedEventIds.add(eventKey);
-    
-    // Cancel timer on ANY response from Mostro for this order
-    _cancelSessionTimeoutCleanup(orderId);
     
     final navProvider = ref.read(navigationProvider.notifier);
 
@@ -468,13 +468,46 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
     }
   }
   
+  /// Starts a 10-second timer to cleanup orphan sessions for create orders (by requestId)
+  static void startSessionTimeoutCleanupForRequestId(int requestId, Ref ref) {
+    final key = 'request:$requestId';
+    // Cancel existing timer if any
+    _sessionTimeouts[key]?.cancel();
+    
+    _sessionTimeouts[key] = Timer(const Duration(seconds: 10), () {
+      try {
+        ref.read(sessionNotifierProvider.notifier).deleteSessionByRequestId(requestId);
+        Logger().i('Session cleaned up after 10s timeout for requestId: $requestId');
+        
+        // Show timeout message to user and navigate to order book
+        _showTimeoutNotificationAndNavigate(ref);
+      } catch (e) {
+        Logger().e('Failed to cleanup session for requestId: $requestId', error: e);
+      }
+      _sessionTimeouts.remove(key);
+    });
+    
+    Logger().i('Started 10s timeout timer for requestId: $requestId');
+  }
+  
   /// Cancels the timeout timer for a specific orderId
-  static void _cancelSessionTimeoutCleanup(String orderId) {
+  static void cancelSessionTimeoutCleanup(String orderId) {
     final timer = _sessionTimeouts[orderId];
     if (timer != null) {
       timer.cancel();
       _sessionTimeouts.remove(orderId);
       Logger().i('Cancelled 10s timeout timer for order: $orderId - Mostro responded');
+    }
+  }
+  
+  /// Cancels the timeout timer for a specific requestId
+  static void cancelSessionTimeoutCleanupForRequestId(int requestId) {
+    final key = 'request:$requestId';
+    final timer = _sessionTimeouts[key];
+    if (timer != null) {
+      timer.cancel();
+      _sessionTimeouts.remove(key);
+      Logger().i('Cancelled 10s timeout timer for requestId: $requestId - Mostro responded');
     }
   }
 

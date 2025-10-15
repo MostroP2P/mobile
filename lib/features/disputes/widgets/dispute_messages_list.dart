@@ -8,7 +8,12 @@ import 'package:mostro_mobile/features/disputes/widgets/dispute_message_bubble.d
 import 'package:mostro_mobile/features/disputes/widgets/dispute_info_card.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
-class DisputeMessagesList extends ConsumerStatefulWidget {
+
+/// Enum representing the type of item in the dispute messages list
+enum _ListItemType { infoCard, message, chatClosed }
+
+class DisputeMessagesList extends StatefulWidget {
+
   final String disputeId;
   final String status;
   final DisputeData disputeData;
@@ -83,48 +88,48 @@ class _DisputeMessagesListState extends ConsumerState<DisputeMessagesList> {
               SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
-                    if (index == 0) {
-                      // First item is the dispute info card
-                      return DisputeInfoCard(dispute: widget.disputeData);
+                    final itemInfo = _getItemType(index, messages);
+                    
+                    switch (itemInfo.type) {
+                      case _ListItemType.infoCard:
+                        return DisputeInfoCard(dispute: widget.disputeData);
+                      
+                      case _ListItemType.chatClosed:
+                        return _buildChatClosedMessage(context);
+                      
+                      case _ListItemType.message:
+                        final message = messages[itemInfo.messageIndex!];
+                        return DisputeMessageBubble(
+                          message: message.message,
+                          isFromUser: message.isFromUser,
+                          timestamp: message.timestamp,
+                          adminPubkey: message.adminPubkey,
+                        );
                     }
-
-                    // Check if this is the last item and we need to show chat closed message
-                    final isLastItem = index == _getItemCount(messages) - 1;
-                    final isResolvedStatus = _isResolvedStatus(widget.status);
-
-                    if (isLastItem && isResolvedStatus && messages.isNotEmpty) {
-                      // Show chat closed message at the end
-                      return _buildChatClosedMessage(context);
-                    }
-
-                    // Regular message (adjust index for messages)
-                    final messageIndex = isResolvedStatus && messages.isNotEmpty
-                        ? index - 1  // Account for info card
-                        : index - 1; // Account for info card
-
-                    if (messageIndex >= messages.length) {
-                      return _buildChatClosedMessage(context);
-                    }
-
-                    final message = messages[messageIndex];
-                    return DisputeMessageBubble(
-                      message: message.message,
-                      isFromUser: message.isFromUser,
-                      timestamp: message.timestamp,
-                      adminPubkey: message.adminPubkey,
-                    );
                   },
                   childCount: _getItemCount(messages),
                 ),
               ),
-              // Resolution notification (if resolved)
-              if (_isResolvedStatus(widget.status))
-                SliverToBoxAdapter(
-                  child: _buildResolutionNotification(context),
-                ),
             ],
           ),
     );
+  }
+
+  /// Determine the type of item at the given index
+  /// Returns a record with the item type and optional message index
+  ({_ListItemType type, int? messageIndex}) _getItemType(int index, List<DisputeChat> messages) {
+    if (index == 0) {
+      return (type: _ListItemType.infoCard, messageIndex: null);
+    }
+    
+    final messageIndex = index - 1;
+    
+    if (messageIndex >= messages.length) {
+      // Beyond messages, must be chat closed (only added for resolved)
+      return (type: _ListItemType.chatClosed, messageIndex: null);
+    }
+    
+    return (type: _ListItemType.message, messageIndex: messageIndex);
   }
 
   /// Build layout for when there are no messages - with scrolling support
@@ -151,13 +156,9 @@ class _DisputeMessagesListState extends ConsumerState<DisputeMessagesList> {
                   // Content area
                   _buildEmptyAreaContent(context),
                   
-                  // Spacer to push resolution notification to bottom
+                  // Spacer for better layout
                   if (isResolvedStatus)
                     const Spacer(),
-                  
-                  // Resolution notification at bottom (if resolved) - always at bottom
-                  if (isResolvedStatus)
-                    _buildResolutionNotification(context),
                 ],
               ),
             ),
@@ -259,36 +260,6 @@ class _DisputeMessagesListState extends ConsumerState<DisputeMessagesList> {
     );
   }
 
-  Widget _buildResolutionNotification(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.green[900],
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.check_circle,
-            color: Colors.green[300],
-            size: 16,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              S.of(context)!.disputeResolvedMessage,
-              style: TextStyle(
-                color: Colors.green[300],
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   /// Normalizes status string by trimming, lowercasing, and replacing spaces/underscores with hyphens
   String _normalizeStatus(String status) {

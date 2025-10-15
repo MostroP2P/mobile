@@ -31,7 +31,11 @@ class DisputeStatusContent extends ConsumerWidget {
       // Get the appropriate message based on the resolution type and user role
       String message;
       
-      if (status == 'seller-refunded') {
+      // Debug logging to track action and user role
+      debugPrint('DisputeStatusContent: status=$status, action=${dispute.action}, userRole=${dispute.userRole}');
+      
+      // Check action first to determine the type of resolution
+      if (dispute.action == 'admin-canceled' || status == 'seller-refunded') {
         // Admin canceled the order and refunded the seller
         // This means the buyer doesn't get the sats, seller gets refunded
         if (dispute.userRole == UserRole.buyer) {
@@ -52,6 +56,7 @@ class DisputeStatusContent extends ConsumerWidget {
           message = S.of(context)!.disputeAdminSettledMessage;
         }
       } else {
+        // Fallback for generic resolved status without specific action
         message = S.of(context)!.disputeResolvedMessage;
       }
       
