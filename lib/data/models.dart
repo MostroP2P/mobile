@@ -5,6 +5,8 @@ export 'package:mostro_mobile/data/models/mostro_message.dart';
 export 'package:mostro_mobile/data/models/notification.dart';
 export 'package:mostro_mobile/data/models/nostr_event.dart';
 export 'package:mostro_mobile/data/models/order.dart';
+export 'package:mostro_mobile/data/models/orders_request.dart';
+export 'package:mostro_mobile/data/models/orders_response.dart';
 export 'package:mostro_mobile/data/models/payload.dart';
 export 'package:mostro_mobile/data/models/payment_request.dart';
 export 'package:mostro_mobile/data/models/peer.dart';

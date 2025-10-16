@@ -311,6 +311,9 @@ class FakeMostroService implements MostroService {
   Future<void> requestRestoreSession() async {}
 
   @override
+  Future<void> requestOrderDetails(List<String> orderIds) async {}
+
+  @override
   Future<Session> publishOrder(MostroMessage order) =>
       throw UnimplementedError();
 

@@ -40,7 +40,8 @@ enum Action {
   sendDm('send-dm'),
   tradePubkey('trade-pubkey'),
   timeoutReversal('timeout-reversal'),
-  restoreSession('restore-session');
+  restoreSession('restore-session'),
+  orders('orders');
 
   final String value;
 

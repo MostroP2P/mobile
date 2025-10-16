@@ -86,6 +86,7 @@ class NotificationMessageMapper {
       case mostro.Action.timeoutReversal:
         return 'notification_order_update_title';
       case mostro.Action.restoreSession:
+      case mostro.Action.orders:
         return 'notification_order_update_title';
     }
   }
@@ -181,6 +182,7 @@ class NotificationMessageMapper {
       case mostro.Action.timeoutReversal:
         return 'notification_order_update_message';
       case mostro.Action.restoreSession:
+      case mostro.Action.orders:
         return 'notification_order_update_message';
     }
   }

@@ -2,6 +2,8 @@ import 'package:mostro_mobile/data/models/cant_do.dart';
 import 'package:mostro_mobile/data/models/dispute.dart';
 import 'package:mostro_mobile/data/models/next_trade.dart';
 import 'package:mostro_mobile/data/models/order.dart';
+import 'package:mostro_mobile/data/models/orders_request.dart';
+import 'package:mostro_mobile/data/models/orders_response.dart';
 import 'package:mostro_mobile/data/models/payment_failed.dart';
 import 'package:mostro_mobile/data/models/payment_request.dart';
 import 'package:mostro_mobile/data/models/peer.dart';
@@ -15,6 +17,10 @@ abstract class Payload {
   factory Payload.fromJson(Map<String, dynamic> json) {
     if (json.containsKey('order')) {
       return Order.fromJson(json['order']);
+    } else if (json.containsKey('orders')) {
+      return OrdersResponse.fromJson(json);
+    } else if (json.containsKey('ids')) {
+      return OrdersRequest.fromJson(json);
     } else if (json.containsKey('payment_request')) {
       return PaymentRequest.fromJson(json['payment_request']);
     } else if (json.containsKey('cant_do')) {
