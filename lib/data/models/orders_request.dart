@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:mostro_mobile/data/models/payload.dart';
 
 class OrdersRequest implements Payload {
@@ -46,12 +47,11 @@ class OrdersRequest implements Payload {
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is OrdersRequest &&
-           other.ids.length == ids.length &&
-           other.ids.every((id) => ids.contains(id));
+           const ListEquality().equals(other.ids, ids);
   }
 
   @override
-  int get hashCode => ids.hashCode;
+  int get hashCode => const ListEquality().hash(ids);
 
   @override
   String toString() => 'OrdersRequest(ids: $ids)';

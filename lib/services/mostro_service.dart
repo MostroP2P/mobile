@@ -314,7 +314,11 @@ class MostroService {
     _logger.i('Requesting restore session from Mostro');
 
     final keyManager = ref.read(keyManagerProvider);
-    final masterKey = keyManager.masterKeyPair!;
+    final masterKey = keyManager.masterKeyPair;
+    if (masterKey == null) {
+      _logger.e('No master key available for restore session');
+      return;
+    }
 
     final message = MostroMessage(
       action: Action.restoreSession,
@@ -337,7 +341,11 @@ class MostroService {
     }
 
     final keyManager = ref.read(keyManagerProvider);
-    final masterKey = keyManager.masterKeyPair!;
+    final masterKey = keyManager.masterKeyPair;
+    if (masterKey == null) {
+      _logger.e('No master key available for requesting order details');
+      return;
+    }
 
     const maxOrdersPerRequest = 20;
     for (var i = 0; i < orderIds.length; i += maxOrdersPerRequest) {
