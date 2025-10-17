@@ -167,6 +167,7 @@
   "notFound": "The requested dispute could not be found.",
   "invalidDisputeStatus": "The dispute status is invalid.",
   "invalidAction": "The requested action is invalid.",
+  "invalidFiatCurrency": "This Mostro instance doesn't accept the selected currency, try another instance",
   "pendingOrderExists": "You already have an order waiting for you, you must complete it or cancel it before taking another one.",
   "login": "Login",
   "register": "Register",

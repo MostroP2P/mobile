@@ -143,6 +143,7 @@
   "notFound": "La disputa solicitada no pudo ser encontrada.",
   "invalidDisputeStatus": "El estado de la disputa es inválido.",
   "invalidAction": "La acción solicitada es inválida.",
+  "invalidFiatCurrency": "Este mostro no acepta la moneda que seleccionaste, prueba con otra instancia",
   "pendingOrderExists": "Ya tienes una orden esperando por ti, debes completarla o cancelarla antes de tomar otra.",
   "login": "Iniciar Sesión",
   "register": "Registrarse",

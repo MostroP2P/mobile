@@ -27,6 +27,7 @@ class CantDoNotificationMapper {
     'invalid_rating': (context) => S.of(context)!.invalidRating,
     'invalid_order_kind': (context) => S.of(context)!.invalidOrderKind,
     'invalid_order_status': (context) => S.of(context)!.invalidOrderStatus,
+    'invalid_fiat_currency': (context) => S.of(context)!.invalidFiatCurrency,
   };
   
   static String getMessage(BuildContext context, String cantDoReason) {
@@ -75,7 +76,7 @@ class NotificationListenerWidget extends ConsumerWidget {
         } else if (next.action != null) {
           // Handle specific cant-do reasons with custom messages
           if (next.action == mostro.Action.cantDo) {
-            final reason = next.values['action'];
+            final reason = next.values['reason'];
             if (reason is String && reason.isNotEmpty) {
               message = CantDoNotificationMapper.getMessage(context, reason);
             } else {
