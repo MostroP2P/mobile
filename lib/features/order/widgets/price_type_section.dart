@@ -56,7 +56,7 @@ class PriceTypeSection extends StatelessWidget {
                 thumbColor: WidgetStateProperty.resolveWith<Color?>(
                   (Set<WidgetState> states) {
                     if (states.contains(WidgetState.selected)) {
-                      return AppTheme.purpleAccent; // Keep the purple accent color
+                      return AppTheme.textPrimary; // Keep the purple accent color
                     }
                     return null;
                   },
