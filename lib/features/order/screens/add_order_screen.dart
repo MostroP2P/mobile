@@ -185,6 +185,13 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Proactively fetch exchange rate when currency is selected
+    // This triggers the fetch before user enters amounts, preventing "exchangeRateNotAvailable" error
+    final selectedFiatCode = ref.watch(selectedFiatCodeProvider);
+    if (selectedFiatCode != null && selectedFiatCode.isNotEmpty) {
+      ref.watch(exchangeRateProvider(selectedFiatCode));
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFF171A23),
       appBar: AppBar(
@@ -359,10 +366,6 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
     }
 
     if (_selectedPaymentMethods.isEmpty) {
-      return null;
-    }
-
-    if (_validationError != null) {
       return null;
     }
 
