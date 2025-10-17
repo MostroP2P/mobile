@@ -1,10 +1,8 @@
 import 'package:mostro_mobile/data/enums.dart' as enums;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/models/dispute.dart';
-import 'package:mostro_mobile/data/models/dispute_chat.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/data/repositories/dispute_repository.dart';
-import 'package:mostro_mobile/features/disputes/notifiers/dispute_chat_notifier.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
@@ -62,12 +60,8 @@ final disputeDetailsProvider = FutureProvider.family<Dispute?, String>((ref, dis
 });
 
 
-/// Stub provider for dispute chat messages - UI only implementation
-final disputeChatProvider = StateNotifierProvider.family<DisputeChatNotifier, List<DisputeChat>, String>(
-  (ref, disputeId) {
-    return ref.watch(disputeChatNotifierProvider(disputeId).notifier);
-  },
-);
+// The disputeChatNotifierProvider is now the main provider for dispute chat
+// It's defined in dispute_chat_notifier.dart
 
 /// Provider for user disputes list - uses real data from repository
 final userDisputesProvider = FutureProvider<List<Dispute>>((ref) async {

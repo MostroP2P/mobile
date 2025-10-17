@@ -9,9 +9,11 @@ import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
+import 'package:mostro_mobile/services/dispute_read_status_service.dart';
+import 'package:mostro_mobile/features/disputes/providers/dispute_read_status_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
-class DisputeChatScreen extends ConsumerWidget {
+class DisputeChatScreen extends ConsumerStatefulWidget {
   final String disputeId;
 
   const DisputeChatScreen({
@@ -20,9 +22,26 @@ class DisputeChatScreen extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DisputeChatScreen> createState() => _DisputeChatScreenState();
+}
+
+class _DisputeChatScreenState extends ConsumerState<DisputeChatScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Mark dispute as read when screen is opened
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      DisputeReadStatusService.markDisputeAsRead(widget.disputeId);
+      // Notify that the dispute has been marked as read
+      ref.read(disputeReadStatusProvider(widget.disputeId).notifier).state = 
+          DateTime.now().millisecondsSinceEpoch;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     // Get real dispute data from provider
-    final disputeAsync = ref.watch(disputeDetailsProvider(disputeId));
+    final disputeAsync = ref.watch(disputeDetailsProvider(widget.disputeId));
     
     return Scaffold(
       backgroundColor: AppTheme.backgroundDark,
@@ -60,14 +79,14 @@ class DisputeChatScreen extends ConsumerWidget {
             children: [
               // Communication section with messages (includes info card in scroll)
               DisputeCommunicationSection(
-                disputeId: disputeId,
+                disputeId: widget.disputeId,
                 disputeData: disputeData,
                 status: disputeData.status,
               ),
 
               // Input section for sending messages (only show if in-progress)
               if (disputeData.status == 'in-progress')
-                DisputeMessageInput(disputeId: disputeId)
+                DisputeMessageInput(disputeId: widget.disputeId)
               // For 'initiated' and 'resolved' status, don't show input
               // Chat closed message is now shown within the messages area
             ],
@@ -100,7 +119,9 @@ class DisputeChatScreen extends ConsumerWidget {
       dynamic matchingOrderState;
       
       for (final session in sessions) {
-        if (session.orderId == dispute.orderId) {
+        if (session.orderId != null && 
+            dispute.orderId != null && 
+            session.orderId == dispute.orderId) {
           try {
             final orderState = ref.read(orderNotifierProvider(session.orderId!));
             matchingSession = session;
@@ -114,17 +135,7 @@ class DisputeChatScreen extends ConsumerWidget {
       }
 
       // Convert session role to UserRole
-      UserRole? userRole;
-      if (matchingSession?.role != null) {
-        userRole = matchingSession!.role == enums.Role.buyer 
-            ? UserRole.buyer 
-            : matchingSession.role == enums.Role.seller
-                ? UserRole.seller
-                : UserRole.unknown;
-        debugPrint('DisputeChatScreen: session.role = ${matchingSession.role}, converted to userRole = $userRole');
-      } else {
-        debugPrint('DisputeChatScreen: No session role found for dispute ${dispute.disputeId}');
-      }
+      final userRole = _convertSessionRoleToUserRole(matchingSession?.role, dispute.disputeId);
 
       // If we found a matching session, use it
       if (matchingSession != null && matchingOrderState != null) {
@@ -168,17 +179,7 @@ class DisputeChatScreen extends ConsumerWidget {
             // Check if this order state contains our dispute
             if (orderState.dispute?.disputeId == dispute.disputeId) {
               // Convert session role to UserRole
-              UserRole? userRole;
-              if (session.role != null) {
-                userRole = session.role == enums.Role.buyer 
-                    ? UserRole.buyer 
-                    : session.role == enums.Role.seller
-                        ? UserRole.seller
-                        : UserRole.unknown;
-                debugPrint('DisputeChatScreen (fallback): session.role = ${session.role}, converted to userRole = $userRole');
-              } else {
-                debugPrint('DisputeChatScreen (fallback): No session role found for dispute ${dispute.disputeId}');
-              }
+              final userRole = _convertSessionRoleToUserRole(session.role, dispute.disputeId);
               
               // Found the order state that contains this dispute
               if (session.peer != null) {
@@ -252,6 +253,26 @@ class DisputeChatScreen extends ConsumerWidget {
     );
     
     return disputeData;
+  }
+
+  /// Convert session role to UserRole with logging
+  UserRole? _convertSessionRoleToUserRole(enums.Role? sessionRole, String disputeId) {
+    if (sessionRole == null) {
+      debugPrint('DisputeChatScreen: No session role found for dispute $disputeId');
+      return null;
+    }
+
+    final UserRole userRole;
+    if (sessionRole == enums.Role.buyer) {
+      userRole = UserRole.buyer;
+    } else if (sessionRole == enums.Role.seller) {
+      userRole = UserRole.seller;
+    } else {
+      userRole = UserRole.unknown;
+    }
+
+    debugPrint('DisputeChatScreen: session.role = $sessionRole, converted to userRole = $userRole');
+    return userRole;
   }
 
 }

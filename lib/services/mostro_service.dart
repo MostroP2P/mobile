@@ -68,13 +68,28 @@ class MostroService {
       if (decryptedEvent.content == null) return;
 
       final result = jsonDecode(decryptedEvent.content!);
-      if (result is! List) return;
+      
+      // Ensure result is a non-empty List before accessing elements
+      if (result is! List || result.isEmpty) {
+        _logger.w('Received empty or invalid payload, skipping');
+        return;
+      }
+
+      // Skip dispute chat messages (they have "dm" key and are handled by DisputeChatNotifier)
+      if (result[0] is Map && (result[0] as Map).containsKey('dm')) {
+        _logger.i('Skipping dispute chat message (handled by DisputeChatNotifier)');
+        return;
+      }
 
       final msg = MostroMessage.fromJson(result[0]);
       final messageStorage = ref.read(mostroStorageProvider);
-      await messageStorage.addMessage(decryptedEvent.id!, msg);
+      
+      // Use decryptedEvent.id if available, otherwise fall back to original event.id
+      // This handles cases where admin messages might not have an id in the decrypted event
+      final messageKey = decryptedEvent.id ?? event.id ?? 'msg_${DateTime.now().millisecondsSinceEpoch}';
+      await messageStorage.addMessage(messageKey, msg);
       _logger.i(
-        'Received DM, Event ID: ${decryptedEvent.id} with payload: ${decryptedEvent.content}',
+        'Received DM, Event ID: ${decryptedEvent.id ?? event.id} with payload: ${decryptedEvent.content}',
       );
 
       await _maybeLinkChildOrder(msg, matchingSession);

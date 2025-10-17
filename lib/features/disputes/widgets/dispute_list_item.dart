@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mostro_mobile/features/disputes/widgets/dispute_icon.dart';
 import 'package:mostro_mobile/features/disputes/widgets/dispute_content.dart';
+import 'package:mostro_mobile/services/dispute_read_status_service.dart';
 import 'package:mostro_mobile/data/models/dispute.dart';
 
 class DisputeListItem extends StatelessWidget {
@@ -16,7 +17,11 @@ class DisputeListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: () async {
+        // Mark dispute as read when user opens it
+        await DisputeReadStatusService.markDisputeAsRead(dispute.disputeId);
+        onTap();
+      },
       child: Container(
         decoration: BoxDecoration(
           border: Border(
