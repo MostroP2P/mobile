@@ -289,16 +289,10 @@ class TradeDetailScreen extends ConsumerWidget {
             cancelMessage = S.of(context)!.areYouSureCancel;
           }
 
-          // Use different button text when accepting a peer's cancellation
-          final buttonText = tradeState.action ==
-                  actions.Action.cooperativeCancelInitiatedByPeer
-              ? S.of(context)!.acceptCancelButton
-              : S.of(context)!.cancel.toUpperCase();
-
           widgets.add(_buildCancelButton(
             context,
             ref,
-            buttonText,
+            S.of(context)!.acceptCancelButton,
             cancelMessage,
             action,
           ));
@@ -647,6 +641,7 @@ class TradeDetailScreen extends ConsumerWidget {
       },
       style: ElevatedButton.styleFrom(
         backgroundColor: AppTheme.red1,
+        foregroundColor: Colors.white,
       ),
       child: Text(buttonText),
     );
@@ -751,6 +746,7 @@ class TradeDetailScreen extends ConsumerWidget {
       },
       style: ElevatedButton.styleFrom(
         backgroundColor: AppTheme.red1,
+        foregroundColor: Colors.white,
       ),
       child: Text(S.of(context)!.disputeButton),
     );
