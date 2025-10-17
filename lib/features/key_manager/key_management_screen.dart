@@ -7,7 +7,9 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
+import 'package:mostro_mobile/features/subscriptions/subscription_manager_provider.dart';
 import 'package:mostro_mobile/shared/providers.dart';
+import 'package:mostro_mobile/shared/providers/notifications_history_repository_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
 class KeyManagementScreen extends ConsumerStatefulWidget {
@@ -66,31 +68,69 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
     final eventStorage = ref.read(eventStorageProvider);
     await eventStorage.deleteAll();
 
+    final notificationsRepo = ref.read(notificationsRepositoryProvider);
+    await notificationsRepo.clearAll();
+
     final keyManager = ref.read(keyManagerProvider);
     await keyManager.generateAndStoreMasterKey();
 
     await _loadKeys();
   }
 
-  // ignore: unused_element
-  Future<void> _importKey() async {
-    final keyManager = ref.read(keyManagerProvider);
+  Future<void> _importKeyAndRestore() async {
     final importValue = _importController.text.trim();
-    if (importValue.isNotEmpty) {
-      try {
-        await keyManager.importMnemonic(importValue);
-        await _loadKeys();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(S.of(context)!.keyImportedSuccessfully)),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(S.of(context)!.importFailed(e.toString()))),
-          );
-        }
+    if (importValue.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(S.of(context)!.mnemonicValidationEmpty),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+      return;
+    }
+
+    try {
+      final keyManager = ref.read(keyManagerProvider);
+      await keyManager.importMnemonic(importValue);
+      await _loadKeys();
+
+      final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+      await sessionNotifier.reset();
+
+      final mostroStorage = ref.read(mostroStorageProvider);
+      await mostroStorage.deleteAll();
+
+      final eventStorage = ref.read(eventStorageProvider);
+      await eventStorage.deleteAll();
+
+      final notificationsRepo = ref.read(notificationsRepositoryProvider);
+      await notificationsRepo.clearAll();
+
+      ref.read(subscriptionManagerProvider).reinitializeMasterKeySubscription();
+
+      await ref.read(mostroServiceProvider).requestRestoreSession();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(S.of(context)!.keyImportedSuccessfully),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(S.of(context)!.importFailed(e.toString())),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
       }
     }
   }
@@ -558,10 +598,9 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton(
-        onPressed: null, // Keep disabled as requested
+        onPressed: () => _showImportDialog(context),
         style: OutlinedButton.styleFrom(
-          side:
-              BorderSide(color: AppTheme.textSecondary.withValues(alpha: 0.3)),
+          side: const BorderSide(color: AppTheme.activeColor),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
@@ -570,22 +609,62 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
+            const Icon(
               LucideIcons.download,
               size: 20,
-              color: AppTheme.textSecondary.withValues(alpha: 0.5),
+              color: AppTheme.activeColor,
             ),
             const SizedBox(width: 8),
             Text(
               S.of(context)!.importMostroUser,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
-                color: AppTheme.textSecondary.withValues(alpha: 0.5),
+                color: AppTheme.activeColor,
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  String? _validateMnemonic(String value) {
+    final trimmed = value.trim();
+
+    if (trimmed.isEmpty) {
+      return S.of(context)!.mnemonicValidationEmpty;
+    }
+
+    final validCharacters = RegExp(r'^[a-zA-Z\s]+$');
+    if (!validCharacters.hasMatch(trimmed)) {
+      return S.of(context)!.mnemonicValidationInvalidFormat;
+    }
+
+    final words = trimmed.split(RegExp(r'\s+'));
+    if (words.length != 12 && words.length != 24) {
+      return S.of(context)!.mnemonicValidationInvalidWordCount;
+    }
+
+    for (final word in words) {
+      if (word.length < 3) {
+        return S.of(context)!.mnemonicValidationWordTooShort;
+      }
+    }
+
+    return null;
+  }
+
+  void _showImportDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => _ImportDialog(
+        importController: _importController,
+        onImport: () {
+          Navigator.of(dialogContext).pop();
+          _importKeyAndRestore();
+        },
+        validateMnemonic: _validateMnemonic,
       ),
     );
   }
@@ -700,6 +779,150 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
           ],
         );
       },
+    );
+  }
+}
+
+class _ImportDialog extends StatefulWidget {
+  final TextEditingController importController;
+  final VoidCallback onImport;
+  final String? Function(String) validateMnemonic;
+
+  const _ImportDialog({
+    required this.importController,
+    required this.onImport,
+    required this.validateMnemonic,
+  });
+
+  @override
+  State<_ImportDialog> createState() => _ImportDialogState();
+}
+
+class _ImportDialogState extends State<_ImportDialog> {
+  String? _errorText;
+
+  void _validateAndImport() {
+    final error = widget.validateMnemonic(widget.importController.text);
+    if (error == null) {
+      widget.onImport();
+    } else {
+      setState(() {
+        _errorText = error;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: AppTheme.backgroundCard,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+      ),
+      title: Text(
+        S.of(context)!.importMostroUser,
+        style: const TextStyle(
+          color: AppTheme.textPrimary,
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            S.of(context)!.secretWordsInfoText,
+            style: const TextStyle(
+              color: AppTheme.textSecondary,
+              fontSize: 14,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: widget.importController,
+            decoration: InputDecoration(
+              hintText: S.of(context)!.secretWords,
+              hintStyle: const TextStyle(color: AppTheme.textSecondary),
+              filled: true,
+              fillColor: AppTheme.backgroundInput,
+              errorText: _errorText,
+              errorStyle: const TextStyle(
+                color: Colors.redAccent,
+                fontSize: 12,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(
+                  color: _errorText != null
+                      ? Colors.redAccent
+                      : Colors.white.withValues(alpha: 0.1),
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(
+                  color: _errorText != null
+                      ? Colors.redAccent
+                      : Colors.white.withValues(alpha: 0.1),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(
+                  color:
+                      _errorText != null ? Colors.redAccent : AppTheme.activeColor,
+                ),
+              ),
+            ),
+            style: const TextStyle(color: AppTheme.textPrimary),
+            maxLines: 3,
+            onChanged: (_) {
+              if (_errorText != null) {
+                setState(() {
+                  _errorText = null;
+                });
+              }
+            },
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            widget.importController.clear();
+            Navigator.of(context).pop();
+          },
+          child: Text(
+            S.of(context)!.cancel,
+            style: const TextStyle(
+              color: AppTheme.textSecondary,
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        ElevatedButton(
+          onPressed: _validateAndImport,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppTheme.activeColor,
+            foregroundColor: Colors.black,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          ),
+          child: Text(
+            S.of(context)!.importMostroUser,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

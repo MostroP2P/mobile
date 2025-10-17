@@ -858,6 +858,10 @@
   
   "@_comment_account_info_dialogs": "Texto de Diálogos de Información de Cuenta",
   "secretWordsInfoText": "• Estas son tus palabras secretas, la única forma de recuperar tu cuenta si pierdes acceso a esta aplicación o quieres usar tu identidad en otra aplicación.\n\n• Escríbelas cuidadosamente y guárdalas en un lugar seguro y privado. Nunca las compartas con nadie.\n\n• Si pierdes estas palabras, perderás permanentemente el acceso a tu cuenta.",
+  "mnemonicValidationEmpty": "Las palabras secretas no pueden estar vacías",
+  "mnemonicValidationInvalidFormat": "Solo se permiten letras y espacios",
+  "mnemonicValidationInvalidWordCount": "Debe contener exactamente 12 o 24 palabras",
+  "mnemonicValidationWordTooShort": "Cada palabra debe tener al menos 3 letras",
   "privacyInfoText": "• El Modo Reputación protege tu privacidad de terceros mientras te permite construir una reputación con cada intercambio completado.\n\n• El modo de privacidad completa proporciona máximo anonimato pero limita las funciones de construcción de reputación.",
   "currentTradeIndexInfoText": "Con cada nuevo intercambio, se genera una Clave de Intercambio única para asegurar que tus transacciones permanezcan privadas. El índice de intercambio indica cuántas claves has usado. Si estás en 'Modo Reputación,' permites a Mostro vincular todas tus Claves de Intercambio para calcular y mantener tu reputación.",
   "generateNewUserDialogTitle": "¿Generar un nuevo usuario?",
