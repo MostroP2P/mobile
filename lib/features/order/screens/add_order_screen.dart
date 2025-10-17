@@ -369,10 +369,6 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
       return null;
     }
 
-    if (_validationError != null) {
-      return null;
-    }
-
     return _submitOrder; // Form is valid - allow submission
   }
 
