@@ -142,25 +142,13 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
             ElevatedButton(
               onPressed: widget.onCancel,
               style: ElevatedButton.styleFrom(
+                foregroundColor: Colors.white,
                 backgroundColor: Colors.red,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
               ),
               child: Text(S.of(context)!.cancel),
-            ),
-            const SizedBox(width: 8),
-            ElevatedButton(
-              onPressed: () {
-                context.go('/');
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.mostroGreen,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-              ),
-              child: Text(S.of(context)!.done),
             ),
           ],
         ),
