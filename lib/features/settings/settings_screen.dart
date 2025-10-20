@@ -6,6 +6,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/relays/widgets/relay_selector.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
+import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/shared/widgets/currency_selection_dialog.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
 import 'package:mostro_mobile/shared/widgets/language_selector.dart';
@@ -40,6 +41,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Listen to settings changes and update controllers
+    ref.listen<Settings>(settingsProvider, (previous, next) {
+      if (previous?.defaultLightningAddress != next.defaultLightningAddress) {
+        final newText = next.defaultLightningAddress ?? '';
+        if (_lightningAddressController.text != newText) {
+          _lightningAddressController.text = newText;
+        }
+      }
+    });
 
     return Scaffold(
       appBar: AppBar(

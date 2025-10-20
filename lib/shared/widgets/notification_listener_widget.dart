@@ -70,6 +70,9 @@ class NotificationListenerWidget extends ConsumerWidget {
             case 'sessionTimeoutMessage':
               message = S.of(context)!.sessionTimeoutMessage;
               break;
+            case 'lightningAddressUsed':
+              message = S.of(context)!.lightningAddressUsed;
+              break;
             default:
               message = next.customMessage!;
           }
