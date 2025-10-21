@@ -538,6 +538,9 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         final mostroService = ref.read(mostroServiceProvider);
         await mostroService.sendInvoice(orderId, lightningAddress, amount);
         
+        // Check if still mounted after async operation
+        if (!mounted) return;
+        
         // Show feedback to user
         final notificationNotifier = ref.read(notificationActionsProvider.notifier);
         notificationNotifier.showCustomMessage('lightningAddressUsed');
@@ -545,6 +548,8 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         logger.i('Lightning address sent successfully for order: $orderId');
       } catch (e) {
         logger.e('Failed to send Lightning address automatically: $e');
+        // Check if still mounted after async operation
+        if (!mounted) return;
         // Fallback to manual input if auto-send fails
         _navigateToManualInvoiceInput();
       }
