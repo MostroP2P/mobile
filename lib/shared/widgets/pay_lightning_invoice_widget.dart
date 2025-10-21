@@ -80,7 +80,7 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(S.of(context)!.invoiceCopiedToClipboard),
-                    duration: Duration(seconds: 2),
+                    duration: const Duration(seconds: 2),
                   ),
                 );
               },
@@ -117,7 +117,7 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
                       SnackBar(
                         // ignore: use_build_context_synchronously
                         content: Text(S.of(context)!.failedToShareInvoice),
-                        duration: Duration(seconds: 3),
+                        duration: const Duration(seconds: 3),
                       ),
                     );
                   }
