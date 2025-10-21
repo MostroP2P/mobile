@@ -191,6 +191,24 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
         return;
       }
 
+      // SECURITY: Validate sender pubkey
+      // Only accept messages from:
+      // 1. The user themselves (session.tradeKey.public)
+      // 2. The assigned admin/solver (dispute.adminPubkey)
+      if (isFromAdmin) {
+        if (dispute.adminPubkey == null) {
+          _logger.w('Rejecting message: No admin assigned yet for dispute $disputeId');
+          return;
+        }
+        
+        if (senderPubkey != dispute.adminPubkey) {
+          _logger.w('SECURITY: Rejecting message from unauthorized pubkey: $senderPubkey (expected admin: ${dispute.adminPubkey})');
+          return;
+        }
+        
+        _logger.i('Validated message from authorized admin: $senderPubkey');
+      }
+
       // Generate event ID if not present (can happen with admin messages)
       final eventId = unwrappedEvent.id ?? event.id ?? 'chat_${DateTime.now().millisecondsSinceEpoch}_${messageText.hashCode}';
       final eventTimestamp = unwrappedEvent.createdAt ?? DateTime.now();
@@ -252,21 +270,52 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
 
       _logger.i('Found ${chatEvents.length} historical messages for dispute: $disputeId');
 
+      // Get dispute to validate admin pubkey
+      final dispute = await ref.read(disputeDetailsProvider(disputeId).future);
+
       final List<DisputeChat> messages = [];
+      int filteredCount = 0;
+      
       for (final eventData in chatEvents) {
         try {
+          final isFromUser = eventData['is_from_user'] as bool? ?? true;
+          final messagePubkey = eventData['pubkey'] as String?;
+          
+          // SECURITY: Filter messages by authorized pubkeys
+          // Only include messages from:
+          // 1. The user themselves (is_from_user = true)
+          // 2. The assigned admin/solver (matches dispute.adminPubkey)
+          if (!isFromUser) {
+            // Message is from admin, validate pubkey
+            if (dispute?.adminPubkey == null) {
+              _logger.w('Filtering historical message: No admin assigned yet');
+              filteredCount++;
+              continue;
+            }
+            
+            if (messagePubkey != null && messagePubkey != dispute!.adminPubkey) {
+              _logger.w('SECURITY: Filtering historical message from unauthorized pubkey: $messagePubkey (expected: ${dispute.adminPubkey})');
+              filteredCount++;
+              continue;
+            }
+          }
+          
           messages.add(DisputeChat(
             id: eventData['id'] as String,
             message: eventData['content'] as String? ?? '',
             timestamp: DateTime.fromMillisecondsSinceEpoch(
               (eventData['created_at'] as int) * 1000,
             ),
-            isFromUser: eventData['is_from_user'] as bool? ?? true,
+            isFromUser: isFromUser,
             adminPubkey: eventData['admin_pubkey'] as String?,
           ));
         } catch (e) {
           _logger.w('Failed to parse dispute chat message: $e');
         }
+      }
+
+      if (filteredCount > 0) {
+        _logger.i('Filtered $filteredCount unauthorized messages from dispute $disputeId');
       }
 
       state = state.copyWith(messages: messages, isLoading: false);
