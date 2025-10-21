@@ -37,7 +37,7 @@ class Config {
   static const int expirationSeconds = 900;
   static const int expirationHours = 24;
   static const int cleanupIntervalMinutes = 30;
-  static const int sessionExpirationHours = 36;
+  static const int sessionExpirationHours = 72;
 
   // Notification configuration
 
