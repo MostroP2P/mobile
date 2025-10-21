@@ -147,11 +147,28 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
           break;
         }
 
-        // Update session and state
+        // Update session and state with correct peer based on session role
         final sessionProvider = ref.read(sessionNotifierProvider.notifier);
-        final peer = order.buyerTradePubkey != null
-            ? Peer(publicKey: order.buyerTradePubkey!)
-            : null;
+        
+        // Re-fetch session to ensure it's initialized
+        final fetchedSession = sessionProvider.getSessionByOrderId(orderId);
+        if (fetchedSession == null) {
+          logger.e('Session not found for order $orderId in buyerTookOrder');
+          break;
+        }
+        session = fetchedSession;
+
+        // Get the correct peer public key based on current user's role
+        String? peerPubkey;
+        if (session.role == Role.buyer) {
+          // If I'm the buyer, the seller is my peer
+          peerPubkey = order.sellerTradePubkey;
+        } else if (session.role == Role.seller) {
+          // If I'm the seller, the buyer is my peer
+          peerPubkey = order.buyerTradePubkey;
+        }
+
+        final peer = peerPubkey != null ? Peer(publicKey: peerPubkey) : null;
         sessionProvider.updateSession(orderId, (s) => s.peer = peer);
         state = state.copyWith(peer: peer);
         
@@ -178,11 +195,28 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         final order = event.getPayload<Order>();
         if (order == null) return;
 
-        // Update session and state
+        // Update session and state with correct peer based on session role
         final sessionProvider = ref.read(sessionNotifierProvider.notifier);
-        final peer = order.sellerTradePubkey != null
-            ? Peer(publicKey: order.sellerTradePubkey!)
-            : null;
+        
+        // Re-fetch session to ensure it's initialized
+        final fetchedSession = sessionProvider.getSessionByOrderId(orderId);
+        if (fetchedSession == null) {
+          logger.e('Session not found for order $orderId in holdInvoicePaymentAccepted');
+          break;
+        }
+        session = fetchedSession;
+
+        // Get the correct peer public key based on current user's role
+        String? peerPubkey;
+        if (session.role == Role.buyer) {
+          // If I'm the buyer, the seller is my peer
+          peerPubkey = order.sellerTradePubkey;
+        } else if (session.role == Role.seller) {
+          // If I'm the seller, the buyer is my peer
+          peerPubkey = order.buyerTradePubkey;
+        }
+
+        final peer = peerPubkey != null ? Peer(publicKey: peerPubkey) : null;
         sessionProvider.updateSession(orderId, (s) => s.peer = peer);
         state = state.copyWith(peer: peer);
         
@@ -254,12 +288,18 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
           return;
         }
 
-
         // Ensure dispute has the orderId for proper association and correct status
+        // Also ensure createdAt is set from event timestamp if not already present
+        final createdAt = dispute.createdAt ?? 
+            (event.timestamp != null 
+                ? DateTime.fromMillisecondsSinceEpoch(event.timestamp!)
+                : DateTime.now());
+        
         final disputeWithOrderId = dispute.copyWith(
           orderId: orderId,
           status: dispute.status ?? 'initiated', // Ensure status is set for user-initiated disputes
           action: 'dispute-initiated-by-you', // Store the action for UI logic
+          createdAt: createdAt, // Ensure timestamp is preserved
         );
 
         // Save dispute in state for listing
@@ -292,14 +332,21 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
             
             if (payloadMap.containsKey('dispute')) {
               final disputeId = payloadMap['dispute'] as String;
+              
+              // Use the event timestamp (from gift-wrapped message) if available,
+              // otherwise fall back to DateTime.now().
+              final createdAt = event.timestamp != null
+                  ? DateTime.fromMillisecondsSinceEpoch(event.timestamp!)
+                  : DateTime.now();
+              
               dispute = Dispute(
                 disputeId: disputeId,
                 orderId: orderId,
                 status: 'initiated',
                 action: 'dispute-initiated-by-peer',
-                createdAt: DateTime.now(),
+                createdAt: createdAt,
               );
-              logger.i('disputeInitiatedByPeer: Created dispute from ID: $disputeId');
+              logger.i('disputeInitiatedByPeer: Created dispute from ID: $disputeId with timestamp: $createdAt');
             }
           } catch (e) {
             logger.e('disputeInitiatedByPeer: Failed to create dispute from payload: $e');
@@ -312,14 +359,22 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         }
 
 
-        logger.i('disputeInitiatedByPeer: Dispute details - ID: ${dispute.disputeId}, Status: ${dispute.status}, Action: ${dispute.action}');
+        logger.i('disputeInitiatedByPeer: Dispute details - ID: ${dispute.disputeId}, Status: ${dispute.status}, Action: ${dispute.action}, createdAt: ${dispute.createdAt}');
+        
         // Ensure dispute has the orderId for proper association and correct status/action
+        // Also ensure createdAt is set from event timestamp if not already present
+        final createdAt = dispute.createdAt ?? 
+            (event.timestamp != null 
+                ? DateTime.fromMillisecondsSinceEpoch(event.timestamp!)
+                : DateTime.now());
+        
         final disputeWithOrderId = dispute.copyWith(
           orderId: orderId,
           status: dispute.status ?? 'initiated', // Ensure status is set
           action: 'dispute-initiated-by-peer', // Store the action for UI logic
+          createdAt: createdAt, // Ensure timestamp is preserved
         );
-        logger.i('disputeInitiatedByPeer: Final dispute - ID: ${disputeWithOrderId.disputeId}, Status: ${disputeWithOrderId.status}, Action: ${disputeWithOrderId.action}');
+        logger.i('disputeInitiatedByPeer: Final dispute - ID: ${disputeWithOrderId.disputeId}, Status: ${disputeWithOrderId.status}, Action: ${disputeWithOrderId.action}, createdAt: ${disputeWithOrderId.createdAt}');
 
 
         // Save dispute in state for listing

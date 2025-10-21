@@ -133,6 +133,20 @@ class OrderState {
     // Handle dispute status updates based on action
     Dispute? updatedDispute = message.getPayload<Dispute>() ?? dispute;
     
+    // If we got a dispute from the message payload, ensure it has the message timestamp
+    // This is critical for correct sorting in the dispute list
+    if (updatedDispute != null && message.getPayload<Dispute>() != null) {
+      // Use message timestamp if dispute doesn't have a createdAt or if message has a timestamp
+      if (message.timestamp != null && 
+          (updatedDispute.createdAt == null || 
+           updatedDispute.createdAt!.millisecondsSinceEpoch != message.timestamp)) {
+        updatedDispute = updatedDispute.copyWith(
+          createdAt: DateTime.fromMillisecondsSinceEpoch(message.timestamp!),
+        );
+        _logger.i('Updated dispute ${updatedDispute.disputeId} createdAt from message timestamp: ${updatedDispute.createdAt}');
+      }
+    }
+    
     // Add defensive null check - if both message payload and existing dispute are null,
     // we cannot perform dispute updates
     if (updatedDispute == null && 
@@ -420,6 +434,11 @@ class OrderState {
           Action.cancel,
           Action.release,
         ],
+        Action.adminTookDispute: [
+          Action.sendDm,
+          Action.cancel,
+          Action.release,
+        ],
       },
       Status.settledHoldInvoice: {
         Action.addInvoice: [
@@ -536,6 +555,10 @@ class OrderState {
           Action.cancel,
         ],
         Action.disputeInitiatedByPeer: [
+          Action.sendDm,
+          Action.cancel,
+        ],
+        Action.adminTookDispute: [
           Action.sendDm,
           Action.cancel,
         ],

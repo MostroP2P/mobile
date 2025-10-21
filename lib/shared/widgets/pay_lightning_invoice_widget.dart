@@ -141,6 +141,7 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
             ElevatedButton(
               onPressed: widget.onCancel,
               style: ElevatedButton.styleFrom(
+                foregroundColor: Colors.white,
                 backgroundColor: Colors.red,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),

@@ -4,6 +4,75 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 cmake_minimum_required(VERSION 3.10)
+
+# Ensure the linker can locate libstdc++ when clang is configured for a newer
+# GCC toolchain than the one installed on the host. This prevents the CMake
+# compiler check from failing with `-lstdc++` missing (observed with clang 18
+# expecting GCC 14 on Ubuntu 24.04).
+if(NOT DEFINED FLUTTER_TARGET_PLATFORM_SYSROOT)
+  find_program(_host_gpp NAMES g++)
+  if(_host_gpp)
+    execute_process(
+      COMMAND ${_host_gpp} -print-file-name=libstdc++.so
+      OUTPUT_VARIABLE _host_libstdcpp
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      ERROR_QUIET
+    )
+    if(_host_libstdcpp AND NOT _host_libstdcpp STREQUAL "libstdc++.so")
+      get_filename_component(_host_libstdcpp_dir "${_host_libstdcpp}" DIRECTORY)
+      if(NOT _host_libstdcpp_dir STREQUAL "")
+        get_filename_component(_gcc_triple "${_host_libstdcpp_dir}" DIRECTORY)
+        get_filename_component(_gcc_triple "${_gcc_triple}" NAME)
+        get_filename_component(_gcc_version "${_host_libstdcpp_dir}" NAME)
+
+        set(_stdcpp_include_candidates
+          "${_host_libstdcpp_dir}/include"
+          "/usr/include/c++/${_gcc_version}"
+          "/usr/include/${_gcc_triple}/c++/${_gcc_version}")
+
+        set(_stdcpp_include_paths "")
+        foreach(_candidate IN LISTS _stdcpp_include_candidates)
+          if(EXISTS "${_candidate}")
+            list(APPEND _stdcpp_include_paths "${_candidate}")
+          endif()
+        endforeach()
+
+        if(NOT _stdcpp_include_paths STREQUAL "")
+          list(REMOVE_DUPLICATES _stdcpp_include_paths)
+          string(JOIN ":" _stdcpp_include_env ${_stdcpp_include_paths})
+          if("$ENV{CPLUS_INCLUDE_PATH}" STREQUAL "")
+            set(ENV{CPLUS_INCLUDE_PATH} "${_stdcpp_include_env}")
+          else()
+            set(ENV{CPLUS_INCLUDE_PATH}
+              "${_stdcpp_include_env}:$ENV{CPLUS_INCLUDE_PATH}")
+          endif()
+
+          set(_stdcpp_include_flags "")
+          foreach(_include_dir IN LISTS _stdcpp_include_paths)
+            set(_stdcpp_include_flags
+              "${_stdcpp_include_flags} -isystem ${_include_dir}")
+          endforeach()
+          set(CMAKE_CXX_FLAGS_INIT "${CMAKE_CXX_FLAGS_INIT}${_stdcpp_include_flags}")
+        endif()
+
+        if("$ENV{LIBRARY_PATH}" STREQUAL "")
+          set(ENV{LIBRARY_PATH} "${_host_libstdcpp_dir}")
+        else()
+          set(ENV{LIBRARY_PATH}
+            "${_host_libstdcpp_dir}:$ENV{LIBRARY_PATH}")
+        endif()
+
+        set(CMAKE_EXE_LINKER_FLAGS_INIT
+          "${CMAKE_EXE_LINKER_FLAGS_INIT} -L${_host_libstdcpp_dir}")
+        set(CMAKE_SHARED_LINKER_FLAGS_INIT
+          "${CMAKE_SHARED_LINKER_FLAGS_INIT} -L${_host_libstdcpp_dir}")
+        set(CMAKE_MODULE_LINKER_FLAGS_INIT
+          "${CMAKE_MODULE_LINKER_FLAGS_INIT} -L${_host_libstdcpp_dir}")
+      endif()
+    endif()
+  endif()
+endif()
+
 project(runner LANGUAGES CXX)
 
 # The name of the executable created for the application. Change this to change

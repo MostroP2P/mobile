@@ -338,7 +338,13 @@ class DisputeData {
   });
 
   /// Create DisputeData from Dispute object with OrderState context
-  factory DisputeData.fromDispute(Dispute dispute, {OrderState? orderState}) {
+  /// 
+  /// [userRole] is the user's role in the order (buyer or seller), obtained from the Session
+  factory DisputeData.fromDispute(
+    Dispute dispute, {
+    OrderState? orderState,
+    UserRole? userRole,
+  }) {
     // Determine if user is the creator based on the OrderState action if available
     bool? isUserCreator;
     
@@ -365,27 +371,44 @@ class DisputeData {
       isUserCreator = null;
     }
     
-    // Try to get counterparty info from order state and determine correct role
+    // Try to get counterparty info from order state
     String? counterpartyName;
-    UserRole userRole = UserRole.unknown;
     
-    if (orderState != null) {
-      // Get the counterparty nym using the same approach as chat
-      if (orderState.peer != null) {
-        counterpartyName = orderState.peer!.publicKey; // This will be resolved by nickNameProvider in the UI
-      }
-    } else if (dispute.adminPubkey != null && dispute.status != 'resolved') {
-      // Only use admin pubkey as counterparty if dispute is not resolved and no peer info
-      // For resolved disputes, we don't want to show admin as counterparty
+    // Use the provided userRole or default to unknown
+    final finalUserRole = userRole ?? UserRole.unknown;
+
+    // Terminal dispute states where admin should not be used as counterparty
+    // Terminal statuses where the dispute is finished and admin should not be shown as counterparty
+    final terminalStatusList = [
+      'resolved',
+      'closed',
+      'seller-refunded',
+      'seller_refunded',
+      'admin-canceled',
+      'admin_canceled',
+      'admin-settled',
+      'admin_settled',
+      'solved',
+      'completed',
+    ];
+
+    if (orderState?.peer != null) {
+      counterpartyName = orderState!.peer!.publicKey; // This will be resolved by nickNameProvider in the UI
+    }
+
+    // Only use admin pubkey as counterparty if:
+    // 1. There is no peer information available
+    // 2. Admin pubkey exists
+    // 3. Dispute is not in a terminal state (normalize status to lowercase for comparison)
+    final normalizedStatus = dispute.status?.toLowerCase().trim() ?? '';
+    if (orderState?.peer == null && 
+        dispute.adminPubkey != null && 
+        !terminalStatusList.contains(normalizedStatus)) {
       counterpartyName = dispute.adminPubkey;
     }
-      
-    // Determine if user is buyer or seller based on order type
-    if (orderState != null && orderState.order != null) {
-      // If order type is 'buy', then the order creator is buying (user is buyer)
-      // If order type is 'sell', then the order creator is selling (user is seller)
-      // The peer is always the opposite role
-      userRole = orderState.order!.kind.value == 'buy' ? UserRole.buyer : UserRole.seller;
+    
+    if (kDebugMode) {
+      debugPrint('DisputeData.fromDispute: User role = $finalUserRole');
     }
 
     // Get the appropriate description key based on status and creator
@@ -403,7 +426,7 @@ class DisputeData {
       counterparty: counterpartyName,
       isCreator: isUserCreator,
       createdAt: dispute.createdAt ?? DateTime.now(),
-      userRole: userRole,
+      userRole: finalUserRole,
       action: dispute.action, // Pass the action to determine resolution type
     );
   }
