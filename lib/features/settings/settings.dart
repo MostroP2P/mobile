@@ -26,6 +26,7 @@ class Settings {
     String? defaultFiatCode,
     String? selectedLanguage,
     String? defaultLightningAddress,
+    bool clearDefaultLightningAddress = false,
     List<String>? blacklistedRelays,
     List<Map<String, dynamic>>? userRelays,
   }) {
@@ -35,7 +36,9 @@ class Settings {
       mostroPublicKey: mostroPublicKey ?? this.mostroPublicKey,
       defaultFiatCode: defaultFiatCode ?? this.defaultFiatCode,
       selectedLanguage: selectedLanguage ?? this.selectedLanguage,
-      defaultLightningAddress: defaultLightningAddress ?? this.defaultLightningAddress,
+      defaultLightningAddress: clearDefaultLightningAddress 
+          ? null 
+          : (defaultLightningAddress ?? this.defaultLightningAddress),
       blacklistedRelays: blacklistedRelays ?? this.blacklistedRelays,
       userRelays: userRelays ?? this.userRelays,
     );

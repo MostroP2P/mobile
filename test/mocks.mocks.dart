@@ -1944,6 +1944,7 @@ class MockSettings extends _i1.Mock implements _i2.Settings {
     String? defaultFiatCode,
     String? selectedLanguage,
     String? defaultLightningAddress,
+    bool? clearDefaultLightningAddress = false,
     List<String>? blacklistedRelays,
     List<Map<String, dynamic>>? userRelays,
   }) =>
@@ -1958,6 +1959,7 @@ class MockSettings extends _i1.Mock implements _i2.Settings {
             #defaultFiatCode: defaultFiatCode,
             #selectedLanguage: selectedLanguage,
             #defaultLightningAddress: defaultLightningAddress,
+            #clearDefaultLightningAddress: clearDefaultLightningAddress,
             #blacklistedRelays: blacklistedRelays,
             #userRelays: userRelays,
           },
@@ -1974,6 +1976,7 @@ class MockSettings extends _i1.Mock implements _i2.Settings {
               #defaultFiatCode: defaultFiatCode,
               #selectedLanguage: selectedLanguage,
               #defaultLightningAddress: defaultLightningAddress,
+              #clearDefaultLightningAddress: clearDefaultLightningAddress,
               #blacklistedRelays: blacklistedRelays,
               #userRelays: userRelays,
             },

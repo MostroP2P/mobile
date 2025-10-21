@@ -5,6 +5,8 @@ class DisputeChat {
   final DateTime timestamp;
   final bool isFromUser;
   final String? adminPubkey;
+  final bool isPending;
+  final String? error;
 
   DisputeChat({
     required this.id,
@@ -12,6 +14,8 @@ class DisputeChat {
     required this.timestamp,
     required this.isFromUser,
     this.adminPubkey,
+    this.isPending = false,
+    this.error,
   });
 
   factory DisputeChat.fromJson(Map<String, dynamic> json) {
@@ -21,6 +25,8 @@ class DisputeChat {
       timestamp: _parseTimestamp(json['timestamp']),
       isFromUser: json['isFromUser'] ?? false,
       adminPubkey: json['adminPubkey'],
+      isPending: json['isPending'] ?? false,
+      error: json['error'],
     );
   }
 
@@ -31,7 +37,30 @@ class DisputeChat {
       'timestamp': timestamp.toIso8601String(),
       'isFromUser': isFromUser,
       'adminPubkey': adminPubkey,
+      'isPending': isPending,
+      'error': error,
     };
+  }
+
+  /// Create a copy with updated fields
+  DisputeChat copyWith({
+    String? id,
+    String? message,
+    DateTime? timestamp,
+    bool? isFromUser,
+    String? adminPubkey,
+    bool? isPending,
+    String? error,
+  }) {
+    return DisputeChat(
+      id: id ?? this.id,
+      message: message ?? this.message,
+      timestamp: timestamp ?? this.timestamp,
+      isFromUser: isFromUser ?? this.isFromUser,
+      adminPubkey: adminPubkey ?? this.adminPubkey,
+      isPending: isPending ?? this.isPending,
+      error: error ?? this.error,
+    );
   }
 
   static DateTime _parseTimestamp(dynamic v) {

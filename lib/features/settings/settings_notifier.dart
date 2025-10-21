@@ -79,7 +79,13 @@ class SettingsNotifier extends StateNotifier<Settings> {
   }
 
   Future<void> updateDefaultLightningAddress(String? newValue) async {
-    state = state.copyWith(defaultLightningAddress: newValue);
+    if (newValue == null || newValue.trim().isEmpty) {
+      // Clear the Lightning address
+      state = state.copyWith(clearDefaultLightningAddress: true);
+    } else {
+      // Set the Lightning address
+      state = state.copyWith(defaultLightningAddress: newValue.trim());
+    }
     await _saveToPrefs();
   }
 
