@@ -268,6 +268,8 @@ class TradeDetailScreen extends ConsumerWidget {
 
     final widgets = <Widget>[];
 
+    // VIEW DISPUTE button is now handled in _buildButtonRow
+
     for (final action in userActions) {
       // FSM-driven action mapping: ensure all actions are handled
       switch (action) {
@@ -287,16 +289,10 @@ class TradeDetailScreen extends ConsumerWidget {
             cancelMessage = S.of(context)!.areYouSureCancel;
           }
 
-          // Use different button text when accepting a peer's cancellation
-          final buttonText = tradeState.action ==
-                  actions.Action.cooperativeCancelInitiatedByPeer
-              ? S.of(context)!.acceptCancelButton
-              : S.of(context)!.cancel.toUpperCase();
-
           widgets.add(_buildCancelButton(
             context,
             ref,
-            buttonText,
+            S.of(context)!.acceptCancelButton,
             cancelMessage,
             action,
           ));
@@ -343,11 +339,15 @@ class TradeDetailScreen extends ConsumerWidget {
 
         case actions.Action.disputeInitiatedByYou:
         case actions.Action.disputeInitiatedByPeer:
+        case actions.Action.adminTookDispute:
+          // VIEW DISPUTE button is handled above, independent of action system
+          break;
+
         case actions.Action.dispute:
           // Only allow dispute if not already disputed
           if (tradeState.action != actions.Action.disputeInitiatedByYou &&
               tradeState.action != actions.Action.disputeInitiatedByPeer &&
-              tradeState.action != actions.Action.dispute) {
+              tradeState.action != actions.Action.adminTookDispute) {
             widgets.add(_buildDisputeButton(
               context,
               ref,
@@ -519,7 +519,6 @@ class TradeDetailScreen extends ConsumerWidget {
         case actions.Action.adminSettled:
         case actions.Action.adminAddSolver:
         case actions.Action.adminTakeDispute:
-        case actions.Action.adminTookDispute:
         case actions.Action.invoiceUpdated:
         case actions.Action.tradePubkey:
         case actions.Action.cantDo:
@@ -642,6 +641,7 @@ class TradeDetailScreen extends ConsumerWidget {
       },
       style: ElevatedButton.styleFrom(
         backgroundColor: AppTheme.red1,
+        foregroundColor: Colors.white,
       ),
       child: Text(buttonText),
     );
@@ -746,6 +746,7 @@ class TradeDetailScreen extends ConsumerWidget {
       },
       style: ElevatedButton.styleFrom(
         backgroundColor: AppTheme.red1,
+        foregroundColor: Colors.white,
       ),
       child: Text(S.of(context)!.disputeButton),
     );
@@ -763,11 +764,33 @@ class TradeDetailScreen extends ConsumerWidget {
     );
   }
 
+  Widget _buildViewDisputeButton(BuildContext context, String disputeId) {
+    return ElevatedButton(
+      onPressed: () {
+        context.push('/dispute_details/$disputeId');
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppTheme.mostroGreen,
+      ),
+      child: Text(S.of(context)!.viewDisputeButton),
+    );
+  }
+
   /// Build button row with equal widths and heights
   Widget _buildButtonRow(
       BuildContext context, WidgetRef ref, OrderState tradeState) {
     final actionButtons = _buildActionButtons(context, ref, tradeState);
-    final allButtons = [_buildCloseButton(context), ...actionButtons];
+    
+    // Check for VIEW DISPUTE button - independent of action system
+    final List<Widget> extraButtons = [];
+    if ((tradeState.action == actions.Action.disputeInitiatedByYou ||
+         tradeState.action == actions.Action.disputeInitiatedByPeer ||
+         tradeState.action == actions.Action.adminTookDispute) &&
+         tradeState.dispute?.disputeId != null) {
+      extraButtons.add(_buildViewDisputeButton(context, tradeState.dispute!.disputeId));
+    }
+    
+    final allButtons = [_buildCloseButton(context), ...actionButtons, ...extraButtons];
 
     if (allButtons.length == 1) {
       // Single button - center it with natural oval shape

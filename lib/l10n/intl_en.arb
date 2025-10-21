@@ -167,6 +167,7 @@
   "notFound": "The requested dispute could not be found.",
   "invalidDisputeStatus": "The dispute status is invalid.",
   "invalidAction": "The requested action is invalid.",
+  "invalidFiatCurrency": "This Mostro instance doesn't accept the selected currency, try another instance",
   "pendingOrderExists": "You already have an order waiting for you, you must complete it or cancel it before taking another one.",
   "login": "Login",
   "register": "Register",
@@ -616,6 +617,7 @@
   
   "rateButton": "RATE",
   "contactButton": "CONTACT",
+  "viewDisputeButton": "VIEW DISPUTE",
   
   "rateCounterpart": "Rate Counterpart",
   "submitRating": "Submit Rating",
@@ -694,6 +696,9 @@
   "disputeInProgress": "This dispute is currently in progress. A solver is reviewing your case.",
   "disputeSellerRefunded": "This dispute has been resolved with the seller being refunded.",
   "disputeUnknownStatus": "The status of this dispute is unknown.",
+
+  "disputeChatClosed": "This dispute has been resolved. The chat is now closed.",
+
   
   "@_comment_dispute_descriptions": "Dispute Description Messages",
   "disputeDescriptionInitiatedByUser": "You opened this dispute",
@@ -705,8 +710,24 @@
   "disputeDescriptionUnknown": "Unknown status",
   "disputeAdminSettledMessage": "The admin settled the order in favor of one party. Check your wallet for any payments.",
   "disputeSellerRefundedMessage": "The admin canceled the order and refunded the seller. The dispute is now closed.",
+  "disputeSettledBuyerMessage": "The dispute was resolved in your favor. The order was completed successfully and you received the sats. Check your wallet.",
+  "disputeSettledSellerMessage": "The dispute was resolved. The order was completed successfully and the buyer received the sats.",
+  "disputeCanceledBuyerMessage": "The admin canceled the order. The seller was refunded and you did not receive the sats.",
+  "disputeCanceledSellerMessage": "The admin canceled the order and refunded you. The buyer did not receive the sats. Check your wallet for the refund.",
   "disputeOpenedByYou": "You opened this dispute against the buyer {counterparty}, please read carefully below:",
   "@disputeOpenedByYou": {
+    "placeholders": {
+      "counterparty": { "type": "String" }
+    }
+  },
+  "disputeOpenedByYouAgainstSeller": "You opened this dispute against the seller {counterparty}, please read carefully below:",
+  "@disputeOpenedByYouAgainstSeller": {
+    "placeholders": {
+      "counterparty": { "type": "String" }
+    }
+  },
+  "disputeOpenedByYouAgainstBuyer": "You opened this dispute against the buyer {counterparty}, please read carefully below:",
+  "@disputeOpenedByYouAgainstBuyer": {
     "placeholders": {
       "counterparty": { "type": "String" }
     }

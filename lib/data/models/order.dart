@@ -240,11 +240,11 @@ class Order implements Payload {
   @override
   String get type => 'order';
 
-  Order copyWith({String? buyerInvoice}) {
+  Order copyWith({String? buyerInvoice, Status? status}) {
     return Order(
       id: id,
       kind: kind,
-      status: status,
+      status: status ?? this.status,
       amount: amount,
       fiatCode: fiatCode,
       minAmount: minAmount,
