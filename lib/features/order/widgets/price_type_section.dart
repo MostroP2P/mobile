@@ -56,9 +56,9 @@ class PriceTypeSection extends StatelessWidget {
                 thumbColor: WidgetStateProperty.resolveWith<Color?>(
                   (Set<WidgetState> states) {
                     if (states.contains(WidgetState.selected)) {
-                      return Colors.white; // White thumb when active for better contrast
+                      return AppTheme.textPrimary; // White thumb when active for better contrast
                     }
-                    return Colors.grey.shade400; // Light grey when inactive
+                    return AppTheme.textSecondary; // Light grey when inactive
                   },
                 ),
                 trackColor: WidgetStateProperty.resolveWith<Color?>(
@@ -66,7 +66,7 @@ class PriceTypeSection extends StatelessWidget {
                     if (states.contains(WidgetState.selected)) {
                       return AppTheme.purpleAccent; // Purple track when active
                     }
-                    return Colors.grey.shade700; // Dark grey track when inactive
+                    return AppTheme.backgroundInactive; // Dark grey track when inactive
                   },
                 ),
                 trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
