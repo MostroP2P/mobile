@@ -164,6 +164,9 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
           final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
           await sessionNotifier.deleteSession(orderId);
           
+          // Check if still mounted after async operation
+          if (!mounted) return;
+          
           logger.i('Session deleted for canceled order $orderId');
           
           // Show cancellation notification
