@@ -310,6 +310,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 onChanged: (value) {
                   final cleanValue = value.trim().isEmpty ? null : value.trim();
                   ref.read(settingsProvider.notifier).updateDefaultLightningAddress(cleanValue);
+                  
+                  // Force sync immediately for empty values
+                  if (cleanValue == null) {
+                    _lightningAddressController.text = '';
+                  }
                 },
                 decoration: InputDecoration(
                   border: InputBorder.none,
