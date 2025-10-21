@@ -149,17 +149,6 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
               ),
               child: Text(S.of(context)!.cancel),
             ),
-            const SizedBox(width: 8),
-            ElevatedButton(
-              onPressed: widget.onSubmit,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.mostroGreen,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-              ),
-              child: Text(S.of(context)!.done),
-            ),
           ],
         ),
       ],
