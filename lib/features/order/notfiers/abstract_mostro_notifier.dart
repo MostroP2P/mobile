@@ -9,6 +9,7 @@ import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/features/notifications/providers/notifications_provider.dart';
 import 'package:mostro_mobile/features/notifications/utils/notification_data_extractor.dart';
+import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:logger/logger.dart';
 
 class AbstractMostroNotifier extends StateNotifier<OrderState> {
@@ -188,7 +189,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
       case Action.addInvoice:
         final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
         sessionNotifier.saveSession(session);
-        navProvider.go('/add_invoice/$orderId');
+        await _handleAddInvoiceWithAutoLightningAddress(event);
         break;
 
       case Action.holdInvoicePaymentAccepted:
@@ -509,6 +510,69 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
       _sessionTimeouts.remove(key);
       Logger().i('Cancelled 10s timeout timer for requestId: $requestId - Mostro responded');
     }
+  }
+
+  /// Handles add-invoice action with automatic Lightning address sending if available
+  Future<void> _handleAddInvoiceWithAutoLightningAddress(MostroMessage event) async {
+    // Check if this add-invoice comes after a payment-failed
+    // If status is paymentFailed, don't auto-send Lightning address - use manual input
+    if (state.status == Status.paymentFailed) {
+      logger.i('add-invoice after payment-failed detected - using manual input instead of auto Lightning address');
+      _navigateToManualInvoiceInput();
+      return;
+    }
+    
+    final settings = ref.read(settingsProvider);
+    final lightningAddress = settings.defaultLightningAddress?.trim();
+    
+    if (lightningAddress != null && lightningAddress.isNotEmpty && _isValidLightningAddress(lightningAddress)) {
+      logger.i('Auto-sending Lightning address for add-invoice: $lightningAddress');
+      
+      try {
+        // For Lightning addresses, amount should always be null
+        // because the Lightning address handles the amount automatically
+        const int? amount = null;
+        logger.i('Sending Lightning address with amount: null (Lightning address handles amount)');
+        
+        // Send Lightning address automatically
+        final mostroService = ref.read(mostroServiceProvider);
+        await mostroService.sendInvoice(orderId, lightningAddress, amount);
+        
+        // Check if still mounted after async operation
+        if (!mounted) return;
+        
+        // Show feedback to user
+        final notificationNotifier = ref.read(notificationActionsProvider.notifier);
+        notificationNotifier.showCustomMessage('lightningAddressUsed');
+        
+        logger.i('Lightning address sent successfully for order: $orderId');
+      } catch (e) {
+        logger.e('Failed to send Lightning address automatically: $e');
+        // Check if still mounted after async operation
+        if (!mounted) return;
+        // Fallback to manual input if auto-send fails
+        _navigateToManualInvoiceInput();
+      }
+    } else {
+      // No Lightning address or invalid format - use manual input
+      _navigateToManualInvoiceInput();
+    }
+  }
+
+  /// Validates Lightning address format (user@domain.tld)
+  bool _isValidLightningAddress(String address) {
+    // Lightning address format: user@domain.tld
+    // More robust validation with character constraints
+    final lnAddressRegex = RegExp(
+      r'^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    );
+    return lnAddressRegex.hasMatch(address);
+  }
+
+  /// Navigate to manual invoice input screen
+  void _navigateToManualInvoiceInput() {
+    final navProvider = ref.read(navigationProvider.notifier);
+    navProvider.go('/add_invoice/$orderId');
   }
 
   @override

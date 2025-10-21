@@ -24,10 +24,7 @@ class PaymentRequest implements Payload {
 
     values.add(order?.toJson());
     values.add(lnInvoice);
-
-    if (amount != null) {
-      values.add(amount);
-    }
+    values.add(amount);  // Always add amount, even if null
 
     final result = {typeKey: values};
 

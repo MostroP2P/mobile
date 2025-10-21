@@ -226,6 +226,7 @@
   "defaultFiatCurrency": "Default Fiat Currency",
   "setDefaultLightningAddress": "Set your default lightning address",
   "defaultLightningAddress": "Default Lightning Address",
+  "lightningAddressUsed": "Using your configured Lightning address",
   "relays": "Relays",
   "selectNostrRelays": "Select the Nostr relays you connect to",
   "addRelay": "Add Relay",
