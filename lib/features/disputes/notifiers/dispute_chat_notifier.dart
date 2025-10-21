@@ -59,17 +59,24 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
     
     _logger.i('Initializing dispute chat for disputeId: $disputeId');
     await _loadHistoricalMessages();
-    _subscribe();
+    await _subscribe();
     _isInitialized = true;
   }
 
   /// Subscribe to new dispute chat messages
-  void _subscribe() {
+  Future<void> _subscribe() async {
     final session = _getSessionForDispute();
     if (session == null) {
       _logger.w('No session found for dispute: $disputeId');
       _listenForSession();
       return;
+    }
+
+    // Cancel existing subscription to prevent leaks and duplicate handlers
+    if (_subscription != null) {
+      _logger.i('Cancelling previous subscription for dispute: $disputeId');
+      await _subscription!.cancel();
+      _subscription = null;
     }
 
     // Subscribe to kind 1059 (Gift Wrap) events for dispute messages
@@ -108,7 +115,7 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
           _logger.i('Session found for dispute $disputeId, canceling listener and subscribing');
           _sessionListener?.close();
           _sessionListener = null;
-          _subscribe();
+          unawaited(_subscribe());
         }
       },
     );
@@ -228,6 +235,7 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
           'type': 'dispute_chat',
           'dispute_id': disputeId,
           'is_from_user': !isFromAdmin,
+          'isPending': false,
         },
       );
 
@@ -238,6 +246,7 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
         timestamp: eventTimestamp,
         isFromUser: !isFromAdmin,
         adminPubkey: isFromAdmin ? senderPubkey : null,
+        isPending: false, // Received messages are already confirmed
       );
 
       final allMessages = [...state.messages, disputeChat];
@@ -308,6 +317,8 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
             ),
             isFromUser: isFromUser,
             adminPubkey: eventData['admin_pubkey'] as String?,
+            isPending: eventData['isPending'] as bool? ?? false,
+            error: eventData['error'] as String?,
           ));
         } catch (e) {
           _logger.w('Failed to parse dispute chat message: $e');
@@ -353,9 +364,27 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
       return;
     }
 
+    // Generate ID for message
+    final rumorId = 'rumor_${DateTime.now().millisecondsSinceEpoch}';
+    final rumorTimestamp = DateTime.now();
+
     try {
       _logger.i('Sending Gift Wrap DM to admin: ${dispute.adminPubkey}');
       
+      // Add message to state with isPending=true (optimistic UI)
+      final pendingMessage = DisputeChat(
+        id: rumorId,
+        message: text,
+        timestamp: rumorTimestamp,
+        isFromUser: true,
+        isPending: true,
+      );
+
+      final allMessages = [...state.messages, pendingMessage];
+      final deduped = {for (var m in allMessages) m.id: m}.values.toList();
+      deduped.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+      state = state.copyWith(messages: deduped, error: null);
+
       // For dispute chat, the CLI expects format matching Message enum from mostro-core
       // Message::Dm(MessageKind) where MessageKind has version, action, and payload
       // Note: Rust uses snake_case for enum variants in JSON serialization
@@ -388,26 +417,14 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
 
       _logger.i('Sending gift wrap from ${session.tradeKey.public} to ${dispute.adminPubkey}');
 
-      // Generate ID for local storage
-      final rumorId = rumor.id ?? 'rumor_${DateTime.now().millisecondsSinceEpoch}';
-      final rumorTimestamp = rumor.createdAt ?? DateTime.now();
-
-      // Add to local state immediately
-      final disputeChat = DisputeChat(
-        id: rumorId,
-        message: text,
-        timestamp: rumorTimestamp,
-        isFromUser: true,
-      );
-
-      final allMessages = [...state.messages, disputeChat];
-      final deduped = {for (var m in allMessages) m.id: m}.values.toList();
-      deduped.sort((a, b) => a.timestamp.compareTo(b.timestamp));
-      state = state.copyWith(messages: deduped);
-
       // Publish to network
       ref.read(nostrServiceProvider).publishEvent(wrappedEvent);
       _logger.i('Dispute message sent successfully to admin for dispute: $disputeId');
+
+      // Update message to isPending=false (success)
+      final sentMessage = pendingMessage.copyWith(isPending: false);
+      final updatedMessages = state.messages.map((m) => m.id == rumorId ? sentMessage : m).toList();
+      state = state.copyWith(messages: updatedMessages);
 
       // Store in local storage
       final eventStore = ref.read(eventStorageProvider);
@@ -424,12 +441,49 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
           'type': 'dispute_chat',
           'dispute_id': disputeId,
           'is_from_user': true,
+          'isPending': false,
         },
       );
     } catch (e, stackTrace) {
       _logger.e('Failed to send dispute message: $e', stackTrace: stackTrace);
-      // Show error to user if needed
-      state = state.copyWith(error: 'Failed to send message: $e');
+      
+      // Mark message as failed in state
+      final failedMessage = state.messages
+          .firstWhere((m) => m.id == rumorId, orElse: () => DisputeChat(
+                id: rumorId,
+                message: text,
+                timestamp: rumorTimestamp,
+                isFromUser: true,
+              ))
+          .copyWith(isPending: false, error: e.toString());
+      
+      final updatedMessages = state.messages.map((m) => m.id == rumorId ? failedMessage : m).toList();
+      state = state.copyWith(
+        messages: updatedMessages,
+        error: 'Failed to send message: $e',
+      );
+
+      // Store failed state in local storage
+      final eventStore = ref.read(eventStorageProvider);
+      try {
+        await eventStore.putItem(
+          rumorId,
+          {
+            'id': rumorId,
+            'content': text,
+            'created_at': rumorTimestamp.millisecondsSinceEpoch ~/ 1000,
+            'kind': 1,
+            'pubkey': session.tradeKey.public,
+            'type': 'dispute_chat',
+            'dispute_id': disputeId,
+            'is_from_user': true,
+            'isPending': false,
+            'error': e.toString(),
+          },
+        );
+      } catch (storageError) {
+        _logger.e('Failed to store error state: $storageError');
+      }
     }
   }
 
