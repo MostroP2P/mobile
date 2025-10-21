@@ -167,6 +167,7 @@
   "notFound": "Disputa non trovata.",
   "invalidDisputeStatus": "Lo stato della disputa è invalido.",
   "invalidAction": "L'azione richiesta è invalida",
+  "invalidFiatCurrency": "Questa istanza Mostro non accetta la valuta selezionata, prova un'altra istanza",
   "pendingOrderExists": "Hai già un ordine in attesa, devi completarlo o cancellarlo prima di prenderne un altro.",
   "login": "Accedi",
   "register": "Registrati",

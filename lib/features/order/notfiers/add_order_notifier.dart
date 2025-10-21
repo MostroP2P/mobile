@@ -45,10 +45,12 @@ class AddOrderNotifier extends AbstractMostroNotifier {
                 
                 unawaited(handleEvent(msg));
                 
-                // Reset for retry if out_of_range_sats_amount
+                // Reset for retry if out_of_range_sats_amount or invalid_fiat_currency
                 final cantDo = msg.getPayload<CantDo>();
                 if (cantDo?.cantDoReason == CantDoReason.outOfRangeSatsAmount) {
                   _resetForRetry();
+                } else if (cantDo?.cantDoReason == CantDoReason.invalidFiatCurrency) {
+                  _cleanupSessionAndNavigateBack();
                 }
               }
             }
@@ -111,6 +113,20 @@ class AddOrderNotifier extends AbstractMostroNotifier {
     // Re-subscribe with new requestId
     subscription?.close();
     subscribe();
+  }
+
+  /// Clean up session and navigate back for invalid_fiat_currency error
+  void _cleanupSessionAndNavigateBack() {
+    logger.i('Cleaning up session and navigating back after invalid_fiat_currency');
+    
+    // Delete the session from SessionNotifier
+    ref.read(sessionNotifierProvider.notifier).deleteSessionByRequestId(requestId);
+    
+    // Navigate back to home/order book
+    ref.read(navigationProvider.notifier).go('/');
+    
+    // Invalidate this provider to clean up
+    ref.invalidateSelf();
   }
   
   @override
