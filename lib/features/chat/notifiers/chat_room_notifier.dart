@@ -198,15 +198,25 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
       deduped.sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
       state = state.copy(messages: deduped);
 
-      // Notify the chat rooms list to update immediately
+      // Publish to network - await to catch network/initialization errors
+      try {
+        await ref.read(nostrServiceProvider).publishEvent(wrappedEvent);
+        _logger.d('Message sent successfully to network');
+      } catch (publishError, publishStack) {
+        _logger.e('Failed to publish message: $publishError', stackTrace: publishStack);
+        // Remove from local state if publish failed
+        final updatedMessages =
+            state.messages.where((msg) => msg.id != innerEvent.id).toList();
+        state = state.copy(messages: updatedMessages);
+        rethrow; // Re-throw to be caught by outer catch
+      }
+
+      // Notify the chat rooms list to update after successful publish
       try {
         ref.read(chatRoomsNotifierProvider.notifier).refreshChatList();
       } catch (e) {
         _logger.w('Could not refresh chat list after sending message: $e');
       }
-
-      ref.read(nostrServiceProvider).publishEvent(wrappedEvent);
-      _logger.d('Message sent successfully to network');
     } catch (e, stackTrace) {
       _logger.e('Failed to send message: $e', stackTrace: stackTrace);
       // Remove from local state if sending failed

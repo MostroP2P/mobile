@@ -417,9 +417,47 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
 
       _logger.i('Sending gift wrap from ${session.tradeKey.public} to ${dispute.adminPubkey}');
 
-      // Publish to network
-      ref.read(nostrServiceProvider).publishEvent(wrappedEvent);
-      _logger.i('Dispute message sent successfully to admin for dispute: $disputeId');
+      // Publish to network - await to catch network/initialization errors
+      try {
+        await ref.read(nostrServiceProvider).publishEvent(wrappedEvent);
+        _logger.i('Dispute message sent successfully to admin for dispute: $disputeId');
+      } catch (publishError, publishStack) {
+        _logger.e('Failed to publish dispute message: $publishError', stackTrace: publishStack);
+        
+        // Mark message as failed
+        final failedMessage = pendingMessage.copyWith(
+          isPending: false,
+          error: 'Failed to publish: $publishError',
+        );
+        final updatedMessages = state.messages.map((m) => m.id == rumorId ? failedMessage : m).toList();
+        state = state.copyWith(
+          messages: updatedMessages,
+          error: 'Failed to send message: $publishError',
+        );
+        
+        // Store failed state
+        final eventStore = ref.read(eventStorageProvider);
+        try {
+          await eventStore.putItem(
+            rumorId,
+            {
+              'id': rumorId,
+              'content': text,
+              'created_at': rumorTimestamp.millisecondsSinceEpoch ~/ 1000,
+              'kind': rumor.kind,
+              'pubkey': rumor.pubkey,
+              'type': 'dispute_chat',
+              'dispute_id': disputeId,
+              'is_from_user': true,
+              'isPending': false,
+              'error': 'Failed to publish: $publishError',
+            },
+          );
+        } catch (storageError) {
+          _logger.e('Failed to store error state: $storageError');
+        }
+        return; // Exit early, don't mark as success
+      }
 
       // Update message to isPending=false (success)
       final sentMessage = pendingMessage.copyWith(isPending: false);
