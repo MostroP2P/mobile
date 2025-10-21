@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -81,7 +80,7 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(S.of(context)!.invoiceCopiedToClipboard),
-                    duration: Duration(seconds: 2),
+                    duration: const Duration(seconds: 2),
                   ),
                 );
               },
@@ -118,7 +117,7 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
                       SnackBar(
                         // ignore: use_build_context_synchronously
                         content: Text(S.of(context)!.failedToShareInvoice),
-                        duration: Duration(seconds: 3),
+                        duration: const Duration(seconds: 3),
                       ),
                     );
                   }
