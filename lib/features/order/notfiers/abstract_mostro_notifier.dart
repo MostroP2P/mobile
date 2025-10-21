@@ -554,10 +554,14 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
     }
   }
 
-  /// Validates Lightning address format (basic email-like validation)
+  /// Validates Lightning address format (user@domain.tld)
   bool _isValidLightningAddress(String address) {
-    final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
-    return emailRegex.hasMatch(address);
+    // Lightning address format: user@domain.tld
+    // More robust validation with character constraints
+    final lnAddressRegex = RegExp(
+      r'^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    );
+    return lnAddressRegex.hasMatch(address);
   }
 
   /// Navigate to manual invoice input screen
