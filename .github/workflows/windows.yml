@@ -19,26 +19,39 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: '3.24.0'   # pin version or omit for latest
+          flutter-version: '3.32.2'   # match version from main.yml
 
-      # 3. Accept Windows SDK / Build Tools licenses (optional but avoids prompts)
-      - name: Accept SDK licenses
-        run: flutter doctor --android-licenses   # only if Android tools present
+      # 3. Configure Flutter (disable analytics, accept licenses)
+      - name: Configure Flutter
+        run: |
+          flutter config --no-analytics
+          flutter config --enable-windows-desktop
+          
+      # 4. Accept SDK licenses non-interactively (if Android SDK is present)
+      - name: Accept licenses
+        run: |
+          "y" * 100 | flutter doctor --android-licenses
+        shell: pwsh
         continue-on-error: true
-
-      # 4. Enable Windows desktop support
-      - name: Enable Windows desktop
-        run: flutter config --enable-windows-desktop
 
       # 5. Install project dependencies
       - name: Install dependencies
         run: flutter pub get
 
-      # 6. Build Windows release
+      # 6. Generate localization and other required files
+      - name: Generate required files
+        run: dart run build_runner build -d
+
+      # 7. Analyze code (optional but recommended)
+      - name: Analyze code
+        run: flutter analyze
+        continue-on-error: true   # don't fail build on warnings
+
+      # 8. Build Windows release
       - name: Build Windows release
         run: flutter build windows --release
 
-      # 7. Upload the executable
+      # 9. Upload the executable
       - name: Upload Windows build
         uses: actions/upload-artifact@v4
         with:
