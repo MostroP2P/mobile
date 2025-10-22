@@ -139,6 +139,46 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
     logger.i('handleEvent: Processing action ${event.action} for order $orderId (bypassTimestampGate: $bypassTimestampGate)');
     switch (event.action) {
       case Action.newOrder:
+        // Check if Mostro is republishing the order after timeout
+        final currentSession = ref.read(sessionProvider(orderId));
+        if (currentSession != null && 
+            (state.status == Status.waitingBuyerInvoice || state.status == Status.waitingPayment)) {
+          // This is a maker receiving order republication after taker timeout
+          logger.i('MAKER: Received order reactivation from Mostro - taker timed out, order returned to pending');
+          
+          // Show notification: counterpart didn't respond, order will be republished
+          if (isRecent || !bypassTimestampGate) {
+            final notifProvider = ref.read(notificationActionsProvider.notifier);
+            notifProvider.showCustomMessage('orderTimeoutMaker');
+          }
+        }
+        break;
+        
+      case Action.canceled:
+        // Handle cancellation sent by Mostro (for both timeout and cancellation scenarios)
+        final currentSession = ref.read(sessionProvider(orderId));
+        if (currentSession != null) {
+          logger.i('CANCELLATION: Received cancellation message from Mostro for order $orderId');
+          
+          // Delete session - this applies to both maker and taker scenarios
+          final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+          await sessionNotifier.deleteSession(orderId);
+          
+          logger.i('Session deleted for canceled order $orderId');
+          
+          // Show cancellation notification
+          if (isRecent || !bypassTimestampGate) {
+            final notifProvider = ref.read(notificationActionsProvider.notifier);
+            notifProvider.showCustomMessage('orderCanceled');
+          }
+          
+          // Navigate to main order book screen
+          if (isRecent && !bypassTimestampGate) {
+            navProvider.go('/');
+          }
+          
+          return; // Session was deleted, no further processing needed
+        }
         break;
         
       case Action.buyerTookOrder:
@@ -262,16 +302,6 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
 
       case Action.purchaseCompleted:
         // No additional logic needed beyond notification
-        break;
-
-      case Action.canceled:
-        // Cleanup
-        ref.read(mostroStorageProvider).deleteAllMessagesByOrderId(orderId);
-        ref.read(sessionNotifierProvider.notifier).deleteSession(orderId);
-        
-        // Navigate to main order book screen and invalidate
-        navProvider.go('/');
-        ref.invalidateSelf();
         break;
 
       case Action.cooperativeCancelInitiatedByYou:
@@ -413,9 +443,6 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         break;
 
       case Action.rateReceived:
-        break;
-
-      case Action.timeoutReversal:
         break;
 
       // Default

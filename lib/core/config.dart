@@ -40,11 +40,6 @@ class Config {
   static const int sessionExpirationHours = 72;
 
   // Notification configuration
-
   static String notificationChannelId = 'mostro_mobile';
   static int notificationId = 38383;
-
-  // Timeouts for timeout detection (new critical operations)
-  static const Duration timeoutDetectionTimeout = Duration(seconds: 8);
-  static const Duration messageStorageTimeout = Duration(seconds: 5);
 }
