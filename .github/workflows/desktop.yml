@@ -1,0 +1,137 @@
+name: Build Flutter Desktop (Multi-Platform)
+
+on:
+  push:
+    tags: ['v*.*.*']          # run only when a tag like v1.2.3 is pushed
+  workflow_dispatch:
+
+jobs:
+  build-desktop:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            build-command: flutter build linux --release
+            artifact-path: build/linux/x64/release/bundle
+            artifact-name: linux-x64.tar.gz
+            package-command: tar -czf
+          - os: macos-latest
+            platform: macos
+            build-command: flutter build macos --release
+            artifact-path: build/macos/Build/Products/Release
+            artifact-name: macos.zip
+            package-command: zip -r
+          - os: windows-latest
+            platform: windows
+            build-command: flutter build windows --release
+            artifact-path: build/windows/x64/runner/Release
+            artifact-name: windows-x64.zip
+            package-command: Compress-Archive -Path * -DestinationPath
+      fail-fast: false  # Continue other builds even if one fails
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      # 1. Check-out source
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Install Flutter
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.32.2'
+
+      # 3. Install Linux dependencies (Linux only)
+      - name: Install Linux dependencies
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev
+
+      # 4. Configure Flutter
+      - name: Configure Flutter
+        shell: bash
+        run: |
+          flutter config --no-analytics
+          flutter config --enable-${{ matrix.platform }}-desktop
+
+      # 5. Accept licenses (Windows only)
+      - name: Accept licenses
+        if: matrix.platform == 'windows'
+        run: |
+          "y" * 100 | flutter doctor --android-licenses
+        shell: pwsh
+        continue-on-error: true
+
+      # 6. Install project dependencies
+      - name: Install dependencies
+        run: flutter pub get
+
+      # 7. Generate localization and other required files
+      - name: Generate required files
+        run: dart run build_runner build -d
+
+      # 8. Extract version from pubspec.yaml
+      - name: Extract version
+        id: extract_version
+        shell: bash
+        run: |
+          version=$(grep '^version: ' pubspec.yaml | cut -d ' ' -f 2 | tr -d '\r')
+          echo "VERSION=$version" >> $GITHUB_ENV
+          echo "version=$version" >> $GITHUB_OUTPUT
+          echo "Version: $version"
+
+      # 9. Analyze code (optional)
+      - name: Analyze code
+        run: flutter analyze
+        continue-on-error: true
+
+      # 10. Build for platform
+      - name: Build ${{ matrix.platform }} release
+        run: ${{ matrix.build-command }}
+
+      # 11. Package build (Linux)
+      - name: Package Linux build
+        if: matrix.platform == 'linux'
+        run: |
+          cd ${{ matrix.artifact-path }}
+          tar -czf ../../../../../mostro_mobile-${{ steps.extract_version.outputs.version }}-${{ matrix.artifact-name }} *
+          cd ../../../../../
+
+      # 12. Package build (macOS)
+      - name: Package macOS build
+        if: matrix.platform == 'macos'
+        run: |
+          cd ${{ matrix.artifact-path }}
+          zip -r ../../../../../mostro_mobile-${{ steps.extract_version.outputs.version }}-${{ matrix.artifact-name }} *.app
+          cd ../../../../../
+
+      # 13. Package build (Windows)
+      - name: Package Windows build
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          cd ${{ matrix.artifact-path }}
+          Compress-Archive -Path * -DestinationPath "../../../../../mostro_mobile-${{ steps.extract_version.outputs.version }}-${{ matrix.artifact-name }}"
+          cd ../../../../../
+
+      # 14. Upload as artifact
+      - name: Upload ${{ matrix.platform }} artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.platform }}-release
+          path: mostro_mobile-${{ steps.extract_version.outputs.version }}-${{ matrix.artifact-name }}
+
+      # 15. Create GitHub Release and upload
+      - name: Create GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "mostro_mobile-${{ steps.extract_version.outputs.version }}-${{ matrix.artifact-name }}"
+          tag: v${{ steps.extract_version.outputs.version }}
+          allowUpdates: true
+          omitBodyDuringUpdate: true
+          replacesArtifacts: true
+
