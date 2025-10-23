@@ -1,0 +1,86 @@
+name: Build Flutter Linux Desktop
+
+on:
+  push:
+    tags: ['v*.*.*']          # run only when a tag like v1.2.3 is pushed
+  workflow_dispatch:
+
+jobs:
+  linux-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Check-out source
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Install Flutter
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.32.2'   # match version from main.yml
+
+      # 3. Install Linux build dependencies
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev
+
+      # 4. Configure Flutter (disable analytics)
+      - name: Configure Flutter
+        run: |
+          flutter config --no-analytics
+          flutter config --enable-linux-desktop
+
+      # 5. Install project dependencies
+      - name: Install dependencies
+        run: flutter pub get
+
+      # 6. Generate localization and other required files
+      - name: Generate required files
+        run: dart run build_runner build -d
+
+      # 7. Extract version from pubspec.yaml
+      - name: Extract version
+        id: extract_version
+        run: |
+          version=$(grep '^version: ' pubspec.yaml | cut -d ' ' -f 2 | tr -d '\r')
+          echo "VERSION=$version" >> $GITHUB_ENV
+          echo "version=$version" >> $GITHUB_OUTPUT
+          echo "Version: $version"
+
+      # 8. Analyze code (optional but recommended)
+      - name: Analyze code
+        run: flutter analyze
+        continue-on-error: true   # don't fail build on warnings
+
+      # 9. Build Linux release
+      - name: Build Linux release
+        run: flutter build linux --release
+
+      # 10. Create tarball package for distribution
+      - name: Package Linux build
+        run: |
+          cd build/linux/x64/release/bundle
+          tar -czf ../../../../../mostro_mobile-${{ steps.extract_version.outputs.version }}-linux-x64.tar.gz *
+          cd ../../../../../
+          echo "Created: mostro_mobile-${{ steps.extract_version.outputs.version }}-linux-x64.tar.gz"
+
+      # 11. Upload as artifact (backup)
+      - name: Upload Linux build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-release
+          path: mostro_mobile-${{ steps.extract_version.outputs.version }}-linux-x64.tar.gz
+
+      # 12. Create GitHub Release and upload
+      - name: Create GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "mostro_mobile-${{ steps.extract_version.outputs.version }}-linux-x64.tar.gz"
+          tag: v${{ steps.extract_version.outputs.version }}
+          allowUpdates: true
+          omitBodyDuringUpdate: true
+          replacesArtifacts: true
+
