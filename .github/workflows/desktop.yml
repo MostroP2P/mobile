@@ -62,7 +62,8 @@ jobs:
       - name: Accept licenses (Windows)
         if: matrix.platform == 'windows'
         run: |
-          "y" * 100 | flutter doctor --android-licenses
+          $input = "y`n" * 100
+          $input | flutter doctor --android-licenses
         shell: pwsh
         continue-on-error: true
 
