@@ -43,6 +43,7 @@ jobs:
         with:
           channel: stable
           flutter-version: '3.32.2'
+          cache: true  # Enable caching for faster builds
 
       # 3. Install Linux dependencies (Linux only)
       - name: Install Linux dependencies
@@ -64,6 +65,7 @@ jobs:
         run: |
           $input = "y`n" * 100
           $input | flutter doctor --android-licenses
+          exit 0
         shell: pwsh
         continue-on-error: true
 
