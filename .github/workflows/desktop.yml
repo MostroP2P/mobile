@@ -10,7 +10,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             platform: linux
             build-command: flutter build linux --release
             artifact-path: build/linux/x64/release/bundle
