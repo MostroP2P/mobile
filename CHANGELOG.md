@@ -5,6 +5,54 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2]
+
+### Added
+- **Desktop Application Support** (#340): Complete implementation for Windows and Mac desktop platforms
+- **Dispute Chat System** (#329): Full-featured dispute chat implementation with role-specific messaging and real-time updates
+- **Lightning Address Auto-Send** (#336): Automatic Lightning address transmission on add-invoice for waiting-buyer-invoice status
+- **Invalid Fiat Currency Handling** (#331): Comprehensive error handling for invalid fiat currency with session cleanup and user feedback
+- **Custom Mostro Public Key Support** (#315): Environment variable support for configuring custom Mostro public keys
+- **Create Order Timeout Protection** (#318): Orphan session cleanup system with 10-second timeout for order creation
+- **Dispute Action Button** (#323): VIEW DISPUTE button integration for orders in dispute states in order details screen
+- **Admin-Canceled Dispute Status**: Enhanced dispute status handling for admin-canceled disputes with proper user notifications
+- **Dispute Resolution Tracking**: Role-specific dispute resolution messages and admin assignment flow improvements
+
+### Fixed
+- **Invoice Payment Confirmation** (#337): Restored invoice payment confirmation in PayLightningInvoiceWidget
+- **Exchange Rate Fetching** (#332): Fixed exchange rate fetching issue in Create Order screen for accurate pricing
+- **Linux Build Configuration** (#321): Fixed Linux build with host-toolchain bootstrap in CMakeLists.txt and updated README
+- **Chat Tab UI** (#320): Improved chat tab UI contrast, corrected shared key display, and fixed status badge rendering
+- **Dispute Status Handling**: Case-insensitive dispute status processing with additional terminal states for admin counterparty
+- **Price Type Switch UI** (#335): Enhanced visual contrast for better UX in price type switch component
+- **Button Text Colors** (#333): Updated red button text color to white for improved readability
+- **Switch Button Colors**: Fixed switch button color consistency across the application
+- **Dispute Status Badge**: Corrected status badge display in dispute-related screens
+
+### Changed
+- **Session Deletion Timeout** (#330): Increased automatic session deletion from 36 to 72 hours for better user experience
+- **NIP44 Dependency** (#338): Migrated to Mostro fork of nip44 dependency for improved protocol compatibility
+- **Order Status Flow** (#327): Refactored flow from waiting to pending status for clearer state transitions
+- **Dispute Status System** (#310): Complete overhaul with comprehensive localization support across all languages
+- **Dispute Protocol**: Migrated dispute protocol from NIP-17 to NIP-59 for enhanced security and standardization
+- **Dispute Data Handling**: Converted userDisputeDataProvider to handle async state with preserved message timestamps
+- **Dispute UI Layout**: Optimized dispute chat layout with CustomScrollView and SafeArea for better mobile experience
+- **Dispute Message Sorting**: Disputes now sorted by creation date in descending order for easier navigation
+
+### Removed
+- **Unused Session Peer Logic**: Removed unused session peer fallback logic in dispute chat for code cleanup
+- **Mock Dispute Data**: Replaced mock dispute data with real provider implementation throughout the application
+- **Debug Logging**: Removed debug logs from dispute resolution and role determination code
+
+### Security
+- **Enhanced Dispute Privacy**: Improved dispute protocol security with NIP-59 encrypted messaging
+- **Session Cleanup Protection**: Automatic cleanup of orphaned sessions prevents security vulnerabilities in order creation flow
+
+### Documentation
+- **Dispute System Documentation**: Comprehensive documentation for dispute chat implementation and protocol changes
+- **Desktop Platform Guide**: Setup and build instructions for Windows and Mac desktop applications
+- **Linux Build Guide**: Updated README with Linux-specific build instructions and requirements
+
 ## [1.0.1]
 
 ### Added
