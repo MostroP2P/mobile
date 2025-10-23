@@ -103,31 +103,30 @@ jobs:
       - name: Build ${{ matrix.platform }} release
         run: ${{ matrix.build-command }}
 
-      # 11. Package build (Linux)
+      # 11. Package Linux build
       - name: Package Linux build
         if: matrix.platform == 'linux'
         run: |
-          cd ${{ matrix.artifact-path }}
-          tar -czf ../../../../../mostro_mobile-${{ steps.extract_version.outputs.version }}-${{ matrix.artifact-name }} *
-          cd ../../../../../
+          mkdir -p ./dist
+          tar -czf ./dist/mostro_mobile-${{ steps.extract_version.outputs.version }}-${{ matrix.artifact-name }} \
+            -C ${{ matrix.artifact-path }} .
 
       # 12. Package build (macOS)
       - name: Package macOS build
         if: matrix.platform == 'macos'
         run: |
-          cd ${{ matrix.artifact-path }}
-          zip -r ../../../../../mostro_mobile-${{ steps.extract_version.outputs.version }}-${{ matrix.artifact-name }} *.app
-          cd ../../../../../
+          mkdir -p ./dist
+          find ${{ matrix.artifact-path }} -name "*.app" -type d | head -1 | xargs -I {} \
+            zip -r ./dist/mostro_mobile-${{ steps.extract_version.outputs.version }}-${{ matrix.artifact-name }} {}
 
       # 13. Package build (Windows)
       - name: Package Windows build
         if: matrix.platform == 'windows'
         shell: pwsh
         run: |
-          cd ${{ matrix.artifact-path }}
-          Compress-Archive -Path * -DestinationPath "../../../../../mostro_mobile-${{ steps.extract_version.outputs.version }}-${{ matrix.artifact-name }}"
-          cd ../../../../../
-
+          if (-not (Test-Path "./dist")) { New-Item -ItemType Directory -Path "./dist" | Out-Null }
+          Compress-Archive -Path "${{ matrix.artifact-path }}/*" `
+            -DestinationPath "./dist/mostro_mobile-${{ steps.extract_version.outputs.version }}-${{ matrix.artifact-name }}"
       # 14. Upload as artifact
       - name: Upload ${{ matrix.platform }} artifact
         uses: actions/upload-artifact@v4
