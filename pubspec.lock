@@ -978,7 +978,7 @@ packages:
       path: "."
       ref: master
       resolved-ref: "73379b8b1332f1ee78a250055494e6b73e673ea2"
-      url: "https://github.com/chebizarro/dart-nip44.git"
+      url: "https://github.com/MostroP2P/dart-nip44.git"
     source: git
     version: "1.0.0"
   node_preamble:
