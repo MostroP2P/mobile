@@ -42,18 +42,49 @@ jobs:
       - name: Generate required files
         run: dart run build_runner build -d
 
-      # 7. Analyze code (optional but recommended)
+      # 7. Extract version from pubspec.yaml
+      - name: Extract version
+        id: extract_version
+        run: |
+          $version = (Select-String -Path pubspec.yaml -Pattern '^version: ').Line -replace 'version: ',''
+          $version = $version.Trim()
+          echo "VERSION=$version" >> $env:GITHUB_ENV
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+          echo "Version: $version"
+        shell: pwsh
+
+      # 8. Analyze code (optional but recommended)
       - name: Analyze code
         run: flutter analyze
         continue-on-error: true   # don't fail build on warnings
 
-      # 8. Build Windows release
+      # 9. Build Windows release
       - name: Build Windows release
         run: flutter build windows --release
 
-      # 9. Upload the executable
-      - name: Upload Windows build
+      # 10. Create zip package for distribution
+      - name: Package Windows build
+        run: |
+          $version = "${{ steps.extract_version.outputs.version }}"
+          cd build/windows/x64/runner/Release
+          Compress-Archive -Path * -DestinationPath "../../../../../mostro_mobile-$version-windows-x64.zip"
+          cd ../../../../../
+          echo "Created: mostro_mobile-$version-windows-x64.zip"
+        shell: pwsh
+
+      # 11. Upload as artifact (backup)
+      - name: Upload Windows build artifact
         uses: actions/upload-artifact@v4
         with:
           name: windows-release
-          path: build/windows/x64/runner/Release/   # folder containing .exe and dlls
+          path: mostro_mobile-${{ steps.extract_version.outputs.version }}-windows-x64.zip
+
+      # 12. Create GitHub Release and upload
+      - name: Create GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "mostro_mobile-${{ steps.extract_version.outputs.version }}-windows-x64.zip"
+          tag: v${{ steps.extract_version.outputs.version }}
+          allowUpdates: true
+          omitBodyDuringUpdate: true
+          replacesArtifacts: true
