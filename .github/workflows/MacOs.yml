@@ -57,7 +57,10 @@ jobs:
       - name: Package macOS build
         run: |
           cd build/macos/Build/Products/Release
-          zip -r ../../../../../mostro_mobile-${{ steps.extract_version.outputs.version }}-macos.zip mostro_mobile.app
+          echo "Contents of Release directory:"
+          ls -la
+          # Zip all .app bundles (typically there's only one)
+          zip -r ../../../../../mostro_mobile-${{ steps.extract_version.outputs.version }}-macos.zip *.app
           cd ../../../../../
           echo "Created: mostro_mobile-${{ steps.extract_version.outputs.version }}-macos.zip"
 
