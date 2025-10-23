@@ -90,6 +90,10 @@ jobs:
         shell: bash
         run: |
           version=$(grep '^version: ' pubspec.yaml | cut -d ' ' -f 2 | tr -d '\r')
+          if [[ -z "$version" ]]; then
+            echo "ERROR: Could not extract version from pubspec.yaml"
+            exit 1
+          fi
           echo "VERSION=$version" >> $GITHUB_ENV
           echo "version=$version" >> $GITHUB_OUTPUT
           echo "Version: $version"
