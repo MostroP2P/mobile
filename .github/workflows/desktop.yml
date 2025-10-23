@@ -58,12 +58,19 @@ jobs:
           flutter config --no-analytics
           flutter config --enable-${{ matrix.platform }}-desktop
 
-      # 5. Accept licenses (Windows only)
-      - name: Accept licenses
+      # 5. Accept SDK licenses non-interactively
+      - name: Accept licenses (Windows)
         if: matrix.platform == 'windows'
         run: |
           "y" * 100 | flutter doctor --android-licenses
         shell: pwsh
+        continue-on-error: true
+
+      - name: Accept licenses (Linux/macOS)
+        if: matrix.platform != 'windows'
+        run: |
+          yes | flutter doctor --android-licenses || true
+        shell: bash
         continue-on-error: true
 
       # 6. Install project dependencies
