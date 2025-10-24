@@ -1,0 +1,189 @@
+name: Build Flutter Desktop (Multi-Platform)
+
+on:
+  push:
+    tags: ['v*.*.*']          # run only when a tag like v1.2.3 is pushed
+  workflow_dispatch:
+    inputs:
+      flutter_version:
+        description: 'Flutter version (or "latest")'
+        required: false
+        default: '3.32.2'
+
+env:
+  FLUTTER_VERSION: '3.32.2'  # Default Flutter version
+
+jobs:
+  build-desktop:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            platform: linux
+            build-command: flutter build linux --release
+            artifact-path: build/linux/x64/release/bundle
+            artifact-name: linux-x64.tar.gz
+            package-command: tar -czf
+          - os: macos-latest
+            platform: macos
+            build-command: flutter build macos --release
+            artifact-path: build/macos/Build/Products/Release
+            artifact-name: macos.zip
+            package-command: zip -r
+          - os: windows-latest
+            platform: windows
+            build-command: flutter build windows --release
+            artifact-path: build/windows/x64/runner/Release
+            artifact-name: windows-x64.zip
+            package-command: Compress-Archive -Path * -DestinationPath
+      fail-fast: false  # Continue other builds even if one fails
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      # 1. Check-out source
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Install Flutter
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ inputs.flutter_version || env.FLUTTER_VERSION }}
+          cache: true  # Enable caching for faster builds
+
+      # 3. Install Linux dependencies (Linux only)
+      - name: Install Linux dependencies
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libsecret-1-dev
+
+      # 4. Configure Flutter
+      - name: Configure Flutter
+        shell: bash
+        run: |
+          flutter config --no-analytics
+          flutter config --enable-${{ matrix.platform }}-desktop
+
+      # 5. Accept SDK licenses non-interactively
+      - name: Accept licenses (Windows)
+        if: matrix.platform == 'windows'
+        run: |
+          $input = "y`n" * 100
+          $input | flutter doctor --android-licenses
+          exit 0
+        shell: pwsh
+        continue-on-error: true
+
+      - name: Accept licenses (Linux/macOS)
+        if: matrix.platform != 'windows'
+        run: |
+          yes | flutter doctor --android-licenses || true
+        shell: bash
+        continue-on-error: true
+
+      # 6. Cache pub dependencies
+      - name: Cache pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            ${{ runner.os == 'Windows' && '%LOCALAPPDATA%\Pub\Cache' || '' }}
+          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-
+
+      # 7. Install project dependencies
+      - name: Install dependencies
+        run: flutter pub get
+
+      # 8. Generate localization and other required files
+      - name: Generate required files
+        run: dart run build_runner build -d
+
+      # 9. Extract version from pubspec.yaml
+      - name: Extract version
+        id: extract_version
+        shell: bash
+        run: |
+          version=$(grep '^version: ' pubspec.yaml | cut -d ' ' -f 2 | tr -d '\r')
+          if [[ -z "$version" ]]; then
+            echo "ERROR: Could not extract version from pubspec.yaml"
+            exit 1
+          fi
+          echo "VERSION=$version" >> $GITHUB_ENV
+          echo "version=$version" >> $GITHUB_OUTPUT
+          echo "Version: $version"
+
+      # 10. Analyze code (optional)
+      - name: Analyze code
+        run: flutter analyze --fatal-infos
+        continue-on-error: true
+
+      # 11. Build for platform
+      - name: Build ${{ matrix.platform }} release
+        run: ${{ matrix.build-command }}
+        
+      # 12. Verify build output exists
+      - name: Verify build output
+        shell: bash
+        run: |
+          if [ ! -d "${{ matrix.artifact-path }}" ]; then
+            echo "ERROR: Build output not found at ${{ matrix.artifact-path }}"
+            exit 1
+          fi
+          echo "✅ Build output verified at ${{ matrix.artifact-path }}"
+
+      # 13. Package Linux build
+      - name: Package Linux build
+        if: matrix.platform == 'linux'
+        run: |
+          mkdir -p ./dist
+          tar -czf ./dist/mostro_mobile-${{ steps.extract_version.outputs.version }}-${{ matrix.artifact-name }} \
+            -C ${{ matrix.artifact-path }} .
+
+      # 14. Package build (macOS)
+      - name: Package macOS build
+        if: matrix.platform == 'macos'
+        run: |
+          mkdir -p ./dist
+          find ${{ matrix.artifact-path }} -name "*.app" -type d | head -1 | xargs -I {} \
+            zip -r ./dist/mostro_mobile-${{ steps.extract_version.outputs.version }}-${{ matrix.artifact-name }} {}
+
+      # 15. Package build (Windows)
+      - name: Package Windows build
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "./dist")) { New-Item -ItemType Directory -Path "./dist" | Out-Null }
+          Compress-Archive -Path "${{ matrix.artifact-path }}/*" `
+            -DestinationPath "./dist/mostro_mobile-${{ steps.extract_version.outputs.version }}-${{ matrix.artifact-name }}"
+      
+      # 16. Upload as artifact
+      - name: Upload ${{ matrix.platform }} artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.platform }}-release
+          path: ./dist/mostro_mobile-${{ steps.extract_version.outputs.version }}-${{ matrix.artifact-name }}
+
+      # 17. Create GitHub Release and upload
+      - name: Create GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "./dist/mostro_mobile-${{ steps.extract_version.outputs.version }}-${{ matrix.artifact-name }}"
+          tag: v${{ steps.extract_version.outputs.version }}
+          name: "Release v${{ steps.extract_version.outputs.version }}"
+          body: |
+            ## Desktop Builds - v${{ steps.extract_version.outputs.version }}
+            
+            **Platform**: ${{ matrix.platform }}
+            **Flutter Version**: ${{ inputs.flutter_version || env.FLUTTER_VERSION }}
+            **Build Date**: ${{ github.event.head_commit.timestamp }}
+          allowUpdates: true
+          omitBodyDuringUpdate: false
+          replacesArtifacts: true
+          draft: false
+          prerelease: false
+
