@@ -6,6 +6,7 @@ import 'package:heroicons/heroicons.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
+import 'package:mostro_mobile/features/key_manager/import_mnemonic_dialog.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
@@ -558,10 +559,9 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton(
-        onPressed: null, // Keep disabled as requested
+        onPressed: () => _showImportMnemonicDialog(context),
         style: OutlinedButton.styleFrom(
-          side:
-              BorderSide(color: AppTheme.textSecondary.withValues(alpha: 0.3)),
+          side: const BorderSide(color: AppTheme.activeColor),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
@@ -570,18 +570,18 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
+            const Icon(
               LucideIcons.download,
               size: 20,
-              color: AppTheme.textSecondary.withValues(alpha: 0.5),
+              color: AppTheme.activeColor,
             ),
             const SizedBox(width: 8),
             Text(
               S.of(context)!.importMostroUser,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
-                color: AppTheme.textSecondary.withValues(alpha: 0.5),
+                color: AppTheme.activeColor,
               ),
             ),
           ],
@@ -699,6 +699,15 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
             ),
           ],
         );
+      },
+    );
+  }
+
+  void _showImportMnemonicDialog(BuildContext context) {
+    showDialog<String>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return const ImportMnemonicDialog();
       },
     );
   }

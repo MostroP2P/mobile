@@ -1177,5 +1177,16 @@
   "deleteUserRelayCancel": "No",
 
   "@_comment_session_timeout": "Session timeout message",
-  "sessionTimeoutMessage": "Nessuna risposta ricevuta, verifica la tua connessione e riprova più tardi"
+  "sessionTimeoutMessage": "Nessuna risposta ricevuta, verifica la tua connessione e riprova più tardi",
+
+  "@_comment_import_mnemonic_dialog": "Import Mnemonic Dialog strings",
+  "importMostroUserDialogTitle": "Importa Utente Mostro",
+  "importMostroUserInfo1": "Queste sono le tue parole segrete, l'unico modo per recuperare il tuo account se perdi l'accesso a questa app o vuoi usare la tua identità in un'altra app.",
+  "importMostroUserInfo2": "Scrivile con attenzione e conservale in un luogo sicuro e privato. Non condividerle mai con nessuno.",
+  "importMostroUserInfo3": "Se perdi queste parole, perderai permanentemente l'accesso al tuo account.",
+  "secretWordsLabel": "Parole Segrete",
+  "secretWordsPlaceholder": "Inserisci le tue 12 parole segrete separate da spazi",
+  "errorNotTwelveWords": "Devi inserire esattamente 12 parole",
+  "errorWordTooShort": "Ogni parola deve avere almeno 3 lettere",
+  "errorInvalidCharacters": "Le parole possono contenere solo lettere"
 }
