@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:logger/logger.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
-
-final _logger = Logger();
 
 class ImportMnemonicDialog extends StatefulWidget {
   const ImportMnemonicDialog({super.key});
@@ -66,11 +63,6 @@ class _ImportMnemonicDialogState extends State<ImportMnemonicDialog> {
     final mnemonic = _mnemonicController.text.trim();
 
     if (_validateMnemonic(mnemonic)) {
-      final words = mnemonic.split(RegExp(r'\s+'));
-
-      // TODO: Remove this log after testing flow validation
-      _logger.i('Mnemonic import validation successful - Words: ${words.join(' ')}');
-
       if (mounted) {
         Navigator.of(context).pop(mnemonic);
       }

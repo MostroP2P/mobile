@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:heroicons/heroicons.dart';
+import 'package:logger/logger.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/key_manager/import_mnemonic_dialog.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
+import 'package:mostro_mobile/services/restore_service.dart';
 import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
@@ -20,6 +22,7 @@ class KeyManagementScreen extends ConsumerStatefulWidget {
 }
 
 class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
+  final Logger _logger = Logger();
   String? _mnemonic;
   int? _tradeKeyIndex;
   bool _loading = false;
@@ -703,12 +706,31 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
     );
   }
 
-  void _showImportMnemonicDialog(BuildContext context) {
-    showDialog<String>(
+  Future<void> _showImportMnemonicDialog(BuildContext context) async {
+    final mnemonic = await showDialog<String>(
       context: context,
       builder: (BuildContext dialogContext) {
         return const ImportMnemonicDialog();
       },
     );
+
+    if (mnemonic != null && mnemonic.isNotEmpty) {
+      try {
+        final restoreService = ref.read(restoreServiceProvider);
+        await restoreService.importMnemonicAndRestore(mnemonic);
+        await _loadKeys();
+
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(S.of(context)!.keyImportedSuccessfully)),
+        );
+      } catch (e) {
+        _logger.e('Import failed: $e');
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(S.of(context)!.importFailed(e.toString()))),
+        );
+      }
+    }
   }
 }
