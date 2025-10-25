@@ -14,6 +14,7 @@ import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/services/restore_service.dart';
+import 'package:mostro_mobile/services/last_trade_index_service.dart';
 
 class MostroService {
   final Ref ref;
@@ -89,6 +90,11 @@ class MostroService {
           if (payload != null) {
             await ref.read(restoreServiceProvider).processRestoreData(payload);
           }
+        } else if (restore['action'] == 'last-trade-index') {
+          final tradeIndex = restore['trade_index'] as int?;
+          if (tradeIndex != null) {
+            await ref.read(lastTradeIndexServiceProvider).processLastTradeIndex(tradeIndex);
+          }
         }
         return;
       }
@@ -103,9 +109,6 @@ class MostroService {
           _logger.i('Received details for ${orders.length} orders');
 
           await ref.read(restoreServiceProvider).processOrderDetails(orders);
-
-          final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
-          await sessionNotifier.deleteSession('__restore__');
 
           return;
         }

@@ -13,6 +13,7 @@ import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
+import 'package:mostro_mobile/services/last_trade_index_service.dart';
 
 class RestoreService {
   final Ref ref;
@@ -108,9 +109,9 @@ class RestoreService {
 
     if (orderIds.isNotEmpty) {
       await _requestOrderDetails(orderIds, masterKey, settings.mostroPublicKey);
-    } else {
-      await sessionNotifier.deleteSession('__restore__');
     }
+
+    await ref.read(lastTradeIndexServiceProvider).requestLastTradeIndex();
   }
 
   Future<void> _requestOrderDetails(
