@@ -13,6 +13,8 @@ import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
+import 'package:mostro_mobile/services/restore_service.dart';
+import 'package:mostro_mobile/services/last_trade_index_service.dart';
 
 class MostroService {
   final Ref ref;
@@ -68,17 +70,48 @@ class MostroService {
       if (decryptedEvent.content == null) return;
 
       final result = jsonDecode(decryptedEvent.content!);
-      
-      // Ensure result is a non-empty List before accessing elements
+
       if (result is! List || result.isEmpty) {
         _logger.w('Received empty or invalid payload, skipping');
         return;
       }
 
-      // Skip dispute chat messages (they have "dm" key and are handled by DisputeChatNotifier)
       if (result[0] is Map && (result[0] as Map).containsKey('dm')) {
         _logger.i('Skipping dispute chat message (handled by DisputeChatNotifier)');
         return;
+      }
+
+      if (result[0] is Map && (result[0] as Map).containsKey('restore')) {
+        final data = result[0] as Map<String, dynamic>;
+        final restore = data['restore'] as Map<String, dynamic>;
+
+        if (restore['action'] == 'restore-session') {
+          final payload = restore['payload'] as Map<String, dynamic>?;
+          if (payload != null) {
+            await ref.read(restoreServiceProvider).processRestoreData(payload);
+          }
+        } else if (restore['action'] == 'last-trade-index') {
+          final tradeIndex = restore['trade_index'] as int?;
+          if (tradeIndex != null) {
+            await ref.read(lastTradeIndexServiceProvider).processLastTradeIndex(tradeIndex);
+          }
+        }
+        return;
+      }
+
+      if (result[0] is Map && (result[0] as Map).containsKey('order')) {
+        final data = result[0] as Map<String, dynamic>;
+        final order = data['order'] as Map<String, dynamic>;
+
+        if (order['action'] == 'orders') {
+          final payload = order['payload'] as Map<String, dynamic>?;
+          final orders = payload?['orders'] as List<dynamic>? ?? [];
+          _logger.i('Received details for ${orders.length} orders');
+
+          await ref.read(restoreServiceProvider).processOrderDetails(orders);
+
+          return;
+        }
       }
 
       final msg = MostroMessage.fromJson(result[0]);

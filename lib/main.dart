@@ -39,7 +39,10 @@ Future<void> main() async {
 
   final container = ProviderContainer(
     overrides: [
-      settingsProvider.overrideWith((b) => settings),
+      settingsProvider.overrideWith((ref) {
+        settings.ref = ref;
+        return settings;
+      }),
       backgroundServiceProvider.overrideWithValue(backgroundService),
       biometricsHelperProvider.overrideWithValue(biometricsHelper),
       sharedPreferencesProvider.overrideWithValue(sharedPreferences),

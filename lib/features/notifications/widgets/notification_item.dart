@@ -120,6 +120,7 @@ class NotificationItem extends ConsumerWidget {
         case mostro_action.Action.adminTakeDispute:
         case mostro_action.Action.adminTookDispute:
         case mostro_action.Action.invoiceUpdated:
+        case mostro_action.Action.restoreSession:
         case mostro_action.Action.tradePubkey:
           break;
       }

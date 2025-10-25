@@ -9,6 +9,7 @@ import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/core/deep_link_handler.dart';
 import 'package:mostro_mobile/core/deep_link_interceptor.dart';
 import 'package:mostro_mobile/features/auth/providers/auth_notifier_provider.dart';
+import 'package:mostro_mobile/features/restore/restore_overlay.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/features/auth/notifiers/auth_state.dart';
 import 'package:mostro_mobile/services/lifecycle_manager.dart';
@@ -163,6 +164,14 @@ class _MostroAppState extends ConsumerState<MostroApp> {
           theme: AppTheme.theme,
           darkTheme: AppTheme.theme,
           routerConfig: _router!,
+          builder: (context, child) {
+            return Stack(
+              children: [
+                child ?? const SizedBox.shrink(),
+                const RestoreOverlay(),
+              ],
+            );
+          },
           // Use language override from settings if available, otherwise let callback handle detection
           locale: settings.selectedLanguage != null
               ? Locale(settings.selectedLanguage!)

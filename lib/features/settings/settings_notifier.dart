@@ -5,10 +5,12 @@ import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/enums/storage_keys.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:mostro_mobile/services/restore_service.dart';
+import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 
 class SettingsNotifier extends StateNotifier<Settings> {
   final SharedPreferencesAsync _prefs;
-  final Ref? ref;
+  Ref? ref;
   final _logger = Logger();
   static final String _storageKey = SharedPreferencesKeys.appSettings.value;
 
@@ -51,7 +53,7 @@ class SettingsNotifier extends StateNotifier<Settings> {
     
     if (oldPubkey != newValue) {
       _logger.i('Mostro change detected: $oldPubkey → $newValue');
-      
+
       // COMPLETE RESET: Clear blacklist and user relays when changing Mostro
       state = state.copyWith(
         mostroPublicKey: newValue,
@@ -60,12 +62,30 @@ class SettingsNotifier extends StateNotifier<Settings> {
       );
       
       _logger.i('Reset blacklist and user relays for new Mostro instance');
+
+      await _saveToPrefs();
+
+      // Clear old sessions before restoring with new Mostro instance
+      final currentRef = ref;
+      if (currentRef != null) {
+        try {
+          // Delete all old sessions from previous Mostro instance
+          await currentRef.read(sessionNotifierProvider.notifier).reset();
+          _logger.i('Cleared old sessions from previous Mostro instance');
+
+          // Restore sessions from new Mostro instance
+          await currentRef.read(restoreServiceProvider).restore();
+          _logger.i('Restore after Mostro instance change succeeded');
+        } catch (e) {
+          _logger.w('Restore after Mostro instance change failed: $e');
+        }
+      } else {
+        _logger.w('Cannot restore: ref is null');
+      }
     } else {
-      // Only update pubkey if it's the same (without reset)
       state = state.copyWith(mostroPublicKey: newValue);
+      await _saveToPrefs();
     }
-    
-    await _saveToPrefs();
   }
 
   Future<void> updateDefaultFiatCode(String newValue) async {
