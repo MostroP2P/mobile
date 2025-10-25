@@ -1,92 +1,98 @@
-import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:mostro_mobile/core/app.dart';
-import 'package:mostro_mobile/features/auth/providers/auth_notifier_provider.dart';
-import 'package:mostro_mobile/features/relays/relays_provider.dart';
-import 'package:mostro_mobile/features/settings/settings_notifier.dart';
-import 'package:mostro_mobile/features/settings/settings_provider.dart';
-import 'package:mostro_mobile/background/background_service.dart';
-import 'package:mostro_mobile/features/notifications/services/background_notification_service.dart';
-import 'package:mostro_mobile/shared/providers/background_service_provider.dart';
-import 'package:mostro_mobile/shared/providers/providers.dart';
-import 'package:mostro_mobile/shared/utils/biometrics_helper.dart';
-import 'package:mostro_mobile/shared/utils/notification_permission_helper.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:timeago/timeago.dart' as timeago;
-import 'package:mostro_mobile/features/logs/logs_service.dart'; // 🔹
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mockito/mockito.dart';
+import 'package:mostro_mobile/features/logs/logs_screen.dart';
+import 'package:mostro_mobile/features/logs/logs_service.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
+import '../../mocks.mocks.dart';
 
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
 
-  // Inicializa LogsService
-  final logsService = LogsService();
-  await logsService.init();
+  group('LogsScreen Widget Tests', () {
+    late MockLogsService mockLogsService;
 
-  // Captura errores globales y print()
-  FlutterError.onError = (details) {
-    debugPrint('FlutterError: ${details.exceptionAsString()}\n${details.stack}');
-  };
+    setUp(() {
+      mockLogsService = MockLogsService();
+      when(mockLogsService.logs).thenReturn([]);
+    });
 
-  runZonedGuarded(() async {
-    await _startApp(logsService);
-  }, (error, stackTrace) {
-    debugPrint('ERROR: $error\n$stackTrace'); // LogsService ya lo captura
+    Widget createTestWidget() {
+      return ProviderScope(
+        overrides: [
+          logsProvider.overrideWith((ref) => mockLogsService),
+        ],
+        child: MaterialApp(
+          localizationsDelegates: S.localizationsDelegates,
+          supportedLocales: S.supportedLocales,
+          home: const LogsScreen(),
+        ),
+      );
+    }
+
+    testWidgets('Initial state shows no logs', (tester) async {
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      // Capturamos S.of(context)! de forma segura
+      final s = S.of(tester.element(find.byType(LogsScreen)))!;
+
+      expect(find.text(s.noLogsMessage), findsOneWidget);
+    });
+
+    testWidgets('Displays logs when added', (tester) async {
+      final logLine = '[2025-01-01T12:00:00] INFO Test log';
+      when(mockLogsService.logs).thenReturn([logLine]);
+
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      final s = S.of(tester.element(find.byType(LogsScreen)))!;
+
+      expect(find.textContaining('Test log'), findsOneWidget);
+      expect(find.text(s.noLogsMessage), findsNothing);
+    });
+
+    testWidgets('Clears logs when delete button pressed', (tester) async {
+      final logLine = '[2025-01-01T12:00:00] INFO Log to delete';
+      when(mockLogsService.logs).thenReturn([logLine]);
+
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      final s = S.of(tester.element(find.byType(LogsScreen)))!;
+
+      final deleteButton = find.byTooltip(s.deleteLogsTooltip);
+      expect(deleteButton, findsOneWidget);
+
+      await tester.tap(deleteButton);
+      await tester.pumpAndSettle();
+
+      verify(mockLogsService.clearLogs()).called(1);
+    });
+
+    testWidgets('Exports logs when export button pressed', (tester) async {
+      final logLine = '[2025-01-01T12:00:00] INFO Export this log';
+      when(mockLogsService.logs).thenReturn([logLine]);
+
+      final fakeFile = File('/tmp/fake_logs.txt');
+      when(mockLogsService.getLogFile(clean: true))
+          .thenAnswer((_) async => fakeFile);
+
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      final s = S.of(tester.element(find.byType(LogsScreen)))!;
+
+      final exportButton = find.byTooltip(s.shareLogsTooltip);
+      expect(exportButton, findsOneWidget);
+
+      await tester.tap(exportButton);
+      await tester.pumpAndSettle();
+
+      verify(mockLogsService.getLogFile(clean: true)).called(1);
+    });
   });
-}
-
-Future<void> _startApp(LogsService logsService) async {
-  await requestNotificationPermissionIfNeeded();
-
-  final biometricsHelper = BiometricsHelper();
-  final sharedPreferences = SharedPreferencesAsync();
-  final secureStorage = const FlutterSecureStorage();
-
-  final mostroDatabase = await openMostroDatabase('mostro.db');
-  final eventsDatabase = await openMostroDatabase('events.db');
-
-  final settings = SettingsNotifier(sharedPreferences);
-  await settings.init();
-
-  await initializeNotifications();
-  _initializeTimeAgoLocalization();
-
-  final backgroundService = createBackgroundService(settings.settings);
-  await backgroundService.init();
-
-  final container = ProviderContainer(
-    overrides: [
-      settingsProvider.overrideWith((ref) => settings),
-      backgroundServiceProvider.overrideWithValue(backgroundService),
-      biometricsHelperProvider.overrideWithValue(biometricsHelper),
-      sharedPreferencesProvider.overrideWithValue(sharedPreferences),
-      secureStorageProvider.overrideWithValue(secureStorage),
-      mostroDatabaseProvider.overrideWithValue(mostroDatabase),
-      eventDatabaseProvider.overrideWithValue(eventsDatabase),
-      logsProvider.overrideWith((ref) => logsService), // 🔹 corrección
-    ],
-  );
-
-  _initializeRelaySynchronization(container);
-
-  runApp(
-    UncontrolledProviderScope(
-      container: container,
-      child: const MostroApp(),
-    ),
-  );
-}
-
-void _initializeRelaySynchronization(ProviderContainer container) {
-  try {
-    container.read(relaysProvider);
-  } catch (e) {
-    debugPrint('Failed to initialize relay synchronization: $e');
-  }
-}
-
-void _initializeTimeAgoLocalization() {
-  timeago.setLocaleMessages('es', timeago.EsMessages());
-  timeago.setLocaleMessages('it', timeago.ItMessages());
 }
