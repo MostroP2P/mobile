@@ -779,19 +779,25 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
             ElevatedButton(
               onPressed: () async {
                 Navigator.of(dialogContext).pop();
+
+                if (!mounted) return;
+                final messenger = ScaffoldMessenger.of(context);
+                final refreshSuccess = S.of(context)!.refreshSuccessful;
+                final refreshFailedMsg = S.of(context)!.refreshFailed;
+
                 try {
                   final restoreService = ref.read(restoreServiceProvider);
                   await restoreService.restore();
 
                   if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(S.of(context)!.refreshSuccessful)),
+                  messenger.showSnackBar(
+                    SnackBar(content: Text(refreshSuccess)),
                   );
                 } catch (e) {
                   _logger.e('Refresh failed: $e');
                   if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(S.of(context)!.refreshFailed(e.toString()))),
+                  messenger.showSnackBar(
+                    SnackBar(content: Text(refreshFailedMsg(e.toString()))),
                   );
                 }
               },
@@ -818,6 +824,10 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
   }
 
   Future<void> _showImportMnemonicDialog(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final importSuccess = S.of(context)!.keyImportedSuccessfully;
+    final importFailedMsg = S.of(context)!.importFailed;
+
     final mnemonic = await showDialog<String>(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -826,20 +836,22 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
     );
 
     if (mnemonic != null && mnemonic.isNotEmpty) {
+      if (!mounted) return;
+
       try {
         final restoreService = ref.read(restoreServiceProvider);
         await restoreService.importMnemonicAndRestore(mnemonic);
         await _loadKeys();
 
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(S.of(context)!.keyImportedSuccessfully)),
+        messenger.showSnackBar(
+          SnackBar(content: Text(importSuccess)),
         );
       } catch (e) {
         _logger.e('Import failed: $e');
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(S.of(context)!.importFailed(e.toString()))),
+        messenger.showSnackBar(
+          SnackBar(content: Text(importFailedMsg(e.toString()))),
         );
       }
     }
