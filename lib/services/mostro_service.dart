@@ -102,6 +102,8 @@ class MostroService {
           final orders = payload?['orders'] as List<dynamic>? ?? [];
           _logger.i('Received details for ${orders.length} orders');
 
+          await ref.read(restoreServiceProvider).processOrderDetails(orders);
+
           final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
           await sessionNotifier.deleteSession('__restore__');
 

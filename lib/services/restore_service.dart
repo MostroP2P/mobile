@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
+import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/models/restore_data.dart';
 import 'package:mostro_mobile/data/models/restore_message.dart';
@@ -146,6 +147,29 @@ class RestoreService {
 
     await ref.read(nostrServiceProvider).publishEvent(wrappedEvent);
     _logger.i('Requested details for ${orderIds.length} orders');
+  }
+
+  Future<void> processOrderDetails(List<dynamic> ordersData) async {
+    final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+
+    for (final orderData in ordersData) {
+      final orderId = orderData['id'] as String?;
+      final buyerPubkey = orderData['buyer_trade_pubkey'] as String?;
+      final sellerPubkey = orderData['seller_trade_pubkey'] as String?;
+
+      if (orderId == null) continue;
+
+      final session = sessionNotifier.getSessionByOrderId(orderId);
+      if (session == null) continue;
+
+      if (buyerPubkey != null && session.tradeKey.public == buyerPubkey) {
+        await sessionNotifier.updateSession(orderId, (s) => s.role = Role.buyer);
+      } else if (sellerPubkey != null && session.tradeKey.public == sellerPubkey) {
+        await sessionNotifier.updateSession(orderId, (s) => s.role = Role.seller);
+      }
+    }
+
+    _logger.i('Updated session roles for ${ordersData.length} orders');
   }
 }
 
