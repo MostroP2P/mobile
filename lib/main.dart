@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -14,10 +15,28 @@ import 'package:mostro_mobile/shared/utils/biometrics_helper.dart';
 import 'package:mostro_mobile/shared/utils/notification_permission_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timeago/timeago.dart' as timeago;
+import 'package:mostro_mobile/features/logs/logs_service.dart'; // 🔹
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Inicializa LogsService
+  final logsService = LogsService();
+  await logsService.init();
+
+  // Captura errores globales y print()
+  FlutterError.onError = (details) {
+    debugPrint('FlutterError: ${details.exceptionAsString()}\n${details.stack}');
+  };
+
+  runZonedGuarded(() async {
+    await _startApp(logsService);
+  }, (error, stackTrace) {
+    debugPrint('ERROR: $error\n$stackTrace'); // LogsService ya lo captura
+  });
+}
+
+Future<void> _startApp(LogsService logsService) async {
   await requestNotificationPermissionIfNeeded();
 
   final biometricsHelper = BiometricsHelper();
@@ -31,7 +50,6 @@ Future<void> main() async {
   await settings.init();
 
   await initializeNotifications();
-
   _initializeTimeAgoLocalization();
 
   final backgroundService = createBackgroundService(settings.settings);
@@ -39,17 +57,17 @@ Future<void> main() async {
 
   final container = ProviderContainer(
     overrides: [
-      settingsProvider.overrideWith((b) => settings),
+      settingsProvider.overrideWith((ref) => settings),
       backgroundServiceProvider.overrideWithValue(backgroundService),
       biometricsHelperProvider.overrideWithValue(biometricsHelper),
       sharedPreferencesProvider.overrideWithValue(sharedPreferences),
       secureStorageProvider.overrideWithValue(secureStorage),
       mostroDatabaseProvider.overrideWithValue(mostroDatabase),
       eventDatabaseProvider.overrideWithValue(eventsDatabase),
+      logsProvider.overrideWith((ref) => logsService), // 🔹 corrección
     ],
   );
 
-  // Initialize relay sync on app start
   _initializeRelaySynchronization(container);
 
   runApp(
@@ -60,25 +78,15 @@ Future<void> main() async {
   );
 }
 
-/// Initialize relay synchronization on app startup
 void _initializeRelaySynchronization(ProviderContainer container) {
   try {
-    // Read the relays provider to trigger initialization of RelaysNotifier
-    // This will automatically start sync with the configured Mostro instance
     container.read(relaysProvider);
   } catch (e) {
-    // Log error but don't crash app if relay sync initialization fails
     debugPrint('Failed to initialize relay synchronization: $e');
   }
 }
 
-/// Initialize timeago localization for supported languages
 void _initializeTimeAgoLocalization() {
-  // Set Spanish locale for timeago
   timeago.setLocaleMessages('es', timeago.EsMessages());
-
-  // Set Italian locale for timeago
   timeago.setLocaleMessages('it', timeago.ItMessages());
-
-  // English is already the default, no need to set it
 }
