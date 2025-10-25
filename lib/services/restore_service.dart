@@ -14,6 +14,9 @@ import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/services/last_trade_index_service.dart';
+import 'package:mostro_mobile/shared/providers/notifications_history_repository_provider.dart'
+    show notificationsRepositoryProvider;
+import 'package:mostro_mobile/shared/providers/local_notifications_providers.dart';
 
 class RestoreService {
   final Ref ref;
@@ -22,17 +25,33 @@ class RestoreService {
   RestoreService(this.ref);
 
   Future<void> importMnemonicAndRestore(String mnemonic) async {
-    _logger.i('Starting restore session');
+    _logger.i('Importing mnemonic and restoring session');
+
+    await _clearNotifications();
 
     final keyManager = ref.read(keyManagerProvider);
     await keyManager.importMnemonic(mnemonic);
 
+    await restore();
+  }
+
+  Future<void> restore() async {
+    _logger.i('Starting restore session');
+
+    final keyManager = ref.read(keyManagerProvider);
+    final masterKey = keyManager.masterKeyPair;
+
+    if (masterKey == null) {
+      _logger.w('Cannot restore: no master key found');
+      throw Exception('No master key found');
+    }
+
     final settings = ref.read(settingsProvider);
     if (settings.mostroPublicKey.isEmpty) {
+      _logger.w('Cannot restore: Mostro public key not configured');
       throw Exception('Mostro public key not configured');
     }
 
-    final masterKey = keyManager.masterKeyPair!;
     final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
 
     final tempSession = Session(
@@ -171,6 +190,20 @@ class RestoreService {
     }
 
     _logger.i('Updated session roles for ${ordersData.length} orders');
+  }
+
+  Future<void> _clearNotifications() async {
+    try {
+      final notificationsRepo = ref.read(notificationsRepositoryProvider);
+      await notificationsRepo.clearAll();
+
+      final localNotifications = ref.read(localNotificationsProvider);
+      await localNotifications.cancelAll();
+
+      _logger.i('Cleared all notifications');
+    } catch (e) {
+      _logger.w('Error clearing notifications: $e');
+    }
   }
 }
 
