@@ -18,7 +18,11 @@ class NotificationDataExtractor {
       case Action.newOrder:
         // No notification for new orders
         return null;
-        
+
+      case Action.restoreSession:
+        // Restore is an internal operation, no user notification needed
+        return null;
+
       case Action.buyerTookOrder:
         final order = event.getPayload<Order>();
         if (order == null) return null;

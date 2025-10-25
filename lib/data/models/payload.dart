@@ -6,6 +6,7 @@ import 'package:mostro_mobile/data/models/payment_failed.dart';
 import 'package:mostro_mobile/data/models/payment_request.dart';
 import 'package:mostro_mobile/data/models/peer.dart';
 import 'package:mostro_mobile/data/models/rating_user.dart';
+import 'package:mostro_mobile/data/models/restore_data.dart';
 import 'package:mostro_mobile/data/models/text_message.dart';
 
 abstract class Payload {
@@ -17,6 +18,8 @@ abstract class Payload {
       return Order.fromJson(json['order']);
     } else if (json.containsKey('payment_request')) {
       return PaymentRequest.fromJson(json['payment_request']);
+    } else if (json.containsKey('restore_data')) {
+      return RestoreData.fromJson(json);
     } else if (json.containsKey('cant_do')) {
       return CantDo.fromJson(json);
     } else if (json.containsKey('peer')) {

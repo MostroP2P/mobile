@@ -38,6 +38,7 @@ enum Action {
   paymentFailed('payment-failed'),
   invoiceUpdated('invoice-updated'),
   sendDm('send-dm'),
+  restoreSession('restore-session'),
   tradePubkey('trade-pubkey');
 
   final String value;
