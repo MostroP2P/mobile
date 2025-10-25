@@ -143,7 +143,6 @@
   "notFound": "La disputa solicitada no pudo ser encontrada.",
   "invalidDisputeStatus": "El estado de la disputa es inválido.",
   "invalidAction": "La acción solicitada es inválida.",
-  "invalidFiatCurrency": "Este mostro no acepta la moneda que seleccionaste, prueba con otra instancia",
   "pendingOrderExists": "Ya tienes una orden esperando por ti, debes completarla o cancelarla antes de tomar otra.",
   "login": "Iniciar Sesión",
   "register": "Registrarse",
@@ -192,7 +191,6 @@
   "defaultFiatCurrency": "Moneda Fiat Predeterminada",
   "setDefaultLightningAddress": "Establece tu dirección Lightning predeterminada",
   "defaultLightningAddress": "Dirección Lightning",
-  "lightningAddressUsed": "Usando tu dirección Lightning configurada",
   "relays": "Relays",
   "selectNostrRelays": "Selecciona los relays Nostr a los que te conectas",
   "addRelay": "Agregar Relay",
@@ -541,7 +539,6 @@
   "completePurchaseButton": "COMPLETAR COMPRA",
   "rateButton": "CALIFICAR",
   "contactButton": "CONTACTAR",
-  "viewDisputeButton": "VER DISPUTA",
   
   "rateCounterpart": "Calificar Contraparte",
   "submitRating": "Enviar Calificación",
@@ -703,9 +700,6 @@
   "disputeInProgress": "Esta disputa está actualmente en progreso. Un mediador está revisando tu caso.",
   "disputeSellerRefunded": "Esta disputa se ha resuelto con el vendedor siendo reembolsado.",
   "disputeUnknownStatus": "El estado de esta disputa es desconocido.",
-
-  "disputeChatClosed": "Esta disputa ha sido resuelta. El chat está cerrado.",
-
   
   "@_comment_dispute_descriptions": "Mensajes de Descripción de Disputas",
   "disputeDescriptionInitiatedByUser": "Tú abriste esta disputa",
@@ -717,24 +711,8 @@
   "disputeDescriptionUnknown": "Estado desconocido",
   "disputeAdminSettledMessage": "El administrador resolvió la orden a favor de una de las partes. Revisa tu billetera para ver los pagos.",
   "disputeSellerRefundedMessage": "El administrador canceló la orden y reembolsó al vendedor. La disputa está ahora cerrada.",
-  "disputeSettledBuyerMessage": "La disputa se resolvió a tu favor. La orden se completó exitosamente y recibiste los sats. Revisa tu billetera.",
-  "disputeSettledSellerMessage": "La disputa fue resuelta. La orden se completó exitosamente y el comprador recibió los sats.",
-  "disputeCanceledBuyerMessage": "El administrador canceló la orden. Se reembolsó al vendedor y no recibiste los sats.",
-  "disputeCanceledSellerMessage": "El administrador canceló la orden y te reembolsó. El comprador no recibió los sats. Revisa tu billetera para ver el reembolso.",
   "disputeOpenedByYou": "Abriste esta disputa contra el comprador {counterparty}, lee atentamente a continuación:",
   "@disputeOpenedByYou": {
-    "placeholders": {
-      "counterparty": { "type": "String" }
-    }
-  },
-  "disputeOpenedByYouAgainstSeller": "Abriste esta disputa contra el vendedor {counterparty}, lee atentamente a continuación:",
-  "@disputeOpenedByYouAgainstSeller": {
-    "placeholders": {
-      "counterparty": { "type": "String" }
-    }
-  },
-  "disputeOpenedByYouAgainstBuyer": "Abriste esta disputa contra el comprador {counterparty}, lee atentamente a continuación:",
-  "@disputeOpenedByYouAgainstBuyer": {
     "placeholders": {
       "counterparty": { "type": "String" }
     }
@@ -1122,6 +1100,15 @@
   "deleteUserRelayCancel": "No",
 
   "@_comment_session_timeout": "Session timeout message",
-  "sessionTimeoutMessage": "No hubo respuesta, verifica tu conexión e inténtalo más tarde"
+  "sessionTimeoutMessage": "No hubo respuesta, verifica tu conexión e inténtalo más tarde",
 
+  "@_comment_logsScreenTitle": "Title for the logs screen in the app",
+  "logsScreenTitle": "Registros de la aplicación",
+  "deleteLogsTooltip": "Borrar logs",
+  "logsDeletedMessage": "🧹 Logs borrados",
+  "shareLogsTooltip": "Compartir archivo de logs",
+  "logsShareText": "Logs de MostroApp",
+  "noLogsMessage": "No hay registros aún.",
+  "logsMenuTitle": "Ver registros (Logs)",
+  "logsMenuSubtitle": "Diagnóstico y eventos internos"
 }
