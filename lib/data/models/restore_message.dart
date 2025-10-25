@@ -14,8 +14,8 @@ class RestoreMessage {
           'version': version,
           'action': action,
           'payload': null,
-        }
+        },
       };
 
-  String toJsonString() => jsonEncode(toJson());
+  String toJsonString() => jsonEncode([toJson(), null]);
 }
