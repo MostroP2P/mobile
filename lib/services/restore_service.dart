@@ -9,6 +9,8 @@ import 'package:mostro_mobile/data/models/restore_data.dart';
 import 'package:mostro_mobile/data/models/restore_message.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
+import 'package:mostro_mobile/features/restore/restore_progress_notifier.dart';
+import 'package:mostro_mobile/features/restore/restore_progress_state.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
@@ -38,99 +40,136 @@ class RestoreService {
   Future<void> restore() async {
     _logger.i('Starting restore session');
 
-    final keyManager = ref.read(keyManagerProvider);
-    final masterKey = keyManager.masterKeyPair;
+    // Show overlay
+    final progressNotifier = ref.read(restoreProgressProvider.notifier);
+    progressNotifier.startRestore();
 
-    if (masterKey == null) {
-      _logger.w('Cannot restore: no master key found');
-      throw Exception('No master key found');
+    try {
+      final keyManager = ref.read(keyManagerProvider);
+      final masterKey = keyManager.masterKeyPair;
+
+      if (masterKey == null) {
+        _logger.w('Cannot restore: no master key found');
+        progressNotifier.showError('No master key found');
+        throw Exception('No master key found');
+      }
+
+      final settings = ref.read(settingsProvider);
+      if (settings.mostroPublicKey.isEmpty) {
+        _logger.w('Cannot restore: Mostro public key not configured');
+        progressNotifier.showError('Mostro not configured');
+        throw Exception('Mostro public key not configured');
+      }
+
+      final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+
+      final tempSession = Session(
+        masterKey: masterKey,
+        tradeKey: masterKey,
+        keyIndex: 0,
+        fullPrivacy: settings.fullPrivacyMode,
+        startTime: DateTime.now(),
+        orderId: '__restore__',
+      );
+
+      await sessionNotifier.saveSession(tempSession);
+      ref.read(mostroServiceProvider);
+
+      // Update to requesting state
+      progressNotifier.updateStep(RestoreStep.requesting);
+
+      final restoreMessage = RestoreMessage();
+      final rumor = NostrEvent.fromPartialData(
+        keyPairs: masterKey,
+        content: restoreMessage.toJsonString(),
+        kind: 1,
+        tags: [],
+      );
+
+      final wrappedEvent = await rumor.mostroWrap(
+        masterKey,
+        settings.mostroPublicKey,
+      );
+
+      await ref.read(nostrServiceProvider).publishEvent(wrappedEvent);
+      _logger.i('Restore request sent');
+    } catch (e) {
+      _logger.e('Restore failed: $e');
+      progressNotifier.showError(e.toString());
+      rethrow;
     }
-
-    final settings = ref.read(settingsProvider);
-    if (settings.mostroPublicKey.isEmpty) {
-      _logger.w('Cannot restore: Mostro public key not configured');
-      throw Exception('Mostro public key not configured');
-    }
-
-    final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
-
-    final tempSession = Session(
-      masterKey: masterKey,
-      tradeKey: masterKey,
-      keyIndex: 0,
-      fullPrivacy: settings.fullPrivacyMode,
-      startTime: DateTime.now(),
-      orderId: '__restore__',
-    );
-
-    await sessionNotifier.saveSession(tempSession);
-    ref.read(mostroServiceProvider);
-
-    final restoreMessage = RestoreMessage();
-    final rumor = NostrEvent.fromPartialData(
-      keyPairs: masterKey,
-      content: restoreMessage.toJsonString(),
-      kind: 1,
-      tags: [],
-    );
-
-    final wrappedEvent = await rumor.mostroWrap(
-      masterKey,
-      settings.mostroPublicKey,
-    );
-
-    await ref.read(nostrServiceProvider).publishEvent(wrappedEvent);
-    _logger.i('Restore request sent');
   }
 
   Future<void> processRestoreData(Map<String, dynamic> payload) async {
-    final restoreData = RestoreData.fromJson(payload);
-    final keyManager = ref.read(keyManagerProvider);
-    final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
-    final settings = ref.read(settingsProvider);
+    final progressNotifier = ref.read(restoreProgressProvider.notifier);
 
-    _logger.i('Restored ${restoreData.orders.length} orders, ${restoreData.disputes.length} disputes');
+    try {
+      final restoreData = RestoreData.fromJson(payload);
+      final keyManager = ref.read(keyManagerProvider);
+      final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+      final settings = ref.read(settingsProvider);
 
-    final List<String> orderIds = [];
-    final masterKey = keyManager.masterKeyPair!;
+      final totalOrders = restoreData.orders.length + restoreData.disputes.length;
+      _logger.i('Restored $totalOrders orders (${restoreData.orders.length} orders, ${restoreData.disputes.length} disputes)');
 
-    for (final order in restoreData.orders) {
-      final tradeKey = await keyManager.deriveTradeKeyFromIndex(order.tradeIndex);
+      // Update overlay to receiving orders
+      progressNotifier.setOrdersReceived(totalOrders);
 
-      final session = Session(
-        masterKey: masterKey,
-        tradeKey: tradeKey,
-        keyIndex: order.tradeIndex,
-        fullPrivacy: settings.fullPrivacyMode,
-        startTime: DateTime.now(),
-        orderId: order.id,
-      );
+      final List<String> orderIds = [];
+      final masterKey = keyManager.masterKeyPair!;
 
-      await sessionNotifier.saveSession(session);
-      orderIds.add(order.id);
+      // Process orders
+      for (final order in restoreData.orders) {
+        final tradeKey = await keyManager.deriveTradeKeyFromIndex(order.tradeIndex);
+
+        final session = Session(
+          masterKey: masterKey,
+          tradeKey: tradeKey,
+          keyIndex: order.tradeIndex,
+          fullPrivacy: settings.fullPrivacyMode,
+          startTime: DateTime.now(),
+          orderId: order.id,
+        );
+
+        await sessionNotifier.saveSession(session);
+        orderIds.add(order.id);
+        progressNotifier.incrementProgress();
+      }
+
+      // Process disputes
+      for (final dispute in restoreData.disputes) {
+        final tradeKey = await keyManager.deriveTradeKeyFromIndex(dispute.tradeIndex);
+
+        final session = Session(
+          masterKey: masterKey,
+          tradeKey: tradeKey,
+          keyIndex: dispute.tradeIndex,
+          fullPrivacy: settings.fullPrivacyMode,
+          startTime: DateTime.now(),
+          orderId: dispute.orderId,
+        );
+
+        await sessionNotifier.saveSession(session);
+        orderIds.add(dispute.orderId);
+        progressNotifier.incrementProgress();
+      }
+
+      // Request order details
+      if (orderIds.isNotEmpty) {
+        progressNotifier.updateStep(RestoreStep.loadingDetails, total: orderIds.length);
+        await _requestOrderDetails(orderIds, masterKey, settings.mostroPublicKey);
+      }
+
+      // Finalize
+      progressNotifier.updateStep(RestoreStep.finalizing);
+      await ref.read(lastTradeIndexServiceProvider).requestLastTradeIndex();
+
+      progressNotifier.completeRestore();
+    } catch (e) {
+      _logger.e('Process restore data failed: $e');
+      progressNotifier.showError(e.toString());
+      rethrow;
     }
-
-    for (final dispute in restoreData.disputes) {
-      final tradeKey = await keyManager.deriveTradeKeyFromIndex(dispute.tradeIndex);
-
-      final session = Session(
-        masterKey: masterKey,
-        tradeKey: tradeKey,
-        keyIndex: dispute.tradeIndex,
-        fullPrivacy: settings.fullPrivacyMode,
-        startTime: DateTime.now(),
-        orderId: dispute.orderId,
-      );
-
-      await sessionNotifier.saveSession(session);
-      orderIds.add(dispute.orderId);
-    }
-
-    if (orderIds.isNotEmpty) {
-      await _requestOrderDetails(orderIds, masterKey, settings.mostroPublicKey);
-    }
-
-    await ref.read(lastTradeIndexServiceProvider).requestLastTradeIndex();
   }
 
   Future<void> _requestOrderDetails(
@@ -170,7 +209,11 @@ class RestoreService {
   }
 
   Future<void> processOrderDetails(List<dynamic> ordersData) async {
+    final progressNotifier = ref.read(restoreProgressProvider.notifier);
     final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+
+    // Update to processing roles
+    progressNotifier.updateStep(RestoreStep.processingRoles, total: ordersData.length, current: 0);
 
     for (final orderData in ordersData) {
       final orderId = orderData['id'] as String?;
@@ -187,6 +230,8 @@ class RestoreService {
       } else if (sellerPubkey != null && session.tradeKey.public == sellerPubkey) {
         await sessionNotifier.updateSession(orderId, (s) => s.role = Role.seller);
       }
+
+      progressNotifier.incrementProgress();
     }
 
     _logger.i('Updated session roles for ${ordersData.length} orders');

@@ -877,7 +877,17 @@
   "fullPrivacyMode": "Modo privacidad completa",
   "maximumAnonymity": "Máximo anonimato",
   "standardPrivacyWithReputation": "Privacidad estándar con reputación",
-  
+
+  "@_comment_restore_overlay": "Texto de Overlay de Restauración",
+  "restoringOrders": "Restaurando Órdenes",
+  "restoreRequestingData": "Solicitando datos de Mostro...",
+  "restoreReceivingOrders": "Recibiendo órdenes...",
+  "restoreLoadingDetails": "Cargando detalles de órdenes...",
+  "restoreProcessingRoles": "Procesando roles...",
+  "restoreFinalizing": "Finalizando...",
+  "restoreCompleted": "¡Restauración completada!",
+  "restoreError": "Restauración fallida",
+
   "@_comment_relay_dialogs": "Texto de Diálogos de Relay",
   "editRelay": "Editar Relay",
   "relayUrl": "URL del Relay",

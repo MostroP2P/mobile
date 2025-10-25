@@ -933,7 +933,17 @@
   "fullPrivacyMode": "Modalità privacy completa",
   "maximumAnonymity": "Massimo anonimato",
   "standardPrivacyWithReputation": "Privacy standard con reputazione",
-  
+
+  "@_comment_restore_overlay": "Testo Overlay Ripristino",
+  "restoringOrders": "Ripristino Ordini",
+  "restoreRequestingData": "Richiesta dati da Mostro...",
+  "restoreReceivingOrders": "Ricezione ordini...",
+  "restoreLoadingDetails": "Caricamento dettagli ordini...",
+  "restoreProcessingRoles": "Elaborazione ruoli...",
+  "restoreFinalizing": "Finalizzazione...",
+  "restoreCompleted": "Ripristino completato!",
+  "restoreError": "Ripristino fallito",
+
   "@_comment_relay_dialogs": "Testo Dialoghi Relay",
   "editRelay": "Modifica Relay",
   "relayUrl": "URL del Relay",

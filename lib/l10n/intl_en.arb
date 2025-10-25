@@ -898,7 +898,17 @@
   "fullPrivacyMode": "Full privacy mode",
   "maximumAnonymity": "Maximum anonymity",
   "standardPrivacyWithReputation": "Standard privacy with reputation",
-  
+
+  "@_comment_restore_overlay": "Restore Overlay Text",
+  "restoringOrders": "Restoring Orders",
+  "restoreRequestingData": "Requesting data from Mostro...",
+  "restoreReceivingOrders": "Receiving orders...",
+  "restoreLoadingDetails": "Loading order details...",
+  "restoreProcessingRoles": "Processing roles...",
+  "restoreFinalizing": "Finalizing...",
+  "restoreCompleted": "Restore completed!",
+  "restoreError": "Restore failed",
+
   "@_comment_relay_dialogs": "Relay Dialog Text",
   "editRelay": "Edit Relay",
   "relayUrl": "Relay URL",
