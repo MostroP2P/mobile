@@ -6,6 +6,9 @@ import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/shared/providers/drawer_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
+// 🔹 Importa la pantalla de logs
+import 'package:mostro_mobile/features/logs/logs_screen.dart';
+
 class CustomDrawerOverlay extends ConsumerWidget {
   final Widget child;
 
@@ -37,7 +40,6 @@ class CustomDrawerOverlay extends ConsumerWidget {
           canPop: !isDrawerOpen,
           onPopInvokedWithResult: (didPop, result) {
             if (!didPop && isDrawerOpen) {
-              // Close drawer if it's open
               ref.read(drawerProvider.notifier).closeDrawer();
             }
           },
@@ -69,7 +71,7 @@ class CustomDrawerOverlay extends ConsumerWidget {
                   padding: EdgeInsets.only(top: statusBarHeight),
                   child: Column(
                     children: [
-                      SizedBox(height: 24),
+                      const SizedBox(height: 24),
 
                       // Logo header
                       Container(
@@ -84,7 +86,7 @@ class CustomDrawerOverlay extends ConsumerWidget {
                         ),
                       ),
 
-                      SizedBox(height: 24),
+                      const SizedBox(height: 24),
 
                       Divider(
                         height: 1,
@@ -92,7 +94,7 @@ class CustomDrawerOverlay extends ConsumerWidget {
                         color: Colors.white.withValues(alpha: 0.1),
                       ),
 
-                      SizedBox(height: 16),
+                      const SizedBox(height: 16),
 
                       // Menu items
                       _buildMenuItem(
@@ -116,6 +118,39 @@ class CustomDrawerOverlay extends ConsumerWidget {
                         title: S.of(context)!.about,
                         route: '/about',
                       ),
+
+                      // 🔹 Nuevo: Logs (Registros)
+                      const SizedBox(height: 8),
+                      ListTile(
+                        dense: true,
+                        leading: const Icon(
+                          LucideIcons.bug,
+                          color: Colors.amber,
+                          size: 22,
+                        ),
+                        title: Text(
+                          S.of(context)!.logsMenuTitle, // "Ver registros (Logs)" en el idioma actual
+                          style: AppTheme.theme.textTheme.bodyLarge?.copyWith(
+                            color: AppTheme.cream1,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        subtitle: Text(
+                          S.of(context)!.logsMenuSubtitle, // "Diagnóstico y eventos internos"
+                          style: AppTheme.theme.textTheme.bodyMedium?.copyWith(
+                            color: AppTheme.cream1.withValues(alpha: 0.8),
+                          ),
+                        ),
+                        onTap: () {
+                          ref.read(drawerProvider.notifier).closeDrawer();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const LogsScreen(),
+                            ),
+                          );
+                        },
+                      ),
                     ],
                   ),
                 ),
@@ -128,12 +163,12 @@ class CustomDrawerOverlay extends ConsumerWidget {
   }
 
   Widget _buildMenuItem(
-    BuildContext context,
-    WidgetRef ref, {
-    required IconData icon,
-    required String title,
-    required String route,
-  }) {
+      BuildContext context,
+      WidgetRef ref, {
+        required IconData icon,
+        required String title,
+        required String route,
+      }) {
     return ListTile(
       dense: true,
       leading: Icon(
