@@ -1146,3 +1146,13 @@
   "@_comment_session_timeout": "Session timeout message",
   "sessionTimeoutMessage": "No response received, check your connection and try again later"
 }
+  "@_comment_logsScreenTitle": "Title for the logs screen in the app",
+  "logsScreenTitle": "Application Logs",
+  "deleteLogsTooltip": "Delete logs",
+  "logsDeletedMessage": "🧹 Logs cleared",
+  "shareLogsTooltip": "Share logs file",
+  "logsShareText": "MostroApp Logs",
+  "noLogsMessage": "No logs yet.",
+  "logsMenuTitle": "View Logs",
+  "logsMenuSubtitle": "Internal diagnostics and events"
+}

@@ -6,6 +6,9 @@ import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/shared/providers/drawer_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
+// 🔹 Import Logs screen
+import 'package:mostro_mobile/features/logs/logs_screen.dart';
+
 class CustomDrawerOverlay extends ConsumerWidget {
   final Widget child;
 
@@ -115,6 +118,39 @@ class CustomDrawerOverlay extends ConsumerWidget {
                         icon: LucideIcons.info,
                         title: S.of(context)!.about,
                         route: '/about',
+                      ),
+
+                      // 🔹 New Logs menu item
+                      const SizedBox(height: 8),
+                      ListTile(
+                        dense: true,
+                        leading: const Icon(
+                          LucideIcons.bug,
+                          color: Colors.amber,
+                          size: 22,
+                        ),
+                        title: Text(
+                          S.of(context)!.logsMenuTitle, // "View logs"
+                          style: AppTheme.theme.textTheme.bodyLarge?.copyWith(
+                            color: AppTheme.cream1,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        subtitle: Text(
+                          S.of(context)!.logsMenuSubtitle, // "Diagnostics and internal events"
+                          style: AppTheme.theme.textTheme.bodyMedium?.copyWith(
+                            color: AppTheme.cream1.withValues(alpha: 0.8),
+                          ),
+                        ),
+                        onTap: () {
+                          ref.read(drawerProvider.notifier).closeDrawer();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const LogsScreen(),
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),
