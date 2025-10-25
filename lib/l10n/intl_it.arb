@@ -167,6 +167,7 @@
   "notFound": "Disputa non trovata.",
   "invalidDisputeStatus": "Lo stato della disputa è invalido.",
   "invalidAction": "L'azione richiesta è invalida",
+  "invalidFiatCurrency": "Questa istanza Mostro non accetta la valuta selezionata, prova un'altra istanza",
   "pendingOrderExists": "Hai già un ordine in attesa, devi completarlo o cancellarlo prima di prenderne un altro.",
   "login": "Accedi",
   "register": "Registrati",
@@ -225,6 +226,7 @@
   "defaultFiatCurrency": "Valuta Fiat Predefinita",
   "setDefaultLightningAddress": "Imposta il tuo indirizzo Lightning predefinito",
   "defaultLightningAddress": "Indirizzo Lightning Predefinito",
+  "lightningAddressUsed": "Utilizzando il tuo indirizzo Lightning configurato",
   "relays": "Relay",
   "selectNostrRelays": "Seleziona i relay Nostr a cui connetterti",
   "addRelay": "Aggiungi Relay",
@@ -568,6 +570,7 @@
   "completePurchaseButton": "COMPLETA ACQUISTO",
   "rateButton": "VALUTA",
   "contactButton": "CONTATTA",
+  "viewDisputeButton": "VISUALIZZA DISPUTA",
   
   "rateCounterpart": "Valuta Controparte",
   "submitRating": "Invia Valutazione",
@@ -754,6 +757,9 @@
   "disputeInProgress": "Questa disputa è attualmente in corso. Un risolutore sta esaminando il tuo caso.",
   "disputeSellerRefunded": "Questa disputa è stata risolta con il venditore che è stato rimborsato.",
   "disputeUnknownStatus": "Lo stato di questa disputa è sconosciuto.",
+
+  "disputeChatClosed": "Questa disputa è stata risolta. La chat è ora chiusa.",
+
   
   "@_comment_dispute_descriptions": "Messaggi di Descrizione delle Dispute",
   "disputeDescriptionInitiatedByUser": "Hai aperto questa disputa",
@@ -765,8 +771,24 @@
   "disputeDescriptionUnknown": "Stato sconosciuto",
   "disputeAdminSettledMessage": "L'amministratore ha risolto l'ordine a favore di una delle parti. Controlla il tuo wallet per eventuali pagamenti.",
   "disputeSellerRefundedMessage": "L'amministratore ha cancellato l'ordine e rimborsato il venditore. La disputa è ora chiusa.",
+  "disputeSettledBuyerMessage": "La disputa è stata risolta a tuo favore. L'ordine è stato completato con successo e hai ricevuto i sats. Controlla il tuo wallet.",
+  "disputeSettledSellerMessage": "La disputa è stata risolta. L'ordine è stato completato con successo e l'acquirente ha ricevuto i sats.",
+  "disputeCanceledBuyerMessage": "L'amministratore ha cancellato l'ordine. Il venditore è stato rimborsato e non hai ricevuto i sats.",
+  "disputeCanceledSellerMessage": "L'amministratore ha cancellato l'ordine e ti ha rimborsato. L'acquirente non ha ricevuto i sats. Controlla il tuo wallet per il rimborso.",
   "disputeOpenedByYou": "Hai aperto questa disputa contro l'acquirente {counterparty}, leggi attentamente di seguito:",
   "@disputeOpenedByYou": {
+    "placeholders": {
+      "counterparty": { "type": "String" }
+    }
+  },
+  "disputeOpenedByYouAgainstSeller": "Hai aperto questa disputa contro il venditore {counterparty}, leggi attentamente di seguito:",
+  "@disputeOpenedByYouAgainstSeller": {
+    "placeholders": {
+      "counterparty": { "type": "String" }
+    }
+  },
+  "disputeOpenedByYouAgainstBuyer": "Hai aperto questa disputa contro l'acquirente {counterparty}, leggi attentamente di seguito:",
+  "@disputeOpenedByYouAgainstBuyer": {
     "placeholders": {
       "counterparty": { "type": "String" }
     }
@@ -1155,8 +1177,8 @@
   "deleteUserRelayCancel": "No",
 
   "@_comment_session_timeout": "Session timeout message",
-  "sessionTimeoutMessage": "Nessuna risposta ricevuta, verifica la tua connessione e riprova più tardi",
-
+  "sessionTimeoutMessage": "Nessuna risposta ricevuta, verifica la tua connessione e riprova più tardi"
+}
   "@_comment_logsScreenTitle": "Title for the logs screen in the app",
   "logsScreenTitle": "Registri dell'applicazione",
   "deleteLogsTooltip": "Elimina log",
