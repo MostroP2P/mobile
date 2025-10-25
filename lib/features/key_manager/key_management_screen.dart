@@ -171,8 +171,20 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                         _buildGenerateNewUserButton(context),
                         const SizedBox(height: 16),
 
-                        // Import Mostro User Button
-                        _buildImportUserButton(context),
+                        // Import and Refresh User Buttons
+                        Row(
+                          children: [
+                            Expanded(
+                              flex: 7,
+                              child: _buildImportUserButton(context),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              flex: 3,
+                              child: _buildRefreshUserButton(context),
+                            ),
+                          ],
+                        ),
                         const SizedBox(height: 16),
                       ],
                     ),
@@ -559,36 +571,54 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
   }
 
   Widget _buildImportUserButton(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: OutlinedButton(
-        onPressed: () => _showImportMnemonicDialog(context),
-        style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: AppTheme.activeColor),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-          padding: const EdgeInsets.symmetric(vertical: 16),
+    return OutlinedButton(
+      onPressed: () => _showImportMnemonicDialog(context),
+      style: OutlinedButton.styleFrom(
+        side: const BorderSide(color: AppTheme.activeColor),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              LucideIcons.download,
-              size: 20,
-              color: AppTheme.activeColor,
-            ),
-            const SizedBox(width: 8),
-            Text(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            LucideIcons.download,
+            size: 20,
+            color: AppTheme.activeColor,
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
               S.of(context)!.importMostroUser,
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
                 color: AppTheme.activeColor,
               ),
+              overflow: TextOverflow.ellipsis,
             ),
-          ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRefreshUserButton(BuildContext context) {
+    return OutlinedButton(
+      onPressed: () => _showRefreshUserDialog(context),
+      style: OutlinedButton.styleFrom(
+        side: const BorderSide(color: AppTheme.activeColor),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
         ),
+        padding: const EdgeInsets.symmetric(vertical: 16),
+      ),
+      child: const Icon(
+        LucideIcons.refreshCw,
+        size: 20,
+        color: AppTheme.activeColor,
       ),
     );
   }
@@ -698,6 +728,87 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                   fontWeight: FontWeight.w500,
                 ),
                 textAlign: TextAlign.center,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showRefreshUserDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          backgroundColor: AppTheme.backgroundCard,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+          ),
+          title: Text(
+            S.of(context)!.refreshUserDialogTitle,
+            style: const TextStyle(
+              color: AppTheme.textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          content: Text(
+            S.of(context)!.refreshUserDialogContent,
+            style: const TextStyle(
+              color: AppTheme.textSecondary,
+              fontSize: 14,
+              height: 1.5,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(
+                S.of(context)!.cancel,
+                style: const TextStyle(
+                  color: AppTheme.textSecondary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(width: 12),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.of(dialogContext).pop();
+                try {
+                  final restoreService = ref.read(restoreServiceProvider);
+                  await restoreService.restore();
+
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(S.of(context)!.refreshSuccessful)),
+                  );
+                } catch (e) {
+                  _logger.e('Refresh failed: $e');
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(S.of(context)!.refreshFailed(e.toString()))),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.activeColor,
+                foregroundColor: Colors.black,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+              ),
+              child: Text(
+                S.of(context)!.refresh,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
           ],
