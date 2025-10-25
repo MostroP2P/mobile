@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
@@ -61,17 +63,18 @@ class RestoreService {
   }
 
   Future<void> processRestoreData(Map<String, dynamic> payload) async {
-
     final restoreData = RestoreData.fromJson(payload);
     final keyManager = ref.read(keyManagerProvider);
     final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
     final settings = ref.read(settingsProvider);
 
-    _logger.i('Parsed restore data: ${restoreData.orders.length} orders, ${restoreData.disputes.length} disputes');
+    _logger.i('Restored ${restoreData.orders.length} orders, ${restoreData.disputes.length} disputes');
+
+    final List<String> orderIds = [];
+    final masterKey = keyManager.masterKeyPair!;
 
     for (final order in restoreData.orders) {
       final tradeKey = await keyManager.deriveTradeKeyFromIndex(order.tradeIndex);
-      final masterKey = keyManager.masterKeyPair!;
 
       final session = Session(
         masterKey: masterKey,
@@ -83,11 +86,66 @@ class RestoreService {
       );
 
       await sessionNotifier.saveSession(session);
-      _logger.i('Restored order ${order.id}');
+      orderIds.add(order.id);
     }
 
-    await sessionNotifier.deleteSession('__restore__');
-    _logger.i('Restored ${restoreData.orders.length} orders successfully');
+    for (final dispute in restoreData.disputes) {
+      final tradeKey = await keyManager.deriveTradeKeyFromIndex(dispute.tradeIndex);
+
+      final session = Session(
+        masterKey: masterKey,
+        tradeKey: tradeKey,
+        keyIndex: dispute.tradeIndex,
+        fullPrivacy: settings.fullPrivacyMode,
+        startTime: DateTime.now(),
+        orderId: dispute.orderId,
+      );
+
+      await sessionNotifier.saveSession(session);
+      orderIds.add(dispute.orderId);
+    }
+
+    if (orderIds.isNotEmpty) {
+      await _requestOrderDetails(orderIds, masterKey, settings.mostroPublicKey);
+    } else {
+      await sessionNotifier.deleteSession('__restore__');
+    }
+  }
+
+  Future<void> _requestOrderDetails(
+    List<String> orderIds,
+    NostrKeyPairs masterKey,
+    String mostroPublicKey,
+  ) async {
+    final requestId = DateTime.now().millisecondsSinceEpoch;
+    final orderRequestContent = jsonEncode([
+      {
+        "order": {
+          "version": 1,
+          "request_id": requestId,
+          "action": "orders",
+          "payload": {
+            "ids": orderIds,
+          }
+        }
+      },
+      null
+    ]);
+
+    final rumor = NostrEvent.fromPartialData(
+      keyPairs: masterKey,
+      content: orderRequestContent,
+      kind: 1,
+      tags: [],
+    );
+
+    final wrappedEvent = await rumor.mostroWrap(
+      masterKey,
+      mostroPublicKey,
+    );
+
+    await ref.read(nostrServiceProvider).publishEvent(wrappedEvent);
+    _logger.i('Requested details for ${orderIds.length} orders');
   }
 }
 

@@ -93,6 +93,22 @@ class MostroService {
         return;
       }
 
+      if (result[0] is Map && (result[0] as Map).containsKey('order')) {
+        final data = result[0] as Map<String, dynamic>;
+        final order = data['order'] as Map<String, dynamic>;
+
+        if (order['action'] == 'orders') {
+          final payload = order['payload'] as Map<String, dynamic>?;
+          final orders = payload?['orders'] as List<dynamic>? ?? [];
+          _logger.i('Received details for ${orders.length} orders');
+
+          final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+          await sessionNotifier.deleteSession('__restore__');
+
+          return;
+        }
+      }
+
       final msg = MostroMessage.fromJson(result[0]);
       final messageStorage = ref.read(mostroStorageProvider);
       
