@@ -463,10 +463,31 @@
   "refreshUser": "Refresh User",
   "keyImportedSuccessfully": "Key imported successfully",
   "importFailed": "Import failed: {error}",
+  "@importFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "refreshSuccessful": "User data refreshed successfully",
   "refreshFailed": "Refresh failed: {error}",
+  "@refreshFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "noMnemonicFound": "No mnemonic found",
   "errorLoadingMnemonic": "Error: {error}",
+  "@errorLoadingMnemonic": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   
   "noMessagesAvailable": "No messages available",
   "back": "BACK",

@@ -103,6 +103,7 @@ class SubscriptionManager {
     }
   }
 
+
   void _updateAllSubscriptions(List<Session> sessions) {
     if (sessions.isEmpty) {
       _logger.i('No sessions available, clearing session-based subscriptions');
@@ -305,6 +306,8 @@ class SubscriptionManager {
 
   void unsubscribeAll() {
     for (final type in SubscriptionType.values) {
+      // Keep admin subscription active (independent of sessions)
+      if (type == SubscriptionType.admin) continue;
       unsubscribeByType(type);
     }
   }

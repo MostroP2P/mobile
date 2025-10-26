@@ -385,10 +385,31 @@
   "refreshUser": "Actualizar Usuario",
   "keyImportedSuccessfully": "Clave importada exitosamente",
   "importFailed": "Importación falló: {error}",
+  "@importFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "refreshSuccessful": "Datos de usuario actualizados exitosamente",
   "refreshFailed": "Actualización falló: {error}",
+  "@refreshFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "noMnemonicFound": "No se encontró mnemónico",
   "errorLoadingMnemonic": "Error: {error}",
+  "@errorLoadingMnemonic": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   
   "noMessagesAvailable": "No hay mensajes disponibles",
   "back": "ATRÁS",

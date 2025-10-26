@@ -414,10 +414,31 @@
   "refreshUser": "Aggiorna Utente",
   "keyImportedSuccessfully": "Chiave importata con successo",
   "importFailed": "Importazione fallita: {error}",
+  "@importFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "refreshSuccessful": "Dati utente aggiornati con successo",
   "refreshFailed": "Aggiornamento fallito: {error}",
+  "@refreshFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "noMnemonicFound": "Nessun mnemonico trovato",
   "errorLoadingMnemonic": "Errore: {error}",
+  "@errorLoadingMnemonic": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   
   "noMessagesAvailable": "Nessun messaggio disponibile",
   "back": "INDIETRO",
