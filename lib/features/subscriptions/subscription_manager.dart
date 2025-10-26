@@ -86,6 +86,13 @@ class SubscriptionManager {
         return;
       }
 
+      // Cancel existing admin subscription if present
+      if (_subscriptions.containsKey(SubscriptionType.admin)) {
+        _logger.i('Cancelling existing admin subscription before creating new one {subscriptionId: ${_subscriptions[SubscriptionType.admin]!.request.subscriptionId}}');
+        unsubscribeByType(SubscriptionType.admin);
+        
+      }
+
       final filter = NostrFilter(
         kinds: [1059],
         p: [masterKey.public],
@@ -96,11 +103,19 @@ class SubscriptionManager {
         filter: filter,
       );
 
-      _logger.i('Admin subscription initialized for master key');
+      _logger.i('Admin subscription initialized for master key: ${masterKey.public}');
     } catch (e, stackTrace) {
       _logger.e('Failed to initialize admin subscription',
           error: e, stackTrace: stackTrace);
     }
+  }
+
+  /// Update admin subscription after master key changes
+  /// Call this after importing mnemonic or restoring from backup
+  void updateAdminSubscription() {
+    _logger.i('Updating admin subscription due to master key change');
+
+    _initializeAdminSubscription();
   }
 
   void _updateAllSubscriptions(List<Session> sessions) {

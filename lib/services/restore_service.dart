@@ -19,6 +19,8 @@ import 'package:mostro_mobile/shared/providers/notifications_history_repository_
 import 'package:mostro_mobile/shared/providers/local_notifications_providers.dart';
 import 'package:mostro_mobile/features/restore/restore_progress_notifier.dart';
 import 'package:mostro_mobile/features/restore/restore_progress_state.dart';
+import 'package:mostro_mobile/features/subscriptions/subscription_manager_provider.dart';
+import 'package:mostro_mobile/features/subscriptions/subscription_type.dart';
 
 class RestoreService {
   final Ref ref;
@@ -31,6 +33,10 @@ class RestoreService {
 
     final keyManager = ref.read(keyManagerProvider);
     await keyManager.importMnemonic(mnemonic);
+
+    // Update admin subscription after master key changes
+    _logger.i('Master key imported, updating admin subscription');
+    ref.read(subscriptionManagerProvider).updateAdminSubscription();
 
     await restore();
   }
@@ -64,6 +70,8 @@ class RestoreService {
       // Ensure MostroService is initialized to receive admin messages
       ref.read(mostroServiceProvider);
 
+      _logger.i('Preparing restore request with master key pubkey: ${masterKey.public}');
+
       final restoreMessage = RestoreMessage();
       final rumor = NostrEvent.fromPartialData(
         keyPairs: masterKey,
@@ -72,13 +80,22 @@ class RestoreService {
         tags: [],
       );
 
+      _logger.i('Rumor created, wrapping with sender=${masterKey.public}, receiver=${settings.mostroPublicKey}');
+
       final wrappedEvent = await rumor.mostroWrap(
         masterKey,
         settings.mostroPublicKey,
       );
 
+      _logger.i('Wrapped event created, publishing to relays');
       await ref.read(nostrServiceProvider).publishEvent(wrappedEvent);
       _logger.i('Restore request sent');
+
+      // Verify admin subscription is active
+      final subManager = ref.read(subscriptionManagerProvider);
+      final hasAdminSub = subManager.hasActiveSubscription(SubscriptionType.admin);
+      final adminFilters = subManager.getActiveFilters(SubscriptionType.admin);
+      _logger.i('Admin events subscription status after restore request: active=$hasAdminSub, filters=${adminFilters.map((f) => f.toMap()).toList()}');
     } catch (e) {
       _logger.e('Restore failed: $e');
       progressNotifier.showError(e.toString());

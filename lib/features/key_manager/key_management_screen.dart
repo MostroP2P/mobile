@@ -9,6 +9,7 @@ import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/key_manager/import_mnemonic_dialog.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
+import 'package:mostro_mobile/features/subscriptions/subscription_manager_provider.dart';
 import 'package:mostro_mobile/services/restore_service.dart';
 import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
@@ -27,7 +28,6 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
   int? _tradeKeyIndex;
   bool _loading = false;
   bool _showSecretWords = false;
-  final TextEditingController _importController = TextEditingController();
 
   @override
   void initState() {
@@ -68,36 +68,17 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
     await mostroStorage.deleteAll();
 
     final eventStorage = ref.read(eventStorageProvider);
-    await eventStorage.deleteAll();
+    await eventStorage.deleteAllExceptAdmin();
 
     final keyManager = ref.read(keyManagerProvider);
     await keyManager.generateAndStoreMasterKey();
 
+    // Update admin subscription after new master key is generated
+    ref.read(subscriptionManagerProvider).updateAdminSubscription();
+
     await _loadKeys();
   }
 
-  // ignore: unused_element
-  Future<void> _importKey() async {
-    final keyManager = ref.read(keyManagerProvider);
-    final importValue = _importController.text.trim();
-    if (importValue.isNotEmpty) {
-      try {
-        await keyManager.importMnemonic(importValue);
-        await _loadKeys();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(S.of(context)!.keyImportedSuccessfully)),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(S.of(context)!.importFailed(e.toString()))),
-          );
-        }
-      }
-    }
-  }
 
   String _maskSeedPhrase(String seedPhrase) {
     final words = seedPhrase.split(' ');

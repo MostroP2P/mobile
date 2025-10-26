@@ -52,7 +52,6 @@ class EventStorage extends BaseStorage<Map<String, dynamic>> {
   /// on next app restart, potentially creating duplicate restore operations.
   ///
   /// Only use this when:
-  /// - Generating a new master key (old admin events can't be decrypted anyway)
   /// - Complete app reset is required
   ///
   /// For restore operations, use deleteAllExceptAdmin() instead.
