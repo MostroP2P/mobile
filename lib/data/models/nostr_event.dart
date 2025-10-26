@@ -265,6 +265,101 @@ extension NostrEventExtensions on NostrEvent {
     return now.subtract(Duration(seconds: randomSeconds));
   }
 
+  /// P2P Chat: Simplified NIP-59 wrapper for peer-to-peer chat
+  /// Wraps a signed kind 1 event directly in a kind 1059 wrapper
+  /// This is different from mostroWrap which uses a SEAL intermediate layer
+  /// 
+  /// According to Mostro documentation:
+  /// 1. Inner event is kind 1, signed by sender
+  /// 2. Wrapper is kind 1059, encrypted with ephemeral key
+  /// 3. No SEAL (kind 13) intermediate layer
+  Future<NostrEvent> p2pWrap(NostrKeyPairs senderKeys, String receiverPubkey) async {
+    if (kind != 1) {
+      throw ArgumentError('Expected kind 1 event for P2P chat, got: $kind');
+    }
+
+    if (content == null || content!.isEmpty) {
+      throw ArgumentError('Message content is empty');
+    }
+
+    try {
+      // The inner event must be signed by the sender
+      // This is already done when creating the event with fromPartialData
+      final innerEventJson = jsonEncode(toMap());
+
+      // Generate ephemeral key pair (single-use for this message)
+      final ephemeralKeyPair = NostrUtils.generateKeyPair();
+
+      // Encrypt the inner event with ephemeral key + receiver's public key
+      final encryptedContent = await NostrUtils.encryptNIP44(
+        innerEventJson,
+        ephemeralKeyPair.private,
+        receiverPubkey,
+      );
+
+      // Create wrapper (kind 1059) with randomized timestamp
+      final wrapper = NostrEvent.fromPartialData(
+        kind: 1059,
+        content: encryptedContent,
+        keyPairs: ephemeralKeyPair,
+        tags: [
+          ["p", receiverPubkey], // Identifies the receiver (shared key pubkey)
+        ],
+        createdAt: _randomizedTimestamp(),
+      );
+
+      return wrapper;
+    } catch (e) {
+      throw Exception('Failed to wrap P2P chat message: $e');
+    }
+  }
+
+  /// P2P Chat: Unwrap a simplified NIP-59 wrapper for peer-to-peer chat
+  /// Decrypts a kind 1059 wrapper to extract the signed kind 1 inner event
+  /// This is different from mostroUnWrap which expects a SEAL intermediate layer
+  Future<NostrEvent> p2pUnwrap(NostrKeyPairs receiver) async {
+    if (kind != 1059) {
+      throw ArgumentError('Expected kind 1059 (Gift Wrap), got: $kind');
+    }
+
+    if (content == null || content!.isEmpty) {
+      throw ArgumentError('Gift Wrap content is empty');
+    }
+
+    try {
+      // The wrapper pubkey is the ephemeral public key
+      final ephemeralPubkey = pubkey;
+
+      // Decrypt the wrapper with receiver's private key + ephemeral public key
+      final decryptedContent = await NostrUtils.decryptNIP44(
+        content!,
+        receiver.private,
+        ephemeralPubkey,
+      );
+
+      // Parse the inner event
+      final sanitizedJson = _sanitizeEventJson(decryptedContent);
+      final innerEvent = NostrEvent.deserialized(
+        '["EVENT", "", $sanitizedJson]',
+      );
+
+      // Verify it's a kind 1 event
+      if (innerEvent.kind != 1) {
+        throw Exception('Expected kind 1 inner event, got: ${innerEvent.kind}');
+      }
+
+      // Verify the signature of the inner event
+      if (innerEvent.id == null || innerEvent.sig == null) {
+        throw Exception('Inner event is not properly signed');
+      }
+
+      // The inner event is already verified by deserialized()
+      return innerEvent;
+    } catch (e) {
+      throw Exception('Failed to unwrap P2P chat message: $e');
+    }
+  }
+
   NostrEvent copy() {
     return NostrEvent(
       content: content,

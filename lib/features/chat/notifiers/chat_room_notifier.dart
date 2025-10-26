@@ -143,17 +143,19 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
         return;
       }
 
-      final chat = await event.mostroUnWrap(session.sharedKey!);
-      // Deduplicate by message ID and always sort by createdAt
-      final allMessages = [
-        ...state.messages,
-        chat,
-      ];
-      // Use a map to deduplicate by event id
-      final deduped = {for (var m in allMessages) m.id: m}.values.toList();
-
-      deduped.sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
-      state = state.copy(messages: deduped);
+      final chat = await event.p2pUnwrap(session.sharedKey!);
+      
+      // Check if message already exists to prevent duplicates
+      final messageExists = state.messages.any((m) => m.id == chat.id);
+      if (!messageExists) {
+        // Add new message and sort
+        final updatedMessages = [...state.messages, chat];
+        updatedMessages.sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
+        state = state.copy(messages: updatedMessages);
+        _logger.d('New message added from relay, total messages: ${updatedMessages.length}');
+      } else {
+        _logger.d('Message already exists in state, skipping duplicate');
+      }
 
       // Notify the chat rooms list to update when new messages arrive
       try {
@@ -188,26 +190,30 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
     );
 
     try {
-      final wrappedEvent = await innerEvent.mostroWrap(
+      final wrappedEvent = await innerEvent.p2pWrap(
         session.tradeKey,
         session.sharedKey!.public,
       );
 
-      final allMessages = [...state.messages, innerEvent];
-      final deduped = {for (var m in allMessages) m.id: m}.values.toList();
-      deduped.sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
-      state = state.copy(messages: deduped);
-
-      // Publish to network - await to catch network/initialization errors
+      // Publish to network first - await to catch network/initialization errors
       try {
         await ref.read(nostrServiceProvider).publishEvent(wrappedEvent);
         _logger.d('Message sent successfully to network');
+        
+        // Add the inner event to state immediately for optimistic UI
+        // The relay will echo it back and _onChatEvent will handle deduplication
+        final messageExists = state.messages.any((m) => m.id == innerEvent.id);
+        if (!messageExists) {
+          final updatedMessages = [...state.messages, innerEvent];
+          updatedMessages.sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
+          state = state.copy(messages: updatedMessages);
+          _logger.d('Message added to state optimistically, total messages: ${updatedMessages.length}');
+        } else {
+          _logger.d('Message already exists in state, skipping add');
+        }
+        
       } catch (publishError, publishStack) {
         _logger.e('Failed to publish message: $publishError', stackTrace: publishStack);
-        // Remove from local state if publish failed
-        final updatedMessages =
-            state.messages.where((msg) => msg.id != innerEvent.id).toList();
-        state = state.copy(messages: updatedMessages);
         rethrow; // Re-throw to be caught by outer catch
       }
 
@@ -219,10 +225,6 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
       }
     } catch (e, stackTrace) {
       _logger.e('Failed to send message: $e', stackTrace: stackTrace);
-      // Remove from local state if sending failed
-      final updatedMessages =
-          state.messages.where((msg) => msg.id != innerEvent.id).toList();
-      state = state.copy(messages: updatedMessages);
     }
   }
 
@@ -323,7 +325,7 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
             _logger.i('Event belongs to our chat, unwrapping...');
             // Decrypt and unwrap the message
             final unwrappedMessage =
-                await storedEvent.mostroUnWrap(session.sharedKey!);
+                await storedEvent.p2pUnwrap(session.sharedKey!);
             historicalMessages.add(unwrappedMessage);
             _logger.i(
                 'Successfully unwrapped message: ${unwrappedMessage.content}');
@@ -342,13 +344,19 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
           'Total historical messages processed: ${historicalMessages.length}');
 
       if (historicalMessages.isNotEmpty) {
-        // Update state with historical messages
-        final deduped =
-            {for (var m in historicalMessages) m.id: m}.values.toList();
+        // Merge historical messages with existing messages, avoiding duplicates
+        final allMessages = [...state.messages, ...historicalMessages];
+        // Deduplicate by ID
+        final seen = <String>{};
+        final deduped = allMessages.where((m) {
+          if (seen.contains(m.id)) return false;
+          seen.add(m.id!);
+          return true;
+        }).toList();
         deduped.sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
         state = state.copy(messages: deduped);
         _logger.i(
-            'Successfully loaded ${deduped.length} historical messages for chat $orderId');
+            'Successfully loaded and merged ${historicalMessages.length} historical messages, total: ${deduped.length} for chat $orderId');
       } else {
         _logger.w('No historical messages loaded for chat $orderId');
         _logger.i('This could be because:');
