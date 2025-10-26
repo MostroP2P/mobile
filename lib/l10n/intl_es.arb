@@ -1139,6 +1139,16 @@
   "secretWordsPlaceholder": "Ingresa tus 12 palabras secretas separadas por espacios",
   "errorNotTwelveWords": "Debes ingresar exactamente 12 palabras",
   "errorWordTooShort": "Cada palabra debe tener al menos 3 letras",
-  "errorInvalidCharacters": "Las palabras solo pueden contener letras"
+  "errorInvalidCharacters": "Las palabras solo pueden contener letras",
+
+  "@_comment_restore_overlay": "Mensajes de overlay de restauración",
+  "restoringOrders": "Restaurando Órdenes",
+  "restoreRequestingData": "Solicitando datos de restauración...",
+  "restoreReceivingOrders": "Recibiendo órdenes...",
+  "restoreLoadingDetails": "Cargando detalles de órdenes...",
+  "restoreProcessingRoles": "Procesando roles...",
+  "restoreFinalizing": "Finalizando restauración...",
+  "restoreCompleted": "¡Restauración completada!",
+  "restoreError": "Error de restauración"
 
 }

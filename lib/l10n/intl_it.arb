@@ -1194,5 +1194,15 @@
   "secretWordsPlaceholder": "Inserisci le tue 12 parole segrete separate da spazi",
   "errorNotTwelveWords": "Devi inserire esattamente 12 parole",
   "errorWordTooShort": "Ogni parola deve avere almeno 3 lettere",
-  "errorInvalidCharacters": "Le parole possono contenere solo lettere"
+  "errorInvalidCharacters": "Le parole possono contenere solo lettere",
+
+  "@_comment_restore_overlay": "Messaggi di overlay di ripristino",
+  "restoringOrders": "Ripristino Ordini",
+  "restoreRequestingData": "Richiesta dati di ripristino...",
+  "restoreReceivingOrders": "Ricezione ordini...",
+  "restoreLoadingDetails": "Caricamento dettagli ordini...",
+  "restoreProcessingRoles": "Elaborazione ruoli...",
+  "restoreFinalizing": "Finalizzazione ripristino...",
+  "restoreCompleted": "Ripristino completato!",
+  "restoreError": "Errore di ripristino"
 }

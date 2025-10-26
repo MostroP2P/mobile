@@ -1161,5 +1161,15 @@
   "secretWordsPlaceholder": "Enter your 12 secret words separated by spaces",
   "errorNotTwelveWords": "You must enter exactly 12 words",
   "errorWordTooShort": "Each word must have at least 3 letters",
-  "errorInvalidCharacters": "Words can only contain letters"
+  "errorInvalidCharacters": "Words can only contain letters",
+
+  "@_comment_restore_overlay": "Restore overlay messages",
+  "restoringOrders": "Restoring Orders",
+  "restoreRequestingData": "Requesting restore data...",
+  "restoreReceivingOrders": "Receiving orders...",
+  "restoreLoadingDetails": "Loading order details...",
+  "restoreProcessingRoles": "Processing roles...",
+  "restoreFinalizing": "Finalizing restore...",
+  "restoreCompleted": "Restore completed!",
+  "restoreError": "Restore error"
 }
