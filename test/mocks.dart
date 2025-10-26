@@ -146,7 +146,7 @@ class MockSubscriptionManager extends SubscriptionManager {
   }
 
   @override
-  void unsubscribeAll() {
+  void unsubscribeAllExceptAdmin() {
     _subscriptions.clear();
   }
 

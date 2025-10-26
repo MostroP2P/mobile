@@ -56,14 +56,20 @@ class MostroService {
   }
 
   Future<void> _onAdminData(NostrEvent event) async {
+    _logger.i('MostroService._onAdminData received event: ${event.id} kind=${event.kind}');
     final eventStore = ref.read(eventStorageProvider);
 
-    if (await eventStore.hasItem(event.id!)) return;
+    if (await eventStore.hasItem(event.id!)) {
+      _logger.d('Skipping duplicate admin event: ${event.id}');
+      return;
+    }
+
     await eventStore.putItem(
       event.id!,
       {
         'id': event.id,
         'created_at': event.createdAt!.millisecondsSinceEpoch ~/ 1000,
+        'type': 'admin',
       },
     );
 
@@ -119,7 +125,6 @@ class MostroService {
         }
       }
 
-      _logger.w('Received unknown admin message type');
     } catch (e) {
       _logger.e('Error processing admin event', error: e);
     }
@@ -128,12 +133,17 @@ class MostroService {
   Future<void> _onOrderData(NostrEvent event) async {
     final eventStore = ref.read(eventStorageProvider);
 
-    if (await eventStore.hasItem(event.id!)) return;
+    if (await eventStore.hasItem(event.id!)) {
+      _logger.d('Skipping duplicate order event: ${event.id}');
+      return;
+    }
+
     await eventStore.putItem(
       event.id!,
       {
         'id': event.id,
         'created_at': event.createdAt!.millisecondsSinceEpoch ~/ 1000,
+        'type': 'order',
       },
     );
 

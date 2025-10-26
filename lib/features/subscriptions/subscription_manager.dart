@@ -103,7 +103,6 @@ class SubscriptionManager {
     }
   }
 
-
   void _updateAllSubscriptions(List<Session> sessions) {
     if (sessions.isEmpty) {
       _logger.i('No sessions available, clearing session-based subscriptions');
@@ -299,12 +298,12 @@ class SubscriptionManager {
   }
 
   void subscribeAll() {
-    unsubscribeAll();
+    unsubscribeAllExceptAdmin();
     final currentSessions = ref.read(sessionNotifierProvider);
     _updateAllSubscriptions(currentSessions);
   }
 
-  void unsubscribeAll() {
+  void unsubscribeAllExceptAdmin() {
     for (final type in SubscriptionType.values) {
       // Keep admin subscription active (independent of sessions)
       if (type == SubscriptionType.admin) continue;
@@ -379,7 +378,7 @@ class SubscriptionManager {
 
   void dispose() {
     _sessionListener.close();
-    unsubscribeAll();
+    unsubscribeAllExceptAdmin();
     _ordersController.close();
     _chatController.close();
     _relayListController.close();

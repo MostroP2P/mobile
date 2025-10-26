@@ -211,15 +211,16 @@ class RestoreService {
 
   Future<void> _clearAll() async {
     try {
-      // Clean existing sessions, orders,notificarions and events before processing restore data
+      // Clean existing sessions, orders, notifications and events before processing restore data
       final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
       await sessionNotifier.reset();
 
       final mostroStorage = ref.read(mostroStorageProvider);
       await mostroStorage.deleteAll();
 
+      // Preserve admin events to prevent reprocessing historical restore messages
       final eventStorage = ref.read(eventStorageProvider);
-      await eventStorage.deleteAll();
+      await eventStorage.deleteAllExceptAdmin();
 
       final notificationsRepo = ref.read(notificationsRepositoryProvider);
       await notificationsRepo.clearAll();
@@ -227,9 +228,9 @@ class RestoreService {
       final localNotifications = ref.read(localNotificationsProvider);
       await localNotifications.cancelAll();
 
-      _logger.i('Cleared all ');
+      _logger.i('Cleared all data (preserved admin event history)');
     } catch (e) {
-      _logger.w('Error clearing notifications: $e');
+      _logger.w('Error clearing data: $e');
     }
   }
 }
