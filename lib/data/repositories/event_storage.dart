@@ -18,4 +18,19 @@ class EventStorage extends BaseStorage<Map<String, dynamic>> {
   Map<String, dynamic> toDbMap(Map<String, dynamic> event) {
     return event;
   }
+
+  @override
+  Future<void> deleteAll() async {
+    final allRecords = await store.find(db);
+
+    await db.transaction((txn) async {
+      for (final record in allRecords) {
+        final eventType = record.value['type'] as String?;
+
+        if (eventType != 'admin') {
+          await store.record(record.key).delete(txn);
+        }
+      }
+    });
+  }
 }
