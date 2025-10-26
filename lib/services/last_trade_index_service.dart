@@ -5,8 +5,8 @@ import 'package:mostro_mobile/data/models/last_trade_index_message.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
+import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
-import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 
 class LastTradeIndexService {
   final Ref ref;
@@ -25,6 +25,9 @@ class LastTradeIndexService {
 
     final settings = ref.read(settingsProvider);
     final request = LastTradeIndexRequest();
+
+    // Ensure MostroService is initialized to receive admin messages
+    ref.read(mostroServiceProvider);
 
     final rumor = NostrEvent.fromPartialData(
       keyPairs: masterKey,
@@ -46,9 +49,6 @@ class LastTradeIndexService {
     final keyManager = ref.read(keyManagerProvider);
     await keyManager.setCurrentKeyIndex(tradeIndex + 1);
     _logger.i('Updated key index to ${tradeIndex + 1}');
-
-    final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
-    await sessionNotifier.deleteSession('__restore__');
   }
 }
 

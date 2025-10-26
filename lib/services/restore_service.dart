@@ -13,6 +13,7 @@ import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
+import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
 import 'package:mostro_mobile/services/last_trade_index_service.dart';
 import 'package:mostro_mobile/shared/providers/notifications_history_repository_provider.dart'
     show notificationsRepositoryProvider;
@@ -27,8 +28,6 @@ class RestoreService {
   Future<void> importMnemonicAndRestore(String mnemonic) async {
     _logger.i('Importing mnemonic and restoring session');
 
-    await _clearNotifications();
-
     final keyManager = ref.read(keyManagerProvider);
     await keyManager.importMnemonic(mnemonic);
 
@@ -36,6 +35,8 @@ class RestoreService {
   }
 
   Future<void> restore() async {
+    await _clearAll();
+
     _logger.i('Starting restore session');
 
     final keyManager = ref.read(keyManagerProvider);
@@ -52,18 +53,7 @@ class RestoreService {
       throw Exception('Mostro public key not configured');
     }
 
-    final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
-
-    final tempSession = Session(
-      masterKey: masterKey,
-      tradeKey: masterKey,
-      keyIndex: 0,
-      fullPrivacy: settings.fullPrivacyMode,
-      startTime: DateTime.now(),
-      orderId: '__restore__',
-    );
-
-    await sessionNotifier.saveSession(tempSession);
+    // Ensure MostroService is initialized to receive admin messages
     ref.read(mostroServiceProvider);
 
     final restoreMessage = RestoreMessage();
@@ -85,11 +75,12 @@ class RestoreService {
 
   Future<void> processRestoreData(Map<String, dynamic> payload) async {
     final restoreData = RestoreData.fromJson(payload);
-    final keyManager = ref.read(keyManagerProvider);
     final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
-    final settings = ref.read(settingsProvider);
 
-    _logger.i('Restored ${restoreData.orders.length} orders, ${restoreData.disputes.length} disputes');
+    _logger.i('Processing ${restoreData.orders.length} orders, ${restoreData.disputes.length} disputes');
+
+    final keyManager = ref.read(keyManagerProvider);
+    final settings = ref.read(settingsProvider);
 
     final List<String> orderIds = [];
     final masterKey = keyManager.masterKeyPair!;
@@ -192,15 +183,25 @@ class RestoreService {
     _logger.i('Updated session roles for ${ordersData.length} orders');
   }
 
-  Future<void> _clearNotifications() async {
+  Future<void> _clearAll() async {
     try {
+      // Clean existing sessions, orders,notificarions and events before processing restore data
+      final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+      await sessionNotifier.reset();
+
+      final mostroStorage = ref.read(mostroStorageProvider);
+      await mostroStorage.deleteAll();
+
+      final eventStorage = ref.read(eventStorageProvider);
+      await eventStorage.deleteAll();
+
       final notificationsRepo = ref.read(notificationsRepositoryProvider);
       await notificationsRepo.clearAll();
 
       final localNotifications = ref.read(localNotificationsProvider);
       await localNotifications.cancelAll();
 
-      _logger.i('Cleared all notifications');
+      _logger.i('Cleared all ');
     } catch (e) {
       _logger.w('Error clearing notifications: $e');
     }
