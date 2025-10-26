@@ -783,13 +783,13 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                   final restoreService = ref.read(restoreServiceProvider);
                   await restoreService.restore();
 
-                  if (!mounted) return;
+                  if (!mounted || !context.mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text(S.of(context)!.refreshSuccessful)),
                   );
                 } catch (e) {
                   _logger.e('Refresh failed: $e');
-                  if (!mounted) return;
+                  if (!mounted || !context.mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text(S.of(context)!.refreshFailed(e.toString()))),
                   );
@@ -831,13 +831,13 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
         await restoreService.importMnemonicAndRestore(mnemonic);
         await _loadKeys();
 
-        if (!mounted) return;
+        if (!mounted || !context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(S.of(context)!.keyImportedSuccessfully)),
         );
       } catch (e) {
         _logger.e('Import failed: $e');
-        if (!mounted) return;
+        if (!mounted || !context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(S.of(context)!.importFailed(e.toString()))),
         );

@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
@@ -7,6 +5,7 @@ import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/models/restore_data.dart';
 import 'package:mostro_mobile/data/models/restore_message.dart';
+import 'package:mostro_mobile/data/models/orders_request_message.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
@@ -166,23 +165,14 @@ class RestoreService {
     String mostroPublicKey,
   ) async {
     final requestId = DateTime.now().millisecondsSinceEpoch;
-    final orderRequestContent = jsonEncode([
-      {
-        "order": {
-          "version": 1,
-          "request_id": requestId,
-          "action": "orders",
-          "payload": {
-            "ids": orderIds,
-          }
-        }
-      },
-      null
-    ]);
+    final ordersRequest = OrdersRequestMessage(
+      requestId: requestId,
+      orderIds: orderIds,
+    );
 
     final rumor = NostrEvent.fromPartialData(
       keyPairs: masterKey,
-      content: orderRequestContent,
+      content: ordersRequest.toJsonString(),
       kind: 1,
       tags: [],
     );
