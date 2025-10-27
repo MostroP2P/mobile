@@ -141,7 +141,7 @@ jobs:
         if: matrix.platform == 'linux'
         run: |
           mkdir -p ./dist
-          tar -czf ./dist/mostro_desktop-${{ steps.extract_version.outputs.version }}-${{ matrix.artifact-name }} \
+          tar -czf ./dist/mostro-desktop-${{ steps.extract_version.outputs.version }}-${{ matrix.artifact-name }} \
             -C ${{ matrix.artifact-path }} .
 
       # 14. Package build (macOS)
@@ -150,7 +150,7 @@ jobs:
         run: |
           mkdir -p ./dist
           find ${{ matrix.artifact-path }} -name "*.app" -type d | head -1 | xargs -I {} \
-            zip -r ./dist/mostro_desktop-${{ steps.extract_version.outputs.version }}-${{ matrix.artifact-name }} {}
+            zip -r ./dist/mostro-desktop-${{ steps.extract_version.outputs.version }}-${{ matrix.artifact-name }} {}
 
       # 15. Package build (Windows)
       - name: Package Windows build
@@ -159,20 +159,20 @@ jobs:
         run: |
           if (-not (Test-Path "./dist")) { New-Item -ItemType Directory -Path "./dist" | Out-Null }
           Compress-Archive -Path "${{ matrix.artifact-path }}/*" `
-            -DestinationPath "./dist/mostro_desktop-${{ steps.extract_version.outputs.version }}-${{ matrix.artifact-name }}"
+            -DestinationPath "./dist/mostro-desktop-${{ steps.extract_version.outputs.version }}-${{ matrix.artifact-name }}"
       
       # 16. Upload as artifact
       - name: Upload ${{ matrix.platform }} artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.platform }}-release
-          path: ./dist/mostro_desktop-${{ steps.extract_version.outputs.version }}-${{ matrix.artifact-name }}
+          path: ./dist/mostro-desktop-${{ steps.extract_version.outputs.version }}-${{ matrix.artifact-name }}
 
       # 17. Create GitHub Release and upload
       - name: Create GitHub Release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "./dist/mostro_desktop-${{ steps.extract_version.outputs.version }}-${{ matrix.artifact-name }}"
+          artifacts: "./dist/mostro-desktop-${{ steps.extract_version.outputs.version }}-${{ matrix.artifact-name }}"
           tag: v${{ steps.extract_version.outputs.version }}
           name: "Release v${{ steps.extract_version.outputs.version }}"
           body: |
