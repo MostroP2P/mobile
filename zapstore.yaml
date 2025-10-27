@@ -10,15 +10,15 @@ description: |
 
   🌟 Key Features:
 
-    🛡️ Privacy-First Architecture: Advanced encryption with NIP-59 gift wrapping for all trade communications
-    🔑 Hierarchical Key Management: BIP-32/BIP-39 compliant key derivation with unique keys per trade
-    🌍 Multi-Language Support: Full internationalization in English, Spanish, and Italian
-    ⚡ Lightning Network Integration: Seamless Bitcoin Lightning payments and invoicing
-    🔄 Real-Time Trading: Live order book updates and instant messaging with counterparts
-    🎨 Modern UI/UX: Card-based interfaces, smooth animations, and intuitive navigation
-    🔒 Secure Storage: Hardware-backed secure storage for cryptographic keys
-    📱 Cross-Platform: Native performance on both Android and iOS
-    🌐 Decentralized: No central authority, operates entirely on Nostr relays
+    - 🛡️ Privacy-First Architecture: Advanced encryption with NIP-59 gift wrapping for all trade communications
+    - 🔑 Hierarchical Key Management: BIP-32/BIP-39 compliant key derivation with unique keys per trade
+    - 🌍 Multi-Language Support: Full internationalization in English, Spanish, and Italian
+    - ⚡ Lightning Network Integration: Seamless Bitcoin Lightning payments and invoicing
+    - 🔄 Real-Time Trading: Live order book updates and instant messaging with counterparts
+    - 🎨 Modern UI/UX: Card-based interfaces, smooth animations, and intuitive navigation
+    - 🔒 Secure Storage: Hardware-backed secure storage for cryptographic keys
+    - 📱 Cross-Platform: Native performance on both Android and iOS
+    - 🌐 Decentralized: No central authority, operates entirely on Nostr relays
 
 icon: assets/images/launcher-icon.png
 changelog: CHANGELOG.md
