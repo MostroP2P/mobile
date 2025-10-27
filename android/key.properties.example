@@ -1,6 +1,12 @@
-# Example key.properties for local development
-# Copy this to key.properties and fill in your actual values
-storePassword=your_store_password_here
-keyPassword=your_key_password_here  
-keyAlias=your_key_alias_here
-storeFile=your_keystore_file_name.jks
+# Android Release Signing Configuration
+# 
+# Copy this file: cp android/key.properties.example android/key.properties
+# Then fill with your actual keystore values
+# 
+# NEVER commit key.properties to git - it's already in .gitignore
+# For complete setup instructions, see: docs/GITHUB_SECRETS_SETUP.md
+
+storeFile=upload-keystore.jks
+storePassword=YOUR_STORE_PASSWORD_HERE
+keyAlias=upload
+keyPassword=YOUR_KEY_PASSWORD_HERE
