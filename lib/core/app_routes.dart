@@ -208,7 +208,12 @@ GoRouter createRouter(WidgetRef ref) {
           GoRoute(
             name: 'logs',
             path: '/logs',
-            builder: (context, state) => const LogsScreen(),
+            pageBuilder: (context, state) =>
+                buildPageWithDefaultTransition<void>(
+              context: context,
+              state: state,
+              child: const LogsScreen(),
+            ),
           ),
           GoRoute(
             path: '/walkthrough',
