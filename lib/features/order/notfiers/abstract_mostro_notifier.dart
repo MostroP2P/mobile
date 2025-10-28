@@ -264,6 +264,34 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         // Enable chat
         final chat = ref.read(chatRoomsProvider(orderId).notifier);
         chat.subscribe();
+        
+        // Check if Lightning address was used and show notification
+        if (session.role == Role.buyer) {
+          try {
+            final storage = ref.read(mostroStorageProvider);
+            final messages = await storage.getAllMessagesForOrderId(orderId);
+            
+            // Find the order confirmation message (incoming Action.newOrder)
+            final orderConfirmation = messages
+                .where((m) => m.action == Action.newOrder)
+                .where((m) => m.getPayload<Order>()?.buyerInvoice != null)
+                .firstOrNull;
+            
+            if (orderConfirmation != null) {
+              final confirmationOrder = orderConfirmation.getPayload<Order>();
+              final buyerInvoice = confirmationOrder?.buyerInvoice;
+              
+              if (buyerInvoice != null && _isValidLightningAddress(buyerInvoice)) {
+                // Show Lightning address used notification
+                final notificationNotifier = ref.read(notificationActionsProvider.notifier);
+                notificationNotifier.showCustomMessage('lightningAddressUsed');
+              }
+            }
+          } catch (e) {
+            logger.w('Error checking lightning address usage: $e');
+            // Fail silently, don't affect main functionality
+          }
+        }
         break;
 
       case Action.holdInvoicePaymentSettled:
