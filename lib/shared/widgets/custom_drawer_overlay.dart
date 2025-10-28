@@ -16,117 +16,138 @@ class CustomDrawerOverlay extends ConsumerWidget {
     final isDrawerOpen = ref.watch(drawerProvider);
     final statusBarHeight = MediaQuery.of(context).padding.top;
 
-    return Stack(
-      children: [
-        // Main content
-        child,
+    return PopScope(
+      canPop: !isDrawerOpen,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && isDrawerOpen) {
+          ref.read(drawerProvider.notifier).closeDrawer();
+        }
+      },
+      child: Stack(
+        children: [
+          // Main content
+          child,
 
-        // Overlay background
-        if (isDrawerOpen)
-          GestureDetector(
-            onTap: () => ref.read(drawerProvider.notifier).closeDrawer(),
-            child: Container(
-              width: double.infinity,
-              height: double.infinity,
-              color: Colors.black.withAlpha(80),
+          // Overlay background
+          if (isDrawerOpen)
+            GestureDetector(
+              onTap: () =>
+                  ref.read(drawerProvider.notifier).closeDrawer(),
+              child: Container(
+                width: double.infinity,
+                height: double.infinity,
+                color: Colors.black.withAlpha(80),
+              ),
             ),
-          ),
 
-        // Drawer
-        AnimatedPositioned(
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-          left: isDrawerOpen ? 0 : -MediaQuery.of(context).size.width * 0.7,
-          top: 0,
-          bottom: 0,
-          child: GestureDetector(
-            onHorizontalDragEnd: (details) {
-              if (details.primaryVelocity != null &&
-                  details.primaryVelocity! < 0) {
-                ref.read(drawerProvider.notifier).closeDrawer();
-              }
-            },
-            child: Container(
-              width: MediaQuery.of(context).size.width * 0.7,
-              decoration: BoxDecoration(
-                color: AppTheme.dark1,
-                border: Border(
-                  right: BorderSide(
-                    color: Colors.white.withAlpha(25),
-                    width: 1.0,
+          // Drawer content
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            left: isDrawerOpen ? 0 : -MediaQuery.of(context).size.width * 0.7,
+            top: 0,
+            bottom: 0,
+            child: GestureDetector(
+              onHorizontalDragEnd: (details) {
+                if (details.primaryVelocity != null &&
+                    details.primaryVelocity! < 0) {
+                  ref.read(drawerProvider.notifier).closeDrawer();
+                }
+              },
+              child: Container(
+                width: MediaQuery.of(context).size.width * 0.7,
+                decoration: BoxDecoration(
+                  color: AppTheme.dark1,
+                  border: Border(
+                    right: BorderSide(
+                      color: Colors.white.withAlpha(25),
+                      width: 1.0,
+                    ),
+                  ),
+                ),
+                child: Padding(
+                  padding: EdgeInsets.only(top: statusBarHeight),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 24),
+
+                      // Logo
+                      Container(
+                        height: 100,
+                        width: double.infinity,
+                        alignment: Alignment.center,
+                        decoration: const BoxDecoration(
+                          image: DecorationImage(
+                            image: AssetImage(
+                                'assets/images/logo-alpha.png'),
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 24),
+                      Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: Colors.white.withAlpha(25),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Menu items
+                      _buildMenuItem(
+                        context,
+                        ref,
+                        icon: LucideIcons.user,
+                        title: S.of(context)!.account,
+                        route: '/key_management',
+                      ),
+                      _buildMenuItem(
+                        context,
+                        ref,
+                        icon: LucideIcons.settings,
+                        title: S.of(context)!.settings,
+                        route: '/settings',
+                      ),
+                      _buildMenuItem(
+                        context,
+                        ref,
+                        icon: LucideIcons.info,
+                        title: S.of(context)!.about,
+                        route: '/about',
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      // ✅ Logs menu item integrated correctly
+                      ListTile(
+                        leading: const Icon(Icons.bug_report,
+                            color: Colors.orangeAccent),
+                        title: Text(
+                          S.of(context)!.logsMenuTitle,
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w500),
+                        ),
+                        subtitle: Text(
+                          S.of(context)!.logsMenuSubtitle,
+                          style:
+                          const TextStyle(color: Colors.grey, fontSize: 12),
+                        ),
+                        onTap: () {
+                          ref
+                              .read(drawerProvider.notifier)
+                              .closeDrawer();
+                          context.push('/logs');
+                        },
+                      ),
+                    ],
                   ),
                 ),
               ),
-              child: Padding(
-                padding: EdgeInsets.only(top: statusBarHeight),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 24),
-                    // Logo
-                    Container(
-                      height: 100,
-                      width: double.infinity,
-                      alignment: Alignment.center,
-                      decoration: const BoxDecoration(
-                        image: DecorationImage(
-                          image: AssetImage('assets/images/logo-alpha.png'),
-                          fit: BoxFit.contain,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    Divider(
-                      height: 1,
-                      thickness: 1,
-                      color: Colors.white.withAlpha(25),
-                    ),
-                    const SizedBox(height: 16),
-                    // Menu items
-                    _buildMenuItem(
-                      context,
-                      ref,
-                      icon: LucideIcons.user,
-                      title: S.of(context)!.account,
-                      route: '/key_management',
-                    ),
-                    _buildMenuItem(
-                      context,
-                      ref,
-                      icon: LucideIcons.settings,
-                      title: S.of(context)!.settings,
-                      route: '/settings',
-                    ),
-                    _buildMenuItem(
-                      context,
-                      ref,
-                      icon: LucideIcons.info,
-                      title: S.of(context)!.about,
-                      route: '/about',
-                    ),
-                    const SizedBox(height: 8),
-                    // 🔹 Logs menu item
-                    ListTile(
-                      leading: const Icon(Icons.bug_report, color: Colors.orangeAccent),
-                      title: Text(
-                        S.of(context)!.logsMenuTitle,
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
-                      ),
-                      subtitle: Text(
-                        S.of(context)!.logsMenuSubtitle,
-                        style: const TextStyle(color: Colors.grey, fontSize: 12),
-                      ),
-                      onTap: () {
-                        ref.read(drawerProvider.notifier).closeDrawer();
-                        context.push('/logs');
-                      },
-                    ),
-                  ],
-                ),
-              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
