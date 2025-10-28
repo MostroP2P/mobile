@@ -31,6 +31,8 @@ import 'package:mostro_mobile/shared/widgets/notification_listener_widget.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
+import '../features/logs/logs_screen.dart';
+
 GoRouter createRouter(WidgetRef ref) {
   return GoRouter(
     navigatorKey: GlobalKey<NavigatorState>(),
@@ -202,6 +204,11 @@ GoRouter createRouter(WidgetRef ref) {
               state: state,
               child: const AboutScreen(),
             ),
+          ),
+          GoRoute(
+            name: 'logs',
+            path: '/logs',
+            builder: (context, state) => const LogsScreen(),
           ),
           GoRoute(
             path: '/walkthrough',

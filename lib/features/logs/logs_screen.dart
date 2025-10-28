@@ -3,22 +3,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/features/logs/logs_service.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:mostro_mobile/core/app_theme.dart';
 
 class LogsScreen extends ConsumerWidget {
   const LogsScreen({super.key});
 
-  Color _getLogColor(String line, BuildContext context) {
-    final theme = Theme.of(context);
+  Color _getLogColor(String line) {
     if (line.contains('ERROR') || line.contains('Exception')) {
-      return Colors.redAccent.shade200;
+      return AppTheme.statusError;
     } else if (line.contains('WARN') || line.contains('⚠️')) {
-      return Colors.amberAccent.shade200;
+      return AppTheme.statusWarning;
     } else if (line.contains('INFO') || line.contains('🟢')) {
-      return theme.colorScheme.secondary;
+      return AppTheme.statusInfo;
     } else {
-      return theme.brightness == Brightness.dark
-          ? Colors.grey.shade300
-          : Colors.grey.shade900;
+      return AppTheme.textPrimary;
     }
   }
 
@@ -26,38 +24,38 @@ class LogsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final logsService = ref.watch(logsProvider);
     final logs = logsService.logs.reversed.toList();
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    // Guardar la localización antes de cualquier await
     final s = S.of(context)!;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF121212) : Colors.grey.shade100,
+      backgroundColor: AppTheme.backgroundDark,
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppTheme.textPrimary),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         title: Text(
           s.logsScreenTitle,
-          style: const TextStyle(fontWeight: FontWeight.w600),
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            color: AppTheme.textPrimary,
+          ),
         ),
-        backgroundColor: theme.colorScheme.surface,
-        iconTheme: IconThemeData(color: theme.colorScheme.primary),
-        titleTextStyle: theme.textTheme.titleMedium?.copyWith(
-          color: theme.colorScheme.onSurface,
-        ),
+        backgroundColor: AppTheme.backgroundDark,
         actions: [
           IconButton(
-            icon: const Icon(Icons.delete_outline),
+            icon: const Icon(Icons.delete_outline, color: AppTheme.textPrimary),
             tooltip: s.deleteLogsTooltip,
             onPressed: () async {
               await logsService.clearLogs();
-              // BuildContext seguro porque s ya está capturado
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(s.logsDeletedMessage)),
-              );
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(s.logsDeletedMessage)),
+                );
+              }
             },
           ),
           IconButton(
-            icon: const Icon(Icons.share_outlined),
+            icon: const Icon(Icons.share_outlined, color: AppTheme.textPrimary),
             tooltip: s.shareLogsTooltip,
             onPressed: () async {
               final file = await logsService.getLogFile(clean: true);
@@ -70,9 +68,7 @@ class LogsScreen extends ConsumerWidget {
           ? Center(
         child: Text(
           s.noLogsMessage,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
+          style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
         ),
       )
           : ListView.builder(
@@ -82,12 +78,9 @@ class LogsScreen extends ConsumerWidget {
           final log = logs[i];
           return Container(
             margin: const EdgeInsets.symmetric(vertical: 4),
-            padding:
-            const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
             decoration: BoxDecoration(
-              color: isDark
-                  ? Colors.grey.withAlpha(179) // reemplaza withOpacity
-                  : Colors.grey.shade200.withAlpha(179),
+              color: AppTheme.backgroundCard.withAlpha(180),
               borderRadius: BorderRadius.circular(8),
             ),
             child: SelectableText(
@@ -95,7 +88,7 @@ class LogsScreen extends ConsumerWidget {
               style: TextStyle(
                 fontFamily: 'monospace',
                 fontSize: 13,
-                color: _getLogColor(log, context),
+                color: _getLogColor(log),
               ),
             ),
           );

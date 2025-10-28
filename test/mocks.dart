@@ -21,6 +21,7 @@ import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/features/order/notfiers/order_notifier.dart';
 import 'package:sembast/sembast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:mostro_mobile/features/logs/logs_service.dart';
 
 import 'mocks.mocks.dart';
 
@@ -40,6 +41,7 @@ import 'mocks.mocks.dart';
   OrderState,
   OrderNotifier,
   NostrKeyPairs,
+  LogsService,
 ])
 
 // Custom mock for SettingsNotifier that returns a specific Settings object
