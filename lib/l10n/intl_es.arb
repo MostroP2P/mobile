@@ -1122,9 +1122,9 @@
   "deleteUserRelayCancel": "No",
 
   "@_comment_session_timeout": "Session timeout message",
-  "sessionTimeoutMessage": "No hubo respuesta, verifica tu conexión e inténtalo más tarde"
+  "sessionTimeoutMessage": "No hubo respuesta, verifica tu conexión e inténtalo más tarde",
 
-}
+
   "@_comment_logsScreenTitle": "Title for the logs screen in the app",
   "logsScreenTitle": "Registros de la aplicación",
   "deleteLogsTooltip": "Borrar logs",
