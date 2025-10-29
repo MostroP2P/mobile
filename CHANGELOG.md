@@ -5,7 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.2]
+## [v1.0.3]
+
+### Added
+- **Release Build Features** (#341): Chat and disputes features now enabled in production/release builds (previously debug-only)
+
+### Fixed
+- **P2P Chat Message Encryption** (#343): Restored simplified NIP-59 implementation for secure peer-to-peer messaging
+- **Desktop Build Artifacts** (#344): Fixed inconsistent artifact naming for desktop builds
+
+### Changed
+- **Build Naming Convention** (#346): Standardized build artifact naming to use dash separators for consistency across all platforms
+- **Debug Mode Restrictions**: Removed debug-only limitations for chat tabs and disputes view, making features fully accessible in release builds
+
+### Documentation
+- **Configuration Updates** (#345): Updated changelog and zapstore configuration file with latest project information
+
+## [v1.0.2]
 
 ### Added
 - **Desktop Application Support** (#340): Complete implementation for Windows and Mac desktop platforms

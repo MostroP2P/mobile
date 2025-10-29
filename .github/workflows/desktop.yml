@@ -9,6 +9,8 @@ on:
         description: 'Flutter version (or "latest")'
         required: false
         default: '3.32.2'
+  repository_dispatch:
+    types: [build-desktop]    # triggered by main.yml after Android build
 
 env:
   FLUTTER_VERSION: '3.32.2'  # Default Flutter version
@@ -141,7 +143,7 @@ jobs:
         if: matrix.platform == 'linux'
         run: |
           mkdir -p ./dist
-          tar -czf ./dist/mostro_mobile-${{ steps.extract_version.outputs.version }}-${{ matrix.artifact-name }} \
+          tar -czf ./dist/mostro-desktop-${{ steps.extract_version.outputs.version }}-${{ matrix.artifact-name }} \
             -C ${{ matrix.artifact-path }} .
 
       # 14. Package build (macOS)
@@ -150,7 +152,7 @@ jobs:
         run: |
           mkdir -p ./dist
           find ${{ matrix.artifact-path }} -name "*.app" -type d | head -1 | xargs -I {} \
-            zip -r ./dist/mostro_mobile-${{ steps.extract_version.outputs.version }}-${{ matrix.artifact-name }} {}
+            zip -r ./dist/mostro-desktop-${{ steps.extract_version.outputs.version }}-${{ matrix.artifact-name }} {}
 
       # 15. Package build (Windows)
       - name: Package Windows build
@@ -159,30 +161,23 @@ jobs:
         run: |
           if (-not (Test-Path "./dist")) { New-Item -ItemType Directory -Path "./dist" | Out-Null }
           Compress-Archive -Path "${{ matrix.artifact-path }}/*" `
-            -DestinationPath "./dist/mostro_mobile-${{ steps.extract_version.outputs.version }}-${{ matrix.artifact-name }}"
+            -DestinationPath "./dist/mostro-desktop-${{ steps.extract_version.outputs.version }}-${{ matrix.artifact-name }}"
       
       # 16. Upload as artifact
       - name: Upload ${{ matrix.platform }} artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.platform }}-release
-          path: ./dist/mostro_mobile-${{ steps.extract_version.outputs.version }}-${{ matrix.artifact-name }}
+          path: ./dist/mostro-desktop-${{ steps.extract_version.outputs.version }}-${{ matrix.artifact-name }}
 
       # 17. Create GitHub Release and upload
       - name: Create GitHub Release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "./dist/mostro_mobile-${{ steps.extract_version.outputs.version }}-${{ matrix.artifact-name }}"
+          artifacts: "./dist/mostro-desktop-${{ steps.extract_version.outputs.version }}-${{ matrix.artifact-name }}"
           tag: v${{ steps.extract_version.outputs.version }}
-          name: "Release v${{ steps.extract_version.outputs.version }}"
-          body: |
-            ## Desktop Builds - v${{ steps.extract_version.outputs.version }}
-            
-            **Platform**: ${{ matrix.platform }}
-            **Flutter Version**: ${{ inputs.flutter_version || env.FLUTTER_VERSION }}
-            **Build Date**: ${{ github.event.head_commit.timestamp }}
           allowUpdates: true
-          omitBodyDuringUpdate: false
+          omitBodyDuringUpdate: true
           replacesArtifacts: true
           draft: false
           prerelease: false
