@@ -13,8 +13,6 @@ import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
-import 'package:mostro_mobile/services/restore_service.dart';
-import 'package:mostro_mobile/services/last_trade_index_service.dart';
 
 class MostroService {
   final Ref ref;
@@ -22,7 +20,6 @@ class MostroService {
 
   Settings _settings;
   StreamSubscription<NostrEvent>? _ordersSubscription;
-  StreamSubscription<NostrEvent>? _adminSubscription;
 
   MostroService(this.ref) : _settings = ref.read(settingsProvider);
 
@@ -30,19 +27,9 @@ class MostroService {
     // Subscribe to the orders stream from SubscriptionManager
     // The SubscriptionManager will automatically manage subscriptions based on SessionNotifier changes
     _ordersSubscription = ref.read(subscriptionManagerProvider).orders.listen(
-      _onOrderData,
+      _onData,
       onError: (error, stackTrace) {
         _logger.e('Error in orders subscription',
-            error: error, stackTrace: stackTrace);
-      },
-      cancelOnError: false,
-    );
-
-    // Subscribe to the admin stream for administrative messages (restore, last-trade-index)
-    _adminSubscription = ref.read(subscriptionManagerProvider).admin.listen(
-      _onAdminData,
-      onError: (error, stackTrace) {
-        _logger.e('Error in admin subscription',
             error: error, stackTrace: stackTrace);
       },
       cancelOnError: false,
@@ -51,99 +38,18 @@ class MostroService {
 
   void dispose() {
     _ordersSubscription?.cancel();
-    _adminSubscription?.cancel();
     _logger.i('MostroService disposed');
   }
 
-  Future<void> _onAdminData(NostrEvent event) async {
-    _logger.i('MostroService._onAdminData received event: ${event.id} kind=${event.kind}');
+  Future<void> _onData(NostrEvent event) async {
     final eventStore = ref.read(eventStorageProvider);
 
-    if (await eventStore.hasItem(event.id!)) {
-      _logger.d('Skipping duplicate admin event: ${event.id}');
-      return;
-    }
-
+    if (await eventStore.hasItem(event.id!)) return;
     await eventStore.putItem(
       event.id!,
       {
         'id': event.id,
         'created_at': event.createdAt!.millisecondsSinceEpoch ~/ 1000,
-        'type': 'admin',
-      },
-    );
-
-    // Admin messages are encrypted with master key
-    final masterKey = ref.read(keyManagerProvider).masterKeyPair;
-    if (masterKey == null) {
-      _logger.w('Cannot decrypt admin message: no master key');
-      return;
-    }
-
-    try {
-      final decryptedEvent = await event.unWrap(masterKey.private);
-      if (decryptedEvent.content == null) return;
-
-      final result = jsonDecode(decryptedEvent.content!);
-
-      if (result is! List || result.isEmpty) {
-        _logger.w('Received empty or invalid admin payload, skipping');
-        return;
-      }
-
-      // Handle restore messages (restore-session, last-trade-index)
-      if (result[0] is Map && (result[0] as Map).containsKey('restore')) {
-        final data = result[0] as Map<String, dynamic>;
-        final restore = data['restore'] as Map<String, dynamic>;
-
-        if (restore['action'] == 'restore-session') {
-          final payload = restore['payload'] as Map<String, dynamic>?;
-          if (payload != null) {
-            await ref.read(restoreServiceProvider).processRestoreData(payload);
-          }
-        } else if (restore['action'] == 'last-trade-index') {
-          final tradeIndex = restore['trade_index'] as int?;
-          if (tradeIndex != null) {
-            await ref.read(lastTradeIndexServiceProvider).processLastTradeIndex(tradeIndex);
-          }
-        }
-        return;
-      }
-
-      // Handle batch orders response
-      if (result[0] is Map && (result[0] as Map).containsKey('order')) {
-        final data = result[0] as Map<String, dynamic>;
-        final order = data['order'] as Map<String, dynamic>;
-
-        if (order['action'] == 'orders') {
-          final payload = order['payload'] as Map<String, dynamic>?;
-          final orders = payload?['orders'] as List<dynamic>? ?? [];
-          _logger.i('Received details for ${orders.length} orders');
-
-          await ref.read(restoreServiceProvider).processOrderDetails(orders);
-          return;
-        }
-      }
-
-    } catch (e) {
-      _logger.e('Error processing admin event', error: e);
-    }
-  }
-
-  Future<void> _onOrderData(NostrEvent event) async {
-    final eventStore = ref.read(eventStorageProvider);
-
-    if (await eventStore.hasItem(event.id!)) {
-      _logger.d('Skipping duplicate order event: ${event.id}');
-      return;
-    }
-
-    await eventStore.putItem(
-      event.id!,
-      {
-        'id': event.id,
-        'created_at': event.createdAt!.millisecondsSinceEpoch ~/ 1000,
-        'type': 'order',
       },
     );
 
@@ -162,12 +68,14 @@ class MostroService {
       if (decryptedEvent.content == null) return;
 
       final result = jsonDecode(decryptedEvent.content!);
-
+      
+      // Ensure result is a non-empty List before accessing elements
       if (result is! List || result.isEmpty) {
         _logger.w('Received empty or invalid payload, skipping');
         return;
       }
 
+      // Skip dispute chat messages (they have "dm" key and are handled by DisputeChatNotifier)
       if (result[0] is Map && (result[0] as Map).containsKey('dm')) {
         _logger.i('Skipping dispute chat message (handled by DisputeChatNotifier)');
         return;
@@ -175,7 +83,9 @@ class MostroService {
 
       final msg = MostroMessage.fromJson(result[0]);
       final messageStorage = ref.read(mostroStorageProvider);
-
+      
+      // Use decryptedEvent.id if available, otherwise fall back to original event.id
+      // This handles cases where admin messages might not have an id in the decrypted event
       final messageKey = decryptedEvent.id ?? event.id ?? 'msg_${DateTime.now().millisecondsSinceEpoch}';
       await messageStorage.addMessage(messageKey, msg);
       _logger.i(
@@ -184,7 +94,7 @@ class MostroService {
 
       await _maybeLinkChildOrder(msg, matchingSession);
     } catch (e) {
-      _logger.e('Error processing order event', error: e);
+      _logger.e('Error processing event', error: e);
     }
   }
 

@@ -103,7 +103,7 @@ class LifecycleManager extends WidgetsBindingObserver {
       if (activeFilters.isNotEmpty) {
         _isInBackground = true;
         _logger.i("Switching to background");
-        subscriptionManager.unsubscribeAllExceptAdmin();
+        subscriptionManager.unsubscribeAll();
         // Transfer active subscriptions to background service
         final backgroundService = ref.read(backgroundServiceProvider);
         await backgroundService.setForegroundStatus(false);

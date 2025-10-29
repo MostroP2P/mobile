@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/core/models/relay_list_event.dart';
 import 'package:mostro_mobile/data/models/session.dart';
-import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_type.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
@@ -25,12 +24,10 @@ class SubscriptionManager {
   final _ordersController = StreamController<NostrEvent>.broadcast();
   final _chatController = StreamController<NostrEvent>.broadcast();
   final _relayListController = StreamController<RelayListEvent>.broadcast();
-  final _adminController = StreamController<NostrEvent>.broadcast();
 
   Stream<NostrEvent> get orders => _ordersController.stream;
   Stream<NostrEvent> get chat => _chatController.stream;
   Stream<RelayListEvent> get relayList => _relayListController.stream;
-  Stream<NostrEvent> get admin => _adminController.stream;
 
   SubscriptionManager(this.ref) {
     _initSessionListener();
@@ -55,15 +52,12 @@ class SubscriptionManager {
 
   /// CRITICAL: Initialize subscriptions for existing sessions
   /// DO NOT REMOVE: Fixes stuck orders bug when app restarts with existing sessions
-  ///
-  /// This method ensures that subscriptions are created for sessions that already
-  /// exist when SubscriptionManager is created, since fireImmediately: false
+  /// 
+  /// This method ensures that subscriptions are created for sessions that already 
+  /// exist when SubscriptionManager is created, since fireImmediately: false 
   /// prevents automatic initialization.
   void _initializeExistingSessions() {
     try {
-      // Always initialize admin subscription (independent of sessions)
-      _initializeAdminSubscription();
-
       final existingSessions = ref.read(sessionNotifierProvider);
       if (existingSessions.isNotEmpty) {
         _logger.i('Initializing subscriptions for ${existingSessions.length} existing sessions');
@@ -77,65 +71,20 @@ class SubscriptionManager {
     }
   }
 
-  /// Initialize admin subscription independently of sessions
-  void _initializeAdminSubscription() {
-    try {
-      final masterKey = ref.read(keyManagerProvider).masterKeyPair;
-      if (masterKey == null) {
-        _logger.i('No master key available, skipping admin subscription');
-        return;
-      }
-
-      // Cancel existing admin subscription if present
-      if (_subscriptions.containsKey(SubscriptionType.admin)) {
-        _logger.i('Cancelling existing admin subscription before creating new one {subscriptionId: ${_subscriptions[SubscriptionType.admin]!.request.subscriptionId}}');
-        unsubscribeByType(SubscriptionType.admin);
-        
-      }
-
-      final filter = NostrFilter(
-        kinds: [1059],
-        p: [masterKey.public],
-      );
-
-      subscribe(
-        type: SubscriptionType.admin,
-        filter: filter,
-      );
-
-      _logger.i('Admin subscription initialized for master key: ${masterKey.public}');
-    } catch (e, stackTrace) {
-      _logger.e('Failed to initialize admin subscription',
-          error: e, stackTrace: stackTrace);
-    }
-  }
-
-  /// Update admin subscription after master key changes
-  /// Call this after importing mnemonic or restoring from backup
-  void updateAdminSubscription() {
-    _logger.i('Updating admin subscription due to master key change');
-
-    _initializeAdminSubscription();
-  }
-
   void _updateAllSubscriptions(List<Session> sessions) {
     if (sessions.isEmpty) {
-      _logger.i('No sessions available, clearing session-based subscriptions');
+      _logger.i('No sessions available, clearing all subscriptions');
       _clearAllSubscriptions();
       return;
     }
 
     for (final type in SubscriptionType.values) {
-      // Admin subscription is managed independently
-      if (type == SubscriptionType.admin) continue;
       _updateSubscription(type, sessions);
     }
   }
 
   void _clearAllSubscriptions() {
     for (final type in SubscriptionType.values) {
-      // Keep admin subscription active (independent of sessions)
-      if (type == SubscriptionType.admin) continue;
       unsubscribeByType(type);
     }
   }
@@ -192,16 +141,6 @@ class SubscriptionManager {
               .map((s) => s.sharedKey!.public)
               .toList(),
         );
-      case SubscriptionType.admin:
-        // Admin subscription uses master key for administrative messages
-        final masterKey = ref.read(keyManagerProvider).masterKeyPair;
-        if (masterKey == null) {
-          return null;
-        }
-        return NostrFilter(
-          kinds: [1059],
-          p: [masterKey.public],
-        );
       case SubscriptionType.relayList:
         // Relay list subscriptions are handled separately via subscribeToMostroRelayList
         return null;
@@ -216,9 +155,6 @@ class SubscriptionManager {
           break;
         case SubscriptionType.chat:
           _chatController.add(event);
-          break;
-        case SubscriptionType.admin:
-          _adminController.add(event);
           break;
         case SubscriptionType.relayList:
           final relayListEvent = RelayListEvent.fromEvent(event);
@@ -271,8 +207,6 @@ class SubscriptionManager {
         return orders;
       case SubscriptionType.chat:
         return chat;
-      case SubscriptionType.admin:
-        return admin;
       case SubscriptionType.relayList:
         // RelayList subscriptions should use subscribeToMostroRelayList() instead
         throw UnsupportedError('Use subscribeToMostroRelayList() for relay list subscriptions');
@@ -313,15 +247,13 @@ class SubscriptionManager {
   }
 
   void subscribeAll() {
-    unsubscribeAllExceptAdmin();
+    unsubscribeAll();
     final currentSessions = ref.read(sessionNotifierProvider);
     _updateAllSubscriptions(currentSessions);
   }
 
-  void unsubscribeAllExceptAdmin() {
+  void unsubscribeAll() {
     for (final type in SubscriptionType.values) {
-      // Keep admin subscription active (independent of sessions)
-      if (type == SubscriptionType.admin) continue;
       unsubscribeByType(type);
     }
   }
@@ -393,10 +325,9 @@ class SubscriptionManager {
 
   void dispose() {
     _sessionListener.close();
-    unsubscribeAllExceptAdmin();
+    unsubscribeAll();
     _ordersController.close();
     _chatController.close();
     _relayListController.close();
-    _adminController.close();
   }
 }
