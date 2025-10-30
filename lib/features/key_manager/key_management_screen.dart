@@ -824,6 +824,10 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
   }
 
   Future<void> _showImportMnemonicDialog(BuildContext context) async {
+    // Capture context-dependent values before async gap
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final localizations = S.of(context)!;
+
     final mnemonic = await showDialog<String>(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -832,9 +836,6 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
     );
 
     if (mnemonic != null && mnemonic.isNotEmpty) {
-      // Capture context-dependent values before async gap
-      final scaffoldMessenger = ScaffoldMessenger.of(context);
-      final localizations = S.of(context)!;
 
       try {
         final restoreService = ref.read(restoreServiceProvider);
