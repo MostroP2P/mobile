@@ -6,5 +6,5 @@ import 'package:mostro_mobile/shared/providers/storage_providers.dart';
 final settingsProvider =
     StateNotifierProvider<SettingsNotifier, Settings>((ref) {
   final prefs = ref.watch(sharedPreferencesProvider);
-  return SettingsNotifier(prefs);
+  return SettingsNotifier(prefs, ref: ref);
 });

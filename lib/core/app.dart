@@ -16,6 +16,7 @@ import 'package:mostro_mobile/shared/providers/app_init_provider.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/notifiers/locale_notifier.dart';
 import 'package:mostro_mobile/features/walkthrough/providers/first_run_provider.dart';
+import 'package:mostro_mobile/features/restore/restore_overlay.dart';
 
 class MostroApp extends ConsumerStatefulWidget {
   const MostroApp({super.key});
@@ -163,6 +164,14 @@ class _MostroAppState extends ConsumerState<MostroApp> {
           theme: AppTheme.theme,
           darkTheme: AppTheme.theme,
           routerConfig: _router!,
+          builder: (context, child) {
+            return Stack(
+              children: [
+                child ?? const SizedBox.shrink(),
+                const RestoreOverlay(),
+              ],
+            );
+          },
           // Use language override from settings if available, otherwise let callback handle detection
           locale: settings.selectedLanguage != null
               ? Locale(settings.selectedLanguage!)

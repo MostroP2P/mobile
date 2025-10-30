@@ -382,10 +382,34 @@
   "incrementsWithEachTrade": "Se incrementa con cada intercambio",
   "generateNewUser": "Generar Nuevo Usuario",
   "importMostroUser": "Importar Usuario Mostro",
+  "refreshUser": "Actualizar Usuario",
   "keyImportedSuccessfully": "Clave importada exitosamente",
   "importFailed": "Importación falló: {error}",
+  "@importFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "refreshSuccessful": "Datos de usuario actualizados exitosamente",
+  "refreshFailed": "Actualización falló: {error}",
+  "@refreshFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "noMnemonicFound": "No se encontró mnemónico",
   "errorLoadingMnemonic": "Error: {error}",
+  "@errorLoadingMnemonic": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   
   "noMessagesAvailable": "No hay mensajes disponibles",
   "back": "ATRÁS",
@@ -864,6 +888,9 @@
   "currentTradeIndexInfoText": "Con cada nuevo intercambio, se genera una Clave de Intercambio única para asegurar que tus transacciones permanezcan privadas. El índice de intercambio indica cuántas claves has usado. Si estás en 'Modo Reputación,' permites a Mostro vincular todas tus Claves de Intercambio para calcular y mantener tu reputación.",
   "generateNewUserDialogTitle": "¿Generar un nuevo usuario?",
   "generateNewUserDialogContent": "Si continúas, se generará un nuevo conjunto de 12 palabras como tu nuevo usuario. Este nuevo usuario no tendrá reputación, y tendrás que empezar desde cero.",
+  "refreshUserDialogTitle": "¿Actualizar datos de usuario?",
+  "refreshUserDialogContent": "Esto volverá a solicitar tus intercambios y órdenes desde la instancia de Mostro. Úsalo si crees que tus datos están desincronizados o faltan órdenes.",
+  "refresh": "Actualizar",
   "continueButton": "Continuar",
   "show": "Mostrar",
   "hide": "Ocultar",
@@ -1122,6 +1149,27 @@
   "deleteUserRelayCancel": "No",
 
   "@_comment_session_timeout": "Session timeout message",
-  "sessionTimeoutMessage": "No hubo respuesta, verifica tu conexión e inténtalo más tarde"
+  "sessionTimeoutMessage": "No hubo respuesta, verifica tu conexión e inténtalo más tarde",
+
+  "@_comment_import_mnemonic_dialog": "Import Mnemonic Dialog strings",
+  "importMostroUserDialogTitle": "Importar Usuario Mostro",
+  "importMostroUserInfo1": "Estas son tus palabras secretas, la única forma de recuperar tu cuenta si pierdes acceso a esta app o quieres usar tu identidad en otra app.",
+  "importMostroUserInfo2": "Escríbelas con cuidado y guárdalas en un lugar seguro y privado. Nunca las compartas con nadie.",
+  "importMostroUserInfo3": "Si pierdes estas palabras, perderás permanentemente el acceso a tu cuenta.",
+  "secretWordsLabel": "Palabras Secretas",
+  "secretWordsPlaceholder": "Ingresa tus 12 palabras secretas separadas por espacios",
+  "errorNotTwelveWords": "Debes ingresar exactamente 12 palabras",
+  "errorWordTooShort": "Cada palabra debe tener al menos 3 letras",
+  "errorInvalidCharacters": "Las palabras solo pueden contener letras",
+
+  "@_comment_restore_overlay": "Mensajes de overlay de restauración",
+  "restoringOrders": "Restaurando Órdenes",
+  "restoreRequestingData": "Solicitando datos de restauración...",
+  "restoreReceivingOrders": "Recibiendo órdenes...",
+  "restoreLoadingDetails": "Cargando detalles de órdenes...",
+  "restoreProcessingRoles": "Procesando roles...",
+  "restoreFinalizing": "Finalizando restauración...",
+  "restoreCompleted": "¡Restauración completada!",
+  "restoreError": "Error de restauración"
 
 }

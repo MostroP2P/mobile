@@ -82,6 +82,8 @@ class NotificationMessageMapper {
       case mostro.Action.adminTakeDispute:
       case mostro.Action.adminTookDispute:
         return 'notification_dispute_started_title';
+      case mostro.Action.restoreSession:
+        return '';
       case mostro.Action.tradePubkey:
         return 'notification_order_update_title';
     }
@@ -174,6 +176,8 @@ class NotificationMessageMapper {
       case mostro.Action.adminTakeDispute:
       case mostro.Action.adminTookDispute:
         return 'notification_dispute_started_message';
+      case mostro.Action.restoreSession:
+        return '';
       case mostro.Action.tradePubkey:
         return 'notification_order_update_message';
     }

@@ -460,10 +460,34 @@
   "incrementsWithEachTrade": "Increments with each trade",
   "generateNewUser": "Generate New User",
   "importMostroUser": "Import Mostro User",
+  "refreshUser": "Refresh User",
   "keyImportedSuccessfully": "Key imported successfully",
   "importFailed": "Import failed: {error}",
+  "@importFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "refreshSuccessful": "User data refreshed successfully",
+  "refreshFailed": "Refresh failed: {error}",
+  "@refreshFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "noMnemonicFound": "No mnemonic found",
   "errorLoadingMnemonic": "Error: {error}",
+  "@errorLoadingMnemonic": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   
   "noMessagesAvailable": "No messages available",
   "back": "BACK",
@@ -885,6 +909,9 @@
   "currentTradeIndexInfoText": "With each new trade, a unique Trade Key is generated to ensure your transactions remain private. The trade index indicates how many keys you've used. If you're in 'Reputation Mode,' you allow Mostro to link all your Trade Keys to calculate and maintain your reputation.",
   "generateNewUserDialogTitle": "Generate a new user?",
   "generateNewUserDialogContent": "If you continue, a new set of 12 words will be generated as your new user. This new user will have no reputation, and you will have to start from scratch.",
+  "refreshUserDialogTitle": "Refresh user data?",
+  "refreshUserDialogContent": "This will re-fetch your trades and orders from the Mostro instance. Use this if you think your data is out of sync or orders are missing.",
+  "refresh": "Refresh",
   "continueButton": "Continue",
   "show": "Show",
   "hide": "Hide",
@@ -1144,5 +1171,26 @@
   "deleteUserRelayCancel": "No",
 
   "@_comment_session_timeout": "Session timeout message",
-  "sessionTimeoutMessage": "No response received, check your connection and try again later"
+  "sessionTimeoutMessage": "No response received, check your connection and try again later",
+
+  "@_comment_import_mnemonic_dialog": "Import Mnemonic Dialog strings",
+  "importMostroUserDialogTitle": "Import Mostro User",
+  "importMostroUserInfo1": "These are your secret words, the only way to recover your account if you lose access to this app or want to use your identity in another app.",
+  "importMostroUserInfo2": "Write them down carefully and store them in a secure, private location. Never share them with anyone.",
+  "importMostroUserInfo3": "If you lose these words, you'll permanently lose access to your account.",
+  "secretWordsLabel": "Secret Words",
+  "secretWordsPlaceholder": "Enter your 12 secret words separated by spaces",
+  "errorNotTwelveWords": "You must enter exactly 12 words",
+  "errorWordTooShort": "Each word must have at least 3 letters",
+  "errorInvalidCharacters": "Words can only contain letters",
+
+  "@_comment_restore_overlay": "Restore overlay messages",
+  "restoringOrders": "Restoring Orders",
+  "restoreRequestingData": "Requesting restore data...",
+  "restoreReceivingOrders": "Receiving orders...",
+  "restoreLoadingDetails": "Loading order details...",
+  "restoreProcessingRoles": "Processing roles...",
+  "restoreFinalizing": "Finalizing restore...",
+  "restoreCompleted": "Restore completed!",
+  "restoreError": "Restore error"
 }

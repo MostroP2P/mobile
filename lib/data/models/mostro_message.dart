@@ -42,7 +42,7 @@ class MostroMessage<T extends Payload> {
 
   factory MostroMessage.fromJson(Map<String, dynamic> json) {
     final timestamp = json['timestamp'];
-    json = json['order'] ?? json['cant-do'] ?? json;
+    json = json['order'] ?? json['cant-do'] ?? json['restore'] ?? json;
     final num requestId = json['request_id'] ?? 0;
 
     return MostroMessage(
