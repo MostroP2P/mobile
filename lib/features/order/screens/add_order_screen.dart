@@ -192,6 +192,20 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
       ref.watch(exchangeRateProvider(selectedFiatCode));
     }
 
+    // Listen for fiat code changes and reset payment methods when currency changes
+    // This prevents stale payment methods from previous currency selection
+    ref.listen<String?>(selectedFiatCodeProvider, (previous, next) {
+      // Only reset if there was a previous value and it changed
+      // Skip on initial load (previous == null)
+      if (previous != null && previous != next && context.mounted) {
+        setState(() {
+          _selectedPaymentMethods = [];
+          _showCustomPaymentMethod = false;
+          _customPaymentMethodController.clear();
+        });
+      }
+    });
+
     return Scaffold(
       backgroundColor: const Color(0xFF171A23),
       appBar: AppBar(
