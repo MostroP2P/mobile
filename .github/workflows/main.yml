@@ -203,6 +203,13 @@ jobs:
           omitBodyDuringUpdate: true
           replacesArtifacts: true
 
+      - name: Trigger Desktop Builds
+        if: steps.should_build.outputs.SHOULD_BUILD == 'true'
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          event-type: build-desktop
+          client-payload: '{"version": "${{ env.VERSION }}"}'
+
       - name: Cleanup Keystore
         if: always() && steps.should_build.outputs.SHOULD_BUILD == 'true'
         run: |

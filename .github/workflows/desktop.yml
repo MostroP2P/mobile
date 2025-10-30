@@ -9,6 +9,8 @@ on:
         description: 'Flutter version (or "latest")'
         required: false
         default: '3.32.2'
+  repository_dispatch:
+    types: [build-desktop]    # triggered by main.yml after Android build
 
 env:
   FLUTTER_VERSION: '3.32.2'  # Default Flutter version
@@ -174,15 +176,8 @@ jobs:
         with:
           artifacts: "./dist/mostro-desktop-${{ steps.extract_version.outputs.version }}-${{ matrix.artifact-name }}"
           tag: v${{ steps.extract_version.outputs.version }}
-          name: "Release v${{ steps.extract_version.outputs.version }}"
-          body: |
-            ## Desktop Builds - v${{ steps.extract_version.outputs.version }}
-            
-            **Platform**: ${{ matrix.platform }}
-            **Flutter Version**: ${{ inputs.flutter_version || env.FLUTTER_VERSION }}
-            **Build Date**: ${{ github.event.head_commit.timestamp }}
           allowUpdates: true
-          omitBodyDuringUpdate: false
+          omitBodyDuringUpdate: true
           replacesArtifacts: true
           draft: false
           prerelease: false
