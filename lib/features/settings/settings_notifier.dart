@@ -5,7 +5,7 @@ import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/enums/storage_keys.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:mostro_mobile/services/restore_service.dart';
+import 'package:mostro_mobile/features/restore/restore_service.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 
 class SettingsNotifier extends StateNotifier<Settings> {
