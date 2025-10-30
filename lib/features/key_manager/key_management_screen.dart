@@ -779,19 +779,25 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
             ElevatedButton(
               onPressed: () async {
                 Navigator.of(dialogContext).pop();
+
+                // Capture context-dependent values before async gap
+                final successMessage = S.of(context)!.refreshSuccessful;
+                final scaffoldMessenger = ScaffoldMessenger.of(context);
+                final localizations = S.of(context)!;
+
                 try {
                   final restoreService = ref.read(restoreServiceProvider);
                   await restoreService.restore();
 
                   if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(S.of(context)!.refreshSuccessful)),
+                  scaffoldMessenger.showSnackBar(
+                    SnackBar(content: Text(successMessage)),
                   );
                 } catch (e) {
                   _logger.e('Refresh failed: $e');
                   if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(S.of(context)!.refreshFailed(e.toString()))),
+                  scaffoldMessenger.showSnackBar(
+                    SnackBar(content: Text(localizations.refreshFailed(e.toString()))),
                   );
                 }
               },
@@ -826,20 +832,24 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
     );
 
     if (mnemonic != null && mnemonic.isNotEmpty) {
+      // Capture context-dependent values before async gap
+      final scaffoldMessenger = ScaffoldMessenger.of(context);
+      final localizations = S.of(context)!;
+
       try {
         final restoreService = ref.read(restoreServiceProvider);
         await restoreService.importMnemonicAndRestore(mnemonic);
         await _loadKeys();
 
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(S.of(context)!.keyImportedSuccessfully)),
+        scaffoldMessenger.showSnackBar(
+          SnackBar(content: Text(localizations.keyImportedSuccessfully)),
         );
       } catch (e) {
         _logger.e('Import failed: $e');
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(S.of(context)!.importFailed(e.toString()))),
+        scaffoldMessenger.showSnackBar(
+          SnackBar(content: Text(localizations.importFailed(e.toString()))),
         );
       }
     }

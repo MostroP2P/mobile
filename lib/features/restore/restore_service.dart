@@ -83,7 +83,6 @@ class RestoreService {
     final filter = NostrFilter(
       kinds: [1059],
       p: [_tempTradeKey!.public],
-      limit: 1,
     );
 
     final request = NostrRequest(filters: [filter]);
