@@ -2,6 +2,7 @@ import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
+import 'package:mostro_mobile/features/restore/restore_progress_notifier.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
@@ -21,6 +22,7 @@ class SessionRestorer {
     final keyManager = ref.read(keyManagerProvider);
     final settings = ref.read(settingsProvider);
     final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+    final progress = ref.read(restoreProgressProvider.notifier);
     final storage = ref.read(mostroStorageProvider);
     final masterKey = keyManager.masterKeyPair!;
 
@@ -51,6 +53,7 @@ class SessionRestorer {
           await _saveOrderDetailsAsMessage(orderId, orderDetails, storage);
 
           restoredCount++;
+          progress.incrementProgress();
         }
       }
     }
@@ -80,6 +83,7 @@ class SessionRestorer {
           await _saveOrderDetailsAsMessage(orderId, orderDetails, storage);
 
           restoredCount++;
+          progress.incrementProgress();
         }
       }
     }

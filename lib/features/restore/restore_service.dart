@@ -4,12 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/restore/restore_progress_notifier.dart';
+import 'package:mostro_mobile/features/restore/restore_progress_state.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_manager_provider.dart';
 import 'package:mostro_mobile/features/restore/order_restorer.dart';
 import 'package:mostro_mobile/features/restore/restore_message_handler.dart';
 import 'package:mostro_mobile/features/restore/session_restorer.dart';
 import 'package:mostro_mobile/shared/providers/local_notifications_providers.dart';
+import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/notifications_history_repository_provider.dart';
@@ -118,10 +120,11 @@ class RestoreService {
 
     final order = message['order'] as Map<String, dynamic>?;
     final restore = message['restore'] as Map<String, dynamic>?;
+    final cantDo = message['cant-do'] as Map<String, dynamic>?;
 
-    final action = (order ?? restore)?['action'] as String?;
-    final payload = (order ?? restore)?['payload'];
-    final data = order ?? restore;
+    final action = (order ?? restore ?? cantDo)?['action'] as String?;
+    final payload = (order ?? restore ?? cantDo)?['payload'];
+    final data = order ?? restore ?? cantDo;
 
     await _processAction(action, payload, data: data);
   }
@@ -154,8 +157,22 @@ class RestoreService {
         _checkCompletion();
         break;
 
+      case 'cant-do':
+        _logger.w('Restore: received cant-do from Mostro: $payload');
+        _handleCantDo(payload);
+        break;
+
       default:
         _logger.w('Restore: unknown action "$action"');
+    }
+  }
+
+  void _handleCantDo(dynamic payload) {
+    // Check if it's a not_found error (user has no data to restore)
+    if (payload != null && payload.toString().toLowerCase().contains('not_found')) {
+      _logger.i('Restore: no data found for user (cant-do: not_found)');
+      // Clean up and close the restore process
+      _cleanup();
     }
   }
 
@@ -167,14 +184,27 @@ class RestoreService {
     _data!.restoreDisputes = (restoreData['disputes'] as List?)?.cast<Map<String, dynamic>>();
     _data!.hasRestoreData = true;
 
+    final totalOrders = (_data!.restoreOrders?.length ?? 0) + (_data!.restoreDisputes?.length ?? 0);
+    _logger.i('Restore: found $totalOrders orders to restore');
+
+    // Update overlay with number of orders received
+    final progress = ref.read(restoreProgressProvider.notifier);
+    progress.setOrdersReceived(totalOrders);
+
     final orderIds = _orderRestorer.extractOrderIds(
       restoreOrders: _data!.restoreOrders,
       restoreDisputes: _data!.restoreDisputes,
     );
 
+    _logger.i('Restore: extracted ${orderIds.length} order IDs');
+
     if (orderIds.isNotEmpty) {
+      _logger.i('Restore: requesting order details for ${orderIds.length} orders');
+      // Update to loading details step
+      progress.updateStep(RestoreStep.loadingDetails);
       await _requestOrderDetails(orderIds);
     } else {
+      _logger.i('Restore: no order IDs to fetch, marking as complete');
       _data!.hasOrdersInfo = true;
     }
 
@@ -216,6 +246,11 @@ class RestoreService {
 
   Future<void> _finalize() async {
     try {
+      final progress = ref.read(restoreProgressProvider.notifier);
+
+      // Update to processing roles step
+      progress.updateStep(RestoreStep.processingRoles);
+
       await _sessionRestorer.cleanupTempSession(_tempTradeKey!.public);
 
       if (_data!.lastTradeIndex != null) {
@@ -230,7 +265,18 @@ class RestoreService {
         orderDetails: _data!.orderDetails,
       );
 
+      // Update to finalizing step
+      progress.updateStep(RestoreStep.finalizing);
+
+    // Invalidate and rebuild SubscriptionManager and MostroService to ensure fresh state
       ref.invalidate(subscriptionManagerProvider);
+      ref.invalidate(mostroServiceProvider);
+
+      // Force rebuild by reading them immediately
+      ref.read(subscriptionManagerProvider);
+      final mostroService = ref.read(mostroServiceProvider);
+      mostroService.init();
+
       _logger.i('Restore: completed successfully');
     } catch (e, stackTrace) {
       _logger.e('Restore: finalization error', error: e, stackTrace: stackTrace);
