@@ -3,13 +3,8 @@ import 'dart:convert';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
-import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
-import 'package:mostro_mobile/data/models/restore_data.dart';
 import 'package:mostro_mobile/data/models/restore_message.dart';
-import 'package:mostro_mobile/data/models/orders_request_message.dart';
-import 'package:mostro_mobile/data/models/last_trade_index_message.dart';
-import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
@@ -19,16 +14,24 @@ import 'package:mostro_mobile/shared/providers/notifications_history_repository_
     show notificationsRepositoryProvider;
 import 'package:mostro_mobile/shared/providers/local_notifications_providers.dart';
 import 'package:mostro_mobile/features/restore/restore_progress_notifier.dart';
-import 'package:mostro_mobile/features/restore/restore_progress_state.dart';
 
 class RestoreService {
   final Ref ref;
   final Logger _logger = Logger();
 
-  // Temporary subscription for restore operations using trade key 1
+  // Temporary variables for restore process
   StreamSubscription<NostrEvent>? _tempSubscription;
   NostrKeyPairs? _tempTradeKey1;
-  final Set<String> _processedEventIds = {}; // In-memory deduplication
+  final Set<String> _processedEventIds = {};
+  List<dynamic>? _tempRestoreOrders;
+  List<dynamic>? _tempRestoreDisputes;
+  List<dynamic>? _tempOrdersDetails;
+  int? _tempLastTradeIndex;
+
+  // Flags to track received data
+  bool _receivedRestoreData = false;
+  bool _receivedOrdersInfo = false;
+  bool _receivedLastTradeIndex = false;
 
   RestoreService(this.ref);
 
@@ -42,12 +45,19 @@ class RestoreService {
   }
 
   Future<void> restore() async {
-    await _clearAll();
-    _processedEventIds.clear();
-
     _logger.i('Starting restore session');
 
-    // Show overlay
+    // Clear existing data
+    await _clearAll();
+    _processedEventIds.clear();
+    _receivedRestoreData = false;
+    _receivedOrdersInfo = false;
+    _receivedLastTradeIndex = false;
+    _tempRestoreOrders = null;
+    _tempRestoreDisputes = null;
+    _tempOrdersDetails = null;
+    _tempLastTradeIndex = null;
+
     final progressNotifier = ref.read(restoreProgressProvider.notifier);
     progressNotifier.startRestore();
 
@@ -56,27 +66,22 @@ class RestoreService {
       final masterKey = keyManager.masterKeyPair;
 
       if (masterKey == null) {
-        _logger.w('Cannot restore: no master key found');
         progressNotifier.showError('No master key found');
         throw Exception('No master key found');
       }
 
       final settings = ref.read(settingsProvider);
       if (settings.mostroPublicKey.isEmpty) {
-        _logger.w('Cannot restore: Mostro public key not configured');
         progressNotifier.showError('Mostro not configured');
         throw Exception('Mostro public key not configured');
       }
 
-      // Derive trade key 1 for temporary subscription
-      _tempTradeKey1 = await keyManager.deriveTradeKeyFromIndex(1);
-      _logger.i('Derived trade key 1: ${_tempTradeKey1!.public}');
-
-      // Subscribe to trade key 1 with since filter (no historical events)
+      // Derive temporary trade key
+      _tempTradeKey1 = await keyManager.deriveTradeKeyFromIndex(0);
       final filter = NostrFilter(
         kinds: [1059],
         p: [_tempTradeKey1!.public],
-        since: DateTime.now(),
+        limit: 1,
       );
       final request = NostrRequest(filters: [filter]);
 
@@ -86,15 +91,11 @@ class RestoreService {
           .listen(
             _handleTempEvent,
             onError: (error, stackTrace) {
-              _logger.e('Temp subscription error',
-                  error: error, stackTrace: stackTrace);
+              _logger.e('Subscription error', error: error, stackTrace: stackTrace);
             },
             cancelOnError: false,
           );
 
-      _logger.i('Temp subscription created for trade key 1');
-
-      // Prepare restore request
       final restoreMessage = RestoreMessage();
       final rumor = NostrEvent.fromPartialData(
         keyPairs: _tempTradeKey1!,
@@ -103,17 +104,12 @@ class RestoreService {
         tags: [],
       );
 
-      _logger.i(
-          'Rumor created with trade key 1, wrapping with seal=${masterKey.public}, receiver=${settings.mostroPublicKey}');
-
-      // Wrap with separate keys: seal=master, rumor=trade key 1
       final wrappedEvent = await rumor.mostroWrapWithSeparateKeys(
         rumorKeys: _tempTradeKey1!,
         sealKeys: masterKey,
         receiverPubkey: settings.mostroPublicKey,
       );
 
-      _logger.i('Wrapped event created, publishing to relays');
       await ref.read(nostrServiceProvider).publishEvent(wrappedEvent);
       _logger.i('Restore request sent');
     } catch (e) {
@@ -123,137 +119,141 @@ class RestoreService {
     }
   }
 
-  Future<void> processRestoreData(Map<String, dynamic> payload) async {
-    final progressNotifier = ref.read(restoreProgressProvider.notifier);
+  Future<void> _handleTempEvent(NostrEvent event) async {
+    if (!_processedEventIds.add(event.id!)) {
+      return;
+    }
 
     try {
-      final restoreData = RestoreData.fromJson(payload);
-      final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+      final unwrapped = await event.mostroUnWrap(_tempTradeKey1!);
 
-      final totalOrders = restoreData.orders.length + restoreData.disputes.length;
-      _logger.i('Processing $totalOrders orders (${restoreData.orders.length} orders, ${restoreData.disputes.length} disputes)');
+      if (unwrapped.content == null || unwrapped.content!.isEmpty) {
+        return;
+      }
 
-      // Update overlay to receiving orders
-      progressNotifier.setOrdersReceived(totalOrders);
+      final content = jsonDecode(unwrapped.content!);
 
-      final keyManager = ref.read(keyManagerProvider);
-      final settings = ref.read(settingsProvider);
+      if (content is! List || content.isEmpty) {
+        return;
+      }
+
+      final order = content[0]['order'];
+      final restore = content[0]['restore'];
+
+      if (order != null) {
+        await _processAction(order['action'] as String?, order['payload'], data: order);
+      } else if (restore != null) {
+        await _processAction(restore['action'] as String?, restore['payload'], data: restore);
+      }
+    } catch (e, stackTrace) {
+      _logger.e('Error handling event', error: e, stackTrace: stackTrace);
+    }
+  }
+
+  Future<void> _processAction(String? action, dynamic payload, {dynamic data}) async {
+    if (action == null) {
+      return;
+    }
+
+    switch (action) {
+      case 'restore-session':
+        if (_receivedRestoreData) {
+          return;
+        }
+        _logger.i('Processing restore session data');
+        _receivedRestoreData = true;
+        if (payload != null) {
+          await _handleRestoreData(payload);
+        }
+        break;
+
+      case 'orders':
+        if (_receivedOrdersInfo) {
+          return;
+        }
+        _logger.i('Processing orders info');
+        _receivedOrdersInfo = true;
+        if (payload != null && payload['orders'] != null) {
+          _tempOrdersDetails = payload['orders'] as List;
+        }
+        _checkAndCleanupIfComplete();
+        break;
+
+      case 'last-trade-index':
+        if (_receivedLastTradeIndex) {
+          return;
+        }
+        _logger.i('Processing last trade index');
+        _receivedLastTradeIndex = true;
+        if (data != null) {
+          _tempLastTradeIndex = data['trade_index'] as int?;
+        }
+        _checkAndCleanupIfComplete();
+        break;
+
+      default:
+        _logger.w('Unknown action: $action');
+    }
+  }
+
+  Future<void> _handleRestoreData(dynamic payload) async {
+    try {
+      final restoreData = payload['restore_data'];
+      if (restoreData == null) {
+        return;
+      }
+
+      _tempRestoreOrders = restoreData['orders'] as List?;
+      _tempRestoreDisputes = restoreData['disputes'] as List?;
 
       final List<String> orderIds = [];
-      final masterKey = keyManager.masterKeyPair!;
 
-      // Process orders
-      for (final order in restoreData.orders) {
-        final tradeKey = await keyManager.deriveTradeKeyFromIndex(order.tradeIndex);
-
-        final session = Session(
-          masterKey: masterKey,
-          tradeKey: tradeKey,
-          keyIndex: order.tradeIndex,
-          fullPrivacy: settings.fullPrivacyMode,
-          startTime: DateTime.now(),
-          orderId: order.id,
-        );
-
-        await sessionNotifier.saveSession(session);
-        orderIds.add(order.id);
-        progressNotifier.incrementProgress();
+      if (_tempRestoreOrders != null) {
+        for (final order in _tempRestoreOrders!) {
+          final orderId = order['order_id'] as String?;
+          if (orderId != null) {
+            orderIds.add(orderId);
+          }
+        }
       }
 
-      // Process disputes
-      for (final dispute in restoreData.disputes) {
-        final tradeKey = await keyManager.deriveTradeKeyFromIndex(dispute.tradeIndex);
-
-        final session = Session(
-          masterKey: masterKey,
-          tradeKey: tradeKey,
-          keyIndex: dispute.tradeIndex,
-          fullPrivacy: settings.fullPrivacyMode,
-          startTime: DateTime.now(),
-          orderId: dispute.orderId,
-        );
-
-        await sessionNotifier.saveSession(session);
-        orderIds.add(dispute.orderId);
-        progressNotifier.incrementProgress();
+      if (_tempRestoreDisputes != null) {
+        for (final dispute in _tempRestoreDisputes!) {
+          final orderId = dispute['order_id'] as String?;
+          if (orderId != null) {
+            orderIds.add(orderId);
+          }
+        }
       }
 
-      // Request order details
       if (orderIds.isNotEmpty) {
-        progressNotifier.updateStep(RestoreStep.loadingDetails, total: orderIds.length);
-        await _requestOrderDetails(orderIds, masterKey, settings.mostroPublicKey);
+        await _requestOrderDetails(orderIds);
       } else {
-        // No orders to restore, request last trade index directly
-        await _requestLastTradeIndex();
+        _receivedOrdersInfo = true;
       }
+
+      await _requestLastTradeIndex();
     } catch (e) {
-      _logger.e('Process restore data failed: $e');
-      progressNotifier.showError(e.toString());
-      rethrow;
+      _logger.e('Error handling restore data: $e');
     }
   }
 
-  Future<void> _requestOrderDetails(
-    List<String> orderIds,
-    NostrKeyPairs masterKey,
-    String mostroPublicKey,
-  ) async {
-    final requestId = DateTime.now().millisecondsSinceEpoch;
-    final ordersRequest = OrdersRequestMessage(
-      requestId: requestId,
-      orderIds: orderIds,
-    );
-
-    final rumor = NostrEvent.fromPartialData(
-      keyPairs: _tempTradeKey1!,
-      content: ordersRequest.toJsonString(),
-      kind: 1,
-      tags: [],
-    );
-
-    final wrappedEvent = await rumor.mostroWrapWithSeparateKeys(
-      rumorKeys: _tempTradeKey1!,
-      sealKeys: masterKey,
-      receiverPubkey: mostroPublicKey,
-    );
-
-    await ref.read(nostrServiceProvider).publishEvent(wrappedEvent);
-    _logger.i('Requested details for ${orderIds.length} orders with trade key 1');
-  }
-
-  Future<void> processOrderDetails(List<dynamic> ordersData) async {
-    final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
-
-    for (final orderData in ordersData) {
-      final orderId = orderData['id'] as String?;
-      final buyerPubkey = orderData['buyer_trade_pubkey'] as String?;
-      final sellerPubkey = orderData['seller_trade_pubkey'] as String?;
-
-      if (orderId == null) continue;
-
-      final session = sessionNotifier.getSessionByOrderId(orderId);
-      if (session == null) continue;
-
-      if (buyerPubkey != null && session.tradeKey.public == buyerPubkey) {
-        await sessionNotifier.updateSession(orderId, (s) => s.role = Role.buyer);
-      } else if (sellerPubkey != null && session.tradeKey.public == sellerPubkey) {
-        await sessionNotifier.updateSession(orderId, (s) => s.role = Role.seller);
-      }
-    }
-
-    _logger.i('Updated session roles for ${ordersData.length} orders');
-  }
-
-  Future<void> _requestLastTradeIndex() async {
+  Future<void> _requestOrderDetails(List<String> orderIds) async {
     final keyManager = ref.read(keyManagerProvider);
-    final masterKey = keyManager.masterKeyPair!;
     final settings = ref.read(settingsProvider);
+    final masterKey = keyManager.masterKeyPair!;
 
-    final request = LastTradeIndexRequest();
+    final requestMessage = {
+      'order': {
+        'version': 1,
+        'action': 'orders',
+        'payload': {'ids': orderIds}
+      }
+    };
 
     final rumor = NostrEvent.fromPartialData(
       keyPairs: _tempTradeKey1!,
-      content: request.toJsonString(),
+      content: jsonEncode([requestMessage, null]),
       kind: 1,
       tags: [],
     );
@@ -265,116 +265,107 @@ class RestoreService {
     );
 
     await ref.read(nostrServiceProvider).publishEvent(wrappedEvent);
-    _logger.i('Requested last trade index with trade key 1');
-
-    // Update progress
-    final progressNotifier = ref.read(restoreProgressProvider.notifier);
-    progressNotifier.updateStep(RestoreStep.finalizing);
   }
 
-  Future<void> _handleTempEvent(NostrEvent event) async {
-    _logger.i('Received temp event: ${event.id}');
+  Future<void> _requestLastTradeIndex() async {
+    final keyManager = ref.read(keyManagerProvider);
+    final settings = ref.read(settingsProvider);
+    final masterKey = keyManager.masterKeyPair!;
 
-    // In-memory deduplication
-    if (!_processedEventIds.add(event.id!)) {
-      _logger.d('Skipping duplicate temp event: ${event.id}');
-      return;
+    final requestMessage = {
+      'restore': {
+        'version': 1,
+        'action': 'last-trade-index',
+        'payload': null
+      }
+    };
+
+    final rumor = NostrEvent.fromPartialData(
+      keyPairs: _tempTradeKey1!,
+      content: jsonEncode([requestMessage, null]),
+      kind: 1,
+      tags: [],
+    );
+
+    final wrappedEvent = await rumor.mostroWrapWithSeparateKeys(
+      rumorKeys: _tempTradeKey1!,
+      sealKeys: masterKey,
+      receiverPubkey: settings.mostroPublicKey,
+    );
+
+    await ref.read(nostrServiceProvider).publishEvent(wrappedEvent);
+  }
+
+  void _checkAndCleanupIfComplete() {
+    if (_receivedRestoreData && _receivedOrdersInfo && _receivedLastTradeIndex) {
+      _processAllData();
     }
+  }
 
+  Future<void> _processAllData() async {
     try {
-      // Unwrap with trade key 1
-      final unwrapped = await event.unWrap(_tempTradeKey1!.private);
+      final keyManager = ref.read(keyManagerProvider);
+      final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
 
-      if (unwrapped.content == null || unwrapped.content!.isEmpty) {
-        _logger.w('Empty content in temp event');
-        return;
+      final tempSession = sessionNotifier.getSessionByTradeKey(_tempTradeKey1!.public);
+      if (tempSession != null && tempSession.orderId != null) {
+        await sessionNotifier.deleteSession(tempSession.orderId!);
+        _logger.i('Deleted temporary session');
       }
 
-      final content = jsonDecode(unwrapped.content!);
-
-      if (content is! List || content.isEmpty) {
-        _logger.w('Invalid content format in temp event');
-        return;
+      if (_tempLastTradeIndex != null) {
+        await keyManager.setCurrentKeyIndex(_tempLastTradeIndex! + 1);
+        _logger.i('Updated key index to: ${_tempLastTradeIndex! + 1}');
       }
 
-      final order = content[0]['order'];
-      if (order == null) {
-        _logger.w('No order field in temp event');
-        return;
+      if (_tempOrdersDetails != null) {
+        _logger.i('=== RESTORED ORDERS ===');
+        for (final orderData in _tempOrdersDetails!) {
+          _logger.i('Order data: $orderData');
+        }
+        _logger.i('Total orders: ${_tempOrdersDetails!.length}');
       }
-
-      final action = order['action'] as String?;
-      final payload = order['payload'];
-
-      _logger.i('Processing temp event with action: $action');
-
-      // Route based on action
-      switch (action) {
-        case 'restore-data':
-          if (payload != null) {
-            await processRestoreData(payload);
-          }
-          break;
-        case 'orders-info':
-          if (payload != null && payload is List) {
-            await processOrderDetails(payload);
-            // After details, request last trade index
-            await _requestLastTradeIndex();
-          }
-          break;
-        case 'last-trade-index':
-          if (payload != null) {
-            final index = payload['index'] as int?;
-            if (index != null) {
-              final keyManager = ref.read(keyManagerProvider);
-              await keyManager.setCurrentKeyIndex(index + 1);
-              _logger.i('Updated key index to: ${index + 1}');
-            }
-          }
-          // Finish restore after index received
-          await _finishRestore();
-          break;
-        default:
-          _logger.w('Unknown action in temp event: $action');
-      }
-    } catch (e, stackTrace) {
-      _logger.e('Error handling temp event', error: e, stackTrace: stackTrace);
+      _cleanupTempSession();
+    } catch (e) {
+      _logger.e('Error processing all data: $e');
+      _cleanupTempSession();
     }
   }
 
-  Future<void> _finishRestore() async {
-    _logger.i('Finishing restore - cleaning up temp subscription');
-
-    // Cancel temp subscription
-    await _tempSubscription?.cancel();
+  void _cleanupTempSession() {
+    _tempSubscription?.cancel();
     _tempSubscription = null;
     _tempTradeKey1 = null;
     _processedEventIds.clear();
 
-    // Complete restore progress overlay
+    _receivedRestoreData = false;
+    _receivedOrdersInfo = false;
+    _receivedLastTradeIndex = false;
+
+    _tempRestoreOrders = null;
+    _tempRestoreDisputes = null;
+    _tempOrdersDetails = null;
+    _tempLastTradeIndex = null;
+
     final progressNotifier = ref.read(restoreProgressProvider.notifier);
     progressNotifier.completeRestore();
 
-    _logger.i('Restore completed successfully');
+    _logger.i('Restore completed');
   }
 
   Future<void> _clearAll() async {
     try {
-      // Clean existing sessions, orders, notifications and events before processing restore data
       final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
       await sessionNotifier.reset();
 
       final mostroStorage = ref.read(mostroStorageProvider);
       await mostroStorage.deleteAll();
 
-
       final notificationsRepo = ref.read(notificationsRepositoryProvider);
       await notificationsRepo.clearAll();
 
       final localNotifications = ref.read(localNotificationsProvider);
       await localNotifications.cancelAll();
-
-      _logger.i('Cleared all data (preserved admin event history)');
     } catch (e) {
       _logger.w('Error clearing data: $e');
     }

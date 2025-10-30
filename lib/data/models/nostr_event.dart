@@ -265,6 +265,92 @@ extension NostrEventExtensions on NostrEvent {
     return now.subtract(Duration(seconds: randomSeconds));
   }
 
+  /// Wraps a RUMOR (kind 1) into a Gift Wrap (kind 1059) with separate keys for RUMOR and SEAL
+  ///
+  /// This is used for Mostro restore-session and similar operations where:
+  /// - RUMOR is signed with trade key (index 0)
+  /// - SEAL is signed with master key (identity key)
+  ///
+  /// Flow:
+  /// 1. Create RUMOR (kind 1, unsigned) with rumor keys
+  /// 2. Encrypt RUMOR with seal keys → SEAL (13)
+  /// 3. Encrypt SEAL with ephemeral key → Gift Wrap (1059)
+  ///
+  /// Parameters:
+  /// - rumorKeys: The keys used to sign the rumor (trade key)
+  /// - sealKeys: The keys used to sign the seal (master/identity key)
+  /// - receiverPubkey: The receiver's public key (Mostro pubkey)
+  Future<NostrEvent> mostroWrapWithSeparateKeys({
+    required NostrKeyPairs rumorKeys,
+    required NostrKeyPairs sealKeys,
+    required String receiverPubkey,
+  }) async {
+    if (kind != 1) {
+      throw ArgumentError('Expected kind 1 (RUMOR), got: $kind');
+    }
+
+    if (content == null || content!.isEmpty) {
+      throw ArgumentError('RUMOR content is empty');
+    }
+
+    try {
+      // STEP 1: Prepare the RUMOR (kind 1, unsigned) with rumor keys
+      final rumorMap = {
+        'kind': 1,
+        'content': content,
+        'pubkey': rumorKeys.public,
+        'created_at': ((createdAt ?? DateTime.now()).millisecondsSinceEpoch ~/ 1000),
+        'tags': tags ?? [],
+      };
+
+      final rumorJson = jsonEncode(rumorMap);
+
+      // STEP 2: Create SEAL (kind 13) signed with SEAL KEYS
+      // Encrypt the rumor with seal private key + receiver's public key
+      final encryptedRumor = await NostrUtils.encryptNIP44(
+        rumorJson,
+        sealKeys.private,
+        receiverPubkey,
+      );
+
+      final seal = NostrEvent.fromPartialData(
+        kind: 13,
+        content: encryptedRumor,
+        keyPairs: sealKeys, // Use seal keys (master/identity key)
+        tags: [],
+        createdAt: DateTime.now(),
+      );
+
+      final sealJson = jsonEncode(seal.toMap());
+
+      // STEP 3: Create Gift Wrap (kind 1059)
+      // Generate ephemeral key pair (single-use)
+      final ephemeralKeyPair = NostrUtils.generateKeyPair();
+
+      // Encrypt the seal with ephemeral key + receiver's public key
+      final encryptedSeal = await NostrUtils.encryptNIP44(
+        sealJson,
+        ephemeralKeyPair.private,
+        receiverPubkey,
+      );
+
+      // Create Gift Wrap with randomized timestamp
+      final giftWrap = NostrEvent.fromPartialData(
+        kind: 1059,
+        content: encryptedSeal,
+        keyPairs: ephemeralKeyPair,
+        tags: [
+          ["p", receiverPubkey],
+        ],
+        createdAt: _randomizedTimestamp(),
+      );
+
+      return giftWrap;
+    } catch (e) {
+      throw Exception('Failed to wrap with separate keys: $e');
+    }
+  }
+
   /// P2P Chat: Simplified NIP-59 wrapper for peer-to-peer chat
   /// Wraps a signed kind 1 event directly in a kind 1059 wrapper
   /// This is different from mostroWrap which uses a SEAL intermediate layer
