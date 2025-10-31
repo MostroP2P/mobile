@@ -1,21 +1,22 @@
 import 'dart:async';
+import 'dart:ui'; // 🔹 Agregar para PlatformDispatcher
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mostro_mobile/core/app.dart';
-import 'package:mostro_mobile/features/auth/providers/auth_notifier_provider.dart';
 import 'package:mostro_mobile/features/relays/relays_provider.dart';
 import 'package:mostro_mobile/features/settings/settings_notifier.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/background/background_service.dart';
-import 'package:mostro_mobile/features/notifications/services/background_notification_service.dart';
 import 'package:mostro_mobile/shared/providers/background_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/providers.dart';
 import 'package:mostro_mobile/shared/utils/biometrics_helper.dart';
 import 'package:mostro_mobile/shared/utils/notification_permission_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timeago/timeago.dart' as timeago;
-import 'package:mostro_mobile/features/logs/logs_service.dart'; // 🔹
+import 'package:mostro_mobile/features/logs/logs_service.dart';
+import 'package:mostro_mobile/features/logs/logs_provider.dart'; // 🔹 AGREGAR ESTE IMPORT
+import 'package:mostro_mobile/features/notifications/services/background_notification_service.dart'; // 🔹 AGREGAR
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,16 +25,31 @@ Future<void> main() async {
   final logsService = LogsService();
   await logsService.init();
 
-  // Captura errores globales y print()
+  // Log de inicio
+  logsService.log('🚀 App iniciada');
+
+  // Captura errores globales de Flutter
   FlutterError.onError = (details) {
-    debugPrint('FlutterError: ${details.exceptionAsString()}\n${details.stack}');
+    logsService.log('❌ FlutterError: ${details.exceptionAsString()}');
+    if (details.stack != null) {
+      logsService.log('Stack: ${details.stack}');
+    }
   };
 
-  runZonedGuarded(() async {
-    await _startApp(logsService);
-  }, (error, stackTrace) {
-    debugPrint('ERROR: $error\n$stackTrace'); // LogsService ya lo captura
-  });
+  // Captura errores de Dart no manejados
+  PlatformDispatcher.instance.onError = (error, stack) {
+    logsService.log('❌ Uncaught error: $error');
+    logsService.log('Stack: $stack');
+    return true; // Marca el error como manejado
+  };
+
+  runZonedGuarded(
+        () async => await _startApp(logsService),
+        (error, stackTrace) {
+      logsService.log('⚠️ Zone error: $error');
+      logsService.log('StackTrace: $stackTrace');
+    },
+  );
 }
 
 Future<void> _startApp(LogsService logsService) async {
@@ -49,7 +65,7 @@ Future<void> _startApp(LogsService logsService) async {
   final settings = SettingsNotifier(sharedPreferences);
   await settings.init();
 
-  await initializeNotifications();
+  await initializeNotifications(); // 🔹 DESCOMENTADO
   _initializeTimeAgoLocalization();
 
   final backgroundService = createBackgroundService(settings.settings);
@@ -64,7 +80,7 @@ Future<void> _startApp(LogsService logsService) async {
       secureStorageProvider.overrideWithValue(secureStorage),
       mostroDatabaseProvider.overrideWithValue(mostroDatabase),
       eventDatabaseProvider.overrideWithValue(eventsDatabase),
-      logsProvider.overrideWith((ref) => logsService), // 🔹 corrección
+      logsServiceProvider.overrideWithValue(logsService),
     ],
   );
 
@@ -82,7 +98,8 @@ void _initializeRelaySynchronization(ProviderContainer container) {
   try {
     container.read(relaysProvider);
   } catch (e) {
-    debugPrint('Failed to initialize relay synchronization: $e');
+    final logsService = container.read(logsServiceProvider);
+    logsService.log('Failed to initialize relay synchronization: $e');
   }
 }
 

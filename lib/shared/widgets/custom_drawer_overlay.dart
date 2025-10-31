@@ -117,29 +117,6 @@ class CustomDrawerOverlay extends ConsumerWidget {
                       ),
 
                       const SizedBox(height: 8),
-
-                      // ✅ Logs menu item integrated correctly
-                      ListTile(
-                        leading: const Icon(Icons.bug_report,
-                            color: Colors.orangeAccent),
-                        title: Text(
-                          S.of(context)!.logsMenuTitle,
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w500),
-                        ),
-                        subtitle: Text(
-                          S.of(context)!.logsMenuSubtitle,
-                          style:
-                          const TextStyle(color: Colors.grey, fontSize: 12),
-                        ),
-                        onTap: () {
-                          ref
-                              .read(drawerProvider.notifier)
-                              .closeDrawer();
-                          context.push('/logs');
-                        },
-                      ),
                     ],
                   ),
                 ),

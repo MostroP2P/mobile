@@ -1130,8 +1130,12 @@
   "deleteLogsTooltip": "Borrar logs",
   "logsDeletedMessage": "🧹 Logs borrados",
   "shareLogsTooltip": "Compartir archivo de logs",
+  "errorSharingLogs": "Ocurrió un error al compartir los registros.",
   "logsShareText": "Logs de MostroApp",
   "noLogsMessage": "No hay registros aún.",
   "logsMenuTitle": "Ver registros (Logs)",
-  "logsMenuSubtitle": "Diagnóstico y eventos internos"
+  "logsMenuSubtitle": "Diagnóstico y eventos internos",
+  "logsEnabledDescription": "Guardando registros de actividad",
+  "logsDisabledDescription": "Registros desactivados",
+  "viewLogsButton": "Ver registros"
 }

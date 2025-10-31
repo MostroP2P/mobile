@@ -1152,7 +1152,11 @@
   "logsDeletedMessage": "🧹 Logs cleared",
   "shareLogsTooltip": "Share logs file",
   "logsShareText": "MostroApp Logs",
+  "errorSharingLogs": "An error occurred while sharing logs.",
   "noLogsMessage": "No logs yet.",
   "logsMenuTitle": "View Logs",
-  "logsMenuSubtitle": "Internal diagnostics and events"
+  "logsMenuSubtitle": "Internal diagnostics and events",
+  "logsEnabledDescription": "Saving activity logs",
+  "logsDisabledDescription": "Logs disabled",
+  "viewLogsButton": "View logs"
 }

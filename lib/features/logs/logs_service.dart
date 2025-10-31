@@ -1,131 +1,158 @@
+// lib/features/logs/logs_service.dart
 import 'dart:async';
+import 'dart:collection';
 import 'dart:io';
-import 'package:flutter/foundation.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+class LogsService {
+  static final LogsService _instance = LogsService._internal();
+  factory LogsService() => _instance;
+  LogsService._internal();
 
-final logsProvider = ChangeNotifierProvider<LogsService>((ref) {
-  return LogsService()..init();
-});
+  static const String _logsEnabledKey = 'logs_enabled';
 
-class LogsService extends ChangeNotifier {
   final List<String> _logs = [];
-  late File _logFile;
+  File? _logFile;
   IOSink? _sink;
   bool _initialized = false;
-  DebugPrintCallback? _previousDebugPrint;
+  bool _isEnabled = true;
 
-  List<String> get logs => _logs;
+  // Expose unmodifiable view to prevent external mutation
+  UnmodifiableListView<String> get logs => UnmodifiableListView(_logs);
 
   Future<void> init() async {
     if (_initialized) return;
 
+    try {
+      // Load preference for logs enabled/disabled
+      final prefs = await SharedPreferences.getInstance();
+      _isEnabled = prefs.getBool(_logsEnabledKey) ?? true;
 
-    final dir = await getApplicationDocumentsDirectory();
-    _logFile = File('${dir.path}/mostro_logs.txt');
+      final dir = await getApplicationDocumentsDirectory();
+      _logFile = File('${dir.path}/mostro_logs.txt');
 
-    // Load previous logs if present
-    if (await _logFile.exists()) {
-      final content = await _logFile.readAsLines();
-      _logs.addAll(content);
-      if (content.isNotEmpty) notifyListeners();
-      _initialized = true;
-    }
-
-    _sink = _logFile.openWrite(mode: FileMode.append);
-
-    // Intercept debugPrint to persist all logs (and still print in debug).
-    _previousDebugPrint ??= debugPrint;
-    debugPrint = (String? message, {int? wrapWidth}) {
-      final time = DateTime.now().toIso8601String();
-      final line = "[$time] ${message ?? ''}";
-      try {
-        _logs.add(line);
-        _sink?.writeln(line); // keep original emojis/colors
-        // Avoid flushing every line; rely on OS buffering.
-        notifyListeners();
-      } catch (e, st) {
-        // Fallback to the original debugPrint to avoid recursion and crashes.
-        _previousDebugPrint?.call('[LogsService] Error writing log: $e');
-        _previousDebugPrint?.call(st.toString());
-      } finally {
-        if (kDebugMode) {
-          // Also print to console in debug builds.
-          // Preserve wrapWidth by delegating to the original if available.
-          _previousDebugPrint?.call(line, wrapWidth: wrapWidth);
-        }
+      // Load existing logs if file exists
+      if (await _logFile!.exists()) {
+        final content = await _logFile!.readAsString();
+        _logs.addAll(content.split('\n').where((line) => line.isNotEmpty));
       }
-    };
-  }
 
-  Future<void> clearLogs() async {
-    await _sink?.flush();
-    await _sink?.close();
-    _sink = null;
+      // Open file for appending
+      _sink = _logFile!.openWrite(mode: FileMode.append);
 
-    _logs.clear();
-    await _logFile.writeAsString('');
-
-    _sink = _logFile.openWrite(mode: FileMode.append);
-
-    await _writeLog('🧹 Logs cleared by user');
-  }
-
-  @protected
-  Future<void> _writeLog(String message) async {
-    if (_sink == null) {
-      _previousDebugPrint?.call('[LogsService] ⚠️ Sink uninitialized: $message');
-      return;
+      // Set initialized flag only after successful setup
+      _initialized = true;
+    } catch (e) {
+      print('Error initializing LogsService: $e');
+      rethrow;
     }
+  }
+
+  // Get current state
+  Future<bool> isLogsEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_logsEnabledKey) ?? true;
+  }
+
+  // Change state
+  Future<void> setLogsEnabled(bool enabled) async {
+    _isEnabled = enabled;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_logsEnabledKey, enabled);
+  }
+
+  // Main logging method - compatible with both old (writeLog) and new (log) usage
+  void log(String message) {
+    if (!_initialized || !_isEnabled) return;
+
+    final timestamp = DateTime.now().toIso8601String();
+    final line = '[$timestamp] $message';
+
+    _logs.add(line);
 
     try {
-      final timestamp = DateTime.now().toIso8601String();
-      final line = '[$timestamp] $message';
-      _logs.add(line);
-      _sink!.writeln(line);
-      await _sink!.flush();
-      notifyListeners();
-    } catch (e, stackTrace) {
-      _previousDebugPrint?.call('[LogsService] ❌ Write error: $e');
-      _previousDebugPrint?.call(stackTrace.toString());
+      _sink?.writeln(line);
+    } catch (e) {
+      print('Error writing to log file: $e');
     }
   }
 
-  /// Returns the log file.
-  /// If [clean] is true, emojis and non-printable characters are removed.
-  Future<File> getLogFile({bool clean = false}) async {
-    await _sink?.flush();
+  // Alias for backwards compatibility
+  Future<void> writeLog(String message) async {
+    log(message);
+  }
 
-    if (clean) {
-      final cleanLines = _logs.map((line) => _cleanLine(line)).toList();
-      final cleanFile = File(_logFile.path.replaceFirst('.txt', '_clean.txt'));
-      await cleanFile.writeAsString(cleanLines.join('\n'));
+  // Read logs (backwards compatibility)
+  Future<List<String>> readLogs() async {
+    return _logs.toList();
+  }
+
+  Future<void> clearLogs({bool clean = true}) async {
+    if (!_initialized) return;
+
+    try {
+      // Close current sink
+      await _sink?.close();
+
+      // Clear file
+      await _logFile?.writeAsString('');
+
+      // Clear memory list
+      _logs.clear();
+
+      // Reopen sink
+      _sink = _logFile?.openWrite(mode: FileMode.append);
+    } catch (e) {
+      print('Error clearing logs: $e');
+    }
+  }
+
+  Future<File?> getLogFile({bool clean = false}) async {
+    if (!_initialized || _logFile == null) return null;
+
+    try {
+      // Flush before reading to ensure all data is written
+      await _sink?.flush();
+
+      if (!clean) {
+        return _logFile;
+      }
+
+      // Create cleaned copy
+      final dir = await getApplicationDocumentsDirectory();
+      final cleanFile = File('${dir.path}/mostro_logs_clean.txt');
+
+      final content = await _logFile!.readAsString();
+      final cleanedLines = content
+          .split('\n')
+          .where((line) => line.isNotEmpty)
+          .map(_cleanLine)
+          .join('\n');
+
+      await cleanFile.writeAsString(cleanedLines);
       return cleanFile;
+    } catch (e) {
+      print('Error getting log file: $e');
+      return null;
     }
-
-    return _logFile;
   }
 
-  /// Removes emojis and non-printable characters, keeping only visible text
   String _cleanLine(String line) {
-    final ansi = RegExp(r'\x1B\[[0-?]*[ -/]*[@-~]');
-    final noAnsi = line.replaceAll(ansi, '');
-    return noAnsi.replaceAll(RegExp(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]'), '');
+    // Remove ANSI color codes (e.g., \x1B[31m for red)
+    final ansiRegex = RegExp(r'\x1B\[[0-?]*[ -/]*[@-~]');
+    final noAnsi = line.replaceAll(ansiRegex, '');
 
+    // Remove non-printable control characters but keep Unicode text
+    final controlCharsRegex = RegExp(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]');
+    return noAnsi.replaceAll(controlCharsRegex, '');
   }
 
-  @override
-  void dispose() {
-    unawaited(_sink?.flush());
-    _sink?.close();
-    _sink = null;
-
-    if (_previousDebugPrint != null) {
-      debugPrint = _previousDebugPrint!;
-      _previousDebugPrint = null;
+  Future<void> dispose() async {
+    if (_initialized) {
+      await _sink?.flush();
+      await _sink?.close();
+      _initialized = false;
     }
-
-    super.dispose();
   }
 }

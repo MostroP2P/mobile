@@ -4,8 +4,8 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i5;
-import 'dart:io' as _i14;
-import 'dart:ui' as _i31;
+import 'dart:collection' as _i14;
+import 'dart:io' as _i31;
 
 import 'package:dart_nostr/dart_nostr.dart' as _i3;
 import 'package:dart_nostr/nostr/model/relay_informations.dart' as _i16;
@@ -35,7 +35,7 @@ import 'package:mostro_mobile/services/nostr_service.dart' as _i15;
 import 'package:riverpod/src/internals.dart' as _i8;
 import 'package:sembast/sembast.dart' as _i6;
 import 'package:sembast/src/api/transaction.dart' as _i22;
-import 'package:shared_preferences/src/shared_preferences_async.dart' as _i21;
+import 'package:shared_preferences/shared_preferences.dart' as _i21;
 import 'package:state_notifier/state_notifier.dart' as _i27;
 
 // ignore_for_file: type=lint
@@ -250,8 +250,9 @@ class _FakeLogger_18 extends _i1.SmartFake implements _i13.Logger {
         );
 }
 
-class _FakeFile_19 extends _i1.SmartFake implements _i14.File {
-  _FakeFile_19(
+class _FakeUnmodifiableListView_19<E> extends _i1.SmartFake
+    implements _i14.UnmodifiableListView<E> {
+  _FakeUnmodifiableListView_19(
     Object parent,
     Invocation parentInvocation,
   ) : super(
@@ -3082,16 +3083,13 @@ class MockLogsService extends _i1.Mock implements _i30.LogsService {
   }
 
   @override
-  List<String> get logs => (super.noSuchMethod(
+  _i14.UnmodifiableListView<String> get logs => (super.noSuchMethod(
         Invocation.getter(#logs),
-        returnValue: <String>[],
-      ) as List<String>);
-
-  @override
-  bool get hasListeners => (super.noSuchMethod(
-        Invocation.getter(#hasListeners),
-        returnValue: false,
-      ) as bool);
+        returnValue: _FakeUnmodifiableListView_19<String>(
+          this,
+          Invocation.getter(#logs),
+        ),
+      ) as _i14.UnmodifiableListView<String>);
 
   @override
   _i5.Future<void> init() => (super.noSuchMethod(
@@ -3104,66 +3102,81 @@ class MockLogsService extends _i1.Mock implements _i30.LogsService {
       ) as _i5.Future<void>);
 
   @override
-  _i5.Future<void> clearLogs() => (super.noSuchMethod(
+  _i5.Future<bool> isLogsEnabled() => (super.noSuchMethod(
         Invocation.method(
-          #clearLogs,
+          #isLogsEnabled,
           [],
+        ),
+        returnValue: _i5.Future<bool>.value(false),
+      ) as _i5.Future<bool>);
+
+  @override
+  _i5.Future<void> setLogsEnabled(bool? enabled) => (super.noSuchMethod(
+        Invocation.method(
+          #setLogsEnabled,
+          [enabled],
         ),
         returnValue: _i5.Future<void>.value(),
         returnValueForMissingStub: _i5.Future<void>.value(),
       ) as _i5.Future<void>);
 
   @override
-  _i5.Future<_i14.File> getLogFile({bool? clean = false}) =>
+  void log(String? message) => super.noSuchMethod(
+        Invocation.method(
+          #log,
+          [message],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  _i5.Future<void> writeLog(String? message) => (super.noSuchMethod(
+        Invocation.method(
+          #writeLog,
+          [message],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+
+  @override
+  _i5.Future<List<String>> readLogs() => (super.noSuchMethod(
+        Invocation.method(
+          #readLogs,
+          [],
+        ),
+        returnValue: _i5.Future<List<String>>.value(<String>[]),
+      ) as _i5.Future<List<String>>);
+
+  @override
+  _i5.Future<void> clearLogs({bool? clean = true}) => (super.noSuchMethod(
+        Invocation.method(
+          #clearLogs,
+          [],
+          {#clean: clean},
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+
+  @override
+  _i5.Future<_i31.File?> getLogFile({bool? clean = false}) =>
       (super.noSuchMethod(
         Invocation.method(
           #getLogFile,
           [],
           {#clean: clean},
         ),
-        returnValue: _i5.Future<_i14.File>.value(_FakeFile_19(
-          this,
-          Invocation.method(
-            #getLogFile,
-            [],
-            {#clean: clean},
-          ),
-        )),
-      ) as _i5.Future<_i14.File>);
+        returnValue: _i5.Future<_i31.File?>.value(),
+      ) as _i5.Future<_i31.File?>);
 
   @override
-  void dispose() => super.noSuchMethod(
+  _i5.Future<void> dispose() => (super.noSuchMethod(
         Invocation.method(
           #dispose,
           [],
         ),
-        returnValueForMissingStub: null,
-      );
-
-  @override
-  void addListener(_i31.VoidCallback? listener) => super.noSuchMethod(
-        Invocation.method(
-          #addListener,
-          [listener],
-        ),
-        returnValueForMissingStub: null,
-      );
-
-  @override
-  void removeListener(_i31.VoidCallback? listener) => super.noSuchMethod(
-        Invocation.method(
-          #removeListener,
-          [listener],
-        ),
-        returnValueForMissingStub: null,
-      );
-
-  @override
-  void notifyListeners() => super.noSuchMethod(
-        Invocation.method(
-          #notifyListeners,
-          [],
-        ),
-        returnValueForMissingStub: null,
-      );
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
 }
