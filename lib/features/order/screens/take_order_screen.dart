@@ -470,8 +470,11 @@ class _CountdownWidget extends ConsumerWidget {
       return const SizedBox.shrink();
     }
 
-    final expiresAtTimestamp = int.parse(order.orderExpiresAt!);
-    final expiration = DateTime.fromMillisecondsSinceEpoch(expiresAtTimestamp * 1000);
+    final expiresAtSeconds = int.tryParse(order.orderExpiresAt!);
+    if (expiresAtSeconds == null || expiresAtSeconds <= 0) {
+      return const SizedBox.shrink();
+    }
+    final expiration = DateTime.fromMillisecondsSinceEpoch(expiresAtSeconds * 1000);
     final createdAt = order.createdAt!;
 
     return DynamicCountdownWidget(
