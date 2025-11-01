@@ -1177,5 +1177,19 @@
   "deleteUserRelayCancel": "No",
 
   "@_comment_session_timeout": "Session timeout message",
-  "sessionTimeoutMessage": "Nessuna risposta ricevuta, verifica la tua connessione e riprova più tardi"
+  "sessionTimeoutMessage": "Nessuna risposta ricevuta, verifica la tua connessione e riprova più tardi",
+
+  "@_comment_logsScreenTitle": "Title for the logs screen in the app",
+  "logsScreenTitle": "Registri dell'applicazione",
+  "deleteLogsTooltip": "Elimina log",
+  "logsDeletedMessage": "🧹 Log cancellati",
+  "shareLogsTooltip": "Condividi file log",
+  "errorSharingLogs": "Si è verificato un errore durante la condivisione dei registri.",
+  "logsShareText": "Log di MostroApp",
+  "noLogsMessage": "Nessun registro presente.",
+  "logsMenuTitle": "Visualizza Log",
+  "logsMenuSubtitle": "Diagnostica ed eventi interni",
+  "logsEnabledDescription": "Salvataggio dei registri di attività",
+  "logsDisabledDescription": "Registri disattivati",
+  "viewLogsButton": "Visualizza registri"
 }

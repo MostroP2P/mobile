@@ -1,23 +1,58 @@
+import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mostro_mobile/core/app.dart';
-import 'package:mostro_mobile/features/auth/providers/auth_notifier_provider.dart';
 import 'package:mostro_mobile/features/relays/relays_provider.dart';
 import 'package:mostro_mobile/features/settings/settings_notifier.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/background/background_service.dart';
-import 'package:mostro_mobile/features/notifications/services/background_notification_service.dart';
 import 'package:mostro_mobile/shared/providers/background_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/providers.dart';
 import 'package:mostro_mobile/shared/utils/biometrics_helper.dart';
 import 'package:mostro_mobile/shared/utils/notification_permission_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timeago/timeago.dart' as timeago;
+import 'package:mostro_mobile/features/logs/logs_service.dart';
+import 'package:mostro_mobile/features/logs/logs_provider.dart';
+import 'package:mostro_mobile/features/notifications/services/background_notification_service.dart'; // 🔹 AGREGAR
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Inicializa LogsService
+  final logsService = LogsService();
+  await logsService.init();
+
+  // Log de inicio
+  logsService.log('🚀 App iniciada');
+
+  // Captura errores globales de Flutter
+  FlutterError.onError = (details) {
+    logsService.log('❌ FlutterError: ${details.exceptionAsString()}');
+    if (details.stack != null) {
+      logsService.log('Stack: ${details.stack}');
+    }
+  };
+
+  // Captura errores de Dart no manejados
+  PlatformDispatcher.instance.onError = (error, stack) {
+    logsService.log('❌ Uncaught error: $error');
+    logsService.log('Stack: $stack');
+    return true; // Marca el error como manejado
+  };
+
+  runZonedGuarded(
+        () async => await _startApp(logsService),
+        (error, stackTrace) {
+      logsService.log('⚠️ Zone error: $error');
+      logsService.log('StackTrace: $stackTrace');
+    },
+  );
+}
+
+Future<void> _startApp(LogsService logsService) async {
   await requestNotificationPermissionIfNeeded();
 
   final biometricsHelper = BiometricsHelper();
@@ -30,8 +65,7 @@ Future<void> main() async {
   final settings = SettingsNotifier(sharedPreferences);
   await settings.init();
 
-  await initializeNotifications();
-
+  await initializeNotifications(); // 🔹 DESCOMENTADO
   _initializeTimeAgoLocalization();
 
   final backgroundService = createBackgroundService(settings.settings);
@@ -39,17 +73,17 @@ Future<void> main() async {
 
   final container = ProviderContainer(
     overrides: [
-      settingsProvider.overrideWith((b) => settings),
+      settingsProvider.overrideWith((ref) => settings),
       backgroundServiceProvider.overrideWithValue(backgroundService),
       biometricsHelperProvider.overrideWithValue(biometricsHelper),
       sharedPreferencesProvider.overrideWithValue(sharedPreferences),
       secureStorageProvider.overrideWithValue(secureStorage),
       mostroDatabaseProvider.overrideWithValue(mostroDatabase),
       eventDatabaseProvider.overrideWithValue(eventsDatabase),
+      logsServiceProvider.overrideWithValue(logsService),
     ],
   );
 
-  // Initialize relay sync on app start
   _initializeRelaySynchronization(container);
 
   runApp(
@@ -60,25 +94,16 @@ Future<void> main() async {
   );
 }
 
-/// Initialize relay synchronization on app startup
 void _initializeRelaySynchronization(ProviderContainer container) {
   try {
-    // Read the relays provider to trigger initialization of RelaysNotifier
-    // This will automatically start sync with the configured Mostro instance
     container.read(relaysProvider);
   } catch (e) {
-    // Log error but don't crash app if relay sync initialization fails
-    debugPrint('Failed to initialize relay synchronization: $e');
+    final logsService = container.read(logsServiceProvider);
+    logsService.log('Failed to initialize relay synchronization: $e');
   }
 }
 
-/// Initialize timeago localization for supported languages
 void _initializeTimeAgoLocalization() {
-  // Set Spanish locale for timeago
   timeago.setLocaleMessages('es', timeago.EsMessages());
-
-  // Set Italian locale for timeago
   timeago.setLocaleMessages('it', timeago.ItMessages());
-
-  // English is already the default, no need to set it
 }

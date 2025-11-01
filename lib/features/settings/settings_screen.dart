@@ -10,6 +10,7 @@ import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/shared/widgets/currency_selection_dialog.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
 import 'package:mostro_mobile/shared/widgets/language_selector.dart';
+import 'package:mostro_mobile/features/logs/logs_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -97,6 +98,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                   // Relays Card
                   _buildRelaysCard(context),
+                  const SizedBox(height: 16),
+
+                  // Logs Card
+                  _buildLogsCard(context),
                   const SizedBox(height: 16),
 
                   // Mostro Card
@@ -384,6 +389,98 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             const SizedBox(height: 20),
             RelaySelector(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLogsCard(BuildContext context) {
+    final isLogsEnabled = ref.watch(logsEnabledProvider);
+    final logsEnabledNotifier = ref.read(logsEnabledProvider.notifier);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.backgroundCard,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(
+                  LucideIcons.bug,
+                  color: AppTheme.activeColor,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Logs',
+                  style: const TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const Spacer(),
+                Switch(
+                  value: isLogsEnabled,
+                  onChanged: (value) async {
+                    await logsEnabledNotifier.toggle(value);
+                  },
+                  activeThumbColor: AppTheme.activeColor,
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Text(
+              isLogsEnabled
+                  ? S.of(context)!.logsEnabledDescription
+                  : S.of(context)!.logsDisabledDescription,
+              style: const TextStyle(
+                color: AppTheme.textSecondary,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 16),
+            InkWell(
+              onTap: () {
+                context.push('/logs');
+              },
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: AppTheme.activeColor.withValues(alpha: 0.3),
+                    width: 1,
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      S.of(context)!.viewLogsButton,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: AppTheme.activeColor,
+                      ),
+                    ),
+                    const Icon(
+                      Icons.arrow_forward_ios,
+                      size: 16,
+                      color: AppTheme.activeColor,
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),

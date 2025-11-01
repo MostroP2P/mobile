@@ -16,32 +16,32 @@ class CustomDrawerOverlay extends ConsumerWidget {
     final isDrawerOpen = ref.watch(drawerProvider);
     final statusBarHeight = MediaQuery.of(context).padding.top;
 
-    return Stack(
-      children: [
-        // Main content
-        child,
+    return PopScope(
+      canPop: !isDrawerOpen,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && isDrawerOpen) {
+          ref.read(drawerProvider.notifier).closeDrawer();
+        }
+      },
+      child: Stack(
+        children: [
+          // Main content
+          child,
 
-        // Overlay background
-        if (isDrawerOpen)
-          GestureDetector(
-            onTap: () => ref.read(drawerProvider.notifier).closeDrawer(),
-            child: Container(
-              width: double.infinity,
-              height: double.infinity,
-              color: Colors.black.withValues(alpha: 0.3),
+          // Overlay background
+          if (isDrawerOpen)
+            GestureDetector(
+              onTap: () =>
+                  ref.read(drawerProvider.notifier).closeDrawer(),
+              child: Container(
+                width: double.infinity,
+                height: double.infinity,
+                color: Colors.black.withAlpha(80),
+              ),
             ),
-          ),
 
-        // Drawer
-        PopScope(
-          canPop: !isDrawerOpen,
-          onPopInvokedWithResult: (didPop, result) {
-            if (!didPop && isDrawerOpen) {
-              // Close drawer if it's open
-              ref.read(drawerProvider.notifier).closeDrawer();
-            }
-          },
-          child: AnimatedPositioned(
+          // Drawer content
+          AnimatedPositioned(
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOut,
             left: isDrawerOpen ? 0 : -MediaQuery.of(context).size.width * 0.7,
@@ -60,7 +60,7 @@ class CustomDrawerOverlay extends ConsumerWidget {
                   color: AppTheme.dark1,
                   border: Border(
                     right: BorderSide(
-                      color: Colors.white.withValues(alpha: 0.1),
+                      color: Colors.white.withAlpha(25),
                       width: 1.0,
                     ),
                   ),
@@ -69,30 +69,29 @@ class CustomDrawerOverlay extends ConsumerWidget {
                   padding: EdgeInsets.only(top: statusBarHeight),
                   child: Column(
                     children: [
-                      SizedBox(height: 24),
+                      const SizedBox(height: 24),
 
-                      // Logo header
+                      // Logo
                       Container(
                         height: 100,
                         width: double.infinity,
                         alignment: Alignment.center,
                         decoration: const BoxDecoration(
                           image: DecorationImage(
-                            image: AssetImage('assets/images/logo-alpha.png'),
+                            image: AssetImage(
+                                'assets/images/logo-alpha.png'),
                             fit: BoxFit.contain,
                           ),
                         ),
                       ),
 
-                      SizedBox(height: 24),
-
+                      const SizedBox(height: 24),
                       Divider(
                         height: 1,
                         thickness: 1,
-                        color: Colors.white.withValues(alpha: 0.1),
+                        color: Colors.white.withAlpha(25),
                       ),
-
-                      SizedBox(height: 16),
+                      const SizedBox(height: 16),
 
                       // Menu items
                       _buildMenuItem(
@@ -116,31 +115,29 @@ class CustomDrawerOverlay extends ConsumerWidget {
                         title: S.of(context)!.about,
                         route: '/about',
                       ),
+
+                      const SizedBox(height: 8),
                     ],
                   ),
                 ),
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   Widget _buildMenuItem(
-    BuildContext context,
-    WidgetRef ref, {
-    required IconData icon,
-    required String title,
-    required String route,
-  }) {
+      BuildContext context,
+      WidgetRef ref, {
+        required IconData icon,
+        required String title,
+        required String route,
+      }) {
     return ListTile(
       dense: true,
-      leading: Icon(
-        icon,
-        color: AppTheme.cream1,
-        size: 22,
-      ),
+      leading: Icon(icon, color: AppTheme.cream1, size: 22),
       title: Text(
         title,
         style: AppTheme.theme.textTheme.bodyLarge?.copyWith(
