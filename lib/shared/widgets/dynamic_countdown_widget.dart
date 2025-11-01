@@ -35,6 +35,12 @@ class DynamicCountdownWidget extends ConsumerWidget {
 
     // Calculate total duration and remaining time
     final totalDuration = expiration.difference(createdAt);
+    
+    // Early return if expiration is at or before creation time
+    if (expiration.isAtSameMomentAs(createdAt) || expiration.isBefore(createdAt)) {
+      return const SizedBox.shrink();
+    }
+    
     final Duration remainingTime = expiration.isAfter(now)
         ? expiration.difference(now)
         : const Duration();
@@ -45,8 +51,8 @@ class DynamicCountdownWidget extends ConsumerWidget {
 
     if (useDayScale) {
       // DAY SCALE: Show days and hours
-      final totalDays = (totalDuration.inHours / 24).round();
-      final daysLeft = (remainingTime.inHours / 24).floor();
+      final totalDays = ((totalDuration.inSeconds + 86399) ~/ 86400).clamp(1, double.infinity).toInt();
+      final daysLeft = ((remainingTime.inHours / 24).floor()).clamp(0, totalDays);
       final hoursLeftInDay = remainingTime.inHours % 24;
       
       final minutesLeftInHour = remainingTime.inMinutes % 60;
@@ -64,7 +70,7 @@ class DynamicCountdownWidget extends ConsumerWidget {
       );
     } else {
       // HOUR SCALE: Show hours, minutes, seconds (≤24 hours remaining)
-      final totalHours = (totalDuration.inMinutes / 60).round();
+      final totalHours = ((totalDuration.inSeconds + 3599) ~/ 3600).clamp(1, double.infinity).toInt();
       final hoursLeft = remainingTime.inHours.clamp(0, totalHours);
       final minutesLeft = remainingTime.inMinutes % 60;
       final secondsLeft = remainingTime.inSeconds % 60;
