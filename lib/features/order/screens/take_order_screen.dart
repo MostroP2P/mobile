@@ -1,4 +1,3 @@
-import 'package:circular_countdown/circular_countdown.dart';
 import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,8 +17,8 @@ import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
 import 'package:mostro_mobile/shared/utils/currency_utils.dart';
 
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
-import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/shared/providers/time_provider.dart';
+import 'package:mostro_mobile/shared/widgets/dynamic_countdown_widget.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
 class TakeOrderScreen extends ConsumerStatefulWidget {
@@ -88,7 +87,7 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
             _buildCreatorReputation(order),
             const SizedBox(height: 24),
             _CountdownWidget(
-              expirationDate: order.expirationDate,
+              order: order,
             ),
             const SizedBox(height: 36),
             _buildActionButtons(context, ref, order),
@@ -443,10 +442,10 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
 
 /// Widget that displays a real-time countdown timer for pending orders
 class _CountdownWidget extends ConsumerWidget {
-  final DateTime expirationDate;
+  final NostrEvent order;
 
   const _CountdownWidget({
-    required this.expirationDate,
+    required this.order,
   });
 
   @override
@@ -456,7 +455,7 @@ class _CountdownWidget extends ConsumerWidget {
 
     return timeAsync.when(
       data: (currentTime) {
-        return _buildCountDownTime(context, ref, expirationDate);
+        return _buildCountDownTime(context, ref, order);
       },
       loading: () => const CircularProgressIndicator(),
       error: (error, stack) => const SizedBox.shrink(),
@@ -464,47 +463,20 @@ class _CountdownWidget extends ConsumerWidget {
   }
 
   Widget _buildCountDownTime(
-      BuildContext context, WidgetRef ref, DateTime expiration) {
-    Duration countdown = Duration(hours: 0);
-    final now = DateTime.now();
-
-    // Handle edge case: expiration in the past
-    if (expiration.isBefore(now.subtract(const Duration(hours: 1)))) {
-      // If expiration is more than 1 hour in the past, likely invalid
+      BuildContext context, WidgetRef ref, NostrEvent order) {
+    // Use exact timestamps from order_expires_at
+    if (order.orderExpiresAt == null) {
+      // No valid expiration timestamp available
       return const SizedBox.shrink();
     }
 
-    if (expiration.isAfter(now)) {
-      countdown = expiration.difference(now);
-    }
+    final expiresAtTimestamp = int.parse(order.orderExpiresAt!);
+    final expiration = DateTime.fromMillisecondsSinceEpoch(expiresAtTimestamp * 1000);
+    final createdAt = order.createdAt!;
 
-    // Get dynamic expiration hours from Mostro instance
-    final mostroInstance = ref.read(orderRepositoryProvider).mostroInstance;
-    final maxOrderHours =
-        mostroInstance?.expirationHours ?? 24; // fallback to 24 hours
-
-    // Validate expiration hours
-    if (maxOrderHours <= 0 || maxOrderHours > 168) {
-      // Max 1 week
-      return const SizedBox.shrink();
-    }
-
-    final hoursLeft = countdown.inHours.clamp(0, maxOrderHours);
-    final minutesLeft = countdown.inMinutes % 60;
-    final secondsLeft = countdown.inSeconds % 60;
-
-    final formattedTime =
-        '${hoursLeft.toString().padLeft(2, '0')}:${minutesLeft.toString().padLeft(2, '0')}:${secondsLeft.toString().padLeft(2, '0')}';
-
-    return Column(
-      children: [
-        CircularCountdown(
-          countdownTotal: maxOrderHours,
-          countdownRemaining: hoursLeft,
-        ),
-        const SizedBox(height: 16),
-        Text(S.of(context)!.timeLeftLabel(formattedTime)),
-      ],
+    return DynamicCountdownWidget(
+      expiration: expiration,
+      createdAt: createdAt,
     );
   }
 }
