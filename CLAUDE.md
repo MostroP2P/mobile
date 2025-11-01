@@ -125,14 +125,14 @@ Automatic cleanup system that prevents sessions from becoming orphaned when Most
 - **Purpose**: Prevents orphan sessions when Mostro doesn't respond within 10 seconds
 - **Cleanup**: Deletes session, shows localized notification, navigates to order book
 - **Cancellation**: Timer automatically cancelled when any response received from Mostro
-- **Implementation**: `AbstractMostroNotifier.startSessionTimeoutCleanup()` in `abstract_mostro_notifier.dart:286-305`
+- **Implementation**: `AbstractMostroNotifier.startSessionTimeoutCleanup()` method in `abstract_mostro_notifier.dart`
 
 **Order Creation Protection**:
 - **Activation**: Started automatically when users create orders (`AddOrderNotifier.submitOrder`)
 - **Purpose**: Prevents orphan sessions when Mostro doesn't respond to new order creation within 10 seconds
 - **Cleanup**: Deletes temporary session, shows localized notification, navigates to order book
 - **Cancellation**: Timer automatically cancelled when any response received from Mostro
-- **Implementation**: `AbstractMostroNotifier.startSessionTimeoutCleanupForRequestId()` in `abstract_mostro_notifier.dart`
+- **Implementation**: `AbstractMostroNotifier.startSessionTimeoutCleanupForRequestId()` method in `abstract_mostro_notifier.dart`
 
 #### **Localized User Feedback**
 ```
@@ -244,6 +244,18 @@ When orders are canceled, Mostro sends `Action.canceled` gift wrap:
 - **Setup**: Locales configured in `main.dart` with `timeago.setLocaleMessages()`
 - **Implementation**: Custom `timeAgoWithLocale()` method in NostrEvent extension
 - **Usage**: Automatically uses app's current locale for "hace X horas" vs "hours ago"
+
+### Dynamic Countdown Timer System
+- **DynamicCountdownWidget**: Intelligent countdown widget for pending orders with automatic day/hour scaling
+- **Implementation**: Located in `lib/shared/widgets/dynamic_countdown_widget.dart`
+- **Data Source**: Uses exact `order_expires_at` timestamps from Mostro protocol for precision
+- **Dual Display Modes**:
+  - **Day Scale** (>24h remaining): Shows "14d 20h 06m" format with day-based circular progress
+  - **Hour Scale** (≤24h remaining): Shows "HH:MM:SS" format with hour-based circular progress
+- **Automatic Transition**: Switches at exactly 24:00:00 remaining time
+- **Localization**: Uses `S.of(context)!.timeLeftLabel()` for internationalized display
+- **Scope**: Only for pending status orders; waiting orders use separate countdown system
+- **Integration**: Shared across TakeOrderScreen and TradeDetailScreen for consistency
 
 ## Relay Synchronization System
 
