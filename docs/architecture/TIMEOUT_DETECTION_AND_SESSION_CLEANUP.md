@@ -354,7 +354,7 @@ class DynamicCountdownWidget extends ConsumerWidget {
 
 **TakeOrderScreen Usage**:
 ```dart
-// lib/features/order/screens/take_order_screen.dart - Lines 477-480
+// lib/features/order/screens/take_order_screen.dart - _buildCountDownTime method
 return DynamicCountdownWidget(
   expiration: DateTime.fromMillisecondsSinceEpoch(expiresAtTimestamp * 1000),
   createdAt: order.createdAt!,
@@ -363,7 +363,7 @@ return DynamicCountdownWidget(
 
 **TradeDetailScreen Usage**:
 ```dart
-// lib/features/trades/screens/trade_detail_screen.dart - Lines 87-93
+// lib/features/trades/screens/trade_detail_screen.dart - trade details widget tree
 _CountdownWidget(
   orderId: orderId,
   tradeState: tradeState,
@@ -380,7 +380,7 @@ _CountdownWidget(
 #### **Real-time Countdown Widget**
 
 ```dart
-// lib/features/trades/screens/trade_detail_screen.dart - Lines 862-1062
+// lib/features/trades/screens/trade_detail_screen.dart - _CountdownWidget class
 class _CountdownWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -413,7 +413,7 @@ class _CountdownWidget extends ConsumerWidget {
 The countdown displays different behaviors based on order status:
 
 ```dart
-// Lines 916-1023: Countdown logic by order status
+// _buildCountDownTime method: Countdown logic by order status
 Widget? _buildCountDownTime(BuildContext context, WidgetRef ref, 
     OrderState tradeState, List<MostroMessage> messages, int? expiresAtTimestamp) {
   
@@ -475,7 +475,7 @@ Widget? _buildCountDownTime(BuildContext context, WidgetRef ref,
 #### **Message State Detection**
 
 ```dart
-// Lines 1025-1050: Find the message that caused the current state
+// _findMessageForState method: Find the message that caused the current state
 MostroMessage? _findMessageForState(List<MostroMessage> messages, Status status) {
   // Sort messages by timestamp (most recent first)
   final sortedMessages = List<MostroMessage>.from(messages)
@@ -797,7 +797,7 @@ The system automatically starts cleanup timers for both order creation and order
 When users take orders, a cleanup timer is automatically started to prevent sessions from becoming orphaned if Mostro doesn't respond:
 
 ```dart
-// lib/features/order/notfiers/abstract_mostro_notifier.dart:286-305
+// lib/features/order/notfiers/abstract_mostro_notifier.dart - startSessionTimeoutCleanup method
 static void startSessionTimeoutCleanup(String orderId, Ref ref) {
   // Cancel existing timer if any
   _sessionTimeouts[orderId]?.cancel();

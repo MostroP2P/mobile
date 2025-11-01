@@ -125,14 +125,14 @@ Automatic cleanup system that prevents sessions from becoming orphaned when Most
 - **Purpose**: Prevents orphan sessions when Mostro doesn't respond within 10 seconds
 - **Cleanup**: Deletes session, shows localized notification, navigates to order book
 - **Cancellation**: Timer automatically cancelled when any response received from Mostro
-- **Implementation**: `AbstractMostroNotifier.startSessionTimeoutCleanup()` in `abstract_mostro_notifier.dart:286-305`
+- **Implementation**: `AbstractMostroNotifier.startSessionTimeoutCleanup()` method in `abstract_mostro_notifier.dart`
 
 **Order Creation Protection**:
 - **Activation**: Started automatically when users create orders (`AddOrderNotifier.submitOrder`)
 - **Purpose**: Prevents orphan sessions when Mostro doesn't respond to new order creation within 10 seconds
 - **Cleanup**: Deletes temporary session, shows localized notification, navigates to order book
 - **Cancellation**: Timer automatically cancelled when any response received from Mostro
-- **Implementation**: `AbstractMostroNotifier.startSessionTimeoutCleanupForRequestId()` in `abstract_mostro_notifier.dart`
+- **Implementation**: `AbstractMostroNotifier.startSessionTimeoutCleanupForRequestId()` method in `abstract_mostro_notifier.dart`
 
 #### **Localized User Feedback**
 ```
