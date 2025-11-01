@@ -4,6 +4,7 @@ import 'dart:collection';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'native_log_service.dart'; // 👈 AGREGAR
 
 class LogsService {
   static final LogsService _instance = LogsService._internal();
@@ -11,12 +12,18 @@ class LogsService {
   LogsService._internal();
 
   static const String _logsEnabledKey = 'logs_enabled';
+  static const String _nativeLogsEnabledKey = 'native_logs_enabled'; // 👈 NUEVO
 
   final List<String> _logs = [];
   File? _logFile;
   IOSink? _sink;
   bool _initialized = false;
   bool _isEnabled = true;
+  bool _nativeLogsEnabled = true; // 👈 NUEVO
+
+  // 👇 AGREGAR: Servicio de logs nativos
+  final NativeLogService _nativeLogService = NativeLogService();
+  StreamSubscription? _nativeSubscription;
 
   // Expose unmodifiable view to prevent external mutation
   UnmodifiableListView<String> get logs => UnmodifiableListView(_logs);
@@ -25,9 +32,10 @@ class LogsService {
     if (_initialized) return;
 
     try {
-      // Load preference for logs enabled/disabled
+      // Load preferences
       final prefs = await SharedPreferences.getInstance();
       _isEnabled = prefs.getBool(_logsEnabledKey) ?? true;
+      _nativeLogsEnabled = prefs.getBool(_nativeLogsEnabledKey) ?? true; // 👈 NUEVO
 
       final dir = await getApplicationDocumentsDirectory();
       _logFile = File('${dir.path}/mostro_logs.txt');
@@ -41,11 +49,46 @@ class LogsService {
       // Open file for appending
       _sink = _logFile!.openWrite(mode: FileMode.append);
 
+      // 👇 AGREGAR: Iniciar captura de logs nativos
+      if (_nativeLogsEnabled) {
+        _initNativeLogsCapture();
+      }
+
       // Set initialized flag only after successful setup
       _initialized = true;
     } catch (e) {
       print('Error initializing LogsService: $e');
       rethrow;
+    }
+  }
+
+  // 👇 AGREGAR MÉTODO COMPLETO
+  void _initNativeLogsCapture() {
+    try {
+      _nativeSubscription = _nativeLogService.nativeLogStream.listen(
+            (nativeLog) {
+          if (!_isEnabled || !_nativeLogsEnabled) return;
+
+          // Formatear log nativo con prefijo
+          final timestamp = DateTime.now().toIso8601String();
+          final line = '[$timestamp] [NATIVE] $nativeLog';
+
+          _logs.add(line);
+
+          try {
+            _sink?.writeln(line);
+          } catch (e) {
+            print('Error escribiendo log nativo: $e');
+          }
+        },
+        onError: (error) {
+          print('❌ Error en stream de logs nativos: $error');
+        },
+      );
+
+      log('🔧 Captura de logs nativos iniciada');
+    } catch (e) {
+      print('❌ Error iniciando captura de logs nativos: $e');
     }
   }
 
@@ -55,11 +98,32 @@ class LogsService {
     return prefs.getBool(_logsEnabledKey) ?? true;
   }
 
+  // 👇 AGREGAR MÉTODO NUEVO
+  Future<bool> isNativeLogsEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_nativeLogsEnabledKey) ?? true;
+  }
+
   // Change state
   Future<void> setLogsEnabled(bool enabled) async {
     _isEnabled = enabled;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_logsEnabledKey, enabled);
+  }
+
+  // 👇 AGREGAR MÉTODO NUEVO
+  Future<void> setNativeLogsEnabled(bool enabled) async {
+    _nativeLogsEnabled = enabled;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_nativeLogsEnabledKey, enabled);
+
+    if (enabled && _nativeSubscription == null) {
+      _initNativeLogsCapture();
+    } else if (!enabled && _nativeSubscription != null) {
+      await _nativeSubscription?.cancel();
+      _nativeSubscription = null;
+      log('🔧 Captura de logs nativos detenida');
+    }
   }
 
   // Main logging method - compatible with both old (writeLog) and new (log) usage
@@ -152,6 +216,11 @@ class LogsService {
     if (_initialized) {
       await _sink?.flush();
       await _sink?.close();
+
+      // 👇 AGREGAR: Limpiar servicio de logs nativos
+      await _nativeSubscription?.cancel();
+      _nativeLogService.dispose();
+
       _initialized = false;
     }
   }

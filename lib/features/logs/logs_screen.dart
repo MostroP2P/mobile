@@ -9,6 +9,12 @@ class LogsScreen extends ConsumerWidget {
   const LogsScreen({super.key});
 
   Color _getLogColor(String line) {
+    // 👇 AGREGAR: Detectar logs nativos primero
+    if (line.contains('[NATIVE]')) {
+      // Color específico para logs nativos de Android
+      return const Color(0xFFFF9800); // Naranja para nativos
+    }
+
     if (line.contains('ERROR') || line.contains('Exception') || line.contains('❌')) {
       return AppTheme.statusError;
     } else if (line.contains('WARN') || line.contains('⚠️')) {
@@ -20,9 +26,23 @@ class LogsScreen extends ConsumerWidget {
     }
   }
 
+  // 👇 AGREGAR: Método para obtener icono según tipo de log
+  IconData _getLogIcon(String line) {
+    if (line.contains('[NATIVE]')) {
+      return Icons.android;
+    } else if (line.contains('ERROR') || line.contains('❌')) {
+      return Icons.error_outline;
+    } else if (line.contains('WARN') || line.contains('⚠️')) {
+      return Icons.warning_amber;
+    } else if (line.contains('🚀')) {
+      return Icons.rocket_launch;
+    } else {
+      return Icons.info_outline;
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Usa el provider reactivo de logs
     final logs = ref.watch(logsProvider).reversed.toList();
     final logsNotifier = ref.read(logsNotifierProvider.notifier);
     final s = S.of(context)!;
@@ -48,7 +68,6 @@ class LogsScreen extends ConsumerWidget {
             tooltip: s.deleteLogsTooltip,
             onPressed: () async {
               await logsNotifier.clearLogs();
-              // Invalida el provider para forzar actualización
               ref.invalidate(logsProvider);
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -93,6 +112,9 @@ class LogsScreen extends ConsumerWidget {
         itemCount: logs.length,
         itemBuilder: (context, i) {
           final log = logs[i];
+          final logColor = _getLogColor(log);
+          final logIcon = _getLogIcon(log); // 👈 USAR NUEVO MÉTODO
+
           return Container(
             margin: const EdgeInsets.symmetric(vertical: 4),
             padding: const EdgeInsets.symmetric(
@@ -102,14 +124,36 @@ class LogsScreen extends ConsumerWidget {
             decoration: BoxDecoration(
               color: AppTheme.backgroundCard.withAlpha(180),
               borderRadius: BorderRadius.circular(8),
-            ),
-            child: SelectableText(
-              log,
-              style: TextStyle(
-                fontFamily: 'monospace',
-                fontSize: 13,
-                color: _getLogColor(log),
+              // 👇 AGREGAR: Borde izquierdo de color para mejor distinción
+              border: Border(
+                left: BorderSide(
+                  color: logColor,
+                  width: 3,
+                ),
               ),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 👇 AGREGAR: Icono indicador
+                Icon(
+                  logIcon,
+                  size: 16,
+                  color: logColor,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: SelectableText(
+                    log,
+                    style: TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 12,
+                      color: logColor,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
             ),
           );
         },

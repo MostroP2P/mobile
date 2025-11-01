@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:ui'; // 🔹 Agregar para PlatformDispatcher
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -15,7 +15,7 @@ import 'package:mostro_mobile/shared/utils/notification_permission_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:mostro_mobile/features/logs/logs_service.dart';
-import 'package:mostro_mobile/features/logs/logs_provider.dart'; // 🔹 AGREGAR ESTE IMPORT
+import 'package:mostro_mobile/features/logs/logs_provider.dart';
 import 'package:mostro_mobile/features/notifications/services/background_notification_service.dart'; // 🔹 AGREGAR
 
 Future<void> main() async {

@@ -19,9 +19,14 @@ StateNotifierProvider<LogsNotifier, List<String>>((ref) {
   return LogsNotifier(ref.read(logsServiceProvider));
 });
 
-// Provider para el estado del switch
+// Provider para el estado del switch de logs Flutter
 final logsEnabledProvider = StateNotifierProvider<LogsEnabledNotifier, bool>((ref) {
   return LogsEnabledNotifier(ref.read(logsServiceProvider));
+});
+
+// 👇 AGREGAR: Provider para el estado del switch de logs nativos
+final nativeLogsEnabledProvider = StateNotifierProvider<NativeLogsEnabledNotifier, bool>((ref) {
+  return NativeLogsEnabledNotifier(ref.read(logsServiceProvider));
 });
 
 class LogsNotifier extends StateNotifier<List<String>> {
@@ -32,12 +37,10 @@ class LogsNotifier extends StateNotifier<List<String>> {
   }
 
   Future<void> _loadLogs() async {
-    // Usa la nueva propiedad logs del servicio
     state = _logsService.logs.toList();
   }
 
   Future<void> addLog(String message) async {
-    // Usa el nuevo método log() en lugar de writeLog()
     _logsService.log(message);
     await _loadLogs();
   }
@@ -65,6 +68,24 @@ class LogsEnabledNotifier extends StateNotifier<bool> {
 
   Future<void> toggle(bool enabled) async {
     await _logsService.setLogsEnabled(enabled);
+    state = enabled;
+  }
+}
+
+// 👇 AGREGAR CLASE COMPLETA
+class NativeLogsEnabledNotifier extends StateNotifier<bool> {
+  final LogsService _logsService;
+
+  NativeLogsEnabledNotifier(this._logsService) : super(true) {
+    _loadState();
+  }
+
+  Future<void> _loadState() async {
+    state = await _logsService.isNativeLogsEnabled();
+  }
+
+  Future<void> toggle(bool enabled) async {
+    await _logsService.setNativeLogsEnabled(enabled);
     state = enabled;
   }
 }
