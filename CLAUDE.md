@@ -245,6 +245,18 @@ When orders are canceled, Mostro sends `Action.canceled` gift wrap:
 - **Implementation**: Custom `timeAgoWithLocale()` method in NostrEvent extension
 - **Usage**: Automatically uses app's current locale for "hace X horas" vs "hours ago"
 
+### Dynamic Countdown Timer System
+- **DynamicCountdownWidget**: Intelligent countdown widget for pending orders with automatic day/hour scaling
+- **Implementation**: Located in `lib/shared/widgets/dynamic_countdown_widget.dart`
+- **Data Source**: Uses exact `order_expires_at` timestamps from Mostro protocol for precision
+- **Dual Display Modes**:
+  - **Day Scale** (>24h remaining): Shows "14d 20h 06m" format with day-based circular progress
+  - **Hour Scale** (≤24h remaining): Shows "HH:MM:SS" format with hour-based circular progress
+- **Automatic Transition**: Switches at exactly 24:00:00 remaining time
+- **Localization**: Uses `S.of(context)!.timeLeftLabel()` for internationalized display
+- **Scope**: Only for pending status orders; waiting orders use separate countdown system
+- **Integration**: Shared across TakeOrderScreen and TradeDetailScreen for consistency
+
 ## Relay Synchronization System
 
 ### Overview
