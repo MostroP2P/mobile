@@ -418,15 +418,30 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   size: 20,
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  'Logs',
-                  style: const TextStyle(
-                    color: AppTheme.textPrimary,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
+                Expanded(  // Cambiado para evitar overflow
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        S.of(context)!.logsMenuTitle,
+                        style: const TextStyle(
+                          color: AppTheme.textPrimary,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        S.of(context)!.logsMenuSubtitle,
+                        style: const TextStyle(
+                          color: AppTheme.textSecondary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const Spacer(),
                 Switch(
                   value: isLogsEnabled,
                   onChanged: (value) async {

@@ -64,6 +64,7 @@ class AppTheme {
   static const Color statusSettledText = Color(0xFFC084FC);
   static const Color statusInactiveBackground = Color(0xFF1F2937); // Colors.grey.shade800
   static const Color statusInactiveText = Color(0xFFD1D5DB);     // Colors.grey.shade300
+  static const Color statusNative = Color(0xFFFF9800);
   
   // Text colors
   static const Color secondaryText = Color(0xFFBDBDBD);  // Colors.grey.shade400

@@ -16,19 +16,19 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:mostro_mobile/features/logs/logs_service.dart';
 import 'package:mostro_mobile/features/logs/logs_provider.dart';
-import 'package:mostro_mobile/features/notifications/services/background_notification_service.dart'; // 🔹 AGREGAR
+import 'package:mostro_mobile/features/notifications/services/background_notification_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Inicializa LogsService
+  // Initialize LogsService
   final logsService = LogsService();
   await logsService.init();
 
-  // Log de inicio
-  logsService.log('🚀 App iniciada');
+  // Startup log
+  logsService.log('🚀 App started');
 
-  // Captura errores globales de Flutter
+  // Capture global Flutter errors
   FlutterError.onError = (details) {
     logsService.log('❌ FlutterError: ${details.exceptionAsString()}');
     if (details.stack != null) {
@@ -36,11 +36,11 @@ Future<void> main() async {
     }
   };
 
-  // Captura errores de Dart no manejados
+  // Capture unhandled Dart errors
   PlatformDispatcher.instance.onError = (error, stack) {
     logsService.log('❌ Uncaught error: $error');
     logsService.log('Stack: $stack');
-    return true; // Marca el error como manejado
+    return true; // Mark error as handled
   };
 
   runZonedGuarded(
@@ -65,7 +65,7 @@ Future<void> _startApp(LogsService logsService) async {
   final settings = SettingsNotifier(sharedPreferences);
   await settings.init();
 
-  await initializeNotifications(); // 🔹 DESCOMENTADO
+  await initializeNotifications(); // Uncommented
   _initializeTimeAgoLocalization();
 
   final backgroundService = createBackgroundService(settings.settings);

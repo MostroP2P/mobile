@@ -9,10 +9,10 @@ class LogsScreen extends ConsumerWidget {
   const LogsScreen({super.key});
 
   Color _getLogColor(String line) {
-    // 👇 AGREGAR: Detectar logs nativos primero
+    // Detect native logs first
     if (line.contains('[NATIVE]')) {
-      // Color específico para logs nativos de Android
-      return const Color(0xFFFF9800); // Naranja para nativos
+      // Specific color for Android native logs
+      return AppTheme.statusNative;
     }
 
     if (line.contains('ERROR') || line.contains('Exception') || line.contains('❌')) {
@@ -26,7 +26,7 @@ class LogsScreen extends ConsumerWidget {
     }
   }
 
-  // 👇 AGREGAR: Método para obtener icono según tipo de log
+  // Get icon based on log type
   IconData _getLogIcon(String line) {
     if (line.contains('[NATIVE]')) {
       return Icons.android;
@@ -89,7 +89,7 @@ class LogsScreen extends ConsumerWidget {
               } else {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Error sharing logs')),
+                    SnackBar(content: Text(s.errorSharingLogs)),
                   );
                 }
               }
@@ -113,7 +113,7 @@ class LogsScreen extends ConsumerWidget {
         itemBuilder: (context, i) {
           final log = logs[i];
           final logColor = _getLogColor(log);
-          final logIcon = _getLogIcon(log); // 👈 USAR NUEVO MÉTODO
+          final logIcon = _getLogIcon(log); // Use new method
 
           return Container(
             margin: const EdgeInsets.symmetric(vertical: 4),
@@ -124,7 +124,7 @@ class LogsScreen extends ConsumerWidget {
             decoration: BoxDecoration(
               color: AppTheme.backgroundCard.withAlpha(180),
               borderRadius: BorderRadius.circular(8),
-              // 👇 AGREGAR: Borde izquierdo de color para mejor distinción
+              // Left colored border for better distinction
               border: Border(
                 left: BorderSide(
                   color: logColor,
@@ -135,7 +135,7 @@ class LogsScreen extends ConsumerWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 👇 AGREGAR: Icono indicador
+                // Indicator icon
                 Icon(
                   logIcon,
                   size: 16,

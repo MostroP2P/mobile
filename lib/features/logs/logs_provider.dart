@@ -4,27 +4,27 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/features/logs/logs_service.dart';
 
-// Provider principal del servicio (singleton)
+// Main service provider (singleton)
 final logsServiceProvider = Provider<LogsService>((ref) => LogsService());
 
-// Provider para acceso directo a los logs (reactivo)
+// Provider for direct reactive access to logs
 final logsProvider = Provider<UnmodifiableListView<String>>((ref) {
   final service = ref.watch(logsServiceProvider);
   return service.logs;
 });
 
-// Provider para el notifier (mantiene tu lógica actual)
+// Provider for the notifier (maintains current logic)
 final logsNotifierProvider =
 StateNotifierProvider<LogsNotifier, List<String>>((ref) {
   return LogsNotifier(ref.read(logsServiceProvider));
 });
 
-// Provider para el estado del switch de logs Flutter
+// Provider for Flutter logs switch state
 final logsEnabledProvider = StateNotifierProvider<LogsEnabledNotifier, bool>((ref) {
   return LogsEnabledNotifier(ref.read(logsServiceProvider));
 });
 
-// 👇 AGREGAR: Provider para el estado del switch de logs nativos
+// Provider for native logs switch state
 final nativeLogsEnabledProvider = StateNotifierProvider<NativeLogsEnabledNotifier, bool>((ref) {
   return NativeLogsEnabledNotifier(ref.read(logsServiceProvider));
 });
@@ -72,7 +72,7 @@ class LogsEnabledNotifier extends StateNotifier<bool> {
   }
 }
 
-// 👇 AGREGAR CLASE COMPLETA
+// NativeLogsEnabledNotifier class
 class NativeLogsEnabledNotifier extends StateNotifier<bool> {
   final LogsService _logsService;
 

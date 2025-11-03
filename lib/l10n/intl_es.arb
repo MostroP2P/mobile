@@ -1137,5 +1137,6 @@
   "logsMenuSubtitle": "Diagnóstico y eventos internos",
   "logsEnabledDescription": "Guardando registros de actividad",
   "logsDisabledDescription": "Registros desactivados",
-  "viewLogsButton": "Ver registros"
+  "viewLogsButton": "Ver registros",
+  "errorSharingLogs": "Error al compartir registros"
 }

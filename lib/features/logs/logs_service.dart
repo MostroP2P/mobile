@@ -1,10 +1,9 @@
-// lib/features/logs/logs_service.dart
 import 'dart:async';
 import 'dart:collection';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'native_log_service.dart'; // 👈 AGREGAR
+import 'native_log_service.dart'; // Import native log service
 
 class LogsService {
   static final LogsService _instance = LogsService._internal();
@@ -12,16 +11,16 @@ class LogsService {
   LogsService._internal();
 
   static const String _logsEnabledKey = 'logs_enabled';
-  static const String _nativeLogsEnabledKey = 'native_logs_enabled'; // 👈 NUEVO
+  static const String _nativeLogsEnabledKey = 'native_logs_enabled'; // New key for native logs
 
   final List<String> _logs = [];
   File? _logFile;
   IOSink? _sink;
   bool _initialized = false;
   bool _isEnabled = true;
-  bool _nativeLogsEnabled = true; // 👈 NUEVO
+  bool _nativeLogsEnabled = true; // New flag for native logs
 
-  // 👇 AGREGAR: Servicio de logs nativos
+  // Native log service
   final NativeLogService _nativeLogService = NativeLogService();
   StreamSubscription? _nativeSubscription;
 
@@ -35,7 +34,7 @@ class LogsService {
       // Load preferences
       final prefs = await SharedPreferences.getInstance();
       _isEnabled = prefs.getBool(_logsEnabledKey) ?? true;
-      _nativeLogsEnabled = prefs.getBool(_nativeLogsEnabledKey) ?? true; // 👈 NUEVO
+      _nativeLogsEnabled = prefs.getBool(_nativeLogsEnabledKey) ?? true; // Load native logs preference
 
       final dir = await getApplicationDocumentsDirectory();
       _logFile = File('${dir.path}/mostro_logs.txt');
@@ -49,7 +48,7 @@ class LogsService {
       // Open file for appending
       _sink = _logFile!.openWrite(mode: FileMode.append);
 
-      // 👇 AGREGAR: Iniciar captura de logs nativos
+      // Start native logs capture
       if (_nativeLogsEnabled) {
         _initNativeLogsCapture();
       }
@@ -62,14 +61,14 @@ class LogsService {
     }
   }
 
-  // 👇 AGREGAR MÉTODO COMPLETO
+  // Initialize native logs capture
   void _initNativeLogsCapture() {
     try {
       _nativeSubscription = _nativeLogService.nativeLogStream.listen(
             (nativeLog) {
           if (!_isEnabled || !_nativeLogsEnabled) return;
 
-          // Formatear log nativo con prefijo
+          // Format native log with prefix
           final timestamp = DateTime.now().toIso8601String();
           final line = '[$timestamp] [NATIVE] $nativeLog';
 
@@ -78,17 +77,17 @@ class LogsService {
           try {
             _sink?.writeln(line);
           } catch (e) {
-            print('Error escribiendo log nativo: $e');
+            print('Error writing native log: $e');
           }
         },
         onError: (error) {
-          print('❌ Error en stream de logs nativos: $error');
+          print('❌ Error in native logs stream: $error');
         },
       );
 
-      log('🔧 Captura de logs nativos iniciada');
+      log('🔧 Native logs capture started');
     } catch (e) {
-      print('❌ Error iniciando captura de logs nativos: $e');
+      print('❌ Error starting native logs capture: $e');
     }
   }
 
@@ -98,7 +97,7 @@ class LogsService {
     return prefs.getBool(_logsEnabledKey) ?? true;
   }
 
-  // 👇 AGREGAR MÉTODO NUEVO
+  // Get native logs enabled state
   Future<bool> isNativeLogsEnabled() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(_nativeLogsEnabledKey) ?? true;
@@ -111,7 +110,7 @@ class LogsService {
     await prefs.setBool(_logsEnabledKey, enabled);
   }
 
-  // 👇 AGREGAR MÉTODO NUEVO
+  // Set native logs enabled state
   Future<void> setNativeLogsEnabled(bool enabled) async {
     _nativeLogsEnabled = enabled;
     final prefs = await SharedPreferences.getInstance();
@@ -122,7 +121,7 @@ class LogsService {
     } else if (!enabled && _nativeSubscription != null) {
       await _nativeSubscription?.cancel();
       _nativeSubscription = null;
-      log('🔧 Captura de logs nativos detenida');
+      log('🔧 Native logs capture stopped');
     }
   }
 
@@ -217,7 +216,7 @@ class LogsService {
       await _sink?.flush();
       await _sink?.close();
 
-      // 👇 AGREGAR: Limpiar servicio de logs nativos
+      // Clean up native logs service
       await _nativeSubscription?.cancel();
       _nativeLogService.dispose();
 

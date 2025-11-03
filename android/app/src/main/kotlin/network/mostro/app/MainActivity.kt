@@ -19,7 +19,7 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
-        // EventChannel para streaming automático de logs nativos
+        // EventChannel for automatic native log streaming
         EventChannel(flutterEngine.dartExecutor.binaryMessenger, EVENT_CHANNEL)
             .setStreamHandler(object : EventChannel.StreamHandler {
                 override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
@@ -37,11 +37,12 @@ class MainActivity : FlutterActivity() {
         isCapturing = true
 
         Thread {
+            var reader: BufferedReader? = null
             try {
-                // Limpiar logcat previo
+                // Clear previous logcat
                 Runtime.getRuntime().exec("logcat -c").waitFor()
 
-                // Capturar logs solo de esta app con timestamp
+                // Capture logs only for this app with timestamp
                 logcatProcess = Runtime.getRuntime().exec(
                     arrayOf(
                         "logcat",
@@ -50,9 +51,9 @@ class MainActivity : FlutterActivity() {
                     )
                 )
 
-                val reader = BufferedReader(InputStreamReader(logcatProcess?.inputStream))
+                reader = BufferedReader(InputStreamReader(logcatProcess?.inputStream))
 
-                // 👇 CORRECCIÓN: Usar while con asignación inline
+                // Use inline assignment in while loop
                 while (isCapturing) {
                     val line = reader.readLine() ?: break
 
@@ -68,6 +69,16 @@ class MainActivity : FlutterActivity() {
                     eventSink?.error("LOGCAT_ERROR", e.message, null)
                 }
             } finally {
+                reader?.close()
+                logcatProcess?.destroy()
+                // Forcibly kill if not terminated after brief wait
+                try {
+                    if (logcatProcess?.waitFor(100, java.util.concurrent.TimeUnit.MILLISECONDS) == false) {
+                        logcatProcess?.destroyForcibly()
+                    }
+                } catch (e: Exception) {
+                    Log.w("MostroLogCapture", "Error waiting for process termination", e)
+                }
                 isCapturing = false
             }
         }.start()
@@ -75,7 +86,19 @@ class MainActivity : FlutterActivity() {
 
     private fun stopLogCapture() {
         isCapturing = false
-        logcatProcess?.destroy()
+        logcatProcess?.let { process ->
+            process.destroy()
+            // Force kill if still alive after brief wait
+            Thread {
+                try {
+                    if (!process.waitFor(200, java.util.concurrent.TimeUnit.MILLISECONDS)) {
+                        process.destroyForcibly()
+                    }
+                } catch (e: Exception) {
+                    Log.w("MostroLogCapture", "Process cleanup interrupted", e)
+                }
+            }.start()
+        }
         logcatProcess = null
     }
 
