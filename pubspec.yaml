@@ -84,6 +84,10 @@ dependencies:
 
   app_links: ^6.4.0
 
+  # Firebase
+  firebase_core: ^3.8.0
+  firebase_messaging: ^15.1.4
+
 
 dev_dependencies:
   flutter_test:
