@@ -36,13 +36,15 @@ class MostroMessage<T extends Payload> {
       json['id'] = id;
     }
     json['action'] = action.value;
-    json['payload'] = _payload?.toJson();
+    // Serialize EmptyPayload as null to match protocol specification
+    json['payload'] = (_payload is EmptyPayload) ? null :_payload?.toJson();
     return json;
   }
 
   factory MostroMessage.fromJson(Map<String, dynamic> json) {
     final timestamp = json['timestamp'];
-    json = json['order'] ?? json['cant-do'] ?? json;
+    // Support both 'order', 'restore', and 'cant-do' wrapper keys
+    json = json['order'] ?? json['restore'] ?? json['cant-do'] ?? json;
     final num requestId = json['request_id'] ?? 0;
 
     return MostroMessage(
@@ -97,7 +99,9 @@ class MostroMessage<T extends Payload> {
   }
 
   String sign(NostrKeyPairs keyPair) {
-    final message = {'order': toJson()};
+    // Use 'restore' key for restore action, 'order' for everything else
+    final wrapperKey = action == Action.restore ? 'restore' : 'order';
+    final message = {wrapperKey: toJson()};
     final serializedEvent = jsonEncode(message);
     final bytes = utf8.encode(serializedEvent);
     final digest = sha256.convert(bytes);
@@ -107,7 +111,9 @@ class MostroMessage<T extends Payload> {
   }
 
   String serialize({NostrKeyPairs? keyPair}) {
-    final message = {'order': toJson()};
+    // Use 'restore' key for restore action, 'order' for everything else
+    final wrapperKey = action == Action.restore ? 'restore' : 'order';
+    final message = {wrapperKey: toJson()};
     final serializedEvent = jsonEncode(message);
     final signature = (keyPair != null) ? '"${sign(keyPair)}"' : null;
     final content = '[$serializedEvent, $signature]';
