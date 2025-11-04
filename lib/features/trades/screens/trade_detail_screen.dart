@@ -979,7 +979,7 @@ class _CountdownWidget extends ConsumerWidget {
 
     // Show countdown ONLY for these 3 specific statuses
     if (status == Status.pending) {
-      // Pending orders: use exact timestamps from order_expires_at
+      // Pending orders: use exact timestamps from expires_at
       if (expiresAtTimestamp == null || expiresAtTimestamp <= 0) {
         // No valid expiration timestamp available
         return null;

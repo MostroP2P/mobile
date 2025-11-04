@@ -464,13 +464,13 @@ class _CountdownWidget extends ConsumerWidget {
 
   Widget _buildCountDownTime(
       BuildContext context, WidgetRef ref, NostrEvent order) {
-    // Use exact timestamps from order_expires_at
-    if (order.orderExpiresAt == null) {
+    // Use exact timestamps from expires_at
+    if (order.expiresAt == null) {
       // No valid expiration timestamp available
       return const SizedBox.shrink();
     }
 
-    final expiresAtSeconds = int.tryParse(order.orderExpiresAt!);
+    final expiresAtSeconds = int.tryParse(order.expiresAt.toString());
     if (expiresAtSeconds == null || expiresAtSeconds <= 0) {
       return const SizedBox.shrink();
     }

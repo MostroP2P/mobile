@@ -9,7 +9,7 @@ import 'package:mostro_mobile/generated/l10n.dart';
 /// - >24 hours remaining: Day scale showing "14d 20h 06m" format  
 /// - ≤24 hours remaining: Hour scale showing "HH:MM:SS" format
 /// 
-/// Uses exact timestamps from order_expires_at tag for precise calculations.
+/// Uses exact timestamps from expires_at tag for precise calculations.
 /// 
 /// Note: Orders in waiting status (waitingBuyerInvoice, waitingPayment) use 
 /// a different countdown system based on expirationSeconds + message timestamps.

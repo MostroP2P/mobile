@@ -39,7 +39,7 @@ extension NostrEventExtensions on NostrEvent {
   String? timeAgoWithLocale(String? locale) =>
       _timeAgo(_getTagValue('expiration'), locale);
   DateTime get expirationDate => _getTimeStamp(_getTagValue('expiration')!);
-  String? get orderExpiresAt => _getTagValue('order_expires_at');
+  String? get expiresAt => _getTagValue('expires_at');
   String? get platform => _getTagValue('y');
   String get type => _getTagValue('z')!;
 

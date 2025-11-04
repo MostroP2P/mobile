@@ -343,7 +343,7 @@ class DynamicCountdownWidget extends ConsumerWidget {
 #### **Key Features**
 
 1. **Automatic Scaling**: Switches between day/hour formats based on remaining time
-2. **Exact Timestamps**: Uses `order_expires_at` tag for precise calculations
+2. **Exact Timestamps**: Uses `expires_at` tag for precise calculations
 3. **Dynamic Display**: 
    - **>24 hours**: Day scale with "14d 20h 06m" format
    - **≤24 hours**: Hour scale with "HH:MM:SS" format
@@ -375,7 +375,7 @@ _CountdownWidget(
 
 - **Pending Orders Only**: DynamicCountdownWidget is specifically designed for orders in `Status.pending`
 - **Waiting Orders Use Different System**: Orders in `Status.waitingBuyerInvoice` and `Status.waitingPayment` use separate countdown logic based on `expirationSeconds` + message timestamps
-- **Data Source**: Uses `order_expires_at` Nostr tag for exact expiration timestamps rather than calculated values
+- **Data Source**: Uses `expires_at` Nostr tag for exact expiration timestamps rather than calculated values
 
 #### **Real-time Countdown Widget**
 
