@@ -29,25 +29,31 @@ Future<void> main() async {
   logsService.log('🚀 App started');
 
   // Capture global Flutter errors
+  final previousFlutterOnError = FlutterError.onError;
   FlutterError.onError = (details) {
     logsService.log('❌ FlutterError: ${details.exceptionAsString()}');
     if (details.stack != null) {
       logsService.log('Stack: ${details.stack}');
     }
+    previousFlutterOnError?.call(details);
   };
 
   // Capture unhandled Dart errors
+  final previousPlatformOnError = PlatformDispatcher.instance.onError;
   PlatformDispatcher.instance.onError = (error, stack) {
     logsService.log('❌ Uncaught error: $error');
     logsService.log('Stack: $stack');
-    return true; // Mark error as handled
+    return previousPlatformOnError?.call(error, stack) ?? false;
   };
 
-  runZonedGuarded(
-        () async => await _startApp(logsService),
-        (error, stackTrace) {
+  runZonedGuarded<Future<void>>(
+    () async => _startApp(logsService),
+    (error, stackTrace) {
       logsService.log('⚠️ Zone error: $error');
       logsService.log('StackTrace: $stackTrace');
+      FlutterError.reportError(
+         FlutterErrorDetails(exception: error, stack: stackTrace),
+      );
     },
   );
 }
@@ -65,7 +71,7 @@ Future<void> _startApp(LogsService logsService) async {
   final settings = SettingsNotifier(sharedPreferences);
   await settings.init();
 
-  await initializeNotifications(); // Uncommented
+  await initializeNotifications();
   _initializeTimeAgoLocalization();
 
   final backgroundService = createBackgroundService(settings.settings);
@@ -80,7 +86,14 @@ Future<void> _startApp(LogsService logsService) async {
       secureStorageProvider.overrideWithValue(secureStorage),
       mostroDatabaseProvider.overrideWithValue(mostroDatabase),
       eventDatabaseProvider.overrideWithValue(eventsDatabase),
-      logsServiceProvider.overrideWithValue(logsService),
+      // Use overrideWith to preserve reactive behavior
+      logsServiceProvider.overrideWith((ref) {
+        // Add cleanup for the custom instance
+        ref.onDispose(() {
+          logsService.dispose();
+        });
+        return logsService;
+      }),
     ],
   );
 

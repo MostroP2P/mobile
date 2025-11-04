@@ -6,6 +6,7 @@
 import 'dart:async' as _i5;
 import 'dart:collection' as _i14;
 import 'dart:io' as _i31;
+import 'dart:ui' as _i32;
 
 import 'package:dart_nostr/dart_nostr.dart' as _i3;
 import 'package:dart_nostr/nostr/model/relay_informations.dart' as _i16;
@@ -3092,6 +3093,12 @@ class MockLogsService extends _i1.Mock implements _i30.LogsService {
       ) as _i14.UnmodifiableListView<String>);
 
   @override
+  bool get hasListeners => (super.noSuchMethod(
+        Invocation.getter(#hasListeners),
+        returnValue: false,
+      ) as bool);
+
+  @override
   _i5.Future<void> init() => (super.noSuchMethod(
         Invocation.method(
           #init,
@@ -3111,9 +3118,28 @@ class MockLogsService extends _i1.Mock implements _i30.LogsService {
       ) as _i5.Future<bool>);
 
   @override
+  _i5.Future<bool> isNativeLogsEnabled() => (super.noSuchMethod(
+        Invocation.method(
+          #isNativeLogsEnabled,
+          [],
+        ),
+        returnValue: _i5.Future<bool>.value(false),
+      ) as _i5.Future<bool>);
+
+  @override
   _i5.Future<void> setLogsEnabled(bool? enabled) => (super.noSuchMethod(
         Invocation.method(
           #setLogsEnabled,
+          [enabled],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> setNativeLogsEnabled(bool? enabled) => (super.noSuchMethod(
+        Invocation.method(
+          #setNativeLogsEnabled,
           [enabled],
         ),
         returnValue: _i5.Future<void>.value(),
@@ -3179,4 +3205,31 @@ class MockLogsService extends _i1.Mock implements _i30.LogsService {
         returnValue: _i5.Future<void>.value(),
         returnValueForMissingStub: _i5.Future<void>.value(),
       ) as _i5.Future<void>);
+
+  @override
+  void addListener(_i32.VoidCallback? listener) => super.noSuchMethod(
+        Invocation.method(
+          #addListener,
+          [listener],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void removeListener(_i32.VoidCallback? listener) => super.noSuchMethod(
+        Invocation.method(
+          #removeListener,
+          [listener],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void notifyListeners() => super.noSuchMethod(
+        Invocation.method(
+          #notifyListeners,
+          [],
+        ),
+        returnValueForMissingStub: null,
+      );
 }

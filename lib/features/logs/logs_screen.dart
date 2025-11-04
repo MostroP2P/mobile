@@ -43,7 +43,9 @@ class LogsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final logs = ref.watch(logsProvider).reversed.toList();
+    // Watch logsProvider directly for automatic updates
+    // This will rebuild whenever logs change thanks to ChangeNotifier
+    final logs = ref.watch(logsProvider);
     final logsNotifier = ref.read(logsNotifierProvider.notifier);
     final s = S.of(context)!;
 
@@ -68,7 +70,7 @@ class LogsScreen extends ConsumerWidget {
             tooltip: s.deleteLogsTooltip,
             onPressed: () async {
               await logsNotifier.clearLogs();
-              ref.invalidate(logsProvider);
+              // No need to call ref.invalidate - ChangeNotifier handles it!
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text(s.logsDeletedMessage)),
@@ -110,10 +112,12 @@ class LogsScreen extends ConsumerWidget {
           : ListView.builder(
         padding: const EdgeInsets.all(12),
         itemCount: logs.length,
+        reverse: true, // Show newest logs at the bottom
         itemBuilder: (context, i) {
-          final log = logs[i];
+          // Access logs in reverse order without copying the entire list
+          final log = logs[logs.length - 1 - i];
           final logColor = _getLogColor(log);
-          final logIcon = _getLogIcon(log); // Use new method
+          final logIcon = _getLogIcon(log);
 
           return Container(
             margin: const EdgeInsets.symmetric(vertical: 4),
@@ -122,7 +126,7 @@ class LogsScreen extends ConsumerWidget {
               horizontal: 10,
             ),
             decoration: BoxDecoration(
-              color: AppTheme.backgroundCard.withAlpha(180),
+              color: AppTheme.backgroundCard.withValues(alpha: 180 / 255),
               borderRadius: BorderRadius.circular(8),
               // Left colored border for better distinction
               border: Border(

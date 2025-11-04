@@ -23,6 +23,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   late final TextEditingController _mostroTextController;
   late final TextEditingController _lightningAddressController;
+  bool _hasSetupListener = false;
 
   @override
   void initState() {
@@ -31,7 +32,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     _mostroTextController = TextEditingController(text: settings.mostroPublicKey);
     _lightningAddressController = TextEditingController(text: settings.defaultLightningAddress ?? '');
   }
-
 
   @override
   void dispose() {
@@ -42,15 +42,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Listen to settings changes and update controllers
-    ref.listen<Settings>(settingsProvider, (previous, next) {
-      if (previous?.defaultLightningAddress != next.defaultLightningAddress) {
-        final newText = next.defaultLightningAddress ?? '';
-        if (_lightningAddressController.text != newText) {
-          _lightningAddressController.text = newText;
+    // Setup listener only once to avoid repeated subscriptions
+    if (!_hasSetupListener) {
+      _hasSetupListener = true;
+      ref.listen<Settings>(settingsProvider, (previous, next) {
+        if (previous?.defaultLightningAddress != next.defaultLightningAddress) {
+          final newText = next.defaultLightningAddress ?? '';
+          if (_lightningAddressController.text != newText) {
+            _lightningAddressController.text = newText;
+          }
         }
-      }
-    });
+      });
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -58,7 +61,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         elevation: 0,
         leading: IconButton(
           icon:
-              const HeroIcon(HeroIcons.arrowLeft, color: AppTheme.textPrimary),
+          const HeroIcon(HeroIcons.arrowLeft, color: AppTheme.textPrimary),
           onPressed: () => context.pop(),
         ),
         title: Text(
@@ -243,7 +246,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Widget _buildLightningAddressCard(BuildContext context) {
-
     return Container(
       decoration: BoxDecoration(
         color: AppTheme.backgroundCard,
@@ -315,7 +317,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 onChanged: (value) {
                   final cleanValue = value.trim().isEmpty ? null : value.trim();
                   ref.read(settingsProvider.notifier).updateDefaultLightningAddress(cleanValue);
-                  
+
                   // Force sync immediately for empty values
                   if (cleanValue == null) {
                     _lightningAddressController.text = '';
@@ -418,7 +420,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   size: 20,
                 ),
                 const SizedBox(width: 8),
-                Expanded(  // Cambiado para evitar overflow
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -573,7 +575,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 controller: controller,
                 style: const TextStyle(color: AppTheme.textPrimary),
                 onChanged: (value) => ref
-                    .watch(settingsProvider.notifier)
+                    .read(settingsProvider.notifier)
                     .updateMostroInstance(value),
                 decoration: InputDecoration(
                   border: InputBorder.none,

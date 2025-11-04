@@ -4,8 +4,17 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/features/logs/logs_service.dart';
 
-// Main service provider (singleton)
-final logsServiceProvider = Provider<LogsService>((ref) => LogsService());
+// Reactive ChangeNotifier service provider with proper lifecycle management
+final logsServiceProvider = ChangeNotifierProvider<LogsService>((ref) {
+  final service = LogsService();
+
+  // Cleanup when provider is disposed
+  ref.onDispose(() {
+    service.dispose();
+  });
+
+  return service;
+});
 
 // Provider for direct reactive access to logs
 final logsProvider = Provider<UnmodifiableListView<String>>((ref) {
@@ -16,17 +25,26 @@ final logsProvider = Provider<UnmodifiableListView<String>>((ref) {
 // Provider for the notifier (maintains current logic)
 final logsNotifierProvider =
 StateNotifierProvider<LogsNotifier, List<String>>((ref) {
-  return LogsNotifier(ref.read(logsServiceProvider));
+  final service = ref.watch(logsServiceProvider);
+
+  // Listen to service changes and update state
+  ref.listen<LogsService>(logsServiceProvider, (previous, next) {
+    // This will trigger when the service notifies listeners
+  });
+
+  return LogsNotifier(service);
 });
 
 // Provider for Flutter logs switch state
 final logsEnabledProvider = StateNotifierProvider<LogsEnabledNotifier, bool>((ref) {
-  return LogsEnabledNotifier(ref.read(logsServiceProvider));
+  final service = ref.watch(logsServiceProvider);
+  return LogsEnabledNotifier(service);
 });
 
 // Provider for native logs switch state
 final nativeLogsEnabledProvider = StateNotifierProvider<NativeLogsEnabledNotifier, bool>((ref) {
-  return NativeLogsEnabledNotifier(ref.read(logsServiceProvider));
+  final service = ref.watch(logsServiceProvider);
+  return NativeLogsEnabledNotifier(service);
 });
 
 class LogsNotifier extends StateNotifier<List<String>> {
@@ -42,11 +60,13 @@ class LogsNotifier extends StateNotifier<List<String>> {
 
   Future<void> addLog(String message) async {
     _logsService.log(message);
+    // The service will call notifyListeners(), so state will update automatically
     await _loadLogs();
   }
 
   Future<void> clearLogs({bool clean = true}) async {
     await _logsService.clearLogs(clean: clean);
+    // The service will call notifyListeners()
     state = [];
   }
 

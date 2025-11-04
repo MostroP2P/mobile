@@ -1158,6 +1158,6 @@
   "logsMenuSubtitle": "Internal diagnostics and events",
   "logsEnabledDescription": "Saving activity logs",
   "logsDisabledDescription": "Logs disabled",
-  "viewLogsButton": "View logs",
-  "errorSharingLogs": "Error sharing logs"
+  "viewLogsButton": "View logs"
+
 }

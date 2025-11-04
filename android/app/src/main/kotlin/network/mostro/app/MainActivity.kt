@@ -8,12 +8,13 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
 import java.io.BufferedReader
 import java.io.InputStreamReader
+import java.util.concurrent.atomic.AtomicBoolean
 
 class MainActivity : FlutterActivity() {
 
     private val EVENT_CHANNEL = "native_logcat_stream"
     private var logcatProcess: Process? = null
-    private var isCapturing = false
+    private val isCapturing = AtomicBoolean(false)
     private val handler = Handler(Looper.getMainLooper())
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -33,15 +34,12 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun startLogCapture(eventSink: EventChannel.EventSink?) {
-        if (isCapturing) return
-        isCapturing = true
+        // Use compareAndSet for thread-safe check-and-set operation
+        if (!isCapturing.compareAndSet(false, true)) return
 
-        Thread {
+        Thread({
             var reader: BufferedReader? = null
             try {
-                // Clear previous logcat
-                Runtime.getRuntime().exec("logcat -c").waitFor()
-
                 // Capture logs only for this app with timestamp
                 logcatProcess = Runtime.getRuntime().exec(
                     arrayOf(
@@ -51,10 +49,12 @@ class MainActivity : FlutterActivity() {
                     )
                 )
 
-                reader = BufferedReader(InputStreamReader(logcatProcess?.inputStream))
+                reader = BufferedReader(
+                    InputStreamReader(logcatProcess?.inputStream)
+                )
 
                 // Use inline assignment in while loop
-                while (isCapturing) {
+                while (isCapturing.get()) {
                     val line = reader.readLine() ?: break
 
                     if (line.isNotEmpty()) {
@@ -79,13 +79,13 @@ class MainActivity : FlutterActivity() {
                 } catch (e: Exception) {
                     Log.w("MostroLogCapture", "Error waiting for process termination", e)
                 }
-                isCapturing = false
+                isCapturing.set(false)
             }
-        }.start()
+        }, "mostro-logcat").start()
     }
 
     private fun stopLogCapture() {
-        isCapturing = false
+        isCapturing.set(false)
         logcatProcess?.let { process ->
             process.destroy()
             // Force kill if still alive after brief wait

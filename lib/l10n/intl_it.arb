@@ -1191,6 +1191,5 @@
   "logsMenuSubtitle": "Diagnostica ed eventi interni",
   "logsEnabledDescription": "Salvataggio dei registri di attività",
   "logsDisabledDescription": "Registri disattivati",
-  "viewLogsButton": "Visualizza registri",
-  "errorSharingLogs": "Errore nella condivisione dei log"
+  "viewLogsButton": "Visualizza registri"
 }
