@@ -398,7 +398,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Widget _buildLogsCard(BuildContext context) {
-    final isLogsEnabled = ref.watch(logsEnabledProvider);
+    final logsState = ref.watch(logsEnabledProvider);
     final logsEnabledNotifier = ref.read(logsEnabledProvider.notifier);
 
     return Container(
@@ -444,18 +444,29 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ],
                   ),
                 ),
-                Switch(
-                  value: isLogsEnabled,
-                  onChanged: (value) async {
-                    await logsEnabledNotifier.toggle(value);
-                  },
-                  activeThumbColor: AppTheme.activeColor,
-                ),
+
+                if (logsState == LogsState.loading)
+                  const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(AppTheme.activeColor),
+                    ),
+                  )
+                else
+                  Switch(
+                    value: logsState == LogsState.enabled,
+                    onChanged: (value) async {
+                      await logsEnabledNotifier.toggle(value);
+                    },
+                    activeThumbColor: AppTheme.activeColor,
+                  ),
               ],
             ),
             const SizedBox(height: 20),
             Text(
-              isLogsEnabled
+              logsState == LogsState.enabled
                   ? S.of(context)!.logsEnabledDescription
                   : S.of(context)!.logsDisabledDescription,
               style: const TextStyle(

@@ -268,33 +268,22 @@ class LogsService extends ChangeNotifier {
 
   /// Dispose method for cleanup
   @override
-  Future<void> dispose() async {
+  void dispose() {
     if (_isDisposed) return;
-
     _isDisposed = true;
 
-    try {
-      // Stop native log capture
-      await _nativeSubscription?.cancel();
-      _nativeSubscription = null;
-      _nativeLogService.dispose();
+    unawaited(_nativeSubscription?.cancel());
+    _nativeSubscription = null;
+    _nativeLogService.dispose();
 
-      // Flush and close file sink
-      await _sink?.flush();
-      await _sink?.close();
-      _sink = null;
+    unawaited(_sink?.flush());
+    _sink?.close();
+    _sink = null;
 
-      // Clear logs from memory
-      _logs.clear();
+    _logs.clear();
+    _logFile = null;
+    _initialized = false;
 
-      // Reset state
-      _logFile = null;
-      _initialized = false;
-
-      // Call parent dispose
-      super.dispose();
-    } catch (e) {
-      print('Error disposing LogsService: $e');
-    }
+    super.dispose();
   }
 }

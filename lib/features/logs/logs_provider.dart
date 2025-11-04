@@ -1,52 +1,48 @@
-// lib/features/logs/logs_provider.dart
 import 'dart:collection';
 import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/features/logs/logs_service.dart';
 
-// Reactive ChangeNotifier service provider with proper lifecycle management
+// Define possible states for logs
+enum LogsState {
+  loading,
+  enabled,
+  disabled
+}
+
+// Providers remain the same
 final logsServiceProvider = ChangeNotifierProvider<LogsService>((ref) {
   final service = LogsService();
-
-  // Cleanup when provider is disposed
   ref.onDispose(() {
     service.dispose();
   });
-
   return service;
 });
 
-// Provider for direct reactive access to logs
 final logsProvider = Provider<UnmodifiableListView<String>>((ref) {
   final service = ref.watch(logsServiceProvider);
   return service.logs;
 });
 
-// Provider for the notifier (maintains current logic)
 final logsNotifierProvider =
 StateNotifierProvider<LogsNotifier, List<String>>((ref) {
   final service = ref.watch(logsServiceProvider);
-
-  // Listen to service changes and update state
-  ref.listen<LogsService>(logsServiceProvider, (previous, next) {
-    // This will trigger when the service notifies listeners
-  });
-
   return LogsNotifier(service);
 });
 
-// Provider for Flutter logs switch state
-final logsEnabledProvider = StateNotifierProvider<LogsEnabledNotifier, bool>((ref) {
+// Updated to use LogsState
+final logsEnabledProvider = StateNotifierProvider<LogsEnabledNotifier, LogsState>((ref) {
   final service = ref.watch(logsServiceProvider);
   return LogsEnabledNotifier(service);
 });
 
-// Provider for native logs switch state
-final nativeLogsEnabledProvider = StateNotifierProvider<NativeLogsEnabledNotifier, bool>((ref) {
+// Updated to use LogsState
+final nativeLogsEnabledProvider = StateNotifierProvider<NativeLogsEnabledNotifier, LogsState>((ref) {
   final service = ref.watch(logsServiceProvider);
   return NativeLogsEnabledNotifier(service);
 });
 
+// LogsNotifier remains the same
 class LogsNotifier extends StateNotifier<List<String>> {
   final LogsService _logsService;
 
@@ -60,13 +56,11 @@ class LogsNotifier extends StateNotifier<List<String>> {
 
   Future<void> addLog(String message) async {
     _logsService.log(message);
-    // The service will call notifyListeners(), so state will update automatically
     await _loadLogs();
   }
 
   Future<void> clearLogs({bool clean = true}) async {
     await _logsService.clearLogs(clean: clean);
-    // The service will call notifyListeners()
     state = [];
   }
 
@@ -75,37 +69,48 @@ class LogsNotifier extends StateNotifier<List<String>> {
   }
 }
 
-class LogsEnabledNotifier extends StateNotifier<bool> {
+// Updated LogsEnabledNotifier to use LogsState
+class LogsEnabledNotifier extends StateNotifier<LogsState> {
   final LogsService _logsService;
 
-  LogsEnabledNotifier(this._logsService) : super(true) {
+  LogsEnabledNotifier(this._logsService) : super(LogsState.loading) {
     _loadState();
   }
 
   Future<void> _loadState() async {
-    state = await _logsService.isLogsEnabled();
+    final isEnabled = await _logsService.isLogsEnabled();
+    state = isEnabled ? LogsState.enabled : LogsState.disabled;
   }
 
   Future<void> toggle(bool enabled) async {
+    state = LogsState.loading; // Indicate that the state is changing
     await _logsService.setLogsEnabled(enabled);
-    state = enabled;
+    state = enabled ? LogsState.enabled : LogsState.disabled;
   }
+
+  // Helper method to check if logs are enabled
+  bool get isEnabled => state == LogsState.enabled;
 }
 
-// NativeLogsEnabledNotifier class
-class NativeLogsEnabledNotifier extends StateNotifier<bool> {
+// Updated NativeLogsEnabledNotifier to use LogsState
+class NativeLogsEnabledNotifier extends StateNotifier<LogsState> {
   final LogsService _logsService;
 
-  NativeLogsEnabledNotifier(this._logsService) : super(true) {
+  NativeLogsEnabledNotifier(this._logsService) : super(LogsState.loading) {
     _loadState();
   }
 
   Future<void> _loadState() async {
-    state = await _logsService.isNativeLogsEnabled();
+    final isEnabled = await _logsService.isNativeLogsEnabled();
+    state = isEnabled ? LogsState.enabled : LogsState.disabled;
   }
 
   Future<void> toggle(bool enabled) async {
+    state = LogsState.loading; // Indicate that the state is changing
     await _logsService.setNativeLogsEnabled(enabled);
-    state = enabled;
+    state = enabled ? LogsState.enabled : LogsState.disabled;
   }
+
+  // Helper method to check if native logs are enabled
+  bool get isEnabled => state == LogsState.enabled;
 }
