@@ -84,6 +84,8 @@ class NotificationMessageMapper {
         return 'notification_dispute_started_title';
       case mostro.Action.tradePubkey:
         return 'notification_order_update_title';
+      case mostro.Action.restore:
+        return 'TODO: implement restore title key';
     }
   }
 
@@ -176,6 +178,8 @@ class NotificationMessageMapper {
         return 'notification_dispute_started_message';
       case mostro.Action.tradePubkey:
         return 'notification_order_update_message';
+      case mostro.Action.restore:
+        return 'TODO: implement restore message key';
     }
   }
 
