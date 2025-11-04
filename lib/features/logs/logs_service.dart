@@ -112,7 +112,7 @@ class LogsService extends ChangeNotifier {
         },
       );
 
-      log('🔧 Native logs capture started');
+      print('🔧 Native logs capture started');
     } catch (e) {
       print('❌ Error starting native logs capture: $e');
     }

@@ -47,7 +47,6 @@ class LogsScreen extends ConsumerWidget {
     // This will rebuild whenever logs change thanks to ChangeNotifier
     final logs = ref.watch(logsProvider);
 
-    // CAMBIO: Acceso directo al servicio en lugar de logsNotifier
     final logsService = ref.read(logsServiceProvider);
 
     final s = S.of(context)!;
@@ -72,7 +71,6 @@ class LogsScreen extends ConsumerWidget {
             icon: const Icon(Icons.delete_outline, color: AppTheme.textPrimary),
             tooltip: s.deleteLogsTooltip,
             onPressed: () async {
-              // CAMBIO: Llamada directa al servicio
               await logsService.clearLogs();
               // No need to call ref.invalidate - ChangeNotifier handles it!
               if (context.mounted) {
@@ -86,7 +84,6 @@ class LogsScreen extends ConsumerWidget {
             icon: const Icon(Icons.share_outlined, color: AppTheme.textPrimary),
             tooltip: s.shareLogsTooltip,
             onPressed: () async {
-              // CAMBIO: Llamada directa al servicio
               final file = await logsService.getLogFile(clean: true);
               if (file != null) {
                 await Share.shareXFiles(

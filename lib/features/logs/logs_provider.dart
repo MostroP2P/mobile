@@ -24,7 +24,6 @@ final logsProvider = Provider<UnmodifiableListView<String>>((ref) {
   return service.logs;
 });
 
-// ELIMINADO: logsNotifierProvider ya no es necesario
 
 // Updated to use LogsState
 final logsEnabledProvider = StateNotifierProvider<LogsEnabledNotifier, LogsState>((ref) {
@@ -37,8 +36,6 @@ final nativeLogsEnabledProvider = StateNotifierProvider<NativeLogsEnabledNotifie
   final service = ref.watch(logsServiceProvider);
   return NativeLogsEnabledNotifier(service);
 });
-
-// ELIMINADO: LogsNotifier class completa
 
 // Updated LogsEnabledNotifier to use LogsState
 class LogsEnabledNotifier extends StateNotifier<LogsState> {
