@@ -277,7 +277,7 @@ class LogsService extends ChangeNotifier {
     _nativeLogService.dispose();
 
     unawaited(_sink?.flush());
-    _sink?.close();
+    unawaited(_sink?.close());
     _sink = null;
 
     _logs.clear();

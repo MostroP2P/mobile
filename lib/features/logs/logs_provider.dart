@@ -1,5 +1,4 @@
 import 'dart:collection';
-import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/features/logs/logs_service.dart';
 
@@ -10,7 +9,7 @@ enum LogsState {
   disabled
 }
 
-// Providers remain the same
+// Main service provider (reactive via ChangeNotifier)
 final logsServiceProvider = ChangeNotifierProvider<LogsService>((ref) {
   final service = LogsService();
   ref.onDispose(() {
@@ -19,16 +18,13 @@ final logsServiceProvider = ChangeNotifierProvider<LogsService>((ref) {
   return service;
 });
 
+// Provider for reactive logs list
 final logsProvider = Provider<UnmodifiableListView<String>>((ref) {
   final service = ref.watch(logsServiceProvider);
   return service.logs;
 });
 
-final logsNotifierProvider =
-StateNotifierProvider<LogsNotifier, List<String>>((ref) {
-  final service = ref.watch(logsServiceProvider);
-  return LogsNotifier(service);
-});
+// ELIMINADO: logsNotifierProvider ya no es necesario
 
 // Updated to use LogsState
 final logsEnabledProvider = StateNotifierProvider<LogsEnabledNotifier, LogsState>((ref) {
@@ -42,32 +38,7 @@ final nativeLogsEnabledProvider = StateNotifierProvider<NativeLogsEnabledNotifie
   return NativeLogsEnabledNotifier(service);
 });
 
-// LogsNotifier remains the same
-class LogsNotifier extends StateNotifier<List<String>> {
-  final LogsService _logsService;
-
-  LogsNotifier(this._logsService) : super([]) {
-    _loadLogs();
-  }
-
-  Future<void> _loadLogs() async {
-    state = _logsService.logs.toList();
-  }
-
-  Future<void> addLog(String message) async {
-    _logsService.log(message);
-    await _loadLogs();
-  }
-
-  Future<void> clearLogs({bool clean = true}) async {
-    await _logsService.clearLogs(clean: clean);
-    state = [];
-  }
-
-  Future<File?> getLogFile({bool clean = false}) async {
-    return await _logsService.getLogFile(clean: clean);
-  }
-}
+// ELIMINADO: LogsNotifier class completa
 
 // Updated LogsEnabledNotifier to use LogsState
 class LogsEnabledNotifier extends StateNotifier<LogsState> {
@@ -83,12 +54,11 @@ class LogsEnabledNotifier extends StateNotifier<LogsState> {
   }
 
   Future<void> toggle(bool enabled) async {
-    state = LogsState.loading; // Indicate that the state is changing
+    state = LogsState.loading;
     await _logsService.setLogsEnabled(enabled);
     state = enabled ? LogsState.enabled : LogsState.disabled;
   }
 
-  // Helper method to check if logs are enabled
   bool get isEnabled => state == LogsState.enabled;
 }
 
@@ -106,11 +76,10 @@ class NativeLogsEnabledNotifier extends StateNotifier<LogsState> {
   }
 
   Future<void> toggle(bool enabled) async {
-    state = LogsState.loading; // Indicate that the state is changing
+    state = LogsState.loading;
     await _logsService.setNativeLogsEnabled(enabled);
     state = enabled ? LogsState.enabled : LogsState.disabled;
   }
 
-  // Helper method to check if native logs are enabled
   bool get isEnabled => state == LogsState.enabled;
 }
