@@ -3,10 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:heroicons/heroicons.dart';
+import 'package:logger/logger.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
+import 'package:mostro_mobile/features/key_manager/import_mnemonic_dialog.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
+import 'package:mostro_mobile/features/restore/restore_manager.dart';
 import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
@@ -19,6 +22,7 @@ class KeyManagementScreen extends ConsumerStatefulWidget {
 }
 
 class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
+  final Logger _logger = Logger();
   String? _mnemonic;
   int? _tradeKeyIndex;
   bool _loading = false;
@@ -167,8 +171,20 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                         _buildGenerateNewUserButton(context),
                         const SizedBox(height: 16),
 
-                        // Import Mostro User Button
-                        _buildImportUserButton(context),
+                        // Import and Refresh User Buttons
+                        Row(
+                          children: [
+                            Expanded(
+                              flex: 7,
+                              child: _buildImportUserButton(context),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              flex: 3,
+                              child: _buildRefreshUserButton(context),
+                            ),
+                          ],
+                        ),
                         const SizedBox(height: 16),
                       ],
                     ),
@@ -555,37 +571,54 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
   }
 
   Widget _buildImportUserButton(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: OutlinedButton(
-        onPressed: null, // Keep disabled as requested
-        style: OutlinedButton.styleFrom(
-          side:
-              BorderSide(color: AppTheme.textSecondary.withValues(alpha: 0.3)),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-          padding: const EdgeInsets.symmetric(vertical: 16),
+    return OutlinedButton(
+      onPressed: () => _showImportMnemonicDialog(context),
+      style: OutlinedButton.styleFrom(
+        side: const BorderSide(color: AppTheme.activeColor),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              LucideIcons.download,
-              size: 20,
-              color: AppTheme.textSecondary.withValues(alpha: 0.5),
-            ),
-            const SizedBox(width: 8),
-            Text(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            LucideIcons.download,
+            size: 20,
+            color: AppTheme.activeColor,
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
               S.of(context)!.importMostroUser,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
-                color: AppTheme.textSecondary.withValues(alpha: 0.5),
+                color: AppTheme.activeColor,
               ),
+              overflow: TextOverflow.ellipsis,
             ),
-          ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRefreshUserButton(BuildContext context) {
+    return OutlinedButton(
+      onPressed: () => _showRefreshUserDialog(context),
+      style: OutlinedButton.styleFrom(
+        side: const BorderSide(color: AppTheme.activeColor),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
         ),
+        padding: const EdgeInsets.symmetric(vertical: 16),
+      ),
+      child: const Icon(
+        LucideIcons.refreshCw,
+        size: 20,
+        color: AppTheme.activeColor,
       ),
     );
   }
@@ -701,5 +734,125 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
         );
       },
     );
+  }
+
+  void _showRefreshUserDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          backgroundColor: AppTheme.backgroundCard,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+          ),
+          title: Text(
+            S.of(context)!.refreshUserDialogTitle,
+            style: const TextStyle(
+              color: AppTheme.textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          content: Text(
+            S.of(context)!.refreshUserDialogContent,
+            style: const TextStyle(
+              color: AppTheme.textSecondary,
+              fontSize: 14,
+              height: 1.5,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(
+                S.of(context)!.cancel,
+                style: const TextStyle(
+                  color: AppTheme.textSecondary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(width: 12),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.of(dialogContext).pop();
+
+                // Capture context-dependent values before async gap
+                final successMessage = S.of(context)!.refreshSuccessful;
+                final scaffoldMessenger = ScaffoldMessenger.of(context);
+                final localizations = S.of(context)!;
+
+                try {
+                  final restoreService = ref.read(restoreServiceProvider);
+                  await restoreService.restore();
+
+                  if (!mounted) return;
+                  scaffoldMessenger.showSnackBar(
+                    SnackBar(content: Text(successMessage)),
+                  );
+                } catch (e) {
+                  _logger.e('Refresh failed: $e');
+                  if (!mounted) return;
+                  scaffoldMessenger.showSnackBar(
+                    SnackBar(content: Text(localizations.refreshFailed(e.toString()))),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.activeColor,
+                foregroundColor: Colors.black,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+              ),
+              child: Text(
+                S.of(context)!.refresh,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _showImportMnemonicDialog(BuildContext context) async {
+    // Capture context-dependent values before async gap
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final localizations = S.of(context)!;
+
+    final mnemonic = await showDialog<String>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return const ImportMnemonicDialog();
+      },
+    );
+
+    if (mnemonic != null && mnemonic.isNotEmpty) {
+
+      try {
+        final restoreService = ref.read(restoreServiceProvider);
+        await restoreService.importMnemonicAndRestore(mnemonic);
+        await _loadKeys();
+
+        if (!mounted) return;
+        scaffoldMessenger.showSnackBar(
+          SnackBar(content: Text(localizations.keyImportedSuccessfully)),
+        );
+      } catch (e) {
+        _logger.e('Import failed: $e');
+        if (!mounted) return;
+        scaffoldMessenger.showSnackBar(
+          SnackBar(content: Text(localizations.importFailed(e.toString()))),
+        );
+      }
+    }
   }
 }
