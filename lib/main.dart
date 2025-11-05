@@ -56,27 +56,32 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     // Initialize local notifications system in this isolate
     await initializeNotifications();
 
-    // TODO: Complete FCM background processing implementation
-    //
-    // This requires a backend service that:
-    // 1. Listens to Nostr relays for kind 1059 (gift-wrapped) events
-    // 2. Detects new Mostro messages for registered users
-    // 3. Sends FCM push notification with minimal payload:
-    //    - event_id: The Nostr event ID
-    //    - recipient_pubkey: The trade key public key
-    //
-    // When FCM message is received here, we need to:
-    // 1. Load sessions from Sembast database (using event_id or recipient_pubkey)
-    // 2. Initialize NostrService with relay list from settings
-    // 3. Fetch the event from relays using event_id
-    // 4. Decrypt the event content with the trade key from the session
-    // 5. Extract MostroMessage and show local notification
-    //
-    // Privacy note: FCM payload only contains public data (event_id, pubkey)
-    // All sensitive data (amounts, addresses) stays encrypted until decrypted locally
+    // Load settings to get relay list
+    final sharedPrefs = SharedPreferencesAsync();
+    final relaysJson = await sharedPrefs.getStringList('settings.relays');
+    final relays = relaysJson ?? [];
 
-    logger.i('FCM notification logged - Full processing requires backend implementation');
-    logger.i('Event: $eventId, Recipient: ${recipientPubkey.substring(0, 10)}...');
+    if (relays.isEmpty) {
+      logger.w('No relays configured in settings - cannot fetch event');
+      return;
+    }
+
+    logger.i('Using ${relays.length} relays to fetch event');
+
+    // Process the FCM notification
+    // This will:
+    // 1. Load sessions from Sembast database
+    // 2. Find matching session by recipient_pubkey
+    // 3. Fetch the event from relays using event_id (TODO)
+    // 4. Decrypt with trade key from session
+    // 5. Show local notification
+    await processFCMBackgroundNotification(
+      eventId: eventId,
+      recipientPubkey: recipientPubkey,
+      relays: relays,
+    );
+
+    logger.i('FCM background notification processed successfully');
 
   } catch (e, stackTrace) {
     logger.e('Error processing FCM background message: $e');
