@@ -86,6 +86,8 @@ class NotificationMessageMapper {
         return 'notification_order_update_title';
       case mostro.Action.restore:
         return 'TODO: implement restore title key';
+      case mostro.Action.orders:
+        return 'TODO: implement orders title key';
     }
   }
 
@@ -180,6 +182,8 @@ class NotificationMessageMapper {
         return 'notification_order_update_message';
       case mostro.Action.restore:
         return 'TODO: implement restore message key';
+      case mostro.Action.orders:
+        return 'TODO: implement orders message key';
     }
   }
 
