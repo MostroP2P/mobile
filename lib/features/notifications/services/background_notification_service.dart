@@ -283,15 +283,122 @@ Future<void> retryNotification(NostrEvent event, {int maxAttempts = 3}) async {
   }
 }
 
-/// Process FCM notification from background when app is terminated
+/// Fetch and process all new events from relays (Silent Push approach)
 ///
-/// This function is called from the FCM background handler to process
-/// notifications when the app is completely closed.
+/// This function is called from the FCM silent push handler to fetch
+/// all new events from relays and process notifications.
+///
+/// Flow:
+/// 1. Load all active sessions from database
+/// 2. Get last processed timestamp from storage
+/// 3. Fetch all new events since last timestamp
+/// 4. Process each event and show notifications
+/// 5. Update last processed timestamp
+///
+/// Privacy: FCM doesn't contain any event data, only wakes up the app
+Future<void> fetchAndProcessNewEvents({required List<String> relays}) async {
+  final logger = Logger();
+
+  try {
+    logger.i('Starting to fetch new events from relays');
+
+    // Step 1: Load all sessions from database
+    final sessions = await _loadSessionsFromDatabase();
+
+    if (sessions.isEmpty) {
+      logger.i('No active sessions found');
+      return;
+    }
+
+    logger.i('Found ${sessions.length} active sessions');
+
+    // Step 2: Get last processed timestamp
+    final sharedPrefs = SharedPreferencesAsync();
+    final lastProcessedTime = await sharedPrefs.getInt('fcm.last_processed_timestamp') ?? 0;
+    final since = DateTime.fromMillisecondsSinceEpoch(lastProcessedTime * 1000);
+
+    logger.i('Fetching events since: ${since.toIso8601String()}');
+
+    // Step 3: Initialize NostrService
+    final nostrService = NostrService();
+    final settings = Settings(
+      relays: relays,
+      fullPrivacyMode: false,
+      mostroPublicKey: '', // Not needed for fetching
+    );
+
+    try {
+      await nostrService.init(settings);
+    } catch (e) {
+      logger.e('Failed to initialize NostrService: $e');
+      return;
+    }
+
+    // Step 4: Fetch new events for each session
+    int processedCount = 0;
+    final now = DateTime.now();
+
+    for (final session in sessions) {
+      try {
+        // Create filter for this session's events
+        final filter = NostrFilter(
+          kinds: [1059], // Gift-wrapped events
+          authors: [session.tradeKey.public], // Events for this trade key
+          since: since,
+        );
+
+        logger.d('Fetching events for session: ${session.orderId}');
+
+        // Fetch events
+        final events = await nostrService.fetchEvents(filter);
+
+        logger.d('Found ${events.length} events for session ${session.orderId}');
+
+        // Process each event
+        for (final event in events) {
+          final nostrEvent = NostrEvent(
+            id: event.id,
+            kind: event.kind,
+            content: event.content,
+            tags: event.tags,
+            createdAt: event.createdAt,
+            pubkey: event.pubkey,
+            sig: event.sig,
+            subscriptionId: event.subscriptionId,
+          );
+
+          // Show notification
+          await showLocalNotification(nostrEvent);
+          processedCount++;
+        }
+      } catch (e) {
+        logger.e('Error processing events for session ${session.orderId}: $e');
+        // Continue with next session
+      }
+    }
+
+    // Step 5: Update last processed timestamp
+    final newTimestamp = (now.millisecondsSinceEpoch / 1000).floor();
+    await sharedPrefs.setInt('fcm.last_processed_timestamp', newTimestamp);
+
+    logger.i('Processed $processedCount new events successfully');
+
+  } catch (e, stackTrace) {
+    logger.e('Error fetching and processing new events: $e');
+    logger.e('Stack trace: $stackTrace');
+  }
+}
+
+/// Process FCM notification from background when app is terminated (Legacy approach)
+///
+/// This function is kept for backward compatibility but is no longer used
+/// in the Silent Push approach.
 ///
 /// Parameters:
 /// - [eventId]: The Nostr event ID from the FCM payload
 /// - [recipientPubkey]: The recipient public key (trade key) from the FCM payload
 /// - [relays]: List of relay URLs to fetch the event from
+@Deprecated('Use fetchAndProcessNewEvents for Silent Push approach')
 Future<void> processFCMBackgroundNotification({
   required String eventId,
   required String recipientPubkey,

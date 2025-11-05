@@ -19,72 +19,56 @@ import 'package:mostro_mobile/shared/utils/notification_permission_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
-/// Top-level function to handle FCM messages when app is terminated
-/// This handler is called in a separate isolate by Firebase Messaging
+/// Top-level function to handle FCM silent push notifications
+///
+/// This is a "Silent Push" approach where FCM is used only to wake up the app.
+/// The payload is empty - FCM doesn't contain any event data.
+///
+/// Privacy benefits:
+/// - Backend doesn't know which user receives which notification
+/// - No mapping of recipient_pubkey → FCM token needed
+/// - All sensitive data stays encrypted until decrypted locally
+///
+/// Flow:
+/// 1. Backend sends empty FCM push to all users
+/// 2. FCM wakes up the app in background
+/// 3. App fetches ALL new events from relays
+/// 4. App processes and shows notifications for matching sessions
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   final logger = Logger();
 
   try {
-    logger.i('FCM background message received');
+    logger.i('FCM silent push received - waking up app');
     logger.d('Message ID: ${message.messageId}');
-    logger.d('Message data: ${message.data}');
 
     // Initialize Firebase in this isolate
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
 
-    // Validate FCM payload structure
-    if (message.data.isEmpty) {
-      logger.w('FCM message has empty data payload');
-      return;
-    }
-
-    // Extract event_id and recipient_pubkey from FCM payload
-    final eventId = message.data['event_id'] as String?;
-    final recipientPubkey = message.data['recipient_pubkey'] as String?;
-
-    if (eventId == null || recipientPubkey == null) {
-      logger.w('FCM message missing required fields - event_id: $eventId, recipient_pubkey: $recipientPubkey');
-      return;
-    }
-
-    logger.i('Processing FCM notification for event: $eventId');
-    logger.d('Recipient pubkey: ${recipientPubkey.substring(0, 16)}...');
-
-    // Initialize local notifications system in this isolate
+    // Initialize local notifications system
     await initializeNotifications();
 
-    // Load settings to get relay list
+    // Load relay list from settings
     final sharedPrefs = SharedPreferencesAsync();
     final relaysJson = await sharedPrefs.getStringList('settings.relays');
     final relays = relaysJson ?? [];
 
     if (relays.isEmpty) {
-      logger.w('No relays configured in settings - cannot fetch event');
+      logger.w('No relays configured - cannot fetch events');
       return;
     }
 
-    logger.i('Using ${relays.length} relays to fetch event');
+    logger.i('Fetching new events from ${relays.length} relays...');
 
-    // Process the FCM notification
-    // This will:
-    // 1. Load sessions from Sembast database
-    // 2. Find matching session by recipient_pubkey
-    // 3. Fetch the event from relays using event_id (TODO)
-    // 4. Decrypt with trade key from session
-    // 5. Show local notification
-    await processFCMBackgroundNotification(
-      eventId: eventId,
-      recipientPubkey: recipientPubkey,
-      relays: relays,
-    );
+    // Fetch and process all new events
+    await fetchAndProcessNewEvents(relays: relays);
 
-    logger.i('FCM background notification processed successfully');
+    logger.i('Silent push processed - all new events fetched and notifications shown');
 
   } catch (e, stackTrace) {
-    logger.e('Error processing FCM background message: $e');
+    logger.e('Error processing silent push: $e');
     logger.e('Stack trace: $stackTrace');
   }
 }
