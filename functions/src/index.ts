@@ -32,6 +32,10 @@ const FCM_TOPIC = "mostro_notifications";
 let lastNotificationTime = 0;
 const NOTIFICATION_COOLDOWN_MS = 60 * 1000; // 1 minute
 
+// Batching mechanism to group multiple events within a short window
+let batchTimeout: NodeJS.Timeout | null = null;
+const BATCH_DELAY_MS = 5000; // 5 seconds - wait for more events
+
 // WebSocket connections to relays
 const relayConnections = new Map<string, WebSocket>();
 
@@ -40,6 +44,7 @@ const SUBSCRIPTION_ID = "mostro-listener";
 
 /**
  * Connects to a Nostr relay and subscribes to kind 1059 events
+ * @param {string} relayUrl - The WebSocket URL of the Nostr relay
  */
 function connectToRelay(relayUrl: string): void {
   try {
@@ -51,7 +56,7 @@ function connectToRelay(relayUrl: string): void {
       logger.info(`Connected to ${relayUrl}`);
 
       // Subscribe to kind 1059 (gift-wrapped) events
-      // Only listen for events from the last 5 minutes to avoid processing old events
+      // Only listen for events from last 5 minutes to avoid old events
       const fiveMinutesAgo = Math.floor(Date.now() / 1000) - 300;
 
       const subscriptionMessage = JSON.stringify([
@@ -82,8 +87,8 @@ function connectToRelay(relayUrl: string): void {
               createdAt: event.created_at,
             });
 
-            // Send FCM notification to wake up all devices
-            sendSilentPushNotification();
+            // Trigger batched notification
+            triggerBatchedNotification();
           }
         }
       } catch (error) {
@@ -96,7 +101,9 @@ function connectToRelay(relayUrl: string): void {
     });
 
     ws.on("close", () => {
-      logger.warn(`Connection closed to ${relayUrl}, reconnecting in 5 seconds...`);
+      logger.warn(
+        `Connection closed to ${relayUrl}, reconnecting in 5 seconds...`
+      );
       relayConnections.delete(relayUrl);
 
       // Reconnect after 5 seconds
@@ -110,6 +117,27 @@ function connectToRelay(relayUrl: string): void {
     // Retry connection after 10 seconds
     setTimeout(() => connectToRelay(relayUrl), 10000);
   }
+}
+
+/**
+ * Triggers a batched notification
+ * Multiple events within BATCH_DELAY_MS window result in a single notification
+ */
+function triggerBatchedNotification(): void {
+  // If there's already a pending notification, don't create another
+  if (batchTimeout) {
+    logger.info("Event batched - notification already scheduled");
+    return;
+  }
+
+  // Schedule notification after delay to batch multiple events
+  batchTimeout = setTimeout(() => {
+    logger.info("Batch delay completed - sending notification");
+    sendSilentPushNotification();
+    batchTimeout = null;
+  }, BATCH_DELAY_MS);
+
+  logger.info(`Notification scheduled in ${BATCH_DELAY_MS}ms`);
 }
 
 /**
@@ -168,15 +196,17 @@ async function sendSilentPushNotification(): Promise<void> {
  * HTTP endpoint to manually trigger a test notification
  * Useful for testing the FCM setup
  */
-export const sendTestNotification = functions.https.onRequest(async (_req, res) => {
-  try {
-    await sendSilentPushNotification();
-    res.json({ success: true, message: "Test notification sent" });
-  } catch (error) {
-    logger.error("Error in sendTestNotification:", error);
-    res.status(500).json({ success: false, error: String(error) });
+export const sendTestNotification = functions.https.onRequest(
+  async (_req, res) => {
+    try {
+      await sendSilentPushNotification();
+      res.json({success: true, message: "Test notification sent"});
+    } catch (error) {
+      logger.error("Error in sendTestNotification:", error);
+      res.status(500).json({success: false, error: String(error)});
+    }
   }
-});
+);
 
 /**
  * HTTP endpoint to get connection status
@@ -222,7 +252,7 @@ export const startNostrListener = functions.https.onRequest((_req, res) => {
  * Scheduled function to keep connections alive
  * Runs every 5 minutes to ensure connections are maintained
  */
-export const keepAlive = onSchedule("every 5 minutes", async (_event) => {
+export const keepAlive = onSchedule("every 5 minutes", async () => {
   logger.info("Keep-alive check running...");
 
   // Check and reconnect to any disconnected relays
