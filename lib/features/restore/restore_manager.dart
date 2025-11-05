@@ -1,13 +1,17 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:dart_nostr/nostr/model/request/filter.dart';
 import 'package:dart_nostr/nostr/model/request/request.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
+import 'package:mostro_mobile/data/models/nostr_event.dart';
+import 'package:mostro_mobile/data/models/orders_request.dart';
+import 'package:mostro_mobile/data/models/orders_response.dart';
 import 'package:mostro_mobile/data/models/payload.dart';
+import 'package:mostro_mobile/data/models/restore_response.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
-import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/features/restore/restore_progress_notifier.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/providers/local_notifications_providers.dart';
@@ -17,11 +21,19 @@ import 'package:mostro_mobile/shared/providers/notifications_history_repository_
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 
+enum RestoreStage {
+  gettingRestoreData,
+  gettingOrdersDetails,
+  gettingTradeIndex,
+}
+
 class RestoreService {
-  
+
   final Ref ref;
   final Logger _logger = Logger();
   StreamSubscription<NostrEvent>? _tempSubscription;
+  Completer<NostrEvent>? _currentCompleter;
+  RestoreStage _currentStage = RestoreStage.gettingRestoreData;
 
   RestoreService(this.ref);
 
@@ -43,9 +55,29 @@ class RestoreService {
     }
   }
 
+  Future<NostrEvent> _waitForEvent(RestoreStage stage, {Duration timeout = const Duration(seconds: 10)}) async {
+    _currentStage = stage;
+    _currentCompleter = Completer<NostrEvent>();
+
+    try {
+      final event = await _currentCompleter!.future.timeout(
+        timeout,
+        onTimeout: () {
+          throw TimeoutException('Stage $stage timed out after ${timeout.inSeconds}s');
+        },
+      );
+      _logger.i('Restore: stage $_currentStage completed - Event: ${event.id}');
+      return event;
+    } catch (e) {
+      _logger.e('Restore: stage $_currentStage failed', error: e);
+      rethrow;
+    }
+  }
+
   void _handleTempSubscriptionsResponse(NostrEvent event) {
-    _logger.i('Restore: received restore notification event ${event.id}');
-    
+    if (_currentCompleter != null && !_currentCompleter!.isCompleted) {
+      _currentCompleter!.complete(event);
+    }
   }
 
   Future<StreamSubscription<NostrEvent>> _createTempSubscription() async {
@@ -56,6 +88,7 @@ class RestoreService {
     final filter = NostrFilter(
       kinds: [1059],
       p: [tempTradeKey.public],
+      limit: 0, //IMPORTANT:  limit 0 indicates we don’t want historical events, only new ones https://nostrbook.dev/protocol/filter
     );
 
     final request = NostrRequest(filters: [filter]);
@@ -69,6 +102,7 @@ class RestoreService {
       cancelOnError: false,
     );
     
+    _logger.i('Restore: temporary subscription created');
     return subscription;
   }
 
