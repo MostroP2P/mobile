@@ -15,6 +15,7 @@ class FCMService {
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
 
   static const String _fcmTokenKey = 'fcm_token';
+  static const String _fcmTopic = 'mostro_notifications';
 
   bool _isInitialized = false;
 
@@ -39,6 +40,9 @@ class FCMService {
 
       // Get and store initial FCM token
       await _getAndStoreToken();
+
+      // Subscribe to topic for silent push notifications
+      await _subscribeToTopic();
 
       // Set up token refresh listener
       _setupTokenRefreshListener();
@@ -101,6 +105,16 @@ class FCMService {
       _logger.i('FCM token saved to SharedPreferences');
     } catch (e) {
       _logger.e('Error saving FCM token: $e');
+    }
+  }
+
+  /// Subscribes to the FCM topic for broadcast notifications
+  Future<void> _subscribeToTopic() async {
+    try {
+      await _messaging.subscribeToTopic(_fcmTopic);
+      _logger.i('Subscribed to FCM topic: $_fcmTopic');
+    } catch (e) {
+      _logger.e('Error subscribing to FCM topic: $e');
     }
   }
 
