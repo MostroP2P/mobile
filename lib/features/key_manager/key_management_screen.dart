@@ -787,7 +787,7 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
 
                 try {
                   final restoreService = ref.read(restoreServiceProvider);
-                  await restoreService.restore();
+                  await restoreService.initRestoreProcess();
 
                   if (!mounted) return;
                   scaffoldMessenger.showSnackBar(

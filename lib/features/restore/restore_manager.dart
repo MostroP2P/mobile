@@ -29,7 +29,7 @@ class RestoreService {
     _logger.i('Restore: importing mnemonic');
     final keyManager = ref.read(keyManagerProvider);
     await keyManager.importMnemonic(mnemonic);
-    await restore();
+    await initRestoreProcess();
   }
 
   Future<void> _clearAll() async {
