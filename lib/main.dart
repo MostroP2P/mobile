@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -8,6 +9,7 @@ import 'package:mostro_mobile/features/settings/settings_notifier.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/background/background_service.dart';
 import 'package:mostro_mobile/features/notifications/services/background_notification_service.dart';
+import 'package:mostro_mobile/firebase_options.dart';
 import 'package:mostro_mobile/shared/providers/background_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/providers.dart';
 import 'package:mostro_mobile/shared/utils/biometrics_helper.dart';
@@ -17,6 +19,11 @@ import 'package:timeago/timeago.dart' as timeago;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   await requestNotificationPermissionIfNeeded();
 
