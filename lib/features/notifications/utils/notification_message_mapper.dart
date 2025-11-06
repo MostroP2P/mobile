@@ -85,9 +85,9 @@ class NotificationMessageMapper {
       case mostro.Action.tradePubkey:
         return 'notification_order_update_title';
       case mostro.Action.restore:
-        return 'TODO: implement restore title key';
       case mostro.Action.orders:
-        return 'TODO: implement orders title key';
+      case mostro.Action.lastTradeIndex:
+        return 'TODO: implement  title key if needed';
     }
   }
 
@@ -181,9 +181,10 @@ class NotificationMessageMapper {
       case mostro.Action.tradePubkey:
         return 'notification_order_update_message';
       case mostro.Action.restore:
-        return 'TODO: implement restore message key';
       case mostro.Action.orders:
-        return 'TODO: implement orders message key';
+      case mostro.Action.lastTradeIndex:
+        return 'TODO: implement message key if needed';
+      
     }
   }
 
