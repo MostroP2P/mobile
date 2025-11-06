@@ -11,15 +11,19 @@ import 'package:mostro_mobile/data/models/orders_request.dart';
 import 'package:mostro_mobile/data/models/orders_response.dart';
 import 'package:mostro_mobile/data/models/payload.dart';
 import 'package:mostro_mobile/data/models/restore_response.dart';
+import 'package:mostro_mobile/data/models/last_trade_index_response.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/restore/restore_progress_notifier.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
-import 'package:mostro_mobile/shared/providers/local_notifications_providers.dart';
+import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/notifications_history_repository_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
+import 'package:mostro_mobile/data/models/session.dart';
+import 'package:mostro_mobile/data/models/enums/role.dart';
+
 
 enum RestoreStage {
   gettingRestoreData,
@@ -48,8 +52,9 @@ class RestoreService {
     try {
       await ref.read(sessionNotifierProvider.notifier).reset();
       await ref.read(mostroStorageProvider).deleteAll();
+      await ref.read(eventStorageProvider).deleteAll();
       await ref.read(notificationsRepositoryProvider).clearAll();
-      await ref.read(localNotificationsProvider).cancelAll();
+      
     } catch (e) {
       _logger.w('Restore: cleanup error', error: e);
     }
@@ -294,7 +299,6 @@ class RestoreService {
     } finally {
       // Cleanup: always cancel subscription
       _logger.i('Restore: cleaning up subscription');
-      await _tempSubscription?.cancel();
       _tempSubscription = null;
       _currentCompleter = null;
       ref.read(restoreProgressProvider.notifier).completeRestore();  
