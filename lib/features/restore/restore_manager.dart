@@ -14,6 +14,7 @@ import 'package:mostro_mobile/data/models/restore_response.dart';
 import 'package:mostro_mobile/data/models/last_trade_index_response.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/restore/restore_progress_notifier.dart';
+import 'package:mostro_mobile/features/restore/restore_progress_state.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
@@ -276,9 +277,7 @@ class RestoreService {
         throw Exception('Rumor content is empty');
       }
 
-      // Parse response format: [{"restore": {...}}, null]
       final contentList = jsonDecode(rumor.content!) as List<dynamic>;
-      _logger.i('Restore: raw content: ${rumor.content}');
       final messageData = contentList[0] as Map<String, dynamic>;
 
       // Extract trade_index from restore wrapper
@@ -311,8 +310,6 @@ class RestoreService {
       if (masterKey == null) {
         throw Exception('Master key not available');
       }
-
-      int restoredCount = 0;
 
       // Restore each order as a session
       for (final entry in ordersIds.entries) {
@@ -437,44 +434,63 @@ class RestoreService {
       _tempSubscription = await _createTempSubscription();
 
       // STAGE 1: Getting Restore Data
+      progress.updateStep(RestoreStep.requesting);
       await _sendRestoreRequest();
       final restoreDataEvent = await _waitForEvent(RestoreStage.gettingRestoreData);
       final ordersIds = await _extractRestoreData(restoreDataEvent);
       progress.setOrdersReceived(ordersIds.length);
 
-      if (ordersIds.isEmpty) { 
+      if (ordersIds.isEmpty) {
         _logger.w('Restore: no orders or disputes to restore');
+        await _sendLastTradeIndexRequest();
+        final lastTradeIndexEvent = await _waitForEvent(RestoreStage.gettingTradeIndex);
+        final lastTradeIndexResponse = await _extractLastTradeIndex(lastTradeIndexEvent);
+        final lastTradeIndex = lastTradeIndexResponse.tradeIndex;
+        await keyManager.setCurrentKeyIndex(lastTradeIndex + 1);
+        progress.completeRestore();
         return;
       }
 
       // STAGE 2: Getting Orders Details
+      progress.updateStep(RestoreStep.loadingDetails);
       await _sendOrdersDetailsRequest(ordersIds.keys.toList());
       final ordersDetailsEvent = await _waitForEvent(RestoreStage.gettingOrdersDetails);
       final ordersResponse = await _extractOrdersDetails(ordersDetailsEvent);
 
       // STAGE 3: Getting Last Trade Index
-      //await _sendLastTradeIndexRequest();
-      //final lastTradeIndexEvent = await _waitForEvent(RestoreStage.gettingTradeIndex);
-      //final lastTradeIndexResponse = await _extractLastTradeIndex(lastTradeIndexEvent);
-      //final lastTradeIndex = lastTradeIndexResponse.tradeIndex;
+      await _sendLastTradeIndexRequest();
+      final lastTradeIndexEvent = await _waitForEvent(RestoreStage.gettingTradeIndex);
+      final lastTradeIndexResponse = await _extractLastTradeIndex(lastTradeIndexEvent);
+      final lastTradeIndex = lastTradeIndexResponse.tradeIndex;
 
       // IMPORTANT: Cancel temporary subscription before proceeding to avoid interference
       await _tempSubscription?.cancel();
+      _tempSubscription = null;
 
-      await restore(ordersIds, 1, ordersResponse);
+      // STAGE 4: Processing and restoring sessions
+      progress.updateStep(RestoreStep.processingRoles);
+      await restore(ordersIds, lastTradeIndex, ordersResponse);
 
     } on TimeoutException catch (e, stack) {
       _logger.e('Restore: timeout error', error: e, stackTrace: stack);
+      ref.read(restoreProgressProvider.notifier).showError('Request timeout');
       rethrow;
     } catch (e, stack) {
       _logger.e('Restore: error during restore process', error: e, stackTrace: stack);
+      ref.read(restoreProgressProvider.notifier).showError(e.toString());
       rethrow;
     } finally {
       // Cleanup: always cancel subscription
       _logger.i('Restore: cleaning up subscription');
+      await _tempSubscription?.cancel();
       _tempSubscription = null;
       _currentCompleter = null;
-      ref.read(restoreProgressProvider.notifier).completeRestore();  
+
+      // Only call completeRestore if not in error state
+      final currentState = ref.read(restoreProgressProvider);
+      if (currentState.step != RestoreStep.error) {
+        ref.read(restoreProgressProvider.notifier).completeRestore();
+      }
     }
   }
 }

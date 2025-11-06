@@ -41,6 +41,40 @@ class MostroService {
     _logger.i('MostroService disposed');
   }
 
+  bool _isRestorePayload(Map<String, dynamic> json) {
+    // Check if this is a restore-specific payload that should be ignored
+    // These payloads are only used during restore process via temporary trade key
+    final wrapper = json['restore'] ?? json['order'];
+    if (wrapper == null || wrapper['payload'] == null) return false;
+
+    final payload = wrapper['payload'] as Map<String, dynamic>;
+
+    // RestoreData: has 'restore_data' wrapper with 'orders' and 'disputes' arrays
+    if (payload.containsKey('restore_data')) {
+      return true;
+    }
+
+    // LastTradeIndexResponse: has 'trade_index' field
+    if (payload.containsKey('trade_index')) {
+      return true;
+    }
+
+    // OrdersResponse: has 'orders' array with OrderDetail objects
+    // OrderDetail has buyer_trade_pubkey/seller_trade_pubkey fields
+    if (payload.containsKey('orders') && payload['orders'] is List) {
+      final orders = payload['orders'] as List;
+      if (orders.isNotEmpty && orders[0] is Map) {
+        final firstOrder = orders[0] as Map;
+        if (firstOrder.containsKey('buyer_trade_pubkey') ||
+            firstOrder.containsKey('seller_trade_pubkey')) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
   Future<void> _onData(NostrEvent event) async {
     final eventStore = ref.read(eventStorageProvider);
 
@@ -65,6 +99,7 @@ class MostroService {
 
     try {
       final decryptedEvent = await event.unWrap(privateKey);
+
       if (decryptedEvent.content == null) return;
 
       final result = jsonDecode(decryptedEvent.content!);
@@ -81,7 +116,13 @@ class MostroService {
         return;
       }
 
+      // Skip restore-specific payloads that arrive as historical events due to temporary subscription
+      if (result[0] is Map && _isRestorePayload(result[0] as Map<String, dynamic>)) {
+        return;
+      }
+
       final msg = MostroMessage.fromJson(result[0]);
+
       final messageStorage = ref.read(mostroStorageProvider);
       
       // Use decryptedEvent.id if available, otherwise fall back to original event.id

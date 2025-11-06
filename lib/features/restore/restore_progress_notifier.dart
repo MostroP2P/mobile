@@ -58,8 +58,8 @@ class RestoreProgressNotifier extends StateNotifier<RestoreProgressState> {
       step: RestoreStep.completed,
     );
 
-    // Auto-hide after 1 second
-    Future.delayed(const Duration(seconds: 1), () {
+    // Auto-hide after 3 seconds
+    Future.delayed(const Duration(seconds: 3), () {
       if (mounted) {
         hide();
       }

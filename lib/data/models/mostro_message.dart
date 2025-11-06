@@ -99,8 +99,8 @@ class MostroMessage<T extends Payload> {
   }
 
   String sign(NostrKeyPairs keyPair) {
-    // Use 'restore' key for restore action, 'order' for everything else
-    final wrapperKey = action == Action.restore ? 'restore' : 'order';
+    // Use 'restore' key for restore and last-trade-index actions, 'order' for everything else
+    final wrapperKey = action == Action.restore || action == Action.lastTradeIndex ? 'restore' : 'order';
     final message = {wrapperKey: toJson()};
     final serializedEvent = jsonEncode(message);
     final bytes = utf8.encode(serializedEvent);
@@ -112,7 +112,7 @@ class MostroMessage<T extends Payload> {
 
   String serialize({NostrKeyPairs? keyPair}) {
     // Use 'restore' key for restore action, 'order' for everything else
-    final wrapperKey = action == Action.restore ? 'restore' : 'order';
+    final wrapperKey = action == Action.restore || action == Action.lastTradeIndex ? 'restore' : 'order';
     final message = {wrapperKey: toJson()};
     final serializedEvent = jsonEncode(message);
     final signature = (keyPair != null) ? '"${sign(keyPair)}"' : null;
