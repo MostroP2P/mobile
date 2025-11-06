@@ -238,12 +238,178 @@ class RestoreService {
     }
   }
 
+  Future<void> _sendLastTradeIndexRequest() async {
+    _logger.i('Restore: sending last trade index request');
+
+    final keyManager = ref.read(keyManagerProvider);
+    final settings = ref.read(settingsProvider);
+    final tempTradeKey = await keyManager.deriveTradeKeyFromIndex(1);
+
+    // Create last-trade-index message with EmptyPayload (serializes as null per protocol spec)
+    final mostroMessage = MostroMessage<EmptyPayload>(
+      action: Action.lastTradeIndex,
+      payload: EmptyPayload(),
+    );
+
+    final wrappedEvent = await mostroMessage.wrap(
+      tradeKey: tempTradeKey,
+      recipientPubKey: settings.mostroPublicKey,
+      masterKey: settings.fullPrivacyMode ? null : keyManager.masterKeyPair
+    );
+
+    await ref.read(nostrServiceProvider).publishEvent(wrappedEvent);
+    _logger.i('Restore: last trade index request sent successfully');
+  }
+
+  Future<LastTradeIndexResponse> _extractLastTradeIndex(NostrEvent event) async {
+    try {
+      _logger.i('Restore: extracting last trade index from gift wrap event ${event.id}');
+
+      final keyManager = ref.read(keyManagerProvider);
+      final tempTradeKey = await keyManager.deriveTradeKeyFromIndex(1);
+
+      // Unwrap the gift wrap (kind 1059) to get the rumor
+      final rumor = await event.mostroUnWrap(tempTradeKey);
+      _logger.i('Restore: unwrapped rumor event ${rumor.id}');
+
+      if (rumor.content == null || rumor.content!.isEmpty) {
+        throw Exception('Rumor content is empty');
+      }
+
+      // Parse response format: [{"restore": {...}}, null]
+      final contentList = jsonDecode(rumor.content!) as List<dynamic>;
+      _logger.i('Restore: raw content: ${rumor.content}');
+      final messageData = contentList[0] as Map<String, dynamic>;
+
+      // Extract trade_index from restore wrapper
+      final restoreWrapper = messageData['restore'] as Map<String, dynamic>;
+
+      final response = LastTradeIndexResponse.fromJson(restoreWrapper);
+
+      _logger.i('Restore: last trade index is ${response.tradeIndex}');
+
+      return response;
+    } catch (e, stack) {
+      _logger.e('Restore: failed to extract last trade index', error: e, stackTrace: stack);
+      rethrow;
+    }
+  }
+
+  Future<void> restore(Map<String, int> ordersIds, int lastTradeIndex, OrdersResponse ordersResponse) async {
+    try {
+
+      final keyManager = ref.read(keyManagerProvider);
+      final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+      final progress = ref.read(restoreProgressProvider.notifier);
+      final settings = ref.read(settingsProvider);
+
+      // Set the next trade key index
+      await keyManager.setCurrentKeyIndex(lastTradeIndex + 1);
+
+      // Get master key
+      final masterKey = keyManager.masterKeyPair;
+      if (masterKey == null) {
+        throw Exception('Master key not available');
+      }
+
+      int restoredCount = 0;
+
+      // Restore each order as a session
+      for (final entry in ordersIds.entries) {
+        final orderId = entry.key;
+        final tradeIndex = entry.value;
+
+        // Find the order detail for this orderId
+        final orderDetail = ordersResponse.orders.firstWhere(
+          (order) => order.id == orderId,
+          orElse: () => throw Exception('Order detail not found for orderId: $orderId'),
+        );
+
+        // Derive trade key for this trade index
+        final tradeKey = keyManager.deriveTradeKeyPair(tradeIndex);
+
+        // Determine role by comparing trade keys
+        Role? role;
+        if (orderDetail.buyerTradePubkey != null && orderDetail.buyerTradePubkey == tradeKey.public) {
+          role = Role.buyer;
+        } else if (orderDetail.sellerTradePubkey != null && orderDetail.sellerTradePubkey == tradeKey.public) {
+          role = Role.seller;
+        }
+
+        // Use createdAt if available, otherwise use current time
+        final startTime = orderDetail.createdAt != null
+            ? DateTime.fromMillisecondsSinceEpoch(orderDetail.createdAt! * 1000)
+            : DateTime.now();
+
+        
+        // Create session
+        final session = Session(
+          masterKey: masterKey,
+          tradeKey: tradeKey,
+          keyIndex: tradeIndex,
+          fullPrivacy: settings.fullPrivacyMode,
+          startTime: startTime,
+          orderId: orderDetail.id,
+          role: role,
+        );
+
+        // Store session
+        await sessionNotifier.saveSession(session);
+        progress.incrementProgress();
+      }
+        /*
+        // Convert OrderDetail to Order and store as message
+        final order = Order(
+          id: orderDetail.id,
+          kind: OrderType.fromString(orderDetail.kind),
+          status: Status.fromString(orderDetail.status),
+          amount: orderDetail.amount,
+          fiatCode: orderDetail.fiatCode,
+          minAmount: orderDetail.minAmount,
+          maxAmount: orderDetail.maxAmount,
+          fiatAmount: orderDetail.fiatAmount,
+          paymentMethod: orderDetail.paymentMethod,
+          premium: orderDetail.premium,
+          buyerTradePubkey: orderDetail.buyerTradePubkey,
+          sellerTradePubkey: orderDetail.sellerTradePubkey,
+          createdAt: orderDetail.createdAt,
+          expiresAt: orderDetail.expiresAt,
+        );
+
+        // Determine action based on status
+        final action = _mapStatusToAction(order.status);
+
+        // Create MostroMessage with the order
+        final orderMessage = MostroMessage<Order>(
+          action: action,
+          id: orderDetail.id,
+          payload: order,
+          tradeIndex: tradeIndex,
+          timestamp: orderDetail.createdAt ?? DateTime.now().millisecondsSinceEpoch ~/ 1000,
+        );
+
+        // Store message with timestamp-based key
+        final messageKey = '$orderId-restore-${DateTime.now().millisecondsSinceEpoch}';
+        await mostroStorage.addMessage(messageKey, orderMessage);
+
+        restoredCount++;
+        progress.incrementProgress();
+      }
+      */
+
+    } catch (e, stack) {
+      _logger.e('Restore: error during restore', error: e, stackTrace: stack);
+      rethrow;
+    }
+  }
+
   //Workflow:
   // 1. Clear existing data
   // 2. Create temporary subscription to key index 1 for restore notifications
   // 3. Send restore request and wait for response (Stage 1: GettingRestoreData)
   // 4. Process restore data and request order details (Stage 2: GettingOrdersDetails)
-  
+  // 5. Request last trade index (Stage 3: GettingTradeIndex)
+  // 6. Complete restore process
   Future<void> initRestoreProcess() async {
     try {
       // Clear existing data
