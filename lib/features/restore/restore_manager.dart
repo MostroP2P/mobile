@@ -439,22 +439,29 @@ class RestoreService {
       // STAGE 1: Getting Restore Data
       await _sendRestoreRequest();
       final restoreDataEvent = await _waitForEvent(RestoreStage.gettingRestoreData);
-      final restoreData = await _extractRestoreData(restoreDataEvent);
-      progress.setOrdersReceived(restoreData.length);
+      final ordersIds = await _extractRestoreData(restoreDataEvent);
+      progress.setOrdersReceived(ordersIds.length);
 
-      if (restoreData.isEmpty) { 
+      if (ordersIds.isEmpty) { 
         _logger.w('Restore: no orders or disputes to restore');
         return;
       }
 
       // STAGE 2: Getting Orders Details
-      await _sendOrdersDetailsRequest(restoreData.keys.toList());
+      await _sendOrdersDetailsRequest(ordersIds.keys.toList());
       final ordersDetailsEvent = await _waitForEvent(RestoreStage.gettingOrdersDetails);
       final ordersResponse = await _extractOrdersDetails(ordersDetailsEvent);
 
-      _logger.i('Restore: processing ${ordersResponse.toJson()} orders');
+      // STAGE 3: Getting Last Trade Index
+      //await _sendLastTradeIndexRequest();
+      //final lastTradeIndexEvent = await _waitForEvent(RestoreStage.gettingTradeIndex);
+      //final lastTradeIndexResponse = await _extractLastTradeIndex(lastTradeIndexEvent);
+      //final lastTradeIndex = lastTradeIndexResponse.tradeIndex;
 
-    
+      // IMPORTANT: Cancel temporary subscription before proceeding to avoid interference
+      await _tempSubscription?.cancel();
+
+      await restore(ordersIds, 1, ordersResponse);
 
     } on TimeoutException catch (e, stack) {
       _logger.e('Restore: timeout error', error: e, stackTrace: stack);
