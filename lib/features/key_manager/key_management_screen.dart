@@ -12,6 +12,7 @@ import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/features/restore/restore_manager.dart';
 import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:mostro_mobile/shared/providers/notifications_history_repository_provider.dart';
 
 class KeyManagementScreen extends ConsumerStatefulWidget {
   const KeyManagementScreen({super.key});
@@ -70,6 +71,8 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
     final eventStorage = ref.read(eventStorageProvider);
     await eventStorage.deleteAll();
 
+    await ref.read(notificationsRepositoryProvider).clearAll();
+    
     final keyManager = ref.read(keyManagerProvider);
     await keyManager.generateAndStoreMasterKey();
 
