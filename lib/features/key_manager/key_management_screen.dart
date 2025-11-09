@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:heroicons/heroicons.dart';
-import 'package:logger/logger.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
@@ -23,7 +22,6 @@ class KeyManagementScreen extends ConsumerStatefulWidget {
 }
 
 class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
-  final Logger _logger = Logger();
   String? _mnemonic;
   int? _tradeKeyIndex;
   bool _loading = false;
@@ -783,26 +781,8 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
               onPressed: () async {
                 Navigator.of(dialogContext).pop();
 
-                // Capture context-dependent values before async gap
-                final successMessage = S.of(context)!.refreshSuccessful;
-                final scaffoldMessenger = ScaffoldMessenger.of(context);
-                final localizations = S.of(context)!;
-
-                try {
-                  final restoreService = ref.read(restoreServiceProvider);
-                  await restoreService.initRestoreProcess();
-
-                  if (!mounted) return;
-                  scaffoldMessenger.showSnackBar(
-                    SnackBar(content: Text(successMessage)),
-                  );
-                } catch (e) {
-                  _logger.e('Refresh failed: $e');
-                  if (!mounted) return;
-                  scaffoldMessenger.showSnackBar(
-                    SnackBar(content: Text(localizations.refreshFailed(e.toString()))),
-                  );
-                }
+                final restoreService = ref.read(restoreServiceProvider);
+                await restoreService.initRestoreProcess();
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.activeColor,
@@ -827,9 +807,6 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
   }
 
   Future<void> _showImportMnemonicDialog(BuildContext context) async {
-    // Capture context-dependent values before async gap
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
-    final localizations = S.of(context)!;
 
     final mnemonic = await showDialog<String>(
       context: context,
@@ -839,23 +816,8 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
     );
 
     if (mnemonic != null && mnemonic.isNotEmpty) {
-
-      try {
-        final restoreService = ref.read(restoreServiceProvider);
-        await restoreService.importMnemonicAndRestore(mnemonic);
-        await _loadKeys();
-
-        if (!mounted) return;
-        scaffoldMessenger.showSnackBar(
-          SnackBar(content: Text(localizations.keyImportedSuccessfully)),
-        );
-      } catch (e) {
-        _logger.e('Import failed: $e');
-        if (!mounted) return;
-        scaffoldMessenger.showSnackBar(
-          SnackBar(content: Text(localizations.importFailed(e.toString()))),
-        );
-      }
+      final restoreService = ref.read(restoreServiceProvider);
+      await restoreService.importMnemonicAndRestore(mnemonic);
     }
   }
 }

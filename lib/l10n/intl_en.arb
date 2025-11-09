@@ -1192,5 +1192,6 @@
   "restoreProcessingRoles": "Processing roles...",
   "restoreFinalizing": "Finalizing restore...",
   "restoreCompleted": "Restore completed!",
-  "restoreError": "Restore error"
+  "restoreError": "Restore error",
+  "restoreErrorMessage": "Error restoring user data. Please check your connection and try again."
 }

@@ -146,6 +146,13 @@ class OrderNotifier extends AbstractMostroNotifier {
     }
   }
 
+  /// Update dispute in state (used during restore)
+  void updateDispute(Dispute dispute) {
+    if (mounted) {
+      state = state.copyWith(dispute: dispute);
+    }
+  }
+
   /// Subscribe to public events (38383) to detect automatic order cancellation
   void _subscribeToPublicEvents() {
     _publicEventsSubscription = ref.listen(

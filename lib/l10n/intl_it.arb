@@ -1225,5 +1225,6 @@
   "restoreProcessingRoles": "Elaborazione ruoli...",
   "restoreFinalizing": "Finalizzazione ripristino...",
   "restoreCompleted": "Ripristino completato!",
-  "restoreError": "Errore di ripristino"
+  "restoreError": "Errore di ripristino",
+  "restoreErrorMessage": "Errore nel ripristino dei dati utente. Verifica la tua connessione e riprova più tardi."
 }

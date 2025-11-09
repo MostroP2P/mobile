@@ -7,6 +7,7 @@ import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/relays/widgets/relay_selector.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
+import 'package:mostro_mobile/features/restore/restore_manager.dart';
 import 'package:mostro_mobile/shared/widgets/currency_selection_dialog.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
 import 'package:mostro_mobile/shared/widgets/language_selector.dart';
@@ -460,9 +461,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               child: TextFormField(
                 controller: controller,
                 style: const TextStyle(color: AppTheme.textPrimary),
-                onChanged: (value) => ref
-                    .watch(settingsProvider.notifier)
-                    .updateMostroInstance(value),
+                onChanged: (value) async {
+                  final oldValue = ref.read(settingsProvider).mostroPublicKey;
+                  await ref.read(settingsProvider.notifier).updateMostroInstance(value);
+
+                  // Trigger restore if pubkey changed
+                  if (oldValue != value && value.isNotEmpty) {
+                    try {
+                      final restoreService = ref.read(restoreServiceProvider);
+                      await restoreService.initRestoreProcess();
+                    } catch (e) {
+                      // Ignore errors during restore
+                    }
+                  }
+                },
                 decoration: InputDecoration(
                   border: InputBorder.none,
                   labelText: S.of(context)!.mostroPubkey,

@@ -149,7 +149,7 @@ class RestoreOverlay extends ConsumerWidget {
 
   String _getMessage(BuildContext context, RestoreProgressState state) {
     if (state.step == RestoreStep.error) {
-      return state.errorMessage ?? S.of(context)!.restoreError;
+      return S.of(context)!.restoreErrorMessage;
     }
 
     switch (state.step) {

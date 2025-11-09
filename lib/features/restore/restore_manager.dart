@@ -12,6 +12,7 @@ import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/data/models/last_trade_index_response.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
+import 'package:mostro_mobile/data/models/dispute.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/models/orders_request.dart';
 import 'package:mostro_mobile/data/models/orders_response.dart';
@@ -31,6 +32,7 @@ import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/notifications/providers/notifications_provider.dart';
+import 'package:mostro_mobile/features/order/notfiers/abstract_mostro_notifier.dart';
 
 
 enum RestoreStage {
@@ -51,8 +53,22 @@ class RestoreService {
 
   Future<void> importMnemonicAndRestore(String mnemonic) async {
     _logger.i('Restore: importing mnemonic');
+
+    // Import the mnemonic - this saves to storage
     final keyManager = ref.read(keyManagerProvider);
     await keyManager.importMnemonic(mnemonic);
+    _logger.i('Restore: mnemonic imported and saved to storage');
+
+    // Invalidate keyManagerProvider to force re-initialization
+    // This ensures all providers get a fresh instance with the new key
+    ref.invalidate(keyManagerProvider);
+    _logger.i('Restore: invalidated keyManagerProvider');
+
+    // Get the new instance and initialize it
+    final newKeyManager = ref.read(keyManagerProvider);
+    await newKeyManager.init();
+    _logger.i('Restore: new keyManager initialized, masterKeyPair=${newKeyManager.masterKeyPair != null}');
+
     await initRestoreProcess();
   }
 
@@ -146,7 +162,7 @@ class RestoreService {
     _logger.i('Restore: request sent successfully');
   }
 
-  Future<Map<String,int>> _extractRestoreData(NostrEvent event) async {
+  Future<({Map<String, int> orderIds, List<RestoredDispute> disputes})> _extractRestoreData(NostrEvent event) async {
     try {
 
       final keyManager = ref.read(keyManagerProvider);
@@ -165,7 +181,7 @@ class RestoreService {
       // Check if Mostro returned cant-do (not found)
       if (messageData.containsKey('cant-do')) {
         _logger.w('Restore: Mostro returned cant-do for restore data (no orders found)');
-        return {};
+        return (orderIds: <String, int>{}, disputes: <RestoredDispute>[]);
       }
 
       // Extract payload from restore wrapper
@@ -173,19 +189,19 @@ class RestoreService {
 
       if (restoreWrapper == null) {
         _logger.w('Restore: no restore wrapper found, returning empty orders');
-        return {};
+        return (orderIds: <String, int>{}, disputes: <RestoredDispute>[]);
       }
 
       final payload = restoreWrapper['payload'] as Map<String, dynamic>?;
 
       if (payload == null) {
         _logger.w('Restore: no payload found in restore wrapper, returning empty orders');
-        return {};
+        return (orderIds: <String, int>{}, disputes: <RestoredDispute>[]);
       }
 
       final restoreData = RestoreData.fromJson(payload);
 
-      Map<String, int> orderIds = {};
+      final Map<String, int> orderIds = <String, int>{};
 
       for (var order in restoreData.orders) {
         orderIds[order.id] = order.tradeIndex;
@@ -195,7 +211,9 @@ class RestoreService {
         orderIds[dispute.orderId] = dispute.tradeIndex;
       }
 
-      return orderIds;
+      final List<RestoredDispute> disputesList = restoreData.disputes;
+
+      return (orderIds: orderIds, disputes: disputesList);
     } catch (e, stack) {
       _logger.e('Restore: failed to extract restore data', error: e, stackTrace: stack);
       rethrow;
@@ -330,6 +348,36 @@ class RestoreService {
     }
   }
 
+  /// Determines if the user initiated the dispute based on available information
+  bool _determineIfUserInitiatedDispute({
+    required RestoredDispute restoredDispute,
+    required Order order,
+    Session? session,
+  }) {
+    // Without session role, we can't determine who initiated
+    if (session?.role == null) {
+      _logger.w('Restore: cannot determine dispute initiator, no session role for order ${order.id}');
+      return false; // Default to peer-initiated
+    }
+
+    // Check trade pubkeys to determine who initiated
+    // The user is either buyer or seller based on session.role
+    final userPubkey = session!.tradeKey.public;
+    final isBuyer = session.role == Role.buyer;
+
+    // Compare with order pubkeys to determine if user initiated
+    // This logic depends on how dispute initiator info is stored
+    // For now, we'll use a heuristic: if user is buyer and buyerTradePubkey matches, user initiated
+    if (isBuyer && order.buyerTradePubkey == userPubkey) {
+      return true; // User is buyer and likely initiated
+    } else if (!isBuyer && order.sellerTradePubkey == userPubkey) {
+      return true; // User is seller and likely initiated
+    }
+
+    // Default to peer-initiated if we can't determine
+    return false;
+  }
+
   /// Maps Status to the appropriate Action for restored orders
   Action _getActionFromStatus(Status status) {
     switch (status) {
@@ -356,7 +404,7 @@ class RestoreService {
       case Status.completedByAdmin:
         return Action.adminSettled;
       case Status.dispute:
-        return Action.disputeInitiatedByPeer; // Default to peer-initiated
+        return Action.disputeInitiatedByPeer; //No should be used -  Default to peer-initiated
       case Status.expired:
         return Action.canceled;
       case Status.paymentFailed:
@@ -368,7 +416,7 @@ class RestoreService {
     }
   }
 
-  Future<void> restore(Map<String, int> ordersIds, int lastTradeIndex, OrdersResponse ordersResponse) async {
+  Future<void> restore(Map<String, int> ordersIds, int lastTradeIndex, OrdersResponse ordersResponse, List<RestoredDispute> disputes) async {
     try {
 
       final keyManager = ref.read(keyManagerProvider);
@@ -426,6 +474,10 @@ class RestoreService {
         progress.incrementProgress();
       }
 
+      // Enable restore mode to block all message processing
+      AbstractMostroNotifier.setRestoring(true);
+      _logger.i('Restore: enabled restore mode - blocking all message processing');
+
       // Wait for historical messages to arrive and be saved to storage
       _logger.i('Restore: waiting 5 seconds for historical messages to be saved...');
       await Future.delayed(const Duration(seconds: 5));
@@ -454,8 +506,45 @@ class RestoreService {
             expiresAt: orderDetail.expiresAt,
           );
 
-          // Derive appropriate action from status
-          final action = _getActionFromStatus(order.status);
+          // Check if this order has a dispute
+          final restoredDispute = disputes.where((d) => d.orderId == orderDetail.id).firstOrNull;
+
+          // Determine action and create dispute if needed
+          Action action;
+          Dispute? dispute;
+
+          if (restoredDispute != null && order.status == Status.dispute) {
+            // This is a disputed order - determine who initiated
+            final session = ref.read(sessionNotifierProvider.notifier).getSessionByOrderId(orderDetail.id);
+
+            // Determine if user initiated the dispute
+            // If user is buyer and buyer initiated, or user is seller and seller initiated
+            final userInitiated = _determineIfUserInitiatedDispute(
+              restoredDispute: restoredDispute,
+              order: order,
+              session: session,
+            );
+
+            action = userInitiated
+                ? Action.disputeInitiatedByYou
+                : Action.disputeInitiatedByPeer;
+
+            // Create Dispute object
+            dispute = Dispute(
+              disputeId: restoredDispute.disputeId,
+              orderId: restoredDispute.orderId,
+              status: restoredDispute.status,
+              createdAt: orderDetail.createdAt != null
+                  ? DateTime.fromMillisecondsSinceEpoch(orderDetail.createdAt!)
+                  : DateTime.now(),
+              action: userInitiated ? 'dispute-initiated-by-you' : 'dispute-initiated-by-peer',
+            );
+
+            _logger.i('Restore: dispute found for order ${orderDetail.id}, action: $action');
+          } else {
+            // Regular order without dispute
+            action = _getActionFromStatus(order.status);
+          }
 
           // Build MostroMessage with Order payload
           final mostroMessage = MostroMessage<Order>(
@@ -470,7 +559,14 @@ class RestoreService {
           await storage.addMessage(key, mostroMessage);
 
           // Update state using public method that calls updateWith internally
-          ref.read(orderNotifierProvider(orderDetail.id).notifier).updateStateFromMessage(mostroMessage);
+          final notifier = ref.read(orderNotifierProvider(orderDetail.id).notifier);
+          notifier.updateStateFromMessage(mostroMessage);
+
+          // If dispute exists, update state with dispute object using public method
+          if (dispute != null) {
+            notifier.updateDispute(dispute);
+            _logger.i('Restore: added dispute to state for order ${orderDetail.id}');
+          }
 
           _logger.i('Restore: built message for order ${orderDetail.id} with status ${orderDetail.status}, action $action');
         } catch (e, stack) {
@@ -480,16 +576,23 @@ class RestoreService {
 
       _logger.i('Restore: state update completed for all orders');
 
+      // Disable restore mode - back to normal message processing
+      AbstractMostroNotifier.setRestoring(false);
+      _logger.i('Restore: disabled restore mode - re-enabling message processing');
+
       // Navigate to home and clear notification tray
       final navProvider = ref.read(navigationProvider.notifier);
       navProvider.go('/');
 
+      //While bulding subscriptions, some old notifications may have arrived - clear them all
       final notifProvider = ref.read(notificationActionsProvider.notifier);
       notifProvider.clearAll();
 
       _logger.i('Restore: navigated to home and cleared notification tray');
 
     } catch (e, stack) {
+      // Ensure flag is cleared even on error
+      AbstractMostroNotifier.setRestoring(false);
       _logger.e('Restore: error during restore', error: e, stackTrace: stack);
       rethrow;
     }
@@ -532,9 +635,11 @@ class RestoreService {
       progress.updateStep(RestoreStep.requesting);
       await _sendRestoreRequest();
       final restoreDataEvent = await _waitForEvent(RestoreStage.gettingRestoreData);
-      final ordersIds = await _extractRestoreData(restoreDataEvent);
+      final extracted = await _extractRestoreData(restoreDataEvent);
+      final ordersIds = extracted.orderIds;
+      final disputes = extracted.disputes;
       progress.setOrdersReceived(ordersIds.length);
-      
+
       if (ordersIds.isEmpty) {
         _logger.w('Restore: no orders or disputes to restore');
         await _sendLastTradeIndexRequest();
@@ -566,16 +671,10 @@ class RestoreService {
 
       // STAGE 4: Processing and restoring sessions
       progress.updateStep(RestoreStep.processingRoles);
-      await restore(ordersIds, lastTradeIndex, ordersResponse);
-
-    } on TimeoutException catch (e, stack) {
-      _logger.e('Restore: timeout error', error: e, stackTrace: stack);
-      ref.read(restoreProgressProvider.notifier).showError('Request timeout');
-      rethrow;
+      await restore(ordersIds, lastTradeIndex, ordersResponse, disputes);
     } catch (e, stack) {
       _logger.e('Restore: error during restore process', error: e, stackTrace: stack);
-      ref.read(restoreProgressProvider.notifier).showError(e.toString());
-      rethrow;
+      ref.read(restoreProgressProvider.notifier).showError('');
     } finally {
       // Cleanup: always cancel subscription
       _logger.i('Restore: cleaning up subscription');

@@ -21,9 +21,18 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
 
   ProviderSubscription<AsyncValue<MostroMessage?>>? subscription;
   final Set<String> _processedEventIds = <String>{};
-  
+
   // Timer storage for orphan session cleanup
   static final Map<String, Timer> _sessionTimeouts = {};
+
+  // Restore mode flag - blocks all message processing during restore
+  static bool _isRestoring = false;
+
+  static void setRestoring(bool value) {
+    _isRestoring = value;
+  }
+
+  static bool get isRestoring => _isRestoring;
 
   AbstractMostroNotifier(
     this.orderId,
@@ -48,6 +57,12 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
       (_, next) {
         next.when(
           data: (MostroMessage? msg) {
+            // Skip all processing during restore - messages are saved but state is not updated
+            if (isRestoring) {
+              logger.d('Skipping message processing during restore: ${msg?.action}');
+              return;
+            }
+
             if (kDebugMode) {
               logger.i('Received message: ${msg?.toJson()}');
             } else {
@@ -56,7 +71,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
             if (msg != null) {
               // Cancel timer on ANY response from Mostro for this order
               cancelSessionTimeoutCleanup(orderId);
-              
+
               if (mounted) {
                 state = state.updateWith(msg);
               }

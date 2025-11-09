@@ -1170,6 +1170,7 @@
   "restoreProcessingRoles": "Procesando roles...",
   "restoreFinalizing": "Finalizando restauración...",
   "restoreCompleted": "¡Restauración completada!",
-  "restoreError": "Error de restauración"
+  "restoreError": "Error de restauración",
+  "restoreErrorMessage": "Error al restaurar datos del usuario. Verifica tu conexión e inténtalo más tarde."
 
 }
