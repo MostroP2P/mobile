@@ -6,24 +6,31 @@ import 'package:dart_nostr/nostr/model/request/request.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
+import 'package:mostro_mobile/data/models/enums/role.dart';
+import 'package:mostro_mobile/data/models/enums/order_type.dart';
+import 'package:mostro_mobile/data/models/enums/status.dart';
+import 'package:mostro_mobile/data/models/order.dart';
+import 'package:mostro_mobile/data/models/last_trade_index_response.dart';
+import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/models/orders_request.dart';
 import 'package:mostro_mobile/data/models/orders_response.dart';
 import 'package:mostro_mobile/data/models/payload.dart';
 import 'package:mostro_mobile/data/models/restore_response.dart';
-import 'package:mostro_mobile/data/models/last_trade_index_response.dart';
+import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/restore/restore_progress_notifier.dart';
 import 'package:mostro_mobile/features/restore/restore_progress_state.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
+import 'package:mostro_mobile/shared/providers/navigation_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/notifications_history_repository_provider.dart';
+import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
-import 'package:mostro_mobile/data/models/mostro_message.dart';
-import 'package:mostro_mobile/data/models/session.dart';
-import 'package:mostro_mobile/data/models/enums/role.dart';
+import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
+import 'package:mostro_mobile/features/notifications/providers/notifications_provider.dart';
 
 
 enum RestoreStage {
@@ -55,7 +62,8 @@ class RestoreService {
       await ref.read(mostroStorageProvider).deleteAll();
       await ref.read(eventStorageProvider).deleteAll();
       await ref.read(notificationsRepositoryProvider).clearAll();
-      
+      ref.read(orderRepositoryProvider).clearCache();
+
     } catch (e) {
       _logger.w('Restore: cleanup error', error: e);
     }
@@ -154,9 +162,26 @@ class RestoreService {
       final contentList = jsonDecode(rumor.content!) as List<dynamic>;
       final messageData = contentList[0] as Map<String, dynamic>;
 
+      // Check if Mostro returned cant-do (not found)
+      if (messageData.containsKey('cant-do')) {
+        _logger.w('Restore: Mostro returned cant-do for restore data (no orders found)');
+        return {};
+      }
+
       // Extract payload from restore wrapper
-      final restoreWrapper = messageData['restore'] as Map<String, dynamic>;
-      final payload = restoreWrapper['payload'] as Map<String, dynamic>;
+      final restoreWrapper = messageData['restore'] as Map<String, dynamic>?;
+
+      if (restoreWrapper == null) {
+        _logger.w('Restore: no restore wrapper found, returning empty orders');
+        return {};
+      }
+
+      final payload = restoreWrapper['payload'] as Map<String, dynamic>?;
+
+      if (payload == null) {
+        _logger.w('Restore: no payload found in restore wrapper, returning empty orders');
+        return {};
+      }
 
       final restoreData = RestoreData.fromJson(payload);
 
@@ -280,8 +305,19 @@ class RestoreService {
       final contentList = jsonDecode(rumor.content!) as List<dynamic>;
       final messageData = contentList[0] as Map<String, dynamic>;
 
+      // Check if Mostro returned cant-do (not found)
+      if (messageData.containsKey('cant-do')) {
+        _logger.w('Restore: Mostro returned cant-do for last trade index, defaulting to 0');
+        return LastTradeIndexResponse(tradeIndex: 0);
+      }
+
       // Extract trade_index from restore wrapper
-      final restoreWrapper = messageData['restore'] as Map<String, dynamic>;
+      final restoreWrapper = messageData['restore'] as Map<String, dynamic>?;
+
+      if (restoreWrapper == null) {
+        _logger.w('Restore: no restore wrapper found, defaulting trade index to 0');
+        return LastTradeIndexResponse(tradeIndex: 0);
+      }
 
       final response = LastTradeIndexResponse.fromJson(restoreWrapper);
 
@@ -294,6 +330,44 @@ class RestoreService {
     }
   }
 
+  /// Maps Status to the appropriate Action for restored orders
+  Action _getActionFromStatus(Status status) {
+    switch (status) {
+      case Status.pending:
+        return Action.newOrder;
+      case Status.waitingBuyerInvoice:
+        return Action.waitingBuyerInvoice;
+      case Status.waitingPayment:
+        return Action.waitingSellerToPay;
+      case Status.active:
+        return Action.buyerTookOrder;
+      case Status.fiatSent:
+        return Action.fiatSentOk;
+      case Status.settledHoldInvoice:
+        return Action.holdInvoicePaymentSettled;
+      case Status.success:
+        return Action.purchaseCompleted;
+      case Status.canceled:
+        return Action.canceled;
+      case Status.canceledByAdmin:
+        return Action.adminCanceled;
+      case Status.settledByAdmin:
+        return Action.adminSettled;
+      case Status.completedByAdmin:
+        return Action.adminSettled;
+      case Status.dispute:
+        return Action.disputeInitiatedByPeer; // Default to peer-initiated
+      case Status.expired:
+        return Action.canceled;
+      case Status.paymentFailed:
+        return Action.paymentFailed;
+      case Status.cooperativelyCanceled:
+        return Action.cooperativeCancelAccepted;
+      case Status.inProgress:
+        return Action.buyerTookOrder;
+    }
+  }
+
   Future<void> restore(Map<String, int> ordersIds, int lastTradeIndex, OrdersResponse ordersResponse) async {
     try {
 
@@ -301,6 +375,7 @@ class RestoreService {
       final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
       final progress = ref.read(restoreProgressProvider.notifier);
       final settings = ref.read(settingsProvider);
+
 
       // Set the next trade key index
       await keyManager.setCurrentKeyIndex(lastTradeIndex + 1);
@@ -333,66 +408,86 @@ class RestoreService {
           role = Role.seller;
         }
 
-        // Use createdAt if available, otherwise use current time
-        final startTime = orderDetail.createdAt != null
-            ? DateTime.fromMillisecondsSinceEpoch(orderDetail.createdAt! * 1000)
-            : DateTime.now();
-
-        
-        // Create session
         final session = Session(
           masterKey: masterKey,
           tradeKey: tradeKey,
           keyIndex: tradeIndex,
           fullPrivacy: settings.fullPrivacyMode,
-          startTime: startTime,
+          startTime: DateTime.now(),
           orderId: orderDetail.id,
           role: role,
         );
 
         // Store session
         await sessionNotifier.saveSession(session);
+
+        _logger.i('Restore: created session for order ${orderDetail.id} (isRestored: true)');
+
         progress.incrementProgress();
       }
-        /*
-        // Convert OrderDetail to Order and store as message
-        final order = Order(
-          id: orderDetail.id,
-          kind: OrderType.fromString(orderDetail.kind),
-          status: Status.fromString(orderDetail.status),
-          amount: orderDetail.amount,
-          fiatCode: orderDetail.fiatCode,
-          minAmount: orderDetail.minAmount,
-          maxAmount: orderDetail.maxAmount,
-          fiatAmount: orderDetail.fiatAmount,
-          paymentMethod: orderDetail.paymentMethod,
-          premium: orderDetail.premium,
-          buyerTradePubkey: orderDetail.buyerTradePubkey,
-          sellerTradePubkey: orderDetail.sellerTradePubkey,
-          createdAt: orderDetail.createdAt,
-          expiresAt: orderDetail.expiresAt,
-        );
 
-        // Determine action based on status
-        final action = _mapStatusToAction(order.status);
+      // Wait for historical messages to arrive and be saved to storage
+      _logger.i('Restore: waiting 5 seconds for historical messages to be saved...');
+      await Future.delayed(const Duration(seconds: 5));
 
-        // Create MostroMessage with the order
-        final orderMessage = MostroMessage<Order>(
-          action: action,
-          id: orderDetail.id,
-          payload: order,
-          tradeIndex: tradeIndex,
-          timestamp: orderDetail.createdAt ?? DateTime.now().millisecondsSinceEpoch ~/ 1000,
-        );
+      // Build MostroMessages from ordersResponse and update state (source of truth from Mostro)
+      _logger.i('Restore: building messages for ${ordersResponse.orders.length} orders from ordersResponse');
+      final storage = ref.read(mostroStorageProvider);
 
-        // Store message with timestamp-based key
-        final messageKey = '$orderId-restore-${DateTime.now().millisecondsSinceEpoch}';
-        await mostroStorage.addMessage(messageKey, orderMessage);
+      for (final orderDetail in ordersResponse.orders) {
+        try {
+          // Convert OrderDetail to Order
+          final order = Order(
+            id: orderDetail.id,
+            kind: OrderType.fromString(orderDetail.kind),
+            status: Status.fromString(orderDetail.status),
+            amount: orderDetail.amount,
+            fiatCode: orderDetail.fiatCode,
+            minAmount: orderDetail.minAmount,
+            maxAmount: orderDetail.maxAmount,
+            fiatAmount: orderDetail.fiatAmount,
+            paymentMethod: orderDetail.paymentMethod,
+            premium: orderDetail.premium,
+            buyerTradePubkey: orderDetail.buyerTradePubkey,
+            sellerTradePubkey: orderDetail.sellerTradePubkey,
+            createdAt: orderDetail.createdAt,
+            expiresAt: orderDetail.expiresAt,
+          );
 
-        restoredCount++;
-        progress.incrementProgress();
+          // Derive appropriate action from status
+          final action = _getActionFromStatus(order.status);
+
+          // Build MostroMessage with Order payload
+          final mostroMessage = MostroMessage<Order>(
+            id: orderDetail.id,
+            action: action,
+            payload: order,
+            timestamp: orderDetail.createdAt ?? DateTime.now().millisecondsSinceEpoch,
+          );
+
+          // Save message to storage for future sync()
+          final key = '${orderDetail.id}_restore_${action.value}_${DateTime.now().millisecondsSinceEpoch}';
+          await storage.addMessage(key, mostroMessage);
+
+          // Update state using public method that calls updateWith internally
+          ref.read(orderNotifierProvider(orderDetail.id).notifier).updateStateFromMessage(mostroMessage);
+
+          _logger.i('Restore: built message for order ${orderDetail.id} with status ${orderDetail.status}, action $action');
+        } catch (e, stack) {
+          _logger.e('Restore: failed to process order ${orderDetail.id}', error: e, stackTrace: stack);
+        }
       }
-      */
+
+      _logger.i('Restore: state update completed for all orders');
+
+      // Navigate to home and clear notification tray
+      final navProvider = ref.read(navigationProvider.notifier);
+      navProvider.go('/');
+
+      final notifProvider = ref.read(notificationActionsProvider.notifier);
+      notifProvider.clearAll();
+
+      _logger.i('Restore: navigated to home and cleared notification tray');
 
     } catch (e, stack) {
       _logger.e('Restore: error during restore', error: e, stackTrace: stack);
@@ -439,7 +534,7 @@ class RestoreService {
       final restoreDataEvent = await _waitForEvent(RestoreStage.gettingRestoreData);
       final ordersIds = await _extractRestoreData(restoreDataEvent);
       progress.setOrdersReceived(ordersIds.length);
-
+      
       if (ordersIds.isEmpty) {
         _logger.w('Restore: no orders or disputes to restore');
         await _sendLastTradeIndexRequest();
@@ -453,7 +548,9 @@ class RestoreService {
 
       // STAGE 2: Getting Orders Details
       progress.updateStep(RestoreStep.loadingDetails);
-      await _sendOrdersDetailsRequest(ordersIds.keys.toList());
+      final orderIdsList = ordersIds.keys.toList();
+      _logger.i('Restore: requesting details for ${orderIdsList.length} orders: $orderIdsList');
+      await _sendOrdersDetailsRequest(orderIdsList);
       final ordersDetailsEvent = await _waitForEvent(RestoreStage.gettingOrdersDetails);
       final ordersResponse = await _extractOrdersDetails(ordersDetailsEvent);
 

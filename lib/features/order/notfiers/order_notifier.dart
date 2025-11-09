@@ -139,6 +139,13 @@ class OrderNotifier extends AbstractMostroNotifier {
     );
   }
 
+  /// Update state from MostroMessage (used during restore)
+  void updateStateFromMessage(MostroMessage message) {
+    if (mounted) {
+      state = state.updateWith(message);
+    }
+  }
+
   /// Subscribe to public events (38383) to detect automatic order cancellation
   void _subscribeToPublicEvents() {
     _publicEventsSubscription = ref.listen(
