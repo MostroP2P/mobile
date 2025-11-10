@@ -43,7 +43,7 @@ class MostroMessage<T extends Payload> {
 
   factory MostroMessage.fromJson(Map<String, dynamic> json) {
     final timestamp = json['timestamp'];
-    // Support both 'order', 'restore', and 'cant-do' wrapper keys
+    // IMPORTANT : Use 'order', 'restore' or 'cant-do' key as per protocol
     json = json['order'] ?? json['restore'] ?? json['cant-do'] ?? json;
     final num requestId = json['request_id'] ?? 0;
 
@@ -99,7 +99,7 @@ class MostroMessage<T extends Payload> {
   }
 
   String sign(NostrKeyPairs keyPair) {
-    // Use 'restore' key for restore and last-trade-index actions, 'order' for everything else
+    //IMPORTANT : Use 'restore' key for restore and last-trade-index actions, 'order' for everything else, as per protocol
     final wrapperKey = action == Action.restore || action == Action.lastTradeIndex ? 'restore' : 'order';
     final message = {wrapperKey: toJson()};
     final serializedEvent = jsonEncode(message);
@@ -111,7 +111,7 @@ class MostroMessage<T extends Payload> {
   }
 
   String serialize({NostrKeyPairs? keyPair}) {
-    // Use 'restore' key for restore action, 'order' for everything else
+    //IMPORTANT : Use 'restore' key for restore and last-trade-index actions, 'order' for everything else, as per protocol
     final wrapperKey = action == Action.restore || action == Action.lastTradeIndex ? 'restore' : 'order';
     final message = {wrapperKey: toJson()};
     final serializedEvent = jsonEncode(message);

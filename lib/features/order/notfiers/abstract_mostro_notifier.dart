@@ -25,7 +25,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
   // Timer storage for orphan session cleanup
   static final Map<String, Timer> _sessionTimeouts = {};
 
-  // Restore mode flag - blocks all message processing during restore
+  // Restore mode flag - blocks all old message processing during restore
   static bool _isRestoring = false;
 
   static void setRestoring(bool value) {
@@ -57,9 +57,9 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
       (_, next) {
         next.when(
           data: (MostroMessage? msg) {
-            // Skip all processing during restore - messages are saved but state is not updated
+            // Skip all old message processing during restore - messages are saved but state is not updated
             if (isRestoring) {
-              logger.d('Skipping message processing during restore: ${msg?.action}');
+              logger.d('Skipping old message processing during restore: ${msg?.action}');
               return;
             }
 

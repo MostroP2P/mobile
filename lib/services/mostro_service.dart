@@ -40,7 +40,9 @@ class MostroService {
     _ordersSubscription?.cancel();
     _logger.i('MostroService disposed');
   }
-
+  
+  //IMPORTANT : The app always use trade index 1 for restore-related messages
+  // When subscribtions are created from restore process for real orders, restore related messages may be avoided
   bool _isRestorePayload(Map<String, dynamic> json) {
     // Check if this is a restore-specific payload that should be ignored
     // These payloads are only used during restore process via temporary trade key
