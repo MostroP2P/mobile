@@ -341,9 +341,11 @@ Future<void> fetchAndProcessNewEvents({required List<String> relays}) async {
     for (final session in sessions) {
       try {
         // Create filter for this session's events
+        // Use 'p' tag to filter by recipient (the trade key that can decrypt the event)
+        // Note: 'authors' would filter by sender, but we need events sent TO this trade key
         final filter = NostrFilter(
           kinds: [1059], // Gift-wrapped events
-          authors: [session.tradeKey.public], // Events for this trade key
+          p: [session.tradeKey.public], // Events sent to this trade key
           since: since,
         );
 
