@@ -400,18 +400,34 @@ class RestoreService {
   }
 
   /// Maps Status to the appropriate Action for restored orders
-  Action _getActionFromStatus(Status status) {
+  Action _getActionFromStatus(Status status, Role? userRole) {
     switch (status) {
       case Status.pending:
         return Action.newOrder;
       case Status.waitingBuyerInvoice:
-        return Action.waitingBuyerInvoice;
+        // If user is buyer, they need to add invoice
+        // If user is seller, they are waiting for buyer to add invoice
+        return userRole == Role.buyer
+            ? Action.addInvoice
+            : Action.waitingBuyerInvoice;
       case Status.waitingPayment:
-        return Action.waitingSellerToPay;
+        // If user is seller, they need to pay invoice
+        // If user is buyer, they are waiting for seller to pay
+        return userRole == Role.seller
+            ? Action.payInvoice
+            : Action.waitingSellerToPay;
       case Status.active:
-        return Action.buyerTookOrder;
+        // If user is buyer, they need to confirm fiat sent
+        // If user is seller, buyer took the order and seller waits
+        return userRole == Role.buyer
+            ? Action.fiatSent
+            : Action.buyerTookOrder;
       case Status.fiatSent:
-        return Action.fiatSentOk;
+        // If user is seller, they need to release funds
+        // If user is buyer, they are waiting for seller to release
+        return userRole == Role.seller
+            ? Action.release
+            : Action.fiatSentOk;
       case Status.settledHoldInvoice:
         return Action.holdInvoicePaymentSettled;
       case Status.success:
@@ -471,9 +487,11 @@ class RestoreService {
 
         // Determine role by comparing trade keys
         Role? role;
-        if (orderDetail.buyerTradePubkey != null && orderDetail.buyerTradePubkey == tradeKey.public) {
+        final userPubkey = tradeKey.public;
+
+        if (orderDetail.buyerTradePubkey != null && orderDetail.buyerTradePubkey == userPubkey) {
           role = Role.buyer;
-        } else if (orderDetail.sellerTradePubkey != null && orderDetail.sellerTradePubkey == tradeKey.public) {
+        } else if (orderDetail.sellerTradePubkey != null && orderDetail.sellerTradePubkey == userPubkey) {
           role = Role.seller;
         }
 
@@ -489,8 +507,6 @@ class RestoreService {
 
         // Store session
         await sessionNotifier.saveSession(session);
-
-        _logger.i('Restore: created session for order ${orderDetail.id}');
 
         progress.incrementProgress();
       }
@@ -570,6 +586,8 @@ class RestoreService {
           } else {
             // Regular order without dispute
             action = _getActionFromStatus(order.status);
+            final session = ref.read(sessionNotifierProvider.notifier).getSessionByOrderId(orderDetail.id);
+            action = _getActionFromStatus(order.status, session?.role);
           }
 
           // Build generic MostroMessage with Order payload
