@@ -585,7 +585,6 @@ class RestoreService {
             _logger.i('Restore: dispute found for order ${orderDetail.id}');
           } else {
             // Regular order without dispute
-            action = _getActionFromStatus(order.status);
             final session = ref.read(sessionNotifierProvider.notifier).getSessionByOrderId(orderDetail.id);
             action = _getActionFromStatus(order.status, session?.role);
           }
