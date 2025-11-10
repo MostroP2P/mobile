@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models.dart';
 import 'package:mostro_mobile/features/order/models/order_state.dart';
+import 'package:mostro_mobile/features/restore/restore_mode_provider.dart';
 import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/features/notifications/providers/notifications_provider.dart';
@@ -24,15 +25,6 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
 
   // Timer storage for orphan session cleanup
   static final Map<String, Timer> _sessionTimeouts = {};
-
-  // Restore mode flag - blocks all old message processing during restore
-  static bool _isRestoring = false;
-
-  static void setRestoring(bool value) {
-    _isRestoring = value;
-  }
-
-  static bool get isRestoring => _isRestoring;
 
   AbstractMostroNotifier(
     this.orderId,
@@ -58,6 +50,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         next.when(
           data: (MostroMessage? msg) {
             // Skip all old message processing during restore - messages are saved but state is not updated
+            final isRestoring = ref.read(isRestoringProvider);
             if (isRestoring) {
               logger.d('Skipping old message processing during restore: ${msg?.action}');
               return;

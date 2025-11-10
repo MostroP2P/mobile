@@ -54,7 +54,7 @@ class RestoredOrder {
   }
 
   Map<String, dynamic> toJson() => {
-    'id': id,
+    'order_id': id,
     'trade_index': tradeIndex,
     'status': status,
   };

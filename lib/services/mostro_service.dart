@@ -46,10 +46,18 @@ class MostroService {
   bool _isRestorePayload(Map<String, dynamic> json) {
     // Check if this is a restore-specific payload that should be ignored
     // These payloads are only used during restore process via temporary trade key
-    final wrapper = json['restore'] ?? json['order'];
-    if (wrapper == null || wrapper['payload'] == null) return false;
 
-    final payload = wrapper['payload'] as Map<String, dynamic>;
+    // Safely get wrapper and validate it's a Map
+    final wrapper = json['restore'] ?? json['order'];
+    if (wrapper == null) return false;
+    if (wrapper is! Map<String, dynamic>) return false;
+
+    // Safely get payload and validate it's a Map
+    final payloadValue = wrapper['payload'];
+    if (payloadValue == null) return false;
+    if (payloadValue is! Map<String, dynamic>) return false;
+
+    final payload = payloadValue;
 
     // RestoreData: has 'restore_data' wrapper with 'orders' and 'disputes' arrays
     if (payload.containsKey('restore_data')) {
@@ -63,12 +71,22 @@ class MostroService {
 
     // OrdersResponse: has 'orders' array with OrderDetail objects
     // OrderDetail has buyer_trade_pubkey/seller_trade_pubkey fields
-    if (payload.containsKey('orders') && payload['orders'] is List) {
-      final orders = payload['orders'] as List;
-      if (orders.isNotEmpty && orders[0] is Map) {
-        final firstOrder = orders[0] as Map;
-        if (firstOrder.containsKey('buyer_trade_pubkey') ||
-            firstOrder.containsKey('seller_trade_pubkey')) {
+    if (payload.containsKey('orders')) {
+      final ordersValue = payload['orders'];
+
+      // Validate orders is a List
+      if (ordersValue is! List) return false;
+
+      // Check first element if list is not empty
+      if (ordersValue.isNotEmpty) {
+        final firstOrderValue = ordersValue[0];
+
+        // Validate first element is a Map
+        if (firstOrderValue is! Map<String, dynamic>) return false;
+
+        // Check for restore-specific fields
+        if (firstOrderValue.containsKey('buyer_trade_pubkey') ||
+            firstOrderValue.containsKey('seller_trade_pubkey')) {
           return true;
         }
       }

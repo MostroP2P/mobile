@@ -23,6 +23,7 @@ import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/restore/restore_progress_notifier.dart';
 import 'package:mostro_mobile/features/restore/restore_progress_state.dart';
+import 'package:mostro_mobile/features/restore/restore_mode_provider.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
@@ -33,7 +34,6 @@ import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/notifications/providers/notifications_provider.dart';
-import 'package:mostro_mobile/features/order/notfiers/abstract_mostro_notifier.dart';
 
 
 enum RestoreStage {
@@ -451,8 +451,8 @@ class RestoreService {
       // Set the next trade key index
       await keyManager.setCurrentKeyIndex(lastTradeIndex + 1);
 
-        // Enable restore mode to block all old message processing
-      AbstractMostroNotifier.setRestoring(true);
+      // Enable restore mode to block all old message processing
+      ref.read(isRestoringProvider.notifier).state = true;
       _logger.i('Restore: enabled restore mode - blocking all old message processing');
 
       // Restore each a session to get future messages
@@ -602,12 +602,12 @@ class RestoreService {
       _logger.i('Restore: state update completed for all orders');
 
       // Disable restore mode - back to normal message processing
-      AbstractMostroNotifier.setRestoring(false);
+      ref.read(isRestoringProvider.notifier).state = false;
       _logger.i('Restore: disabled restore mode - re-enabling message processing');
 
     } catch (e, stack) {
       // Ensure flag is cleared even on error
-      AbstractMostroNotifier.setRestoring(false);
+      ref.read(isRestoringProvider.notifier).state = false;
       _logger.e('Restore: error during restore', error: e, stackTrace: stack);
       rethrow;
     }
