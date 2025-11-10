@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:mostro_mobile/shared/utils/mnemonic_validator.dart';
 
 class ImportMnemonicDialog extends StatefulWidget {
   const ImportMnemonicDialog({super.key});
@@ -28,35 +29,14 @@ class _ImportMnemonicDialogState extends State<ImportMnemonicDialog> {
       return false;
     }
 
-    final words = trimmed.split(RegExp(r'\s+'));
-
-    if (words.length != 12) {
-      setState(() {
-        _errorMessage = S.of(context)!.errorNotTwelveWords;
-      });
-      return false;
-    }
-
-    for (final word in words) {
-      if (word.length < 3) {
-        setState(() {
-          _errorMessage = S.of(context)!.errorWordTooShort;
-        });
-        return false;
-      }
-
-      if (!RegExp(r'^[a-zA-Z]+$').hasMatch(word)) {
-        setState(() {
-          _errorMessage = S.of(context)!.errorInvalidCharacters;
-        });
-        return false;
-      }
-    }
+    // Use BIP39 checksum validation
+    final isValid = validateMnemonic(trimmed);
 
     setState(() {
-      _errorMessage = null;
+      _errorMessage = isValid ? null : S.of(context)!.invalidMnemonic;
     });
-    return true;
+
+    return isValid;
   }
 
   void _handleImport() {
