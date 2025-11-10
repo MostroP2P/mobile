@@ -25,6 +25,10 @@ const NOSTR_RELAYS = [
   "wss://relay.mostro.network",
 ];
 
+// Mostro instance public key - matches lib/core/config.dart
+// This filters events to only those from your Mostro instance
+const MOSTRO_PUBKEY = "82fa8cb978b43c79b2156585bac2c011176a21d2aead6d9f7c575c005be88390";
+
 // FCM topic that all app instances subscribe to
 const FCM_TOPIC = "mostro_notifications";
 
@@ -56,6 +60,7 @@ function connectToRelay(relayUrl: string): void {
       logger.info(`Connected to ${relayUrl}`);
 
       // Subscribe to kind 1059 (gift-wrapped) events
+      // Filter by Mostro pubkey to only get events from this Mostro instance
       // Only listen for events from last 5 minutes to avoid old events
       const fiveMinutesAgo = Math.floor(Date.now() / 1000) - 300;
 
@@ -64,6 +69,7 @@ function connectToRelay(relayUrl: string): void {
         SUBSCRIPTION_ID,
         {
           kinds: [1059],
+          authors: [MOSTRO_PUBKEY], // Only events authored by this Mostro instance
           since: fiveMinutesAgo,
         },
       ]);
@@ -84,12 +90,16 @@ function connectToRelay(relayUrl: string): void {
           if (event.kind === 1059) {
             logger.info(`Received kind 1059 event from ${relayUrl}`, {
               eventId: event.id,
+              author: event.pubkey,
               createdAt: event.created_at,
+              timestamp: new Date(event.created_at * 1000).toISOString(),
             });
 
             // Trigger batched notification
             triggerBatchedNotification();
           }
+        } else if (message[0] === "EOSE") {
+          logger.debug(`End of stored events from ${relayUrl}`);
         }
       } catch (error) {
         logger.error(`Error processing message from ${relayUrl}:`, error);
@@ -126,18 +136,19 @@ function connectToRelay(relayUrl: string): void {
 function triggerBatchedNotification(): void {
   // If there's already a pending notification, don't create another
   if (batchTimeout) {
-    logger.info("Event batched - notification already scheduled");
+    logger.debug("Event batched - notification already scheduled");
     return;
   }
 
   // Schedule notification after delay to batch multiple events
+  const scheduledTime = new Date(Date.now() + BATCH_DELAY_MS);
   batchTimeout = setTimeout(() => {
     logger.info("Batch delay completed - sending notification");
     sendSilentPushNotification();
     batchTimeout = null;
   }, BATCH_DELAY_MS);
 
-  logger.info(`Notification scheduled in ${BATCH_DELAY_MS}ms`);
+  logger.info(`Notification scheduled for ${scheduledTime.toISOString()}`);
 }
 
 /**
@@ -186,6 +197,8 @@ async function sendSilentPushNotification(): Promise<void> {
     logger.info("Silent push notification sent successfully", {
       messageId: response,
       topic: FCM_TOPIC,
+      timestamp: new Date(now).toISOString(),
+      nextAllowedTime: new Date(now + NOTIFICATION_COOLDOWN_MS).toISOString(),
     });
   } catch (error) {
     logger.error("Error sending FCM notification:", error);

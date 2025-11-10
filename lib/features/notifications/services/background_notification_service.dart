@@ -13,6 +13,7 @@ import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as mostro_action;
+import 'package:mostro_mobile/data/repositories/event_storage.dart';
 import 'package:mostro_mobile/data/repositories/session_storage.dart';
 import 'package:mostro_mobile/features/key_manager/key_derivator.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager.dart';
@@ -52,10 +53,27 @@ void _onNotificationTap(NotificationResponse response) {
 }
 
 Future<void> showLocalNotification(NostrEvent event) async {
+  final logger = Logger();
+
   try {
+    // Step 1: Check if event was already processed (deduplication)
+    if (event.id == null) {
+      logger.w('Event has no ID, cannot check for duplicates');
+      return;
+    }
+
+    final eventsDb = await openMostroDatabase('events.db');
+    final eventStorage = EventStorage(db: eventsDb);
+
+    final alreadyProcessed = await eventStorage.hasItem(event.id!);
+    if (alreadyProcessed) {
+      logger.d('Event ${event.id} already processed, skipping notification');
+      return;
+    }
+
     final mostroMessage = await _decryptAndProcessEvent(event);
     if (mostroMessage == null) return;
-    
+
 
     final sessions = await _loadSessionsFromDatabase();
     final matchingSession = sessions.cast<Session?>().firstWhere(
@@ -104,7 +122,15 @@ Future<void> showLocalNotification(NostrEvent event) async {
       payload: mostroMessage.id,
     );
 
-    Logger().i('Shown: ${notificationText.title} - ${notificationText.body}');
+    // Step 2: Mark event as processed to prevent future duplicates
+    await eventStorage.putItem(event.id!, {
+      'id': event.id,
+      'kind': event.kind,
+      'processed_at': DateTime.now().millisecondsSinceEpoch,
+      'notification_shown': true,
+    });
+
+    logger.i('Notification shown and event marked as processed: ${notificationText.title} - ${notificationText.body}');
   } catch (e) {
     Logger().e('Notification error: $e');
   }

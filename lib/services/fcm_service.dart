@@ -19,6 +19,9 @@ class FCMService {
 
   bool _isInitialized = false;
 
+  /// Returns whether the FCM service has been successfully initialized
+  bool get isInitialized => _isInitialized;
+
   /// Initializes the FCM service
   ///
   /// This should be called early in the app lifecycle, typically during app initialization
@@ -52,9 +55,12 @@ class FCMService {
 
       _isInitialized = true;
       _logger.i('FCM service initialized successfully');
-    } catch (e) {
+    } catch (e, stackTrace) {
       _logger.e('Failed to initialize FCM service: $e');
-      rethrow;
+      _logger.e('Stack trace: $stackTrace');
+      // Don't rethrow - FCM is optional, app should continue without it
+      // The app can still work with the existing BackgroundService for notifications
+      _logger.w('App will continue without FCM push notifications');
     }
   }
 
@@ -84,13 +90,19 @@ class FCMService {
   /// Gets the FCM token and stores it in SharedPreferences
   Future<void> _getAndStoreToken() async {
     try {
-      final token = await _messaging.getToken();
+      final token = await _messaging.getToken().timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          _logger.w('Timeout getting FCM token');
+          return null;
+        },
+      );
 
       if (token != null) {
         _logger.i('FCM token obtained: ${token.substring(0, 20)}...');
         await _saveToken(token);
       } else {
-        _logger.w('FCM token is null');
+        _logger.w('FCM token is null - push notifications may not work');
       }
     } catch (e) {
       _logger.e('Error getting FCM token: $e');
@@ -111,10 +123,16 @@ class FCMService {
   /// Subscribes to the FCM topic for broadcast notifications
   Future<void> _subscribeToTopic() async {
     try {
-      await _messaging.subscribeToTopic(_fcmTopic);
+      await _messaging.subscribeToTopic(_fcmTopic).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          _logger.w('Timeout subscribing to FCM topic: $_fcmTopic');
+        },
+      );
       _logger.i('Subscribed to FCM topic: $_fcmTopic');
     } catch (e) {
       _logger.e('Error subscribing to FCM topic: $e');
+      // Don't throw - topic subscription is not critical, can retry later
     }
   }
 
@@ -166,12 +184,25 @@ class FCMService {
   /// Deletes the stored FCM token
   Future<void> deleteToken() async {
     try {
-      await _messaging.deleteToken();
+      await _messaging.deleteToken().timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          _logger.w('Timeout deleting FCM token from Firebase');
+        },
+      );
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_fcmTokenKey);
-      _logger.i('FCM token deleted');
+      _logger.i('FCM token deleted successfully');
     } catch (e) {
       _logger.e('Error deleting FCM token: $e');
+      // Try to remove from local storage even if Firebase delete fails
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove(_fcmTokenKey);
+        _logger.i('FCM token removed from local storage');
+      } catch (localError) {
+        _logger.e('Error removing FCM token from local storage: $localError');
+      }
     }
   }
 
