@@ -420,14 +420,10 @@ class RestoreService {
         // If user is buyer, they need to confirm fiat sent
         // If user is seller, buyer took the order and seller waits
         return userRole == Role.buyer
-            ? Action.fiatSent
+            ? Action.holdInvoicePaymentAccepted
             : Action.buyerTookOrder;
       case Status.fiatSent:
-        // If user is seller, they need to release funds
-        // If user is buyer, they are waiting for seller to release
-        return userRole == Role.seller
-            ? Action.release
-            : Action.fiatSentOk;
+        return Action.fiatSentOk;
       case Status.settledHoldInvoice:
         return Action.holdInvoicePaymentSettled;
       case Status.success:
