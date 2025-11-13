@@ -306,12 +306,81 @@ final countdownTimeProvider = StreamProvider<DateTime>((ref) {
 - **Resource efficiency**: Single timer supports multiple subscribers
 - **Memory leak prevention**: Proper disposal handling
 
-### Countdown UI Integration
+### Dynamic Countdown Timer System
+
+The application now uses a unified `DynamicCountdownWidget` for all pending order countdown timers, providing intelligent scaling and precise timestamp calculations.
+
+#### **DynamicCountdownWidget Architecture**
+
+```dart
+// lib/shared/widgets/dynamic_countdown_widget.dart
+class DynamicCountdownWidget extends ConsumerWidget {
+  final DateTime expiration;
+  final DateTime createdAt;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final remainingTime = expiration.isAfter(now) ? expiration.difference(now) : Duration.zero;
+    final useDayScale = remainingTime.inHours > 24;
+
+    if (useDayScale) {
+      // Day scale: "14d 20h 06m" format for >24 hours
+      final daysLeft = (remainingTime.inHours / 24).floor();
+      final hoursLeftInDay = remainingTime.inHours % 24;
+      final minutesLeftInHour = remainingTime.inMinutes % 60;
+      return CircularCountdown(countdownTotal: totalDays, countdownRemaining: daysLeft);
+    } else {
+      // Hour scale: "HH:MM:SS" format for ≤24 hours
+      final hoursLeft = remainingTime.inHours.clamp(0, totalHours);
+      final minutesLeft = remainingTime.inMinutes % 60;
+      final secondsLeft = remainingTime.inSeconds % 60;
+      return CircularCountdown(countdownTotal: totalHours, countdownRemaining: hoursLeft);
+    }
+  }
+}
+```
+
+#### **Key Features**
+
+1. **Automatic Scaling**: Switches between day/hour formats based on remaining time
+2. **Exact Timestamps**: Uses `expires_at` tag for precise calculations
+3. **Dynamic Display**: 
+   - **>24 hours**: Day scale with "14d 20h 06m" format
+   - **≤24 hours**: Hour scale with "HH:MM:SS" format
+4. **Intelligent Rounding**: Circle divisions use intelligent rounding (28.2h → 28h, 23.7h → 24h)
+5. **Shared Component**: Eliminates 96 lines of duplicated countdown code
+
+#### **Integration Points**
+
+**TakeOrderScreen Usage**:
+```dart
+// lib/features/order/screens/take_order_screen.dart - _buildCountDownTime method
+return DynamicCountdownWidget(
+  expiration: DateTime.fromMillisecondsSinceEpoch(expiresAtTimestamp * 1000),
+  createdAt: order.createdAt!,
+);
+```
+
+**TradeDetailScreen Usage**:
+```dart
+// lib/features/trades/screens/trade_detail_screen.dart - trade details widget tree
+_CountdownWidget(
+  orderId: orderId,
+  tradeState: tradeState,
+  expiresAtTimestamp: orderPayload.expiresAt != null ? orderPayload.expiresAt! * 1000 : null,
+),
+```
+
+#### **Scope and Limitations**
+
+- **Pending Orders Only**: DynamicCountdownWidget is specifically designed for orders in `Status.pending`
+- **Waiting Orders Use Different System**: Orders in `Status.waitingBuyerInvoice` and `Status.waitingPayment` use separate countdown logic based on `expirationSeconds` + message timestamps
+- **Data Source**: Uses `expires_at` Nostr tag for exact expiration timestamps rather than calculated values
 
 #### **Real-time Countdown Widget**
 
 ```dart
-// lib/features/trades/screens/trade_detail_screen.dart - Lines 862-1062
+// lib/features/trades/screens/trade_detail_screen.dart - _CountdownWidget class
 class _CountdownWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -344,7 +413,7 @@ class _CountdownWidget extends ConsumerWidget {
 The countdown displays different behaviors based on order status:
 
 ```dart
-// Lines 916-1023: Countdown logic by order status
+// _buildCountDownTime method: Countdown logic by order status
 Widget? _buildCountDownTime(BuildContext context, WidgetRef ref, 
     OrderState tradeState, List<MostroMessage> messages, int? expiresAtTimestamp) {
   
@@ -406,7 +475,7 @@ Widget? _buildCountDownTime(BuildContext context, WidgetRef ref,
 #### **Message State Detection**
 
 ```dart
-// Lines 1025-1050: Find the message that caused the current state
+// _findMessageForState method: Find the message that caused the current state
 MostroMessage? _findMessageForState(List<MostroMessage> messages, Status status) {
   // Sort messages by timestamp (most recent first)
   final sortedMessages = List<MostroMessage>.from(messages)
@@ -728,7 +797,7 @@ The system automatically starts cleanup timers for both order creation and order
 When users take orders, a cleanup timer is automatically started to prevent sessions from becoming orphaned if Mostro doesn't respond:
 
 ```dart
-// lib/features/order/notfiers/abstract_mostro_notifier.dart:286-305
+// lib/features/order/notfiers/abstract_mostro_notifier.dart - startSessionTimeoutCleanup method
 static void startSessionTimeoutCleanup(String orderId, Ref ref) {
   // Cancel existing timer if any
   _sessionTimeouts[orderId]?.cancel();

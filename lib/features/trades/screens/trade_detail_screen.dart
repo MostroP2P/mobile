@@ -23,6 +23,7 @@ import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/shared/providers/time_provider.dart';
+import 'package:mostro_mobile/shared/widgets/dynamic_countdown_widget.dart';
 import 'package:mostro_mobile/features/disputes/providers/dispute_providers.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
@@ -978,19 +979,14 @@ class _CountdownWidget extends ConsumerWidget {
 
     // Show countdown ONLY for these 3 specific statuses
     if (status == Status.pending) {
-      // Pending orders: use expirationHours
-      final expHours =
-          mostroInstance?.expirationHours ?? 24; // 24 hours fallback
-      final countdownDuration = Duration(hours: expHours);
-
-      // Handle edge case: invalid timestamp
-      if (expiresAtTimestamp != null && expiresAtTimestamp <= 0) {
-        expiresAtTimestamp = null;
+      // Pending orders: use exact timestamps from expires_at
+      if (expiresAtTimestamp == null || expiresAtTimestamp <= 0) {
+        // No valid expiration timestamp available
+        return null;
       }
 
-      final expiration = expiresAtTimestamp != null
-          ? DateTime.fromMillisecondsSinceEpoch(expiresAtTimestamp)
-          : now.add(countdownDuration);
+      final expiration = DateTime.fromMillisecondsSinceEpoch(expiresAtTimestamp);
+      final createdAt = DateTime.fromMillisecondsSinceEpoch((tradeState.order?.createdAt ?? 0) * 1000);
 
       // Handle edge case: expiration in the past
       if (expiration.isBefore(now.subtract(const Duration(hours: 1)))) {
@@ -998,26 +994,9 @@ class _CountdownWidget extends ConsumerWidget {
         return null;
       }
 
-      final Duration difference = expiration.isAfter(now)
-          ? expiration.difference(now)
-          : const Duration();
-
-      final hoursLeft = difference.inHours.clamp(0, expHours);
-      final minutesLeft = difference.inMinutes % 60;
-      final secondsLeft = difference.inSeconds % 60;
-
-      final formattedTime =
-          '${hoursLeft.toString().padLeft(2, '0')}:${minutesLeft.toString().padLeft(2, '0')}:${secondsLeft.toString().padLeft(2, '0')}';
-
-      return Column(
-        children: [
-          CircularCountdown(
-            countdownTotal: expHours,
-            countdownRemaining: hoursLeft,
-          ),
-          const SizedBox(height: 16),
-          Text(S.of(context)!.timeLeftLabel(formattedTime)),
-        ],
+      return DynamicCountdownWidget(
+        expiration: expiration,
+        createdAt: createdAt,
       );
     } else if (status == Status.waitingBuyerInvoice ||
         status == Status.waitingPayment) {
