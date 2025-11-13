@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models.dart';
 import 'package:mostro_mobile/features/order/models/order_state.dart';
+import 'package:mostro_mobile/features/restore/restore_mode_provider.dart';
 import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/features/notifications/providers/notifications_provider.dart';
@@ -21,7 +22,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
 
   ProviderSubscription<AsyncValue<MostroMessage?>>? subscription;
   final Set<String> _processedEventIds = <String>{};
-  
+
   // Timer storage for orphan session cleanup
   static final Map<String, Timer> _sessionTimeouts = {};
 
@@ -48,6 +49,13 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
       (_, next) {
         next.when(
           data: (MostroMessage? msg) {
+            // Skip all old message processing during restore - messages are saved but state is not updated
+            final isRestoring = ref.read(isRestoringProvider);
+            if (isRestoring) {
+              logger.d('Skipping old message processing during restore: ${msg?.action}');
+              return;
+            }
+
             if (kDebugMode) {
               logger.i('Received message: ${msg?.toJson()}');
             } else {
@@ -56,7 +64,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
             if (msg != null) {
               // Cancel timer on ANY response from Mostro for this order
               cancelSessionTimeoutCleanup(orderId);
-              
+
               if (mounted) {
                 state = state.updateWith(msg);
               }

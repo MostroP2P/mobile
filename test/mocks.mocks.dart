@@ -845,6 +845,15 @@ class MockOpenOrdersRepository extends _i1.Mock
         ),
         returnValueForMissingStub: null,
       );
+
+  @override
+  void clearCache() => super.noSuchMethod(
+        Invocation.method(
+          #clearCache,
+          [],
+        ),
+        returnValueForMissingStub: null,
+      );
 }
 
 /// A class which mocks [SharedPreferencesAsync].
@@ -2917,6 +2926,25 @@ class MockOrderNotifier extends _i1.Mock implements _i28.OrderNotifier {
         returnValue: _i5.Future<void>.value(),
         returnValueForMissingStub: _i5.Future<void>.value(),
       ) as _i5.Future<void>);
+
+  @override
+  void updateStateFromMessage(_i7.MostroMessage<_i7.Payload>? message) =>
+      super.noSuchMethod(
+        Invocation.method(
+          #updateStateFromMessage,
+          [message],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void updateDispute(_i7.Dispute? dispute) => super.noSuchMethod(
+        Invocation.method(
+          #updateDispute,
+          [dispute],
+        ),
+        returnValueForMissingStub: null,
+      );
 
   @override
   void dispose() => super.noSuchMethod(

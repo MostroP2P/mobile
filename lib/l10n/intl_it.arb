@@ -410,11 +410,35 @@
   "yourTradeCounter": "Il tuo contatore di scambi",
   "incrementsWithEachTrade": "Si incrementa ad ogni scambio",
   "generateNewUser": "Genera Nuovo Utente",
-  "importMostroUser": "Importa Utente Mostro",
+  "importMostroUser": "Importa Utente",
+  "refreshUser": "Aggiorna Utente",
   "keyImportedSuccessfully": "Chiave importata con successo",
   "importFailed": "Importazione fallita: {error}",
+  "@importFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "refreshSuccessful": "Dati utente aggiornati con successo",
+  "refreshFailed": "Aggiornamento fallito: {error}",
+  "@refreshFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "noMnemonicFound": "Nessun mnemonico trovato",
   "errorLoadingMnemonic": "Errore: {error}",
+  "@errorLoadingMnemonic": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   
   "noMessagesAvailable": "Nessun messaggio disponibile",
   "back": "INDIETRO",
@@ -920,6 +944,9 @@
   "currentTradeIndexInfoText": "Con ogni nuovo scambio, viene generata una Chiave di Scambio unica per assicurare che le tue transazioni rimangano private. L'indice di scambio indica quante chiavi hai usato. Se sei in 'Modalità Reputazione,' permetti a Mostro di collegare tutte le tue Chiavi di Scambio per calcolare e mantenere la tua reputazione.",
   "generateNewUserDialogTitle": "Generare un nuovo utente?",
   "generateNewUserDialogContent": "Se continui, verrà generato un nuovo set di 12 parole come tuo nuovo utente. Questo nuovo utente non avrà reputazione, e dovrai ricominciare da capo.",
+  "refreshUserDialogTitle": "Aggiornare i dati utente?",
+  "refreshUserDialogContent": "Questo richiederà nuovamente i tuoi scambi e ordini dall'istanza Mostro. Usalo se pensi che i tuoi dati non siano sincronizzati o manchino ordini.",
+  "refresh": "Aggiorna",
   "continueButton": "Continua",
   "show": "Mostra",
   "hide": "Nascondi",
@@ -1177,5 +1204,25 @@
   "deleteUserRelayCancel": "No",
 
   "@_comment_session_timeout": "Session timeout message",
-  "sessionTimeoutMessage": "Nessuna risposta ricevuta, verifica la tua connessione e riprova più tardi"
+  "sessionTimeoutMessage": "Nessuna risposta ricevuta, verifica la tua connessione e riprova più tardi",
+
+  "@_comment_import_mnemonic_dialog": "Import Mnemonic Dialog strings",
+  "importMostroUserDialogTitle": "Importa Utente",
+  "importMostroUserInfo1": "Queste sono le tue parole segrete, l'unico modo per recuperare il tuo account se perdi l'accesso a questa app o vuoi usare la tua identità in un'altra app.",
+  "importMostroUserInfo2": "Scrivile con attenzione e conservale in un luogo sicuro e privato. Non condividerle mai con nessuno.",
+  "importMostroUserInfo3": "Se perdi queste parole, perderai permanentemente l'accesso al tuo account.",
+  "secretWordsLabel": "Parole Segrete",
+  "secretWordsPlaceholder": "Inserisci le tue 12 parole segrete separate da spazi",
+  "invalidMnemonic": "Mnemonic non valido. Verifica le tue parole",
+
+  "@_comment_restore_overlay": "Messaggi di overlay di ripristino",
+  "restoringOrders": "Ripristino Ordini",
+  "restoreRequestingData": "Richiesta dati di ripristino...",
+  "restoreReceivingOrders": "Ricezione ordini...",
+  "restoreLoadingDetails": "Caricamento dettagli ordini...",
+  "restoreProcessingRoles": "Elaborazione ruoli...",
+  "restoreFinalizing": "Finalizzazione ripristino...",
+  "restoreCompleted": "Ripristino completato!",
+  "restoreError": "Errore di ripristino",
+  "restoreErrorMessage": "Errore nel ripristino dei dati utente. Verifica la tua connessione e riprova più tardi."
 }

@@ -137,4 +137,11 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
     _subscribeToOrders();
     _emitEvents();
   }
+
+  /// Clear in-memory order cache and reload from relays (used during account restore)
+  void clearCache() {
+    _logger.i('Clearing order cache and reloading');
+    _events.clear();
+    _subscribeToOrders(); // Resubscribe to reload orders from relays
+  }
 }
