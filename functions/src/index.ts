@@ -1,7 +1,7 @@
 /**
  * Firebase Cloud Function for Mostro Mobile Push Notifications
  *
- * This function listens to Nostr relays for new kind 1059 (gift-wrapped) events
+ * This function polls Nostr relays for new kind 1059 (gift-wrapped) events
  * and sends silent push notifications via FCM to wake up the mobile app.
  *
  * Privacy-preserving approach:
@@ -9,12 +9,18 @@
  * - No user-to-token mapping needed
  * - All devices receive the same empty notification
  * - App fetches and decrypts events locally
+ *
+ * Polling-based architecture:
+ * - Scheduled function runs every 5 minutes
+ * - Queries relay for new events since last check
+ * - Closes connection immediately after receiving response
+ * - No persistent WebSocket connections
  */
 
-import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import * as logger from "firebase-functions/logger";
 import {onSchedule} from "firebase-functions/v2/scheduler";
+import {onRequest} from "firebase-functions/v2/https";
 import WebSocket from "ws";
 
 // Initialize Firebase Admin SDK
@@ -27,128 +33,112 @@ const NOSTR_RELAYS = [
 
 // Mostro instance public key - matches lib/core/config.dart
 // This filters events to only those from your Mostro instance
-const MOSTRO_PUBKEY = "82fa8cb978b43c79b2156585bac2c011176a21d2aead6d9f7c575c005be88390";
+const MOSTRO_PUBKEY =
+  "82fa8cb978b43c79b2156585bac2c011176a21d2aead6d9f7c575c005be88390";
 
 // FCM topic that all app instances subscribe to
 const FCM_TOPIC = "mostro_notifications";
 
-// Track last notification time to prevent spam (1 minute cooldown)
-let lastNotificationTime = 0;
-const NOTIFICATION_COOLDOWN_MS = 60 * 1000; // 1 minute
-
-// Batching mechanism to group multiple events within a short window
-let batchTimeout: NodeJS.Timeout | null = null;
-const BATCH_DELAY_MS = 5000; // 5 seconds - wait for more events
-
-// WebSocket connections to relays
-const relayConnections = new Map<string, WebSocket>();
+// Track last check time to query for new events
+let lastCheckTimestamp = Math.floor(Date.now() / 1000);
 
 // Subscription ID for tracking
-const SUBSCRIPTION_ID = "mostro-listener";
+const SUBSCRIPTION_ID = "mostro-poller";
 
 /**
- * Connects to a Nostr relay and subscribes to kind 1059 events
+ * Polls a Nostr relay for new events since the last check
+ * Opens connection, queries, waits for response, then closes
  * @param {string} relayUrl - The WebSocket URL of the Nostr relay
+ * @return {Promise<number>} Number of new events found
  */
-function connectToRelay(relayUrl: string): void {
-  try {
-    logger.info(`Connecting to relay: ${relayUrl}`);
+function pollRelay(relayUrl: string): Promise<number> {
+  return new Promise((resolve, reject) => {
+    let eventCount = 0;
+    let timeoutHandle: NodeJS.Timeout | undefined;
 
-    const ws = new WebSocket(relayUrl);
+    try {
+      logger.info(`Polling relay: ${relayUrl}`);
 
-    ws.on("open", () => {
-      logger.info(`Connected to ${relayUrl}`);
+      const ws = new WebSocket(relayUrl);
 
-      // Subscribe to kind 1059 (gift-wrapped) events
-      // Filter by Mostro pubkey to only get events from this Mostro instance
-      // Only listen for events from last 5 minutes to avoid old events
-      const fiveMinutesAgo = Math.floor(Date.now() / 1000) - 300;
+      // Set timeout for the entire operation (30 seconds)
+      timeoutHandle = setTimeout(() => {
+        logger.warn(`Polling timeout for ${relayUrl}`);
+        ws.close();
+        resolve(eventCount);
+      }, 30000);
 
-      const subscriptionMessage = JSON.stringify([
-        "REQ",
-        SUBSCRIPTION_ID,
-        {
-          kinds: [1059],
-          authors: [MOSTRO_PUBKEY], // Only events authored by this Mostro instance
-          since: fiveMinutesAgo,
-        },
-      ]);
+      ws.on("open", () => {
+        logger.info(`Connected to ${relayUrl}`);
 
-      ws.send(subscriptionMessage);
-      logger.info(`Subscribed to kind 1059 events on ${relayUrl}`);
-    });
+        // Query for events since last check
+        const subscriptionMessage = JSON.stringify([
+          "REQ",
+          SUBSCRIPTION_ID,
+          {
+            kinds: [1059],
+            authors: [MOSTRO_PUBKEY],
+            since: lastCheckTimestamp,
+          },
+        ]);
 
-    ws.on("message", (data: WebSocket.Data) => {
-      try {
-        const message = JSON.parse(data.toString());
+        ws.send(subscriptionMessage);
+        logger.info(`Querying events since ${lastCheckTimestamp}`, {
+          sinceDate: new Date(lastCheckTimestamp * 1000).toISOString(),
+        });
+      });
 
-        // Check if this is an EVENT message
-        if (message[0] === "EVENT" && message[1] === SUBSCRIPTION_ID) {
-          const event = message[2];
+      ws.on("message", (data: WebSocket.Data) => {
+        try {
+          const message = JSON.parse(data.toString());
 
-          // Verify it's a kind 1059 event
-          if (event.kind === 1059) {
-            logger.info(`Received kind 1059 event from ${relayUrl}`, {
-              eventId: event.id,
-              author: event.pubkey,
-              createdAt: event.created_at,
-              timestamp: new Date(event.created_at * 1000).toISOString(),
+          // Check if this is an EVENT message
+          if (message[0] === "EVENT" && message[1] === SUBSCRIPTION_ID) {
+            const event = message[2];
+
+            // Verify it's a kind 1059 event
+            if (event.kind === 1059) {
+              eventCount++;
+              logger.info(`Found new event from ${relayUrl}`, {
+                eventId: event.id,
+                author: event.pubkey,
+                createdAt: event.created_at,
+                timestamp: new Date(event.created_at * 1000).toISOString(),
+              });
+            }
+          } else if (message[0] === "EOSE") {
+            logger.info(`Polling complete for ${relayUrl}`, {
+              eventsFound: eventCount,
             });
 
-            // Trigger batched notification
-            triggerBatchedNotification();
+            // Close connection after receiving EOSE
+            clearTimeout(timeoutHandle);
+            ws.close();
+            resolve(eventCount);
           }
-        } else if (message[0] === "EOSE") {
-          logger.debug(`End of stored events from ${relayUrl}`);
+        } catch (error) {
+          logger.error(`Error processing message from ${relayUrl}:`, error);
         }
-      } catch (error) {
-        logger.error(`Error processing message from ${relayUrl}:`, error);
+      });
+
+      ws.on("error", (error: Error) => {
+        logger.error(`WebSocket error on ${relayUrl}:`, error);
+        clearTimeout(timeoutHandle);
+        reject(error);
+      });
+
+      ws.on("close", () => {
+        clearTimeout(timeoutHandle);
+        logger.debug(`Connection to ${relayUrl} closed`);
+      });
+    } catch (error) {
+      if (timeoutHandle) {
+        clearTimeout(timeoutHandle);
       }
-    });
-
-    ws.on("error", (error: Error) => {
-      logger.error(`WebSocket error on ${relayUrl}:`, error);
-    });
-
-    ws.on("close", () => {
-      logger.warn(
-        `Connection closed to ${relayUrl}, reconnecting in 5 seconds...`
-      );
-      relayConnections.delete(relayUrl);
-
-      // Reconnect after 5 seconds
-      setTimeout(() => connectToRelay(relayUrl), 5000);
-    });
-
-    relayConnections.set(relayUrl, ws);
-  } catch (error) {
-    logger.error(`Failed to connect to ${relayUrl}:`, error);
-
-    // Retry connection after 10 seconds
-    setTimeout(() => connectToRelay(relayUrl), 10000);
-  }
-}
-
-/**
- * Triggers a batched notification
- * Multiple events within BATCH_DELAY_MS window result in a single notification
- */
-function triggerBatchedNotification(): void {
-  // If there's already a pending notification, don't create another
-  if (batchTimeout) {
-    logger.debug("Event batched - notification already scheduled");
-    return;
-  }
-
-  // Schedule notification after delay to batch multiple events
-  const scheduledTime = new Date(Date.now() + BATCH_DELAY_MS);
-  batchTimeout = setTimeout(() => {
-    logger.info("Batch delay completed - sending notification");
-    sendSilentPushNotification();
-    batchTimeout = null;
-  }, BATCH_DELAY_MS);
-
-  logger.info(`Notification scheduled for ${scheduledTime.toISOString()}`);
+      logger.error(`Failed to poll ${relayUrl}:`, error);
+      reject(error);
+    }
+  });
 }
 
 /**
@@ -157,14 +147,7 @@ function triggerBatchedNotification(): void {
  */
 async function sendSilentPushNotification(): Promise<void> {
   try {
-    // Check cooldown to prevent notification spam
     const now = Date.now();
-    if (now - lastNotificationTime < NOTIFICATION_COOLDOWN_MS) {
-      logger.info("Skipping notification due to cooldown");
-      return;
-    }
-
-    lastNotificationTime = now;
 
     // Send silent data-only message to FCM topic
     const message = {
@@ -198,7 +181,6 @@ async function sendSilentPushNotification(): Promise<void> {
       messageId: response,
       topic: FCM_TOPIC,
       timestamp: new Date(now).toISOString(),
-      nextAllowedTime: new Date(now + NOTIFICATION_COOLDOWN_MS).toISOString(),
     });
   } catch (error) {
     logger.error("Error sending FCM notification:", error);
@@ -209,78 +191,81 @@ async function sendSilentPushNotification(): Promise<void> {
  * HTTP endpoint to manually trigger a test notification
  * Useful for testing the FCM setup
  */
-export const sendTestNotification = functions.https.onRequest(
-  async (_req, res) => {
-    try {
-      await sendSilentPushNotification();
-      res.json({success: true, message: "Test notification sent"});
-    } catch (error) {
-      logger.error("Error in sendTestNotification:", error);
-      res.status(500).json({success: false, error: String(error)});
-    }
+export const sendTestNotification = onRequest(async (_req, res) => {
+  try {
+    await sendSilentPushNotification();
+    res.json({success: true, message: "Test notification sent"});
+  } catch (error) {
+    logger.error("Error in sendTestNotification:", error);
+    res.status(500).json({success: false, error: String(error)});
   }
-);
+});
 
 /**
- * HTTP endpoint to get connection status
+ * HTTP endpoint to get polling status
  */
-export const getStatus = functions.https.onRequest((_req, res) => {
+export const getStatus = onRequest((_req, res) => {
   const status = {
-    connectedRelays: Array.from(relayConnections.keys()),
-    totalRelays: NOSTR_RELAYS.length,
-    lastNotificationTime: new Date(lastNotificationTime).toISOString(),
+    relays: NOSTR_RELAYS,
+    lastCheckTimestamp: lastCheckTimestamp,
+    lastCheckDate: new Date(lastCheckTimestamp * 1000).toISOString(),
+    mostroPublicKey: MOSTRO_PUBKEY,
+    fcmTopic: FCM_TOPIC,
   };
 
   res.json(status);
 });
 
 /**
- * Initialize relay connections when the function starts
- * This keeps persistent WebSocket connections to Nostr relays
+ * Scheduled function to poll relays for new events
+ * Runs every 5 minutes to check for new Mostro notifications
  */
-export const startNostrListener = functions.https.onRequest((_req, res) => {
-  if (relayConnections.size === 0) {
-    logger.info("Starting Nostr relay listener...");
+export const keepAlive = onSchedule("every 5 minutes", async () => {
+  const checkStartTime = Math.floor(Date.now() / 1000);
+  logger.info("Starting scheduled relay poll", {
+    lastCheckTimestamp,
+    lastCheckDate: new Date(lastCheckTimestamp * 1000).toISOString(),
+    checkStartDate: new Date(checkStartTime * 1000).toISOString(),
+  });
 
-    // Connect to all configured relays
-    NOSTR_RELAYS.forEach((relayUrl) => {
-      connectToRelay(relayUrl);
+  try {
+    // Poll all configured relays
+    const pollPromises = NOSTR_RELAYS.map((relayUrl) => pollRelay(relayUrl));
+    const results = await Promise.allSettled(pollPromises);
+
+    // Count total new events
+    let totalNewEvents = 0;
+    results.forEach((result, index) => {
+      if (result.status === "fulfilled") {
+        totalNewEvents += result.value;
+        const relay = NOSTR_RELAYS[index];
+        logger.info(`Relay ${relay} found ${result.value} events`);
+      } else {
+        logger.error(
+          `Relay ${NOSTR_RELAYS[index]} polling failed:`,
+          result.reason
+        );
+      }
     });
 
-    res.json({
-      success: true,
-      message: "Nostr listener started",
-      relays: NOSTR_RELAYS,
+    logger.info("Polling complete", {
+      totalNewEvents,
+      relaysChecked: NOSTR_RELAYS.length,
     });
-  } else {
-    res.json({
-      success: true,
-      message: "Nostr listener already running",
-      connectedRelays: Array.from(relayConnections.keys()),
-    });
+
+    // Send notification if we found new events
+    if (totalNewEvents > 0) {
+      logger.info(`Found ${totalNewEvents} new events, sending notification`);
+      await sendSilentPushNotification();
+    } else {
+      logger.info("No new events found, skipping notification");
+    }
+
+    // Update last check timestamp for next poll
+    lastCheckTimestamp = checkStartTime;
+  } catch (error) {
+    logger.error("Error in keepAlive poll:", error);
   }
 });
 
-/**
- * Scheduled function to keep connections alive
- * Runs every 5 minutes to ensure connections are maintained
- */
-export const keepAlive = onSchedule("every 5 minutes", async () => {
-  logger.info("Keep-alive check running...");
-
-  // Check and reconnect to any disconnected relays
-  NOSTR_RELAYS.forEach((relayUrl) => {
-    if (!relayConnections.has(relayUrl)) {
-      logger.warn(`Relay ${relayUrl} is disconnected, reconnecting...`);
-      connectToRelay(relayUrl);
-    }
-  });
-});
-
-// Auto-start connections when the module loads
-// This ensures connections are established when the function is deployed
-NOSTR_RELAYS.forEach((relayUrl) => {
-  connectToRelay(relayUrl);
-});
-
-logger.info("Mostro FCM Cloud Function initialized");
+logger.info("Mostro FCM Cloud Function initialized (polling mode)");
