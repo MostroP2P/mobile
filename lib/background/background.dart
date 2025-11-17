@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/models/nostr_filter.dart';
-import 'package:mostro_mobile/data/repositories/event_storage.dart';
+import 'package:mostro_mobile/data/repositories/notification_state_storage.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/features/notifications/services/background_notification_service.dart' as notification_service;
 import 'package:mostro_mobile/services/nostr_service.dart';
@@ -13,13 +13,19 @@ import 'package:mostro_mobile/shared/providers/mostro_database_provider.dart';
 bool isAppForeground = true;
 String currentLanguage = 'en';
 
+/// Background service entry point for notification handling
+///
+/// Architecture:
+/// - Uses separate notification_state store for deduplication
+/// - Does not write to events.db (read-only boundary)
+/// - Processes Nostr events and shows notifications
 @pragma('vm:entry-point')
 Future<void> serviceMain(ServiceInstance service) async {
 
   final Map<String, Map<String, dynamic>> activeSubscriptions = {};
   final nostrService = NostrService();
-  final db = await openMostroDatabase('events.db');
-  final eventStore = EventStorage(db: db);
+  final db = await openMostroDatabase('notifications.db');
+  final notificationStateStore = NotificationStateStorage(db: db);
 
   service.on('app-foreground-status').listen((data) {
     isAppForeground = data?['is-foreground'] ?? isAppForeground;
@@ -69,7 +75,7 @@ Future<void> serviceMain(ServiceInstance service) async {
 
     subscription.listen((event) async {
       try {
-        if (await eventStore.hasItem(event.id!)) return;
+        if (await notificationStateStore.isProcessed(event.id!)) return;
         await notification_service.retryNotification(event);
       } catch (e) {
         Logger().e('Error processing event', error: e);

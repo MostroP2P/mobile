@@ -1,3 +1,44 @@
+/// Background Notification Service
+///
+/// Handles processing of Nostr events for push notifications in both
+/// foreground and background contexts.
+///
+/// ## Architecture
+///
+/// ### Storage Strategy:
+/// - **mostro.db**: Core app data (sessions, orders) - Read/Write in foreground
+/// - **notifications.db**: Notification deduplication state - Read/Write in background
+/// - **events.db**: (Legacy, no longer used for notifications)
+///
+/// ### Deduplication:
+/// Uses a separate `notification_state` store in `notifications.db` to track
+/// which events have been processed. This prevents duplicate notifications and
+/// maintains a clean separation between event data and notification state.
+///
+/// Schema: notification_state store
+/// - key: event ID (String)
+/// - value: {processed_at: int, notification_shown: bool}
+///
+/// ### Error Handling:
+/// - `showLocalNotification()`: Propagates errors to enable retry mechanisms
+/// - `retryNotification()`: Implements exponential backoff (1s, 2s, 4s)
+/// - Errors are logged and rethrown for proper handling by callers
+///
+/// ### Read-only Boundary:
+/// Background service maintains read-only access to event/session data:
+/// - Reads from mostro.db for session matching and decryption
+/// - Writes ONLY to notifications.db for deduplication
+/// - Does not modify events.db or mostro.db from background
+///
+/// ### Silent Push Flow (Current):
+/// 1. FCM sends silent wake-up notification
+/// 2. App calls `fetchAndProcessNewEvents()`
+/// 3. Fetches new events from relays since last check
+/// 4. Each event checked against notification_state for duplicates
+/// 5. New events decrypted, processed, and notifications shown
+/// 6. Event IDs marked as processed in notification_state
+library;
+
 import 'dart:convert';
 import 'dart:math';
 
@@ -13,7 +54,7 @@ import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as mostro_action;
-import 'package:mostro_mobile/data/repositories/event_storage.dart';
+import 'package:mostro_mobile/data/repositories/notification_state_storage.dart';
 import 'package:mostro_mobile/data/repositories/session_storage.dart';
 import 'package:mostro_mobile/features/key_manager/key_derivator.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager.dart';
@@ -52,88 +93,91 @@ void _onNotificationTap(NotificationResponse response) {
   }
 }
 
+/// Show a local notification for a Nostr event
+///
+/// This function processes a Nostr event and displays a notification.
+/// It uses a separate notification_state store for deduplication to avoid
+/// processing the same event multiple times.
+///
+/// Architecture:
+/// - Read-only for event data
+/// - Writes deduplication state to separate notification_state store
+/// - Propagates errors to allow retry mechanisms to work
+///
+/// Throws: Any error encountered during processing (for retry support)
 Future<void> showLocalNotification(NostrEvent event) async {
   final logger = Logger();
 
-  try {
-    // Step 1: Check if event was already processed (deduplication)
-    if (event.id == null) {
-      logger.w('Event has no ID, cannot check for duplicates');
-      return;
-    }
-
-    final eventsDb = await openMostroDatabase('events.db');
-    final eventStorage = EventStorage(db: eventsDb);
-
-    final alreadyProcessed = await eventStorage.hasItem(event.id!);
-    if (alreadyProcessed) {
-      logger.d('Event ${event.id} already processed, skipping notification');
-      return;
-    }
-
-    final mostroMessage = await _decryptAndProcessEvent(event);
-    if (mostroMessage == null) return;
-
-
-    final sessions = await _loadSessionsFromDatabase();
-    final matchingSession = sessions.cast<Session?>().firstWhere(
-      (session) => session?.orderId == mostroMessage.id,
-      orElse: () => null,
-    );
-    
-    final notificationData = await NotificationDataExtractor.extractFromMostroMessage(mostroMessage, null, session: matchingSession);
-    if (notificationData == null || notificationData.isTemporary) return;
-
-    final notificationText = await _getLocalizedNotificationText(notificationData.action, notificationData.values);
-    final expandedText = _getExpandedText(notificationData.values);
-
-    final details = NotificationDetails(
-      android: AndroidNotificationDetails(
-        'mostro_channel',
-        'Mostro Notifications',
-        channelDescription: 'Notifications for Mostro trades and messages',
-        importance: Importance.max,
-        priority: Priority.high,
-        visibility: NotificationVisibility.public,
-        playSound: true,
-        enableVibration: true,
-        ticker: notificationText.title,
-        icon: '@drawable/ic_notification',
-        styleInformation: expandedText != null 
-            ? BigTextStyleInformation(expandedText, contentTitle: notificationText.title)
-            : null,
-        category: AndroidNotificationCategory.message,
-        autoCancel: true,
-      ),
-      iOS: DarwinNotificationDetails(
-        presentAlert: true,
-        presentBadge: true,
-        presentSound: true,
-        interruptionLevel: InterruptionLevel.critical,
-        subtitle: expandedText,
-      ),
-    );
-
-    await flutterLocalNotificationsPlugin.show(
-      event.id.hashCode,
-      notificationText.title,
-      notificationText.body,
-      details,
-      payload: mostroMessage.id,
-    );
-
-    // Step 2: Mark event as processed to prevent future duplicates
-    await eventStorage.putItem(event.id!, {
-      'id': event.id,
-      'kind': event.kind,
-      'processed_at': DateTime.now().millisecondsSinceEpoch,
-      'notification_shown': true,
-    });
-
-    logger.i('Notification shown and event marked as processed: ${notificationText.title} - ${notificationText.body}');
-  } catch (e) {
-    Logger().e('Notification error: $e');
+  // Step 1: Check if event was already processed (deduplication)
+  if (event.id == null) {
+    logger.w('Event has no ID, cannot check for duplicates');
+    return;
   }
+
+  final notificationDb = await openMostroDatabase('notifications.db');
+  final notificationStateStorage = NotificationStateStorage(db: notificationDb);
+
+  final alreadyProcessed = await notificationStateStorage.isProcessed(event.id!);
+  if (alreadyProcessed) {
+    logger.d('Event ${event.id} already processed, skipping notification');
+    return;
+  }
+
+  final mostroMessage = await _decryptAndProcessEvent(event);
+  if (mostroMessage == null) return;
+
+  final sessions = await _loadSessionsFromDatabase();
+  final matchingSession = sessions.cast<Session?>().firstWhere(
+    (session) => session?.orderId == mostroMessage.id,
+    orElse: () => null,
+  );
+
+  final notificationData = await NotificationDataExtractor.extractFromMostroMessage(mostroMessage, null, session: matchingSession);
+  if (notificationData == null || notificationData.isTemporary) return;
+
+  final notificationText = await _getLocalizedNotificationText(notificationData.action, notificationData.values);
+  final expandedText = _getExpandedText(notificationData.values);
+
+  final details = NotificationDetails(
+    android: AndroidNotificationDetails(
+      'mostro_channel',
+      'Mostro Notifications',
+      channelDescription: 'Notifications for Mostro trades and messages',
+      importance: Importance.max,
+      priority: Priority.high,
+      visibility: NotificationVisibility.public,
+      playSound: true,
+      enableVibration: true,
+      ticker: notificationText.title,
+      icon: '@drawable/ic_notification',
+      styleInformation: expandedText != null
+          ? BigTextStyleInformation(expandedText, contentTitle: notificationText.title)
+          : null,
+      category: AndroidNotificationCategory.message,
+      autoCancel: true,
+    ),
+    iOS: DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+      interruptionLevel: InterruptionLevel.critical,
+      subtitle: expandedText,
+    ),
+  );
+
+  // Show notification - propagate errors for retry support
+  await flutterLocalNotificationsPlugin.show(
+    event.id.hashCode,
+    notificationText.title,
+    notificationText.body,
+    details,
+    payload: mostroMessage.id,
+  );
+
+  // Step 2: Mark event as processed to prevent future duplicates
+  await notificationStateStorage.markAsProcessed(event.id!);
+
+  logger.i('Notification shown and event marked as processed: ${notificationText.title} - ${notificationText.body}');
 }
 
 

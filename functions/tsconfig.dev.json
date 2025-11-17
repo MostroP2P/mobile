@@ -1,5 +1,9 @@
+// This file is used by ESLint and IDEs for type-checking configuration files
+// that are not included in the main tsconfig.json (e.g., .eslintrc.js)
 {
+  "extends": "./tsconfig.json",
   "include": [
-    ".eslintrc.js"
+    ".eslintrc.js",
+    "src/**/*"
   ]
 }
