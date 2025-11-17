@@ -164,13 +164,13 @@ async function sendSilentPushNotification(): Promise<void> {
       },
       apns: {
         headers: {
-          "apns-priority": "10",
+          "apns-priority": "5",
+          "apns-push-type": "background",
+          "apns-topic": "network.mostro.app",
         },
         payload: {
           aps: {
             contentAvailable: true,
-            // Silent notification for iOS
-            sound: undefined,
           },
         },
       },
