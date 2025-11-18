@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.0.4]
+
+### Added
+- **Dynamic Countdown Timer System** (#354): Intelligent countdown widget with automatic day/hour scaling for pending orders
+  - Uses exact `order_expires_at` timestamps from Mostro protocol for precision
+  - Day scale (>24h): Shows "14d 20h 06m" format with day-based circular progress
+  - Hour scale (≤24h): Shows "HH:MM:SS" format with hour-based circular progress
+  - Automatic transition at 24:00:00 remaining with localized display
+  - Created shared `DynamicCountdownWidget` to eliminate code duplication
+  - Safe parsing with edge case handling for expired/invalid timestamps
+- **Lightning Address Usage Notification** (#349): Automatic notification when configured Lightning address is used for payments
+  - Detects buyerInvoice usage in order confirmation messages
+  - Informs buy order makers when their configured address was automatically used
+  - Integrated with existing notification system for consistent UX
+
+### Fixed
+- **Payment Method Reset** (#353): Payment methods now properly reset when fiat currency changes (#352)
+  - Clears selected payment methods and custom fields on currency change
+  - Prevents invalid payment methods being sent for wrong currency
+- **Desktop Build Process** (#350): Resolved GitHub Actions workflow issues for Windows and Mac desktop builds
+
+### Documentation
+- **Android Signing Setup** (#347): Enhanced documentation and examples for Android APK signing configuration
+  - Improved key.properties.example with detailed explanations
+  - Added DEBUG_RELEASE_CONFLICT.md guide for troubleshooting build issues
+
 ## [v1.0.3]
 
 ### Added
