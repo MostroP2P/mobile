@@ -6,6 +6,29 @@ import 'package:flutter/foundation.dart'
 
 /// Default [FirebaseOptions] for use with your Firebase apps.
 ///
+/// ## Security Note
+///
+/// The credentials in this file (API keys, App IDs, Project IDs) are **public by design**
+/// and safe to commit to version control. These are client-side identifiers used to connect
+/// mobile/web apps to Firebase services.
+///
+/// **What is public (safe to expose):**
+/// - API Keys (apiKey): Public identifiers for Firebase project
+/// - App IDs (appId): Public app identifiers
+/// - Project ID (projectId): Public project identifier
+/// - Sender ID (messagingSenderId): Public FCM sender identifier
+///
+/// **What is private (NOT in this file):**
+/// - Service Account Keys (private_key): Server-side credentials for Firebase Admin SDK
+/// - These are managed securely by Firebase Cloud Functions and never exposed to clients
+///
+/// **Security comes from:**
+/// - Firebase Security Rules (Firestore, Storage, etc.)
+/// - App Check for preventing abuse
+/// - Proper backend authentication and authorization
+///
+/// Reference: https://firebase.google.com/docs/projects/api-keys
+///
 /// Example:
 /// ```dart
 /// import 'firebase_options.dart';
