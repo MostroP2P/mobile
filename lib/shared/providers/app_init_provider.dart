@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logger/logger.dart';
 import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
@@ -12,12 +13,22 @@ import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_manager_provider.dart';
 
 final appInitializerProvider = FutureProvider<void>((ref) async {
+  final logger = Logger();
+
   final nostrService = ref.read(nostrServiceProvider);
   await nostrService.init(ref.read(settingsProvider));
 
-  // Initialize FCM service for push notifications
+  // Initialize FCM service for push notifications (non-critical)
+  // FCM is optional - app can function without it using BackgroundService
   final fcmService = ref.read(fcmServiceProvider);
-  await fcmService.initialize();
+  try {
+    await fcmService.initialize();
+  } catch (e, stackTrace) {
+    // Log but don't fail app initialization if FCM fails
+    // The app can still work with existing BackgroundService for notifications
+    logger.e('FCM initialization failed during app init: $e', error: e, stackTrace: stackTrace);
+    logger.w('App will continue without FCM - using BackgroundService for notifications');
+  }
 
   final keyManager = ref.read(keyManagerProvider);
   await keyManager.init();
