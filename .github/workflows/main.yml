@@ -133,7 +133,7 @@ jobs:
 
       - name: Build APK
         if: steps.should_build.outputs.SHOULD_BUILD == 'true'
-        run: flutter build apk --release --dart-define=APP_VERSION=${{ env.VERSION }} --dart-define=GIT_COMMIT=${{ github.sha }}
+        run: flutter build apk --split-per-abi --dart-define=APP_VERSION=${{ env.VERSION }} --dart-define=GIT_COMMIT=${{ github.sha }}
         env:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
@@ -149,38 +149,63 @@ jobs:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEYSTORE_FILE: upload-keystore.jks
 
+      - name: Rename Split APKs
+        if: steps.should_build.outputs.SHOULD_BUILD == 'true'
+        run: |
+          # Rename APKs with version and architecture
+          mv build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk \
+             build/app/outputs/flutter-apk/mostro-v${{ env.VERSION }}-armeabi-v7a.apk
+          mv build/app/outputs/flutter-apk/app-arm64-v8a-release.apk \
+             build/app/outputs/flutter-apk/mostro-v${{ env.VERSION }}-arm64-v8a.apk
+
+          # Verify renamed files exist
+          ls -lh build/app/outputs/flutter-apk/mostro-v${{ env.VERSION }}-*.apk
+
       - name: Verify APK Signing
         if: steps.should_build.outputs.SHOULD_BUILD == 'true'
         run: |
-          # Check if APK exists and is signed
-          if [ -f "build/app/outputs/flutter-apk/app-release.apk" ]; then
-            echo "✅ APK built successfully"
-            set -euo pipefail
-            echo "Verifying with jarsigner..."
-            APK="build/app/outputs/flutter-apk/app-release.apk"
-            # Capture jarsigner result; print excerpt separately so failures propagate
-            jarsigner -verify -verbose -certs "$APK" > /tmp/jarsigner.out
-            sed -n '1,120p' /tmp/jarsigner.out
-            # Try apksigner if available to print certs/fingerprint
-            SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
-            APKSIGNER=$(find "$SDK_ROOT"/build-tools -name apksigner -type f 2>/dev/null | sort -V | tail -1 || true)
-            if [ -n "$APKSIGNER" ]; then
-              echo "Verifying with apksigner..."
-              "$APKSIGNER" verify --print-certs "$APK"
-              # Optional: enforce signer fingerprint if provided
-              if [ -n "${{ secrets.ANDROID_CERT_SHA256 }}" ]; then
-                FPR=$("$APKSIGNER" verify --print-certs "$APK" 2>/dev/null \
-                  | awk -F': ' '/SHA-256 digest/{print $2}' | tr -d ' ')
-                if [ "$FPR" != "${{ secrets.ANDROID_CERT_SHA256 }}" ]; then
-                  echo "❌ APK cert SHA-256 mismatch"
-                  exit 1
+          set -euo pipefail
+          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+          APKSIGNER=$(find "$SDK_ROOT"/build-tools -name apksigner -type f 2>/dev/null | sort -V | tail -1 || true)
+
+          # Function to verify a single APK
+          verify_apk() {
+            local APK_PATH=$1
+            local APK_NAME=$2
+
+            if [ -f "$APK_PATH" ]; then
+              echo "✅ $APK_NAME built successfully"
+              echo "Verifying $APK_NAME with jarsigner..."
+              jarsigner -verify -verbose -certs "$APK_PATH" > /tmp/jarsigner-$APK_NAME.out
+              sed -n '1,120p' /tmp/jarsigner-$APK_NAME.out
+
+              # Try apksigner if available
+              if [ -n "$APKSIGNER" ]; then
+                echo "Verifying $APK_NAME with apksigner..."
+                "$APKSIGNER" verify --print-certs "$APK_PATH"
+
+                # Optional: enforce signer fingerprint if provided
+                if [ -n "${{ secrets.ANDROID_CERT_SHA256 }}" ]; then
+                  FPR=$("$APKSIGNER" verify --print-certs "$APK_PATH" 2>/dev/null \
+                    | awk -F': ' '/SHA-256 digest/{print $2}' | tr -d ' ')
+                  if [ "$FPR" != "${{ secrets.ANDROID_CERT_SHA256 }}" ]; then
+                    echo "❌ $APK_NAME cert SHA-256 mismatch"
+                    exit 1
+                  fi
                 fi
               fi
+              echo ""
+            else
+              echo "❌ $APK_NAME build failed - file not found: $APK_PATH"
+              exit 1
             fi
-          else
-            echo "❌ APK build failed"
-            exit 1
-          fi
+          }
+
+          # Verify both split APKs
+          verify_apk "build/app/outputs/flutter-apk/mostro-v${{ env.VERSION }}-armeabi-v7a.apk" "armeabi-v7a APK"
+          verify_apk "build/app/outputs/flutter-apk/mostro-v${{ env.VERSION }}-arm64-v8a.apk" "arm64-v8a APK"
+
+          echo "✅ All APKs verified successfully"
 
       - name: Upload Artifacts
         if: steps.should_build.outputs.SHOULD_BUILD == 'true'
@@ -188,7 +213,8 @@ jobs:
         with:
           name: Releases
           path: |
-            build/app/outputs/flutter-apk/app-release.apk
+            build/app/outputs/flutter-apk/mostro-v${{ env.VERSION }}-armeabi-v7a.apk
+            build/app/outputs/flutter-apk/mostro-v${{ env.VERSION }}-arm64-v8a.apk
             build/app/outputs/bundle/release/app-release.aab
 
 
@@ -197,7 +223,7 @@ jobs:
         if: steps.should_build.outputs.SHOULD_BUILD == 'true'
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "build/app/outputs/flutter-apk/app-release.apk,build/app/outputs/bundle/release/app-release.aab"
+          artifacts: "build/app/outputs/flutter-apk/mostro-v${{ env.VERSION }}-armeabi-v7a.apk,build/app/outputs/flutter-apk/mostro-v${{ env.VERSION }}-arm64-v8a.apk,build/app/outputs/bundle/release/app-release.aab"
           tag: v${{ env.VERSION }}
           allowUpdates: true
           omitBodyDuringUpdate: true
