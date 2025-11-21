@@ -46,8 +46,9 @@ android/app/upload-keystore.jks
 .cxx/
 
 # Firebase and Google Services
-android/app/google-services.json
-ios/Runner/GoogleService-Info.plist
+# Note: google-services.json and GoogleService-Info.plist contain PUBLIC credentials
+# These are safe to commit (see lib/firebase_options.dart for security explanation)
+# Only PRIVATE service account keys should be kept secret (never in client code)
 
 # Web
 web/.dart_tool/
