@@ -178,8 +178,9 @@ jobs:
             if [ -f "$APK_PATH" ]; then
               echo "✅ $APK_NAME built successfully"
               echo "Verifying $APK_NAME with jarsigner..."
-              jarsigner -verify -verbose -certs "$APK_PATH" > /tmp/jarsigner-$APK_NAME.out
-              sed -n '1,120p' /tmp/jarsigner-$APK_NAME.out
+              local SAFE_APK_NAME=$(echo "$APK_NAME" | tr ' ' '_')
+              jarsigner -verify -verbose -certs "$APK_PATH" > "/tmp/jarsigner-${SAFE_APK_NAME}.out"
+              sed -n '1,120p' "/tmp/jarsigner-${SAFE_APK_NAME}.out"
 
               # Try apksigner if available
               if [ -n "$APKSIGNER" ]; then
