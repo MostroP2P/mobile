@@ -71,6 +71,11 @@ chrome/.cxx
 chrome/.dart_tool
 chrome/.packages
 
+# Cloud Functions
+functions/node_modules/
+functions/lib/
+functions/.runtimeconfig.json
+
 # Misc
 *.log
 *.lock

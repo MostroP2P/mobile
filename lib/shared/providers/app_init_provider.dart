@@ -5,6 +5,7 @@ import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
+import 'package:mostro_mobile/services/fcm_service.dart';
 import 'package:mostro_mobile/shared/providers/background_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
@@ -13,6 +14,10 @@ import 'package:mostro_mobile/features/subscriptions/subscription_manager_provid
 final appInitializerProvider = FutureProvider<void>((ref) async {
   final nostrService = ref.read(nostrServiceProvider);
   await nostrService.init(ref.read(settingsProvider));
+
+  // Initialize FCM service for push notifications
+  final fcmService = ref.read(fcmServiceProvider);
+  await fcmService.initialize();
 
   final keyManager = ref.read(keyManagerProvider);
   await keyManager.init();

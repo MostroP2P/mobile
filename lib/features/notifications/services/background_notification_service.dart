@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 
-import 'package:dart_nostr/nostr/model/event/event.dart';
+import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
@@ -13,17 +13,20 @@ import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as mostro_action;
+import 'package:mostro_mobile/data/repositories/event_storage.dart';
 import 'package:mostro_mobile/data/repositories/session_storage.dart';
 import 'package:mostro_mobile/features/key_manager/key_derivator.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager.dart';
 import 'package:mostro_mobile/features/key_manager/key_storage.dart';
 import 'package:mostro_mobile/features/notifications/utils/notification_data_extractor.dart';
 import 'package:mostro_mobile/features/notifications/utils/notification_message_mapper.dart';
+import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/generated/l10n_en.dart';
 import 'package:mostro_mobile/generated/l10n_es.dart';
 import 'package:mostro_mobile/generated/l10n_it.dart';
 import 'package:mostro_mobile/background/background.dart' as bg;
+import 'package:mostro_mobile/services/nostr_service.dart';
 import 'package:mostro_mobile/shared/providers/mostro_database_provider.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
@@ -50,10 +53,27 @@ void _onNotificationTap(NotificationResponse response) {
 }
 
 Future<void> showLocalNotification(NostrEvent event) async {
+  final logger = Logger();
+
   try {
+    // Step 1: Check if event was already processed (deduplication)
+    if (event.id == null) {
+      logger.w('Event has no ID, cannot check for duplicates');
+      return;
+    }
+
+    final eventsDb = await openMostroDatabase('events.db');
+    final eventStorage = EventStorage(db: eventsDb);
+
+    final alreadyProcessed = await eventStorage.hasItem(event.id!);
+    if (alreadyProcessed) {
+      logger.d('Event ${event.id} already processed, skipping notification');
+      return;
+    }
+
     final mostroMessage = await _decryptAndProcessEvent(event);
     if (mostroMessage == null) return;
-    
+
 
     final sessions = await _loadSessionsFromDatabase();
     final matchingSession = sessions.cast<Session?>().firstWhere(
@@ -102,7 +122,15 @@ Future<void> showLocalNotification(NostrEvent event) async {
       payload: mostroMessage.id,
     );
 
-    Logger().i('Shown: ${notificationText.title} - ${notificationText.body}');
+    // Step 2: Mark event as processed to prevent future duplicates
+    await eventStorage.putItem(event.id!, {
+      'id': event.id,
+      'kind': event.kind,
+      'processed_at': DateTime.now().millisecondsSinceEpoch,
+      'notification_shown': true,
+    });
+
+    logger.i('Notification shown and event marked as processed: ${notificationText.title} - ${notificationText.body}');
   } catch (e) {
     Logger().e('Notification error: $e');
   }
@@ -258,25 +286,224 @@ String? _getExpandedText(Map<String, dynamic> values) {
 }
 
 
-Future<void> retryNotification(NostrEvent event, {int maxAttempts = 3}) async {  
-  int attempt = 0;  
-  bool success = false;  
-  
-  while (!success && attempt < maxAttempts) {  
-    try {  
-      await showLocalNotification(event);  
-      success = true;  
-    } catch (e) {  
-      attempt++;  
-      if (attempt >= maxAttempts) {  
-        Logger().e('Failed to show notification after $maxAttempts attempts: $e');  
-        break;  
-      }  
-      
-      // Exponential backoff: 1s, 2s, 4s, etc.  
-      final backoffSeconds = pow(2, attempt - 1).toInt();  
-      Logger().e('Notification attempt $attempt failed: $e. Retrying in ${backoffSeconds}s');  
-      await Future.delayed(Duration(seconds: backoffSeconds));  
-    }  
-  }  
+Future<void> retryNotification(NostrEvent event, {int maxAttempts = 3}) async {
+  int attempt = 0;
+  bool success = false;
+
+  while (!success && attempt < maxAttempts) {
+    try {
+      await showLocalNotification(event);
+      success = true;
+    } catch (e) {
+      attempt++;
+      if (attempt >= maxAttempts) {
+        Logger().e('Failed to show notification after $maxAttempts attempts: $e');
+        break;
+      }
+
+      // Exponential backoff: 1s, 2s, 4s, etc.
+      final backoffSeconds = pow(2, attempt - 1).toInt();
+      Logger().e('Notification attempt $attempt failed: $e. Retrying in ${backoffSeconds}s');
+      await Future.delayed(Duration(seconds: backoffSeconds));
+    }
+  }
+}
+
+/// Fetch and process all new events from relays (Silent Push approach)
+///
+/// This function is called from the FCM silent push handler to fetch
+/// all new events from relays and process notifications.
+///
+/// Flow:
+/// 1. Load all active sessions from database
+/// 2. Get last processed timestamp from storage
+/// 3. Fetch all new events since last timestamp
+/// 4. Process each event and show notifications
+/// 5. Update last processed timestamp
+///
+/// Privacy: FCM doesn't contain any event data, only wakes up the app
+Future<void> fetchAndProcessNewEvents({required List<String> relays}) async {
+  final logger = Logger();
+
+  try {
+    logger.i('Starting to fetch new events from relays');
+
+    // Step 1: Load all sessions from database
+    final sessions = await _loadSessionsFromDatabase();
+
+    if (sessions.isEmpty) {
+      logger.i('No active sessions found');
+      return;
+    }
+
+    logger.i('Found ${sessions.length} active sessions');
+
+    // Step 2: Get last processed timestamp
+    final sharedPrefs = SharedPreferencesAsync();
+    final lastProcessedTime = await sharedPrefs.getInt('fcm.last_processed_timestamp') ?? 0;
+    final since = DateTime.fromMillisecondsSinceEpoch(lastProcessedTime * 1000);
+
+    logger.i('Fetching events since: ${since.toIso8601String()}');
+
+    // Step 3: Initialize NostrService
+    final nostrService = NostrService();
+    final settings = Settings(
+      relays: relays,
+      fullPrivacyMode: false,
+      mostroPublicKey: '', // Not needed for fetching
+    );
+
+    try {
+      await nostrService.init(settings);
+    } catch (e) {
+      logger.e('Failed to initialize NostrService: $e');
+      return;
+    }
+
+    // Step 4: Fetch new events for each session
+    int processedCount = 0;
+    final now = DateTime.now();
+
+    for (final session in sessions) {
+      try {
+        // Create filter for this session's events
+        // Use 'p' tag to filter by recipient (the trade key that can decrypt the event)
+        // Note: 'authors' would filter by sender, but we need events sent TO this trade key
+        final filter = NostrFilter(
+          kinds: [1059], // Gift-wrapped events
+          p: [session.tradeKey.public], // Events sent to this trade key
+          since: since,
+        );
+
+        logger.d('Fetching events for session: ${session.orderId}');
+
+        // Fetch events
+        final events = await nostrService.fetchEvents(filter);
+
+        logger.d('Found ${events.length} events for session ${session.orderId}');
+
+        // Process each event
+        for (final event in events) {
+          final nostrEvent = NostrEvent(
+            id: event.id,
+            kind: event.kind,
+            content: event.content,
+            tags: event.tags,
+            createdAt: event.createdAt,
+            pubkey: event.pubkey,
+            sig: event.sig,
+            subscriptionId: event.subscriptionId,
+          );
+
+          // Show notification
+          await showLocalNotification(nostrEvent);
+          processedCount++;
+        }
+      } catch (e) {
+        logger.e('Error processing events for session ${session.orderId}: $e');
+        // Continue with next session
+      }
+    }
+
+    // Step 5: Update last processed timestamp
+    final newTimestamp = (now.millisecondsSinceEpoch / 1000).floor();
+    await sharedPrefs.setInt('fcm.last_processed_timestamp', newTimestamp);
+
+    logger.i('Processed $processedCount new events successfully');
+
+  } catch (e, stackTrace) {
+    logger.e('Error fetching and processing new events: $e');
+    logger.e('Stack trace: $stackTrace');
+  }
+}
+
+/// Process FCM notification from background when app is terminated (Legacy approach)
+///
+/// This function is kept for backward compatibility but is no longer used
+/// in the Silent Push approach.
+///
+/// Parameters:
+/// - [eventId]: The Nostr event ID from the FCM payload
+/// - [recipientPubkey]: The recipient public key (trade key) from the FCM payload
+/// - [relays]: List of relay URLs to fetch the event from
+@Deprecated('Use fetchAndProcessNewEvents for Silent Push approach')
+Future<void> processFCMBackgroundNotification({
+  required String eventId,
+  required String recipientPubkey,
+  required List<String> relays,
+}) async {
+  final logger = Logger();
+
+  try {
+    logger.i('Processing FCM background notification for event: $eventId');
+
+    // Step 1: Load sessions from database to find the matching session
+    final sessions = await _loadSessionsFromDatabase();
+    final matchingSession = sessions.cast<Session?>().firstWhere(
+      (s) => s?.tradeKey.public == recipientPubkey,
+      orElse: () => null,
+    );
+
+    if (matchingSession == null) {
+      logger.w('No matching session found for recipient: ${recipientPubkey.substring(0, 16)}...');
+      return;
+    }
+
+    logger.i('Found matching session for order: ${matchingSession.orderId}');
+
+    // Step 2: Initialize NostrService with relay list
+    final nostrService = NostrService();
+    final settings = Settings(
+      relays: relays,
+      fullPrivacyMode: false,
+      mostroPublicKey: '', // Not needed for just fetching events
+    );
+
+    try {
+      await nostrService.init(settings);
+      logger.i('NostrService initialized with ${relays.length} relays');
+    } catch (e) {
+      logger.e('Failed to initialize NostrService: $e');
+      return;
+    }
+
+    // Step 3: Create filter to fetch the specific event by ID
+    final filter = NostrFilter(
+      ids: [eventId],
+      kinds: [1059], // Gift-wrapped events
+    );
+
+    logger.i('Fetching event $eventId from relays...');
+
+    // Step 4: Fetch the event from relays
+    final events = await nostrService.fetchEvents(filter);
+
+    if (events.isEmpty) {
+      logger.w('Event $eventId not found in any relay');
+      return;
+    }
+
+    logger.i('Found event ${events.first.id}, processing notification...');
+
+    // Step 5: Convert to NostrEvent and process through existing notification system
+    final nostrEvent = NostrEvent(
+      id: events.first.id,
+      kind: events.first.kind,
+      content: events.first.content,
+      tags: events.first.tags,
+      createdAt: events.first.createdAt,
+      pubkey: events.first.pubkey,
+      sig: events.first.sig,
+      subscriptionId: events.first.subscriptionId,
+    );
+
+    // Process and show the notification
+    await showLocalNotification(nostrEvent);
+
+    logger.i('FCM background notification processed and shown successfully');
+
+  } catch (e, stackTrace) {
+    logger.e('Error processing FCM background notification: $e');
+    logger.e('Stack trace: $stackTrace');
+  }
 }  
