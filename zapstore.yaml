@@ -33,4 +33,4 @@ license: MIT
 blossom_servers:
   - https://cdn.zapstore.dev
 assets:
-  - mostro-vd+.d+.d+-arm64-v8a.apk
+  - .*.apk

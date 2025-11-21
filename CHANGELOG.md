@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.0.6]
+
+### Fixed
+- **GitHub Actions APK Verification** (#364): Fixed unquoted variable with spaces in file redirections that broke the signing verification step
+  - Sanitized temporary filenames to avoid shell expansion issues with spaces
+  - Resolved ambiguous redirect error in jarsigner verification process
+
+## [v1.0.5]
+
+### Added
+- **Restore Orders Feature** (#355): Complete session restoration system with protocol-compliant implementation
+  - Added restore-session action for recovering user sessions from Mostro
+  - Implemented EmptyPayload class for proper null payload serialization
+  - Support for both reputation and full privacy modes in restore requests
+  - Protocol-compliant message serialization with correct wrapper keys ("restore" for Action.restore, "order" for other actions)
+  - RestoreService with comprehensive session restore workflow including data cleanup and temporary subscriptions
+
+### Changed
+- **Split APK Architecture** (#360): Enhanced build system to generate architecture-specific APKs for better distribution
+  - Updated GitHub Actions to build separate APKs for armeabi-v7a and arm64-v8a architectures
+  - Replaced universal APK with split APKs for optimized app size per architecture
+  - Enhanced APK naming convention: mostro-v{VERSION}-{architecture}.apk format
+  - Improved verification process for both architecture variants using jarsigner and apksigner
+- **Zapstore Distribution** (#362): Updated zapstore configuration for split APK support
+  - Configured zapstore.yaml to distribute arm64-v8a APKs
+  - Removed armeabi-v7a from zapstore distribution as it's not supported by the platform
+
 ## [v1.0.4]
 
 ### Added
