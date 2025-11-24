@@ -7,12 +7,12 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/key_manager/import_mnemonic_dialog.dart';
+import 'package:mostro_mobile/features/key_manager/providers/backup_confirmation_provider.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/features/restore/restore_manager.dart';
 import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/providers/notifications_history_repository_provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class KeyManagementScreen extends ConsumerStatefulWidget {
   const KeyManagementScreen({super.key});
@@ -23,32 +23,16 @@ class KeyManagementScreen extends ConsumerStatefulWidget {
 }
 
 class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
-  static const String _confirmedSavedKey = 'user_confirmed_saved_mnemonic';
-  
   String? _mnemonic;
   int? _tradeKeyIndex;
   bool _loading = false;
   bool _showSecretWords = false;
-  bool _userConfirmedSaved = false;
   final TextEditingController _importController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _loadKeys();
-    _loadSavedConfirmationState();
-  }
-
-  Future<void> _loadSavedConfirmationState() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _userConfirmedSaved = prefs.getBool(_confirmedSavedKey) ?? false;
-    });
-  }
-
-  Future<void> _saveConfirmationState(bool confirmed) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_confirmedSavedKey, confirmed);
   }
 
   Future<void> _loadKeys() async {
@@ -126,10 +110,8 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
     );
     
     if (confirmed == true && mounted) {
-      setState(() {
-        _userConfirmedSaved = true;
-      });
-      await _saveConfirmationState(true);
+      // Update the backup confirmation state through the provider
+      ref.read(backupConfirmationProvider.notifier).setBackupConfirmed(true);
     }
   }
 
@@ -149,10 +131,7 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
     await keyManager.generateAndStoreMasterKey();
 
     // Reset the confirmation state for new user
-    await _saveConfirmationState(false);
-    setState(() {
-      _userConfirmedSaved = false;
-    });
+    ref.read(backupConfirmationProvider.notifier).setBackupConfirmed(false);
 
     await _loadKeys();
   }
@@ -166,10 +145,7 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
         await keyManager.importMnemonic(importValue);
         
         // Reset the confirmation state for imported key
-        await _saveConfirmationState(false);
-        setState(() {
-          _userConfirmedSaved = false;
-        });
+        ref.read(backupConfirmationProvider.notifier).setBackupConfirmed(false);
         
         await _loadKeys();
         if (mounted) {
@@ -362,73 +338,79 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Left side: "Ya la guardé" button or static text
-                      if (_userConfirmedSaved)
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              LucideIcons.check,
-                              size: 16,
-                              color: AppTheme.textSecondary,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              S.of(context)!.backupConfirmed,
-                              style: const TextStyle(
-                                color: AppTheme.textSecondary,
-                                fontSize: 14,
+                  Consumer(
+                    builder: (context, ref, child) {
+                      final isBackupConfirmed = ref.watch(backupConfirmationProvider);
+                      
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          // Left side: "Ya la guardé" button or static text
+                          if (isBackupConfirmed)
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  LucideIcons.check,
+                                  size: 16,
+                                  color: AppTheme.textSecondary,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  S.of(context)!.backupConfirmed,
+                                  style: const TextStyle(
+                                    color: AppTheme.textSecondary,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            )
+                          else
+                            TextButton.icon(
+                              onPressed: _showConfirmSavedDialog,
+                              icon: const Icon(
+                                LucideIcons.bookmark,
+                                size: 16,
+                                color: AppTheme.activeColor,
+                              ),
+                              label: Text(
+                                S.of(context)!.confirmBackup,
+                                style: const TextStyle(
+                                  color: AppTheme.activeColor,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ),
-                          ],
-                        )
-                      else
-                        TextButton.icon(
-                          onPressed: _showConfirmSavedDialog,
-                          icon: const Icon(
-                            LucideIcons.bookmark,
-                            size: 16,
-                            color: AppTheme.activeColor,
-                          ),
-                          label: Text(
-                            S.of(context)!.confirmBackup,
-                            style: const TextStyle(
+                          
+                          // Right side: Show/Hide button
+                          TextButton.icon(
+                            onPressed: () {
+                              setState(() {
+                                _showSecretWords = !_showSecretWords;
+                              });
+                            },
+                            icon: Icon(
+                              _showSecretWords
+                                  ? LucideIcons.eyeOff
+                                  : LucideIcons.eye,
+                              size: 16,
                               color: AppTheme.activeColor,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
+                            ),
+                            label: Text(
+                              _showSecretWords
+                                  ? S.of(context)!.hide
+                                  : S.of(context)!.show,
+                              style: const TextStyle(
+                                color: AppTheme.activeColor,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
-                        ),
-                      
-                      // Right side: Show/Hide button
-                      TextButton.icon(
-                        onPressed: () {
-                          setState(() {
-                            _showSecretWords = !_showSecretWords;
-                          });
-                        },
-                        icon: Icon(
-                          _showSecretWords
-                              ? LucideIcons.eyeOff
-                              : LucideIcons.eye,
-                          size: 16,
-                          color: AppTheme.activeColor,
-                        ),
-                        label: Text(
-                          _showSecretWords
-                              ? S.of(context)!.hide
-                              : S.of(context)!.show,
-                          style: const TextStyle(
-                            color: AppTheme.activeColor,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
+                        ],
+                      );
+                    },
                   ),
                 ],
               ),

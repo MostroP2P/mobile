@@ -3,32 +3,100 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/features/key_manager/providers/backup_confirmation_provider.dart';
 import 'package:mostro_mobile/features/notifications/providers/notifications_provider.dart';
 
-class NotificationBellWidget extends ConsumerWidget {
+class NotificationBellWidget extends ConsumerStatefulWidget {
   const NotificationBellWidget({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<NotificationBellWidget> createState() => _NotificationBellWidgetState();
+}
+
+class _NotificationBellWidgetState extends ConsumerState<NotificationBellWidget>
+    with TickerProviderStateMixin {
+  
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _pulseAnimation = Tween<double>(
+      begin: -0.1,
+      end: 0.1,
+    ).animate(CurvedAnimation(
+      parent: _pulseController,
+      curve: Curves.elasticInOut,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  void _startPulseAnimation() {
+    _pulseController.repeat(reverse: true);
+  }
+
+  void _stopPulseAnimation() {
+    _pulseController.stop();
+    _pulseController.reset();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final unreadCount = ref.watch(unreadNotificationsCountProvider);
+    final isBackupConfirmed = ref.watch(backupConfirmationProvider);
     final currentRoute = GoRouterState.of(context).uri.path;
+
+    // Manage animation based on backup status
+    if (!isBackupConfirmed) {
+      _startPulseAnimation();
+    } else {
+      _stopPulseAnimation();
+    }
 
     if (currentRoute == '/notifications') {
       return const SizedBox.shrink();
     }
 
+    Widget bellIcon = HeroIcon(
+      HeroIcons.bell,
+      style: HeroIconStyle.outline,
+      color: AppTheme.cream1,
+      size: 28,
+    );
+
+    // Wrap with animation if backup not confirmed
+    if (!isBackupConfirmed) {
+      bellIcon = AnimatedBuilder(
+        animation: _pulseAnimation,
+        builder: (context, child) {
+          return Transform.rotate(
+            angle: _pulseAnimation.value,
+            child: child,
+          );
+        },
+        child: bellIcon,
+      );
+    }
+
     return Stack(
       children: [
         IconButton(
-          icon: const HeroIcon(
-            HeroIcons.bell,
-            style: HeroIconStyle.outline,
-            color: AppTheme.cream1,
-            size: 28,
-          ),
+          icon: bellIcon,
           onPressed: () => context.push('/notifications'),
         ),
         if (unreadCount > 0) _NotificationBadge(count: unreadCount),
+        // Show red dot for backup reminder when backup not confirmed
+        if (!isBackupConfirmed) const _BackupReminderDot(),
       ],
     );
   }
@@ -62,6 +130,26 @@ class _NotificationBadge extends StatelessWidget {
             fontWeight: FontWeight.bold,
           ),
           textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
+}
+
+class _BackupReminderDot extends StatelessWidget {
+  const _BackupReminderDot();
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      right: 8,
+      top: 8,
+      child: Container(
+        width: 8,
+        height: 8,
+        decoration: const BoxDecoration(
+          color: AppTheme.statusError,
+          shape: BoxShape.circle,
         ),
       ),
     );
