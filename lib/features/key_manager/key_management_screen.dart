@@ -345,7 +345,7 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                       return Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          // Left side: "Ya la guardé" button or static text
+                          // Left side: "Confirm backup" button
                           if (isBackupConfirmed)
                             Row(
                               mainAxisSize: MainAxisSize.min,

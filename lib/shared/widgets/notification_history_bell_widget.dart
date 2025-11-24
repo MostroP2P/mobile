@@ -18,6 +18,7 @@ class _NotificationBellWidgetState extends ConsumerState<NotificationBellWidget>
   
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
+  bool _isAnimating = false;
 
   @override
   void initState() {
@@ -42,10 +43,14 @@ class _NotificationBellWidgetState extends ConsumerState<NotificationBellWidget>
   }
 
   void _startPulseAnimation() {
+    if (_isAnimating) return;
+    _isAnimating = true;
     _pulseController.repeat(reverse: true);
   }
 
   void _stopPulseAnimation() {
+    if (!_isAnimating) return;
+    _isAnimating = false;
     _pulseController.stop();
     _pulseController.reset();
   }
@@ -57,9 +62,9 @@ class _NotificationBellWidgetState extends ConsumerState<NotificationBellWidget>
     final currentRoute = GoRouterState.of(context).uri.path;
 
     // Manage animation based on backup status
-    if (!isBackupConfirmed) {
+    if (!isBackupConfirmed && !_isAnimating) {
       _startPulseAnimation();
-    } else {
+    } else if (isBackupConfirmed && _isAnimating) {
       _stopPulseAnimation();
     }
 
