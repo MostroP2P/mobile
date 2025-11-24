@@ -99,9 +99,11 @@ class _NotificationBellWidgetState extends ConsumerState<NotificationBellWidget>
           icon: bellIcon,
           onPressed: () => context.push('/notifications'),
         ),
-        if (unreadCount > 0) _NotificationBadge(count: unreadCount),
-        // Show red dot for backup reminder when backup not confirmed
-        if (!isBackupConfirmed) const _BackupReminderDot(),
+        // Show notification badge if there are unread notifications, otherwise show backup reminder dot
+        if (unreadCount > 0)
+          _NotificationBadge(count: unreadCount)
+        else if (!isBackupConfirmed)
+          const _BackupReminderDot(),
       ],
     );
   }
