@@ -895,7 +895,7 @@
   "show": "Mostrar",
   "hide": "Ocultar",
   "confirmBackup": "Confirmar respaldo",
-  "confirmSavedWordsMessage": "Confirmo que he guardado mis palabras secretas en un lugar seguro.\n\nEntiendo que si pierdo mis palabras secretas no podré recuperar esta cuenta.",
+  "confirmSavedWordsMessage": "• Confirmo que he guardado mis palabras secretas en un lugar seguro.\n\n• Entiendo que si pierdo mis palabras secretas no podré recuperar esta cuenta.",
   "backupConfirmed": "Respaldo confirmado",
   "backupReminderMessage": "Debes guardar tus palabras secretas. Ve a \"Cuenta\" y confirma el respaldo",
   "backupAccountButton": "Respaldar cuenta",

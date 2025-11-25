@@ -951,7 +951,7 @@
   "show": "Mostra",
   "hide": "Nascondi",
   "confirmBackup": "Conferma backup",
-  "confirmSavedWordsMessage": "Confermo di aver salvato le mie parole segrete in un luogo sicuro.\n\nCapisco che se perdo le mie parole segrete non potrò recuperare questo account.",
+  "confirmSavedWordsMessage": "• Confermo di aver salvato le mie parole segrete in un luogo sicuro.\n\n• Capisco che se perdo le mie parole segrete non potrò recuperare questo account.",
   "backupConfirmed": "Backup confermato",
   "backupReminderMessage": "Devi salvare le tue parole segrete. Vai a \"Account\" e conferma il backup",
   "backupAccountButton": "Backup Account",

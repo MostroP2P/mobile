@@ -144,9 +144,6 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
       try {
         await keyManager.importMnemonic(importValue);
         
-        // Reset the confirmation state for imported key
-        ref.read(backupConfirmationProvider.notifier).setBackupConfirmed(false);
-        
         await _loadKeys();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -926,6 +923,9 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
     if (mnemonic != null && mnemonic.isNotEmpty) {
       final restoreService = ref.read(restoreServiceProvider);
       await restoreService.importMnemonicAndRestore(mnemonic);
+      
+      // Mark backup as confirmed for imported account (user already has it backed up)
+      ref.read(backupConfirmationProvider.notifier).setBackupConfirmed(true);
     }
   }
 }
