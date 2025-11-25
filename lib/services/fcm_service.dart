@@ -3,54 +3,42 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Service for managing Firebase Cloud Messaging (FCM) functionality
-///
-/// This service handles:
-/// - FCM token generation and storage
-/// - Token refresh handling
-/// - Notification permissions
-/// - Foreground message handling
+/// Firebase Cloud Messaging service for push notifications
 class FCMService {
   final Logger _logger = Logger();
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
+
+  Future<void> Function()? _onMessageReceivedCallback;
 
   static const String _fcmTokenKey = 'fcm_token';
   static const String _fcmTopic = 'mostro_notifications';
 
   bool _isInitialized = false;
 
-  /// Returns whether the FCM service has been successfully initialized
   bool get isInitialized => _isInitialized;
 
-  /// Initializes the FCM service
-  ///
-  /// This should be called early in the app lifecycle, typically during app initialization
-  Future<void> initialize() async {
+  Future<void> initialize({
+    Future<void> Function()? onMessageReceived,
+  }) async {
     if (_isInitialized) {
       _logger.i('FCM service already initialized');
       return;
     }
 
     try {
-      _logger.i('Initializing FCM service...');
+      _logger.i('Initializing FCM service');
 
-      // Request notification permissions
+      _onMessageReceivedCallback = onMessageReceived;
+
       final permissionGranted = await _requestPermissions();
       if (!permissionGranted) {
         _logger.w('Notification permissions not granted');
         return;
       }
 
-      // Get and store initial FCM token
       await _getAndStoreToken();
-
-      // Subscribe to topic for silent push notifications
       await _subscribeToTopic();
-
-      // Set up token refresh listener
       _setupTokenRefreshListener();
-
-      // Set up foreground message handler
       _setupForegroundMessageHandler();
 
       _isInitialized = true;
@@ -58,16 +46,13 @@ class FCMService {
     } catch (e, stackTrace) {
       _logger.e('Failed to initialize FCM service: $e');
       _logger.e('Stack trace: $stackTrace');
-      // Don't rethrow - FCM is optional, app should continue without it
-      // The app can still work with the existing BackgroundService for notifications
       _logger.w('App will continue without FCM push notifications');
     }
   }
 
-  /// Requests notification permissions from the user
   Future<bool> _requestPermissions() async {
     try {
-      _logger.i('Requesting notification permissions...');
+      _logger.i('Requesting notification permissions');
 
       final settings = await _messaging.requestPermission(
         alert: true,
@@ -77,8 +62,7 @@ class FCMService {
       );
 
       final granted = settings.authorizationStatus == AuthorizationStatus.authorized;
-
-      _logger.i('Notification permission status: ${settings.authorizationStatus}');
+      _logger.i('Permission status: ${settings.authorizationStatus}');
 
       return granted;
     } catch (e) {
@@ -87,7 +71,6 @@ class FCMService {
     }
   }
 
-  /// Gets the FCM token and stores it in SharedPreferences
   Future<void> _getAndStoreToken() async {
     try {
       final token = await _messaging.getToken().timeout(
@@ -109,40 +92,35 @@ class FCMService {
     }
   }
 
-  /// Saves the FCM token to SharedPreferences
   Future<void> _saveToken(String token) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_fcmTokenKey, token);
-      _logger.i('FCM token saved to SharedPreferences');
+      _logger.i('FCM token saved');
     } catch (e) {
       _logger.e('Error saving FCM token: $e');
     }
   }
 
-  /// Subscribes to the FCM topic for broadcast notifications
   Future<void> _subscribeToTopic() async {
     try {
       await _messaging.subscribeToTopic(_fcmTopic).timeout(
         const Duration(seconds: 10),
         onTimeout: () {
-          _logger.w('Timeout subscribing to FCM topic: $_fcmTopic');
+          _logger.w('Timeout subscribing to topic: $_fcmTopic');
         },
       );
-      _logger.i('Subscribed to FCM topic: $_fcmTopic');
+      _logger.i('Subscribed to topic: $_fcmTopic');
     } catch (e) {
-      _logger.e('Error subscribing to FCM topic: $e');
-      // Don't throw - topic subscription is not critical, can retry later
+      _logger.e('Error subscribing to topic: $e');
     }
   }
 
-  /// Sets up a listener for FCM token refresh
   void _setupTokenRefreshListener() {
     _messaging.onTokenRefresh.listen(
       (newToken) {
         _logger.i('FCM token refreshed: ${newToken.substring(0, 20)}...');
         _saveToken(newToken);
-        // TODO: Send new token to backend when available
       },
       onError: (error) {
         _logger.e('Error in token refresh listener: $error');
@@ -150,27 +128,28 @@ class FCMService {
     );
   }
 
-  /// Sets up handler for foreground messages
   void _setupForegroundMessageHandler() {
     FirebaseMessaging.onMessage.listen(
-      (RemoteMessage message) {
+      (RemoteMessage message) async {
         _logger.i('Received foreground FCM message');
-        _logger.d('Message data: ${message.data}');
 
-        // TODO: Process foreground messages
-        // For now, just log them
-        if (message.notification != null) {
-          _logger.i('Notification title: ${message.notification!.title}');
-          _logger.i('Notification body: ${message.notification!.body}');
+        if (_onMessageReceivedCallback != null) {
+          try {
+            await _onMessageReceivedCallback!();
+            _logger.i('Event processing completed');
+          } catch (e) {
+            _logger.e('Error processing events: $e');
+          }
+        } else {
+          _logger.w('No callback configured');
         }
       },
       onError: (error) {
-        _logger.e('Error in foreground message handler: $error');
+        _logger.e('Error in message handler: $error');
       },
     );
   }
 
-  /// Gets the currently stored FCM token
   Future<String?> getToken() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -181,38 +160,34 @@ class FCMService {
     }
   }
 
-  /// Deletes the stored FCM token
   Future<void> deleteToken() async {
     try {
       await _messaging.deleteToken().timeout(
         const Duration(seconds: 10),
         onTimeout: () {
-          _logger.w('Timeout deleting FCM token from Firebase');
+          _logger.w('Timeout deleting FCM token');
         },
       );
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_fcmTokenKey);
-      _logger.i('FCM token deleted successfully');
+      _logger.i('FCM token deleted');
     } catch (e) {
       _logger.e('Error deleting FCM token: $e');
-      // Try to remove from local storage even if Firebase delete fails
       try {
         final prefs = await SharedPreferences.getInstance();
         await prefs.remove(_fcmTokenKey);
         _logger.i('FCM token removed from local storage');
       } catch (localError) {
-        _logger.e('Error removing FCM token from local storage: $localError');
+        _logger.e('Error removing token from local storage: $localError');
       }
     }
   }
 
-  /// Cleans up resources
   void dispose() {
     _isInitialized = false;
   }
 }
 
-/// Provider for the FCM service
 final fcmServiceProvider = Provider<FCMService>((ref) {
   final service = FCMService();
   ref.onDispose(() {

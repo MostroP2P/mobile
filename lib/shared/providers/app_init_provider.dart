@@ -11,6 +11,7 @@ import 'package:mostro_mobile/shared/providers/background_service_provider.dart'
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_manager_provider.dart';
+import 'package:mostro_mobile/features/notifications/services/background_notification_service.dart';
 
 final appInitializerProvider = FutureProvider<void>((ref) async {
   final logger = Logger();
@@ -18,16 +19,25 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
   final nostrService = ref.read(nostrServiceProvider);
   await nostrService.init(ref.read(settingsProvider));
 
-  // Initialize FCM service for push notifications (non-critical)
-  // FCM is optional - app can function without it using BackgroundService
   final fcmService = ref.read(fcmServiceProvider);
   try {
-    await fcmService.initialize();
+    await fcmService.initialize(
+      onMessageReceived: () async {
+        final settings = ref.read(settingsProvider);
+        final relays = settings.relays;
+
+        if (relays.isEmpty) {
+          logger.w('No relays configured - cannot fetch events');
+          return;
+        }
+
+        logger.i('FCM message received - fetching events from ${relays.length} relays');
+        await fetchAndProcessNewEvents(relays: relays);
+      },
+    );
   } catch (e, stackTrace) {
-    // Log but don't fail app initialization if FCM fails
-    // The app can still work with existing BackgroundService for notifications
-    logger.e('FCM initialization failed during app init: $e', error: e, stackTrace: stackTrace);
-    logger.w('App will continue without FCM - using BackgroundService for notifications');
+    logger.e('FCM initialization failed: $e', error: e, stackTrace: stackTrace);
+    logger.w('App will continue without FCM');
   }
 
   final keyManager = ref.read(keyManagerProvider);

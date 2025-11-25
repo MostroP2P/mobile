@@ -1,42 +1,4 @@
-/// Background Notification Service
-///
-/// Handles processing of Nostr events for push notifications in both
-/// foreground and background contexts.
-///
-/// ## Architecture
-///
-/// ### Storage Strategy:
-/// - **mostro.db**: Core app data (sessions, orders) - Read/Write in foreground
-/// - **notifications.db**: Notification deduplication state - Read/Write in background
-/// - **events.db**: (Legacy, no longer used for notifications)
-///
-/// ### Deduplication:
-/// Uses a separate `notification_state` store in `notifications.db` to track
-/// which events have been processed. This prevents duplicate notifications and
-/// maintains a clean separation between event data and notification state.
-///
-/// Schema: notification_state store
-/// - key: event ID (String)
-/// - value: {processed_at: int, notification_shown: bool}
-///
-/// ### Error Handling:
-/// - `showLocalNotification()`: Propagates errors to enable retry mechanisms
-/// - `retryNotification()`: Implements exponential backoff (1s, 2s, 4s)
-/// - Errors are logged and rethrown for proper handling by callers
-///
-/// ### Read-only Boundary:
-/// Background service maintains read-only access to event/session data:
-/// - Reads from mostro.db for session matching and decryption
-/// - Writes ONLY to notifications.db for deduplication
-/// - Does not modify events.db or mostro.db from background
-///
-/// ### Silent Push Flow (Current):
-/// 1. FCM sends silent wake-up notification
-/// 2. App calls `fetchAndProcessNewEvents()`
-/// 3. Fetches new events from relays since last check
-/// 4. Each event checked against notification_state for duplicates
-/// 5. New events decrypted, processed, and notifications shown
-/// 6. Event IDs marked as processed in notification_state
+/// Background notification service - processes Nostr events for push notifications
 library;
 
 import 'dart:convert';
@@ -93,23 +55,11 @@ void _onNotificationTap(NotificationResponse response) {
   }
 }
 
-/// Show a local notification for a Nostr event
-///
-/// This function processes a Nostr event and displays a notification.
-/// It uses a separate notification_state store for deduplication to avoid
-/// processing the same event multiple times.
-///
-/// Architecture:
-/// - Read-only for event data
-/// - Writes deduplication state to separate notification_state store
-/// - Propagates errors to allow retry mechanisms to work
-///
-/// Throws: Any error encountered during processing (for retry support)
+/// Process and show local notification for a Nostr event
 Future<void> showLocalNotification(NostrEvent event) async {
   final logger = Logger();
 
   try {
-    // Step 1: Check if event was already processed (deduplication)
     if (event.id == null) {
       logger.w('Event has no ID, cannot check for duplicates');
       return;
@@ -120,7 +70,7 @@ Future<void> showLocalNotification(NostrEvent event) async {
 
     final alreadyProcessed = await notificationStateStorage.isProcessed(event.id!);
     if (alreadyProcessed) {
-      logger.d('Event ${event.id} already processed, skipping notification');
+      logger.d('Event ${event.id} already processed, skipping');
       return;
     }
 
@@ -166,7 +116,6 @@ Future<void> showLocalNotification(NostrEvent event) async {
       ),
     );
 
-    // Show notification - errors will propagate for retry support
     await flutterLocalNotificationsPlugin.show(
       event.id.hashCode,
       notificationText.title,
@@ -175,14 +124,11 @@ Future<void> showLocalNotification(NostrEvent event) async {
       payload: mostroMessage.id,
     );
 
-    // Step 2: Mark event as processed to prevent future duplicates
     await notificationStateStorage.markAsProcessed(event.id!);
 
-    logger.i('Notification shown and event marked as processed: ${notificationText.title} - ${notificationText.body}');
+    logger.i('Notification shown: ${notificationText.title} - ${notificationText.body}');
   } catch (e, stackTrace) {
-    // Log error with stack trace for debugging
     logger.e('Notification error: $e', error: e, stackTrace: stackTrace);
-    // Rethrow to allow retry mechanism to catch and retry
     rethrow;
   }
 }
@@ -352,7 +298,6 @@ Future<void> retryNotification(NostrEvent event, {int maxAttempts = 3}) async {
         break;
       }
 
-      // Exponential backoff: 1s, 2s, 4s, etc.
       final backoffSeconds = pow(2, attempt - 1).toInt();
       Logger().e('Notification attempt $attempt failed: $e. Retrying in ${backoffSeconds}s');
       await Future.delayed(Duration(seconds: backoffSeconds));
@@ -360,26 +305,13 @@ Future<void> retryNotification(NostrEvent event, {int maxAttempts = 3}) async {
   }
 }
 
-/// Fetch and process all new events from relays (Silent Push approach)
-///
-/// This function is called from the FCM silent push handler to fetch
-/// all new events from relays and process notifications.
-///
-/// Flow:
-/// 1. Load all active sessions from database
-/// 2. Get last processed timestamp from storage
-/// 3. Fetch all new events since last timestamp
-/// 4. Process each event and show notifications
-/// 5. Update last processed timestamp
-///
-/// Privacy: FCM doesn't contain any event data, only wakes up the app
+/// Fetch and process new events from relays
 Future<void> fetchAndProcessNewEvents({required List<String> relays}) async {
   final logger = Logger();
 
   try {
-    logger.i('Starting to fetch new events from relays');
+    logger.i('Fetching new events from relays');
 
-    // Step 1: Load all sessions from database
     final sessions = await _loadSessionsFromDatabase();
 
     if (sessions.isEmpty) {
@@ -389,19 +321,17 @@ Future<void> fetchAndProcessNewEvents({required List<String> relays}) async {
 
     logger.i('Found ${sessions.length} active sessions');
 
-    // Step 2: Get last processed timestamp
     final sharedPrefs = SharedPreferencesAsync();
     final lastProcessedTime = await sharedPrefs.getInt('fcm.last_processed_timestamp') ?? 0;
     final since = DateTime.fromMillisecondsSinceEpoch(lastProcessedTime * 1000);
 
     logger.i('Fetching events since: ${since.toIso8601String()}');
 
-    // Step 3: Initialize NostrService
     final nostrService = NostrService();
     final settings = Settings(
       relays: relays,
       fullPrivacyMode: false,
-      mostroPublicKey: '', // Not needed for fetching
+      mostroPublicKey: '',
     );
 
     try {
@@ -411,29 +341,23 @@ Future<void> fetchAndProcessNewEvents({required List<String> relays}) async {
       return;
     }
 
-    // Step 4: Fetch new events for each session
     int processedCount = 0;
     final now = DateTime.now();
 
     for (final session in sessions) {
       try {
-        // Create filter for this session's events
-        // Use 'p' tag to filter by recipient (the trade key that can decrypt the event)
-        // Note: 'authors' would filter by sender, but we need events sent TO this trade key
         final filter = NostrFilter(
-          kinds: [1059], // Gift-wrapped events
-          p: [session.tradeKey.public], // Events sent to this trade key
+          kinds: [1059],
+          p: [session.tradeKey.public],
           since: since,
         );
 
         logger.d('Fetching events for session: ${session.orderId}');
 
-        // Fetch events
         final events = await nostrService.fetchEvents(filter);
 
         logger.d('Found ${events.length} events for session ${session.orderId}');
 
-        // Process each event
         for (final event in events) {
           final nostrEvent = NostrEvent(
             id: event.id,
@@ -446,17 +370,14 @@ Future<void> fetchAndProcessNewEvents({required List<String> relays}) async {
             subscriptionId: event.subscriptionId,
           );
 
-          // Show notification
           await showLocalNotification(nostrEvent);
           processedCount++;
         }
       } catch (e) {
         logger.e('Error processing events for session ${session.orderId}: $e');
-        // Continue with next session
       }
     }
 
-    // Step 5: Update last processed timestamp
     final newTimestamp = (now.millisecondsSinceEpoch / 1000).floor();
     await sharedPrefs.setInt('fcm.last_processed_timestamp', newTimestamp);
 
@@ -468,16 +389,7 @@ Future<void> fetchAndProcessNewEvents({required List<String> relays}) async {
   }
 }
 
-/// Process FCM notification from background when app is terminated (Legacy approach)
-///
-/// This function is kept for backward compatibility but is no longer used
-/// in the Silent Push approach.
-///
-/// Parameters:
-/// - [eventId]: The Nostr event ID from the FCM payload
-/// - [recipientPubkey]: The recipient public key (trade key) from the FCM payload
-/// - [relays]: List of relay URLs to fetch the event from
-@Deprecated('Use fetchAndProcessNewEvents for Silent Push approach')
+@Deprecated('Use fetchAndProcessNewEvents instead')
 Future<void> processFCMBackgroundNotification({
   required String eventId,
   required String recipientPubkey,
