@@ -36,3 +36,14 @@ abstract class Payload {
     }
   }
 }
+
+/// Empty payload for actions that don't require payload data
+class EmptyPayload implements Payload {
+  const EmptyPayload();
+
+  @override
+  String get type => 'empty';
+
+  @override
+  Map<String, dynamic> toJson() => {};
+}

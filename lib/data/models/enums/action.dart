@@ -38,7 +38,10 @@ enum Action {
   paymentFailed('payment-failed'),
   invoiceUpdated('invoice-updated'),
   sendDm('send-dm'),
-  tradePubkey('trade-pubkey');
+  tradePubkey('trade-pubkey'),
+  restore('restore-session'),
+  orders('orders'),
+  lastTradeIndex('last-trade-index');
 
   final String value;
 

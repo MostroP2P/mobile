@@ -40,6 +40,60 @@ class MostroService {
     _ordersSubscription?.cancel();
     _logger.i('MostroService disposed');
   }
+  
+  //IMPORTANT : The app always use trade index 1 for restore-related messages
+  // When subscribtions are created from restore process for real orders, restore related messages may be avoided
+  bool _isRestorePayload(Map<String, dynamic> json) {
+    // Check if this is a restore-specific payload that should be ignored
+    // These payloads are only used during restore process via temporary trade key
+
+    // Safely get wrapper and validate it's a Map
+    final wrapper = json['restore'] ?? json['order'];
+    if (wrapper == null) return false;
+    if (wrapper is! Map<String, dynamic>) return false;
+
+    // Safely get payload and validate it's a Map
+    final payloadValue = wrapper['payload'];
+    if (payloadValue == null) return false;
+    if (payloadValue is! Map<String, dynamic>) return false;
+
+    final payload = payloadValue;
+
+    // RestoreData: has 'restore_data' wrapper with 'orders' and 'disputes' arrays
+    if (payload.containsKey('restore_data')) {
+      return true;
+    }
+
+    // LastTradeIndexResponse: has 'trade_index' field
+    if (payload.containsKey('trade_index')) {
+      return true;
+    }
+
+    // OrdersResponse: has 'orders' array with OrderDetail objects
+    // OrderDetail has buyer_trade_pubkey/seller_trade_pubkey fields
+    if (payload.containsKey('orders')) {
+      final ordersValue = payload['orders'];
+
+      // Validate orders is a List
+      if (ordersValue is! List) return false;
+
+      // Check first element if list is not empty
+      if (ordersValue.isNotEmpty) {
+        final firstOrderValue = ordersValue[0];
+
+        // Validate first element is a Map
+        if (firstOrderValue is! Map<String, dynamic>) return false;
+
+        // Check for restore-specific fields
+        if (firstOrderValue.containsKey('buyer_trade_pubkey') ||
+            firstOrderValue.containsKey('seller_trade_pubkey')) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
 
   Future<void> _onData(NostrEvent event) async {
     final eventStore = ref.read(eventStorageProvider);
@@ -65,6 +119,7 @@ class MostroService {
 
     try {
       final decryptedEvent = await event.unWrap(privateKey);
+
       if (decryptedEvent.content == null) return;
 
       final result = jsonDecode(decryptedEvent.content!);
@@ -81,7 +136,13 @@ class MostroService {
         return;
       }
 
+      // Skip restore-specific payloads that arrive as historical events due to temporary subscription
+      if (result[0] is Map && _isRestorePayload(result[0] as Map<String, dynamic>)) {
+        return;
+      }
+
       final msg = MostroMessage.fromJson(result[0]);
+
       final messageStorage = ref.read(mostroStorageProvider);
       
       // Use decryptedEvent.id if available, otherwise fall back to original event.id
