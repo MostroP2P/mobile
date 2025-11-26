@@ -194,7 +194,7 @@ class _EncryptedFileMessageState extends ConsumerState<EncryptedFileMessage> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.grey.withValues(alpha: 25),
+          color: AppTheme.backgroundCard,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: AppTheme.textSecondary.withValues(alpha: 76),
@@ -219,10 +219,10 @@ class _EncryptedFileMessageState extends ConsumerState<EncryptedFileMessage> {
                     children: [
                       Text(
                         metadata.filename,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
-                          color: AppTheme.cream1,
+                          color: Colors.white,
                         ),
                         overflow: TextOverflow.ellipsis,
                         maxLines: 2,
@@ -234,20 +234,20 @@ class _EncryptedFileMessageState extends ConsumerState<EncryptedFileMessage> {
                             _formatFileSize(metadata.originalSize),
                             style: TextStyle(
                               fontSize: 12,
-                              color: AppTheme.textSecondary.withValues(alpha: 153),
+                              color: Colors.white.withValues(alpha: 178),
                             ),
                           ),
                           const SizedBox(width: 8),
                           Icon(
                             Icons.lock,
                             size: 12,
-                            color: AppTheme.textSecondary.withValues(alpha: 153),
+                            color: Colors.white.withValues(alpha: 178),
                           ),
                           Text(
                             ' Encrypted',
                             style: TextStyle(
                               fontSize: 11,
-                              color: AppTheme.textSecondary.withValues(alpha: 153),
+                              color: Colors.white.withValues(alpha: 178),
                             ),
                           ),
                         ],
@@ -273,7 +273,7 @@ class _EncryptedFileMessageState extends ConsumerState<EncryptedFileMessage> {
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.mostroGreen,
-                  foregroundColor: Colors.white,
+                  foregroundColor: Colors.black,
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -297,7 +297,7 @@ class _EncryptedFileMessageState extends ConsumerState<EncryptedFileMessage> {
       ),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.backgroundInput,
+        color: AppTheme.backgroundCard,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: AppTheme.textSecondary.withValues(alpha: 76),
@@ -321,7 +321,7 @@ class _EncryptedFileMessageState extends ConsumerState<EncryptedFileMessage> {
             'Downloading file...',
             style: TextStyle(
               fontSize: 12,
-              color: AppTheme.textSecondary.withValues(alpha: 153),
+              color: Colors.white.withValues(alpha: 178),
             ),
             textAlign: TextAlign.center,
           ),
