@@ -1169,6 +1169,46 @@
   "restoreFinalizing": "Finalizando restauración...",
   "restoreCompleted": "¡Restauración completada!",
   "restoreError": "Error de restauración",
-  "restoreErrorMessage": "Error al restaurar datos del usuario. Verifica tu conexión e inténtalo más tarde."
+  "restoreErrorMessage": "Error al restaurar datos del usuario. Verifica tu conexión e inténtalo más tarde.",
+
+  "@_comment_logs_screen": "Pantalla de logs y funcionalidad de exportación",
+  "logsReport": "Registros",
+  "viewAndExportLogs": "Ver y exportar registros de la aplicación",
+  "clearLogs": "Limpiar Registros",
+  "totalLogs": "{count} registros",
+  "@totalLogs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "maxEntries": "Máx {max} entradas",
+  "@maxEntries": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "noLogsAvailable": "No hay registros disponibles",
+  "logsWillAppearHere": "Los registros aparecerán aquí mientras usas la aplicación",
+  "saveToDevice": "Guardar en Dispositivo",
+  "shareReport": "Compartir",
+  "logsExportTitle": "Exportar Registros de Mostro",
+  "exportFailed": "Error al exportar registros",
+  "saveFailed": "Error al guardar registros",
+  "logsSavedTo": "Registros guardados en: {path}",
+  "@logsSavedTo": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "clearLogsConfirmTitle": "¿Limpiar todos los registros?",
+  "clearLogsConfirmMessage": "Esta acción no se puede deshacer. Todos los registros se eliminarán permanentemente.",
+  "clear": "Limpiar",
+  "cancel": "Cancelar"
 
 }

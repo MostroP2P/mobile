@@ -1224,5 +1224,45 @@
   "restoreFinalizing": "Finalizzazione ripristino...",
   "restoreCompleted": "Ripristino completato!",
   "restoreError": "Errore di ripristino",
-  "restoreErrorMessage": "Errore nel ripristino dei dati utente. Verifica la tua connessione e riprova più tardi."
+  "restoreErrorMessage": "Errore nel ripristino dei dati utente. Verifica la tua connessione e riprova più tardi.",
+
+  "@_comment_logs_screen": "Schermata logs e funzionalità di esportazione",
+  "logsReport": "Registri",
+  "viewAndExportLogs": "Visualizza ed esporta i registri dell'applicazione",
+  "clearLogs": "Cancella Registri",
+  "totalLogs": "{count} registri",
+  "@totalLogs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "maxEntries": "Max {max} voci",
+  "@maxEntries": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "noLogsAvailable": "Nessun registro disponibile",
+  "logsWillAppearHere": "I registri appariranno qui mentre usi l'app",
+  "saveToDevice": "Salva su Dispositivo",
+  "shareReport": "Condividi",
+  "logsExportTitle": "Esportazione Registri Mostro",
+  "exportFailed": "Errore durante l'esportazione dei registri",
+  "saveFailed": "Errore durante il salvataggio dei registri",
+  "logsSavedTo": "Registri salvati in: {path}",
+  "@logsSavedTo": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "clearLogsConfirmTitle": "Cancellare tutti i registri?",
+  "clearLogsConfirmMessage": "Questa azione non può essere annullata. Tutti i registri verranno eliminati permanentemente.",
+  "clear": "Cancella",
+  "cancel": "Annulla"
 }
