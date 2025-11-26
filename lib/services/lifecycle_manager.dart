@@ -11,6 +11,9 @@ import 'package:mostro_mobile/shared/providers/background_service_provider.dart'
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_manager_provider.dart';
+import 'package:mostro_mobile/features/settings/settings_provider.dart';
+import 'package:mostro_mobile/features/notifications/services/background_notification_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LifecycleManager extends WidgetsBindingObserver {
   final Ref ref;
@@ -23,10 +26,11 @@ class LifecycleManager extends WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
+    _logger.i('App lifecycle state changed to: $state');
+
     if (Platform.isAndroid || Platform.isIOS) {
       switch (state) {
         case AppLifecycleState.resumed:
-          // App is in foreground
           if (_isInBackground) {
             await _switchToForeground();
           }
@@ -34,7 +38,6 @@ class LifecycleManager extends WidgetsBindingObserver {
         case AppLifecycleState.paused:
         case AppLifecycleState.inactive:
         case AppLifecycleState.detached:
-          // App is in background
           if (!_isInBackground) {
             await _switchToBackground();
           }
@@ -50,10 +53,11 @@ class LifecycleManager extends WidgetsBindingObserver {
       _isInBackground = false;
       _logger.i("Switching to foreground");
 
+      await _checkPendingFCMEvents();
+
       // Stop background service
       final backgroundService = ref.read(backgroundServiceProvider);
       await backgroundService.setForegroundStatus(true);
-      _logger.i("Background service foreground status set to true");
 
       // Add a small delay to ensure the background service has fully transitioned
       await Future.delayed(const Duration(milliseconds: 500));
@@ -62,21 +66,17 @@ class LifecycleManager extends WidgetsBindingObserver {
       subscriptionManager.subscribeAll();
 
       // Reinitialize the mostro service
-      _logger.i("Reinitializing MostroService");
       ref.read(mostroServiceProvider).init();
 
-      // Refresh order repository by re-reading it
-      _logger.i("Refreshing order repository");
+      // Refresh order repository
       final orderRepo = ref.read(orderRepositoryProvider);
       orderRepo.reloadData();
 
       // Reinitialize chat rooms
-      _logger.i("Reloading chat rooms");
       final chatRooms = ref.read(chatRoomsNotifierProvider.notifier);
       chatRooms.reloadAllChats();
 
       // Force UI update for trades
-      _logger.i("Invalidating providers to refresh UI");
       ref.invalidate(filteredTradesWithOrderStateProvider);
 
       _logger.i("Foreground transition complete");
@@ -85,24 +85,52 @@ class LifecycleManager extends WidgetsBindingObserver {
     }
   }
 
+  Future<void> _checkPendingFCMEvents() async {
+    try {
+      final sharedPrefs = SharedPreferencesAsync();
+      final hasPending = await sharedPrefs.getBool('fcm.pending_fetch') ?? false;
+
+      if (hasPending) {
+        _logger.i('Pending FCM events detected - processing now');
+
+        await sharedPrefs.setBool('fcm.pending_fetch', false);
+
+        final settings = ref.read(settingsProvider);
+        final relays = settings.relays;
+
+        if (relays.isEmpty) {
+          _logger.w('No relays configured - cannot fetch events');
+          return;
+        }
+
+        _logger.i('Fetching new events from ${relays.length} relays');
+        await fetchAndProcessNewEvents(relays: relays);
+        _logger.i('Successfully processed pending FCM events');
+      }
+    } catch (e, stackTrace) {
+      _logger.e('Error processing pending FCM events: $e');
+      _logger.e('Stack trace: $stackTrace');
+    }
+  }
+
   Future<void> _switchToBackground() async {
     try {
+      _isInBackground = true;
+      _logger.i("Switching to background");
+
       // Get the subscription manager
       final subscriptionManager = ref.read(subscriptionManagerProvider);
       final activeFilters = <NostrFilter>[];
-      
+
       // Get actual filters for each subscription type
       for (final type in SubscriptionType.values) {
         final filters = subscriptionManager.getActiveFilters(type);
         if (filters.isNotEmpty) {
-          _logger.d('Found ${filters.length} active filters for $type');
           activeFilters.addAll(filters);
         }
       }
 
       if (activeFilters.isNotEmpty) {
-        _isInBackground = true;
-        _logger.i("Switching to background");
         subscriptionManager.unsubscribeAll();
         // Transfer active subscriptions to background service
         final backgroundService = ref.read(backgroundServiceProvider);

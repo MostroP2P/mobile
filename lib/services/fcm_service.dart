@@ -26,27 +26,38 @@ class FCMService {
     }
 
     try {
-      _logger.i('Initializing FCM service');
+      _logger.i('=== FCM INITIALIZATION START ===');
 
       _onMessageReceivedCallback = onMessageReceived;
+      _logger.i('Callback configured: ${onMessageReceived != null}');
 
+      _logger.i('Requesting notification permissions...');
       final permissionGranted = await _requestPermissions();
+      _logger.i('Permission granted: $permissionGranted');
       if (!permissionGranted) {
         _logger.w('Notification permissions not granted');
         return;
       }
 
+      _logger.i('Getting FCM token...');
       await _getAndStoreToken();
+
+      _logger.i('Subscribing to FCM topic...');
       await _subscribeToTopic();
+
+      _logger.i('Setting up token refresh listener...');
       _setupTokenRefreshListener();
+
+      _logger.i('Setting up foreground message handler...');
       _setupForegroundMessageHandler();
 
       _isInitialized = true;
-      _logger.i('FCM service initialized successfully');
+      _logger.i('=== FCM INITIALIZATION COMPLETE ===');
     } catch (e, stackTrace) {
       _logger.e('Failed to initialize FCM service: $e');
       _logger.e('Stack trace: $stackTrace');
       _logger.w('App will continue without FCM push notifications');
+      rethrow;
     }
   }
 

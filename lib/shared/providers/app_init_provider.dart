@@ -16,6 +16,8 @@ import 'package:mostro_mobile/features/notifications/services/background_notific
 final appInitializerProvider = FutureProvider<void>((ref) async {
   final logger = Logger();
 
+  logger.i('=== APP INITIALIZATION STARTED ===');
+
   final nostrService = ref.read(nostrServiceProvider);
   await nostrService.init(ref.read(settingsProvider));
 
@@ -31,13 +33,11 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
           return;
         }
 
-        logger.i('FCM message received - fetching events from ${relays.length} relays');
         await fetchAndProcessNewEvents(relays: relays);
       },
     );
   } catch (e, stackTrace) {
     logger.e('FCM initialization failed: $e', error: e, stackTrace: stackTrace);
-    logger.w('App will continue without FCM');
   }
 
   final keyManager = ref.read(keyManagerProvider);
@@ -45,7 +45,7 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
 
   final sessionManager = ref.read(sessionNotifierProvider.notifier);
   await sessionManager.init();
-  
+
   ref.read(subscriptionManagerProvider);
 
   ref.listen<Settings>(settingsProvider, (previous, next) {
@@ -63,4 +63,6 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
       ref.read(chatRoomsProvider(session.orderId!).notifier).subscribe();
     }
   }
+
+  logger.i('=== APP INITIALIZATION COMPLETED ===');
 });
