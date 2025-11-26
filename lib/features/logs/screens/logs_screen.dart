@@ -294,19 +294,11 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        '(${log.service})',
+                        '(${log.service}:${log.line})',
                         style: const TextStyle(
                           color: AppTheme.activeColor,
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Lines:{${log.line}}',
-                        style: const TextStyle(
-                          color: AppTheme.textSecondary,
-                          fontSize: 11,
                           fontFamily: 'monospace',
                         ),
                       ),

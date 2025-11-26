@@ -19,7 +19,7 @@ class LogEntry {
   String format() {
     final time = timestamp.toString().substring(0, 19);
     final levelStr = level.toString().split('.').last.toUpperCase();
-    return '[$levelStr]($service)Line:{$line} - $message\n$time';
+    return '[$levelStr]($service:$line) $time - $message';
   }
 }
 
@@ -61,7 +61,7 @@ class MemoryLogOutput extends LogOutput {
   }
 
   Map<String, String> _extractFromFormattedLine(String line) {
-    final match = RegExp(r'\[(?:ERROR|WARN|INFO|DEBUG|TRACE)\]\((\w+)\)Line:\{(\d+)\}').firstMatch(line);
+    final match = RegExp(r'\[(?:ERROR|WARN|INFO|DEBUG|TRACE)\]\((\w+):(\d+)\)').firstMatch(line);
     if (match != null) {
       return {
         'service': match.group(1) ?? 'App',
@@ -132,8 +132,7 @@ class SimplePrinter extends LogPrinter {
     final line = serviceAndLine['line'] ?? '0';
 
     return [
-      '[$level]($service)Line:{$line} - $message',
-      timestamp,
+      '[$level]($service:$line) $timestamp - $message',
     ];
   }
 
