@@ -1,8 +1,13 @@
+import 'dart:io';
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:mostro_mobile/services/encrypted_image_upload_service.dart';
 
 class MessageInput extends ConsumerStatefulWidget {
   final String orderId;
@@ -23,6 +28,10 @@ class MessageInput extends ConsumerStatefulWidget {
 class _MessageInputState extends ConsumerState<MessageInput> {
   final TextEditingController _textController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
+  final ImagePicker _imagePicker = ImagePicker();
+  final EncryptedImageUploadService _imageUploadService = EncryptedImageUploadService();
+  
+  bool _isUploadingImage = false; // For loading indicator
 
   @override
   void initState() {
@@ -57,6 +66,75 @@ class _MessageInputState extends ConsumerState<MessageInput> {
     }
   }
 
+  // Handle image selection, encryption and upload
+  Future<void> _selectAndUploadImage() async {
+    try {
+      setState(() {
+        _isUploadingImage = true;
+      });
+
+      // Show image picker modal
+      final pickedFile = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85, // Compress for faster upload
+      );
+
+      if (pickedFile != null) {
+        // Get shared key for this order/chat
+        final sharedKey = await _getSharedKeyForOrder(widget.orderId);
+        
+        // Upload encrypted image to Blossom
+        final result = await _imageUploadService.uploadEncryptedImage(
+          imageFile: File(pickedFile.path),
+          sharedKey: sharedKey,
+          filename: pickedFile.name,
+        );
+        
+        // Send encrypted image message via NIP-59
+        await _sendEncryptedImageMessage(result);
+      }
+    } catch (e) {
+      // Show error to user
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error uploading image: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUploadingImage = false;
+        });
+      }
+    }
+  }
+
+  // Get shared key for this order/chat session
+  Future<Uint8List> _getSharedKeyForOrder(String orderId) async {
+    // Get the chat room notifier to access the shared key
+    final chatNotifier = ref.read(chatRoomsProvider(orderId).notifier);
+    return await chatNotifier.getSharedKey();
+  }
+
+  // Send encrypted image message via NIP-59 gift wrap
+  Future<void> _sendEncryptedImageMessage(EncryptedImageUploadResult result) async {
+    try {
+      // Create JSON content for the rumor
+      final imageMessageJson = jsonEncode(result.toJson());
+      
+      // Send via existing chat system (will be wrapped in NIP-59)
+      await ref
+          .read(chatRoomsProvider(widget.orderId).notifier)
+          .sendMessage(imageMessageJson);
+          
+    } catch (e) {
+      throw Exception('Failed to send encrypted image message: $e');
+    }
+  }
+
 
 
   @override
@@ -84,6 +162,39 @@ class _MessageInputState extends ConsumerState<MessageInput> {
             ),
             child: Row(
               children: [
+                // + Button for image upload
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: AppTheme.backgroundDark,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: AppTheme.textSecondary.withValues(alpha: 76), // 0.3 opacity
+                      width: 1,
+                    ),
+                  ),
+                  child: IconButton(
+                    icon: _isUploadingImage
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: AppTheme.cream1,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Icon(
+                            Icons.add,
+                            color: AppTheme.cream1,
+                            size: 20,
+                          ),
+                    onPressed: _isUploadingImage ? null : _selectAndUploadImage,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
@@ -119,7 +230,7 @@ class _MessageInputState extends ConsumerState<MessageInput> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 8),
                 Container(
                   width: 42,
                   height: 42,
