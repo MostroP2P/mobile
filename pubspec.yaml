@@ -83,6 +83,14 @@ dependencies:
   auto_size_text: ^3.0.0
 
   app_links: ^6.4.0
+  
+  # Dependencies for image upload to Blossom
+  image_picker: ^1.0.4
+  mime: ^1.0.4
+  image: ^4.1.3
+  
+  # ChaCha20-Poly1305 encryption
+  pointycastle: ^3.9.1
 
 
 dev_dependencies:
