@@ -1231,5 +1231,27 @@
   "clearLogsConfirmTitle": "Clear all logs?",
   "clearLogsConfirmMessage": "This action cannot be undone. All logs will be permanently deleted.",
   "clear": "Clear",
-  "cancel": "Cancel"
+  "cancel": "Cancel",
+
+  "@_comment_dev_tools": "Developer Tools Section",
+  "devTools": "Dev Tools",
+  "devToolsWarning": "Advanced features for technical users",
+  "devToolsDescription": "Access diagnostic tools and logs",
+  "logStorageLocation": "Log Storage Location",
+  "storageLocationUpdated": "Storage location updated",
+  "defaultDownloads": "Default (Downloads)",
+
+  "@_comment_logs_filters": "Logs Filtering and Search",
+  "filterByLevel": "Filter by Level",
+  "allLevels": "All Levels",
+  "errors": "Errors",
+  "warnings": "Warnings",
+  "info": "Info",
+  "debug": "Debug",
+  "searchLogs": "Search logs...",
+  "searchInLogs": "Search in logs",
+  "noLogsMatchFilter": "No logs match the current filter",
+  "clearFilters": "Clear Filters",
+  "copyLog": "Copy log",
+  "logCopied": "Log copied to clipboard"
 }

@@ -1,0 +1,306 @@
+Resolving dependencies...
+Downloading packages...
+  _fe_analyzer_shared 85.0.0 (92.0.0 available)
+  analyzer 7.6.0 (9.0.0 available)
+  analyzer_plugin 0.13.4 (0.13.11 available)
+  app_links 6.4.0 (7.0.0 available)
+  bip340 0.1.0 (0.3.1 available)
+  build 2.5.4 (4.0.3 available)
+  build_config 1.1.2 (1.2.0 available)
+  build_daemon 4.0.4 (4.1.1 available)
+  build_resolvers 2.5.4 (3.0.4 available)
+  build_runner 2.5.4 (2.10.4 available)
+  build_runner_core 9.1.2 (9.3.2 available)
+  built_value 8.11.0 (8.12.1 available)
+  characters 1.4.0 (1.4.1 available)
+  code_builder 4.10.1 (4.11.0 available)
+  cross_file 0.3.4+2 (0.3.5+1 available)
+  crypto 3.0.6 (3.0.7 available)
+  custom_lint_core 0.7.5 (0.8.1 available)
+  custom_lint_visitor 1.0.0+7.7.0 (1.0.0+8.4.0 available)
+  dart_nostr 9.1.1 (9.2.2 available)
+  dart_style 3.1.1 (3.1.3 available)
+  elliptic 0.3.11 (0.3.12 available)
+  flutter_hooks 0.21.2 (0.21.3+1 available)
+  flutter_local_notifications 19.4.0 (19.5.0 available)
+  flutter_local_notifications_windows 1.0.2 (1.0.3 available)
+  flutter_plugin_android_lifecycle 2.0.28 (2.0.33 available)
+  flutter_riverpod 2.6.1 (3.0.3 available)
+  flutter_svg 2.2.0 (2.2.3 available)
+  go_router 16.0.0 (17.0.0 available)
+  google_fonts 6.2.1 (6.3.2 available)
+  hooks_riverpod 2.6.1 (3.0.3 available)
+  http 1.4.0 (1.6.0 available)
+  idb_shim 2.6.7 (2.6.7+1 available)
+  introduction_screen 3.1.17 (4.0.0 available)
+  local_auth 2.3.0 (3.0.0 available)
+  local_auth_android 1.0.50 (2.0.3 available)
+  local_auth_darwin 1.5.0 (2.0.1 available)
+  local_auth_platform_interface 1.0.10 (1.1.0 available)
+  local_auth_windows 1.0.11 (2.0.1 available)
+  logger 2.6.1 (2.6.2 available)
+  matcher 0.12.17 (0.12.18 available)
+  material_color_utilities 0.11.1 (0.13.0 available)
+  meta 1.16.0 (1.17.0 available)
+  mockito 5.4.6 (5.6.1 available)
+  path_provider_android 2.2.17 (2.2.22 available)
+  path_provider_foundation 2.4.1 (2.5.1 available)
+  petitparser 6.1.0 (7.0.1 available)
+  pointycastle 3.9.1 (4.0.0 available)
+  pool 1.5.1 (1.5.2 available)
+  process 5.0.3 (5.0.5 available)
+  riverpod 2.6.1 (3.0.3 available)
+  riverpod_annotation 2.6.1 (3.0.3 available)
+  riverpod_generator 2.6.5 (3.0.3 available)
+  sembast 3.8.5+1 (3.8.5+2 available)
+  share_plus 10.1.4 (12.0.1 available)
+  share_plus_platform_interface 5.0.2 (6.1.0 available)
+  shared_preferences_android 2.4.10 (2.4.17 available)
+  shared_preferences_foundation 2.5.4 (2.5.6 available)
+  source_gen 2.0.0 (4.1.1 available)
+  test 1.26.2 (1.28.0 available)
+  test_api 0.7.6 (0.7.8 available)
+  test_core 0.6.11 (0.6.14 available)
+  url_launcher_android 6.3.16 (6.3.28 available)
+  url_launcher_ios 6.3.3 (6.3.6 available)
+  url_launcher_linux 3.2.1 (3.2.2 available)
+  url_launcher_macos 3.2.2 (3.2.5 available)
+  url_launcher_windows 3.1.4 (3.1.5 available)
+  uuid 4.5.1 (4.5.2 available)
+  vector_graphics_compiler 1.1.17 (1.1.19 available)
+  vm_service 15.0.0 (15.0.2 available)
+  watcher 1.1.2 (1.1.4 available)
+  web_socket_channel 2.4.0 (3.0.3 available)
+  win32 5.14.0 (5.15.0 available)
+  xml 6.5.0 (6.6.1 available)
+Got dependencies!
+73 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+Launching lib\main.dart on sdk gphone64 x86 64 in debug mode...
+Running Gradle task 'assembleDebug'...                          
+Running Gradle task 'assembleDebug'...                            168.7s
+√ Built build\app\outputs\flutter-apk\app-debug.apk
+Installing build\app\outputs\flutter-apk\app-debug.apk...           3.1s
+D/FlutterJNI( 9030): Beginning load of flutter...
+D/FlutterJNI( 9030): flutter (null) was loaded normally!
+I/flutter ( 9030): [IMPORTANT:flutter/shell/platform/android/android_context_gl_impeller.cc(104)] Using the Impeller rendering backend (OpenGLES).
+D/com.llfbandit.app_links( 9030): Intent { act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] flg=0x30000000 xflg=0x4 cmp=network.mostro.app/.MainActivity (has extras) }
+D/CompatChangeReporter( 9030): Compat change id reported: 377864165; UID 10251; state: ENABLED
+Syncing files to device sdk gphone64 x86 64...                  
+W/work.mostro.app( 9030): userfaultfd: MOVE ioctl seems unsupported: Try again
+I/work.mostro.app( 9030): Background concurrent mark compact GC freed 3066KB AllocSpace bytes, 22(820KB) LOS objects, 49% free, 2398KB/4797KB, paused 4.405ms,24.310ms total 239.802ms
+I/work.mostro.app( 9030): hiddenapi: Accessing hidden method Landroid/view/accessibility/AccessibilityNodeInfo;->getSourceNodeId()J (runtime_flags=0, domain=platform, api=unsupported,test-api) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app, TargetSdkVersion=36) using reflection: allowed
+I/work.mostro.app( 9030): hiddenapi: Accessing hidden method Landroid/view/accessibility/AccessibilityRecord;->getSourceNodeId()J (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app, TargetSdkVersion=36) using reflection: allowed
+I/work.mostro.app( 9030): hiddenapi: Accessing hidden field Landroid/view/accessibility/AccessibilityNodeInfo;->mChildNodeIds:Landroid/util/LongArray; (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app, TargetSdkVersion=36) using reflection: allowed
+I/work.mostro.app( 9030): hiddenapi: Accessing hidden method Landroid/util/LongArray;->get(I)J (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app, TargetSdkVersion=36) using reflection: allowed
+W/HWUI    ( 9030): Unknown dataspace 0
+Syncing files to device sdk gphone64 x86 64...                   1,067ms
+
+Flutter run key commands.
+r Hot reload. 
+R Hot restart.
+h List all available interactive commands.
+d Detach (terminate "flutter run" but leave application running).
+c Clear the screen
+q Quit (terminate the application on the device).
+
+A Dart VM Service on sdk gphone64 x86 64 is available at: http://127.0.0.1:52943/YPjD1WL9jSw=/
+The Flutter DevTools debugger and profiler on sdk gphone64 x86 64 is available at: http://127.0.0.1:9101?uri=http://127.0.0.1:52943/YPjD1WL9jSw=/
+D/ProfileInstaller( 9030): Installing profile for network.mostro.app
+I/Choreographer( 9030): Skipped 54 frames!  The application may be doing too much work on its main thread.
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@477b494
+I/work.mostro.app( 9030): Compiler allocated 5082KB to compile void android.view.ViewRootImpl.performTraversals()
+I/WindowExtensionsImpl( 9030): Initializing Window Extensions, vendor API level=9, activity embedding enabled=true
+D/VRI[MainActivity]( 9030): WindowInsets changed: 1080x2400 statusBars:[0,63,0,0] navigationBars:[0,0,0,63] mandatorySystemGestures:[0,63,0,84] 
+I/Choreographer( 9030): Skipped 99 frames!  The application may be doing too much work on its main thread.
+D/WindowLayoutComponentImpl( 9030): Register WindowLayoutInfoListener on Context=network.mostro.app.MainActivity@c09bec7, of which baseContext=android.app.ContextImpl@f734d19
+I/flutter ( 9030):  17:42:15 [INFO] - Loading relays from settings: [wss://relay.mostro.network]
+I/flutter ( 9030):  17:42:15 [INFO] - Loading user relays from settings: []
+I/flutter ( 9030):  17:42:15 [INFO] - Loaded 1 relays: [wss://relay.mostro.network (RelaySource.defaultConfig)]
+I/flutter ( 9030): [38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+I/flutter ( 9030): [38;5;12m│ #0   SubscriptionManager._initializeExistingSessions (package:mostro_mobile/features/subscriptions/subscription_manager.dart:66:17)[0m
+I/flutter ( 9030): [38;5;12m│ #1   new SubscriptionManager (package:mostro_mobile/features/subscriptions/subscription_manager.dart:36:5)[0m
+I/flutter ( 9030): [38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄[0m
+I/flutter ( 9030): [38;5;12m│ 💡 No existing sessions found during SubscriptionManager initialization[0m
+I/flutter ( 9030): [38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+I/flutter ( 9030):  17:42:15 [INFO] - Mostro relay sync initialized - sync will start after provider initialization
+I/flutter ( 9030):  17:42:15 [INFO] - Syncing relays with Mostro instance: 82fa8cb978b43c79b2156585bac2c011176a21d2aead6d9f7c575c005be88390
+I/flutter ( 9030): [38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+I/flutter ( 9030): [38;5;12m│ #0   SubscriptionManager.unsubscribeFromMostroRelayList (package:mostro_mobile/features/subscriptions/subscription_manager.dart:323:13)[0m
+I/flutter ( 9030): [38;5;12m│ #1   RelaysNotifier.syncWithMostroInstance (package:mostro_mobile/features/relays/relays_notifier.dart:451:29)[0m
+I/flutter ( 9030): [38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄[0m
+I/flutter ( 9030): [38;5;12m│ 💡 Unsubscribed from Mostro relay list[0m
+I/flutter ( 9030): [38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+I/flutter ( 9030): [38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+I/flutter ( 9030): [38;5;12m│ #0   DeepLinkInterceptor.initialize (package:mostro_mobile/core/deep_link_interceptor.dart:18:13)[0m
+I/flutter ( 9030): [38;5;12m│ #1   _MostroAppState._initializeDeepLinkInterceptor (package:mostro_mobile/core/app.dart:48:27)[0m
+I/flutter ( 9030): [38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄[0m
+I/flutter ( 9030): [38;5;12m│ 💡 DeepLinkInterceptor initialized[0m
+I/flutter ( 9030): [38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+I/flutter ( 9030):  17:42:16 [INFO] - Initializing NostrService with relays: [wss://relay.mostro.network]
+I/Choreographer( 9030): Skipped 131 frames!  The application may be doing too much work on its main thread.
+D/InsetsController( 9030): hide(ime())
+I/ImeTracker( 9030): network.mostro.app:2b1093e9: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+I/flutter ( 9030):  17:42:19 [INFO] - NostrService initialized successfully with 1 relays
+I/flutter ( 9030):  17:42:19 [INFO] - NostrService is ready for relay subscriptions
+I/flutter ( 9030): [38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+I/flutter ( 9030): [38;5;12m│ #0   SubscriptionManager.subscribeToMostroRelayList (package:mostro_mobile/features/subscriptions/subscription_manager.dart:273:15)[0m
+I/flutter ( 9030): [38;5;12m│ #1   RelaysNotifier.syncWithMostroInstance (package:mostro_mobile/features/relays/relays_notifier.dart:461:31)[0m
+I/flutter ( 9030): [38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄[0m
+I/flutter ( 9030): [38;5;12m│ 💡 Subscribed to relay list for Mostro: 82fa8cb978b43c79b2156585bac2c011176a21d2aead6d9f7c575c005be88390[0m
+I/flutter ( 9030): [38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+I/flutter ( 9030):  17:42:19 [INFO] - Successfully subscribed to relay list events for Mostro: 82fa8cb978b43c79b2156585bac2c011176a21d2aead6d9f7c575c005be88390
+I/flutter ( 9030): [38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+I/flutter ( 9030): [38;5;12m│ #0   SubscriptionManager._updateAllSubscriptions (package:mostro_mobile/features/subscriptions/subscription_manager.dart:76:15)[0m
+I/flutter ( 9030): [38;5;12m│ #1   SubscriptionManager._initSessionListener.<anonymous closure> (package:mostro_mobile/features/subscriptions/subscription_manager.dart:43:9)[0m
+I/flutter ( 9030): [38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄[0m
+I/flutter ( 9030): [38;5;12m│ 💡 No sessions available, clearing all subscriptions[0m
+I/flutter ( 9030): [38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+I/flutter ( 9030): [38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+I/flutter ( 9030): [38;5;12m│ #0   SubscriptionManager._initializeExistingSessions (package:mostro_mobile/features/subscriptions/subscription_manager.dart:66:17)[0m
+I/flutter ( 9030): [38;5;12m│ #1   new SubscriptionManager (package:mostro_mobile/features/subscriptions/subscription_manager.dart:36:5)[0m
+I/flutter ( 9030): [38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄[0m
+I/flutter ( 9030): [38;5;12m│ 💡 No existing sessions found during SubscriptionManager initialization[0m
+I/flutter ( 9030): [38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+I/flutter ( 9030): [38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+I/flutter ( 9030): [38;5;12m│ #0   DeepLinkHandler.initialize (package:mostro_mobile/core/deep_link_handler.dart:19:13)[0m
+I/flutter ( 9030): [38;5;12m│ #1   _MostroAppState.build.<anonymous closure>.<anonymous closure> (package:mostro_mobile/core/app.dart:150:31)[0m
+I/flutter ( 9030): [38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄[0m
+I/flutter ( 9030): [38;5;12m│ 💡 Initializing DeepLinkHandler[0m
+I/flutter ( 9030): [38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+I/flutter ( 9030): [38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+I/flutter ( 9030): [38;5;12m│ #0   DeepLinkService.initialize (package:mostro_mobile/services/deep_link_service.dart:56:15)[0m
+I/flutter ( 9030): [38;5;12m│ #1   DeepLinkHandler.initialize (package:mostro_mobile/core/deep_link_handler.dart:25:21)[0m
+I/flutter ( 9030): [38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄[0m
+I/flutter ( 9030): [38;5;12m│ 💡 DeepLinkService initialized successfully[0m
+I/flutter ( 9030): [38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@35a6042
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@477b494
+I/flutter ( 9030): [38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+I/flutter ( 9030): [38;5;12m│ #0   OpenOrdersRepository._subscribeToOrders.<anonymous closure> (package:mostro_mobile/data/repositories/open_orders_repository.dart:57:17)[0m
+I/flutter ( 9030): [38;5;12m│ #1   _RootZone.runUnaryGuarded (dart:async/zone.dart:1778:10)[0m
+I/flutter ( 9030): [38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄[0m
+I/flutter ( 9030): [38;5;12m│ 💡 Mostro instance info loaded: NostrEvent(3e539a2fecd67a72a07975b29b2859019bbfd1934bcf505be94f08f052dc3f53, 38383, , 6a831cfdc8284e25b3640c1ccf032b2517e995d2598f4b2ae2770e95b23459210a192dbd2cc98bfd0e95e6a9c8de799ac5b949ec17a9f6f59f5c204e543aced1, 82fa8cb978b43c79b2156585bac2c011176a21d2aead6d9f7c575c005be88390, 2025-11-26 17:40:51.000, [[d, 82fa8cb978b43c79b2156585bac2c011176a21d2aead6d9f7c575c005be88390], [mostro_version, 0.15.5], [mostro_commit_hash, 47fe2a12e53c8827fdedd175f865a4b50d3e558f], [max_order_amount, 10000], [min_order_amount, 500], [expiration_hours, 24], [expiration_seconds, 900], [fiat_currencies_accepted, ], [max_orders_per_response, 10], [fee, 0.006], [pow, 0], [hold_invoice_expiration_window, 900], [hold_invoice_cltv_delta, 298], [invoice_expiration_window, 900], [lnd_version, 0.19.3-beta commit=lightning-terminal-v0.15.2-alpha], [lnd_node_pubkey, 031df9367377758ef6a167f218023c5a1dcf3994d3e96327d32f0f008548fe4236], [lnd_commit_hash, 911f8cae52670332fe46affd35ff18458ebd5ffb
+I/flutter ( 9030): [38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+I/flutter ( 9030):  17:42:29 [INFO] - Retrying relay sync for Mostro: 82fa8cb978b43c79b2156585bac2c011176a21d2aead6d9f7c575c005be88390
+I/flutter ( 9030): [38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+I/flutter ( 9030): [38;5;12m│ #0   SubscriptionManager.subscribeToMostroRelayList (package:mostro_mobile/features/subscriptions/subscription_manager.dart:273:15)[0m
+I/flutter ( 9030): [38;5;12m│ #1   RelaysNotifier._scheduleRetrySync.<anonymous closure> (package:mostro_mobile/features/relays/relays_notifier.dart:487:33)[0m
+I/flutter ( 9030): [38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄[0m
+I/flutter ( 9030): [38;5;12m│ 💡 Subscribed to relay list for Mostro: 82fa8cb978b43c79b2156585bac2c011176a21d2aead6d9f7c575c005be88390[0m
+I/flutter ( 9030): [38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+I/flutter ( 9030):  17:42:29 [INFO] - Received relay list from Mostro 82fa8cb978b43c79b2156585bac2c011176a21d2aead6d9f7c575c005be88390: [wss://relay.mostro.network]
+I/flutter ( 9030):  17:42:29 [INFO] - Kept 1 default relays and 0 user relays
+I/flutter ( 9030):  17:42:29 [INFO] - Skipping duplicate relay: wss://relay.mostro.network
+I/flutter ( 9030):  17:42:31 [INFO] - Relay list unchanged (hash match), skipping update
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@35a6042
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@477b494
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@35a6042
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@477b494
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@35a6042
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@477b494
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@35a6042
+I/flutter ( 9030):  17:43:02 [DEBUG] - Relay list unchanged, skipping update
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@477b494
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@35a6042
+I/ImeTracker( 9030): network.mostro.app:c0bacd1d: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+I/HWUI    ( 9030): Using FreeType backend (prop=Auto)
+D/InsetsController( 9030): show(ime())
+D/InsetsController( 9030): Setting requestedVisibleTypes to 511 (was 503)
+I/AssistStructure( 9030): Flattened final assist data: 492 bytes, containing 1 windows, 3 views
+D/InputConnectionAdaptor( 9030): The input method toggled cursor monitoring on
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): android.view.ImeBackAnimationController@8b58d97
+W/InteractionJankMonitor( 9030): Initializing without READ_DEVICE_CONFIG permission. enabled=false, interval=1, missedFrameThreshold=3, frameTimeThreshold=64, package=network.mostro.app
+I/ImeTracker( 9030): network.mostro.app:c0bacd1d: onShown
+I/flutter ( 9030):  17:43:31 [INFO] - Relay list unchanged (hash match), skipping update
+I/ImeTracker( 9030): network.mostro.app:fc512a37: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT fromUser false
+D/InsetsController( 9030): hide(ime())
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@35a6042
+D/InsetsController( 9030): Setting requestedVisibleTypes to 503 (was 511)
+D/CompatChangeReporter( 9030): Compat change id reported: 395521150; UID 10251; state: ENABLED
+I/ImeTracker( 9030): system_server:a7e2c4e4: onCancelled at PHASE_CLIENT_ON_CONTROLS_CHANGED
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@477b494
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@35a6042
+I/flutter ( 9030):  17:44:11 [DEBUG] - Relay list unchanged, skipping update
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@477b494
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@35a6042
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@477b494
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@35a6042
+I/flutter ( 9030):  17:44:31 [INFO] - Relay list unchanged (hash match), skipping update
+I/flutter ( 9030):  17:44:32 [DEBUG] - Relay list unchanged, skipping update
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@477b494
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@35a6042
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@477b494
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@35a6042
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@477b494
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@35a6042
+I/flutter ( 9030):  17:45:31 [INFO] - Relay list unchanged (hash match), skipping update
+I/flutter ( 9030): [38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+I/flutter ( 9030): [38;5;12m│ #0   OpenOrdersRepository._subscribeToOrders.<anonymous closure> (package:mostro_mobile/data/repositories/open_orders_repository.dart:57:17)[0m
+I/flutter ( 9030): [38;5;12m│ #1   _RootZone.runUnaryGuarded (dart:async/zone.dart:1778:10)[0m
+I/flutter ( 9030): [38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄[0m
+I/flutter ( 9030): [38;5;12m│ 💡 Mostro instance info loaded: NostrEvent(481c3756d2d62ff2eb32c8575c59f9a7adf2f73cf3a0f2dd1ccc0424ad4ebc4d, 38383, , 2ecaa66098b7a2909fdde5f0f9700ace20dc91b4ceaf9b557de4afab7b2206c5b59429fa63949f5c085827fd41596e741ae2cba26d96514aa3a5d474420a8c53, 82fa8cb978b43c79b2156585bac2c011176a21d2aead6d9f7c575c005be88390, 2025-11-26 17:45:51.000, [[d, 82fa8cb978b43c79b2156585bac2c011176a21d2aead6d9f7c575c005be88390], [mostro_version, 0.15.5], [mostro_commit_hash, 47fe2a12e53c8827fdedd175f865a4b50d3e558f], [max_order_amount, 10000], [min_order_amount, 500], [expiration_hours, 24], [expiration_seconds, 900], [fiat_currencies_accepted, ], [max_orders_per_response, 10], [fee, 0.006], [pow, 0], [hold_invoice_expiration_window, 900], [hold_invoice_cltv_delta, 298], [invoice_expiration_window, 900], [lnd_version, 0.19.3-beta commit=lightning-terminal-v0.15.2-alpha], [lnd_node_pubkey, 031df9367377758ef6a167f218023c5a1dcf3994d3e96327d32f0f008548fe4236], [lnd_commit_hash, 911f8cae52670332fe46affd35ff18458ebd5ffb
+I/flutter ( 9030): [38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@477b494
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@35a6042
+I/flutter ( 9030):  17:46:31 [INFO] - Relay list unchanged (hash match), skipping update
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@477b494
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@35a6042
+I/flutter ( 9030):  17:47:31 [INFO] - Relay list unchanged (hash match), skipping update
+I/flutter ( 9030):  17:48:31 [INFO] - Relay list unchanged (hash match), skipping update
+I/flutter ( 9030):  17:49:31 [INFO] - Relay list unchanged (hash match), skipping update
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@477b494
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@35a6042
+I/flutter ( 9030):  17:50:31 [INFO] - Relay list unchanged (hash match), skipping update
+I/flutter ( 9030):  17:50:34 [DEBUG] - Relay list unchanged, skipping update
+I/flutter ( 9030): [38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+I/flutter ( 9030): [38;5;12m│ #0   OpenOrdersRepository._subscribeToOrders.<anonymous closure> (package:mostro_mobile/data/repositories/open_orders_repository.dart:57:17)[0m
+I/flutter ( 9030): [38;5;12m│ #1   _RootZone.runUnaryGuarded (dart:async/zone.dart:1778:10)[0m
+I/flutter ( 9030): [38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄[0m
+I/flutter ( 9030): [38;5;12m│ 💡 Mostro instance info loaded: NostrEvent(14470896ad9bca5339c68a1efefc079f9c5668b1ab495376ea032d06616954bf, 38383, , bdc558758d846386d09e43b551412b813676a2849f461a678123ebe320a33992db05f5146ba796fd3752a18f25efc0453766fc9002ea7add751c11d586fd25fa, 82fa8cb978b43c79b2156585bac2c011176a21d2aead6d9f7c575c005be88390, 2025-11-26 17:50:51.000, [[d, 82fa8cb978b43c79b2156585bac2c011176a21d2aead6d9f7c575c005be88390], [mostro_version, 0.15.5], [mostro_commit_hash, 47fe2a12e53c8827fdedd175f865a4b50d3e558f], [max_order_amount, 10000], [min_order_amount, 500], [expiration_hours, 24], [expiration_seconds, 900], [fiat_currencies_accepted, ], [max_orders_per_response, 10], [fee, 0.006], [pow, 0], [hold_invoice_expiration_window, 900], [hold_invoice_cltv_delta, 298], [invoice_expiration_window, 900], [lnd_version, 0.19.3-beta commit=lightning-terminal-v0.15.2-alpha], [lnd_node_pubkey, 031df9367377758ef6a167f218023c5a1dcf3994d3e96327d32f0f008548fe4236], [lnd_commit_hash, 911f8cae52670332fe46affd35ff18458ebd5ffb
+I/flutter ( 9030): [38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+I/flutter ( 9030):  17:51:32 [INFO] - Relay list unchanged (hash match), skipping update
+I/flutter ( 9030):  17:52:32 [INFO] - Relay list unchanged (hash match), skipping update
+I/flutter ( 9030):  17:53:32 [INFO] - Relay list unchanged (hash match), skipping update
+I/flutter ( 9030):  17:54:32 [INFO] - Relay list unchanged (hash match), skipping update
+
+Performing hot reload...                                        
+Reloaded 154 of 2702 libraries in 6,907ms (compile: 1807 ms, reload: 1689 ms, reassemble: 784 ms).
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@477b494
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@35a6042
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@477b494
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@35a6042
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@477b494
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@35a6042
+I/flutter ( 9030):  17:55:32 [INFO] - Relay list unchanged (hash match), skipping update
+I/flutter ( 9030): [38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+I/flutter ( 9030): [38;5;12m│ #0   OpenOrdersRepository._subscribeToOrders.<anonymous closure> (package:mostro_mobile/data/repositories/open_orders_repository.dart:57:17)[0m
+I/flutter ( 9030): [38;5;12m│ #1   _RootZone.runUnaryGuarded (dart:async/zone.dart:1778:10)[0m
+I/flutter ( 9030): [38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄[0m
+I/flutter ( 9030): [38;5;12m│ 💡 Mostro instance info loaded: NostrEvent(3026c09e5b71878baf5b4bdb6d8f8b2533e88b9441d8f4701467fc7cd2f009dc, 38383, , 911a5d91c0d1a643f9d45c8c3bb77ada273abe5ae57f1c2de70a52495d82679a7b5f55c2cce2554b0bc9987fa60df85e56fb0b6956b2abf2e3244dcee8a7ced3, 82fa8cb978b43c79b2156585bac2c011176a21d2aead6d9f7c575c005be88390, 2025-11-26 17:55:51.000, [[d, 82fa8cb978b43c79b2156585bac2c011176a21d2aead6d9f7c575c005be88390], [mostro_version, 0.15.5], [mostro_commit_hash, 47fe2a12e53c8827fdedd175f865a4b50d3e558f], [max_order_amount, 10000], [min_order_amount, 500], [expiration_hours, 24], [expiration_seconds, 900], [fiat_currencies_accepted, ], [max_orders_per_response, 10], [fee, 0.006], [pow, 0], [hold_invoice_expiration_window, 900], [hold_invoice_cltv_delta, 298], [invoice_expiration_window, 900], [lnd_version, 0.19.3-beta commit=lightning-terminal-v0.15.2-alpha], [lnd_node_pubkey, 031df9367377758ef6a167f218023c5a1dcf3994d3e96327d32f0f008548fe4236], [lnd_commit_hash, 911f8cae52670332fe46affd35ff18458ebd5ffb
+I/flutter ( 9030): [38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@477b494
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@35a6042
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@477b494
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@35a6042
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@477b494
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@35a6042
+I/flutter ( 9030):  17:56:16 [DEBUG] - Relay list unchanged, skipping update
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@477b494
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@35a6042
+I/flutter ( 9030):  17:56:32 [INFO] - Relay list unchanged (hash match), skipping update
+I/Choreographer( 9030): Skipped 117 frames!  The application may be doing too much work on its main thread.
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@477b494
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@35a6042
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@477b494
+D/WindowOnBackDispatcher( 9030): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@35a6042
+I/flutter ( 9030):  17:57:32 [INFO] - Relay list unchanged (hash match), skipping update
+I/flutter ( 9030):  17:58:32 [INFO] - Relay list unchanged (hash match), skipping update
+I/flutter ( 9030):  17:59:32 [INFO] - Relay list unchanged (hash match), skipping update
+I/flutter ( 9030):  18:00:32 [INFO] - Relay list unchanged (hash match), skipping update
+I/flutter ( 9030): [38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+I/flutter ( 9030): [38;5;12m│ #0   OpenOrdersRepository._subscribeToOrders.<anonymous closure> (package:mostro_mobile/data/repositories/open_orders_repository.dart:57:17)[0m
+I/flutter ( 9030): [38;5;12m│ #1   _RootZone.runUnaryGuarded (dart:async/zone.dart:1778:10)[0m
+I/flutter ( 9030): [38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄[0m
+I/flutter ( 9030): [38;5;12m│ 💡 Mostro instance info loaded: NostrEvent(5dadc82737244aff35c97f08b6543a2c5d72af78fb801d839bded2ea196e2532, 38383, , edbc8ecdd6b00e70db37248a9e4c6b9972a9b4679f17bbd6b9260885225583d3eb157f758e2c76fc52ace90aca98433c1eebb0d18b59b757d3fa6bd0db8ed315, 82fa8cb978b43c79b2156585bac2c011176a21d2aead6d9f7c575c005be88390, 2025-11-26 18:00:51.000, [[d, 82fa8cb978b43c79b2156585bac2c011176a21d2aead6d9f7c575c005be88390], [mostro_version, 0.15.5], [mostro_commit_hash, 47fe2a12e53c8827fdedd175f865a4b50d3e558f], [max_order_amount, 10000], [min_order_amount, 500], [expiration_hours, 24], [expiration_seconds, 900], [fiat_currencies_accepted, ], [max_orders_per_response, 10], [fee, 0.006], [pow, 0], [hold_invoice_expiration_window, 900], [hold_invoice_cltv_delta, 298], [invoice_expiration_window, 900], [lnd_version, 0.19.3-beta commit=lightning-terminal-v0.15.2-alpha], [lnd_node_pubkey, 031df9367377758ef6a167f218023c5a1dcf3994d3e96327d32f0f008548fe4236], [lnd_commit_hash, 911f8cae52670332fe46affd35ff18458ebd5ffb
+I/flutter ( 9030): [38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m

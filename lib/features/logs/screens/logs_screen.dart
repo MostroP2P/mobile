@@ -1,9 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:path_provider/path_provider.dart';
@@ -18,10 +20,36 @@ class LogsScreen extends ConsumerStatefulWidget {
 
 class _LogsScreenState extends ConsumerState<LogsScreen> {
   bool _isExporting = false;
+  Level? _selectedLevel;
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<LogEntry> _filterLogs(List<LogEntry> logs) {
+    var filtered = logs;
+
+    if (_selectedLevel != null) {
+      filtered = filtered.where((log) => log.level == _selectedLevel).toList();
+    }
+
+    if (_searchQuery.isNotEmpty) {
+      filtered = filtered.where((log) =>
+        log.message.toLowerCase().contains(_searchQuery.toLowerCase())
+      ).toList();
+    }
+
+    return filtered;
+  }
 
   @override
   Widget build(BuildContext context) {
-    final logs = MemoryLogOutput.instance.getAllLogs();
+    final allLogs = MemoryLogOutput.instance.getAllLogs();
+    final logs = _filterLogs(allLogs);
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundDark,
@@ -47,19 +75,21 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
       ),
       body: Column(
         children: [
-          _buildStatsHeader(logs.length),
+          _buildStatsHeader(allLogs.length, logs.length),
+          _buildSearchBar(),
+          _buildFilterChips(),
           Expanded(
             child: logs.isEmpty
                 ? _buildEmptyState()
                 : _buildLogsList(logs),
           ),
-          if (logs.isNotEmpty) _buildActionButtons(),
+          if (allLogs.isNotEmpty) _buildActionButtons(),
         ],
       ),
     );
   }
 
-  Widget _buildStatsHeader(int count) {
+  Widget _buildStatsHeader(int totalCount, int filteredCount) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -75,7 +105,9 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            S.of(context)!.totalLogs(count),
+            filteredCount == totalCount
+                ? S.of(context)!.totalLogs(totalCount)
+                : '$filteredCount / ${S.of(context)!.totalLogs(totalCount)}',
             style: const TextStyle(
               color: AppTheme.textPrimary,
               fontSize: 16,
@@ -83,13 +115,91 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
             ),
           ),
           Text(
-            S.of(context)!.maxEntries(1000),
+            S.of(context)!.maxEntries(Config.logMaxEntries),
             style: const TextStyle(
               color: AppTheme.textSecondary,
               fontSize: 14,
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      color: AppTheme.backgroundCard,
+      child: TextField(
+        controller: _searchController,
+        style: const TextStyle(color: AppTheme.textPrimary),
+        decoration: InputDecoration(
+          hintText: S.of(context)!.searchLogs,
+          hintStyle: const TextStyle(color: AppTheme.textSecondary),
+          prefixIcon: const Icon(Icons.search, color: AppTheme.textSecondary),
+          suffixIcon: _searchQuery.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.clear, color: AppTheme.textSecondary),
+                  onPressed: () {
+                    _searchController.clear();
+                    setState(() => _searchQuery = '');
+                  },
+                )
+              : null,
+          filled: true,
+          fillColor: AppTheme.backgroundInput,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        ),
+        onChanged: (value) {
+          setState(() => _searchQuery = value);
+        },
+      ),
+    );
+  }
+
+  Widget _buildFilterChips() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      color: AppTheme.backgroundCard,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _buildFilterChip(S.of(context)!.allLevels, null),
+            const SizedBox(width: 8),
+            _buildFilterChip(S.of(context)!.errors, Level.error),
+            const SizedBox(width: 8),
+            _buildFilterChip(S.of(context)!.warnings, Level.warning),
+            const SizedBox(width: 8),
+            _buildFilterChip(S.of(context)!.info, Level.info),
+            const SizedBox(width: 8),
+            _buildFilterChip(S.of(context)!.debug, Level.debug),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterChip(String label, Level? level) {
+    final isSelected = _selectedLevel == level;
+    return FilterChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (selected) {
+        setState(() => _selectedLevel = selected ? level : null);
+      },
+      backgroundColor: AppTheme.backgroundInput,
+      selectedColor: AppTheme.activeColor.withValues(alpha: 0.3),
+      labelStyle: TextStyle(
+        color: isSelected ? AppTheme.activeColor : AppTheme.textSecondary,
+        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+      ),
+      side: BorderSide(
+        color: isSelected ? AppTheme.activeColor : Colors.white.withValues(alpha: 0.1),
       ),
     );
   }
@@ -143,6 +253,7 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
   Widget _buildLogItem(LogEntry log) {
     final color = _getLogLevelColor(log.level);
     final icon = _getLogLevelIcon(log.level);
+    final levelStr = log.level.toString().split('.').last.toUpperCase();
 
     return Container(
       decoration: BoxDecoration(
@@ -153,26 +264,99 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
           ),
         ),
       ),
-      child: ListTile(
-        dense: true,
-        leading: Icon(icon, color: color, size: 20),
-        title: Text(
-          log.message,
-          style: const TextStyle(
-            fontFamily: 'monospace',
-            color: AppTheme.textPrimary,
-            fontSize: 13,
-          ),
-        ),
-        subtitle: Text(
-          _formatTimestamp(log.timestamp),
-          style: const TextStyle(
-            color: AppTheme.textSecondary,
-            fontSize: 11,
-          ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: color, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: color.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          levelStr,
+                          style: TextStyle(
+                            color: color,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '(${log.service})',
+                        style: const TextStyle(
+                          color: AppTheme.activeColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Lines:{${log.line}}',
+                        style: const TextStyle(
+                          color: AppTheme.textSecondary,
+                          fontSize: 11,
+                          fontFamily: 'monospace',
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    log.message,
+                    style: const TextStyle(
+                      fontFamily: 'monospace',
+                      color: AppTheme.textPrimary,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _formatTimestamp(log.timestamp),
+                    style: const TextStyle(
+                      color: AppTheme.textSecondary,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.copy, size: 18),
+              color: AppTheme.textSecondary,
+              onPressed: () => _copyLogToClipboard(log),
+              tooltip: S.of(context)!.copyLog,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
+          ],
         ),
       ),
     );
+  }
+
+  Future<void> _copyLogToClipboard(LogEntry log) async {
+    await Clipboard.setData(ClipboardData(text: log.format()));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(S.of(context)!.logCopied),
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   Widget _buildActionButtons() {
@@ -313,8 +497,18 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
   }
 
   Future<String> _saveToDocuments(File tempFile) async {
-    final directory = await getApplicationDocumentsDirectory();
-    final logsDir = Directory('${directory.path}/MostroLogs');
+    Directory? directory;
+
+    if (Platform.isAndroid) {
+      directory = Directory('/storage/emulated/0/Download');
+      if (!await directory.exists()) {
+        directory = await getExternalStorageDirectory();
+      }
+    } else {
+      directory = await getApplicationDocumentsDirectory();
+    }
+
+    final logsDir = Directory('${directory!.path}/MostroLogs');
     await logsDir.create(recursive: true);
 
     final timestamp = DateFormat('yyyy-MM-dd_HH-mm-ss').format(DateTime.now());

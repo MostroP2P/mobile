@@ -1264,5 +1264,27 @@
   "clearLogsConfirmTitle": "Cancellare tutti i registri?",
   "clearLogsConfirmMessage": "Questa azione non può essere annullata. Tutti i registri verranno eliminati permanentemente.",
   "clear": "Cancella",
-  "cancel": "Annulla"
+  "cancel": "Annulla",
+
+  "@_comment_dev_tools": "Sezione Strumenti Sviluppatore",
+  "devTools": "Strumenti Dev",
+  "devToolsWarning": "Funzionalità avanzate per utenti tecnici",
+  "devToolsDescription": "Accedi a strumenti diagnostici e registri",
+  "logStorageLocation": "Posizione Archiviazione Registri",
+  "storageLocationUpdated": "Posizione di archiviazione aggiornata",
+  "defaultDownloads": "Predefinito (Download)",
+
+  "@_comment_logs_filters": "Filtro e Ricerca Registri",
+  "filterByLevel": "Filtra per Livello",
+  "allLevels": "Tutti i Livelli",
+  "errors": "Errori",
+  "warnings": "Avvisi",
+  "info": "Info",
+  "debug": "Debug",
+  "searchLogs": "Cerca registri...",
+  "searchInLogs": "Cerca nei registri",
+  "noLogsMatchFilter": "Nessun registro corrisponde al filtro corrente",
+  "clearFilters": "Cancella Filtri",
+  "copyLog": "Copia registro",
+  "logCopied": "Registro copiato negli appunti"
 }

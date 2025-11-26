@@ -1209,6 +1209,28 @@
   "clearLogsConfirmTitle": "¿Limpiar todos los registros?",
   "clearLogsConfirmMessage": "Esta acción no se puede deshacer. Todos los registros se eliminarán permanentemente.",
   "clear": "Limpiar",
-  "cancel": "Cancelar"
+  "cancel": "Cancelar",
+
+  "@_comment_dev_tools": "Sección de Herramientas de Desarrollador",
+  "devTools": "Herramientas Dev",
+  "devToolsWarning": "Funciones avanzadas para usuarios técnicos",
+  "devToolsDescription": "Acceder a herramientas de diagnóstico y registros",
+  "logStorageLocation": "Ubicación de Almacenamiento de Registros",
+  "storageLocationUpdated": "Ubicación de almacenamiento actualizada",
+  "defaultDownloads": "Predeterminado (Descargas)",
+
+  "@_comment_logs_filters": "Filtrado y Búsqueda de Registros",
+  "filterByLevel": "Filtrar por Nivel",
+  "allLevels": "Todos los Niveles",
+  "errors": "Errores",
+  "warnings": "Advertencias",
+  "info": "Info",
+  "debug": "Debug",
+  "searchLogs": "Buscar registros...",
+  "searchInLogs": "Buscar en registros",
+  "noLogsMatchFilter": "No hay registros que coincidan con el filtro actual",
+  "clearFilters": "Limpiar Filtros",
+  "copyLog": "Copiar registro",
+  "logCopied": "Registro copiado al portapapeles"
 
 }
