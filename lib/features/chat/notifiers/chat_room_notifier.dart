@@ -9,6 +9,7 @@ import 'package:mostro_mobile/data/models/chat_room.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/services/encrypted_image_upload_service.dart';
+import 'package:mostro_mobile/services/encrypted_file_upload_service.dart';
 import 'package:sembast/sembast.dart';
 
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
@@ -421,14 +422,16 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
         return;
       }
 
-      // Check if it's an encrypted image message
-      if (jsonContent != null && jsonContent['type'] == 'image_encrypted') {
-        _logger.i('📸 Processing encrypted image message');
-        await _processEncryptedImageMessage(message, jsonContent);
+      // Check for encrypted message types
+      if (jsonContent != null) {
+        if (jsonContent['type'] == 'image_encrypted') {
+          _logger.i('📸 Processing encrypted image message');
+          await _processEncryptedImageMessage(message, jsonContent);
+        } else if (jsonContent['type'] == 'file_encrypted') {
+          _logger.i('📎 Processing encrypted file message');
+          await _processEncryptedFileMessage(message, jsonContent);
+        }
       }
-      
-      // Future: Handle other message types here
-      // else if (jsonContent['type'] == 'document_encrypted') { ... }
       
     } catch (e) {
       _logger.w('Error processing message content: $e');
@@ -475,6 +478,10 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
   // Simple cache for decrypted images
   final Map<String, Uint8List> _imageCache = {};
   final Map<String, EncryptedImageUploadResult> _imageMetadata = {};
+  
+  // Simple cache for decrypted files
+  final Map<String, Uint8List> _fileCache = {};
+  final Map<String, EncryptedFileUploadResult> _fileMetadata = {};
 
   /// Cache a decrypted image for quick display
   void cacheDecryptedImage(
@@ -497,6 +504,80 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
     return _imageMetadata[messageId];
   }
 
+  /// Process encrypted file message by pre-downloading and caching
+  Future<void> _processEncryptedFileMessage(
+    NostrEvent message, 
+    Map<String, dynamic> fileData
+  ) async {
+    try {
+      // Extract file metadata
+      final result = EncryptedFileUploadResult.fromJson(fileData);
+      
+      _logger.i('📥 File message received: ${result.filename} (${result.fileType})');
+      _logger.d('Blossom URL: ${result.blossomUrl}');
+      _logger.d('Original size: ${result.originalSize} bytes');
+      
+      // Auto-download images for preview, but not other files
+      if (result.fileType == 'image') {
+        _logger.i('📸 Auto-downloading image for preview: ${result.filename}');
+        
+        try {
+          // Get shared key for decryption
+          final sharedKey = await getSharedKey();
+          
+          // Download and decrypt image in background
+          final uploadService = EncryptedFileUploadService();
+          final decryptedFile = await uploadService.downloadAndDecryptFile(
+            blossomUrl: result.blossomUrl,
+            nonceHex: result.nonce,
+            sharedKey: sharedKey,
+          );
+          
+          _logger.i('✅ Image downloaded and decrypted successfully: ${decryptedFile.length} bytes');
+          
+          // Cache the decrypted image for immediate display
+          cacheDecryptedFile(message.id!, decryptedFile, result);
+          
+        } catch (e) {
+          _logger.e('❌ Failed to auto-download image: $e');
+          // Store metadata without file data - user can manually download
+          cacheDecryptedFile(message.id!, null, result);
+        }
+      } else {
+        // Don't pre-download non-image files - let user choose when to download
+        // Just store the metadata for display
+        cacheDecryptedFile(message.id!, null, result);
+      }
+      
+    } catch (e) {
+      _logger.e('❌ Failed to process encrypted file: $e');
+      // Don't rethrow - message should still be displayed (maybe with error indicator)
+    }
+  }
+
+  /// Cache a decrypted file for quick display
+  void cacheDecryptedFile(
+    String messageId, 
+    Uint8List? fileData, 
+    EncryptedFileUploadResult metadata
+  ) {
+    if (fileData != null) {
+      _fileCache[messageId] = fileData;
+    }
+    _fileMetadata[messageId] = metadata;
+    _logger.d('🗄️ Cached file metadata for message: $messageId');
+  }
+
+  /// Get cached decrypted file data
+  Uint8List? getCachedFile(String messageId) {
+    return _fileCache[messageId];
+  }
+
+  /// Get cached file metadata
+  EncryptedFileUploadResult? getFileMetadata(String messageId) {
+    return _fileMetadata[messageId];
+  }
+
   /// Check if a message is an encrypted image message
   bool isEncryptedImageMessage(NostrEvent message) {
     try {
@@ -505,6 +586,19 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
       
       final jsonContent = jsonDecode(content);
       return jsonContent['type'] == 'image_encrypted';
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Check if a message is an encrypted file message
+  bool isEncryptedFileMessage(NostrEvent message) {
+    try {
+      final content = message.content;
+      if (content == null || !content.startsWith('{')) return false;
+      
+      final jsonContent = jsonDecode(content);
+      return jsonContent['type'] == 'file_encrypted';
     } catch (e) {
       return false;
     }

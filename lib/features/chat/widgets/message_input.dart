@@ -3,11 +3,12 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
-import 'package:mostro_mobile/services/encrypted_image_upload_service.dart';
+import 'package:mostro_mobile/services/encrypted_file_upload_service.dart';
+import 'package:mostro_mobile/services/file_validation_service.dart';
 
 class MessageInput extends ConsumerStatefulWidget {
   final String orderId;
@@ -28,10 +29,9 @@ class MessageInput extends ConsumerStatefulWidget {
 class _MessageInputState extends ConsumerState<MessageInput> {
   final TextEditingController _textController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
-  final ImagePicker _imagePicker = ImagePicker();
-  final EncryptedImageUploadService _imageUploadService = EncryptedImageUploadService();
+  final EncryptedFileUploadService _fileUploadService = EncryptedFileUploadService();
   
-  bool _isUploadingImage = false; // For loading indicator
+  bool _isUploadingFile = false; // For loading indicator
 
   @override
   void initState() {
@@ -66,39 +66,43 @@ class _MessageInputState extends ConsumerState<MessageInput> {
     }
   }
 
-  // Handle image selection, encryption and upload
-  Future<void> _selectAndUploadImage() async {
+  // Handle file selection, encryption and upload
+  Future<void> _selectAndUploadFile() async {
     try {
       setState(() {
-        _isUploadingImage = true;
+        _isUploadingFile = true;
       });
 
-      // Show image picker modal
-      final pickedFile = await _imagePicker.pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 85, // Compress for faster upload
+      // Show native file picker
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: FileValidationService.getSupportedExtensions()
+            .map((ext) => ext.substring(1)) // Remove the dot from extensions
+            .toList(),
+        allowMultiple: false,
       );
 
-      if (pickedFile != null) {
+      if (result != null && result.files.single.path != null) {
+        final file = File(result.files.single.path!);
+        
         // Get shared key for this order/chat
         final sharedKey = await _getSharedKeyForOrder(widget.orderId);
         
-        // Upload encrypted image to Blossom
-        final result = await _imageUploadService.uploadEncryptedImage(
-          imageFile: File(pickedFile.path),
+        // Upload encrypted file to Blossom
+        final uploadResult = await _fileUploadService.uploadEncryptedFile(
+          file: file,
           sharedKey: sharedKey,
-          filename: pickedFile.name,
         );
         
-        // Send encrypted image message via NIP-59
-        await _sendEncryptedImageMessage(result);
+        // Send encrypted file message via NIP-59
+        await _sendEncryptedFileMessage(uploadResult);
       }
     } catch (e) {
       // Show error to user
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error uploading image: $e'),
+            content: Text('Error uploading file: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -106,7 +110,7 @@ class _MessageInputState extends ConsumerState<MessageInput> {
     } finally {
       if (mounted) {
         setState(() {
-          _isUploadingImage = false;
+          _isUploadingFile = false;
         });
       }
     }
@@ -119,19 +123,19 @@ class _MessageInputState extends ConsumerState<MessageInput> {
     return await chatNotifier.getSharedKey();
   }
 
-  // Send encrypted image message via NIP-59 gift wrap
-  Future<void> _sendEncryptedImageMessage(EncryptedImageUploadResult result) async {
+  // Send encrypted file message via NIP-59 gift wrap
+  Future<void> _sendEncryptedFileMessage(EncryptedFileUploadResult result) async {
     try {
       // Create JSON content for the rumor
-      final imageMessageJson = jsonEncode(result.toJson());
+      final fileMessageJson = jsonEncode(result.toJson());
       
       // Send via existing chat system (will be wrapped in NIP-59)
       await ref
           .read(chatRoomsProvider(widget.orderId).notifier)
-          .sendMessage(imageMessageJson);
+          .sendMessage(fileMessageJson);
           
     } catch (e) {
-      throw Exception('Failed to send encrypted image message: $e');
+      throw Exception('Failed to send encrypted file message: $e');
     }
   }
 
@@ -175,7 +179,7 @@ class _MessageInputState extends ConsumerState<MessageInput> {
                     ),
                   ),
                   child: IconButton(
-                    icon: _isUploadingImage
+                    icon: _isUploadingFile
                         ? SizedBox(
                             width: 20,
                             height: 20,
@@ -185,11 +189,11 @@ class _MessageInputState extends ConsumerState<MessageInput> {
                             ),
                           )
                         : Icon(
-                            Icons.add,
+                            Icons.attach_file,
                             color: AppTheme.cream1,
                             size: 20,
                           ),
-                    onPressed: _isUploadingImage ? null : _selectAndUploadImage,
+                    onPressed: _isUploadingFile ? null : _selectAndUploadFile,
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                   ),

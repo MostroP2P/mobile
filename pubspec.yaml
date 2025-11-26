@@ -91,6 +91,10 @@ dependencies:
   
   # ChaCha20-Poly1305 encryption
   pointycastle: ^3.9.1
+  
+  # File picker for documents, videos, etc.
+  file_picker: ^8.0.0+1
+  open_file: ^3.3.2
 
 
 dev_dependencies:
