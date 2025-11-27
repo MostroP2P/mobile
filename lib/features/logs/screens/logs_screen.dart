@@ -23,9 +23,35 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
   Level? _selectedLevel;
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+  bool _showScrollToTop = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    if (_scrollController.hasClients) {
+      final showButton = _scrollController.offset > 200;
+      if (showButton != _showScrollToTop) {
+        setState(() => _showScrollToTop = showButton);
+      }
+    }
+  }
+
+  void _scrollToTop() {
+    _scrollController.animateTo(
+      0,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+    );
+  }
 
   @override
   void dispose() {
+    _scrollController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -51,9 +77,11 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
     final allLogs = MemoryLogOutput.instance.getAllLogs();
     final logs = _filterLogs(allLogs);
 
-    return Scaffold(
-      backgroundColor: AppTheme.backgroundDark,
-      appBar: AppBar(
+    return Stack(
+      children: [
+        Scaffold(
+          backgroundColor: AppTheme.backgroundDark,
+          appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
@@ -73,19 +101,36 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          _buildStatsHeader(allLogs.length, logs.length),
-          _buildSearchBar(),
-          _buildFilterChips(),
-          Expanded(
-            child: logs.isEmpty
-                ? _buildEmptyState()
-                : _buildLogsList(logs),
+          body: Column(
+            children: [
+              _buildStatsHeader(allLogs.length, logs.length),
+              _buildSearchBar(),
+              _buildFilterChips(),
+              Expanded(
+                child: logs.isEmpty
+                    ? _buildEmptyState()
+                    : _buildLogsList(logs),
+              ),
+              if (allLogs.isNotEmpty) _buildActionButtons(),
+            ],
           ),
-          if (allLogs.isNotEmpty) _buildActionButtons(),
-        ],
-      ),
+        ),
+        if (_showScrollToTop)
+          Positioned(
+            right: 16,
+            bottom: 100,
+            child: FloatingActionButton(
+              mini: true,
+              backgroundColor: AppTheme.activeColor,
+              onPressed: _scrollToTop,
+              child: const Icon(
+                Icons.arrow_upward,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+          ),
+      ],
     );
   }
 
@@ -242,9 +287,10 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
 
   Widget _buildLogsList(List<LogEntry> logs) {
     return ListView.builder(
+      controller: _scrollController,
       itemCount: logs.length,
       itemBuilder: (context, index) {
-        final log = logs[index];
+        final log = logs[logs.length - 1 - index];
         return _buildLogItem(log);
       },
     );

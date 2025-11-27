@@ -44,7 +44,7 @@ class Config {
   static int notificationId = 38383;
 
   // Logger configuration
-  static const int logMaxEntries = 5000;
-  static const int logBatchDeleteSize = 500;
+  static const int logMaxEntries = 1000;
+  static const int logBatchDeleteSize = 100;
   static bool fullLogsInfo = true; // false = simple logs in console, true = full Logger format in console
 }
