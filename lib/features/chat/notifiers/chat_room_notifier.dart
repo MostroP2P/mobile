@@ -539,7 +539,6 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
           final uploadService = EncryptedFileUploadService();
           final decryptedFile = await uploadService.downloadAndDecryptFile(
             blossomUrl: result.blossomUrl,
-            nonceHex: result.nonce,
             sharedKey: sharedKey,
           );
           

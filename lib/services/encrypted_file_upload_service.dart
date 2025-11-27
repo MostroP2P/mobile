@@ -131,14 +131,13 @@ class EncryptedFileUploadService {
   }
 
   /// Download and decrypt file from Blossom
+  /// The nonce is automatically extracted from the encrypted blob
   Future<Uint8List> downloadAndDecryptFile({
     required String blossomUrl,
-    required String nonceHex,
     required Uint8List sharedKey,
   }) async {
     _logger.i('🔓 Starting encrypted file download and decryption...');
     _logger.d('URL: $blossomUrl');
-    _logger.d('Nonce: $nonceHex');
     
     try {
       // 1. Download encrypted blob from Blossom

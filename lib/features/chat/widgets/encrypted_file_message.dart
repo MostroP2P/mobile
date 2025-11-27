@@ -427,7 +427,6 @@ class _EncryptedFileMessageState extends ConsumerState<EncryptedFileMessage> {
       final uploadService = EncryptedFileUploadService();
       final decryptedFile = await uploadService.downloadAndDecryptFile(
         blossomUrl: metadata.blossomUrl,
-        nonceHex: metadata.nonce,
         sharedKey: sharedKey,
       );
 
