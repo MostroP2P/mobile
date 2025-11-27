@@ -114,13 +114,13 @@ class BlossomDownloadService {
   ) async {
     _logger.i('📥 Download with progress tracking: $blossomUrl');
 
+    final client = http.Client();
     try {
       final uri = Uri.parse(blossomUrl);
       final request = http.Request('GET', uri);
       request.headers['User-Agent'] = 'MostroMobile/1.0';
       request.headers['Accept'] = 'application/octet-stream, */*';
 
-      final client = http.Client();
       final response = await client.send(request).timeout(_timeout);
 
       if (response.statusCode != 200) {
@@ -142,8 +142,6 @@ class BlossomDownloadService {
         }
       }
 
-      client.close();
-
       final data = Uint8List.fromList(bytes);
       _logger.i('✅ Download with progress completed: ${data.length} bytes');
       return data;
@@ -154,6 +152,8 @@ class BlossomDownloadService {
         rethrow;
       }
       throw BlossomDownloadException('Network error: $e');
+    } finally {
+      client.close();
     }
   }
 }
