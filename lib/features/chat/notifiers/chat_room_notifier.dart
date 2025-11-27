@@ -388,14 +388,24 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
       throw Exception('Session or shared key not available for orderId: $orderId');
     }
     
-    // Convert from NostrKeyPairs to Uint8List (32 bytes)
-    final sharedKeyBytes = Uint8List(32);
     final hexKey = session.sharedKey!.private; // This should be hex string
     
-    // Convert hex string to bytes
-    for (int i = 0; i < 32; i++) {
-      final byte = int.parse(hexKey.substring(i * 2, i * 2 + 2), radix: 16);
-      sharedKeyBytes[i] = byte;
+    // Validate hex key length
+    if (hexKey.length != 64) {
+      throw Exception('Invalid shared key length for orderId $orderId: expected 64 hex chars, got ${hexKey.length}');
+    }
+    
+    // Convert from NostrKeyPairs to Uint8List (32 bytes)
+    final sharedKeyBytes = Uint8List(32);
+    
+    try {
+      // Convert hex string to bytes
+      for (int i = 0; i < 32; i++) {
+        final byte = int.parse(hexKey.substring(i * 2, i * 2 + 2), radix: 16);
+        sharedKeyBytes[i] = byte;
+      }
+    } catch (e) {
+      throw Exception('Malformed shared key for orderId $orderId: invalid hex format - $e');
     }
     
     return sharedKeyBytes;
