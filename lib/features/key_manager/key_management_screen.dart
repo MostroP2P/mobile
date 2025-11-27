@@ -7,6 +7,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/key_manager/import_mnemonic_dialog.dart';
+import 'package:mostro_mobile/features/key_manager/providers/backup_confirmation_provider.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/features/restore/restore_manager.dart';
 import 'package:mostro_mobile/shared/providers.dart';
@@ -59,6 +60,61 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
     }
   }
 
+  Future<void> _showConfirmSavedDialog() async {
+    if (!mounted) return;
+    
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: AppTheme.backgroundCard,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          title: Text(
+            S.of(context)!.confirmBackup,
+            style: const TextStyle(
+              color: AppTheme.textPrimary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          content: Text(
+            S.of(context)!.confirmSavedWordsMessage,
+            style: const TextStyle(
+              color: AppTheme.textSecondary,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(
+                S.of(context)!.cancel,
+                style: const TextStyle(
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(
+                S.of(context)!.confirm,
+                style: const TextStyle(
+                  color: AppTheme.activeColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+    
+    if (confirmed == true && mounted) {
+      // Update the backup confirmation state through the provider
+      ref.read(backupConfirmationProvider.notifier).setBackupConfirmed(true);
+    }
+  }
+
   Future<void> _generateNewMasterKey() async {
     final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
     await sessionNotifier.reset();
@@ -74,6 +130,9 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
     final keyManager = ref.read(keyManagerProvider);
     await keyManager.generateAndStoreMasterKey();
 
+    // Reset the confirmation state for new user
+    ref.read(backupConfirmationProvider.notifier).setBackupConfirmed(false);
+
     await _loadKeys();
   }
 
@@ -84,6 +143,7 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
     if (importValue.isNotEmpty) {
       try {
         await keyManager.importMnemonic(importValue);
+        
         await _loadKeys();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -275,34 +335,79 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton.icon(
-                        onPressed: () {
-                          setState(() {
-                            _showSecretWords = !_showSecretWords;
-                          });
-                        },
-                        icon: Icon(
-                          _showSecretWords
-                              ? LucideIcons.eyeOff
-                              : LucideIcons.eye,
-                          size: 16,
-                          color: AppTheme.activeColor,
-                        ),
-                        label: Text(
-                          _showSecretWords
-                              ? S.of(context)!.hide
-                              : S.of(context)!.show,
-                          style: const TextStyle(
-                            color: AppTheme.activeColor,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
+                  Consumer(
+                    builder: (context, ref, child) {
+                      final isBackupConfirmed = ref.watch(backupConfirmationProvider);
+                      
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          // Left side: "Confirm backup" button
+                          if (isBackupConfirmed)
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  LucideIcons.check,
+                                  size: 16,
+                                  color: AppTheme.textSecondary,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  S.of(context)!.backupConfirmed,
+                                  style: const TextStyle(
+                                    color: AppTheme.textSecondary,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            )
+                          else
+                            TextButton.icon(
+                              onPressed: _showConfirmSavedDialog,
+                              icon: const Icon(
+                                LucideIcons.bookmark,
+                                size: 16,
+                                color: AppTheme.activeColor,
+                              ),
+                              label: Text(
+                                S.of(context)!.confirmBackup,
+                                style: const TextStyle(
+                                  color: AppTheme.activeColor,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          
+                          // Right side: Show/Hide button
+                          TextButton.icon(
+                            onPressed: () {
+                              setState(() {
+                                _showSecretWords = !_showSecretWords;
+                              });
+                            },
+                            icon: Icon(
+                              _showSecretWords
+                                  ? LucideIcons.eyeOff
+                                  : LucideIcons.eye,
+                              size: 16,
+                              color: AppTheme.activeColor,
+                            ),
+                            label: Text(
+                              _showSecretWords
+                                  ? S.of(context)!.hide
+                                  : S.of(context)!.show,
+                              style: const TextStyle(
+                                color: AppTheme.activeColor,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                    ],
+                        ],
+                      );
+                    },
                   ),
                 ],
               ),
@@ -818,6 +923,9 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
     if (mnemonic != null && mnemonic.isNotEmpty) {
       final restoreService = ref.read(restoreServiceProvider);
       await restoreService.importMnemonicAndRestore(mnemonic);
+      
+      // Mark backup as confirmed for imported account (user already has it backed up)
+      ref.read(backupConfirmationProvider.notifier).setBackupConfirmed(true);
     }
   }
 }
