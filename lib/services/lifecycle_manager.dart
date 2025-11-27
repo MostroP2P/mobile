@@ -88,12 +88,12 @@ class LifecycleManager extends WidgetsBindingObserver {
   Future<void> _checkPendingFCMEvents() async {
     try {
       final sharedPrefs = SharedPreferencesAsync();
+      
+      // SharedPreferencesAsync always reads fresh values
       final hasPending = await sharedPrefs.getBool('fcm.pending_fetch') ?? false;
 
       if (hasPending) {
         _logger.i('Pending FCM events detected - processing now');
-
-        await sharedPrefs.setBool('fcm.pending_fetch', false);
 
         final settings = ref.read(settingsProvider);
         final relays = settings.relays;
@@ -105,11 +105,15 @@ class LifecycleManager extends WidgetsBindingObserver {
 
         _logger.i('Fetching new events from ${relays.length} relays');
         await fetchAndProcessNewEvents(relays: relays);
+        
+        // Only clear flag after successful processing
+        await sharedPrefs.setBool('fcm.pending_fetch', false);
         _logger.i('Successfully processed pending FCM events');
       }
     } catch (e, stackTrace) {
       _logger.e('Error processing pending FCM events: $e');
       _logger.e('Stack trace: $stackTrace');
+      // Flag remains set so it will be retried
     }
   }
 

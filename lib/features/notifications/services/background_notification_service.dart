@@ -1,6 +1,3 @@
-/// Background notification service - processes Nostr events for push notifications
-library;
-
 import 'dart:convert';
 import 'dart:math';
 

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
@@ -14,6 +16,9 @@ class FCMService {
   static const String _fcmTopic = 'mostro_notifications';
 
   bool _isInitialized = false;
+  
+  StreamSubscription<String>? _tokenRefreshSub;
+  StreamSubscription<RemoteMessage>? _foregroundMsgSub;
 
   bool get isInitialized => _isInitialized;
 
@@ -128,7 +133,10 @@ class FCMService {
   }
 
   void _setupTokenRefreshListener() {
-    _messaging.onTokenRefresh.listen(
+    // Cancel existing subscription if any
+    _tokenRefreshSub?.cancel();
+    
+    _tokenRefreshSub = _messaging.onTokenRefresh.listen(
       (newToken) {
         _logger.i('FCM token refreshed: ${newToken.substring(0, 20)}...');
         _saveToken(newToken);
@@ -140,7 +148,10 @@ class FCMService {
   }
 
   void _setupForegroundMessageHandler() {
-    FirebaseMessaging.onMessage.listen(
+    // Cancel existing subscription if any
+    _foregroundMsgSub?.cancel();
+    
+    _foregroundMsgSub = FirebaseMessaging.onMessage.listen(
       (RemoteMessage message) async {
         _logger.i('Received foreground FCM message');
 
@@ -195,6 +206,11 @@ class FCMService {
   }
 
   void dispose() {
+    _logger.i('Disposing FCM service');
+    _tokenRefreshSub?.cancel();
+    _foregroundMsgSub?.cancel();
+    _tokenRefreshSub = null;
+    _foregroundMsgSub = null;
     _isInitialized = false;
   }
 }
