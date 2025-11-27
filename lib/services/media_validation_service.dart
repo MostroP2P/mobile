@@ -1,12 +1,11 @@
 import 'dart:typed_data';
 import 'package:image/image.dart' as img;
 import 'package:mime/mime.dart';
+import 'package:logger/logger.dart';
 
 enum SupportedImageType {
   jpeg,
   png,
-  gif,
-  webp,
 }
 
 extension SupportedImageTypeExtension on SupportedImageType {
@@ -16,10 +15,6 @@ extension SupportedImageTypeExtension on SupportedImageType {
         return 'image/jpeg';
       case SupportedImageType.png:
         return 'image/png';
-      case SupportedImageType.gif:
-        return 'image/gif';
-      case SupportedImageType.webp:
-        return 'image/webp';
     }
   }
 
@@ -29,18 +24,12 @@ extension SupportedImageTypeExtension on SupportedImageType {
         return 'jpg';
       case SupportedImageType.png:
         return 'png';
-      case SupportedImageType.gif:
-        return 'gif';
-      case SupportedImageType.webp:
-        return 'webp';
     }
   }
 
   static const List<SupportedImageType> all = [
     SupportedImageType.jpeg,
     SupportedImageType.png,
-    SupportedImageType.gif,
-    SupportedImageType.webp,
   ];
 }
 
@@ -63,6 +52,8 @@ class MediaValidationResult {
 }
 
 class MediaValidationService {
+  static final Logger _logger = Logger();
+  
   /// Sanitizes and validates image exactly like whitenoise
   /// 1. Detects format from data (not extension)
   /// 2. Validates that it's a complete and valid image
@@ -70,6 +61,92 @@ class MediaValidationService {
   static Future<MediaValidationResult> validateAndSanitizeImage(
     Uint8List imageData,
   ) async {
+    return _sanitizeImageHeavy(imageData);
+  }
+  
+  /// Light image sanitization for better performance
+  /// 1. Detects format using magic bytes
+  /// 2. Basic integrity check via decode
+  /// 3. Strips metadata only (no heavy pixel validation)
+  /// 4. Quick re-encode with minimal quality loss
+  static Future<MediaValidationResult> validateAndSanitizeImageLight(
+    Uint8List imageData,
+  ) async {
+    _logger.i('📸 Light image sanitization started: ${imageData.length} bytes');
+    
+    if (imageData.isEmpty) {
+      throw MediaValidationException('File is empty');
+    }
+
+    // STEP 1: Detect format using magic bytes
+    SupportedImageType? detectedType;
+    
+    // Use mime package for initial detection
+    final mimeType = lookupMimeType('', headerBytes: imageData);
+    
+    switch (mimeType) {
+      case 'image/jpeg':
+        detectedType = SupportedImageType.jpeg;
+        break;
+      case 'image/png':
+        detectedType = SupportedImageType.png;
+        break;
+      default:
+        throw MediaValidationException(
+          'Unsupported image format: $mimeType. Supported formats: ${SupportedImageTypeExtension.all.map((t) => t.mimeType).join(", ")}'
+        );
+    }
+
+    // STEP 2: Basic integrity check via decode (no pixel validation)
+    img.Image? decodedImage;
+    try {
+      decodedImage = img.decodeImage(imageData);
+      if (decodedImage == null) {
+        throw MediaValidationException(
+          'Invalid or corrupted ${detectedType.mimeType} image: Could not decode'
+        );
+      }
+    } catch (e) {
+      throw MediaValidationException(
+        'Invalid or corrupted ${detectedType.mimeType} image: $e'
+      );
+    }
+
+    // STEP 3: Quick re-encode to strip metadata with minimal quality loss
+    Uint8List sanitizedData;
+    try {
+      switch (detectedType) {
+        case SupportedImageType.jpeg:
+          // Use quality 95 to minimize quality loss while stripping EXIF
+          sanitizedData = Uint8List.fromList(img.encodeJpg(decodedImage, quality: 95));
+          break;
+        case SupportedImageType.png:
+          // PNG is lossless, so no quality concerns
+          sanitizedData = Uint8List.fromList(img.encodePng(decodedImage));
+          break;
+      }
+    } catch (e) {
+      throw MediaValidationException('Failed to re-encode image: $e');
+    }
+
+    _logger.i('✅ Light image sanitization completed: ${sanitizedData.length} bytes');
+    
+    return MediaValidationResult(
+      imageType: detectedType,
+      mimeType: detectedType.mimeType,
+      extension: detectedType.extension,
+      validatedData: sanitizedData,
+      width: decodedImage.width,
+      height: decodedImage.height,
+    );
+  }
+  
+  /// Heavy image sanitization (original method) for maximum security
+  static Future<MediaValidationResult> _sanitizeImageHeavy(
+    Uint8List imageData,
+  ) async {
+    _logger.i('🔒 Heavy image sanitization started: ${imageData.length} bytes');
+    
     if (imageData.isEmpty) {
       throw MediaValidationException('File is empty');
     }
@@ -86,12 +163,6 @@ class MediaValidationService {
         break;
       case 'image/png':
         detectedType = SupportedImageType.png;
-        break;
-      case 'image/gif':
-        detectedType = SupportedImageType.gif;
-        break;
-      case 'image/webp':
-        detectedType = SupportedImageType.webp;
         break;
       default:
         throw MediaValidationException(
@@ -125,18 +196,12 @@ class MediaValidationService {
         case SupportedImageType.png:
           sanitizedData = Uint8List.fromList(img.encodePng(decodedImage));
           break;
-        case SupportedImageType.gif:
-          sanitizedData = Uint8List.fromList(img.encodeGif(decodedImage));
-          break;
-        case SupportedImageType.webp:
-          // Convert WebP to PNG (WebP encoding not available in this image package version)
-          sanitizedData = Uint8List.fromList(img.encodePng(decodedImage));
-          detectedType = SupportedImageType.png;
-          break;
       }
     } catch (e) {
       throw MediaValidationException('Failed to re-encode image: $e');
     }
+
+    _logger.i('✅ Heavy image sanitization completed: ${sanitizedData.length} bytes');
 
     return MediaValidationResult(
       imageType: detectedType,
@@ -146,6 +211,11 @@ class MediaValidationService {
       width: decodedImage.width,
       height: decodedImage.height,
     );
+  }
+  
+  /// Check if image type is supported in the new format restrictions
+  static bool isImageTypeSupported(String mimeType) {
+    return mimeType == 'image/jpeg' || mimeType == 'image/png';
   }
 }
 

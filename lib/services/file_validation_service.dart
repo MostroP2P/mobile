@@ -31,23 +31,17 @@ class FileValidationService {
   static const Map<String, List<String>> supportedTypes = {
     'image': [
       'image/jpeg',
-      'image/jpg', 
-      'image/png',
-      'image/gif',
-      'image/webp'
+      'image/png'
     ],
     'video': [
       'video/mp4',
       'video/quicktime',
-      'video/x-msvideo', // AVI
-      'video/webm'
+      'video/x-msvideo' // AVI
     ],
     'document': [
       'application/pdf',
       'application/msword', // DOC
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // DOCX
-      'text/plain',
-      'text/rtf'
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document' // DOCX
     ]
   };
   
@@ -56,21 +50,16 @@ class FileValidationService {
     '.jpg': 'image/jpeg',
     '.jpeg': 'image/jpeg',
     '.png': 'image/png',
-    '.gif': 'image/gif',
-    '.webp': 'image/webp',
     
     // Videos
     '.mp4': 'video/mp4',
     '.mov': 'video/quicktime',
     '.avi': 'video/x-msvideo',
-    '.webm': 'video/webm',
     
     // Documents
     '.pdf': 'application/pdf',
     '.doc': 'application/msword',
-    '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    '.txt': 'text/plain',
-    '.rtf': 'text/rtf'
+    '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
   };
 
   /// Validate file for secure P2P exchange
@@ -106,6 +95,9 @@ class FileValidationService {
     if (fileType == null) {
       throw FileValidationException('Unsupported file type: $mimeType');
     }
+    
+    // 5. Perform type-specific validation
+    await _performTypeSpecificValidation(fileData, mimeType, fileType);
     
     _logger.i('✅ File validation successful: $fileType ($mimeType)');
     
@@ -158,6 +150,144 @@ class FileValidationService {
   /// Get supported file extensions for file picker
   static List<String> getSupportedExtensions() {
     return extensionToMime.keys.toList();
+  }
+  
+  /// Perform type-specific validation based on file type
+  static Future<void> _performTypeSpecificValidation(
+    Uint8List fileData, 
+    String mimeType, 
+    String fileType
+  ) async {
+    switch (fileType) {
+      case 'document':
+        if (mimeType == 'application/pdf') {
+          await _validatePdfStructure(fileData);
+        } else if (mimeType == 'application/msword' || 
+                   mimeType == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+          await _validateDocumentStructure(fileData, mimeType);
+        }
+        break;
+      case 'video':
+        await _validateVideoStructure(fileData, mimeType);
+        break;
+      // Images are handled by MediaValidationService
+      case 'image':
+        break;
+    }
+  }
+  
+  /// Validate PDF structure and security
+  static Future<void> _validatePdfStructure(Uint8List fileData) async {
+    _logger.d('🔍 Validating PDF structure...');
+    
+    // Check PDF header
+    if (fileData.length < 8) {
+      throw FileValidationException('PDF file too small or corrupted');
+    }
+    
+    // PDF files must start with %PDF-
+    final header = String.fromCharCodes(fileData.take(5));
+    if (!header.startsWith('%PDF-')) {
+      throw FileValidationException('Invalid PDF header');
+    }
+    
+    // Check for PDF trailer (should end with %%EOF or whitespace)
+    final tail = String.fromCharCodes(fileData.skip(fileData.length - 20).take(20));
+    if (!tail.contains('%%EOF')) {
+      _logger.w('⚠️ PDF may be incomplete (no %%EOF trailer found)');
+    }
+    
+    _logger.d('✅ PDF structure validation passed');
+  }
+  
+  /// Validate DOC/DOCX structure and check for macros
+  static Future<void> _validateDocumentStructure(Uint8List fileData, String mimeType) async {
+    _logger.d('🔍 Validating document structure...');
+    
+    if (mimeType == 'application/msword') {
+      // DOC file validation - check OLE header
+      if (fileData.length < 8) {
+        throw FileValidationException('DOC file too small or corrupted');
+      }
+      
+      // DOC files start with OLE signature: D0CF11E0A1B11AE1
+      final oleHeader = fileData.take(8).toList();
+      final expectedHeader = [0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1];
+      
+      bool headerMatches = true;
+      for (int i = 0; i < 8; i++) {
+        if (oleHeader[i] != expectedHeader[i]) {
+          headerMatches = false;
+          break;
+        }
+      }
+      
+      if (!headerMatches) {
+        throw FileValidationException('Invalid DOC file format');
+      }
+      
+      // Basic macro detection for DOC files
+      final fileString = String.fromCharCodes(fileData);
+      if (fileString.contains('VBA') || fileString.contains('Microsoft Visual Basic')) {
+        throw FileValidationException('Document contains macros which are not allowed for security reasons');
+      }
+    } 
+    else if (mimeType == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+      // DOCX file validation - check ZIP header
+      if (fileData.length < 4) {
+        throw FileValidationException('DOCX file too small or corrupted');
+      }
+      
+      // DOCX files are ZIP archives, should start with PK header
+      if (fileData[0] != 0x50 || fileData[1] != 0x4B) {
+        throw FileValidationException('Invalid DOCX file format (not a ZIP archive)');
+      }
+      
+      // Basic macro detection - look for vbaProject.bin in the ZIP structure
+      final fileString = String.fromCharCodes(fileData);
+      if (fileString.contains('vbaProject.bin') || fileString.contains('macros/')) {
+        throw FileValidationException('Document contains macros which are not allowed for security reasons');
+      }
+    }
+    
+    _logger.d('✅ Document structure validation passed');
+  }
+  
+  /// Validate video file structure
+  static Future<void> _validateVideoStructure(Uint8List fileData, String mimeType) async {
+    _logger.d('🔍 Validating video structure...');
+    
+    if (fileData.length < 12) {
+      throw FileValidationException('Video file too small or corrupted');
+    }
+    
+    switch (mimeType) {
+      case 'video/mp4':
+        // MP4 files should have 'ftyp' box near the beginning
+        final header = String.fromCharCodes(fileData.skip(4).take(4));
+        if (header != 'ftyp') {
+          throw FileValidationException('Invalid MP4 file structure');
+        }
+        break;
+      case 'video/quicktime':
+        // MOV files also use 'ftyp' box or 'moov' box
+        final header1 = String.fromCharCodes(fileData.skip(4).take(4));
+        final header2 = String.fromCharCodes(fileData.skip(8).take(4));
+        if (header1 != 'ftyp' && header1 != 'moov' && header2 != 'moov') {
+          throw FileValidationException('Invalid MOV file structure');
+        }
+        break;
+      case 'video/x-msvideo':
+        // AVI files start with RIFF header followed by AVI 
+        final riff = String.fromCharCodes(fileData.take(4));
+        final avi = String.fromCharCodes(fileData.skip(8).take(3));
+        if (riff != 'RIFF' || avi != 'AVI') {
+          throw FileValidationException('Invalid AVI file structure');
+        }
+        break;
+    }
+    
+    _logger.d('✅ Video structure validation passed');
   }
   
   /// Get file type icon

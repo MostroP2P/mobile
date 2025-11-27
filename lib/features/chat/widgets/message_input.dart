@@ -4,11 +4,14 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:mime/mime.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/services/encrypted_file_upload_service.dart';
+import 'package:mostro_mobile/services/encrypted_image_upload_service.dart';
 import 'package:mostro_mobile/services/file_validation_service.dart';
+import 'package:mostro_mobile/services/media_validation_service.dart';
 
 class MessageInput extends ConsumerStatefulWidget {
   final String orderId;
@@ -30,6 +33,7 @@ class _MessageInputState extends ConsumerState<MessageInput> {
   final TextEditingController _textController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   final EncryptedFileUploadService _fileUploadService = EncryptedFileUploadService();
+  final EncryptedImageUploadService _imageUploadService = EncryptedImageUploadService();
   
   bool _isUploadingFile = false; // For loading indicator
 
@@ -84,18 +88,35 @@ class _MessageInputState extends ConsumerState<MessageInput> {
 
       if (result != null && result.files.single.path != null) {
         final file = File(result.files.single.path!);
+        final filename = result.files.single.name;
         
         // Get shared key for this order/chat
         final sharedKey = await _getSharedKeyForOrder(widget.orderId);
         
-        // Upload encrypted file to Blossom
-        final uploadResult = await _fileUploadService.uploadEncryptedFile(
-          file: file,
-          sharedKey: sharedKey,
-        );
+        // Determine if this is an image or other file type
+        final fileData = await file.readAsBytes();
+        final isImage = await _isImageFile(fileData, filename);
         
-        // Send encrypted file message via NIP-59
-        await _sendEncryptedFileMessage(uploadResult);
+        if (isImage) {
+          // Handle as image with light sanitization
+          final uploadResult = await _imageUploadService.uploadEncryptedImage(
+            imageFile: file,
+            sharedKey: sharedKey,
+            filename: filename,
+          );
+          
+          // Send encrypted image message via NIP-59
+          await _sendEncryptedImageMessage(uploadResult);
+        } else {
+          // Handle as document/video with validation
+          final uploadResult = await _fileUploadService.uploadEncryptedFile(
+            file: file,
+            sharedKey: sharedKey,
+          );
+          
+          // Send encrypted file message via NIP-59
+          await _sendEncryptedFileMessage(uploadResult);
+        }
       }
     } catch (e) {
       // Show error to user
@@ -114,6 +135,29 @@ class _MessageInputState extends ConsumerState<MessageInput> {
         });
       }
     }
+  }
+
+  // Determine if a file is an image based on content and extension
+  Future<bool> _isImageFile(Uint8List fileData, String filename) async {
+    try {
+      // Use mime detection to check if it's an image
+      final mimeType = await _getMimeType(fileData, filename);
+      return MediaValidationService.isImageTypeSupported(mimeType ?? '');
+    } catch (e) {
+      return false;
+    }
+  }
+  
+  // Get MIME type for a file
+  Future<String?> _getMimeType(Uint8List fileData, String filename) async {
+    // First try magic bytes detection
+    final mimeFromBytes = lookupMimeType('', headerBytes: fileData);
+    if (mimeFromBytes != null) {
+      return mimeFromBytes;
+    }
+    
+    // Fallback to extension-based detection
+    return lookupMimeType(filename);
   }
 
   // Get shared key for this order/chat session
@@ -136,6 +180,22 @@ class _MessageInputState extends ConsumerState<MessageInput> {
           
     } catch (e) {
       throw Exception('Failed to send encrypted file message: $e');
+    }
+  }
+
+  // Send encrypted image message via NIP-59 gift wrap
+  Future<void> _sendEncryptedImageMessage(EncryptedImageUploadResult result) async {
+    try {
+      // Create JSON content for the rumor
+      final imageMessageJson = jsonEncode(result.toJson());
+      
+      // Send via existing chat system (will be wrapped in NIP-59)
+      await ref
+          .read(chatRoomsProvider(widget.orderId).notifier)
+          .sendMessage(imageMessageJson);
+          
+    } catch (e) {
+      throw Exception('Failed to send encrypted image message: $e');
     }
   }
 

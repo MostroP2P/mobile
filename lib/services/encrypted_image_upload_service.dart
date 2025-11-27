@@ -89,8 +89,8 @@ class EncryptedImageUploadService {
       final imageData = await imageFile.readAsBytes();
       _logger.d('Read image file: ${imageData.length} bytes');
       
-      // 2. Validate and sanitize (like whitenoise)
-      final validationResult = await MediaValidationService.validateAndSanitizeImage(
+      // 2. Validate and sanitize with light sanitization for better performance
+      final validationResult = await MediaValidationService.validateAndSanitizeImageLight(
         imageData
       );
       
