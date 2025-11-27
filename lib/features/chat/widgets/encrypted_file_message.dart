@@ -459,9 +459,18 @@ class _EncryptedFileMessageState extends ConsumerState<EncryptedFileMessage> {
         throw Exception('File not available');
       }
 
-      // Save file to temporary directory
+      // Save file to temporary directory with sanitized filename
       final tempDir = await getTemporaryDirectory();
-      final tempFile = File('${tempDir.path}/${metadata.filename}');
+      final sanitizedFilename = _sanitizeFilename(metadata.filename);
+      final tempFile = File('${tempDir.path}/$sanitizedFilename');
+      
+      // Verify the resolved path is still within the temp directory to prevent path traversal
+      final tempDirPath = tempDir.resolveSymbolicLinksSync();
+      final tempFilePath = tempFile.absolute.path;
+      if (!tempFilePath.startsWith('$tempDirPath${Platform.pathSeparator}')) {
+        throw Exception('Security error: Path traversal attempt detected in filename');
+      }
+      
       await tempFile.writeAsBytes(cachedFile);
 
       // Open file with system default app
@@ -506,6 +515,28 @@ class _EncryptedFileMessageState extends ConsumerState<EncryptedFileMessage> {
     if (bytes < 1024) return '${bytes}B';
     if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)}KB';
     return '${(bytes / (1024 * 1024)).toStringAsFixed(1)}MB';
+  }
+
+  /// Sanitize filename to prevent path traversal and other security issues
+  String _sanitizeFilename(String filename) {
+    // 1. Get basename only (remove any directory components)
+    final basename = filename.split(RegExp(r'[/\\]')).last;
+    
+    // 2. Remove dangerous characters including null bytes, control chars, and reserved chars
+    final cleaned = basename.replaceAll(RegExp(r'[<>:"|?*\x00-\x1F]'), '_');
+    
+    // 3. Limit length to reasonable size
+    final limited = cleaned.length > 100 ? cleaned.substring(0, 100) : cleaned;
+    
+    // 4. Ensure not empty and not Windows reserved names
+    if (limited.isEmpty || 
+        ['CON', 'PRN', 'AUX', 'NUL', 'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 
+         'COM6', 'COM7', 'COM8', 'COM9', 'LPT1', 'LPT2', 'LPT3', 'LPT4', 
+         'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9'].contains(limited.toUpperCase())) {
+      return 'file_${DateTime.now().millisecondsSinceEpoch}';
+    }
+    
+    return limited;
   }
 }
 
