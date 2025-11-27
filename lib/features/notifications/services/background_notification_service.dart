@@ -16,7 +16,6 @@ import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as mostro_action;
-import 'package:mostro_mobile/data/repositories/notification_state_storage.dart';
 import 'package:mostro_mobile/data/repositories/session_storage.dart';
 import 'package:mostro_mobile/features/key_manager/key_derivator.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager.dart';
@@ -55,34 +54,18 @@ void _onNotificationTap(NotificationResponse response) {
   }
 }
 
-/// Process and show local notification for a Nostr event
 Future<void> showLocalNotification(NostrEvent event) async {
-  final logger = Logger();
-
   try {
-    if (event.id == null) {
-      logger.w('Event has no ID, cannot check for duplicates');
-      return;
-    }
-
-    final notificationDb = await openMostroDatabase('notifications.db');
-    final notificationStateStorage = NotificationStateStorage(db: notificationDb);
-
-    final alreadyProcessed = await notificationStateStorage.isProcessed(event.id!);
-    if (alreadyProcessed) {
-      logger.d('Event ${event.id} already processed, skipping');
-      return;
-    }
-
     final mostroMessage = await _decryptAndProcessEvent(event);
     if (mostroMessage == null) return;
+    
 
     final sessions = await _loadSessionsFromDatabase();
     final matchingSession = sessions.cast<Session?>().firstWhere(
       (session) => session?.orderId == mostroMessage.id,
       orElse: () => null,
     );
-
+    
     final notificationData = await NotificationDataExtractor.extractFromMostroMessage(mostroMessage, null, session: matchingSession);
     if (notificationData == null || notificationData.isTemporary) return;
 
@@ -101,7 +84,7 @@ Future<void> showLocalNotification(NostrEvent event) async {
         enableVibration: true,
         ticker: notificationText.title,
         icon: '@drawable/ic_notification',
-        styleInformation: expandedText != null
+        styleInformation: expandedText != null 
             ? BigTextStyleInformation(expandedText, contentTitle: notificationText.title)
             : null,
         category: AndroidNotificationCategory.message,
@@ -124,12 +107,9 @@ Future<void> showLocalNotification(NostrEvent event) async {
       payload: mostroMessage.id,
     );
 
-    await notificationStateStorage.markAsProcessed(event.id!);
-
-    logger.i('Notification shown: ${notificationText.title} - ${notificationText.body}');
-  } catch (e, stackTrace) {
-    logger.e('Notification error: $e', error: e, stackTrace: stackTrace);
-    rethrow;
+    Logger().i('Shown: ${notificationText.title} - ${notificationText.body}');
+  } catch (e) {
+    Logger().e('Notification error: $e');
   }
 }
 
@@ -138,13 +118,32 @@ Future<MostroMessage?> _decryptAndProcessEvent(NostrEvent event) async {
   try {
     if (event.kind != 4 && event.kind != 1059) return null;
 
+    // Extract recipient from event
+    String? recipient = event.recipient;
+    
+    // For kind 1059 (gift-wrapped), recipient might be in 'p' tag
+    if ((recipient == null || recipient.isEmpty) && event.kind == 1059 && event.tags != null) {
+      final pTags = event.tags!.where((tag) => tag.isNotEmpty && tag[0] == 'p');
+      if (pTags.isNotEmpty && pTags.first.length > 1) {
+        recipient = pTags.first[1];
+      }
+    }
+
+    if (recipient == null || recipient.isEmpty) {
+      Logger().d('No recipient found for event ${event.id}');
+      return null;
+    }
+
     final sessions = await _loadSessionsFromDatabase();
     final matchingSession = sessions.cast<Session?>().firstWhere(
-      (s) => s?.tradeKey.public == event.recipient,
+      (s) => s?.tradeKey.public == recipient,
       orElse: () => null,
     );
 
-    if (matchingSession == null) return null;
+    if (matchingSession == null) {
+      Logger().d('No matching session found for recipient: ${recipient.substring(0, 16)}...');
+      return null;
+    }
 
     final decryptedEvent = await event.unWrap(matchingSession.tradeKey.private);
     if (decryptedEvent.content == null) return null;

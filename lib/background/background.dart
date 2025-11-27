@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/models/nostr_filter.dart';
-import 'package:mostro_mobile/data/repositories/notification_state_storage.dart';
+import 'package:mostro_mobile/data/repositories/event_storage.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/features/notifications/services/background_notification_service.dart' as notification_service;
 import 'package:mostro_mobile/services/nostr_service.dart';
@@ -24,8 +24,8 @@ Future<void> serviceMain(ServiceInstance service) async {
 
   final Map<String, Map<String, dynamic>> activeSubscriptions = {};
   final nostrService = NostrService();
-  final db = await openMostroDatabase('notifications.db');
-  final notificationStateStore = NotificationStateStorage(db: db);
+  final db = await openMostroDatabase('events.db');
+  final eventStore = EventStorage(db: db);
 
   service.on('app-foreground-status').listen((data) {
     isAppForeground = data?['is-foreground'] ?? isAppForeground;
@@ -75,7 +75,7 @@ Future<void> serviceMain(ServiceInstance service) async {
 
     subscription.listen((event) async {
       try {
-        if (await notificationStateStore.isProcessed(event.id!)) return;
+        if (await eventStore.hasItem(event.id!)) return;
         await notification_service.retryNotification(event);
       } catch (e) {
         Logger().e('Error processing event', error: e);

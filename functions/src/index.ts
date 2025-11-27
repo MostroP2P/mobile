@@ -7,7 +7,7 @@ import WebSocket from "ws";
 admin.initializeApp();
 
 const NOSTR_RELAYS = ["wss://relay.mostro.network"];
-const MOSTRO_PUBKEY = "0a537332f2d569059add3fd2e376e1d6b8c1e1b9f7a999ac2592b4afbba74a00";
+const MOSTRO_PUBKEY = "82fa8cb978b43c79b2156585bac2c011176a21d2aead6d9f7c575c005be88390";
 const FCM_TOPIC = "mostro_notifications";
 const SUBSCRIPTION_ID = "mostro-poller";
 

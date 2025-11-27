@@ -115,22 +115,22 @@ class LifecycleManager extends WidgetsBindingObserver {
 
   Future<void> _switchToBackground() async {
     try {
-      _isInBackground = true;
-      _logger.i("Switching to background");
-
       // Get the subscription manager
       final subscriptionManager = ref.read(subscriptionManagerProvider);
       final activeFilters = <NostrFilter>[];
-
+      
       // Get actual filters for each subscription type
       for (final type in SubscriptionType.values) {
         final filters = subscriptionManager.getActiveFilters(type);
         if (filters.isNotEmpty) {
+          _logger.d('Found ${filters.length} active filters for $type');
           activeFilters.addAll(filters);
         }
       }
 
       if (activeFilters.isNotEmpty) {
+        _isInBackground = true;
+        _logger.i("Switching to background");
         subscriptionManager.unsubscribeAll();
         // Transfer active subscriptions to background service
         final backgroundService = ref.read(backgroundServiceProvider);
