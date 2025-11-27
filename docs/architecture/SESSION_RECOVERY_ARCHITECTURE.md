@@ -22,7 +22,7 @@ The Session Recovery Architecture enables users to restore their complete tradin
 - **Complete State Recovery**: Restores all active orders, disputes, and trading sessions
 - **Cryptographic Security**: Uses BIP-39/BIP-32 standards for key derivation
 - **Trade Index Synchronization**: Maintains exact key sequence consistency
-- **Privacy Mode Support**: Respects full privacy settings during recovery
+- **Privacy Mode Support**: Recovery is supported in reputation mode only. Privacy mode is not supported because Mostrod cannot link order history requests to a user (this is the intended behavior)
 - **Atomic Operations**: All-or-nothing recovery with proper cleanup
 
 ## Core Components

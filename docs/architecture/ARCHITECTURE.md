@@ -161,7 +161,8 @@ Complete account restoration from 12-word mnemonic seed phrases with full state 
 - **Session Restoration**: Complete trading sessions recreated from Mostro backend
 - **Trade Index Sync**: Precise synchronization with last used trade key index  
 - **Order State Rebuild**: Full order history and dispute information recovery
-- **Privacy Mode Support**: Recovery works in both standard and full privacy modes
+- **Privacy Mode Support**: Recovery is supported in reputation mode only. Privacy mode is not supported because Mostrod cannot link order history requests to a user (this is the intended behavior)
+
 
 **Multi-Stage Process:**
 ```
