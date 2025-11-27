@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:logger/logger.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/data/models/dispute_chat.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
@@ -45,8 +45,7 @@ class DisputeChatState {
 class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
   final String disputeId;
   final Ref ref;
-  final _logger = Logger();
-  
+
   StreamSubscription<NostrEvent>? _subscription;
   ProviderSubscription<dynamic>? _sessionListener;
   bool _isInitialized = false;
@@ -57,7 +56,7 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
   Future<void> initialize() async {
     if (_isInitialized) return;
     
-    _logger.i('Initializing dispute chat for disputeId: $disputeId');
+    logger.i('Initializing dispute chat for disputeId: $disputeId');
     await _loadHistoricalMessages();
     await _subscribe();
     _isInitialized = true;
@@ -67,14 +66,14 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
   Future<void> _subscribe() async {
     final session = _getSessionForDispute();
     if (session == null) {
-      _logger.w('No session found for dispute: $disputeId');
+      logger.w('No session found for dispute: $disputeId');
       _listenForSession();
       return;
     }
 
     // Cancel existing subscription to prevent leaks and duplicate handlers
     if (_subscription != null) {
-      _logger.i('Cancelling previous subscription for dispute: $disputeId');
+      logger.i('Cancelling previous subscription for dispute: $disputeId');
       await _subscription!.cancel();
       _subscription = null;
     }
@@ -91,7 +90,7 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
     );
     
     _subscription = nostrService.subscribeToEvents(request).listen(_onChatEvent);
-    _logger.i('Subscribed to kind 1059 (Gift Wrap) for dispute: $disputeId');
+    logger.i('Subscribed to kind 1059 (Gift Wrap) for dispute: $disputeId');
   }
 
   /// Listen for session changes and subscribe when session is ready
@@ -100,19 +99,19 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
     _sessionListener?.close();
     _sessionListener = null;
     
-    _logger.i('Starting to listen for session list changes for dispute: $disputeId');
+    logger.i('Starting to listen for session list changes for dispute: $disputeId');
 
     // Watch the entire session list for changes
     _sessionListener = ref.listen<List<Session>>(
       sessionNotifierProvider,
       (previous, next) {
-        _logger.i('Session list changed, checking for dispute $disputeId match');
+        logger.i('Session list changed, checking for dispute $disputeId match');
         
         // Try to find a session that matches this dispute
         final session = _getSessionForDispute();
         if (session != null) {
           // Found a matching session, cancel listener and subscribe
-          _logger.i('Session found for dispute $disputeId, canceling listener and subscribing');
+          logger.i('Session found for dispute $disputeId, canceling listener and subscribing');
           _sessionListener?.close();
           _sessionListener = null;
           unawaited(_subscribe());
@@ -189,12 +188,12 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
           }
         }
       } catch (e) {
-        _logger.w('Failed to parse Mostro message: $e');
+        logger.w('Failed to parse Mostro message: $e');
         return;
       }
 
       if (messageText.isEmpty) {
-        _logger.w('Received empty message, skipping');
+        logger.w('Received empty message, skipping');
         return;
       }
 
@@ -204,16 +203,16 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
       // 2. The assigned admin/solver (dispute.adminPubkey)
       if (isFromAdmin) {
         if (dispute.adminPubkey == null) {
-          _logger.w('Rejecting message: No admin assigned yet for dispute $disputeId');
+          logger.w('Rejecting message: No admin assigned yet for dispute $disputeId');
           return;
         }
         
         if (senderPubkey != dispute.adminPubkey) {
-          _logger.w('SECURITY: Rejecting message from unauthorized pubkey: $senderPubkey (expected admin: ${dispute.adminPubkey})');
+          logger.w('SECURITY: Rejecting message from unauthorized pubkey: $senderPubkey (expected admin: ${dispute.adminPubkey})');
           return;
         }
         
-        _logger.i('Validated message from authorized admin: $senderPubkey');
+        logger.i('Validated message from authorized admin: $senderPubkey');
       }
 
       // Generate event ID if not present (can happen with admin messages)
@@ -254,16 +253,16 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
       deduped.sort((a, b) => a.timestamp.compareTo(b.timestamp));
       
       state = state.copyWith(messages: deduped);
-      _logger.i('Added dispute chat message for dispute: $disputeId (from ${isFromAdmin ? "admin" : "user"})');
+      logger.i('Added dispute chat message for dispute: $disputeId (from ${isFromAdmin ? "admin" : "user"})');
     } catch (e, stackTrace) {
-      _logger.e('Error processing dispute chat event: $e', stackTrace: stackTrace);
+      logger.e('Error processing dispute chat event: $e', stackTrace: stackTrace);
     }
   }
 
   /// Load historical messages from storage
   Future<void> _loadHistoricalMessages() async {
     try {
-      _logger.i('Loading historical messages for dispute: $disputeId');
+      logger.i('Loading historical messages for dispute: $disputeId');
       state = state.copyWith(isLoading: true);
 
       final eventStore = ref.read(eventStorageProvider);
@@ -277,7 +276,7 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
         sort: [SortOrder('created_at', true)], // Oldest first
       );
 
-      _logger.i('Found ${chatEvents.length} historical messages for dispute: $disputeId');
+      logger.i('Found ${chatEvents.length} historical messages for dispute: $disputeId');
 
       // Get dispute to validate admin pubkey
       final dispute = await ref.read(disputeDetailsProvider(disputeId).future);
@@ -297,13 +296,13 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
           if (!isFromUser) {
             // Message is from admin, validate pubkey
             if (dispute?.adminPubkey == null) {
-              _logger.w('Filtering historical message: No admin assigned yet');
+              logger.w('Filtering historical message: No admin assigned yet');
               filteredCount++;
               continue;
             }
             
             if (messagePubkey != null && messagePubkey != dispute!.adminPubkey) {
-              _logger.w('SECURITY: Filtering historical message from unauthorized pubkey: $messagePubkey (expected: ${dispute.adminPubkey})');
+              logger.w('SECURITY: Filtering historical message from unauthorized pubkey: $messagePubkey (expected: ${dispute.adminPubkey})');
               filteredCount++;
               continue;
             }
@@ -321,17 +320,17 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
             error: eventData['error'] as String?,
           ));
         } catch (e) {
-          _logger.w('Failed to parse dispute chat message: $e');
+          logger.w('Failed to parse dispute chat message: $e');
         }
       }
 
       if (filteredCount > 0) {
-        _logger.i('Filtered $filteredCount unauthorized messages from dispute $disputeId');
+        logger.i('Filtered $filteredCount unauthorized messages from dispute $disputeId');
       }
 
       state = state.copyWith(messages: messages, isLoading: false);
     } catch (e, stackTrace) {
-      _logger.e('Error loading historical messages: $e', stackTrace: stackTrace);
+      logger.e('Error loading historical messages: $e', stackTrace: stackTrace);
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
@@ -341,26 +340,26 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
   Future<void> sendMessage(String text) async {
     final session = _getSessionForDispute();
     if (session == null) {
-      _logger.w('Cannot send message: Session is null for dispute: $disputeId');
+      logger.w('Cannot send message: Session is null for dispute: $disputeId');
       return;
     }
 
     // Get dispute to find admin pubkey and orderId
     final dispute = await ref.read(disputeDetailsProvider(disputeId).future);
     if (dispute == null) {
-      _logger.w('Cannot send message: Dispute not found');
+      logger.w('Cannot send message: Dispute not found');
       return;
     }
     
     if (dispute.adminPubkey == null) {
-      _logger.w('Cannot send message: Admin pubkey not found for dispute');
+      logger.w('Cannot send message: Admin pubkey not found for dispute');
       return;
     }
     
     // Get orderId from session
     final orderId = session.orderId;
     if (orderId == null) {
-      _logger.w('Cannot send message: Session orderId is null');
+      logger.w('Cannot send message: Session orderId is null');
       return;
     }
 
@@ -369,7 +368,7 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
     final rumorTimestamp = DateTime.now();
 
     try {
-      _logger.i('Sending Gift Wrap DM to admin: ${dispute.adminPubkey}');
+      logger.i('Sending Gift Wrap DM to admin: ${dispute.adminPubkey}');
       
       // Add message to state with isPending=true (optimistic UI)
       final pendingMessage = DisputeChat(
@@ -415,14 +414,14 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
         dispute.adminPubkey!,
       );
 
-      _logger.i('Sending gift wrap from ${session.tradeKey.public} to ${dispute.adminPubkey}');
+      logger.i('Sending gift wrap from ${session.tradeKey.public} to ${dispute.adminPubkey}');
 
       // Publish to network - await to catch network/initialization errors
       try {
         await ref.read(nostrServiceProvider).publishEvent(wrappedEvent);
-        _logger.i('Dispute message sent successfully to admin for dispute: $disputeId');
+        logger.i('Dispute message sent successfully to admin for dispute: $disputeId');
       } catch (publishError, publishStack) {
-        _logger.e('Failed to publish dispute message: $publishError', stackTrace: publishStack);
+        logger.e('Failed to publish dispute message: $publishError', stackTrace: publishStack);
         
         // Mark message as failed
         final failedMessage = pendingMessage.copyWith(
@@ -454,7 +453,7 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
             },
           );
         } catch (storageError) {
-          _logger.e('Failed to store error state: $storageError');
+          logger.e('Failed to store error state: $storageError');
         }
         return; // Exit early, don't mark as success
       }
@@ -483,7 +482,7 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
         },
       );
     } catch (e, stackTrace) {
-      _logger.e('Failed to send dispute message: $e', stackTrace: stackTrace);
+      logger.e('Failed to send dispute message: $e', stackTrace: stackTrace);
       
       // Mark message as failed in state
       final failedMessage = state.messages
@@ -520,7 +519,7 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
           },
         );
       } catch (storageError) {
-        _logger.e('Failed to store error state: $storageError');
+        logger.e('Failed to store error state: $storageError');
       }
     }
   }
@@ -529,7 +528,7 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
   Session? _getSessionForDispute() {
     try {
       final sessions = ref.read(sessionNotifierProvider);
-      _logger.i('Looking for session for dispute: $disputeId, available sessions: ${sessions.length}');
+      logger.i('Looking for session for dispute: $disputeId, available sessions: ${sessions.length}');
       
       // Search through all sessions to find the one that has this dispute
       for (final session in sessions) {
@@ -539,7 +538,7 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
             
             // Check if this order state contains our dispute
             if (orderState.dispute?.disputeId == disputeId) {
-              _logger.i('Found session for dispute: $disputeId with orderId: ${session.orderId}');
+              logger.i('Found session for dispute: $disputeId with orderId: ${session.orderId}');
               return session;
             }
           } catch (e) {
@@ -549,10 +548,10 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
         }
       }
       
-      _logger.w('No session found for dispute: $disputeId');
+      logger.w('No session found for dispute: $disputeId');
       return null;
     } catch (e, stackTrace) {
-      _logger.e('Error getting session for dispute: $e', stackTrace: stackTrace);
+      logger.e('Error getting session for dispute: $e', stackTrace: stackTrace);
       return null;
     }
   }

@@ -1191,5 +1191,67 @@
   "restoreFinalizing": "Finalizing restore...",
   "restoreCompleted": "Restore completed!",
   "restoreError": "Restore error",
-  "restoreErrorMessage": "Error restoring user data. Please check your connection and try again."
+  "restoreErrorMessage": "Error restoring user data. Please check your connection and try again.",
+
+  "@_comment_logs_screen": "Logs screen and export functionality",
+  "logsReport": "Logs",
+  "viewAndExportLogs": "View and export application logs",
+  "clearLogs": "Clear Logs",
+  "totalLogs": "{count} logs",
+  "@totalLogs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "maxEntries": "Max {max} entries",
+  "@maxEntries": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "noLogsAvailable": "No logs available",
+  "logsWillAppearHere": "Logs will appear here as you use the app",
+  "saveToDevice": "Save to Device",
+  "shareReport": "Share",
+  "logsExportTitle": "Mostro Logs Export",
+  "exportFailed": "Failed to export logs",
+  "saveFailed": "Failed to save logs",
+  "logsSavedTo": "Logs saved to: {path}",
+  "@logsSavedTo": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "clearLogsConfirmTitle": "Clear all logs?",
+  "clearLogsConfirmMessage": "This action cannot be undone. All logs will be permanently deleted.",
+  "clear": "Clear",
+  "cancel": "Cancel",
+
+  "@_comment_dev_tools": "Developer Tools Section",
+  "devTools": "Dev Tools",
+  "devToolsWarning": "Advanced features for technical users",
+  "devToolsDescription": "Access diagnostic tools and logs",
+  "logStorageLocation": "Log Storage Location",
+  "storageLocationUpdated": "Storage location updated",
+  "defaultDownloads": "Default (Downloads)",
+
+  "@_comment_logs_filters": "Logs Filtering and Search",
+  "filterByLevel": "Filter by Level",
+  "allLevels": "All Levels",
+  "errors": "Errors",
+  "warnings": "Warnings",
+  "info": "Info",
+  "debug": "Debug",
+  "searchLogs": "Search logs...",
+  "searchInLogs": "Search in logs",
+  "noLogsMatchFilter": "No logs match the current filter",
+  "clearFilters": "Clear Filters",
+  "copyLog": "Copy log",
+  "logCopied": "Log copied to clipboard"
 }

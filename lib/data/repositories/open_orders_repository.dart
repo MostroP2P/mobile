@@ -2,10 +2,10 @@ import 'dart:async';
 import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:dart_nostr/nostr/model/request/filter.dart';
 import 'package:dart_nostr/nostr/model/request/request.dart';
-import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/repositories/order_repository_interface.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
 
 const orderEventKind = 38383;
@@ -19,7 +19,6 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
   final StreamController<List<NostrEvent>> _eventStreamController =
       StreamController.broadcast();
   final Map<String, NostrEvent> _events = {};
-  final _logger = Logger();
   StreamSubscription<NostrEvent>? _subscription;
 
   NostrEvent? get mostroInstance => _mostroInstance;
@@ -54,11 +53,11 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
         _eventStreamController.add(_events.values.toList());
       } else if (event.type == 'info' &&
           event.pubkey == _settings.mostroPublicKey) {
-        _logger.i('Mostro instance info loaded: $event');
+        logger.i('Repository: mostro instance info loaded - $event');
         _mostroInstance = event;
       }
     }, onError: (error) {
-      _logger.e('Error in order subscription: $error');
+      logger.e('Repository: order subscription failed - $error');
       // Optionally, you could auto-resubscribe here if desired
     });
 
@@ -123,7 +122,7 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
 
   void updateSettings(Settings settings) {
     if (_settings.mostroPublicKey != settings.mostroPublicKey) {
-      _logger.i('Mostro instance changed, updating...');
+      logger.i('Repository: mostro instance changed, updating');
       _settings = settings.copyWith();
       _events.clear();
       _subscribeToOrders();
@@ -133,14 +132,14 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
   }
 
   void reloadData() {
-    _logger.i('Reloading repository data');
+    logger.i('Repository: reloading data');
     _subscribeToOrders();
     _emitEvents();
   }
 
   /// Clear in-memory order cache and reload from relays (used during account restore)
   void clearCache() {
-    _logger.i('Clearing order cache and reloading');
+    logger.i('Repository: clearing order cache and reloading');
     _events.clear();
     _subscribeToOrders(); // Resubscribe to reload orders from relays
   }

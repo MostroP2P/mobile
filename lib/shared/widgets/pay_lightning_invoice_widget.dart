@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:logger/logger.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
@@ -10,7 +10,6 @@ import 'package:mostro_mobile/generated/l10n.dart';
 class PayLightningInvoiceWidget extends StatefulWidget {
   final VoidCallback onSubmit;
   final VoidCallback onCancel;
-  final Logger logger = Logger();
   final String lnInvoice;
   final int sats;
   final String fiatAmount;
@@ -75,7 +74,7 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
             ElevatedButton.icon(
               onPressed: () {
                 Clipboard.setData(ClipboardData(text: widget.lnInvoice));
-                widget.logger
+                logger
                     .i('Copied LN Invoice to clipboard: ${widget.lnInvoice}');
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -100,17 +99,17 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
                   final uri = Uri.parse('lightning:${widget.lnInvoice}');
                   if (await canLaunchUrl(uri)) {
                     await launchUrl(uri);
-                    widget.logger.i(
+                    logger.i(
                         'Launched Lightning wallet with invoice: ${widget.lnInvoice}');
                   } else {
                     // Fallback to generic share if no Lightning apps available
                     // lightning: URL scheme is not necessary then
                     await Share.share(widget.lnInvoice);
-                    widget.logger.i(
+                    logger.i(
                         'Shared LN Invoice via share sheet: ${widget.lnInvoice}');
                   }
                 } catch (e) {
-                  widget.logger.e('Failed to share LN Invoice: $e');
+                  logger.e('Failed to share LN Invoice: $e');
                   if (mounted) {
                     // ignore: use_build_context_synchronously
                     ScaffoldMessenger.of(context).showSnackBar(

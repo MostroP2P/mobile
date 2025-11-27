@@ -4,6 +4,7 @@ import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models.dart';
 import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/features/notifications/providers/notifications_provider.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/features/order/notfiers/abstract_mostro_notifier.dart';
 import 'package:mostro_mobile/services/mostro_service.dart';
@@ -22,7 +23,7 @@ class OrderNotifier extends AbstractMostroNotifier {
 
   @override
   Future<void> handleEvent(MostroMessage event, {bool bypassTimestampGate = false}) async {
-    logger.i('OrderNotifier received event: ${event.action} for order $orderId');
+    logger.i('Order: received event ${event.action} for order $orderId');
 
     // Handle the event normally - timeout/cancellation logic is now in AbstractMostroNotifier
     await super.handleEvent(event, bypassTimestampGate: bypassTimestampGate);
@@ -37,7 +38,7 @@ class OrderNotifier extends AbstractMostroNotifier {
       final storage = ref.read(mostroStorageProvider);
       final messages = await storage.getAllMessagesForOrderId(orderId);
       if (messages.isEmpty) {
-        logger.w('No messages found for order $orderId');
+        logger.w('Order: no messages found for order $orderId');
         return;
       }
 
@@ -58,10 +59,10 @@ class OrderNotifier extends AbstractMostroNotifier {
       state = currentState;
 
       logger.i(
-          'Synced order $orderId to state: ${state.status} - ${state.action}');
+          'Order: synced order $orderId to state: ${state.status} - ${state.action}');
     } catch (e, stack) {
       logger.e(
-        'Error syncing order state for $orderId',
+        'Order: syncing failed - $e',
         error: e,
         stackTrace: stack,
       );
@@ -163,11 +164,11 @@ class OrderNotifier extends AbstractMostroNotifier {
           final publicEvent = ref.read(eventProvider(orderId));
           final currentSession = ref.read(sessionProvider(orderId));
           
-          if (publicEvent?.status == Status.canceled && 
+          if (publicEvent?.status == Status.canceled &&
               state.status == Status.pending &&
               currentSession != null) {
-            
-            logger.i('AUTOMATIC EXPIRATION: Order $orderId expired, removing from My Trades');
+
+            logger.i('Order: automatic expiration - order $orderId expired, removing from My Trades');
             
             // Delete session - order disappears from My Trades
             final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
@@ -181,7 +182,7 @@ class OrderNotifier extends AbstractMostroNotifier {
           }
         } catch (e, stack) {
           logger.e(
-            'Error handling automatic cancellation for order $orderId',
+            'Order: automatic cancellation handling failed - $e',
             error: e,
             stackTrace: stack,
           );

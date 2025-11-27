@@ -1169,6 +1169,68 @@
   "restoreFinalizing": "Finalizando restauración...",
   "restoreCompleted": "¡Restauración completada!",
   "restoreError": "Error de restauración",
-  "restoreErrorMessage": "Error al restaurar datos del usuario. Verifica tu conexión e inténtalo más tarde."
+  "restoreErrorMessage": "Error al restaurar datos del usuario. Verifica tu conexión e inténtalo más tarde.",
+
+  "@_comment_logs_screen": "Pantalla de logs y funcionalidad de exportación",
+  "logsReport": "Registros",
+  "viewAndExportLogs": "Ver y exportar registros de la aplicación",
+  "clearLogs": "Limpiar Registros",
+  "totalLogs": "{count} registros",
+  "@totalLogs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "maxEntries": "Máx {max} entradas",
+  "@maxEntries": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "noLogsAvailable": "No hay registros disponibles",
+  "logsWillAppearHere": "Los registros aparecerán aquí mientras usas la aplicación",
+  "saveToDevice": "Guardar en Dispositivo",
+  "shareReport": "Compartir",
+  "logsExportTitle": "Exportar Registros de Mostro",
+  "exportFailed": "Error al exportar registros",
+  "saveFailed": "Error al guardar registros",
+  "logsSavedTo": "Registros guardados en: {path}",
+  "@logsSavedTo": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "clearLogsConfirmTitle": "¿Limpiar todos los registros?",
+  "clearLogsConfirmMessage": "Esta acción no se puede deshacer. Todos los registros se eliminarán permanentemente.",
+  "clear": "Limpiar",
+  "cancel": "Cancelar",
+
+  "@_comment_dev_tools": "Sección de Herramientas de Desarrollador",
+  "devTools": "Herramientas Dev",
+  "devToolsWarning": "Funciones avanzadas para usuarios técnicos",
+  "devToolsDescription": "Acceder a herramientas de diagnóstico y registros",
+  "logStorageLocation": "Ubicación de Almacenamiento de Registros",
+  "storageLocationUpdated": "Ubicación de almacenamiento actualizada",
+  "defaultDownloads": "Predeterminado (Descargas)",
+
+  "@_comment_logs_filters": "Filtrado y Búsqueda de Registros",
+  "filterByLevel": "Filtrar por Nivel",
+  "allLevels": "Todos los Niveles",
+  "errors": "Errores",
+  "warnings": "Advertencias",
+  "info": "Info",
+  "debug": "Debug",
+  "searchLogs": "Buscar registros...",
+  "searchInLogs": "Buscar en registros",
+  "noLogsMatchFilter": "No hay registros que coincidan con el filtro actual",
+  "clearFilters": "Limpiar Filtros",
+  "copyLog": "Copiar registro",
+  "logCopied": "Registro copiado al portapapeles"
 
 }
