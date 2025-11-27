@@ -28,12 +28,46 @@ class _EncryptedImageMessageState extends ConsumerState<EncryptedImageMessage> {
   String? _errorMessage;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadImageIfNeeded();
+    });
+  }
+
+  void _loadImageIfNeeded() {
+    if (!mounted) return;
+    
+    final chatNotifier = ref.read(chatRoomsProvider(widget.orderId).notifier);
+    final messageId = widget.message.id;
+    if (messageId == null) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Invalid message: missing ID';
+        });
+      }
+      return;
+    }
+    
+    final cachedImage = chatNotifier.getCachedImage(messageId);
+    if (cachedImage == null && !_isLoading) {
+      _loadImage();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final chatNotifier = ref.read(chatRoomsProvider(widget.orderId).notifier);
     
+    // Handle null message ID defensively
+    final messageId = widget.message.id;
+    if (messageId == null) {
+      return _buildErrorWidget();
+    }
+    
     // Check if image is already cached
-    final cachedImage = chatNotifier.getCachedImage(widget.message.id!);
-    final imageMetadata = chatNotifier.getImageMetadata(widget.message.id!);
+    final cachedImage = chatNotifier.getCachedImage(messageId);
+    final imageMetadata = chatNotifier.getImageMetadata(messageId);
 
     if (cachedImage != null && imageMetadata != null) {
       return _buildImageWidget(cachedImage, imageMetadata);
@@ -47,8 +81,7 @@ class _EncryptedImageMessageState extends ConsumerState<EncryptedImageMessage> {
       return _buildErrorWidget();
     }
 
-    // Try to load the image
-    _loadImage();
+    // Show loading widget while waiting for initState to trigger the load
     return _buildLoadingWidget();
   }
 
@@ -241,6 +274,16 @@ class _EncryptedImageMessageState extends ConsumerState<EncryptedImageMessage> {
 
   Future<void> _loadImage() async {
     if (_isLoading) return;
+    
+    final messageId = widget.message.id;
+    if (messageId == null) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Invalid message: missing ID';
+        });
+      }
+      return;
+    }
 
     setState(() {
       _isLoading = true;
@@ -275,7 +318,7 @@ class _EncryptedImageMessageState extends ConsumerState<EncryptedImageMessage> {
       );
 
       // Cache the image
-      chatNotifier.cacheDecryptedImage(widget.message.id!, decryptedImage, imageData);
+      chatNotifier.cacheDecryptedImage(messageId, decryptedImage, imageData);
 
       if (mounted) {
         setState(() {
