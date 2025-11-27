@@ -4,8 +4,8 @@ import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
@@ -22,7 +22,6 @@ class OrderInfo {
 }
 
 class DeepLinkService {
-  final Logger _logger = Logger();
   final AppLinks _appLinks = AppLinks();
 
   // Stream controller for deep link events
@@ -41,21 +40,21 @@ class DeepLinkService {
       // Listen for incoming deep links when app is already running
       _appLinks.uriLinkStream.listen(
         (Uri uri) {
-          _logger.i('Deep link received while app running: $uri');
+          logger.i('DeepLink: received while app running - $uri');
           _handleDeepLink(uri);
         },
         onError: (Object err) {
-          _logger.e('Deep link stream error: $err');
+          logger.e('DeepLink: stream error - $err');
         },
       );
 
       // NOTE: We don't process the initial link here to avoid GoRouter conflicts
       // The initial link will be handled by the app initialization in app.dart
-      
+
       _isInitialized = true;
-      _logger.i('DeepLinkService initialized successfully');
+      logger.i('DeepLinkService: initialized successfully');
     } catch (e) {
-      _logger.e('Failed to initialize DeepLinkService: $e');
+      logger.e('DeepLinkService: initialization failed - $e');
       rethrow;
     }
   }
@@ -72,7 +71,7 @@ class DeepLinkService {
     BuildContext context,
   ) async {
     try {
-      _logger.i('Processing mostro link: $url');
+      logger.i('DeepLink: processing mostro link $url');
 
       // Validate URL format
       if (!NostrUtils.isValidMostroUrl(url)) {
@@ -98,7 +97,7 @@ class DeepLinkService {
         return DeepLinkResult.error(S.of(context)!.deepLinkNoRelays);
       }
 
-      _logger.i('Parsed order ID: $orderId, relays: $relays');
+      logger.i('DeepLink: parsed order ID $orderId with ${relays.length} relays');
 
       // Fetch the order info directly using the order ID
       final fetchedOrderInfo = await _fetchOrderInfoById(
@@ -117,7 +116,7 @@ class DeepLinkService {
 
       return DeepLinkResult.success(fetchedOrderInfo);
     } catch (e) {
-      _logger.e('Error processing mostro link: $e');
+      logger.e('DeepLink: processing failed - $e');
       return DeepLinkResult.error('Failed to process deep link: $e');
     }
   }
@@ -148,7 +147,7 @@ class DeepLinkService {
 
       // If no events found and we have default relays, try those
       if (events.isEmpty) {
-        _logger.i('Order not found in specified relays, trying default relays');
+        logger.i('DeepLink: order not found in specified relays - trying default relays');
         final defaultEvents = await nostrService.fetchEvents(filter);
         events.addAll(defaultEvents);
       }
@@ -177,7 +176,7 @@ class DeepLinkService {
 
       return null;
     } catch (e) {
-      _logger.e('Error fetching order info by ID: $e');
+      logger.e('DeepLink: fetch order info failed - $e');
       return null;
     }
   }
@@ -196,9 +195,8 @@ class DeepLinkService {
   /// Navigates to the appropriate screen for the given order
   void navigateToOrder(GoRouter router, OrderInfo orderInfo) {
     final route = getNavigationRoute(orderInfo);
-    _logger.i(
-        'Navigating to: $route (Order: ${orderInfo.orderId}, Type: ${orderInfo.orderType.value})');
-    
+    logger.i('Navigation: routing to $route - order ${orderInfo.orderId}, type ${orderInfo.orderType.value}');
+
     // Use post-frame callback to ensure navigation happens after the current frame
     // This prevents GoRouter assertion failures during app lifecycle transitions
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -208,15 +206,15 @@ class DeepLinkService {
         if (context != null && context.mounted) {
           router.push(route);
         } else {
-          _logger.w('Router context is not available for navigation to: $route');
+          logger.w('Navigation: router context not available for $route');
         }
       } catch (e) {
-        _logger.e('Error navigating to order: $e');
+        logger.e('Navigation: failed to navigate to order - $e');
         // Fallback: try using go instead of push if push fails
         try {
           router.go(route);
         } catch (fallbackError) {
-          _logger.e('Fallback navigation also failed: $fallbackError');
+          logger.e('Navigation: fallback also failed - $fallbackError');
         }
       }
     });

@@ -29,7 +29,7 @@ import 'package:mostro_mobile/features/logs/screens/logs_screen.dart';
 import 'package:mostro_mobile/features/walkthrough/providers/first_run_provider.dart';
 import 'package:mostro_mobile/shared/widgets/navigation_listener_widget.dart';
 import 'package:mostro_mobile/shared/widgets/notification_listener_widget.dart';
-import 'package:logger/logger.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
 GoRouter createRouter(WidgetRef ref) {
@@ -60,7 +60,7 @@ GoRouter createRouter(WidgetRef ref) {
       );
     },
     errorBuilder: (context, state) {
-      final logger = Logger();
+
       logger.w('GoRouter error: ${state.error}');
       
       // For errors, show a generic error page

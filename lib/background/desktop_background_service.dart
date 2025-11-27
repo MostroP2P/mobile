@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:isolate';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter/services.dart';
-import 'package:logger/logger.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/data/models/nostr_filter.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
@@ -28,7 +28,7 @@ class DesktopBackgroundService implements BackgroundService {
     BackgroundIsolateBinaryMessenger.ensureInitialized(token);
 
     final nostrService = NostrService();
-    final logger = Logger();
+
     bool isAppForeground = true;
 
     isolateReceivePort.listen((message) async {

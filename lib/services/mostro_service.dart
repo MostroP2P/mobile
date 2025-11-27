@@ -28,7 +28,7 @@ class MostroService {
     _ordersSubscription = ref.read(subscriptionManagerProvider).orders.listen(
       _onData,
       onError: (error, stackTrace) {
-        logger.e('Error in orders subscription',
+        logger.e('Subscription: orders subscription error - $error',
             error: error, stackTrace: stackTrace);
       },
       cancelOnError: false,
@@ -37,7 +37,7 @@ class MostroService {
 
   void dispose() {
     _ordersSubscription?.cancel();
-    logger.i('MostroService disposed');
+    logger.i('MostroService: disposed successfully');
   }
   
   //IMPORTANT : The app always use trade index 1 for restore-related messages
@@ -111,7 +111,7 @@ class MostroService {
       (s) => s.tradeKey.public == event.recipient,
     );
     if (matchingSession == null) {
-      logger.w('No matching session found for recipient: ${event.recipient}');
+      logger.w('Session: no match found for recipient ${event.recipient}');
       return;
     }
     final privateKey = matchingSession.tradeKey.private;
@@ -125,13 +125,13 @@ class MostroService {
       
       // Ensure result is a non-empty List before accessing elements
       if (result is! List || result.isEmpty) {
-        logger.w('Received empty or invalid payload, skipping');
+        logger.w('Event: received empty or invalid payload - skipping');
         return;
       }
 
       // Skip dispute chat messages (they have "dm" key and are handled by DisputeChatNotifier)
       if (result[0] is Map && (result[0] as Map).containsKey('dm')) {
-        logger.i('Skipping dispute chat message (handled by DisputeChatNotifier)');
+        logger.i('Event: skipping dispute chat message - handled by DisputeChatNotifier');
         return;
       }
 
@@ -148,13 +148,11 @@ class MostroService {
       // This handles cases where admin messages might not have an id in the decrypted event
       final messageKey = decryptedEvent.id ?? event.id ?? 'msg_${DateTime.now().millisecondsSinceEpoch}';
       await messageStorage.addMessage(messageKey, msg);
-      logger.i(
-        'Received DM, Event ID: ${decryptedEvent.id ?? event.id} with payload: ${decryptedEvent.content}',
-      );
+      logger.i('Message: received DM event ${decryptedEvent.id ?? event.id}');
 
       await _maybeLinkChildOrder(msg, matchingSession);
     } catch (e) {
-      logger.e('Error processing event', error: e);
+      logger.e('Event: processing failed - $e', error: e);
     }
   }
 
@@ -178,9 +176,7 @@ class MostroService {
 
     ref.read(orderNotifierProvider(message.id!).notifier).subscribe();
 
-    logger.i(
-      'Linked child order ${message.id} to parent ${session.parentOrderId}',
-    );
+    logger.i('Order: linked child ${message.id} to parent ${session.parentOrderId}');
   }
 
   Future<void> submitOrder(MostroMessage order) async {
@@ -290,9 +286,7 @@ class MostroService {
     final remaining = maxAmount - selectedAmount;
 
     if (remaining < minAmount) {
-      logger.i(
-        '[$callerLabel] Range order $orderId exhausted (remaining $remaining < min $minAmount); skipping child preparation.',
-      );
+      logger.i('Order: [$callerLabel] range order $orderId exhausted - remaining $remaining < min $minAmount');
       return null;
     }
 
@@ -309,13 +303,9 @@ class MostroService {
         parentOrderId: orderId,
         role: currentSession.role!,
       );
-      logger.i(
-        '[$callerLabel] Prepared child session for $orderId using key index $nextKeyIndex',
-      );
+      logger.i('Session: [$callerLabel] prepared child for $orderId using key index $nextKeyIndex');
     } else {
-      logger.w(
-        '[$callerLabel] Unable to prepare child session for $orderId; session or role missing.',
-      );
+      logger.w('Session: [$callerLabel] unable to prepare child for $orderId - session or role missing');
     }
 
     return NextTrade(

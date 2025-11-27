@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:logger/logger.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/core/models/relay_list_event.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription.dart';
@@ -18,7 +18,7 @@ import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 class SubscriptionManager {
   final Ref ref;
   final Map<SubscriptionType, Subscription> _subscriptions = {};
-  final _logger = Logger();
+
   late final ProviderSubscription _sessionListener;
 
   final _ordersController = StreamController<NostrEvent>.broadcast();
@@ -44,7 +44,7 @@ class SubscriptionManager {
       },
       fireImmediately: false,
       onError: (error, stackTrace) {
-        _logger.e('Error in session listener',
+        logger.e('Error in session listener',
             error: error, stackTrace: stackTrace);
       },
     );
@@ -60,20 +60,20 @@ class SubscriptionManager {
     try {
       final existingSessions = ref.read(sessionNotifierProvider);
       if (existingSessions.isNotEmpty) {
-        _logger.i('Initializing subscriptions for ${existingSessions.length} existing sessions');
+        logger.i('Initializing subscriptions for ${existingSessions.length} existing sessions');
         _updateAllSubscriptions(existingSessions);
       } else {
-        _logger.i('No existing sessions found during SubscriptionManager initialization');
+        logger.i('No existing sessions found during SubscriptionManager initialization');
       }
     } catch (e, stackTrace) {
-      _logger.e('Error initializing existing sessions',
+      logger.e('Error initializing existing sessions',
           error: e, stackTrace: stackTrace);
     }
   }
 
   void _updateAllSubscriptions(List<Session> sessions) {
     if (sessions.isEmpty) {
-      _logger.i('No sessions available, clearing all subscriptions');
+      logger.i('No sessions available, clearing all subscriptions');
       _clearAllSubscriptions();
       return;
     }
@@ -91,7 +91,7 @@ class SubscriptionManager {
 
   void _updateSubscription(SubscriptionType type, List<Session> sessions) {
     if (sessions.isEmpty) {
-      _logger.i('No sessions for $type subscription');
+      logger.i('No sessions for $type subscription');
       unsubscribeByType(type);
       return;
     }
@@ -108,10 +108,10 @@ class SubscriptionManager {
         filter: filter,
       );
 
-      _logger
+      logger
           .i('Subscription created for $type with ${sessions.length} sessions');
     } catch (e, stackTrace) {
-      _logger.e('Failed to create $type subscription',
+      logger.e('Failed to create $type subscription',
           error: e, stackTrace: stackTrace);
     }
   }
@@ -164,7 +164,7 @@ class SubscriptionManager {
           break;
       }
     } catch (e, stackTrace) {
-      _logger.e('Error handling $type event', error: e, stackTrace: stackTrace);
+      logger.e('Error handling $type event', error: e, stackTrace: stackTrace);
     }
   }
 
@@ -182,7 +182,7 @@ class SubscriptionManager {
     final streamSubscription = stream.listen(
       (event) => _handleEvent(type, event),
       onError: (error, stackTrace) {
-        _logger.e('Error in $type subscription',
+        logger.e('Error in $type subscription',
             error: error, stackTrace: stackTrace);
       },
       cancelOnError: false,
@@ -270,9 +270,9 @@ class SubscriptionManager {
 
       _subscribeToRelayList(filter);
 
-      _logger.i('Subscribed to relay list for Mostro: $mostroPubkey');
+      logger.i('Subscribed to relay list for Mostro: $mostroPubkey');
     } catch (e, stackTrace) {
-      _logger.e('Failed to subscribe to Mostro relay list',
+      logger.e('Failed to subscribe to Mostro relay list',
           error: e, stackTrace: stackTrace);
     }
   }
@@ -295,7 +295,7 @@ class SubscriptionManager {
         }
       },
       onError: (error, stackTrace) {
-        _logger.e('Error in relay list subscription',
+        logger.e('Error in relay list subscription',
             error: error, stackTrace: stackTrace);
       },
       cancelOnError: false,
@@ -320,7 +320,7 @@ class SubscriptionManager {
   /// Unsubscribes from Mostro relay list events
   void unsubscribeFromMostroRelayList() {
     unsubscribeByType(SubscriptionType.relayList);
-    _logger.i('Unsubscribed from Mostro relay list');
+    logger.i('Unsubscribed from Mostro relay list');
   }
 
   void dispose() {

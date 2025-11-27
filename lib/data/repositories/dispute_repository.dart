@@ -1,6 +1,6 @@
 import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:logger/logger.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/data/models/dispute.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
@@ -13,14 +13,13 @@ class DisputeRepository {
   final NostrService _nostrService;
   final String _mostroPubkey;
   final Ref _ref;
-  final Logger _logger = Logger();
 
   DisputeRepository(this._nostrService, this._mostroPubkey, this._ref);
 
   /// Create a new dispute for an order
   Future<bool> createDispute(String orderId) async {
     try {
-      _logger.d('Creating dispute for order: $orderId');
+      logger.d('Repository: creating dispute for order $orderId');
 
       // Get user's session for the order to get the trade key
       final sessions = _ref.read(sessionNotifierProvider);
@@ -29,14 +28,14 @@ class DisputeRepository {
           );
 
       if (session == null) {
-        _logger
-            .e('No session found for order: $orderId, cannot create dispute');
+        logger
+            .e('Repository: no session found for order $orderId, cannot create dispute');
         return false;
       }
 
       // Validate trade key is present
       if (session.tradeKey.private.isEmpty) {
-        _logger.e('Trade key is empty for order: $orderId, cannot create dispute');
+        logger.e('Repository: trade key is empty for order $orderId, cannot create dispute');
         return false;
       }
 
@@ -55,17 +54,17 @@ class DisputeRepository {
       // Send the wrapped event to Mostro
       await _nostrService.publishEvent(event);
 
-      _logger.d('Successfully sent dispute creation for order: $orderId');
+      logger.d('Repository: successfully sent dispute creation for order $orderId');
       return true;
     } catch (e) {
-      _logger.e('Failed to create dispute: $e');
+      logger.e('Repository: create dispute failed - $e');
       return false;
     }
   }
 
   Future<List<Dispute>> getUserDisputes() async {
     try {
-      _logger.d('Getting user disputes from sessions');
+      logger.d('Repository: getting user disputes from sessions');
 
       // Get all user sessions and check their order states for disputes
       final sessions = _ref.read(sessionNotifierProvider);
@@ -81,38 +80,38 @@ class DisputeRepository {
               disputes.add(orderState.dispute!);
             }
           } catch (e) {
-            _logger.w('Failed to get order state for order ${session.orderId}: $e');
+            logger.w('Repository: failed to get order state for order ${session.orderId} - $e');
           }
         }
       }
 
-      _logger.d('Found ${disputes.length} disputes from sessions');
+      logger.d('Repository: found ${disputes.length} disputes from sessions');
       return disputes;
     } catch (e) {
-      _logger.e('Failed to get user disputes: $e');
+      logger.e('Repository: get user disputes failed - $e');
       return [];
     }
   }
 
   Future<Dispute?> getDispute(String disputeId) async {
     try {
-      _logger.d('Getting dispute by ID: $disputeId');
-      
+      logger.d('Repository: getting dispute by ID $disputeId');
+
       // Get all user disputes and find the one with matching ID
       final disputes = await getUserDisputes();
       final dispute = disputes.firstWhereOrNull(
         (d) => d.disputeId == disputeId,
       );
-      
+
       if (dispute != null) {
-        _logger.d('Found dispute with ID: $disputeId');
+        logger.d('Repository: found dispute with ID $disputeId');
       } else {
-        _logger.w('No dispute found with ID: $disputeId');
+        logger.w('Repository: no dispute found with ID $disputeId');
       }
-      
+
       return dispute;
     } catch (e) {
-      _logger.e('Failed to get dispute by ID $disputeId: $e');
+      logger.e('Repository: get dispute by ID failed for $disputeId - $e');
       return null;
     }
   }

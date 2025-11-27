@@ -1,4 +1,4 @@
-import 'package:logger/logger.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/data/models.dart';
 import 'package:mostro_mobile/data/enums.dart';
 
@@ -11,7 +11,6 @@ class OrderState {
   final Dispute? dispute;
   final Peer? peer;
   final PaymentFailed? paymentFailed;
-  final _logger = Logger();
 
   OrderState({
     required this.status,
@@ -89,7 +88,7 @@ class OrderState {
   }
 
   OrderState updateWith(MostroMessage message) {
-    _logger.i('Updating OrderState with Action: ${message.action}');
+    logger.i('Updating OrderState with Action: ${message.action}');
 
     // Preserve the current state entirely for cantDo messages - they are informational only
     if (message.action == Action.cantDo) {
@@ -101,13 +100,13 @@ class OrderState {
         message.action, message.getPayload<Order>()?.status);
 
     // DEBUG: Log status mapping
-    _logger.i('Status mapping: ${message.action} → $newStatus');
+    logger.i('Status mapping: ${message.action} → $newStatus');
 
     // Preserve PaymentRequest correctly
     PaymentRequest? newPaymentRequest;
     if (message.payload is PaymentRequest) {
       newPaymentRequest = message.getPayload<PaymentRequest>();
-      _logger.i('New PaymentRequest found in message');
+      logger.i('New PaymentRequest found in message');
     } else {
       newPaymentRequest = paymentRequest; // Preserve existing
     }
@@ -116,7 +115,7 @@ class OrderState {
     if (message.payload is Peer &&
         message.getPayload<Peer>()!.publicKey.isNotEmpty) {
       newPeer = message.getPayload<Peer>();
-      _logger.i('👤 New Peer found in message');
+      logger.i('👤 New Peer found in message');
     } else if (message.payload is Order) {
       if (message.getPayload<Order>()!.buyerTradePubkey != null) {
         newPeer =
@@ -125,7 +124,7 @@ class OrderState {
         newPeer =
             Peer(publicKey: message.getPayload<Order>()!.sellerTradePubkey!);
       }
-      _logger.i('👤 New Peer found in message');
+      logger.i('👤 New Peer found in message');
     } else {
       newPeer = peer; // Preserve existing
     }
@@ -145,18 +144,18 @@ class OrderState {
           updatedDispute = updatedDispute.copyWith(
             createdAt: DateTime.fromMillisecondsSinceEpoch(tsMs),
           );
-          _logger.i('Updated dispute ${updatedDispute.disputeId} createdAt from message timestamp: ${updatedDispute.createdAt}');
+          logger.i('Updated dispute ${updatedDispute.disputeId} createdAt from message timestamp: ${updatedDispute.createdAt}');
         }
       }
     }
-    
+
     // Add defensive null check - if both message payload and existing dispute are null,
     // we cannot perform dispute updates
-    if (updatedDispute == null && 
-        (message.action == Action.adminTookDispute || 
-         message.action == Action.adminSettled || 
+    if (updatedDispute == null &&
+        (message.action == Action.adminTookDispute ||
+         message.action == Action.adminSettled ||
          message.action == Action.adminCanceled)) {
-      _logger.w('Cannot update dispute for action ${message.action}: no dispute found in message payload or existing state');
+      logger.w('Cannot update dispute for action ${message.action}: no dispute found in message payload or existing state');
     } else if (message.action == Action.adminTookDispute && updatedDispute != null) {
       // When admin takes dispute, update status to in-progress and set admin info
       // Extract admin pubkey from Peer payload if available
@@ -165,31 +164,31 @@ class OrderState {
         final peerPayload = message.getPayload<Peer>();
         if (peerPayload != null && peerPayload.publicKey.isNotEmpty) {
           adminPubkey = peerPayload.publicKey;
-          _logger.i('Extracted admin pubkey from Peer payload: $adminPubkey');
+          logger.i('Extracted admin pubkey from Peer payload: $adminPubkey');
         }
       }
-      
+
       updatedDispute = updatedDispute.copyWith(
         status: 'in-progress',
         adminTookAt: DateTime.now(),
         adminPubkey: adminPubkey,
       );
-      _logger.i('Updated dispute status to in-progress for adminTookDispute action');
+      logger.i('Updated dispute status to in-progress for adminTookDispute action');
     } else if (message.action == Action.adminSettled && updatedDispute != null) {
       // When admin settles dispute, update status to resolved with settlement info
       updatedDispute = updatedDispute.copyWith(
         status: 'resolved',
         action: 'admin-settled', // Store the resolution type
       );
-      _logger.i('Updated dispute status to resolved for adminSettled action');
+      logger.i('Updated dispute status to resolved for adminSettled action');
     } else if (message.action == Action.adminCanceled && updatedDispute != null) {
       // When admin cancels order, update dispute status to seller-refunded
       updatedDispute = updatedDispute.copyWith(
         status: 'seller-refunded',
         action: 'admin-canceled', // Store the resolution type
       );
-      _logger.i('Updated dispute status to seller-refunded for adminCanceled action');
-      _logger.i('Dispute status updated to: ${updatedDispute.status}');
+      logger.i('Updated dispute status to seller-refunded for adminCanceled action');
+      logger.i('Dispute status updated to: ${updatedDispute.status}');
     }
 
     final newState = copyWith(
@@ -207,8 +206,8 @@ class OrderState {
       paymentFailed: message.getPayload<PaymentFailed>() ?? paymentFailed,
     );
 
-    _logger.i('New state: ${newState.status} - ${newState.action}');
-    _logger
+    logger.i('New state: ${newState.status} - ${newState.action}');
+    logger
         .i('PaymentRequest preserved: ${newState.paymentRequest != null}');
 
     return newState;
