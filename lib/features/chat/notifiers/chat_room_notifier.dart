@@ -17,6 +17,7 @@ import 'package:mostro_mobile/features/subscriptions/subscription_manager_provid
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
+import 'package:mostro_mobile/features/chat/utils/message_type_helpers.dart';
 
 class ChatRoomNotifier extends StateNotifier<ChatRoom> {
   /// Reload the chat room by re-subscribing to events.
@@ -434,10 +435,10 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
 
       // Check for encrypted message types
       if (jsonContent != null) {
-        if (jsonContent['type'] == 'image_encrypted') {
+        if (MessageTypeUtils.isEncryptedImageMessage(message)) {
           _logger.i('📸 Processing encrypted image message');
           await _processEncryptedImageMessage(message, jsonContent);
-        } else if (jsonContent['type'] == 'file_encrypted') {
+        } else if (MessageTypeUtils.isEncryptedFileMessage(message)) {
           _logger.i('📎 Processing encrypted file message');
           await _processEncryptedFileMessage(message, jsonContent);
         }
@@ -587,31 +588,6 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
     return _fileMetadata[messageId];
   }
 
-  /// Check if a message is an encrypted image message
-  bool isEncryptedImageMessage(NostrEvent message) {
-    try {
-      final content = message.content;
-      if (content == null || !content.startsWith('{')) return false;
-      
-      final jsonContent = jsonDecode(content);
-      return jsonContent['type'] == 'image_encrypted';
-    } catch (e) {
-      return false;
-    }
-  }
-
-  /// Check if a message is an encrypted file message
-  bool isEncryptedFileMessage(NostrEvent message) {
-    try {
-      final content = message.content;
-      if (content == null || !content.startsWith('{')) return false;
-      
-      final jsonContent = jsonDecode(content);
-      return jsonContent['type'] == 'file_encrypted';
-    } catch (e) {
-      return false;
-    }
-  }
 
   @override
   void dispose() {

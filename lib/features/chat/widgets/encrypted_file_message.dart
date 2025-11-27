@@ -539,15 +539,3 @@ class _EncryptedFileMessageState extends ConsumerState<EncryptedFileMessage> {
   }
 }
 
-/// Helper function to check if a message is an encrypted file
-bool isEncryptedFileMessage(NostrEvent message) {
-  try {
-    final content = message.content;
-    if (content == null || !content.startsWith('{')) return false;
-    
-    final jsonContent = jsonDecode(content) as Map<String, dynamic>;
-    return jsonContent['type'] == 'file_encrypted';
-  } catch (e) {
-    return false;
-  }
-}

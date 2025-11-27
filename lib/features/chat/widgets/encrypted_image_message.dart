@@ -341,17 +341,3 @@ class _EncryptedImageMessageState extends ConsumerState<EncryptedImageMessage> {
     return '${(bytes / (1024 * 1024)).toStringAsFixed(1)}MB';
   }
 }
-
-/// Helper function to check if a message is an encrypted image
-bool isEncryptedImageMessage(NostrEvent message) {
-  try {
-    final content = message.content;
-    if (content == null || !content.startsWith('{')) return false;
-    
-    // ignore: avoid_dynamic_calls
-    final jsonContent = jsonDecode(content) as Map<String, dynamic>;
-    return jsonContent['type'] == 'image_encrypted';
-  } catch (e) {
-    return false;
-  }
-}
