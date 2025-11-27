@@ -1169,6 +1169,12 @@
   "restoreFinalizing": "Finalizando restauración...",
   "restoreCompleted": "¡Restauración completada!",
   "restoreError": "Error de restauración",
-  "restoreErrorMessage": "Error al restaurar datos del usuario. Verifica tu conexión e inténtalo más tarde."
+  "restoreErrorMessage": "Error al restaurar datos del usuario. Verifica tu conexión e inténtalo más tarde.",
+
+  "@_comment_file_messaging": "File messaging strings",
+  "download": "Descargar",
+  "openFile": "Abrir Archivo",
+  "encrypted": "Encriptado",
+  "downloadingFile": "Descargando archivo..."
 
 }

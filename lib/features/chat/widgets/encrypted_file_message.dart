@@ -10,6 +10,7 @@ import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/services/encrypted_file_upload_service.dart';
 import 'package:mostro_mobile/services/file_validation_service.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class EncryptedFileMessage extends ConsumerStatefulWidget {
   final NostrEvent message;
@@ -244,7 +245,7 @@ class _EncryptedFileMessageState extends ConsumerState<EncryptedFileMessage> {
                             color: Colors.white.withValues(alpha: 178),
                           ),
                           Text(
-                            ' Encrypted',
+                            ' ${S.of(context)!.encrypted}',
                             style: TextStyle(
                               fontSize: 11,
                               color: Colors.white.withValues(alpha: 178),
@@ -268,7 +269,7 @@ class _EncryptedFileMessageState extends ConsumerState<EncryptedFileMessage> {
                   size: 16,
                 ),
                 label: Text(
-                  isDownloaded ? 'Open File' : 'Download',
+                  isDownloaded ? S.of(context)!.openFile : S.of(context)!.download,
                   style: const TextStyle(fontSize: 13),
                 ),
                 style: ElevatedButton.styleFrom(
@@ -318,7 +319,7 @@ class _EncryptedFileMessageState extends ConsumerState<EncryptedFileMessage> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Downloading file...',
+            S.of(context)!.downloadingFile,
             style: TextStyle(
               fontSize: 12,
               color: Colors.white.withValues(alpha: 178),
