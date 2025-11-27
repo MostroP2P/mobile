@@ -9,6 +9,7 @@ Mostro Mobile is a sophisticated peer-to-peer Bitcoin trading application built 
 - **Feature-Based Organization**: Clear separation of concerns using feature modules
 - **Reactive State Management**: Riverpod-based reactive architecture
 - **Privacy-First Design**: End-to-end encryption and hierarchical key management
+- **Account Recovery**: BIP-39 mnemonic-based complete state restoration
 - **Real-Time Synchronization**: Live updates via WebSocket subscriptions
 - **Multi-Platform Support**: Single codebase for Android and iOS
 
@@ -35,6 +36,7 @@ lib/
 │   ├── order/             # Order creation and management
 │   ├── rate/              # Rating and reputation system
 │   ├── relays/            # Relay management and synchronization
+│   ├── restore/           # Account recovery from mnemonic
 │   ├── settings/          # User preferences and configuration
 │   ├── subscriptions/     # Event subscription management
 │   ├── trades/            # Active trade management
@@ -149,6 +151,29 @@ Comprehensive implementation of Nostr protocol with advanced privacy features.
 - **Secure Storage**: Hardware-backed secure storage for private keys
 - **Key Rotation**: Automatic privacy-preserving key rotation
 
+### 🔄 Account Recovery System
+Complete account restoration from 12-word mnemonic seed phrases with full state reconstruction.
+
+**📚 Detailed Documentation**: [`SESSION_RECOVERY_ARCHITECTURE.md`](SESSION_RECOVERY_ARCHITECTURE.md)
+
+**Recovery Capabilities:**
+- **Cryptographic Recovery**: Master key and trade key regeneration from mnemonic
+- **Session Restoration**: Complete trading sessions recreated from Mostro backend
+- **Trade Index Sync**: Precise synchronization with last used trade key index  
+- **Order State Rebuild**: Full order history and dispute information recovery
+- **Privacy Mode Support**: Recovery is supported in reputation mode only. Privacy mode is not supported because Mostrod cannot link order history requests to a user (this is the intended behavior)
+
+
+**Multi-Stage Process:**
+```
+Mnemonic Import → Data Cleanup → Backend Sync → Session Recreation → State Rebuild
+```
+
+**Key Components:**
+- **RestoreService**: Orchestrates the complete 4-stage recovery workflow
+- **RestoreProgressNotifier**: Provides real-time recovery progress to users
+- **ImportMnemonicDialog**: Secure mnemonic input with BIP-39 validation
+
 ---
 
 ## State Management Architecture
@@ -188,6 +213,7 @@ abstract class OrderRepositoryInterface {
   Future<List<Order>> getOrders();
   Future<void> saveOrder(Order order);
   Future<void> deleteOrder(String orderId);
+  Future<void> clearCache(); // Used during account recovery
 }
 
 // Concrete implementations
@@ -252,9 +278,10 @@ All trade communications use NIP-59 gift wrapping with three encryption layers:
 ```
 
 ### Key Management Security
-- **BIP-39 Mnemonic**: 12/24 word recovery phrases
+- **BIP-39 Mnemonic**: 12-word recovery phrases for complete account backup
 - **BIP-32 Derivation**: Hierarchical deterministic key derivation
 - **Trade-Specific Keys**: Unique keys per trade prevent transaction linking
+- **Account Recovery**: Complete state restoration from mnemonic seed phrase
 - **Secure Storage**: Platform-native secure storage for private keys
 - **Memory Protection**: Secure clearing of sensitive data from memory
 
@@ -449,10 +476,12 @@ lib/services/nostr_service.dart     # Nostr protocol integration
 lib/services/mostro_service.dart    # Mostro trading protocol
 lib/services/event_bus.dart         # Inter-service communication
 
-# Key Management
+# Key Management & Recovery
 lib/features/key_manager/key_manager.dart        # Cryptographic operations
-lib/features/key_manager/key_storage.dart        # Secure key storage
+lib/features/key_manager/key_storage.dart        # Secure key storage  
 lib/features/key_manager/key_derivator.dart      # BIP-32 key derivation
+lib/features/restore/restore_manager.dart        # Account recovery orchestration
+lib/features/restore/restore_progress_notifier.dart # Recovery progress state
 
 # Data Layer
 lib/data/repositories/              # Repository implementations
@@ -480,11 +509,11 @@ test/mocks.mocks.dart              # Main test mocking file
 - **riverpod**: Core state management library
 - **go_router**: Declarative routing
 
-### Nostr Protocol
+### Nostr Protocol & Cryptography
 - **dart_nostr**: Core Nostr protocol implementation
 - **crypto**: Cryptographic operations
-- **bip32**: Hierarchical deterministic key derivation
-- **bip39**: Mnemonic seed phrase generation
+- **bip32**: Hierarchical deterministic key derivation  
+- **bip39**: Mnemonic seed phrase generation and account recovery
 
 ### Data & Storage
 - **sembast**: NoSQL database for local storage
@@ -553,6 +582,7 @@ test/mocks.mocks.dart              # Main test mocking file
 - **Horizontal Scaling**: Support for additional Mostro instances
 - **Performance Optimization**: Further mobile-specific optimizations
 - **Feature Modularity**: Enhanced plugin architecture for new features
+- **Recovery Improvements**: Enhanced dispute detection and cloud backup options
 
 ### Protocol Extensions
 - **Lightning Integration**: Direct Lightning Network integration
@@ -566,6 +596,10 @@ test/mocks.mocks.dart              # Main test mocking file
 
 ---
  
-**Last Updated**: 2025-08-28 
+**Last Updated**: November 25, 2025
+**Related Documentation**: 
+- [Session Recovery Architecture](SESSION_RECOVERY_ARCHITECTURE.md)
+- [Session and Key Management](SESSION_AND_KEY_MANAGEMENT.md)
+- [Nostr Integration](NOSTR.md)
 
 *This architecture documentation is a living document that evolves with the codebase. All architectural decisions should be reflected here, and any significant changes should be documented with rationale and impact analysis.*
