@@ -1263,8 +1263,6 @@
   },
   "clearLogsConfirmTitle": "Cancellare tutti i registri?",
   "clearLogsConfirmMessage": "Questa azione non può essere annullata. Tutti i registri verranno eliminati permanentemente.",
-  "clear": "Cancella",
-  "cancel": "Annulla",
 
   "@_comment_dev_tools": "Sezione Strumenti Sviluppatore",
   "devTools": "Strumenti Dev",

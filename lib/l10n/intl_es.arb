@@ -1208,8 +1208,6 @@
   },
   "clearLogsConfirmTitle": "¿Limpiar todos los registros?",
   "clearLogsConfirmMessage": "Esta acción no se puede deshacer. Todos los registros se eliminarán permanentemente.",
-  "clear": "Limpiar",
-  "cancel": "Cancelar",
 
   "@_comment_dev_tools": "Sección de Herramientas de Desarrollador",
   "devTools": "Herramientas Dev",

@@ -538,15 +538,28 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
     Directory? directory;
 
     if (Platform.isAndroid) {
-      directory = Directory('/storage/emulated/0/Download');
-      if (!await directory.exists()) {
+      // Try to get Downloads directory first (most reliable on modern Android)
+      final externalDirs = await getExternalStorageDirectories(
+        type: StorageDirectory.downloads,
+      );
+
+      if (externalDirs != null && externalDirs.isNotEmpty) {
+        directory = externalDirs[0];
+      } else {
+        // Fallback to external storage root
         directory = await getExternalStorageDirectory();
+
+        directory ??= await getApplicationDocumentsDirectory();
       }
+    } else if (Platform.isIOS) {
+      directory = await getApplicationDocumentsDirectory();
     } else {
+      // For other platforms (Windows, Linux, macOS)
       directory = await getApplicationDocumentsDirectory();
     }
 
-    final logsDir = Directory('${directory!.path}/MostroLogs');
+
+    final logsDir = Directory('${directory.path}/MostroLogs');
     await logsDir.create(recursive: true);
 
     final timestamp = DateFormat('yyyy-MM-dd_HH-mm-ss').format(DateTime.now());

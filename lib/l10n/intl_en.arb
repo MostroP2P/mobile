@@ -1230,8 +1230,6 @@
   },
   "clearLogsConfirmTitle": "Clear all logs?",
   "clearLogsConfirmMessage": "This action cannot be undone. All logs will be permanently deleted.",
-  "clear": "Clear",
-  "cancel": "Cancel",
 
   "@_comment_dev_tools": "Developer Tools Section",
   "devTools": "Dev Tools",

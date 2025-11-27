@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
-import 'package:mostro_mobile/services/logger_service.dart';
+import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/models/nostr_filter.dart';
 import 'package:mostro_mobile/data/repositories/event_storage.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
@@ -15,6 +15,18 @@ String currentLanguage = 'en';
 
 @pragma('vm:entry-point')
 Future<void> serviceMain(ServiceInstance service) async {
+  // Create a local logger for the background isolate
+  final logger = Logger(
+    printer: PrettyPrinter(
+      methodCount: 2,
+      errorMethodCount: 8,
+      lineLength: 120,
+      colors: true,
+      printEmojis: true,
+      dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
+    ),
+    level: Level.debug,
+  );
 
   final Map<String, Map<String, dynamic>> activeSubscriptions = {};
   final nostrService = NostrService();
