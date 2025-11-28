@@ -463,11 +463,11 @@ class _EncryptedFileMessageState extends ConsumerState<EncryptedFileMessage> {
       final sanitizedFilename = _sanitizeFilename(metadata.filename);
       final tempFile = File('${tempDir.path}/$sanitizedFilename');
       
-      // Verify the resolved path is still within the temp directory to prevent path traversal
-      final tempDirPath = tempDir.resolveSymbolicLinksSync();
-      final tempFilePath = tempFile.absolute.path;
-      if (!tempFilePath.startsWith('$tempDirPath${Platform.pathSeparator}')) {
-        throw Exception('Security error: Path traversal attempt detected in filename');
+      // Basic security check: ensure sanitized filename is safe
+      // The sanitization function already handles most security concerns
+      if (sanitizedFilename.contains('/') || sanitizedFilename.contains('\\') || 
+          sanitizedFilename.contains('..') || sanitizedFilename.trim().isEmpty) {
+        throw Exception('Security error: Invalid characters in sanitized filename');
       }
       
       await tempFile.writeAsBytes(cachedFile);
@@ -521,21 +521,49 @@ class _EncryptedFileMessageState extends ConsumerState<EncryptedFileMessage> {
     // 1. Get basename only (remove any directory components)
     final basename = filename.split(RegExp(r'[/\\]')).last;
     
-    // 2. Remove dangerous characters including null bytes, control chars, and reserved chars
-    final cleaned = basename.replaceAll(RegExp(r'[<>:"|?*\x00-\x1F]'), '_');
+    // 2. Normalize accented characters to prevent encoding issues
+    String normalized = basename
+        .replaceAll('á', 'a').replaceAll('é', 'e').replaceAll('í', 'i')
+        .replaceAll('ó', 'o').replaceAll('ú', 'u').replaceAll('ñ', 'n')
+        .replaceAll('ü', 'u').replaceAll('Á', 'A').replaceAll('É', 'E')
+        .replaceAll('Í', 'I').replaceAll('Ó', 'O').replaceAll('Ú', 'U')
+        .replaceAll('Ñ', 'N').replaceAll('Ü', 'U');
     
-    // 3. Limit length to reasonable size
-    final limited = cleaned.length > 100 ? cleaned.substring(0, 100) : cleaned;
+    // 3. Replace spaces with underscores and remove dangerous characters
+    final cleaned = normalized
+        .replaceAll(RegExp(r'\s+'), '_')  // Replace spaces with underscores
+        .replaceAll(RegExp(r'[<>:"|?*\x00-\x1F]'), '_')  // Remove dangerous chars
+        .replaceAll('..', '_');  // Prevent directory traversal patterns
     
-    // 4. Ensure not empty and not Windows reserved names
-    if (limited.isEmpty || 
-        ['CON', 'PRN', 'AUX', 'NUL', 'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 
-         'COM6', 'COM7', 'COM8', 'COM9', 'LPT1', 'LPT2', 'LPT3', 'LPT4', 
-         'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9'].contains(limited.toUpperCase())) {
-      return 'file_${DateTime.now().millisecondsSinceEpoch}';
+    // 4. Preserve file extension
+    String sanitized = cleaned;
+    if (sanitized.contains('.')) {
+      final parts = sanitized.split('.');
+      if (parts.length > 1) {
+        final extension = parts.last;
+        final nameWithoutExt = parts.sublist(0, parts.length - 1).join('_');
+        final maxNameLength = 100 - extension.length - 1;
+        final truncatedName = nameWithoutExt.length > maxNameLength 
+            ? nameWithoutExt.substring(0, maxNameLength)
+            : nameWithoutExt;
+        sanitized = '$truncatedName.$extension';
+      }
+    } else {
+      // No extension, just limit length
+      sanitized = sanitized.length > 100 ? sanitized.substring(0, 100) : sanitized;
     }
     
-    return limited;
+    // 5. Ensure not empty and not Windows reserved names
+    final nameOnly = sanitized.contains('.') ? sanitized.split('.').first : sanitized;
+    if (sanitized.isEmpty || nameOnly.isEmpty ||
+        ['CON', 'PRN', 'AUX', 'NUL', 'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 
+         'COM6', 'COM7', 'COM8', 'COM9', 'LPT1', 'LPT2', 'LPT3', 'LPT4', 
+         'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9'].contains(nameOnly.toUpperCase())) {
+      final extension = sanitized.contains('.') ? '.${sanitized.split('.').last}' : '';
+      return 'file_${DateTime.now().millisecondsSinceEpoch}$extension';
+    }
+    
+    return sanitized;
   }
 }
 
