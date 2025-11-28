@@ -1191,5 +1191,11 @@
   "restoreFinalizing": "Finalizing restore...",
   "restoreCompleted": "Restore completed!",
   "restoreError": "Restore error",
-  "restoreErrorMessage": "Error restoring user data. Please check your connection and try again."
+  "restoreErrorMessage": "Error restoring user data. Please check your connection and try again.",
+
+  "@_comment_file_messaging": "File messaging strings",
+  "download": "Download",
+  "openFile": "Open File",
+  "encrypted": "Encrypted",
+  "downloadingFile": "Downloading file..."
 }

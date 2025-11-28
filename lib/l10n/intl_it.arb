@@ -1224,5 +1224,11 @@
   "restoreFinalizing": "Finalizzazione ripristino...",
   "restoreCompleted": "Ripristino completato!",
   "restoreError": "Errore di ripristino",
-  "restoreErrorMessage": "Errore nel ripristino dei dati utente. Verifica la tua connessione e riprova più tardi."
+  "restoreErrorMessage": "Errore nel ripristino dei dati utente. Verifica la tua connessione e riprova più tardi.",
+
+  "@_comment_file_messaging": "File messaging strings",
+  "download": "Scarica",
+  "openFile": "Apri File",
+  "encrypted": "Crittografato",
+  "downloadingFile": "Scaricamento file..."
 }

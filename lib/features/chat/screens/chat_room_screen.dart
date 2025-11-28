@@ -157,6 +157,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                               : ChatMessagesList(
                                   chatRoom: chatDetailState,
                                   peerPubkey: peer,
+                                  orderId: widget.orderId,
                                   scrollController: _scrollController,
                                 ),
                           ),
