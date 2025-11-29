@@ -83,10 +83,8 @@ class MemoryLogOutput extends LogOutput {
         .replaceAll(RegExp(r'[┌┐└┘├┤─│┬┴┼╭╮╰╯╔╗╚╝╠╣═║╦╩╬━┃┄├]'), '')
         .replaceAll(RegExp(r'[\u{1F300}-\u{1F9FF}]', unicode: true), '')
         .replaceAll(RegExp(r'nsec[0-9a-z]+'), '[PRIVATE_KEY]')
-        .replaceAll(RegExp(r'npub[0-9a-z]+'), '[PUBLIC_KEY]')
         .replaceAll(RegExp(r'"privateKey"\s*:\s*"[^"]*"'), '"privateKey":"[REDACTED]"')
         .replaceAll(RegExp(r'"mnemonic"\s*:\s*"[^"]*"'), '"mnemonic":"[REDACTED]"')
-        .replaceAll(RegExp(r'[0-9a-f]{64}'), '[HEX]')
         .replaceAll(RegExp(r'[^A-Za-z0-9\s.:,!?\-_/\[\]]'), ' ')
         .replaceAll(RegExp(r'\s+'), ' ');
     return cleaned.trim();

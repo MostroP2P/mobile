@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/core/config.dart';
+import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:path_provider/path_provider.dart';
@@ -72,6 +73,11 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
     return filtered;
   }
 
+  String _getLogStorageLocation(BuildContext context) {
+    final settings = ref.watch(settingsProvider);
+    return settings.customLogStorageDirectory ?? S.of(context)!.defaultDownloads;
+  }
+
   @override
   Widget build(BuildContext context) {
     final allLogs = MemoryLogOutput.instance.getAllLogs();
@@ -135,6 +141,8 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
   }
 
   Widget _buildStatsHeader(int totalCount, int filteredCount) {
+    final storageLocation = _getLogStorageLocation(context);
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -146,25 +154,52 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
           ),
         ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            filteredCount == totalCount
-                ? S.of(context)!.totalLogs(totalCount)
-                : '$filteredCount / ${S.of(context)!.totalLogs(totalCount)}',
-            style: const TextStyle(
-              color: AppTheme.textPrimary,
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                filteredCount == totalCount
+                    ? S.of(context)!.totalLogs(totalCount)
+                    : '$filteredCount / ${S.of(context)!.totalLogs(totalCount)}',
+                style: const TextStyle(
+                  color: AppTheme.textPrimary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Text(
+                S.of(context)!.maxEntries(Config.logMaxEntries),
+                style: const TextStyle(
+                  color: AppTheme.textSecondary,
+                  fontSize: 14,
+                ),
+              ),
+            ],
           ),
-          Text(
-            S.of(context)!.maxEntries(Config.logMaxEntries),
-            style: const TextStyle(
-              color: AppTheme.textSecondary,
-              fontSize: 14,
-            ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(
+                Icons.folder_outlined,
+                color: AppTheme.textInactive,
+                size: 16,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  storageLocation,
+                  style: const TextStyle(
+                    color: AppTheme.textInactive,
+                    fontSize: 12,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -238,13 +273,13 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
         setState(() => _selectedLevel = selected ? level : null);
       },
       backgroundColor: AppTheme.backgroundInput,
-      selectedColor: AppTheme.activeColor.withValues(alpha: 0.3),
+      selectedColor: AppTheme.statusInfo.withValues(alpha: 0.2),
       labelStyle: TextStyle(
-        color: isSelected ? AppTheme.activeColor : AppTheme.textSecondary,
+        color: isSelected ? AppTheme.statusInfo : AppTheme.textSecondary,
         fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
       ),
       side: BorderSide(
-        color: isSelected ? AppTheme.activeColor : Colors.white.withValues(alpha: 0.1),
+        color: isSelected ? AppTheme.statusInfo : Colors.white.withValues(alpha: 0.1),
       ),
     );
   }

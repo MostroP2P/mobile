@@ -100,12 +100,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   _buildRelaysCard(context),
                   const SizedBox(height: 16),
 
-                  // Mostro Card
-                  _buildMostroCard(context, _mostroTextController),
-                  const SizedBox(height: 16),
-
                   // Dev Tools Card
                   _buildDevToolsCard(context),
+                  const SizedBox(height: 16),
+
+                  // Mostro Card
+                  _buildMostroCard(context, _mostroTextController),
                   const SizedBox(height: 16),
                 ],
               ),
@@ -497,17 +497,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Widget _buildDevToolsCard(BuildContext context) {
-    final settings = ref.watch(settingsProvider);
-    final storageLocation = settings.customLogStorageDirectory ?? S.of(context)!.defaultDownloads;
-
     return Container(
       decoration: BoxDecoration(
         color: AppTheme.backgroundCard,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppTheme.statusWarning.withValues(alpha: 0.5),
-          width: 2,
-        ),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -517,8 +511,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             Row(
               children: [
                 const Icon(
-                  Icons.warning_amber_rounded,
-                  color: AppTheme.statusWarning,
+                  Icons.bug_report_outlined,
+                  color: AppTheme.textSecondary,
                   size: 20,
                 ),
                 const SizedBox(width: 8),
@@ -536,7 +530,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             Text(
               S.of(context)!.devToolsWarning,
               style: const TextStyle(
-                color: AppTheme.statusWarning,
+                color: AppTheme.textSecondary,
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
               ),
@@ -592,42 +586,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ],
                   ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              S.of(context)!.logStorageLocation,
-              style: const TextStyle(
-                color: AppTheme.textSecondary,
-                fontSize: 14,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppTheme.backgroundInput,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.folder_outlined,
-                    color: AppTheme.textSecondary,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      storageLocation,
-                      style: const TextStyle(
-                        color: AppTheme.textPrimary,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ],
               ),
             ),
           ],
