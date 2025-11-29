@@ -15,6 +15,18 @@ String currentLanguage = 'en';
 
 @pragma('vm:entry-point')
 Future<void> serviceMain(ServiceInstance service) async {
+  // Create a local logger for the background isolate
+  final logger = Logger(
+    printer: PrettyPrinter(
+      methodCount: 2,
+      errorMethodCount: 8,
+      lineLength: 120,
+      colors: true,
+      printEmojis: true,
+      dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
+    ),
+    level: Level.debug,
+  );
 
   final Map<String, Map<String, dynamic>> activeSubscriptions = {};
   final nostrService = NostrService();
@@ -72,7 +84,7 @@ Future<void> serviceMain(ServiceInstance service) async {
         if (await eventStore.hasItem(event.id!)) return;
         await notification_service.retryNotification(event);
       } catch (e) {
-        Logger().e('Error processing event', error: e);
+        logger.e('Error processing event', error: e);
       }
     });
   });

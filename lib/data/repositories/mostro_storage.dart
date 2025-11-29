@@ -1,11 +1,10 @@
-import 'package:logger/logger.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/data/models/payload.dart';
 import 'package:sembast/sembast.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/repositories/base_storage.dart';
 
 class MostroStorage extends BaseStorage<MostroMessage> {
-  final Logger _logger = Logger();
 
   MostroStorage({required Database db})
       : super(db, stringMapStoreFactory.store('orders'));
@@ -21,12 +20,12 @@ class MostroStorage extends BaseStorage<MostroMessage> {
       dbMap['timestamp'] = message.timestamp;
 
       await store.record(id).put(db, dbMap);
-      _logger.i(
-        'Saved message of type ${message.action} with order id ${message.id}',
+      logger.i(
+        'Storage: saved message of type ${message.action} with order id ${message.id}',
       );
     } catch (e, stack) {
-      _logger.e(
-        'addMessage failed for $id',
+      logger.e(
+        'Storage: add message failed for $id - $e',
         error: e,
         stackTrace: stack,
       );
@@ -39,7 +38,7 @@ class MostroStorage extends BaseStorage<MostroMessage> {
     try {
       return await getAll();
     } catch (e, stack) {
-      _logger.e('getAllMessages failed', error: e, stackTrace: stack);
+      logger.e('Storage: get all messages failed - $e', error: e, stackTrace: stack);
       return <MostroMessage>[];
     }
   }
@@ -48,9 +47,9 @@ class MostroStorage extends BaseStorage<MostroMessage> {
   Future<void> deleteAllMessages() async {
     try {
       await deleteAll();
-      _logger.i('All messages deleted');
+      logger.i('Storage: all messages deleted');
     } catch (e, stack) {
-      _logger.e('deleteAllMessages failed', error: e, stackTrace: stack);
+      logger.e('Storage: delete all messages failed - $e', error: e, stackTrace: stack);
       rethrow;
     }
   }

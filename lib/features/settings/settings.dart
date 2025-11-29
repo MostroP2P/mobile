@@ -7,6 +7,7 @@ class Settings {
   final String? defaultLightningAddress;
   final List<String> blacklistedRelays; // Relays blocked by user from auto-sync
   final List<Map<String, dynamic>> userRelays; // User-added relays with metadata
+  final String? customLogStorageDirectory; // Custom directory for log exports
 
   Settings({
     required this.relays,
@@ -17,6 +18,7 @@ class Settings {
     this.defaultLightningAddress,
     this.blacklistedRelays = const [],
     this.userRelays = const [],
+    this.customLogStorageDirectory,
   });
 
   Settings copyWith({
@@ -29,6 +31,7 @@ class Settings {
     bool clearDefaultLightningAddress = false,
     List<String>? blacklistedRelays,
     List<Map<String, dynamic>>? userRelays,
+    String? customLogStorageDirectory,
   }) {
     return Settings(
       relays: relays ?? this.relays,
@@ -36,11 +39,12 @@ class Settings {
       mostroPublicKey: mostroPublicKey ?? this.mostroPublicKey,
       defaultFiatCode: defaultFiatCode ?? this.defaultFiatCode,
       selectedLanguage: selectedLanguage ?? this.selectedLanguage,
-      defaultLightningAddress: clearDefaultLightningAddress 
-          ? null 
+      defaultLightningAddress: clearDefaultLightningAddress
+          ? null
           : (defaultLightningAddress ?? this.defaultLightningAddress),
       blacklistedRelays: blacklistedRelays ?? this.blacklistedRelays,
       userRelays: userRelays ?? this.userRelays,
+      customLogStorageDirectory: customLogStorageDirectory ?? this.customLogStorageDirectory,
     );
   }
 
@@ -53,6 +57,7 @@ class Settings {
         'defaultLightningAddress': defaultLightningAddress,
         'blacklistedRelays': blacklistedRelays,
         'userRelays': userRelays,
+        'customLogStorageDirectory': customLogStorageDirectory,
       };
 
   factory Settings.fromJson(Map<String, dynamic> json) {
@@ -66,6 +71,7 @@ class Settings {
       blacklistedRelays: (json['blacklistedRelays'] as List<dynamic>?)?.cast<String>() ?? [],
       userRelays: (json['userRelays'] as List<dynamic>?)
           ?.cast<Map<String, dynamic>>() ?? [],
+      customLogStorageDirectory: json['customLogStorageDirectory'],
     );
   }
 }

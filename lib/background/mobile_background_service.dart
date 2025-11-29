@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:dart_nostr/nostr/model/request/filter.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
-import 'package:logger/logger.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/background/background.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'abstract_background_service.dart';
@@ -16,7 +16,7 @@ class MobileBackgroundService implements BackgroundService {
 
   final _subscriptions = <String, Map<String, dynamic>>{};
   bool _isRunning = false;
-  final _logger = Logger();
+
   bool _serviceReady = false;
   final List<Function> _pendingOperations = [];
 
@@ -45,18 +45,18 @@ class MobileBackgroundService implements BackgroundService {
       service.invoke('start', {
         'settings': _settings.toJson(),
       });
-      _logger.d(
+      logger.d(
         'Service started with settings: ${_settings.toJson()}',
       );
     });
 
     service.on('on-stop').listen((event) {
       _isRunning = false;
-      _logger.i('Service stopped');
+      logger.i('Service stopped');
     });
 
     service.on('service-ready').listen((data) {
-      _logger.i("Service confirmed it's ready");
+      logger.i("Service confirmed it's ready");
       _serviceReady = true;
       _processPendingOperations();
     });
@@ -68,7 +68,7 @@ class MobileBackgroundService implements BackgroundService {
     _subscriptions[subId] = {'filters': filters};
 
     _executeWhenReady(() {
-      _logger.i("Sending subscription to service");
+      logger.i("Sending subscription to service");
       service.invoke('create-subscription', {
         'id': subId,
         'filters': filters.map((f) => f.toMap()).toList(),
@@ -127,7 +127,7 @@ class MobileBackgroundService implements BackgroundService {
         try {
           await _startService();
         } catch (e) {
-          _logger.e('Error starting service: $e');
+          logger.e('Error starting service: $e');
           // Retry with a delay if needed
           await Future.delayed(Duration(seconds: 1));
           await _startService();
@@ -137,7 +137,7 @@ class MobileBackgroundService implements BackgroundService {
   }
 
   Future<void> _startService() async {
-    _logger.i("Starting service");
+    logger.i("Starting service");
     await service.startService();
     _serviceReady = false; // Reset ready state when starting
 
@@ -152,7 +152,7 @@ class MobileBackgroundService implements BackgroundService {
       await Future.delayed(const Duration(milliseconds: 50));
     }
 
-    _logger.i("Service running, sending settings");
+    logger.i("Service running, sending settings");
     service.invoke('start', {
       'settings': _settings.toJson(),
     });

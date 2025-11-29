@@ -19,6 +19,19 @@ class DesktopBackgroundService implements BackgroundService {
   Future<void> init() async {}
 
   static void isolateEntry(List<dynamic> args) async {
+    // Create a local logger for the desktop background isolate
+    final logger = Logger(
+      printer: PrettyPrinter(
+        methodCount: 2,
+        errorMethodCount: 8,
+        lineLength: 120,
+        colors: true,
+        printEmojis: true,
+        dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
+      ),
+      level: Level.debug,
+    );
+
     final isolateReceivePort = ReceivePort();
     final mainSendPort = args[0] as SendPort;
     final token = args[1] as RootIsolateToken;
@@ -28,7 +41,7 @@ class DesktopBackgroundService implements BackgroundService {
     BackgroundIsolateBinaryMessenger.ensureInitialized(token);
 
     final nostrService = NostrService();
-    final logger = Logger();
+
     bool isAppForeground = true;
 
     isolateReceivePort.listen((message) async {

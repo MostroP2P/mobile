@@ -1956,6 +1956,7 @@ class MockSettings extends _i1.Mock implements _i2.Settings {
     bool? clearDefaultLightningAddress = false,
     List<String>? blacklistedRelays,
     List<Map<String, dynamic>>? userRelays,
+    String? customLogStorageDirectory,
   }) =>
       (super.noSuchMethod(
         Invocation.method(
@@ -1971,6 +1972,7 @@ class MockSettings extends _i1.Mock implements _i2.Settings {
             #clearDefaultLightningAddress: clearDefaultLightningAddress,
             #blacklistedRelays: blacklistedRelays,
             #userRelays: userRelays,
+            #customLogStorageDirectory: customLogStorageDirectory,
           },
         ),
         returnValue: _FakeSettings_0(
@@ -1988,6 +1990,7 @@ class MockSettings extends _i1.Mock implements _i2.Settings {
               #clearDefaultLightningAddress: clearDefaultLightningAddress,
               #blacklistedRelays: blacklistedRelays,
               #userRelays: userRelays,
+              #customLogStorageDirectory: customLogStorageDirectory,
             },
           ),
         ),
