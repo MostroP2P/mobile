@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/core/config.dart';
@@ -13,6 +15,12 @@ import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_manager_provider.dart';
 import 'package:mostro_mobile/features/notifications/services/background_notification_service.dart';
 
+/// Check if the current platform supports Firebase
+bool get _isFirebaseSupported {
+  if (kIsWeb) return false;
+  return Platform.isAndroid || Platform.isIOS;
+}
+
 final appInitializerProvider = FutureProvider<void>((ref) async {
   final logger = Logger();
 
@@ -21,23 +29,28 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
   final nostrService = ref.read(nostrServiceProvider);
   await nostrService.init(ref.read(settingsProvider));
 
-  final fcmService = ref.read(fcmServiceProvider);
-  try {
-    await fcmService.initialize(
-      onMessageReceived: () async {
-        final settings = ref.read(settingsProvider);
-        final relays = settings.relays;
+  // Initialize FCM only on supported platforms (Android, iOS)
+  if (_isFirebaseSupported) {
+    final fcmService = ref.read(fcmServiceProvider);
+    try {
+      await fcmService.initialize(
+        onMessageReceived: () async {
+          final settings = ref.read(settingsProvider);
+          final relays = settings.relays;
 
-        if (relays.isEmpty) {
-          logger.w('No relays configured - cannot fetch events');
-          return;
-        }
+          if (relays.isEmpty) {
+            logger.w('No relays configured - cannot fetch events');
+            return;
+          }
 
-        await fetchAndProcessNewEvents(relays: relays);
-      },
-    );
-  } catch (e, stackTrace) {
-    logger.e('FCM initialization failed: $e', error: e, stackTrace: stackTrace);
+          await fetchAndProcessNewEvents(relays: relays);
+        },
+      );
+    } catch (e, stackTrace) {
+      logger.e('FCM initialization failed: $e', error: e, stackTrace: stackTrace);
+    }
+  } else {
+    logger.i('FCM not supported on this platform - skipping FCM initialization');
   }
 
   final keyManager = ref.read(keyManagerProvider);

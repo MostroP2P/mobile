@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -19,7 +21,14 @@ import 'package:mostro_mobile/shared/utils/notification_permission_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
+/// Check if the current platform supports Firebase
+bool get _isFirebaseSupported {
+  if (kIsWeb) return false;
+  return Platform.isAndroid || Platform.isIOS;
+}
+
 /// FCM background message handler - sets flag for event processing when app becomes active
+/// Only active on Android and iOS platforms
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   final logger = Logger();
@@ -45,11 +54,13 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-
-  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  // Initialize Firebase only on supported platforms (Android, iOS)
+  if (_isFirebaseSupported) {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  }
 
   await requestNotificationPermissionIfNeeded();
 
@@ -94,10 +105,16 @@ Future<void> main() async {
 }
 
 /// Process pending FCM events flagged by background handler
+/// Only runs on platforms where Firebase is supported (Android, iOS)
 Future<void> _checkPendingEventsOnResume(
   SharedPreferencesAsync sharedPrefs,
   SettingsNotifier settings,
 ) async {
+  // Skip if Firebase is not supported on this platform
+  if (!_isFirebaseSupported) {
+    return;
+  }
+
   final logger = Logger();
 
   try {
