@@ -36,9 +36,15 @@ class _EncryptedFileMessageState extends ConsumerState<EncryptedFileMessage> {
   Widget build(BuildContext context) {
     final chatNotifier = ref.read(chatRoomsProvider(widget.orderId).notifier);
     
+    // Check if message ID is valid
+    final messageId = widget.message.id;
+    if (messageId == null) {
+      return _buildErrorWidget();
+    }
+    
     // Check if file is already cached
-    final cachedFile = chatNotifier.getCachedFile(widget.message.id!);
-    final fileMetadata = chatNotifier.getFileMetadata(widget.message.id!);
+    final cachedFile = chatNotifier.getCachedFile(messageId);
+    final fileMetadata = chatNotifier.getFileMetadata(messageId);
 
     if (cachedFile != null && fileMetadata != null) {
       // Check if it's an image and show preview
@@ -62,11 +68,12 @@ class _EncryptedFileMessageState extends ConsumerState<EncryptedFileMessage> {
     if (metadata != null) {
       // For images, try to download automatically for preview
       if (_isImage(metadata.fileType)) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!_isLoading) {
+        if (!_isLoading) {
+          setState(() => _isLoading = true);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
             _downloadFile();
-          }
-        });
+          });
+        }
       }
       return _buildFileWidget(null, metadata);
     }
@@ -407,10 +414,12 @@ class _EncryptedFileMessageState extends ConsumerState<EncryptedFileMessage> {
   Future<void> _downloadFile() async {
     if (_isLoading) return;
 
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+    }
 
     try {
       final chatNotifier = ref.read(chatRoomsProvider(widget.orderId).notifier);
@@ -431,7 +440,10 @@ class _EncryptedFileMessageState extends ConsumerState<EncryptedFileMessage> {
       );
 
       // Cache the file
-      chatNotifier.cacheDecryptedFile(widget.message.id!, decryptedFile, metadata);
+      final messageId = widget.message.id;
+      if (messageId != null) {
+        chatNotifier.cacheDecryptedFile(messageId, decryptedFile, metadata);
+      }
 
       if (mounted) {
         setState(() {
@@ -450,9 +462,14 @@ class _EncryptedFileMessageState extends ConsumerState<EncryptedFileMessage> {
 
   Future<void> _openFile() async {
     try {
+      final messageId = widget.message.id;
+      if (messageId == null) {
+        throw Exception('Invalid message: missing ID');
+      }
+      
       final chatNotifier = ref.read(chatRoomsProvider(widget.orderId).notifier);
-      final cachedFile = chatNotifier.getCachedFile(widget.message.id!);
-      final metadata = chatNotifier.getFileMetadata(widget.message.id!);
+      final cachedFile = chatNotifier.getCachedFile(messageId);
+      final metadata = chatNotifier.getFileMetadata(messageId);
       
       if (cachedFile == null || metadata == null) {
         throw Exception('File not available');
