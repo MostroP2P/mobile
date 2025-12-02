@@ -226,9 +226,8 @@ class FileValidationService {
         throw FileValidationException('Invalid DOC file format');
       }
       
-      // Basic macro detection for DOC files
-      final fileString = String.fromCharCodes(fileData);
-      if (fileString.contains('VBA') || fileString.contains('Microsoft Visual Basic')) {
+      // Basic macro detection for DOC files using byte pattern search
+      if (_containsMacroPatterns(fileData)) {
         throw FileValidationException('Document contains macros which are not allowed for security reasons');
       }
     } 
@@ -244,8 +243,7 @@ class FileValidationService {
       }
       
       // Basic macro detection - look for vbaProject.bin in the ZIP structure
-      final fileString = String.fromCharCodes(fileData);
-      if (fileString.contains('vbaProject.bin') || fileString.contains('macros/')) {
+      if (_containsMacroPatterns(fileData)) {
         throw FileValidationException('Document contains macros which are not allowed for security reasons');
       }
     }
@@ -290,6 +288,45 @@ class FileValidationService {
     _logger.d('✅ Video structure validation passed');
   }
   
+  /// Check if file contains macro patterns using efficient byte search
+  static bool _containsMacroPatterns(Uint8List fileData) {
+    // Patterns to search for (ASCII byte sequences)
+    final patterns = [
+      'VBA'.codeUnits,                           // VBA macro indicator
+      'Microsoft Visual Basic'.codeUnits,       // VBA full name
+      'vbaProject.bin'.codeUnits,               // DOCX macro file
+      'macros/'.codeUnits,                      // DOCX macro directory
+    ];
+    
+    // Search for any of the patterns
+    for (final pattern in patterns) {
+      if (_containsPattern(fileData, pattern)) {
+        return true;
+      }
+    }
+    
+    return false;
+  }
+  
+  /// Efficient byte pattern search using sliding window approach
+  static bool _containsPattern(Uint8List data, List<int> pattern) {
+    if (pattern.isEmpty || data.length < pattern.length) {
+      return false;
+    }
+    
+    // Sliding window search - stops as soon as pattern is found
+    outer: for (int i = 0; i <= data.length - pattern.length; i++) {
+      for (int j = 0; j < pattern.length; j++) {
+        if (data[i + j] != pattern[j]) {
+          continue outer;
+        }
+      }
+      return true; // Pattern found - early exit
+    }
+    
+    return false;
+  }
+
   /// Get file type icon
   static String getFileTypeIcon(String fileType) {
     switch (fileType) {

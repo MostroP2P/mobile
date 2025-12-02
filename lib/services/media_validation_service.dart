@@ -106,6 +106,8 @@ class MediaValidationService {
           'Invalid or corrupted ${detectedType.mimeType} image: Could not decode'
         );
       }
+    } on MediaValidationException {
+      rethrow;
     } catch (e) {
       throw MediaValidationException(
         'Invalid or corrupted ${detectedType.mimeType} image: $e'
@@ -180,6 +182,8 @@ class MediaValidationService {
           'Invalid or corrupted ${detectedType.mimeType} image: Could not decode'
         );
       }
+    } on MediaValidationException {
+      rethrow;
     } catch (e) {
       throw MediaValidationException(
         'Invalid or corrupted ${detectedType.mimeType} image: $e'
