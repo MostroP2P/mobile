@@ -1230,5 +1230,10 @@
   "download": "Scarica",
   "openFile": "Apri File",
   "encrypted": "Crittografato",
-  "downloadingFile": "Scaricamento file..."
+  "downloadingFile": "Scaricamento file...",
+
+  "@_comment_file_confirmation": "File confirmation dialog strings",
+  "confirmFileUpload": "Conferma Invio",
+  "sendThisFile": "Inviare questo file?",
+  "send": "Invia"
 }

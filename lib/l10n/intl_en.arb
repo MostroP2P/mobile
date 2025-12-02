@@ -1197,5 +1197,10 @@
   "download": "Download",
   "openFile": "Open File",
   "encrypted": "Encrypted",
-  "downloadingFile": "Downloading file..."
+  "downloadingFile": "Downloading file...",
+
+  "@_comment_file_confirmation": "File confirmation dialog strings",
+  "confirmFileUpload": "Confirm Upload",
+  "sendThisFile": "Send this file?",
+  "send": "Send"
 }

@@ -90,6 +90,12 @@ class _MessageInputState extends ConsumerState<MessageInput> {
         final file = File(result.files.single.path!);
         final filename = result.files.single.name;
         
+        // Show confirmation dialog before uploading
+        final shouldUpload = await _showFileConfirmationDialog(filename);
+        if (!shouldUpload) {
+          return; // User cancelled, exit without uploading
+        }
+        
         // Get shared key for this order/chat
         final sharedKey = await _getSharedKeyForOrder(widget.orderId);
         
@@ -199,7 +205,84 @@ class _MessageInputState extends ConsumerState<MessageInput> {
     }
   }
 
-
+  // Show confirmation dialog for file upload
+  Future<bool> _showFileConfirmationDialog(String filename) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: AppTheme.backgroundCard,
+          title: Text(
+            S.of(context)!.confirmFileUpload,
+            style: TextStyle(
+              color: AppTheme.cream1,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                S.of(context)!.sendThisFile,
+                style: TextStyle(
+                  color: AppTheme.cream1,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppTheme.backgroundInput,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  filename,
+                  style: TextStyle(
+                    color: AppTheme.textSecondary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(
+                S.of(context)!.cancel,
+                style: TextStyle(
+                  color: AppTheme.textSecondary,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.mostroGreen,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+              child: Text(
+                S.of(context)!.send,
+                style: const TextStyle(
+                  color: Colors.black,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+    
+    return result ?? false; // If dialog is dismissed, treat as cancelled
+  }
 
   @override
   Widget build(BuildContext context) {
