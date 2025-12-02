@@ -476,15 +476,7 @@ class _EncryptedFileMessageState extends ConsumerState<EncryptedFileMessage> {
       final result = await OpenFile.open(tempFile.path);
       
       if (mounted) {
-        if (result.type == ResultType.done) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Opening ${metadata.filename}'),
-              backgroundColor: AppTheme.mostroGreen,
-              duration: const Duration(seconds: 2),
-            ),
-          );
-        } else {
+        if (result.type != ResultType.done) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Could not open file: ${result.message}'),
