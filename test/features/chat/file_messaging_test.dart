@@ -88,13 +88,13 @@ void main() {
     group('Encryption & Key Management', () {
       test('derives identical shared keys for both parties', () {
         // Use valid keys from key derivation (same pattern as mostro_service_test.dart)
-        final userA_privateKey = tradePrivKey;
-        final userA_publicKey = keyDerivator.privateToPublicKey(userA_privateKey);
-        final userB_privateKey = peerPrivKey;
-        final userB_publicKey = peerPublicKey;
+        final userAPrivateKey = tradePrivKey;
+        final userAPublicKey = keyDerivator.privateToPublicKey(userAPrivateKey);
+        final userBPrivateKey = peerPrivKey;
+        final userBPublicKey = peerPublicKey;
 
-        final sharedKeyA = NostrUtils.computeSharedKey(userA_privateKey, userB_publicKey);
-        final sharedKeyB = NostrUtils.computeSharedKey(userB_privateKey, userA_publicKey);
+        final sharedKeyA = NostrUtils.computeSharedKey(userAPrivateKey, userBPublicKey);
+        final sharedKeyB = NostrUtils.computeSharedKey(userBPrivateKey, userAPublicKey);
 
         expect(sharedKeyA.private, equals(sharedKeyB.private));
       });
@@ -292,7 +292,6 @@ void main() {
 
       test('handles upload success response', () async {
         final blossomClient = BlossomClient(serverUrl: 'https://blossom.server.com');
-        final testData = Uint8List.fromList([1, 2, 3, 4, 5]);
 
         // We can't easily test the actual HTTP without mocking http.Client
         // This test verifies the URL construction logic
@@ -414,35 +413,35 @@ void main() {
 
       test('handles file sharing between different sessions', () {
         // Create session 1 with different derived keys
-        final session1_tradeKey = keyDerivator.derivePrivateKey(extendedPrivKey, 10);
-        final session1_peerKey = keyDerivator.derivePrivateKey(extendedPrivKey, 11);
-        final session1_peerPublic = keyDerivator.privateToPublicKey(session1_peerKey);
+        final session1TradeKey = keyDerivator.derivePrivateKey(extendedPrivKey, 10);
+        final session1PeerKey = keyDerivator.derivePrivateKey(extendedPrivKey, 11);
+        final session1PeerPublic = keyDerivator.privateToPublicKey(session1PeerKey);
 
         final session1 = Session(
           masterKey: NostrKeyPairs(private: masterPrivKey),
-          tradeKey: NostrKeyPairs(private: session1_tradeKey),
+          tradeKey: NostrKeyPairs(private: session1TradeKey),
           keyIndex: 10,
           fullPrivacy: false,
           startTime: DateTime.now(),
           orderId: 'order-1',
           role: Role.buyer,
-          peer: Peer(publicKey: session1_peerPublic),
+          peer: Peer(publicKey: session1PeerPublic),
         );
 
         // Create session 2 with different derived keys  
-        final session2_tradeKey = keyDerivator.derivePrivateKey(extendedPrivKey, 20);
-        final session2_peerKey = keyDerivator.derivePrivateKey(extendedPrivKey, 21);
-        final session2_peerPublic = keyDerivator.privateToPublicKey(session2_peerKey);
+        final session2TradeKey = keyDerivator.derivePrivateKey(extendedPrivKey, 20);
+        final session2PeerKey = keyDerivator.derivePrivateKey(extendedPrivKey, 21);
+        final session2PeerPublic = keyDerivator.privateToPublicKey(session2PeerKey);
 
         final session2 = Session(
           masterKey: NostrKeyPairs(private: masterPrivKey),
-          tradeKey: NostrKeyPairs(private: session2_tradeKey),
+          tradeKey: NostrKeyPairs(private: session2TradeKey),
           keyIndex: 20,
           fullPrivacy: false,
           startTime: DateTime.now(),
           orderId: 'order-2',
           role: Role.seller,
-          peer: Peer(publicKey: session2_peerPublic),
+          peer: Peer(publicKey: session2PeerPublic),
         );
 
         expect(session1.sharedKey!.private, isNot(equals(session2.sharedKey!.private)));
