@@ -53,14 +53,14 @@ Future<void> showLocalNotification(NostrEvent event) async {
   try {
     final mostroMessage = await _decryptAndProcessEvent(event);
     if (mostroMessage == null) return;
-    
+
 
     final sessions = await _loadSessionsFromDatabase();
     final matchingSession = sessions.cast<Session?>().firstWhere(
       (session) => session?.orderId == mostroMessage.id,
       orElse: () => null,
     );
-    
+
     final notificationData = await NotificationDataExtractor.extractFromMostroMessage(mostroMessage, null, session: matchingSession);
     if (notificationData == null || notificationData.isTemporary) return;
 
@@ -78,7 +78,7 @@ Future<void> showLocalNotification(NostrEvent event) async {
         playSound: true,
         enableVibration: true,
         ticker: notificationText.title,
-        icon: '@drawable/ic_notification',
+        icon: '@drawable/ic_bg_service_small',
         styleInformation: expandedText != null 
             ? BigTextStyleInformation(expandedText, contentTitle: notificationText.title)
             : null,
@@ -258,25 +258,25 @@ String? _getExpandedText(Map<String, dynamic> values) {
 }
 
 
-Future<void> retryNotification(NostrEvent event, {int maxAttempts = 3}) async {  
-  int attempt = 0;  
-  bool success = false;  
-  
-  while (!success && attempt < maxAttempts) {  
-    try {  
-      await showLocalNotification(event);  
-      success = true;  
-    } catch (e) {  
-      attempt++;  
-      if (attempt >= maxAttempts) {  
-        Logger().e('Failed to show notification after $maxAttempts attempts: $e');  
-        break;  
-      }  
-      
-      // Exponential backoff: 1s, 2s, 4s, etc.  
-      final backoffSeconds = pow(2, attempt - 1).toInt();  
-      Logger().e('Notification attempt $attempt failed: $e. Retrying in ${backoffSeconds}s');  
-      await Future.delayed(Duration(seconds: backoffSeconds));  
-    }  
-  }  
+Future<void> retryNotification(NostrEvent event, {int maxAttempts = 3}) async {
+  int attempt = 0;
+  bool success = false;
+
+  while (!success && attempt < maxAttempts) {
+    try {
+      await showLocalNotification(event);
+      success = true;
+    } catch (e) {
+      attempt++;
+      if (attempt >= maxAttempts) {
+        Logger().e('Failed to show notification after $maxAttempts attempts: $e');
+        break;
+      }
+
+      // Exponential backoff: 1s, 2s, 4s, etc.
+      final backoffSeconds = pow(2, attempt - 1).toInt();
+      Logger().e('Notification attempt $attempt failed: $e. Retrying in ${backoffSeconds}s');
+      await Future.delayed(Duration(seconds: backoffSeconds));
+    }
+  }
 }  
