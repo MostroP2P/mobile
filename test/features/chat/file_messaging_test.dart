@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -316,59 +315,84 @@ void main() {
     });
 
     group('Gift Wrap Message Creation', () {
-      test('creates file message with correct metadata', () {
-        final fileMessage = {
-          'type': 'file_encrypted',
-          'file_type': 'document',
-          'blossom_url': 'https://blossom.server.com/hash123',
-          'nonce': 'abcdef123456789012345678',
-          'mime_type': 'application/pdf',
-          'original_size': 12345,
-          'filename': 'document.pdf',
-          'encrypted_size': 12389,
-        };
+      test('creates file message with correct metadata using real code', () {
+        final uploadResult = EncryptedFileUploadResult(
+          blossomUrl: 'https://blossom.server.com/hash123',
+          nonce: 'abcdef123456789012345678',
+          fileType: 'document',
+          mimeType: 'application/pdf',
+          originalSize: 12345,
+          filename: 'document.pdf',
+          encryptedSize: 12389,
+        );
 
-        expect(fileMessage['type'], equals('file_encrypted'));
-        expect(fileMessage['nonce'], isA<String>());
-        expect(fileMessage['blossom_url'], startsWith('https://'));
-        expect(fileMessage.containsKey('encryption_key'), isFalse);
+        final json = uploadResult.toJson();
+
+        expect(json['type'], equals('file_encrypted'));
+        expect(json['nonce'], isA<String>());
+        expect(json['blossom_url'], startsWith('https://'));
+        expect(json.containsKey('encryption_key'), isFalse);
+        expect(json['file_type'], equals('document'));
+        expect(json['mime_type'], equals('application/pdf'));
+        expect(json['original_size'], equals(12345));
+        expect(json['encrypted_size'], equals(12389));
       });
 
-      test('includes nonce but not encryption key', () {
-        final imageMessage = {
-          'type': 'image_encrypted',
-          'file_type': 'image',
-          'blossom_url': 'https://blossom.server.com/hash456',
-          'nonce': '1234567890abcdef12345678',
-          'mime_type': 'image/jpeg',
-          'original_size': 54321,
-          'filename': 'photo.jpg',
-          'encrypted_size': 54365,
-        };
+      test('creates image message with correct structure using real code', () {
+        final uploadResult = EncryptedImageUploadResult(
+          blossomUrl: 'https://blossom.server.com/hash456',
+          nonce: '1234567890abcdef12345678',
+          mimeType: 'image/jpeg',
+          originalSize: 54321,
+          width: 1920,
+          height: 1080,
+          filename: 'photo.jpg',
+          encryptedSize: 54365,
+        );
 
-        expect(imageMessage.containsKey('nonce'), isTrue);
-        expect(imageMessage.containsKey('encryption_key'), isFalse);
-        expect(imageMessage.containsKey('shared_key'), isFalse);
+        final json = uploadResult.toJson();
+
+        expect(json['type'], equals('image_encrypted'));
+        expect(json.containsKey('nonce'), isTrue);
+        expect(json.containsKey('encryption_key'), isFalse);
+        expect(json.containsKey('shared_key'), isFalse);
+        expect(json['mime_type'], equals('image/jpeg'));
+        expect(json['width'], equals(1920));
+        expect(json['height'], equals(1080));
+        expect(json['encrypted_size'], equals(54365));
       });
 
-      test('formats JSON correctly for different file types', () {
-        final videoMessage = {
-          'type': 'file_encrypted',
-          'file_type': 'video',
-          'blossom_url': 'https://blossom.server.com/hash789',
-          'nonce': 'fedcba987654321098765432',
-          'mime_type': 'video/mp4',
-          'original_size': 9876543,
-          'filename': 'video.mp4',
-          'encrypted_size': 9876587,
-        };
+      test('file and image messages have different type fields', () {
+        final fileResult = EncryptedFileUploadResult(
+          blossomUrl: 'https://blossom.server.com/file',
+          nonce: 'nonce123',
+          fileType: 'video',
+          mimeType: 'video/mp4',
+          originalSize: 9876543,
+          filename: 'video.mp4',
+          encryptedSize: 9876587,
+        );
 
-        final jsonString = jsonEncode(videoMessage);
-        final decoded = jsonDecode(jsonString);
+        final imageResult = EncryptedImageUploadResult(
+          blossomUrl: 'https://blossom.server.com/image',
+          nonce: 'nonce456',
+          mimeType: 'image/png',
+          originalSize: 123456,
+          width: 800,
+          height: 600,
+          filename: 'image.png',
+          encryptedSize: 123500,
+        );
 
-        expect(decoded['type'], equals('file_encrypted'));
-        expect(decoded['file_type'], equals('video'));
-        expect(decoded['mime_type'], equals('video/mp4'));
+        final fileJson = fileResult.toJson();
+        final imageJson = imageResult.toJson();
+
+        expect(fileJson['type'], equals('file_encrypted'));
+        expect(imageJson['type'], equals('image_encrypted'));
+        expect(fileJson['file_type'], equals('video'));
+        expect(imageJson.containsKey('width'), isTrue);
+        expect(imageJson.containsKey('height'), isTrue);
+        expect(fileJson.containsKey('width'), isFalse);
       });
     });
 
