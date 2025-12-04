@@ -269,7 +269,7 @@ void main() {
     });
 
     group('Blossom Upload', () {
-      test('creates proper HTTP authorization header', () async {
+      test('delegates to BlossomClient uploadImage method', () async {
         final testData = Uint8List.fromList([1, 2, 3, 4, 5]);
         const mimeType = 'image/jpeg';
 
@@ -290,11 +290,10 @@ void main() {
         )).called(1);
       });
 
-      test('handles upload success response', () async {
+      test('exposes configured server URL', () async {
         final blossomClient = BlossomClient(serverUrl: 'https://blossom.server.com');
 
-        // We can't easily test the actual HTTP without mocking http.Client
-        // This test verifies the URL construction logic
+        // Verify URL construction logic
         expect(blossomClient.serverUrl, equals('https://blossom.server.com'));
       });
 
@@ -308,8 +307,8 @@ void main() {
 
         expect(
           () => mockBlossomClient.uploadImage(
-            imageData: Uint8List.fromList([1, 2, 3, 4, 5]), 
-            mimeType: mimeType
+            imageData: Uint8List.fromList([1, 2, 3, 4, 5]),
+            mimeType: mimeType,
           ),
           throwsA(isA<BlossomException>()),
         );
