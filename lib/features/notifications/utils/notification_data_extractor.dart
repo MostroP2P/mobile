@@ -108,10 +108,22 @@ class NotificationDataExtractor {
         }
         break;
         
+      case Action.fiatSent:
+        // Notification for seller when buyer marks fiat as sent
+        // This requires seller to release the funds
+        final order = event.getPayload<Order>();
+        if (order != null) {
+          values = {
+            'fiat_code': order.fiatCode,
+            'fiat_amount': order.fiatAmount,
+          };
+        }
+        break;
+
       case Action.fiatSentOk:
         // Only sellers should receive fiat confirmed notifications
         if (session?.role != Role.seller) return null;
-        
+
         final peer = event.getPayload<Peer>();
         if (peer?.publicKey != null) {
           final buyerNym = ref != null
