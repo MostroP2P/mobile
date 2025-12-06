@@ -78,7 +78,7 @@ Future<void> showLocalNotification(NostrEvent event) async {
         playSound: true,
         enableVibration: true,
         ticker: notificationText.title,
-        icon: '@drawable/ic_bg_service_small',
+        icon: '@drawable/ic_notification',
         styleInformation: expandedText != null 
             ? BigTextStyleInformation(expandedText, contentTitle: notificationText.title)
             : null,
