@@ -388,7 +388,6 @@ Future<void> _processEncryptedImageMessage(
   final uploadService = EncryptedImageUploadService();
   final decryptedImage = await uploadService.downloadAndDecryptImage(
     blossomUrl: result.blossomUrl,
-    nonceHex: result.nonce,
     sharedKey: sharedKey,
   );
   

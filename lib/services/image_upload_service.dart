@@ -2,8 +2,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/services/media_validation_service.dart';
-import 'package:mostro_mobile/services/blossom_client.dart';
-import 'package:mostro_mobile/core/config/blossom_config.dart';
+import 'package:mostro_mobile/services/blossom_upload_helper.dart';
 
 class ImageUploadService {
   final Logger _logger = Logger();
@@ -50,34 +49,6 @@ class ImageUploadService {
   
   /// Upload with automatic retry to multiple servers
   Future<String> _uploadWithRetry(Uint8List imageData, String mimeType) async {
-    final servers = BlossomConfig.defaultServers;
-    for (int i = 0; i < servers.length; i++) {
-      final serverUrl = servers[i];
-      _logger.d('Attempting upload to server ${i + 1}/${servers.length}: $serverUrl');
-      
-      try {
-        final client = BlossomClient(serverUrl: serverUrl);
-        final blossomUrl = await client.uploadImage(
-          imageData: imageData,
-          mimeType: mimeType,
-        );
-        
-        _logger.i('✅ Upload successful to: $serverUrl');
-        return blossomUrl;
-        
-      } catch (e) {
-        _logger.w('❌ Upload failed to $serverUrl: $e');
-        
-        // If it's the last server, re-throw the error
-        if (i == servers.length - 1) {
-          throw BlossomException('All Blossom servers failed. Last error: $e');
-        }
-        
-        // Continue with next server
-        continue;
-      }
-    }
-    
-    throw BlossomException('No Blossom servers available');
+    return BlossomUploadHelper.uploadWithRetry(imageData, mimeType);
   }
 }

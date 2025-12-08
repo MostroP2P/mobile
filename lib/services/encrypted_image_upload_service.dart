@@ -3,10 +3,9 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/services/media_validation_service.dart';
-import 'package:mostro_mobile/services/blossom_client.dart';
+import 'package:mostro_mobile/services/blossom_upload_helper.dart';
 import 'package:mostro_mobile/services/encryption_service.dart';
 import 'package:mostro_mobile/services/blossom_download_service.dart';
-import 'package:mostro_mobile/core/config/blossom_config.dart';
 
 class EncryptedImageUploadResult {
   final String blossomUrl;
@@ -46,16 +45,20 @@ class EncryptedImageUploadResult {
 
   /// Create from JSON (for receiving messages)
   factory EncryptedImageUploadResult.fromJson(Map<String, dynamic> json) {
-    return EncryptedImageUploadResult(
-      blossomUrl: json['blossom_url'],
-      nonce: json['nonce'],
-      mimeType: json['mime_type'],
-      originalSize: json['original_size'],
-      width: json['width'],
-      height: json['height'],
-      filename: json['filename'],
-      encryptedSize: json['encrypted_size'],
-    );
+    try {
+      return EncryptedImageUploadResult(
+        blossomUrl: json['blossom_url'] as String,
+        nonce: json['nonce'] as String,
+        mimeType: json['mime_type'] as String,
+        originalSize: json['original_size'] as int,
+        width: json['width'] as int,
+        height: json['height'] as int,
+        filename: json['filename'] as String,
+        encryptedSize: json['encrypted_size'] as int,
+      );
+    } catch (e) {
+      throw FormatException('Invalid EncryptedImageUploadResult JSON: $e');
+    }
   }
 }
 
@@ -139,12 +142,10 @@ class EncryptedImageUploadService {
   /// Download and decrypt image from Blossom
   Future<Uint8List> downloadAndDecryptImage({
     required String blossomUrl,
-    required String nonceHex,
     required Uint8List sharedKey,
   }) async {
     _logger.i('🔓 Starting encrypted image download and decryption...');
     _logger.d('URL: $blossomUrl');
-    _logger.d('Nonce: $nonceHex');
     
     try {
       // 1. Download encrypted blob from Blossom
@@ -169,36 +170,7 @@ class EncryptedImageUploadService {
   
   /// Upload with automatic retry to multiple servers
   Future<String> _uploadWithRetry(Uint8List encryptedData, String mimeType) async {
-    final servers = BlossomConfig.defaultServers;
-    
-    for (int i = 0; i < servers.length; i++) {
-      final serverUrl = servers[i];
-      _logger.d('Attempting upload to server ${i + 1}/${servers.length}: $serverUrl');
-      
-      try {
-        final client = BlossomClient(serverUrl: serverUrl);
-        final blossomUrl = await client.uploadImage(
-          imageData: encryptedData,
-          mimeType: mimeType,
-        );
-        
-        _logger.i('✅ Upload successful to: $serverUrl');
-        return blossomUrl;
-        
-      } catch (e) {
-        _logger.w('❌ Upload failed to $serverUrl: $e');
-        
-        // If it's the last server, re-throw the error
-        if (i == servers.length - 1) {
-          throw BlossomException('All Blossom servers failed. Last error: $e');
-        }
-        
-        // Continue with next server
-        continue;
-      }
-    }
-    
-    throw BlossomException('No Blossom servers available');
+    return BlossomUploadHelper.uploadWithRetry(encryptedData, mimeType);
   }
 
   /// Download from Blossom with retry

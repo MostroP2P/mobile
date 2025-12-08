@@ -3,10 +3,9 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/services/file_validation_service.dart';
-import 'package:mostro_mobile/services/blossom_client.dart';
+import 'package:mostro_mobile/services/blossom_upload_helper.dart';
 import 'package:mostro_mobile/services/encryption_service.dart';
 import 'package:mostro_mobile/services/blossom_download_service.dart';
-import 'package:mostro_mobile/core/config/blossom_config.dart';
 
 class EncryptedFileUploadResult {
   final String blossomUrl;
@@ -43,15 +42,19 @@ class EncryptedFileUploadResult {
 
   /// Create from JSON (for receiving messages)
   factory EncryptedFileUploadResult.fromJson(Map<String, dynamic> json) {
-    return EncryptedFileUploadResult(
-      blossomUrl: json['blossom_url'],
-      nonce: json['nonce'],
-      mimeType: json['mime_type'],
-      fileType: json['file_type'],
-      originalSize: json['original_size'],
-      filename: json['filename'],
-      encryptedSize: json['encrypted_size'],
-    );
+    try {
+      return EncryptedFileUploadResult(
+        blossomUrl: json['blossom_url'] as String,
+        nonce: json['nonce'] as String,
+        mimeType: json['mime_type'] as String,
+        fileType: json['file_type'] as String,
+        originalSize: json['original_size'] as int,
+        filename: json['filename'] as String,
+        encryptedSize: json['encrypted_size'] as int,
+      );
+    } catch (e) {
+      throw FormatException('Invalid EncryptedFileUploadResult JSON: $e');
+    }
   }
 }
 
@@ -151,36 +154,7 @@ class EncryptedFileUploadService {
   
   /// Upload with automatic retry to multiple servers
   Future<String> _uploadWithRetry(Uint8List encryptedData, String mimeType) async {
-    final servers = BlossomConfig.defaultServers;
-    
-    for (int i = 0; i < servers.length; i++) {
-      final serverUrl = servers[i];
-      _logger.d('Attempting upload to server ${i + 1}/${servers.length}: $serverUrl');
-      
-      try {
-        final client = BlossomClient(serverUrl: serverUrl);
-        final blossomUrl = await client.uploadImage(
-          imageData: encryptedData,
-          mimeType: mimeType,
-        );
-        
-        _logger.i('✅ Upload successful to: $serverUrl');
-        return blossomUrl;
-        
-      } catch (e) {
-        _logger.w('❌ Upload failed to $serverUrl: $e');
-        
-        // If it's the last server, re-throw the error
-        if (i == servers.length - 1) {
-          throw BlossomException('All Blossom servers failed. Last error: $e');
-        }
-        
-        // Continue with next server
-        continue;
-      }
-    }
-    
-    throw BlossomException('No Blossom servers available');
+    return BlossomUploadHelper.uploadWithRetry(encryptedData, mimeType);
   }
 
   /// Download from Blossom with retry

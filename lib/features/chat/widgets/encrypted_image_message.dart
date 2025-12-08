@@ -319,7 +319,6 @@ class _EncryptedImageMessageState extends ConsumerState<EncryptedImageMessage> {
       final uploadService = EncryptedImageUploadService();
       final decryptedImage = await uploadService.downloadAndDecryptImage(
         blossomUrl: imageData.blossomUrl,
-        nonceHex: imageData.nonce,
         sharedKey: sharedKey,
       );
 

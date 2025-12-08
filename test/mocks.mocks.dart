@@ -3293,7 +3293,6 @@ class MockEncryptedImageUploadService extends _i1.Mock
   @override
   _i5.Future<_i33.Uint8List> downloadAndDecryptImage({
     required String? blossomUrl,
-    required String? nonceHex,
     required _i33.Uint8List? sharedKey,
   }) =>
       (super.noSuchMethod(
@@ -3302,7 +3301,6 @@ class MockEncryptedImageUploadService extends _i1.Mock
           [],
           {
             #blossomUrl: blossomUrl,
-            #nonceHex: nonceHex,
             #sharedKey: sharedKey,
           },
         ),
