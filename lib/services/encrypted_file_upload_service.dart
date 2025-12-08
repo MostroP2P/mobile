@@ -6,6 +6,7 @@ import 'package:mostro_mobile/services/file_validation_service.dart';
 import 'package:mostro_mobile/services/blossom_client.dart';
 import 'package:mostro_mobile/services/encryption_service.dart';
 import 'package:mostro_mobile/services/blossom_download_service.dart';
+import 'package:mostro_mobile/core/config/blossom_config.dart';
 
 class EncryptedFileUploadResult {
   final String blossomUrl;
@@ -57,18 +58,6 @@ class EncryptedFileUploadResult {
 class EncryptedFileUploadService {
   final Logger _logger = Logger();
   
-  // List of Blossom servers (with fallbacks)
-  static const List<String> _blossomServers = [
-    'https://blossom.primal.net',
-    'https://blossom.band',
-    'https://nostr.media',
-    'https://blossom.sector01.com',
-    'https://24242.io',
-    'https://otherstuff.shaving.kiwi',
-    'https://blossom.f7z.io',
-    'https://nosto.re',
-    'https://blossom.poster.place',
-  ];
   
   EncryptedFileUploadService();
 
@@ -162,7 +151,7 @@ class EncryptedFileUploadService {
   
   /// Upload with automatic retry to multiple servers
   Future<String> _uploadWithRetry(Uint8List encryptedData, String mimeType) async {
-    final servers = _blossomServers;
+    final servers = BlossomConfig.defaultServers;
     
     for (int i = 0; i < servers.length; i++) {
       final serverUrl = servers[i];

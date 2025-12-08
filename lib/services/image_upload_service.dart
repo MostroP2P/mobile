@@ -3,22 +3,11 @@ import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/services/media_validation_service.dart';
 import 'package:mostro_mobile/services/blossom_client.dart';
+import 'package:mostro_mobile/core/config/blossom_config.dart';
 
 class ImageUploadService {
   final Logger _logger = Logger();
   
-  // List of Blossom servers (with fallbacks)
-  static const List<String> _blossomServers = [
-    'https://blossom.primal.net',
-    'https://blossom.band',
-    'https://nostr.media',
-    'https://blossom.sector01.com',
-    'https://24242.io',
-    'https://otherstuff.shaving.kiwi',
-    'https://blossom.f7z.io',
-    'https://nosto.re',
-    'https://blossom.poster.place',
-  ];
   
   ImageUploadService();
 
@@ -61,8 +50,7 @@ class ImageUploadService {
   
   /// Upload with automatic retry to multiple servers
   Future<String> _uploadWithRetry(Uint8List imageData, String mimeType) async {
-    final servers = _blossomServers; // Always use real Blossom servers
-    
+    final servers = BlossomConfig.defaultServers;
     for (int i = 0; i < servers.length; i++) {
       final serverUrl = servers[i];
       _logger.d('Attempting upload to server ${i + 1}/${servers.length}: $serverUrl');
