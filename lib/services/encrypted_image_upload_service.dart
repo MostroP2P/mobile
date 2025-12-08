@@ -223,10 +223,3 @@ class EncryptedImageUploadService {
   }
 }
 
-class BlossomException implements Exception {
-  final String message;
-  BlossomException(this.message);
-  
-  @override
-  String toString() => 'BlossomException: $message';
-}
