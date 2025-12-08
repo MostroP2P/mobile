@@ -1,7 +1,6 @@
 import 'dart:typed_data';
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mockito/mockito.dart';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:image/image.dart' as img;
@@ -19,10 +18,8 @@ import 'package:mostro_mobile/services/encrypted_image_upload_service.dart' hide
 import 'package:mostro_mobile/services/blossom_download_service.dart';
 import 'package:mostro_mobile/features/chat/notifiers/chat_room_notifier.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
-import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 
 import '../../mocks.mocks.dart';
-import '../../mocks.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -54,18 +51,11 @@ void main() {
   provideDummy<ChatRoomNotifier>(MockChatRoomNotifier());
 
   group('File Messaging System', () {
-    late ProviderContainer container;
     late MockBlossomClient mockBlossomClient;
-    late MockEncryptedFileUploadService mockFileUploadService;
-    late MockEncryptedImageUploadService mockImageUploadService;
-    late MockBlossomDownloadService mockDownloadService;
     late Session testSession;
 
     setUp(() {
       mockBlossomClient = MockBlossomClient();
-      mockFileUploadService = MockEncryptedFileUploadService();
-      mockImageUploadService = MockEncryptedImageUploadService();
-      mockDownloadService = MockBlossomDownloadService();
 
       // Use same valid key derivation pattern as mostro_service_test.dart
       testSession = Session(
@@ -78,25 +68,6 @@ void main() {
         role: Role.buyer,
         peer: Peer(publicKey: peerPublicKey),
       );
-
-      // Create container with mock session notifier override
-      container = ProviderContainer(overrides: [
-        sessionNotifierProvider.overrideWith((ref) {
-          final mockSessionNotifier = MockSessionNotifier(
-            ref,
-            MockKeyManager(),
-            MockSessionStorage(),
-            MockSettings(),
-          );
-          // Configure the mock to return our test session
-          mockSessionNotifier.setMockSession(testSession);
-          return mockSessionNotifier;
-        }),
-      ]);
-    });
-
-    tearDown(() {
-      container.dispose();
     });
 
     group('Encryption & Key Management', () {
@@ -228,17 +199,8 @@ void main() {
     });
 
     group('File Validation', () {
-      test('accepts files within 25MB limit', () {
-        final file24MB = Uint8List(24 * 1024 * 1024);
-        expect(file24MB.length, lessThanOrEqualTo(FileValidationService.maxFileSize));
-        
-        final file25MB = Uint8List(25 * 1024 * 1024);
-        expect(file25MB.length, lessThanOrEqualTo(FileValidationService.maxFileSize));
-      });
-
-      test('rejects oversized files', () {
-        final file26MB = Uint8List(26 * 1024 * 1024);
-        expect(file26MB.length, greaterThan(FileValidationService.maxFileSize));
+      test('uses 25MB max file size', () {
+        expect(FileValidationService.maxFileSize, equals(25 * 1024 * 1024));
       });
 
       test('validates supported extensions', () {
@@ -267,9 +229,7 @@ void main() {
       });
 
       test('handles zero-byte files', () {
-        final emptyFile = Uint8List(0);
-        expect(emptyFile.length, equals(0));
-        expect(emptyFile.length, lessThan(FileValidationService.maxFileSize));
+        expect(0, lessThan(FileValidationService.maxFileSize));
       });
 
       test('validates real JPEG file with API', () async {
@@ -568,11 +528,6 @@ void main() {
     });
 
     group('File Download & Decryption', () {
-      test('download service can be mocked', () {
-        expect(mockDownloadService, isNotNull);
-        expect(mockDownloadService, isA<MockBlossomDownloadService>());
-      });
-
       test('verifies file integrity after decryption', () {
         final testData = Uint8List.fromList([1, 2, 3, 4, 5]);
         final key = Uint8List.fromList(List.generate(32, (i) => i));
@@ -595,16 +550,6 @@ void main() {
     });
 
     group('Complete File Sharing Flows', () {
-      test('image upload service can be mocked', () {
-        expect(mockImageUploadService, isNotNull);
-        expect(mockImageUploadService, isA<MockEncryptedImageUploadService>());
-      });
-
-      test('file upload service can be mocked', () {
-        expect(mockFileUploadService, isNotNull);
-        expect(mockFileUploadService, isA<MockEncryptedFileUploadService>());
-      });
-
       test('handles file sharing between different sessions', () {
         // Create session 1 with different derived keys
         final session1TradeKey = keyDerivator.derivePrivateKey(extendedPrivKey, 10);
@@ -677,19 +622,15 @@ void main() {
         final corruptedAuthTag = Uint8List.fromList(encrypted.authTag);
         corruptedAuthTag[0] = (corruptedAuthTag[0] + 1) % 256;
 
-        bool threwEncryptionException = false;
-        try {
-          EncryptionService.decryptChaCha20Poly1305(
+        expect(
+          () => EncryptionService.decryptChaCha20Poly1305(
             key: key,
             nonce: encrypted.nonce,
             encryptedData: encrypted.encryptedData,
             authTag: corruptedAuthTag,
-          );
-        } catch (e) {
-          threwEncryptionException = e is EncryptionException;
-        }
-        
-        expect(threwEncryptionException, isTrue);
+          ),
+          throwsA(isA<EncryptionException>()),
+        );
       });
 
       test('validates session isolation', () {
@@ -725,17 +666,13 @@ void main() {
         expect(result.authTag.length, equals(16));
 
         // Invalid key should throw ArgumentError
-        bool threwArgumentError = false;
-        try {
-          EncryptionService.encryptChaCha20Poly1305(
+        expect(
+          () => EncryptionService.encryptChaCha20Poly1305(
             key: invalidKey,
             plaintext: testData,
-          );
-        } catch (e) {
-          threwArgumentError = e is ArgumentError;
-        }
-        
-        expect(threwArgumentError, isTrue);
+          ),
+          throwsArgumentError,
+        );
       });
     });
   });
@@ -743,7 +680,7 @@ void main() {
 
 // Helper functions for test data creation
 
-/// Creates a valid JPEG image using the image package for header validation tests
+/// Creates a minimal JPEG byte sequence with valid header markers for header validation tests
 Uint8List _createTestJpeg() {
   // Minimal valid JPEG header for basic header tests
   return Uint8List.fromList([
@@ -758,7 +695,7 @@ Uint8List _createTestJpeg() {
   ]);
 }
 
-/// Creates a valid PNG image using the image package for header validation tests
+/// Creates a minimal PNG byte sequence with valid header markers for header validation tests
 Uint8List _createTestPng() {
   // Minimal valid PNG header for basic header tests
   return Uint8List.fromList([
