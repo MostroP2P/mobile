@@ -26,15 +26,16 @@ class _NotificationBellWidgetState extends ConsumerState<NotificationBellWidget>
       vsync: this,
     );
     _shakeAnimation = Tween<double>(
-      begin: -0.05,
-      end: 0.05,
+      begin: -0.15,
+      end: 0.15,
     ).animate(CurvedAnimation(
       parent: _animationController,
-      curve: Curves.elasticIn,
+      curve: Curves.easeInOut,
     ));
     
     // Handle initial state where backup reminder might already be active
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       final shouldAnimate = ref.read(backupReminderProvider);
       if (shouldAnimate) {
         _animationController.repeat(reverse: true);
