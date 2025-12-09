@@ -1213,5 +1213,9 @@
   "imageDecryptionError": "Error decrypting image",
   "imageNotAvailable": "Image not available",
   "couldNotOpenFile": "Could not open file",
-  "errorOpeningFile": "Error opening file"
+  "errorOpeningFile": "Error opening file",
+
+  "@_comment_backup_reminder": "Backup reminder notification",
+  "backupAccountReminder": "You must back up your account",
+  "backupAccountReminderMessage": "Back up your secret words to recover your account"
 }
