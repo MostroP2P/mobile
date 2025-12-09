@@ -9,6 +9,7 @@ import 'package:open_file/open_file.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/services/encrypted_image_upload_service.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 
 class EncryptedImageMessage extends ConsumerStatefulWidget {
   final NostrEvent message;
@@ -46,7 +47,7 @@ class _EncryptedImageMessageState extends ConsumerState<EncryptedImageMessage> {
     if (messageId == null) {
       if (mounted) {
         setState(() {
-          _errorMessage = 'Invalid message: missing ID';
+          _errorMessage = S.of(context)!.invalidMessageMissingId;
         });
       }
       return;
@@ -209,7 +210,7 @@ class _EncryptedImageMessageState extends ConsumerState<EncryptedImageMessage> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
-              'Decrypting image...',
+              S.of(context)!.decryptingImage,
               style: TextStyle(
                 fontSize: 12,
                 color: AppTheme.textSecondary.withValues(alpha: 153),
@@ -251,7 +252,7 @@ class _EncryptedImageMessageState extends ConsumerState<EncryptedImageMessage> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
-              'Failed to load image',
+              S.of(context)!.failedToLoadImage,
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.red,
@@ -285,7 +286,7 @@ class _EncryptedImageMessageState extends ConsumerState<EncryptedImageMessage> {
     if (messageId == null) {
       if (mounted) {
         setState(() {
-          _errorMessage = 'Invalid message: missing ID';
+          _errorMessage = S.of(context)!.invalidMessageMissingId;
         });
       }
       return;
@@ -302,7 +303,7 @@ class _EncryptedImageMessageState extends ConsumerState<EncryptedImageMessage> {
       // Parse the message content to get image data
       final content = widget.message.content;
       if (content == null || !content.startsWith('{')) {
-        throw Exception('Invalid image message format');
+        throw Exception(S.of(context)!.invalidImageMessageFormat);
       }
 
       final imageData = EncryptedImageUploadResult.fromJson(
@@ -347,7 +348,13 @@ class _EncryptedImageMessageState extends ConsumerState<EncryptedImageMessage> {
   }
 
   Future<void> _openImage(Uint8List imageData, EncryptedImageUploadResult metadata) async {
+    // Cache localized strings before async operations
+    final securityErrorMsg = S.of(context)!.securityErrorInvalidChars;
+    final couldNotOpenMsg = S.of(context)!.couldNotOpenFile;
+    final errorOpeningMsg = S.of(context)!.errorOpeningFile;
+    
     try {
+      
       // Save image to temporary directory
       final tempDir = await getTemporaryDirectory();
       final sanitizedFilename = _sanitizeFilename(metadata.filename);
@@ -356,7 +363,7 @@ class _EncryptedImageMessageState extends ConsumerState<EncryptedImageMessage> {
       // Security check
       if (sanitizedFilename.contains('/') || sanitizedFilename.contains('\\') || 
           sanitizedFilename.contains('..') || sanitizedFilename.trim().isEmpty) {
-        throw Exception('Security error: Invalid characters in sanitized filename');
+        throw Exception(securityErrorMsg);
       }
       
       await tempFile.writeAsBytes(imageData);
@@ -368,7 +375,7 @@ class _EncryptedImageMessageState extends ConsumerState<EncryptedImageMessage> {
         if (result.type != ResultType.done) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Could not open file: ${result.message}'),
+              content: Text('$couldNotOpenMsg: ${result.message}'),
               backgroundColor: Colors.orange,
               duration: const Duration(seconds: 3),
             ),
@@ -379,7 +386,7 @@ class _EncryptedImageMessageState extends ConsumerState<EncryptedImageMessage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error opening file: $e'),
+            content: Text('$errorOpeningMsg: $e'),
             backgroundColor: Colors.red,
           ),
         );

@@ -6,8 +6,7 @@ import 'package:mostro_mobile/services/blossom_upload_helper.dart';
 
 class ImageUploadService {
   final Logger _logger = Logger();
-  
-  
+
   ImageUploadService();
 
   /// Upload image with complete sanitization

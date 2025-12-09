@@ -28,7 +28,7 @@ This document details the complete implementation of encrypted file messaging fo
 
 ## Architecture Overview
 
-```
+```text
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   User A        │    │ Blossom Servers │    │   User B        │
 │                 │    │                 │    │                 │
@@ -142,7 +142,7 @@ static Uint8List decryptChaCha20Poly1305({
 - Key derived from ECDH key exchange in Mostro protocol
 
 **Blob Structure**:
-```
+```text
 ┌─────────────┬──────────────────┬─────────────────┐
 │ Nonce (12B) │ Encrypted Data   │ Auth Tag (16B)  │
 └─────────────┴──────────────────┴─────────────────┘

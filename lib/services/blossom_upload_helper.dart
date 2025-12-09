@@ -27,6 +27,10 @@ class BlossomUploadHelper {
   ) async {
     final servers = BlossomConfig.defaultServers;
     
+    if (servers.isEmpty) {
+      throw BlossomException('No Blossom servers configured');
+    }
+    
     for (int i = 0; i < servers.length; i++) {
       final serverUrl = servers[i];
       _logger.d('Attempting upload to server ${i + 1}/${servers.length}: $serverUrl');
@@ -48,12 +52,10 @@ class BlossomUploadHelper {
         if (i == servers.length - 1) {
           throw BlossomException('All Blossom servers failed. Last error: $e');
         }
-        
-        // Continue with next server
-        continue;
       }
     }
     
-    throw BlossomException('No Blossom servers available');
+    // This should never be reached due to the throw on last server failure
+    throw StateError('Unreachable: upload loop exited unexpectedly');
   }
 }

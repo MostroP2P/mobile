@@ -64,8 +64,7 @@ class EncryptedImageUploadResult {
 
 class EncryptedImageUploadService {
   final Logger _logger = Logger();
-  
-  
+
   EncryptedImageUploadService();
 
   /// Upload encrypted image with complete sanitization and encryption
