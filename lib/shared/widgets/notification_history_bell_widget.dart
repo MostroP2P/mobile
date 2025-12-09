@@ -32,6 +32,14 @@ class _NotificationBellWidgetState extends ConsumerState<NotificationBellWidget>
       parent: _animationController,
       curve: Curves.elasticIn,
     ));
+    
+    // Handle initial state where backup reminder might already be active
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final shouldAnimate = ref.read(backupReminderProvider);
+      if (shouldAnimate) {
+        _animationController.repeat(reverse: true);
+      }
+    });
   }
 
   @override
@@ -43,19 +51,21 @@ class _NotificationBellWidgetState extends ConsumerState<NotificationBellWidget>
   @override
   Widget build(BuildContext context) {
     final unreadCount = ref.watch(unreadNotificationsCountProvider);
-    final shouldShowBackupReminder = ref.watch(backupReminderProvider);
     final currentRoute = GoRouterState.of(context).uri.path;
+
+    ref.listen<bool>(backupReminderProvider, (previous, next) {
+      if (next && !_animationController.isAnimating) {
+        _animationController.repeat(reverse: true);
+      } else if (!next && _animationController.isAnimating) {
+        _animationController.stop();
+        _animationController.reset();
+      }
+    });
+
+    final shouldShowBackupReminder = ref.watch(backupReminderProvider);
 
     if (currentRoute == '/notifications') {
       return const SizedBox.shrink();
-    }
-
-    // Start shake animation if backup reminder is active
-    if (shouldShowBackupReminder && !_animationController.isAnimating) {
-      _animationController.repeat(reverse: true);
-    } else if (!shouldShowBackupReminder && _animationController.isAnimating) {
-      _animationController.stop();
-      _animationController.reset();
     }
 
     return Stack(
