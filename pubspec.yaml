@@ -96,6 +96,9 @@ dependencies:
   # File picker for documents, videos, etc.
   file_picker: ^10.3.7
   open_file: ^3.5.10
+  
+  # Unicode normalization for filename sanitization
+  diacritic: ^0.1.6
 
 
 dev_dependencies:

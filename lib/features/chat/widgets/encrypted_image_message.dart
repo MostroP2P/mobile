@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_file/open_file.dart';
+import 'package:diacritic/diacritic.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/services/encrypted_image_upload_service.dart';
@@ -302,16 +303,15 @@ class _EncryptedImageMessageState extends ConsumerState<EncryptedImageMessage> {
       
       // Parse the message content to get image data
       final content = widget.message.content;
-      if (content == null || !content.startsWith('{')) {
+      if (content == null || content.trim().isEmpty) {
         throw Exception(S.of(context)!.invalidImageMessageFormat);
       }
 
-      final imageData = EncryptedImageUploadResult.fromJson(
-        Map<String, dynamic>.from(
-          // ignore: avoid_dynamic_calls
-          jsonDecode(content) as Map
-        )
-      );
+      final parsedJson = jsonDecode(content);
+      if (parsedJson is! Map<String, dynamic>) {
+        throw Exception(S.of(context)!.invalidImageMessageFormat);
+      }
+      final imageData = EncryptedImageUploadResult.fromJson(parsedJson);
 
       // Get shared key
       final sharedKey = await chatNotifier.getSharedKey();
@@ -399,13 +399,8 @@ class _EncryptedImageMessageState extends ConsumerState<EncryptedImageMessage> {
     // Get basename only (remove any directory components)
     final basename = filename.split(RegExp(r'[/\\]')).last;
     
-    // Normalize accented characters
-    String normalized = basename
-        .replaceAll('á', 'a').replaceAll('é', 'e').replaceAll('í', 'i')
-        .replaceAll('ó', 'o').replaceAll('ú', 'u').replaceAll('ñ', 'n')
-        .replaceAll('ü', 'u').replaceAll('Á', 'A').replaceAll('É', 'E')
-        .replaceAll('Í', 'I').replaceAll('Ó', 'O').replaceAll('Ú', 'U')
-        .replaceAll('Ñ', 'N').replaceAll('Ü', 'U');
+    // Normalize using diacritic package for comprehensive Unicode support
+    String normalized = removeDiacritics(basename);
     
     // Replace spaces and remove dangerous characters
     final cleaned = normalized
