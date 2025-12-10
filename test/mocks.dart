@@ -19,6 +19,11 @@ import 'package:mostro_mobile/services/nostr_service.dart';
 import 'package:mostro_mobile/shared/notifiers/session_notifier.dart';
 import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/features/order/notfiers/order_notifier.dart';
+import 'package:mostro_mobile/services/blossom_client.dart';
+import 'package:mostro_mobile/services/encrypted_file_upload_service.dart';
+import 'package:mostro_mobile/services/encrypted_image_upload_service.dart';
+import 'package:mostro_mobile/services/blossom_download_service.dart';
+import 'package:mostro_mobile/features/chat/notifiers/chat_room_notifier.dart';
 import 'package:sembast/sembast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -40,6 +45,11 @@ import 'mocks.mocks.dart';
   OrderState,
   OrderNotifier,
   NostrKeyPairs,
+  BlossomClient,
+  EncryptedFileUploadService,
+  EncryptedImageUploadService,
+  BlossomDownloadService,
+  ChatRoomNotifier,
 ])
 
 // Custom mock for SettingsNotifier that returns a specific Settings object

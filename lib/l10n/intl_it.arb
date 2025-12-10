@@ -258,6 +258,9 @@
   "noneSelected": "Nessuna selezione",
   "fiatCurrencies": "Valute fiat",
   "paymentMethods": "Metodi di pagamento",
+  "invalidMessageMissingId": "Messaggio non valido: ID mancante",
+  "invalidImageMessageFormat": "Formato del messaggio immagine non valido",
+  "securityErrorInvalidChars": "Errore di sicurezza: caratteri non validi nel nome file sanitizzato",
   "ratingLabel": "Valutazione: {rating}",
   "buyingBitcoin": "Comprando Bitcoin",
   "sellingBitcoin": "Vendendo Bitcoin",
@@ -1224,5 +1227,24 @@
   "restoreFinalizing": "Finalizzazione ripristino...",
   "restoreCompleted": "Ripristino completato!",
   "restoreError": "Errore di ripristino",
-  "restoreErrorMessage": "Errore nel ripristino dei dati utente. Verifica la tua connessione e riprova più tardi."
+  "restoreErrorMessage": "Errore nel ripristino dei dati utente. Verifica la tua connessione e riprova più tardi.",
+
+  "@_comment_file_messaging": "File messaging strings",
+  "download": "Scarica",
+  "openFile": "Apri File",
+  "encrypted": "Crittografato",
+  "downloadingFile": "Scaricamento file...",
+
+  "@_comment_file_confirmation": "File confirmation dialog strings",
+  "confirmFileUpload": "Conferma Invio",
+  "sendThisFile": "Inviare questo file?",
+  "send": "Invia",
+
+  "@_comment_image_decryption": "Image decryption status strings",
+  "decryptingImage": "Decrittazione immagine...",
+  "failedToLoadImage": "Impossibile caricare l'immagine",
+  "imageDecryptionError": "Errore nella decrittazione dell'immagine",
+  "imageNotAvailable": "Immagine non disponibile",
+  "couldNotOpenFile": "Impossibile aprire il file",
+  "errorOpeningFile": "Errore nell'apertura del file"
 }

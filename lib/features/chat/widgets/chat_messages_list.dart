@@ -7,12 +7,14 @@ import 'package:mostro_mobile/features/chat/widgets/message_bubble.dart';
 class ChatMessagesList extends StatefulWidget {
   final ChatRoom chatRoom;
   final String peerPubkey;
+  final String orderId;
   final ScrollController? scrollController; // Optional external scroll controller
 
   const ChatMessagesList({
     super.key,
     required this.chatRoom,
     required this.peerPubkey,
+    required this.orderId,
     this.scrollController,
   });
 
@@ -131,6 +133,7 @@ class _ChatMessagesListState extends State<ChatMessagesList> {
           return MessageBubble(
             message: message,
             peerPubkey: widget.peerPubkey,
+            orderId: widget.orderId,
           );
         },
       ),
