@@ -1232,7 +1232,8 @@
   "noLogsMatchFilter": "No hay registros que coincidan con el filtro actual",
   "clearFilters": "Limpiar Filtros",
   "copyLog": "Copiar registro",
-  "logCopied": "Registro copiado al portapapeles"
+  "logCopied": "Registro copiado al portapapeles",
+  
   "@_comment_file_messaging": "File messaging strings",
   "download": "Descargar",
   "openFile": "Abrir Archivo",

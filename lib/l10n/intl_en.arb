@@ -1254,7 +1254,8 @@
   "noLogsMatchFilter": "No logs match the current filter",
   "clearFilters": "Clear Filters",
   "copyLog": "Copy log",
-  "logCopied": "Log copied to clipboard"
+  "logCopied": "Log copied to clipboard",
+  
   "@_comment_file_messaging": "File messaging strings",
   "download": "Download",
   "openFile": "Open File",

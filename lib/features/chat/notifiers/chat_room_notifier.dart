@@ -434,16 +434,16 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
       // Check for encrypted message types
       if (jsonContent != null) {
         if (MessageTypeUtils.isEncryptedImageMessage(message)) {
-          _logger.i('📸 Processing encrypted image message');
+          logger.i('📸 Processing encrypted image message');
           await _processEncryptedImageMessage(message, jsonContent);
         } else if (MessageTypeUtils.isEncryptedFileMessage(message)) {
-          _logger.i('📎 Processing encrypted file message');
+          logger.i('📎 Processing encrypted file message');
           await _processEncryptedFileMessage(message, jsonContent);
         }
       }
-      
+
     } catch (e) {
-      _logger.w('Error processing message content: $e');
+      logger.w('Error processing message content: $e');
       // Don't rethrow - message should still be displayed as text
     }
   }
@@ -457,28 +457,28 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
       // Extract image metadata
       final result = EncryptedImageUploadResult.fromJson(imageData);
       
-      _logger.i('📥 Pre-downloading encrypted image: ${result.filename}');
-      _logger.d('Blossom URL: ${result.blossomUrl}');
-      _logger.d('Original size: ${result.originalSize} bytes');
-      
+      logger.i('📥 Pre-downloading encrypted image: ${result.filename}');
+      logger.d('Blossom URL: ${result.blossomUrl}');
+      logger.d('Original size: ${result.originalSize} bytes');
+
       // Get shared key for decryption
       final sharedKey = await getSharedKey();
-      
+
       // Download and decrypt image in background
       final uploadService = EncryptedImageUploadService();
       final decryptedImage = await uploadService.downloadAndDecryptImage(
         blossomUrl: result.blossomUrl,
         sharedKey: sharedKey,
       );
-      
-      _logger.i('✅ Image downloaded and decrypted successfully: ${decryptedImage.length} bytes');
-      
+
+      logger.i('✅ Image downloaded and decrypted successfully: ${decryptedImage.length} bytes');
+
       // Cache the decrypted image for immediate display
       // You could store it in a Map<String, Uint8List> for quick access
       cacheDecryptedImage(message.id!, decryptedImage, result);
-      
+
     } catch (e) {
-      _logger.e('❌ Failed to process encrypted image: $e');
+      logger.e('❌ Failed to process encrypted image: $e');
       // Don't rethrow - message should still be displayed (maybe with error indicator)
     }
   }
@@ -493,13 +493,13 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
 
   /// Cache a decrypted image for quick display
   void cacheDecryptedImage(
-    String messageId, 
-    Uint8List imageData, 
+    String messageId,
+    Uint8List imageData,
     EncryptedImageUploadResult metadata
   ) {
     _imageCache[messageId] = imageData;
     _imageMetadata[messageId] = metadata;
-    _logger.d('🗄️ Cached decrypted image for message: $messageId');
+    logger.d('🗄️ Cached decrypted image for message: $messageId');
   }
 
   /// Get cached decrypted image data
@@ -520,33 +520,33 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
     try {
       // Extract file metadata
       final result = EncryptedFileUploadResult.fromJson(fileData);
-      
-      _logger.i('📥 File message received: ${result.filename} (${result.fileType})');
-      _logger.d('Blossom URL: ${result.blossomUrl}');
-      _logger.d('Original size: ${result.originalSize} bytes');
-      
+
+      logger.i('📥 File message received: ${result.filename} (${result.fileType})');
+      logger.d('Blossom URL: ${result.blossomUrl}');
+      logger.d('Original size: ${result.originalSize} bytes');
+
       // Auto-download images for preview, but not other files
       if (result.fileType == 'image') {
-        _logger.i('📸 Auto-downloading image for preview: ${result.filename}');
-        
+        logger.i('📸 Auto-downloading image for preview: ${result.filename}');
+
         try {
           // Get shared key for decryption
           final sharedKey = await getSharedKey();
-          
+
           // Download and decrypt image in background
           final uploadService = EncryptedFileUploadService();
           final decryptedFile = await uploadService.downloadAndDecryptFile(
             blossomUrl: result.blossomUrl,
             sharedKey: sharedKey,
           );
-          
-          _logger.i('✅ Image downloaded and decrypted successfully: ${decryptedFile.length} bytes');
-          
+
+          logger.i('✅ Image downloaded and decrypted successfully: ${decryptedFile.length} bytes');
+
           // Cache the decrypted image for immediate display
           cacheDecryptedFile(message.id!, decryptedFile, result);
-          
+
         } catch (e) {
-          _logger.e('❌ Failed to auto-download image: $e');
+          logger.e('❌ Failed to auto-download image: $e');
           // Store metadata without file data - user can manually download
           cacheDecryptedFile(message.id!, null, result);
         }
@@ -555,24 +555,24 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
         // Just store the metadata for display
         cacheDecryptedFile(message.id!, null, result);
       }
-      
+
     } catch (e) {
-      _logger.e('❌ Failed to process encrypted file: $e');
+      logger.e('❌ Failed to process encrypted file: $e');
       // Don't rethrow - message should still be displayed (maybe with error indicator)
     }
   }
 
   /// Cache a decrypted file for quick display
   void cacheDecryptedFile(
-    String messageId, 
-    Uint8List? fileData, 
+    String messageId,
+    Uint8List? fileData,
     EncryptedFileUploadResult metadata
   ) {
     if (fileData != null) {
       _fileCache[messageId] = fileData;
     }
     _fileMetadata[messageId] = metadata;
-    _logger.d('🗄️ Cached file metadata for message: $messageId');
+    logger.d('🗄️ Cached file metadata for message: $messageId');
   }
 
   /// Get cached decrypted file data

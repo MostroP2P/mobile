@@ -1287,7 +1287,8 @@
   "noLogsMatchFilter": "Nessun registro corrisponde al filtro corrente",
   "clearFilters": "Cancella Filtri",
   "copyLog": "Copia registro",
-  "logCopied": "Registro copiato negli appunti"
+  "logCopied": "Registro copiato negli appunti",
+  
   "@_comment_file_messaging": "File messaging strings",
   "download": "Scarica",
   "openFile": "Apri File",
