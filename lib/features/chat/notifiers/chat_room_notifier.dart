@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +8,8 @@ import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/data/models/chat_room.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/models/session.dart';
+import 'package:mostro_mobile/services/encrypted_image_upload_service.dart';
+import 'package:mostro_mobile/services/encrypted_file_upload_service.dart';
 import 'package:sembast/sembast.dart';
 
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
@@ -13,6 +17,7 @@ import 'package:mostro_mobile/features/subscriptions/subscription_manager_provid
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
+import 'package:mostro_mobile/features/chat/utils/message_type_helpers.dart';
 
 class ChatRoomNotifier extends StateNotifier<ChatRoom> {
   /// Reload the chat room by re-subscribing to events.
@@ -142,6 +147,9 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
       }
 
       final chat = await event.p2pUnwrap(session.sharedKey!);
+      
+      // Process special message types (e.g., encrypted images)
+      await _processMessageContent(chat);
       
       // Check if message already exists to prevent duplicates
       final messageExists = state.messages.any((m) => m.id == chat.id);
@@ -371,6 +379,212 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
       logger.e('Stack trace: ${StackTrace.current}');
     }
   }
+
+  /// Get the shared key for this chat session (used by MessageInput)
+  Future<Uint8List> getSharedKey() async {
+    final session = ref.read(sessionProvider(orderId));
+    if (session == null || session.sharedKey == null) {
+      throw Exception('Session or shared key not available for orderId: $orderId');
+    }
+    
+    final hexKey = session.sharedKey!.private; // This should be hex string
+    
+    // Validate hex key length
+    if (hexKey.length != 64) {
+      throw Exception('Invalid shared key length for orderId $orderId: expected 64 hex chars, got ${hexKey.length}');
+    }
+    
+    // Convert from NostrKeyPairs to Uint8List (32 bytes)
+    final sharedKeyBytes = Uint8List(32);
+    
+    try {
+      // Convert hex string to bytes
+      for (int i = 0; i < 32; i++) {
+        final byte = int.parse(hexKey.substring(i * 2, i * 2 + 2), radix: 16);
+        sharedKeyBytes[i] = byte;
+      }
+    } catch (e) {
+      throw Exception('Malformed shared key for orderId $orderId: invalid hex format - $e');
+    }
+    
+    return sharedKeyBytes;
+  }
+
+  /// Process special message content (e.g., encrypted images)
+  Future<void> _processMessageContent(NostrEvent message) async {
+    try {
+      final content = message.content;
+      if (content == null || !content.startsWith('{')) {
+        // Not a JSON message, treat as regular text
+        return;
+      }
+
+      // Try to parse as JSON
+      Map<String, dynamic>? jsonContent;
+      try {
+        final decoded = jsonDecode(content);
+        if (decoded is Map<String, dynamic>) {
+          jsonContent = decoded;
+        }
+      } catch (e) {
+        // Not valid JSON, treat as regular text
+        return;
+      }
+
+      // Check for encrypted message types
+      if (jsonContent != null) {
+        if (MessageTypeUtils.isEncryptedImageMessage(message)) {
+          _logger.i('📸 Processing encrypted image message');
+          await _processEncryptedImageMessage(message, jsonContent);
+        } else if (MessageTypeUtils.isEncryptedFileMessage(message)) {
+          _logger.i('📎 Processing encrypted file message');
+          await _processEncryptedFileMessage(message, jsonContent);
+        }
+      }
+      
+    } catch (e) {
+      _logger.w('Error processing message content: $e');
+      // Don't rethrow - message should still be displayed as text
+    }
+  }
+
+  /// Process encrypted image message by pre-downloading and caching
+  Future<void> _processEncryptedImageMessage(
+    NostrEvent message, 
+    Map<String, dynamic> imageData
+  ) async {
+    try {
+      // Extract image metadata
+      final result = EncryptedImageUploadResult.fromJson(imageData);
+      
+      _logger.i('📥 Pre-downloading encrypted image: ${result.filename}');
+      _logger.d('Blossom URL: ${result.blossomUrl}');
+      _logger.d('Original size: ${result.originalSize} bytes');
+      
+      // Get shared key for decryption
+      final sharedKey = await getSharedKey();
+      
+      // Download and decrypt image in background
+      final uploadService = EncryptedImageUploadService();
+      final decryptedImage = await uploadService.downloadAndDecryptImage(
+        blossomUrl: result.blossomUrl,
+        sharedKey: sharedKey,
+      );
+      
+      _logger.i('✅ Image downloaded and decrypted successfully: ${decryptedImage.length} bytes');
+      
+      // Cache the decrypted image for immediate display
+      // You could store it in a Map<String, Uint8List> for quick access
+      cacheDecryptedImage(message.id!, decryptedImage, result);
+      
+    } catch (e) {
+      _logger.e('❌ Failed to process encrypted image: $e');
+      // Don't rethrow - message should still be displayed (maybe with error indicator)
+    }
+  }
+
+  // Simple cache for decrypted images
+  final Map<String, Uint8List> _imageCache = {};
+  final Map<String, EncryptedImageUploadResult> _imageMetadata = {};
+  
+  // Simple cache for decrypted files
+  final Map<String, Uint8List> _fileCache = {};
+  final Map<String, EncryptedFileUploadResult> _fileMetadata = {};
+
+  /// Cache a decrypted image for quick display
+  void cacheDecryptedImage(
+    String messageId, 
+    Uint8List imageData, 
+    EncryptedImageUploadResult metadata
+  ) {
+    _imageCache[messageId] = imageData;
+    _imageMetadata[messageId] = metadata;
+    _logger.d('🗄️ Cached decrypted image for message: $messageId');
+  }
+
+  /// Get cached decrypted image data
+  Uint8List? getCachedImage(String messageId) {
+    return _imageCache[messageId];
+  }
+
+  /// Get cached image metadata
+  EncryptedImageUploadResult? getImageMetadata(String messageId) {
+    return _imageMetadata[messageId];
+  }
+
+  /// Process encrypted file message by pre-downloading and caching
+  Future<void> _processEncryptedFileMessage(
+    NostrEvent message, 
+    Map<String, dynamic> fileData
+  ) async {
+    try {
+      // Extract file metadata
+      final result = EncryptedFileUploadResult.fromJson(fileData);
+      
+      _logger.i('📥 File message received: ${result.filename} (${result.fileType})');
+      _logger.d('Blossom URL: ${result.blossomUrl}');
+      _logger.d('Original size: ${result.originalSize} bytes');
+      
+      // Auto-download images for preview, but not other files
+      if (result.fileType == 'image') {
+        _logger.i('📸 Auto-downloading image for preview: ${result.filename}');
+        
+        try {
+          // Get shared key for decryption
+          final sharedKey = await getSharedKey();
+          
+          // Download and decrypt image in background
+          final uploadService = EncryptedFileUploadService();
+          final decryptedFile = await uploadService.downloadAndDecryptFile(
+            blossomUrl: result.blossomUrl,
+            sharedKey: sharedKey,
+          );
+          
+          _logger.i('✅ Image downloaded and decrypted successfully: ${decryptedFile.length} bytes');
+          
+          // Cache the decrypted image for immediate display
+          cacheDecryptedFile(message.id!, decryptedFile, result);
+          
+        } catch (e) {
+          _logger.e('❌ Failed to auto-download image: $e');
+          // Store metadata without file data - user can manually download
+          cacheDecryptedFile(message.id!, null, result);
+        }
+      } else {
+        // Don't pre-download non-image files - let user choose when to download
+        // Just store the metadata for display
+        cacheDecryptedFile(message.id!, null, result);
+      }
+      
+    } catch (e) {
+      _logger.e('❌ Failed to process encrypted file: $e');
+      // Don't rethrow - message should still be displayed (maybe with error indicator)
+    }
+  }
+
+  /// Cache a decrypted file for quick display
+  void cacheDecryptedFile(
+    String messageId, 
+    Uint8List? fileData, 
+    EncryptedFileUploadResult metadata
+  ) {
+    if (fileData != null) {
+      _fileCache[messageId] = fileData;
+    }
+    _fileMetadata[messageId] = metadata;
+    _logger.d('🗄️ Cached file metadata for message: $messageId');
+  }
+
+  /// Get cached decrypted file data
+  Uint8List? getCachedFile(String messageId) {
+    return _fileCache[messageId];
+  }
+
+  /// Get cached file metadata
+  EncryptedFileUploadResult? getFileMetadata(String messageId) {
+    return _fileMetadata[messageId];
+  }
+
 
   @override
   void dispose() {

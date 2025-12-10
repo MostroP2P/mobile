@@ -52,6 +52,10 @@
 		<meta-data
 			android:name="com.google.firebase.messaging.default_notification_icon"
 			android:resource="@drawable/ic_bg_service_small" />
+		<!-- Preserve ic_notification for local notifications -->
+		<meta-data
+			android:name="com.app.notification_icon"
+			android:resource="@drawable/ic_notification" />
 
 	</application>
 

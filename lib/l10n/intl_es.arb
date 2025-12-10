@@ -225,6 +225,9 @@
   "noneSelected": "Ninguno seleccionado",
   "fiatCurrencies": "Monedas fiat",
   "paymentMethods": "Métodos de pago",
+  "invalidMessageMissingId": "Mensaje inválido: ID faltante",
+  "invalidImageMessageFormat": "Formato de mensaje de imagen inválido",
+  "securityErrorInvalidChars": "Error de seguridad: caracteres inválidos en nombre de archivo sanitizado",
   "ratingLabel": "Calificación: {rating}",
   "buyingBitcoin": "Comprando Bitcoin",
   "sellingBitcoin": "Vendiendo Bitcoin",
@@ -1230,5 +1233,23 @@
   "clearFilters": "Limpiar Filtros",
   "copyLog": "Copiar registro",
   "logCopied": "Registro copiado al portapapeles"
+  "@_comment_file_messaging": "File messaging strings",
+  "download": "Descargar",
+  "openFile": "Abrir Archivo",
+  "encrypted": "Encriptado",
+  "downloadingFile": "Descargando archivo...",
+
+  "@_comment_file_confirmation": "File confirmation dialog strings",
+  "confirmFileUpload": "Confirmar Envío",
+  "sendThisFile": "¿Enviar este archivo?",
+  "send": "Enviar",
+
+  "@_comment_image_decryption": "Image decryption status strings",
+  "decryptingImage": "Desencriptando imagen...",
+  "failedToLoadImage": "Error al cargar la imagen",
+  "imageDecryptionError": "Error al desencriptar la imagen",
+  "imageNotAvailable": "Imagen no disponible",
+  "couldNotOpenFile": "No se pudo abrir el archivo",
+  "errorOpeningFile": "Error al abrir archivo"
 
 }

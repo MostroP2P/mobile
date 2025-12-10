@@ -77,3 +77,6 @@ chrome/.packages
 .pdm
 bfg-1.14.0.jar
 lib/generated/
+
+# FVM Version Cache
+.fvm/
