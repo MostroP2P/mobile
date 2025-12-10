@@ -9,6 +9,7 @@ import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/key_manager/import_mnemonic_dialog.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/features/restore/restore_manager.dart';
+import 'package:mostro_mobile/features/notifications/providers/backup_reminder_provider.dart';
 import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/providers/notifications_history_repository_provider.dart';
@@ -73,6 +74,9 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
     
     final keyManager = ref.read(keyManagerProvider);
     await keyManager.generateAndStoreMasterKey();
+
+    // Show backup reminder when generating new user
+    ref.read(backupReminderProvider.notifier).showBackupReminder();
 
     await _loadKeys();
   }
@@ -283,6 +287,10 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                           setState(() {
                             _showSecretWords = !_showSecretWords;
                           });
+                          // Dismiss backup reminder when user views seed phrase
+                          if (_showSecretWords) {
+                            ref.read(backupReminderProvider.notifier).dismissBackupReminder();
+                          }
                         },
                         icon: Icon(
                           _showSecretWords

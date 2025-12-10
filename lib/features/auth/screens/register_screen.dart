@@ -5,6 +5,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/auth/notifiers/auth_state.dart';
 import 'package:mostro_mobile/features/auth/providers/auth_notifier_provider.dart';
+import 'package:mostro_mobile/features/notifications/providers/backup_reminder_provider.dart';
 import 'package:mostro_mobile/shared/widgets/custom_button.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
@@ -30,7 +31,11 @@ class RegisterScreen extends HookConsumerWidget {
     ref.listen<AuthState>(authNotifierProvider, (previous, state) {
       if (state is AuthKeyGenerated) {
         privateKeyController.text = NostrUtils.nsecToHex(state.privateKey);
+        // Show backup reminder when new key is generated
+        ref.read(backupReminderProvider.notifier).showBackupReminder();
       } else if (state is AuthRegistrationSuccess) {
+        // Show backup reminder on successful registration (for imported keys too)
+        ref.read(backupReminderProvider.notifier).showBackupReminder();
         // Navigate to home after successful registration
         context.go('/');
       } else if (state is AuthFailure) {

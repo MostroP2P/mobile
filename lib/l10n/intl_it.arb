@@ -1246,5 +1246,9 @@
   "imageDecryptionError": "Errore nella decrittazione dell'immagine",
   "imageNotAvailable": "Immagine non disponibile",
   "couldNotOpenFile": "Impossibile aprire il file",
-  "errorOpeningFile": "Errore nell'apertura del file"
+  "errorOpeningFile": "Errore nell'apertura del file",
+
+  "@_comment_backup_reminder": "Promemoria backup account",
+  "backupAccountReminder": "Devi fare il backup del tuo account",
+  "backupAccountReminderMessage": "Salva le tue parole segrete per recuperare il tuo account"
 }

@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/notifications/providers/notifications_provider.dart';
+import 'package:mostro_mobile/features/notifications/providers/backup_reminder_provider.dart';
 import 'package:mostro_mobile/features/notifications/widgets/notification_item.dart';
 import 'package:mostro_mobile/features/notifications/widgets/notifications_actions_menu.dart';
+import 'package:mostro_mobile/features/notifications/widgets/backup_reminder_notification.dart';
 import 'package:mostro_mobile/shared/widgets/mostro_app_bar.dart';
 import 'package:mostro_mobile/shared/widgets/notification_history_bell_widget.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
@@ -15,6 +17,7 @@ class NotificationsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notifications = ref.watch(notificationsHistoryProvider);
+    final shouldShowBackupReminder = ref.watch(backupReminderProvider);
     
     return Scaffold(
       backgroundColor: AppTheme.backgroundDark,
@@ -37,7 +40,8 @@ class NotificationsScreen extends ConsumerWidget {
       ),
       body: notifications.when(
         data: (notificationList) {
-          if (notificationList.isEmpty) {
+          // Show empty state only if no notifications AND no backup reminder
+          if (notificationList.isEmpty && !shouldShowBackupReminder) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -69,15 +73,29 @@ class NotificationsScreen extends ConsumerWidget {
             );
           }
 
+          // Calculate total items (backup reminder + regular notifications)
+          final totalItems = (shouldShowBackupReminder ? 1 : 0) + notificationList.length;
+
           return RefreshIndicator(
             onRefresh: () async {
               ref.invalidate(notificationsHistoryProvider);
             },
             child: ListView.builder(
               padding: AppTheme.mediumPadding,
-              itemCount: notificationList.length,
+              itemCount: totalItems,
               itemBuilder: (context, index) {
-                final notification = notificationList[index];
+                // Show backup reminder first if active
+                if (shouldShowBackupReminder && index == 0) {
+                  return const Padding(
+                    padding: EdgeInsets.only(bottom: 8),
+                    child: BackupReminderNotification(),
+                  );
+                }
+                
+                // Adjust index for regular notifications
+                final notificationIndex = shouldShowBackupReminder ? index - 1 : index;
+                final notification = notificationList[notificationIndex];
+                
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: NotificationItem(
