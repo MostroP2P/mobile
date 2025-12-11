@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/enums.dart';
-import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
@@ -60,10 +59,8 @@ class MostroMessageDetail extends ConsumerWidget {
     final orderPayload = tradeState.order;
     switch (action) {
       case actions.Action.newOrder:
-        final expHrs =
-            ref.read(orderRepositoryProvider).mostroInstance?.expiration ??
-                '24';
-        return S.of(context)!.newOrder(int.tryParse(expHrs) ?? 24);
+        final expHrs = 24; // TODO: use mostroInstance.expirationHours when available
+        return S.of(context)!.newOrder(expHrs);
       case actions.Action.canceled:
         return S.of(context)!.canceled(orderPayload?.id ?? '');
       case actions.Action.payInvoice:
