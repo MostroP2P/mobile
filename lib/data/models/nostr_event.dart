@@ -37,7 +37,7 @@ extension NostrEventExtensions on NostrEvent {
   String? get bond => _getTagValue('bond');
   String? get expiration => _timeAgo(_getTagValue('expiration'));
   String? timeAgoWithLocale(String? locale) =>
-      _timeAgo(_getTagValue('expiration'), locale);
+      _timeAgoFromCreated(locale);
   DateTime get expirationDate => _getTimeStamp(_getTagValue('expiration')!);
   String? get expiresAt => _getTagValue('expires_at');
   String? get platform => _getTagValue('y');
@@ -76,6 +76,12 @@ extension NostrEventExtensions on NostrEvent {
     } else {
       return "invalid date";
     }
+  }
+
+  String _timeAgoFromCreated([String? locale]) {
+    if (createdAt == null) return "invalid date";
+    final effectiveLocale = locale ?? 'es';
+    return timeago.format(createdAt!, allowFromNow: true, locale: effectiveLocale);
   }
 
   Future<NostrEvent> unWrap(String privateKey) async {
