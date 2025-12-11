@@ -140,7 +140,6 @@ Future<void> main() async {
   );
 
   _initializeRelaySynchronization(container);
-  _checkPendingEventsOnResume(sharedPreferences, settings);
 
   runApp(
     UncontrolledProviderScope(
@@ -148,48 +147,6 @@ Future<void> main() async {
       child: const MostroApp(),
     ),
   );
-}
-
-/// Process pending FCM events flagged by background handler
-/// Only runs on platforms where Firebase is supported (Android, iOS)
-/// This is a fallback for when background processing fails
-Future<void> _checkPendingEventsOnResume(
-  SharedPreferencesAsync sharedPrefs,
-  SettingsNotifier settings,
-) async {
-  // Skip if Firebase is not supported on this platform
-  if (!_isFirebaseSupported) {
-    return;
-  }
-
-  final logger = Logger();
-
-  try {
-    final hasPending = await sharedPrefs.getBool('fcm.pending_fetch') ?? false;
-
-    if (hasPending) {
-      logger.i('Pending events detected (background processing failed) - processing now');
-
-      await sharedPrefs.setBool('fcm.pending_fetch', false);
-
-      final relays = settings.settings.relays;
-      if (relays.isEmpty) {
-        logger.w('No relays configured - cannot fetch events');
-        return;
-      }
-
-      logger.i('Fetching new events from ${relays.length} relays');
-      // Process without limits since app is now active
-      await fetchAndProcessNewEvents(
-        relays: relays,
-        // No limits when app is active
-      );
-      logger.i('Successfully processed pending events');
-    }
-  } catch (e, stackTrace) {
-    logger.e('Error processing pending events: $e');
-    logger.e('Stack trace: $stackTrace');
-  }
 }
 
 /// Initialize relay synchronization on app startup
