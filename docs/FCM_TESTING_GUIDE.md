@@ -182,7 +182,7 @@ Silent push notification sent successfully
    - OR: Use daemon to send test event
 
 3. **Wait for notification:**
-   - Cloud Functions polls every 1 minutes
+   - Cloud Functions polls every 1 minute
    - Should detect new event
    - Should send silent push
    - Background handler should wake up
@@ -366,14 +366,14 @@ adb logcat | grep "Found.*active sessions"
 - Notes: [Any issues or observations]
 
 ### Test 4: Cloud Functions
-- [ ] Poller running every 5 minutes
+- [ ] Poller running every 1 minute
 - [ ] Events detected correctly
 - [ ] Silent push sent
 - Notes: [Any issues or observations]
 
 ### Test 5: End-to-End
 - [ ] Complete flow successful
-- [ ] Notification received within 6 minutes
+- [ ] Notification received within 2 minutes
 - [ ] Content decrypted correctly
 - Notes: [Any issues or observations]
 
