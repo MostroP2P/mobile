@@ -44,6 +44,9 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
     final sharedPrefs = SharedPreferencesAsync();
     
+    // SharedPreferencesAsync always reads fresh values from native storage
+    // No reload() needed - it queries the platform directly on each call
+    
     // Load settings to get relay configuration
     final settingsJson = await sharedPrefs.getString('mostro_settings');
     List<String> relays = ['wss://relay.mostro.network']; // Default fallback
