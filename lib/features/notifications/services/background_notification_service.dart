@@ -358,67 +358,91 @@ Future<void> fetchAndProcessNewEvents({
       return;
     }
 
-    int processedCount = 0;
-    int skippedCount = 0;
-    final now = DateTime.now();
+    try {
+      int processedCount = 0;
+      int failedCount = 0;
+      int skippedCount = 0;
+      int latestEventTimestamp = lastProcessedTime;
 
-    for (final session in sessions) {
-      try {
-        final filter = NostrFilter(
-          kinds: [1059],
-          p: [session.tradeKey.public],
-          since: since,
-        );
-
-        logger.d('Fetching events for session: ${session.orderId}');
-
-        // Apply timeout per session to avoid blocking
-        final events = await nostrService.fetchEvents(filter).timeout(
-          timeoutPerSession,
-          onTimeout: () {
-            logger.w('Timeout fetching events for session ${session.orderId}');
-            return [];
-          },
-        );
-
-        logger.d('Found ${events.length} events for session ${session.orderId}');
-
-        // Limit events per session if specified
-        final eventsToProcess = maxEventsPerSession != null && events.length > maxEventsPerSession
-            ? events.take(maxEventsPerSession).toList()
-            : events;
-
-        if (maxEventsPerSession != null && events.length > maxEventsPerSession) {
-          skippedCount += events.length - maxEventsPerSession;
-          logger.w('Limiting to $maxEventsPerSession events (skipped ${events.length - maxEventsPerSession})');
-        }
-
-        for (final event in eventsToProcess) {
-          final nostrEvent = NostrEvent(
-            id: event.id,
-            kind: event.kind,
-            content: event.content,
-            tags: event.tags,
-            createdAt: event.createdAt,
-            pubkey: event.pubkey,
-            sig: event.sig,
-            subscriptionId: event.subscriptionId,
+      for (final session in sessions) {
+        try {
+          final filter = NostrFilter(
+            kinds: [1059],
+            p: [session.tradeKey.public],
+            since: since,
           );
 
-          await showLocalNotification(nostrEvent);
-          processedCount++;
+          logger.d('Fetching events for session: ${session.orderId}');
+
+          // Apply timeout per session to avoid blocking
+          final events = await nostrService.fetchEvents(filter).timeout(
+            timeoutPerSession,
+            onTimeout: () {
+              logger.w('Timeout fetching events for session ${session.orderId}');
+              return [];
+            },
+          );
+
+          logger.d('Found ${events.length} events for session ${session.orderId}');
+
+          // Limit events per session if specified
+          final eventsToProcess = maxEventsPerSession != null && events.length > maxEventsPerSession
+              ? events.take(maxEventsPerSession).toList()
+              : events;
+
+          if (maxEventsPerSession != null && events.length > maxEventsPerSession) {
+            skippedCount += events.length - maxEventsPerSession;
+            logger.w('Limiting to $maxEventsPerSession events (skipped ${events.length - maxEventsPerSession})');
+          }
+
+          for (final event in eventsToProcess) {
+            // Track the latest event timestamp we've seen
+            final eventTs = (event.createdAt?.millisecondsSinceEpoch ?? 0) ~/ 1000;
+            if (eventTs > latestEventTimestamp) {
+              latestEventTimestamp = eventTs;
+            }
+
+            final nostrEvent = NostrEvent(
+              id: event.id,
+              kind: event.kind,
+              content: event.content,
+              tags: event.tags,
+              createdAt: event.createdAt,
+              pubkey: event.pubkey,
+              sig: event.sig,
+              subscriptionId: event.subscriptionId,
+            );
+
+            try {
+              await showLocalNotification(nostrEvent);
+              processedCount++;
+            } catch (e) {
+              failedCount++;
+              logger.e('Failed to show notification for event ${event.id}: $e');
+            }
+          }
+        } catch (e) {
+          logger.e('Error processing events for session ${session.orderId}: $e');
         }
-      } catch (e) {
-        logger.e('Error processing events for session ${session.orderId}: $e');
       }
-    }
 
-    final newTimestamp = (now.millisecondsSinceEpoch / 1000).floor();
-    await sharedPrefs.setInt('fcm.last_processed_timestamp', newTimestamp);
+      // Only advance timestamp if we actually processed events
+      if (latestEventTimestamp > lastProcessedTime) {
+        await sharedPrefs.setInt('fcm.last_processed_timestamp', latestEventTimestamp);
+        logger.i('Updated last processed timestamp to: ${DateTime.fromMillisecondsSinceEpoch(latestEventTimestamp * 1000).toIso8601String()}');
+      }
 
-    logger.i('Processed $processedCount new events successfully');
-    if (skippedCount > 0) {
-      logger.w('Skipped $skippedCount events due to limit');
+      logger.i('Processed $processedCount new events successfully');
+      if (failedCount > 0) {
+        logger.w('Failed to process $failedCount events');
+      }
+      if (skippedCount > 0) {
+        logger.w('Skipped $skippedCount events due to limit');
+      }
+    } finally {
+      // Always cleanup NostrService connections
+      await nostrService.disconnectFromRelays();
+      logger.d('NostrService connections cleaned up');
     }
 
   } catch (e, stackTrace) {
