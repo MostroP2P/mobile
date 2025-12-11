@@ -182,7 +182,7 @@ Silent push notification sent successfully
    - OR: Use daemon to send test event
 
 3. **Wait for notification:**
-   - Cloud Functions polls every 5 minutes
+   - Cloud Functions polls every 1 minutes
    - Should detect new event
    - Should send silent push
    - Background handler should wake up
