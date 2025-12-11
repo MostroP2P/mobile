@@ -159,7 +159,7 @@ export const getStatus = onRequest((_req, res) => {
   res.json(status);
 });
 
-export const keepAlive = onSchedule("every 5 minutes", async () => {
+export const keepAlive = onSchedule("every 1 minutes", async () => {
   const checkStartTime = Math.floor(Date.now() / 1000);
   logger.info("Starting scheduled relay poll", {
     lastCheckTimestamp,

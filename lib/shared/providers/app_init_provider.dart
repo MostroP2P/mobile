@@ -35,6 +35,7 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
     try {
       await fcmService.initialize(
         onMessageReceived: () async {
+          logger.i('FCM foreground message received - processing events');
           final settings = ref.read(settingsProvider);
           final relays = settings.relays;
 
@@ -43,7 +44,12 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
             return;
           }
 
-          await fetchAndProcessNewEvents(relays: relays);
+          // In foreground, process without limits (app is active)
+          await fetchAndProcessNewEvents(
+            relays: relays,
+            // No maxEventsPerSession limit in foreground
+            // Default timeout of 10s per session
+          );
         },
       );
     } catch (e, stackTrace) {

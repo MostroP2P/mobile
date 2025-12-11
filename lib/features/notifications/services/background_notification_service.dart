@@ -312,11 +312,22 @@ Future<void> retryNotification(NostrEvent event, {int maxAttempts = 3}) async {
 }
 
 /// Fetch and process new events from relays
-Future<void> fetchAndProcessNewEvents({required List<String> relays}) async {
+/// 
+/// [maxEventsPerSession] limits the number of events processed per session (default: unlimited)
+/// [timeoutPerSession] sets a timeout for fetching events per session (default: 10 seconds)
+Future<void> fetchAndProcessNewEvents({
+  required List<String> relays,
+  int? maxEventsPerSession,
+  Duration timeoutPerSession = const Duration(seconds: 10),
+}) async {
   final logger = Logger();
 
   try {
     logger.i('Fetching new events from relays');
+    if (maxEventsPerSession != null) {
+      logger.i('Max events per session: $maxEventsPerSession');
+    }
+    logger.i('Timeout per session: ${timeoutPerSession.inSeconds}s');
 
     final sessions = await _loadSessionsFromDatabase();
 
@@ -348,6 +359,7 @@ Future<void> fetchAndProcessNewEvents({required List<String> relays}) async {
     }
 
     int processedCount = 0;
+    int skippedCount = 0;
     final now = DateTime.now();
 
     for (final session in sessions) {
@@ -360,11 +372,28 @@ Future<void> fetchAndProcessNewEvents({required List<String> relays}) async {
 
         logger.d('Fetching events for session: ${session.orderId}');
 
-        final events = await nostrService.fetchEvents(filter);
+        // Apply timeout per session to avoid blocking
+        final events = await nostrService.fetchEvents(filter).timeout(
+          timeoutPerSession,
+          onTimeout: () {
+            logger.w('Timeout fetching events for session ${session.orderId}');
+            return [];
+          },
+        );
 
         logger.d('Found ${events.length} events for session ${session.orderId}');
 
-        for (final event in events) {
+        // Limit events per session if specified
+        final eventsToProcess = maxEventsPerSession != null && events.length > maxEventsPerSession
+            ? events.take(maxEventsPerSession).toList()
+            : events;
+
+        if (maxEventsPerSession != null && events.length > maxEventsPerSession) {
+          skippedCount += events.length - maxEventsPerSession;
+          logger.w('Limiting to $maxEventsPerSession events (skipped ${events.length - maxEventsPerSession})');
+        }
+
+        for (final event in eventsToProcess) {
           final nostrEvent = NostrEvent(
             id: event.id,
             kind: event.kind,
@@ -388,6 +417,9 @@ Future<void> fetchAndProcessNewEvents({required List<String> relays}) async {
     await sharedPrefs.setInt('fcm.last_processed_timestamp', newTimestamp);
 
     logger.i('Processed $processedCount new events successfully');
+    if (skippedCount > 0) {
+      logger.w('Skipped $skippedCount events due to limit');
+    }
 
   } catch (e, stackTrace) {
     logger.e('Error fetching and processing new events: $e');
