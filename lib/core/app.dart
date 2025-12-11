@@ -4,6 +4,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:app_links/app_links.dart';
+import 'package:logger/logger.dart';
 import 'package:mostro_mobile/core/app_routes.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/core/deep_link_handler.dart';
@@ -11,8 +12,10 @@ import 'package:mostro_mobile/core/deep_link_interceptor.dart';
 import 'package:mostro_mobile/features/auth/providers/auth_notifier_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/features/auth/notifiers/auth_state.dart';
+import 'package:mostro_mobile/features/notifications/services/background_notification_service.dart';
 import 'package:mostro_mobile/services/lifecycle_manager.dart';
 import 'package:mostro_mobile/shared/providers/app_init_provider.dart';
+import 'package:mostro_mobile/shared/providers/storage_providers.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/notifiers/locale_notifier.dart';
 import 'package:mostro_mobile/features/walkthrough/providers/first_run_provider.dart';
@@ -28,7 +31,7 @@ class MostroApp extends ConsumerStatefulWidget {
   ConsumerState<MostroApp> createState() => _MostroAppState();
 }
 
-class _MostroAppState extends ConsumerState<MostroApp> {
+class _MostroAppState extends ConsumerState<MostroApp> with WidgetsBindingObserver {
   GoRouter? _router;
   bool _deepLinksInitialized = false;
   DeepLinkInterceptor? _deepLinkInterceptor;
@@ -37,9 +40,52 @@ class _MostroAppState extends ConsumerState<MostroApp> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     ref.read(lifecycleManagerProvider);
     _initializeDeepLinkInterceptor();
     _processInitialDeepLink();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      _checkPendingEventsOnResume();
+    }
+  }
+
+  /// Check and process pending FCM events when app resumes
+  /// This is a fallback for when background processing fails
+  Future<void> _checkPendingEventsOnResume() async {
+    final logger = Logger();
+    try {
+      final sharedPrefs = ref.read(sharedPreferencesProvider);
+      final settings = ref.read(settingsProvider.notifier);
+      
+      final hasPending = await sharedPrefs.getBool('fcm.pending_fetch') ?? false;
+      
+      if (hasPending) {
+        logger.i('Pending events detected on resume - processing now');
+        
+        await sharedPrefs.setBool('fcm.pending_fetch', false);
+        
+        final relays = settings.settings.relays;
+        if (relays.isEmpty) {
+          logger.w('No relays configured - cannot fetch events');
+          return;
+        }
+        
+        logger.i('Fetching new events from ${relays.length} relays');
+        await fetchAndProcessNewEvents(
+          relays: relays,
+          // No limits when app is active
+        );
+        logger.i('Successfully processed pending events on resume');
+      }
+    } catch (e, stackTrace) {
+      logger.e('Error checking pending events on resume: $e');
+      logger.e('Stack trace: $stackTrace');
+    }
   }
 
   /// Initialize the deep link interceptor
@@ -107,6 +153,7 @@ class _MostroAppState extends ConsumerState<MostroApp> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _customUrlSubscription?.cancel();
     _deepLinkInterceptor?.dispose();
     // Deep link handler disposal is handled automatically by Riverpod

@@ -13,6 +13,12 @@ import 'package:mostro_mobile/shared/providers/mostro_database_provider.dart';
 bool isAppForeground = true;
 String currentLanguage = 'en';
 
+/// Background service entry point for notification handling
+///
+/// Architecture:
+/// - Uses separate notification_state store for deduplication
+/// - Does not write to events.db (read-only boundary)
+/// - Processes Nostr events and shows notifications
 @pragma('vm:entry-point')
 Future<void> serviceMain(ServiceInstance service) async {
 
