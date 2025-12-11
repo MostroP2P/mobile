@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:math';
 
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -51,10 +50,12 @@ void _onNotificationTap(NotificationResponse response) {
   }
 }
 
-Future<void> showLocalNotification(NostrEvent event) async {
+/// Shows a local notification for a Nostr event
+/// Returns true if notification was shown successfully, false otherwise
+Future<bool> showLocalNotification(NostrEvent event) async {
   try {
     final mostroMessage = await _decryptAndProcessEvent(event);
-    if (mostroMessage == null) return;
+    if (mostroMessage == null) return false;
 
     final sessions = await _loadSessionsFromDatabase();
     final matchingSession = sessions.cast<Session?>().firstWhere(
@@ -65,7 +66,7 @@ Future<void> showLocalNotification(NostrEvent event) async {
     final notificationData = await NotificationDataExtractor.extractFromMostroMessage(mostroMessage, null, session: matchingSession);
 
     if (notificationData == null || notificationData.isTemporary) {
-      return;
+      return false;
     }
 
     final notificationText = await _getLocalizedNotificationText(notificationData.action, notificationData.values);
@@ -107,8 +108,10 @@ Future<void> showLocalNotification(NostrEvent event) async {
     );
 
     Logger().i('Shown: ${notificationText.title} - ${notificationText.body}');
+    return true;
   } catch (e) {
     Logger().e('Notification error: $e');
+    return false;
   }
 }
 
@@ -289,24 +292,18 @@ String? _getExpandedText(Map<String, dynamic> values) {
 
 
 Future<void> retryNotification(NostrEvent event, {int maxAttempts = 3}) async {
+  final logger = Logger();
   int attempt = 0;
   bool success = false;
 
   while (!success && attempt < maxAttempts) {
-    try {
-      await showLocalNotification(event);
-      success = true;
-    } catch (e) {
+    success = await showLocalNotification(event);
+    if (!success) {
       attempt++;
-      if (attempt >= maxAttempts) {
-        Logger().e('Failed to show notification after $maxAttempts attempts: $e');
-        break;
+      logger.w('Attempt $attempt failed to show notification');
+      if (attempt < maxAttempts) {
+        await Future.delayed(Duration(seconds: attempt));
       }
-
-      // Exponential backoff: 1s, 2s, 4s, etc.
-      final backoffSeconds = pow(2, attempt - 1).toInt();
-      Logger().e('Notification attempt $attempt failed: $e. Retrying in ${backoffSeconds}s');
-      await Future.delayed(Duration(seconds: backoffSeconds));
     }
   }
 }
@@ -413,12 +410,12 @@ Future<void> fetchAndProcessNewEvents({
               subscriptionId: event.subscriptionId,
             );
 
-            try {
-              await showLocalNotification(nostrEvent);
+            final success = await showLocalNotification(nostrEvent);
+            if (success) {
               processedCount++;
-            } catch (e) {
+            } else {
               failedCount++;
-              logger.e('Failed to show notification for event ${event.id}: $e');
+              logger.e('Failed to show notification for event ${event.id}');
             }
           }
         } catch (e) {
@@ -523,7 +520,10 @@ Future<void> processFCMBackgroundNotification({
     );
 
     // Process and show the notification
-    await showLocalNotification(nostrEvent);
+    final success = await showLocalNotification(nostrEvent);
+    if (!success) {
+      logger.w('Failed to show notification for background FCM event');
+    }
 
     logger.i('FCM background notification processed and shown successfully');
 
