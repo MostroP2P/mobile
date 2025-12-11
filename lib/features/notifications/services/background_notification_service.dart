@@ -55,16 +55,18 @@ Future<void> showLocalNotification(NostrEvent event) async {
   try {
     final mostroMessage = await _decryptAndProcessEvent(event);
     if (mostroMessage == null) return;
-    
 
     final sessions = await _loadSessionsFromDatabase();
     final matchingSession = sessions.cast<Session?>().firstWhere(
       (session) => session?.orderId == mostroMessage.id,
       orElse: () => null,
     );
-    
+
     final notificationData = await NotificationDataExtractor.extractFromMostroMessage(mostroMessage, null, session: matchingSession);
-    if (notificationData == null || notificationData.isTemporary) return;
+
+    if (notificationData == null || notificationData.isTemporary) {
+      return;
+    }
 
     final notificationText = await _getLocalizedNotificationText(notificationData.action, notificationData.values);
     final expandedText = _getExpandedText(notificationData.values);
@@ -81,7 +83,7 @@ Future<void> showLocalNotification(NostrEvent event) async {
         enableVibration: true,
         ticker: notificationText.title,
         icon: '@drawable/ic_notification',
-        styleInformation: expandedText != null 
+        styleInformation: expandedText != null
             ? BigTextStyleInformation(expandedText, contentTitle: notificationText.title)
             : null,
         category: AndroidNotificationCategory.message,
@@ -113,7 +115,9 @@ Future<void> showLocalNotification(NostrEvent event) async {
 
 Future<MostroMessage?> _decryptAndProcessEvent(NostrEvent event) async {
   try {
-    if (event.kind != 4 && event.kind != 1059) return null;
+    if (event.kind != 4 && event.kind != 1059) {
+      return null;
+    }
 
     // Extract recipient from event
     String? recipient = event.recipient;
@@ -132,6 +136,7 @@ Future<MostroMessage?> _decryptAndProcessEvent(NostrEvent event) async {
     }
 
     final sessions = await _loadSessionsFromDatabase();
+
     final matchingSession = sessions.cast<Session?>().firstWhere(
       (s) => s?.tradeKey.public == recipient,
       orElse: () => null,
@@ -143,14 +148,18 @@ Future<MostroMessage?> _decryptAndProcessEvent(NostrEvent event) async {
     }
 
     final decryptedEvent = await event.unWrap(matchingSession.tradeKey.private);
-    if (decryptedEvent.content == null) return null;
+    if (decryptedEvent.content == null) {
+      return null;
+    }
 
     final result = jsonDecode(decryptedEvent.content!);
-    if (result is! List || result.isEmpty) return null;
+    if (result is! List || result.isEmpty) {
+      return null;
+    }
 
     final mostroMessage = MostroMessage.fromJson(result[0]);
     mostroMessage.timestamp = event.createdAt?.millisecondsSinceEpoch;
-    
+
     return mostroMessage;
   } catch (e) {
     Logger().e('Decrypt error: $e');
@@ -294,6 +303,7 @@ Future<void> retryNotification(NostrEvent event, {int maxAttempts = 3}) async {
         break;
       }
 
+      // Exponential backoff: 1s, 2s, 4s, etc.
       final backoffSeconds = pow(2, attempt - 1).toInt();
       Logger().e('Notification attempt $attempt failed: $e. Retrying in ${backoffSeconds}s');
       await Future.delayed(Duration(seconds: backoffSeconds));

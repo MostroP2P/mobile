@@ -115,6 +115,15 @@ flutter {
     source = "../.."
 }
 
+// Minimal AndroidX conflict resolution - only fix the specific build error
+configurations.all {
+    resolutionStrategy {
+        // Only force the problematic dependencies, not all AndroidX
+        force 'androidx.activity:activity:1.9.2'
+        force 'androidx.activity:activity-ktx:1.9.2'
+    }
+}
+
 dependencies {
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'
 }

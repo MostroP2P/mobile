@@ -3,6 +3,7 @@
 This document provides a comprehensive explanation of how the Mostro mobile application handles cryptographic keys, session management, and data storage. It covers the complete lifecycle from key generation to order creation and message handling.
 
 ## Table of Contents
+- [Related Documentation](#related-documentation)
 - [Key Management Architecture](#key-management-architecture)
 - [Identity Key System](#identity-key-system)
 - [Trade Keys and Index Management](#trade-keys-and-index-management)
@@ -10,9 +11,15 @@ This document provides a comprehensive explanation of how the Mostro mobile appl
 - [Order Creation Flow](#order-creation-flow)
 - [Message Wrapping and NIP-59 Implementation](#message-wrapping-and-nip-59-implementation)
 - [Storage Architecture](#storage-architecture)
+- [Account Backup and Recovery](#account-backup-and-recovery)
 - [Specific Scenarios](#specific-scenarios)
 - [Code Flow Examples](#code-flow-examples)
 - [Logging and Debugging](#logging-and-debugging)
+
+## Related Documentation
+- [Session Recovery Architecture](SESSION_RECOVERY_ARCHITECTURE.md) - Complete account recovery from mnemonic
+- [Architecture Overview](ARCHITECTURE.md) - High-level system architecture
+- [Nostr Integration](NOSTR.md) - Nostr protocol implementation details
 
 ## Key Management Architecture
 
@@ -40,6 +47,17 @@ static const String keyDerivationPath = "m/44'/1237'/38383'/0";
 // In key_manager_provider.dart
 final keyDerivator = KeyDerivator(Config.keyDerivationPath);
 ```
+
+### Account Recovery
+The key management system supports complete account recovery from a BIP-39 mnemonic seed phrase. 
+This allows users to restore their trading state on new devices, including:
+
+- Cryptographic key regeneration
+- Active session restoration  
+- Trade index synchronization
+- Order state reconstruction
+
+For complete details, see [Session Recovery Architecture](SESSION_RECOVERY_ARCHITECTURE.md).
 
 ## Identity Key System
 
@@ -124,6 +142,20 @@ Future<int> readTradeKeyIndex() async {
 }
 ```
 
+#### Trade Index Recovery and Synchronization
+
+During account recovery, the trade key index must be synchronized with the Mostro backend 
+to ensure continuity of key generation:
+
+```dart
+// During recovery process (RestoreService)
+final lastTradeIndex = await requestLastTradeIndexFromMostro();
+await keyManager.setCurrentKeyIndex(lastTradeIndex + 1);
+```
+
+This prevents key conflicts and ensures that new trades use the correct sequential index. 
+The recovery process is detailed in [Session Recovery Architecture](SESSION_RECOVERY_ARCHITECTURE.md#trade-index-synchronization).
+
 ## Session Management
 
 ### Session Architecture
@@ -185,6 +217,37 @@ Sessions are persisted using `SessionStorage` (`lib/data/repositories/session_st
 - **Active Sessions**: Stored in memory (`SessionNotifier._sessions` map)
 - **Persistent Storage**: Serialized to Sembast for app restart recovery
 - **Cleanup**: Automatic cleanup of expired sessions (72 hours default)
+
+### Session Recovery from Mnemonic
+
+During account recovery, sessions are reconstructed from Mostro backend data:
+
+1. **Key Regeneration**: Trade keys are re-derived using original indices
+2. **Role Determination**: Buyer/seller roles determined from order pubkey comparison
+3. **State Reconstruction**: Order states rebuilt from Mostro order details
+4. **Dispute Handling**: Special handling for disputed orders (with limitations)
+
+```dart
+// Session recreation during recovery (RestoreService)
+for (final entry in ordersIds.entries) {
+  final tradeKey = keyManager.deriveTradeKeyPair(tradeIndex);
+  
+  final session = Session(
+    masterKey: _masterKey!,
+    tradeKey: tradeKey,
+    keyIndex: tradeIndex,  // Original index from Mostro
+    fullPrivacy: settings.fullPrivacyMode,
+    startTime: DateTime.now(),
+    orderId: orderDetail.id,
+    role: role, // Determined from pubkey comparison
+  );
+  
+  await sessionNotifier.saveSession(session);
+}
+```
+
+**Important**: Current dispute initiator detection has limitations. 
+See [Session Recovery Architecture - Dispute Handling](SESSION_RECOVERY_ARCHITECTURE.md#dispute-handling) for details.
 
 ### Session Lifecycle and Cleanup
 
@@ -419,7 +482,7 @@ Sensitive cryptographic material is stored in secure storage:
 | Key | Type | Content | Location |
 |-----|------|---------|----------|
 | `master_key` | String | Extended private key (BIP32) | `SecureStorageKeys.masterKey` |
-| `mnemonic` | String | BIP39 seed phrase | `SecureStorageKeys.mnemonic` |
+| `mnemonic` | String | BIP39 seed phrase (12 words) | `SecureStorageKeys.mnemonic` |
 
 ### SharedPreferences Storage
 Non-sensitive configuration data:
@@ -436,6 +499,10 @@ Session and order data:
 - **Sessions**: Complete session objects with keys and metadata
 - **Messages**: Mostro messages associated with orders
 - **Events**: Processed Nostr events for deduplication
+
+**Account Recovery**: The mnemonic serves as the complete backup for account recovery. 
+Users can restore their entire trading state on new devices using only the mnemonic phrase. 
+Recovery process detailed in [Session Recovery Architecture](SESSION_RECOVERY_ARCHITECTURE.md).
 
 ### Storage Access Patterns
 
@@ -476,9 +543,46 @@ class KeyStorage {
 }
 ```
 
-## Child Order Session Management After Release
+## Account Backup and Recovery
 
-### The Missing Session Problem
+### Mnemonic Backup
+Users can view their 12-word BIP-39 mnemonic in the Key Management screen:
+
+```dart
+// File: lib/features/key_manager/key_management_screen.dart
+Future<String?> getMnemonic() async {
+  return await keyManager.getMnemonic();
+}
+```
+
+**Security Note**: The mnemonic provides complete access to all user funds and trading history.
+
+### Recovery Process Overview
+Account recovery follows a multi-stage process:
+
+1. **Mnemonic Import**: BIP-39 validation and key regeneration
+2. **Data Cleanup**: Clear all existing local data
+3. **Backend Synchronization**: Request active orders and trade index from Mostro
+4. **Session Reconstruction**: Recreate sessions with proper trade keys
+5. **State Rebuild**: Reconstruct order states and UI
+
+```dart
+// Main recovery entry point (RestoreService)
+await restoreService.importMnemonicAndRestore(mnemonic);
+```
+
+For implementation details, see [Session Recovery Architecture](SESSION_RECOVERY_ARCHITECTURE.md).
+
+### Recovery Limitations
+- **Dispute Initiator**: Current detection of dispute initiator has known limitations
+- **Historical Messages**: May require waiting period for complete message history
+- **Full Privacy Mode**: Supported but may affect reputation recovery
+
+## Specific Scenarios
+
+### Child Order Session Management After Release
+
+#### The Missing Session Problem
 
 When a range order is successfully completed via the `release` action, mostrod creates a child order using the next available trade key that was provided in the `NextTrade` payload. However, the mobile app has a critical gap in handling these child orders: **no session exists for the child order when the `new-order` message arrives**.
 
@@ -1156,5 +1260,12 @@ The Mostro mobile app implements a sophisticated hierarchical key management sys
 
 This architecture ensures that user funds and privacy are protected while maintaining the ability to build reputation and participate in the Mostro peer-to-peer trading network.
 
-*Last updated: September 29, 2025*  
-*Protocol version: 1.0*  
+### Account Recovery
+The system provides robust account recovery capabilities through BIP-39 mnemonic backup, 
+ensuring users never lose access to their trading history or funds. The recovery process 
+maintains cryptographic integrity while reconstructing the complete trading state from 
+backend data.
+
+*Last updated: November 25, 2025*  
+*Protocol version: 1.0*
+*Related: [Session Recovery Architecture](SESSION_RECOVERY_ARCHITECTURE.md)*

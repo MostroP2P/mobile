@@ -83,6 +83,22 @@ dependencies:
   auto_size_text: ^3.0.0
 
   app_links: ^6.4.0
+  
+  # Dependencies for image upload to Blossom
+  image_picker: ^1.2.1
+  mime: ^2.0.0
+  image: ^4.5.4
+  
+  # ChaCha20-Poly1305 encryption
+  # Pinned to ^3.9.1 due to bip32 ^2.0.0 dependency conflict
+  pointycastle: ^3.9.1
+  
+  # File picker for documents, videos, etc.
+  file_picker: ^10.3.7
+  open_file: ^3.5.10
+  
+  # Unicode normalization for filename sanitization
+  diacritic: ^0.1.6
 
   # Firebase
   firebase_core: ^3.8.0

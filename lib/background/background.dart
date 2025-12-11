@@ -75,7 +75,9 @@ Future<void> serviceMain(ServiceInstance service) async {
 
     subscription.listen((event) async {
       try {
-        if (await eventStore.hasItem(event.id!)) return;
+        if (await eventStore.hasItem(event.id!)) {
+          return;
+        }
         await notification_service.retryNotification(event);
       } catch (e) {
         Logger().e('Error processing event', error: e);
