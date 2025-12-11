@@ -489,43 +489,55 @@ Future<void> processFCMBackgroundNotification({
       return;
     }
 
-    // Step 3: Create filter to fetch the specific event by ID
-    final filter = NostrFilter(
-      ids: [eventId],
-      kinds: [1059], // Gift-wrapped events
-    );
+    try {
+      // Step 3: Create filter to fetch the specific event by ID
+      final filter = NostrFilter(
+        ids: [eventId],
+        kinds: [1059], // Gift-wrapped events
+      );
 
-    logger.i('Fetching event $eventId from relays...');
+      logger.i('Fetching event $eventId from relays...');
 
-    // Step 4: Fetch the event from relays
-    final events = await nostrService.fetchEvents(filter);
+      // Step 4: Fetch the event from relays with timeout
+      final events = await nostrService.fetchEvents(filter).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          logger.w('Timeout fetching event $eventId from relays');
+          return [];
+        },
+      );
 
-    if (events.isEmpty) {
-      logger.w('Event $eventId not found in any relay');
-      return;
+      if (events.isEmpty) {
+        logger.w('Event $eventId not found in any relay');
+        return;
+      }
+
+      logger.i('Found event ${events.first.id}, processing notification...');
+
+      // Step 5: Convert to NostrEvent and process through existing notification system
+      final nostrEvent = NostrEvent(
+        id: events.first.id,
+        kind: events.first.kind,
+        content: events.first.content,
+        tags: events.first.tags,
+        createdAt: events.first.createdAt,
+        pubkey: events.first.pubkey,
+        sig: events.first.sig,
+        subscriptionId: events.first.subscriptionId,
+      );
+
+      // Process and show the notification
+      final success = await showLocalNotification(nostrEvent);
+      if (!success) {
+        logger.w('Failed to show notification for background FCM event');
+      }
+
+      logger.i('FCM background notification processed and shown successfully');
+    } finally {
+      // Always cleanup NostrService connections
+      await nostrService.disconnectFromRelays();
+      logger.d('NostrService connections cleaned up');
     }
-
-    logger.i('Found event ${events.first.id}, processing notification...');
-
-    // Step 5: Convert to NostrEvent and process through existing notification system
-    final nostrEvent = NostrEvent(
-      id: events.first.id,
-      kind: events.first.kind,
-      content: events.first.content,
-      tags: events.first.tags,
-      createdAt: events.first.createdAt,
-      pubkey: events.first.pubkey,
-      sig: events.first.sig,
-      subscriptionId: events.first.subscriptionId,
-    );
-
-    // Process and show the notification
-    final success = await showLocalNotification(nostrEvent);
-    if (!success) {
-      logger.w('Failed to show notification for background FCM event');
-    }
-
-    logger.i('FCM background notification processed and shown successfully');
 
   } catch (e, stackTrace) {
     logger.e('Error processing FCM background notification: $e');
