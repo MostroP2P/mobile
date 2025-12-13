@@ -8,7 +8,6 @@ SendPort? _isolateLogSender;
 
 /// Initialize receiver to collect logs from background isolates
 void initIsolateLogReceiver() {
-  // Make idempotent: return early if already initialized to prevent port leaks
   if (_isolateLogReceiver != null) return;
 
   _isolateLogReceiver = ReceivePort();
@@ -23,7 +22,6 @@ void initIsolateLogReceiver() {
 
 SendPort? get isolateLogSenderPort => _isolateLogSender;
 
-/// Sanitizes log messages by removing ANSI codes, emojis, and redacting sensitive data
 String cleanMessage(String message) {
   var cleaned = message;
   cleaned = cleaned
@@ -44,7 +42,6 @@ String cleanMessage(String message) {
 }
 
 void addLogFromIsolate(Map<String, dynamic> logData) {
-  // Validate and sanitize timestamp
   DateTime timestamp;
   try {
     final timestampStr = logData['timestamp'];
@@ -54,14 +51,13 @@ void addLogFromIsolate(Map<String, dynamic> logData) {
       timestamp = DateTime.parse(timestampStr.toString());
     }
   } catch (e) {
-    timestamp = DateTime.now(); // Fallback if parsing fails
+    timestamp = DateTime.now();
   }
 
-  // Validate and sanitize all fields
   final levelStr = logData['level']?.toString() ?? 'debug';
   final level = _levelFromString(levelStr);
   final rawMessage = logData['message']?.toString() ?? '';
-  final message = cleanMessage(rawMessage); // Sanitize message
+  final message = cleanMessage(rawMessage);
   final service = logData['service']?.toString() ?? 'Background';
   final line = logData['line']?.toString() ?? '0';
 
@@ -74,7 +70,6 @@ void addLogFromIsolate(Map<String, dynamic> logData) {
   ));
 
   if (MemoryLogOutput.instance._buffer.length > Config.logMaxEntries) {
-    // Fix: ensure we don't try to remove more items than exist
     final deleteCount = MemoryLogOutput.instance._buffer.length < Config.logBatchDeleteSize
         ? MemoryLogOutput.instance._buffer.length - Config.logMaxEntries
         : Config.logBatchDeleteSize;
@@ -149,7 +144,12 @@ class MemoryLogOutput extends LogOutput {
       ));
 
       if (_buffer.length > Config.logMaxEntries) {
-        _buffer.removeRange(0, Config.logBatchDeleteSize);
+        final deleteCount = _buffer.length < Config.logBatchDeleteSize
+            ? _buffer.length - Config.logMaxEntries
+            : Config.logBatchDeleteSize;
+        if (deleteCount > 0) {
+          _buffer.removeRange(0, deleteCount);
+        }
       }
     }
   }
@@ -199,8 +199,7 @@ class SimplePrinter extends LogPrinter {
     final level = _formatLevel(event.level);
     final message = event.message.toString();
     final timestamp = event.time.toString().substring(0, 19);
-    final stackTrace = event.stackTrace ?? StackTrace.current;
-    final serviceAndLine = extractFromStackTrace(stackTrace);
+    final serviceAndLine = extractFromStackTrace(event.stackTrace);
     final service = serviceAndLine['service'] ?? 'App';
     final line = serviceAndLine['line'] ?? '0';
 
@@ -226,8 +225,6 @@ class SimplePrinter extends LogPrinter {
     }
   }
 
-  /// Extracts service name and line number from stack trace
-  /// Made public to allow other log outputs to use this logic
   Map<String, String> extractFromStackTrace(StackTrace? stackTrace) {
     if (stackTrace == null) return {'service': 'App', 'line': '0'};
 
@@ -313,11 +310,9 @@ class IsolateLogOutput extends LogOutput {
     }
 
     if (sendPort != null) {
-      // Use original stackTrace to extract accurate service/line metadata
       final printer = SimplePrinter();
       final serviceAndLine = printer.extractFromStackTrace(event.origin.stackTrace);
 
-      // Sanitize the message to remove sensitive data
       final rawMessage = event.origin.message.toString();
       final sanitizedMessage = cleanMessage(rawMessage);
 
