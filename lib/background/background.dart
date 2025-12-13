@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:isolate';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
@@ -8,6 +9,7 @@ import 'package:mostro_mobile/data/repositories/event_storage.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/features/notifications/services/background_notification_service.dart' as notification_service;
 import 'package:mostro_mobile/services/nostr_service.dart';
+import 'package:mostro_mobile/services/logger_service.dart' as logger_service;
 import 'package:mostro_mobile/shared/providers/mostro_database_provider.dart';
 
 bool isAppForeground = true;
@@ -15,18 +17,8 @@ String currentLanguage = 'en';
 
 @pragma('vm:entry-point')
 Future<void> serviceMain(ServiceInstance service) async {
-  // Create a local logger for the background isolate
-  final logger = Logger(
-    printer: PrettyPrinter(
-      methodCount: 2,
-      errorMethodCount: 8,
-      lineLength: 120,
-      colors: true,
-      printEmojis: true,
-      dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
-    ),
-    level: Level.debug,
-  );
+  SendPort? loggerSendPort;
+  late Logger logger;
 
   final Map<String, Map<String, dynamic>> activeSubscriptions = {};
   final nostrService = NostrService();
@@ -42,6 +34,15 @@ Future<void> serviceMain(ServiceInstance service) async {
 
     final settingsMap = data['settings'];
     if (settingsMap == null) return;
+
+    loggerSendPort = data['loggerSendPort'] as SendPort?;
+
+    // Create logger that forwards to main thread
+    logger = Logger(
+      printer: logger_service.SimplePrinter(),
+      output: logger_service.IsolateLogOutput(loggerSendPort),
+      level: Level.debug,
+    );
 
     final settings = Settings.fromJson(settingsMap);
     currentLanguage = settings.selectedLanguage ?? PlatformDispatcher.instance.locale.languageCode;

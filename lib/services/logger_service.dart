@@ -1,5 +1,49 @@
+import 'dart:isolate';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/core/config.dart';
+
+// Isolate log communication
+ReceivePort? _isolateLogReceiver;
+SendPort? _isolateLogSender;
+
+/// Initialize receiver to collect logs from background isolates
+void initIsolateLogReceiver() {
+  _isolateLogReceiver = ReceivePort();
+  _isolateLogSender = _isolateLogReceiver!.sendPort;
+
+  _isolateLogReceiver!.listen((message) {
+    if (message is Map<String, dynamic>) {
+      addLogFromIsolate(message);
+    }
+  });
+}
+
+SendPort? get isolateLogSenderPort => _isolateLogSender;
+
+void addLogFromIsolate(Map<String, dynamic> logData) {
+  MemoryLogOutput.instance._buffer.add(LogEntry(
+    timestamp: DateTime.parse(logData['timestamp']),
+    level: _levelFromString(logData['level']),
+    message: logData['message'],
+    service: logData['service'],
+    line: logData['line'],
+  ));
+
+  if (MemoryLogOutput.instance._buffer.length > Config.logMaxEntries) {
+    MemoryLogOutput.instance._buffer.removeRange(0, Config.logBatchDeleteSize);
+  }
+}
+
+Level _levelFromString(String level) {
+  switch (level) {
+    case 'error': return Level.error;
+    case 'warning': return Level.warning;
+    case 'info': return Level.info;
+    case 'debug': return Level.debug;
+    case 'trace': return Level.trace;
+    default: return Level.debug;
+  }
+}
 
 class LogEntry {
   final DateTime timestamp;
@@ -219,6 +263,49 @@ Logger get logger {
       filter: _AlwaysStackTraceFilter(),
     );
     return _cachedSimpleLogger!;
+  }
+}
+
+/// LogOutput that forwards logs from isolates to main thread via SendPort
+class IsolateLogOutput extends LogOutput {
+  final SendPort? sendPort;
+  final SimplePrinter _printer = SimplePrinter();
+
+  IsolateLogOutput(this.sendPort);
+
+  @override
+  void output(OutputEvent event) {
+    for (final line in event.lines) {
+      // ignore: avoid_print
+      print(line);
+    }
+
+    if (sendPort != null) {
+      final formatted = _printer.log(LogEvent(
+        event.level,
+        event.origin.message,
+        time: event.origin.time,
+      ));
+
+      if (formatted.isNotEmpty) {
+        final serviceAndLine = _extractFromLine(formatted[0]);
+        sendPort!.send({
+          'timestamp': event.origin.time.toIso8601String(),
+          'level': event.level.name,
+          'message': event.origin.message.toString(),
+          'service': serviceAndLine['service'] ?? 'Background',
+          'line': serviceAndLine['line'] ?? '0',
+        });
+      }
+    }
+  }
+
+  Map<String, String> _extractFromLine(String line) {
+    final match = RegExp(r'\[(?:ERROR|WARN|INFO|DEBUG|TRACE)\]\((\w+):(\d+)\)').firstMatch(line);
+    if (match != null) {
+      return {'service': match.group(1) ?? 'Background', 'line': match.group(2) ?? '0'};
+    }
+    return {'service': 'Background', 'line': '0'};
   }
 }
 

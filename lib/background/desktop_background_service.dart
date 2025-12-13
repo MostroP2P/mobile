@@ -6,6 +6,7 @@ import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/models/nostr_filter.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
+import 'package:mostro_mobile/services/logger_service.dart' as logger_service;
 import 'abstract_background_service.dart';
 
 class DesktopBackgroundService implements BackgroundService {
@@ -19,26 +20,20 @@ class DesktopBackgroundService implements BackgroundService {
   Future<void> init() async {}
 
   static void isolateEntry(List<dynamic> args) async {
-    // Create a local logger for the desktop background isolate
-    final logger = Logger(
-      printer: PrettyPrinter(
-        methodCount: 2,
-        errorMethodCount: 8,
-        lineLength: 120,
-        colors: true,
-        printEmojis: true,
-        dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
-      ),
-      level: Level.debug,
-    );
-
     final isolateReceivePort = ReceivePort();
     final mainSendPort = args[0] as SendPort;
     final token = args[1] as RootIsolateToken;
+    final loggerSendPort = args.length > 2 ? args[2] as SendPort? : null; // Optional logger SendPort
 
     mainSendPort.send(isolateReceivePort.sendPort);
 
     BackgroundIsolateBinaryMessenger.ensureInitialized(token);
+
+    final logger = Logger(
+      printer: logger_service.SimplePrinter(),
+      output: logger_service.IsolateLogOutput(loggerSendPort),
+      level: Level.debug,
+    );
 
     final nostrService = NostrService();
 
