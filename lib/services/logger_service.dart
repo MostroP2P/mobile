@@ -8,6 +8,9 @@ SendPort? _isolateLogSender;
 
 /// Initialize receiver to collect logs from background isolates
 void initIsolateLogReceiver() {
+  // Make idempotent: return early if already initialized to prevent port leaks
+  if (_isolateLogReceiver != null) return;
+
   _isolateLogReceiver = ReceivePort();
   _isolateLogSender = _isolateLogReceiver!.sendPort;
 
@@ -20,17 +23,64 @@ void initIsolateLogReceiver() {
 
 SendPort? get isolateLogSenderPort => _isolateLogSender;
 
+/// Sanitizes log messages by removing ANSI codes, emojis, and redacting sensitive data
+String cleanMessage(String message) {
+  var cleaned = message;
+  cleaned = cleaned
+      .replaceAll(RegExp(r'\x1B\[[0-9;]*[a-zA-Z]'), '')
+      .replaceAll(RegExp(r'\[\d+m'), '')
+      .replaceAll(RegExp(r'\[38;5;\d+m'), '')
+      .replaceAll(RegExp(r'\[39m'), '')
+      .replaceAll(RegExp(r'\[2m'), '')
+      .replaceAll(RegExp(r'\[22m'), '')
+      .replaceAll(RegExp(r'[┌┐└┘├┤─│┬┴┼╭╮╰╯╔╗╚╝╠╣═║╦╩╬━┃┄├]'), '')
+      .replaceAll(RegExp(r'[\u{1F300}-\u{1F9FF}]', unicode: true), '')
+      .replaceAll(RegExp(r'nsec[0-9a-z]+'), '[PRIVATE_KEY]')
+      .replaceAll(RegExp(r'"privateKey"\s*:\s*"[^"]*"'), '"privateKey":"[REDACTED]"')
+      .replaceAll(RegExp(r'"mnemonic"\s*:\s*"[^"]*"'), '"mnemonic":"[REDACTED]"')
+      .replaceAll(RegExp(r'[^A-Za-z0-9\s.:,!?\-_/\[\]]'), ' ')
+      .replaceAll(RegExp(r'\s+'), ' ');
+  return cleaned.trim();
+}
+
 void addLogFromIsolate(Map<String, dynamic> logData) {
+  // Validate and sanitize timestamp
+  DateTime timestamp;
+  try {
+    final timestampStr = logData['timestamp'];
+    if (timestampStr == null) {
+      timestamp = DateTime.now();
+    } else {
+      timestamp = DateTime.parse(timestampStr.toString());
+    }
+  } catch (e) {
+    timestamp = DateTime.now(); // Fallback if parsing fails
+  }
+
+  // Validate and sanitize all fields
+  final levelStr = logData['level']?.toString() ?? 'debug';
+  final level = _levelFromString(levelStr);
+  final rawMessage = logData['message']?.toString() ?? '';
+  final message = cleanMessage(rawMessage); // Sanitize message
+  final service = logData['service']?.toString() ?? 'Background';
+  final line = logData['line']?.toString() ?? '0';
+
   MemoryLogOutput.instance._buffer.add(LogEntry(
-    timestamp: DateTime.parse(logData['timestamp']),
-    level: _levelFromString(logData['level']),
-    message: logData['message'],
-    service: logData['service'],
-    line: logData['line'],
+    timestamp: timestamp,
+    level: level,
+    message: message,
+    service: service,
+    line: line,
   ));
 
   if (MemoryLogOutput.instance._buffer.length > Config.logMaxEntries) {
-    MemoryLogOutput.instance._buffer.removeRange(0, Config.logBatchDeleteSize);
+    // Fix: ensure we don't try to remove more items than exist
+    final deleteCount = MemoryLogOutput.instance._buffer.length < Config.logBatchDeleteSize
+        ? MemoryLogOutput.instance._buffer.length - Config.logMaxEntries
+        : Config.logBatchDeleteSize;
+    if (deleteCount > 0) {
+      MemoryLogOutput.instance._buffer.removeRange(0, deleteCount);
+    }
   }
 }
 
@@ -93,7 +143,7 @@ class MemoryLogOutput extends LogOutput {
       _buffer.add(LogEntry(
         timestamp: event.origin.time,
         level: event.level,
-        message: _cleanMessage(event.origin.message.toString()),
+        message: cleanMessage(event.origin.message.toString()),
         service: serviceAndLine['service'] ?? 'App',
         line: serviceAndLine['line'] ?? '0',
       ));
@@ -113,25 +163,6 @@ class MemoryLogOutput extends LogOutput {
       };
     }
     return {'service': 'App', 'line': '0'};
-  }
-
-  String _cleanMessage(String message) {
-    var cleaned = message;
-    cleaned = cleaned
-        .replaceAll(RegExp(r'\x1B\[[0-9;]*[a-zA-Z]'), '')
-        .replaceAll(RegExp(r'\[\d+m'), '')
-        .replaceAll(RegExp(r'\[38;5;\d+m'), '')
-        .replaceAll(RegExp(r'\[39m'), '')
-        .replaceAll(RegExp(r'\[2m'), '')
-        .replaceAll(RegExp(r'\[22m'), '')
-        .replaceAll(RegExp(r'[┌┐└┘├┤─│┬┴┼╭╮╰╯╔╗╚╝╠╣═║╦╩╬━┃┄├]'), '')
-        .replaceAll(RegExp(r'[\u{1F300}-\u{1F9FF}]', unicode: true), '')
-        .replaceAll(RegExp(r'nsec[0-9a-z]+'), '[PRIVATE_KEY]')
-        .replaceAll(RegExp(r'"privateKey"\s*:\s*"[^"]*"'), '"privateKey":"[REDACTED]"')
-        .replaceAll(RegExp(r'"mnemonic"\s*:\s*"[^"]*"'), '"mnemonic":"[REDACTED]"')
-        .replaceAll(RegExp(r'[^A-Za-z0-9\s.:,!?\-_/\[\]]'), ' ')
-        .replaceAll(RegExp(r'\s+'), ' ');
-    return cleaned.trim();
   }
 
   List<LogEntry> getAllLogs() => List.unmodifiable(_buffer);
@@ -169,7 +200,7 @@ class SimplePrinter extends LogPrinter {
     final message = event.message.toString();
     final timestamp = event.time.toString().substring(0, 19);
     final stackTrace = event.stackTrace ?? StackTrace.current;
-    final serviceAndLine = _extractFromStackTrace(stackTrace);
+    final serviceAndLine = extractFromStackTrace(stackTrace);
     final service = serviceAndLine['service'] ?? 'App';
     final line = serviceAndLine['line'] ?? '0';
 
@@ -195,7 +226,9 @@ class SimplePrinter extends LogPrinter {
     }
   }
 
-  Map<String, String> _extractFromStackTrace(StackTrace? stackTrace) {
+  /// Extracts service name and line number from stack trace
+  /// Made public to allow other log outputs to use this logic
+  Map<String, String> extractFromStackTrace(StackTrace? stackTrace) {
     if (stackTrace == null) return {'service': 'App', 'line': '0'};
 
     final lines = stackTrace.toString().split('\n');
@@ -269,7 +302,6 @@ Logger get logger {
 /// LogOutput that forwards logs from isolates to main thread via SendPort
 class IsolateLogOutput extends LogOutput {
   final SendPort? sendPort;
-  final SimplePrinter _printer = SimplePrinter();
 
   IsolateLogOutput(this.sendPort);
 
@@ -281,31 +313,22 @@ class IsolateLogOutput extends LogOutput {
     }
 
     if (sendPort != null) {
-      final formatted = _printer.log(LogEvent(
-        event.level,
-        event.origin.message,
-        time: event.origin.time,
-      ));
+      // Use original stackTrace to extract accurate service/line metadata
+      final printer = SimplePrinter();
+      final serviceAndLine = printer.extractFromStackTrace(event.origin.stackTrace);
 
-      if (formatted.isNotEmpty) {
-        final serviceAndLine = _extractFromLine(formatted[0]);
-        sendPort!.send({
-          'timestamp': event.origin.time.toIso8601String(),
-          'level': event.level.name,
-          'message': event.origin.message.toString(),
-          'service': serviceAndLine['service'] ?? 'Background',
-          'line': serviceAndLine['line'] ?? '0',
-        });
-      }
-    }
-  }
+      // Sanitize the message to remove sensitive data
+      final rawMessage = event.origin.message.toString();
+      final sanitizedMessage = cleanMessage(rawMessage);
 
-  Map<String, String> _extractFromLine(String line) {
-    final match = RegExp(r'\[(?:ERROR|WARN|INFO|DEBUG|TRACE)\]\((\w+):(\d+)\)').firstMatch(line);
-    if (match != null) {
-      return {'service': match.group(1) ?? 'Background', 'line': match.group(2) ?? '0'};
+      sendPort!.send({
+        'timestamp': event.origin.time.toIso8601String(),
+        'level': event.level.name,
+        'message': sanitizedMessage,
+        'service': serviceAndLine['service'] ?? 'Background',
+        'line': serviceAndLine['line'] ?? '0',
+      });
     }
-    return {'service': 'Background', 'line': '0'};
   }
 }
 
