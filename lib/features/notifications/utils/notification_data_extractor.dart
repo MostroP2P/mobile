@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:logger/logger.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models.dart';
@@ -101,9 +101,9 @@ class NotificationDataExtractor {
               ? ref.read(orderRepositoryProvider).mostroInstance?.expirationSeconds ?? Config.expirationSeconds
               : Config.expirationSeconds;
           values['expiration_seconds'] = expirationSeconds;
-          Logger().d('waitingBuyerInvoice: extracted expiration_seconds=$expirationSeconds');
+          logger.d('waitingBuyerInvoice: extracted expiration_seconds=$expirationSeconds');
         } catch (e) {
-          Logger().e('waitingBuyerInvoice: Error accessing providers: $e');
+          logger.e('waitingBuyerInvoice: Error accessing providers: $e');
           values['expiration_seconds'] = Config.expirationSeconds;
         }
         break;

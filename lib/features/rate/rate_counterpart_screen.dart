@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:logger/logger.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
@@ -21,10 +21,9 @@ class RateCounterpartScreen extends ConsumerStatefulWidget {
 
 class _RateCounterpartScreenState extends ConsumerState<RateCounterpartScreen> {
   int _rating = 0;
-  final _logger = Logger();
 
   Future<void> _submitRating() async {
-    _logger.i('Rating submitted: $_rating');
+    logger.i('Rating submitted: $_rating');
     final orderNotifer = ref.watch(
       orderNotifierProvider(widget.orderId).notifier,
     );
