@@ -11,6 +11,7 @@ import 'package:logger/logger.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:mostro_mobile/data/models/peer.dart';
+import 'package:mostro_mobile/shared/providers/push_notification_provider.dart';
 
 class SessionNotifier extends StateNotifier<List<Session>> {
   final Ref ref;
@@ -114,8 +115,31 @@ class SessionNotifier extends StateNotifier<List<Session>> {
       _requestIdToSession[requestId] = session;
     }
 
+    // Register push notification token for this trade
+    _registerPushToken(tradeKey.public);
+
     _emitState();
     return session;
+  }
+
+  /// Register push notification token for a trade key
+  Future<void> _registerPushToken(String tradePubkey) async {
+    try {
+      final pushService = ref.read(pushNotificationServiceProvider);
+      await pushService.registerToken(tradePubkey);
+    } catch (e) {
+      _logger.w('Failed to register push token: $e');
+    }
+  }
+
+  /// Unregister push notification token for a trade key
+  Future<void> _unregisterPushToken(String tradePubkey) async {
+    try {
+      final pushService = ref.read(pushNotificationServiceProvider);
+      await pushService.unregisterToken(tradePubkey);
+    } catch (e) {
+      _logger.w('Failed to unregister push token: $e');
+    }
   }
 
   Future<void> saveSession(Session session) async {
@@ -178,6 +202,8 @@ class SessionNotifier extends StateNotifier<List<Session>> {
   Future<void> deleteSession(String sessionId) async {
     final removed = _sessions.remove(sessionId);
     if (removed != null) {
+      // Unregister push token when session is deleted
+      _unregisterPushToken(removed.tradeKey.public);
       _pendingChildSessions
           .removeWhere((_, session) => identical(session, removed));
       _requestIdToSession
