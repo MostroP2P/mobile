@@ -10,6 +10,7 @@ import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
 
 class LogsScreen extends ConsumerStatefulWidget {
@@ -527,19 +528,43 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
   }
 
   Future<void> _saveToDevice() async {
+    logger.i('Button pressed, starting save process');
     setState(() => _isExporting = true);
     try {
+      if (Platform.isAndroid) {
+        logger.i('Checking Android version and permissions');
+
+        PermissionStatus status;
+
+        // Try manageExternalStorage first (for Android 11+)
+        if (await Permission.manageExternalStorage.isGranted) {
+          status = PermissionStatus.granted;
+        } else {
+          // Try regular storage permission
+          status = await Permission.storage.status;
+          if (!status.isGranted && !status.isPermanentlyDenied) {
+            status = await Permission.storage.request();
+          }
+        }
+
+      }
+
+      logger.i('Creating log file');
       final file = await _createLogFile();
+
+      logger.i('Saving to documents/downloads');
       final savedPath = await _saveToDocuments(file);
+      logger.i('Successfully saved to: $savedPath');
 
       if (mounted) {
         _showSuccessSnackBar(
           S.of(context)!.logsSavedTo(savedPath),
         );
       }
-    } catch (e) {
+    } catch (e, stack) {
+      logger.e('Failed to save logs to device', error: e, stackTrace: stack);
       if (mounted) {
-        _showErrorSnackBar(S.of(context)!.saveFailed);
+        _showErrorSnackBar('${S.of(context)!.saveFailed}: $e');
       }
     } finally {
       if (mounted) {
@@ -570,36 +595,61 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
   }
 
   Future<String> _saveToDocuments(File tempFile) async {
-    Directory? directory;
+    logger.i('Getting storage directory');
+
+    final Directory directory;
 
     if (Platform.isAndroid) {
-      // Try to get Downloads directory first (most reliable on modern Android)
-      final externalDirs = await getExternalStorageDirectories(
-        type: StorageDirectory.downloads,
-      );
+      final externalDir = await getExternalStorageDirectory();
+      if (externalDir != null) {
+        final storageRoot = externalDir.path.split('/Android/')[0];
+        logger.i('Storage root: $storageRoot');
 
-      if (externalDirs != null && externalDirs.isNotEmpty) {
-        directory = externalDirs[0];
+        final downloadPath = '$storageRoot/Download';
+        logger.i('Trying Downloads path: $downloadPath');
+        var downloadsDir = Directory(downloadPath);
+
+        if (!await downloadsDir.exists()) {
+          final altPath = '$storageRoot/Downloads';
+          logger.i('Download not found, trying: $altPath');
+          downloadsDir = Directory(altPath);
+        }
+
+        if (await downloadsDir.exists()) {
+          directory = downloadsDir;
+        } else {
+          logger.w('Downloads folder not found, using app storage');
+          directory = externalDir;
+        }
       } else {
-        // Fallback to external storage root
-        directory = await getExternalStorageDirectory();
-
-        directory ??= await getApplicationDocumentsDirectory();
+        directory = await getApplicationDocumentsDirectory();
       }
-    } else if (Platform.isIOS) {
-      directory = await getApplicationDocumentsDirectory();
     } else {
-      // For other platforms (Windows, Linux, macOS)
       directory = await getApplicationDocumentsDirectory();
     }
 
-
+    logger.i('Final directory: ${directory.path}');
     final logsDir = Directory('${directory.path}/MostroLogs');
+    logger.i('Creating logs directory: ${logsDir.path}');
     await logsDir.create(recursive: true);
 
     final timestamp = DateFormat('yyyy-MM-dd_HH-mm-ss').format(DateTime.now());
     final destinationFile = File('${logsDir.path}/mostro_logs_$timestamp.txt');
+
+    logger.i('Copying to: ${destinationFile.path}');
     await tempFile.copy(destinationFile.path);
+
+    // Verify the file was actually created
+    final exists = await destinationFile.exists();
+    logger.i('File exists after copy: $exists');
+
+    if (!exists) {
+      throw Exception('File was not created at ${destinationFile.path}');
+    }
+
+    final fileSize = await destinationFile.length();
+    logger.i('File size: $fileSize bytes');
+    logger.i('File saved successfully');
 
     return destinationFile.path;
   }
