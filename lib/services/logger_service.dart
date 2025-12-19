@@ -15,7 +15,12 @@ void initIsolateLogReceiver() {
 
   _isolateLogReceiver!.listen((message) {
     if (message is Map<String, dynamic>) {
-      addLogFromIsolate(message);
+      try {
+        addLogFromIsolate(message);
+      } catch (e, stack) {
+        print('ERROR: Failed to process isolate log message: $e');
+        print('Stack trace: $stack');
+      }
     }
   });
 }
