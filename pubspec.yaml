@@ -100,6 +100,10 @@ dependencies:
   # Unicode normalization for filename sanitization
   diacritic: ^0.1.6
 
+  # Firebase
+  firebase_core: ^3.8.0
+  firebase_messaging: ^15.1.4
+
 
 dev_dependencies:
   flutter_test:
