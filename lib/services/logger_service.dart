@@ -123,46 +123,28 @@ class MemoryLogOutput extends LogOutput {
 
   @override
   void output(OutputEvent event) {
-    final formattedLines = _printer.log(LogEvent(
-      event.level,
-      event.origin.message,
-      time: event.origin.time,
-      error: event.origin.error,
-      stackTrace: event.origin.stackTrace,
+    // Use StackTrace.current as fallback to get accurate caller info
+    final stackTrace = event.origin.stackTrace ?? StackTrace.current;
+    final serviceAndLine = _printer.extractFromStackTrace(stackTrace);
+
+    // Always add to buffer
+    _buffer.add(LogEntry(
+      timestamp: event.origin.time,
+      level: event.level,
+      message: cleanMessage(event.origin.message.toString()),
+      service: serviceAndLine['service'] ?? 'Unknown',
+      line: serviceAndLine['line'] ?? '0',
     ));
 
-    if (formattedLines.isNotEmpty) {
-      final formattedLine = formattedLines[0];
-      final serviceAndLine = _extractFromFormattedLine(formattedLine);
-
-      _buffer.add(LogEntry(
-        timestamp: event.origin.time,
-        level: event.level,
-        message: cleanMessage(event.origin.message.toString()),
-        service: serviceAndLine['service'] ?? 'App',
-        line: serviceAndLine['line'] ?? '0',
-      ));
-
-      if (_buffer.length > Config.logMaxEntries) {
-        final deleteCount = _buffer.length < Config.logBatchDeleteSize
-            ? _buffer.length - Config.logMaxEntries
-            : Config.logBatchDeleteSize;
-        if (deleteCount > 0) {
-          _buffer.removeRange(0, deleteCount);
-        }
+    // Maintain buffer size limit
+    if (_buffer.length > Config.logMaxEntries) {
+      final deleteCount = _buffer.length < Config.logBatchDeleteSize
+          ? _buffer.length - Config.logMaxEntries
+          : Config.logBatchDeleteSize;
+      if (deleteCount > 0) {
+        _buffer.removeRange(0, deleteCount);
       }
     }
-  }
-
-  Map<String, String> _extractFromFormattedLine(String line) {
-    final match = RegExp(r'\[(?:ERROR|WARN|INFO|DEBUG|TRACE)\]\((\w+):(\d+)\)').firstMatch(line);
-    if (match != null) {
-      return {
-        'service': match.group(1) ?? 'App',
-        'line': match.group(2) ?? '0'
-      };
-    }
-    return {'service': 'App', 'line': '0'};
   }
 
   List<LogEntry> getAllLogs() => List.unmodifiable(_buffer);
@@ -199,8 +181,10 @@ class SimplePrinter extends LogPrinter {
     final level = _formatLevel(event.level);
     final message = event.message.toString();
     final timestamp = event.time.toString().substring(0, 19);
-    final serviceAndLine = extractFromStackTrace(event.stackTrace);
-    final service = serviceAndLine['service'] ?? 'App';
+    // Use StackTrace.current as fallback to get accurate caller info
+    final stackTrace = event.stackTrace ?? StackTrace.current;
+    final serviceAndLine = extractFromStackTrace(stackTrace);
+    final service = serviceAndLine['service'] ?? 'Unknown';
     final line = serviceAndLine['line'] ?? '0';
 
     return [
@@ -226,10 +210,9 @@ class SimplePrinter extends LogPrinter {
   }
 
   Map<String, String> extractFromStackTrace(StackTrace? stackTrace) {
-    if (stackTrace == null) return {'service': 'App', 'line': '0'};
+    if (stackTrace == null) return {'service': 'Unknown', 'line': '0'};
 
     final lines = stackTrace.toString().split('\n');
-    Map<String, String>? lastValid;
 
     for (final line in lines) {
       if (line.contains('logger_service.dart') ||
@@ -242,23 +225,22 @@ class SimplePrinter extends LogPrinter {
 
       var match = RegExp(r'#\d+\s+\S+\s+\((?:package:[\w_]+/)?(?:.*/)(\w+)\.dart:(\d+)').firstMatch(line);
       if (match != null) {
-        lastValid = {
-          'service': match.group(1) ?? 'App',
+        return {
+          'service': match.group(1) ?? 'Unknown',
           'line': match.group(2) ?? '0'
         };
-        continue;
       }
 
       match = RegExp(r'package:[\w_]+/(?:.*/)(\w+)\.dart:(\d+)').firstMatch(line);
       if (match != null) {
-        lastValid = {
-          'service': match.group(1) ?? 'App',
+        return {
+          'service': match.group(1) ?? 'Unknown',
           'line': match.group(2) ?? '0'
         };
       }
     }
 
-    return lastValid ?? {'service': 'App', 'line': '0'};
+    return {'service': 'Unknown', 'line': '0'};
   }
 }
 
@@ -283,6 +265,7 @@ Logger get logger {
       ),
       output: _MultiOutput(MemoryLogOutput.instance, ConsoleOutput()),
       level: Level.debug,
+      filter: _AlwaysStackTraceFilter(),
     );
     return _cachedFullLogger!;
   } else {
