@@ -18,7 +18,9 @@ void initIsolateLogReceiver() {
       try {
         addLogFromIsolate(message);
       } catch (e, stack) {
+        // ignore: avoid_print
         print('ERROR: Failed to process isolate log message: $e');
+        // ignore: avoid_print
         print('Stack trace: $stack');
       }
     }
