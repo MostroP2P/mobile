@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:logger/logger.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/enums/storage_keys.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
@@ -9,7 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class SettingsNotifier extends StateNotifier<Settings> {
   final SharedPreferencesAsync _prefs;
   final Ref? ref;
-  final _logger = Logger();
+
   static final String _storageKey = SharedPreferencesKeys.appSettings.value;
 
   SettingsNotifier(this._prefs, {this.ref}) : super(_defaultSettings());
@@ -50,7 +50,7 @@ class SettingsNotifier extends StateNotifier<Settings> {
     final oldPubkey = state.mostroPublicKey;
     
     if (oldPubkey != newValue) {
-      _logger.i('Mostro change detected: $oldPubkey → $newValue');
+      logger.i('Mostro change detected: $oldPubkey → $newValue');
       
       // COMPLETE RESET: Clear blacklist and user relays when changing Mostro
       state = state.copyWith(
@@ -59,7 +59,7 @@ class SettingsNotifier extends StateNotifier<Settings> {
         userRelays: const [],         // User relays vacíos
       );
       
-      _logger.i('Reset blacklist and user relays for new Mostro instance');
+      logger.i('Reset blacklist and user relays for new Mostro instance');
     } else {
       // Only update pubkey if it's the same (without reset)
       state = state.copyWith(mostroPublicKey: newValue);
@@ -97,7 +97,7 @@ class SettingsNotifier extends StateNotifier<Settings> {
       currentBlacklist.add(normalized);
       state = state.copyWith(blacklistedRelays: currentBlacklist);
       await _saveToPrefs();
-      _logger.i('Added relay to blacklist: $normalized');
+      logger.i('Added relay to blacklist: $normalized');
     }
   }
 
@@ -108,7 +108,7 @@ class SettingsNotifier extends StateNotifier<Settings> {
     if (currentBlacklist.remove(normalized)) {
       state = state.copyWith(blacklistedRelays: currentBlacklist);
       await _saveToPrefs();
-      _logger.i('Removed relay from blacklist: $normalized');
+      logger.i('Removed relay from blacklist: $normalized');
     }
   }
 
@@ -133,7 +133,7 @@ class SettingsNotifier extends StateNotifier<Settings> {
     if (state.blacklistedRelays.isNotEmpty) {
       state = state.copyWith(blacklistedRelays: const []);
       await _saveToPrefs();
-      _logger.i('Cleared all blacklisted relays');
+      logger.i('Cleared all blacklisted relays');
     }
   }
 
@@ -141,7 +141,7 @@ class SettingsNotifier extends StateNotifier<Settings> {
   Future<void> updateUserRelays(List<Map<String, dynamic>> newUserRelays) async {
     state = state.copyWith(userRelays: newUserRelays);
     await _saveToPrefs();
-    _logger.i('Updated user relays: ${newUserRelays.length} relays');
+    logger.i('Updated user relays: ${newUserRelays.length} relays');
   }
 
   Future<void> _saveToPrefs() async {

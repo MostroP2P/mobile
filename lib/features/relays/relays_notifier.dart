@@ -3,10 +3,10 @@ import 'dart:io';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:dart_nostr/nostr/model/ease.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:logger/logger.dart';
 import 'package:mostro_mobile/core/models/relay_list_event.dart';
 import 'package:mostro_mobile/features/settings/settings_notifier.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_manager.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'relay.dart';
 
@@ -27,7 +27,6 @@ class RelayValidationResult {
 class RelaysNotifier extends StateNotifier<List<Relay>> {
   final SettingsNotifier settings;
   final Ref ref;
-  final _logger = Logger();
   SubscriptionManager? _subscriptionManager;
   StreamSubscription<RelayListEvent>? _relayListSubscription;
   Timer? _settingsWatchTimer;
@@ -51,8 +50,8 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
   void _loadRelays() {
     final saved = settings.state;
     
-    _logger.i('Loading relays from settings: ${saved.relays}');
-    _logger.i('Loading user relays from settings: ${saved.userRelays}');
+    logger.i('Loading relays from settings: ${saved.relays}');
+    logger.i('Loading user relays from settings: ${saved.userRelays}');
     
     final loadedRelays = <Relay>[];
     
@@ -75,7 +74,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
     loadedRelays.addAll(userRelaysFromSettings);
     
     state = loadedRelays;
-    _logger.i('Loaded ${state.length} relays: ${state.map((r) => '${r.url} (${r.source})').toList()}');
+    logger.i('Loaded ${state.length} relays: ${state.map((r) => '${r.url} (${r.source})').toList()}');
   }
 
   Future<void> _saveRelays() async {
@@ -91,7 +90,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
     // Separate user relays for metadata preservation
     final userRelays = state.where((r) => r.source == RelaySource.user).toList();
     
-    _logger.i('Saving ${allActiveRelayUrls.length} active relays (excluding ${blacklistedUrls.length} blacklisted) and ${userRelays.length} user relays metadata');
+    logger.i('Saving ${allActiveRelayUrls.length} active relays (excluding ${blacklistedUrls.length} blacklisted) and ${userRelays.length} user relays metadata');
     
     // Save ALL active relays to settings.relays (NostrService will use these)
     await settings.updateRelays(allActiveRelayUrls);
@@ -100,7 +99,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
     final userRelaysJson = userRelays.map((r) => r.toJson()).toList();
     await settings.updateUserRelays(userRelaysJson);
     
-    _logger.i('Relays saved successfully');
+    logger.i('Relays saved successfully');
   }
 
   Future<void> addRelay(Relay relay) async {
@@ -380,7 +379,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
     // Step 5: Remove from blacklist if present (user wants to manually add it)
     if (settings.state.blacklistedRelays.contains(normalizedUrl)) {
       await settings.removeFromBlacklist(normalizedUrl);
-      _logger.i('Removed $normalizedUrl from blacklist - user manually added it');
+      logger.i('Removed $normalizedUrl from blacklist - user manually added it');
     }
 
     // Step 6: Add relay as user relay
@@ -424,15 +423,15 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
           _handleMostroRelayListUpdate(relayListEvent);
         },
         onError: (error, stackTrace) {
-          _logger.e('Error handling relay list event',
+          logger.e('Error handling relay list event',
               error: error, stackTrace: stackTrace);
         },
       );
 
       // Don't call syncWithMostroInstance() here - it's handled by Future.microtask() in constructor
-      _logger.i('Mostro relay sync initialized - sync will start after provider initialization');
+      logger.i('Mostro relay sync initialized - sync will start after provider initialization');
     } catch (e, stackTrace) {
-      _logger.e('Failed to initialize Mostro relay sync',
+      logger.e('Failed to initialize Mostro relay sync',
           error: e, stackTrace: stackTrace);
     }
   }
@@ -442,11 +441,11 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
     try {
       final mostroPubkey = settings.state.mostroPublicKey;
       if (mostroPubkey.isEmpty) {
-        _logger.w('No Mostro pubkey configured, skipping relay sync');
+        logger.w('No Mostro pubkey configured, skipping relay sync');
         return;
       }
 
-      _logger.i('Syncing relays with Mostro instance: $mostroPubkey');
+      logger.i('Syncing relays with Mostro instance: $mostroPubkey');
       
       // Cancel any existing relay list subscription before creating new one
       _subscriptionManager?.unsubscribeFromMostroRelayList();
@@ -460,18 +459,18 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
         
         // Subscribe to the new Mostro instance
         _subscriptionManager?.subscribeToMostroRelayList(mostroPubkey);
-        _logger.i('Successfully subscribed to relay list events for Mostro: $mostroPubkey');
+        logger.i('Successfully subscribed to relay list events for Mostro: $mostroPubkey');
         
         // Schedule a retry in case the subscription doesn't work immediately
         _scheduleRetrySync(mostroPubkey);
         
       } catch (e) {
-        _logger.w('Failed to subscribe immediately, will retry later: $e');
+        logger.w('Failed to subscribe immediately, will retry later: $e');
         // Schedule a retry even if initial subscription fails
         _scheduleRetrySync(mostroPubkey);
       }
     } catch (e, stackTrace) {
-      _logger.e('Failed to sync with Mostro instance',
+      logger.e('Failed to sync with Mostro instance',
           error: e, stackTrace: stackTrace);
     }
   }
@@ -484,11 +483,11 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
     _retryTimer = Timer(const Duration(seconds: 10), () async {
       try {
         if (settings.state.mostroPublicKey == mostroPubkey) {
-          _logger.i('Retrying relay sync for Mostro: $mostroPubkey');
+          logger.i('Retrying relay sync for Mostro: $mostroPubkey');
           _subscriptionManager?.subscribeToMostroRelayList(mostroPubkey);
         }
       } catch (e) {
-        _logger.w('Retry sync failed: $e');
+        logger.w('Retry sync failed: $e');
       } finally {
         _retryTimer = null;  // Clear reference after execution
       }
@@ -505,11 +504,11 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
         final nostrService = ref.read(nostrServiceProvider);
         // Check if NostrService is actually initialized
         if (nostrService.isInitialized) {
-          _logger.i('NostrService is ready for relay subscriptions');
+          logger.i('NostrService is ready for relay subscriptions');
           return;
         }
       } catch (e) {
-        _logger.w('NostrService not accessible yet, attempt ${attempt + 1}/$maxAttempts: $e');
+        logger.w('NostrService not accessible yet, attempt ${attempt + 1}/$maxAttempts: $e');
       }
       
       if (attempt < maxAttempts - 1) {
@@ -517,7 +516,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
       }
     }
     
-    _logger.e('NostrService failed to initialize after $maxAttempts attempts');
+    logger.e('NostrService failed to initialize after $maxAttempts attempts');
     throw Exception('NostrService not available for relay synchronization');
   }
 
@@ -528,7 +527,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
       
       // Validate that this event is from the currently configured Mostro instance
       if (event.authorPubkey != currentMostroPubkey) {
-        _logger.w('Ignoring relay list event from wrong Mostro instance. '
+        logger.w('Ignoring relay list event from wrong Mostro instance. '
             'Expected: $currentMostroPubkey, Got: ${event.authorPubkey}');
         return;
       }
@@ -536,7 +535,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
       // Timestamp validation: ignore events older than the last processed event
       if (_lastProcessedEventTime != null && 
           event.publishedAt.isBefore(_lastProcessedEventTime!)) {
-        _logger.i('Ignoring older relay list event from ${event.publishedAt} '
+        logger.i('Ignoring older relay list event from ${event.publishedAt} '
             '(last processed: $_lastProcessedEventTime)');
         return;
       }
@@ -544,11 +543,11 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
       // Hash-based deduplication: ignore identical relay lists
       final relayListHash = event.validRelays.join(',');
       if (_lastRelayListHash == relayListHash) {
-        _logger.i('Relay list unchanged (hash match), skipping update');
+        logger.i('Relay list unchanged (hash match), skipping update');
         return;
       }
       
-      _logger.i('Received relay list from Mostro ${event.authorPubkey}: ${event.relays}');
+      logger.i('Received relay list from Mostro ${event.authorPubkey}: ${event.relays}');
       
       // Normalize relay URLs to prevent duplicates
       final normalizedRelays = event.validRelays
@@ -571,13 +570,13 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
           .where((relay) => relay.source == RelaySource.defaultConfig && !blacklistedUrls.contains(_normalizeRelayUrl(relay.url)))
           .toList();
       
-      _logger.i('Kept ${updatedRelays.length} default relays and ${userRelays.length} user relays');
+      logger.i('Kept ${updatedRelays.length} default relays and ${userRelays.length} user relays');
       
       // Process Mostro relays from 10002 event
       for (final relayUrl in normalizedRelays) {
         // Skip if blacklisted by user
         if (blacklistedUrls.contains(relayUrl)) {
-          _logger.i('Skipping blacklisted Mostro relay: $relayUrl');
+          logger.i('Skipping blacklisted Mostro relay: $relayUrl');
           continue;
         }
 
@@ -592,27 +591,27 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
           userRelays.removeWhere((r) => _normalizeRelayUrl(r.url) == relayUrl);
           final promotedRelay = Relay.fromMostro(relayUrl);
           updatedRelays.insert(0, promotedRelay); // Insert at beginning
-          _logger.i('Promoted user relay to Mostro relay: $relayUrl');
+          logger.i('Promoted user relay to Mostro relay: $relayUrl');
           continue;
         }
 
         // Skip if already in updatedRelays (avoid duplicates with default relays)
         if (updatedRelays.any((r) => _normalizeRelayUrl(r.url) == relayUrl)) {
-          _logger.i('Skipping duplicate relay: $relayUrl');
+          logger.i('Skipping duplicate relay: $relayUrl');
           continue;
         }
         
         // Add new Mostro relay
         final mostroRelay = Relay.fromMostro(relayUrl);
         updatedRelays.add(mostroRelay);
-        _logger.i('Added Mostro relay: $relayUrl');
+        logger.i('Added Mostro relay: $relayUrl');
       }
 
       // Remove Mostro relays that are no longer in the 10002 event (ELIMINATION case)
       final currentMostroRelays = state.where((relay) => relay.source == RelaySource.mostro).toList();
       for (final mostroRelay in currentMostroRelays) {
         if (!normalizedRelays.contains(_normalizeRelayUrl(mostroRelay.url))) {
-          _logger.i('Removing Mostro relay no longer in 10002: ${mostroRelay.url}');
+          logger.i('Removing Mostro relay no longer in 10002: ${mostroRelay.url}');
           // Relay is eliminated completely - no reverting to user relay
         }
       }
@@ -625,14 +624,14 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
           !finalRelays.every((relay) => state.contains(relay))) {
         state = finalRelays;
         await _saveRelays();
-        _logger.i('Updated relay list with ${finalRelays.length} relays (${blacklistedUrls.length} blacklisted)');
+        logger.i('Updated relay list with ${finalRelays.length} relays (${blacklistedUrls.length} blacklisted)');
       }
       
       // Update tracking variables after successful processing
       _lastProcessedEventTime = event.publishedAt;
       _lastRelayListHash = relayListHash;
     } catch (e, stackTrace) {
-      _logger.e('Error handling Mostro relay list update',
+      logger.e('Error handling Mostro relay list update',
           error: e, stackTrace: stackTrace);
     }
   }
@@ -644,17 +643,17 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
     final relay = state.firstWhere((r) => r.url == url, orElse: () => Relay(url: ''));
     
     if (relay.url.isEmpty) {
-      _logger.w('Attempted to remove non-existent relay: $url');
+      logger.w('Attempted to remove non-existent relay: $url');
       return;
     }
 
     // Blacklist all relays to prevent re-addition during sync
     await settings.addToBlacklist(url);
-    _logger.i('Blacklisted ${relay.source} relay: $url');
+    logger.i('Blacklisted ${relay.source} relay: $url');
 
     // Remove relay from current state
     await removeRelay(url);
-    _logger.i('Removed relay: $url (source: ${relay.source})');
+    logger.i('Removed relay: $url (source: ${relay.source})');
   }
 
   // Removed removeRelayWithSource - no longer needed since all relays are managed via blacklist
@@ -674,14 +673,14 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
           currentPubkey != null && 
           newPubkey.isNotEmpty && 
           currentPubkey!.isNotEmpty) {
-        _logger.i('Detected REAL Mostro pubkey change: $currentPubkey -> $newPubkey');
+        logger.i('Detected REAL Mostro pubkey change: $currentPubkey -> $newPubkey');
         currentPubkey = newPubkey;
         
         // 🔥 RESET COMPLETO: Limpiar todos los relays y hacer sync fresco
         _cleanAllRelaysAndResync();
       } else if (newPubkey != currentPubkey) {
         // Just update the tracking variable without reset (initial load)
-        _logger.i('Initial Mostro pubkey load: $newPubkey');
+        logger.i('Initial Mostro pubkey load: $newPubkey');
         currentPubkey = newPubkey;
         syncWithMostroInstance();
       }
@@ -691,14 +690,14 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
   /// Clean all relays (except default) and perform fresh sync with new Mostro
   Future<void> _cleanAllRelaysAndResync() async {
     try {
-      _logger.i('Cleaning all relays and performing fresh sync...');
+      logger.i('Cleaning all relays and performing fresh sync...');
       
       // CLEAR ALL relays (only keep default)
       final defaultRelay = Relay.fromDefault('wss://relay.mostro.network');
       state = [defaultRelay];
       await _saveRelays();
       
-      _logger.i('Reset to default relay only, starting fresh sync');
+      logger.i('Reset to default relay only, starting fresh sync');
       
       // Reset hash and timestamp for completely fresh sync with new Mostro
       _lastRelayListHash = null;
@@ -708,7 +707,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
       await syncWithMostroInstance();
       
     } catch (e, stackTrace) {
-      _logger.e('Error during relay cleanup and resync',
+      logger.e('Error during relay cleanup and resync',
           error: e, stackTrace: stackTrace);
     }
   }
@@ -784,7 +783,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
     final wouldBeBlacklisted = [...currentBlacklist, urlToBlacklist];
     final wouldRemainActive = currentActiveRelays.where((url) => !wouldBeBlacklisted.contains(url)).toList();
     
-    _logger.d('Current active: ${currentActiveRelays.length}, Would remain: ${wouldRemainActive.length}');
+    logger.d('Current active: ${currentActiveRelays.length}, Would remain: ${wouldRemainActive.length}');
     return wouldRemainActive.isEmpty;
   }
 
@@ -797,7 +796,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
     if (isCurrentlyBlacklisted) {
       // Remove from blacklist and trigger sync to add back
       await settings.removeFromBlacklist(url);
-      _logger.i('Removed $url from blacklist, triggering re-sync');
+      logger.i('Removed $url from blacklist, triggering re-sync');
       
       // Reset hash to allow re-processing of the same relay list with updated blacklist context
       _lastRelayListHash = null;
@@ -807,14 +806,14 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
       // Add to blacklist and remove from current state
       await settings.addToBlacklist(url);
       await removeRelay(url);
-      _logger.i('Blacklisted and removed Mostro relay: $url');
+      logger.i('Blacklisted and removed Mostro relay: $url');
     }
   }
 
   /// Clear all blacklisted relays and trigger re-sync
   Future<void> clearBlacklistAndResync() async {
     await settings.clearBlacklist();
-    _logger.i('Cleared blacklist, triggering relay re-sync');
+    logger.i('Cleared blacklist, triggering relay re-sync');
     
     // Reset hash to allow re-processing of relay lists with cleared blacklist
     _lastRelayListHash = null;
@@ -839,7 +838,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
       final removedCount = state.length - cleanedRelays.length;
       state = cleanedRelays;
       await _saveRelays();
-      _logger.i('Cleaned $removedCount Mostro relays from state');
+      logger.i('Cleaned $removedCount Mostro relays from state');
     }
   }
 

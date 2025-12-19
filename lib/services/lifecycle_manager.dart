@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:dart_nostr/nostr/model/request/filter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:logger/logger.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_type.dart';
 import 'package:mostro_mobile/features/trades/providers/trades_provider.dart';
@@ -15,7 +15,6 @@ import 'package:mostro_mobile/features/subscriptions/subscription_manager_provid
 class LifecycleManager extends WidgetsBindingObserver {
   final Ref ref;
   bool _isInBackground = false;
-  final _logger = Logger();
 
   LifecycleManager(this.ref) {
     WidgetsBinding.instance.addObserver(this);
@@ -48,12 +47,12 @@ class LifecycleManager extends WidgetsBindingObserver {
   Future<void> _switchToForeground() async {
     try {
       _isInBackground = false;
-      _logger.i("Switching to foreground");
+      logger.i("Lifecycle: switching to foreground");
 
       // Stop background service
       final backgroundService = ref.read(backgroundServiceProvider);
       await backgroundService.setForegroundStatus(true);
-      _logger.i("Background service foreground status set to true");
+      logger.i("BackgroundService: foreground status set to true");
 
       // Add a small delay to ensure the background service has fully transitioned
       await Future.delayed(const Duration(milliseconds: 500));
@@ -62,26 +61,26 @@ class LifecycleManager extends WidgetsBindingObserver {
       subscriptionManager.subscribeAll();
 
       // Reinitialize the mostro service
-      _logger.i("Reinitializing MostroService");
+      logger.i("MostroService: reinitializing");
       ref.read(mostroServiceProvider).init();
 
       // Refresh order repository by re-reading it
-      _logger.i("Refreshing order repository");
+      logger.i("Repository: refreshing orders");
       final orderRepo = ref.read(orderRepositoryProvider);
       orderRepo.reloadData();
 
       // Reinitialize chat rooms
-      _logger.i("Reloading chat rooms");
+      logger.i("Chat: reloading rooms");
       final chatRooms = ref.read(chatRoomsNotifierProvider.notifier);
       chatRooms.reloadAllChats();
 
       // Force UI update for trades
-      _logger.i("Invalidating providers to refresh UI");
+      logger.i("UI: invalidating providers to refresh");
       ref.invalidate(filteredTradesWithOrderStateProvider);
 
-      _logger.i("Foreground transition complete");
+      logger.i("Lifecycle: foreground transition complete");
     } catch (e) {
-      _logger.e("Error during foreground transition: $e");
+      logger.e("Error during foreground transition: $e");
     }
   }
 
@@ -95,34 +94,33 @@ class LifecycleManager extends WidgetsBindingObserver {
       for (final type in SubscriptionType.values) {
         final filters = subscriptionManager.getActiveFilters(type);
         if (filters.isNotEmpty) {
-          _logger.d('Found ${filters.length} active filters for $type');
+          logger.d('Subscription: found ${filters.length} active filters for $type');
           activeFilters.addAll(filters);
         }
       }
 
       if (activeFilters.isNotEmpty) {
         _isInBackground = true;
-        _logger.i("Switching to background");
+        logger.i("Lifecycle: switching to background");
         subscriptionManager.unsubscribeAll();
         // Transfer active subscriptions to background service
         final backgroundService = ref.read(backgroundServiceProvider);
         await backgroundService.setForegroundStatus(false);
-        _logger.i(
-            "Transferring ${activeFilters.length} active filters to background service");
+        logger.i("BackgroundService: transferring ${activeFilters.length} active filters");
         backgroundService.subscribe(activeFilters);
       } else {
-        _logger.w("No active subscriptions to transfer to background service");
+        logger.w("BackgroundService: no active subscriptions to transfer");
       }
 
-      _logger.i("Background transition complete");
+      logger.i("Lifecycle: background transition complete");
     } catch (e) {
-      _logger.e("Error during background transition: $e");
+      logger.e("Lifecycle: background transition failed - $e");
     }
   }
 
   @Deprecated('Use SubscriptionManager instead.')
   void addSubscription(NostrFilter filter) {
-    _logger.w('LifecycleManager.addSubscription is deprecated. Use SubscriptionManager instead.');
+    logger.w('Lifecycle: addSubscription deprecated - use SubscriptionManager instead');
     // No-op - subscriptions are now tracked by SubscriptionManager
   }
 
