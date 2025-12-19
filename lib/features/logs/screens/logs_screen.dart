@@ -10,7 +10,6 @@ import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
 
 class LogsScreen extends ConsumerStatefulWidget {
@@ -531,28 +530,10 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
     logger.i('Button pressed, starting save process');
     setState(() => _isExporting = true);
     try {
-      if (Platform.isAndroid) {
-        logger.i('Checking Android version and permissions');
-
-        PermissionStatus status;
-
-        // Try manageExternalStorage first (for Android 11+)
-        if (await Permission.manageExternalStorage.isGranted) {
-          status = PermissionStatus.granted;
-        } else {
-          // Try regular storage permission
-          status = await Permission.storage.status;
-          if (!status.isGranted && !status.isPermanentlyDenied) {
-            status = await Permission.storage.request();
-          }
-        }
-
-      }
-
       logger.i('Creating log file');
       final file = await _createLogFile();
 
-      logger.i('Saving to documents/downloads');
+      logger.i('Saving to storage');
       final savedPath = await _saveToDocuments(file);
       logger.i('Successfully saved to: $savedPath');
 
