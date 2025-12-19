@@ -1218,7 +1218,7 @@
   "devToolsDescription": "Acceder a herramientas de diagnóstico y registros",
   "logStorageLocation": "Ubicación de Almacenamiento de Registros",
   "storageLocationUpdated": "Ubicación de almacenamiento actualizada",
-  "defaultDownloads": "Predeterminado (Descargas)",
+  "defaultDownloads": "Almacenamiento de la App",
 
   "@_comment_logs_filters": "Filtrado y Búsqueda de Registros",
   "filterByLevel": "Filtrar por Nivel",

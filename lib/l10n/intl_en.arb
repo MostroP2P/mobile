@@ -1240,7 +1240,7 @@
   "devToolsDescription": "Access diagnostic tools and logs",
   "logStorageLocation": "Log Storage Location",
   "storageLocationUpdated": "Storage location updated",
-  "defaultDownloads": "Default (Downloads)",
+  "defaultDownloads": "App Storage",
 
   "@_comment_logs_filters": "Logs Filtering and Search",
   "filterByLevel": "Filter by Level",

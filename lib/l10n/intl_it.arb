@@ -1273,7 +1273,7 @@
   "devToolsDescription": "Accedi a strumenti diagnostici e registri",
   "logStorageLocation": "Posizione Archiviazione Registri",
   "storageLocationUpdated": "Posizione di archiviazione aggiornata",
-  "defaultDownloads": "Predefinito (Download)",
+  "defaultDownloads": "Archiviazione App",
 
   "@_comment_logs_filters": "Filtro e Ricerca Registri",
   "filterByLevel": "Filtra per Livello",

@@ -595,40 +595,16 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
   }
 
   Future<String> _saveToDocuments(File tempFile) async {
-    logger.i('Getting storage directory');
+    logger.i('Saving to app storage');
 
-    final Directory directory;
+    final directory = Platform.isAndroid
+        ? await getExternalStorageDirectory()
+        : await getApplicationDocumentsDirectory();
 
-    if (Platform.isAndroid) {
-      final externalDir = await getExternalStorageDirectory();
-      if (externalDir != null) {
-        final storageRoot = externalDir.path.split('/Android/')[0];
-        logger.i('Storage root: $storageRoot');
-
-        final downloadPath = '$storageRoot/Download';
-        logger.i('Trying Downloads path: $downloadPath');
-        var downloadsDir = Directory(downloadPath);
-
-        if (!await downloadsDir.exists()) {
-          final altPath = '$storageRoot/Downloads';
-          logger.i('Download not found, trying: $altPath');
-          downloadsDir = Directory(altPath);
-        }
-
-        if (await downloadsDir.exists()) {
-          directory = downloadsDir;
-        } else {
-          logger.w('Downloads folder not found, using app storage');
-          directory = externalDir;
-        }
-      } else {
-        directory = await getApplicationDocumentsDirectory();
-      }
-    } else {
-      directory = await getApplicationDocumentsDirectory();
+    if (directory == null) {
+      throw Exception('Could not get storage directory');
     }
 
-    logger.i('Final directory: ${directory.path}');
     final logsDir = Directory('${directory.path}/MostroLogs');
     logger.i('Creating logs directory: ${logsDir.path}');
     await logsDir.create(recursive: true);
@@ -639,17 +615,13 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
     logger.i('Copying to: ${destinationFile.path}');
     await tempFile.copy(destinationFile.path);
 
-    // Verify the file was actually created
     final exists = await destinationFile.exists();
-    logger.i('File exists after copy: $exists');
-
     if (!exists) {
-      throw Exception('File was not created at ${destinationFile.path}');
+      throw Exception('File was not created');
     }
 
     final fileSize = await destinationFile.length();
-    logger.i('File size: $fileSize bytes');
-    logger.i('File saved successfully');
+    logger.i('File saved: $fileSize bytes at ${destinationFile.path}');
 
     return destinationFile.path;
   }
