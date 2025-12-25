@@ -12,6 +12,7 @@ import 'package:mostro_mobile/features/restore/restore_manager.dart';
 import 'package:mostro_mobile/shared/widgets/currency_selection_dialog.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
 import 'package:mostro_mobile/shared/widgets/language_selector.dart';
+import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -25,6 +26,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   late final TextEditingController _mostroTextController;
   late final TextEditingController _lightningAddressController;
   Timer? _debounceTimer;
+  String? _pubkeyError;
 
   @override
   void initState() {
@@ -41,6 +43,31 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     _mostroTextController.dispose();
     _lightningAddressController.dispose();
     super.dispose();
+  }
+
+  bool _isValidPubkey(String input) {
+    // Validate hex format (64 characters, hex only)
+    if (input.length == 64 && RegExp(r'^[a-fA-F0-9]+$').hasMatch(input)) {
+      return true;
+    }
+    // Validate npub format (63 characters, starts with npub1)
+    if (input.startsWith('npub1') && input.length == 63) {
+      return true;
+    }
+    return false;
+  }
+
+  String _convertToHex(String input) {
+    try {
+      if (input.startsWith('npub1')) {
+        // Use dart_nostr Bech32 decoding
+        final decoded = NostrUtils.decodeBech32(input);
+        return decoded;
+      }
+      return input; // Already hex format
+    } catch (e) {
+      throw const FormatException('Invalid npub format');
+    }
   }
 
   @override
@@ -467,16 +494,46 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 onChanged: (value) async {
                   _debounceTimer?.cancel();
                   _debounceTimer = Timer(const Duration(seconds: 3), () async {
-                    final oldValue = ref.read(settingsProvider).mostroPublicKey;
-                    await ref.read(settingsProvider.notifier).updateMostroInstance(value);
+                    if (!mounted) return;
+                    
+                    try {
+                      if (_isValidPubkey(value)) {
+                        setState(() {
+                          _pubkeyError = null;
+                        });
+                        
+                        final hexValue = _convertToHex(value);
+                        final oldValue = ref.read(settingsProvider).mostroPublicKey;
+                        await ref.read(settingsProvider.notifier).updateMostroInstance(hexValue);
 
-                    // Trigger restore if pubkey changed
-                    if (oldValue != value && value.isNotEmpty) {
-                      try {
-                        final restoreService = ref.read(restoreServiceProvider);
-                        await restoreService.initRestoreProcess();
-                      } catch (e) {
-                        // Ignore errors during restore
+                        // Update text controller to show hex if it was npub
+                        if (value.startsWith('npub1')) {
+                          controller.text = hexValue;
+                        }
+
+                        // Trigger restore if pubkey changed
+                        if (oldValue != hexValue && hexValue.isNotEmpty) {
+                          try {
+                            final restoreService = ref.read(restoreServiceProvider);
+                            await restoreService.initRestoreProcess();
+                          } catch (e) {
+                            // Ignore errors during restore
+                          }
+                        }
+                      } else if (value.isNotEmpty) {
+                        setState(() {
+                          _pubkeyError = S.of(context)!.invalidKeyFormat;
+                        });
+                      } else {
+                        setState(() {
+                          _pubkeyError = null;
+                        });
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        setState(() {
+                          _pubkeyError = S.of(context)!.invalidKeyFormat;
+                        });
                       }
                     }
                   });
@@ -492,6 +549,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
               ),
             ),
+            if (_pubkeyError != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                _pubkeyError!,
+                style: const TextStyle(
+                  color: Colors.red,
+                  fontSize: 12,
+                ),
+              ),
+            ],
           ],
         ),
       ),

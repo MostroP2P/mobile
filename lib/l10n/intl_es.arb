@@ -1195,6 +1195,8 @@
 
   "@_comment_backup_reminder": "Recordatorio de respaldo de cuenta",
   "backupAccountReminder": "Debes respaldar tu cuenta",
-  "backupAccountReminderMessage": "Respalda tus palabras secretas para recuperar tu cuenta"
+  "backupAccountReminderMessage": "Respalda tus palabras secretas para recuperar tu cuenta",
 
+  "@_comment_validation": "Mensajes de validación de entrada",
+  "invalidKeyFormat": "Formato de clave inválido"
 }

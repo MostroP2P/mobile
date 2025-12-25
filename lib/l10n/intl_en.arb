@@ -1217,5 +1217,8 @@
 
   "@_comment_backup_reminder": "Backup reminder notification",
   "backupAccountReminder": "You must back up your account",
-  "backupAccountReminderMessage": "Back up your secret words to recover your account"
+  "backupAccountReminderMessage": "Back up your secret words to recover your account",
+
+  "@_comment_validation": "Input validation messages",
+  "invalidKeyFormat": "Invalid key format"
 }

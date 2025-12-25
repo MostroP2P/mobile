@@ -1250,5 +1250,8 @@
 
   "@_comment_backup_reminder": "Promemoria backup account",
   "backupAccountReminder": "Devi fare il backup del tuo account",
-  "backupAccountReminderMessage": "Salva le tue parole segrete per recuperare il tuo account"
+  "backupAccountReminderMessage": "Salva le tue parole segrete per recuperare il tuo account",
+
+  "@_comment_validation": "Messaggi di convalida input",
+  "invalidKeyFormat": "Formato chiave non valido"
 }
