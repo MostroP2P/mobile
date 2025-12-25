@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -23,6 +24,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   late final TextEditingController _mostroTextController;
   late final TextEditingController _lightningAddressController;
+  Timer? _debounceTimer;
 
   @override
   void initState() {
@@ -35,6 +37,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _mostroTextController.dispose();
     _lightningAddressController.dispose();
     super.dispose();
@@ -462,18 +465,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 controller: controller,
                 style: const TextStyle(color: AppTheme.textPrimary),
                 onChanged: (value) async {
-                  final oldValue = ref.read(settingsProvider).mostroPublicKey;
-                  await ref.read(settingsProvider.notifier).updateMostroInstance(value);
+                  _debounceTimer?.cancel();
+                  _debounceTimer = Timer(const Duration(seconds: 3), () async {
+                    final oldValue = ref.read(settingsProvider).mostroPublicKey;
+                    await ref.read(settingsProvider.notifier).updateMostroInstance(value);
 
-                  // Trigger restore if pubkey changed
-                  if (oldValue != value && value.isNotEmpty) {
-                    try {
-                      final restoreService = ref.read(restoreServiceProvider);
-                      await restoreService.initRestoreProcess();
-                    } catch (e) {
-                      // Ignore errors during restore
+                    // Trigger restore if pubkey changed
+                    if (oldValue != value && value.isNotEmpty) {
+                      try {
+                        final restoreService = ref.read(restoreServiceProvider);
+                        await restoreService.initRestoreProcess();
+                      } catch (e) {
+                        // Ignore errors during restore
+                      }
                     }
-                  }
+                  });
                 },
                 decoration: InputDecoration(
                   border: InputBorder.none,
