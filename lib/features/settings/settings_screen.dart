@@ -506,6 +506,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         final oldValue = ref.read(settingsProvider).mostroPublicKey;
                         await ref.read(settingsProvider.notifier).updateMostroInstance(hexValue);
 
+                        // Check mounted after async operation
+                        if (!mounted) return;
+
                         // Update text controller to show hex if it was npub
                         if (value.startsWith('npub1')) {
                           controller.text = hexValue;
