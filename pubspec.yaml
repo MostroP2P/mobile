@@ -100,7 +100,7 @@ dependencies:
   # Unicode normalization for filename sanitization
   diacritic: ^0.1.6
 
-  # Firebase
+  # Firebase (not supported on Linux - use conditional imports in code)
   firebase_core: ^3.8.0
   firebase_messaging: ^15.1.4
 
