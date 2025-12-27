@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "375342057498",
+    "project_id": "mostro-mobile",
+    "storage_bucket": "mostro-mobile.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:375342057498:android:4ef7011ab12de38e86e9a3",
+        "android_client_info": {
+          "package_name": "network.mostro.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCOrsfYrkIItBLAFbnYmh4HnsxBTnT3y14"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

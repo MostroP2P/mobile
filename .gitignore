@@ -45,9 +45,7 @@ android/app/upload-keystore.jks
 *.apk
 .cxx/
 
-# Firebase and Google Services
-android/app/google-services.json
-ios/Runner/GoogleService-Info.plist
+# Firebase and Google Services (public credentials - safe to commit)
 
 # Web
 web/.dart_tool/
