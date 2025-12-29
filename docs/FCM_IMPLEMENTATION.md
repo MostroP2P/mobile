@@ -7,7 +7,7 @@ This document outlines the implementation of Firebase Cloud Messaging (FCM) for 
 - **Silent push notifications** wake up the app without exposing message content
 - **All message decryption happens locally** on the device
 - **Minimal metadata** is exposed to Firebase/Google services
-- **Custom notification server** ([mostro-push-server](https://github.com/AndreaDiazCorreia/mostro-push-server)) handles token management and notification delivery
+- **Custom notification server** ([mostro-push-server](https://github.com/MostroP2P/mostro-push-server)) handles token management and notification delivery
 
 ### Why a Custom Server?
 
@@ -18,7 +18,7 @@ The initial approach was to use **Firebase Cloud Functions** as the notification
 - ❌ **Unreliable for real-time:** Not suitable for monitoring relay events in real-time
 - ❌ **Complexity:** Additional overhead for managing function deployments and monitoring
 
-The custom server approach ([mostro-push-server](https://github.com/AndreaDiazCorreia/mostro-push-server)) provides:
+The custom server approach ([mostro-push-server](https://github.com/MostroP2P/mostro-push-server)) provides:
 
 - ✅ **Persistent WebSocket connections** to Nostr relays for real-time event monitoring
 - ✅ **Stable and reliable** notification delivery
@@ -302,7 +302,7 @@ encrypted_token = ephemeral_pubkey || nonce || ciphertext
 ### Related Documentation
 - `docs/FIREBASE_LINUX_NOTE.md` - Linux compatibility notes
 - [MIP-05 specification](https://github.com/marmot-protocol/marmot/pull/18) - Privacy-preserving push notifications approach
-- [mostro-push-server](https://github.com/AndreaDiazCorreia/mostro-push-server) - Custom notification server repository
+- [mostro-push-server](https://github.com/MostroP2P/mostro-push-server) - Custom notification server repository
 - [Firebase Cloud Messaging documentation](https://firebase.google.com/docs/cloud-messaging)
 - [NIP-59 (Gift Wrap)](https://github.com/nostr-protocol/nips/blob/master/59.md) - Nostr event encryption standard
 
@@ -365,7 +365,7 @@ The notification server is maintained in a **separate repository** and handles:
 ## References
 
 - [MIP-05: Marmot Push Notifications](https://github.com/marmot-protocol/marmot/pull/18) - Privacy-preserving push notification approach
-- [mostro-push-server](https://github.com/AndreaDiazCorreia/mostro-push-server) - Custom notification server repository
+- [mostro-push-server](https://github.com/MostroP2P/mostro-push-server) - Custom notification server repository
 - [Firebase Cloud Messaging Documentation](https://firebase.google.com/docs/cloud-messaging)
 - [NIP-59: Gift Wrap](https://github.com/nostr-protocol/nips/blob/master/59.md) - Nostr event encryption
 - [ChaCha20-Poly1305 AEAD](https://datatracker.ietf.org/doc/html/rfc8439) - Authenticated encryption
