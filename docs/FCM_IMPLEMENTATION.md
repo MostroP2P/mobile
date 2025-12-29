@@ -1,13 +1,128 @@
 # FCM Implementation for MostroP2P Mobile
 
-## Overview
+## MIP-05 Implementation Overview
 
-This document outlines the implementation of Firebase Cloud Messaging (FCM) for push notifications in the MostroP2P mobile application. The implementation follows a privacy-preserving approach similar to **[MIP-05 (Marmot Push Notifications)](https://github.com/marmot-protocol/marmot/pull/18)**, where:
+This implementation follows the **MIP-05 (Marmot Push Notifications)** specification for privacy-preserving push notifications. Below is an overview of which aspects are being implemented and why.
 
-- **Silent push notifications** wake up the app without exposing message content
-- **All message decryption happens locally** on the device
-- **Minimal metadata** is exposed to Firebase/Google services
-- **Custom notification server** ([mostro-push-server](https://github.com/MostroP2P/mostro-push-server)) handles token management and notification delivery
+### ✅ Implemented Aspects
+
+#### 1. Silent Push Notifications
+**What:** FCM sends empty notifications with no message content
+**Why:** Prevents Firebase/Google from learning message content, sender identity, or group membership
+**Implementation:** 
+- FCM notifications contain only `content-available` flag
+- App fetches and decrypts actual messages from Nostr relays when awakened
+
+#### 2. Encrypted Token Registration
+**What:** Device tokens are encrypted using ChaCha20-Poly1305 with ECDH key derivation
+**Why:** Prevents the notification server from linking tokens to user identities or correlating across groups
+**Implementation:**
+- Generate ephemeral secp256k1 keypair per token
+- Derive encryption key via ECDH + HKDF (salt: "mostro-fcm-v1", info: "mostro-token-encryption")
+- Encrypt with random 12-byte nonce for probabilistic encryption
+- Token format: `ephemeral_pubkey || nonce || ciphertext` (280 bytes total)
+
+#### 3. Payload Padding
+**What:** All encrypted tokens padded to uniform 220 bytes before encryption
+**Why:** Prevents group members from inferring platforms (APNs vs FCM) from token sizes
+**Implementation:**
+- Format: `platform_byte (1) || token_length (2) || device_token || random_padding`
+- Platform bytes: 0x01 = APNs, 0x02 = FCM
+- Ensures uniform 280-byte encrypted tokens
+
+#### 4. Custom Notification Server
+**What:** Dedicated server (mostro-push-server) handles token registration and FCM delivery
+**Why:** Provides persistent WebSocket connections to Nostr relays, avoiding Cloud Functions limitations
+**Implementation:**
+- Server monitors Nostr relays for new events
+- Decrypts tokens and sends silent push notifications via FCM
+- State-minimized design with no persistent token storage
+
+### ⚠️ Partially Implemented / Simplified Aspects
+
+#### 5. Token Distribution (Simplified)
+**MIP-05 Approach:** Gossip-based protocol with kind 447/448/449 events in MLS groups
+**MostroP2P Approach:** Direct registration with notification server
+**Why Simplified:** MostroP2P uses a different architecture (not MLS-based groups)
+**Implementation:**
+- Device registers encrypted token directly with notification server
+- Server maintains token list for each user
+- No group-based token sharing required
+
+#### 6. Gift-Wrapped Notification Triggers (Simplified)
+**MIP-05 Approach:** NIP-59 gift-wrapped events to trigger notifications
+**MostroP2P Approach:** Server monitors Nostr relays directly for relevant events
+**Why Simplified:** MostroP2P has a simpler event model that doesn't require gift wrapping
+**Implementation:**
+- Server monitors relays for new trade events
+- No need for encrypted event wrapping in MostroP2P context
+
+### ❌ Not Implemented Aspects
+
+#### 7. MLS Group Integration
+**Reason:** MostroP2P doesn't use MLS (Message Layer Security) for group management
+**Alternative:** MostroP2P uses direct user-to-user trades and simple group concepts
+
+#### 8. Multi-Server Token Management
+**Reason:** MostroP2P uses a single notification server (mostro-push-server)
+**Alternative:** Simplified architecture with single server reduces complexity
+
+#### 9. Tor Support
+**Reason:** Not prioritized for initial implementation
+**Future:** Could be added as an optional privacy enhancement
+
+#### 10. Decoy Tokens
+**Reason:** MostroP2P's trade model doesn't require group size obfuscation
+**Alternative:** Privacy is maintained through other means (encrypted tokens, silent push)
+
+### 🔒 Privacy Properties Maintained
+
+#### What Firebase/Google Learn:
+- ✅ A notification occurred for a device (unavoidable with push)
+- ✅ Device owner's platform identity (Google account via FCM token)
+
+#### What Firebase/Google CANNOT Learn:
+- ✅ Message content (notifications are silent/empty)
+- ✅ Sender's Nostr identity
+- ✅ Recipient's Nostr identity
+- ✅ Trade details or order information
+- ✅ Group membership (not applicable to MostroP2P)
+
+#### What Notification Server Learns:
+- ✅ Timing of notification events
+- ✅ Encrypted device tokens (cannot decrypt to actual FCM tokens)
+
+#### What Notification Server CANNOT Learn:
+- ✅ Message content
+- ✅ Sender's Nostr identity
+- ✅ Recipient's Nostr identity
+- ✅ Which Nostr user owns which device token
+- ✅ User IP addresses (relays observe IPs)
+
+### 📋 Implementation Phases
+
+The implementation is divided into phases to match MostroP2P's architecture while maintaining MIP-05 privacy principles:
+
+- **Phase 1:** Firebase basic configuration ✅ COMPLETE
+- **Phase 2:** FCM service with background integration ⚠️ TO IMPLEMENT
+- **Phase 3:** Encrypted token registration with server ⚠️ TO IMPLEMENT
+- **Phase 4:** User settings and opt-out controls ⚠️ TO IMPLEMENT
+
+### 🎯 Key Differences from MIP-05
+
+| Aspect | MIP-05 | MostroP2P Implementation |
+|--------|--------|---------------------------|
+| **Token Distribution** | Gossip protocol in MLS groups | Direct server registration |
+| **Event Triggers** | Gift-wrapped NIP-59 events | Direct relay monitoring |
+| **Group Model** | MLS-based encrypted groups | Simple user-to-user trades |
+| **Multi-Server** | Support for multiple servers | Single dedicated server |
+| **Decoys** | Required for privacy | Not needed for trade model |
+
+Despite these differences, the core privacy properties of MIP-05 are maintained:
+- Silent push notifications
+- Encrypted token registration
+- Minimal metadata exposure
+- User opt-out capability
 
 ### Why a Custom Server?
 
