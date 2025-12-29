@@ -91,7 +91,7 @@ The implementation is divided into multiple phases (Pull Requests) to facilitate
 
 ---
 
-## Phase 1: Firebase Basic Configuration ✅
+## Phase 1: Firebase Basic Configuration ✅ COMPLETE
 
 **Branch:** `feature/firebase-fcm-setup`
 
@@ -123,7 +123,7 @@ The implementation is divided into multiple phases (Pull Requests) to facilitate
 
 ---
 
-## Phase 2: FCM Service Implementation
+## Phase 2: FCM Service Implementation ⚠️ TO IMPLEMENT
 
 **Branch:** `feature/fcm-service` (to be created from `main` after Phase 1 merge)
 
@@ -181,7 +181,7 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 ---
 
-## Phase 3: Push Notification Service with Encryption
+## Phase 3: Push Notification Service with Encryption ⚠️ TO IMPLEMENT
 
 **Branch:** `feature/push-notification-service` (to be created from `main` after Phase 2 merge)
 
@@ -244,7 +244,7 @@ encrypted_token = ephemeral_pubkey || nonce || ciphertext
 
 ---
 
-## Phase 4: User Settings and Opt-Out
+## Phase 4: User Settings and Opt-Out ⚠️ TO IMPLEMENT
 
 **Branch:** `feature/notification-settings` (to be created from `main` after Phase 3 merge)
 
