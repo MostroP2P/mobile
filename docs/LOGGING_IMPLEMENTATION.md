@@ -29,7 +29,7 @@ This implementation uses a **singleton logger pattern with centralized output ma
 - Simple API: `logger.i()`, `logger.e()`, `logger.d()`
 - No configuration needed per service
 - Stack trace extraction for debugging
-- It keeps normal console logs and minimize logs for UI
+- Maintains normal console output while providing a minimized log view for the UI
 
 ### Trade-offs
 
