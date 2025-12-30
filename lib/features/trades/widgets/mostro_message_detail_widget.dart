@@ -61,7 +61,7 @@ class MostroMessageDetail extends ConsumerWidget {
       case actions.Action.newOrder:
         final expHrs =
             ref.read(orderRepositoryProvider).mostroInstance?.expirationHours ??
-                '24';
+                24;
         return S.of(context)!.newOrder(expHrs.toString());
       case actions.Action.canceled:
         return S.of(context)!.canceled(orderPayload?.id ?? '');
