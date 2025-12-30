@@ -2,6 +2,13 @@
   "@@locale": "it",
   "backToHome": "Torna alla home",
   "newOrder": "La tua offerta è stata pubblicata! Attendi fino a quando un altro utente accetta il tuo ordine. Sarà disponibile per {expiration_hours} ore. Puoi annullare questo ordine prima che un altro utente lo prenda premendo: Cancella.",
+  "@newOrder": {
+    "placeholders": {
+      "expiration_hours": {
+        "type": "String"
+      }
+    }
+  },
   "canceled": "Hai annullato l'ordine ID: {id}!",
   "payInvoice": "Paga questa Hodl Invoice di {amount} Sats per {fiat_amount} {fiat_code} per iniziare l'operazione. Se non la paghi entro {expiration_seconds} minuti lo scambio sarà annullato.",
   "@payInvoice": {
@@ -654,7 +661,14 @@
       }
     }
   },
-  "youCreatedOfferMessage": "Hai creato questa offerta. Di seguito sono riportati i dettagli della tua offerta. Aspetta che un altro utente la prenda. Sarà pubblicata per 24 ore. Puoi cancellarla in qualsiasi momento utilizzando il pulsante 'Annulla'.",
+  "youCreatedOfferMessage": "Hai creato questa offerta. Di seguito sono riportati i dettagli della tua offerta. Aspetta che un altro utente la prenda. Sarà pubblicata per {expiration_hours} ore. Puoi cancellarla in qualsiasi momento utilizzando il pulsante 'Annulla'.",
+  "@youCreatedOfferMessage": {
+    "placeholders": {
+      "expiration_hours": {
+        "type": "String"
+      }
+    }
+  },
   "youAreSellingTitle": "Stai vendendo {sats} sats",
   "@youAreSellingTitle": {
     "placeholders": {

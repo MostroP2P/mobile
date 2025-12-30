@@ -105,6 +105,8 @@ class TradeDetailScreen extends ConsumerWidget {
       BuildContext context, WidgetRef ref, OrderState tradeState) {
     final session = ref.watch(sessionProvider(orderId));
     final isPending = tradeState.status == Status.pending;
+    final mostroInstance = ref.watch(orderRepositoryProvider).mostroInstance;
+    final expirationHours = mostroInstance?.expirationHours ?? 24;
 
     // Determine if the user is the creator of the order based on role and order type
     final isCreator = _isUserCreator(session, tradeState);
@@ -119,20 +121,19 @@ class TradeDetailScreen extends ConsumerWidget {
       // If `orderPayload.amount` is 0, the trade is "at market price"
       final isZeroAmount = (tradeState.order!.amount == 0);
       String priceText = '';
-      
+
       if (isZeroAmount) {
         final premium = tradeState.order!.premium;
         final premiumValue = premium.toDouble();
-        
+
         if (premiumValue == 0) {
           // No premium - show only market price
           priceText = S.of(context)!.atMarketPrice;
         } else {
           // Has premium/discount - show market price with percentage
           final isPremiumPositive = premiumValue >= 0;
-          final premiumDisplay = isPremiumPositive
-              ? '(+$premiumValue%)'
-              : '($premiumValue%)';
+          final premiumDisplay =
+              isPremiumPositive ? '(+$premiumValue%)' : '($premiumValue%)';
           priceText = '${S.of(context)!.atMarketPrice} $premiumDisplay';
         }
       }
@@ -153,7 +154,9 @@ class TradeDetailScreen extends ConsumerWidget {
       return Column(
         children: [
           NotificationMessageCard(
-            message: S.of(context)!.youCreatedOfferMessage,
+            message: S
+                .of(context)!
+                .youCreatedOfferMessage(expirationHours.toString()),
             icon: Icons.info_outline,
           ),
           const SizedBox(height: 16),
@@ -188,23 +191,22 @@ class TradeDetailScreen extends ConsumerWidget {
 
     final hasFixedSatsAmount = tradeState.order!.amount != 0;
     final satAmount = hasFixedSatsAmount ? ' ${tradeState.order!.amount}' : '';
-    
+
     // For market price orders, show premium in the same format as order book
     String priceText = '';
-    
+
     if (!hasFixedSatsAmount) {
       final premium = tradeState.order!.premium;
       final premiumValue = premium.toDouble();
-      
+
       if (premiumValue == 0) {
         // No premium - show only market price
         priceText = S.of(context)!.atMarketPrice;
       } else {
         // Has premium/discount - show market price with percentage
         final isPremiumPositive = premiumValue >= 0;
-        final premiumDisplay = isPremiumPositive
-            ? '(+$premiumValue%)'
-            : '($premiumValue%)';
+        final premiumDisplay =
+            isPremiumPositive ? '(+$premiumValue%)' : '($premiumValue%)';
         priceText = '${S.of(context)!.atMarketPrice} $premiumDisplay';
       }
     }
@@ -620,7 +622,8 @@ class TradeDetailScreen extends ConsumerWidget {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                 ),
                 child: Text(
                   S.of(context)!.yes,
@@ -717,7 +720,7 @@ class TradeDetailScreen extends ConsumerWidget {
             // Create dispute using the repository
             final repository = ref.read(disputeRepositoryProvider);
             final success = await repository.createDispute(orderId);
-            
+
             if (success && context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -737,7 +740,9 @@ class TradeDetailScreen extends ConsumerWidget {
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(S.of(context)!.disputeCreationErrorWithMessage(e.toString())),
+                  content: Text(S
+                      .of(context)!
+                      .disputeCreationErrorWithMessage(e.toString())),
                   backgroundColor: AppTheme.red1,
                 ),
               );
@@ -781,17 +786,22 @@ class TradeDetailScreen extends ConsumerWidget {
   Widget _buildButtonRow(
       BuildContext context, WidgetRef ref, OrderState tradeState) {
     final actionButtons = _buildActionButtons(context, ref, tradeState);
-    
+
     // Check for VIEW DISPUTE button - independent of action system
     final List<Widget> extraButtons = [];
     if ((tradeState.action == actions.Action.disputeInitiatedByYou ||
-         tradeState.action == actions.Action.disputeInitiatedByPeer ||
-         tradeState.action == actions.Action.adminTookDispute) &&
-         tradeState.dispute?.disputeId != null) {
-      extraButtons.add(_buildViewDisputeButton(context, tradeState.dispute!.disputeId));
+            tradeState.action == actions.Action.disputeInitiatedByPeer ||
+            tradeState.action == actions.Action.adminTookDispute) &&
+        tradeState.dispute?.disputeId != null) {
+      extraButtons
+          .add(_buildViewDisputeButton(context, tradeState.dispute!.disputeId));
     }
-    
-    final allButtons = [_buildCloseButton(context), ...actionButtons, ...extraButtons];
+
+    final allButtons = [
+      _buildCloseButton(context),
+      ...actionButtons,
+      ...extraButtons
+    ];
 
     if (allButtons.length == 1) {
       // Single button - center it with natural oval shape
@@ -976,7 +986,6 @@ class _CountdownWidget extends ConsumerWidget {
     final status = tradeState.status;
     final now = DateTime.now();
     final mostroInstance = ref.read(orderRepositoryProvider).mostroInstance;
-
     // Show countdown ONLY for these 3 specific statuses
     if (status == Status.pending) {
       // Pending orders: use exact timestamps from expires_at
@@ -985,8 +994,10 @@ class _CountdownWidget extends ConsumerWidget {
         return null;
       }
 
-      final expiration = DateTime.fromMillisecondsSinceEpoch(expiresAtTimestamp);
-      final createdAt = DateTime.fromMillisecondsSinceEpoch((tradeState.order?.createdAt ?? 0) * 1000);
+      final expiration =
+          DateTime.fromMillisecondsSinceEpoch(expiresAtTimestamp);
+      final createdAt = DateTime.fromMillisecondsSinceEpoch(
+          (tradeState.order?.createdAt ?? 0) * 1000);
 
       // Handle edge case: expiration in the past
       if (expiration.isBefore(now.subtract(const Duration(hours: 1)))) {

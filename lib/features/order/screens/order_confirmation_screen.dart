@@ -5,6 +5,8 @@ import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
+import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
+import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 
 class OrderConfirmationScreen extends ConsumerWidget {
   final String orderId;
@@ -13,6 +15,8 @@ class OrderConfirmationScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final mostroInstance = ref.watch(orderRepositoryProvider).mostroInstance;
+    final expirationHours = mostroInstance?.expirationHours ?? 24;
     return Scaffold(
       backgroundColor: AppTheme.dark1,
       appBar: OrderAppBar(title: 'Order Confirmed'),
@@ -23,7 +27,7 @@ class OrderConfirmationScreen extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                S.of(context)!.newOrder('24'),
+                S.of(context)!.newOrder(expirationHours.toString()),
                 style: TextStyle(fontSize: 18, color: AppTheme.cream1),
                 textAlign: TextAlign.center,
               ),
