@@ -1251,6 +1251,10 @@
   "imageDecryptionError": "Error al desencriptar la imagen",
   "imageNotAvailable": "Imagen no disponible",
   "couldNotOpenFile": "No se pudo abrir el archivo",
-  "errorOpeningFile": "Error al abrir archivo"
+  "errorOpeningFile": "Error al abrir archivo",
+
+  "@_comment_backup_reminder": "Recordatorio de respaldo de cuenta",
+  "backupAccountReminder": "Debes respaldar tu cuenta",
+  "backupAccountReminderMessage": "Respalda tus palabras secretas para recuperar tu cuenta"
 
 }

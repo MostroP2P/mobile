@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/features/walkthrough/providers/first_run_provider.dart';
+import 'package:mostro_mobile/features/notifications/providers/backup_reminder_provider.dart';
 import 'package:mostro_mobile/features/walkthrough/utils/highlight_config.dart';
 
 class WalkthroughScreen extends ConsumerStatefulWidget {
@@ -166,6 +167,8 @@ class _WalkthroughScreenState extends ConsumerState<WalkthroughScreen> {
 
   Future<void> _onIntroEnd(BuildContext context) async {
     await ref.read(firstRunProvider.notifier).markFirstRunComplete();
+    // Show backup reminder for first-time users
+    ref.read(backupReminderProvider.notifier).showBackupReminder();
     if (context.mounted) {
       context.go('/');
     }
