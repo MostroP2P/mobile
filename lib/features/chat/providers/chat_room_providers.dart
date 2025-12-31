@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:logger/logger.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/data/models/chat_room.dart';
 import 'package:mostro_mobile/features/chat/notifiers/chat_rooms_notifier.dart';
 import 'package:mostro_mobile/features/chat/chat_room_provider.dart';
@@ -44,9 +44,6 @@ final sortedChatRoomsProvider = Provider<List<ChatRoom>>((ref) {
   return chatRoomsWithFreshData;
 });
 
-// Logger instance for session start time operations
-final _sessionLogger = Logger();
-
 // Helper function to get session start time for sorting with improved error handling
 int _getSessionStartTime(Ref ref, ChatRoom chatRoom) {
   try {
@@ -55,22 +52,22 @@ int _getSessionStartTime(Ref ref, ChatRoom chatRoom) {
     if (session != null) {
       // Return the session start time (when the order was taken/contacted)
       final startTime = session.startTime.millisecondsSinceEpoch ~/ 1000;
-      _sessionLogger.d('Retrieved session start time for chat ${chatRoom.orderId}: $startTime');
+      logger.d('Retrieved session start time for chat ${chatRoom.orderId}: $startTime');
       return startTime;
     } else {
-      _sessionLogger.i('No session found for chat ${chatRoom.orderId}, using fallback time');
+      logger.i('No session found for chat ${chatRoom.orderId}, using fallback time');
     }
   } catch (e, stackTrace) {
     // Enhanced error handling with proper logging for diagnostics
-    _sessionLogger.e(
+    logger.e(
       'Error getting session start time for chat ${chatRoom.orderId}: $e',
       error: e,
       stackTrace: stackTrace,
     );
   }
-  
+
   // Fallback: use current time so new chats appear at top
   final fallbackTime = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-  _sessionLogger.d('Using fallback time for chat ${chatRoom.orderId}: $fallbackTime');
+  logger.d('Using fallback time for chat ${chatRoom.orderId}: $fallbackTime');
   return fallbackTime;
 }
