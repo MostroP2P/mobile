@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -8,6 +10,7 @@ import 'package:mostro_mobile/features/settings/settings_notifier.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/background/background_service.dart';
 import 'package:mostro_mobile/features/notifications/services/background_notification_service.dart';
+import 'package:mostro_mobile/services/fcm_service.dart';
 import 'package:mostro_mobile/shared/providers/background_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/providers.dart';
 import 'package:mostro_mobile/shared/utils/biometrics_helper.dart';
@@ -36,6 +39,9 @@ Future<void> main() async {
 
   final backgroundService = createBackgroundService(settings.settings);
   await backgroundService.init();
+
+  // Initialize FCM (skip on Linux)
+  await _initializeFirebaseMessaging(sharedPreferences);
 
   final container = ProviderContainer(
     overrides: [
@@ -81,4 +87,23 @@ void _initializeTimeAgoLocalization() {
   timeago.setLocaleMessages('it', timeago.ItMessages());
 
   // English is already the default, no need to set it
+}
+
+/// Initialize Firebase Cloud Messaging
+Future<void> _initializeFirebaseMessaging(SharedPreferencesAsync prefs) async {
+  try {
+    // Skip Firebase initialization on Linux (not supported)
+    if (!kIsWeb && Platform.isLinux) {
+      debugPrint(
+          'Firebase not supported on Linux - skipping FCM initialization');
+      return;
+    }
+
+    final fcmService = FCMService(prefs);
+    await fcmService.initialize();
+    debugPrint('Firebase Cloud Messaging initialized successfully');
+  } catch (e) {
+    // Log error but don't crash app if FCM initialization fails
+    debugPrint('Failed to initialize Firebase Cloud Messaging: $e');
+  }
 }
