@@ -4,8 +4,8 @@ import 'package:collection/collection.dart';
 import 'package:dart_nostr/dart_nostr.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/enums.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/data/models.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_manager_provider.dart';
@@ -16,7 +16,6 @@ import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 
 class MostroService {
   final Ref ref;
-  final _logger = Logger();
 
   Settings _settings;
   StreamSubscription<NostrEvent>? _ordersSubscription;
@@ -29,7 +28,7 @@ class MostroService {
     _ordersSubscription = ref.read(subscriptionManagerProvider).orders.listen(
       _onData,
       onError: (error, stackTrace) {
-        _logger.e('Error in orders subscription',
+        logger.e('Error in orders subscription',
             error: error, stackTrace: stackTrace);
       },
       cancelOnError: false,
@@ -38,7 +37,7 @@ class MostroService {
 
   void dispose() {
     _ordersSubscription?.cancel();
-    _logger.i('MostroService disposed');
+    logger.i('MostroService disposed');
   }
   
   //IMPORTANT : The app always use trade index 1 for restore-related messages
@@ -112,7 +111,7 @@ class MostroService {
       (s) => s.tradeKey.public == event.recipient,
     );
     if (matchingSession == null) {
-      _logger.w('No matching session found for recipient: ${event.recipient}');
+      logger.w('No matching session found for recipient: ${event.recipient}');
       return;
     }
     final privateKey = matchingSession.tradeKey.private;
@@ -126,13 +125,13 @@ class MostroService {
       
       // Ensure result is a non-empty List before accessing elements
       if (result is! List || result.isEmpty) {
-        _logger.w('Received empty or invalid payload, skipping');
+        logger.w('Received empty or invalid payload, skipping');
         return;
       }
 
       // Skip dispute chat messages (they have "dm" key and are handled by DisputeChatNotifier)
       if (result[0] is Map && (result[0] as Map).containsKey('dm')) {
-        _logger.i('Skipping dispute chat message (handled by DisputeChatNotifier)');
+        logger.i('Skipping dispute chat message (handled by DisputeChatNotifier)');
         return;
       }
 
@@ -149,13 +148,13 @@ class MostroService {
       // This handles cases where admin messages might not have an id in the decrypted event
       final messageKey = decryptedEvent.id ?? event.id ?? 'msg_${DateTime.now().millisecondsSinceEpoch}';
       await messageStorage.addMessage(messageKey, msg);
-      _logger.i(
+      logger.i(
         'Received DM, Event ID: ${decryptedEvent.id ?? event.id} with payload: ${decryptedEvent.content}',
       );
 
       await _maybeLinkChildOrder(msg, matchingSession);
     } catch (e) {
-      _logger.e('Error processing event', error: e);
+      logger.e('Error processing event', error: e);
     }
   }
 
@@ -179,7 +178,7 @@ class MostroService {
 
     ref.read(orderNotifierProvider(message.id!).notifier).subscribe();
 
-    _logger.i(
+    logger.i(
       'Linked child order ${message.id} to parent ${session.parentOrderId}',
     );
   }
@@ -291,7 +290,7 @@ class MostroService {
     final remaining = maxAmount - selectedAmount;
 
     if (remaining < minAmount) {
-      _logger.i(
+      logger.i(
         '[$callerLabel] Range order $orderId exhausted (remaining $remaining < min $minAmount); skipping child preparation.',
       );
       return null;
@@ -310,11 +309,11 @@ class MostroService {
         parentOrderId: orderId,
         role: currentSession.role!,
       );
-      _logger.i(
+      logger.i(
         '[$callerLabel] Prepared child session for $orderId using key index $nextKeyIndex',
       );
     } else {
-      _logger.w(
+      logger.w(
         '[$callerLabel] Unable to prepare child session for $orderId; session or role missing.',
       );
     }
@@ -353,7 +352,7 @@ class MostroService {
       masterKey: session.fullPrivacy ? null : session.masterKey,
       keyIndex: session.fullPrivacy ? null : session.keyIndex,
     );
-    _logger
+    logger
         .i('Sending DM, Event ID: ${event.id} with payload: ${order.toJson()}');
     await ref.read(nostrServiceProvider).publishEvent(event);
   }
