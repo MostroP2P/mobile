@@ -1233,6 +1233,14 @@
 
   "@_comment_backup_reminder": "Backup reminder notification",
   "backupAccountReminder": "You must back up your account",
-  "backupAccountReminderMessage": "Save your secret words to recover your account"
+  "backupAccountReminderMessage": "Save your secret words to recover your account",
+
+  "@_comment_logging_ui": "Logging UI strings",
+  "logCapture": "Log Capture",
+  "capturingLogs": "Capturing logs",
+  "captureDisabled": "Capture disabled",
+  "performanceWarning": "Performance Warning",
+  "performanceWarningMessage": "Enabling log capture may impact application performance. Only enable this feature when debugging or troubleshooting issues.",
+  "enable": "Enable"
 
 }

@@ -1264,5 +1264,13 @@
 
   "@_comment_backup_reminder": "Promemoria backup account",
   "backupAccountReminder": "Devi fare il backup del tuo account",
-  "backupAccountReminderMessage": "Salva le tue parole segrete per recuperare il tuo account"
+  "backupAccountReminderMessage": "Salva le tue parole segrete per recuperare il tuo account",
+
+  "@_comment_logging_ui": "Stringhe interfaccia logging",
+  "logCapture": "Acquisizione Log",
+  "capturingLogs": "Acquisizione log in corso",
+  "captureDisabled": "Acquisizione disabilitata",
+  "performanceWarning": "Avviso Prestazioni",
+  "performanceWarningMessage": "L'abilitazione dell'acquisizione dei log potrebbe influire sulle prestazioni dell'applicazione. Attiva questa funzione solo durante il debug o la risoluzione dei problemi.",
+  "enable": "Abilita"
 }

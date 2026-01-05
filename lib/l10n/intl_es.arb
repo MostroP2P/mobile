@@ -1209,6 +1209,14 @@
 
   "@_comment_backup_reminder": "Recordatorio de respaldo de cuenta",
   "backupAccountReminder": "Debes respaldar tu cuenta",
-  "backupAccountReminderMessage": "Respalda tus palabras secretas para recuperar tu cuenta"
+  "backupAccountReminderMessage": "Respalda tus palabras secretas para recuperar tu cuenta",
+
+  "@_comment_logging_ui": "Cadenas de interfaz de registro",
+  "logCapture": "Captura de Registros",
+  "capturingLogs": "Capturando registros",
+  "captureDisabled": "Captura deshabilitada",
+  "performanceWarning": "Advertencia de Rendimiento",
+  "performanceWarningMessage": "Habilitar la captura de registros puede afectar el rendimiento de la aplicación. Solo habilita esta función cuando estés depurando o solucionando problemas.",
+  "enable": "Habilitar"
 
 }
