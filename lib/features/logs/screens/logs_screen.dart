@@ -35,7 +35,8 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
 
   void _onScroll() {
     if (_scrollController.hasClients) {
-      final showButton = _scrollController.offset > 200;
+      final maxScroll = _scrollController.position.maxScrollExtent;
+      final showButton = _scrollController.offset > 200 && maxScroll > 0;
       if (showButton != _showScrollToTop) {
         setState(() => _showScrollToTop = showButton);
       }
@@ -114,12 +115,7 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
   }
 
   Future<void> _disableLoggingAndSave() async {
-    final logs = MemoryLogOutput.instance.getAllLogs();
-
-    if (logs.isNotEmpty) {
-      await _saveToDevice();
-    }
-
+    // Only disable and clear - no saving (Phase 2)
     MemoryLogOutput.isLoggingEnabled = false;
     MemoryLogOutput.instance.clear();
 
@@ -167,11 +163,11 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
                     ? _buildEmptyState()
                     : _buildLogsList(logs),
               ),
-              if (allLogs.isNotEmpty) _buildActionButtons(),
+              _buildActionButtons(),
             ],
           ),
         ),
-        if (_showScrollToTop)
+        if (_showScrollToTop && logs.isNotEmpty)
           Positioned(
             right: 16,
             bottom: 100,
@@ -191,7 +187,6 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
   }
 
   Widget _buildStatsHeader(int totalCount, int filteredCount) {
-    final storageLocation = _getLogStorageLocation(context);
     final settings = ref.watch(settingsProvider);
     final isLoggingEnabled = settings.isLoggingEnabled;
 
@@ -268,28 +263,6 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
                 ),
               ),
             ],
-          ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      storageLocation,
-                      style: const TextStyle(
-                        color: AppTheme.textInactive,
-                        fontSize: 12,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Icon(
-                    Icons.edit_outlined,
-                    color: AppTheme.textInactive,
-                    size: 14,
-                  ),
-                ],
-              ),
-            ),
           ),
         ],
       ),
@@ -534,24 +507,13 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
           ),
         ),
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: null,  // Disabled for Phase 1
-              icon: const Icon(Icons.save),
-              label: Text(S.of(context)!.saveToDevice),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: ElevatedButton.icon(
-              onPressed: _isExporting ? null : _shareLogs,
-              icon: const Icon(Icons.share),
-              label: Text(S.of(context)!.shareReport),
-            ),
-          ),
-        ],
+      child: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton.icon(
+          onPressed: _isExporting ? null : _shareLogs,
+          icon: const Icon(Icons.share),
+          label: Text(S.of(context)!.shareReport),
+        ),
       ),
     );
   }
@@ -616,34 +578,6 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
     }
   }
 
-  Future<void> _saveToDevice() async {
-    logger.i('Button pressed, starting save process');
-    setState(() => _isExporting = true);
-    try {
-      logger.i('Creating log file');
-      final file = await _createLogFile();
-
-      logger.i('Saving to storage');
-      final savedPath = await _saveToDocuments(file);
-      logger.i('Successfully saved to: $savedPath');
-
-      if (mounted) {
-        _showSuccessSnackBar(
-          S.of(context)!.logsSavedTo(savedPath),
-        );
-      }
-    } catch (e, stack) {
-      logger.e('Failed to save logs to device', error: e, stackTrace: stack);
-      if (mounted) {
-        _showErrorSnackBar('${S.of(context)!.saveFailed}: $e');
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isExporting = false);
-      }
-    }
-  }
-
   Future<File> _createLogFile() async {
     final logs = MemoryLogOutput.instance.getAllLogs();
     final buffer = StringBuffer();
@@ -663,38 +597,6 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
     await file.writeAsString(buffer.toString());
 
     return file;
-  }
-
-  Future<String> _saveToDocuments(File tempFile) async {
-    logger.i('Saving to app storage');
-
-    final directory = Platform.isAndroid
-        ? await getExternalStorageDirectory()
-        : await getApplicationDocumentsDirectory();
-
-    if (directory == null) {
-      throw Exception('Could not get storage directory');
-    }
-
-    final logsDir = Directory('${directory.path}/MostroLogs');
-    logger.i('Creating logs directory: ${logsDir.path}');
-    await logsDir.create(recursive: true);
-
-    final timestamp = DateFormat('yyyy-MM-dd_HH-mm-ss').format(DateTime.now());
-    final destinationFile = File('${logsDir.path}/mostro_logs_$timestamp.txt');
-
-    logger.i('Copying to: ${destinationFile.path}');
-    await tempFile.copy(destinationFile.path);
-
-    final exists = await destinationFile.exists();
-    if (!exists) {
-      throw Exception('File was not created');
-    }
-
-    final fileSize = await destinationFile.length();
-    logger.i('File saved: $fileSize bytes at ${destinationFile.path}');
-
-    return destinationFile.path;
   }
 
   void _showClearConfirmation() {
@@ -748,16 +650,6 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  void _showSuccessSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green,
-        behavior: SnackBarBehavior.floating,
       ),
     );
   }

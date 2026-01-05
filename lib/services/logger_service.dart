@@ -255,17 +255,13 @@ class SimplePrinter extends LogPrinter {
 class _ProductionOptimizedFilter extends LogFilter {
   @override
   bool shouldLog(LogEvent event) {
-    // In release mode, only log if memory capture is enabled OR if it's a warning/error
-    if (!Config.isDebug) {
-      // Allow warnings and errors even if logging is disabled (for console in case needed)
-      if (event.level.index >= Level.warning.index) return true;
-
-      // Otherwise, only log if memory capture is enabled
-      return MemoryLogOutput.isLoggingEnabled;
+    // Debug: always log to console
+    if (Config.isDebug) {
+      return true;
     }
 
-    // In debug mode, always log
-    return true;
+    // Release: only if UI switch is enabled (console is null anyway)
+    return MemoryLogOutput.isLoggingEnabled;
   }
 }
 

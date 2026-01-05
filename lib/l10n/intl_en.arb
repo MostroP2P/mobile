@@ -1241,6 +1241,53 @@
   "captureDisabled": "Capture disabled",
   "performanceWarning": "Performance Warning",
   "performanceWarningMessage": "Enabling log capture may impact application performance. Only enable this feature when debugging or troubleshooting issues.",
-  "enable": "Enable"
+  "enable": "Enable",
+  "logsReport": "Logs Report",
+  "clearLogs": "Clear Logs",
+  "totalLogs": "{count} logs",
+  "@totalLogs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "maxEntries": "Max {count} entries",
+  "@maxEntries": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchLogs": "Search logs...",
+  "allLevels": "All",
+  "errors": "Errors",
+  "warnings": "Warnings",
+  "info": "Info",
+  "debug": "Debug",
+  "noLogsAvailable": "No logs available",
+  "logsWillAppearHere": "Logs will appear here when log capture is enabled",
+  "copyLog": "Copy log",
+  "logCopied": "Log copied to clipboard",
+  "saveToDevice": "Save to Device",
+  "saveFile": "Save File",
+  "shareReport": "Share Report",
+  "logsExportTitle": "Logs Export",
+  "exportFailed": "Export failed",
+  "logsSavedTo": "Logs saved to {path}",
+  "@logsSavedTo": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "saveFailed": "Save failed",
+  "clearLogsConfirmTitle": "Clear All Logs?",
+  "clearLogsConfirmMessage": "This will permanently delete all captured logs. This action cannot be undone.",
+  "devTools": "Dev Tools",
+  "devToolsWarning": "For debugging and troubleshooting only",
+  "viewAndExportLogs": "View and export application logs"
 
 }

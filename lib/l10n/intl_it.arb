@@ -1272,5 +1272,52 @@
   "captureDisabled": "Acquisizione disabilitata",
   "performanceWarning": "Avviso Prestazioni",
   "performanceWarningMessage": "L'abilitazione dell'acquisizione dei log potrebbe influire sulle prestazioni dell'applicazione. Attiva questa funzione solo durante il debug o la risoluzione dei problemi.",
-  "enable": "Abilita"
+  "enable": "Abilita",
+  "logsReport": "Rapporto Log",
+  "clearLogs": "Cancella Log",
+  "totalLogs": "{count} log",
+  "@totalLogs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "maxEntries": "Max {count} voci",
+  "@maxEntries": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchLogs": "Cerca log...",
+  "allLevels": "Tutti",
+  "errors": "Errori",
+  "warnings": "Avvisi",
+  "info": "Info",
+  "debug": "Debug",
+  "noLogsAvailable": "Nessun log disponibile",
+  "logsWillAppearHere": "I log appariranno qui quando l'acquisizione è abilitata",
+  "copyLog": "Copia log",
+  "logCopied": "Log copiato negli appunti",
+  "saveToDevice": "Salva su Dispositivo",
+  "saveFile": "Salva File",
+  "shareReport": "Condividi Rapporto",
+  "logsExportTitle": "Esporta Log",
+  "exportFailed": "Esportazione fallita",
+  "logsSavedTo": "Log salvati in {path}",
+  "@logsSavedTo": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "saveFailed": "Salvataggio fallito",
+  "clearLogsConfirmTitle": "Cancellare Tutti i Log?",
+  "clearLogsConfirmMessage": "Questo eliminerà permanentemente tutti i log acquisiti. Questa azione non può essere annullata.",
+  "devTools": "Strumenti di Sviluppo",
+  "devToolsWarning": "Solo per debug e risoluzione problemi",
+  "viewAndExportLogs": "Visualizza ed esporta i log dell'applicazione"
 }

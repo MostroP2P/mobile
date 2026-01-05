@@ -1217,6 +1217,53 @@
   "captureDisabled": "Captura deshabilitada",
   "performanceWarning": "Advertencia de Rendimiento",
   "performanceWarningMessage": "Habilitar la captura de registros puede afectar el rendimiento de la aplicación. Solo habilita esta función cuando estés depurando o solucionando problemas.",
-  "enable": "Habilitar"
+  "enable": "Habilitar",
+  "logsReport": "Reporte de Registros",
+  "clearLogs": "Limpiar Registros",
+  "totalLogs": "{count} registros",
+  "@totalLogs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "maxEntries": "Máx {count} entradas",
+  "@maxEntries": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchLogs": "Buscar registros...",
+  "allLevels": "Todos",
+  "errors": "Errores",
+  "warnings": "Advertencias",
+  "info": "Info",
+  "debug": "Debug",
+  "noLogsAvailable": "No hay registros disponibles",
+  "logsWillAppearHere": "Los registros aparecerán aquí cuando la captura esté habilitada",
+  "copyLog": "Copiar registro",
+  "logCopied": "Registro copiado al portapapeles",
+  "saveToDevice": "Guardar en Dispositivo",
+  "saveFile": "Guardar Archivo",
+  "shareReport": "Compartir Reporte",
+  "logsExportTitle": "Exportar Registros",
+  "exportFailed": "Exportación fallida",
+  "logsSavedTo": "Registros guardados en {path}",
+  "@logsSavedTo": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "saveFailed": "Guardado fallido",
+  "clearLogsConfirmTitle": "¿Limpiar Todos los Registros?",
+  "clearLogsConfirmMessage": "Esto eliminará permanentemente todos los registros capturados. Esta acción no se puede deshacer.",
+  "devTools": "Herramientas de Desarrollo",
+  "devToolsWarning": "Solo para depuración y solución de problemas",
+  "viewAndExportLogs": "Ver y exportar registros de la aplicación"
 
 }
