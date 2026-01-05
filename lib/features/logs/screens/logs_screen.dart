@@ -73,37 +73,6 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
     return filtered;
   }
 
-  String _getLogStorageLocation(BuildContext context) {
-    final settings = ref.watch(settingsProvider);
-    return settings.customLogStorageDirectory ?? S.of(context)!.defaultDownloads;
-  }
-
-  Future<void> _selectStorageDirectory() async {
-    // For now, show a dialog explaining the feature
-    // In a future implementation, this would use file_picker to select a directory
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.backgroundCard,
-        title: const Text(
-          'Select Storage Directory',
-          style: TextStyle(color: AppTheme.textPrimary),
-        ),
-        content: const Text(
-          'Custom storage directory selection will be available in a future update. '
-          'Currently, logs are saved to the default app storage directory.',
-          style: TextStyle(color: AppTheme.textSecondary),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
-
   Future<void> _toggleLogging(bool value) async {
     if (value) {
       await _showPerformanceWarning();
@@ -117,13 +86,12 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppTheme.backgroundCard,
-        title: const Text(
-          'Performance Warning',
+        title: Text(
+          S.of(context)!.performanceWarning,
           style: TextStyle(color: AppTheme.textPrimary),
         ),
-        content: const Text(
-          'Enabling log capture may impact application performance. '
-          'Only enable this feature when debugging or troubleshooting issues.',
+        content: Text(
+          S.of(context)!.performanceWarningMessage,
           style: TextStyle(color: AppTheme.textSecondary),
         ),
         actions: [
@@ -133,7 +101,7 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Enable'),
+            child: Text(S.of(context)!.enable),
           ),
         ],
       ),
@@ -248,8 +216,8 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Log Capture',
+                    Text(
+                      S.of(context)!.logCapture,
                       style: TextStyle(
                         color: AppTheme.textPrimary,
                         fontSize: 16,
@@ -259,8 +227,8 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
                     const SizedBox(height: 4),
                     Text(
                       isLoggingEnabled
-                          ? 'Capturing logs'
-                          : 'Capture disabled',
+                          ? S.of(context)!.capturingLogs
+                          : S.of(context)!.captureDisabled,
                       style: TextStyle(
                         color: isLoggingEnabled
                             ? AppTheme.activeColor
@@ -301,19 +269,6 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          InkWell(
-            onTap: _selectStorageDirectory,
-            borderRadius: BorderRadius.circular(8),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.folder_outlined,
-                    color: AppTheme.textInactive,
-                    size: 16,
-                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -583,7 +538,7 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
         children: [
           Expanded(
             child: OutlinedButton.icon(
-              onPressed: _isExporting ? null : _saveToDevice,
+              onPressed: null,  // Disabled for Phase 1
               icon: const Icon(Icons.save),
               label: Text(S.of(context)!.saveToDevice),
             ),
