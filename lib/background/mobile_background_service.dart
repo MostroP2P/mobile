@@ -5,6 +5,7 @@ import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/background/background.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
+import 'package:mostro_mobile/services/logger_service.dart' as logger_service;
 import 'abstract_background_service.dart';
 
 class MobileBackgroundService implements BackgroundService {
@@ -44,6 +45,7 @@ class MobileBackgroundService implements BackgroundService {
       _isRunning = true;
       service.invoke('start', {
         'settings': _settings.toJson(),
+        'loggerSendPort': logger_service.isolateLogSenderPort,
       });
       _logger.d(
         'Service started with settings: ${_settings.toJson()}',
@@ -152,9 +154,10 @@ class MobileBackgroundService implements BackgroundService {
       await Future.delayed(const Duration(milliseconds: 50));
     }
 
-    _logger.i("Service running, sending settings");
+    logger_service.logger.i("Service running, sending settings");
     service.invoke('start', {
       'settings': _settings.toJson(),
+      'loggerSendPort': logger_service.isolateLogSenderPort,
     });
   }
 
