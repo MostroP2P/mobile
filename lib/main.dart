@@ -11,6 +11,7 @@ import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/background/background_service.dart';
 import 'package:mostro_mobile/features/notifications/services/background_notification_service.dart';
 import 'package:mostro_mobile/services/fcm_service.dart';
+import 'package:mostro_mobile/services/push_notification_service.dart';
 import 'package:mostro_mobile/shared/providers/background_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/providers.dart';
 import 'package:mostro_mobile/shared/utils/biometrics_helper.dart';
@@ -89,7 +90,7 @@ void _initializeTimeAgoLocalization() {
   // English is already the default, no need to set it
 }
 
-/// Initialize Firebase Cloud Messaging
+/// Initialize Firebase Cloud Messaging and Push Notification Service
 Future<void> _initializeFirebaseMessaging(SharedPreferencesAsync prefs) async {
   try {
     // Skip Firebase initialization on Linux (not supported)
@@ -101,7 +102,10 @@ Future<void> _initializeFirebaseMessaging(SharedPreferencesAsync prefs) async {
 
     final fcmService = FCMService(prefs);
     await fcmService.initialize();
-    debugPrint('Firebase Cloud Messaging initialized successfully');
+
+    // Initialize Push Notification Service (for encrypted token registration)
+    final pushService = PushNotificationService(fcmService: fcmService);
+    await pushService.initialize();
   } catch (e) {
     // Log error but don't crash app if FCM initialization fails
     debugPrint('Failed to initialize Firebase Cloud Messaging: $e');
