@@ -59,8 +59,10 @@ class MostroMessageDetail extends ConsumerWidget {
     final orderPayload = tradeState.order;
     switch (action) {
       case actions.Action.newOrder:
-        final expHrs = 24; // TODO: use mostroInstance.expirationHours when available
-        return S.of(context)!.newOrder(expHrs);
+        final expHrs =
+            ref.read(orderRepositoryProvider).mostroInstance?.expirationHours ??
+                24;
+        return S.of(context)!.newOrder(expHrs.toString());
       case actions.Action.canceled:
         return S.of(context)!.canceled(orderPayload?.id ?? '');
       case actions.Action.payInvoice:
@@ -104,14 +106,17 @@ class MostroMessageDetail extends ConsumerWidget {
                 ?.expirationSeconds ??
             900;
         final expMinutes = (expSecs / 60).round();
-        
+
         // Check if user is the maker (creator) of the order
         final session = ref.watch(sessionProvider(orderPayload?.id ?? ''));
         final isUserCreator = _isUserCreator(session, tradeState);
-        
+
         if (isUserCreator) {
           // Maker scenario: user created a buy order, show waiting for taker message
-          return S.of(context)!.orderTakenWaitingCounterpart(expMinutes).replaceAll('\\n', '\n');
+          return S
+              .of(context)!
+              .orderTakenWaitingCounterpart(expMinutes)
+              .replaceAll('\\n', '\n');
         } else {
           // Taker scenario: user took someone's order, show original message
           return S
@@ -125,15 +130,18 @@ class MostroMessageDetail extends ConsumerWidget {
                 ?.expirationSeconds ??
             900;
         final expMinutes = (expSecs / 60).round();
-        
+
         // Check if user is the maker (creator) of a sell order
         final session = ref.watch(sessionProvider(orderPayload?.id ?? ''));
         final isUserCreator = _isUserCreator(session, tradeState);
         final isSellOrder = tradeState.order?.kind == OrderType.sell;
-        
+
         if (isUserCreator && isSellOrder) {
           // Maker scenario: user created a sell order, show waiting for taker message
-          return S.of(context)!.orderTakenWaitingCounterpart(expMinutes).replaceAll('\\n', '\n');
+          return S
+              .of(context)!
+              .orderTakenWaitingCounterpart(expMinutes)
+              .replaceAll('\\n', '\n');
         } else {
           // Taker scenario: user took someone's order, show original message
           return S.of(context)!.waitingBuyerInvoice(expMinutes);
@@ -215,7 +223,8 @@ class MostroMessageDetail extends ConsumerWidget {
         return S.of(context)!.adminSettledUsers(orderPayload!.id ?? '');
       case actions.Action.paymentFailed:
         final payload = ref.read(orderNotifierProvider(orderId)).paymentFailed;
-        final intervalInMinutes = ((payload?.paymentRetriesInterval ?? 0) / 60).round();
+        final intervalInMinutes =
+            ((payload?.paymentRetriesInterval ?? 0) / 60).round();
         return S.of(context)!.paymentFailed(
               payload?.paymentAttempts ?? 0,
               intervalInMinutes,

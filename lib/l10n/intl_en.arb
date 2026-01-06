@@ -2,6 +2,14 @@
   "@@locale": "en",
   "backToHome": "Back to Home",
   "newOrder": "Your offer has been published! Please wait until another user picks your order. It will be available for {expiration_hours} hours. You can cancel this order before another user picks it up by executing: cancel.",
+  "@newOrder": {
+    "placeholders": {
+      "expiration_hours": {
+        "type": "String",
+        "description": "The expiration time in hours"
+      }
+    }
+  },
   "canceled": "You have canceled the order ID: {id}.",
   "payInvoice": "Please pay this hold invoice of {amount} Sats for {fiat_code} {fiat_amount} to start the operation. If you do not pay it within {expiration_seconds} minutes, the trade will be canceled.",
   "@payInvoice": {
@@ -263,7 +271,15 @@
   "someoneIsBuyingTitle": "Someone is Buying Sats",
   "someoneIsSellingFixedTitle": "Someone is Selling {sats} Sats",
   "someoneIsBuyingFixedTitle": "Someone is Buying {sats} Sats",
-  "youCreatedOfferMessage": "You created this offer. Below are the details of your offer. Wait for another user to take it. It will be published for 24 hours. You can cancel it at any time using the 'Cancel' button.",
+  "youCreatedOfferMessage": "You created this offer. Below are the details of your offer. Wait for another user to take it. It will be published for {expiration_hours} hours. You can cancel it at any time using the 'Cancel' button.",
+  "@youCreatedOfferMessage": {
+    "placeholders": {
+      "expiration_hours": {
+        "type": "String",
+        "description": "The expiration time in hours"
+      }
+    }
+  },
   "youAreSellingTitle": "You are selling{sats} sats",
   "youAreBuyingTitle": "You are buying{sats} sats",
   "forAmount": "for {amount}",
@@ -1213,5 +1229,10 @@
   "imageDecryptionError": "Error decrypting image",
   "imageNotAvailable": "Image not available",
   "couldNotOpenFile": "Could not open file",
-  "errorOpeningFile": "Error opening file"
+  "errorOpeningFile": "Error opening file",
+
+  "@_comment_backup_reminder": "Backup reminder notification",
+  "backupAccountReminder": "You must back up your account",
+  "backupAccountReminderMessage": "Save your secret words to recover your account"
+
 }

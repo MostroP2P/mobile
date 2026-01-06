@@ -42,4 +42,9 @@ class Config {
   // Notification configuration
   static String notificationChannelId = 'mostro_mobile';
   static int notificationId = 38383;
+
+  // Logger configuration
+  static const int logMaxEntries = 1000;
+  static const int logBatchDeleteSize = 100;
+  static bool fullLogsInfo = true; // false = simple logs, true = PrettyPrinter
 }

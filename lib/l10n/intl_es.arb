@@ -2,6 +2,13 @@
   "@@locale": "es",
   "backToHome": "Volver al inicio",
   "newOrder": "¡Tu oferta ha sido publicada! Por favor espera hasta que otro usuario elija tu orden. Estará disponible durante {expiration_hours} horas. Puedes cancelar esta orden antes de que otro usuario la tome ejecutando: cancel.",
+  "@newOrder": {
+    "placeholders": {
+      "expiration_hours": {
+        "type": "String"
+      }
+    }
+  },
   "canceled": "Has cancelado la orden ID: {id}.",
   "payInvoice": "Por favor paga esta factura retenida de {amount} Sats por {fiat_amount} {fiat_code} para iniciar la operación. Si no la pagas antes de {expiration_seconds} minutos, el intercambio será cancelado.",
   "@payInvoice": {
@@ -611,7 +618,14 @@
   "someoneIsBuyingTitle": "Alguien está Comprando Sats",
   "someoneIsSellingFixedTitle": "Alguien está Vendiendo {sats} Sats",
   "someoneIsBuyingFixedTitle": "Alguien está Comprando {sats} Sats",
-  "youCreatedOfferMessage": "Creaste esta oferta. A continuación se muestran los detalles de tu oferta. Espera a que otro usuario la tome. Se publicará durante 24 horas. Puedes cancelarla en cualquier momento usando el botón 'Cancelar'.",
+  "youCreatedOfferMessage": "Creaste esta oferta. A continuación se muestran los detalles de tu oferta. Espera a que otro usuario la tome. Se publicará durante {expiration_hours} horas. Puedes cancelarla en cualquier momento usando el botón 'Cancelar'.",
+  "@youCreatedOfferMessage": {
+    "placeholders": {
+      "expiration_hours": {
+        "type": "String"
+      }
+    }
+  },
   "youAreSellingTitle": "Estás vendiendo {sats} sats",
   "youAreBuyingTitle": "Estás comprando {sats} sats",
   "forAmount": "por {amount}",
@@ -1191,6 +1205,10 @@
   "imageDecryptionError": "Error al desencriptar la imagen",
   "imageNotAvailable": "Imagen no disponible",
   "couldNotOpenFile": "No se pudo abrir el archivo",
-  "errorOpeningFile": "Error al abrir archivo"
+  "errorOpeningFile": "Error al abrir archivo",
+
+  "@_comment_backup_reminder": "Recordatorio de respaldo de cuenta",
+  "backupAccountReminder": "Debes respaldar tu cuenta",
+  "backupAccountReminderMessage": "Respalda tus palabras secretas para recuperar tu cuenta"
 
 }
