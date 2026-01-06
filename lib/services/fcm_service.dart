@@ -23,10 +23,12 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     // Skip on unsupported platforms
     if (kIsWeb || Platform.isLinux) return;
 
-    // Initialize Firebase for background context
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
+    // Initialize Firebase for background context (if not already initialized)
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    }
 
     final sharedPrefs = SharedPreferencesAsync();
 
@@ -58,7 +60,7 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 }
 
 class FCMService {
-  final FirebaseMessaging _messaging = FirebaseMessaging.instance;
+  FirebaseMessaging get _messaging => FirebaseMessaging.instance;
   final SharedPreferencesAsync _prefs;
 
   static const String _fcmTokenKey = 'fcm_token';
@@ -79,21 +81,28 @@ class FCMService {
     try {
       // Skip Firebase initialization on Linux (not supported)
       if (!kIsWeb && Platform.isLinux) {
-        _logger
-            .i('Firebase not supported on Linux - skipping FCM initialization');
+        debugPrint('FCM: Skipping initialization on Linux (not supported)');
         return;
       }
 
-      // Initialize Firebase
-      await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
-      );
+      debugPrint('FCM: Starting initialization...');
+
+      // Initialize Firebase (if not already initialized)
+      if (Firebase.apps.isEmpty) {
+        await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
+        );
+        debugPrint('FCM: Firebase initialized');
+      } else {
+        debugPrint('FCM: Firebase already initialized');
+      }
 
       // Request notification permissions
       final permissionGranted = await _requestPermissions();
-      if (!permissionGranted) {
-        _logger.w(
-            'Notification permissions not granted - FCM will have limited functionality');
+      if (permissionGranted) {
+        debugPrint('FCM: Notification permissions granted');
+      } else {
+        debugPrint('FCM: Notification permissions not granted');
       }
 
       // Get and store FCM token
