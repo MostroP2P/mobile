@@ -1,4 +1,5 @@
 import 'dart:isolate';
+import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/core/config.dart';
 
@@ -71,22 +72,13 @@ void addLogFromIsolate(Map<String, dynamic> logData) {
   final service = logData['service']?.toString() ?? 'Background';
   final line = logData['line']?.toString() ?? '0';
 
-  MemoryLogOutput.instance._buffer.add(LogEntry(
+  MemoryLogOutput.instance.addEntry(LogEntry(
     timestamp: timestamp,
     level: level,
     message: message,
     service: service,
     line: line,
   ));
-
-  if (MemoryLogOutput.instance._buffer.length > Config.logMaxEntries) {
-    final deleteCount = MemoryLogOutput.instance._buffer.length < Config.logBatchDeleteSize
-        ? MemoryLogOutput.instance._buffer.length - Config.logMaxEntries
-        : Config.logBatchDeleteSize;
-    if (deleteCount > 0) {
-      MemoryLogOutput.instance._buffer.removeRange(0, deleteCount);
-    }
-  }
 }
 
 Level _levelFromString(String level) {
@@ -123,7 +115,7 @@ class LogEntry {
 }
 
 /// Custom LogOutput that captures all logs to memory buffer
-class MemoryLogOutput extends LogOutput {
+class MemoryLogOutput extends LogOutput with ChangeNotifier {
   static final MemoryLogOutput instance = MemoryLogOutput._();
 
   MemoryLogOutput._();
@@ -144,16 +136,29 @@ class MemoryLogOutput extends LogOutput {
     final stackTrace = event.origin.stackTrace ?? StackTrace.current;
     final serviceAndLine = _printer.extractFromStackTrace(stackTrace);
 
-    // Add to buffer
-    _buffer.add(LogEntry(
+    addEntry(LogEntry(
       timestamp: event.origin.time,
       level: event.level,
       message: cleanMessage(event.origin.message.toString()),
       service: serviceAndLine['service'] ?? 'Unknown',
       line: serviceAndLine['line'] ?? '0',
     ));
+  }
 
-    // Maintain buffer size limit
+  List<LogEntry> getAllLogs() => List.unmodifiable(_buffer);
+
+  void clear() {
+    _buffer.clear();
+    notifyListeners();
+  }
+
+  void addEntry(LogEntry entry) {
+    _buffer.add(entry);
+    _maintainBufferSize();
+    notifyListeners();
+  }
+
+  void _maintainBufferSize() {
     if (_buffer.length > Config.logMaxEntries) {
       final deleteCount = _buffer.length < Config.logBatchDeleteSize
           ? _buffer.length - Config.logMaxEntries
@@ -164,8 +169,6 @@ class MemoryLogOutput extends LogOutput {
     }
   }
 
-  List<LogEntry> getAllLogs() => List.unmodifiable(_buffer);
-  void clear() => _buffer.clear();
   int get logCount => _buffer.length;
 }
 

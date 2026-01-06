@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/core/config.dart';
+import 'package:mostro_mobile/features/logs/providers/logs_provider.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
@@ -126,7 +127,7 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final allLogs = MemoryLogOutput.instance.getAllLogs();
+    final allLogs = ref.watch(logsProvider);
     final logs = _filterLogs(allLogs);
 
     return Stack(
