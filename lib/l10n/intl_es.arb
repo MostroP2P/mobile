@@ -1212,7 +1212,7 @@
   "backupAccountReminderMessage": "Respalda tus palabras secretas para recuperar tu cuenta",
 
   "@_comment_validation": "Mensajes de validación de entrada",
-  "invalidKeyFormat": "Formato de clave inválido"
+  "invalidKeyFormat": "Formato de clave inválido",
   
   "@_comment_logging_ui": "Cadenas de interfaz de registro",
   "logCapture": "Captura de Registros",
