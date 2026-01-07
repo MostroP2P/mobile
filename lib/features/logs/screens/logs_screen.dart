@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logger/logger.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/core/config.dart';
+import 'package:mostro_mobile/features/logs/logs_provider.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
-
-enum LogLevel { error, warning, info, debug }
+import 'package:mostro_mobile/services/logger_service.dart';
 
 class LogsScreen extends ConsumerStatefulWidget {
   const LogsScreen({super.key});
@@ -15,7 +16,7 @@ class LogsScreen extends ConsumerStatefulWidget {
 }
 
 class _LogsScreenState extends ConsumerState<LogsScreen> {
-  LogLevel? _selectedLevel;
+  String? _selectedLevel;
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
@@ -30,7 +31,7 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
   void _onScroll() {
     if (_scrollController.hasClients) {
       final maxScroll = _scrollController.position.maxScrollExtent;
-      final showButton = _scrollController.offset > 200 && maxScroll > 0;
+      final showButton = _scrollController.offset > 200 && maxScroll > 200;
       if (showButton != _showScrollToTop) {
         setState(() => _showScrollToTop = showButton);
       }
@@ -60,6 +61,16 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
     }
   }
 
+  void _enableLogging() {
+    MemoryLogOutput.isLoggingEnabled = true;
+    ref.read(settingsProvider.notifier).updateLoggingEnabled(true);
+  }
+
+  void _disableLogging() {
+    MemoryLogOutput.isLoggingEnabled = false;
+    ref.read(settingsProvider.notifier).updateLoggingEnabled(false);
+  }
+
   Future<void> _showPerformanceWarning() async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -87,13 +98,13 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
     );
 
     if (confirmed == true && mounted) {
-      await ref.read(settingsProvider.notifier).updateLoggingEnabled(true);
+      _enableLogging();
     }
   }
 
   Future<void> _disableLoggingAndSave() async {
     if (mounted) {
-      await ref.read(settingsProvider.notifier).updateLoggingEnabled(false);
+      _disableLogging();
     }
   }
 
@@ -127,6 +138,7 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
     );
 
     if (confirmed == true && mounted) {
+      ref.read(logsProvider.notifier).clearLogs();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -141,7 +153,12 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
   Widget build(BuildContext context) {
     final settings = ref.watch(settingsProvider);
     final isLoggingEnabled = settings.isLoggingEnabled;
-    final logs = <dynamic>[];
+    final filter = LogsFilter(
+      levelFilter: _selectedLevel,
+      searchQuery: _searchQuery,
+    );
+    final allLogs = ref.watch(logsProvider);
+    final logs = ref.watch(filteredLogsProvider(filter));
 
     return Stack(
       children: [
@@ -169,11 +186,13 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
           ),
           body: Column(
             children: [
-              _buildStatsHeader(logs.length, logs.length, isLoggingEnabled),
+              _buildStatsHeader(allLogs.length, logs.length, isLoggingEnabled),
               _buildSearchBar(),
               _buildFilterChips(),
               Expanded(
-                child: _buildEmptyState(),
+                child: logs.isEmpty
+                    ? _buildEmptyState()
+                    : _buildLogsList(logs),
               ),
             ],
           ),
@@ -293,7 +312,13 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
                   icon: const Icon(Icons.clear, color: AppTheme.textSecondary),
                   onPressed: () {
                     _searchController.clear();
-                    setState(() => _searchQuery = '');
+                    setState(() {
+                      _searchQuery = '';
+                      _showScrollToTop = false;
+                      if (_scrollController.hasClients) {
+                        _scrollController.jumpTo(0);
+                      }
+                    });
                   },
                 )
               : null,
@@ -306,7 +331,13 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         ),
         onChanged: (value) {
-          setState(() => _searchQuery = value);
+          setState(() {
+            _searchQuery = value;
+            _showScrollToTop = false;
+            if (_scrollController.hasClients) {
+              _scrollController.jumpTo(0);
+            }
+          });
         },
       ),
     );
@@ -322,26 +353,32 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
           children: [
             _buildFilterChip(S.of(context)!.allLevels, null),
             const SizedBox(width: 8),
-            _buildFilterChip(S.of(context)!.errors, LogLevel.error),
+            _buildFilterChip(S.of(context)!.errors, 'error'),
             const SizedBox(width: 8),
-            _buildFilterChip(S.of(context)!.warnings, LogLevel.warning),
+            _buildFilterChip(S.of(context)!.warnings, 'warning'),
             const SizedBox(width: 8),
-            _buildFilterChip(S.of(context)!.info, LogLevel.info),
+            _buildFilterChip(S.of(context)!.info, 'info'),
             const SizedBox(width: 8),
-            _buildFilterChip(S.of(context)!.debug, LogLevel.debug),
+            _buildFilterChip(S.of(context)!.debug, 'debug'),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildFilterChip(String label, LogLevel? level) {
-    final isSelected = _selectedLevel == level;
+  Widget _buildFilterChip(String label, String? levelFilter) {
+    final isSelected = _selectedLevel == levelFilter;
     return FilterChip(
       label: Text(label),
       selected: isSelected,
       onSelected: (selected) {
-        setState(() => _selectedLevel = selected ? level : null);
+        setState(() {
+          _selectedLevel = selected ? levelFilter : null;
+          _showScrollToTop = false;
+          if (_scrollController.hasClients) {
+            _scrollController.jumpTo(0);
+          }
+        });
       },
       backgroundColor: AppTheme.backgroundInput,
       selectedColor: AppTheme.statusInfo.withValues(alpha: 0.2),
@@ -389,5 +426,123 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildLogsList(List<LogEntry> logs) {
+    return ListView.builder(
+      controller: _scrollController,
+      padding: const EdgeInsets.all(8),
+      itemCount: logs.length,
+      itemBuilder: (context, index) {
+        final log = logs[logs.length - 1 - index];
+        return _buildLogItem(log);
+      },
+    );
+  }
+
+  Widget _buildLogItem(LogEntry log) {
+    final color = _getLogLevelColor(log.level);
+    final icon = _getLogLevelIcon(log.level);
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppTheme.backgroundCard,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: color.withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 16, color: color),
+              const SizedBox(width: 8),
+              Text(
+                log.level.toString().split('.').last.toUpperCase(),
+                style: TextStyle(
+                  color: color,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '${log.service}:${log.line}',
+                style: const TextStyle(
+                  color: AppTheme.textSecondary,
+                  fontSize: 12,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                _formatTime(log.timestamp),
+                style: const TextStyle(
+                  color: AppTheme.textInactive,
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            log.message,
+            style: const TextStyle(
+              color: AppTheme.textPrimary,
+              fontSize: 13,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _getLogLevelColor(Level level) {
+    switch (level) {
+      case Level.error:
+        return AppTheme.statusError;
+      case Level.warning:
+        return AppTheme.statusWarning;
+      case Level.info:
+        return AppTheme.statusInfo;
+      case Level.debug:
+        return AppTheme.textSecondary;
+      default:
+        return AppTheme.textSecondary;
+    }
+  }
+
+  IconData _getLogLevelIcon(Level level) {
+    switch (level) {
+      case Level.error:
+        return Icons.error;
+      case Level.warning:
+        return Icons.warning;
+      case Level.info:
+        return Icons.info;
+      case Level.debug:
+        return Icons.bug_report;
+      default:
+        return Icons.circle;
+    }
+  }
+
+  String _formatTime(DateTime timestamp) {
+    final now = DateTime.now();
+    final difference = now.difference(timestamp);
+
+    if (difference.inSeconds < 60) {
+      return '${difference.inSeconds}s ago';
+    } else if (difference.inMinutes < 60) {
+      return '${difference.inMinutes}m ago';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours}h ago';
+    } else {
+      return '${timestamp.hour.toString().padLeft(2, '0')}:${timestamp.minute.toString().padLeft(2, '0')}';
+    }
   }
 }
