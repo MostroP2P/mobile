@@ -15,14 +15,14 @@ Implementation of a comprehensive logging system for MostroP2P mobile app with i
 - Toggle resets to OFF on every app restart (not persisted)
 - Route configuration
 
-### Phase 2: Logger Service & Integration (Current)
+### Phase 2: Logger Service & Integration (Completed)
 - Logger service with memory buffer and sanitization
 - Riverpod providers
 - Initialize in main.dart
 - Connect UI to actual logger
 - Test with 2 files: RelaysNotifier, SubscriptionManager
 
-### Phase 3: Core Services Migration 
+### Phase 3: Core Services Migration (Current)
 - NostrService
 - MostroService
 - DeepLinkService
@@ -204,6 +204,6 @@ void backgroundMain(SendPort sendPort) async {
 
 ---
 
-**Version**: 2
+**Version**: 3
 **Status**: Phase 2 - Ready
 **Last Updated**: 2026-01-06
