@@ -1236,7 +1236,7 @@
   "backupAccountReminderMessage": "Back up your secret words to recover your account",
 
   "@_comment_validation": "Input validation messages",
-  "invalidKeyFormat": "Invalid key format"
+  "invalidKeyFormat": "Invalid key format",
   
   "@_comment_logging_ui": "Logging UI strings",
   "logCapture": "Log Capture",
