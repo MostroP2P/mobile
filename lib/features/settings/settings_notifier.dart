@@ -151,7 +151,6 @@ class SettingsNotifier extends StateNotifier<Settings> {
 
   Future<void> updateLoggingEnabled(bool newValue) async {
     state = state.copyWith(isLoggingEnabled: newValue);
-    await _saveToPrefs();
   }
 
   Settings get settings => state.copyWith();

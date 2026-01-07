@@ -57,7 +57,6 @@ class Settings {
         'defaultLightningAddress': defaultLightningAddress,
         'blacklistedRelays': blacklistedRelays,
         'userRelays': userRelays,
-        'isLoggingEnabled': isLoggingEnabled,
       };
 
   factory Settings.fromJson(Map<String, dynamic> json) {
@@ -71,7 +70,7 @@ class Settings {
       blacklistedRelays: (json['blacklistedRelays'] as List<dynamic>?)?.cast<String>() ?? [],
       userRelays: (json['userRelays'] as List<dynamic>?)
           ?.cast<Map<String, dynamic>>() ?? [],
-      isLoggingEnabled: json['isLoggingEnabled'] as bool? ?? false,
+      isLoggingEnabled: false,
     );
   }
 }

@@ -7,18 +7,19 @@ Implementation of a comprehensive logging system for MostroP2P mobile app with i
 ## Implementation Phases
 
 
-### Phase 1: UI Components & Translations (Current)
-- Logs screen with filtering and share
+### Phase 1: UI Components & Translations (Completed)
+- Logs screen with filtering (no share button yet)
 - Translations (EN, ES, IT)
-- Settings screen integration (Dev Tools section)
+- Settings screen integration (Dev Tools section after Relays)
 - Logging toggle with performance warning
+- Toggle resets to OFF on every app restart (not persisted)
 - Route configuration
 
-### Phase 2: Logger Service & Integration
+### Phase 2: Logger Service & Integration (Current)
 - Logger service with memory buffer and sanitization
 - Riverpod providers
 - Initialize in main.dart
-- Settings model and notifier updates
+- Connect UI to actual logger
 - Test with 2 files: RelaysNotifier, SubscriptionManager
 
 ### Phase 3: Core Services Migration 
@@ -201,9 +202,8 @@ void backgroundMain(SendPort sendPort) async {
 }
 ```
 
-
 ---
 
-**Version**: 2.0
-**Status**: Phase 1 - Ready for Implementation
+**Version**: 2
+**Status**: Phase 2 - Ready
 **Last Updated**: 2026-01-06
