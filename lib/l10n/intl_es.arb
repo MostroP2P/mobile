@@ -897,7 +897,7 @@
   "currencyInfoText": "Elige la moneda predeterminada para tus órdenes.",
   "lightningAddressInfoText": "Una Dirección Lightning es un identificador similar a un email (ej., usuario@dominio.com) que simplifica recibir pagos de Bitcoin. Establecer una predeterminada aquí la completará automáticamente al crear órdenes de compra, haciendo el proceso más rápido y conveniente.",
   "relaysInfoText": "• Los relays son servidores que ayudan a distribuir tus mensajes a través de la red Nostr.\n\n• Agregar más relays puede mejorar la conectividad y redundancia.\n\n• Los relays no se sincronizan entre sí, por lo que solo aquellos a los que estés conectado recibirán tus mensajes.",
-  "mostroInfoText": "• El Mostro que selecciones será donde publiques tus ofertas.\n\n• En caso de disputa, una persona asignada a ese Mostro será quien la resuelva.",
+  "mostroInfoText": "• Soporta formatos hex y npub (se muestra como hex).\n\n• El Mostro que selecciones será donde publiques tus ofertas.\n\n• En caso de disputa, una persona asignada a ese Mostro será quien la resuelva.",
   
   "@_comment_account_info_dialogs": "Texto de Diálogos de Información de Cuenta",
   "secretWordsInfoText": "• Estas son tus palabras secretas, la única forma de recuperar tu cuenta si pierdes acceso a esta aplicación o quieres usar tu identidad en otra aplicación.\n\n• Escríbelas cuidadosamente y guárdalas en un lugar seguro y privado. Nunca las compartas con nadie.\n\n• Si pierdes estas palabras, perderás permanentemente el acceso a tu cuenta.",
@@ -1209,6 +1209,8 @@
 
   "@_comment_backup_reminder": "Recordatorio de respaldo de cuenta",
   "backupAccountReminder": "Debes respaldar tu cuenta",
-  "backupAccountReminderMessage": "Respalda tus palabras secretas para recuperar tu cuenta"
+  "backupAccountReminderMessage": "Respalda tus palabras secretas para recuperar tu cuenta",
 
+  "@_comment_validation": "Mensajes de validación de entrada",
+  "invalidKeyFormat": "Formato de clave inválido"
 }

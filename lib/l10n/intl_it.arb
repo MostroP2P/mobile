@@ -953,7 +953,7 @@
   "currencyInfoText": "Scegli la valuta predefinita per i tuoi ordini.",
   "lightningAddressInfoText": "Un Indirizzo Lightning è un identificatore simile a un'email (es., utente@dominio.com) che semplifica la ricezione di pagamenti Bitcoin. Impostarne uno predefinito qui lo completerà automaticamente durante la creazione di ordini di acquisto, rendendo il processo più veloce e conveniente.",
   "relaysInfoText": "• I relay sono server che aiutano a distribuire i tuoi messaggi attraverso la rete Nostr.\n\n• Aggiungere più relay può migliorare la connettività e la ridondanza.\n\n• I relay non si sincronizzano tra loro, quindi solo quelli a cui sei connesso riceveranno i tuoi messaggi.",
-  "mostroInfoText": "• Il Mostro che selezioni sarà quello dove pubblicherai le tue offerte.\n\n• In caso di disputa, una persona assegnata a quel Mostro sarà quella che la risolverà.",
+  "mostroInfoText": "• Supporta formati hex e npub (mostra come hex).\n\n• Il Mostro che selezioni sarà quello dove pubblicherai le tue offerte.\n\n• In caso di disputa, una persona assegnata a quel Mostro sarà quella che la risolverà.",
   
   "@_comment_account_info_dialogs": "Testo Dialoghi Informazioni Account",
   "secretWordsInfoText": "• Queste sono le tue parole segrete, l'unico modo per recuperare il tuo account se perdi l'accesso a questa app o vuoi usare la tua identità in un'altra app.\n\n• Scrivile attentamente e conservale in un luogo sicuro e privato. Non condividerle mai con nessuno.\n\n• Se perdi queste parole, perderai permanentemente l'accesso al tuo account.",
@@ -1264,5 +1264,8 @@
 
   "@_comment_backup_reminder": "Promemoria backup account",
   "backupAccountReminder": "Devi fare il backup del tuo account",
-  "backupAccountReminderMessage": "Salva le tue parole segrete per recuperare il tuo account"
+  "backupAccountReminderMessage": "Salva le tue parole segrete per recuperare il tuo account",
+
+  "@_comment_validation": "Messaggi di convalida input",
+  "invalidKeyFormat": "Formato chiave non valido"
 }
