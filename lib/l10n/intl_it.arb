@@ -1264,5 +1264,62 @@
 
   "@_comment_backup_reminder": "Promemoria backup account",
   "backupAccountReminder": "Devi fare il backup del tuo account",
-  "backupAccountReminderMessage": "Salva le tue parole segrete per recuperare il tuo account"
+  "backupAccountReminderMessage": "Salva le tue parole segrete per recuperare il tuo account",
+
+  "@_comment_logging_ui": "Stringhe interfaccia logging",
+  "logCapture": "Acquisizione Log",
+  "capturingLogs": "Acquisizione log in corso",
+  "captureDisabled": "Acquisizione disabilitata",
+  "performanceWarning": "Avviso Prestazioni",
+  "performanceWarningMessage": "L'abilitazione dell'acquisizione dei log potrebbe influire sulle prestazioni dell'applicazione. Attiva questa funzione solo durante il debug o la risoluzione dei problemi.",
+  "enable": "Abilita",
+  "logsReport": "Rapporto Log",
+  "clearLogs": "Cancella Log",
+  "totalLogs": "{count} log",
+  "@totalLogs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "maxEntries": "Max {count} voci",
+  "@maxEntries": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchLogs": "Cerca log...",
+  "allLevels": "Tutti",
+  "errors": "Errori",
+  "warnings": "Avvisi",
+  "info": "Info",
+  "debug": "Debug",
+  "noLogsAvailable": "Nessun log disponibile",
+  "logsWillAppearHere": "I log appariranno qui quando l'acquisizione è abilitata",
+  "copyLog": "Copia log",
+  "logCopied": "Log copiato negli appunti",
+  "saveToDevice": "Salva su Dispositivo",
+  "saveFile": "Salva File",
+  "shareReport": "Condividi Rapporto",
+  "shareLogs": "Condividi Log",
+  "logsExportTitle": "Esporta Log",
+  "exportFailed": "Esportazione fallita",
+  "logsSavedTo": "Log salvati in {path}",
+  "@logsSavedTo": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "saveFailed": "Salvataggio fallito",
+  "clearLogsConfirmation": "Questo eliminerà permanentemente tutti i log acquisiti. Questa azione non può essere annullata.",
+  "logsCleared": "Log cancellati",
+  "shareFeatureComingSoon": "Funzione di condivisione disponibile nella Fase 2",
+  "devTools": "Strumenti di Sviluppo",
+  "devToolsWarning": "Solo per debug e risoluzione problemi",
+  "viewAndExportLogs": "Visualizza ed esporta i log dell'applicazione"
 }

@@ -1233,6 +1233,63 @@
 
   "@_comment_backup_reminder": "Backup reminder notification",
   "backupAccountReminder": "You must back up your account",
-  "backupAccountReminderMessage": "Save your secret words to recover your account"
+  "backupAccountReminderMessage": "Save your secret words to recover your account",
+
+  "@_comment_logging_ui": "Logging UI strings",
+  "logCapture": "Log Capture",
+  "capturingLogs": "Capturing logs",
+  "captureDisabled": "Capture disabled",
+  "performanceWarning": "Performance Warning",
+  "performanceWarningMessage": "Enabling log capture may impact application performance. Only enable this feature when debugging or troubleshooting issues.",
+  "enable": "Enable",
+  "logsReport": "Logs Report",
+  "clearLogs": "Clear Logs",
+  "totalLogs": "{count} logs",
+  "@totalLogs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "maxEntries": "Max {count} entries",
+  "@maxEntries": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchLogs": "Search logs...",
+  "allLevels": "All",
+  "errors": "Errors",
+  "warnings": "Warnings",
+  "info": "Info",
+  "debug": "Debug",
+  "noLogsAvailable": "No logs available",
+  "logsWillAppearHere": "Logs will appear here when log capture is enabled",
+  "copyLog": "Copy log",
+  "logCopied": "Log copied to clipboard",
+  "saveToDevice": "Save to Device",
+  "saveFile": "Save File",
+  "shareReport": "Share Report",
+  "shareLogs": "Share Logs",
+  "logsExportTitle": "Logs Export",
+  "exportFailed": "Export failed",
+  "logsSavedTo": "Logs saved to {path}",
+  "@logsSavedTo": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "saveFailed": "Save failed",
+  "clearLogsConfirmation": "This will permanently delete all captured logs. This action cannot be undone.",
+  "logsCleared": "Logs cleared",
+  "shareFeatureComingSoon": "Share feature coming in Phase 2",
+  "devTools": "Dev Tools",
+  "devToolsWarning": "For debugging and troubleshooting only",
+  "viewAndExportLogs": "View and export application logs"
 
 }
