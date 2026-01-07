@@ -1267,7 +1267,7 @@
   "backupAccountReminderMessage": "Salva le tue parole segrete per recuperare il tuo account",
 
   "@_comment_validation": "Messaggi di convalida input",
-  "invalidKeyFormat": "Formato chiave non valido"
+  "invalidKeyFormat": "Formato chiave non valido",
 
   "@_comment_logging_ui": "Stringhe interfaccia logging",
   "logCapture": "Acquisizione Log",
