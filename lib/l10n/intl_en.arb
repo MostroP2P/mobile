@@ -920,7 +920,7 @@
   "currencyInfoText": "Choose the default currency for your orders.",
   "lightningAddressInfoText": "A Lightning Address is an email-like identifier (e.g., user@domain.com) that simplifies receiving Bitcoin payments. Setting a default one here will automatically populate it when creating buy orders, making the process faster and more convenient.",
   "relaysInfoText": "• Relays are servers that help distribute your messages across the Nostr network.\n\n• Adding more relays can improve connectivity and redundancy.\n\n• Relays don't sync with each other, so only those you're connected to will receive your messages.",
-  "mostroInfoText": "• The Mostro you select will be the one where you post your offers.\n\n• In case of a dispute, a human assigned to that Mostro will be the one to resolve it.",
+  "mostroInfoText": "• Supports hex and npub formats (displays as hex).\n\n• The Mostro you select will be the one where you post your offers.\n\n• In case of a dispute, a human assigned to that Mostro will be the one to resolve it.",
   
   "@_comment_account_info_dialogs": "Account Screen Info Dialog Text",
   "secretWordsInfoText": "• These are your secret words, the only way to recover your account if you lose access to this app or want to use your identity in another app.\n\n• Write them down carefully and store them in a secure, private location. Never share them with anyone.\n\n• If you lose these words, you'll permanently lose access to your account.",
@@ -1233,8 +1233,11 @@
 
   "@_comment_backup_reminder": "Backup reminder notification",
   "backupAccountReminder": "You must back up your account",
-  "backupAccountReminderMessage": "Save your secret words to recover your account",
+  "backupAccountReminderMessage": "Back up your secret words to recover your account",
 
+  "@_comment_validation": "Input validation messages",
+  "invalidKeyFormat": "Invalid key format"
+  
   "@_comment_logging_ui": "Logging UI strings",
   "logCapture": "Log Capture",
   "capturingLogs": "Capturing logs",
