@@ -127,9 +127,13 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
     );
 
     if (confirmed == true && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(S.of(context)!.logsCleared)),
-      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(S.of(context)!.logsCleared)),
+          );
+        }
+      });
     }
   }
 
