@@ -96,12 +96,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   _buildLightningAddressCard(context),
                   const SizedBox(height: 16),
 
-                  // Dev Tools Card
-                  _buildDevToolsCard(context),
-                  const SizedBox(height: 16),
-
                   // Relays Card
                   _buildRelaysCard(context),
+                  const SizedBox(height: 16),
+
+                  // Dev Tools Card
+                  _buildDevToolsCard(context),
                   const SizedBox(height: 16),
 
                   // Mostro Card

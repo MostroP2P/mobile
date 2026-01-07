@@ -133,13 +133,6 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
     }
   }
 
-  Future<void> _shareLogs() async {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(S.of(context)!.shareFeatureComingSoon)),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final settings = ref.watch(settingsProvider);
@@ -178,7 +171,6 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
               Expanded(
                 child: _buildEmptyState(),
               ),
-              _buildActionButtons(logs.length),
             ],
           ),
         ),
@@ -388,37 +380,6 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
                 fontSize: 14,
               ),
               textAlign: TextAlign.center,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionButtons(int logsCount) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.backgroundCard,
-        border: Border(
-          top: BorderSide(
-            color: Colors.white.withValues(alpha: 0.1),
-            width: 1,
-          ),
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: logsCount == 0 ? null : _shareLogs,
-              icon: const Icon(Icons.share),
-              label: Text(S.of(context)!.shareLogs),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppTheme.activeColor,
-                side: BorderSide(color: AppTheme.activeColor.withValues(alpha: 0.5)),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
             ),
           ),
         ],
