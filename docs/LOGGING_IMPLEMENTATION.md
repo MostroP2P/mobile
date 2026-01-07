@@ -4,6 +4,46 @@
 
 Implementation of a comprehensive logging system for MostroP2P mobile app with in-memory capture, background isolate support, privacy sanitization, and export capabilities.
 
+## Implementation Phases
+
+
+### Phase 1: UI Components & Translations (Current)
+- Logs screen with filtering and share
+- Translations (EN, ES, IT)
+- Settings screen integration (Dev Tools section)
+- Logging toggle with performance warning
+- Route configuration
+
+### Phase 2: Logger Service & Integration
+- Logger service with memory buffer and sanitization
+- Riverpod providers
+- Initialize in main.dart
+- Settings model and notifier updates
+- Test with 2 files: RelaysNotifier, SubscriptionManager
+
+### Phase 3: Core Services Migration 
+- NostrService
+- MostroService
+- DeepLinkService
+- 2 additional core files
+
+### Phase 4: Background Services 
+- Mobile and desktop background service
+- Isolate logging
+
+### Phase 5: File Export & Persistence 
+- Auto-save to storage
+- Restore on app restart
+- Generate .txt files
+- Folder picker and permissions
+
+### Phase 6: UI Enhancements 
+- Recording indicator widget
+- Statistics and controls
+
+### Phase 7: Remaining Migrations
+- 25+ files with logs
+
 ## Design Approach
 
 ### Why This Architecture?
@@ -114,41 +154,6 @@ void main() async {
 }
 ```
 
-### 4. Privacy Sanitization
-
-The `cleanMessage()` function automatically redacts:
-
-| Pattern | Replacement | Example |
-|---------|-------------|---------|
-| `nsec[0-9a-z]+` | `[PRIVATE_KEY]` | `nsec1abc...` → `[PRIVATE_KEY]` |
-| `"privateKey":"..."` | `"privateKey":"[REDACTED]"` | JSON field redacted |
-| `"mnemonic":"..."` | `"mnemonic":"[REDACTED]"` | Seed phrase redacted |
-| ANSI codes | Removed | Color/formatting stripped |
-| Emojis | Removed | All emoji ranges |
-
-### 5. File Storage & Permissions
-
-**Android/iOS**:
-```dart
-// External storage (requires permissions in future)
-final directory = await getExternalStorageDirectory();
-final logsDir = Directory('${directory.path}/MostroLogs');
-```
-
-**PERMISSIONS REQUIRED** (not yet implemented):
-- Android: `WRITE_EXTERNAL_STORAGE` permission
-- iOS: Automatic with app sandbox
-
-**Desktop/Web**:
-```dart
-// Application documents (no special permissions)
-final directory = await getApplicationDocumentsDirectory();
-```
-
-**Storage location display**:
-- UI shows storage path to user
-- Configurable via `Settings.customLogStorageDirectory`
-
 ## Migration Example
 
 ### Service Integration
@@ -199,5 +204,6 @@ void backgroundMain(SendPort sendPort) async {
 
 ---
 
-**Version**: 1.0
-**Status**: Phase 1 - Planning Complete
+**Version**: 2.0
+**Status**: Phase 1 - Ready for Implementation
+**Last Updated**: 2026-01-06
