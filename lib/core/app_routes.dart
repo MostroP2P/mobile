@@ -24,6 +24,7 @@ import 'package:mostro_mobile/features/walkthrough/screens/walkthrough_screen.da
 import 'package:mostro_mobile/features/disputes/screens/dispute_chat_screen.dart';
 
 import 'package:mostro_mobile/features/notifications/screens/notifications_screen.dart';
+import 'package:mostro_mobile/features/logs/screens/logs_screen.dart';
 
 import 'package:mostro_mobile/features/walkthrough/providers/first_run_provider.dart';
 import 'package:mostro_mobile/shared/widgets/navigation_listener_widget.dart';
@@ -282,6 +283,15 @@ GoRouter createRouter(WidgetRef ref) {
               context: context,
               state: state,
               child: const NotificationsScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/logs',
+            pageBuilder: (context, state) =>
+                buildPageWithDefaultTransition<void>(
+              context: context,
+              state: state,
+              child: const LogsScreen(),
             ),
           ),
         ],
