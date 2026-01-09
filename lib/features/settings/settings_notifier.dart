@@ -4,6 +4,7 @@ import 'package:logger/logger.dart';
 import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/enums/storage_keys.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsNotifier extends StateNotifier<Settings> {
@@ -151,6 +152,7 @@ class SettingsNotifier extends StateNotifier<Settings> {
 
   Future<void> updateLoggingEnabled(bool newValue) async {
     state = state.copyWith(isLoggingEnabled: newValue);
+    MemoryLogOutput.isLoggingEnabled = newValue;
   }
 
   Settings get settings => state.copyWith();

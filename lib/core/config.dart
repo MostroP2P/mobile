@@ -46,5 +46,4 @@ class Config {
   // Logger configuration
   static const int logMaxEntries = 1000;
   static const int logBatchDeleteSize = 100;
-  static bool fullLogsInfo = true; // false = simple logs, true = PrettyPrinter
 }
