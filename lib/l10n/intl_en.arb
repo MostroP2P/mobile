@@ -1228,39 +1228,12 @@
   "failedToLoadImage": "Failed to load image",
   "imageDecryptionError": "Error decrypting image",
   "imageNotAvailable": "Image not available",
-  "couldNotOpenFile": "Could not open file: {error}",
-  "errorOpeningFile": "Error opening file: {error}",
-  "errorUploadingFile": "Error uploading file: {error}",
-  "failedToUpdateInvoice": "Failed to update invoice: {error}",
-  "@failedToUpdateInvoice": {
-  "placeholders": {
-    "error": { "type": "String" }
-   }
- },
-
-  "failedToCancelOrder": "Failed to cancel order: {error}",
-  "@failedToCancelOrder": {
-  "placeholders": {
-    "error": { "type": "String" }
-  }
- },
-
-  "@errorUploadingFile": {
-  "placeholders": {
-    "error": { "type": "String" }
-  }
-},
-  "@couldNotOpenFile": {
-   "placeholders": {
-    "error": { "type": "String" }
-   }
-  },
-  "@errorOpeningFile": {
-   "placeholders": {
-    "error": { "type": "String" }
-   }
-  },
-
+  "couldNotOpenFile": "Could not open file.",
+  "errorOpeningFile": "Error opening file.",
+  "errorUploadingFile": "Error uploading file.",
+  "failedToUpdateInvoice": "Failed to update invoice.",
+  "failedToCancelOrder": "Failed to cancel order.",
+  
   "@_comment_backup_reminder": "Backup reminder notification",
   "backupAccountReminder": "You must back up your account",
   "backupAccountReminderMessage": "Back up your secret words to recover your account",

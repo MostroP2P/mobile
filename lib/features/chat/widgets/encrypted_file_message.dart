@@ -497,7 +497,7 @@ class _EncryptedFileMessageState extends ConsumerState<EncryptedFileMessage> {
         if (result.type != ResultType.done) {
           showTopSnackBar(
             context,
-            S.of(context)!.couldNotOpenFile(result.message),
+            S.of(context)!.couldNotOpenFile,
              backgroundColor: Colors.orange,
             duration: const Duration(seconds: 3),
      );
@@ -507,7 +507,7 @@ class _EncryptedFileMessageState extends ConsumerState<EncryptedFileMessage> {
       if (mounted) {
         showTopSnackBar(
           context,
-          S.of(context)!.errorOpeningFile(e.toString()),
+          S.of(context)!.errorOpeningFile,
           backgroundColor: Colors.red,
           );
       }

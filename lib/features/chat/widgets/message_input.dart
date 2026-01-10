@@ -130,7 +130,7 @@ class _MessageInputState extends ConsumerState<MessageInput> {
       if (mounted) {
         showTopSnackBar(
           context,
-          S.of(context)!.errorUploadingFile(e.toString()),
+          S.of(context)!.errorUploadingFile,
            backgroundColor: Colors.red,
      );
       }
