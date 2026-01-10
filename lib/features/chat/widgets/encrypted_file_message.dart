@@ -115,7 +115,7 @@ class _EncryptedFileMessageState extends ConsumerState<EncryptedFileMessage> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Failed to load image',
+                        S.of(context)!.failedToLoadImage,
                         style: TextStyle(
                           color: AppTheme.textSecondary,
                           fontSize: 12,
@@ -367,7 +367,7 @@ class _EncryptedFileMessageState extends ConsumerState<EncryptedFileMessage> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Failed to load file',
+            S.of(context)!.error,
             style: TextStyle(
               fontSize: 12,
               color: Colors.red,
@@ -497,7 +497,7 @@ class _EncryptedFileMessageState extends ConsumerState<EncryptedFileMessage> {
         if (result.type != ResultType.done) {
           showTopSnackBar(
             context,
-            'Could not open file: ${result.message}',
+            S.of(context)!.couldNotOpenFile(result.message),
              backgroundColor: Colors.orange,
             duration: const Duration(seconds: 3),
      );
@@ -507,7 +507,7 @@ class _EncryptedFileMessageState extends ConsumerState<EncryptedFileMessage> {
       if (mounted) {
         showTopSnackBar(
           context,
-          'Error opening file: $e',
+          S.of(context)!.errorOpeningFile(e.toString()),
           backgroundColor: Colors.red,
           );
       }

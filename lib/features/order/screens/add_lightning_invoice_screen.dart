@@ -66,7 +66,7 @@ class _AddLightningInvoiceScreenState
                           if (context.mounted) {
                              showTopSnackBar(
                               context,
-                              'Failed to update invoice: ${e.toString()}',
+                              S.of(context)!.failedToUpdateInvoice(e.toString()),
                               );
                           }
                         }
@@ -82,7 +82,7 @@ class _AddLightningInvoiceScreenState
                         if (context.mounted) {
                            showTopSnackBar(
                             context,
-                            'Failed to cancel order: ${e.toString()}',
+                            S.of(context)!.failedToCancelOrder(e.toString()),
                          );
                         }
                       }
