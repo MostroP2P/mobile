@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mostro_mobile/common/top_snackbar.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
@@ -95,11 +96,9 @@ class NotificationListenerWidget extends ConsumerWidget {
           message = S.of(context)!.notificationGenericTitle;
         }
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            duration: const Duration(seconds: 2), // Show for 2 seconds
-          ),
+        showTopSnackBar(
+          context,
+          message,
         );
         // Clear notification after showing to prevent repetition
         ref.read(notificationActionsProvider.notifier).clearTemporary();

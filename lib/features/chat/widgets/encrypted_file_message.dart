@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'dart:convert';
 import 'dart:io';
+import 'package:mostro_mobile/common/top_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dart_nostr/dart_nostr.dart';
@@ -114,7 +115,7 @@ class _EncryptedFileMessageState extends ConsumerState<EncryptedFileMessage> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Failed to load image',
+                        S.of(context)!.failedToLoadImage,
                         style: TextStyle(
                           color: AppTheme.textSecondary,
                           fontSize: 12,
@@ -366,7 +367,7 @@ class _EncryptedFileMessageState extends ConsumerState<EncryptedFileMessage> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Failed to load file',
+            S.of(context)!.error,
             style: TextStyle(
               fontSize: 12,
               color: Colors.red,
@@ -494,23 +495,21 @@ class _EncryptedFileMessageState extends ConsumerState<EncryptedFileMessage> {
       
       if (mounted) {
         if (result.type != ResultType.done) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Could not open file: ${result.message}'),
-              backgroundColor: Colors.orange,
-              duration: const Duration(seconds: 3),
-            ),
-          );
+          showTopSnackBar(
+            context,
+            S.of(context)!.couldNotOpenFile,
+             backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 3),
+     );
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error opening file: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        showTopSnackBar(
+          context,
+          S.of(context)!.errorOpeningFile,
+          backgroundColor: Colors.red,
+          );
       }
     }
   }

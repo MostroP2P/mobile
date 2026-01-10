@@ -1,3 +1,4 @@
+import 'package:mostro_mobile/common/top_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
@@ -20,9 +21,10 @@ class LoginScreen extends HookConsumerWidget {
       if (state is AuthAuthenticated) {
         context.go('/');
       } else if (state is AuthFailure) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(state.error)),
-        );
+        showTopSnackBar(
+          context,
+          state.error,
+          );
       }
     });
 

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:mostro_mobile/common/top_snackbar.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logger/logger.dart';
@@ -147,16 +148,14 @@ class DeepLinkHandler {
 
   /// Shows an error snack bar
   void _showErrorSnackBar(BuildContext? context, String message) {
-    if (context == null) return;
+  if (context == null) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-        duration: const Duration(seconds: 3),
-      ),
-    );
-  }
+  showTopSnackBar(
+    context,
+    message,
+    backgroundColor: Colors.red,
+  );
+}
 
   /// Disposes the deep link handler
   void dispose() {

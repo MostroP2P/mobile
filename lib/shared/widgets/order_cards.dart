@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mostro_mobile/common/top_snackbar.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
@@ -229,14 +230,12 @@ class OrderIdCard extends StatelessWidget {
                   size: 20,
                 ),
                 onPressed: () {
-                  Clipboard.setData(ClipboardData(text: orderId));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(S.of(context)!.orderIdCopiedMessage),
-                      duration: Duration(seconds: 2),
-                    ),
+                Clipboard.setData(ClipboardData(text: orderId));
+                  showTopSnackBar(
+                    context,
+                    S.of(context)!.orderIdCopiedMessage,
                   );
-                },
+              },
               ),
             ],
           ),

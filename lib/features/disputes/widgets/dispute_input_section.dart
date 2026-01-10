@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mostro_mobile/common/top_snackbar.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
@@ -127,21 +128,19 @@ class _DisputeInputSectionState extends State<DisputeInputSection> {
       await Future.delayed(const Duration(milliseconds: 500));
       
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Message sent: $message'),
-            backgroundColor: Colors.green,
-          ),
-        );
+         showTopSnackBar(
+           context,
+          'Message sent: $message',
+          backgroundColor: Colors.green,
+          );
       }
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to send message: $error'),
+         showTopSnackBar(
+           context,
+           'Failed to send message: $error',
             backgroundColor: Colors.red,
-          ),
-        );
+     );
       }
     } finally {
       if (mounted) {

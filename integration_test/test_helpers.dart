@@ -188,6 +188,10 @@ class FakeSecureStorage implements FlutterSecureStorage {
     // TODO: implement containsKey
     throw UnimplementedError();
   }
+  final Map<String, List<ValueChanged<String?>>> _listeners = {};
+
+  @override
+  Map<String, List<ValueChanged<String?>>> get getListeners => _listeners;
 
   @override
   // TODO: implement iOptions

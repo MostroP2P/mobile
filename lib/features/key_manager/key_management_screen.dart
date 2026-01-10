@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:mostro_mobile/common/top_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -90,15 +91,19 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
         await keyManager.importMnemonic(importValue);
         await _loadKeys();
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(S.of(context)!.keyImportedSuccessfully)),
-          );
+          showTopSnackBar(
+            context,
+            S.of(context)!.keyImportedSuccessfully,
+            backgroundColor: Colors.green,
+     );
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(S.of(context)!.importFailed(e.toString()))),
-          );
+          showTopSnackBar(
+            context,
+            S.of(context)!.importFailed(e.toString()),
+            backgroundColor: Colors.red,
+      );
         }
       }
     }

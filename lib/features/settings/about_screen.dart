@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mostro_mobile/common/top_snackbar.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -732,13 +733,11 @@ class AboutScreen extends ConsumerWidget {
     }
   }
 
-  void _showErrorSnackBar(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppTheme.statusError,
-        duration: const Duration(seconds: 3),
-      ),
+   void _showErrorSnackBar(BuildContext context, String message) {
+     showTopSnackBar(
+      context,
+      message,
+      backgroundColor: AppTheme.statusError,
     );
   }
 
@@ -865,13 +864,11 @@ class AboutScreen extends ConsumerWidget {
   void _copyToClipboard(BuildContext context, String text) {
     Clipboard.setData(ClipboardData(text: text));
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(S.of(context)!.copiedToClipboard),
-          backgroundColor: AppTheme.statusSuccess,
-          duration: const Duration(seconds: 2),
-        ),
-      );
+       showTopSnackBar(
+         context,
+         S.of(context)!.copiedToClipboard,
+         backgroundColor: AppTheme.statusSuccess,
+     );
     }
   }
 }

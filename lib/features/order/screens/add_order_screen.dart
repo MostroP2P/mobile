@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mostro_mobile/common/top_snackbar.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/order.dart';
@@ -391,11 +392,9 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
       final selectedFiatCode = ref.read(selectedFiatCodeProvider);
 
       if (selectedFiatCode == null || selectedFiatCode.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(S.of(context)!.pleaseSelectCurrency),
-            duration: const Duration(seconds: 2),
-          ),
+         showTopSnackBar(
+           context,
+          S.of(context)!.pleaseSelectCurrency,
         );
         return;
       }
@@ -404,12 +403,10 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
       final fiatCode = selectedFiatCode;
 
       if (_selectedPaymentMethods.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(S.of(context)!.pleaseSelectPaymentMethod),
-            duration: const Duration(seconds: 2),
-          ),
-        );
+         showTopSnackBar(
+          context,
+          S.of(context)!.pleaseSelectPaymentMethod,
+         );
         return;
       }
 
@@ -429,13 +426,11 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
       if (!exchangeRateAsync.hasValue || mostroInstance == null) {
         debugPrint(
             'Submission blocked: Required data not available - Exchange rate: ${exchangeRateAsync.hasValue}, Mostro instance: ${mostroInstance != null}');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(S.of(context)!.exchangeRateNotAvailable),
-            duration: const Duration(seconds: 3),
-            backgroundColor: Colors.orange.withValues(alpha: 0.8),
-          ),
-        );
+         showTopSnackBar(
+           context,
+           S.of(context)!.exchangeRateNotAvailable,
+           backgroundColor: Colors.orange.withValues(alpha: 0.8),
+         );
         return;
       }
 

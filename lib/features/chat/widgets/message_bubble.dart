@@ -1,4 +1,5 @@
 import 'package:dart_nostr/nostr/model/event/event.dart';
+import 'package:mostro_mobile/common/top_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -154,18 +155,12 @@ class MessageBubble extends ConsumerWidget {
     // Only copy if text is not empty
     if (text.isNotEmpty) {
       Clipboard.setData(ClipboardData(text: text));
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(S.of(context)!.messageCopiedToClipboard),
-          duration: const Duration(seconds: 2),
-          backgroundColor: AppTheme.backgroundCard,
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.all(16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ),
-      );
+      showTopSnackBar(
+           context,
+           S.of(context)!.messageCopiedToClipboard,
+           backgroundColor: AppTheme.backgroundCard,
+           duration: const Duration(seconds: 2),
+        );
     }
   }
   
