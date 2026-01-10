@@ -77,11 +77,7 @@ class _RateCounterpartScreenState extends ConsumerState<RateCounterpartScreen> {
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.mostroGreen,
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 30),
                 ),
                 onPressed: _rating > 0 ? _submitRating : null,
                 child: Text(S.of(context)!.submitRating,
