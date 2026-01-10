@@ -117,6 +117,9 @@ class AppTheme {
           fixedSize: const Size.fromHeight(48),
           minimumSize: Size.zero,
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
@@ -135,6 +138,9 @@ class AppTheme {
           textStyle: GoogleFonts.robotoCondensed(
             fontWeight: FontWeight.w500,
             fontSize: 14.0,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
           ),
         ),
       ),
