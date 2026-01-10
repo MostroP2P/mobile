@@ -1,4 +1,5 @@
 import 'package:flutter/gestures.dart';
+import 'package:mostro_mobile/common/top_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
@@ -35,15 +36,16 @@ class _ClickableTextState extends State<ClickableText> {
   }
 
   void _handleTap() async {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-            '${widget.leftText} ${widget.clickableText} copied to clipboard'),
-        duration: const Duration(seconds: 2),
-      ),
-    );
-    await Clipboard.setData(ClipboardData(text: widget.clickableText));
-  }
+  await Clipboard.setData(
+    ClipboardData(text: widget.clickableText),
+  );
+  if (!mounted) return;
+
+  showTopSnackBar(
+    context,
+    '${widget.leftText} ${widget.clickableText} copied to clipboard',
+  );
+}
 
   @override
   Widget build(BuildContext context) {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mostro_mobile/common/top_snackbar.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
@@ -74,12 +75,11 @@ class NotificationsActionsMenu extends ConsumerWidget {
     switch (action) {
       case 'mark_all_read':
         repository.markAllAsRead();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(S.of(context)!.markAllAsRead),
-            backgroundColor: AppTheme.statusSuccess,
-          ),
-        );
+         showTopSnackBar(
+           context,
+           S.of(context)!.markAllAsRead,
+           backgroundColor: AppTheme.statusSuccess,
+     );
         break;
       case 'clear_all':
         _showClearAllConfirmationDialog(context, ref);
@@ -112,12 +112,11 @@ class NotificationsActionsMenu extends ConsumerWidget {
             onPressed: () {
               ref.read(notificationsDatabaseProvider).clearAll();
               Navigator.of(context).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(S.of(context)!.clearAll),
-                  backgroundColor: AppTheme.statusError,
-                ),
-              );
+              showTopSnackBar(
+                context,
+                S.of(context)!.clearAll,
+                backgroundColor: AppTheme.statusError,
+       );
             },
             child: Text(
               S.of(context)!.clearAll,

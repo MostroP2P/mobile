@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mostro_mobile/common/top_snackbar.dart';
 import 'package:flutter/services.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
@@ -88,13 +89,12 @@ class DisputeMessageBubble extends StatelessWidget {
 
   void _copyToClipboard(BuildContext context, String text) {
     Clipboard.setData(ClipboardData(text: text));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(S.of(context)?.messageCopiedToClipboard ?? 'Message copied to clipboard'),
-        duration: const Duration(seconds: 1),
-        backgroundColor: Colors.green,
-      ),
-    );
+     showTopSnackBar(
+      context,
+      S.of(context)?.messageCopiedToClipboard ?? 'Message copied to clipboard',
+      backgroundColor: Colors.green,
+      duration: const Duration(seconds: 1),
+   );
   }
 
   String _formatTime(DateTime dateTime) {

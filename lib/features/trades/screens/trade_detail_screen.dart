@@ -722,29 +722,26 @@ class TradeDetailScreen extends ConsumerWidget {
             final success = await repository.createDispute(orderId);
 
             if (success && context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(S.of(context)!.disputeCreatedSuccessfully),
-                  backgroundColor: AppTheme.mostroGreen,
-                ),
-              );
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+              content: Text(S.of(context)!.disputeCreatedSuccessfully),
+              ),
+           );
             } else if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(S.of(context)!.disputeCreationFailed),
-                  backgroundColor: AppTheme.red1,
-                ),
-              );
+               SnackBar(
+               content: Text(S.of(context)!.disputeCreationFailed),
+               ),
+             );
             }
           } catch (e) {
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(S
-                      .of(context)!
-                      .disputeCreationErrorWithMessage(e.toString())),
-                  backgroundColor: AppTheme.red1,
+                content: Text(
+                S.of(context)!.disputeCreationErrorWithMessage(e.toString()),
                 ),
+               ),
               );
             }
           }

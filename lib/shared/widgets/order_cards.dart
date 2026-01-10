@@ -228,15 +228,15 @@ class OrderIdCard extends StatelessWidget {
                   color: Colors.white70,
                   size: 20,
                 ),
-                onPressed: () {
-                  Clipboard.setData(ClipboardData(text: orderId));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(S.of(context)!.orderIdCopiedMessage),
-                      duration: Duration(seconds: 2),
-                    ),
-                  );
-                },
+                 onPressed: () {
+                 Clipboard.setData(ClipboardData(text: orderId));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                   content: Text(S.of(context)!.orderIdCopiedMessage),
+                   duration: const Duration(seconds: 2),
+                   ),
+               );
+               },
               ),
             ],
           ),

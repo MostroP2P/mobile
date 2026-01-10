@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:mostro_mobile/common/top_snackbar.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:mime/mime.dart';
@@ -127,12 +128,11 @@ class _MessageInputState extends ConsumerState<MessageInput> {
     } catch (e) {
       // Show error to user
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error uploading file: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        showTopSnackBar(
+          context,
+          'Error uploading file: $e',
+           backgroundColor: Colors.red,
+     );
       }
     } finally {
       if (mounted) {

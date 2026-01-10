@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'dart:convert';
 import 'dart:io';
+import 'package:mostro_mobile/common/top_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dart_nostr/dart_nostr.dart';
@@ -373,23 +374,22 @@ class _EncryptedImageMessageState extends ConsumerState<EncryptedImageMessage> {
       
       if (mounted) {
         if (result.type != ResultType.done) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('$couldNotOpenMsg: ${result.message}'),
-              backgroundColor: Colors.orange,
-              duration: const Duration(seconds: 3),
-            ),
-          );
+          showTopSnackBar(
+            context,
+            '$couldNotOpenMsg: ${result.message}',
+             backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 3),
+         );
+
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('$errorOpeningMsg: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        showTopSnackBar(
+         context,
+         '$errorOpeningMsg: $e',
+         backgroundColor: Colors.red,
+   );
       }
     }
   }

@@ -1,3 +1,4 @@
+import 'package:mostro_mobile/common/top_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -39,10 +40,11 @@ class RegisterScreen extends HookConsumerWidget {
         // Navigate to home after successful registration
         context.go('/');
       } else if (state is AuthFailure) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(state.error)),
-        );
-      }
+        showTopSnackBar(
+           context,
+           state.error,
+      );
+     }
     });
 
     // Trigger biometrics check on first build

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mostro_mobile/common/top_snackbar.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
@@ -63,12 +64,10 @@ class _AddLightningInvoiceScreenState
                           if (context.mounted) context.go('/');
                         } catch (e) {
                           if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                    'Failed to update invoice: ${e.toString()}'),
-                              ),
-                            );
+                             showTopSnackBar(
+                              context,
+                              'Failed to update invoice: ${e.toString()}',
+                              );
                           }
                         }
                       }
@@ -81,12 +80,10 @@ class _AddLightningInvoiceScreenState
                         if (context.mounted) context.go('/');
                       } catch (e) {
                         if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                  'Failed to cancel order: ${e.toString()}'),
-                            ),
-                          );
+                           showTopSnackBar(
+                            context,
+                            'Failed to cancel order: ${e.toString()}',
+                         );
                         }
                       }
                     },
