@@ -88,9 +88,6 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
               label: Text(S.of(context)!.copy),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.mostroGreen,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
               ),
             ),
             ElevatedButton.icon(
@@ -127,9 +124,6 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
               label: Text(S.of(context)!.share),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.mostroGreen,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
               ),
             ),
           ],
@@ -143,9 +137,6 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
               style: ElevatedButton.styleFrom(
                 foregroundColor: Colors.white,
                 backgroundColor: Colors.red,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
               ),
               child: Text(S.of(context)!.cancel),
             ),

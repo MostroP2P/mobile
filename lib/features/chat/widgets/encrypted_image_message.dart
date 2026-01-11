@@ -149,7 +149,7 @@ class _EncryptedImageMessageState extends ConsumerState<EncryptedImageMessage> {
                     Icon(
                       Icons.image,
                       size: 12,
-                      color: AppTheme.textSecondary.withValues(alpha: 153),
+                      color: AppTheme.textSecondary.withValues(alpha: 0.6),
                     ),
                     const SizedBox(width: 4),
                     Expanded(
@@ -157,7 +157,7 @@ class _EncryptedImageMessageState extends ConsumerState<EncryptedImageMessage> {
                         metadata.filename,
                         style: TextStyle(
                           fontSize: 11,
-                          color: AppTheme.textSecondary.withValues(alpha: 153),
+                          color: AppTheme.textSecondary.withValues(alpha: 0.6),
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -166,7 +166,7 @@ class _EncryptedImageMessageState extends ConsumerState<EncryptedImageMessage> {
                       _formatFileSize(metadata.originalSize),
                       style: TextStyle(
                         fontSize: 11,
-                        color: AppTheme.textSecondary.withValues(alpha: 153),
+                        color: AppTheme.textSecondary.withValues(alpha: 0.6),
                       ),
                     ),
                   ],
@@ -191,7 +191,7 @@ class _EncryptedImageMessageState extends ConsumerState<EncryptedImageMessage> {
         color: AppTheme.backgroundInput,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: AppTheme.textSecondary.withValues(alpha: 76),
+          color: AppTheme.textSecondary.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -233,10 +233,10 @@ class _EncryptedImageMessageState extends ConsumerState<EncryptedImageMessage> {
         minHeight: 80,
       ),
       decoration: BoxDecoration(
-        color: Colors.red.withValues(alpha: 25),
+        color: Colors.red.withValues(alpha: 0.098),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Colors.red.withValues(alpha: 127),
+          color: Colors.red.withValues(alpha: 0.5),
           width: 1,
         ),
       ),
@@ -268,7 +268,7 @@ class _EncryptedImageMessageState extends ConsumerState<EncryptedImageMessage> {
                 _errorMessage!,
                 style: TextStyle(
                   fontSize: 10,
-                  color: Colors.red.withValues(alpha: 153),
+                  color: Colors.red.withValues(alpha: 0.6),
                 ),
                 textAlign: TextAlign.center,
                 maxLines: 2,

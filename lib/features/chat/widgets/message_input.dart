@@ -317,7 +317,7 @@ class _MessageInputState extends ConsumerState<MessageInput> {
                     color: AppTheme.backgroundDark,
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: AppTheme.textSecondary.withValues(alpha: 76), // 0.3 opacity
+                      color: AppTheme.textSecondary.withValues(alpha: 0.3), // 0.3 opacity
                       width: 1,
                     ),
                   ),
@@ -359,7 +359,7 @@ class _MessageInputState extends ConsumerState<MessageInput> {
                       decoration: InputDecoration(
                         hintText: S.of(context)!.typeAMessage,
                         hintStyle: TextStyle(
-                            color: AppTheme.textSecondary.withValues(alpha: 153), // 0.6 opacity
+                            color: AppTheme.textSecondary.withValues(alpha: 0.6), // 0.6 opacity
                             fontSize: 15),
                         contentPadding:
                             const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

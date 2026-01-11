@@ -117,6 +117,9 @@ class AppTheme {
           fixedSize: const Size.fromHeight(48),
           minimumSize: Size.zero,
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
@@ -136,6 +139,10 @@ class AppTheme {
             fontWeight: FontWeight.w500,
             fontSize: 14.0,
           ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 30),
         ),
       ),
       inputDecorationTheme: const InputDecorationTheme(

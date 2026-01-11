@@ -203,7 +203,7 @@ class _ChatListItemState extends ConsumerState<ChatListItem> {
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
-            color: Colors.white.withValues(alpha: 13), // 0.05 opacity
+            color: Colors.white.withValues(alpha: 0.05), // 0.05 opacity
             width: 1.0,
           ),
         ),

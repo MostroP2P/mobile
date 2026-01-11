@@ -853,9 +853,6 @@ class TradeDetailScreen extends ConsumerWidget {
       style: OutlinedButton.styleFrom(
         foregroundColor: AppTheme.mostroGreen,
         side: const BorderSide(color: AppTheme.mostroGreen),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-        ),
         padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 30),
         minimumSize: const Size(120, 48),
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
