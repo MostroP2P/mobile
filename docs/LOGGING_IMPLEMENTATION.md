@@ -22,11 +22,12 @@ Implementation of a comprehensive logging system for MostroP2P mobile app with i
 - Connect UI to actual logger
 - Test with 2 files: RelaysNotifier, SubscriptionManager
 
-### Phase 3: Core Services Migration (Current)
+### Phase 3: Core Services Migration (Completed)
 - NostrService
 - MostroService
 - DeepLinkService
-- 2 additional core files
+- mostro_storage 
+- AbstractMostroNotifier + subclases (AddOrderNotifier, OrderNotifier)
 
 ### Phase 4: Background Services 
 - Mobile and desktop background service
@@ -204,6 +205,6 @@ void backgroundMain(SendPort sendPort) async {
 
 ---
 
-**Version**: 3
-**Status**: Phase 2 - Ready
-**Last Updated**: 2026-01-06
+**Version**: 4
+**Status**: Phase 3 - Completed
+**Last Updated**: 2026-01-12
