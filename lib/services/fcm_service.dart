@@ -79,9 +79,9 @@ class FCMService {
     if (_isInitialized) return;
 
     try {
-      // Skip Firebase initialization on Linux (not supported)
-      if (!kIsWeb && Platform.isLinux) {
-        debugPrint('FCM: Skipping initialization on Linux (not supported)');
+      // Skip Firebase initialization on web and Linux (not supported)
+      if (kIsWeb || Platform.isLinux) {
+        debugPrint('FCM: Skipping initialization on web/Linux (not supported)');
         return;
       }
 
