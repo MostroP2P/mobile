@@ -11,7 +11,7 @@ import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/features/notifications/providers/notifications_provider.dart';
 import 'package:mostro_mobile/features/notifications/utils/notification_data_extractor.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
-import 'package:logger/logger.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 
 class AbstractMostroNotifier extends StateNotifier<OrderState> {
   final String orderId;
