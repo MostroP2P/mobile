@@ -13,6 +13,12 @@ import 'package:mostro_mobile/services/fcm_service.dart';
 
 final _logger = Logger();
 
+/// Safely truncate a pubkey for logging, avoiding RangeError on short strings.
+String _shortenPubkey(String pubkey, [int maxLength = 16]) {
+  if (pubkey.length <= maxLength) return pubkey;
+  return '${pubkey.substring(0, maxLength)}...';
+}
+
 /// Service for registering push notification tokens with the Mostro push server.
 ///
 /// This implements a privacy-preserving approach following MIP-05:
@@ -114,8 +120,7 @@ class PushNotificationService {
         return false;
       }
 
-      debugPrint(
-          'PushService: Registering token for trade ${tradePubkey.substring(0, 16)}...');
+      debugPrint('PushService: Registering token for trade ${_shortenPubkey(tradePubkey)}');
 
       // Encrypt the token
       final encryptedToken = _encryptToken(fcmToken);
@@ -140,7 +145,7 @@ class PushNotificationService {
         final data = jsonDecode(response.body);
         if (data['success'] == true) {
           debugPrint(
-              'PushService: Token registered for trade ${tradePubkey.substring(0, 16)}...');
+              'PushService: Token registered for trade ${_shortenPubkey(tradePubkey)}');
           _registeredTradePubkeys.add(tradePubkey);
           return true;
         }
@@ -184,7 +189,7 @@ class PushNotificationService {
 
     try {
       debugPrint(
-          'PushService: Unregistering token for trade ${tradePubkey.substring(0, 16)}...');
+          'PushService: Unregistering token for trade ${_shortenPubkey(tradePubkey)}');
 
       final response = await http
           .post(
@@ -198,7 +203,7 @@ class PushNotificationService {
 
       if (response.statusCode == 200) {
         debugPrint(
-            'PushService: Token unregistered for trade ${tradePubkey.substring(0, 16)}...');
+            'PushService: Token unregistered for trade ${_shortenPubkey(tradePubkey)}');
         _registeredTradePubkeys.remove(tradePubkey);
         return true;
       }
@@ -290,6 +295,16 @@ class PushNotificationService {
   Uint8List _createPaddedPayload(String deviceToken, Random random) {
     final tokenBytes = utf8.encode(deviceToken);
     final platformByte = Platform.isIOS ? _platformIos : _platformAndroid;
+
+    // Guard against buffer overflow: 3 bytes header (platform + length)
+    const maxTokenLength = _paddedPayloadSize - 3;
+    if (tokenBytes.length > maxTokenLength) {
+      throw ArgumentError(
+        '_createPaddedPayload: deviceToken length ${tokenBytes.length} bytes '
+        'exceeds maximum allowed $maxTokenLength bytes '
+        '(paddedPayloadSize=$_paddedPayloadSize - 3 header bytes)',
+      );
+    }
 
     final payload = Uint8List(_paddedPayloadSize);
     payload[0] = platformByte;

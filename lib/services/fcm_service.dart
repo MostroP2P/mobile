@@ -209,22 +209,10 @@ class FCMService {
 
     _foregroundMessageSubscription = FirebaseMessaging.onMessage.listen(
       (RemoteMessage message) async {
-        // Silent notification received while app is in foreground
-        // The existing background service is already running and will
-        // handle fetching and displaying notifications
-
-        // Optionally trigger an immediate refresh
-        try {
-          final service = FlutterBackgroundService();
-          final isRunning = await service.isRunning();
-
-          if (isRunning) {
-            // The background service will pick up new events through its
-            // existing subscription mechanism
-          }
-        } catch (e) {
-          _logger.e('Error triggering background service: $e');
-        }
+        // Silent notification received while app is in foreground.
+        // The existing background service subscription mechanism will
+        // pick up new events automatically - no action needed here.
+        debugPrint('FCM: Foreground message received');
       },
       onError: (error) {
         _logger.e('Error receiving foreground message: $error');
