@@ -71,6 +71,10 @@ class FCMService {
 
   bool _isInitialized = false;
 
+  /// Callback invoked when FCM token is refreshed.
+  /// Set this to re-register tokens with the push notification server.
+  void Function(String newToken)? onTokenRefresh;
+
   FCMService(this._prefs);
 
   bool get isInitialized => _isInitialized;
@@ -187,8 +191,12 @@ class FCMService {
         debugPrint('FCM: Token refreshed');
         await _prefs.setString(_fcmTokenKey, newToken);
 
-        // TODO: In Phase 3, send updated encrypted token to notification server
-        // This will be implemented in PushNotificationService
+        // Notify listener (e.g., PushNotificationService) to re-register token
+        try {
+          onTokenRefresh?.call(newToken);
+        } catch (e) {
+          _logger.e('Error in onTokenRefresh callback: $e');
+        }
       },
       onError: (error) {
         _logger.e('Error on token refresh: $error');

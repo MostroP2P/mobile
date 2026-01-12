@@ -27,6 +27,9 @@ class PushNotificationService {
   String? _serverPubkey;
   bool _isInitialized = false;
 
+  /// Track registered trade pubkeys for re-registration on token refresh
+  final Set<String> _registeredTradePubkeys = {};
+
   // Encryption constants
   static const int _paddedPayloadSize = 220;
   static const int _nonceSize = 12;
@@ -138,6 +141,7 @@ class PushNotificationService {
         if (data['success'] == true) {
           debugPrint(
               'PushService: Token registered for trade ${tradePubkey.substring(0, 16)}...');
+          _registeredTradePubkeys.add(tradePubkey);
           return true;
         }
       }
@@ -147,6 +151,28 @@ class PushNotificationService {
     } catch (e) {
       _logger.e('Error registering token: $e');
       return false;
+    }
+  }
+
+  /// Re-register all known trade pubkeys with the new FCM token.
+  /// Called when FCM token is refreshed.
+  Future<void> reRegisterAllTokens() async {
+    if (_registeredTradePubkeys.isEmpty) {
+      debugPrint('PushService: No trade pubkeys to re-register');
+      return;
+    }
+
+    debugPrint(
+        'PushService: Re-registering ${_registeredTradePubkeys.length} trade pubkeys...');
+
+    // Copy the set to avoid modification during iteration
+    final pubkeys = Set<String>.from(_registeredTradePubkeys);
+    for (final tradePubkey in pubkeys) {
+      try {
+        await registerToken(tradePubkey);
+      } catch (e) {
+        _logger.e('Error re-registering token for $tradePubkey: $e');
+      }
     }
   }
 
@@ -173,6 +199,7 @@ class PushNotificationService {
       if (response.statusCode == 200) {
         debugPrint(
             'PushService: Token unregistered for trade ${tradePubkey.substring(0, 16)}...');
+        _registeredTradePubkeys.remove(tradePubkey);
         return true;
       }
 

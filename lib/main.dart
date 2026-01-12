@@ -122,6 +122,9 @@ Future<_PushServices?> _initializeFirebaseMessaging(
     final pushService = PushNotificationService(fcmService: fcmService);
     await pushService.initialize();
 
+    // Wire up token refresh to re-register all trade pubkeys
+    fcmService.onTokenRefresh = (_) => pushService.reRegisterAllTokens();
+
     return _PushServices(fcmService: fcmService, pushService: pushService);
   } catch (e) {
     // Log error but don't crash app if FCM initialization fails
