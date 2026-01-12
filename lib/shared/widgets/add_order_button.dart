@@ -85,7 +85,7 @@ class _AddOrderButtonState extends State<AddOrderButton>
                               backgroundColor: AppTheme.buyColor,
                               foregroundColor: Colors.black,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(50),
+                                borderRadius: BorderRadius.circular(8),
                               ),
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 12, vertical: 10),
@@ -118,7 +118,7 @@ class _AddOrderButtonState extends State<AddOrderButton>
                               backgroundColor: AppTheme.sellColor,
                               foregroundColor: Colors.black,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(50),
+                                borderRadius: BorderRadius.circular(8),
                               ),
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 12, vertical: 10),
