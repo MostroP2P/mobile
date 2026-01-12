@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -11,6 +12,7 @@ import 'package:mostro_mobile/features/restore/restore_manager.dart';
 import 'package:mostro_mobile/shared/widgets/currency_selection_dialog.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
 import 'package:mostro_mobile/shared/widgets/language_selector.dart';
+import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -23,6 +25,8 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   late final TextEditingController _mostroTextController;
   late final TextEditingController _lightningAddressController;
+  Timer? _debounceTimer;
+  String? _pubkeyError;
 
   @override
   void initState() {
@@ -35,9 +39,35 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _mostroTextController.dispose();
     _lightningAddressController.dispose();
     super.dispose();
+  }
+
+  bool _isValidPubkey(String input) {
+    // Validate hex format (64 characters, hex only)
+    if (input.length == 64 && RegExp(r'^[a-fA-F0-9]+$').hasMatch(input)) {
+      return true;
+    }
+    // Validate npub format (63 characters, starts with npub1)
+    if (input.startsWith('npub1') && input.length == 63) {
+      return true;
+    }
+    return false;
+  }
+
+  String _convertToHex(String input) {
+    try {
+      if (input.startsWith('npub1')) {
+        // Use dart_nostr Bech32 decoding
+        final decoded = NostrUtils.decodeBech32(input);
+        return decoded;
+      }
+      return input; // Already hex format
+    } catch (e) {
+      throw const FormatException('Invalid npub format');
+    }
   }
 
   @override
@@ -100,6 +130,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   _buildRelaysCard(context),
                   const SizedBox(height: 16),
 
+                  // Dev Tools Card
+                  _buildDevToolsCard(context),
+                  const SizedBox(height: 16),
+
                   // Mostro Card
                   _buildMostroCard(context, _mostroTextController),
                   const SizedBox(height: 16),
@@ -108,6 +142,105 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           )
         ],
+      ),
+    );
+  }
+
+  Widget _buildDevToolsCard(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.backgroundCard,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(
+                  LucideIcons.bug,
+                  color: AppTheme.activeColor,
+                  size: 24,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  S.of(context)!.devTools,
+                  style: const TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              S.of(context)!.devToolsWarning,
+              style: const TextStyle(
+                color: AppTheme.textSecondary,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => context.push('/logs'),
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.backgroundInput,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        LucideIcons.fileText,
+                        color: AppTheme.activeColor,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              S.of(context)!.logsReport,
+                              style: const TextStyle(
+                                color: AppTheme.textPrimary,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              S.of(context)!.viewAndExportLogs,
+                              style: const TextStyle(
+                                color: AppTheme.textSecondary,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(
+                        Icons.chevron_right,
+                        color: AppTheme.textSecondary,
+                        size: 20,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -462,18 +595,54 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 controller: controller,
                 style: const TextStyle(color: AppTheme.textPrimary),
                 onChanged: (value) async {
-                  final oldValue = ref.read(settingsProvider).mostroPublicKey;
-                  await ref.read(settingsProvider.notifier).updateMostroInstance(value);
-
-                  // Trigger restore if pubkey changed
-                  if (oldValue != value && value.isNotEmpty) {
+                  _debounceTimer?.cancel();
+                  _debounceTimer = Timer(const Duration(seconds: 3), () async {
+                    if (!mounted) return;
+                    
                     try {
-                      final restoreService = ref.read(restoreServiceProvider);
-                      await restoreService.initRestoreProcess();
+                      if (_isValidPubkey(value)) {
+                        setState(() {
+                          _pubkeyError = null;
+                        });
+                        
+                        final hexValue = _convertToHex(value);
+                        final oldValue = ref.read(settingsProvider).mostroPublicKey;
+                        await ref.read(settingsProvider.notifier).updateMostroInstance(hexValue);
+
+                        // Check mounted after async operation
+                        if (!mounted) return;
+
+                        // Update text controller to show hex if it was npub
+                        if (value.startsWith('npub1')) {
+                          controller.text = hexValue;
+                        }
+
+                        // Trigger restore if pubkey changed
+                        if (oldValue != hexValue && hexValue.isNotEmpty) {
+                          try {
+                            final restoreService = ref.read(restoreServiceProvider);
+                            await restoreService.initRestoreProcess();
+                          } catch (e) {
+                            // Ignore errors during restore
+                          }
+                        }
+                      } else if (value.isNotEmpty) {
+                        setState(() {
+                          _pubkeyError = S.of(context)!.invalidKeyFormat;
+                        });
+                      } else {
+                        setState(() {
+                          _pubkeyError = null;
+                        });
+                      }
                     } catch (e) {
-                      // Ignore errors during restore
+                      if (mounted) {
+                        setState(() {
+                          _pubkeyError = S.of(context)!.invalidKeyFormat;
+                        });
+                      }
                     }
-                  }
+                  });
                 },
                 decoration: InputDecoration(
                   border: InputBorder.none,
@@ -486,6 +655,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
               ),
             ),
+            if (_pubkeyError != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                _pubkeyError!,
+                style: const TextStyle(
+                  color: Colors.red,
+                  fontSize: 12,
+                ),
+              ),
+            ],
           ],
         ),
       ),

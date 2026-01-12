@@ -49,4 +49,8 @@ class Config {
     'PUSH_SERVER_URL',
     defaultValue: 'https://mostro-push-server.fly.dev',
   );
+  // Logger configuration
+  static const int logMaxEntries = 1000;
+  static const int logBatchDeleteSize = 100;
+  static bool fullLogsInfo = true; // false = simple logs, true = PrettyPrinter
 }

@@ -2,6 +2,14 @@
   "@@locale": "en",
   "backToHome": "Back to Home",
   "newOrder": "Your offer has been published! Please wait until another user picks your order. It will be available for {expiration_hours} hours. You can cancel this order before another user picks it up by executing: cancel.",
+  "@newOrder": {
+    "placeholders": {
+      "expiration_hours": {
+        "type": "String",
+        "description": "The expiration time in hours"
+      }
+    }
+  },
   "canceled": "You have canceled the order ID: {id}.",
   "payInvoice": "Please pay this hold invoice of {amount} Sats for {fiat_code} {fiat_amount} to start the operation. If you do not pay it within {expiration_seconds} minutes, the trade will be canceled.",
   "@payInvoice": {
@@ -263,7 +271,15 @@
   "someoneIsBuyingTitle": "Someone is Buying Sats",
   "someoneIsSellingFixedTitle": "Someone is Selling {sats} Sats",
   "someoneIsBuyingFixedTitle": "Someone is Buying {sats} Sats",
-  "youCreatedOfferMessage": "You created this offer. Below are the details of your offer. Wait for another user to take it. It will be published for 24 hours. You can cancel it at any time using the 'Cancel' button.",
+  "youCreatedOfferMessage": "You created this offer. Below are the details of your offer. Wait for another user to take it. It will be published for {expiration_hours} hours. You can cancel it at any time using the 'Cancel' button.",
+  "@youCreatedOfferMessage": {
+    "placeholders": {
+      "expiration_hours": {
+        "type": "String",
+        "description": "The expiration time in hours"
+      }
+    }
+  },
   "youAreSellingTitle": "You are selling{sats} sats",
   "youAreBuyingTitle": "You are buying{sats} sats",
   "forAmount": "for {amount}",
@@ -904,7 +920,7 @@
   "currencyInfoText": "Choose the default currency for your orders.",
   "lightningAddressInfoText": "A Lightning Address is an email-like identifier (e.g., user@domain.com) that simplifies receiving Bitcoin payments. Setting a default one here will automatically populate it when creating buy orders, making the process faster and more convenient.",
   "relaysInfoText": "• Relays are servers that help distribute your messages across the Nostr network.\n\n• Adding more relays can improve connectivity and redundancy.\n\n• Relays don't sync with each other, so only those you're connected to will receive your messages.",
-  "mostroInfoText": "• The Mostro you select will be the one where you post your offers.\n\n• In case of a dispute, a human assigned to that Mostro will be the one to resolve it.",
+  "mostroInfoText": "• Supports hex and npub formats (displays as hex).\n\n• The Mostro you select will be the one where you post your offers.\n\n• In case of a dispute, a human assigned to that Mostro will be the one to resolve it.",
   
   "@_comment_account_info_dialogs": "Account Screen Info Dialog Text",
   "secretWordsInfoText": "• These are your secret words, the only way to recover your account if you lose access to this app or want to use your identity in another app.\n\n• Write them down carefully and store them in a secure, private location. Never share them with anyone.\n\n• If you lose these words, you'll permanently lose access to your account.",
@@ -1217,5 +1233,66 @@
 
   "@_comment_backup_reminder": "Backup reminder notification",
   "backupAccountReminder": "You must back up your account",
-  "backupAccountReminderMessage": "Back up your secret words to recover your account"
+  "backupAccountReminderMessage": "Back up your secret words to recover your account",
+
+  "@_comment_validation": "Input validation messages",
+  "invalidKeyFormat": "Invalid key format",
+  
+  "@_comment_logging_ui": "Logging UI strings",
+  "logCapture": "Log Capture",
+  "capturingLogs": "Capturing logs",
+  "captureDisabled": "Capture disabled",
+  "performanceWarning": "Performance Warning",
+  "performanceWarningMessage": "Enabling log capture may impact application performance. Only enable this feature when debugging or troubleshooting issues.",
+  "enable": "Enable",
+  "logsReport": "Logs Report",
+  "clearLogs": "Clear Logs",
+  "totalLogs": "{count} logs",
+  "@totalLogs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "maxEntries": "Max {count} entries",
+  "@maxEntries": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchLogs": "Search logs...",
+  "allLevels": "All",
+  "errors": "Errors",
+  "warnings": "Warnings",
+  "info": "Info",
+  "debug": "Debug",
+  "noLogsAvailable": "No logs available",
+  "logsWillAppearHere": "Logs will appear here when log capture is enabled",
+  "copyLog": "Copy log",
+  "logCopied": "Log copied to clipboard",
+  "saveToDevice": "Save to Device",
+  "saveFile": "Save File",
+  "shareReport": "Share Report",
+  "shareLogs": "Share Logs",
+  "logsExportTitle": "Logs Export",
+  "exportFailed": "Export failed",
+  "logsSavedTo": "Logs saved to {path}",
+  "@logsSavedTo": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "saveFailed": "Save failed",
+  "clearLogsConfirmation": "This will permanently delete all captured logs. This action cannot be undone.",
+  "logsCleared": "Logs cleared",
+  "shareFeatureComingSoon": "Share feature coming in Phase 2",
+  "devTools": "Dev Tools",
+  "devToolsWarning": "For debugging and troubleshooting only",
+  "viewAndExportLogs": "View and export application logs"
+
 }
