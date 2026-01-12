@@ -47,6 +47,6 @@ class Config {
   // Push notification server configuration
   static const String pushServerUrl = String.fromEnvironment(
     'PUSH_SERVER_URL',
-    defaultValue: 'https://push.mostro.network',
+    defaultValue: 'https://mostro-push-server.fly.dev',
   );
 }
