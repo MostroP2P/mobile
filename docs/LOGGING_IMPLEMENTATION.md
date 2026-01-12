@@ -29,9 +29,10 @@ Implementation of a comprehensive logging system for MostroP2P mobile app with i
 - mostro_storage 
 - AbstractMostroNotifier + subclases (AddOrderNotifier, OrderNotifier)
 
-### Phase 4: Background Services 
-- Mobile and desktop background service
-- Isolate logging
+### Phase 4: Background Services (Completed)
+- Mobile background service with isolate logging
+- Desktop background service with isolate logging
+- Isolate log receiver initialized in main.dart
 
 ### Phase 5: File Export & Persistence 
 - Auto-save to storage
@@ -205,6 +206,6 @@ void backgroundMain(SendPort sendPort) async {
 
 ---
 
-**Version**: 4
-**Status**: Phase 3 - Completed
+**Version**: 5
+**Status**: Phase 4 - Completed
 **Last Updated**: 2026-01-12
