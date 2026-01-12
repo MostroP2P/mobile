@@ -11,6 +11,7 @@ import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/background/background_service.dart';
 import 'package:mostro_mobile/features/notifications/services/background_notification_service.dart';
 import 'package:mostro_mobile/services/fcm_service.dart';
+import 'package:mostro_mobile/services/push_notification_service.dart';
 import 'package:mostro_mobile/shared/providers/background_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/providers.dart';
 import 'package:mostro_mobile/shared/utils/biometrics_helper.dart';
@@ -41,7 +42,7 @@ Future<void> main() async {
   await backgroundService.init();
 
   // Initialize FCM (skip on Linux)
-  await _initializeFirebaseMessaging(sharedPreferences);
+  final pushServices = await _initializeFirebaseMessaging(sharedPreferences);
 
   final container = ProviderContainer(
     overrides: [
@@ -52,6 +53,11 @@ Future<void> main() async {
       secureStorageProvider.overrideWithValue(secureStorage),
       mostroDatabaseProvider.overrideWithValue(mostroDatabase),
       eventDatabaseProvider.overrideWithValue(eventsDatabase),
+      if (pushServices != null) ...[
+        fcmServiceProvider.overrideWithValue(pushServices.fcmService),
+        pushNotificationServiceProvider
+            .overrideWithValue(pushServices.pushService),
+      ],
     ],
   );
 
@@ -89,21 +95,40 @@ void _initializeTimeAgoLocalization() {
   // English is already the default, no need to set it
 }
 
-/// Initialize Firebase Cloud Messaging
-Future<void> _initializeFirebaseMessaging(SharedPreferencesAsync prefs) async {
+/// Result of Firebase/push notification initialization
+class _PushServices {
+  final FCMService fcmService;
+  final PushNotificationService pushService;
+
+  _PushServices({required this.fcmService, required this.pushService});
+}
+
+/// Initialize Firebase Cloud Messaging and Push Notification Service
+/// Returns the initialized services, or null if not supported/failed
+Future<_PushServices?> _initializeFirebaseMessaging(
+    SharedPreferencesAsync prefs) async {
   try {
     // Skip Firebase initialization on Linux (not supported)
     if (!kIsWeb && Platform.isLinux) {
       debugPrint(
           'Firebase not supported on Linux - skipping FCM initialization');
-      return;
+      return null;
     }
 
     final fcmService = FCMService(prefs);
     await fcmService.initialize();
-    debugPrint('Firebase Cloud Messaging initialized successfully');
+
+    // Initialize Push Notification Service (for encrypted token registration)
+    final pushService = PushNotificationService(fcmService: fcmService);
+    await pushService.initialize();
+
+    // Wire up token refresh to re-register all trade pubkeys
+    fcmService.onTokenRefresh = (_) => pushService.reRegisterAllTokens();
+
+    return _PushServices(fcmService: fcmService, pushService: pushService);
   } catch (e) {
     // Log error but don't crash app if FCM initialization fails
     debugPrint('Failed to initialize Firebase Cloud Messaging: $e');
+    return null;
   }
 }

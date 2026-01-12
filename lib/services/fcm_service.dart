@@ -71,6 +71,10 @@ class FCMService {
 
   bool _isInitialized = false;
 
+  /// Callback invoked when FCM token is refreshed.
+  /// Set this to re-register tokens with the push notification server.
+  void Function(String newToken)? onTokenRefresh;
+
   FCMService(this._prefs);
 
   bool get isInitialized => _isInitialized;
@@ -79,9 +83,9 @@ class FCMService {
     if (_isInitialized) return;
 
     try {
-      // Skip Firebase initialization on Linux (not supported)
-      if (!kIsWeb && Platform.isLinux) {
-        debugPrint('FCM: Skipping initialization on Linux (not supported)');
+      // Skip Firebase initialization on web and Linux (not supported)
+      if (kIsWeb || Platform.isLinux) {
+        debugPrint('FCM: Skipping initialization on web/Linux (not supported)');
         return;
       }
 
@@ -187,8 +191,12 @@ class FCMService {
         debugPrint('FCM: Token refreshed');
         await _prefs.setString(_fcmTokenKey, newToken);
 
-        // TODO: In Phase 3, send updated encrypted token to notification server
-        // This will be implemented in PushNotificationService
+        // Notify listener (e.g., PushNotificationService) to re-register token
+        try {
+          onTokenRefresh?.call(newToken);
+        } catch (e) {
+          _logger.e('Error in onTokenRefresh callback: $e');
+        }
       },
       onError: (error) {
         _logger.e('Error on token refresh: $error');
@@ -201,22 +209,10 @@ class FCMService {
 
     _foregroundMessageSubscription = FirebaseMessaging.onMessage.listen(
       (RemoteMessage message) async {
-        // Silent notification received while app is in foreground
-        // The existing background service is already running and will
-        // handle fetching and displaying notifications
-
-        // Optionally trigger an immediate refresh
-        try {
-          final service = FlutterBackgroundService();
-          final isRunning = await service.isRunning();
-
-          if (isRunning) {
-            // The background service will pick up new events through its
-            // existing subscription mechanism
-          }
-        } catch (e) {
-          _logger.e('Error triggering background service: $e');
-        }
+        // Silent notification received while app is in foreground.
+        // The existing background service subscription mechanism will
+        // pick up new events automatically - no action needed here.
+        debugPrint('FCM: Foreground message received');
       },
       onError: (error) {
         _logger.e('Error receiving foreground message: $error');

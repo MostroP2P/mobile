@@ -12,7 +12,8 @@ class Config {
   // Mostro hexkey
   static const String mostroPubKey = String.fromEnvironment(
     'MOSTRO_PUB_KEY',
-    defaultValue: '82fa8cb978b43c79b2156585bac2c011176a21d2aead6d9f7c575c005be88390',
+    defaultValue:
+        '82fa8cb978b43c79b2156585bac2c011176a21d2aead6d9f7c575c005be88390',
   );
   //'9d9d0455a96871f2dc4289b8312429db2e925f167b37c77bf7b28014be235980';
 
@@ -43,6 +44,11 @@ class Config {
   static String notificationChannelId = 'mostro_mobile';
   static int notificationId = 38383;
 
+  // Push notification server configuration
+  static const String pushServerUrl = String.fromEnvironment(
+    'PUSH_SERVER_URL',
+    defaultValue: 'https://mostro-push-server.fly.dev',
+  );
   // Logger configuration
   static const int logMaxEntries = 1000;
   static const int logBatchDeleteSize = 100;
