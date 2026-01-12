@@ -16,7 +16,6 @@ import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 
 class MostroService {
   final Ref ref;
-  final _logger = Logger();
 
   Settings _settings;
   StreamSubscription<NostrEvent>? _ordersSubscription;
@@ -353,7 +352,7 @@ class MostroService {
       masterKey: session.fullPrivacy ? null : session.masterKey,
       keyIndex: session.fullPrivacy ? null : session.keyIndex,
     );
-    _logger
+    logger
         .i('Sending DM, Event ID: ${event.id} with payload: ${order.toJson()}');
     await ref.read(nostrServiceProvider).publishEvent(event);
   }

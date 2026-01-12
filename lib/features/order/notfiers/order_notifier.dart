@@ -6,6 +6,7 @@ import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/features/notifications/providers/notifications_provider.dart';
 import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/features/order/notfiers/abstract_mostro_notifier.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/services/mostro_service.dart';
 
 class OrderNotifier extends AbstractMostroNotifier {

@@ -16,7 +16,6 @@ import 'package:mostro_mobile/services/logger_service.dart';
 class AbstractMostroNotifier extends StateNotifier<OrderState> {
   final String orderId;
   final Ref ref;
-  final logger = Logger();
 
   late Session session;
 
@@ -504,17 +503,17 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
     _sessionTimeouts[orderId] = Timer(const Duration(seconds: 10), () {
       try {
         ref.read(sessionNotifierProvider.notifier).deleteSession(orderId);
-        Logger().i('Session cleaned up after 10s timeout: $orderId');
+        logger.i('Session cleaned up after 10s timeout: $orderId');
         
         // Show timeout message to user and navigate to order book
         _showTimeoutNotificationAndNavigate(ref);
       } catch (e) {
-        Logger().e('Failed to cleanup session: $orderId', error: e);
+        logger.e('Failed to cleanup session: $orderId', error: e);
       }
       _sessionTimeouts.remove(orderId);
     });
     
-    Logger().i('Started 10s timeout timer for order: $orderId');
+    logger.i('Started 10s timeout timer for order: $orderId');
   }
   
   /// Shows timeout notification and navigates to order book
@@ -528,7 +527,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
       final navProvider = ref.read(navigationProvider.notifier);
       navProvider.go('/');
     } catch (e) {
-      Logger().e('Failed to show timeout notification or navigate', error: e);
+      logger.e('Failed to show timeout notification or navigate', error: e);
     }
   }
   
@@ -541,17 +540,17 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
     _sessionTimeouts[key] = Timer(const Duration(seconds: 10), () {
       try {
         ref.read(sessionNotifierProvider.notifier).deleteSessionByRequestId(requestId);
-        Logger().i('Session cleaned up after 10s timeout for requestId: $requestId');
+        logger.i('Session cleaned up after 10s timeout for requestId: $requestId');
         
         // Show timeout message to user and navigate to order book
         _showTimeoutNotificationAndNavigate(ref);
       } catch (e) {
-        Logger().e('Failed to cleanup session for requestId: $requestId', error: e);
+        logger.e('Failed to cleanup session for requestId: $requestId', error: e);
       }
       _sessionTimeouts.remove(key);
     });
     
-    Logger().i('Started 10s timeout timer for requestId: $requestId');
+    logger.i('Started 10s timeout timer for requestId: $requestId');
   }
   
   /// Cancels the timeout timer for a specific orderId
@@ -560,7 +559,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
     if (timer != null) {
       timer.cancel();
       _sessionTimeouts.remove(orderId);
-      Logger().i('Cancelled 10s timeout timer for order: $orderId - Mostro responded');
+      logger.i('Cancelled 10s timeout timer for order: $orderId - Mostro responded');
     }
   }
   
@@ -571,7 +570,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
     if (timer != null) {
       timer.cancel();
       _sessionTimeouts.remove(key);
-      Logger().i('Cancelled 10s timeout timer for requestId: $requestId - Mostro responded');
+      logger.i('Cancelled 10s timeout timer for requestId: $requestId - Mostro responded');
     }
   }
 
