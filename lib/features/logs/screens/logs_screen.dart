@@ -184,17 +184,19 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
               ),
             ],
           ),
-          body: Column(
-            children: [
-              _buildStatsHeader(allLogs.length, logs.length, isLoggingEnabled),
-              _buildSearchBar(),
-              _buildFilterChips(),
-              Expanded(
-                child: logs.isEmpty
-                    ? _buildEmptyState()
-                    : _buildLogsList(logs),
-              ),
-            ],
+          body: SafeArea(
+            child: Column(
+              children: [
+                _buildStatsHeader(allLogs.length, logs.length, isLoggingEnabled),
+                _buildSearchBar(),
+                _buildFilterChips(),
+                Expanded(
+                  child: logs.isEmpty
+                      ? _buildEmptyState()
+                      : _buildLogsList(logs),
+                ),
+              ],
+            ),
           ),
         ),
         if (_showScrollToTop && logs.isNotEmpty)
@@ -431,7 +433,7 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
   Widget _buildLogsList(List<LogEntry> logs) {
     return ListView.builder(
       controller: _scrollController,
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.only(left: 8, right: 8, top: 8, bottom: 16),
       itemCount: logs.length,
       itemBuilder: (context, index) {
         final log = logs[logs.length - 1 - index];
