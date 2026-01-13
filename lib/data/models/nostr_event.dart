@@ -35,9 +35,8 @@ extension NostrEventExtensions on NostrEvent {
   String? get name => _getTagValue('name') ?? 'Anon';
   String? get geohash => _getTagValue('g');
   String? get bond => _getTagValue('bond');
-  String? get expiration => _timeAgo(_getTagValue('expiration'));
-  String? timeAgoWithLocale(String? locale) =>
-      _timeAgo(_getTagValue('expiration'), locale);
+  String? timeAgoWithLocale(String locale) =>
+      _timeAgoFromCreated(locale);
   DateTime get expirationDate => _getTimeStamp(_getTagValue('expiration')!);
   String? get expiresAt => _getTagValue('expires_at');
   String? get platform => _getTagValue('y');
@@ -61,21 +60,10 @@ extension NostrEventExtensions on NostrEvent {
         .subtract(Duration(hours: 12));
   }
 
-  String _timeAgo(String? ts, [String? locale]) {
-    if (ts == null) return "invalid date";
-    final timestamp = int.tryParse(ts);
-    if (timestamp != null && timestamp > 0) {
-      final DateTime eventTime =
-          DateTime.fromMillisecondsSinceEpoch(timestamp * 1000)
-              .subtract(Duration(hours: 48));
 
-      // Use provided locale or fallback to Spanish
-      final effectiveLocale = locale ?? 'es';
-      return timeago.format(eventTime,
-          allowFromNow: true, locale: effectiveLocale);
-    } else {
-      return "invalid date";
-    }
+  String _timeAgoFromCreated(String locale) {
+    if (createdAt == null) return "invalid date";
+    return timeago.format(createdAt!, allowFromNow: true, locale: locale);
   }
 
   Future<NostrEvent> unWrap(String privateKey) async {
