@@ -432,9 +432,10 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
   }
 
   Widget _buildLogsList(List<LogEntry> logs) {
+    final bottomInset = MediaQuery.of(context).viewPadding.bottom;
     return ListView.builder(
       controller: _scrollController,
-      padding: const EdgeInsets.only(left: 8, right: 8, top: 8, bottom: 16),
+      padding: EdgeInsets.only(left: 8, right: 8, top: 8, bottom: bottomInset + 64),
       itemCount: logs.length,
       itemBuilder: (context, index) {
         final log = logs[logs.length - 1 - index];
