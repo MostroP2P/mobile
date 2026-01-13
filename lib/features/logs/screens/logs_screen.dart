@@ -7,6 +7,7 @@ import 'package:mostro_mobile/features/logs/logs_provider.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
+import 'package:mostro_mobile/shared/utils/datetime_extensions_utils.dart';
 
 class LogsScreen extends ConsumerStatefulWidget {
   const LogsScreen({super.key});
@@ -534,17 +535,6 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
   }
 
   String _formatTime(DateTime timestamp) {
-    final now = DateTime.now();
-    final difference = now.difference(timestamp);
-
-    if (difference.inSeconds < 60) {
-      return '${difference.inSeconds}s ago';
-    } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes}m ago';
-    } else if (difference.inHours < 24) {
-      return '${difference.inHours}h ago';
-    } else {
-      return '${timestamp.hour.toString().padLeft(2, '0')}:${timestamp.minute.toString().padLeft(2, '0')}';
-    }
+    return timestamp.timeAgoWithLocale(context);
   }
 }
