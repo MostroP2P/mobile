@@ -267,9 +267,12 @@ class FakeBackgroundService implements BackgroundService {
 }
 
 class FakeMostroService implements MostroService {
-  FakeMostroService(this.ref);
-  @override
-  final Ref ref;
+  FakeMostroService(this._ref);
+
+  final Ref _ref;
+
+ @override
+  Ref get ref => _ref;
 
   @override
   void init({List<NostrKeyPairs>? keys}) {}
