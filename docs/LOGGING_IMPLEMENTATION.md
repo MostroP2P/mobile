@@ -27,7 +27,7 @@ Implementation of a comprehensive logging system for MostroP2P mobile app with i
 - MostroService
 - DeepLinkService
 - mostro_storage 
-- AbstractMostroNotifier + subclases (AddOrderNotifier, OrderNotifier)
+- AbstractMostroNotifier + subclasses (AddOrderNotifier, OrderNotifier)
 
 ### Phase 4: Background Services (Completed)
 - Mobile background service with isolate logging
