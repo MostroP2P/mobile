@@ -155,5 +155,21 @@ class SettingsNotifier extends StateNotifier<Settings> {
     MemoryLogOutput.isLoggingEnabled = newValue;
   }
 
+  Future<void> updatePushNotificationsEnabled(bool newValue) async {
+    state = state.copyWith(pushNotificationsEnabled: newValue);
+    await _saveToPrefs();
+    _logger.i('Push notifications ${newValue ? 'enabled' : 'disabled'}');
+  }
+
+  Future<void> updateNotificationSoundEnabled(bool newValue) async {
+    state = state.copyWith(notificationSoundEnabled: newValue);
+    await _saveToPrefs();
+  }
+
+  Future<void> updateNotificationVibrationEnabled(bool newValue) async {
+    state = state.copyWith(notificationVibrationEnabled: newValue);
+    await _saveToPrefs();
+  }
+
   Settings get settings => state.copyWith();
 }

@@ -1293,6 +1293,21 @@
   "shareFeatureComingSoon": "Share feature coming in Phase 2",
   "devTools": "Dev Tools",
   "devToolsWarning": "For debugging and troubleshooting only",
-  "viewAndExportLogs": "View and export application logs"
+  "viewAndExportLogs": "View and export application logs",
+  "pushNotifications": "Push Notifications",
+  "pushNotificationsDescription": "Receive notifications when there are updates to your trades, even when the app is closed.",
+  "pushNotificationsNotSupported": "Push notifications are not supported on this platform.",
+  "notificationPreferences": "Preferences",
+  "notificationSound": "Sound",
+  "notificationSoundDescription": "Play a sound when receiving notifications",
+  "notificationVibration": "Vibration",
+  "notificationVibrationDescription": "Vibrate when receiving notifications",
+  "privacyInfo": "Privacy Information",
+  "pushNotificationsPrivacyInfo": "MostroP2P uses privacy-preserving push notifications. Your message content is never shared with third parties.",
+  "privacyBulletSilentPush": "Silent push notifications - no message content is sent through Firebase",
+  "privacyBulletEncryptedTokens": "Device tokens are encrypted before registration",
+  "privacyBulletLocalDecryption": "All messages are decrypted locally on your device",
+  "notificationSettings": "Notification Settings",
+  "notificationSettingsDescription": "Configure push notification preferences"
 
 }
