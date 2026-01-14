@@ -107,7 +107,7 @@ class _AmountSectionState extends State<AmountSection> {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: const Color(0xFF8CC63F),
+          color: AppTheme.mostroGreen,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
@@ -180,8 +180,8 @@ class _AmountSectionState extends State<AmountSection> {
     return FormSection(
       title: _getTitle(),
       topRightWidget: _getTopRightWidget(),
-      icon: const Icon(Icons.money, color: Color(0xFF8CC63F), size: 18),
-      iconBackgroundColor: const Color(0xFF8CC63F).withValues(alpha: 0.3),
+      icon: const Icon(Icons.money, color: AppTheme.mostroGreen, size: 18),
+      iconBackgroundColor: AppTheme.mostroGreen.withValues(alpha: 0.3),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -243,7 +243,7 @@ class _AmountSectionState extends State<AmountSection> {
             Text(
               S.of(context)!.tapSecondFieldForRange,
               style: const TextStyle(
-                color: Color(0xFF8CC63F),
+                color: AppTheme.mostroGreen,
                 fontSize: 12,
               ),
             ),

@@ -57,7 +57,7 @@ class PaymentConfirmationScreen extends ConsumerWidget {
                   height: 80,
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Color(0xFF8CC541),
+                    color: AppTheme.mostroGreen,
                   ),
                   child: const Icon(
                     Icons.check,
@@ -84,7 +84,7 @@ class PaymentConfirmationScreen extends ConsumerWidget {
                 const SizedBox(height: 24),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF8CC541),
+                    backgroundColor: AppTheme.mostroGreen,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),

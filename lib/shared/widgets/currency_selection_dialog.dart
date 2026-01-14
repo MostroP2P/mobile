@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
@@ -69,7 +70,7 @@ class _CurrencySelectionDialogWidgetState
                 color: const Color(0xFF252a3a),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: const Color(0xFF8CC63F).withValues(alpha: 0.3),
+                  color: AppTheme.mostroGreen.withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
@@ -150,7 +151,7 @@ class _CurrencySelectionDialogWidgetState
                                 ),
                                 trailing: isSelected
                                     ? const Icon(Icons.check,
-                                        color: Color(0xFF8CC63F))
+                                        color: AppTheme.mostroGreen)
                                     : null,
                                 onTap: () {
                                   Navigator.of(context).pop(code);

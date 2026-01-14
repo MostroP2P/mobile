@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
@@ -513,7 +514,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
                   child: Text(S.of(context)!.ok,
-                      style: TextStyle(color: Color(0xFF8CC63F))),
+                      style: const TextStyle(color: AppTheme.mostroGreen)),
                 ),
               ],
             ),

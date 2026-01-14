@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:introduction_screen/introduction_screen.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/features/walkthrough/providers/first_run_provider.dart';
 import 'package:mostro_mobile/features/notifications/providers/backup_reminder_provider.dart';
@@ -26,7 +27,7 @@ class _WalkthroughScreenState extends ConsumerState<WalkthroughScreen> {
     const defaultStyle = TextStyle(fontSize: 16, color: Color(0xFF9aa1b6));
     const highlightStyle = TextStyle(
       fontSize: 16,
-      color: Color(0xFF8cc63f),
+      color: AppTheme.mostroGreen,
       fontWeight: FontWeight.w600,
     );
 
