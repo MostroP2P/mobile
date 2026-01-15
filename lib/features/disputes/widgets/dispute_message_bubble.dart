@@ -76,7 +76,7 @@ class DisputeMessageBubble extends StatelessWidget {
 
   Color _getAdminMessageColor() {
     // Use admin blue color with same transparency approach as peer messages
-    const Color adminBlue = Color(0xFF1565C0);
+    const Color adminBlue = AppTheme.createdByYouChip;
     
     // Create a subdued version by reducing saturation and value like peer messages
     final HSVColor hsvColor = HSVColor.fromColor(adminBlue);

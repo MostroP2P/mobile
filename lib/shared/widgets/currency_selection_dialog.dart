@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
@@ -43,13 +44,13 @@ class _CurrencySelectionDialogWidgetState
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: const Color(0xFF1E2230),
+      backgroundColor: AppTheme.backgroundCard,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           AppBar(
-            backgroundColor: const Color(0xFF252a3a),
+            backgroundColor: AppTheme.backgroundInput,
             title: Text(
               widget.title,
               style: const TextStyle(color: Colors.white),
@@ -66,10 +67,10 @@ class _CurrencySelectionDialogWidgetState
             child: Container(
               height: 48,
               decoration: BoxDecoration(
-                color: const Color(0xFF252a3a),
+                color: AppTheme.backgroundInput,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: const Color(0xFF8CC63F).withValues(alpha: 0.3),
+                  color: AppTheme.mostroGreen.withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
@@ -150,7 +151,7 @@ class _CurrencySelectionDialogWidgetState
                                 ),
                                 trailing: isSelected
                                     ? const Icon(Icons.check,
-                                        color: Color(0xFF8CC63F))
+                                        color: AppTheme.mostroGreen)
                                     : null,
                                 onTap: () {
                                   Navigator.of(context).pop(code);

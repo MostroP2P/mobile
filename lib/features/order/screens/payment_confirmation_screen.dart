@@ -18,7 +18,7 @@ class PaymentConfirmationScreen extends ConsumerWidget {
     final state = ref.watch(orderNotifierProvider(orderId));
 
     return Scaffold(
-      backgroundColor: const Color(0xFF1D212C),
+      backgroundColor: AppTheme.dark1,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -46,7 +46,7 @@ class PaymentConfirmationScreen extends ConsumerWidget {
             margin: const EdgeInsets.all(16),
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: const Color(0xFF303544),
+              color: AppTheme.dark2,
               borderRadius: BorderRadius.circular(20),
             ),
             child: Column(
@@ -57,7 +57,7 @@ class PaymentConfirmationScreen extends ConsumerWidget {
                   height: 80,
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Color(0xFF8CC541),
+                    color: AppTheme.mostroGreen,
                   ),
                   child: const Icon(
                     Icons.check,
@@ -84,7 +84,7 @@ class PaymentConfirmationScreen extends ConsumerWidget {
                 const SizedBox(height: 24),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF8CC541),
+                    backgroundColor: AppTheme.mostroGreen,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),

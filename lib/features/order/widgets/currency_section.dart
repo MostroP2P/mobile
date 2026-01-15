@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/features/order/widgets/form_section.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
@@ -23,8 +24,8 @@ class CurrencySection extends ConsumerWidget {
           ? S.of(context)!.selectFiatCurrencyPay
           : S.of(context)!.selectFiatCurrencyReceive,
       icon: const Text('\$',
-          style: TextStyle(color: Color(0xFF8CC63F), fontSize: 18)),
-      iconBackgroundColor: const Color(0xFF764BA2).withValues(alpha: 0.3),
+          style: TextStyle(color: AppTheme.mostroGreen, fontSize: 18)),
+      iconBackgroundColor: AppTheme.purpleAccent.withValues(alpha: 0.3),
       child: currenciesAsync.when(
         loading: () => Text(S.of(context)!.loadingCurrencies,
             style: const TextStyle(color: Colors.white)),
