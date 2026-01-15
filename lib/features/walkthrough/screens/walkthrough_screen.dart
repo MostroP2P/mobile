@@ -24,7 +24,7 @@ class _WalkthroughScreenState extends ConsumerState<WalkthroughScreen> {
     bool isOrderBookStep = false,
     bool isCreateOfferStep = false,
   }) {
-    const defaultStyle = TextStyle(fontSize: 16, color: Color(0xFF9aa1b6));
+    const defaultStyle = TextStyle(fontSize: 16, color: Colors.white70);
     const highlightStyle = TextStyle(
       fontSize: 16,
       color: AppTheme.mostroGreen,
@@ -98,7 +98,7 @@ class _WalkthroughScreenState extends ConsumerState<WalkthroughScreen> {
   List<PageViewModel> _getPages(BuildContext context) {
     const pageDecoration = PageDecoration(
       titleTextStyle: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-      bodyTextStyle: TextStyle(fontSize: 16, color: Color(0xFF9aa1b6)),
+      bodyTextStyle: TextStyle(fontSize: 16, color: Colors.white70),
       bodyPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       imagePadding: EdgeInsets.zero,
     );
