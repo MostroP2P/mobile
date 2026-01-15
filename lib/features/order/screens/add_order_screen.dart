@@ -208,9 +208,9 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
     });
 
     return Scaffold(
-      backgroundColor: const Color(0xFF171A23),
+      backgroundColor: AppTheme.backgroundDark,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF171A23),
+        backgroundColor: AppTheme.backgroundDark,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -299,9 +299,9 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
                                 ? S.of(context)!.enterSatsAmountBuy
                                 : S.of(context)!.enterSatsAmountSell,
                             icon: const Icon(Icons.bolt,
-                                color: Color(0xFFF3CA29), size: 18),
+                                color: AppTheme.yellow, size: 18),
                             iconBackgroundColor:
-                                const Color(0xFFF3CA29).withValues(alpha: 0.3),
+                                AppTheme.yellow.withValues(alpha: 0.3),
                             child: TextFormField(
                               controller: _satsAmountController,
                               style: const TextStyle(color: Colors.white),
@@ -505,7 +505,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
           showDialog(
             context: context,
             builder: (context) => AlertDialog(
-              backgroundColor: const Color(0xFF1E2230),
+              backgroundColor: AppTheme.backgroundCard,
               title: Text(S.of(context)!.error,
                   style: const TextStyle(color: Colors.white)),
               content: Text(e.toString(),

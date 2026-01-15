@@ -52,7 +52,7 @@ class HomeScreen extends ConsumerWidget {
                           _buildFilterButton(context, ref),
                           Expanded(
                             child: Container(
-                              color: const Color(0xFF1D212C),
+                              color: AppTheme.dark1,
                               child: filteredOrders.isEmpty
                                   ? Center(
                                       child: Column(
@@ -193,7 +193,7 @@ class HomeScreen extends ConsumerWidget {
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-      color: const Color(0xFF1D212C),
+      color: AppTheme.dark1,
       child: Align(
         alignment: Alignment.centerLeft,
         child: Container(

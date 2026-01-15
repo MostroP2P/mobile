@@ -796,7 +796,7 @@ class AboutScreen extends ConsumerWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
-        backgroundColor: const Color(0xFF1E2230),
+        backgroundColor: AppTheme.backgroundCard,
         child: Padding(
           padding: const EdgeInsets.all(20.0),
           child: Column(

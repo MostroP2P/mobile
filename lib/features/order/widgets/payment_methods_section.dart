@@ -145,7 +145,7 @@ class PaymentMethodsSection extends ConsumerWidget {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              backgroundColor: const Color(0xFF1E2230),
+              backgroundColor: AppTheme.backgroundCard,
               title: Text(
                 S.of(context)!.selectPaymentMethodsTitle,
                 style: const TextStyle(color: Colors.white, fontSize: 18),
