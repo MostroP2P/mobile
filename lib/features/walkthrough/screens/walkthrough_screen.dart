@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:introduction_screen/introduction_screen.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/features/walkthrough/providers/first_run_provider.dart';
 import 'package:mostro_mobile/features/notifications/providers/backup_reminder_provider.dart';
@@ -23,10 +24,10 @@ class _WalkthroughScreenState extends ConsumerState<WalkthroughScreen> {
     bool isOrderBookStep = false,
     bool isCreateOfferStep = false,
   }) {
-    const defaultStyle = TextStyle(fontSize: 16, color: Color(0xFF9aa1b6));
+    const defaultStyle = TextStyle(fontSize: 16, color: Colors.white70);
     const highlightStyle = TextStyle(
       fontSize: 16,
-      color: Color(0xFF8cc63f),
+      color: AppTheme.mostroGreen,
       fontWeight: FontWeight.w600,
     );
 
@@ -97,7 +98,7 @@ class _WalkthroughScreenState extends ConsumerState<WalkthroughScreen> {
   List<PageViewModel> _getPages(BuildContext context) {
     const pageDecoration = PageDecoration(
       titleTextStyle: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-      bodyTextStyle: TextStyle(fontSize: 16, color: Color(0xFF9aa1b6)),
+      bodyTextStyle: TextStyle(fontSize: 16, color: Colors.white70),
       bodyPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       imagePadding: EdgeInsets.zero,
     );
