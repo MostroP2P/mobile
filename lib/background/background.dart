@@ -86,7 +86,13 @@ Future<void> serviceMain(ServiceInstance service) async {
         }
         await notification_service.retryNotification(event);
       } catch (e) {
-        logger?.e('Error processing event', error: e);
+        final currentLogger = logger;
+        if (currentLogger != null) {
+          currentLogger.e('Error processing event', error: e);
+        } else {
+          // ignore: avoid_print
+          print('ERROR (logger not ready): Error processing event: $e');
+        }
       }
     });
   });
