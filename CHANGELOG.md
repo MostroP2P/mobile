@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.0.7]
+
+### Added
+- **In-App Logging System** (#403, #398): Complete logging service with UI components and settings integration
+  - Logger service with basic integration for debugging and troubleshooting
+  - Logging UI components with toggle controls and log viewer
+  - Multi-language support for logging features
+- **Push Notification System** (#391, #394, #396): Full Firebase Cloud Messaging integration
+  - Firebase basic configuration for push notifications
+  - FCM service with background integration (Phase 2)
+  - PushNotificationService with encrypted token registration (Phase 3)
+- **Encrypted File Messaging** (#367): Support for encrypted file attachments in chat
+- **Backup Account Reminder** (#383): Notification system to remind users to backup their account
+- **FVM Configuration** (#376): Flutter Version Management configuration for consistent development environment
+
+### Fixed
+- **Order Creation Time Display** (#386): Fixed bug in order creation time display
+- **Background Notifications** (#378): Fixed background notifications failing in release builds
+- **Localization Entries**: Fixed invalidKeyFormat entry in Italian and Spanish ARB files
+- **Logging Toggle State**: Fixed toggle resetting to OFF on app restart
+- **Build Workflow** (#375): Added missing build_runner step to flutter.yml workflow
+
+### Changed
+- **Brand Colors Unification** (#407): Unified brand colors and consolidated color variants (Phase 1)
+- **UI Buttons and Opacity** (#402): Improved button styling and opacity handling
+- **Mostro Instance Configuration** (#390): Enhanced UX for Mostro instance configuration
+- **Order Expiration** (#392): Removed hardcoded 24h order expiration, now uses expiration_hours for trade messages and new orders
+- **Info Event Kind** (#410): Updated info event kind from 38383 to 38385
+
+### Documentation
+- **Session Recovery Guide** (#366): Added session recovery documentation
+- **Logging System Documentation** (#393): Added in-app logging system documentation
+
 ## [v1.0.6]
 
 ### Fixed
