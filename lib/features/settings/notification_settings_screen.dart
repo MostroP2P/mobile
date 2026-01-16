@@ -105,8 +105,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
                               .updatePushNotificationsEnabled(value);
                         }
                       : null,
-                  activeTrackColor: AppTheme.activeColor.withValues(alpha: 0.5),
-                  activeThumbColor: AppTheme.activeColor,
+                  activeColor: AppTheme.activeColor,
                 ),
               ],
             ),
@@ -278,8 +277,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
             Switch(
               value: value,
               onChanged: enabled ? onChanged : null,
-              activeTrackColor: AppTheme.activeColor.withValues(alpha: 0.5),
-              activeThumbColor: AppTheme.activeColor,
+              activeColor: AppTheme.activeColor,
             ),
           ],
         ),
