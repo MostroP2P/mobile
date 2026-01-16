@@ -36,6 +36,10 @@ class PushNotificationService {
   /// Track registered trade pubkeys for re-registration on token refresh
   final Set<String> _registeredTradePubkeys = {};
 
+  /// Callback to check if push notifications are enabled in settings
+  /// Set this from the app to integrate with user preferences
+  bool Function()? isPushEnabledInSettings;
+
   // Encryption constants
   static const int _paddedPayloadSize = 220;
   static const int _nonceSize = 12;
@@ -103,6 +107,12 @@ class PushNotificationService {
   /// This is the key that Mostro daemon uses in the 'p' tag when sending events
   Future<bool> registerToken(String tradePubkey) async {
     if (!isSupported) {
+      return false;
+    }
+
+    // Check if push notifications are enabled in settings
+    if (isPushEnabledInSettings != null && !isPushEnabledInSettings!()) {
+      debugPrint('PushService: Push notifications disabled in settings, skipping registration');
       return false;
     }
 
@@ -177,6 +187,27 @@ class PushNotificationService {
         await registerToken(tradePubkey);
       } catch (e) {
         _logger.e('Error re-registering token for $tradePubkey: $e');
+      }
+    }
+  }
+
+  /// Unregister all registered tokens
+  /// Called when user disables push notifications in settings
+  Future<void> unregisterAllTokens() async {
+    if (!isSupported || _registeredTradePubkeys.isEmpty) {
+      return;
+    }
+
+    debugPrint(
+        'PushService: Unregistering all ${_registeredTradePubkeys.length} tokens...');
+
+    // Copy the set to avoid modification during iteration
+    final pubkeys = Set<String>.from(_registeredTradePubkeys);
+    for (final tradePubkey in pubkeys) {
+      try {
+        await unregisterToken(tradePubkey);
+      } catch (e) {
+        _logger.e('Error unregistering token for $tradePubkey: $e');
       }
     }
   }

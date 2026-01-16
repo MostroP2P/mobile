@@ -5,6 +5,8 @@ import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/enums/storage_keys.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
+import 'package:mostro_mobile/services/push_notification_service.dart';
+import 'package:mostro_mobile/services/fcm_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsNotifier extends StateNotifier<Settings> {
@@ -12,6 +14,16 @@ class SettingsNotifier extends StateNotifier<Settings> {
   final Ref? ref;
   final _logger = Logger();
   static final String _storageKey = SharedPreferencesKeys.appSettings.value;
+
+  /// Push notification service for unregistering tokens when disabled
+  PushNotificationService? _pushService;
+  FCMService? _fcmService;
+
+  /// Set push notification services for integration
+  void setPushServices(PushNotificationService? pushService, FCMService? fcmService) {
+    _pushService = pushService;
+    _fcmService = fcmService;
+  }
 
   SettingsNotifier(this._prefs, {this.ref}) : super(_defaultSettings());
 
@@ -159,6 +171,30 @@ class SettingsNotifier extends StateNotifier<Settings> {
     state = state.copyWith(pushNotificationsEnabled: newValue);
     await _saveToPrefs();
     _logger.i('Push notifications ${newValue ? 'enabled' : 'disabled'}');
+
+    // When disabling, unregister all tokens and delete FCM token
+    if (!newValue) {
+      _unregisterPushTokens();
+    }
+  }
+
+  /// Unregister all push tokens when user disables notifications
+  void _unregisterPushTokens() {
+    if (_pushService != null) {
+      _pushService!.unregisterAllTokens().then((_) {
+        _logger.i('All push tokens unregistered');
+      }).catchError((e) {
+        _logger.w('Failed to unregister push tokens: $e');
+      });
+    }
+
+    if (_fcmService != null) {
+      _fcmService!.deleteToken().then((_) {
+        _logger.i('FCM token deleted');
+      }).catchError((e) {
+        _logger.w('Failed to delete FCM token: $e');
+      });
+    }
   }
 
   Future<void> updateNotificationSoundEnabled(bool newValue) async {
