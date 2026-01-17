@@ -1324,5 +1324,12 @@
   "shareFeatureComingSoon": "Funzione di condivisione disponibile nella Fase 2",
   "devTools": "Strumenti di Sviluppo",
   "devToolsWarning": "Solo per debug e risoluzione problemi",
-  "viewAndExportLogs": "Visualizza ed esporta i log dell'applicazione"
+  "viewAndExportLogs": "Visualizza ed esporta i log dell'applicazione",
+  "saveLogs": "Salva Log",
+  "logsExportSuccess": "Log esportati con successo",
+  "logsExportError": "Impossibile esportare i log",
+  "shareLogsError": "Impossibile condividere i log",
+  "shareLogs": "Condividi Log",
+  "exportSettings": "Impostazioni Esportazione",
+  "close": "Chiudi"
 }

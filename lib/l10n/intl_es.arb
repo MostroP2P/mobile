@@ -1269,6 +1269,13 @@
   "shareFeatureComingSoon": "Función de compartir disponible en Fase 2",
   "devTools": "Herramientas de Desarrollo",
   "devToolsWarning": "Solo para depuración y solución de problemas",
-  "viewAndExportLogs": "Ver y exportar registros de la aplicación"
+  "viewAndExportLogs": "Ver y exportar registros de la aplicación",
+  "saveLogs": "Guardar Registros",
+  "logsExportSuccess": "Registros exportados exitosamente",
+  "logsExportError": "Error al exportar registros",
+  "shareLogsError": "Error al compartir registros",
+  "shareLogs": "Compartir Registros",
+  "exportSettings": "Configuración de Exportación",
+  "close": "Cerrar"
 
 }

@@ -1293,6 +1293,13 @@
   "shareFeatureComingSoon": "Share feature coming in Phase 2",
   "devTools": "Dev Tools",
   "devToolsWarning": "For debugging and troubleshooting only",
-  "viewAndExportLogs": "View and export application logs"
+  "viewAndExportLogs": "View and export application logs",
+  "saveLogs": "Save Logs",
+  "logsExportSuccess": "Logs exported successfully",
+  "logsExportError": "Failed to export logs",
+  "shareLogsError": "Failed to share logs",
+  "shareLogs": "Share Logs",
+  "exportSettings": "Export Settings",
+  "close": "Close"
 
 }
