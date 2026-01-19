@@ -944,7 +944,7 @@
   "lndNodePublicKeyExplanation": "La chiave pubblica del nodo Lightning Network che gestisce i pagamenti per questa istanza di Mostro. Viene utilizzata per il routing della Lightning Network.",
   "lndCommitIdExplanation": "L'hash specifico del commit Git del software LND. Questo fornisce informazioni esatte della versione per l'implementazione della Lightning Network.",
   "lndNodeAliasExplanation": "Il nome leggibile dall'uomo o alias del nodo Lightning Network. Questo rende più facile identificare il nodo nella Lightning Network.",
-  "supportedChainsExplanation": "Le reti blockchain supportate da questo nodo Mostro (tipicamente Bitcoin mainnet, testnet, o regtest).",
+  "supportedChainsExplanation": "Le catene supportate dal nodo LND.",
   "supportedNetworksExplanation": "Gli ambienti di rete specifici su cui opera questo nodo Mostro (mainnet per Bitcoin reale, testnet per i test).",
   "lndNodeUriExplanation": "L'indirizzo di rete completo del nodo Lightning Network, incluse la chiave pubblica e le informazioni di connessione per connessioni peer dirette.",
   
