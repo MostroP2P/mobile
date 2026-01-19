@@ -75,6 +75,14 @@ class AboutScreen extends ConsumerWidget {
     );
   }
 
+  String _formatFiatCurrencies(BuildContext context, String currencies) {
+    if (currencies.isEmpty || currencies == 'Tag: fiat_currencies_accepted not found') {
+      return S.of(context)!.all;
+    }
+    // Add space after commas: "USD,EUR,ARS" -> "USD, EUR, ARS"
+    return currencies.replaceAll(',', ', ');
+  }
+
   Widget _buildAppInformationCard(BuildContext context) {
     const String appVersion = String.fromEnvironment('APP_VERSION',
         defaultValue: 'N/A'); // DON'T TOUCH
@@ -294,6 +302,14 @@ class AboutScreen extends ConsumerWidget {
               '${instance.fee * 100}%',
               S.of(context)!.serviceFeeExplanation,
             ),
+            const SizedBox(height: 16),
+
+            _buildInfoRowWithDialog(
+              context,
+              S.of(context)!.fiatCurrenciesAccepted,
+              _formatFiatCurrencies(context, instance.fiatCurrenciesAccepted),
+              S.of(context)!.fiatCurrenciesAcceptedExplanation,
+            ),
             const SizedBox(height: 20),
 
             // Technical Details Section
@@ -360,6 +376,14 @@ class AboutScreen extends ConsumerWidget {
               S.of(context)!.proofOfWork,
               instance.pow.toString(),
               S.of(context)!.proofOfWorkExplanation,
+            ),
+            const SizedBox(height: 16),
+
+            _buildInfoRowWithDialog(
+              context,
+              S.of(context)!.maxOrdersPerResponse,
+              instance.maxOrdersPerResponse.toString(),
+              S.of(context)!.maxOrdersPerResponseExplanation,
             ),
             const SizedBox(height: 20),
 
