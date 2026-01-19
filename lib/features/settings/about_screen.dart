@@ -267,7 +267,7 @@ class AboutScreen extends ConsumerWidget {
               context,
               S.of(context)!.mostroPublicKey,
               instance.pubKey,
-              S.of(context)!.lndNodePublicKeyExplanation,
+              S.of(context)!.mostroPublicKeyExplanation,
             ),
 
             const SizedBox(height: 16),
@@ -291,7 +291,7 @@ class AboutScreen extends ConsumerWidget {
             _buildInfoRowWithDialog(
               context,
               S.of(context)!.orderLifespan,
-              '${instance.expirationHours} ${S.of(context)!.hour}',
+              '${instance.expirationHours} ${instance.expirationHours == 1 ? S.of(context)!.hour : S.of(context)!.hours}',
               S.of(context)!.orderExpirationExplanation,
             ),
             const SizedBox(height: 16),
