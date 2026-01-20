@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
@@ -13,7 +14,7 @@ class OrderTypeHeader extends StatelessWidget {
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 0),
       decoration: const BoxDecoration(
-        color: Color(0xFF1E2230),
+        color: AppTheme.backgroundCard,
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(12),
           topRight: Radius.circular(12),

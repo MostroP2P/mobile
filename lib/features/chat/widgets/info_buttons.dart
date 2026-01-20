@@ -48,7 +48,7 @@ class InfoButtons extends StatelessWidget {
           backgroundColor: isSelected
               ? AppTheme.mostroGreen
               : AppTheme.backgroundCard,
-          foregroundColor: isSelected ? const Color(0xFF1A1A1A) : AppTheme.textSecondary,
+          foregroundColor: isSelected ? Colors.black : AppTheme.textSecondary,
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),

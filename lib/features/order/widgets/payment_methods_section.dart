@@ -42,8 +42,8 @@ class PaymentMethodsSection extends ConsumerWidget {
 
     return FormSection(
       title: S.of(context)!.paymentMethodsForCurrency(selectedFiatCode ?? ''),
-      icon: const Icon(Icons.credit_card, color: Color(0xFF8CC63F), size: 18),
-      iconBackgroundColor: const Color(0xFF8CC63F).withValues(alpha: 0.3),
+      icon: const Icon(Icons.credit_card, color: AppTheme.mostroGreen, size: 18),
+      iconBackgroundColor: AppTheme.mostroGreen.withValues(alpha: 0.3),
       extraContent: showCustomField
           ? Padding(
               padding: const EdgeInsets.fromLTRB(0, 8, 0, 0),
@@ -58,7 +58,7 @@ class PaymentMethodsSection extends ConsumerWidget {
                     borderSide: BorderSide(color: Colors.white24),
                   ),
                   focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFF8CC63F)),
+                    borderSide: BorderSide(color: AppTheme.mostroGreen),
                   ),
                 ),
               ),
@@ -145,7 +145,7 @@ class PaymentMethodsSection extends ConsumerWidget {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              backgroundColor: const Color(0xFF1E2230),
+              backgroundColor: AppTheme.backgroundCard,
               title: Text(
                 S.of(context)!.selectPaymentMethodsTitle,
                 style: const TextStyle(color: Colors.white, fontSize: 18),
@@ -160,7 +160,7 @@ class PaymentMethodsSection extends ConsumerWidget {
                             title: Text(method,
                                 style: const TextStyle(color: Colors.white)),
                             value: dialogSelectedMethods.contains(method),
-                            activeColor: const Color(0xFF8CC63F),
+                            activeColor: AppTheme.mostroGreen,
                             checkColor: Colors.black,
                             contentPadding: EdgeInsets.zero,
                             onChanged: (selected) {
@@ -192,7 +192,7 @@ class PaymentMethodsSection extends ConsumerWidget {
                               borderSide: BorderSide(color: Colors.white24),
                             ),
                             focusedBorder: UnderlineInputBorder(
-                              borderSide: BorderSide(color: Color(0xFF8CC63F)),
+                              borderSide: BorderSide(color: AppTheme.mostroGreen),
                             ),
                           ),
                           // No need for an onChanged handler that updates the controller

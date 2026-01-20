@@ -9,6 +9,7 @@ import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
 
 const orderEventKind = 38383;
+const infoEventKind = 38385;
 const orderFilterDurationHours = 48;
 
 class OpenOrdersRepository implements OrderRepository<NostrEvent> {
@@ -39,7 +40,7 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
         DateTime.now().subtract(Duration(hours: orderFilterDurationHours));
 
     final filter = NostrFilter(
-      kinds: [orderEventKind],
+      kinds: [orderEventKind, infoEventKind],
       since: filterTime,
       authors: [_settings.mostroPublicKey],
     );
@@ -52,7 +53,7 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
       if (event.type == 'order') {
         _events[event.orderId!] = event;
         _eventStreamController.add(_events.values.toList());
-      } else if (event.type == 'info' &&
+      } else if (event.kind == infoEventKind &&
           event.pubkey == _settings.mostroPublicKey) {
         _logger.i('Mostro instance info loaded: $event');
         _mostroInstance = event;

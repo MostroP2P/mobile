@@ -33,7 +33,7 @@ class LoginScreen extends HookConsumerWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      backgroundColor: const Color(0xFF1D212C),
+      backgroundColor: AppTheme.dark1,
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(

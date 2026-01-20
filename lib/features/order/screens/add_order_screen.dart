@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
@@ -207,9 +208,9 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
     });
 
     return Scaffold(
-      backgroundColor: const Color(0xFF171A23),
+      backgroundColor: AppTheme.backgroundDark,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF171A23),
+        backgroundColor: AppTheme.backgroundDark,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -298,9 +299,9 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
                                 ? S.of(context)!.enterSatsAmountBuy
                                 : S.of(context)!.enterSatsAmountSell,
                             icon: const Icon(Icons.bolt,
-                                color: Color(0xFFF3CA29), size: 18),
+                                color: AppTheme.yellow, size: 18),
                             iconBackgroundColor:
-                                const Color(0xFFF3CA29).withValues(alpha: 0.3),
+                                AppTheme.yellow.withValues(alpha: 0.3),
                             child: TextFormField(
                               controller: _satsAmountController,
                               style: const TextStyle(color: Colors.white),
@@ -504,7 +505,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
           showDialog(
             context: context,
             builder: (context) => AlertDialog(
-              backgroundColor: const Color(0xFF1E2230),
+              backgroundColor: AppTheme.backgroundCard,
               title: Text(S.of(context)!.error,
                   style: const TextStyle(color: Colors.white)),
               content: Text(e.toString(),
@@ -513,7 +514,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
                   child: Text(S.of(context)!.ok,
-                      style: TextStyle(color: Color(0xFF8CC63F))),
+                      style: const TextStyle(color: AppTheme.mostroGreen)),
                 ),
               ],
             ),
