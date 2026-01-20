@@ -92,6 +92,11 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
             ),
             ElevatedButton.icon(
               onPressed: () async {
+                // Capture context values before async gap
+                final messenger = ScaffoldMessenger.of(context);
+                final mediaQuery = MediaQuery.of(context);
+                final errorMessage = S.of(context)!.failedToShareInvoice;
+
                 try {
                   // Try to launch Lightning URL directly first
                   final uri = Uri.parse('lightning:${widget.lnInvoice}');
@@ -109,11 +114,20 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
                 } catch (e) {
                   widget.logger.e('Failed to share LN Invoice: $e');
                   if (mounted) {
-                    // ignore: use_build_context_synchronously
-                    SnackBarHelper.showTopSnackBar(
-                      context,
-                      S.of(context)!.failedToShareInvoice,
-                      duration: const Duration(seconds: 3),
+                    // Show SnackBar at top using captured values
+                    final bottomMargin = mediaQuery.size.height - 96 - 70;
+                    messenger.showSnackBar(
+                      SnackBar(
+                        content: Text(errorMessage),
+                        duration: const Duration(seconds: 3),
+                        behavior: SnackBarBehavior.floating,
+                        margin: EdgeInsets.only(
+                          top: 96,
+                          left: 16,
+                          right: 16,
+                          bottom: bottomMargin,
+                        ),
+                      ),
                     );
                   }
                 }
