@@ -22,15 +22,17 @@ Implementation of a comprehensive logging system for MostroP2P mobile app with i
 - Connect UI to actual logger
 - Test with 2 files: RelaysNotifier, SubscriptionManager
 
-### Phase 3: Core Services Migration (Current)
+### Phase 3: Core Services Migration (Completed)
 - NostrService
 - MostroService
 - DeepLinkService
-- 2 additional core files
+- mostro_storage 
+- AbstractMostroNotifier + subclasses (AddOrderNotifier, OrderNotifier)
 
-### Phase 4: Background Services 
-- Mobile and desktop background service
-- Isolate logging
+### Phase 4: Background Services (Completed)
+- Mobile background service with isolate logging
+- Desktop background service with isolate logging
+- Isolate log receiver initialized in main.dart
 
 ### Phase 5: File Export & Persistence 
 - Auto-save to storage
@@ -204,6 +206,6 @@ void backgroundMain(SendPort sendPort) async {
 
 ---
 
-**Version**: 3
-**Status**: Phase 2 - Ready
-**Last Updated**: 2026-01-06
+**Version**: 5
+**Status**: Phase 4 - Completed
+**Last Updated**: 2026-01-12

@@ -3,7 +3,7 @@ import 'package:dart_nostr/dart_nostr.dart';
 import 'package:dart_nostr/nostr/model/ease.dart';
 import 'package:dart_nostr/nostr/model/ok.dart';
 import 'package:dart_nostr/nostr/model/relay_informations.dart';
-import 'package:logger/logger.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
@@ -14,7 +14,7 @@ import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 class NostrService {
   Settings? _settings;
   final Nostr _nostr = Nostr.instance;
-  final Logger _logger = Logger();
+  
   bool _isInitialized = false;
 
   NostrService();
@@ -32,7 +32,7 @@ class NostrService {
       throw Exception('Cannot initialize NostrService: No relays provided');
     }
     
-    _logger.i('Initializing NostrService with relays: ${settings.relays}');
+    logger.i('Initializing NostrService with relays: ${settings.relays}');
     _settings = settings;
     
     try {
@@ -44,30 +44,30 @@ class NostrService {
         retryOnError: true,
         onRelayListening: (relayUrl, receivedData, channel) {
           if (receivedData is NostrEvent) {
-            _logger.d('Event from $relayUrl: ${receivedData.id}');
+            logger.d('Event from $relayUrl: ${receivedData.id}');
           } else if (receivedData is NostrNotice) {
-            _logger.i('Notice from $relayUrl: ${receivedData.message}');
+            logger.i('Notice from $relayUrl: ${receivedData.message}');
           } else if (receivedData is NostrEventOkCommand) {
-            _logger.d('OK from $relayUrl: ${receivedData.eventId} (accepted: ${receivedData.isEventAccepted})');
+            logger.d('OK from $relayUrl: ${receivedData.eventId} (accepted: ${receivedData.isEventAccepted})');
           } else if (receivedData is NostrRequestEoseCommand) {
-            _logger.d('EOSE from $relayUrl for subscription: ${receivedData.subscriptionId}');
+            logger.d('EOSE from $relayUrl for subscription: ${receivedData.subscriptionId}');
           } else if (receivedData is NostrCountResponse) {
-            _logger.d('Count from $relayUrl: ${receivedData.count}');
+            logger.d('Count from $relayUrl: ${receivedData.count}');
           }
         },
         onRelayConnectionError: (relay, error, channel) {
-          _logger.w('Failed to connect to relay $relay: $error');
+          logger.w('Failed to connect to relay $relay: $error');
         },
         onRelayConnectionDone: (relay, socket) {
-          _logger.i('Successfully connected to relay: $relay');
+          logger.i('Successfully connected to relay: $relay');
         },
       );
       
       _isInitialized = true;
-      _logger.i('NostrService initialized successfully with ${settings.relays.length} relays');
+      logger.i('NostrService initialized successfully with ${settings.relays.length} relays');
     } catch (e) {
       _isInitialized = false;
-      _logger.e('Failed to initialize NostrService: $e');
+      logger.e('Failed to initialize NostrService: $e');
       rethrow;
     }
   }
@@ -75,11 +75,11 @@ class NostrService {
   Future<void> updateSettings(Settings newSettings) async {
     // Compare with current settings instead of relying on dart_nostr internal state
     if (!ListEquality().equals(settings.relays, newSettings.relays)) {
-      _logger.i('Updating relays from ${settings.relays} to ${newSettings.relays}');
+      logger.i('Updating relays from ${settings.relays} to ${newSettings.relays}');
       
       // Validate that new relay list is not empty
       if (newSettings.relays.isEmpty) {
-        _logger.w('Warning: Attempting to update with empty relay list');
+        logger.w('Warning: Attempting to update with empty relay list');
         return;
       }
       
@@ -89,24 +89,24 @@ class NostrService {
         
         // Disconnect from current relays first
         await _nostr.services.relays.disconnectFromRelays();
-        _logger.i('Disconnected from previous relays');
+        logger.i('Disconnected from previous relays');
         
         // Initialize with new relay list
         await init(newSettings);
-        _logger.i('Successfully updated to new relays: ${newSettings.relays}');
+        logger.i('Successfully updated to new relays: ${newSettings.relays}');
       } catch (e) {
-        _logger.e('Failed to update relays: $e');
+        logger.e('Failed to update relays: $e');
         // Try to restore previous state if update fails
         try {
           await init(settings);
-          _logger.i('Restored previous relay configuration');
+          logger.i('Restored previous relay configuration');
         } catch (restoreError) {
-          _logger.e('Failed to restore previous relay configuration: $restoreError');
+          logger.e('Failed to restore previous relay configuration: $restoreError');
           rethrow;
         }
       }
     } else {
-      _logger.d('Relay list unchanged, skipping update');
+      logger.d('Relay list unchanged, skipping update');
     }
   }
 
@@ -127,16 +127,16 @@ class NostrService {
     }
 
     try {
-      _logger.i('Publishing event ${event.id} to relays: ${settings.relays}');
+      logger.i('Publishing event ${event.id} to relays: ${settings.relays}');
       
       await _nostr.services.relays.sendEventToRelaysAsync(
         event,
         timeout: Config.nostrConnectionTimeout,
       );
       
-      _logger.i('Successfully published event ${event.id}');
+      logger.i('Successfully published event ${event.id}');
     } catch (e) {
-      _logger.w('Failed to publish event ${event.id}: $e');
+      logger.w('Failed to publish event ${event.id}: $e');
       
       // If it's the empty relay list assertion error, provide better context
       if (e.toString().contains('relaysUrl.isNotEmpty')) {
@@ -181,7 +181,7 @@ class NostrService {
 
     await _nostr.services.relays.disconnectFromRelays();
     _isInitialized = false;
-    _logger.i('Disconnected from all relays');
+    logger.i('Disconnected from all relays');
   }
 
   bool get isInitialized => _isInitialized;
@@ -270,7 +270,7 @@ class NostrService {
     }
 
     try {
-      _logger.i('Fetching event with ID: $eventId');
+      logger.i('Fetching event with ID: $eventId');
 
       // Create filter to fetch the specific event
       final filter = NostrFilter(
@@ -289,7 +289,7 @@ class NostrService {
       }
 
       if (events.isEmpty) {
-        _logger.w('No event found with ID: $eventId');
+        logger.w('No event found with ID: $eventId');
         return null;
       }
 
@@ -301,20 +301,20 @@ class NostrService {
 
       // Validate it's a proper order event
       if (event.kind != 38383) {
-        _logger.w('Event $eventId is not an order event (kind: ${event.kind})');
+        logger.w('Event $eventId is not an order event (kind: ${event.kind})');
         return null;
       }
 
       // Check if it's from a valid Mostro instance
       if (event.pubkey != settings.mostroPublicKey) {
-        _logger.w('Event $eventId is not from the configured Mostro instance');
+        logger.w('Event $eventId is not from the configured Mostro instance');
         return null;
       }
 
-      _logger.i('Successfully found order event: ${event.id}');
+      logger.i('Successfully found order event: ${event.id}');
       return Order.fromEvent(event);
     } catch (e) {
-      _logger.e('Error fetching event by ID: $e');
+      logger.e('Error fetching event by ID: $e');
       return null;
     }
   }
@@ -324,7 +324,7 @@ class NostrService {
   Future<OrderInfo?> fetchOrderInfoByEventId(String eventId,
       [List<String>? specificRelays]) async {
     try {
-      _logger.i('Fetching order ID from event: $eventId');
+      logger.i('Fetching order ID from event: $eventId');
 
       final filter = NostrFilter(
         ids: [eventId],
@@ -342,7 +342,7 @@ class NostrService {
       }
 
       if (events.isEmpty) {
-        _logger.w('No event found with ID: $eventId');
+        logger.w('No event found with ID: $eventId');
         return null;
       }
 
@@ -354,13 +354,13 @@ class NostrService {
 
       // Validate it's a proper order event
       if (event.kind != 38383) {
-        _logger.w('Event $eventId is not an order event (kind: ${event.kind})');
+        logger.w('Event $eventId is not an order event (kind: ${event.kind})');
         return null;
       }
 
       // Check if it's from a valid Mostro instance
       if (event.pubkey != settings.mostroPublicKey) {
-        _logger.w('Event $eventId is not from the configured Mostro instance');
+        logger.w('Event $eventId is not from the configured Mostro instance');
         return null;
       }
 
@@ -373,7 +373,7 @@ class NostrService {
           .firstOrNull;
 
       if (dTag == null || dTag.isEmpty) {
-        _logger.w('Event $eventId does not contain a valid d tag');
+        logger.w('Event $eventId does not contain a valid d tag');
         return null;
       }
 
@@ -386,7 +386,7 @@ class NostrService {
           .firstOrNull;
 
       if (kTag == null || kTag.isEmpty) {
-        _logger.w('Event $eventId does not contain a valid k tag (order type)');
+        logger.w('Event $eventId does not contain a valid k tag (order type)');
         return null;
       }
 
@@ -394,15 +394,15 @@ class NostrService {
       try {
         orderType = OrderType.fromString(kTag);
       } catch (e) {
-        _logger.w('Event $eventId contains invalid order type: $kTag');
+        logger.w('Event $eventId contains invalid order type: $kTag');
         return null;
       }
 
-      _logger.i(
+      logger.i(
           'Successfully extracted order info - ID: $dTag, Type: ${orderType.value} from event: $eventId');
       return OrderInfo(orderId: dTag, orderType: orderType);
     } catch (e) {
-      _logger.e('Error fetching order ID from event: $e');
+      logger.e('Error fetching order ID from event: $e');
       return null;
     }
   }
@@ -420,7 +420,7 @@ class NostrService {
       final allRelays = <String>{...originalRelays, ...relays}.toList();
 
       if (!ListEquality().equals(originalRelays, allRelays)) {
-        _logger.i('Temporarily connecting to additional relays: $relays');
+        logger.i('Temporarily connecting to additional relays: $relays');
 
         // Update settings with additional relays
         final tempSettings = Settings(
@@ -445,12 +445,12 @@ class NostrService {
         return await fetchEvents(filter);
       }
     } catch (e) {
-      _logger.e('Error fetching from specific relays: $e');
+      logger.e('Error fetching from specific relays: $e');
       // Ensure we restore original settings even on error
       try {
         await updateSettings(settings);
       } catch (restoreError) {
-        _logger.e('Failed to restore original relay settings: $restoreError');
+        logger.e('Failed to restore original relay settings: $restoreError');
       }
       rethrow;
     }
