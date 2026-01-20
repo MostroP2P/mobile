@@ -8,6 +8,7 @@ import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/shared/widgets/add_lightning_invoice_widget.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
 
 class AddLightningInvoiceScreen extends ConsumerStatefulWidget {
   final String orderId;
@@ -63,11 +64,9 @@ class _AddLightningInvoiceScreenState
                           if (context.mounted) context.go('/');
                         } catch (e) {
                           if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                    'Failed to update invoice: ${e.toString()}'),
-                              ),
+                            SnackBarHelper.showTopSnackBar(
+                              context,
+                              'Failed to update invoice: ${e.toString()}',
                             );
                           }
                         }
@@ -81,11 +80,9 @@ class _AddLightningInvoiceScreenState
                         if (context.mounted) context.go('/');
                       } catch (e) {
                         if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                  'Failed to cancel order: ${e.toString()}'),
-                            ),
+                          SnackBarHelper.showTopSnackBar(
+                            context,
+                            'Failed to cancel order: ${e.toString()}',
                           );
                         }
                       }

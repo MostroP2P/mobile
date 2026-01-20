@@ -12,6 +12,7 @@ import 'package:mostro_mobile/services/encrypted_file_upload_service.dart';
 import 'package:mostro_mobile/services/encrypted_image_upload_service.dart';
 import 'package:mostro_mobile/services/file_validation_service.dart';
 import 'package:mostro_mobile/services/media_validation_service.dart';
+import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
 
 class MessageInput extends ConsumerStatefulWidget {
   final String orderId;
@@ -127,11 +128,10 @@ class _MessageInputState extends ConsumerState<MessageInput> {
     } catch (e) {
       // Show error to user
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error uploading file: $e'),
-            backgroundColor: Colors.red,
-          ),
+        SnackBarHelper.showTopSnackBar(
+          context,
+          'Error uploading file: $e',
+          backgroundColor: Colors.red,
         );
       }
     } finally {

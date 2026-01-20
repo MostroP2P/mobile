@@ -8,6 +8,7 @@ import 'package:mostro_mobile/shared/providers/avatar_provider.dart';
 import 'package:mostro_mobile/features/chat/widgets/encrypted_image_message.dart';
 import 'package:mostro_mobile/features/chat/widgets/encrypted_file_message.dart';
 import 'package:mostro_mobile/features/chat/utils/message_type_helpers.dart';
+import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
 
 class MessageBubble extends ConsumerWidget {
   final NostrEvent message;
@@ -154,17 +155,11 @@ class MessageBubble extends ConsumerWidget {
     // Only copy if text is not empty
     if (text.isNotEmpty) {
       Clipboard.setData(ClipboardData(text: text));
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(S.of(context)!.messageCopiedToClipboard),
-          duration: const Duration(seconds: 2),
-          backgroundColor: AppTheme.backgroundCard,
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.all(16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ),
+      SnackBarHelper.showTopSnackBar(
+        context,
+        S.of(context)!.messageCopiedToClipboard,
+        duration: const Duration(seconds: 2),
+        backgroundColor: AppTheme.backgroundCard,
       );
     }
   }

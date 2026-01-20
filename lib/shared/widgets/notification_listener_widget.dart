@@ -6,6 +6,7 @@ import 'package:mostro_mobile/data/models/enums/action.dart' as mostro;
 import 'package:mostro_mobile/features/notifications/notifiers/notification_temporary_state.dart';
 import 'package:mostro_mobile/features/notifications/providers/notifications_provider.dart';
 import 'package:mostro_mobile/features/notifications/utils/notification_message_mapper.dart';
+import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
 
 class CantDoNotificationMapper {
   static final _logger = Logger();
@@ -95,11 +96,10 @@ class NotificationListenerWidget extends ConsumerWidget {
           message = S.of(context)!.notificationGenericTitle;
         }
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            duration: const Duration(seconds: 2), // Show for 2 seconds
-          ),
+        SnackBarHelper.showTopSnackBar(
+          context,
+          message,
+          duration: const Duration(seconds: 2),
         );
         // Clear notification after showing to prevent repetition
         ref.read(notificationActionsProvider.notifier).clearTemporary();

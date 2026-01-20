@@ -9,6 +9,7 @@ import 'package:mostro_mobile/features/notifications/providers/backup_reminder_p
 import 'package:mostro_mobile/shared/widgets/custom_button.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
 
 class RegisterScreen extends HookConsumerWidget {
   const RegisterScreen({super.key});
@@ -39,8 +40,9 @@ class RegisterScreen extends HookConsumerWidget {
         // Navigate to home after successful registration
         context.go('/');
       } else if (state is AuthFailure) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(state.error)),
+        SnackBarHelper.showTopSnackBar(
+          context,
+          state.error,
         );
       }
     });

@@ -8,6 +8,7 @@ import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/shared/utils/datetime_extensions_utils.dart';
+import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
 
 class LogsScreen extends ConsumerStatefulWidget {
   const LogsScreen({super.key});
@@ -142,8 +143,9 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
       ref.read(logsProvider.notifier).clearLogs();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(S.of(context)!.logsCleared)),
+          SnackBarHelper.showTopSnackBar(
+            context,
+            S.of(context)!.logsCleared,
           );
         }
       });

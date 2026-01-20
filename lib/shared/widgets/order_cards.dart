@@ -8,6 +8,7 @@ import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
 import 'package:mostro_mobile/shared/utils/currency_utils.dart';
 
 import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
 
 /// Card that displays the order amount information (selling/buying sats for amount)
 class OrderAmountCard extends ConsumerWidget {
@@ -230,11 +231,9 @@ class OrderIdCard extends StatelessWidget {
                 ),
                 onPressed: () {
                   Clipboard.setData(ClipboardData(text: orderId));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(S.of(context)!.orderIdCopiedMessage),
-                      duration: Duration(seconds: 2),
-                    ),
+                  SnackBarHelper.showTopSnackBar(
+                    context,
+                    S.of(context)!.orderIdCopiedMessage,
                   );
                 },
               ),

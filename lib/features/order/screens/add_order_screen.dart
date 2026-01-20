@@ -21,6 +21,7 @@ import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
 
 class AddOrderScreen extends ConsumerStatefulWidget {
   const AddOrderScreen({super.key});
@@ -392,11 +393,9 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
       final selectedFiatCode = ref.read(selectedFiatCodeProvider);
 
       if (selectedFiatCode == null || selectedFiatCode.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(S.of(context)!.pleaseSelectCurrency),
-            duration: const Duration(seconds: 2),
-          ),
+        SnackBarHelper.showTopSnackBar(
+          context,
+          S.of(context)!.pleaseSelectCurrency,
         );
         return;
       }
@@ -405,11 +404,9 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
       final fiatCode = selectedFiatCode;
 
       if (_selectedPaymentMethods.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(S.of(context)!.pleaseSelectPaymentMethod),
-            duration: const Duration(seconds: 2),
-          ),
+        SnackBarHelper.showTopSnackBar(
+          context,
+          S.of(context)!.pleaseSelectPaymentMethod,
         );
         return;
       }
@@ -430,12 +427,11 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
       if (!exchangeRateAsync.hasValue || mostroInstance == null) {
         debugPrint(
             'Submission blocked: Required data not available - Exchange rate: ${exchangeRateAsync.hasValue}, Mostro instance: ${mostroInstance != null}');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(S.of(context)!.exchangeRateNotAvailable),
-            duration: const Duration(seconds: 3),
-            backgroundColor: Colors.orange.withValues(alpha: 0.8),
-          ),
+        SnackBarHelper.showTopSnackBar(
+          context,
+          S.of(context)!.exchangeRateNotAvailable,
+          duration: const Duration(seconds: 3),
+          backgroundColor: Colors.orange.withValues(alpha: 0.8),
         );
         return;
       }

@@ -6,6 +6,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
 
 class PayLightningInvoiceWidget extends StatefulWidget {
   final VoidCallback onSubmit;
@@ -77,11 +78,10 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
                 Clipboard.setData(ClipboardData(text: widget.lnInvoice));
                 widget.logger
                     .i('Copied LN Invoice to clipboard: ${widget.lnInvoice}');
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(S.of(context)!.invoiceCopiedToClipboard),
-                    duration: const Duration(seconds: 2),
-                  ),
+                SnackBarHelper.showTopSnackBar(
+                  context,
+                  S.of(context)!.invoiceCopiedToClipboard,
+                  duration: const Duration(seconds: 2),
                 );
               },
               icon: const Icon(Icons.copy),
@@ -110,12 +110,10 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
                   widget.logger.e('Failed to share LN Invoice: $e');
                   if (mounted) {
                     // ignore: use_build_context_synchronously
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        // ignore: use_build_context_synchronously
-                        content: Text(S.of(context)!.failedToShareInvoice),
-                        duration: const Duration(seconds: 3),
-                      ),
+                    SnackBarHelper.showTopSnackBar(
+                      context,
+                      S.of(context)!.failedToShareInvoice,
+                      duration: const Duration(seconds: 3),
                     );
                   }
                 }
