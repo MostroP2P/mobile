@@ -107,13 +107,21 @@ class LogsActionsMenu extends ConsumerWidget {
     WidgetRef ref,
     List<LogEntry> logs,
   ) async {
+    final localizations = S.of(context)!;
+    final strings = LogExportStrings(
+      headerTitle: localizations.logsHeaderTitle,
+      generatedLabel: localizations.logsGeneratedLabel,
+      totalLabel: localizations.logsTotalLabel,
+      emptyMessage: localizations.noLogsAvailable,
+    );
+
     try {
-      final filePath = await LoggerExportService.exportLogsToFolder(logs);
+      final filePath = await LoggerExportService.exportLogsToFolder(logs, strings);
 
       if (filePath != null && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(S.of(context)!.logsExportSuccess),
+            content: Text(localizations.logsExportSuccess),
             backgroundColor: AppTheme.statusSuccess,
           ),
         );
@@ -123,7 +131,7 @@ class LogsActionsMenu extends ConsumerWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${S.of(context)!.logsExportError}: $e'),
+            content: Text(localizations.logsExportError),
             backgroundColor: AppTheme.statusError,
           ),
         );
@@ -132,15 +140,27 @@ class LogsActionsMenu extends ConsumerWidget {
   }
 
   Future<void> _shareLogsFile(BuildContext context, List<LogEntry> logs) async {
+    final localizations = S.of(context)!;
+    final strings = LogExportStrings(
+      headerTitle: localizations.logsHeaderTitle,
+      generatedLabel: localizations.logsGeneratedLabel,
+      totalLabel: localizations.logsTotalLabel,
+      emptyMessage: localizations.noLogsAvailable,
+    );
+
     try {
-      final file = await LoggerExportService.exportLogsForSharing(logs);
-      await LoggerExportService.shareLogs(file);
+      final file = await LoggerExportService.exportLogsForSharing(logs, strings);
+      await LoggerExportService.shareLogs(
+        file,
+        subject: localizations.logsShareSubject,
+        text: localizations.logsShareText,
+      );
     } catch (e, stackTrace) {
       _logger.e('Error sharing logs', error: e, stackTrace: stackTrace);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${S.of(context)!.shareLogsError}: $e'),
+            content: Text(localizations.shareLogsError),
             backgroundColor: AppTheme.statusError,
           ),
         );

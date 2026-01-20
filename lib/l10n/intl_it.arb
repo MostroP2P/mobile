@@ -1329,7 +1329,10 @@
   "logsExportSuccess": "Log esportati con successo",
   "logsExportError": "Impossibile esportare i log",
   "shareLogsError": "Impossibile condividere i log",
-  "shareLogs": "Condividi Log",
   "exportSettings": "Impostazioni Esportazione",
-  "close": "Chiudi"
+  "logsHeaderTitle": "Log Applicazione Mostro P2P",
+  "logsGeneratedLabel": "Generato",
+  "logsTotalLabel": "Totale log",
+  "logsShareSubject": "Log Mostro P2P",
+  "logsShareText": "Log dell'applicazione Mostro P2P"
 }

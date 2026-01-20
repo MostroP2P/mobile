@@ -1274,8 +1274,11 @@
   "logsExportSuccess": "Registros exportados exitosamente",
   "logsExportError": "Error al exportar registros",
   "shareLogsError": "Error al compartir registros",
-  "shareLogs": "Compartir Registros",
   "exportSettings": "Configuración de Exportación",
-  "close": "Cerrar"
+  "logsHeaderTitle": "Registros de Aplicación Mostro P2P",
+  "logsGeneratedLabel": "Generado",
+  "logsTotalLabel": "Total de registros",
+  "logsShareSubject": "Registros Mostro P2P",
+  "logsShareText": "Registros de aplicación de Mostro P2P"
 
 }

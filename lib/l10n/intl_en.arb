@@ -1298,8 +1298,11 @@
   "logsExportSuccess": "Logs exported successfully",
   "logsExportError": "Failed to export logs",
   "shareLogsError": "Failed to share logs",
-  "shareLogs": "Share Logs",
   "exportSettings": "Export Settings",
-  "close": "Close"
+  "logsHeaderTitle": "Mostro P2P Application Logs",
+  "logsGeneratedLabel": "Generated",
+  "logsTotalLabel": "Total logs",
+  "logsShareSubject": "Mostro P2P Logs",
+  "logsShareText": "Application logs from Mostro P2P"
 
 }
