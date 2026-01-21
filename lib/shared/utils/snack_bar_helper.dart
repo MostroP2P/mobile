@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 /// Helper class to show SnackBars at the top of the screen
@@ -63,7 +65,7 @@ class SnackBarHelper {
     final topMargin = statusBarHeight + appBarHeight + extraMargin;
 
     final estimatedSnackBarHeight = 60.0; // Estimated height optimized for 1-2 line messages
-    final bottomMargin = screenHeight - topMargin - estimatedSnackBarHeight;
+    final bottomMargin = math.max(0.0, screenHeight - topMargin - estimatedSnackBarHeight);
 
     // Clear any existing SnackBars to prevent stacking
     messenger.clearSnackBars();
