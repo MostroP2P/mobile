@@ -15,9 +15,18 @@ class SnackBarHelper {
     Duration duration = const Duration(seconds: 2),
     Color? backgroundColor,
   }) {
-    // Calculate bottom margin to force SnackBar to appear at top
+    // Calculate positioning using system values
     final mediaQuery = MediaQuery.of(context);
-    final bottomMargin = mediaQuery.size.height - 96 - 70; // screen height - top margin - snackbar height (~70px)
+    final statusBarHeight = mediaQuery.padding.top; // Real status bar height (varies by device)
+    final appBarHeight = kToolbarHeight; // Standard AppBar height (56px)
+    final extraMargin = 4.0; // Minimal margin for tighter spacing
+    final topMargin = statusBarHeight + appBarHeight + extraMargin;
+
+    final estimatedSnackBarHeight = 60.0; // Estimated height optimized for 1-2 line messages
+    final bottomMargin = mediaQuery.size.height - topMargin - estimatedSnackBarHeight;
+
+    // Clear any existing SnackBars to prevent stacking
+    ScaffoldMessenger.of(context).clearSnackBars();
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -26,10 +35,10 @@ class SnackBarHelper {
         backgroundColor: backgroundColor,
         behavior: SnackBarBehavior.floating,
         margin: EdgeInsets.only(
-          top: 96,  // Status bar (24px) + AppBar (56px) + margin (16px) = 96px optimized for Android
+          top: topMargin,
           left: 16,
           right: 16,
-          bottom: bottomMargin, // Force positioning at top by setting large bottom margin
+          bottom: bottomMargin,
         ),
       ),
     );
