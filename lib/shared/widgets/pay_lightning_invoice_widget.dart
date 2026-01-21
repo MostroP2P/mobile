@@ -114,20 +114,12 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
                 } catch (e) {
                   widget.logger.e('Failed to share LN Invoice: $e');
                   if (mounted) {
-                    // Show SnackBar at top using captured values
-                    final bottomMargin = mediaQuery.size.height - 96 - 70;
-                    messenger.showSnackBar(
-                      SnackBar(
-                        content: Text(errorMessage),
-                        duration: const Duration(seconds: 3),
-                        behavior: SnackBarBehavior.floating,
-                        margin: EdgeInsets.only(
-                          top: 96,
-                          left: 16,
-                          right: 16,
-                          bottom: bottomMargin,
-                        ),
-                      ),
+                    SnackBarHelper.showTopSnackBarAsync(
+                      messenger: messenger,
+                      screenHeight: mediaQuery.size.height,
+                      statusBarHeight: mediaQuery.padding.top,
+                      message: errorMessage,
+                      duration: const Duration(seconds: 3),
                     );
                   }
                 }
