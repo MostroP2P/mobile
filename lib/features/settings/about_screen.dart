@@ -9,6 +9,7 @@ import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AboutScreen extends ConsumerWidget {
@@ -733,12 +734,11 @@ class AboutScreen extends ConsumerWidget {
   }
 
   void _showErrorSnackBar(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppTheme.statusError,
-        duration: const Duration(seconds: 3),
-      ),
+    SnackBarHelper.showTopSnackBar(
+      context,
+      message,
+      duration: const Duration(seconds: 3),
+      backgroundColor: AppTheme.statusError,
     );
   }
 
@@ -865,12 +865,11 @@ class AboutScreen extends ConsumerWidget {
   void _copyToClipboard(BuildContext context, String text) {
     Clipboard.setData(ClipboardData(text: text));
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(S.of(context)!.copiedToClipboard),
-          backgroundColor: AppTheme.statusSuccess,
-          duration: const Duration(seconds: 2),
-        ),
+      SnackBarHelper.showTopSnackBar(
+        context,
+        S.of(context)!.copiedToClipboard,
+        duration: const Duration(seconds: 2),
+        backgroundColor: AppTheme.statusSuccess,
       );
     }
   }

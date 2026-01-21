@@ -115,7 +115,6 @@ class _LogsScreenState extends ConsumerState<LogsScreen> with WidgetsBindingObse
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     final settings = ref.watch(settingsProvider);

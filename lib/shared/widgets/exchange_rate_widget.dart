@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
+import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
 
 class ExchangeRateWidget extends ConsumerWidget {
   final String currency;
@@ -45,11 +46,10 @@ class ExchangeRateWidget extends ConsumerWidget {
                   GestureDetector(
                     onTap: () {
                       // Trigger refresh for this specific currency
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Refreshing exchange rate...'),
-                          duration: Duration(seconds: 1),
-                        ),
+                      SnackBarHelper.showTopSnackBar(
+                        context,
+                        'Refreshing exchange rate...',
+                        duration: const Duration(seconds: 1),
                       );
                       ref
                           .read(exchangeRateProvider(currency).notifier)

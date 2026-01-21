@@ -1279,6 +1279,21 @@
   "logsGeneratedLabel": "Generado",
   "logsTotalLabel": "Total de registros",
   "logsShareSubject": "Registros Mostro P2P",
-  "logsShareText": "Registros de aplicación de Mostro P2P"
+  "logsShareText": "Registros de aplicación de Mostro P2P",
+  "pushNotifications": "Notificaciones Push",
+  "pushNotificationsDescription": "Recibe notificaciones cuando haya actualizaciones en tus operaciones, incluso cuando la app está cerrada.",
+  "pushNotificationsNotSupported": "Las notificaciones push no están soportadas en esta plataforma.",
+  "notificationPreferences": "Preferencias",
+  "notificationSound": "Sonido",
+  "notificationSoundDescription": "Reproducir un sonido al recibir notificaciones",
+  "notificationVibration": "Vibración",
+  "notificationVibrationDescription": "Vibrar al recibir notificaciones",
+  "privacyInfo": "Información de Privacidad",
+  "pushNotificationsPrivacyInfo": "MostroP2P usa notificaciones push que preservan tu privacidad. El contenido de tus mensajes nunca se comparte con terceros.",
+  "privacyBulletSilentPush": "Notificaciones push silenciosas - ningún contenido de mensaje se envía a través de Firebase",
+  "privacyBulletEncryptedTokens": "Los tokens del dispositivo se encriptan antes del registro",
+  "privacyBulletLocalDecryption": "Todos los mensajes se desencriptan localmente en tu dispositivo",
+  "notificationSettings": "Configuración de Notificaciones",
+  "notificationSettingsDescription": "Configurar preferencias de notificaciones push"
 
 }

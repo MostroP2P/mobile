@@ -105,8 +105,11 @@ The implementation is divided into phases to match MostroP2P's architecture whil
 
 - **Phase 1:** Firebase basic configuration ✅ COMPLETE
 - **Phase 2:** FCM service with background integration ✅ COMPLETE
-- **Phase 3:** Encrypted token registration with server ✅ COMPLETE
-- **Phase 4:** User settings and opt-out controls ⚠️ TO IMPLEMENT
+- **Phase 3:** Token registration with push server (unencrypted) ✅ COMPLETE
+- **Phase 4:** User settings and opt-out controls ✅ COMPLETE
+- **Phase 5:** Encrypted token registration (ChaCha20-Poly1305) 🔜 FUTURE
+
+> **Note:** Phase 5 will add the encryption layer for privacy-preserving token registration following MIP-05 specification. Currently tokens are registered in plaintext over HTTPS.
 
 ### 🎯 Key Differences from MIP-05
 
@@ -296,83 +299,72 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 ---
 
-## Phase 3: Push Notification Service with Encryption ✅ COMPLETE
+## Phase 3: Token Registration with Push Server ✅ COMPLETE
 
 **Branch:** `feature/push-notification-service`
 
-**Objective:** Implement encrypted token registration with the custom notification server.
+**Objective:** Implement token registration with the custom notification server to enable end-to-end push notifications.
 
 ### Changes
-- Create `PushNotificationService` for server communication
-- Implement token encryption using ChaCha20-Poly1305
-- Implement ECDH key derivation with server's public key
-- Register encrypted tokens with notification server
+- Created `PushNotificationService` for server communication
+- Register FCM tokens with notification server (currently unencrypted)
 - Handle token unregistration on logout/disable
+- Integrate with FCMService for token lifecycle management
 
-### Files to Add/Modify
-- `lib/services/push_notification_service.dart` - Encrypted token registration
-- `lib/core/config.dart` - Add notification server public key and endpoints
+### Files Added/Modified
+- `lib/services/push_notification_service.dart` - Token registration service
+- `lib/core/config.dart` - Notification server endpoints
 - `lib/services/fcm_service.dart` - Integration with PushNotificationService
 
-### Encryption Implementation
-Following MIP-05 approach:
+### Registration Flow
 
 ```dart
-// 1. Generate ephemeral keypair for this token encryption
-ephemeral_privkey = random_bytes(32)
-ephemeral_pubkey = secp256k1.get_pubkey(ephemeral_privkey)
+// 1. Get FCM token
+final fcmToken = await FirebaseMessaging.instance.getToken();
 
-// 2. Derive encryption key using ECDH + HKDF
-shared_x = secp256k1_ecdh(ephemeral_privkey, server_pubkey)
-prk = HKDF-Extract(salt="mostro-fcm-v1", IKM=shared_x)
-encryption_key = HKDF-Expand(prk, "mostro-token-encryption", 32)
-
-// 3. Generate random nonce for probabilistic encryption
-nonce = random_bytes(12)
-
-// 4. Construct padded payload (uniform size)
-padded_payload = platform_byte || token_length || device_token || random_padding
-
-// 5. Encrypt with ChaCha20-Poly1305
-ciphertext = ChaCha20-Poly1305.encrypt(
-    key: encryption_key,
-    nonce: nonce,
-    plaintext: padded_payload,
-    aad: ""
-)
-
-// 6. Token package
-encrypted_token = ephemeral_pubkey || nonce || ciphertext
+// 2. Register with server
+final response = await http.post(
+  Uri.parse('$serverUrl/api/register'),
+  headers: {'Content-Type': 'application/json'},
+  body: jsonEncode({
+    'trade_pubkey': tradePubkey,
+    'token': fcmToken,
+    'platform': 'android', // or 'ios'
+  }),
+);
 ```
 
 ### Key Features
-- **Probabilistic Encryption:** Same FCM token produces different ciphertexts each time
-- **Server Cannot Decrypt:** Only the notification server (with private key) can decrypt
-- **Payload Padding:** Uniform token size prevents platform fingerprinting
-- **HTTPS Communication:** Secure token registration endpoint
+- **Server Communication:** HTTP API integration with mostro-push-server
+- **Platform Identification:** Include platform type for server-side handling
+- **HTTPS Communication:** Secure transport layer (tokens encrypted in transit)
+- **Token Lifecycle:** Register on trade start, unregister on trade end
 
 ### Testing
-- Verify token encryption produces different ciphertexts
-- Test successful registration with notification server
-- Verify encrypted token format (ephemeral_pubkey || nonce || ciphertext)
-- Test token unregistration flow
+- ✅ FCM token sent to server correctly
+- ✅ Push notification delivery end-to-end
+- ✅ App wakes up on silent push
+- ✅ Token unregistration flow
+- ✅ Background notification system triggers correctly
+
+### Privacy Note
+⚠️ **Current implementation does NOT provide full MIP-05 privacy guarantees.** The server can see plaintext device tokens. Full privacy-preserving encryption will be implemented in Phase 5.
 
 ---
 
-## Phase 4: User Settings and Opt-Out ⚠️ TO IMPLEMENT
+## Phase 4: User Settings and Opt-Out ✅ COMPLETE
 
-**Branch:** `feature/notification-settings` (to be created from `main` after Phase 3 merge)
+**Branch:** `feature/notification-settings`
 
 **Objective:** Provide user controls for notification preferences.
 
 ### Changes
-- Add notification settings screen
-- Implement enable/disable toggle for push notifications
-- Add notification sound/vibration preferences
-- Implement token unregistration on disable
-- Add notification preview in settings
+- Added notification settings screen
+- Implemented enable/disable toggle for push notifications
+- Added notification sound/vibration preferences
+- Implemented token unregistration on disable
 
-### Files to Add/Modify
+### Files Added/Modified
 - `lib/features/settings/screens/notification_settings_screen.dart` - Settings UI
 - `lib/features/settings/providers/notification_settings_provider.dart` - Settings state
 - `lib/services/push_notification_service.dart` - Handle enable/disable
@@ -384,10 +376,122 @@ encrypted_token = ephemeral_pubkey || nonce || ciphertext
 - **Privacy Notice:** Explain what data is shared with Firebase/Google
 
 ### Testing
-- Test enable/disable toggle
-- Verify token unregistration on disable
-- Test notification preferences (sound, vibration)
-- Verify settings persistence across app restarts
+- ✅ Enable/disable toggle works
+- ✅ Token unregistration on disable
+- ✅ Notification preferences persist
+- ✅ Settings persistence across app restarts
+
+---
+
+## Phase 5: Encrypted Token Registration 🔜 FUTURE
+
+**Branch:** `feature/encrypted-token-registration` (to be created after current implementation is stable)
+
+**Objective:** Implement MIP-05 compliant encrypted token registration with the custom notification server for privacy-preserving push notifications.
+
+### Overview
+
+Currently, FCM tokens are sent in plaintext (protected by HTTPS in transit). This phase will add end-to-end encryption so that even the push server operator cannot correlate device tokens with user identities.
+
+### Changes
+- Implement token encryption using ChaCha20-Poly1305
+- Implement ECDH key derivation with server's public key
+- Update `PushNotificationService` to use encrypted tokens
+- Add server public key configuration
+- Coordinate with mostro-push-server for decryption support
+
+### Files to Add/Modify
+- `lib/services/push_notification_service.dart` - Add encryption logic
+- `lib/core/config.dart` - Add notification server public key
+
+### Encryption Implementation
+Following MIP-05 approach:
+
+```dart
+// 1. Generate ephemeral keypair for this token encryption
+ephemeral_privkey = random_bytes(32)
+ephemeral_pubkey = secp256k1.get_pubkey(ephemeral_privkey)
+
+// 2. Derive encryption key using ECDH + HKDF
+shared_x = secp256k1_ecdh(ephemeral_privkey, server_pubkey)
+prk = HKDF-Extract(salt="mostro-push-v1", IKM=shared_x)
+encryption_key = HKDF-Expand(prk, "mostro-token-encryption", 32)
+
+// 3. Generate random nonce for probabilistic encryption
+nonce = random_bytes(12)
+
+// 4. Construct padded payload (uniform size - 220 bytes)
+padded_payload = platform_byte || token_length || device_token || random_padding
+
+// 5. Encrypt with ChaCha20-Poly1305
+ciphertext = ChaCha20-Poly1305.encrypt(
+    key: encryption_key,
+    nonce: nonce,
+    plaintext: padded_payload,
+    aad: ""
+)
+
+// 6. Token package (281 bytes total)
+encrypted_token = ephemeral_pubkey || nonce || ciphertext
+```
+
+### Cryptographic Details
+
+| Component | Algorithm | Parameters |
+|-----------|-----------|------------|
+| Key Agreement | ECDH | secp256k1 curve |
+| Key Derivation | HKDF | SHA-256, salt: `mostro-push-v1`, info: `mostro-token-encryption` |
+| Encryption | ChaCha20-Poly1305 | 256-bit key, 96-bit nonce |
+
+### Token Structure (281 bytes)
+
+```
+┌─────────────────────┬────────────┬─────────────────────────────────┐
+│ Ephemeral Pubkey    │   Nonce    │          Ciphertext             │
+│     (33 bytes)      │ (12 bytes) │  (220 + 16 = 236 bytes)         │
+└─────────────────────┴────────────┴─────────────────────────────────┘
+```
+
+### Plaintext Payload Structure (220 bytes)
+
+```
+┌──────────┬──────────────┬─────────────────┬───────────────────────┐
+│ Platform │ Token Length │  Device Token   │    Random Padding     │
+│ (1 byte) │  (2 bytes)   │   (variable)    │     (remainder)       │
+│  0x01/02 │  big-endian  │   UTF-8 string  │   random bytes        │
+└──────────┴──────────────┴─────────────────┴───────────────────────┘
+```
+
+### Key Features
+- **Probabilistic Encryption:** Same FCM token produces different ciphertexts each time
+- **Server Cannot Correlate:** Server cannot link tokens to user identities
+- **Payload Padding:** Uniform 220-byte payload prevents platform fingerprinting
+- **Forward Secrecy:** Ephemeral keys per registration
+
+### Privacy Properties Achieved
+- Server cannot link device tokens to user identities
+- Same token encrypted differently each time (unlinkability)
+- Platform type hidden within encrypted payload
+- Forward secrecy via ephemeral keys
+
+### Dependencies Required
+- `pointycastle: ^3.9.1` - ChaCha20-Poly1305 encryption (already in pubspec.yaml)
+- `crypto: ^3.0.5` - HKDF key derivation (already in pubspec.yaml)
+
+### Testing
+- Verify token encryption produces different ciphertexts for same input
+- Test successful encrypted registration with notification server
+- Verify encrypted token format (33 + 12 + 236 = 281 bytes)
+- Test interoperability with server decryption
+- Test token unregistration flow
+
+### Server Coordination
+This phase requires coordination with `mostro-push-server`:
+1. Server must expose public key via `/api/info` endpoint
+2. Server must implement decryption logic in `src/crypto/mod.rs`
+3. Both client and server must use identical cryptographic parameters
+
+See `mostro-push-server/docs/cryptography.md` for server-side specification.
 
 ---
 

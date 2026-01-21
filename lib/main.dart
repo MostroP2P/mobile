@@ -14,6 +14,7 @@ import 'package:mostro_mobile/services/fcm_service.dart';
 import 'package:mostro_mobile/services/push_notification_service.dart';
 import 'package:mostro_mobile/shared/providers/background_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/providers.dart';
+import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/shared/utils/biometrics_helper.dart';
 import 'package:mostro_mobile/shared/utils/notification_permission_helper.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
@@ -67,6 +68,11 @@ Future<void> main() async {
   // Initialize relay sync on app start
   _initializeRelaySynchronization(container);
 
+  // Connect push notification service with session notifier and settings
+  if (pushServices != null) {
+    _initializePushNotificationIntegration(container, pushServices);
+  }
+
   runApp(
     UncontrolledProviderScope(
       container: container,
@@ -84,6 +90,33 @@ void _initializeRelaySynchronization(ProviderContainer container) {
   } catch (e) {
     // Log error but don't crash app if relay sync initialization fails
     debugPrint('Failed to initialize relay synchronization: $e');
+  }
+}
+
+/// Initialize push notification integration with session notifier and settings
+void _initializePushNotificationIntegration(
+  ProviderContainer container,
+  _PushServices pushServices,
+) {
+  try {
+    // Connect push service with session notifier for automatic token registration
+    container
+        .read(sessionNotifierProvider.notifier)
+        .setPushNotificationService(pushServices.pushService);
+
+    // Connect push services with settings notifier for unregistration on disable
+    container
+        .read(settingsProvider.notifier)
+        .setPushServices(pushServices.pushService, pushServices.fcmService);
+
+    // Set up settings check callback
+    pushServices.pushService.isPushEnabledInSettings = () {
+      return container.read(settingsProvider).pushNotificationsEnabled;
+    };
+
+    debugPrint('Push notification integration initialized');
+  } catch (e) {
+    debugPrint('Failed to initialize push notification integration: $e');
   }
 }
 
@@ -127,6 +160,9 @@ Future<_PushServices?> _initializeFirebaseMessaging(
 
     // Wire up token refresh to re-register all trade pubkeys
     fcmService.onTokenRefresh = (_) => pushService.reRegisterAllTokens();
+
+    // Note: isPushEnabledInSettings callback will be set after ProviderContainer is created
+    // This is done in the app initialization to have access to settings provider
 
     return _PushServices(fcmService: fcmService, pushService: pushService);
   } catch (e) {

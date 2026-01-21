@@ -13,6 +13,7 @@ import 'package:mostro_mobile/features/notifications/providers/backup_reminder_p
 import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/providers/notifications_history_repository_provider.dart';
+import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
 
 class KeyManagementScreen extends ConsumerStatefulWidget {
   const KeyManagementScreen({super.key});
@@ -90,14 +91,16 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
         await keyManager.importMnemonic(importValue);
         await _loadKeys();
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(S.of(context)!.keyImportedSuccessfully)),
+          SnackBarHelper.showTopSnackBar(
+            context,
+            S.of(context)!.keyImportedSuccessfully,
           );
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(S.of(context)!.importFailed(e.toString()))),
+          SnackBarHelper.showTopSnackBar(
+            context,
+            S.of(context)!.importFailed(e.toString()),
           );
         }
       }

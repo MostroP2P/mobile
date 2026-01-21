@@ -11,6 +11,7 @@ import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/services/encrypted_image_upload_service.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
 
 class EncryptedImageMessage extends ConsumerStatefulWidget {
   final NostrEvent message;
@@ -373,22 +374,20 @@ class _EncryptedImageMessageState extends ConsumerState<EncryptedImageMessage> {
       
       if (mounted) {
         if (result.type != ResultType.done) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('$couldNotOpenMsg: ${result.message}'),
-              backgroundColor: Colors.orange,
-              duration: const Duration(seconds: 3),
-            ),
+          SnackBarHelper.showTopSnackBar(
+            context,
+            '$couldNotOpenMsg: ${result.message}',
+            duration: const Duration(seconds: 3),
+            backgroundColor: Colors.orange,
           );
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('$errorOpeningMsg: $e'),
-            backgroundColor: Colors.red,
-          ),
+        SnackBarHelper.showTopSnackBar(
+          context,
+          '$errorOpeningMsg: $e',
+          backgroundColor: Colors.red,
         );
       }
     }

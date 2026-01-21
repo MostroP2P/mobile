@@ -26,6 +26,7 @@ import 'package:mostro_mobile/shared/providers/time_provider.dart';
 import 'package:mostro_mobile/shared/widgets/dynamic_countdown_widget.dart';
 import 'package:mostro_mobile/features/disputes/providers/dispute_providers.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
 
 class TradeDetailScreen extends ConsumerWidget {
   final String orderId;
@@ -722,29 +723,24 @@ class TradeDetailScreen extends ConsumerWidget {
             final success = await repository.createDispute(orderId);
 
             if (success && context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(S.of(context)!.disputeCreatedSuccessfully),
-                  backgroundColor: AppTheme.mostroGreen,
-                ),
+              SnackBarHelper.showTopSnackBar(
+                context,
+                S.of(context)!.disputeCreatedSuccessfully,
+                backgroundColor: AppTheme.mostroGreen,
               );
             } else if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(S.of(context)!.disputeCreationFailed),
-                  backgroundColor: AppTheme.red1,
-                ),
+              SnackBarHelper.showTopSnackBar(
+                context,
+                S.of(context)!.disputeCreationFailed,
+                backgroundColor: AppTheme.red1,
               );
             }
           } catch (e) {
             if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(S
-                      .of(context)!
-                      .disputeCreationErrorWithMessage(e.toString())),
-                  backgroundColor: AppTheme.red1,
-                ),
+              SnackBarHelper.showTopSnackBar(
+                context,
+                S.of(context)!.disputeCreationErrorWithMessage(e.toString()),
+                backgroundColor: AppTheme.red1,
               );
             }
           }

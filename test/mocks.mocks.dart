@@ -1999,6 +1999,30 @@ class MockSettings extends _i1.Mock implements _i2.Settings {
       ) as List<Map<String, dynamic>>);
 
   @override
+  bool get isLoggingEnabled => (super.noSuchMethod(
+        Invocation.getter(#isLoggingEnabled),
+        returnValue: false,
+      ) as bool);
+
+  @override
+  bool get pushNotificationsEnabled => (super.noSuchMethod(
+        Invocation.getter(#pushNotificationsEnabled),
+        returnValue: false,
+      ) as bool);
+
+  @override
+  bool get notificationSoundEnabled => (super.noSuchMethod(
+        Invocation.getter(#notificationSoundEnabled),
+        returnValue: false,
+      ) as bool);
+
+  @override
+  bool get notificationVibrationEnabled => (super.noSuchMethod(
+        Invocation.getter(#notificationVibrationEnabled),
+        returnValue: false,
+      ) as bool);
+
+  @override
   _i2.Settings copyWith({
     List<String>? relays,
     bool? privacyModeSetting,
@@ -2009,6 +2033,10 @@ class MockSettings extends _i1.Mock implements _i2.Settings {
     bool? clearDefaultLightningAddress = false,
     List<String>? blacklistedRelays,
     List<Map<String, dynamic>>? userRelays,
+    bool? isLoggingEnabled,
+    bool? pushNotificationsEnabled,
+    bool? notificationSoundEnabled,
+    bool? notificationVibrationEnabled,
   }) =>
       (super.noSuchMethod(
         Invocation.method(
@@ -2024,6 +2052,10 @@ class MockSettings extends _i1.Mock implements _i2.Settings {
             #clearDefaultLightningAddress: clearDefaultLightningAddress,
             #blacklistedRelays: blacklistedRelays,
             #userRelays: userRelays,
+            #isLoggingEnabled: isLoggingEnabled,
+            #pushNotificationsEnabled: pushNotificationsEnabled,
+            #notificationSoundEnabled: notificationSoundEnabled,
+            #notificationVibrationEnabled: notificationVibrationEnabled,
           },
         ),
         returnValue: _FakeSettings_0(
@@ -2041,6 +2073,10 @@ class MockSettings extends _i1.Mock implements _i2.Settings {
               #clearDefaultLightningAddress: clearDefaultLightningAddress,
               #blacklistedRelays: blacklistedRelays,
               #userRelays: userRelays,
+              #isLoggingEnabled: isLoggingEnabled,
+              #pushNotificationsEnabled: pushNotificationsEnabled,
+              #notificationSoundEnabled: notificationSoundEnabled,
+              #notificationVibrationEnabled: notificationVibrationEnabled,
             },
           ),
         ),
