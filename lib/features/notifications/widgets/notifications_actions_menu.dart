@@ -4,6 +4,7 @@ import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/notifications/providers/notifications_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
 
 class NotificationsActionsMenu extends ConsumerWidget {
   const NotificationsActionsMenu({super.key});
@@ -74,11 +75,10 @@ class NotificationsActionsMenu extends ConsumerWidget {
     switch (action) {
       case 'mark_all_read':
         repository.markAllAsRead();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(S.of(context)!.markAllAsRead),
-            backgroundColor: AppTheme.statusSuccess,
-          ),
+        SnackBarHelper.showTopSnackBar(
+          context,
+          S.of(context)!.markAllAsRead,
+          backgroundColor: AppTheme.statusSuccess,
         );
         break;
       case 'clear_all':
@@ -112,11 +112,10 @@ class NotificationsActionsMenu extends ConsumerWidget {
             onPressed: () {
               ref.read(notificationsDatabaseProvider).clearAll();
               Navigator.of(context).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(S.of(context)!.clearAll),
-                  backgroundColor: AppTheme.statusError,
-                ),
+              SnackBarHelper.showTopSnackBar(
+                context,
+                S.of(context)!.clearAll,
+                backgroundColor: AppTheme.statusError,
               );
             },
             child: Text(

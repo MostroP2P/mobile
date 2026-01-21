@@ -4,6 +4,7 @@ import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/relays/relay.dart';
 import 'package:mostro_mobile/features/relays/relays_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
 
 class RelaySelector extends ConsumerWidget {
   const RelaySelector({super.key});
@@ -475,7 +476,6 @@ class RelaySelector extends ConsumerWidget {
 
                           // Capture context values before async operations
                           final localizations = S.of(context)!;
-                          final scaffoldMessenger = ScaffoldMessenger.of(context);
                           final navigator = Navigator.of(dialogContext);
 
                           setState(() {
@@ -496,14 +496,10 @@ class RelaySelector extends ConsumerWidget {
                             if (result.success) {
                               navigator.pop();
                               if (context.mounted) {
-                                scaffoldMessenger.showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      localizations.addRelaySuccessMessage(result.normalizedUrl!),
-                                      style: const TextStyle(color: Colors.white),
-                                    ),
-                                    backgroundColor: Colors.green,
-                                  ),
+                                SnackBarHelper.showTopSnackBar(
+                                  context,
+                                  localizations.addRelaySuccessMessage(result.normalizedUrl!),
+                                  backgroundColor: Colors.green,
                                 );
                               }
                             } else {

@@ -11,6 +11,7 @@ import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/services/encrypted_file_upload_service.dart';
 import 'package:mostro_mobile/services/file_validation_service.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
 
 class EncryptedFileMessage extends ConsumerStatefulWidget {
   final NostrEvent message;
@@ -494,22 +495,20 @@ class _EncryptedFileMessageState extends ConsumerState<EncryptedFileMessage> {
       
       if (mounted) {
         if (result.type != ResultType.done) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Could not open file: ${result.message}'),
-              backgroundColor: Colors.orange,
-              duration: const Duration(seconds: 3),
-            ),
+          SnackBarHelper.showTopSnackBar(
+            context,
+            'Could not open file: ${result.message}',
+            duration: const Duration(seconds: 3),
+            backgroundColor: Colors.orange,
           );
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error opening file: $e'),
-            backgroundColor: Colors.red,
-          ),
+        SnackBarHelper.showTopSnackBar(
+          context,
+          'Error opening file: $e',
+          backgroundColor: Colors.red,
         );
       }
     }

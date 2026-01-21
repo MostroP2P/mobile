@@ -6,6 +6,7 @@ import 'package:logger/logger.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/services/deep_link_service.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
+import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
 
 class DeepLinkHandler {
   final Ref _ref;
@@ -149,12 +150,11 @@ class DeepLinkHandler {
   void _showErrorSnackBar(BuildContext? context, String message) {
     if (context == null) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-        duration: const Duration(seconds: 3),
-      ),
+    SnackBarHelper.showTopSnackBar(
+      context,
+      message,
+      duration: const Duration(seconds: 3),
+      backgroundColor: Colors.red,
     );
   }
 
