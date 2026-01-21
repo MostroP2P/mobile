@@ -1324,5 +1324,20 @@
   "shareFeatureComingSoon": "Funzione di condivisione disponibile nella Fase 2",
   "devTools": "Strumenti di Sviluppo",
   "devToolsWarning": "Solo per debug e risoluzione problemi",
-  "viewAndExportLogs": "Visualizza ed esporta i log dell'applicazione"
+  "viewAndExportLogs": "Visualizza ed esporta i log dell'applicazione",
+  "pushNotifications": "Notifiche Push",
+  "pushNotificationsDescription": "Ricevi notifiche quando ci sono aggiornamenti sulle tue operazioni, anche quando l'app è chiusa.",
+  "pushNotificationsNotSupported": "Le notifiche push non sono supportate su questa piattaforma.",
+  "notificationPreferences": "Preferenze",
+  "notificationSound": "Suono",
+  "notificationSoundDescription": "Riproduci un suono quando ricevi notifiche",
+  "notificationVibration": "Vibrazione",
+  "notificationVibrationDescription": "Vibra quando ricevi notifiche",
+  "privacyInfo": "Informazioni sulla Privacy",
+  "pushNotificationsPrivacyInfo": "MostroP2P utilizza notifiche push che preservano la privacy. Il contenuto dei tuoi messaggi non viene mai condiviso con terze parti.",
+  "privacyBulletSilentPush": "Notifiche push silenziose - nessun contenuto del messaggio viene inviato tramite Firebase",
+  "privacyBulletEncryptedTokens": "I token del dispositivo vengono crittografati prima della registrazione",
+  "privacyBulletLocalDecryption": "Tutti i messaggi vengono decrittati localmente sul tuo dispositivo",
+  "notificationSettings": "Impostazioni Notifiche",
+  "notificationSettingsDescription": "Configura le preferenze delle notifiche push"
 }

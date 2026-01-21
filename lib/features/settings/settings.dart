@@ -8,6 +8,10 @@ class Settings {
   final List<String> blacklistedRelays; // Relays blocked by user from auto-sync
   final List<Map<String, dynamic>> userRelays; // User-added relays with metadata
   final bool isLoggingEnabled;
+  // Push notification settings
+  final bool pushNotificationsEnabled;
+  final bool notificationSoundEnabled;
+  final bool notificationVibrationEnabled;
 
   Settings({
     required this.relays,
@@ -19,6 +23,9 @@ class Settings {
     this.blacklistedRelays = const [],
     this.userRelays = const [],
     this.isLoggingEnabled = false,
+    this.pushNotificationsEnabled = true,
+    this.notificationSoundEnabled = true,
+    this.notificationVibrationEnabled = true,
   });
 
   Settings copyWith({
@@ -32,6 +39,9 @@ class Settings {
     List<String>? blacklistedRelays,
     List<Map<String, dynamic>>? userRelays,
     bool? isLoggingEnabled,
+    bool? pushNotificationsEnabled,
+    bool? notificationSoundEnabled,
+    bool? notificationVibrationEnabled,
   }) {
     return Settings(
       relays: relays ?? this.relays,
@@ -45,6 +55,9 @@ class Settings {
       blacklistedRelays: blacklistedRelays ?? this.blacklistedRelays,
       userRelays: userRelays ?? this.userRelays,
       isLoggingEnabled: isLoggingEnabled ?? this.isLoggingEnabled,
+      pushNotificationsEnabled: pushNotificationsEnabled ?? this.pushNotificationsEnabled,
+      notificationSoundEnabled: notificationSoundEnabled ?? this.notificationSoundEnabled,
+      notificationVibrationEnabled: notificationVibrationEnabled ?? this.notificationVibrationEnabled,
     );
   }
 
@@ -57,6 +70,9 @@ class Settings {
         'defaultLightningAddress': defaultLightningAddress,
         'blacklistedRelays': blacklistedRelays,
         'userRelays': userRelays,
+        'pushNotificationsEnabled': pushNotificationsEnabled,
+        'notificationSoundEnabled': notificationSoundEnabled,
+        'notificationVibrationEnabled': notificationVibrationEnabled,
       };
 
   factory Settings.fromJson(Map<String, dynamic> json) {
@@ -71,6 +87,9 @@ class Settings {
       userRelays: (json['userRelays'] as List<dynamic>?)
           ?.cast<Map<String, dynamic>>() ?? [],
       isLoggingEnabled: false,
+      pushNotificationsEnabled: json['pushNotificationsEnabled'] as bool? ?? true,
+      notificationSoundEnabled: json['notificationSoundEnabled'] as bool? ?? true,
+      notificationVibrationEnabled: json['notificationVibrationEnabled'] as bool? ?? true,
     );
   }
 }

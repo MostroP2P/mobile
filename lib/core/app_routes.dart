@@ -12,6 +12,7 @@ import 'package:mostro_mobile/features/key_manager/key_management_screen.dart';
 import 'package:mostro_mobile/features/rate/rate_counterpart_screen.dart';
 import 'package:mostro_mobile/features/settings/about_screen.dart';
 import 'package:mostro_mobile/features/settings/settings_screen.dart';
+import 'package:mostro_mobile/features/settings/notification_settings_screen.dart';
 import 'package:mostro_mobile/features/trades/screens/trade_detail_screen.dart';
 import 'package:mostro_mobile/features/trades/screens/trades_screen.dart';
 import 'package:mostro_mobile/features/relays/relays_screen.dart';
@@ -292,6 +293,15 @@ GoRouter createRouter(WidgetRef ref) {
               context: context,
               state: state,
               child: const LogsScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/notification_settings',
+            pageBuilder: (context, state) =>
+                buildPageWithDefaultTransition<void>(
+              context: context,
+              state: state,
+              child: const NotificationSettingsScreen(),
             ),
           ),
         ],

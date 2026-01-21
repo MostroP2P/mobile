@@ -7,6 +7,7 @@ import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/data/repositories/session_storage.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
+import 'package:mostro_mobile/services/push_notification_service.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 import 'package:dart_nostr/dart_nostr.dart';
@@ -26,6 +27,14 @@ class SessionNotifier extends StateNotifier<List<Session>> {
 
   Timer? _cleanupTimer;
   final Logger _logger = Logger();
+
+  /// Push notification service for registering tokens when sessions are saved
+  PushNotificationService? _pushService;
+
+  /// Set the push notification service for automatic token registration
+  void setPushNotificationService(PushNotificationService? service) {
+    _pushService = service;
+  }
 
   List<Session> get sessions => _sessions.values.toList();
 
@@ -124,6 +133,26 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     _pendingChildSessions.remove(session.tradeKey.public);
     await _storage.putSession(session);
     _emitState();
+
+    // Register push notification token for this trade
+    _registerPushToken(session.tradeKey.public);
+  }
+
+  /// Register push notification token for a trade pubkey
+  void _registerPushToken(String tradePubkey) {
+    if (_pushService == null) {
+      _logger.d('Push service not available, skipping token registration');
+      return;
+    }
+
+    // Fire and forget - don't block session save on push registration
+    _pushService!.registerToken(tradePubkey).then((success) {
+      if (success) {
+        _logger.i('Push token registered for trade: ${tradePubkey.substring(0, 16)}...');
+      }
+    }).catchError((e) {
+      _logger.w('Failed to register push token: $e');
+    });
   }
 
   Future<void> updateSession(

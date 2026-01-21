@@ -71,7 +71,7 @@ Future<void> showLocalNotification(NostrEvent event) async {
 
     final details = NotificationDetails(
       android: AndroidNotificationDetails(
-        'mostro_channel',
+        'mostro_notifications', // Must match FCM channel_id for replacement
         'Mostro Notifications',
         channelDescription: 'Notifications for Mostro trades and messages',
         importance: Importance.max,
@@ -81,6 +81,8 @@ Future<void> showLocalNotification(NostrEvent event) async {
         enableVibration: true,
         ticker: notificationText.title,
         icon: '@drawable/ic_notification',
+        // Tag must match FCM notification tag for replacement to work
+        tag: 'mostro-trade',
         styleInformation: expandedText != null
             ? BigTextStyleInformation(expandedText, contentTitle: notificationText.title)
             : null,
@@ -93,11 +95,14 @@ Future<void> showLocalNotification(NostrEvent event) async {
         presentSound: true,
         interruptionLevel: InterruptionLevel.critical,
         subtitle: expandedText,
+        // Thread ID must match FCM for grouping/replacement
+        threadIdentifier: 'mostro-trade',
       ),
     );
 
+    // Use fixed ID (0) with tag for replacement - Android uses tag+id combo
     await flutterLocalNotificationsPlugin.show(
-      event.id.hashCode,
+      0, // Fixed ID - tag 'mostro-trade' makes it unique and replaceable
       notificationText.title,
       notificationText.body,
       details,
