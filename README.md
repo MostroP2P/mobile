@@ -82,14 +82,21 @@ This is a fully-featured mobile application that enables secure, private, and de
    flutter pub get
    ```
 
-3. Generate localization and other required files:
+3. **Generate required files (REQUIRED STEP):**
 
    ```bash
    dart run build_runner build -d
    ```
 
-> **Note:**
-> These commands generate files needed by `flutter_intl` and any other code generators. You must run them after installing dependencies and whenever you update localization files or code generation sources. If you skip this step, you may encounter missing file errors when running the app.
+> **⚠️ IMPORTANT:**
+> This step is **mandatory** and must be run after cloning the repository. It generates code files (`*.g.dart`, `*.mocks.dart`) required for the app to compile and run. These generated files are not committed to the repository and are automatically recreated in CI/CD pipelines.
+>
+> You will need to run this command again whenever you:
+> - Update localization files (`lib/l10n/*.arb`)
+> - Modify files that use code generation (Riverpod providers, JSON serialization, etc.)
+> - Pull changes that affect generated code
+>
+> If you see compilation errors about missing files or imports, run this command again.
 
 ## Running the App
 

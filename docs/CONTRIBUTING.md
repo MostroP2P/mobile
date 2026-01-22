@@ -81,19 +81,25 @@ Mostro Mobile is a Flutter app designed with modularity and maintainability in m
    ```sh
    flutter pub get
    ```
-3. **Run the app:**
+3. **Generate required files (CRITICAL STEP):**
+   ```sh
+   dart run build_runner build -d
+   ```
+   This generates code files (`*.g.dart`, `*.mocks.dart`) required for the app to compile. You must run this after cloning and whenever you modify files that use code generation (Riverpod providers, JSON serialization, localization files, etc.).
+
+4. **Run the app:**
    ```sh
    flutter run
    ```
-4. **Configure environment:**
+5. **Configure environment:**
    - Localization: Run `flutter gen-l10n` if you add new strings.
    - Platform-specific setup: See `README.md` for details.
 
-5. **Testing:**
+6. **Testing:**
    - Unit tests: `flutter test`
    - Integration tests: `flutter test integration_test/`
 
-6. **Linting & Formatting:**
+7. **Linting & Formatting:**
    - Check code style: `flutter analyze`
    - Format code: `flutter format .`
 
@@ -108,6 +114,90 @@ Mostro Mobile is a Flutter app designed with modularity and maintainability in m
 - **Keep UI code declarative and side-effect free.**
 - **For SnackBars, dialogs, or overlays,** always use a post-frame callback to avoid build-phase errors (see `NostrResponsiveButton` pattern).
 - **Refer to existing features** (e.g., order submission, chat) for implementation examples.
+
+---
+
+## Generated Files & Git Workflow
+
+### What Are Generated Files?
+
+This project uses code generation for several purposes:
+- **Riverpod providers** (`*.g.dart`)
+- **JSON serialization** (`*.g.dart`)
+- **Mock classes for testing** (`*.mocks.dart`)
+- **Localization** (`lib/generated/`)
+
+These files are automatically created by running:
+```sh
+dart run build_runner build -d
+```
+
+### Important: DO NOT Commit Generated Files
+
+**Generated files (`*.g.dart`, `*.mocks.dart`) are in `.gitignore` and should NEVER be committed to the repository.**
+
+#### Why?
+- ✅ **Clean PRs**: Only source code changes appear in pull requests
+- ✅ **No merge conflicts**: Generated files won't cause conflicts between branches
+- ✅ **CI regenerates them**: GitHub Actions automatically regenerate these files during builds
+- ✅ **Prevents errors**: No one can accidentally modify generated code manually
+
+### Development Workflow
+
+```
+1. Clone repo
+   └─> flutter pub get
+   └─> dart run build_runner build -d  ← Generate files locally
+
+2. Develop your feature
+   └─> Make code changes
+   └─> If you modify providers/models, re-run build_runner
+
+3. Before committing
+   └─> flutter analyze  ← Must pass with zero issues
+   └─> flutter test     ← All tests must pass
+   └─> git add          ← Add ONLY source files, NOT *.g.dart or *.mocks.dart
+
+4. Create PR
+   └─> CI automatically regenerates all files
+   └─> CI runs analyze and tests
+   └─> Your PR only shows actual code changes
+```
+
+### What If I See Generated Files in My Git Status?
+
+If you see modified `*.g.dart` or `*.mocks.dart` files when running `git status`, **do NOT commit them**. They are already in `.gitignore` and should be ignored automatically. If they appear as modified, it means they were tracked before the `.gitignore` update.
+
+Simply don't stage them:
+```sh
+git status           # See what changed
+git add lib/...      # Add only your actual source files
+git commit           # Generated files won't be included
+```
+
+### Common Scenarios
+
+**Scenario 1: After pulling changes**
+```sh
+git pull
+dart run build_runner build -d  # Regenerate locally
+flutter run                     # App works
+```
+
+**Scenario 2: Modified a model or provider**
+```sh
+# Edit lib/features/settings/settings.dart
+dart run build_runner build -d  # Regenerate affected files
+flutter run                     # Test changes
+git add lib/features/settings/settings.dart  # Add ONLY source file
+git commit -m "feat: add new setting"
+```
+
+**Scenario 3: Compilation errors about missing files**
+```sh
+# Error: "File not found: '*.g.dart'"
+dart run build_runner build -d  # Regenerate
+```
 
 ---
 
