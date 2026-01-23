@@ -20,6 +20,8 @@ class MostroInstance {
   final String supportedChains;
   final String supportedNetworks;
   final String lndNodeUri;
+  final String fiatCurrenciesAccepted;
+  final int maxOrdersPerResponse;
 
   MostroInstance(
     this.pubKey,
@@ -41,6 +43,8 @@ class MostroInstance {
     this.supportedChains,
     this.supportedNetworks,
     this.lndNodeUri,
+    this.fiatCurrenciesAccepted,
+    this.maxOrdersPerResponse,
   );
 
   factory MostroInstance.fromEvent(NostrEvent event) {
@@ -64,6 +68,8 @@ class MostroInstance {
       event.supportedChains,
       event.supportedNetworks,
       event.lndNodeUri,
+      event.fiatCurrenciesAccepted,
+      event.maxOrdersPerResponse,
     );
   }
 }
@@ -96,4 +102,6 @@ extension MostroInstanceExtensions on NostrEvent {
   String get supportedChains => _getTagValue('lnd_chains');
   String get supportedNetworks => _getTagValue('lnd_networks');
   String get lndNodeUri => _getTagValue('lnd_uris');
+  String get fiatCurrenciesAccepted => _getTagValue('fiat_currencies_accepted');
+  int get maxOrdersPerResponse => int.parse(_getTagValue('max_orders_per_response'));
 }
