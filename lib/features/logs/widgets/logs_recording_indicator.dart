@@ -62,7 +62,8 @@ class _LogsRecordingIndicatorState
         currentRoute == '/order_book' ||
         currentRoute == '/chat_list';
 
-    final bottomOffset = isDrawerOpen ? 10.0 : (hasBottomNavBar ? 90.0 : 10.0);
+    final bottomOffset = hasBottomNavBar && !isDrawerOpen ? 90.0 : 16.0;
+
 
     return AnimatedPositioned(
       duration: const Duration(milliseconds: 1000),
