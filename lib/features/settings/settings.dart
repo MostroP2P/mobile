@@ -5,8 +5,8 @@ class Settings {
   final String? defaultFiatCode;
   final String? selectedLanguage; // null means use system locale
   final String? defaultLightningAddress;
-  final List<String> blacklistedRelays; // Relays blocked by user from auto-sync
-  final List<Map<String, dynamic>> userRelays; // User-added relays with metadata
+  final List<String> blacklistedRelays;
+  final List<Map<String, dynamic>> userRelays;
   final bool isLoggingEnabled;
   // Push notification settings
   final bool pushNotificationsEnabled;

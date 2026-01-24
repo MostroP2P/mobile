@@ -4,11 +4,11 @@ import 'package:logger/logger.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/features/logs/logs_provider.dart';
+import 'package:mostro_mobile/features/logs/widgets/logs_actions_menu.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/shared/utils/datetime_extensions_utils.dart';
-import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
 
 class LogsScreen extends ConsumerStatefulWidget {
   const LogsScreen({super.key});
@@ -17,7 +17,7 @@ class LogsScreen extends ConsumerStatefulWidget {
   ConsumerState<LogsScreen> createState() => _LogsScreenState();
 }
 
-class _LogsScreenState extends ConsumerState<LogsScreen> {
+class _LogsScreenState extends ConsumerState<LogsScreen> with WidgetsBindingObserver {
   String? _selectedLevel;
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
@@ -28,6 +28,7 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    WidgetsBinding.instance.addObserver(this);
   }
 
   void _onScroll() {
@@ -50,10 +51,14 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _scrollController.dispose();
     _searchController.dispose();
     super.dispose();
   }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {}
 
   Future<void> _toggleLogging(bool value) async {
     if (value) {
@@ -110,48 +115,6 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
     }
   }
 
-  Future<void> _showClearConfirmation() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.backgroundCard,
-        title: Text(
-          S.of(context)!.clearLogs,
-          style: TextStyle(color: AppTheme.textPrimary),
-        ),
-        content: Text(
-          S.of(context)!.clearLogsConfirmation,
-          style: TextStyle(color: AppTheme.textSecondary),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(S.of(context)!.cancel),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.statusError,
-            ),
-            child: Text(S.of(context)!.clear),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true && mounted) {
-      ref.read(logsProvider.notifier).clearLogs();
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          SnackBarHelper.showTopSnackBar(
-            context,
-            S.of(context)!.logsCleared,
-          );
-        }
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final settings = ref.watch(settingsProvider);
@@ -180,11 +143,7 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
             ),
             iconTheme: const IconThemeData(color: AppTheme.textPrimary),
             actions: [
-              IconButton(
-                icon: const Icon(Icons.delete_outline),
-                onPressed: logs.isEmpty ? null : _showClearConfirmation,
-                tooltip: S.of(context)!.clearLogs,
-              ),
+              LogsActionsMenu(),
             ],
           ),
           body: SafeArea(

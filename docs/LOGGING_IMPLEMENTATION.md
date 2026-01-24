@@ -34,11 +34,12 @@ Implementation of a comprehensive logging system for MostroP2P mobile app with i
 - Desktop background service with isolate logging
 - Isolate log receiver initialized in main.dart
 
-### Phase 5: File Export & Persistence 
-- Auto-save to storage
-- Restore on app restart
-- Generate .txt files
+### Phase 5: File Export & Persistence (Completed)
+- Manual export via hamburger menu
+- Save logs to user-selected location using FilePicker
+- Share logs via native system share sheet
 - Folder picker and permissions
+- Clear logs with confirmation dialog
 
 ### Phase 6: UI Enhancements 
 - Recording indicator widget
@@ -206,6 +207,6 @@ void backgroundMain(SendPort sendPort) async {
 
 ---
 
-**Version**: 5
-**Status**: Phase 4 - Completed
+**Version**: 6
+**Status**: Phase 5 - Completed
 **Last Updated**: 2026-01-12
