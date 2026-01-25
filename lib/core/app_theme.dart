@@ -8,10 +8,13 @@ class AppTheme {
   static const Color dark1 = Color(0xFF1D212C);
   static const Color grey2 = Color(0xFF92949A);
   static const Color yellow = Color(0xFFF3CA29);
+
+  /// Red color for destructive actions, sell buttons, and critical operations
+  /// Use for: Cancel buttons, dispute buttons, sell actions, inactive states
   static const Color red1 = Color(0xFFD84D4D);
+
   static const Color dark2 = Color(0xFF303544);
   static const Color cream1 = Color(0xFFF9F8F1);
-  static const Color red2 = Color(0xFFEF6A6A);
 
   // New colors
 
@@ -30,7 +33,6 @@ class AppTheme {
 
   // Colors for actions
   static const Color buyColor = mostroGreen;
-  static const Color sellColor = Color(0xFFFF8A8A);
   static const Color activeColor = mostroGreen;
   static const Color purpleAccent = Color(0xFF764BA2);
   static const Color purpleButton = Color(0xFF7856AF);
@@ -38,7 +40,11 @@ class AppTheme {
   // Colors for states
   static const Color statusSuccess = mostroGreen;
   static const Color statusWarning = Color(0xFFF3CA29);
+
+  /// Red color for error states, validation failures, and error notifications
+  /// Use for: Error messages, failed operations, validation errors
   static const Color statusError = Color(0xFFEF6A6A);
+
   static const Color statusActive = mostroGreen;
   static const Color statusInfo = Color.fromARGB(255, 42, 123, 214);
   

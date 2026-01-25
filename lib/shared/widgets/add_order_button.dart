@@ -115,7 +115,7 @@ class _AddOrderButtonState extends State<AddOrderButton>
                                 ? () => _navigateToCreateOrder(context, 'sell')
                                 : null,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.sellColor,
+                              backgroundColor: AppTheme.red1,
                               foregroundColor: Colors.black,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
