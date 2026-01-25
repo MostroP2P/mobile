@@ -25,7 +25,7 @@ class PriceTypeSection extends StatelessWidget {
     return FormSection(
       title: S.of(context)!.priceType,
       icon: priceTypeIcon,
-      iconBackgroundColor: AppTheme.purpleAccent.withValues(
+      iconBackgroundColor: AppTheme.purpleButton.withValues(
           alpha: 0.3), // Purple color consistent with other sections
       infoTooltip: S.of(context)!.priceTypeTooltip,
       infoTitle: S.of(context)!.priceType,
@@ -64,7 +64,7 @@ class PriceTypeSection extends StatelessWidget {
                 trackColor: WidgetStateProperty.resolveWith<Color?>(
                   (Set<WidgetState> states) {
                     if (states.contains(WidgetState.selected)) {
-                      return AppTheme.purpleAccent; // Purple track when active
+                      return AppTheme.purpleButton; // Purple track when active
                     }
                     return AppTheme.backgroundInactive; // Dark grey track when inactive
                   },
