@@ -5,7 +5,7 @@ import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
-import 'package:logger/logger.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:mostro_mobile/core/app.dart';
@@ -42,10 +42,10 @@ void _onNotificationTap(NotificationResponse response) {
     final context = MostroApp.navigatorKey.currentContext;
     if (context != null) {
       context.push('/notifications');
-      Logger().i('Navigated to notifications screen');
+      logger.i('Navigated to notifications screen');
     }
   } catch (e) {
-    Logger().e('Navigation error: $e');
+    logger.e('Navigation error: $e');
   }
 }
 
@@ -109,9 +109,9 @@ Future<void> showLocalNotification(NostrEvent event) async {
       payload: mostroMessage.id,
     );
 
-    Logger().i('Shown: ${notificationText.title} - ${notificationText.body}');
+    logger.i('Shown: ${notificationText.title} - ${notificationText.body}');
   } catch (e) {
-    Logger().e('Notification error: $e');
+    logger.e('Notification error: $e');
   }
 }
 
@@ -148,7 +148,7 @@ Future<MostroMessage?> _decryptAndProcessEvent(NostrEvent event) async {
 
     return mostroMessage;
   } catch (e) {
-    Logger().e('Decrypt error: $e');
+    logger.e('Decrypt error: $e');
     return null;
   }
 }
@@ -166,7 +166,7 @@ Future<List<Session>> _loadSessionsFromDatabase() async {
     final sessionStorage = SessionStorage(keyManager, db: db);
     return await sessionStorage.getAll();
   } catch (e) {
-    Logger().e('Session load error: $e');
+    logger.e('Session load error: $e');
     return [];
   }
 }
@@ -285,13 +285,13 @@ Future<void> retryNotification(NostrEvent event, {int maxAttempts = 3}) async {
     } catch (e) {
       attempt++;
       if (attempt >= maxAttempts) {
-        Logger().e('Failed to show notification after $maxAttempts attempts: $e');
+        logger.e('Failed to show notification after $maxAttempts attempts: $e');
         break;
       }
 
       // Exponential backoff: 1s, 2s, 4s, etc.
       final backoffSeconds = pow(2, attempt - 1).toInt();
-      Logger().e('Notification attempt $attempt failed: $e. Retrying in ${backoffSeconds}s');
+      logger.e('Notification attempt $attempt failed: $e. Retrying in ${backoffSeconds}s');
       await Future.delayed(Duration(seconds: backoffSeconds));
     }
   }
