@@ -5,7 +5,7 @@ import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:dart_nostr/nostr/model/request/filter.dart';
 import 'package:dart_nostr/nostr/model/request/request.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:logger/logger.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/enums/role.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
@@ -45,7 +45,6 @@ enum RestoreStage {
 class RestoreService {
 
   final Ref ref;
-  final Logger _logger = Logger();
   StreamSubscription<NostrEvent>? _tempSubscription;
   Completer<NostrEvent>? _currentCompleter;
   RestoreStage _currentStage = RestoreStage.gettingRestoreData;
@@ -55,12 +54,12 @@ class RestoreService {
   RestoreService(this.ref);
 
   Future<void> importMnemonicAndRestore(String mnemonic) async {
-    _logger.i('Restore: importing mnemonic');
+    logger.i('Restore: importing mnemonic');
 
     // Import the mnemonic - this saves to storage
     final keyManager = ref.read(keyManagerProvider);
     await keyManager.importMnemonic(mnemonic);
-    _logger.i('Restore: mnemonic imported and saved to storage');
+    logger.i('Restore: mnemonic imported and saved to storage');
 
     // Invalidate keyManagerProvider to force re-initialization
     // This ensures all providers get a fresh instance with the new key
@@ -75,7 +74,7 @@ class RestoreService {
 
   Future<void> _clearAll() async {
     try {
-      _logger.i('Restore: clearing all existing data before restore');
+      logger.i('Restore: clearing all existing data before restore');
       await ref.read(sessionNotifierProvider.notifier).reset();
       await ref.read(mostroStorageProvider).deleteAll();
       await ref.read(eventStorageProvider).deleteAll();
@@ -83,7 +82,7 @@ class RestoreService {
       ref.read(orderRepositoryProvider).clearCache();
 
     } catch (e) {
-      _logger.w('Restore: cleanup error', error: e);
+      logger.w('Restore: cleanup error', error: e);
     }
   }
 
@@ -98,10 +97,10 @@ class RestoreService {
           throw TimeoutException('Stage $stage timed out after ${timeout.inSeconds}s');
         },
       );
-      _logger.i('Restore: stage $_currentStage completed - Event: ${event.id}');
+      logger.i('Restore: stage $_currentStage completed - Event: ${event.id}');
       return event;
     } catch (e) {
-      _logger.e('Restore: stage $_currentStage failed', error: e);
+      logger.e('Restore: stage $_currentStage failed', error: e);
       rethrow;
     }
   }
@@ -131,17 +130,17 @@ class RestoreService {
     final subscription = stream.listen(
       _handleTempSubscriptionsResponse,
       onError: (error, stackTrace) {
-        _logger.e('Restore: subscription error', error: error, stackTrace: stackTrace);
+        logger.e('Restore: subscription error', error: error, stackTrace: stackTrace);
       },
       cancelOnError: false,
     );
 
-    _logger.i('Restore: temporary subscription created');
+    logger.i('Restore: temporary subscription created');
     return subscription;
   }
 
   Future<void> _sendRestoreRequest() async {
-    _logger.i('Restore: sending restore data request');
+    logger.i('Restore: sending restore data request');
 
     if (_tempTradeKey == null && _masterKey == null) {
       throw Exception('Temp trade key or master key not initialized');
@@ -163,7 +162,7 @@ class RestoreService {
     );
 
     await ref.read(nostrServiceProvider).publishEvent(wrappedEvent);
-    _logger.i('Restore: request sent successfully');
+    logger.i('Restore: request sent successfully');
   }
   
   //Extracts restore data, returns:
@@ -187,7 +186,7 @@ class RestoreService {
 
       // Check if Mostro returned cant-do (not found)
       if (messageData.containsKey('cant-do')) {
-        _logger.w('Restore: Mostro returned cant-do for restore data (no orders found)');
+        logger.w('Restore: Mostro returned cant-do for restore data (no orders found)');
         return (ordersMap: <String, int>{}, disputes: <RestoredDispute>[]);
       }
 
@@ -195,14 +194,14 @@ class RestoreService {
       final restoreWrapper = messageData['restore'] as Map<String, dynamic>?;
 
       if (restoreWrapper == null) {
-        _logger.w('Restore: no restore wrapper found, returning empty orders');
+        logger.w('Restore: no restore wrapper found, returning empty orders');
         return (ordersMap: <String, int>{}, disputes: <RestoredDispute>[]);
       }
 
       final payload = restoreWrapper['payload'] as Map<String, dynamic>?;
 
       if (payload == null) {
-        _logger.w('Restore: no payload found in restore wrapper, returning empty orders');
+        logger.w('Restore: no payload found in restore wrapper, returning empty orders');
         return (ordersMap: <String, int>{}, disputes: <RestoredDispute>[]);
       }
 
@@ -223,13 +222,13 @@ class RestoreService {
 
       return (ordersMap: ordersMap, disputes: disputesList);
     } catch (e, stack) {
-      _logger.e('Restore: failed to extract restore data', error: e, stackTrace: stack);
+      logger.e('Restore: failed to extract restore data', error: e, stackTrace: stack);
       rethrow;
     }
   }
 
   Future<void> _sendOrdersDetailsRequest(List<String> orderIds) async {
-    _logger.i('Restore: sending orders details request for ${orderIds.length} orders');
+    logger.i('Restore: sending orders details request for ${orderIds.length} orders');
 
     if (_tempTradeKey == null && _masterKey == null) {
       throw Exception('Temp trade key or master key not initialized');
@@ -251,13 +250,13 @@ class RestoreService {
     );
 
     await ref.read(nostrServiceProvider).publishEvent(wrappedEvent);
-    _logger.i('Restore: orders details request sent successfully');
+    logger.i('Restore: orders details request sent successfully');
   }
 
   //Extracts orders details from gift wrap event, returns OrdersResponse
   Future<OrdersResponse> _extractOrdersDetails(NostrEvent event) async {
     try {
-      _logger.i('Restore: extracting orders details from gift wrap event ${event.id}');
+      logger.i('Restore: extracting orders details from gift wrap event ${event.id}');
 
       if (_tempTradeKey == null) {
         throw Exception('Temp trade key not initialized');
@@ -280,17 +279,17 @@ class RestoreService {
 
       final ordersResponse = OrdersResponse.fromJson(payload);
 
-      _logger.i('Restore: found ${ordersResponse.orders.length} order details');
+      logger.i('Restore: found ${ordersResponse.orders.length} order details');
 
       return ordersResponse;
     } catch (e, stack) {
-      _logger.e('Restore: failed to extract orders details', error: e, stackTrace: stack);
+      logger.e('Restore: failed to extract orders details', error: e, stackTrace: stack);
       rethrow;
     }
   }
 
   Future<void> _sendLastTradeIndexRequest() async {
-    _logger.i('Restore: sending last trade index request');
+    logger.i('Restore: sending last trade index request');
 
     if (_tempTradeKey == null && _masterKey == null) {
       throw Exception('Temp trade key or master key not initialized');
@@ -312,12 +311,12 @@ class RestoreService {
     );
 
     await ref.read(nostrServiceProvider).publishEvent(wrappedEvent);
-    _logger.i('Restore: last trade index request sent successfully');
+    logger.i('Restore: last trade index request sent successfully');
   }
 
   Future<LastTradeIndexResponse> _extractLastTradeIndex(NostrEvent event) async {
     try {
-      _logger.i('Restore: extracting last trade index from gift wrap event ${event.id}');
+      logger.i('Restore: extracting last trade index from gift wrap event ${event.id}');
 
       if (_tempTradeKey == null) {
         throw Exception('Temp trade key not initialized');
@@ -334,7 +333,7 @@ class RestoreService {
 
       // Check if Mostro returned cant-do (not found)
       if (messageData.containsKey('cant-do')) {
-        _logger.w('Restore: Mostro returned cant-do for last trade index, defaulting to 0');
+        logger.w('Restore: Mostro returned cant-do for last trade index, defaulting to 0');
         return LastTradeIndexResponse(tradeIndex: 0);
       }
 
@@ -342,17 +341,17 @@ class RestoreService {
       final restoreWrapper = messageData['restore'] as Map<String, dynamic>?;
 
       if (restoreWrapper == null) {
-        _logger.w('Restore: no restore wrapper found, defaulting trade index to 0');
+        logger.w('Restore: no restore wrapper found, defaulting trade index to 0');
         return LastTradeIndexResponse(tradeIndex: 0);
       }
 
       final response = LastTradeIndexResponse.fromJson(restoreWrapper);
 
-      _logger.i('Restore: last trade index is ${response.tradeIndex}');
+      logger.i('Restore: last trade index is ${response.tradeIndex}');
 
       return response;
     } catch (e, stack) {
-      _logger.e('Restore: failed to extract last trade index', error: e, stackTrace: stack);
+      logger.e('Restore: failed to extract last trade index', error: e, stackTrace: stack);
       rethrow;
     }
   }
@@ -382,7 +381,7 @@ class RestoreService {
     }
 
     if (!sessionMatchesOrder) {
-      _logger.w(
+      logger.w(
         'Restore: session pubkey mismatch for order ${order.id} - '
         'session role: $sessionRole, session pubkey: $sessionPubkey, '
         'buyer pubkey: ${order.buyerTradePubkey}, seller pubkey: ${order.sellerTradePubkey}'
@@ -465,7 +464,7 @@ class RestoreService {
 
       // Enable restore mode to block all old message processing
       ref.read(isRestoringProvider.notifier).state = true;
-      _logger.i('Restore: enabled restore mode - blocking all old message processing');
+      logger.i('Restore: enabled restore mode - blocking all old message processing');
 
       // Restore each a session to get future messages
       for (final entry in ordersIds.entries) {
@@ -508,13 +507,13 @@ class RestoreService {
       }
 
       // Wait for historical messages to arrive and be saved to storage
-      _logger.i('Restore: waiting 8 seconds for historical messages to be saved...');
+      logger.i('Restore: waiting 8 seconds for historical messages to be saved...');
       //WARNING: It is very important to wait here to ensure all historical messages arrive before rebuilding state
       // Relays could send them with delay
       await Future.delayed(const Duration(seconds: 8));
 
       // Build MostroMessages from ordersResponse and update state (source of truth from Mostro)
-      _logger.i('Restore: building messages for ${ordersResponse.orders.length} orders from ordersResponse');
+      logger.i('Restore: building messages for ${ordersResponse.orders.length} orders from ordersResponse');
       final storage = ref.read(mostroStorageProvider);
 
       // Process each order detail
@@ -552,7 +551,7 @@ class RestoreService {
             // We need the session to compare trade indexes
             bool userInitiated = false;
             if (session == null) {
-              _logger.w('Restore: no session found for disputed order ${orderDetail.id}, defaulting to peer-initiated');
+              logger.w('Restore: no session found for disputed order ${orderDetail.id}, defaulting to peer-initiated');
               action = Action.disputeInitiatedByPeer;
             } else {
               // Determine if user initiated with double verification TODO : improve if protocol changes
@@ -578,7 +577,7 @@ class RestoreService {
               action: userInitiated ? 'dispute-initiated-by-you' : 'dispute-initiated-by-peer',
             );
 
-            _logger.i('Restore: dispute found for order ${orderDetail.id}');
+            logger.i('Restore: dispute found for order ${orderDetail.id}');
           } else {
             // Regular order without dispute
             final session = ref.read(sessionNotifierProvider.notifier).getSessionByOrderId(orderDetail.id);
@@ -605,23 +604,23 @@ class RestoreService {
           // If dispute exists, update state with dispute object using public method
           if (dispute != null) {
             notifier.updateDispute(dispute);
-            _logger.i('Restore: added dispute to state for order ${orderDetail.id}');
+            logger.i('Restore: added dispute to state for order ${orderDetail.id}');
           }
         } catch (e, stack) {
-          _logger.e('Restore: failed to process order ${orderDetail.id}', error: e, stackTrace: stack);
+          logger.e('Restore: failed to process order ${orderDetail.id}', error: e, stackTrace: stack);
         }
       }
 
-      _logger.i('Restore: state update completed for all orders');
+      logger.i('Restore: state update completed for all orders');
 
       // Disable restore mode - back to normal message processing
       ref.read(isRestoringProvider.notifier).state = false;
-      _logger.i('Restore: disabled restore mode - re-enabling message processing');
+      logger.i('Restore: disabled restore mode - re-enabling message processing');
 
     } catch (e, stack) {
       // Ensure flag is cleared even on error
       ref.read(isRestoringProvider.notifier).state = false;
-      _logger.e('Restore: error during restore', error: e, stackTrace: stack);
+      logger.e('Restore: error during restore', error: e, stackTrace: stack);
       rethrow;
     }
   }
@@ -645,22 +644,22 @@ class RestoreService {
       // Validate and initialize master key
       final keyManager = ref.read(keyManagerProvider);
       if (keyManager.masterKeyPair == null) {
-        _logger.e('Restore: master key not found after import');
+        logger.e('Restore: master key not found after import');
         throw Exception('Master key not found');
       }
       _masterKey = keyManager.masterKeyPair;
-      _logger.i('Restore: initialized master key');
+      logger.i('Restore: initialized master key');
 
       // Validate Mostro public key
       final settings = ref.read(settingsProvider);
       if (settings.mostroPublicKey.isEmpty) {
-        _logger.e('Restore: Mostro not configured');
+        logger.e('Restore: Mostro not configured');
         throw Exception('Mostro not configured');
       }
 
       // Initialize temporary trade key (index 1) for entire restore process
       _tempTradeKey = await keyManager.deriveTradeKeyFromIndex(1);
-      _logger.i('Restore: initialized temp trade key with pubkey ${_tempTradeKey!.public}');
+      logger.i('Restore: initialized temp trade key with pubkey ${_tempTradeKey!.public}');
 
       // Subscribe to temporary notifications
       _tempSubscription = await _createTempSubscription();
@@ -675,7 +674,7 @@ class RestoreService {
       progress.setOrdersReceived(ordersMap.length);
 
       if (ordersMap.isEmpty) {
-        _logger.w('Restore: no orders or disputes to restore');
+        logger.w('Restore: no orders or disputes to restore');
         await _sendLastTradeIndexRequest();
         final lastTradeIndexEvent = await _waitForEvent(RestoreStage.gettingTradeIndex);
         final lastTradeIndexResponse = await _extractLastTradeIndex(lastTradeIndexEvent);
@@ -688,7 +687,7 @@ class RestoreService {
       // STAGE 2: Getting Orders Details
       progress.updateStep(RestoreStep.loadingDetails);
       final ordersIdsList = ordersMap.keys.toList();
-      _logger.i('Restore: requesting details for ${ordersIdsList.length} orders: $ordersIdsList');
+      logger.i('Restore: requesting details for ${ordersIdsList.length} orders: $ordersIdsList');
       await _sendOrdersDetailsRequest(ordersIdsList);
       final ordersDetailsEvent = await _waitForEvent(RestoreStage.gettingOrdersDetails);
       final ordersResponse = await _extractOrdersDetails(ordersDetailsEvent);
@@ -716,11 +715,11 @@ class RestoreService {
       notifProvider.clearAll();
 
     } catch (e, stack) {
-      _logger.e('Restore: error during restore process', error: e, stackTrace: stack);
+      logger.e('Restore: error during restore process', error: e, stackTrace: stack);
       ref.read(restoreProgressProvider.notifier).showError('');
     } finally {
       // Cleanup: always cancel subscription and clear keys
-      _logger.i('Restore: cleaning up subscription and keys');
+      logger.i('Restore: cleaning up subscription and keys');
       await _tempSubscription?.cancel();
       _tempSubscription = null;
       _currentCompleter = null;

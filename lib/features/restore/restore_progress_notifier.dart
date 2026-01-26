@@ -1,17 +1,16 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:logger/logger.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/features/restore/restore_progress_state.dart';
 
 class RestoreProgressNotifier extends StateNotifier<RestoreProgressState> {
-  final _logger = Logger();
   Timer? _timeoutTimer;
   static const _maxTimeout = Duration(seconds: 30);
 
   RestoreProgressNotifier() : super(RestoreProgressState.initial());
 
   void startRestore() {
-    _logger.i('Starting restore overlay');
+    logger.i('Starting restore overlay');
     state = RestoreProgressState.initial().copyWith(
       isVisible: true,
       step: RestoreStep.requesting,
@@ -21,7 +20,7 @@ class RestoreProgressNotifier extends StateNotifier<RestoreProgressState> {
   }
 
   void updateStep(RestoreStep step, {int? current, int? total}) {
-    _logger.i('Restore step: $step (${current ?? 0}/${total ?? 0})');
+    logger.i('Restore step: $step (${current ?? 0}/${total ?? 0})');
     state = state.copyWith(
       step: step,
       currentProgress: current ?? state.currentProgress,
@@ -32,7 +31,7 @@ class RestoreProgressNotifier extends StateNotifier<RestoreProgressState> {
   }
 
   void setOrdersReceived(int count) {
-    _logger.i('Received $count orders');
+    logger.i('Received $count orders');
     state = state.copyWith(
       step: RestoreStep.receivingOrders,
       totalProgress: count,
@@ -51,7 +50,7 @@ class RestoreProgressNotifier extends StateNotifier<RestoreProgressState> {
   }
 
   void completeRestore() {
-    _logger.i('Restore completed successfully');
+    logger.i('Restore completed successfully');
     _cancelTimeoutTimer();
 
     state = state.copyWith(
@@ -67,7 +66,7 @@ class RestoreProgressNotifier extends StateNotifier<RestoreProgressState> {
   }
 
   void showError(String message) {
-    _logger.w('Restore error: $message');
+    logger.w('Restore error: $message');
     _cancelTimeoutTimer();
 
     state = state.copyWith(
@@ -84,7 +83,7 @@ class RestoreProgressNotifier extends StateNotifier<RestoreProgressState> {
   }
 
   void hide() {
-    _logger.i('Hiding restore overlay');
+    logger.i('Hiding restore overlay');
     _cancelTimeoutTimer();
     state = RestoreProgressState.initial();
   }
@@ -93,7 +92,7 @@ class RestoreProgressNotifier extends StateNotifier<RestoreProgressState> {
     _cancelTimeoutTimer();
     _timeoutTimer = Timer(_maxTimeout, () {
       if (mounted && state.isVisible) {
-        _logger.w('Restore timeout - auto-hiding overlay');
+        logger.w('Restore timeout - auto-hiding overlay');
         showError('Request timeout');
       }
     });
