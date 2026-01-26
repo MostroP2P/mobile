@@ -75,8 +75,7 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
             ElevatedButton.icon(
               onPressed: () {
                 Clipboard.setData(ClipboardData(text: widget.lnInvoice));
-                widget.logger
-                    .i('Copied LN Invoice to clipboard: ${widget.lnInvoice}');
+                logger.i('Copied LN Invoice to clipboard: ${widget.lnInvoice}');
                 SnackBarHelper.showTopSnackBar(
                   context,
                   S.of(context)!.invoiceCopiedToClipboard,
@@ -101,17 +100,15 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
                   final uri = Uri.parse('lightning:${widget.lnInvoice}');
                   if (await canLaunchUrl(uri)) {
                     await launchUrl(uri);
-                    widget.logger.i(
-                        'Launched Lightning wallet with invoice: ${widget.lnInvoice}');
+                    logger.i('Launched Lightning wallet with invoice: ${widget.lnInvoice}');
                   } else {
                     // Fallback to generic share if no Lightning apps available
                     // lightning: URL scheme is not necessary then
                     await Share.share(widget.lnInvoice);
-                    widget.logger.i(
-                        'Shared LN Invoice via share sheet: ${widget.lnInvoice}');
+                    logger.i('Shared LN Invoice via share sheet: ${widget.lnInvoice}');
                   }
                 } catch (e) {
-                  widget.logger.e('Failed to share LN Invoice: $e');
+                  logger.e('Failed to share LN Invoice: $e');
                   if (mounted) {
                     SnackBarHelper.showTopSnackBarAsync(
                       messenger: messenger,

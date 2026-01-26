@@ -4,7 +4,6 @@ import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/enums/storage_keys.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
-import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/services/push_notification_service.dart';
 import 'package:mostro_mobile/services/fcm_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
