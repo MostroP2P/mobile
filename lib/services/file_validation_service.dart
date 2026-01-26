@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:mime/mime.dart';
-import 'package:logger/logger.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 
 class FileValidationResult {
   final Uint8List validatedData;
@@ -22,7 +22,6 @@ class FileValidationResult {
 }
 
 class FileValidationService {
-  static final Logger _logger = Logger();
   
   // Maximum file size: 25MB
   static const int maxFileSize = 25 * 1024 * 1024;
@@ -67,7 +66,7 @@ class FileValidationService {
     final filename = file.path.split('/').last;
     final fileData = await file.readAsBytes();
     
-    _logger.i('🔍 Validating file: $filename (${fileData.length} bytes)');
+    logger.i('🔍 Validating file: $filename (${fileData.length} bytes)');
     
     // 1. Check file size
     if (fileData.length > maxFileSize) {
@@ -99,7 +98,7 @@ class FileValidationService {
     // 5. Perform type-specific validation
     await _performTypeSpecificValidation(fileData, mimeType, fileType);
     
-    _logger.i('✅ File validation successful: $fileType ($mimeType)');
+    logger.i('✅ File validation successful: $fileType ($mimeType)');
     
     return FileValidationResult(
       validatedData: fileData,
@@ -178,7 +177,7 @@ class FileValidationService {
   
   /// Validate PDF structure and security
   static Future<void> _validatePdfStructure(Uint8List fileData) async {
-    _logger.d('🔍 Validating PDF structure...');
+    logger.d('🔍 Validating PDF structure...');
     
     // Check PDF header
     if (fileData.length < 8) {
@@ -194,15 +193,15 @@ class FileValidationService {
     // Check for PDF trailer (should end with %%EOF or whitespace)
     final tail = String.fromCharCodes(fileData.skip(fileData.length - 20).take(20));
     if (!tail.contains('%%EOF')) {
-      _logger.w('⚠️ PDF may be incomplete (no %%EOF trailer found)');
+      logger.w('⚠️ PDF may be incomplete (no %%EOF trailer found)');
     }
     
-    _logger.d('✅ PDF structure validation passed');
+    logger.d('✅ PDF structure validation passed');
   }
   
   /// Validate DOC/DOCX structure and check for macros
   static Future<void> _validateDocumentStructure(Uint8List fileData, String mimeType) async {
-    _logger.d('🔍 Validating document structure...');
+    logger.d('🔍 Validating document structure...');
     
     if (mimeType == 'application/msword') {
       // DOC file validation - check OLE header
@@ -248,12 +247,12 @@ class FileValidationService {
       }
     }
     
-    _logger.d('✅ Document structure validation passed');
+    logger.d('✅ Document structure validation passed');
   }
   
   /// Validate video file structure
   static Future<void> _validateVideoStructure(Uint8List fileData, String mimeType) async {
-    _logger.d('🔍 Validating video structure...');
+    logger.d('🔍 Validating video structure...');
     
     if (fileData.length < 12) {
       throw FileValidationException('Video file too small or corrupted');
@@ -285,7 +284,7 @@ class FileValidationService {
         break;
     }
     
-    _logger.d('✅ Video structure validation passed');
+    logger.d('✅ Video structure validation passed');
   }
   
   /// Check if file contains macro patterns using efficient byte search

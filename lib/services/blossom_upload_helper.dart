@@ -1,11 +1,10 @@
 import 'dart:typed_data';
-import 'package:logger/logger.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/core/config/blossom_config.dart';
 import 'package:mostro_mobile/services/blossom_client.dart';
 
 /// Shared utility for uploading data to Blossom servers with automatic retry
 class BlossomUploadHelper {
-  static final Logger _logger = Logger();
   
   /// Upload data to Blossom servers with automatic retry across multiple servers
   /// 
@@ -33,7 +32,7 @@ class BlossomUploadHelper {
     
     for (int i = 0; i < servers.length; i++) {
       final serverUrl = servers[i];
-      _logger.d('Attempting upload to server ${i + 1}/${servers.length}: $serverUrl');
+      logger.d('Attempting upload to server ${i + 1}/${servers.length}: $serverUrl');
       
       try {
         final client = BlossomClient(serverUrl: serverUrl);
@@ -42,11 +41,11 @@ class BlossomUploadHelper {
           mimeType: mimeType,
         );
         
-        _logger.i('✅ Upload successful to: $serverUrl');
+        logger.i('✅ Upload successful to: $serverUrl');
         return blossomUrl;
         
       } catch (e) {
-        _logger.w('❌ Upload failed to $serverUrl: $e');
+        logger.w('❌ Upload failed to $serverUrl: $e');
         
         // If it's the last server, re-throw the error
         if (i == servers.length - 1) {

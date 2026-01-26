@@ -4,11 +4,10 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
-import 'package:logger/logger.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mostro_mobile/firebase_options.dart';
 
-final _logger = Logger();
 
 /// FCM background message handler - wakes up the app to process new events
 /// This is called when the app is in background or terminated
@@ -127,8 +126,8 @@ class FCMService {
       _isInitialized = true;
       debugPrint('FCM: Initialized successfully');
     } catch (e, stackTrace) {
-      _logger.e('Error initializing FCM Service: $e');
-      _logger.e('Stack trace: $stackTrace');
+      logger.e('Error initializing FCM Service: $e');
+      logger.e('Stack trace: $stackTrace');
       // Don't rethrow - app should continue without FCM
     }
   }
@@ -149,11 +148,11 @@ class FCMService {
           settings.authorizationStatus == AuthorizationStatus.authorized ||
               settings.authorizationStatus == AuthorizationStatus.provisional;
 
-      _logger
+      logger
           .i('Notification permission status: ${settings.authorizationStatus}');
       return granted;
     } catch (e) {
-      _logger.e('Error requesting permissions: $e');
+      logger.e('Error requesting permissions: $e');
       return false;
     }
   }
@@ -163,7 +162,7 @@ class FCMService {
       final token = await _messaging.getToken().timeout(
         _tokenTimeout,
         onTimeout: () {
-          _logger.w('Timeout getting FCM token');
+          logger.w('Timeout getting FCM token');
           return null;
         },
       );
@@ -173,12 +172,12 @@ class FCMService {
         debugPrint('FCM: Token obtained');
         return token;
       } else {
-        _logger
+        logger
             .w('Failed to obtain FCM token - push notifications may not work');
         return null;
       }
     } catch (e) {
-      _logger.e('Error getting FCM token: $e');
+      logger.e('Error getting FCM token: $e');
       return null;
     }
   }
@@ -195,11 +194,11 @@ class FCMService {
         try {
           onTokenRefresh?.call(newToken);
         } catch (e) {
-          _logger.e('Error in onTokenRefresh callback: $e');
+          logger.e('Error in onTokenRefresh callback: $e');
         }
       },
       onError: (error) {
-        _logger.e('Error on token refresh: $error');
+        logger.e('Error on token refresh: $error');
       },
     );
   }
@@ -215,7 +214,7 @@ class FCMService {
         debugPrint('FCM: Foreground message received');
       },
       onError: (error) {
-        _logger.e('Error receiving foreground message: $error');
+        logger.e('Error receiving foreground message: $error');
       },
     );
   }
@@ -228,7 +227,7 @@ class FCMService {
         // The background service will handle fetching when it starts
       }
     } catch (e) {
-      _logger.e('Error checking pending fetch: $e');
+      logger.e('Error checking pending fetch: $e');
     }
   }
 
@@ -243,7 +242,7 @@ class FCMService {
       // If not in storage, get from Firebase
       return await _getAndStoreToken();
     } catch (e) {
-      _logger.e('Error getting token: $e');
+      logger.e('Error getting token: $e');
       return null;
     }
   }
@@ -253,17 +252,17 @@ class FCMService {
       await _messaging.deleteToken().timeout(
         _tokenTimeout,
         onTimeout: () {
-          _logger.w('Timeout deleting FCM token');
+          logger.w('Timeout deleting FCM token');
         },
       );
       await _prefs.remove(_fcmTokenKey);
     } catch (e) {
-      _logger.e('Error deleting FCM token: $e');
+      logger.e('Error deleting FCM token: $e');
       // Still try to remove from local storage
       try {
         await _prefs.remove(_fcmTokenKey);
       } catch (localError) {
-        _logger.e('Error removing token from local storage: $localError');
+        logger.e('Error removing token from local storage: $localError');
       }
     }
   }

@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 import 'package:image/image.dart' as img;
 import 'package:mime/mime.dart';
-import 'package:logger/logger.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 
 enum SupportedImageType {
   jpeg,
@@ -52,7 +52,6 @@ class MediaValidationResult {
 }
 
 class MediaValidationService {
-  static final Logger _logger = Logger();
   
   /// Sanitizes and validates image exactly like whitenoise
   /// 1. Detects format from data (not extension)
@@ -72,7 +71,7 @@ class MediaValidationService {
   static Future<MediaValidationResult> validateAndSanitizeImageLight(
     Uint8List imageData,
   ) async {
-    _logger.i('📸 Light image sanitization started: ${imageData.length} bytes');
+    logger.i('📸 Light image sanitization started: ${imageData.length} bytes');
     
     if (imageData.isEmpty) {
       throw MediaValidationException('File is empty');
@@ -131,7 +130,7 @@ class MediaValidationService {
       throw MediaValidationException('Failed to re-encode image: $e');
     }
 
-    _logger.i('✅ Light image sanitization completed: ${sanitizedData.length} bytes');
+    logger.i('✅ Light image sanitization completed: ${sanitizedData.length} bytes');
     
     return MediaValidationResult(
       imageType: detectedType,
@@ -147,7 +146,7 @@ class MediaValidationService {
   static Future<MediaValidationResult> _sanitizeImageHeavy(
     Uint8List imageData,
   ) async {
-    _logger.i('🔒 Heavy image sanitization started: ${imageData.length} bytes');
+    logger.i('🔒 Heavy image sanitization started: ${imageData.length} bytes');
     
     if (imageData.isEmpty) {
       throw MediaValidationException('File is empty');
@@ -205,7 +204,7 @@ class MediaValidationService {
       throw MediaValidationException('Failed to re-encode image: $e');
     }
 
-    _logger.i('✅ Heavy image sanitization completed: ${sanitizedData.length} bytes');
+    logger.i('✅ Heavy image sanitization completed: ${sanitizedData.length} bytes');
 
     return MediaValidationResult(
       imageType: detectedType,

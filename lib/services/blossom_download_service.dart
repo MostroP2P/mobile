@@ -1,18 +1,17 @@
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
-import 'package:logger/logger.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 
 class BlossomDownloadService {
-  static final Logger _logger = Logger();
   static const Duration _timeout = Duration(minutes: 2);
 
   /// Download encrypted blob from Blossom server
   static Future<Uint8List> downloadFromBlossom(String blossomUrl) async {
-    _logger.i('📥 Starting download from Blossom: $blossomUrl');
+    logger.i('📥 Starting download from Blossom: $blossomUrl');
     
     try {
       final uri = Uri.parse(blossomUrl);
-      _logger.d('GET $uri');
+      logger.d('GET $uri');
 
       final response = await http.get(
         uri,
@@ -24,16 +23,16 @@ class BlossomDownloadService {
 
       if (response.statusCode == 200) {
         final data = response.bodyBytes;
-        _logger.i('✅ Download successful: ${data.length} bytes');
+        logger.i('✅ Download successful: ${data.length} bytes');
         return data;
       } else {
-        _logger.e('❌ Download failed: ${response.statusCode} - ${response.body}');
+        logger.e('❌ Download failed: ${response.statusCode} - ${response.body}');
         throw BlossomDownloadException(
           'Download failed: HTTP ${response.statusCode} - ${response.body}'
         );
       }
     } catch (e) {
-      _logger.e('❌ Download error: $e');
+      logger.e('❌ Download error: $e');
       if (e is BlossomDownloadException) {
         rethrow;
       }
@@ -47,20 +46,20 @@ class BlossomDownloadService {
     int maxRetries = 3,
     Duration retryDelay = const Duration(seconds: 1),
   }) async {
-    _logger.i('📥 Download with retry: $blossomUrl (max $maxRetries attempts)');
+    logger.i('📥 Download with retry: $blossomUrl (max $maxRetries attempts)');
 
     Exception? lastException;
     
     for (int attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        _logger.d('Attempt $attempt/$maxRetries');
+        logger.d('Attempt $attempt/$maxRetries');
         return await downloadFromBlossom(blossomUrl);
       } catch (e) {
         lastException = e is Exception ? e : Exception(e.toString());
-        _logger.w('❌ Attempt $attempt failed: $e');
+        logger.w('❌ Attempt $attempt failed: $e');
         
         if (attempt < maxRetries) {
-          _logger.d('⏳ Waiting ${retryDelay.inMilliseconds}ms before retry...');
+          logger.d('⏳ Waiting ${retryDelay.inMilliseconds}ms before retry...');
           await Future.delayed(retryDelay);
           // Exponential backoff
           retryDelay = Duration(milliseconds: (retryDelay.inMilliseconds * 1.5).round());
@@ -68,7 +67,7 @@ class BlossomDownloadService {
       }
     }
 
-    _logger.e('❌ All download attempts failed');
+    logger.e('❌ All download attempts failed');
     throw BlossomDownloadException('All $maxRetries download attempts failed. Last error: $lastException');
   }
 
@@ -81,7 +80,7 @@ class BlossomDownloadService {
       );
       return response.statusCode == 200;
     } catch (e) {
-      _logger.w('🔍 URL accessibility check failed for $blossomUrl: $e');
+      logger.w('🔍 URL accessibility check failed for $blossomUrl: $e');
       return false;
     }
   }
@@ -102,7 +101,7 @@ class BlossomDownloadService {
       }
       return null;
     } catch (e) {
-      _logger.w('🔍 Content length check failed for $blossomUrl: $e');
+      logger.w('🔍 Content length check failed for $blossomUrl: $e');
       return null;
     }
   }
@@ -112,7 +111,7 @@ class BlossomDownloadService {
     String blossomUrl,
     void Function(int downloaded, int total)? onProgress,
   ) async {
-    _logger.i('📥 Download with progress tracking: $blossomUrl');
+    logger.i('📥 Download with progress tracking: $blossomUrl');
 
     final client = http.Client();
     try {
@@ -143,11 +142,11 @@ class BlossomDownloadService {
       }
 
       final data = Uint8List.fromList(bytes);
-      _logger.i('✅ Download with progress completed: ${data.length} bytes');
+      logger.i('✅ Download with progress completed: ${data.length} bytes');
       return data;
       
     } catch (e) {
-      _logger.e('❌ Download with progress failed: $e');
+      logger.e('❌ Download with progress failed: $e');
       if (e is BlossomDownloadException) {
         rethrow;
       }

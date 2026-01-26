@@ -3,12 +3,11 @@ import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'package:http/http.dart' as http;
-import 'package:logger/logger.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 
 import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/services/fcm_service.dart';
 
-final _logger = Logger();
 
 /// Safely truncate a pubkey for logging, avoiding RangeError on short strings.
 String _shortenPubkey(String pubkey, [int maxLength = 16]) {
@@ -75,11 +74,11 @@ class PushNotificationService {
         debugPrint('PushService: Initialized successfully');
         return true;
       } else {
-        _logger.e('Server health check failed: ${response.statusCode}');
+        logger.e('Server health check failed: ${response.statusCode}');
         return false;
       }
     } catch (e) {
-      _logger.e('Failed to initialize push service: $e');
+      logger.e('Failed to initialize push service: $e');
       return false;
     }
   }
@@ -100,7 +99,7 @@ class PushNotificationService {
     }
 
     if (!_isInitialized) {
-      _logger.w('Push service not initialized');
+      logger.w('Push service not initialized');
       final initialized = await initialize();
       if (!initialized) return false;
     }
@@ -109,7 +108,7 @@ class PushNotificationService {
       // Get FCM token from FCMService
       final fcmToken = await _fcmService.getToken();
       if (fcmToken == null) {
-        _logger.w('FCM token is null, cannot register');
+        logger.w('FCM token is null, cannot register');
         return false;
       }
 
@@ -138,10 +137,10 @@ class PushNotificationService {
         }
       }
 
-      _logger.e('Failed to register token: ${response.body}');
+      logger.e('Failed to register token: ${response.body}');
       return false;
     } catch (e) {
-      _logger.e('Error registering token: $e');
+      logger.e('Error registering token: $e');
       return false;
     }
   }
@@ -163,7 +162,7 @@ class PushNotificationService {
       try {
         await registerToken(tradePubkey);
       } catch (e) {
-        _logger.e('Error re-registering token for $tradePubkey: $e');
+        logger.e('Error re-registering token for $tradePubkey: $e');
       }
     }
   }
@@ -184,7 +183,7 @@ class PushNotificationService {
       try {
         await unregisterToken(tradePubkey);
       } catch (e) {
-        _logger.e('Error unregistering token for $tradePubkey: $e');
+        logger.e('Error unregistering token for $tradePubkey: $e');
       }
     }
   }
@@ -216,10 +215,10 @@ class PushNotificationService {
         return true;
       }
 
-      _logger.w('Failed to unregister token: ${response.body}');
+      logger.w('Failed to unregister token: ${response.body}');
       return false;
     } catch (e) {
-      _logger.e('Error unregistering token: $e');
+      logger.e('Error unregistering token: $e');
       return false;
     }
   }
