@@ -8,7 +8,7 @@ import 'package:mostro_mobile/data/repositories/session_storage.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/services/push_notification_service.dart';
-import 'package:logger/logger.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:mostro_mobile/data/models/peer.dart';
@@ -26,7 +26,6 @@ class SessionNotifier extends StateNotifier<List<Session>> {
   final Map<String, Session> _pendingChildSessions = {};
 
   Timer? _cleanupTimer;
-  final Logger _logger = Logger();
 
   /// Push notification service for registering tokens when sessions are saved
   PushNotificationService? _pushService;
@@ -141,17 +140,17 @@ class SessionNotifier extends StateNotifier<List<Session>> {
   /// Register push notification token for a trade pubkey
   void _registerPushToken(String tradePubkey) {
     if (_pushService == null) {
-      _logger.d('Push service not available, skipping token registration');
+      logger.d('Push service not available, skipping token registration');
       return;
     }
 
     // Fire and forget - don't block session save on push registration
     _pushService!.registerToken(tradePubkey).then((success) {
       if (success) {
-        _logger.i('Push token registered for trade: ${tradePubkey.substring(0, 16)}...');
+        logger.i('Push token registered for trade: ${tradePubkey.substring(0, 16)}...');
       }
     }).catchError((e) {
-      _logger.w('Failed to register push token: $e');
+      logger.w('Failed to register push token: $e');
     });
   }
 
@@ -233,7 +232,7 @@ class SessionNotifier extends StateNotifier<List<Session>> {
           .removeWhere((_, pending) => identical(pending, session));
       _sessions.removeWhere((_, stored) => identical(stored, session));
       _emitState();
-      _logger.d('Cleaned up temporary session for requestId: $requestId');
+      logger.d('Cleaned up temporary session for requestId: $requestId');
     }
   }
 
@@ -260,7 +259,7 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     _pendingChildSessions[tradeKey.public] = session;
     _emitState();
 
-    _logger.i(
+    logger.i(
       'Prepared child session for parent order $parentOrderId using key index $keyIndex',
     );
 
@@ -275,7 +274,7 @@ class SessionNotifier extends StateNotifier<List<Session>> {
   ) async {
     final session = _pendingChildSessions.remove(tradeKeyPublic);
     if (session == null) {
-      _logger.w(
+      logger.w(
         'No pending child session found for trade key $tradeKeyPublic; nothing to link.',
       );
       return;
@@ -286,7 +285,7 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     await _storage.putSession(session);
     _emitState();
 
-    _logger.i(
+    logger.i(
       'Linked child order $childOrderId to prepared session (parent: ${session.parentOrderId})',
     );
   }
@@ -297,10 +296,10 @@ class SessionNotifier extends StateNotifier<List<Session>> {
       final sharedKey =
           NostrUtils.computeSharedKey(tradePrivateKey, counterpartyPublicKey);
 
-      _logger.d('Shared key calculated: ${sharedKey.public}');
+      logger.d('Shared key calculated: ${sharedKey.public}');
       return sharedKey;
     } catch (e) {
-      _logger.e('Error calculating shared key: $e');
+      logger.e('Error calculating shared key: $e');
       rethrow;
     }
   }
@@ -322,7 +321,7 @@ class SessionNotifier extends StateNotifier<List<Session>> {
 
     _emitState();
 
-    _logger.d('Session updated with shared key for orderId: $orderId');
+    logger.d('Session updated with shared key for orderId: $orderId');
   }
 
   @override

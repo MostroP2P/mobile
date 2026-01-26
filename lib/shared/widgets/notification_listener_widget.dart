@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:logger/logger.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as mostro;
 import 'package:mostro_mobile/features/notifications/notifiers/notification_temporary_state.dart';
@@ -9,7 +9,6 @@ import 'package:mostro_mobile/features/notifications/utils/notification_message_
 import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
 
 class CantDoNotificationMapper {
-  static final _logger = Logger();
   
   static final _messageMap = <String, String Function(BuildContext)>{
     'pending_order_exists': (context) => S.of(context)!.pendingOrderExists,
@@ -37,7 +36,7 @@ class CantDoNotificationMapper {
       return messageGetter(context);
     }
     
-    _logger.w('Unhandled cant-do reason: $cantDoReason. Consider adding to CantDoNotificationMapper.');
+    logger.w('Unhandled cant-do reason: $cantDoReason. Consider adding to CantDoNotificationMapper.');
     
     // Fallback to generic cant-do message
     return NotificationMessageMapper.getLocalizedTitle(context, mostro.Action.cantDo);
