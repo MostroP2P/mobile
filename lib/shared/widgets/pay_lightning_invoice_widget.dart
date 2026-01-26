@@ -17,7 +17,7 @@ class PayLightningInvoiceWidget extends StatefulWidget {
   final String fiatCode;
   final String orderId;
 
-  PayLightningInvoiceWidget({
+  const PayLightningInvoiceWidget({
     super.key,
     required this.onSubmit,
     required this.onCancel,

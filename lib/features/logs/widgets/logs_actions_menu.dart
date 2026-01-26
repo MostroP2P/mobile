@@ -9,7 +9,7 @@ import 'package:mostro_mobile/services/logger_service.dart';
 
 class LogsActionsMenu extends ConsumerWidget {
 
-  LogsActionsMenu({super.key});
+  const LogsActionsMenu({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
