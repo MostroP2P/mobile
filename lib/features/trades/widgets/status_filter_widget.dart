@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:logger/logger.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/status.dart';
@@ -10,7 +10,6 @@ import 'package:mostro_mobile/features/trades/providers/trades_provider.dart';
 class StatusFilterWidget extends ConsumerWidget {
   const StatusFilterWidget({super.key});
 
-  static final _logger = Logger();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -173,7 +172,7 @@ class StatusFilterWidget extends ConsumerWidget {
               try {
                 statusValue = Status.fromString(value);
               } catch (e) {
-                _logger.e('Error parsing status: $e');
+                logger.e('Error parsing status: $e');
                 statusValue = null;
               }
             }

@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:logger/logger.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/enums/storage_keys.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
@@ -12,7 +12,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 class SettingsNotifier extends StateNotifier<Settings> {
   final SharedPreferencesAsync _prefs;
   final Ref? ref;
-  final _logger = Logger();
   static final String _storageKey = SharedPreferencesKeys.appSettings.value;
 
   /// Push notification service for unregistering tokens when disabled
@@ -63,7 +62,7 @@ class SettingsNotifier extends StateNotifier<Settings> {
     final oldPubkey = state.mostroPublicKey;
     
     if (oldPubkey != newValue) {
-      _logger.i('Mostro change detected: $oldPubkey → $newValue');
+      logger.i('Mostro change detected: $oldPubkey → $newValue');
       
       // COMPLETE RESET: Clear blacklist and user relays when changing Mostro
       state = state.copyWith(
@@ -72,7 +71,7 @@ class SettingsNotifier extends StateNotifier<Settings> {
         userRelays: const [],         // User relays vacíos
       );
       
-      _logger.i('Reset blacklist and user relays for new Mostro instance');
+      logger.i('Reset blacklist and user relays for new Mostro instance');
     } else {
       // Only update pubkey if it's the same (without reset)
       state = state.copyWith(mostroPublicKey: newValue);
@@ -110,7 +109,7 @@ class SettingsNotifier extends StateNotifier<Settings> {
       currentBlacklist.add(normalized);
       state = state.copyWith(blacklistedRelays: currentBlacklist);
       await _saveToPrefs();
-      _logger.i('Added relay to blacklist: $normalized');
+      logger.i('Added relay to blacklist: $normalized');
     }
   }
 
@@ -121,7 +120,7 @@ class SettingsNotifier extends StateNotifier<Settings> {
     if (currentBlacklist.remove(normalized)) {
       state = state.copyWith(blacklistedRelays: currentBlacklist);
       await _saveToPrefs();
-      _logger.i('Removed relay from blacklist: $normalized');
+      logger.i('Removed relay from blacklist: $normalized');
     }
   }
 
@@ -146,7 +145,7 @@ class SettingsNotifier extends StateNotifier<Settings> {
     if (state.blacklistedRelays.isNotEmpty) {
       state = state.copyWith(blacklistedRelays: const []);
       await _saveToPrefs();
-      _logger.i('Cleared all blacklisted relays');
+      logger.i('Cleared all blacklisted relays');
     }
   }
 
@@ -154,7 +153,7 @@ class SettingsNotifier extends StateNotifier<Settings> {
   Future<void> updateUserRelays(List<Map<String, dynamic>> newUserRelays) async {
     state = state.copyWith(userRelays: newUserRelays);
     await _saveToPrefs();
-    _logger.i('Updated user relays: ${newUserRelays.length} relays');
+    logger.i('Updated user relays: ${newUserRelays.length} relays');
   }
 
   Future<void> _saveToPrefs() async {
@@ -170,7 +169,7 @@ class SettingsNotifier extends StateNotifier<Settings> {
   Future<void> updatePushNotificationsEnabled(bool newValue) async {
     state = state.copyWith(pushNotificationsEnabled: newValue);
     await _saveToPrefs();
-    _logger.i('Push notifications ${newValue ? 'enabled' : 'disabled'}');
+    logger.i('Push notifications ${newValue ? 'enabled' : 'disabled'}');
 
     // When disabling, unregister all tokens and delete FCM token
     if (!newValue) {
@@ -182,17 +181,17 @@ class SettingsNotifier extends StateNotifier<Settings> {
   void _unregisterPushTokens() {
     if (_pushService != null) {
       _pushService!.unregisterAllTokens().then((_) {
-        _logger.i('All push tokens unregistered');
+        logger.i('All push tokens unregistered');
       }).catchError((e) {
-        _logger.w('Failed to unregister push tokens: $e');
+        logger.w('Failed to unregister push tokens: $e');
       });
     }
 
     if (_fcmService != null) {
       _fcmService!.deleteToken().then((_) {
-        _logger.i('FCM token deleted');
+        logger.i('FCM token deleted');
       }).catchError((e) {
-        _logger.w('Failed to delete FCM token: $e');
+        logger.w('Failed to delete FCM token: $e');
       });
     }
   }
