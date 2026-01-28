@@ -188,7 +188,7 @@ Users can customize or hide this channel in Android settings.
 
 ## Implementation Order
 
-1. **Fix 03**: Add Android permissions (low risk, immediate benefit)
+1. **Fix 03**: Add Android permissions (low risk, immediate benefit) ✅ **COMPLETED**
 2. **Fix 02**: FCM starts service (enables reactive wake-up)
 3. **Fix 04**: Subscription persistence (service can recover state)
 4. **Fix 01**: Smart foreground service (ties it all together)
