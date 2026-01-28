@@ -25,7 +25,7 @@ class PremiumSection extends StatelessWidget {
     return FormSection(
       title: S.of(context)!.premiumTitle,
       icon: premiumValueIcon,
-      iconBackgroundColor: AppTheme.purpleAccent, // Purple color for premium
+      iconBackgroundColor: AppTheme.purpleButton, // Purple color for premium
       infoTooltip: S.of(context)!.premiumTooltip,
       infoTitle: S.of(context)!.premiumTitle,
       child: Column(
@@ -34,10 +34,10 @@ class PremiumSection extends StatelessWidget {
           // Slider
           SliderTheme(
             data: SliderThemeData(
-              activeTrackColor: AppTheme.purpleAccent,
+              activeTrackColor: AppTheme.purpleButton,
               inactiveTrackColor: AppTheme.backgroundInactive,
               thumbColor: AppTheme.textPrimary,
-              overlayColor: AppTheme.purpleAccent.withValues(alpha: 0.2),
+              overlayColor: AppTheme.purpleButton.withValues(alpha: 0.2),
               trackHeight: 4,
             ),
             child: Slider(
