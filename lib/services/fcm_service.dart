@@ -4,8 +4,10 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:mostro_mobile/core/app.dart';
 import 'package:mostro_mobile/firebase_options.dart';
 
 
@@ -117,6 +119,12 @@ class FCMService {
       // Set up foreground message listener
       _setupForegroundMessageListener();
 
+      // Set up notification tap handlers
+      _setupNotificationTapHandlers();
+
+      // Check if app was opened from a terminated state by tapping a notification
+      await _handleInitialMessage();
+
       // Register background message handler
       FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
@@ -217,6 +225,51 @@ class FCMService {
         logger.e('Error receiving foreground message: $error');
       },
     );
+  }
+
+  /// Handle notification taps when app is in background (not terminated)
+  void _setupNotificationTapHandlers() {
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      debugPrint('FCM: Notification tapped (app was in background)');
+      _navigateToOrderFromMessage(message);
+    });
+  }
+
+  /// Handle notification tap that launched the app from terminated state
+  Future<void> _handleInitialMessage() async {
+    final message = await _messaging.getInitialMessage();
+    if (message != null) {
+      debugPrint('FCM: App opened from terminated state via notification tap');
+      // Delay navigation slightly to ensure app is fully initialized
+      Future.delayed(const Duration(milliseconds: 500), () {
+        _navigateToOrderFromMessage(message);
+      });
+    }
+  }
+
+  /// Navigate to order detail screen based on FCM message data
+  void _navigateToOrderFromMessage(RemoteMessage message) {
+    try {
+      // Try to get order ID from data payload
+      final orderId = message.data['order_id'] ?? message.data['orderId'];
+
+      final context = MostroApp.navigatorKey.currentContext;
+      if (context == null) {
+        logger.w('FCM: No context available for navigation');
+        return;
+      }
+
+      if (orderId != null && orderId.toString().isNotEmpty) {
+        context.push('/trade_detail/$orderId');
+        logger.i('FCM: Navigated to trade detail for order: $orderId');
+      } else {
+        // Fallback to notifications screen if no order ID
+        context.push('/notifications');
+        logger.i('FCM: Navigated to notifications screen (no order ID in FCM data)');
+      }
+    } catch (e) {
+      logger.e('FCM: Navigation error: $e');
+    }
   }
 
   Future<void> _checkPendingFetch() async {

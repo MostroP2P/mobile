@@ -40,7 +40,16 @@ Future<void> initializeNotifications() async {
 void _onNotificationTap(NotificationResponse response) {
   try {
     final context = MostroApp.navigatorKey.currentContext;
-    if (context != null) {
+    if (context == null) {
+      Logger().w('No context available for notification navigation');
+      return;
+    }
+
+    final orderId = response.payload;
+    if (orderId != null && orderId.isNotEmpty) {
+      context.push('/trade_detail/$orderId');
+      Logger().i('Navigated to trade detail for order: $orderId');
+    } else {
       context.push('/notifications');
       logger.i('Navigated to notifications screen');
     }

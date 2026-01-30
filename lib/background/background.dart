@@ -20,6 +20,9 @@ Future<void> serviceMain(ServiceInstance service) async {
   SendPort? loggerSendPort;
   Logger? logger;
 
+  // Initialize notifications in background isolate for proper tap handling
+  await notification_service.initializeNotifications();
+
   final Map<String, Map<String, dynamic>> activeSubscriptions = {};
   final nostrService = NostrService();
   final db = await openMostroDatabase('events.db');
