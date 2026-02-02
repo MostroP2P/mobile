@@ -516,7 +516,7 @@ class OrderFilterState extends ConsumerState<OrderFilter> {
                   Text(
                     "${S.of(context)!.discount}: ${premiumMin.toInt()}%",
                     style: const TextStyle(
-                      color: AppTheme.red1,
+                      color: AppTheme.sellColor,
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                     ),
@@ -588,7 +588,7 @@ class OrderFilterState extends ConsumerState<OrderFilter> {
                   Text(
                     "${S.of(context)!.min}: ${ratingMin.toInt()}",
                     style: const TextStyle(
-                      color: AppTheme.red1,
+                      color: AppTheme.sellColor,
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                     ),

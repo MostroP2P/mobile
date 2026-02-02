@@ -30,7 +30,7 @@ class OrderListItem extends ConsumerWidget {
         order.premium != null ? double.tryParse(order.premium!) ?? 0.0 : 0.0;
     final isPremiumPositive = premiumValue >= 0;
     final premiumColor =
-        isPremiumPositive ? AppTheme.buyColor : AppTheme.red1;
+        isPremiumPositive ? AppTheme.buyColor : AppTheme.sellColor;
     final premiumText = premiumValue == 0
         ? "(0%)"
         : isPremiumPositive

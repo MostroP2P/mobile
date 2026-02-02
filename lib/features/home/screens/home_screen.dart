@@ -144,7 +144,7 @@ class HomeScreen extends ConsumerWidget {
             S.of(context)!.sellBtc,
             orderType == OrderType.buy,
             OrderType.buy,
-            AppTheme.red1,
+            AppTheme.sellColor,
           ),
         ],
       ),

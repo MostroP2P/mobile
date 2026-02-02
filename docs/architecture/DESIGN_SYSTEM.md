@@ -228,20 +228,20 @@ TO REMOVE/MERGE:
 - ❌ **Background Variants:** 7 different shades
 - ❌ **Files Needing Refactor:** 14+ priority files
 
-**Current Status (After Phase 2 + 2b):**
-- ✅ **Total Color Definitions:** ~45 in AppTheme (removed green2, red2, sellColor, purpleAccent)
+**Current Status (After Phase 2 + 2b + 2c):**
+- ✅ **Total Color Definitions:** ~46 in AppTheme (removed green2, red2, purpleAccent; restored sellColor)
 - ✅ **Hardcoded Colors:** 0 outside app_theme.dart
 - ✅ **Green Variants:** 1 (unified to #8CC63F)
-- ✅ **Red Variants:** 2 (red1 + statusError)
+- ✅ **Red Variants:** 3 (red1 + statusError + sellColor) - sellColor restored for UX familiarity
 - ✅ **Purple Variants:** 1 (purpleButton #7856AF)
 - ⚠️ **Background Variants:** 7 (needs consolidation in Phase 4)
 - ⚠️ **Files Needing Refactor:** 0 for green/red/purple/hardcoded, pending for phases 3-4
 
 **Final Target (After All Phases):**
-- ✅ **Total Color Definitions:** ~35 (remove redundant)
+- ✅ **Total Color Definitions:** ~36 (remove redundant)
 - ✅ **Hardcoded Colors:** 0 (except in app_theme.dart)
 - ✅ **Green Variants:** 1 (standard brand green) ✅ DONE
-- ✅ **Red Variants:** 2 (red1 + statusError) ✅ DONE
+- ✅ **Red Variants:** 3 (red1 + statusError + sellColor) ✅ DONE
 - ✅ **Purple Variants:** 1 (purpleButton) ✅ DONE
 - ⚠️ **Background Variants:** 4 (clear hierarchy)
 - ✅ **Files Needing Refactor:** 0
@@ -340,8 +340,8 @@ The refactoring is divided into **4 phases**, prioritized by impact and risk:
 
 ### ✅ Phase 2: Red Consolidation (REDS ONLY - COMPLETE)
 
-**Status:** ✅ **COMPLETE** (Reds only - Purples deferred to future phase)
-**Completed:** January 24, 2026
+**Status:** ✅ **COMPLETE** - Final decision: Keep 3 red variants
+**Completed:** January 24, 2026 (Updated: February 2, 2026)
 **Estimated Effort:** Small (~6 files)
 **Risk Level:** 🟢 Low
 **Priority:** High
@@ -349,66 +349,79 @@ The refactoring is divided into **4 phases**, prioritized by impact and risk:
 #### Scope
 
 **Goals:**
-1. ✅ Consolidate 3 red variants → 2 red variants with clear semantics
+1. ✅ Consolidate 3 red variants with clear semantics (red2 removed)
 2. ⏸️ Purple consolidation deferred (out of scope for Phase 2)
 
-#### Decision Made
+#### Final Decision (Updated February 2, 2026)
 
-**Final Red Strategy:** Keep 2 reds with complementary semantics
+**Final Red Strategy:** Keep 3 reds with clear semantic purposes
 ```dart
-/// Red color for destructive actions, sell buttons, and critical operations
-/// Use for: Cancel buttons, dispute buttons, sell actions, inactive states
+/// Red color for destructive actions and critical operations
+/// Use for: Cancel buttons, dispute buttons, critical operations, inactive states
 static const Color red1 = Color(0xFFD84D4D);
 
 /// Red color for error states, validation failures, and error notifications
 /// Use for: Error messages, failed operations, validation errors
 static const Color statusError = Color(0xFFEF6A6A);
+
+/// Red color for sell actions and sell-related UI elements
+/// Use for: Sell buttons, sell tabs, negative premiums/discounts
+static const Color sellColor = Color(0xFFFF8A8A);
 ```
 
 **Removed:**
 - ❌ `red2` - Exact duplicate of `statusError`
-- ❌ `sellColor` - Replaced with `red1` for consistency
+
+**Restored:**
+- ✅ `sellColor` - **Restored on February 2, 2026** due to user familiarity and visual appeal
 
 **Rationale:**
-- `red1` (#D84D4D) - Darker, more saturated red that harmonizes well with brand green (#8CC63F)
-- `statusError` (#EF6A6A) - Lighter red, less aggressive for error messaging
-- Clear semantic separation: actions/buttons vs. error states
-- Both colors actively used (red1: 5 instances, statusError: 13 instances)
+- `red1` (#D84D4D) - Darker, more saturated red for destructive/critical actions
+- `statusError` (#EF6A6A) - Medium red for error states and validation messaging
+- `sellColor` (#FF8A8A) - Lighter red that users are familiar with for sell actions
+- **Key insight:** Users are already accustomed to `sellColor` in sell buttons and actions
+- **Visual feedback:** The lighter `sellColor` looks better visually in the UI compared to darker `red1`
+- Clear semantic separation: destructive actions vs. error states vs. sell actions
 
-#### Work Completed
+#### Work Completed (Updated February 2, 2026)
 
-**Files Modified (6 total):**
+**Initial Work (January 24, 2026):**
 
 1. ✅ `lib/core/app_theme.dart`
-   - Removed `red2` constant
-   - Removed `sellColor` constant
+   - Removed `red2` constant (duplicate)
+   - Initially removed `sellColor` (later restored)
    - Added documentation comments to `red1` and `statusError`
 
+**Restoration (February 2, 2026):**
+
+1. ✅ `lib/core/app_theme.dart`
+   - ✅ Restored `sellColor` constant with documentation
+
 2. ✅ `lib/features/home/widgets/order_list_item.dart`
-   - `sellColor` → `red1` (premium color)
+   - ✅ Reverted `red1` → `sellColor` (premium color)
 
 3. ✅ `lib/features/home/screens/home_screen.dart`
-   - `sellColor` → `red1` (sell tab button)
+   - ✅ Reverted `red1` → `sellColor` (sell tab button)
 
 4. ✅ `lib/shared/widgets/add_order_button.dart`
-   - `sellColor` → `red1` (sell button background)
+   - ✅ Reverted `red1` → `sellColor` (sell button background)
 
 5. ✅ `lib/shared/widgets/order_filter.dart`
-   - `sellColor` → `red1` (2 instances - discount and min labels)
+   - ✅ Reverted `red1` → `sellColor` (2 instances - discount and min labels)
 
 #### Testing
 
-- ✅ All 6 files successfully updated
+- ✅ All 6 files successfully updated (twice - initial consolidation then restoration)
 - ✅ Zero new `flutter analyze` issues introduced
-- ✅ No `sellColor` or `red2` references remaining in codebase
+- ✅ Only `red2` removed from codebase (sellColor restored)
 - ✅ Colors centralized in `app_theme.dart`
 
-#### Metrics
+#### Final Metrics
 
-- **Files Modified:** 6
-- **Color Constants Removed:** 2 (red2, sellColor)
-- **Color Constants Kept:** 2 (red1, statusError)
-- **Replacements Made:** 5 instances (sellColor → red1)
+- **Files Modified:** 6 (initial) + 5 (restoration) = 11 total changes
+- **Color Constants Removed:** 1 (red2 only)
+- **Color Constants Kept:** 3 (red1, statusError, sellColor)
+- **Replacements Made:** 5 instances removed then 5 restored
 - **New Issues:** 0
 
 #### Purple Colors - Completed in Same Session
@@ -912,28 +925,29 @@ The custom gray `#9aa1b6` was only used in walkthrough screen text. `Colors.whit
 
 ---
 
-#### Decision 2.3: Replace sellColor with red1
+#### Decision 2.3: sellColor Restoration (REVERSED)
 
-**Decision:** Remove `sellColor` and use `red1` for all sell-related UI elements
+**Initial Decision (January 24, 2026):** Remove `sellColor` and use `red1` for all sell-related UI elements
 
-**Date:** January 24, 2026
+**REVERSED DECISION (February 2, 2026):** Restore `sellColor` for sell-related UI elements
 
-**Rationale:**
-1. **Visual consistency:** All red actions now use same shade
-2. **Reduces palette complexity:** One less color to maintain
-3. **Better color harmony:** `red1` complements brand green better than lighter `sellColor`
-4. **Semantic clarity:** "Red for actions" is clearer than "light red for sell, dark red for other actions"
+**Rationale for Reversal:**
+1. **User familiarity:** Users are already accustomed to the lighter `sellColor` (#FF8A8A) in sell buttons and actions
+2. **Visual appeal:** The lighter red looks better visually in the UI and provides better UX
+3. **Semantic clarity preserved:** Having distinct colors for sell actions vs. destructive actions improves clarity
+4. **Real-world feedback:** After testing with the darker `red1`, the team decided the lighter color was more appropriate
 
-**Migration:**
-- `order_list_item.dart`: Premium color → red1
-- `home_screen.dart`: Sell tab button → red1
-- `add_order_button.dart`: Sell button background → red1
-- `order_filter.dart`: Discount/min labels → red1 (2 instances)
+**Final State:**
+- `order_list_item.dart`: Premium color uses `sellColor`
+- `home_screen.dart`: Sell tab button uses `sellColor`
+- `add_order_button.dart`: Sell button background uses `sellColor`
+- `order_filter.dart`: Discount/min labels use `sellColor` (2 instances)
 
 **Impact:**
-- 5 files modified
-- Slight visual change (darker red for sell actions)
-- More cohesive color system
+- 5 files modified back to `sellColor`
+- Visual consistency with previous versions
+- User experience prioritized over theoretical consolidation
+- Three red variants maintained with clear semantic purposes
 
 ---
 
@@ -1036,11 +1050,13 @@ This section will document the final, approved color palette after all phases co
 | Color Name | Hex | RGB | Usage | Status |
 |------------|-----|-----|-------|--------|
 | **Buy Green** | `#8CC63F` | (140, 198, 63) | Buy action buttons | ✅ Finalized |
-| **Sell Red** | `#FF8A8A` | (255, 138, 138) | Sell action buttons | ⚠️ To review in Phase 2 |
+| **Sell Red** | `#FF8A8A` | (255, 138, 138) | Sell action buttons, negative premiums | ✅ Finalized |
+| **Destructive Red** | `#D84D4D` | (216, 77, 77) | Cancel, dispute, critical actions | ✅ Finalized |
 
-**Current State:**
-- Buy color finalized and unified with brand green
-- Sell color needs review (is this the right red?)
+**Status:**
+- ✅ Buy color finalized and unified with brand green
+- ✅ Sell color finalized - restored after user testing confirmed visual appeal and familiarity
+- ✅ Destructive actions use darker red (`red1`) for appropriate visual weight
 
 ---
 
@@ -1050,8 +1066,13 @@ This section will document the final, approved color palette after all phases co
 |------------|-----|-----|-------|--------|
 | **Success** | `#8CC63F` | (140, 198, 63) | Success messages, completed states | ✅ Finalized |
 | **Warning** | `#F3CA29` | (243, 202, 41) | Warnings, pending states | ✅ Finalized |
-| **Error** | `#EF6A6A` | (239, 106, 106) | Error messages, failed states | ⚠️ To review in Phase 2 |
+| **Error** | `#EF6A6A` | (239, 106, 106) | Error messages, validation failures | ✅ Finalized |
 | **Info** | `#2A7BD6` | (42, 123, 214) | Informational messages | ✅ Finalized |
+
+**Red Color Family Overview:**
+- `red1` (#D84D4D) - Destructive actions (cancel, dispute)
+- `statusError` (#EF6A6A) - Error states and validation
+- `sellColor` (#FF8A8A) - Sell actions and negative premiums
 
 ---
 
@@ -1345,9 +1366,11 @@ grep -r "Colors.white70" lib/
 
 | Date | Version | Changes | Author |
 |------|---------|---------|--------|
-| 2026-01-14 | 1.0.0 | Initial document creation, Phase 1 complete | 
+| 2026-01-14 | 1.0.0 | Initial document creation, Phase 1 complete |
+| 2026-01-24 | 1.1.0 | Phase 2 complete (red consolidation), Phase 2b complete (purple consolidation) |
+| 2026-02-02 | 1.1.1 | Phase 2c - Restored sellColor after user feedback, updated red strategy to 3 variants |
 
 ---
 
 **Document Status:** 🚧 Active (In Progress)
-**Next Review:** After Phase 2 completion
+**Next Review:** Before Phase 3 implementation

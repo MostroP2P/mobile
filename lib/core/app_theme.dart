@@ -33,6 +33,7 @@ class AppTheme {
 
   // Colors for actions
   static const Color buyColor = mostroGreen;
+  static const Color sellColor = Color(0xFFFF8A8A);
   static const Color activeColor = mostroGreen;
 
   /// Purple color for accent elements, buttons, and decorative UI elements
