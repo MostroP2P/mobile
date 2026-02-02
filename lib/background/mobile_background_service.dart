@@ -43,7 +43,6 @@ class MobileBackgroundService implements BackgroundService {
       _isRunning = true;
       service.invoke('start', {
         'settings': _settings.toJson(),
-        'loggerSendPort': logger_service.isolateLogSenderPort,
       });
       logger_service.logger.d(
         'Service started with settings: ${_settings.toJson()}',
@@ -155,7 +154,6 @@ class MobileBackgroundService implements BackgroundService {
     logger_service.logger.i("Service running, sending settings");
     service.invoke('start', {
       'settings': _settings.toJson(),
-      'loggerSendPort': logger_service.isolateLogSenderPort,
     });
   }
 
