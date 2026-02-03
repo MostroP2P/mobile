@@ -91,7 +91,7 @@ class DisputeMessageBubble extends StatelessWidget {
     Clipboard.setData(ClipboardData(text: text));
     SnackBarHelper.showTopSnackBar(
       context,
-      S.of(context)?.messageCopiedToClipboard ?? 'Message copied to clipboard',
+      S.of(context)!.messageCopiedToClipboard,
       duration: const Duration(seconds: 1),
       backgroundColor: Colors.green,
     );

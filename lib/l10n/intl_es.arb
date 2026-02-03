@@ -609,7 +609,14 @@
   "copy": "Copiar",
   "share": "Compartir",
   "failedToShareInvoice": "Error al compartir factura. Por favor intenta copiarla en su lugar.",
-  
+  "failedToCancelOrder": "Error al cancelar orden: {error}",
+  "@failedToCancelOrder": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "refreshingExchangeRate": "Actualizando tasa de cambio...",
+
   "@_comment_trade_detail_screen_new": "Nuevas cadenas de Pantalla de Detalles de Intercambio",
   "orderDetailsTitle": "DETALLES DE ORDEN",
   "buyOrderDetailsTitle": "DETALLES DE ORDEN DE COMPRA",
@@ -835,6 +842,12 @@
   "notAvailable": "No disponible",
   "unknownDate": "Fecha desconocida",
   "messageCopiedToClipboard": "Mensaje copiado al portapapeles",
+  "textCopiedToClipboard": "{text} copiado al portapapeles",
+  "@textCopiedToClipboard": {
+    "placeholders": {
+      "text": { "type": "String" }
+    }
+  },
 
 
   "@_comment_about_screen_new": "About Screen New Strings",
@@ -1114,6 +1127,12 @@
       "error": { "type": "String" }
     }
   },
+  "messageSent": "Mensaje enviado: {message}",
+  "@messageSent": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
   "waitingAdminAssignmentInput": "Esperando asignación de administrador...",
   "typeYourMessage": "Escribe tu mensaje...",
   
@@ -1211,7 +1230,25 @@
   "imageDecryptionError": "Error al desencriptar la imagen",
   "imageNotAvailable": "Imagen no disponible",
   "couldNotOpenFile": "No se pudo abrir el archivo",
+  "couldNotOpenFileWithMessage": "No se pudo abrir el archivo: {message}",
+  "@couldNotOpenFileWithMessage": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
   "errorOpeningFile": "Error al abrir archivo",
+  "errorOpeningFileWithMessage": "Error al abrir archivo: {error}",
+  "@errorOpeningFileWithMessage": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "errorUploadingFile": "Error al subir archivo: {error}",
+  "@errorUploadingFile": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
 
   "@_comment_backup_reminder": "Recordatorio de respaldo de cuenta",
   "backupAccountReminder": "Debes respaldar tu cuenta",

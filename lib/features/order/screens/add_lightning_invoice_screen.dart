@@ -82,7 +82,7 @@ class _AddLightningInvoiceScreenState
                         if (context.mounted) {
                           SnackBarHelper.showTopSnackBar(
                             context,
-                            'Failed to cancel order: ${e.toString()}',
+                            S.of(context)!.failedToCancelOrder(e.toString()),
                           );
                         }
                       }
