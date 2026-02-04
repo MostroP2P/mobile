@@ -105,7 +105,24 @@ class NotificationSettingsScreen extends ConsumerWidget {
                               .updatePushNotificationsEnabled(value);
                         }
                       : null,
-                  activeColor: AppTheme.activeColor,
+                  thumbColor: WidgetStateProperty.resolveWith<Color?>(
+                    (Set<WidgetState> states) {
+                      if (states.contains(WidgetState.selected)) {
+                        return AppTheme.textPrimary;
+                      }
+                      return AppTheme.textSecondary;
+                    },
+                  ),
+                  trackColor: WidgetStateProperty.resolveWith<Color?>(
+                    (Set<WidgetState> states) {
+                      if (states.contains(WidgetState.selected)) {
+                        return AppTheme.mostroGreen;
+                      }
+                      return AppTheme.backgroundInactive;
+                    },
+                  ),
+                  trackOutlineColor:
+                      WidgetStateProperty.all(Colors.transparent),
                 ),
               ],
             ),
@@ -277,7 +294,24 @@ class NotificationSettingsScreen extends ConsumerWidget {
             Switch(
               value: value,
               onChanged: enabled ? onChanged : null,
-              activeColor: AppTheme.activeColor,
+              thumbColor: WidgetStateProperty.resolveWith<Color?>(
+                (Set<WidgetState> states) {
+                  if (states.contains(WidgetState.selected)) {
+                    return AppTheme.textPrimary;
+                  }
+                  return AppTheme.textSecondary;
+                },
+              ),
+              trackColor: WidgetStateProperty.resolveWith<Color?>(
+                (Set<WidgetState> states) {
+                  if (states.contains(WidgetState.selected)) {
+                    return AppTheme.mostroGreen;
+                  }
+                  return AppTheme.backgroundInactive;
+                },
+              ),
+              trackOutlineColor:
+                  WidgetStateProperty.all(Colors.transparent),
             ),
           ],
         ),
