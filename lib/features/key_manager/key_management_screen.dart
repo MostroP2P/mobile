@@ -380,69 +380,20 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppTheme.backgroundInput,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          settings.fullPrivacyMode
-                              ? S.of(context)!.fullPrivacyMode
-                              : S.of(context)!.reputationMode,
-                          style: const TextStyle(
-                            color: AppTheme.textPrimary,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          settings.fullPrivacyMode
-                              ? S.of(context)!.maximumAnonymity
-                              : S.of(context)!.standardPrivacyWithReputation,
-                          style: const TextStyle(
-                            color: AppTheme.textSecondary,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Switch(
-                    value: settings.fullPrivacyMode,
-                    onChanged: (value) {
-                      ref
-                          .watch(settingsProvider.notifier)
-                          .updatePrivacyMode(value);
-                    },
-                    thumbColor: WidgetStateProperty.resolveWith<Color?>(
-                      (Set<WidgetState> states) {
-                        if (states.contains(WidgetState.selected)) {
-                          return AppTheme.activeColor;
-                        }
-                        return AppTheme.textSecondary;
-                      },
-                    ),
-                    trackColor: WidgetStateProperty.resolveWith<Color?>(
-                      (Set<WidgetState> states) {
-                        if (!states.contains(WidgetState.selected)) {
-                          return AppTheme.backgroundInactive;
-                        }
-                        return null;
-                      },
-                    ),
-                  ),
-                ],
-              ),
+            _buildPrivacyOption(
+              context,
+              title: S.of(context)!.reputationMode,
+              description: S.of(context)!.standardPrivacyWithReputation,
+              isSelected: !settings.fullPrivacyMode,
+              onTap: () => ref.read(settingsProvider.notifier).updatePrivacyMode(false),
+            ),
+            const SizedBox(height: 8),
+            _buildPrivacyOption(
+              context,
+              title: S.of(context)!.fullPrivacyMode,
+              description: S.of(context)!.maximumAnonymity,
+              isSelected: settings.fullPrivacyMode,
+              onTap: () => ref.read(settingsProvider.notifier).updatePrivacyMode(true),
             ),
           ],
         ),
@@ -631,6 +582,75 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
         LucideIcons.refreshCw,
         size: 20,
         color: AppTheme.activeColor,
+      ),
+    );
+  }
+
+  Widget _buildPrivacyOption(
+    BuildContext context,
+    {
+      required String title,
+      required String description,
+      required bool isSelected,
+      required VoidCallback onTap,
+    }
+  ) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(6),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Selection square
+              Container(
+                width: 20,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: isSelected ? AppTheme.activeColor : Colors.transparent,
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(
+                    color: isSelected
+                        ? AppTheme.activeColor
+                        : Colors.white.withValues(alpha: 0.3),
+                    width: 1.5,
+                  ),
+                ),
+                child: isSelected
+                    ? const Icon(Icons.check, size: 14, color: Colors.black)
+                    : null,
+              ),
+              const SizedBox(width: 12),
+              // Title and description
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        color: isSelected ? AppTheme.textPrimary : AppTheme.textInactive,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      description,
+                      style: const TextStyle(
+                        color: AppTheme.textInactive,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
