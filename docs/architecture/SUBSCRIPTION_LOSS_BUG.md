@@ -31,7 +31,7 @@ Both bugs shared the same trigger: the disconnect-reconnect cycle inside `NostrS
 
 Every path that modifies the relay list ends at `_saveRelays()` in `RelaysNotifier`. This method persists the new relay list to `settingsProvider`, which is a reactive provider. The persistence and the destruction of subscriptions are linked through a listener that was not designed with this consequence in mind.
 
-```
+```text
 User action or sync event
   │
   ▼
@@ -127,7 +127,7 @@ On restart:
 
 The trigger chain is unchanged up to `NostrService.updateSettings()`. The behavior inside that method is what changed:
 
-```
+```text
 settingsProvider emits new value
   │
   ▼
@@ -172,7 +172,7 @@ _isInitialized = false;
 
 This flag is set synchronously, before `disconnectFromRelays()` begins its async work. From this point until `init()` completes and sets `_isInitialized = true` (`nostr_service.dart:66`), every method on `NostrService` that checks this flag will throw:
 
-```
+```text
 Exception: Nostr is not initialized. Call init() first.
 ```
 
@@ -195,7 +195,7 @@ Every public method on `NostrService` that is guarded by the `_isInitialized` ch
 
 The most likely scenario involves `publishEvent()`. The relay sync completes while the user is on the order creation screen. The user taps the submit button. The button handler calls `submitOrder()` → `publishOrder()` → `publishEvent()`. The event is never sent.
 
-```
+```text
 T=0ms     settingsProvider emits (relay list changed by sync)
 T=0ms     nostrServiceProvider listener fires
 T=0ms     updateSettings() starts executing
@@ -222,7 +222,7 @@ The order was never published. The exception propagates up through `submitOrder(
 
 `ref.listen` does not serialize or debounce callbacks. If `settingsProvider` emits twice in rapid succession — for example, `updateRelays()` followed immediately by `updateUserRelays()` in `_saveRelays()` — the listener fires twice. Two `updateSettings()` calls execute concurrently:
 
-```
+```text
 Call 1: _isInitialized = false → disconnectFromRelays() (in progress)
 Call 2: _isInitialized = false → disconnectFromRelays() (starts while Call 1 is mid-disconnect)
 ```
@@ -494,3 +494,7 @@ ref.listen<Settings>(settingsProvider, (previous, next) async {
 | Eliminates both bugs with single change | Yes | Yes | No |
 
 Solution A was selected and implemented. It is the lowest-risk option that fixes both the main bug and the race condition with a single change to `NostrService.updateSettings()` (`nostr_service.dart:75`). Its trade-offs (removed relays linger until foreground transition; new relays do not receive subscription REQs until the next `reloadData()`) are functionally inconsequential under normal usage: the default relay delivers all Mostro events, and `LifecycleManager` already handles the full reconnect-and-resubscribe cycle on every foreground transition.
+
+---
+
+**Last Updated:** February 4, 2026
