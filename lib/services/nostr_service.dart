@@ -73,37 +73,27 @@ class NostrService {
   }
 
   Future<void> updateSettings(Settings newSettings) async {
-    // Compare with current settings instead of relying on dart_nostr internal state
     if (!ListEquality().equals(settings.relays, newSettings.relays)) {
       logger.i('Updating relays from ${settings.relays} to ${newSettings.relays}');
-      
-      // Validate that new relay list is not empty
+
       if (newSettings.relays.isEmpty) {
         logger.w('Warning: Attempting to update with empty relay list');
         return;
       }
-      
+
+      // Additive init: dart_nostr skips already-connected relays, so existing
+      // connections and active subscriptions remain untouched. Only new relays
+      // get connected. _isInitialized stays true throughout.
+      final previousSettings = _settings;
       try {
-        // Set initialization flag to false during update to prevent race conditions
-        _isInitialized = false;
-        
-        // Disconnect from current relays first
-        await _nostr.services.relays.disconnectFromRelays();
-        logger.i('Disconnected from previous relays');
-        
-        // Initialize with new relay list
         await init(newSettings);
-        logger.i('Successfully updated to new relays: ${newSettings.relays}');
+        logger.i('Successfully added new relays: ${newSettings.relays}');
       } catch (e) {
-        logger.e('Failed to update relays: $e');
-        // Try to restore previous state if update fails
-        try {
-          await init(settings);
-          logger.i('Restored previous relay configuration');
-        } catch (restoreError) {
-          logger.e('Failed to restore previous relay configuration: $restoreError');
-          rethrow;
-        }
+        // init() failed on new relays but existing connections are still live.
+        // Restore previous settings and keep the service operational.
+        logger.w('Failed to connect to new relays, current relays remain active: $e');
+        _settings = previousSettings;
+        _isInitialized = true;
       }
     } else {
       logger.d('Relay list unchanged, skipping update');
