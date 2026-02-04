@@ -228,7 +228,24 @@ class _LogsScreenState extends ConsumerState<LogsScreen> with WidgetsBindingObse
               Switch(
                 value: isLoggingEnabled,
                 onChanged: _toggleLogging,
-                activeTrackColor: AppTheme.activeColor,
+                thumbColor: WidgetStateProperty.resolveWith<Color?>(
+                  (Set<WidgetState> states) {
+                    if (states.contains(WidgetState.selected)) {
+                      return AppTheme.textPrimary;
+                    }
+                    return AppTheme.textSecondary;
+                  },
+                ),
+                trackColor: WidgetStateProperty.resolveWith<Color?>(
+                  (Set<WidgetState> states) {
+                    if (states.contains(WidgetState.selected)) {
+                      return AppTheme.mostroGreen;
+                    }
+                    return AppTheme.backgroundInactive;
+                  },
+                ),
+                trackOutlineColor:
+                    WidgetStateProperty.all(Colors.transparent),
               ),
             ],
           ),
