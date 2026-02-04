@@ -41,9 +41,11 @@ Implementation of a comprehensive logging system for MostroP2P mobile app with i
 - Folder picker and permissions
 - Clear logs with confirmation dialog
 
-### Phase 6: UI Enhancements 
-- Recording indicator widget
-- Statistics and controls
+### Phase 6: UI Enhancements (Completed)
+- Recording indicator widget (floating red dot, bottom-left)
+- Tap to navigate to logs screen
+- Only visible when logging is enabled
+- Proper lifecycle management 
 
 ### Phase 7: Remaining Migrations
 - 25+ files with logs
@@ -207,6 +209,6 @@ void backgroundMain(SendPort sendPort) async {
 
 ---
 
-**Version**: 6
-**Status**: Phase 5 - Completed
-**Last Updated**: 2026-01-12
+**Version**: 7
+**Status**: Phase 6 - Completed
+**Last Updated**: 2026-01-21
