@@ -45,32 +45,39 @@ class PriceTypeSection extends StatelessWidget {
                 S.of(context)!.market,
                 style: TextStyle(
                   color: isMarketRate
-                      ? AppTheme.statusSuccess
+                      ? AppTheme.activeColor
                       : AppTheme.textInactive,
                   fontSize: 14,
                 ),
               ),
-              Switch(
-                key: const Key('fixedSwitch'),
-                value: isMarketRate,
-                thumbColor: WidgetStateProperty.resolveWith<Color?>(
-                  (Set<WidgetState> states) {
-                    if (states.contains(WidgetState.selected)) {
-                      return AppTheme.textPrimary; // White thumb when active for better contrast
-                    }
-                    return AppTheme.textSecondary; // Light grey when inactive
-                  },
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: () => onToggle(!isMarketRate),
+                child: Container(
+                  width: 50,
+                  height: 26,
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: isMarketRate ? AppTheme.activeColor : AppTheme.backgroundInactive,
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                  child: AnimatedAlign(
+                    duration: const Duration(milliseconds: 200),
+                    alignment: isMarketRate ? Alignment.centerRight : Alignment.centerLeft,
+                    child: Container(
+                      width: 22,
+                      height: 22,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(11),
+                        border: Border.all(
+                          color: Colors.black,
+                          width: 2,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-                trackColor: WidgetStateProperty.resolveWith<Color?>(
-                  (Set<WidgetState> states) {
-                    if (states.contains(WidgetState.selected)) {
-                      return AppTheme.purpleAccent; // Purple track when active
-                    }
-                    return AppTheme.backgroundInactive; // Dark grey track when inactive
-                  },
-                ),
-                trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
-                onChanged: onToggle,
               ),
             ],
           ),
