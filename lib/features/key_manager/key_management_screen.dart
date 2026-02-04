@@ -605,22 +605,30 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Selection square
+              // Radio button
               Container(
                 width: 20,
                 height: 20,
                 decoration: BoxDecoration(
-                  color: isSelected ? AppTheme.activeColor : Colors.transparent,
-                  borderRadius: BorderRadius.circular(4),
+                  shape: BoxShape.circle,
                   border: Border.all(
                     color: isSelected
                         ? AppTheme.activeColor
                         : Colors.white.withValues(alpha: 0.3),
-                    width: 1.5,
+                    width: 2,
                   ),
                 ),
                 child: isSelected
-                    ? const Icon(Icons.check, size: 14, color: Colors.black)
+                    ? Center(
+                        child: Container(
+                          width: 10,
+                          height: 10,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppTheme.activeColor,
+                          ),
+                        ),
+                      )
                     : null,
               ),
               const SizedBox(width: 12),
