@@ -134,10 +134,7 @@ class RelaySelector extends ConsumerWidget {
           // Control - Switch for Mostro/default relays, Delete button for user relays
           relayInfo.source == RelaySource.user
               ? _buildDeleteButton(context, ref, relayInfo)
-              : Container(
-                  padding: const EdgeInsets.only(right: 16),
-                  child: _buildRelaySwitch(context, ref, relayInfo),
-                ),
+              : _buildRelaySwitch(context, ref, relayInfo),
         ],
       ),
     );
@@ -166,37 +163,28 @@ class RelaySelector extends ConsumerWidget {
   }
 
   Widget _buildRelaySwitch(BuildContext context, WidgetRef ref, MostroRelayInfo relayInfo) {
-    final isActive = relayInfo.isActive;
-    
-    return GestureDetector(
-      onTap: () async {
+    return Switch(
+      value: relayInfo.isActive,
+      thumbColor: WidgetStateProperty.resolveWith<Color?>(
+        (Set<WidgetState> states) {
+          if (states.contains(WidgetState.selected)) {
+            return AppTheme.textPrimary;
+          }
+          return AppTheme.textSecondary;
+        },
+      ),
+      trackColor: WidgetStateProperty.resolveWith<Color?>(
+        (Set<WidgetState> states) {
+          if (states.contains(WidgetState.selected)) {
+            return AppTheme.mostroGreen;
+          }
+          return AppTheme.backgroundInactive;
+        },
+      ),
+      trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
+      onChanged: (value) async {
         await _handleRelayToggle(context, ref, relayInfo);
       },
-      child: Container(
-        width: 50,
-        height: 26,
-        padding: const EdgeInsets.all(2),
-        decoration: BoxDecoration(
-          color: isActive ? AppTheme.activeColor : AppTheme.red1,
-          borderRadius: BorderRadius.circular(13),
-        ),
-        child: AnimatedAlign(
-          duration: const Duration(milliseconds: 200),
-          alignment: isActive ? Alignment.centerRight : Alignment.centerLeft,
-          child: Container(
-            width: 22,
-            height: 22,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(11),
-              border: Border.all(
-                color: Colors.black,
-                width: 2,
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 
