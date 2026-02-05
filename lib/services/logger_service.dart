@@ -1,4 +1,5 @@
 import 'dart:isolate';
+import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/core/config.dart';
@@ -7,12 +8,18 @@ import 'package:mostro_mobile/core/config.dart';
 ReceivePort? _isolateLogReceiver;
 SendPort? _isolateLogSender;
 
+const isolatePortName = 'mostro_logger_send_port';
+
 /// Initialize receiver to collect logs from background isolates
 void initIsolateLogReceiver() {
   if (_isolateLogReceiver != null) return;
 
   _isolateLogReceiver = ReceivePort();
   _isolateLogSender = _isolateLogReceiver!.sendPort;
+
+  // Register the SendPort so background isolates can look it up
+  IsolateNameServer.removePortNameMapping(isolatePortName);
+  IsolateNameServer.registerPortWithName(_isolateLogSender!, isolatePortName);
 
   _isolateLogReceiver!.listen((message) {
     if (message is Map<String, dynamic>) {
