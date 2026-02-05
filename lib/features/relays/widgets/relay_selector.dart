@@ -5,6 +5,7 @@ import 'package:mostro_mobile/features/relays/relay.dart';
 import 'package:mostro_mobile/features/relays/relays_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
+import 'package:mostro_mobile/shared/widgets/mostro_switch.dart';
 
 class RelaySelector extends ConsumerWidget {
   const RelaySelector({super.key});
@@ -134,10 +135,7 @@ class RelaySelector extends ConsumerWidget {
           // Control - Switch for Mostro/default relays, Delete button for user relays
           relayInfo.source == RelaySource.user
               ? _buildDeleteButton(context, ref, relayInfo)
-              : Container(
-                  padding: const EdgeInsets.only(right: 16),
-                  child: _buildRelaySwitch(context, ref, relayInfo),
-                ),
+              : _buildRelaySwitch(context, ref, relayInfo),
         ],
       ),
     );
@@ -166,37 +164,11 @@ class RelaySelector extends ConsumerWidget {
   }
 
   Widget _buildRelaySwitch(BuildContext context, WidgetRef ref, MostroRelayInfo relayInfo) {
-    final isActive = relayInfo.isActive;
-    
-    return GestureDetector(
-      onTap: () async {
+    return MostroSwitch(
+      value: relayInfo.isActive,
+      onChanged: (value) async {
         await _handleRelayToggle(context, ref, relayInfo);
       },
-      child: Container(
-        width: 50,
-        height: 26,
-        padding: const EdgeInsets.all(2),
-        decoration: BoxDecoration(
-          color: isActive ? AppTheme.activeColor : AppTheme.red1,
-          borderRadius: BorderRadius.circular(13),
-        ),
-        child: AnimatedAlign(
-          duration: const Duration(milliseconds: 200),
-          alignment: isActive ? Alignment.centerRight : Alignment.centerLeft,
-          child: Container(
-            width: 22,
-            height: 22,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(11),
-              border: Border.all(
-                color: Colors.black,
-                width: 2,
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 

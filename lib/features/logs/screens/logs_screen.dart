@@ -8,6 +8,7 @@ import 'package:mostro_mobile/features/logs/widgets/logs_actions_menu.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
+import 'package:mostro_mobile/shared/widgets/mostro_switch.dart';
 import 'package:mostro_mobile/shared/utils/datetime_extensions_utils.dart';
 
 class LogsScreen extends ConsumerStatefulWidget {
@@ -225,10 +226,9 @@ class _LogsScreenState extends ConsumerState<LogsScreen> with WidgetsBindingObse
                   ],
                 ),
               ),
-              Switch(
+              MostroSwitch(
                 value: isLoggingEnabled,
                 onChanged: _toggleLogging,
-                activeTrackColor: AppTheme.activeColor,
               ),
             ],
           ),
