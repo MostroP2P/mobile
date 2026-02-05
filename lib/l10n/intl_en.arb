@@ -696,6 +696,13 @@
   "copy": "Copy",
   "share": "Share",
   "failedToShareInvoice": "Failed to share invoice. Please try copying instead.",
+  "failedToCancelOrder": "Failed to cancel order: {error}",
+  "@failedToCancelOrder": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "refreshingExchangeRate": "Refreshing exchange rate...",
   "language": "Language",
   "systemDefault": "System Default",
   "english": "English",
@@ -832,6 +839,12 @@
   "notAvailable": "Not available",
   "unknownDate": "Unknown date",
   "messageCopiedToClipboard": "Message copied to clipboard",
+  "textCopiedToClipboard": "{text} copied to clipboard",
+  "@textCopiedToClipboard": {
+    "placeholders": {
+      "text": { "type": "String" }
+    }
+  },
 
   "@_comment_deep_link_errors": "Deep Link Error Messages",
   "deepLinkInvalidFormat": "Invalid mostro: URL format",
@@ -971,6 +984,12 @@
   "@failedSendMessage": {
     "placeholders": {
       "error": { "type": "String" }
+    }
+  },
+  "messageSent": "Message sent: {message}",
+  "@messageSent": {
+    "placeholders": {
+      "message": { "type": "String" }
     }
   },
   "waitingAdminAssignmentInput": "Waiting for admin assignment...",
@@ -1235,7 +1254,25 @@
   "imageDecryptionError": "Error decrypting image",
   "imageNotAvailable": "Image not available",
   "couldNotOpenFile": "Could not open file",
+  "couldNotOpenFileWithMessage": "Could not open file: {message}",
+  "@couldNotOpenFileWithMessage": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
   "errorOpeningFile": "Error opening file",
+  "errorOpeningFileWithMessage": "Error opening file: {error}",
+  "@errorOpeningFileWithMessage": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "errorUploadingFile": "Error uploading file: {error}",
+  "@errorUploadingFile": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
 
   "@_comment_backup_reminder": "Backup reminder notification",
   "backupAccountReminder": "You must back up your account",
