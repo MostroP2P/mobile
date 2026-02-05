@@ -7,6 +7,7 @@ import 'package:heroicons/heroicons.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
+import 'package:mostro_mobile/shared/widgets/mostro_switch.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
 class NotificationSettingsScreen extends ConsumerWidget {
@@ -96,7 +97,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
                     ),
                   ),
                 ),
-                Switch(
+                MostroSwitch(
                   value: isEnabled,
                   onChanged: _isPushSupported
                       ? (value) {
@@ -105,24 +106,6 @@ class NotificationSettingsScreen extends ConsumerWidget {
                               .updatePushNotificationsEnabled(value);
                         }
                       : null,
-                  thumbColor: WidgetStateProperty.resolveWith<Color?>(
-                    (Set<WidgetState> states) {
-                      if (states.contains(WidgetState.selected)) {
-                        return AppTheme.textPrimary;
-                      }
-                      return AppTheme.textSecondary;
-                    },
-                  ),
-                  trackColor: WidgetStateProperty.resolveWith<Color?>(
-                    (Set<WidgetState> states) {
-                      if (states.contains(WidgetState.selected)) {
-                        return AppTheme.mostroGreen;
-                      }
-                      return AppTheme.backgroundInactive;
-                    },
-                  ),
-                  trackOutlineColor:
-                      WidgetStateProperty.all(Colors.transparent),
                 ),
               ],
             ),
@@ -291,27 +274,9 @@ class NotificationSettingsScreen extends ConsumerWidget {
                 ],
               ),
             ),
-            Switch(
+            MostroSwitch(
               value: value,
               onChanged: enabled ? onChanged : null,
-              thumbColor: WidgetStateProperty.resolveWith<Color?>(
-                (Set<WidgetState> states) {
-                  if (states.contains(WidgetState.selected)) {
-                    return AppTheme.textPrimary;
-                  }
-                  return AppTheme.textSecondary;
-                },
-              ),
-              trackColor: WidgetStateProperty.resolveWith<Color?>(
-                (Set<WidgetState> states) {
-                  if (states.contains(WidgetState.selected)) {
-                    return AppTheme.mostroGreen;
-                  }
-                  return AppTheme.backgroundInactive;
-                },
-              ),
-              trackOutlineColor:
-                  WidgetStateProperty.all(Colors.transparent),
             ),
           ],
         ),

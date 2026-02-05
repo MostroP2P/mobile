@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/order/widgets/form_section.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:mostro_mobile/shared/widgets/mostro_switch.dart';
 
 class PriceTypeSection extends StatelessWidget {
   final bool isMarketRate;
@@ -49,26 +50,9 @@ class PriceTypeSection extends StatelessWidget {
                   fontSize: 14,
                 ),
               ),
-              Switch(
+              MostroSwitch(
                 key: const Key('fixedSwitch'),
                 value: isMarketRate,
-                thumbColor: WidgetStateProperty.resolveWith<Color?>(
-                  (Set<WidgetState> states) {
-                    if (states.contains(WidgetState.selected)) {
-                      return AppTheme.textPrimary; // White thumb when active for better contrast
-                    }
-                    return AppTheme.textSecondary; // Light grey when inactive
-                  },
-                ),
-                trackColor: WidgetStateProperty.resolveWith<Color?>(
-                  (Set<WidgetState> states) {
-                    if (states.contains(WidgetState.selected)) {
-                      return AppTheme.mostroGreen;
-                    }
-                    return AppTheme.backgroundInactive; // Dark grey track when inactive
-                  },
-                ),
-                trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
                 onChanged: onToggle,
               ),
             ],

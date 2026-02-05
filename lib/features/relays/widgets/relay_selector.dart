@@ -5,6 +5,7 @@ import 'package:mostro_mobile/features/relays/relay.dart';
 import 'package:mostro_mobile/features/relays/relays_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
+import 'package:mostro_mobile/shared/widgets/mostro_switch.dart';
 
 class RelaySelector extends ConsumerWidget {
   const RelaySelector({super.key});
@@ -163,25 +164,8 @@ class RelaySelector extends ConsumerWidget {
   }
 
   Widget _buildRelaySwitch(BuildContext context, WidgetRef ref, MostroRelayInfo relayInfo) {
-    return Switch(
+    return MostroSwitch(
       value: relayInfo.isActive,
-      thumbColor: WidgetStateProperty.resolveWith<Color?>(
-        (Set<WidgetState> states) {
-          if (states.contains(WidgetState.selected)) {
-            return AppTheme.textPrimary;
-          }
-          return AppTheme.textSecondary;
-        },
-      ),
-      trackColor: WidgetStateProperty.resolveWith<Color?>(
-        (Set<WidgetState> states) {
-          if (states.contains(WidgetState.selected)) {
-            return AppTheme.mostroGreen;
-          }
-          return AppTheme.backgroundInactive;
-        },
-      ),
-      trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
       onChanged: (value) async {
         await _handleRelayToggle(context, ref, relayInfo);
       },
