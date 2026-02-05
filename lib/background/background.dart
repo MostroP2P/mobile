@@ -35,7 +35,7 @@ Future<void> serviceMain(ServiceInstance service) async {
     final settingsMap = data['settings'];
     if (settingsMap == null) return;
 
-    loggerSendPort = data['loggerSendPort'] as SendPort?;
+    loggerSendPort = IsolateNameServer.lookupPortByName(logger_service.isolatePortName);
 
     logger = Logger(
       printer: logger_service.SimplePrinter(),

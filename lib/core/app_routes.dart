@@ -26,6 +26,7 @@ import 'package:mostro_mobile/features/disputes/screens/dispute_chat_screen.dart
 
 import 'package:mostro_mobile/features/notifications/screens/notifications_screen.dart';
 import 'package:mostro_mobile/features/logs/screens/logs_screen.dart';
+import 'package:mostro_mobile/features/logs/widgets/logs_recording_indicator.dart';
 
 import 'package:mostro_mobile/features/walkthrough/providers/first_run_provider.dart';
 import 'package:mostro_mobile/shared/widgets/navigation_listener_widget.dart';
@@ -88,7 +89,12 @@ GoRouter createRouter(WidgetRef ref) {
         builder: (BuildContext context, GoRouterState state, Widget child) {
           return NotificationListenerWidget(
             child: NavigationListenerWidget(
-              child: child,
+              child: Stack(
+                children: [
+                  child,
+                  const LogsRecordingIndicator(),
+                ],
+              ),
             ),
           );
         },

@@ -49,7 +49,7 @@ class MessageBubble extends ConsumerWidget {
                 child: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: isFromPeer ? _getPeerMessageColor(peerPubkey) : AppTheme.purpleAccent,
+                    color: isFromPeer ? _getPeerMessageColor(peerPubkey) : AppTheme.purpleButton,
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(16),
                       topRight: const Radius.circular(16),
@@ -87,7 +87,7 @@ class MessageBubble extends ConsumerWidget {
                 child: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: isFromPeer ? _getPeerMessageColor(peerPubkey) : AppTheme.purpleAccent,
+                    color: isFromPeer ? _getPeerMessageColor(peerPubkey) : AppTheme.purpleButton,
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(16),
                       topRight: const Radius.circular(16),
@@ -125,7 +125,7 @@ class MessageBubble extends ConsumerWidget {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
-                    color: isFromPeer ? _getPeerMessageColor(peerPubkey) : AppTheme.purpleAccent,
+                    color: isFromPeer ? _getPeerMessageColor(peerPubkey) : AppTheme.purpleButton,
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(16),
                       topRight: const Radius.circular(16),

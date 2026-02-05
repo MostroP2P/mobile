@@ -37,7 +37,7 @@ class DisputeMessageBubble extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
-                    color: isFromUser ? AppTheme.purpleAccent : _getAdminMessageColor(),
+                    color: isFromUser ? AppTheme.purpleButton : _getAdminMessageColor(),
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(16),
                       topRight: const Radius.circular(16),
@@ -91,7 +91,7 @@ class DisputeMessageBubble extends StatelessWidget {
     Clipboard.setData(ClipboardData(text: text));
     SnackBarHelper.showTopSnackBar(
       context,
-      S.of(context)?.messageCopiedToClipboard ?? 'Message copied to clipboard',
+      S.of(context)!.messageCopiedToClipboard,
       duration: const Duration(seconds: 1),
       backgroundColor: Colors.green,
     );

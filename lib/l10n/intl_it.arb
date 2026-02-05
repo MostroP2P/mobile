@@ -639,7 +639,14 @@
   "copy": "Copia",
   "share": "Condividi",
   "failedToShareInvoice": "Errore nel condividere la fattura. Per favore prova a copiarla invece.",
-  
+  "failedToCancelOrder": "Impossibile annullare l'ordine: {error}",
+  "@failedToCancelOrder": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "refreshingExchangeRate": "Aggiornamento tasso di cambio...",
+
   "@_comment_trade_detail_screen_new": "Nuove Stringhe Schermata Dettagli Scambio",
   "orderDetailsTitle": "DETTAGLI ORDINE",
   "buyOrderDetailsTitle": "DETTAGLI ORDINE DI ACQUISTO",
@@ -889,6 +896,12 @@
   "notAvailable": "Non disponibile",
   "unknownDate": "Data sconosciuta",
   "messageCopiedToClipboard": "Messaggio copiato negli appunti",
+  "textCopiedToClipboard": "{text} copiato negli appunti",
+  "@textCopiedToClipboard": {
+    "placeholders": {
+      "text": { "type": "String" }
+    }
+  },
 
   "@_comment_about_screen_new": "About Screen New Strings",
   "documentation": "Documentazione",
@@ -1170,6 +1183,12 @@
       "error": { "type": "String" }
     }
   },
+  "messageSent": "Messaggio inviato: {message}",
+  "@messageSent": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
   "waitingAdminAssignmentInput": "In attesa dell'assegnazione dell'amministratore...",
   "typeYourMessage": "Scrivi il tuo messaggio...",
   
@@ -1266,7 +1285,25 @@
   "imageDecryptionError": "Errore nella decrittazione dell'immagine",
   "imageNotAvailable": "Immagine non disponibile",
   "couldNotOpenFile": "Impossibile aprire il file",
+  "couldNotOpenFileWithMessage": "Impossibile aprire il file: {message}",
+  "@couldNotOpenFileWithMessage": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
   "errorOpeningFile": "Errore nell'apertura del file",
+  "errorOpeningFileWithMessage": "Errore nell'apertura del file: {error}",
+  "@errorOpeningFileWithMessage": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "errorUploadingFile": "Errore nel caricamento del file: {error}",
+  "@errorUploadingFile": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
 
   "@_comment_backup_reminder": "Promemoria backup account",
   "backupAccountReminder": "Devi fare il backup del tuo account",

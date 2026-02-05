@@ -130,7 +130,7 @@ class _DisputeInputSectionState extends State<DisputeInputSection> {
       if (mounted) {
         SnackBarHelper.showTopSnackBar(
           context,
-          'Message sent: $message',
+          S.of(context)!.messageSent(message),
           backgroundColor: Colors.green,
         );
       }
@@ -138,7 +138,7 @@ class _DisputeInputSectionState extends State<DisputeInputSection> {
       if (mounted) {
         SnackBarHelper.showTopSnackBar(
           context,
-          'Failed to send message: $error',
+          S.of(context)!.failedSendMessage(error.toString()),
           backgroundColor: Colors.red,
         );
       }
