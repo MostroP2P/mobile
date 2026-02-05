@@ -78,7 +78,7 @@ class CustomDrawerOverlay extends ConsumerWidget {
                         alignment: Alignment.center,
                         decoration: const BoxDecoration(
                           image: DecorationImage(
-                            image: AssetImage('assets/images/logo-alpha.png'),
+                            image: AssetImage('assets/images/logo-beta.png'),
                             fit: BoxFit.contain,
                           ),
                         ),
