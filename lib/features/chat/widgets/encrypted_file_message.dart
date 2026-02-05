@@ -497,7 +497,7 @@ class _EncryptedFileMessageState extends ConsumerState<EncryptedFileMessage> {
         if (result.type != ResultType.done) {
           SnackBarHelper.showTopSnackBar(
             context,
-            'Could not open file: ${result.message}',
+            S.of(context)!.couldNotOpenFileWithMessage(result.message),
             duration: const Duration(seconds: 3),
             backgroundColor: Colors.orange,
           );
@@ -507,7 +507,7 @@ class _EncryptedFileMessageState extends ConsumerState<EncryptedFileMessage> {
       if (mounted) {
         SnackBarHelper.showTopSnackBar(
           context,
-          'Error opening file: $e',
+          S.of(context)!.errorOpeningFileWithMessage(e.toString()),
           backgroundColor: Colors.red,
         );
       }

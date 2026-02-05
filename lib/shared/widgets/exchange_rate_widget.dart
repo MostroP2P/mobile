@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
 import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
 
@@ -48,7 +49,7 @@ class ExchangeRateWidget extends ConsumerWidget {
                       // Trigger refresh for this specific currency
                       SnackBarHelper.showTopSnackBar(
                         context,
-                        'Refreshing exchange rate...',
+                        S.of(context)!.refreshingExchangeRate,
                         duration: const Duration(seconds: 1),
                       );
                       ref
