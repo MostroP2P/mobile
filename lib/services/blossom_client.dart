@@ -3,13 +3,12 @@ import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:http/http.dart' as http;
-import 'package:logger/logger.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
 class BlossomClient {
   final String serverUrl;
   final Duration timeout;
-  final Logger _logger = Logger();
   
   BlossomClient({
     required this.serverUrl,
@@ -25,7 +24,7 @@ class BlossomClient {
     final hash = sha256.convert(imageData);
     final hashHex = hash.toString();
     
-    _logger.d('Uploading image to Blossom: ${imageData.length} bytes, hash: $hashHex');
+    logger.d('Uploading image to Blossom: ${imageData.length} bytes, hash: $hashHex');
     
     // 2. Generate unique keys for authentication
     final authKeys = NostrUtils.generateKeyPair();
@@ -52,7 +51,7 @@ class BlossomClient {
     // 5. HTTP PUT request to Blossom upload endpoint
     final url = Uri.parse('$serverUrl/upload');
     
-    _logger.d('PUT $url');
+    logger.d('PUT $url');
     
     try {
       final response = await http.put(
@@ -68,16 +67,16 @@ class BlossomClient {
       if (response.statusCode == 200 || response.statusCode == 201) {
         // Blossom returns the file URL in the response, construct from hash
         final blossomUrl = '$serverUrl/$hashHex';
-        _logger.i('✅ Image uploaded successfully to Blossom: $blossomUrl');
+        logger.i('✅ Image uploaded successfully to Blossom: $blossomUrl');
         return blossomUrl;
       } else {
-        _logger.e('❌ Blossom upload failed: ${response.statusCode} - ${response.body}');
+        logger.e('❌ Blossom upload failed: ${response.statusCode} - ${response.body}');
         throw BlossomException(
           'Upload failed: ${response.statusCode} - ${response.body}'
         );
       }
     } catch (e) {
-      _logger.e('❌ Blossom upload error: $e');
+      logger.e('❌ Blossom upload error: $e');
       rethrow;
     }
   }

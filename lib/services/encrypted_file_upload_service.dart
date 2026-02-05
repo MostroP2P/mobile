@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
-import 'package:logger/logger.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/services/file_validation_service.dart';
 import 'package:mostro_mobile/services/blossom_upload_helper.dart';
 import 'package:mostro_mobile/services/encryption_service.dart';
@@ -59,7 +59,6 @@ class EncryptedFileUploadResult {
 }
 
 class EncryptedFileUploadService {
-  final Logger _logger = Logger();
   
   
   EncryptedFileUploadService();
@@ -69,13 +68,13 @@ class EncryptedFileUploadService {
     required File file,
     required Uint8List sharedKey,
   }) async {
-    _logger.i('🔒 Starting encrypted file upload process...');
+    logger.i('🔒 Starting encrypted file upload process...');
     
     try {
       // 1. Validate file (size, type, security)
       final validationResult = await FileValidationService.validateFile(file);
       
-      _logger.i(
+      logger.i(
         'File validated: ${validationResult.fileType} (${validationResult.mimeType}), '
         '${validationResult.filename}, ${_formatFileSize(validationResult.size)}'
       );
@@ -87,7 +86,7 @@ class EncryptedFileUploadService {
       );
       
       final encryptedBlob = encryptionResult.toBlob();
-      _logger.i(
+      logger.i(
         '🔐 File encrypted successfully: ${encryptedBlob.length} bytes '
         '(nonce: ${encryptionResult.nonce.length}B, '
         'data: ${encryptionResult.encryptedData.length}B, '
@@ -110,14 +109,14 @@ class EncryptedFileUploadService {
         encryptedSize: encryptedBlob.length,
       );
       
-      _logger.i('🎉 Encrypted file upload completed successfully!');
-      _logger.i('📎 File: ${result.filename} (${result.fileType})');
-      _logger.i('🔗 Blossom URL: ${result.blossomUrl}');
+      logger.i('🎉 Encrypted file upload completed successfully!');
+      logger.i('📎 File: ${result.filename} (${result.fileType})');
+      logger.i('🔗 Blossom URL: ${result.blossomUrl}');
       
       return result;
       
     } catch (e) {
-      _logger.e('❌ Encrypted file upload failed: $e');
+      logger.e('❌ Encrypted file upload failed: $e');
       rethrow;
     }
   }
@@ -128,13 +127,13 @@ class EncryptedFileUploadService {
     required String blossomUrl,
     required Uint8List sharedKey,
   }) async {
-    _logger.i('🔓 Starting encrypted file download and decryption...');
-    _logger.d('URL: $blossomUrl');
+    logger.i('🔓 Starting encrypted file download and decryption...');
+    logger.d('URL: $blossomUrl');
     
     try {
       // 1. Download encrypted blob from Blossom
       final encryptedBlob = await _downloadFromBlossom(blossomUrl);
-      _logger.i('📥 Downloaded encrypted blob: ${encryptedBlob.length} bytes');
+      logger.i('📥 Downloaded encrypted blob: ${encryptedBlob.length} bytes');
       
       // 2. Decrypt with ChaCha20-Poly1305
       final decryptedFile = EncryptionService.decryptFromBlob(
@@ -142,12 +141,12 @@ class EncryptedFileUploadService {
         blob: encryptedBlob,
       );
       
-      _logger.i('🔓 File decrypted successfully: ${decryptedFile.length} bytes');
+      logger.i('🔓 File decrypted successfully: ${decryptedFile.length} bytes');
       
       return decryptedFile;
       
     } catch (e) {
-      _logger.e('❌ File download/decryption failed: $e');
+      logger.e('❌ File download/decryption failed: $e');
       rethrow;
     }
   }

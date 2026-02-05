@@ -4,7 +4,7 @@ import 'dart:typed_data';
 
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:logger/logger.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/data/models/chat_room.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/models/session.dart';
@@ -27,7 +27,7 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
     subscribe();
   }
 
-  final _logger = Logger();
+  
   final String orderId;
   final Ref ref;
   StreamSubscription<NostrEvent>? _subscription;
@@ -76,12 +76,12 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
     // Cancel any existing listener
     _sessionListener?.close();
 
-    _logger.i('Starting to listen for session changes for orderId: $orderId');
+    logger.i('Starting to listen for session changes for orderId: $orderId');
 
     _sessionListener = ref.listen<Session?>(
       sessionProvider(orderId),
       (previous, next) {
-        _logger.i(
+        logger.i(
             'Session update received for orderId: $orderId, session is null: ${next == null}, sharedKey is null: ${next?.sharedKey == null}');
 
         if (next != null && next.sharedKey != null) {
@@ -89,7 +89,7 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
           _sessionListener?.close();
           _sessionListener = null;
 
-          _logger.i(
+          logger.i(
               'Session with shared key is now available, subscribing to chat for orderId: $orderId');
 
           // Use SubscriptionManager to create a subscription for this specific chat room
@@ -103,7 +103,7 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
   void _onChatEvent(NostrEvent event) async {
     try {
       if (event.kind != 1059) {
-        _logger.w('Ignoring non-chat event kind: ${event.kind}');
+        logger.w('Ignoring non-chat event kind: ${event.kind}');
         return;
       }
 
@@ -131,7 +131,7 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
 
       final session = ref.read(sessionProvider(orderId));
       if (session == null || session.sharedKey == null) {
-        _logger.e('Session or shared key is null when processing chat event');
+        logger.e('Session or shared key is null when processing chat event');
         return;
       }
 
@@ -144,7 +144,7 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
       if (pTag.isEmpty ||
           pTag.length < 2 ||
           pTag[1] != session.sharedKey!.public) {
-        _logger.w('Event not addressed to our shared key, ignoring');
+        logger.w('Event not addressed to our shared key, ignoring');
         return;
       }
 
@@ -160,30 +160,30 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
         final updatedMessages = [...state.messages, chat];
         updatedMessages.sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
         state = state.copy(messages: updatedMessages);
-        _logger.d('New message added from relay, total messages: ${updatedMessages.length}');
+        logger.d('New message added from relay, total messages: ${updatedMessages.length}');
       } else {
-        _logger.d('Message already exists in state, skipping duplicate');
+        logger.d('Message already exists in state, skipping duplicate');
       }
 
       // Notify the chat rooms list to update when new messages arrive
       try {
         ref.read(chatRoomsNotifierProvider.notifier).refreshChatList();
       } catch (e) {
-        _logger.w('Could not refresh chat list: $e');
+        logger.w('Could not refresh chat list: $e');
       }
     } catch (e, stackTrace) {
-      _logger.e('Error processing chat event: $e', stackTrace: stackTrace);
+      logger.e('Error processing chat event: $e', stackTrace: stackTrace);
     }
   }
 
   Future<void> sendMessage(String text) async {
     final session = ref.read(sessionProvider(orderId));
     if (session == null) {
-      _logger.w('Cannot send message: Session is null for orderId: $orderId');
+      logger.w('Cannot send message: Session is null for orderId: $orderId');
       return;
     }
     if (session.sharedKey == null) {
-      _logger
+      logger
           .w('Cannot send message: Shared key is null for orderId: $orderId');
       return;
     }
@@ -206,7 +206,7 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
       // Publish to network first - await to catch network/initialization errors
       try {
         await ref.read(nostrServiceProvider).publishEvent(wrappedEvent);
-        _logger.d('Message sent successfully to network');
+        logger.d('Message sent successfully to network');
         
         // Add the inner event to state immediately for optimistic UI
         // The relay will echo it back and _onChatEvent will handle deduplication
@@ -215,13 +215,13 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
           final updatedMessages = [...state.messages, innerEvent];
           updatedMessages.sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
           state = state.copy(messages: updatedMessages);
-          _logger.d('Message added to state optimistically, total messages: ${updatedMessages.length}');
+          logger.d('Message added to state optimistically, total messages: ${updatedMessages.length}');
         } else {
-          _logger.d('Message already exists in state, skipping add');
+          logger.d('Message already exists in state, skipping add');
         }
         
       } catch (publishError, publishStack) {
-        _logger.e('Failed to publish message: $publishError', stackTrace: publishStack);
+        logger.e('Failed to publish message: $publishError', stackTrace: publishStack);
         rethrow; // Re-throw to be caught by outer catch
       }
 
@@ -229,31 +229,31 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
       try {
         ref.read(chatRoomsNotifierProvider.notifier).refreshChatList();
       } catch (e) {
-        _logger.w('Could not refresh chat list after sending message: $e');
+        logger.w('Could not refresh chat list after sending message: $e');
       }
     } catch (e, stackTrace) {
-      _logger.e('Failed to send message: $e', stackTrace: stackTrace);
+      logger.e('Failed to send message: $e', stackTrace: stackTrace);
     }
   }
 
   /// Load historical chat messages from storage
   Future<void> _loadHistoricalMessages() async {
     try {
-      _logger.i('Starting to load historical messages for orderId: $orderId');
+      logger.i('Starting to load historical messages for orderId: $orderId');
 
       final session = ref.read(sessionProvider(orderId));
       if (session == null) {
-        _logger.w(
+        logger.w(
             'Cannot load historical messages: session is null for orderId: $orderId');
         return;
       }
       if (session.sharedKey == null) {
-        _logger.w(
+        logger.w(
             'Cannot load historical messages: shared key is null for orderId: $orderId');
         return;
       }
 
-      _logger.i('Session found with shared key: ${session.sharedKey?.public}');
+      logger.i('Session found with shared key: ${session.sharedKey?.public}');
 
       final eventStore = ref.read(eventStorageProvider);
 
@@ -261,7 +261,7 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
       final allChatEvents = await eventStore.find(
         filter: eventStore.eq('type', 'chat'),
       );
-      _logger.i('Total chat events in storage: ${allChatEvents.length}');
+      logger.i('Total chat events in storage: ${allChatEvents.length}');
 
       // Find all chat events for this specific order
       var chatEvents = await eventStore.find(
@@ -272,22 +272,22 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
         sort: [SortOrder('created_at', false)], // Most recent first
       );
 
-      _logger.i('Chat events found for orderId $orderId: ${chatEvents.length}');
+      logger.i('Chat events found for orderId $orderId: ${chatEvents.length}');
 
       // Fallback: if no events found with order_id, try to find all chat events
       // This handles events stored before the order_id field was added
       if (chatEvents.isEmpty) {
-        _logger.i(
+        logger.i(
             'No events found with order_id, trying fallback to all chat events');
         chatEvents = await eventStore.find(
           filter: eventStore.eq('type', 'chat'),
           sort: [SortOrder('created_at', false)], // Most recent first
         );
-        _logger.i('Fallback: found ${chatEvents.length} total chat events');
+        logger.i('Fallback: found ${chatEvents.length} total chat events');
       }
 
       if (chatEvents.isEmpty) {
-        _logger.w('No chat events found at all');
+        logger.w('No chat events found at all');
         return;
       }
 
@@ -295,11 +295,11 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
 
       for (int i = 0; i < chatEvents.length; i++) {
         final eventData = chatEvents[i];
-        _logger.i('Processing event $i: ${eventData['id']}');
+        logger.i('Processing event $i: ${eventData['id']}');
 
         try {
           // Log the event data structure
-          _logger.i('Event data keys: ${eventData.keys.toList()}');
+          logger.i('Event data keys: ${eventData.keys.toList()}');
 
           // Check if this is a complete event (has all required fields)
           final hasCompleteData = eventData.containsKey('kind') &&
@@ -309,7 +309,7 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
               eventData.containsKey('tags');
 
           if (!hasCompleteData) {
-            _logger.w(
+            logger.w(
                 'Event ${eventData['id']} is incomplete (missing required fields), skipping. This is likely from an older version of the app.');
             continue;
           }
@@ -325,30 +325,30 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
             'tags': eventData['tags'],
           });
 
-          _logger.i(
+          logger.i(
               'Reconstructed event: ${storedEvent.id}, recipient: ${storedEvent.recipient}');
 
           // Check if this event belongs to our chat (shared key)
           if (session.sharedKey?.public == storedEvent.recipient) {
-            _logger.i('Event belongs to our chat, unwrapping...');
+            logger.i('Event belongs to our chat, unwrapping...');
             // Decrypt and unwrap the message
             final unwrappedMessage =
                 await storedEvent.p2pUnwrap(session.sharedKey!);
             historicalMessages.add(unwrappedMessage);
-            _logger.i(
+            logger.i(
                 'Successfully unwrapped message: ${unwrappedMessage.content}');
           } else {
-            _logger.i(
+            logger.i(
                 'Event does not belong to our chat. Expected: ${session.sharedKey?.public}, Got: ${storedEvent.recipient}');
           }
         } catch (e) {
-          _logger
+          logger
               .e('Failed to process historical event ${eventData['id']}: $e');
           // Continue processing other events even if one fails
         }
       }
 
-      _logger.i(
+      logger.i(
           'Total historical messages processed: ${historicalMessages.length}');
 
       if (historicalMessages.isNotEmpty) {
@@ -363,22 +363,22 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
         }).toList();
         deduped.sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
         state = state.copy(messages: deduped);
-        _logger.i(
+        logger.i(
             'Successfully loaded and merged ${historicalMessages.length} historical messages, total: ${deduped.length} for chat $orderId');
       } else {
-        _logger.w('No historical messages loaded for chat $orderId');
-        _logger.i('This could be because:');
-        _logger.i('1. No messages have been sent in this chat yet');
-        _logger
+        logger.w('No historical messages loaded for chat $orderId');
+        logger.i('This could be because:');
+        logger.i('1. No messages have been sent in this chat yet');
+        logger
             .i('2. All stored events are incomplete (from older app version)');
-        _logger.i(
+        logger.i(
             '3. The events belong to a different chat (shared key mismatch)');
-        _logger
+        logger
             .i('New messages will be stored correctly and appear immediately.');
       }
     } catch (e) {
-      _logger.e('Error loading historical messages: $e');
-      _logger.e('Stack trace: ${StackTrace.current}');
+      logger.e('Error loading historical messages: $e');
+      logger.e('Stack trace: ${StackTrace.current}');
     }
   }
 
@@ -436,16 +436,16 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
       // Check for encrypted message types
       if (jsonContent != null) {
         if (MessageTypeUtils.isEncryptedImageMessage(message)) {
-          _logger.i('📸 Processing encrypted image message');
+          logger.i('📸 Processing encrypted image message');
           await _processEncryptedImageMessage(message, jsonContent);
         } else if (MessageTypeUtils.isEncryptedFileMessage(message)) {
-          _logger.i('📎 Processing encrypted file message');
+          logger.i('📎 Processing encrypted file message');
           await _processEncryptedFileMessage(message, jsonContent);
         }
       }
       
     } catch (e) {
-      _logger.w('Error processing message content: $e');
+      logger.w('Error processing message content: $e');
       // Don't rethrow - message should still be displayed as text
     }
   }
@@ -459,9 +459,9 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
       // Extract image metadata
       final result = EncryptedImageUploadResult.fromJson(imageData);
       
-      _logger.i('📥 Pre-downloading encrypted image: ${result.filename}');
-      _logger.d('Blossom URL: ${result.blossomUrl}');
-      _logger.d('Original size: ${result.originalSize} bytes');
+      logger.i('📥 Pre-downloading encrypted image: ${result.filename}');
+      logger.d('Blossom URL: ${result.blossomUrl}');
+      logger.d('Original size: ${result.originalSize} bytes');
       
       // Get shared key for decryption
       final sharedKey = await getSharedKey();
@@ -473,14 +473,14 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
         sharedKey: sharedKey,
       );
       
-      _logger.i('✅ Image downloaded and decrypted successfully: ${decryptedImage.length} bytes');
+      logger.i('✅ Image downloaded and decrypted successfully: ${decryptedImage.length} bytes');
       
       // Cache the decrypted image for immediate display
       // You could store it in a Map<String, Uint8List> for quick access
       cacheDecryptedImage(message.id!, decryptedImage, result);
       
     } catch (e) {
-      _logger.e('❌ Failed to process encrypted image: $e');
+      logger.e('❌ Failed to process encrypted image: $e');
       // Don't rethrow - message should still be displayed (maybe with error indicator)
     }
   }
@@ -501,7 +501,7 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
   ) {
     _imageCache[messageId] = imageData;
     _imageMetadata[messageId] = metadata;
-    _logger.d('🗄️ Cached decrypted image for message: $messageId');
+    logger.d('🗄️ Cached decrypted image for message: $messageId');
   }
 
   /// Get cached decrypted image data
@@ -523,13 +523,13 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
       // Extract file metadata
       final result = EncryptedFileUploadResult.fromJson(fileData);
       
-      _logger.i('📥 File message received: ${result.filename} (${result.fileType})');
-      _logger.d('Blossom URL: ${result.blossomUrl}');
-      _logger.d('Original size: ${result.originalSize} bytes');
+      logger.i('📥 File message received: ${result.filename} (${result.fileType})');
+      logger.d('Blossom URL: ${result.blossomUrl}');
+      logger.d('Original size: ${result.originalSize} bytes');
       
       // Auto-download images for preview, but not other files
       if (result.fileType == 'image') {
-        _logger.i('📸 Auto-downloading image for preview: ${result.filename}');
+        logger.i('📸 Auto-downloading image for preview: ${result.filename}');
         
         try {
           // Get shared key for decryption
@@ -542,13 +542,13 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
             sharedKey: sharedKey,
           );
           
-          _logger.i('✅ Image downloaded and decrypted successfully: ${decryptedFile.length} bytes');
+          logger.i('✅ Image downloaded and decrypted successfully: ${decryptedFile.length} bytes');
           
           // Cache the decrypted image for immediate display
           cacheDecryptedFile(message.id!, decryptedFile, result);
           
         } catch (e) {
-          _logger.e('❌ Failed to auto-download image: $e');
+          logger.e('❌ Failed to auto-download image: $e');
           // Store metadata without file data - user can manually download
           cacheDecryptedFile(message.id!, null, result);
         }
@@ -559,7 +559,7 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
       }
       
     } catch (e) {
-      _logger.e('❌ Failed to process encrypted file: $e');
+      logger.e('❌ Failed to process encrypted file: $e');
       // Don't rethrow - message should still be displayed (maybe with error indicator)
     }
   }
@@ -574,7 +574,7 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
       _fileCache[messageId] = fileData;
     }
     _fileMetadata[messageId] = metadata;
-    _logger.d('🗄️ Cached file metadata for message: $messageId');
+    logger.d('🗄️ Cached file metadata for message: $messageId');
   }
 
   /// Get cached decrypted file data
@@ -592,7 +592,7 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
   void dispose() {
     _subscription?.cancel();
     _sessionListener?.close();
-    _logger.i('Disposed chat room notifier for orderId: $orderId');
+    logger.i('Disposed chat room notifier for orderId: $orderId');
     super.dispose();
   }
 }

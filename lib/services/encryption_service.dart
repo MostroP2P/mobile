@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 import 'dart:math';
 import 'package:pointycastle/export.dart';
-import 'package:logger/logger.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 
 class EncryptionResult {
   final Uint8List encryptedData;
@@ -53,7 +53,6 @@ class EncryptionResult {
 }
 
 class EncryptionService {
-  static final Logger _logger = Logger();
   static final SecureRandom _secureRandom = SecureRandom('Fortuna')
     ..seed(KeyParameter(_generateSeed()));
 
@@ -93,7 +92,7 @@ class EncryptionService {
       throw ArgumentError('ChaCha20-Poly1305 nonce must be 12 bytes');
     }
 
-    _logger.d('Encrypting ${plaintext.length} bytes with ChaCha20-Poly1305');
+    logger.d('Encrypting ${plaintext.length} bytes with ChaCha20-Poly1305');
 
     try {
       // Create ChaCha20-Poly1305 cipher
@@ -118,7 +117,7 @@ class EncryptionService {
       final encryptedData = output.sublist(0, plaintext.length);
       final authTag = output.sublist(plaintext.length, len);
 
-      _logger.i('✅ Encryption successful: ${encryptedData.length} bytes + ${authTag.length} bytes tag');
+      logger.i('✅ Encryption successful: ${encryptedData.length} bytes + ${authTag.length} bytes tag');
 
       return EncryptionResult(
         encryptedData: encryptedData,
@@ -126,7 +125,7 @@ class EncryptionService {
         authTag: authTag,
       );
     } catch (e) {
-      _logger.e('❌ ChaCha20-Poly1305 encryption failed: $e');
+      logger.e('❌ ChaCha20-Poly1305 encryption failed: $e');
       throw EncryptionException('Encryption failed: $e');
     }
   }
@@ -149,7 +148,7 @@ class EncryptionService {
       throw ArgumentError('Poly1305 authentication tag must be 16 bytes');
     }
 
-    _logger.d('Decrypting ${encryptedData.length} bytes with ChaCha20-Poly1305');
+    logger.d('Decrypting ${encryptedData.length} bytes with ChaCha20-Poly1305');
 
     try {
       // Create ChaCha20-Poly1305 cipher
@@ -177,11 +176,11 @@ class EncryptionService {
 
       final decryptedData = output.sublist(0, len);
       
-      _logger.i('✅ Decryption successful: ${decryptedData.length} bytes');
+      logger.i('✅ Decryption successful: ${decryptedData.length} bytes');
 
       return decryptedData;
     } catch (e) {
-      _logger.e('❌ ChaCha20-Poly1305 decryption failed: $e');
+      logger.e('❌ ChaCha20-Poly1305 decryption failed: $e');
       throw EncryptionException('Decryption failed: $e');
     }
   }

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:heroicons/heroicons.dart';
-import 'package:logger/logger.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/logs/logs_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
@@ -9,9 +8,8 @@ import 'package:mostro_mobile/services/logger_export_service.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 
 class LogsActionsMenu extends ConsumerWidget {
-  final _logger = Logger();
 
-  LogsActionsMenu({super.key});
+  const LogsActionsMenu({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -127,7 +125,7 @@ class LogsActionsMenu extends ConsumerWidget {
         );
       }
     } catch (e, stackTrace) {
-      _logger.e('Error exporting logs', error: e, stackTrace: stackTrace);
+      logger.e('Error exporting logs', error: e, stackTrace: stackTrace);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -156,7 +154,7 @@ class LogsActionsMenu extends ConsumerWidget {
         text: localizations.logsShareText,
       );
     } catch (e, stackTrace) {
-      _logger.e('Error sharing logs', error: e, stackTrace: stackTrace);
+      logger.e('Error sharing logs', error: e, stackTrace: stackTrace);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

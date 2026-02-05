@@ -2,22 +2,21 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:logger/logger.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/services/deep_link_service.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
 
 class DeepLinkHandler {
   final Ref _ref;
-  final Logger _logger = Logger();
   StreamSubscription<Uri>? _subscription;
 
   DeepLinkHandler(this._ref);
 
   /// Initializes deep link handling for the app
   void initialize(GoRouter router) {
-    _logger.i('Initializing DeepLinkHandler');
+    logger.i('Initializing DeepLinkHandler');
 
     // Get the deep link service instance
     final deepLinkService = _ref.read(deepLinkServiceProvider);
@@ -28,7 +27,7 @@ class DeepLinkHandler {
     // Listen for deep link events
     _subscription = deepLinkService.deepLinkStream.listen(
       (Uri uri) => _handleDeepLink(uri, router),
-      onError: (error) => _logger.e('Deep link stream error: $error'),
+      onError: (error) => logger.e('Deep link stream error: $error'),
     );
   }
 
@@ -43,20 +42,20 @@ class DeepLinkHandler {
     GoRouter router,
   ) async {
     try {
-      _logger.i('Handling deep link: $uri');
+      logger.i('Handling deep link: $uri');
 
       // Check if it's a mostro: scheme
       if (uri.scheme == 'mostro') {
         await _handleMostroDeepLink(uri.toString(), router);
       } else {
-        _logger.w('Unsupported deep link scheme: ${uri.scheme}');
+        logger.w('Unsupported deep link scheme: ${uri.scheme}');
         final context = router.routerDelegate.navigatorKey.currentContext;
         if (context != null && context.mounted) {
           _showErrorSnackBar(context, S.of(context)!.unsupportedLinkFormat);
         }
       }
     } catch (e) {
-      _logger.e('Error handling deep link: $e');
+      logger.e('Error handling deep link: $e');
       final context = router.routerDelegate.navigatorKey.currentContext;
       if (context != null && context.mounted) {
         _showErrorSnackBar(context, S.of(context)!.failedToOpenLink);
@@ -84,7 +83,7 @@ class DeepLinkHandler {
       // Ensure we have a valid context for processing
       final processingContext = context ?? router.routerDelegate.navigatorKey.currentContext;
       if (processingContext == null || !processingContext.mounted) {
-        _logger.e('No valid context available for deep link processing');
+        logger.e('No valid context available for deep link processing');
         return;
       }
 
@@ -93,7 +92,7 @@ class DeepLinkHandler {
 
       // Get fresh context after async operation
       final currentContext = router.routerDelegate.navigatorKey.currentContext;
-      
+
       // Hide loading indicator
       if (currentContext != null && currentContext.mounted) {
         Navigator.of(currentContext).pop();
@@ -104,17 +103,17 @@ class DeepLinkHandler {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           deepLinkService.navigateToOrder(router, result.orderInfo!);
         });
-        _logger.i('Successfully navigated to order: ${result.orderInfo!.orderId} (${result.orderInfo!.orderType.value})');
+        logger.i('Successfully navigated to order: ${result.orderInfo!.orderId} (${result.orderInfo!.orderType.value})');
       } else {
         final errorContext = router.routerDelegate.navigatorKey.currentContext;
         if (errorContext != null && errorContext.mounted) {
           final errorMessage = result.error ?? S.of(errorContext)!.failedToLoadOrder;
           _showErrorSnackBar(errorContext, errorMessage);
         }
-        _logger.w('Failed to process mostro link: ${result.error}');
+        logger.w('Failed to process mostro link: ${result.error}');
       }
     } catch (e) {
-      _logger.e('Error processing mostro deep link: $e');
+      logger.e('Error processing mostro deep link: $e');
       final errorContext = router.routerDelegate.navigatorKey.currentContext;
       if (errorContext != null && errorContext.mounted) {
         Navigator.of(errorContext).pop(); // Hide loading if still showing

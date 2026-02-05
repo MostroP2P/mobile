@@ -3,6 +3,7 @@
 ## Project Structure & Module Organization
 - Application code sits under `lib/`, grouped by domain (`lib/features/<feature>/`) with shared utilities in `lib/shared/`, dependency wiring in `lib/core/`, and services in `lib/services/`.
 - Persistence, APIs, and background jobs live in `lib/data/` and `lib/background/`; generated localization output is in `lib/generated/` and must stay untouched.
+- For logging, always use the pre-configured singleton `logger` instance via `import 'package:mostro_mobile/services/logger_service.dart';`. Direct instantiation of `Logger()` is no longer permitted. Refer to `docs/LOGGING_IMPLEMENTATION.md` for detailed guidelines.
 - Tests mirror the feature layout under `test/`, end-to-end flows run from `integration_test/`, and platform wrappers reside in `android/`, `ios/`, and `web/`. Additional guidance sits in `docs/`.
 
 ## Build, Test, and Development Commands
