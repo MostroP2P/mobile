@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.1.0]
+
+### Added
+- **Logger Singleton Migration** (#429): Migrated entire codebase to singleton logger pattern for consistent logging
+- **Logger Background Integration** (#406): Logger service with background isolate support
+- **Share and Save Log Files** (#412): Export and share application logs
+- **Logs Recording Indicator**: Visual indicator showing when log capture is active
+- **Notification Settings Screen** (#408): Push notification preferences UI (Phase 4)
+- **Android Background Permissions** (#421): Added permissions for background service reliability
+- **About Screen Improvements** (#411): Enhanced about screen with additional info
+
+### Fixed
+- **Background Notifications Not Showing** (#428): Resolved SendPort serialization issue preventing background notifications
+- **NostrService Relay Updates** (#426): Replaced disconnect-reconnect with additive initialization in `updateSettings`
+- **SnackBar Navigation Overlap** (#413): Moved SnackBars to top of screen to avoid blocking bottom navigation
+
+### Changed
+- **UI Improvements Phase 2** (#419): Visual refinements and layout enhancements
+- **Toggles and Buttons** (#430): Improved toggle switches and button styling with shared MostroSwitch widget
+- **Drawer Mostro Logo** (#431): Updated drawer logo
+- **Internationalized SnackBar Messages** (#424): Replaced hardcoded SnackBar strings with localized versions
+- **Auto-Generated Files** (#417): Updated gitignore and documentation for generated files
+
 ## [v1.0.7]
 
 ### Added
