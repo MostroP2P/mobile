@@ -2,7 +2,16 @@
 
 ## Overview
 
-Multi-Mostro support allows users to connect to multiple Mostro instances (nodes) from a single app installation. Users can switch between trusted (hardcoded) and custom (user-added) nodes, each with their own relay lists, order books, and trading sessions.
+Multi-Mostro support allows users to connect to multiple Mostro instances (nodes) from a single app installation. Users can switch between trusted (hardcoded) and custom (user-added) nodes, each with their own order books and trading sessions.
+
+### Relay Management Per Node
+
+Relay lists are **not** stored per-node. Instead, the existing relay system handles this automatically:
+
+- When the active node changes via `SettingsNotifier.updateMostroInstance()`, blacklisted relays and user relays are reset
+- `RelaysNotifier` subscribes to the active node's kind 10002 events and syncs relay lists in real-time
+- Default relays from `Config.nostrRelays` serve as fallback for any node
+- This means relay state is always derived from the currently active node, not stored alongside it
 
 ## Architecture
 
@@ -50,13 +59,13 @@ SharedPreferences (custom) ──┘           │
 
 **Files Modified**:
 - `lib/core/config.dart` — Add `trustedMostroNodes` list constant
-- `lib/data/models/enums/storage_keys.dart` — Add `mostroCustomNodes` key
+- `lib/data/models/enums/storage_keys.dart` — Add `mostroCustomNodes` enum value (stored as `mostro_custom_nodes`)
 - `lib/shared/providers/app_init_provider.dart` — Initialize `MostroNodesNotifier` during startup
 
 **Key Decisions**:
 - `MostroNode` equality based on `pubkey` only
 - Custom nodes stored in `SharedPreferencesKeys.mostroCustomNodes` (separate from settings)
-- Backward compatibility: unrecognized `mostroPublicKey` auto-imported as custom node
+- Backward compatibility: unrecognized `mostroPublicKey` auto-imported as custom node (only if valid 64-char hex)
 - No changes to `Settings`, `SettingsNotifier`, or `NostrService`
 
 ### Phase 2: Kind 0 Metadata Fetching
@@ -95,6 +104,8 @@ SharedPreferences (custom) ──┘           │
 - Trusted nodes shown with badge/indicator
 - Custom nodes show delete option (if not currently active)
 - Node avatar shows `picture` from kind 0 metadata when available
+- Validate custom node pubkey format (64 hex chars) in the Add Custom Node dialog
+- Debounce node switching to prevent race conditions during rapid selection changes
 
 ### Phase 4: Integration Testing
 
@@ -118,8 +129,6 @@ SharedPreferences (custom) ──┘           │
 **Work Items**:
 - Handle offline metadata fetch gracefully
 - Add loading indicators during node switch
-- Validate custom node pubkey format (64 hex chars)
-- Handle race conditions during rapid node switching
 - Update CLAUDE.md with multi-Mostro architecture notes
 - Performance testing with many custom nodes
 
@@ -152,7 +161,7 @@ class MostroNode {
 
 The implementation maintains full backward compatibility:
 
-1. **Existing users**: Their saved `mostroPublicKey` continues to work. If it matches a trusted node, it's recognized automatically. If not, it's auto-imported as a custom node.
+1. **Existing users**: Their saved `mostroPublicKey` continues to work. If it matches a trusted node, it's recognized automatically. If it's a valid 64-character hex key that doesn't match any trusted node, it's auto-imported as a custom node. Malformed or corrupted pubkeys are silently skipped.
 2. **Environment variable**: `MOSTRO_PUB_KEY` environment variable override continues to work via `Config.mostroPubKey`.
 3. **No migration needed**: The system is additive — no existing data is modified or removed.
 4. **Settings model unchanged**: `Settings.mostroPublicKey` remains the single source of truth for the active node.

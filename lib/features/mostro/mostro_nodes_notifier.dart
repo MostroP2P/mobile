@@ -32,7 +32,9 @@ class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
       ...customNodes.map((n) => n.pubkey),
     };
 
-    if (currentPubkey.isNotEmpty && !allPubkeys.contains(currentPubkey)) {
+    if (currentPubkey.isNotEmpty &&
+        !allPubkeys.contains(currentPubkey) &&
+        _isValidHexPubkey(currentPubkey)) {
       logger.i(
         'Current pubkey not found in known nodes, auto-importing as custom',
       );
@@ -91,8 +93,9 @@ class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
       addedAt: DateTime.now(),
     );
 
-    state = [...state, newNode];
-    await _saveCustomNodes(_customNodes);
+    final updatedCustom = [...customNodes, newNode];
+    await _saveCustomNodes(updatedCustom);
+    state = [...trustedNodes, ...updatedCustom];
     logger.i('Added custom Mostro node: ${newNode.displayName}');
     return true;
   }
@@ -117,21 +120,26 @@ class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
       return false;
     }
 
-    state = state.where((n) => n.pubkey != pubkey).toList();
-    await _saveCustomNodes(_customNodes);
+    final updatedCustom = customNodes.where((n) => n.pubkey != pubkey).toList();
+    await _saveCustomNodes(updatedCustom);
+    state = [...trustedNodes, ...updatedCustom];
     logger.i('Removed custom Mostro node: ${node.displayName}');
     return true;
   }
 
   /// Update custom node name
   Future<void> updateCustomNodeName(String pubkey, String newName) async {
-    state = state.map((n) {
-      if (n.pubkey == pubkey && !n.isTrusted) {
+    final updatedCustom = customNodes.map((n) {
+      if (n.pubkey == pubkey) {
         return n.withMetadata(name: newName);
       }
       return n;
     }).toList();
-    await _saveCustomNodes(_customNodes);
+    await _saveCustomNodes(updatedCustom);
+    state = [
+      ...trustedNodes,
+      ...updatedCustom,
+    ];
   }
 
   /// Update node metadata (from kind 0 fetch in Phase 2)
@@ -166,8 +174,11 @@ class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
   List<MostroNode> get customNodes =>
       state.where((n) => !n.isTrusted).toList();
 
-  List<MostroNode> get _customNodes =>
-      state.where((n) => !n.isTrusted).toList();
+  static final _hexPubkeyRegex = RegExp(r'^[0-9a-fA-F]{64}$');
+
+  static bool _isValidHexPubkey(String value) {
+    return _hexPubkeyRegex.hasMatch(value);
+  }
 
   Future<List<MostroNode>> _loadCustomNodes() async {
     try {
@@ -187,10 +198,15 @@ class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
   }
 
   Future<void> _saveCustomNodes(List<MostroNode> nodes) async {
-    final json = jsonEncode(nodes.map((n) => n.toJson()).toList());
-    await _prefs.setString(
-      SharedPreferencesKeys.mostroCustomNodes.value,
-      json,
-    );
+    try {
+      final json = jsonEncode(nodes.map((n) => n.toJson()).toList());
+      await _prefs.setString(
+        SharedPreferencesKeys.mostroCustomNodes.value,
+        json,
+      );
+    } catch (e) {
+      logger.e('Failed to save custom nodes: $e');
+      rethrow;
+    }
   }
 }

@@ -108,7 +108,8 @@ void main() {
 
     test('init auto-imports unrecognized mostroPublicKey as custom node',
         () async {
-      final unknownPubkey = 'unknown_pubkey_1234567890abcdef';
+      final unknownPubkey =
+          'aabbccdd11223344aabbccdd11223344aabbccdd11223344aabbccdd11223344';
       mockSettingsNotifier.state = makeSettings(
         mostroPublicKey: unknownPubkey,
       );
@@ -129,6 +130,19 @@ void main() {
         SharedPreferencesKeys.mostroCustomNodes.value,
         any,
       )).called(1);
+    });
+
+    test('init does not auto-import invalid/malformed pubkey', () async {
+      mockSettingsNotifier.state = makeSettings(
+        mostroPublicKey: 'not-a-valid-hex-pubkey',
+      );
+      when(mockRef.read(settingsProvider))
+          .thenReturn(mockSettingsNotifier.state);
+
+      final notifier = createNotifier();
+      await notifier.init();
+
+      expect(notifier.customNodes, isEmpty);
     });
 
     test('init does not auto-import when pubkey matches trusted node',
@@ -246,7 +260,8 @@ void main() {
     });
 
     test('removeCustomNode fails for currently active node', () async {
-      final customPubkey = 'active_custom_node_pubkey_12345';
+      final customPubkey =
+          '1122334455667788112233445566778811223344556677881122334455667788';
       mockSettingsNotifier.state = makeSettings(
         mostroPublicKey: customPubkey,
       );

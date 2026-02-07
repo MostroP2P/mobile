@@ -58,6 +58,16 @@ void main() {
       expect(node.truncatedPubkey, 'abcde...67890');
     });
 
+    test('truncatedPubkey returns full pubkey when too short', () {
+      final node = MostroNode(pubkey: 'short');
+      expect(node.truncatedPubkey, 'short');
+    });
+
+    test('truncatedPubkey handles exactly 10 char pubkey', () {
+      final node = MostroNode(pubkey: '1234567890');
+      expect(node.truncatedPubkey, '1234567890');
+    });
+
     test('withMetadata creates copy with updated fields', () {
       final original = MostroNode(
         pubkey: 'abcde12345fghij67890',

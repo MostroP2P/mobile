@@ -19,8 +19,9 @@ class MostroNode {
 
   String get displayName => name ?? truncatedPubkey;
 
-  String get truncatedPubkey =>
-      '${pubkey.substring(0, 5)}...${pubkey.substring(pubkey.length - 5)}';
+  String get truncatedPubkey => pubkey.length > 10
+      ? '${pubkey.substring(0, 5)}...${pubkey.substring(pubkey.length - 5)}'
+      : pubkey;
 
   MostroNode withMetadata({
     String? name,
