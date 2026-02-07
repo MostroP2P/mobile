@@ -192,7 +192,7 @@ void main() {
       await notifier.init();
 
       final result = await notifier.addCustomNode(
-        'new_custom_node_pubkey_1234567890',
+        'aa11bb22cc33dd44aa11bb22cc33dd44aa11bb22cc33dd44aa11bb22cc33dd44',
         name: 'New Node',
       );
 
@@ -200,9 +200,25 @@ void main() {
       expect(notifier.customNodes.length, 1);
       expect(
         notifier.customNodes.first.pubkey,
-        'new_custom_node_pubkey_1234567890',
+        'aa11bb22cc33dd44aa11bb22cc33dd44aa11bb22cc33dd44aa11bb22cc33dd44',
       );
       expect(notifier.customNodes.first.name, 'New Node');
+    });
+
+    test('addCustomNode rejects invalid pubkey format', () async {
+      final notifier = createNotifier();
+      await notifier.init();
+
+      final result = await notifier.addCustomNode(
+        'not-a-valid-hex-pubkey',
+        name: 'Invalid Node',
+      );
+
+      expect(result, false);
+      expect(
+        notifier.customNodes,
+        isEmpty,
+      );
     });
 
     test('addCustomNode rejects duplicate pubkey', () async {
@@ -220,7 +236,7 @@ void main() {
       await notifier.init();
 
       await notifier.addCustomNode(
-        'new_custom_pubkey_1234567890abcdef',
+        'bb22cc33dd44ee55bb22cc33dd44ee55bb22cc33dd44ee55bb22cc33dd44ee55',
         name: 'Saved Node',
       );
 
@@ -235,7 +251,7 @@ void main() {
       await notifier.init();
 
       await notifier.addCustomNode(
-        'removable_node_pubkey_1234567890',
+        'cc33dd44ee55ff66cc33dd44ee55ff66cc33dd44ee55ff66cc33dd44ee55ff66',
         name: 'Removable',
       );
       // Reset the verification count
@@ -243,7 +259,7 @@ void main() {
       when(mockPrefs.setString(any, any)).thenAnswer((_) async {});
 
       final result = await notifier.removeCustomNode(
-        'removable_node_pubkey_1234567890',
+        'cc33dd44ee55ff66cc33dd44ee55ff66cc33dd44ee55ff66cc33dd44ee55ff66',
       );
 
       expect(result, true);
@@ -281,17 +297,17 @@ void main() {
       final notifier = createNotifier();
       await notifier.init();
       await notifier.addCustomNode(
-        'updatable_node_pubkey_1234567890',
+        'dd44ee55ff660011dd44ee55ff660011dd44ee55ff660011dd44ee55ff660011',
         name: 'Old Name',
       );
 
       await notifier.updateCustomNodeName(
-        'updatable_node_pubkey_1234567890',
+        'dd44ee55ff660011dd44ee55ff660011dd44ee55ff660011dd44ee55ff660011',
         'New Name',
       );
 
       final node = notifier.customNodes.firstWhere(
-        (n) => n.pubkey == 'updatable_node_pubkey_1234567890',
+        (n) => n.pubkey == 'dd44ee55ff660011dd44ee55ff660011dd44ee55ff660011dd44ee55ff660011',
       );
       expect(node.name, 'New Name');
     });
@@ -329,12 +345,12 @@ void main() {
       final notifier = createNotifier();
       await notifier.init();
       await notifier.addCustomNode(
-        'custom_for_trust_check_1234567890',
+        'ee55ff66001122ee55ff66001122ee55ff66001122ee55ff66001122ee55ff66',
       );
 
       expect(notifier.isTrustedNode(trustedPubkey), true);
       expect(
-        notifier.isTrustedNode('custom_for_trust_check_1234567890'),
+        notifier.isTrustedNode('ee55ff66001122ee55ff66001122ee55ff66001122ee55ff66001122ee55ff66'),
         false,
       );
       expect(notifier.isTrustedNode('nonexistent_key_1234567890'), false);

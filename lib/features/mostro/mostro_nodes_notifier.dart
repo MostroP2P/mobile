@@ -87,6 +87,11 @@ class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
       return false;
     }
 
+    if (!_isValidHexPubkey(pubkey)) {
+      logger.w('Invalid pubkey format: $pubkey');
+      return false;
+    }
+
     final newNode = MostroNode(
       pubkey: pubkey,
       name: name,
