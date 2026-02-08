@@ -71,9 +71,9 @@ SharedPreferences (custom) ──┘           │
 - Persist-before-state pattern: write operations (`addCustomNode`, `removeCustomNode`, `updateCustomNodeName`) only update in-memory state after successful disk save, preventing memory/disk divergence
 - No changes to `Settings`, `SettingsNotifier`, or `NostrService`
 
-**Test Coverage** (22 tests):
+**Test Coverage** (37 tests):
 - `mostro_node_test.dart` (14 tests): Serialization round-trips, optional field handling, `displayName`/`truncatedPubkey`, `withMetadata` copy semantics, pubkey-based equality/hashCode, `toJson`/`fromJson`
-- `mostro_nodes_notifier_test.dart` (18 tests): Init with trusted/custom/merged nodes, auto-import of unrecognized pubkeys (valid and invalid), `selectedNode` lookup, CRUD operations (`addCustomNode` with validation/duplicates/persistence, `removeCustomNode` with guards, `updateCustomNodeName`), metadata updates, `isTrustedNode` queries, corrupt SharedPreferences handling, `selectNode` delegation
+- `mostro_nodes_notifier_test.dart` (23 tests): Init with trusted/custom/merged nodes, auto-import of unrecognized pubkeys (valid and invalid), `selectedNode` lookup, CRUD operations (`addCustomNode` with validation/duplicates/persistence, `removeCustomNode` with guards, `updateCustomNodeName`), metadata updates, `isTrustedNode` queries, corrupt SharedPreferences handling, `selectNode` delegation
 
 ### Phase 2: Kind 0 Metadata Fetching
 
