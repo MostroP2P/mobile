@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mostro_mobile/core/config.dart';
@@ -8,6 +9,8 @@ import 'package:mostro_mobile/features/mostro/mostro_nodes_notifier.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/features/settings/settings_notifier.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
+import 'package:mostro_mobile/services/nostr_service.dart';
+import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 
 import '../../mocks.dart';
 import '../../mocks.mocks.dart';
@@ -21,6 +24,7 @@ void main() {
     mostroPublicKey: '',
   ));
   provideDummy<SettingsNotifier>(MockSettingsNotifier());
+  provideDummy<NostrService>(MockNostrService());
 
   group('MostroNodesNotifier', () {
     late MockSharedPreferencesAsync mockPrefs;
@@ -389,6 +393,276 @@ void main() {
 
       // State unchanged since the node wasn't found
       expect(mockSettingsNotifier.state.mostroPublicKey, pubkeyBefore);
+    });
+
+    group('metadata fetching', () {
+      late MockNostrService mockNostrService;
+      // Real keypair so events are properly signed and pass isVerified()
+      final testKeyPair = NostrKeyPairs.generate();
+
+      NostrEvent makeKind0Event(
+        Map<String, dynamic> metadata, {
+        DateTime? createdAt,
+      }) {
+        return NostrEvent.fromPartialData(
+          kind: 0,
+          content: jsonEncode(metadata),
+          keyPairs: testKeyPair,
+          createdAt: createdAt ?? DateTime(2025),
+        );
+      }
+
+      setUp(() {
+        mockNostrService = MockNostrService();
+        when(mockRef.read(nostrServiceProvider))
+            .thenReturn(mockNostrService);
+      });
+
+      /// Helper to add a node with testKeyPair's pubkey to the notifier
+      Future<MostroNodesNotifier> createNotifierWithTestNode() async {
+        final notifier = createNotifier();
+        await notifier.init();
+        // Add a node matching the test keypair's pubkey
+        notifier.updateNodeMetadata(testKeyPair.public, name: 'Test Node');
+        // Ensure the node exists in state
+        if (!notifier.state.any((n) => n.pubkey == testKeyPair.public)) {
+          notifier.state = [
+            ...notifier.state,
+            MostroNode(pubkey: testKeyPair.public, name: 'Test Node'),
+          ];
+        }
+        return notifier;
+      }
+
+      test('fetchAllNodeMetadata fetches and applies kind 0 events', () async {
+        final notifier = await createNotifierWithTestNode();
+
+        when(mockNostrService.fetchEvents(any, specificRelays: anyNamed('specificRelays')))
+            .thenAnswer((_) async => [
+                  makeKind0Event({
+                    'name': 'Mostro Official',
+                    'picture': 'https://example.com/pic.png',
+                    'website': 'https://mostro.network',
+                    'about': 'P2P trading node',
+                  }),
+                ]);
+
+        await notifier.fetchAllNodeMetadata();
+
+        final node =
+            notifier.state.firstWhere((n) => n.pubkey == testKeyPair.public);
+        expect(node.name, 'Mostro Official');
+        expect(node.picture, 'https://example.com/pic.png');
+        expect(node.website, 'https://mostro.network');
+        expect(node.about, 'P2P trading node');
+      });
+
+      test('fetchAllNodeMetadata deduplicates by pubkey keeping latest',
+          () async {
+        final notifier = await createNotifierWithTestNode();
+
+        when(mockNostrService.fetchEvents(any, specificRelays: anyNamed('specificRelays')))
+            .thenAnswer((_) async => [
+                  makeKind0Event(
+                    {'name': 'Old Name'},
+                    createdAt: DateTime(2024),
+                  ),
+                  makeKind0Event(
+                    {'name': 'New Name'},
+                    createdAt: DateTime(2025),
+                  ),
+                ]);
+
+        await notifier.fetchAllNodeMetadata();
+
+        final node =
+            notifier.state.firstWhere((n) => n.pubkey == testKeyPair.public);
+        expect(node.name, 'New Name');
+      });
+
+      test('fetchAllNodeMetadata rejects non-https picture and website URLs',
+          () async {
+        final notifier = await createNotifierWithTestNode();
+
+        when(mockNostrService.fetchEvents(any, specificRelays: anyNamed('specificRelays')))
+            .thenAnswer((_) async => [
+                  makeKind0Event({
+                    'name': 'Valid Name',
+                    'picture': 'javascript:alert(1)',
+                    'website': 'http://phishing.com',
+                  }),
+                ]);
+
+        await notifier.fetchAllNodeMetadata();
+
+        final node =
+            notifier.state.firstWhere((n) => n.pubkey == testKeyPair.public);
+        expect(node.name, 'Valid Name');
+        expect(node.picture, isNull);
+        expect(node.website, isNull);
+      });
+
+      test('fetchAllNodeMetadata accepts valid https URLs', () async {
+        final notifier = await createNotifierWithTestNode();
+
+        when(mockNostrService.fetchEvents(any, specificRelays: anyNamed('specificRelays')))
+            .thenAnswer((_) async => [
+                  makeKind0Event({
+                    'picture': 'https://example.com/avatar.png',
+                    'website': 'https://mostro.network',
+                  }),
+                ]);
+
+        await notifier.fetchAllNodeMetadata();
+
+        final node =
+            notifier.state.firstWhere((n) => n.pubkey == testKeyPair.public);
+        expect(node.picture, 'https://example.com/avatar.png');
+        expect(node.website, 'https://mostro.network');
+      });
+
+      test('fetchAllNodeMetadata handles empty event list gracefully',
+          () async {
+        final notifier = createNotifier();
+        await notifier.init();
+        final stateBefore = notifier.state.toList();
+
+        when(mockNostrService.fetchEvents(any, specificRelays: anyNamed('specificRelays')))
+            .thenAnswer((_) async => []);
+
+        await notifier.fetchAllNodeMetadata();
+
+        expect(notifier.state.length, stateBefore.length);
+      });
+
+      test('fetchAllNodeMetadata handles malformed JSON content', () async {
+        final notifier = await createNotifierWithTestNode();
+
+        when(mockNostrService.fetchEvents(any, specificRelays: anyNamed('specificRelays')))
+            .thenAnswer((_) async => [
+                  NostrEvent.fromPartialData(
+                    kind: 0,
+                    content: 'not valid json{{{',
+                    keyPairs: testKeyPair,
+                    createdAt: DateTime(2025),
+                  ),
+                ]);
+
+        // Should not throw
+        await notifier.fetchAllNodeMetadata();
+
+        // Name should remain unchanged
+        final node =
+            notifier.state.firstWhere((n) => n.pubkey == testKeyPair.public);
+        expect(node.name, 'Test Node');
+      });
+
+      test('fetchAllNodeMetadata handles network error gracefully', () async {
+        final notifier = createNotifier();
+        await notifier.init();
+        final stateBefore = notifier.state.toList();
+
+        when(mockNostrService.fetchEvents(any, specificRelays: anyNamed('specificRelays')))
+            .thenThrow(Exception('Network error'));
+
+        // Should not throw
+        await notifier.fetchAllNodeMetadata();
+
+        expect(notifier.state.length, stateBefore.length);
+      });
+
+      test('fetchAllNodeMetadata ignores unverified events', () async {
+        final notifier = createNotifier();
+        await notifier.init();
+
+        when(mockNostrService.fetchEvents(any, specificRelays: anyNamed('specificRelays')))
+            .thenAnswer((_) async => [
+                  NostrEvent(
+                    id: 'forged_id',
+                    kind: 0,
+                    content: jsonEncode({'name': 'Forged Name'}),
+                    sig: 'invalid_signature',
+                    pubkey: trustedPubkey,
+                    createdAt: DateTime(2025),
+                    tags: const [],
+                  ),
+                ]);
+
+        await notifier.fetchAllNodeMetadata();
+
+        // Name should remain unchanged — forged event was rejected
+        final node =
+            notifier.state.firstWhere((n) => n.pubkey == trustedPubkey);
+        expect(node.name, 'Mostro P2P');
+      });
+
+      test('fetchNodeMetadata deduplicates keeping latest when relays return multiple events',
+          () async {
+        final notifier = await createNotifierWithTestNode();
+
+        when(mockNostrService.fetchEvents(any, specificRelays: anyNamed('specificRelays')))
+            .thenAnswer((_) async => [
+                  makeKind0Event(
+                    {'name': 'Old Name'},
+                    createdAt: DateTime(2024),
+                  ),
+                  makeKind0Event(
+                    {'name': 'Latest Name'},
+                    createdAt: DateTime(2025),
+                  ),
+                  makeKind0Event(
+                    {'name': 'Middle Name'},
+                    createdAt: DateTime(2024, 6),
+                  ),
+                ]);
+
+        await notifier.fetchNodeMetadata(testKeyPair.public);
+
+        final node =
+            notifier.state.firstWhere((n) => n.pubkey == testKeyPair.public);
+        expect(node.name, 'Latest Name');
+      });
+
+      test('fetchNodeMetadata fetches single node', () async {
+        final notifier = await createNotifierWithTestNode();
+
+        when(mockNostrService.fetchEvents(any, specificRelays: anyNamed('specificRelays')))
+            .thenAnswer((_) async => [
+                  makeKind0Event({
+                    'name': 'Single Fetch Name',
+                    'about': 'Single fetch about',
+                  }),
+                ]);
+
+        await notifier.fetchNodeMetadata(testKeyPair.public);
+
+        final node =
+            notifier.state.firstWhere((n) => n.pubkey == testKeyPair.public);
+        expect(node.name, 'Single Fetch Name');
+        expect(node.about, 'Single fetch about');
+      });
+
+      test('_applyMetadataFromEvent skips non-map JSON', () async {
+        final notifier = await createNotifierWithTestNode();
+
+        when(mockNostrService.fetchEvents(any, specificRelays: anyNamed('specificRelays')))
+            .thenAnswer((_) async => [
+                  NostrEvent.fromPartialData(
+                    kind: 0,
+                    content: '"just a string"',
+                    keyPairs: testKeyPair,
+                    createdAt: DateTime(2025),
+                  ),
+                ]);
+
+        // Should not throw
+        await notifier.fetchAllNodeMetadata();
+
+        // Name should remain unchanged
+        final node =
+            notifier.state.firstWhere((n) => n.pubkey == testKeyPair.public);
+        expect(node.name, 'Test Node');
+      });
     });
   });
 }

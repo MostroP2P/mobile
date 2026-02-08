@@ -1,3 +1,6 @@
+/// Sentinel value to explicitly clear an optional field in [MostroNode.withMetadata].
+const String _clearField = '__clear__';
+
 class MostroNode {
   final String pubkey;
   String? name;
@@ -17,12 +20,20 @@ class MostroNode {
     this.addedAt,
   });
 
+  /// Sentinel value to explicitly clear a metadata field.
+  /// Usage: `node.withMetadata(name: MostroNode.clear)`
+  static const String clear = _clearField;
+
   String get displayName => name ?? truncatedPubkey;
 
   String get truncatedPubkey => pubkey.length > 10
       ? '${pubkey.substring(0, 5)}...${pubkey.substring(pubkey.length - 5)}'
       : pubkey;
 
+  /// Returns a copy with updated metadata fields.
+  /// - Pass a value to set it.
+  /// - Pass `null` (or omit) to keep the current value.
+  /// - Pass [MostroNode.clear] to explicitly set the field to `null`.
   MostroNode withMetadata({
     String? name,
     String? picture,
@@ -31,10 +42,10 @@ class MostroNode {
   }) {
     return MostroNode(
       pubkey: pubkey,
-      name: name ?? this.name,
-      picture: picture ?? this.picture,
-      website: website ?? this.website,
-      about: about ?? this.about,
+      name: name == _clearField ? null : (name ?? this.name),
+      picture: picture == _clearField ? null : (picture ?? this.picture),
+      website: website == _clearField ? null : (website ?? this.website),
+      about: about == _clearField ? null : (about ?? this.about),
       isTrusted: isTrusted,
       addedAt: addedAt,
     );

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
@@ -20,6 +21,7 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
 
   final mostroNodes = ref.read(mostroNodesProvider.notifier);
   await mostroNodes.init();
+  unawaited(mostroNodes.fetchAllNodeMetadata());
 
   final sessionManager = ref.read(sessionNotifierProvider.notifier);
   await sessionManager.init();
