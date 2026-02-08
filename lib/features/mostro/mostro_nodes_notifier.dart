@@ -136,6 +136,10 @@ class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
 
   /// Update custom node name
   Future<bool> updateCustomNodeName(String pubkey, String newName) async {
+    if (!customNodes.any((n) => n.pubkey == pubkey)) {
+      logger.w('Cannot update name: custom node $pubkey not found');
+      return false;
+    }
     final updatedCustom = customNodes.map((n) {
       if (n.pubkey == pubkey) {
         return n.withMetadata(name: newName);
@@ -177,11 +181,9 @@ class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
     return state.any((n) => n.pubkey == pubkey && n.isTrusted);
   }
 
-  List<MostroNode> get trustedNodes =>
-      state.where((n) => n.isTrusted).toList();
+  List<MostroNode> get trustedNodes => state.where((n) => n.isTrusted).toList();
 
-  List<MostroNode> get customNodes =>
-      state.where((n) => !n.isTrusted).toList();
+  List<MostroNode> get customNodes => state.where((n) => !n.isTrusted).toList();
 
   static final _hexPubkeyRegex = RegExp(r'^[0-9a-fA-F]{64}$');
 
