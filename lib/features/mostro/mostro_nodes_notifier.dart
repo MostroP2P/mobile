@@ -99,7 +99,8 @@ class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
     );
 
     final updatedCustom = [...customNodes, newNode];
-    await _saveCustomNodes(updatedCustom);
+    final saved = await _saveCustomNodes(updatedCustom);
+    if (!saved) return false;
     state = [...trustedNodes, ...updatedCustom];
     logger.i('Added custom Mostro node: ${newNode.displayName}');
     return true;
@@ -126,25 +127,28 @@ class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
     }
 
     final updatedCustom = customNodes.where((n) => n.pubkey != pubkey).toList();
-    await _saveCustomNodes(updatedCustom);
+    final saved = await _saveCustomNodes(updatedCustom);
+    if (!saved) return false;
     state = [...trustedNodes, ...updatedCustom];
     logger.i('Removed custom Mostro node: ${node.displayName}');
     return true;
   }
 
   /// Update custom node name
-  Future<void> updateCustomNodeName(String pubkey, String newName) async {
+  Future<bool> updateCustomNodeName(String pubkey, String newName) async {
     final updatedCustom = customNodes.map((n) {
       if (n.pubkey == pubkey) {
         return n.withMetadata(name: newName);
       }
       return n;
     }).toList();
-    await _saveCustomNodes(updatedCustom);
+    final saved = await _saveCustomNodes(updatedCustom);
+    if (!saved) return false;
     state = [
       ...trustedNodes,
       ...updatedCustom,
     ];
+    return true;
   }
 
   /// Update node metadata (from kind 0 fetch in Phase 2)
@@ -202,16 +206,17 @@ class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
     }
   }
 
-  Future<void> _saveCustomNodes(List<MostroNode> nodes) async {
+  Future<bool> _saveCustomNodes(List<MostroNode> nodes) async {
     try {
       final json = jsonEncode(nodes.map((n) => n.toJson()).toList());
       await _prefs.setString(
         SharedPreferencesKeys.mostroCustomNodes.value,
         json,
       );
+      return true;
     } catch (e) {
       logger.e('Failed to save custom nodes: $e');
-      rethrow;
+      return false;
     }
   }
 }
