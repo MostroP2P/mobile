@@ -66,7 +66,14 @@ SharedPreferences (custom) ──┘           │
 - `MostroNode` equality based on `pubkey` only
 - Custom nodes stored in `SharedPreferencesKeys.mostroCustomNodes` (separate from settings)
 - Backward compatibility: unrecognized `mostroPublicKey` auto-imported as custom node (only if valid 64-char hex)
+- Pubkey validation: `addCustomNode` rejects pubkeys that don't match 64-char hex regex (`^[0-9a-fA-F]{64}$`)
+- Resilient error handling: both `_loadCustomNodes` and `_saveCustomNodes` catch errors and log without rethrowing, preventing app crashes on persistence failures
+- Persist-before-state pattern: write operations (`addCustomNode`, `removeCustomNode`, `updateCustomNodeName`) only update in-memory state after successful disk save, preventing memory/disk divergence
 - No changes to `Settings`, `SettingsNotifier`, or `NostrService`
+
+**Test Coverage** (22 tests):
+- `mostro_node_test.dart` (14 tests): Serialization round-trips, optional field handling, `displayName`/`truncatedPubkey`, `withMetadata` copy semantics, pubkey-based equality/hashCode, `toJson`/`fromJson`
+- `mostro_nodes_notifier_test.dart` (18 tests): Init with trusted/custom/merged nodes, auto-import of unrecognized pubkeys (valid and invalid), `selectedNode` lookup, CRUD operations (`addCustomNode` with validation/duplicates/persistence, `removeCustomNode` with guards, `updateCustomNodeName`), metadata updates, `isTrustedNode` queries, corrupt SharedPreferences handling, `selectNode` delegation
 
 ### Phase 2: Kind 0 Metadata Fetching
 
@@ -148,6 +155,32 @@ class MostroNode {
 }
 ```
 
+### MostroNodesNotifier API
+
+```dart
+// Lifecycle
+Future<void> init();                                        // Load trusted + custom nodes, auto-import unrecognized pubkey
+
+// Selection
+MostroNode? get selectedNode;                               // Currently active node based on settings
+Future<void> selectNode(String pubkey);                     // Switch active node via SettingsNotifier
+
+// CRUD (custom nodes only)
+Future<bool> addCustomNode(String pubkey, {String? name});  // Add with validation (64-hex, no duplicates)
+Future<bool> removeCustomNode(String pubkey);               // Remove non-active, non-trusted node
+Future<bool> updateCustomNodeName(String pubkey, String newName); // Rename custom node
+
+// Metadata (in-memory only, for kind 0 data)
+void updateNodeMetadata(String pubkey, {String? name, ...});
+
+// Queries
+bool isTrustedNode(String pubkey);
+List<MostroNode> get trustedNodes;
+List<MostroNode> get customNodes;
+```
+
+All write operations return `false` on persistence failure without updating in-memory state.
+
 ### Storage
 
 | Data | Storage Location | Key |
@@ -156,6 +189,21 @@ class MostroNode {
 | Custom nodes | SharedPreferences | `mostro_custom_nodes` |
 | Active node | Settings (SharedPreferences) | `mostroPublicKey` |
 | Node metadata | In-memory only | N/A |
+
+## Error Handling Strategy
+
+The notifier uses a **resilient approach** — persistence failures are logged but never crash the app:
+
+| Method | On error | Behavior |
+|--------|----------|----------|
+| `_loadCustomNodes()` | Returns `[]` | Callers silently degrade to trusted-only nodes |
+| `_saveCustomNodes()` | Returns `false` | Callers check result before updating state |
+| `addCustomNode()` | Returns `false` | Node not added to memory if disk save fails |
+| `removeCustomNode()` | Returns `false` | Node stays in memory if disk save fails |
+| `updateCustomNodeName()` | Returns `false` | Name unchanged in memory if disk save fails |
+| `init()` auto-import save | Ignored | Imported node appears in memory for current session but won't persist |
+
+This ensures in-memory state never diverges from disk state during write operations, while keeping the app functional even when SharedPreferences fails.
 
 ## Backward Compatibility
 
