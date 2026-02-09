@@ -495,34 +495,32 @@ class RestoreService {
         // Derive trade key for this trade index
         final tradeKey = keyManager.deriveTradeKeyPair(tradeIndex);
 
-        // Determine role by comparing trade keys
+        // Determine role and peer by comparing trade keys
         Role? role;
+        Peer? peer;
         final userPubkey = tradeKey.public;
 
         if (orderDetail.buyerTradePubkey != null &&
             orderDetail.buyerTradePubkey == userPubkey) {
+          // User is buyer, seller is peer
           role = Role.buyer;
+          if (orderDetail.sellerTradePubkey != null) {
+            peer = Peer(publicKey: orderDetail.sellerTradePubkey!);
+            logger.d(
+                'Restore: Order ${orderDetail.id} - User is buyer, peer (seller) is ${orderDetail.sellerTradePubkey}');
+          }
         } else if (orderDetail.sellerTradePubkey != null &&
             orderDetail.sellerTradePubkey == userPubkey) {
+          // User is seller, buyer is peer
           role = Role.seller;
-        }
-
-        // Determine peer based on role
-        Peer? peer;
-        if (role == Role.buyer && orderDetail.sellerTradePubkey != null) {
-          // User is buyer, so the seller is their peer
-          peer = Peer(publicKey: orderDetail.sellerTradePubkey!);
-          logger.d(
-              'Restore: Order ${orderDetail.id} - User is buyer, peer (seller) is ${orderDetail.sellerTradePubkey}');
-        } else if (role == Role.seller &&
-            orderDetail.buyerTradePubkey != null) {
-          // User is seller, so the buyer is their peer
-          peer = Peer(publicKey: orderDetail.buyerTradePubkey!);
-          logger.d(
-              'Restore: Order ${orderDetail.id} - User is seller, peer (buyer) is ${orderDetail.buyerTradePubkey}');
+          if (orderDetail.buyerTradePubkey != null) {
+            peer = Peer(publicKey: orderDetail.buyerTradePubkey!);
+            logger.d(
+                'Restore: Order ${orderDetail.id} - User is seller, peer (buyer) is ${orderDetail.buyerTradePubkey}');
+          }
         } else {
           logger.w(
-              'Restore: Could not determine peer for order ${orderDetail.id} - role: $role, buyer: ${orderDetail.buyerTradePubkey}, seller: ${orderDetail.sellerTradePubkey}');
+              'Restore: Could not determine role/peer for order ${orderDetail.id} - userPubkey: $userPubkey, buyer: ${orderDetail.buyerTradePubkey}, seller: ${orderDetail.sellerTradePubkey}');
         }
 
         final session = Session(
