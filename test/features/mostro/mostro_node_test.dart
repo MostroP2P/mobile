@@ -104,6 +104,27 @@ void main() {
       expect(updated.about, 'New about');
     });
 
+    test('withMetadata clears fields when MostroNode.clear is passed', () {
+      final original = MostroNode(
+        pubkey: 'abcde12345fghij67890',
+        name: 'Name',
+        picture: 'https://pic.com',
+        website: 'https://site.com',
+        about: 'About text',
+      );
+
+      final cleared = original.withMetadata(
+        name: MostroNode.clear,
+        picture: MostroNode.clear,
+      );
+
+      expect(cleared.name, isNull);
+      expect(cleared.picture, isNull);
+      // Uncleared fields preserved
+      expect(cleared.website, 'https://site.com');
+      expect(cleared.about, 'About text');
+    });
+
     test('equality is based on pubkey', () {
       final node1 = MostroNode(pubkey: 'abcde12345fghij67890', name: 'Node 1');
       final node2 = MostroNode(pubkey: 'abcde12345fghij67890', name: 'Node 2');

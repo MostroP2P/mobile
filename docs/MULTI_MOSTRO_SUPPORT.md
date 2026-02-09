@@ -45,7 +45,7 @@ SharedPreferences (custom) ──┘           │
 
 ## Implementation Phases
 
-### Phase 1: Data Model, Trusted Nodes Registry + Documentation
+### Phase 1: Data Model, Trusted Nodes Registry + Documentation — Completed
 
 **Goal**: Establish the data layer for managing multiple Mostro nodes.
 
@@ -71,28 +71,35 @@ SharedPreferences (custom) ──┘           │
 - Persist-before-state pattern: write operations (`addCustomNode`, `removeCustomNode`, `updateCustomNodeName`) only update in-memory state after successful disk save, preventing memory/disk divergence
 - No changes to `Settings`, `SettingsNotifier`, or `NostrService`
 
-**Test Coverage** (37 tests):
-- `mostro_node_test.dart` (14 tests): Serialization round-trips, optional field handling, `displayName`/`truncatedPubkey`, `withMetadata` copy semantics, pubkey-based equality/hashCode, `toJson`/`fromJson`
-- `mostro_nodes_notifier_test.dart` (23 tests): Init with trusted/custom/merged nodes, auto-import of unrecognized pubkeys (valid and invalid), `selectedNode` lookup, CRUD operations (`addCustomNode` with validation/duplicates/persistence, `removeCustomNode` with guards, `updateCustomNodeName`), metadata updates, `isTrustedNode` queries, corrupt SharedPreferences handling, `selectNode` delegation
-
-### Phase 2: Kind 0 Metadata Fetching
+### Phase 2: Kind 0 Metadata Fetching — Completed
 
 **Goal**: Fetch and display Nostr profile metadata (name, picture, about) for each node.
 
-**Files Created**:
-- `lib/features/mostro/mostro_metadata_provider.dart` — Fire-and-forget metadata fetcher
-
 **Files Modified**:
-- `lib/services/nostr_service.dart` — Add `fetchKind0Metadata(pubkey)` method
-- `lib/shared/providers/app_init_provider.dart` — Trigger metadata fetch after init
+- `lib/features/mostro/mostro_node.dart` — Added `MostroNode.clear` sentinel for explicit field clearing in `withMetadata()`
+- `lib/features/mostro/mostro_nodes_notifier.dart` — Added `fetchAllNodeMetadata()`, `fetchNodeMetadata()`, `_applyMetadataFromEvent()`, `_sanitizeUrl()` methods
+- `lib/shared/providers/app_init_provider.dart` — Fire-and-forget metadata fetch via `unawaited()` after `init()`
+- `test/features/mostro/mostro_node_test.dart` — Added 1 test for `MostroNode.clear` sentinel
+- `test/features/mostro/mostro_nodes_notifier_test.dart` — Added 11 metadata fetch tests
 
 **Key Decisions**:
-- Metadata fetched asynchronously, never blocks app startup
-- Errors logged but never propagated
-- Both batch fetch (all nodes) and per-node refresh providers
-- Metadata stored in-memory on `MostroNode` objects (not persisted)
+- **No changes to `NostrService`**: `fetchEvents(filter)` already handles one-shot fetching with timeout; no wrapper needed
+- **Fetch logic in `MostroNodesNotifier`**: Keeps all node logic co-located; notifier has `_ref` to access `nostrServiceProvider`
+- **Batch fetch**: Single `NostrFilter(kinds: [0], authors: allPubkeys)` request — one round trip instead of N
+- **Deduplication**: Both `fetchAllNodeMetadata()` and `fetchNodeMetadata()` deduplicate across relays, keeping only the most recent event per pubkey (highest `createdAt`). `limit: 1` is a relay hint, not a guarantee, so single-node fetch also deduplicates
+- **Signature verification**: `_applyMetadataFromEvent()` calls `event.isVerified()` before applying metadata; forged events with invalid signatures are logged and silently skipped
+- **URL sanitization**: `picture` and `website` fields are validated via `_sanitizeUrl()` — only `https://` URLs pass through; `javascript:`, `http://`, `data:`, and other schemes are rejected (set to `null`)
+- **Mounted guard**: Both fetch methods check `mounted` after the async `fetchEvents` gap to avoid setting state on a disposed notifier
+- **In-memory only**: Metadata NOT persisted to disk; fetched fresh each app launch; `updateNodeMetadata()` updates state but doesn't call `_saveCustomNodes()`
+- **Fire-and-forget**: Metadata fetch triggered after `init()` via `unawaited()` — doesn't block app startup; UI updates reactively when state changes
+- **Resilient**: All errors caught and logged, never propagated; missing/malformed metadata silently skipped
+- **Explicit field clearing**: `MostroNode.withMetadata()` supports a `MostroNode.clear` sentinel to explicitly set fields to `null`, while omitting a field preserves the existing value
 
-### Phase 3: UI — Node Selector + Add Custom Node
+**Test Coverage** (49 tests total across Phase 1 + Phase 2):
+- `mostro_node_test.dart` (15 tests): Serialization round-trips, optional field handling, `displayName`/`truncatedPubkey`, `withMetadata` copy semantics including `MostroNode.clear`, pubkey-based equality/hashCode, `toJson`/`fromJson`
+- `mostro_nodes_notifier_test.dart` (34 tests): Phase 1 tests (23) + metadata fetching tests (11): batch fetch with kind 0 events, deduplication keeping latest, URL sanitization (rejects non-https, accepts https), empty event list handling, malformed JSON content, network error resilience, unverified event rejection, single-node fetch deduplication across relays, single-node fetch, non-map JSON content
+
+### Phase 3: UI — Node Selector + Add Custom Node — To implement
 
 **Goal**: Allow users to browse, select, and manage Mostro nodes from the UI.
 
@@ -114,7 +121,7 @@ SharedPreferences (custom) ──┘           │
 - Validate custom node pubkey format (64 hex chars) in the Add Custom Node dialog
 - Debounce node switching to prevent race conditions during rapid selection changes
 
-### Phase 4: Integration Testing
+### Phase 4: Integration Testing — To implement
 
 **Goal**: Verify end-to-end flows for node switching and management.
 
@@ -129,7 +136,7 @@ SharedPreferences (custom) ──┘           │
 - Relay reconnection after node switch
 - Settings persistence across app restart
 
-### Phase 5: Polish + Edge Cases
+### Phase 5: Polish + Edge Cases — To implement
 
 **Goal**: Handle edge cases, improve UX, and finalize documentation.
 
@@ -172,6 +179,8 @@ Future<bool> updateCustomNodeName(String pubkey, String newName); // Rename cust
 
 // Metadata (in-memory only, for kind 0 data)
 void updateNodeMetadata(String pubkey, {String? name, ...});
+Future<void> fetchAllNodeMetadata();                        // Batch fetch kind 0 for all nodes (deduplicates, verifies, sanitizes)
+Future<void> fetchNodeMetadata(String pubkey);              // Single-node kind 0 fetch (deduplicates, verifies, sanitizes)
 
 // Queries
 bool isTrustedNode(String pubkey);

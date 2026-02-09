@@ -1,10 +1,12 @@
 import 'dart:convert';
+import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/enums/storage_keys.dart';
 import 'package:mostro_mobile/features/mostro/mostro_node.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
+import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
@@ -174,6 +176,87 @@ class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
       }
       return n;
     }).toList();
+  }
+
+  /// Fetch kind 0 metadata for all nodes in a single batch request
+  Future<void> fetchAllNodeMetadata() async {
+    final pubkeys = state.map((n) => n.pubkey).toList();
+    if (pubkeys.isEmpty) return;
+
+    try {
+      final nostrService = _ref.read(nostrServiceProvider);
+      final filter = NostrFilter(kinds: const [0], authors: pubkeys);
+      final events = await nostrService.fetchEvents(filter);
+      if (!mounted) return;
+
+      // Deduplicate: keep most recent event per pubkey
+      final latestByPubkey = <String, NostrEvent>{};
+      for (final event in events) {
+        final existing = latestByPubkey[event.pubkey];
+        if (existing == null ||
+            (event.createdAt?.isAfter(existing.createdAt ?? DateTime(0)) ??
+                false)) {
+          latestByPubkey[event.pubkey] = event;
+        }
+      }
+
+      for (final event in latestByPubkey.values) {
+        _applyMetadataFromEvent(event);
+      }
+    } catch (e) {
+      logger.e('Failed to fetch node metadata: $e');
+    }
+  }
+
+  /// Fetch kind 0 metadata for a single node
+  Future<void> fetchNodeMetadata(String pubkey) async {
+    try {
+      final nostrService = _ref.read(nostrServiceProvider);
+      final filter =
+          NostrFilter(kinds: const [0], authors: [pubkey], limit: 1);
+      final events = await nostrService.fetchEvents(filter);
+      if (!mounted || events.isEmpty) return;
+
+      // Deduplicate: limit is a relay hint, multiple relays may return events
+      var latest = events.first;
+      for (var i = 1; i < events.length; i++) {
+        final event = events[i];
+        if (event.createdAt?.isAfter(latest.createdAt ?? DateTime(0)) ??
+            false) {
+          latest = event;
+        }
+      }
+      _applyMetadataFromEvent(latest);
+    } catch (e) {
+      logger.e('Failed to fetch metadata for $pubkey: $e');
+    }
+  }
+
+  void _applyMetadataFromEvent(NostrEvent event) {
+    try {
+      if (!event.isVerified()) {
+        logger.w('Ignoring unverified kind 0 event for ${event.pubkey}');
+        return;
+      }
+      final json = jsonDecode(event.content ?? '') as Map<String, dynamic>;
+      updateNodeMetadata(
+        event.pubkey,
+        name: json['name'] as String?,
+        picture: _sanitizeUrl(json['picture'] as String?),
+        website: _sanitizeUrl(json['website'] as String?),
+        about: json['about'] as String?,
+      );
+    } catch (e) {
+      logger.e('Failed to parse metadata for ${event.pubkey}: $e');
+    }
+  }
+
+  /// Returns the URL only if it uses the https scheme, otherwise null.
+  static String? _sanitizeUrl(String? url) {
+    if (url == null || url.isEmpty) return null;
+    final uri = Uri.tryParse(url);
+    if (uri == null || uri.scheme != 'https') return null;
+    return url;
   }
 
   /// Check if a pubkey belongs to a trusted node
