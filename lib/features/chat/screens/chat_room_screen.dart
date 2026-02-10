@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
+import 'package:mostro_mobile/features/chat/widgets/chat_error_screen.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/features/chat/widgets/chat_messages_list.dart';
 import 'package:mostro_mobile/features/chat/widgets/info_buttons.dart';
@@ -44,106 +45,17 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
     final chatDetailState = ref.watch(chatRoomsProvider(widget.orderId));
     final chatNotifier = ref.watch(chatRoomsProvider(widget.orderId).notifier);
     final session = ref.read(sessionProvider(widget.orderId));
-
+    
     // Validate session exists
     if (session == null) {
       logger.e('ChatRoomScreen: Session not found for order ${widget.orderId}');
-      return Scaffold(
-        backgroundColor: AppTheme.backgroundDark,
-        appBar: AppBar(
-          backgroundColor: AppTheme.backgroundDark,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: AppTheme.cream1),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-          title: const Text(
-            'Back',
-            style: TextStyle(color: AppTheme.cream1),
-          ),
-        ),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.error_outline,
-                size: 64,
-                color: AppTheme.textSecondary,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Session not found',
-                style: TextStyle(
-                  color: AppTheme.textPrimary,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Unable to load chat session for this order',
-                style: TextStyle(
-                  color: AppTheme.textSecondary,
-                  fontSize: 14,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      );
+      return ChatErrorScreen.sessionNotFound(context);
     }
-
     // Validate peer exists
     if (session.peer == null) {
       logger.e(
           'ChatRoomScreen: Peer not found in session for order ${widget.orderId}');
-      return Scaffold(
-        backgroundColor: AppTheme.backgroundDark,
-        appBar: AppBar(
-          backgroundColor: AppTheme.backgroundDark,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: AppTheme.cream1),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-          title: const Text(
-            'Back',
-            style: TextStyle(color: AppTheme.cream1),
-          ),
-        ),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.person_off_outlined,
-                size: 64,
-                color: AppTheme.textSecondary,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Peer information unavailable',
-                style: TextStyle(
-                  color: AppTheme.textPrimary,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Chat partner information could not be loaded',
-                style: TextStyle(
-                  color: AppTheme.textSecondary,
-                  fontSize: 14,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      );
+      return ChatErrorScreen.peerUnavailable(context);
     }
 
     final peer = session.peer!.publicKey;

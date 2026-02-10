@@ -1337,6 +1337,12 @@
   "privacyBulletEncryptedTokens": "Los tokens del dispositivo se encriptan antes del registro",
   "privacyBulletLocalDecryption": "Todos los mensajes se desencriptan localmente en tu dispositivo",
   "notificationSettings": "Configuración de Notificaciones",
-  "notificationSettingsDescription": "Configurar preferencias de notificaciones push"
+  "notificationSettingsDescription": "Configurar preferencias de notificaciones push",
+
+  "@_comment_chat_error_screens": "Chat Error Screen Strings",
+  "sessionNotFound": "Sesión no encontrada",
+  "unableToLoadChatSession": "No se pudo cargar la sesión de chat para esta orden",
+  "peerInformationUnavailable": "Información del usuario no disponible",
+  "chatPartnerCouldNotBeLoaded": "No se pudo cargar la información del compañero de chat"
 
 }
