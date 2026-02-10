@@ -37,10 +37,10 @@ class MostroNodeAvatar extends StatelessWidget {
             );
           },
           errorBuilder: (_, __, ___) =>
-              NymAvatar(pubkeyHex: node.pubkey, size: size / 2),
+              NymAvatar(pubkeyHex: node.pubkey, size: size),
         ),
       );
     }
-    return NymAvatar(pubkeyHex: node.pubkey, size: size / 2);
+    return NymAvatar(pubkeyHex: node.pubkey, size: size);
   }
 }
