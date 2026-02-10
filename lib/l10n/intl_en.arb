@@ -1377,6 +1377,7 @@
   "invalidPubkeyFormat": "Invalid public key format. Enter 64-char hex or npub",
   "nodeAddedSuccess": "Node added successfully",
   "nodeRemovedSuccess": "Node removed",
+  "nodeRemoveFailed": "Failed to remove node, please try again",
   "cannotRemoveActiveNode": "Cannot remove the currently active node",
   "deleteCustomNodeTitle": "Remove Custom Node",
   "deleteCustomNodeMessage": "Are you sure you want to remove this custom node?",

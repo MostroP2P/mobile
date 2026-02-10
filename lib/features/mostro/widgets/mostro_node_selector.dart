@@ -391,10 +391,16 @@ class _MostroNodeSelectorState extends ConsumerState<MostroNodeSelector> {
 
     if (shouldDelete == true) {
       final removed = await notifier.removeCustomNode(node.pubkey);
-      if (removed && mounted) {
+      if (!mounted) return;
+      if (removed) {
         SnackBarHelper.showTopSnackBar(
           context,
           localizations.nodeRemovedSuccess,
+        );
+      } else {
+        SnackBarHelper.showTopSnackBar(
+          context,
+          localizations.nodeRemoveFailed,
         );
       }
     }

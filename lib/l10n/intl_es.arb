@@ -1353,6 +1353,7 @@
   "invalidPubkeyFormat": "Formato de clave pública inválido. Ingresa hex de 64 caracteres o npub",
   "nodeAddedSuccess": "Nodo agregado exitosamente",
   "nodeRemovedSuccess": "Nodo eliminado",
+  "nodeRemoveFailed": "Error al eliminar el nodo, inténtalo de nuevo",
   "cannotRemoveActiveNode": "No se puede eliminar el nodo actualmente activo",
   "deleteCustomNodeTitle": "Eliminar Nodo Personalizado",
   "deleteCustomNodeMessage": "¿Estás seguro de que quieres eliminar este nodo personalizado?",
