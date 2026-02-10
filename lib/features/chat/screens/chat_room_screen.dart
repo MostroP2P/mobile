@@ -279,7 +279,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                   border: Border(
                     top: BorderSide(
                       color: Colors.grey.withValues(
-                          alpha: 8), // 0.03 opacity - extremely subtle
+                          alpha: 0.03), // 0.03 opacity - extremely subtle
                       width: 0.3, // Even thinner line
                     ),
                   ),

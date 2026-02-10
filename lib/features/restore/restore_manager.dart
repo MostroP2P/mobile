@@ -551,7 +551,7 @@ class RestoreService {
 
       // Wait for historical messages to arrive and be saved to storage
       logger.i(
-          'Restore: waiting 8 seconds for historical messages to be saved...');
+          'Restore: waiting 10 seconds for historical messages to be saved...');
       //WARNING: It is very important to wait here to ensure all historical messages arrive before rebuilding state
       // Relays could send them with delay
       await Future.delayed(const Duration(seconds: 10));
