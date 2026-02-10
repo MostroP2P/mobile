@@ -158,10 +158,10 @@ class AddCustomNodeDialog {
                         return;
                       }
 
-                      // Convert npub to hex if needed
+                      // Convert npub to hex if needed, then normalize
                       String hexPubkey;
                       try {
-                        hexPubkey = _convertToHex(input);
+                        hexPubkey = _convertToHex(input).toLowerCase();
                       } catch (_) {
                         setState(() {
                           errorMessage =
