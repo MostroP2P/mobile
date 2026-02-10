@@ -1337,6 +1337,42 @@
   "privacyBulletEncryptedTokens": "Los tokens del dispositivo se encriptan antes del registro",
   "privacyBulletLocalDecryption": "Todos los mensajes se desencriptan localmente en tu dispositivo",
   "notificationSettings": "Configuración de Notificaciones",
-  "notificationSettingsDescription": "Configurar preferencias de notificaciones push"
+  "notificationSettingsDescription": "Configurar preferencias de notificaciones push",
+
+  "selectMostroNode": "Seleccionar Nodo Mostro",
+  "mostroNodeDescription": "Selecciona el nodo Mostro en el que quieres operar",
+  "trustedNodesSection": "Nodos de Confianza",
+  "customNodesSection": "Nodos Personalizados",
+  "addCustomNode": "Agregar Nodo Personalizado",
+  "addCustomNodeTitle": "Agregar Nodo Personalizado",
+  "enterNodePubkey": "Clave Pública",
+  "enterNodeName": "Nombre (opcional)",
+  "pubkeyHint": "Formato hex o npub",
+  "nodeNameHint": "Nombre amigable para este nodo",
+  "nodeAlreadyExists": "Este nodo ya existe",
+  "invalidPubkeyFormat": "Formato de clave pública inválido. Ingresa hex de 64 caracteres o npub",
+  "nodeAddedSuccess": "Nodo agregado exitosamente",
+  "nodeRemovedSuccess": "Nodo eliminado",
+  "cannotRemoveActiveNode": "No se puede eliminar el nodo actualmente activo",
+  "deleteCustomNodeTitle": "Eliminar Nodo Personalizado",
+  "deleteCustomNodeMessage": "¿Estás seguro de que quieres eliminar este nodo personalizado?",
+  "deleteCustomNodeConfirm": "Eliminar",
+  "deleteCustomNodeCancel": "Cancelar",
+  "switchingToNode": "Cambiando a {nodeName}...",
+  "@switchingToNode": {
+    "placeholders": {
+      "nodeName": {"type": "String"}
+    }
+  },
+  "nodeSwitchedSuccess": "Cambiado a {nodeName}",
+  "@nodeSwitchedSuccess": {
+    "placeholders": {
+      "nodeName": {"type": "String"}
+    }
+  },
+  "trusted": "Confiable",
+  "noCustomNodesYet": "No se han agregado nodos personalizados",
+  "pubkeyRequired": "La clave pública es requerida",
+  "tapToSelectNode": "Toca para cambiar"
 
 }

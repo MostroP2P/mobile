@@ -24,6 +24,12 @@ class MostroNode {
   /// Usage: `node.withMetadata(name: MostroNode.clear)`
   static const String clear = _clearField;
 
+  /// Validates a 64-character hex public key string.
+  static final RegExp hexPubkeyRegex = RegExp(r'^[0-9a-fA-F]{64}$');
+
+  /// Returns true if [value] is a valid 64-character hex public key.
+  static bool isValidHexPubkey(String value) => hexPubkeyRegex.hasMatch(value);
+
   String get displayName => name ?? truncatedPubkey;
 
   String get truncatedPubkey => pubkey.length > 10
