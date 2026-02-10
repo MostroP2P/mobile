@@ -35,6 +35,7 @@ import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/notifications/providers/notifications_provider.dart';
+import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 
 enum RestoreStage {
   gettingRestoreData,
@@ -536,6 +537,14 @@ class RestoreService {
 
         // Store session
         await sessionNotifier.saveSession(session);
+
+        // Initialize chat subscription  after saving session
+        // This ensures the listener is active before historical messages arrive
+        // The broadcast stream loses events if no one is listening
+        if (peer != null) {
+          ref.read(chatRoomsProvider(orderDetail.id).notifier).subscribe();
+          logger.d('Restore: initialized chat listener for order ${orderDetail.id}');
+        }
 
         progress.incrementProgress();
       }
