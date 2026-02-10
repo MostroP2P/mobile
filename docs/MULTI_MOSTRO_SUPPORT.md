@@ -26,7 +26,7 @@ The existing `Settings.mostroPublicKey` field remains the single source of truth
 
 ### Data Flow
 
-```
+```text
 Config.trustedMostroNodes ──┐
                              ├──▶ MostroNodesNotifier ──▶ UI (Node Selector)
 SharedPreferences (custom) ──┘           │
