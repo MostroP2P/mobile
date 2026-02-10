@@ -189,6 +189,9 @@ class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
       }
       return n;
     }).toList();
+
+    // Persist metadata for custom nodes so it survives app restart
+    _saveCustomNodes(customNodes);
   }
 
   /// Fetch kind 0 metadata for all nodes in a single batch request

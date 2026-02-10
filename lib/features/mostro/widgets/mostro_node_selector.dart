@@ -234,12 +234,29 @@ class _MostroNodeSelectorState extends ConsumerState<MostroNodeSelector> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        node.truncatedPubkey,
+                        node.pubkey,
                         style: const TextStyle(
                           color: AppTheme.textSecondary,
                           fontSize: 12,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
+                      if (node.about != null &&
+                          node.about!.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          node.about!.length > 128
+                              ? '${node.about!.substring(0, 128)}...'
+                              : node.about!,
+                          style: const TextStyle(
+                            color: AppTheme.textSecondary,
+                            fontSize: 12,
+                          ),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ],
                   ),
                 ),

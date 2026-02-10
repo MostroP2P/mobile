@@ -95,8 +95,8 @@ SharedPreferences (custom) ──┘           │
 - **Resilient**: All errors caught and logged, never propagated; missing/malformed metadata silently skipped
 - **Explicit field clearing**: `MostroNode.withMetadata()` supports a `MostroNode.clear` sentinel to explicitly set fields to `null`, while omitting a field preserves the existing value
 
-**Test Coverage** (49 tests total across Phase 1 + Phase 2):
-- `mostro_node_test.dart` (15 tests): Serialization round-trips, optional field handling, `displayName`/`truncatedPubkey`, `withMetadata` copy semantics including `MostroNode.clear`, pubkey-based equality/hashCode, `toJson`/`fromJson`
+**Test Coverage** (46 tests total across Phase 1 + Phase 2):
+- `mostro_node_test.dart` (12 tests): Serialization round-trips, optional field handling, `displayName`, `withMetadata` copy semantics including `MostroNode.clear`, pubkey-based equality/hashCode, `toJson`/`fromJson`
 - `mostro_nodes_notifier_test.dart` (34 tests): Phase 1 tests (23) + metadata fetching tests (11): batch fetch with kind 0 events, deduplication keeping latest, URL sanitization (rejects non-https, accepts https), empty event list handling, malformed JSON content, network error resilience, unverified event rejection, single-node fetch deduplication across relays, single-node fetch, non-map JSON content
 
 ### Phase 3: UI — Node Selector + Add Custom Node — Completed

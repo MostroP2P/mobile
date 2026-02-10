@@ -30,11 +30,7 @@ class MostroNode {
   /// Returns true if [value] is a valid 64-character hex public key.
   static bool isValidHexPubkey(String value) => hexPubkeyRegex.hasMatch(value);
 
-  String get displayName => name ?? truncatedPubkey;
-
-  String get truncatedPubkey => pubkey.length > 10
-      ? '${pubkey.substring(0, 5)}...${pubkey.substring(pubkey.length - 5)}'
-      : pubkey;
+  String get displayName => name ?? pubkey;
 
   /// Returns a copy with updated metadata fields.
   /// - Pass a value to set it.
@@ -94,6 +90,6 @@ class MostroNode {
 
   @override
   String toString() {
-    return 'MostroNode(pubkey: $truncatedPubkey, name: $name, trusted: $isTrusted)';
+    return 'MostroNode(pubkey: $pubkey, name: $name, trusted: $isTrusted)';
   }
 }

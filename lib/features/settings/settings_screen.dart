@@ -704,11 +704,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                selectedNode.truncatedPubkey,
+                                selectedNode.pubkey,
                                 style: const TextStyle(
                                   color: AppTheme.textSecondary,
                                   fontSize: 12,
                                 ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: 2),
                               Text(
