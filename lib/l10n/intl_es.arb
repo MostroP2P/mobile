@@ -1370,6 +1370,7 @@
       "nodeName": {"type": "String"}
     }
   },
+  "errorSwitchingNode": "Error al cambiar de nodo, inténtalo de nuevo",
   "trusted": "Confiable",
   "noCustomNodesYet": "No se han agregado nodos personalizados",
   "pubkeyRequired": "La clave pública es requerida",

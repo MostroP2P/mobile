@@ -1394,6 +1394,7 @@
       "nodeName": {"type": "String"}
     }
   },
+  "errorSwitchingNode": "Error switching node, please try again",
   "trusted": "Trusted",
   "noCustomNodesYet": "No custom nodes added yet",
   "pubkeyRequired": "Public key is required",

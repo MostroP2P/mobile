@@ -1425,6 +1425,7 @@
       "nodeName": {"type": "String"}
     }
   },
+  "errorSwitchingNode": "Errore nel cambio di nodo, riprova",
   "trusted": "Affidabile",
   "noCustomNodesYet": "Nessun nodo personalizzato aggiunto",
   "pubkeyRequired": "La chiave pubblica è obbligatoria",

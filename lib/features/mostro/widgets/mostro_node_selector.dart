@@ -24,8 +24,7 @@ class MostroNodeSelector extends ConsumerStatefulWidget {
   }
 
   @override
-  ConsumerState<MostroNodeSelector> createState() =>
-      _MostroNodeSelectorState();
+  ConsumerState<MostroNodeSelector> createState() => _MostroNodeSelectorState();
 }
 
 class _MostroNodeSelectorState extends ConsumerState<MostroNodeSelector> {
@@ -186,9 +185,7 @@ class _MostroNodeSelectorState extends ConsumerState<MostroNodeSelector> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: (_isSwitching || isSelected)
-              ? null
-              : () => _onNodeTap(node),
+          onTap: (_isSwitching || isSelected) ? null : () => _onNodeTap(node),
           borderRadius: BorderRadius.circular(12),
           child: Container(
             padding: const EdgeInsets.all(14),
@@ -242,8 +239,7 @@ class _MostroNodeSelectorState extends ConsumerState<MostroNodeSelector> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      if (node.about != null &&
-                          node.about!.isNotEmpty) ...[
+                      if (node.about != null && node.about!.isNotEmpty) ...[
                         const SizedBox(height: 4),
                         Text(
                           node.about!.length > 128
@@ -279,9 +275,7 @@ class _MostroNodeSelectorState extends ConsumerState<MostroNodeSelector> {
                   )
                 else if (isCustom)
                   IconButton(
-                    onPressed: _isSwitching
-                        ? null
-                        : () => _onDeleteNode(node),
+                    onPressed: _isSwitching ? null : () => _onDeleteNode(node),
                     tooltip: S.of(context)!.deleteCustomNodeTitle,
                     icon: const Icon(
                       Icons.delete_outline,
@@ -346,7 +340,7 @@ class _MostroNodeSelectorState extends ConsumerState<MostroNodeSelector> {
         messenger: messenger,
         screenHeight: mediaQuery.size.height,
         statusBarHeight: mediaQuery.padding.top,
-        message: e.toString(),
+        message: localizations.errorSwitchingNode,
       );
     }
   }
