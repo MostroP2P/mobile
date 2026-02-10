@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -47,6 +49,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
   String? _validationError;
   bool _isRangeMode = false;
   String? _fixedPriceRangeError;
+  Timer? _fixedPriceRangeErrorTimer;
 
   List<String> _selectedPaymentMethods = [];
   bool _showCustomPaymentMethod = false;
@@ -83,6 +86,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
 
   @override
   void dispose() {
+    _fixedPriceRangeErrorTimer?.cancel();
     _scrollController.dispose();
     _lightningAddressController.dispose();
     _customPaymentMethodController.dispose();
@@ -101,10 +105,11 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
   }
 
   void _showFixedPriceRangeError() {
+    _fixedPriceRangeErrorTimer?.cancel();
     setState(() {
       _fixedPriceRangeError = S.of(context)!.fixedPriceDisabledForRange;
     });
-    Future.delayed(const Duration(seconds: 5), () {
+    _fixedPriceRangeErrorTimer = Timer(const Duration(seconds: 5), () {
       if (mounted) {
         setState(() {
           _fixedPriceRangeError = null;
