@@ -1392,5 +1392,8 @@
   "privacyBulletEncryptedTokens": "I token del dispositivo vengono crittografati prima della registrazione",
   "privacyBulletLocalDecryption": "Tutti i messaggi vengono decrittati localmente sul tuo dispositivo",
   "notificationSettings": "Impostazioni Notifiche",
-  "notificationSettingsDescription": "Configura le preferenze delle notifiche push"
+  "notificationSettingsDescription": "Configura le preferenze delle notifiche push",
+
+  "@_comment_range_fixed_price": "Esclusività reciproca tra ordine a intervallo e prezzo fisso",
+  "fixedPriceDisabledForRange": "Il prezzo fisso non è disponibile per gli ordini a intervallo. Rimuovi l'importo massimo per usare il prezzo fisso."
 }

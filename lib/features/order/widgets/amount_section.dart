@@ -10,6 +10,7 @@ class AmountSection extends StatefulWidget {
   final Function(int? minAmount, int? maxAmount) onAmountChanged;
   final String? Function(double)? validateSatsRange;
   final String? validationError;
+  final ValueChanged<bool>? onRangeModeChanged;
 
   const AmountSection({
     super.key,
@@ -17,6 +18,7 @@ class AmountSection extends StatefulWidget {
     required this.onAmountChanged,
     this.validateSatsRange,
     this.validationError,
+    this.onRangeModeChanged,
   });
 
   @override
@@ -61,9 +63,13 @@ class _AmountSectionState extends State<AmountSection> {
         _showSecondInput = hasContent;
         if (!hasContent) {
           // Reset everything when min amount is cleared
+          final wasRangeMode = _isRangeMode;
           _isRangeMode = false;
           _hasUserInteractedWithSecondField = false;
           _maxAmountController.clear();
+          if (wasRangeMode) {
+            widget.onRangeModeChanged?.call(false);
+          }
         }
       });
     }
@@ -71,9 +77,12 @@ class _AmountSectionState extends State<AmountSection> {
   }
 
   void _onMaxAmountChanged() {
+    final hasMax = _maxAmountController.text.isNotEmpty;
+    final isEffectivelyRange = _isRangeMode && hasMax;
     // Trigger rebuild to show/hide badge when max amount content changes
     setState(() {});
     _notifyAmountChanged();
+    widget.onRangeModeChanged?.call(isEffectivelyRange);
   }
 
   void _onMaxAmountFocusChanged() {
@@ -82,6 +91,7 @@ class _AmountSectionState extends State<AmountSection> {
         _isRangeMode = true;
         _hasUserInteractedWithSecondField = true;
       });
+      widget.onRangeModeChanged?.call(true);
     }
   }
 

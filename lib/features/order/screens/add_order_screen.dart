@@ -45,6 +45,8 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
   int? _minFiatAmount;
   int? _maxFiatAmount;
   String? _validationError;
+  bool _isRangeMode = false;
+  String? _fixedPriceRangeError;
 
   List<String> _selectedPaymentMethods = [];
   bool _showCustomPaymentMethod = false;
@@ -96,6 +98,37 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
       // Use comprehensive validation to check all error conditions
       _validationError = _validateAllAmounts();
     });
+  }
+
+  void _showFixedPriceRangeError() {
+    setState(() {
+      _fixedPriceRangeError = S.of(context)!.fixedPriceDisabledForRange;
+    });
+    Future.delayed(const Duration(seconds: 5), () {
+      if (mounted) {
+        setState(() {
+          _fixedPriceRangeError = null;
+        });
+      }
+    });
+  }
+
+  void _onRangeModeChanged(bool isRange) {
+    final wasFixedPrice = !_marketRate;
+    setState(() {
+      _isRangeMode = isRange;
+      if (isRange && wasFixedPrice) {
+        _marketRate = true;
+        _satsAmountController.clear();
+      }
+      if (!isRange) {
+        _fixedPriceRangeError = null;
+      }
+      _validationError = _validateAllAmounts();
+    });
+    if (isRange && wasFixedPrice) {
+      _showFixedPriceRangeError();
+    }
   }
 
   /// Converts fiat amount to sats using exchange rate
@@ -260,6 +293,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
                           onAmountChanged: _onAmountChanged,
                           validateSatsRange: _validateSatsRange,
                           validationError: _validationError,
+                          onRangeModeChanged: _onRangeModeChanged,
                         ),
                         const SizedBox(height: 16),
                         PaymentMethodsSection(
@@ -276,8 +310,14 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
                         const SizedBox(height: 16),
                         PriceTypeSection(
                           isMarketRate: _marketRate,
+                          errorMessage: _fixedPriceRangeError,
                           onToggle: (value) {
+                            if (!value && _isRangeMode) {
+                              _showFixedPriceRangeError();
+                              return;
+                            }
                             setState(() {
+                              _fixedPriceRangeError = null;
                               _marketRate = value;
                             });
                           },

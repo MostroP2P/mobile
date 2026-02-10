@@ -1361,6 +1361,9 @@
   "privacyBulletEncryptedTokens": "Device tokens are encrypted before registration",
   "privacyBulletLocalDecryption": "All messages are decrypted locally on your device",
   "notificationSettings": "Notification Settings",
-  "notificationSettingsDescription": "Configure push notification preferences"
+  "notificationSettingsDescription": "Configure push notification preferences",
+
+  "@_comment_range_fixed_price": "Range order and fixed price mutual exclusivity",
+  "fixedPriceDisabledForRange": "Fixed price is not available for range orders. Remove the max amount to use fixed price."
 
 }

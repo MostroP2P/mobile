@@ -1337,6 +1337,9 @@
   "privacyBulletEncryptedTokens": "Los tokens del dispositivo se encriptan antes del registro",
   "privacyBulletLocalDecryption": "Todos los mensajes se desencriptan localmente en tu dispositivo",
   "notificationSettings": "Configuración de Notificaciones",
-  "notificationSettingsDescription": "Configurar preferencias de notificaciones push"
+  "notificationSettingsDescription": "Configurar preferencias de notificaciones push",
+
+  "@_comment_range_fixed_price": "Exclusividad mutua entre orden de rango y precio fijo",
+  "fixedPriceDisabledForRange": "El precio fijo no está disponible para órdenes de rango. Elimina la cantidad máxima para usar precio fijo."
 
 }
