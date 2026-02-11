@@ -177,15 +177,41 @@ Settings Screen
 - `mostro_nodes_notifier_test.dart`: 34 tests (CRUD, backward compat, metadata fetching)
 - `mostro_integration_test.dart`: 23 tests (cross-component flows, persistence, relay reset, edge cases)
 
-### Phase 5: Polish + Edge Cases — To implement
+### Phase 5: Polish + Edge Cases — Completed
 
-**Goal**: Handle edge cases, improve UX, and finalize documentation.
+**Goal**: Handle edge cases, improve UX, finalize documentation, and add performance stress tests.
 
-**Work Items**:
-- Handle offline metadata fetch gracefully
-- Add loading indicators during node switch
-- Update CLAUDE.md with multi-Mostro architecture notes
-- Performance testing with many custom nodes
+**Work Items Analysis**:
+
+| Work Item | Status | Notes |
+|-----------|--------|-------|
+| Handle offline metadata fetch gracefully | Done in Phase 3 | `MostroNodeAvatar` uses `Image.network` with loading spinner + `NymAvatar` fallback on error. `fetchAllNodeMetadata()` catches all errors and logs. Fire-and-forget at startup. |
+| Add loading indicators during node switch | Done in Phase 3 | `_isSwitching` flag + per-node `CircularProgressIndicator` in `MostroNodeSelector`. Disables all interactions during switch. Error/revert handling with SnackBars. |
+| Update CLAUDE.md with multi-Mostro architecture notes | Done in Phase 5 | Added "Multi-Mostro Instance Support" section under Architecture Overview |
+| Performance testing with many custom nodes | Done in Phase 5 | 5 stress tests with 50 custom nodes |
+
+**Files Created**:
+- `test/features/mostro/mostro_nodes_performance_test.dart` — 5 performance/stress tests
+
+**Files Modified**:
+- `CLAUDE.md` — Added "Multi-Mostro Instance Support" subsection under Architecture Overview (10 bullet points covering node types, core files, UI components, kind 0 metadata, storage, node switching, backward compatibility, error resilience)
+- `docs/MULTI_MOSTRO_SUPPORT.md` — This section (Phase 5 expanded and marked completed)
+
+**Performance Test Details** (5 tests):
+
+| Test | What it verifies |
+|------|-----------------|
+| Add 50 custom nodes and verify all persisted | All 50 added, state length = trusted + 50, persistence round-trip with fresh notifier |
+| selectedNode lookup with last node in large list | Correct node returned when active node is the last in a list of 50+ |
+| Remove node from middle of large list | List integrity after removing node 25/50, surrounding nodes intact, removal persisted |
+| Batch metadata update for all nodes | `updateNodeMetadata()` for all 50+ nodes, all fields updated correctly |
+| Init with 50 pre-existing nodes completes promptly | `init()` loads 50 nodes from storage in under 1 second |
+
+**Test Coverage Summary** (74 total across Phases 1-5):
+- `mostro_node_test.dart`: 12 tests (model serialization, equality, metadata)
+- `mostro_nodes_notifier_test.dart`: 34 tests (CRUD, backward compat, metadata fetching)
+- `mostro_integration_test.dart`: 23 tests (cross-component flows, persistence, relay reset, edge cases)
+- `mostro_nodes_performance_test.dart`: 5 tests (stress testing with 50 custom nodes)
 
 ## Model Reference
 
