@@ -425,7 +425,7 @@
   "enterAmountHint": "Enter amount",
   "pleaseEnterAmount": "Please enter an amount",
   "pleaseEnterValidAmount": "Please enter a valid amount",
-  "fiatAmountTooHigh": "The fiat amount is too high, please add a new fiat amount, the allowed range is between {minAmount} and {maxAmount} sats",
+  "fiatAmountTooHigh": "The fiat amount is too high. The Mostro node you are using allows between {minAmount} and {maxAmount} sats.",
   "@fiatAmountTooHigh": {
     "placeholders": {
       "minAmount": {
@@ -438,7 +438,7 @@
       }
     }
   },
-  "fiatAmountTooLow": "The fiat amount is too low, please add a new fiat amount, the allowed range is between {minAmount} and {maxAmount} sats",
+  "fiatAmountTooLow": "The fiat amount is too low. The Mostro node you are using allows between {minAmount} and {maxAmount} sats.",
   "@fiatAmountTooLow": {
     "placeholders": {
       "minAmount": {

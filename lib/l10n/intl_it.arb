@@ -367,7 +367,7 @@
   "enterAmountHint": "Inserisci importo",
   "pleaseEnterAmount": "Per favore inserisci un importo",
   "pleaseEnterValidAmount": "Per favore inserisci un importo valido",
-  "fiatAmountTooHigh": "L'importo fiat è troppo alto, per favore inserisci un nuovo importo fiat, l'intervallo consentito è tra {minAmount} e {maxAmount} sats",
+  "fiatAmountTooHigh": "L'importo fiat è troppo alto. Il nodo Mostro che stai usando consente tra {minAmount} e {maxAmount} sats.",
   "@fiatAmountTooHigh": {
     "placeholders": {
       "minAmount": {
@@ -380,7 +380,7 @@
       }
     }
   },
-  "fiatAmountTooLow": "L'importo fiat è troppo basso, per favore inserisci un nuovo importo fiat, l'intervallo consentito è tra {minAmount} e {maxAmount} sats",
+  "fiatAmountTooLow": "L'importo fiat è troppo basso. Il nodo Mostro che stai usando consente tra {minAmount} e {maxAmount} sats.",
   "@fiatAmountTooLow": {
     "placeholders": {
       "minAmount": {
