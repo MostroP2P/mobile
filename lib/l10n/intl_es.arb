@@ -1339,6 +1339,45 @@
   "notificationSettings": "Configuración de Notificaciones",
   "notificationSettingsDescription": "Configurar preferencias de notificaciones push",
 
-  "fixedPriceDisabledForRange": "El precio fijo no está disponible para órdenes de rango. Elimina la cantidad máxima para usar precio fijo."
+  "fixedPriceDisabledForRange": "El precio fijo no está disponible para órdenes de rango. Elimina la cantidad máxima para usar precio fijo.",
+
+  "selectMostroNode": "Seleccionar Nodo Mostro",
+  "mostroNodeDescription": "Selecciona el nodo Mostro en el que quieres operar",
+  "trustedNodesSection": "Nodos de Confianza",
+  "customNodesSection": "Nodos Personalizados",
+  "addCustomNode": "Agregar Nodo Personalizado",
+  "addCustomNodeTitle": "Agregar Nodo Personalizado",
+  "enterNodePubkey": "Clave Pública",
+  "enterNodeName": "Nombre (opcional)",
+  "pubkeyHint": "Formato hex o npub",
+  "nodeNameHint": "Nombre amigable para este nodo",
+  "nodeAlreadyExists": "Este nodo ya existe",
+  "invalidPubkeyFormat": "Formato de clave pública inválido. Ingresa hex de 64 caracteres o npub",
+  "nodeAddedSuccess": "Nodo agregado exitosamente",
+  "nodeRemovedSuccess": "Nodo eliminado",
+  "nodeRemoveFailed": "Error al eliminar el nodo, inténtalo de nuevo",
+  "cannotRemoveActiveNode": "No se puede eliminar el nodo actualmente activo",
+  "deleteCustomNodeTitle": "Eliminar Nodo Personalizado",
+  "deleteCustomNodeMessage": "¿Estás seguro de que quieres eliminar este nodo personalizado?",
+  "deleteCustomNodeConfirm": "Eliminar",
+  "deleteCustomNodeCancel": "Cancelar",
+  "switchingToNode": "Cambiando a {nodeName}...",
+  "@switchingToNode": {
+    "placeholders": {
+      "nodeName": {"type": "String"}
+    }
+  },
+  "nodeSwitchedSuccess": "Cambiado a {nodeName}",
+  "@nodeSwitchedSuccess": {
+    "placeholders": {
+      "nodeName": {"type": "String"}
+    }
+  },
+  "errorSwitchingNode": "Error al cambiar de nodo, inténtalo de nuevo",
+  "trusted": "Confiable",
+  "noCustomNodesYet": "No se han agregado nodos personalizados",
+  "pubkeyRequired": "La clave pública es requerida",
+  "tapToSelectNode": "Toca para cambiar",
+  "nodeNotRespondingReverted": "El nodo no responde, se volvió al nodo anterior"
 
 }

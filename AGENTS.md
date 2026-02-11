@@ -28,3 +28,10 @@
 - Write concise, imperative commits, optionally prefixed with a scope (e.g., `feat:`, `docs:`), and squash to keep each change focused.
 - PR descriptions should capture intent, list key changes, link tracking issues, and flag risk areas; include command output for manual tests and screenshots for UI updates.
 - Keep branches rebased, and reference relevant docs or tickets when requesting review.
+
+## Documentation & Markdown
+- Add a language specifier to every fenced code block. Static analysis (markdownlint MD040) flags blocks without a language identifier. Example:
+
+  ```sh
+  flutter test
+  ```

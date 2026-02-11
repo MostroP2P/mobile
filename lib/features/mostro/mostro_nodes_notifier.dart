@@ -24,13 +24,26 @@ class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
       );
     }).toList();
 
-    final customNodes = await _loadCustomNodes();
+    var customNodes = await _loadCustomNodes();
+
+    // Remove custom nodes that overlap with trusted nodes (one-time migration)
+    final trustedPubkeys = trustedNodes.map((n) => n.pubkey).toSet();
+    final cleanedCustomNodes =
+        customNodes.where((n) => !trustedPubkeys.contains(n.pubkey)).toList();
+    if (cleanedCustomNodes.length != customNodes.length) {
+      logger.i(
+        'Removed ${customNodes.length - cleanedCustomNodes.length} '
+        'custom node(s) that overlap with trusted nodes',
+      );
+      await _saveCustomNodes(cleanedCustomNodes);
+      customNodes = cleanedCustomNodes;
+    }
 
     // Backward compatibility: if the current mostroPublicKey doesn't match
     // any trusted or custom node, auto-import it as a custom node
     final currentPubkey = _ref.read(settingsProvider).mostroPublicKey;
     final allPubkeys = {
-      ...trustedNodes.map((n) => n.pubkey),
+      ...trustedPubkeys,
       ...customNodes.map((n) => n.pubkey),
     };
 
@@ -66,6 +79,7 @@ class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
 
   /// Select a node and trigger the existing Mostro instance switch
   Future<void> selectNode(String pubkey) async {
+    pubkey = pubkey.toLowerCase();
     MostroNode? node;
     for (final n in state) {
       if (n.pubkey == pubkey) {
@@ -84,6 +98,7 @@ class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
 
   /// Add a custom node with duplicate check
   Future<bool> addCustomNode(String pubkey, {String? name}) async {
+    pubkey = pubkey.toLowerCase();
     if (state.any((n) => n.pubkey == pubkey)) {
       logger.w('Node with pubkey $pubkey already exists');
       return false;
@@ -176,6 +191,9 @@ class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
       }
       return n;
     }).toList();
+
+    // Persist metadata for custom nodes so it survives app restart
+    _saveCustomNodes(customNodes);
   }
 
   /// Fetch kind 0 metadata for all nodes in a single batch request
@@ -268,10 +286,8 @@ class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
 
   List<MostroNode> get customNodes => state.where((n) => !n.isTrusted).toList();
 
-  static final _hexPubkeyRegex = RegExp(r'^[0-9a-fA-F]{64}$');
-
   static bool _isValidHexPubkey(String value) {
-    return _hexPubkeyRegex.hasMatch(value);
+    return MostroNode.isValidHexPubkey(value);
   }
 
   Future<List<MostroNode>> _loadCustomNodes() async {

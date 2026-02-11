@@ -26,7 +26,7 @@ The existing `Settings.mostroPublicKey` field remains the single source of truth
 
 ### Data Flow
 
-```
+```text
 Config.trustedMostroNodes ──┐
                              ├──▶ MostroNodesNotifier ──▶ UI (Node Selector)
 SharedPreferences (custom) ──┘           │
@@ -95,46 +95,87 @@ SharedPreferences (custom) ──┘           │
 - **Resilient**: All errors caught and logged, never propagated; missing/malformed metadata silently skipped
 - **Explicit field clearing**: `MostroNode.withMetadata()` supports a `MostroNode.clear` sentinel to explicitly set fields to `null`, while omitting a field preserves the existing value
 
-**Test Coverage** (49 tests total across Phase 1 + Phase 2):
-- `mostro_node_test.dart` (15 tests): Serialization round-trips, optional field handling, `displayName`/`truncatedPubkey`, `withMetadata` copy semantics including `MostroNode.clear`, pubkey-based equality/hashCode, `toJson`/`fromJson`
+**Test Coverage** (46 tests total across Phase 1 + Phase 2):
+- `mostro_node_test.dart` (12 tests): Serialization round-trips, optional field handling, `displayName`, `withMetadata` copy semantics including `MostroNode.clear`, pubkey-based equality/hashCode, `toJson`/`fromJson`
 - `mostro_nodes_notifier_test.dart` (34 tests): Phase 1 tests (23) + metadata fetching tests (11): batch fetch with kind 0 events, deduplication keeping latest, URL sanitization (rejects non-https, accepts https), empty event list handling, malformed JSON content, network error resilience, unverified event rejection, single-node fetch deduplication across relays, single-node fetch, non-map JSON content
 
-### Phase 3: UI — Node Selector + Add Custom Node — To implement
+### Phase 3: UI — Node Selector + Add Custom Node — Completed
 
 **Goal**: Allow users to browse, select, and manage Mostro nodes from the UI.
 
 **Files Created**:
-- `lib/features/mostro/widgets/mostro_node_selector.dart` — Node selection bottom sheet
-- `lib/features/mostro/widgets/add_custom_node_dialog.dart` — Dialog to add custom nodes
+- `lib/features/mostro/widgets/mostro_node_selector.dart` — Bottom sheet widget (`ConsumerStatefulWidget`) for browsing and selecting Mostro nodes. Shows trusted and custom node sections, avatar with kind 0 picture or `NymAvatar` fallback, trusted badge, checkmark for active node, delete for custom nodes, and "Add Custom Node" button. Uses `_isSwitching` flag to prevent rapid taps during node switch.
+- `lib/features/mostro/widgets/add_custom_node_dialog.dart` — `AlertDialog` (via `StatefulBuilder`) for adding custom nodes. Accepts hex (64 chars) or npub1 format with auto-conversion via `NostrUtils.decodeBech32()`. Optional name field. Inline validation with duplicate check and format validation. Fire-and-forget metadata fetch after successful add.
 
 **Files Modified**:
-- `lib/features/settings/settings_screen.dart` — Replace pubkey text field with node selector
-- `lib/l10n/intl_en.arb` — English localization keys
-- `lib/l10n/intl_es.arb` — Spanish localization keys
-- `lib/l10n/intl_it.arb` — Italian localization keys
+- `lib/features/settings/settings_screen.dart` — Replaced `_buildMostroCard` content: removed `TextEditingController`, debounce timer, `_pubkeyError`, `_isValidPubkey()`, and `_convertToHex()`. New card shows currently selected node with avatar, display name, truncated pubkey, trusted badge, and dropdown arrow. Tapping opens `MostroNodeSelector.show(context)`. Watches `mostroNodesProvider` for reactive updates.
+- `lib/l10n/intl_en.arb` — Added 25 new localization keys for node selector UI
+- `lib/l10n/intl_es.arb` — Spanish translations for all new keys
+- `lib/l10n/intl_it.arb` — Italian translations for all new keys
 
 **Key Decisions**:
-- Bottom sheet for node selection (consistent with relay selector pattern)
-- Trusted nodes shown with badge/indicator
-- Custom nodes show delete option (if not currently active)
-- Node avatar shows `picture` from kind 0 metadata when available
-- Validate custom node pubkey format (64 hex chars) in the Add Custom Node dialog
-- Debounce node switching to prevent race conditions during rapid selection changes
+- **Bottom sheet** for node selection (first bottom sheet in the app — new UX pattern via `showModalBottomSheet`)
+- **`Image.network`** for node avatars with `NymAvatar` fallback — no new dependencies
+- **Restore triggered** on node switch (consistent with previous text field behavior) — called in `MostroNodeSelector._onNodeTap()`
+- **npub support** in Add Custom Node dialog — auto-converts to hex via `NostrUtils.decodeBech32()`
+- **`_isSwitching` flag** prevents rapid taps: disables all list items and add button during switch, bottom sheet closes after completion
+- **No metadata fetching in bottom sheet**: metadata is already fetched at app startup; new custom nodes get fire-and-forget metadata fetch after adding
+- **Confirmation dialog** for custom node deletion (consistent with relay deletion pattern)
+- **Cannot delete active node**: shows SnackBar message instead
+- **Async-safe SnackBars**: captures `ScaffoldMessengerState` and `MediaQuery` values before async gaps
 
-### Phase 4: Integration Testing — To implement
+**Widget Structure**:
+```
+Settings Screen
+  └── _buildMostroCard()
+        └── InkWell → MostroNodeSelector.show()
+              └── MostroNodeSelector (Bottom Sheet)
+                    ├── Trusted Nodes Section
+                    │     └── _buildNodeItem() × N
+                    ├── Custom Nodes Section
+                    │     └── _buildNodeItem() × N (or "No custom nodes" text)
+                    └── "Add Custom Node" button
+                          └── AddCustomNodeDialog.show()
+```
 
-**Goal**: Verify end-to-end flows for node switching and management.
+**Localization Keys Added** (25 keys across 3 languages):
+- `selectMostroNode`, `mostroNodeDescription`, `trustedNodesSection`, `customNodesSection`
+- `addCustomNode`, `addCustomNodeTitle`, `enterNodePubkey`, `enterNodeName`
+- `pubkeyHint`, `nodeNameHint`, `nodeAlreadyExists`, `invalidPubkeyFormat`
+- `nodeAddedSuccess`, `nodeRemovedSuccess`, `cannotRemoveActiveNode`
+- `deleteCustomNodeTitle`, `deleteCustomNodeMessage`, `deleteCustomNodeConfirm`, `deleteCustomNodeCancel`
+- `switchingToNode` (parameterized), `nodeSwitchedSuccess` (parameterized)
+- `trusted`, `noCustomNodesYet`, `pubkeyRequired`, `tapToSelectNode`
+
+### Phase 4: Integration Testing — Completed
+
+**Goal**: Verify cross-component end-to-end flows — how `MostroNodesNotifier` and `SettingsNotifier` work together for node switching, persistence round-trips, and relay-reset behavior.
 
 **Files Created**:
-- `test/features/mostro/mostro_integration_test.dart` — Integration tests
+- `test/features/mostro/mostro_integration_test.dart` — 23 integration tests in 7 groups
 
-**Test Scenarios**:
-- Switch between trusted nodes
-- Add and select a custom node
-- Remove a custom node
-- Backward compatibility (unrecognized pubkey auto-import)
-- Relay reconnection after node switch
-- Settings persistence across app restart
+**Test Groups**:
+
+| Group | Tests | What it verifies |
+|-------|-------|-----------------|
+| Node switching flows | 4 | Relay reset on switch, relay preservation on same-node select, unknown pubkey no-op |
+| Custom node lifecycle | 4 | Add → select → verify, add → remove, active node removal rejection, duplicate rejection |
+| Backward compatibility | 4 | Auto-import unrecognized pubkey, malformed pubkey ignored, trusted pubkey not duplicated, empty pubkey gives null selectedNode |
+| Settings persistence across restart | 3 | Custom nodes survive restart, selectNode updates state, corrupt prefs handled |
+| Relay reconnection after node switch | 4 | Blacklisted relays cleared, user relays cleared, main relays list preserved, same-node preserves relays |
+| Pubkey case normalization | 2 | Verifies lowercase normalization in addCustomNode and selectNode |
+| Multi-step end-to-end flows | 2 | Complex multi-node lifecycle with switching and removal, persistence round-trip across 3 sessions |
+
+**Key Decisions**:
+- **Unit-level integration tests**: Tests run in-process using real `MockSettingsNotifier` (extends `SettingsNotifier`) so `updateMostroInstance()` actually executes relay-reset logic, verifying the full `selectNode() → updateMostroInstance() → state.blacklistedRelays/userRelays cleared` chain
+- **In-memory SharedPreferences**: `MockSharedPreferencesAsync` backed by a `Map<String, String>` enables persistence round-trip testing — add nodes in one notifier instance, verify they load in a fresh instance with the same backing store
+- **Dynamic mock ref**: `when(mockRef.read(settingsProvider)).thenAnswer((_) => mockSettingsNotifier.state)` ensures `selectedNode` and `removeCustomNode` always see the latest settings state after `updateMostroInstance()` modifies it
+- **No new mocks**: Reuses existing `MockSharedPreferencesAsync`, `MockRef`, and `MockSettingsNotifier` from `test/mocks.dart`
+
+**Test Coverage Summary** (69 total across Phases 1-4):
+- `mostro_node_test.dart`: 12 tests (model serialization, equality, metadata)
+- `mostro_nodes_notifier_test.dart`: 34 tests (CRUD, backward compat, metadata fetching)
+- `mostro_integration_test.dart`: 23 tests (cross-component flows, persistence, relay reset, edge cases)
 
 ### Phase 5: Polish + Edge Cases — To implement
 
