@@ -147,20 +147,35 @@ Settings Screen
 - `switchingToNode` (parameterized), `nodeSwitchedSuccess` (parameterized)
 - `trusted`, `noCustomNodesYet`, `pubkeyRequired`, `tapToSelectNode`
 
-### Phase 4: Integration Testing — To implement
+### Phase 4: Integration Testing — Completed
 
-**Goal**: Verify end-to-end flows for node switching and management.
+**Goal**: Verify cross-component end-to-end flows — how `MostroNodesNotifier` and `SettingsNotifier` work together for node switching, persistence round-trips, and relay-reset behavior.
 
 **Files Created**:
-- `test/features/mostro/mostro_integration_test.dart` — Integration tests
+- `test/features/mostro/mostro_integration_test.dart` — 18 integration tests in 7 groups
 
-**Test Scenarios**:
-- Switch between trusted nodes
-- Add and select a custom node
-- Remove a custom node
-- Backward compatibility (unrecognized pubkey auto-import)
-- Relay reconnection after node switch
-- Settings persistence across app restart
+**Test Groups**:
+
+| Group | Tests | What it verifies |
+|-------|-------|-----------------|
+| Node switching flows | 3 | Relay reset on switch, relay preservation on same-node select |
+| Custom node lifecycle | 3 | Add → select → verify, add → remove, active node removal rejection |
+| Backward compatibility | 3 | Auto-import unrecognized pubkey, malformed pubkey ignored, trusted pubkey not duplicated |
+| Settings persistence across restart | 3 | Custom nodes survive restart, selected node persists, corrupt prefs handled |
+| Relay reconnection after node switch | 3 | Blacklisted relays cleared, user relays cleared, same-node preserves relays |
+| Case-insensitive pubkey handling | 1 | Documents current exact-match behavior for pubkey comparison |
+| Multi-step end-to-end flows | 2 | Complex multi-node lifecycle with switching and removal, persistence round-trip across 3 sessions |
+
+**Key Decisions**:
+- **Unit-level integration tests**: Tests run in-process using real `MockSettingsNotifier` (extends `SettingsNotifier`) so `updateMostroInstance()` actually executes relay-reset logic, verifying the full `selectNode() → updateMostroInstance() → state.blacklistedRelays/userRelays cleared` chain
+- **In-memory SharedPreferences**: `MockSharedPreferencesAsync` backed by a `Map<String, String>` enables persistence round-trip testing — add nodes in one notifier instance, verify they load in a fresh instance with the same backing store
+- **Dynamic mock ref**: `when(mockRef.read(settingsProvider)).thenAnswer((_) => mockSettingsNotifier.state)` ensures `selectedNode` and `removeCustomNode` always see the latest settings state after `updateMostroInstance()` modifies it
+- **No new mocks**: Reuses existing `MockSharedPreferencesAsync`, `MockRef`, and `MockSettingsNotifier` from `test/mocks.dart`
+
+**Test Coverage Summary** (64 total across Phases 1-4):
+- `mostro_node_test.dart`: 12 tests (model serialization, equality, metadata)
+- `mostro_nodes_notifier_test.dart`: 34 tests (CRUD, backward compat, metadata fetching)
+- `mostro_integration_test.dart`: 18 tests (cross-component flows, persistence, relay reset)
 
 ### Phase 5: Polish + Edge Cases — To implement
 
