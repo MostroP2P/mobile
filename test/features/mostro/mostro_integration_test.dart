@@ -464,8 +464,9 @@ void main() {
       });
     });
 
-    group('Pubkey case sensitivity', () {
-      test('addCustomNode treats different case as different pubkey', () async {
+    group('Pubkey case normalization', () {
+      test('addCustomNode normalizes to lowercase and rejects case-variant duplicate',
+          () async {
         final notifier = createNotifier();
         await notifier.init();
 
@@ -475,16 +476,31 @@ void main() {
           name: 'Lowercase',
         );
         expect(added, true);
+        expect(notifier.customNodes.first.pubkey, customPubkeyA.toLowerCase());
 
-        // Uppercase variant is treated as different pubkey because
-        // MostroNode uses exact string comparison for equality
+        // Uppercase variant is normalized to lowercase and rejected as duplicate
         final addedUpper = await notifier.addCustomNode(
           customPubkeyA.toUpperCase(),
           name: 'Uppercase',
         );
 
-        expect(addedUpper, true);
-        expect(notifier.customNodes.length, 2);
+        expect(addedUpper, false);
+        expect(notifier.customNodes.length, 1);
+      });
+
+      test('selectNode normalizes to lowercase for lookup', () async {
+        final notifier = createNotifier();
+        await notifier.init();
+
+        await notifier.addCustomNode(customPubkeyA, name: 'Node A');
+
+        // Select with uppercase — should still find the lowercase-stored node
+        await notifier.selectNode(customPubkeyA.toUpperCase());
+
+        expect(
+          mockSettingsNotifier.state.mostroPublicKey,
+          customPubkeyA.toLowerCase(),
+        );
       });
     });
 

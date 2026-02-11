@@ -79,6 +79,7 @@ class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
 
   /// Select a node and trigger the existing Mostro instance switch
   Future<void> selectNode(String pubkey) async {
+    pubkey = pubkey.toLowerCase();
     MostroNode? node;
     for (final n in state) {
       if (n.pubkey == pubkey) {
@@ -97,6 +98,7 @@ class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
 
   /// Add a custom node with duplicate check
   Future<bool> addCustomNode(String pubkey, {String? name}) async {
+    pubkey = pubkey.toLowerCase();
     if (state.any((n) => n.pubkey == pubkey)) {
       logger.w('Node with pubkey $pubkey already exists');
       return false;

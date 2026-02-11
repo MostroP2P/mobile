@@ -152,7 +152,7 @@ Settings Screen
 **Goal**: Verify cross-component end-to-end flows — how `MostroNodesNotifier` and `SettingsNotifier` work together for node switching, persistence round-trips, and relay-reset behavior.
 
 **Files Created**:
-- `test/features/mostro/mostro_integration_test.dart` — 22 integration tests in 7 groups
+- `test/features/mostro/mostro_integration_test.dart` — 23 integration tests in 7 groups
 
 **Test Groups**:
 
@@ -163,7 +163,7 @@ Settings Screen
 | Backward compatibility | 4 | Auto-import unrecognized pubkey, malformed pubkey ignored, trusted pubkey not duplicated, empty pubkey gives null selectedNode |
 | Settings persistence across restart | 3 | Custom nodes survive restart, selectNode updates state, corrupt prefs handled |
 | Relay reconnection after node switch | 4 | Blacklisted relays cleared, user relays cleared, main relays list preserved, same-node preserves relays |
-| Pubkey case sensitivity | 1 | Documents current exact-match behavior for pubkey comparison |
+| Pubkey case normalization | 2 | Verifies lowercase normalization in addCustomNode and selectNode |
 | Multi-step end-to-end flows | 2 | Complex multi-node lifecycle with switching and removal, persistence round-trip across 3 sessions |
 
 **Key Decisions**:
@@ -172,10 +172,10 @@ Settings Screen
 - **Dynamic mock ref**: `when(mockRef.read(settingsProvider)).thenAnswer((_) => mockSettingsNotifier.state)` ensures `selectedNode` and `removeCustomNode` always see the latest settings state after `updateMostroInstance()` modifies it
 - **No new mocks**: Reuses existing `MockSharedPreferencesAsync`, `MockRef`, and `MockSettingsNotifier` from `test/mocks.dart`
 
-**Test Coverage Summary** (68 total across Phases 1-4):
+**Test Coverage Summary** (69 total across Phases 1-4):
 - `mostro_node_test.dart`: 12 tests (model serialization, equality, metadata)
 - `mostro_nodes_notifier_test.dart`: 34 tests (CRUD, backward compat, metadata fetching)
-- `mostro_integration_test.dart`: 22 tests (cross-component flows, persistence, relay reset, edge cases)
+- `mostro_integration_test.dart`: 23 tests (cross-component flows, persistence, relay reset, edge cases)
 
 ### Phase 5: Polish + Edge Cases — To implement
 
