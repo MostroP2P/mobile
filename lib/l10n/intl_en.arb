@@ -1361,6 +1361,45 @@
   "privacyBulletEncryptedTokens": "Device tokens are encrypted before registration",
   "privacyBulletLocalDecryption": "All messages are decrypted locally on your device",
   "notificationSettings": "Notification Settings",
-  "notificationSettingsDescription": "Configure push notification preferences"
+  "notificationSettingsDescription": "Configure push notification preferences",
+
+  "selectMostroNode": "Select Mostro Node",
+  "mostroNodeDescription": "Select the Mostro node you want to trade on",
+  "trustedNodesSection": "Trusted Nodes",
+  "customNodesSection": "Custom Nodes",
+  "addCustomNode": "Add Custom Node",
+  "addCustomNodeTitle": "Add Custom Node",
+  "enterNodePubkey": "Public Key",
+  "enterNodeName": "Name (optional)",
+  "pubkeyHint": "Hex or npub format",
+  "nodeNameHint": "Friendly name for this node",
+  "nodeAlreadyExists": "This node already exists",
+  "invalidPubkeyFormat": "Invalid public key format. Enter 64-char hex or npub",
+  "nodeAddedSuccess": "Node added successfully",
+  "nodeRemovedSuccess": "Node removed",
+  "nodeRemoveFailed": "Failed to remove node, please try again",
+  "cannotRemoveActiveNode": "Cannot remove the currently active node",
+  "deleteCustomNodeTitle": "Remove Custom Node",
+  "deleteCustomNodeMessage": "Are you sure you want to remove this custom node?",
+  "deleteCustomNodeConfirm": "Remove",
+  "deleteCustomNodeCancel": "Cancel",
+  "switchingToNode": "Switching to {nodeName}...",
+  "@switchingToNode": {
+    "placeholders": {
+      "nodeName": {"type": "String"}
+    }
+  },
+  "nodeSwitchedSuccess": "Switched to {nodeName}",
+  "@nodeSwitchedSuccess": {
+    "placeholders": {
+      "nodeName": {"type": "String"}
+    }
+  },
+  "errorSwitchingNode": "Error switching node, please try again",
+  "trusted": "Trusted",
+  "noCustomNodesYet": "No custom nodes added yet",
+  "pubkeyRequired": "Public key is required",
+  "tapToSelectNode": "Tap to change",
+  "nodeNotRespondingReverted": "Node is not responding, reverted to previous node"
 
 }

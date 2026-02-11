@@ -1392,5 +1392,44 @@
   "privacyBulletEncryptedTokens": "I token del dispositivo vengono crittografati prima della registrazione",
   "privacyBulletLocalDecryption": "Tutti i messaggi vengono decrittati localmente sul tuo dispositivo",
   "notificationSettings": "Impostazioni Notifiche",
-  "notificationSettingsDescription": "Configura le preferenze delle notifiche push"
+  "notificationSettingsDescription": "Configura le preferenze delle notifiche push",
+
+  "selectMostroNode": "Seleziona Nodo Mostro",
+  "mostroNodeDescription": "Seleziona il nodo Mostro su cui vuoi operare",
+  "trustedNodesSection": "Nodi Affidabili",
+  "customNodesSection": "Nodi Personalizzati",
+  "addCustomNode": "Aggiungi Nodo Personalizzato",
+  "addCustomNodeTitle": "Aggiungi Nodo Personalizzato",
+  "enterNodePubkey": "Chiave Pubblica",
+  "enterNodeName": "Nome (opzionale)",
+  "pubkeyHint": "Formato hex o npub",
+  "nodeNameHint": "Nome amichevole per questo nodo",
+  "nodeAlreadyExists": "Questo nodo esiste già",
+  "invalidPubkeyFormat": "Formato chiave pubblica non valido. Inserisci hex di 64 caratteri o npub",
+  "nodeAddedSuccess": "Nodo aggiunto con successo",
+  "nodeRemovedSuccess": "Nodo rimosso",
+  "nodeRemoveFailed": "Errore nella rimozione del nodo, riprova",
+  "cannotRemoveActiveNode": "Impossibile rimuovere il nodo attualmente attivo",
+  "deleteCustomNodeTitle": "Rimuovi Nodo Personalizzato",
+  "deleteCustomNodeMessage": "Sei sicuro di voler rimuovere questo nodo personalizzato?",
+  "deleteCustomNodeConfirm": "Rimuovi",
+  "deleteCustomNodeCancel": "Annulla",
+  "switchingToNode": "Passaggio a {nodeName}...",
+  "@switchingToNode": {
+    "placeholders": {
+      "nodeName": {"type": "String"}
+    }
+  },
+  "nodeSwitchedSuccess": "Passato a {nodeName}",
+  "@nodeSwitchedSuccess": {
+    "placeholders": {
+      "nodeName": {"type": "String"}
+    }
+  },
+  "errorSwitchingNode": "Errore nel cambio di nodo, riprova",
+  "trusted": "Affidabile",
+  "noCustomNodesYet": "Nessun nodo personalizzato aggiunto",
+  "pubkeyRequired": "La chiave pubblica è obbligatoria",
+  "tapToSelectNode": "Tocca per cambiare",
+  "nodeNotRespondingReverted": "Il nodo non risponde, ripristinato il nodo precedente"
 }

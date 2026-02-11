@@ -24,11 +24,13 @@ class MostroNode {
   /// Usage: `node.withMetadata(name: MostroNode.clear)`
   static const String clear = _clearField;
 
-  String get displayName => name ?? truncatedPubkey;
+  /// Validates a 64-character hex public key string.
+  static final RegExp hexPubkeyRegex = RegExp(r'^[0-9a-fA-F]{64}$');
 
-  String get truncatedPubkey => pubkey.length > 10
-      ? '${pubkey.substring(0, 5)}...${pubkey.substring(pubkey.length - 5)}'
-      : pubkey;
+  /// Returns true if [value] is a valid 64-character hex public key.
+  static bool isValidHexPubkey(String value) => hexPubkeyRegex.hasMatch(value);
+
+  String get displayName => name ?? pubkey;
 
   /// Returns a copy with updated metadata fields.
   /// - Pass a value to set it.
@@ -88,6 +90,6 @@ class MostroNode {
 
   @override
   String toString() {
-    return 'MostroNode(pubkey: $truncatedPubkey, name: $name, trusted: $isTrusted)';
+    return 'MostroNode(pubkey: $pubkey, name: $name, trusted: $isTrusted)';
   }
 }

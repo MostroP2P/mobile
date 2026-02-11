@@ -48,24 +48,9 @@ void main() {
       expect(node.displayName, 'My Node');
     });
 
-    test('displayName returns truncated pubkey when no name', () {
+    test('displayName returns pubkey when no name', () {
       final node = MostroNode(pubkey: 'abcde12345fghij67890');
-      expect(node.displayName, 'abcde...67890');
-    });
-
-    test('truncatedPubkey format', () {
-      final node = MostroNode(pubkey: 'abcde12345fghij67890');
-      expect(node.truncatedPubkey, 'abcde...67890');
-    });
-
-    test('truncatedPubkey returns full pubkey when too short', () {
-      final node = MostroNode(pubkey: 'short');
-      expect(node.truncatedPubkey, 'short');
-    });
-
-    test('truncatedPubkey handles exactly 10 char pubkey', () {
-      final node = MostroNode(pubkey: '1234567890');
-      expect(node.truncatedPubkey, '1234567890');
+      expect(node.displayName, 'abcde12345fghij67890');
     });
 
     test('withMetadata creates copy with updated fields', () {
@@ -182,7 +167,7 @@ void main() {
       );
 
       final str = node.toString();
-      expect(str, contains('abcde...67890'));
+      expect(str, contains('abcde12345fghij67890'));
       expect(str, contains('Test Node'));
       expect(str, contains('true'));
     });
