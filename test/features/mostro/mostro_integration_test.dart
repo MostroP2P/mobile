@@ -41,11 +41,12 @@ void main() {
 
     Settings makeSettings({
       String? mostroPublicKey,
+      List<String>? relays,
       List<String>? blacklistedRelays,
       List<Map<String, dynamic>>? userRelays,
     }) {
       return Settings(
-        relays: [],
+        relays: relays ?? ['wss://default.example.com'],
         fullPrivacyMode: false,
         mostroPublicKey: mostroPublicKey ?? trustedPubkey,
         blacklistedRelays: blacklistedRelays ?? const [],
@@ -160,6 +161,25 @@ void main() {
           {'url': 'wss://myrelay.example.com'}
         ]);
       });
+
+      test('selectNode with unknown pubkey is a no-op', () async {
+        final notifier = createNotifier();
+        await notifier.init();
+
+        final stateBefore = mockSettingsNotifier.state;
+
+        await notifier.selectNode(
+          'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff',
+        );
+
+        // Settings should be completely unchanged
+        expect(mockSettingsNotifier.state.mostroPublicKey,
+            stateBefore.mostroPublicKey);
+        expect(mockSettingsNotifier.state.blacklistedRelays,
+            stateBefore.blacklistedRelays);
+        expect(
+            mockSettingsNotifier.state.userRelays, stateBefore.userRelays);
+      });
     });
 
     group('Custom node lifecycle', () {
@@ -213,6 +233,24 @@ void main() {
         expect(removed, false);
         expect(notifier.customNodes.length, 1);
         expect(notifier.customNodes.first.pubkey, customPubkeyA);
+      });
+
+      test('addCustomNode rejects duplicate in multi-step flow', () async {
+        final notifier = createNotifier();
+        await notifier.init();
+
+        final added1 =
+            await notifier.addCustomNode(customPubkeyA, name: 'First');
+        expect(added1, true);
+        expect(notifier.customNodes.length, 1);
+
+        // Attempt to add same pubkey again
+        final added2 =
+            await notifier.addCustomNode(customPubkeyA, name: 'Duplicate');
+        expect(added2, false);
+        // No duplication
+        expect(notifier.customNodes.length, 1);
+        expect(notifier.customNodes.first.name, 'First');
       });
     });
 
@@ -270,6 +308,17 @@ void main() {
           1,
         );
       });
+
+      test('empty mostroPublicKey results in null selectedNode', () async {
+        mockSettingsNotifier.state = makeSettings(mostroPublicKey: '');
+
+        final notifier = createNotifier();
+        await notifier.init();
+
+        expect(notifier.selectedNode, isNull);
+        // No custom nodes auto-imported for empty string
+        expect(notifier.customNodes, isEmpty);
+      });
     });
 
     group('Settings persistence across restart', () {
@@ -295,14 +344,14 @@ void main() {
         expect(notifier2.customNodes.first.name, 'Persistent Node');
       });
 
-      test('selected node persists via settings notifier', () async {
+      test('selectNode updates settings notifier state', () async {
         final notifier = createNotifier();
         await notifier.init();
         await notifier.addCustomNode(customPubkeyA, name: 'Selected Node');
 
         await notifier.selectNode(customPubkeyA);
 
-        // Verify MockSettingsNotifier state was updated
+        // Verify MockSettingsNotifier in-memory state was updated
         expect(
           mockSettingsNotifier.state.mostroPublicKey,
           customPubkeyA,
@@ -340,7 +389,7 @@ void main() {
           ],
         );
 
-        // Switch to custom node (different from trusted → triggers reset)
+        // Switch to custom node (different from trusted -> triggers reset)
         await notifier.selectNode(customPubkeyA);
 
         expect(mockSettingsNotifier.state.blacklistedRelays, isEmpty);
@@ -363,6 +412,27 @@ void main() {
         await notifier.selectNode(customPubkeyA);
 
         expect(mockSettingsNotifier.state.userRelays, isEmpty);
+      });
+
+      test('main relays list preserved on node switch', () async {
+        final notifier = createNotifier();
+        await notifier.init();
+        await notifier.addCustomNode(customPubkeyA, name: 'Node A');
+
+        final expectedRelays = [
+          'wss://relay1.example.com',
+          'wss://relay2.example.com',
+        ];
+        mockSettingsNotifier.state = mockSettingsNotifier.state.copyWith(
+          relays: expectedRelays,
+          blacklistedRelays: ['wss://blocked.example.com'],
+        );
+
+        // Switch to custom node — blacklist/userRelays reset but relays preserved
+        await notifier.selectNode(customPubkeyA);
+
+        expect(mockSettingsNotifier.state.relays, expectedRelays);
+        expect(mockSettingsNotifier.state.blacklistedRelays, isEmpty);
       });
 
       test('same node preserves relays', () async {
@@ -394,7 +464,7 @@ void main() {
       });
     });
 
-    group('Case-insensitive pubkey handling', () {
+    group('Pubkey case sensitivity', () {
       test('addCustomNode treats different case as different pubkey', () async {
         final notifier = createNotifier();
         await notifier.init();

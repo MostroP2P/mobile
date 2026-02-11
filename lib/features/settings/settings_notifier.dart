@@ -66,8 +66,8 @@ class SettingsNotifier extends StateNotifier<Settings> {
       // COMPLETE RESET: Clear blacklist and user relays when changing Mostro
       state = state.copyWith(
         mostroPublicKey: newValue,
-        blacklistedRelays: const [], // Blacklist vacío
-        userRelays: const [],         // User relays vacíos
+        blacklistedRelays: const [], // Clear blacklist
+        userRelays: const [],         // Clear user relays
       );
       
       logger.i('Reset blacklist and user relays for new Mostro instance');
