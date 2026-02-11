@@ -76,11 +76,26 @@ class RestoreService {
   Future<void> _clearAll() async {
     try {
       logger.i('Restore: clearing all existing data before restore');
+
+      // Get current chat orderIds BEFORE clearing
+      final currentChats = ref.read(chatRoomsNotifierProvider);
+      final chatOrderIds = currentChats.map((c) => c.orderId).toList();
+
+      // Clear storage
       await ref.read(sessionNotifierProvider.notifier).reset();
       await ref.read(mostroStorageProvider).deleteAll();
       await ref.read(eventStorageProvider).deleteAll();
       await ref.read(notificationsRepositoryProvider).clearAll();
       ref.read(orderRepositoryProvider).clearCache();
+
+      // Invalidate chat providers to clear memory
+      ref.invalidate(chatRoomsNotifierProvider);
+      for (final orderId in chatOrderIds) {
+        ref.invalidate(chatRoomsProvider(orderId));
+        ref.invalidate(chatRoomInitializedProvider(orderId));
+      }
+
+      logger.i('Restore: cleared ${chatOrderIds.length} chat providers');
     } catch (e) {
       logger.w('Restore: cleanup error', error: e);
     }

@@ -33,7 +33,8 @@ class ChatRoomsNotifier extends StateNotifier<List<ChatRoom>> {
   Future<void> loadChats() async {
     final sessions = ref.read(sessionNotifierProvider);
     if (sessions.isEmpty) {
-      logger.i("No sessions yet, skipping chat load.");
+      state = [];
+      logger.i("No sessions, clearing chat list.");
       return;
     }
     final now = DateTime.now();
@@ -49,10 +50,12 @@ class ChatRoomsNotifier extends StateNotifier<List<ChatRoom>> {
           .map((s) {
         final chat = ref.read(chatRoomsProvider(s.orderId!));
         return chat;
-      }).toList();
+      })
+          .where((chat) => chat.messages.isNotEmpty)
+          .toList();
 
       state = chats;
-      logger.i("Loaded ${chats.length} chats");
+      logger.i("Loaded ${chats.length} chats with messages");
     } catch (e) {
       logger.e("Error loading chats: $e");
     }
@@ -62,6 +65,7 @@ class ChatRoomsNotifier extends StateNotifier<List<ChatRoom>> {
   Future<void> refreshChatList() async {
     final sessions = ref.read(sessionNotifierProvider.notifier).sessions;
     if (sessions.isEmpty) {
+      state = [];
       return;
     }
     final now = DateTime.now();
@@ -69,7 +73,7 @@ class ChatRoomsNotifier extends StateNotifier<List<ChatRoom>> {
     try {
       // Add a small delay to ensure state has been updated
       await Future.delayed(const Duration(milliseconds: 100));
-      
+
       final chats = sessions
           .where(
         (s) =>
@@ -81,11 +85,13 @@ class ChatRoomsNotifier extends StateNotifier<List<ChatRoom>> {
         // Force a fresh read of the chat state
         final chat = ref.read(chatRoomsProvider(s.orderId!));
         return chat;
-      }).toList();
+      })
+          .where((chat) => chat.messages.isNotEmpty)
+          .toList();
 
       // Force update the state to trigger UI refresh
       state = [...chats];
-      logger.d("Refreshed ${chats.length} chats with updated messages");
+      logger.d("Refreshed ${chats.length} chats with messages");
     } catch (e) {
       logger.e("Error refreshing chats: $e");
     }
