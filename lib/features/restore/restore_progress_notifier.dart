@@ -5,12 +5,14 @@ import 'package:mostro_mobile/features/restore/restore_progress_state.dart';
 
 class RestoreProgressNotifier extends StateNotifier<RestoreProgressState> {
   Timer? _timeoutTimer;
+  Timer? _autoHideTimer;
   static const _maxTimeout = Duration(seconds: 30);
 
   RestoreProgressNotifier() : super(RestoreProgressState.initial());
 
   void startRestore() {
     logger.i('Starting restore overlay');
+    _cancelAutoHideTimer();
     state = RestoreProgressState.initial().copyWith(
       isVisible: true,
       step: RestoreStep.requesting,
@@ -57,8 +59,9 @@ class RestoreProgressNotifier extends StateNotifier<RestoreProgressState> {
       step: RestoreStep.completed,
     );
 
-    // Auto-hide after 3 seconds
-    Future.delayed(const Duration(seconds: 3), () {
+    // Auto-hide after 3 seconds (cancellable)
+    _cancelAutoHideTimer();
+    _autoHideTimer = Timer(const Duration(seconds: 3), () {
       if (mounted) {
         hide();
       }
@@ -74,8 +77,9 @@ class RestoreProgressNotifier extends StateNotifier<RestoreProgressState> {
       errorMessage: message,
     );
 
-    // Auto-hide after 3 seconds
-    Future.delayed(const Duration(seconds: 3), () {
+    // Auto-hide after 3 seconds (cancellable)
+    _cancelAutoHideTimer();
+    _autoHideTimer = Timer(const Duration(seconds: 3), () {
       if (mounted) {
         hide();
       }
@@ -85,6 +89,7 @@ class RestoreProgressNotifier extends StateNotifier<RestoreProgressState> {
   void hide() {
     logger.i('Hiding restore overlay');
     _cancelTimeoutTimer();
+    _cancelAutoHideTimer();
     state = RestoreProgressState.initial();
   }
 
@@ -109,9 +114,15 @@ class RestoreProgressNotifier extends StateNotifier<RestoreProgressState> {
     _timeoutTimer = null;
   }
 
+  void _cancelAutoHideTimer() {
+    _autoHideTimer?.cancel();
+    _autoHideTimer = null;
+  }
+
   @override
   void dispose() {
     _cancelTimeoutTimer();
+    _cancelAutoHideTimer();
     super.dispose();
   }
 }

@@ -7,6 +7,7 @@ import 'package:mostro_mobile/features/mostro/widgets/add_custom_node_dialog.dar
 import 'package:mostro_mobile/features/mostro/widgets/mostro_node_avatar.dart';
 import 'package:mostro_mobile/features/mostro/widgets/trusted_badge.dart';
 import 'package:mostro_mobile/features/restore/restore_manager.dart';
+import 'package:mostro_mobile/features/restore/restore_progress_notifier.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
@@ -312,11 +313,33 @@ class _MostroNodeSelectorState extends ConsumerState<MostroNodeSelector> {
       await notifier.selectNode(node.pubkey);
 
       if (oldPubkey != node.pubkey) {
-        try {
-          final restoreService = ref.read(restoreServiceProvider);
+        final restoreService = ref.read(restoreServiceProvider);
+        final success = await restoreService.initRestoreProcess();
+
+        if (!success) {
+          // Hide error overlay from failed restore
+          ref.read(restoreProgressProvider.notifier).hide();
+
+          // Revert settings to old node
+          await notifier.selectNode(oldPubkey);
+
+          // Re-restore old node's data (since _clearAll already wiped it)
           await restoreService.initRestoreProcess();
-        } catch (_) {
-          // Ignore errors during restore
+
+          if (mounted) {
+            setState(() {
+              _isSwitching = false;
+              _switchingPubkey = null;
+            });
+          }
+
+          SnackBarHelper.showTopSnackBarAsync(
+            messenger: messenger,
+            screenHeight: mediaQuery.size.height,
+            statusBarHeight: mediaQuery.padding.top,
+            message: localizations.nodeNotRespondingReverted,
+          );
+          return;
         }
       }
 

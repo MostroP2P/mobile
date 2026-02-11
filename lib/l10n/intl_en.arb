@@ -1399,6 +1399,7 @@
   "trusted": "Trusted",
   "noCustomNodesYet": "No custom nodes added yet",
   "pubkeyRequired": "Public key is required",
-  "tapToSelectNode": "Tap to change"
+  "tapToSelectNode": "Tap to change",
+  "nodeNotRespondingReverted": "Node is not responding, reverted to previous node"
 
 }

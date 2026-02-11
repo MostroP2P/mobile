@@ -1375,6 +1375,7 @@
   "trusted": "Confiable",
   "noCustomNodesYet": "No se han agregado nodos personalizados",
   "pubkeyRequired": "La clave pública es requerida",
-  "tapToSelectNode": "Toca para cambiar"
+  "tapToSelectNode": "Toca para cambiar",
+  "nodeNotRespondingReverted": "El nodo no responde, se volvió al nodo anterior"
 
 }
