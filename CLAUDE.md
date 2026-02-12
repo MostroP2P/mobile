@@ -92,6 +92,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - URL normalization: Trailing slash removal prevents duplicate entries
 - Instance-isolated testing: Test connections don't affect main app connectivity
 
+### Multi-Mostro Instance Support
+- **Overview**: Users can connect to multiple Mostro instances (nodes) from a single app, switching between them with full relay and subscription reset
+- **Node Types**: Trusted nodes (hardcoded in `Config.trustedMostroNodes`, cannot be removed) vs custom nodes (user-added, persisted in SharedPreferences, removable)
+- **Core Files**: `features/mostro/mostro_node.dart` (model), `mostro_nodes_notifier.dart` (StateNotifier with CRUD, rename, metadata), `mostro_nodes_provider.dart` (Riverpod provider)
+- **UI Components**: `MostroNodeSelector` (bottom sheet for browsing/selecting nodes), `AddCustomNodeDialog` (hex/npub input with validation), `MostroNodeAvatar` (kind 0 picture with `NymAvatar` fallback), `TrustedBadge`
+- **Kind 0 Metadata**: Batch fetch at startup via `fetchAllNodeMetadata()` (fire-and-forget), deduplication keeping latest event per pubkey, signature verification, URL sanitization (https only)
+- **Storage Strategy**: Trusted in `Config`, custom in SharedPreferences (`mostro_custom_nodes`), metadata in-memory only (fetched fresh each launch)
+- **Node Switching**: `selectNode()` → `SettingsNotifier.updateMostroInstance()` → blacklist/userRelays reset → relay reconnection → `RestoreService.initRestoreProcess()`
+- **Backward Compatibility**: Unrecognized `mostroPublicKey` auto-imported as custom node; pubkey validated as 64-char hex; malformed values silently skipped
+- **Error Resilience**: Persist-before-state pattern prevents memory/disk divergence; all persistence errors logged but never crash the app
+- **Implementation**: Located in `features/mostro/` with full documentation in `docs/MULTI_MOSTRO_SUPPORT.md`
+
 ## App Initialization Process
 
 ### Initialization Sequence
