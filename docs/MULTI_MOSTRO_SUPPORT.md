@@ -77,7 +77,8 @@ SharedPreferences (custom) ──┘           │
 
 **Files Modified**:
 - `lib/features/mostro/mostro_node.dart` — Added `MostroNode.clear` sentinel for explicit field clearing in `withMetadata()`
-- `lib/features/mostro/mostro_nodes_notifier.dart` — Added `fetchAllNodeMetadata()`, `fetchNodeMetadata()`, `_applyMetadataFromEvent()`, `_sanitizeUrl()` methods
+- `lib/features/mostro/mostro_nodes_notifier.dart` — Added `fetchAllNodeMetadata()`, `fetchNodeMetadata()`, `_applyMetadataFromEvent()`, `_sanitizeUrl()` methods; added `_trustedMetadataCache` in-memory field with `_loadTrustedMetadataCache()` / `_updateTrustedMetadataCache()` for persisting trusted node metadata
+- `lib/data/models/enums/storage_keys.dart` — Added `trustedNodeMetadata` enum value (stored as `trusted_node_metadata`)
 - `lib/shared/providers/app_init_provider.dart` — Fire-and-forget metadata fetch via `unawaited()` after `init()`
 - `test/features/mostro/mostro_node_test.dart` — Added 1 test for `MostroNode.clear` sentinel
 - `test/features/mostro/mostro_nodes_notifier_test.dart` — Added 11 metadata fetch tests
@@ -90,7 +91,7 @@ SharedPreferences (custom) ──┘           │
 - **Signature verification**: `_applyMetadataFromEvent()` calls `event.isVerified()` before applying metadata; forged events with invalid signatures are logged and silently skipped
 - **URL sanitization**: `picture` and `website` fields are validated via `_sanitizeUrl()` — only `https://` URLs pass through; `javascript:`, `http://`, `data:`, and other schemes are rejected (set to `null`)
 - **Mounted guard**: Both fetch methods check `mounted` after the async `fetchEvents` gap to avoid setting state on a disposed notifier
-- **In-memory only**: Metadata NOT persisted to disk; fetched fresh each app launch; `updateNodeMetadata()` updates state but doesn't call `_saveCustomNodes()`
+- **Metadata persistence**: Custom node metadata is persisted as part of `_saveCustomNodes()`. Trusted node metadata is cached in a separate SharedPreferences key (`trusted_node_metadata`) via an in-memory `_trustedMetadataCache` field — loaded once in `init()`, updated synchronously to avoid TOCTOU races, and persisted as a full snapshot. Metadata is also fetched fresh each app launch to pick up changes.
 - **Fire-and-forget**: Metadata fetch triggered after `init()` via `unawaited()` — doesn't block app startup; UI updates reactively when state changes
 - **Resilient**: All errors caught and logged, never propagated; missing/malformed metadata silently skipped
 - **Explicit field clearing**: `MostroNode.withMetadata()` supports a `MostroNode.clear` sentinel to explicitly set fields to `null`, while omitting a field preserves the existing value
@@ -218,7 +219,7 @@ Future<bool> addCustomNode(String pubkey, {String? name});  // Add with validati
 Future<bool> removeCustomNode(String pubkey);               // Remove non-active, non-trusted node
 Future<bool> updateCustomNodeName(String pubkey, String newName); // Rename custom node
 
-// Metadata (in-memory only, for kind 0 data)
+// Metadata (persisted for both custom and trusted nodes)
 void updateNodeMetadata(String pubkey, {String? name, ...});
 Future<void> fetchAllNodeMetadata();                        // Batch fetch kind 0 for all nodes (deduplicates, verifies, sanitizes)
 Future<void> fetchNodeMetadata(String pubkey);              // Single-node kind 0 fetch (deduplicates, verifies, sanitizes)
@@ -238,7 +239,8 @@ All write operations return `false` on persistence failure without updating in-m
 | Trusted nodes | `Config.trustedMostroNodes` (hardcoded) | N/A |
 | Custom nodes | SharedPreferences | `mostro_custom_nodes` |
 | Active node | Settings (SharedPreferences) | `mostroPublicKey` |
-| Node metadata | In-memory only | N/A |
+| Trusted node metadata | SharedPreferences | `trusted_node_metadata` |
+| Custom node metadata | SharedPreferences (within custom nodes JSON) | `mostro_custom_nodes` |
 
 ## Error Handling Strategy
 
