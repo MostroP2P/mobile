@@ -363,7 +363,9 @@ class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
     if (!isTrustedNode(pubkey)) return;
     try {
       final cache = await _loadTrustedMetadataCache();
+      final existing = cache[pubkey] ?? {};
       cache[pubkey] = {
+        ...existing,
         if (name != null) 'name': name,
         if (picture != null) 'picture': picture,
         if (website != null) 'website': website,
