@@ -578,10 +578,10 @@ void main() {
         when(mockNostrService.fetchEvents(any, specificRelays: anyNamed('specificRelays')))
             .thenAnswer((_) async => [
                   NostrEvent(
-                    id: 'forged_id',
+                    id: 'a' * 64,
                     kind: 0,
                     content: jsonEncode({'name': 'Unverified Name'}),
-                    sig: 'invalid_signature',
+                    sig: 'b' * 128,
                     pubkey: trustedPubkey,
                     createdAt: DateTime(2025),
                     tags: const [],
