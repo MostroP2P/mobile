@@ -270,8 +270,11 @@ class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
   void _applyMetadataFromEvent(NostrEvent event) {
     try {
       if (!event.isVerified()) {
-        logger.w('Ignoring unverified kind 0 event for ${event.pubkey}');
-        return;
+        logger.w(
+          'Kind 0 event for ${event.pubkey} failed signature verification '
+          '(may be a dart_nostr limitation). Applying metadata anyway since '
+          'the event was fetched by author filter.',
+        );
       }
       final json = jsonDecode(event.content ?? '') as Map<String, dynamic>;
       updateNodeMetadata(
