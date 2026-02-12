@@ -664,5 +664,76 @@ void main() {
         expect(node.name, 'Test Node');
       });
     });
+
+    group('metadata cache persistence', () {
+      test('trusted node restores cached metadata on init', () async {
+        final cachedMetadata = {
+          trustedPubkey: {
+            'name': 'Cached Mostro',
+            'picture': 'https://example.com/pic.jpg',
+            'about': 'A cached description',
+          },
+        };
+
+        when(mockPrefs.getString(
+          SharedPreferencesKeys.mostroNodeMetadataCache.value,
+        )).thenAnswer((_) async => jsonEncode(cachedMetadata));
+        when(mockPrefs.getString(
+          SharedPreferencesKeys.mostroCustomNodes.value,
+        )).thenAnswer((_) async => null);
+
+        when(mockRef.read(settingsProvider))
+            .thenReturn(makeSettings(mostroPublicKey: trustedPubkey));
+        when(mockRef.read(settingsProvider.notifier))
+            .thenReturn(mockSettingsNotifier);
+
+        final notifier = MostroNodesNotifier(mockPrefs, mockRef);
+        await notifier.init();
+
+        final trusted =
+            notifier.state.firstWhere((n) => n.pubkey == trustedPubkey);
+        expect(trusted.name, 'Cached Mostro');
+        expect(trusted.picture, 'https://example.com/pic.jpg');
+        expect(trusted.about, 'A cached description');
+        expect(trusted.isTrusted, true);
+      });
+
+      test('updateNodeMetadata persists to metadata cache', () async {
+        when(mockRef.read(settingsProvider))
+            .thenReturn(makeSettings(mostroPublicKey: trustedPubkey));
+        when(mockRef.read(settingsProvider.notifier))
+            .thenReturn(mockSettingsNotifier);
+
+        final notifier = MostroNodesNotifier(mockPrefs, mockRef);
+        await notifier.init();
+
+        notifier.updateNodeMetadata(
+          trustedPubkey,
+          name: 'Updated Name',
+          about: 'Updated about',
+        );
+
+        verify(mockPrefs.setString(
+          SharedPreferencesKeys.mostroNodeMetadataCache.value,
+          any,
+        )).called(1);
+      });
+
+      test('trusted node falls back to config name when no cache', () async {
+        when(mockRef.read(settingsProvider))
+            .thenReturn(makeSettings(mostroPublicKey: trustedPubkey));
+        when(mockRef.read(settingsProvider.notifier))
+            .thenReturn(mockSettingsNotifier);
+
+        final notifier = MostroNodesNotifier(mockPrefs, mockRef);
+        await notifier.init();
+
+        final trusted =
+            notifier.state.firstWhere((n) => n.pubkey == trustedPubkey);
+        expect(trusted.name, Config.trustedMostroNodes.first['name']);
+        expect(trusted.picture, isNull);
+        expect(trusted.about, isNull);
+      });
+    });
   });
 }

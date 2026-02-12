@@ -16,10 +16,19 @@ class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
   MostroNodesNotifier(this._prefs, this._ref) : super([]);
 
   Future<void> init() async {
+    // Load cached metadata so trusted nodes have their last-known
+    // kind 0 data available immediately (before any relay fetch).
+    final metadataCache = await _loadMetadataCache();
+
     final trustedNodes = Config.trustedMostroNodes.map((entry) {
+      final pubkey = entry['pubkey']!;
+      final cached = metadataCache[pubkey];
       return MostroNode(
-        pubkey: entry['pubkey']!,
-        name: entry['name'],
+        pubkey: pubkey,
+        name: cached?['name'] as String? ?? entry['name'],
+        picture: cached?['picture'] as String?,
+        website: cached?['website'] as String?,
+        about: cached?['about'] as String?,
         isTrusted: true,
       );
     }).toList();
@@ -194,6 +203,9 @@ class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
 
     // Persist metadata for custom nodes so it survives app restart
     _saveCustomNodes(customNodes);
+
+    // Cache metadata for all nodes (including trusted) so it survives restart
+    _updateMetadataCache(pubkey, name, picture, website, about);
   }
 
   /// Fetch kind 0 metadata for all nodes in a single batch request
@@ -318,6 +330,51 @@ class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
     } catch (e) {
       logger.e('Failed to save custom nodes: $e');
       return false;
+    }
+  }
+
+  /// Load the metadata cache for all nodes (keyed by pubkey).
+  Future<Map<String, Map<String, dynamic>>> _loadMetadataCache() async {
+    try {
+      final json = await _prefs.getString(
+        SharedPreferencesKeys.mostroNodeMetadataCache.value,
+      );
+      if (json == null) return {};
+
+      final decoded = jsonDecode(json) as Map<String, dynamic>;
+      return decoded.map(
+        (key, value) =>
+            MapEntry(key, Map<String, dynamic>.from(value as Map)),
+      );
+    } catch (e) {
+      logger.e('Failed to load metadata cache: $e');
+      return {};
+    }
+  }
+
+  /// Update a single entry in the metadata cache.
+  Future<void> _updateMetadataCache(
+    String pubkey,
+    String? name,
+    String? picture,
+    String? website,
+    String? about,
+  ) async {
+    try {
+      final cache = await _loadMetadataCache();
+      cache[pubkey] = {
+        if (name != null) 'name': name,
+        if (picture != null) 'picture': picture,
+        if (website != null) 'website': website,
+        if (about != null) 'about': about,
+      };
+      final json = jsonEncode(cache);
+      await _prefs.setString(
+        SharedPreferencesKeys.mostroNodeMetadataCache.value,
+        json,
+      );
+    } catch (e) {
+      logger.e('Failed to update metadata cache: $e');
     }
   }
 }
