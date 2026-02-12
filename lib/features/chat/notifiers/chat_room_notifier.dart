@@ -274,20 +274,8 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
 
       logger.i('Chat events found for orderId $orderId: ${chatEvents.length}');
 
-      // Fallback: if no events found with order_id, try to find all chat events
-      // This handles events stored before the order_id field was added
       if (chatEvents.isEmpty) {
-        logger.i(
-            'No events found with order_id, trying fallback to all chat events');
-        chatEvents = await eventStore.find(
-          filter: eventStore.eq('type', 'chat'),
-          sort: [SortOrder('created_at', false)], // Most recent first
-        );
-        logger.i('Fallback: found ${chatEvents.length} total chat events');
-      }
-
-      if (chatEvents.isEmpty) {
-        logger.w('No chat events found at all');
+        logger.i('No chat events found for orderId $orderId');
         return;
       }
 

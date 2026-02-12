@@ -1396,6 +1396,12 @@
 
   "fixedPriceDisabledForRange": "Il prezzo fisso non è disponibile per gli ordini a intervallo. Rimuovi l'importo massimo per usare il prezzo fisso.",
 
+  "@_comment_chat_error_screens": "Chat Error Screen Strings",
+  "sessionNotFound": "Sessione non trovata",
+  "unableToLoadChatSession": "Impossibile caricare la sessione di chat per questo ordine",
+  "peerInformationUnavailable": "Informazioni utente non disponibili",
+  "chatPartnerCouldNotBeLoaded": "Impossibile caricare le informazioni del partner di chat",
+
   "selectMostroNode": "Seleziona Nodo Mostro",
   "mostroNodeDescription": "Seleziona il nodo Mostro su cui vuoi operare",
   "trustedNodesSection": "Nodi Affidabili",

@@ -1341,6 +1341,12 @@
 
   "fixedPriceDisabledForRange": "El precio fijo no está disponible para órdenes de rango. Elimina la cantidad máxima para usar precio fijo.",
 
+  "@_comment_chat_error_screens": "Chat Error Screen Strings",
+  "sessionNotFound": "Sesión no encontrada",
+  "unableToLoadChatSession": "No se pudo cargar la sesión de chat para esta orden",
+  "peerInformationUnavailable": "Información del usuario no disponible",
+  "chatPartnerCouldNotBeLoaded": "No se pudo cargar la información del compañero de chat",
+
   "selectMostroNode": "Seleccionar Nodo Mostro",
   "mostroNodeDescription": "Selecciona el nodo Mostro en el que quieres operar",
   "trustedNodesSection": "Nodos de Confianza",

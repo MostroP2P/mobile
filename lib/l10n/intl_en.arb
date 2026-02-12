@@ -1365,6 +1365,12 @@
 
   "fixedPriceDisabledForRange": "Fixed price is not available for range orders. Remove the max amount to use fixed price.",
 
+  "@_comment_chat_error_screens": "Chat Error Screen Strings",
+  "sessionNotFound": "Session not found",
+  "unableToLoadChatSession": "Unable to load chat session for this order",
+  "peerInformationUnavailable": "Peer information unavailable",
+  "chatPartnerCouldNotBeLoaded": "Chat partner information could not be loaded",
+
   "selectMostroNode": "Select Mostro Node",
   "mostroNodeDescription": "Select the Mostro node you want to trade on",
   "trustedNodesSection": "Trusted Nodes",
