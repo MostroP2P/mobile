@@ -337,7 +337,7 @@
   "enterAmountHint": "Ingresa cantidad",
   "pleaseEnterAmount": "Por favor ingresa una cantidad",
   "pleaseEnterValidAmount": "Por favor ingresa una cantidad válida",
-  "fiatAmountTooHigh": "La cantidad fiat es demasiado alta, por favor ingresa una nueva cantidad fiat, el rango permitido está entre {minAmount} y {maxAmount} sats",
+  "fiatAmountTooHigh": "La cantidad fiat es demasiado alta. El nodo de Mostro que estás usando permite entre {minAmount} y {maxAmount} sats.",
   "@fiatAmountTooHigh": {
     "placeholders": {
       "minAmount": {
@@ -350,7 +350,7 @@
       }
     }
   },
-  "fiatAmountTooLow": "La cantidad fiat es demasiado baja, por favor ingresa una nueva cantidad fiat, el rango permitido está entre {minAmount} y {maxAmount} sats",
+  "fiatAmountTooLow": "La cantidad fiat es demasiado baja. El nodo de Mostro que estás usando permite entre {minAmount} y {maxAmount} sats.",
   "@fiatAmountTooLow": {
     "placeholders": {
       "minAmount": {
@@ -1338,6 +1338,8 @@
   "privacyBulletLocalDecryption": "Todos los mensajes se desencriptan localmente en tu dispositivo",
   "notificationSettings": "Configuración de Notificaciones",
   "notificationSettingsDescription": "Configurar preferencias de notificaciones push",
+
+  "fixedPriceDisabledForRange": "El precio fijo no está disponible para órdenes de rango. Elimina la cantidad máxima para usar precio fijo.",
 
   "@_comment_chat_error_screens": "Chat Error Screen Strings",
   "sessionNotFound": "Sesión no encontrada",
