@@ -166,6 +166,7 @@ class _MostroAppState extends ConsumerState<MostroApp> {
           _notificationLaunchHandled = true;
           WidgetsBinding.instance.addPostFrameCallback((_) async {
             final orderId = await getNotificationLaunchOrderId();
+            if (!mounted) return;
             if (orderId != null && orderId.isNotEmpty) {
               debugPrint('App launched from notification tap, navigating to order: $orderId');
               _router!.push('/trade_detail/$orderId');
