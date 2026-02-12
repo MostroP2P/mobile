@@ -28,6 +28,7 @@ import 'package:mostro_mobile/features/notifications/screens/notifications_scree
 import 'package:mostro_mobile/features/logs/screens/logs_screen.dart';
 import 'package:mostro_mobile/features/logs/widgets/logs_recording_indicator.dart';
 
+import 'package:mostro_mobile/core/app.dart';
 import 'package:mostro_mobile/features/walkthrough/providers/first_run_provider.dart';
 import 'package:mostro_mobile/shared/widgets/navigation_listener_widget.dart';
 import 'package:mostro_mobile/shared/widgets/notification_listener_widget.dart';
@@ -36,7 +37,7 @@ import 'package:mostro_mobile/services/logger_service.dart';
 
 GoRouter createRouter(WidgetRef ref) {
   return GoRouter(
-    navigatorKey: GlobalKey<NavigatorState>(),
+    navigatorKey: MostroApp.navigatorKey,
     initialLocation: '/',
     redirect: (context, state) {
       // Redirect custom schemes to home to prevent assertion failures
