@@ -17,6 +17,10 @@ class Config {
     {
       'pubkey': _defaultMostroPubKey,
       'name': 'Mostro P2P',
+      'about':
+          'A peer-to-peer Bitcoin trading daemon over the Lightning Network',
+      'picture': 'https://mostro.network/assets/images/favicon.png',
+      'website': 'https://mostro.network/',
     },
   ];
 

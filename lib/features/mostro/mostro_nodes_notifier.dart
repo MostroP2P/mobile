@@ -31,9 +31,9 @@ class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
       return MostroNode(
         pubkey: pubkey,
         name: cached?['name'] as String? ?? entry['name'],
-        picture: cached?['picture'] as String?,
-        website: cached?['website'] as String?,
-        about: cached?['about'] as String?,
+        picture: cached?['picture'] as String? ?? entry['picture'],
+        website: cached?['website'] as String? ?? entry['website'],
+        about: cached?['about'] as String? ?? entry['about'],
         isTrusted: true,
       );
     }).toList();
