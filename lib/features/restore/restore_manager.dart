@@ -705,7 +705,8 @@ class RestoreService {
   // 4. Process restore data and request order details (Stage 2: GettingOrdersDetails)
   // 5. Request last trade index (Stage 3: GettingTradeIndex)
   // 6. Complete restore process
-  Future<void> initRestoreProcess() async {
+  Future<bool> initRestoreProcess() async {
+    bool success = false;
     try {
       // Clear existing data
       await _clearAll();
@@ -758,7 +759,7 @@ class RestoreService {
         final lastTradeIndex = lastTradeIndexResponse.tradeIndex;
         await keyManager.setCurrentKeyIndex(lastTradeIndex + 1);
         progress.completeRestore();
-        return;
+        return true;
       }
 
       // STAGE 2: Getting Orders Details
@@ -794,10 +795,13 @@ class RestoreService {
       //While bulding subscriptions, some old notifications may have arrived - clear them all
       final notifProvider = ref.read(notificationActionsProvider.notifier);
       notifProvider.clearAll();
+
+      success = true;
     } catch (e, stack) {
       logger.e('Restore: error during restore process',
           error: e, stackTrace: stack);
-      ref.read(restoreProgressProvider.notifier).showError('');
+      final errorMessage = e.toString();
+      ref.read(restoreProgressProvider.notifier).showError('Restore failed: $errorMessage');
     } finally {
       // Cleanup: always cancel subscription and clear keys
       logger.i('Restore: cleaning up subscription and keys');
@@ -813,6 +817,8 @@ class RestoreService {
         ref.read(restoreProgressProvider.notifier).completeRestore();
       }
     }
+
+    return success;
   }
 }
 

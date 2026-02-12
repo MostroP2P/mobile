@@ -28,6 +28,9 @@ images:
   - assets/images/screenshot-3.jpg
   - assets/images/screenshot-4.jpg
   - assets/images/screenshot-5.jpg
+  - assets/images/screenshot-6.jpg
+  - assets/images/screenshot-7.jpg
+  - assets/images/screenshot-8.jpg
 tags: peer-to-peer p2p security privacy android bitcoin lightning nostr cryptography freedom-tech
 license: MIT
 blossom_servers:

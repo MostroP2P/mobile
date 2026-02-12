@@ -9,13 +9,22 @@ class Config {
     //'ws://10.0.2.2:7000', // mobile emulator
   ];
 
-  // Mostro hexkey
+  // Trusted Mostro nodes registry
+  static const String _defaultMostroPubKey =
+      '82fa8cb978b43c79b2156585bac2c011176a21d2aead6d9f7c575c005be88390';
+
+  static const List<Map<String, String>> trustedMostroNodes = [
+    {
+      'pubkey': _defaultMostroPubKey,
+      'name': 'Mostro P2P',
+    },
+  ];
+
+  // Mostro hexkey (backward compatible, overridable via env variable)
   static const String mostroPubKey = String.fromEnvironment(
     'MOSTRO_PUB_KEY',
-    defaultValue:
-        '82fa8cb978b43c79b2156585bac2c011176a21d2aead6d9f7c575c005be88390',
+    defaultValue: _defaultMostroPubKey,
   );
-  //'9d9d0455a96871f2dc4289b8312429db2e925f167b37c77bf7b28014be235980';
 
   static const String dBName = 'mostro.db';
   static const String dBPassword = 'mostro';

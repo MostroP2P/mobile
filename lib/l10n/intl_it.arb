@@ -1398,5 +1398,44 @@
   "sessionNotFound": "Sessione non trovata",
   "unableToLoadChatSession": "Impossibile caricare la sessione di chat per questo ordine",
   "peerInformationUnavailable": "Informazioni utente non disponibili",
-  "chatPartnerCouldNotBeLoaded": "Impossibile caricare le informazioni del partner di chat"
+  "chatPartnerCouldNotBeLoaded": "Impossibile caricare le informazioni del partner di chat",
+
+  "selectMostroNode": "Seleziona Nodo Mostro",
+  "mostroNodeDescription": "Seleziona il nodo Mostro su cui vuoi operare",
+  "trustedNodesSection": "Nodi Affidabili",
+  "customNodesSection": "Nodi Personalizzati",
+  "addCustomNode": "Aggiungi Nodo Personalizzato",
+  "addCustomNodeTitle": "Aggiungi Nodo Personalizzato",
+  "enterNodePubkey": "Chiave Pubblica",
+  "enterNodeName": "Nome (opzionale)",
+  "pubkeyHint": "Formato hex o npub",
+  "nodeNameHint": "Nome amichevole per questo nodo",
+  "nodeAlreadyExists": "Questo nodo esiste già",
+  "invalidPubkeyFormat": "Formato chiave pubblica non valido. Inserisci hex di 64 caratteri o npub",
+  "nodeAddedSuccess": "Nodo aggiunto con successo",
+  "nodeRemovedSuccess": "Nodo rimosso",
+  "nodeRemoveFailed": "Errore nella rimozione del nodo, riprova",
+  "cannotRemoveActiveNode": "Impossibile rimuovere il nodo attualmente attivo",
+  "deleteCustomNodeTitle": "Rimuovi Nodo Personalizzato",
+  "deleteCustomNodeMessage": "Sei sicuro di voler rimuovere questo nodo personalizzato?",
+  "deleteCustomNodeConfirm": "Rimuovi",
+  "deleteCustomNodeCancel": "Annulla",
+  "switchingToNode": "Passaggio a {nodeName}...",
+  "@switchingToNode": {
+    "placeholders": {
+      "nodeName": {"type": "String"}
+    }
+  },
+  "nodeSwitchedSuccess": "Passato a {nodeName}",
+  "@nodeSwitchedSuccess": {
+    "placeholders": {
+      "nodeName": {"type": "String"}
+    }
+  },
+  "errorSwitchingNode": "Errore nel cambio di nodo, riprova",
+  "trusted": "Affidabile",
+  "noCustomNodesYet": "Nessun nodo personalizzato aggiunto",
+  "pubkeyRequired": "La chiave pubblica è obbligatoria",
+  "tapToSelectNode": "Tocca per cambiare",
+  "nodeNotRespondingReverted": "Il nodo non risponde, ripristinato il nodo precedente"
 }
