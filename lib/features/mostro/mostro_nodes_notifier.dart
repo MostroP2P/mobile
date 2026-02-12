@@ -12,6 +12,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
   final SharedPreferencesAsync _prefs;
   final Ref _ref;
+  Map<String, Map<String, dynamic>> _trustedMetadataCache = {};
 
   MostroNodesNotifier(this._prefs, this._ref) : super([]);
 
@@ -61,7 +62,22 @@ class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
       await _saveCustomNodes(customNodes);
     }
 
-    state = [...trustedNodes, ...customNodes];
+    // Apply cached metadata to trusted nodes
+    _trustedMetadataCache = await _loadTrustedMetadataCache();
+    final enrichedTrusted = trustedNodes.map((n) {
+      final cached = _trustedMetadataCache[n.pubkey];
+      if (cached != null) {
+        return n.withMetadata(
+          name: cached['name'] as String?,
+          picture: cached['picture'] as String?,
+          website: cached['website'] as String?,
+          about: cached['about'] as String?,
+        );
+      }
+      return n;
+    }).toList();
+
+    state = [...enrichedTrusted, ...customNodes];
     logger.i(
       'MostroNodesNotifier initialized: '
       '${trustedNodes.length} trusted, ${customNodes.length} custom',
@@ -192,8 +208,9 @@ class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
       return n;
     }).toList();
 
-    // Persist metadata for custom nodes so it survives app restart
+    // Persist metadata so it survives app restart
     _saveCustomNodes(customNodes);
+    _updateTrustedMetadataCache(pubkey, name, picture, website, about);
   }
 
   /// Fetch kind 0 metadata for all nodes in a single batch request
@@ -319,5 +336,47 @@ class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
       logger.e('Failed to save custom nodes: $e');
       return false;
     }
+  }
+
+  Future<Map<String, Map<String, dynamic>>> _loadTrustedMetadataCache() async {
+    try {
+      final json = await _prefs.getString(
+        SharedPreferencesKeys.trustedNodeMetadata.value,
+      );
+      if (json == null) return {};
+      final decoded = jsonDecode(json) as Map<String, dynamic>;
+      return decoded.map(
+        (k, v) => MapEntry(k, Map<String, dynamic>.from(v as Map)),
+      );
+    } catch (e) {
+      logger.e('Failed to load trusted metadata cache: $e');
+      return {};
+    }
+  }
+
+  void _updateTrustedMetadataCache(
+    String pubkey,
+    String? name,
+    String? picture,
+    String? website,
+    String? about,
+  ) {
+    if (!isTrustedNode(pubkey)) return;
+    // Update in-memory cache synchronously to avoid TOCTOU races
+    final existing = _trustedMetadataCache[pubkey] ?? {};
+    _trustedMetadataCache[pubkey] = {
+      ...existing,
+      if (name != null) 'name': name,
+      if (picture != null) 'picture': picture,
+      if (website != null) 'website': website,
+      if (about != null) 'about': about,
+    };
+    // Persist the entire snapshot (fire-and-forget is safe since memory is authoritative)
+    _prefs
+        .setString(
+          SharedPreferencesKeys.trustedNodeMetadata.value,
+          jsonEncode(_trustedMetadataCache),
+        )
+        .catchError((e) => logger.e('Failed to persist trusted metadata: $e'));
   }
 }

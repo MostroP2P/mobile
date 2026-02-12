@@ -3,7 +3,8 @@ enum SharedPreferencesKeys {
   keyIndex('key_index'),
   fullPrivacy('full_privacy'),
   firstRunComplete('first_run_complete'),
-  mostroCustomNodes('mostro_custom_nodes');
+  mostroCustomNodes('mostro_custom_nodes'),
+  trustedNodeMetadata('trusted_node_metadata');
 
   final String value;
 
