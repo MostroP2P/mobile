@@ -713,6 +713,9 @@ void main() {
           about: 'Updated about',
         );
 
+        // Allow fire-and-forget async calls in updateNodeMetadata to complete
+        await Future<void>.delayed(Duration.zero);
+
         verify(mockPrefs.setString(
           SharedPreferencesKeys.mostroNodeMetadataCache.value,
           any,
