@@ -12,6 +12,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
   final SharedPreferencesAsync _prefs;
   final Ref _ref;
+  Map<String, Map<String, dynamic>> _trustedMetadataCache = {};
 
   MostroNodesNotifier(this._prefs, this._ref) : super([]);
 
@@ -62,9 +63,9 @@ class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
     }
 
     // Apply cached metadata to trusted nodes
-    final metadataCache = await _loadTrustedMetadataCache();
+    _trustedMetadataCache = await _loadTrustedMetadataCache();
     final enrichedTrusted = trustedNodes.map((n) {
-      final cached = metadataCache[n.pubkey];
+      final cached = _trustedMetadataCache[n.pubkey];
       if (cached != null) {
         return n.withMetadata(
           name: cached['name'] as String?,
@@ -353,30 +354,29 @@ class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
     }
   }
 
-  Future<void> _updateTrustedMetadataCache(
+  void _updateTrustedMetadataCache(
     String pubkey,
     String? name,
     String? picture,
     String? website,
     String? about,
-  ) async {
+  ) {
     if (!isTrustedNode(pubkey)) return;
-    try {
-      final cache = await _loadTrustedMetadataCache();
-      final existing = cache[pubkey] ?? {};
-      cache[pubkey] = {
-        ...existing,
-        if (name != null) 'name': name,
-        if (picture != null) 'picture': picture,
-        if (website != null) 'website': website,
-        if (about != null) 'about': about,
-      };
-      await _prefs.setString(
-        SharedPreferencesKeys.trustedNodeMetadata.value,
-        jsonEncode(cache),
-      );
-    } catch (e) {
-      logger.e('Failed to update trusted metadata cache: $e');
-    }
+    // Update in-memory cache synchronously to avoid TOCTOU races
+    final existing = _trustedMetadataCache[pubkey] ?? {};
+    _trustedMetadataCache[pubkey] = {
+      ...existing,
+      if (name != null) 'name': name,
+      if (picture != null) 'picture': picture,
+      if (website != null) 'website': website,
+      if (about != null) 'about': about,
+    };
+    // Persist the entire snapshot (fire-and-forget is safe since memory is authoritative)
+    _prefs
+        .setString(
+          SharedPreferencesKeys.trustedNodeMetadata.value,
+          jsonEncode(_trustedMetadataCache),
+        )
+        .catchError((e) => logger.e('Failed to persist trusted metadata: $e'));
   }
 }
