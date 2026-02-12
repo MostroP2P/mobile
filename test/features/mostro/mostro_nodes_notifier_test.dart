@@ -571,17 +571,17 @@ void main() {
         expect(notifier.state.length, stateBefore.length);
       });
 
-      test('fetchAllNodeMetadata ignores unverified events', () async {
+      test('fetchAllNodeMetadata applies unverified events with warning', () async {
         final notifier = createNotifier();
         await notifier.init();
 
         when(mockNostrService.fetchEvents(any, specificRelays: anyNamed('specificRelays')))
             .thenAnswer((_) async => [
                   NostrEvent(
-                    id: 'forged_id',
+                    id: 'a' * 64,
                     kind: 0,
-                    content: jsonEncode({'name': 'Forged Name'}),
-                    sig: 'invalid_signature',
+                    content: jsonEncode({'name': 'Unverified Name'}),
+                    sig: 'b' * 128,
                     pubkey: trustedPubkey,
                     createdAt: DateTime(2025),
                     tags: const [],
@@ -590,10 +590,11 @@ void main() {
 
         await notifier.fetchAllNodeMetadata();
 
-        // Name should remain unchanged — forged event was rejected
+        // Metadata is applied even if signature verification fails,
+        // since events are fetched by author filter
         final node =
             notifier.state.firstWhere((n) => n.pubkey == trustedPubkey);
-        expect(node.name, 'Mostro P2P');
+        expect(node.name, 'Unverified Name');
       });
 
       test('fetchNodeMetadata deduplicates keeping latest when relays return multiple events',
