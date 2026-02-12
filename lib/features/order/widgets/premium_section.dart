@@ -152,7 +152,12 @@ class _PremiumSectionState extends State<PremiumSection> {
                   keyboardType:
                       const TextInputType.numberWithOptions(signed: true),
                   inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'^-?\d{0,3}')),
+                    TextInputFormatter.withFunction((oldValue, newValue) {
+                      if (newValue.text.isEmpty) return newValue;
+                      return RegExp(r'^-?\d{0,3}$').hasMatch(newValue.text)
+                          ? newValue
+                          : oldValue;
+                    }),
                   ],
                   onChanged: _onTextChanged,
                   onSubmitted: (_) {
