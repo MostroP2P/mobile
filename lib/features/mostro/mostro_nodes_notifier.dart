@@ -13,16 +13,21 @@ class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
   final SharedPreferencesAsync _prefs;
   final Ref _ref;
 
+  /// In-memory metadata cache for all nodes (trusted + custom).
+  /// Loaded once during init(), updated in-place, and persisted atomically
+  /// to avoid race conditions from concurrent fire-and-forget writes.
+  Map<String, Map<String, dynamic>> _metadataCache = {};
+
   MostroNodesNotifier(this._prefs, this._ref) : super([]);
 
   Future<void> init() async {
     // Load cached metadata so trusted nodes have their last-known
     // kind 0 data available immediately (before any relay fetch).
-    final metadataCache = await _loadMetadataCache();
+    _metadataCache = await _loadMetadataCache();
 
     final trustedNodes = Config.trustedMostroNodes.map((entry) {
       final pubkey = entry['pubkey']!;
-      final cached = metadataCache[pubkey];
+      final cached = _metadataCache[pubkey];
       return MostroNode(
         pubkey: pubkey,
         name: cached?['name'] as String? ?? entry['name'],
@@ -230,6 +235,9 @@ class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
         }
       }
 
+      logger.i(
+        'Fetched kind 0 metadata for ${latestByPubkey.length}/${pubkeys.length} nodes',
+      );
       for (final event in latestByPubkey.values) {
         _applyMetadataFromEvent(event);
       }
@@ -269,6 +277,11 @@ class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
         return;
       }
       final json = jsonDecode(event.content ?? '') as Map<String, dynamic>;
+      logger.i(
+        'Applying metadata for ${event.pubkey.substring(0, 8)}...: '
+        'name=${json['name']}, picture=${json['picture'] != null}, '
+        'about=${json['about'] != null}',
+      );
       updateNodeMetadata(
         event.pubkey,
         name: json['name'] as String?,
@@ -352,7 +365,10 @@ class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
     }
   }
 
-  /// Update a single entry in the metadata cache.
+  /// Update a single entry in the in-memory metadata cache and persist it.
+  ///
+  /// Uses the in-memory [_metadataCache] to avoid race conditions from
+  /// concurrent reads — all updates go through the same map instance.
   Future<void> _updateMetadataCache(
     String pubkey,
     String? name,
@@ -361,14 +377,13 @@ class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
     String? about,
   ) async {
     try {
-      final cache = await _loadMetadataCache();
-      cache[pubkey] = {
+      _metadataCache[pubkey] = {
         if (name != null) 'name': name,
         if (picture != null) 'picture': picture,
         if (website != null) 'website': website,
         if (about != null) 'about': about,
       };
-      final json = jsonEncode(cache);
+      final json = jsonEncode(_metadataCache);
       await _prefs.setString(
         SharedPreferencesKeys.mostroNodeMetadataCache.value,
         json,
