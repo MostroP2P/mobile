@@ -75,15 +75,18 @@ class FormSection extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: iconBackgroundColor,
-                    shape: BoxShape.circle,
+                if (iconBackgroundColor == Colors.transparent)
+                  icon
+                else
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: iconBackgroundColor,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(child: icon),
                   ),
-                  child: Center(child: icon),
-                ),
                 const SizedBox(width: 16),
                 Expanded(child: child),
               ],

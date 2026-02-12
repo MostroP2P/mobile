@@ -412,7 +412,8 @@
   "selectPaymentMethodsTitle": "Seleziona Metodi di Pagamento",
   "premiumTitle": "Premio (%)",
   "premiumTooltip": "Regola quanto sopra o sotto il prezzo di mercato vuoi la tua offerta. Di default, è impostato al 0%, senza premio o sconto, quindi se non vuoi cambiare il prezzo, puoi lasciarlo così com'è.",
-  
+  "premiumEditHint": "Modifica",
+
   "secretWords": "Parole Segrete",
   "toRestoreYourAccount": "Per ripristinare il tuo account",
   "privacy": "Privacy",
