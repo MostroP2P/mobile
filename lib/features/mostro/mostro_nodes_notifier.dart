@@ -61,7 +61,22 @@ class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
       await _saveCustomNodes(customNodes);
     }
 
-    state = [...trustedNodes, ...customNodes];
+    // Apply cached metadata to trusted nodes
+    final metadataCache = await _loadTrustedMetadataCache();
+    final enrichedTrusted = trustedNodes.map((n) {
+      final cached = metadataCache[n.pubkey];
+      if (cached != null) {
+        return n.withMetadata(
+          name: cached['name'] as String?,
+          picture: cached['picture'] as String?,
+          website: cached['website'] as String?,
+          about: cached['about'] as String?,
+        );
+      }
+      return n;
+    }).toList();
+
+    state = [...enrichedTrusted, ...customNodes];
     logger.i(
       'MostroNodesNotifier initialized: '
       '${trustedNodes.length} trusted, ${customNodes.length} custom',
@@ -192,8 +207,9 @@ class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
       return n;
     }).toList();
 
-    // Persist metadata for custom nodes so it survives app restart
+    // Persist metadata so it survives app restart
     _saveCustomNodes(customNodes);
+    _updateTrustedMetadataCache(pubkey, name, picture, website, about);
   }
 
   /// Fetch kind 0 metadata for all nodes in a single batch request
@@ -318,6 +334,47 @@ class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
     } catch (e) {
       logger.e('Failed to save custom nodes: $e');
       return false;
+    }
+  }
+
+  Future<Map<String, Map<String, dynamic>>> _loadTrustedMetadataCache() async {
+    try {
+      final json = await _prefs.getString(
+        SharedPreferencesKeys.trustedNodeMetadata.value,
+      );
+      if (json == null) return {};
+      final decoded = jsonDecode(json) as Map<String, dynamic>;
+      return decoded.map(
+        (k, v) => MapEntry(k, Map<String, dynamic>.from(v as Map)),
+      );
+    } catch (e) {
+      logger.e('Failed to load trusted metadata cache: $e');
+      return {};
+    }
+  }
+
+  Future<void> _updateTrustedMetadataCache(
+    String pubkey,
+    String? name,
+    String? picture,
+    String? website,
+    String? about,
+  ) async {
+    if (!isTrustedNode(pubkey)) return;
+    try {
+      final cache = await _loadTrustedMetadataCache();
+      cache[pubkey] = {
+        if (name != null) 'name': name,
+        if (picture != null) 'picture': picture,
+        if (website != null) 'website': website,
+        if (about != null) 'about': about,
+      };
+      await _prefs.setString(
+        SharedPreferencesKeys.trustedNodeMetadata.value,
+        jsonEncode(cache),
+      );
+    } catch (e) {
+      logger.e('Failed to update trusted metadata cache: $e');
     }
   }
 }
