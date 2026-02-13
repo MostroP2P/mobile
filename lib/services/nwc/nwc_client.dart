@@ -101,11 +101,14 @@ class NwcClient {
   /// Disconnects and cleans up all NWC subscriptions.
   ///
   /// Cancels all active event subscriptions and closes them on the relay side.
-  /// Note: We do not call `disconnectFromRelays()` here because `Nostr.instance`
-  /// is a shared singleton — disconnecting would also kill the app's Mostro
-  /// relay connections. Relay lifecycle is managed by the app layer. Once NWC
-  /// gets its own dedicated Nostr instance (future refactor), this method
-  /// should also close the NWC-specific relay connections.
+  ///
+  /// **Relay connection note:** `Nostr.instance` is a shared singleton — its
+  /// `disconnectFromRelays()` API closes *all* relay WebSockets (including
+  /// Mostro's), and `dart_nostr` does not support closing individual relay
+  /// connections. Until NWC gets its own dedicated Nostr instance (future
+  /// refactor), NWC relay WebSocket connections that are not shared with
+  /// Mostro will persist until the app is closed. This is a known limitation
+  /// tracked for Phase 2.
   void disconnect() {
     // Cancel all active subscriptions and close them on the relay
     for (final entry in _subscriptions.entries) {
@@ -130,7 +133,12 @@ class NwcClient {
       params: params.toMap(),
     ));
 
-    return PayInvoiceResult.fromMap(response.result!);
+    final result = response.result;
+    if (result == null) {
+      throw const NwcException(
+          'pay_invoice: wallet returned success with null result');
+    }
+    return PayInvoiceResult.fromMap(result);
   }
 
   /// Creates a new Lightning invoice.
@@ -142,7 +150,12 @@ class NwcClient {
       params: params.toMap(),
     ));
 
-    return TransactionResult.fromMap(response.result!);
+    final result = response.result;
+    if (result == null) {
+      throw const NwcException(
+          'make_invoice: wallet returned success with null result');
+    }
+    return TransactionResult.fromMap(result);
   }
 
   /// Gets the wallet balance in millisatoshis.
@@ -152,7 +165,12 @@ class NwcClient {
       params: {},
     ));
 
-    return GetBalanceResult.fromMap(response.result!);
+    final result = response.result;
+    if (result == null) {
+      throw const NwcException(
+          'get_balance: wallet returned success with null result');
+    }
+    return GetBalanceResult.fromMap(result);
   }
 
   /// Gets wallet information including supported methods.
@@ -162,7 +180,12 @@ class NwcClient {
       params: {},
     ));
 
-    return GetInfoResult.fromMap(response.result!);
+    final result = response.result;
+    if (result == null) {
+      throw const NwcException(
+          'get_info: wallet returned success with null result');
+    }
+    return GetInfoResult.fromMap(result);
   }
 
   /// Looks up an invoice by payment hash or bolt11 string.
@@ -172,7 +195,12 @@ class NwcClient {
       params: params.toMap(),
     ));
 
-    return TransactionResult.fromMap(response.result!);
+    final result = response.result;
+    if (result == null) {
+      throw const NwcException(
+          'lookup_invoice: wallet returned success with null result');
+    }
+    return TransactionResult.fromMap(result);
   }
 
   /// Sends a NWC request and waits for the response.
@@ -213,13 +241,12 @@ class NwcClient {
       logger.d('NWC: Sending ${request.method} request (id: $requestId)');
 
       // Subscribe to response events (kind 23195) that reference this request
+      // Use #e tag to filter responses referencing our request event ID,
+      // and #p tag to match our client pubkey.
       final filter = NostrFilter(
         kinds: const [23195],
         authors: [connection.walletPubkey],
-        t: [
-          // The 'e' tag references the request event
-        ],
-        // Filter by p tag matching our pubkey
+        e: [requestId],
         p: [_clientPubkey],
       );
 
