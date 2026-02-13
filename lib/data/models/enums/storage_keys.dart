@@ -30,7 +30,8 @@ enum SharedPreferencesKeys {
 
 enum SecureStorageKeys {
   masterKey('master_key'),
-  mnemonic('mnemonic');
+  mnemonic('mnemonic'),
+  nwcConnectionUri('nwc_connection_uri');
 
   final String value;
 

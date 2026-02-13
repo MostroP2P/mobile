@@ -1409,6 +1409,24 @@
   "noCustomNodesYet": "No custom nodes added yet",
   "pubkeyRequired": "Public key is required",
   "tapToSelectNode": "Tap to change",
-  "nodeNotRespondingReverted": "Node is not responding, reverted to previous node"
+  "nodeNotRespondingReverted": "Node is not responding, reverted to previous node",
+  "wallet": "Wallet",
+  "walletDescription": "Connect your Lightning wallet via NWC",
+  "connectWallet": "Connect Wallet",
+  "disconnectWallet": "Disconnect Wallet",
+  "walletConnected": "Connected",
+  "walletDisconnected": "Not Connected",
+  "walletBalance": "Balance",
+  "pasteNwcUri": "Paste NWC URI",
+  "scanQrCode": "Scan QR Code",
+  "scanQrCodeComingSoon": "QR scanner coming soon",
+  "connecting": "Connecting...",
+  "walletInfo": "Wallet Info",
+  "walletSettings": "Wallet Settings",
+  "nwcConnectionError": "Connection error",
+  "invalidNwcUri": "Invalid NWC URI",
+  "walletDisconnectConfirm": "Are you sure you want to disconnect your wallet?",
+  "connectWalletDescription": "Connect your Lightning wallet using a Nostr Wallet Connect (NWC) URI to view your balance and manage payments.",
+  "refreshBalance": "Refresh balance"
 
 }

@@ -1385,6 +1385,24 @@
   "noCustomNodesYet": "No se han agregado nodos personalizados",
   "pubkeyRequired": "La clave pública es requerida",
   "tapToSelectNode": "Toca para cambiar",
-  "nodeNotRespondingReverted": "El nodo no responde, se volvió al nodo anterior"
+  "nodeNotRespondingReverted": "El nodo no responde, se volvió al nodo anterior",
+  "wallet": "Billetera",
+  "walletDescription": "Conecta tu billetera Lightning vía NWC",
+  "connectWallet": "Conectar Billetera",
+  "disconnectWallet": "Desconectar Billetera",
+  "walletConnected": "Conectada",
+  "walletDisconnected": "No Conectada",
+  "walletBalance": "Saldo",
+  "pasteNwcUri": "Pegar URI NWC",
+  "scanQrCode": "Escanear Código QR",
+  "scanQrCodeComingSoon": "Escáner QR próximamente",
+  "connecting": "Conectando...",
+  "walletInfo": "Info de Billetera",
+  "walletSettings": "Configuración de Billetera",
+  "nwcConnectionError": "Error de conexión",
+  "invalidNwcUri": "URI NWC inválida",
+  "walletDisconnectConfirm": "¿Estás seguro de que quieres desconectar tu billetera?",
+  "connectWalletDescription": "Conecta tu billetera Lightning usando una URI de Nostr Wallet Connect (NWC) para ver tu saldo y gestionar pagos.",
+  "refreshBalance": "Actualizar saldo"
 
 }

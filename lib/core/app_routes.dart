@@ -23,6 +23,8 @@ import 'package:mostro_mobile/features/auth/screens/register_screen.dart';
 import 'package:mostro_mobile/features/walkthrough/screens/walkthrough_screen.dart';
 
 import 'package:mostro_mobile/features/disputes/screens/dispute_chat_screen.dart';
+import 'package:mostro_mobile/features/wallet/screens/wallet_settings_screen.dart';
+import 'package:mostro_mobile/features/wallet/screens/connect_wallet_screen.dart';
 
 import 'package:mostro_mobile/features/notifications/screens/notifications_screen.dart';
 import 'package:mostro_mobile/features/logs/screens/logs_screen.dart';
@@ -40,8 +42,9 @@ GoRouter createRouter(WidgetRef ref) {
     initialLocation: '/',
     redirect: (context, state) {
       // Redirect custom schemes to home to prevent assertion failures
-      if (state.uri.scheme == 'mostro' || 
-          (!state.uri.scheme.startsWith('http') && state.uri.scheme.isNotEmpty)) {
+      if (state.uri.scheme == 'mostro' ||
+          (!state.uri.scheme.startsWith('http') &&
+              state.uri.scheme.isNotEmpty)) {
         return '/';
       }
       final firstRunState = ref.read(firstRunProvider);
@@ -56,14 +59,16 @@ GoRouter createRouter(WidgetRef ref) {
         loading: () {
           // While loading, prevent navigation to home by redirecting to walkthrough
           // The walkthrough route will handle the loading state appropriately
-          return state.matchedLocation == '/walkthrough' ? null : '/walkthrough';
+          return state.matchedLocation == '/walkthrough'
+              ? null
+              : '/walkthrough';
         },
         error: (_, __) => null,
       );
     },
     errorBuilder: (context, state) {
       logger.w('GoRouter error: ${state.error}');
-      
+
       // For errors, show a generic error page
       return Scaffold(
         body: Center(
@@ -72,7 +77,9 @@ GoRouter createRouter(WidgetRef ref) {
             children: [
               const Icon(Icons.error, size: 64),
               const SizedBox(height: 16),
-              Text(S.of(context)!.deepLinkNavigationError(state.error.toString())),
+              Text(S
+                  .of(context)!
+                  .deepLinkNavigationError(state.error.toString())),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () => context.go('/'),
@@ -84,7 +91,7 @@ GoRouter createRouter(WidgetRef ref) {
       );
     },
     routes: [
-    ShellRoute(
+      ShellRoute(
         builder: (BuildContext context, GoRouterState state, Widget child) {
           return NotificationListenerWidget(
             child: NavigationListenerWidget(
@@ -298,6 +305,24 @@ GoRouter createRouter(WidgetRef ref) {
               context: context,
               state: state,
               child: const LogsScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/wallet_settings',
+            pageBuilder: (context, state) =>
+                buildPageWithDefaultTransition<void>(
+              context: context,
+              state: state,
+              child: const WalletSettingsScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/connect_wallet',
+            pageBuilder: (context, state) =>
+                buildPageWithDefaultTransition<void>(
+              context: context,
+              state: state,
+              child: const ConnectWalletScreen(),
             ),
           ),
           GoRoute(
