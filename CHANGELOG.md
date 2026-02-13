@@ -30,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Documentation
 - **Multi-Mostro Support Guide** (#452): Comprehensive documentation covering architecture, API, and backward compatibility
-- **AGENTS.md** Code block language specifier for MD040 compliance
+- **AGENTS.md**: Code block language specifier for MD040 compliance
 
 ## [v1.1.0]
 
