@@ -259,7 +259,7 @@ class NwcClient {
 
       final subscription = stream.stream.listen((event) async {
         try {
-          logger.d('NWC: Received event kind=${event.kind} from ${event.pubkey?.substring(0, 8)}...');
+          logger.d('NWC: Received event kind=${event.kind} from ${event.pubkey!.substring(0, 8)}...');
 
           // Verify this response references our request via 'e' tag
           final eTag = event.tags?.firstWhere(
