@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.1.1]
+
+### Added
+- **Multi-Mostro Instance Support** (#436, #437, #440, #443, #444): Complete multi-node architecture allowing users to connect to multiple Mostro instances
+  - Data model and trusted nodes registry with backward-compatible auto-import (Phase 1)
+  - Kind 0 metadata fetching with signature verification and graceful fallback (Phase 2)
+  - Node selector UI with bottom sheet, custom node dialog, avatars, and trusted badges (Phase 3)
+  - Integration test suite with 10+ test scenarios (Phase 4)
+  - Performance stress tests and documentation polish (Phase 5)
+- **Editable Premium/Discount Indicator** (#454): Replaced static premium display with interactive input field and dynamic price range slider
+- **Expanded Payment Methods** (#455): Extended payment methods list with always-visible custom input field and improved form validation
+- **Updated Screenshots** (#432): Refreshed all app screenshots and added 3 new ones
+
+### Fixed
+- **Kind 0 Metadata Verification** (#453): Apply metadata even when signature verification fails for graceful degradation
+- **Kind 0 Metadata Persistence** (#450): Trusted node metadata now persists across app restarts
+- **Fixed Price with Range Orders** (#439): Prevent combining fixed price with range orders in order creation
+- **Chat Restoration Error** (#438): Fixed error restoring chat sessions with new ChatErrorScreen widget
+- **Payment Submit Validation** (#455): Disabled submit button when amount field is empty, allow submission with only custom payment method
+
+### Changed
+- **Settings Screen Node Selector** (#440): Replaced text input with visual node selector for Mostro instance configuration
+
+### Documentation
+- **Multi-Mostro Support Guide** (#452): Comprehensive documentation covering architecture, API, and backward compatibility
+- **AGENTS.md**: Code block language specifier for MD040 compliance
+
 ## [v1.1.0]
 
 ### Added
