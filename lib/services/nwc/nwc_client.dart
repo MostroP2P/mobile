@@ -40,13 +40,12 @@ class NwcClient {
   /// Whether the client is currently connected to relays.
   bool _isConnected = false;
 
-  /// The underlying Nostr instance.
+  /// Dedicated Nostr instance for NWC relay communication.
   ///
-  /// Currently accesses [Nostr.instance] directly since [NostrService] does
-  /// not expose granular relay subscription methods. The [_nostrService]
-  /// dependency is injected for future refactoring where NWC may use a
-  /// dedicated Nostr instance with its own relay connections.
-  Nostr get _nostr => Nostr.instance;
+  /// Uses a separate instance from [Nostr.instance] to avoid interference
+  /// with Mostro's relay pool. This ensures subscriptions and events are
+  /// sent only to the NWC wallet relay(s), not broadcast to all app relays.
+  final Nostr _nostr = Nostr();
 
   /// Active subscriptions for response events.
   final Map<String, StreamSubscription<NostrEvent>> _subscriptions = {};
@@ -98,17 +97,10 @@ class NwcClient {
     }
   }
 
-  /// Disconnects and cleans up all NWC subscriptions.
+  /// Disconnects from relays and cleans up all NWC subscriptions.
   ///
-  /// Cancels all active event subscriptions and closes them on the relay side.
-  ///
-  /// **Relay connection note:** `Nostr.instance` is a shared singleton — its
-  /// `disconnectFromRelays()` API closes *all* relay WebSockets (including
-  /// Mostro's), and `dart_nostr` does not support closing individual relay
-  /// connections. Until NWC gets its own dedicated Nostr instance (future
-  /// refactor), NWC relay WebSocket connections that are not shared with
-  /// Mostro will persist until the app is closed. This is a known limitation
-  /// tracked for Phase 2.
+  /// Cancels all active event subscriptions, closes them on the relay side,
+  /// and disconnects the dedicated NWC Nostr instance from all relays.
   void disconnect() {
     // Cancel all active subscriptions and close them on the relay
     for (final entry in _subscriptions.entries) {
@@ -120,8 +112,16 @@ class NwcClient {
       }
     }
     _subscriptions.clear();
+
+    // Disconnect the dedicated NWC relay connections
+    try {
+      _nostr.services.relays.disconnectFromRelays();
+    } catch (e) {
+      logger.w('NWC: Failed to disconnect relays: $e');
+    }
+
     _isConnected = false;
-    logger.i('NWC: Disconnected and cleaned up subscriptions');
+    logger.i('NWC: Disconnected and cleaned up');
   }
 
   /// Pays a Lightning invoice.
