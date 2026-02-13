@@ -56,6 +56,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
   @override
   void initState() {
     super.initState();
+    _customPaymentMethodController.addListener(_onCustomPaymentMethodChanged);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final GoRouterState state = GoRouterState.of(context);
@@ -88,9 +89,14 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
     _fixedPriceRangeErrorTimer?.cancel();
     _scrollController.dispose();
     _lightningAddressController.dispose();
+    _customPaymentMethodController.removeListener(_onCustomPaymentMethodChanged);
     _customPaymentMethodController.dispose();
     _satsAmountController.dispose();
     super.dispose();
+  }
+
+  void _onCustomPaymentMethodChanged() {
+    setState(() {});
   }
 
   void _onAmountChanged(int? minAmount, int? maxAmount) {
@@ -427,7 +433,8 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
       return null;
     }
 
-    if (_selectedPaymentMethods.isEmpty) {
+    if (_selectedPaymentMethods.isEmpty &&
+        _customPaymentMethodController.text.trim().isEmpty) {
       return null;
     }
 
@@ -449,7 +456,8 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
       // Now we know selectedFiatCode is non-null and non-empty
       final fiatCode = selectedFiatCode;
 
-      if (_selectedPaymentMethods.isEmpty) {
+      if (_selectedPaymentMethods.isEmpty &&
+          _customPaymentMethodController.text.trim().isEmpty) {
         SnackBarHelper.showTopSnackBar(
           context,
           S.of(context)!.pleaseSelectPaymentMethod,
