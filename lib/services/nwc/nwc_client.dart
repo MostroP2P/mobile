@@ -240,14 +240,13 @@ class NwcClient {
       final requestId = requestEvent.id!;
       logger.d('NWC: Sending ${request.method} request (id: $requestId)');
 
-      // Subscribe to response events (kind 23195) that reference this request
-      // Use #e tag to filter responses referencing our request event ID,
-      // and #p tag to match our client pubkey.
+      // Subscribe to response events (kind 23195) from the wallet service.
+      // Only filter by kind + author; some NWC relay implementations
+      // (e.g. Primal) don't support #e / #p tag filters, so we verify
+      // the e-tag match in the event handler below.
       final filter = NostrFilter(
         kinds: const [23195],
         authors: [connection.walletPubkey],
-        e: [requestId],
-        p: [_clientPubkey],
       );
 
       final subId = 'nwc_${requestId.substring(0, 8)}';
