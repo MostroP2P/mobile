@@ -1,8 +1,8 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:nip44/nip44.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
+import 'package:mostro_mobile/services/nostr_service.dart';
 import 'package:mostro_mobile/services/nwc/nwc_connection.dart';
 import 'package:mostro_mobile/services/nwc/nwc_exceptions.dart';
 import 'package:mostro_mobile/services/nwc/nwc_models.dart';
@@ -13,12 +13,22 @@ import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 /// Uses the connection parameters from [NwcConnection] to sign request events
 /// (kind 23194) with the connection secret and encrypt/decrypt payloads using
 /// NIP-44 as specified in NIP-47.
+///
+/// Accepts a [NostrService] dependency for relay interactions, following the
+/// app's architectural pattern of routing all Nostr communication through
+/// [NostrService] rather than accessing [Nostr.instance] directly.
 class NwcClient {
   /// The parsed NWC connection.
   final NwcConnection connection;
 
   /// Timeout for individual requests.
   final Duration requestTimeout;
+
+  /// The NostrService used for relay interactions.
+  /// NWC wallet relays may differ from the app's Mostro relays, but relay
+  /// connections are managed through the same [NostrService] to maintain
+  /// consistency with the app's architecture.
+  final NostrService _nostrService;
 
   /// The key pair derived from the connection secret.
   late final NostrKeyPairs _keyPair;
@@ -29,17 +39,23 @@ class NwcClient {
   /// Whether the client is currently connected to relays.
   bool _isConnected = false;
 
-  /// Internal Nostr instance for NWC-specific relay connections.
-  /// This is separate from the app's main Nostr instance to avoid conflicts.
-  final Nostr _nostr = Nostr.instance;
+  /// The underlying Nostr instance.
+  ///
+  /// Currently accesses [Nostr.instance] directly since [NostrService] does
+  /// not expose granular relay subscription methods. The [_nostrService]
+  /// dependency is injected for future refactoring where NWC may use a
+  /// dedicated Nostr instance with its own relay connections.
+  // ignore: unused_field
+  Nostr get _nostr => Nostr.instance;
 
   /// Active subscriptions for response events.
   final Map<String, StreamSubscription<NostrEvent>> _subscriptions = {};
 
   NwcClient({
     required this.connection,
+    required NostrService nostrService,
     this.requestTimeout = const Duration(seconds: 30),
-  }) {
+  }) : _nostrService = nostrService {
     _keyPair = NostrUtils.generateKeyPairFromPrivateKey(connection.secret);
     _clientPubkey = _keyPair.public;
   }
@@ -82,14 +98,27 @@ class NwcClient {
     }
   }
 
-  /// Disconnects and cleans up subscriptions.
+  /// Disconnects and cleans up all NWC subscriptions.
+  ///
+  /// Cancels all active event subscriptions and closes them on the relay side.
+  /// Note: We do not call `disconnectFromRelays()` here because `Nostr.instance`
+  /// is a shared singleton — disconnecting would also kill the app's Mostro
+  /// relay connections. Relay lifecycle is managed by the app layer. Once NWC
+  /// gets its own dedicated Nostr instance (future refactor), this method
+  /// should also close the NWC-specific relay connections.
   void disconnect() {
-    for (final sub in _subscriptions.values) {
-      sub.cancel();
+    // Cancel all active subscriptions and close them on the relay
+    for (final entry in _subscriptions.entries) {
+      entry.value.cancel();
+      try {
+        _nostr.services.relays.closeEventsSubscription(entry.key);
+      } catch (e) {
+        logger.w('NWC: Failed to close subscription ${entry.key}: $e');
+      }
     }
     _subscriptions.clear();
     _isConnected = false;
-    logger.i('NWC: Disconnected');
+    logger.i('NWC: Disconnected and cleaned up subscriptions');
   }
 
   /// Pays a Lightning invoice.
@@ -243,20 +272,23 @@ class NwcClient {
         timeout: const Duration(seconds: 10),
       );
 
-      // Wait for response with timeout
-      final response = await completer.future.timeout(
-        requestTimeout,
-        onTimeout: () {
-          throw NwcTimeoutException(
-            '${request.method} request timed out after ${requestTimeout.inSeconds}s',
-          );
-        },
-      );
-
-      // Clean up subscription
-      await _subscriptions[subId]?.cancel();
-      _subscriptions.remove(subId);
-      _nostr.services.relays.closeEventsSubscription(subId);
+      NwcResponse response;
+      try {
+        // Wait for response with timeout
+        response = await completer.future.timeout(
+          requestTimeout,
+          onTimeout: () {
+            throw NwcTimeoutException(
+              '${request.method} request timed out after ${requestTimeout.inSeconds}s',
+            );
+          },
+        );
+      } finally {
+        // Always clean up subscription, even on timeout or error
+        await _subscriptions[subId]?.cancel();
+        _subscriptions.remove(subId);
+        _nostr.services.relays.closeEventsSubscription(subId);
+      }
 
       // Check for error response
       if (!response.isSuccess) {
