@@ -141,9 +141,10 @@ class NwcNotifier extends StateNotifier<NwcState> {
         errorMessage: e.message,
       );
     } catch (e) {
-      state = NwcState(
+      logger.e('NWC: Unexpected connection error: $e');
+      state = const NwcState(
         status: NwcStatus.error,
-        errorMessage: e.toString(),
+        errorMessage: 'An unexpected error occurred while connecting',
       );
     }
   }
