@@ -56,7 +56,13 @@ class _ConnectWalletScreenState extends ConsumerState<ConnectWalletScreen> {
             HeroIcons.arrowLeft,
             color: AppTheme.textPrimary,
           ),
-          onPressed: () => context.pop(),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/settings');
+            }
+          },
         ),
         title: Text(
           S.of(context)!.connectWallet,

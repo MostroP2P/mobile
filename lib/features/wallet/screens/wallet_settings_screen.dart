@@ -28,7 +28,13 @@ class WalletSettingsScreen extends ConsumerWidget {
             HeroIcons.arrowLeft,
             color: AppTheme.textPrimary,
           ),
-          onPressed: () => context.pop(),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/settings');
+            }
+          },
         ),
         title: Text(
           S.of(context)!.walletSettings,
