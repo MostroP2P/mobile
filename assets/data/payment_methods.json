@@ -7,6 +7,7 @@
   "CAD": ["Interac e-Transfer", "National Bank of Canada", "Any national bank", "Wise", "Revolut", "Cash"],
   "CHF": ["TWINT", "Cash"],
   "CLP": ["Banco de Chile", "MACH", "Cuenta RUT", "Mercado Pago", "Banco Falabella", "Transferencia bancaria", "Efectivo"],
+  "CRC": ["Bank transfer (IBAN)", "SINPE Móvil", "Cash"],
   "COP": ["Nequi", "Daviplata", "PSE", "Bancolombia", "Llaves BRE-B", "Davivienda", "Efectivo"],
   "CUP": ["Transfermovil", "EnZona", "Tarjeta Clásica", "Saldo móvil", "MiTransfer", "Efectivo"],
   "EUR": ["SEPA", "Revolut", "N26", "Bank Transfer", "Wise", "SEPA instant", "Bizum", "SEPA bank transfer", "Payoneer", "Cash"],
