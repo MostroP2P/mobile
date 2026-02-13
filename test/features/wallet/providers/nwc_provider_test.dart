@@ -18,9 +18,9 @@ void main() {
       expect(state.balanceSats, 1500);
     });
 
-    test('balanceSats rounds correctly', () {
+    test('balanceSats truncates correctly', () {
       const state = NwcState(balanceMsats: 1999);
-      expect(state.balanceSats, 2);
+      expect(state.balanceSats, 1);
     });
 
     test('balanceSats is null when balanceMsats is null', () {
