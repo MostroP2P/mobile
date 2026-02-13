@@ -8,9 +8,8 @@ import 'package:mostro_mobile/core/app_theme.dart';
 
 class PaymentMethodsSection extends ConsumerWidget {
   final List<String> selectedMethods;
-  final bool showCustomField;
   final TextEditingController customController;
-  final Function(List<String>, bool) onMethodsChanged;
+  final Function(List<String>) onMethodsChanged;
 
   /// Helper function to translate payment method names
   String _translatePaymentMethod(String method, BuildContext context) {
@@ -29,7 +28,6 @@ class PaymentMethodsSection extends ConsumerWidget {
   const PaymentMethodsSection({
     super.key,
     required this.selectedMethods,
-    required this.showCustomField,
     required this.customController,
     required this.onMethodsChanged,
   });
@@ -44,26 +42,19 @@ class PaymentMethodsSection extends ConsumerWidget {
       title: S.of(context)!.paymentMethodsForCurrency(selectedFiatCode ?? ''),
       icon: const Icon(Icons.credit_card, color: AppTheme.mostroGreen, size: 18),
       iconBackgroundColor: AppTheme.mostroGreen.withValues(alpha: 0.3),
-      extraContent: showCustomField
-          ? Padding(
-              padding: const EdgeInsets.fromLTRB(0, 8, 0, 0),
-              child: TextField(
-                key: const Key('paymentMethodField'),
-                controller: customController,
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  hintText: S.of(context)!.enterCustomPaymentMethod,
-                  hintStyle: TextStyle(color: Colors.grey),
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.white24),
-                  ),
-                  focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: AppTheme.mostroGreen),
-                  ),
-                ),
-              ),
-            )
-          : null,
+      extraContent: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 8, 16, 16),
+          child: TextField(
+            key: const Key('paymentMethodField'),
+            controller: customController,
+            style: const TextStyle(color: Colors.white, fontSize: 13),
+            decoration: InputDecoration(
+              border: InputBorder.none,
+              hintText: S.of(context)!.enterCustomPaymentMethod,
+              hintStyle: TextStyle(color: Colors.grey, fontSize: 13),
+            ),
+          ),
+        ),
       child: paymentMethodsData.when(
         loading: () => Text(S.of(context)!.loadingPaymentMethods,
             style: const TextStyle(color: Colors.white)),
@@ -92,9 +83,7 @@ class PaymentMethodsSection extends ConsumerWidget {
                 context,
                 availableMethods,
                 selectedMethods,
-                showCustomField,
                 onMethodsChanged,
-                customController,
               );
             },
             child: Row(
@@ -107,6 +96,7 @@ class PaymentMethodsSection extends ConsumerWidget {
                     style: TextStyle(
                       color:
                           selectedMethods.isEmpty ? Colors.grey : Colors.white,
+                      fontSize: 16,
                     ),
                   ),
                 ),
@@ -123,21 +113,20 @@ class PaymentMethodsSection extends ConsumerWidget {
     BuildContext context,
     List<String> availableMethods,
     List<String> selectedMethods,
-    bool showCustomField,
-    Function(List<String>, bool) onMethodsChanged,
-    TextEditingController customController,
+    Function(List<String>) onMethodsChanged,
   ) {
+    // Remove "Other" from available methods since custom field is always visible
     final translatedOther = _translatePaymentMethod('Other', context);
-    if (!availableMethods.contains(translatedOther)) {
-      availableMethods = [...availableMethods, translatedOther];
-    }
+    availableMethods = availableMethods
+        .where((m) => m != translatedOther)
+        .toList();
 
     // Normalize to current locale so checkbox states align with localized labels
     final localizedSelected = selectedMethods
         .map((m) => _translatePaymentMethod(m, context))
+        .where((m) => m != translatedOther)
         .toList();
     List<String> dialogSelectedMethods = List<String>.from(localizedSelected);
-    bool dialogShowOtherField = dialogSelectedMethods.contains(translatedOther);
 
     showDialog(
       context: context,
@@ -155,51 +144,23 @@ class PaymentMethodsSection extends ConsumerWidget {
                 child: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ...availableMethods.map((method) => CheckboxListTile(
-                            title: Text(method,
-                                style: const TextStyle(color: Colors.white)),
-                            value: dialogSelectedMethods.contains(method),
-                            activeColor: AppTheme.mostroGreen,
-                            checkColor: Colors.black,
-                            contentPadding: EdgeInsets.zero,
-                            onChanged: (selected) {
-                              setDialogState(() {
-                                if (selected == true) {
-                                  dialogSelectedMethods.add(method);
-                                  if (method == translatedOther) {
-                                    dialogShowOtherField = true;
-                                  }
-                                } else {
-                                  dialogSelectedMethods.remove(method);
-                                  if (method == translatedOther) {
-                                    dialogShowOtherField = false;
-                                  }
-                                }
-                              });
-                            },
-                          )),
-                      if (dialogShowOtherField) ...[
-                        const SizedBox(height: 16),
-                        // Use the existing controller directly to avoid memory leaks and cursor position loss
-                        TextField(
-                          controller: customController,
-                          style: const TextStyle(color: Colors.white),
-                          decoration: InputDecoration(
-                            hintText: S.of(context)!.enterCustomPaymentMethod,
-                            hintStyle: TextStyle(color: Colors.grey),
-                            enabledBorder: UnderlineInputBorder(
-                              borderSide: BorderSide(color: Colors.white24),
-                            ),
-                            focusedBorder: UnderlineInputBorder(
-                              borderSide: BorderSide(color: AppTheme.mostroGreen),
-                            ),
-                          ),
-                          // No need for an onChanged handler that updates the controller
-                          // as the controller will automatically update its text
-                        ),
-                      ],
-                    ],
+                    children: availableMethods.map((method) => CheckboxListTile(
+                          title: Text(method,
+                              style: const TextStyle(color: Colors.white)),
+                          value: dialogSelectedMethods.contains(method),
+                          activeColor: AppTheme.mostroGreen,
+                          checkColor: Colors.black,
+                          contentPadding: EdgeInsets.zero,
+                          onChanged: (selected) {
+                            setDialogState(() {
+                              if (selected == true) {
+                                dialogSelectedMethods.add(method);
+                              } else {
+                                dialogSelectedMethods.remove(method);
+                              }
+                            });
+                          },
+                        )).toList(),
                   ),
                 ),
               ),
@@ -217,8 +178,7 @@ class PaymentMethodsSection extends ConsumerWidget {
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    onMethodsChanged(
-                        dialogSelectedMethods, dialogShowOtherField);
+                    onMethodsChanged(dialogSelectedMethods);
                     Navigator.of(context).pop();
                   },
                   style: ElevatedButton.styleFrom(

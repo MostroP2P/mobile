@@ -52,7 +52,6 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
   Timer? _fixedPriceRangeErrorTimer;
 
   List<String> _selectedPaymentMethods = [];
-  bool _showCustomPaymentMethod = false;
 
   @override
   void initState() {
@@ -240,7 +239,6 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
       if (previous != null && previous != next && context.mounted) {
         setState(() {
           _selectedPaymentMethods = [];
-          _showCustomPaymentMethod = false;
           _customPaymentMethodController.clear();
         });
       }
@@ -303,12 +301,10 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
                         const SizedBox(height: 16),
                         PaymentMethodsSection(
                           selectedMethods: _selectedPaymentMethods,
-                          showCustomField: _showCustomPaymentMethod,
                           customController: _customPaymentMethodController,
-                          onMethodsChanged: (methods, showCustom) {
+                          onMethodsChanged: (methods) {
                             setState(() {
                               _selectedPaymentMethods = methods;
-                              _showCustomPaymentMethod = showCustom;
                             });
                           },
                         ),
@@ -502,14 +498,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
 
         List<String> paymentMethods =
             List<String>.from(_selectedPaymentMethods);
-        if (_showCustomPaymentMethod &&
-            _customPaymentMethodController.text.isNotEmpty) {
-          // Remove localized "Other" (case-insensitive, trimmed) from the list
-          final localizedOther = S.of(context)!.other.trim().toLowerCase();
-          paymentMethods.removeWhere(
-            (method) => method.trim().toLowerCase() == localizedOther,
-          );
-
+        if (_customPaymentMethodController.text.isNotEmpty) {
           String sanitizedPaymentMethod = _customPaymentMethodController.text;
 
           final problematicChars = RegExp(r'[,"\\\[\]{}]');
