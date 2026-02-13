@@ -61,8 +61,8 @@ class WalletBalanceWidget extends StatelessWidget {
             Center(
               child: Text(
                 balanceSats != null
-                    ? '⚡ ${_formatBalance(balanceSats!)} sats'
-                    : '⚡ -- sats',
+                    ? '⚡ ${_formatBalance(balanceSats!)} ${S.of(context)!.sats}'
+                    : '⚡ -- ${S.of(context)!.sats}',
                 style: const TextStyle(
                   color: AppTheme.textPrimary,
                   fontSize: 28,

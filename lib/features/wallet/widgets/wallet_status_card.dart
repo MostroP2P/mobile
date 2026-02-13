@@ -101,7 +101,7 @@ class WalletStatusCard extends ConsumerWidget {
                                 nwcState.balanceSats != null) ...[
                               const SizedBox(height: 4),
                               Text(
-                                '⚡ ${_formatSats(nwcState.balanceSats!)} sats',
+                                '⚡ ${_formatSats(nwcState.balanceSats!)} ${S.of(context)!.sats}',
                                 style: const TextStyle(
                                   color: AppTheme.textSecondary,
                                   fontSize: 13,

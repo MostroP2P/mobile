@@ -27,7 +27,7 @@ class NwcState extends Equatable {
 
   /// Balance converted from millisatoshis to satoshis.
   int? get balanceSats =>
-      balanceMsats != null ? (balanceMsats! / 1000).round() : null;
+      balanceMsats != null ? (balanceMsats! ~/ 1000) : null;
 
   NwcState copyWith({
     NwcStatus? status,
@@ -115,7 +115,11 @@ class NwcNotifier extends StateNotifier<NwcState> {
       }
 
       if (persist) {
-        await _storage.saveConnection(uri);
+        try {
+          await _storage.saveConnection(uri);
+        } catch (e) {
+          logger.w('NWC: Failed to persist connection URI: $e');
+        }
       }
 
       state = NwcState(
@@ -148,7 +152,11 @@ class NwcNotifier extends StateNotifier<NwcState> {
   Future<void> disconnect() async {
     _client?.disconnect();
     _client = null;
-    await _storage.deleteConnection();
+    try {
+      await _storage.deleteConnection();
+    } catch (e) {
+      logger.w('NWC: Failed to delete stored connection: $e');
+    }
     state = const NwcState(status: NwcStatus.disconnected);
     logger.i('NWC: Disconnected and cleared stored connection');
   }
