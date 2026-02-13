@@ -39,8 +39,11 @@ images:
     - assets/images/screenshot-8.jpg
 supported_nips:
     - "01"
-    - "17"
+    - "06"
+    - "44"
+    - "47"
     - "59"
+    - "65"
     - "69"
 metadata_sources:
     - github
