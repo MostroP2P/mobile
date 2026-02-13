@@ -382,7 +382,8 @@
   "selectPaymentMethodsTitle": "Seleccionar Métodos de Pago",
   "premiumTitle": "Prima (%)",
   "premiumTooltip": "Ajusta cuánto por encima o por debajo del precio de mercado quieres tu oferta. Por defecto, está establecido en 0%, sin prima o descuento, así que si no quieres cambiar el precio, puedes dejarlo como está.",
-  
+  "premiumEditHint": "Editar",
+
   "secretWords": "Palabras Secretas",
   "toRestoreYourAccount": "Para restaurar tu cuenta",
   "privacy": "Privacidad",
