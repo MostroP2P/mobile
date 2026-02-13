@@ -14,7 +14,7 @@ This improves UX significantly: instead of copy-pasting invoices between apps, p
 
 All NWC code lives under `lib/services/nwc/` with four files:
 
-```
+```text
 lib/services/nwc/
 ├── nwc_connection.dart    # URI parsing & connection model
 ├── nwc_models.dart        # Request/response/command models  
