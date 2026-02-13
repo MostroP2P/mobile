@@ -416,6 +416,11 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
       return null; // Disables button, prevents loading state
     }
 
+    // Ensure at least a minimum amount is entered
+    if (_minFiatAmount == null) {
+      return null;
+    }
+
     // Check other basic conditions that would prevent submission
     final selectedFiatCode = ref.read(selectedFiatCodeProvider);
     if (selectedFiatCode == null || selectedFiatCode.isEmpty) {
