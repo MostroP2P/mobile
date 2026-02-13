@@ -260,6 +260,8 @@ class NwcClient {
 
       final subscription = stream.stream.listen((event) async {
         try {
+          logger.d('NWC: Received event kind=${event.kind} from ${event.pubkey?.substring(0, 8)}...');
+
           // Verify this response references our request via 'e' tag
           final eTag = event.tags?.firstWhere(
             (t) => t.isNotEmpty && t[0] == 'e',
@@ -267,8 +269,11 @@ class NwcClient {
           );
 
           if (eTag == null || eTag.length < 2 || eTag[1] != requestId) {
+            logger.d('NWC: Ignoring event — e tag mismatch (expected: ${requestId.substring(0, 8)}..., got: ${eTag != null && eTag.length >= 2 ? eTag[1].substring(0, 8) : "none"}...)');
             return; // Not our response
           }
+
+          logger.d('NWC: Response matched for ${request.method}!');
 
           // Decrypt the response
           final decrypted = await Nip44.decryptMessage(
@@ -302,9 +307,11 @@ class NwcClient {
       NwcResponse response;
       try {
         // Wait for response with timeout
+        logger.d('NWC: Waiting for ${request.method} response (timeout: ${requestTimeout.inSeconds}s)...');
         response = await completer.future.timeout(
           requestTimeout,
           onTimeout: () {
+            logger.w('NWC: ${request.method} TIMED OUT after ${requestTimeout.inSeconds}s');
             throw NwcTimeoutException(
               '${request.method} request timed out after ${requestTimeout.inSeconds}s',
             );

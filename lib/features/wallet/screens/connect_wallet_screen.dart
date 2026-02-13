@@ -37,7 +37,7 @@ class _ConnectWalletScreenState extends ConsumerState<ConnectWalletScreen> {
     ref.listen<NwcState>(nwcProvider, (previous, next) {
       if (next.status == NwcStatus.connected) {
         if (context.mounted) {
-          context.go('/wallet_settings');
+          context.pop();
         }
       } else if (next.status == NwcStatus.error) {
         setState(() {
