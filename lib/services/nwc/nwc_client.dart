@@ -28,6 +28,7 @@ class NwcClient {
   /// NWC wallet relays may differ from the app's Mostro relays, but relay
   /// connections are managed through the same [NostrService] to maintain
   /// consistency with the app's architecture.
+  // ignore: unused_field
   final NostrService _nostrService;
 
   /// The key pair derived from the connection secret.
@@ -45,7 +46,6 @@ class NwcClient {
   /// not expose granular relay subscription methods. The [_nostrService]
   /// dependency is injected for future refactoring where NWC may use a
   /// dedicated Nostr instance with its own relay connections.
-  // ignore: unused_field
   Nostr get _nostr => Nostr.instance;
 
   /// Active subscriptions for response events.
@@ -231,7 +231,7 @@ class NwcClient {
         ),
       );
 
-      final subscription = stream.listen((event) async {
+      final subscription = stream.stream.listen((event) async {
         try {
           // Verify this response references our request via 'e' tag
           final eTag = event.tags?.firstWhere(
@@ -267,7 +267,7 @@ class NwcClient {
       _subscriptions[subId] = subscription;
 
       // Publish the request event
-      _nostr.services.relays.sendEventToRelays(
+      await _nostr.services.relays.sendEventToRelaysAsync(
         requestEvent,
         timeout: const Duration(seconds: 10),
       );

@@ -3,7 +3,7 @@ import 'package:mostro_mobile/services/nwc/nwc_exceptions.dart';
 
 /// Represents a parsed NWC (Nostr Wallet Connect) connection URI.
 ///
-/// Format: nostr+walletconnect://<wallet_pubkey>?relay=<relay_url>&secret=<secret>&lud16=<lud16>
+/// Format: `nostr+walletconnect://<wallet_pubkey>?relay=<relay_url>&secret=<secret>&lud16=<lud16>`
 class NwcConnection extends Equatable {
   /// The wallet service's 32-byte hex-encoded public key.
   final String walletPubkey;

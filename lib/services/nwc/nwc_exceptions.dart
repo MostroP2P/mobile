@@ -28,8 +28,7 @@ class NwcResponseException extends NwcException {
 
 /// Thrown when a request to the wallet service times out.
 class NwcTimeoutException extends NwcException {
-  const NwcTimeoutException([String message = 'Request timed out'])
-      : super(message);
+  const NwcTimeoutException([super.message = 'Request timed out']);
 
   @override
   String toString() => 'NwcTimeoutException: $message';
@@ -37,8 +36,7 @@ class NwcTimeoutException extends NwcException {
 
 /// Thrown when the NWC client is not connected.
 class NwcNotConnectedException extends NwcException {
-  const NwcNotConnectedException([String message = 'Not connected to relay'])
-      : super(message);
+  const NwcNotConnectedException([super.message = 'Not connected to relay']);
 
   @override
   String toString() => 'NwcNotConnectedException: $message';
