@@ -43,11 +43,11 @@ class PaymentMethodsSection extends ConsumerWidget {
       icon: const Icon(Icons.credit_card, color: AppTheme.mostroGreen, size: 18),
       iconBackgroundColor: AppTheme.mostroGreen.withValues(alpha: 0.3),
       extraContent: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 16, 16),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
           child: TextField(
             key: const Key('paymentMethodField'),
             controller: customController,
-            style: const TextStyle(color: Colors.white, fontSize: 13),
+            style: const TextStyle(color: Colors.white, fontSize: 15),
             decoration: InputDecoration(
               border: InputBorder.none,
               hintText: S.of(context)!.enterCustomPaymentMethod,
