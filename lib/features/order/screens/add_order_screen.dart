@@ -52,11 +52,11 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
   Timer? _fixedPriceRangeErrorTimer;
 
   List<String> _selectedPaymentMethods = [];
-  bool _showCustomPaymentMethod = false;
 
   @override
   void initState() {
     super.initState();
+    _customPaymentMethodController.addListener(_onCustomPaymentMethodChanged);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final GoRouterState state = GoRouterState.of(context);
@@ -89,9 +89,14 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
     _fixedPriceRangeErrorTimer?.cancel();
     _scrollController.dispose();
     _lightningAddressController.dispose();
+    _customPaymentMethodController.removeListener(_onCustomPaymentMethodChanged);
     _customPaymentMethodController.dispose();
     _satsAmountController.dispose();
     super.dispose();
+  }
+
+  void _onCustomPaymentMethodChanged() {
+    setState(() {});
   }
 
   void _onAmountChanged(int? minAmount, int? maxAmount) {
@@ -240,7 +245,6 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
       if (previous != null && previous != next && context.mounted) {
         setState(() {
           _selectedPaymentMethods = [];
-          _showCustomPaymentMethod = false;
           _customPaymentMethodController.clear();
         });
       }
@@ -303,12 +307,10 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
                         const SizedBox(height: 16),
                         PaymentMethodsSection(
                           selectedMethods: _selectedPaymentMethods,
-                          showCustomField: _showCustomPaymentMethod,
                           customController: _customPaymentMethodController,
-                          onMethodsChanged: (methods, showCustom) {
+                          onMethodsChanged: (methods) {
                             setState(() {
                               _selectedPaymentMethods = methods;
-                              _showCustomPaymentMethod = showCustom;
                             });
                           },
                         ),
@@ -420,13 +422,19 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
       return null; // Disables button, prevents loading state
     }
 
+    // Ensure at least a minimum amount is entered
+    if (_minFiatAmount == null) {
+      return null;
+    }
+
     // Check other basic conditions that would prevent submission
     final selectedFiatCode = ref.read(selectedFiatCodeProvider);
     if (selectedFiatCode == null || selectedFiatCode.isEmpty) {
       return null;
     }
 
-    if (_selectedPaymentMethods.isEmpty) {
+    if (_selectedPaymentMethods.isEmpty &&
+        _customPaymentMethodController.text.trim().isEmpty) {
       return null;
     }
 
@@ -448,7 +456,8 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
       // Now we know selectedFiatCode is non-null and non-empty
       final fiatCode = selectedFiatCode;
 
-      if (_selectedPaymentMethods.isEmpty) {
+      if (_selectedPaymentMethods.isEmpty &&
+          _customPaymentMethodController.text.trim().isEmpty) {
         SnackBarHelper.showTopSnackBar(
           context,
           S.of(context)!.pleaseSelectPaymentMethod,
@@ -502,14 +511,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
 
         List<String> paymentMethods =
             List<String>.from(_selectedPaymentMethods);
-        if (_showCustomPaymentMethod &&
-            _customPaymentMethodController.text.isNotEmpty) {
-          // Remove localized "Other" (case-insensitive, trimmed) from the list
-          final localizedOther = S.of(context)!.other.trim().toLowerCase();
-          paymentMethods.removeWhere(
-            (method) => method.trim().toLowerCase() == localizedOther,
-          );
-
+        if (_customPaymentMethodController.text.isNotEmpty) {
           String sanitizedPaymentMethod = _customPaymentMethodController.text;
 
           final problematicChars = RegExp(r'[,"\\\[\]{}]');

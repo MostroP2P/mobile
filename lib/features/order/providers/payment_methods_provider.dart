@@ -17,19 +17,14 @@ final paymentMethodsForCurrencyProvider =
   return paymentMethodsData.when(
     data: (data) {
       if (data.containsKey(currencyCode)) {
-        final methods = List<String>.from(data[currencyCode]);
-
-        if (!methods.contains('Other')) {
-          methods.add('Other');
-        }
-        return methods;
+        return List<String>.from(data[currencyCode]);
       } else {
         return List<String>.from(
-            data['default'] ?? ['Bank Transfer', 'Cash in person', 'Other']);
+            data['default'] ?? ['Bank Transfer', 'Cash in person']);
       }
     },
     loading: () => ['Loading...'],
-    error: (_, __) => ['Bank Transfer', 'Cash in person', 'Other'],
+    error: (_, __) => ['Bank Transfer', 'Cash in person'],
   );
 });
 
