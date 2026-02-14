@@ -703,6 +703,12 @@
       "error": { "type": "String" }
     }
   },
+  "failedToUpdateInvoice": "Failed to update invoice: {error}",
+  "@failedToUpdateInvoice": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
   "refreshingExchangeRate": "Refreshing exchange rate...",
   "language": "Language",
   "systemDefault": "System Default",

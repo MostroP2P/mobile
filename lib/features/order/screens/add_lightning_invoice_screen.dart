@@ -159,10 +159,12 @@ class _AddLightningInvoiceScreenState
       if (mounted) context.go('/');
     } catch (e) {
       if (mounted) {
-        SnackBarHelper.showTopSnackBar(
-          context,
-          'Failed to update invoice: ${e.toString()}',
-        );
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          SnackBarHelper.showTopSnackBar(
+            context,
+            S.of(context)!.failedToUpdateInvoice(e.toString()),
+          );
+        });
       }
     }
   }
@@ -175,10 +177,12 @@ class _AddLightningInvoiceScreenState
       if (mounted) context.go('/');
     } catch (e) {
       if (mounted) {
-        SnackBarHelper.showTopSnackBar(
-          context,
-          S.of(context)!.failedToCancelOrder(e.toString()),
-        );
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          SnackBarHelper.showTopSnackBar(
+            context,
+            S.of(context)!.failedToCancelOrder(e.toString()),
+          );
+        });
       }
     }
   }

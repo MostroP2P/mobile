@@ -646,6 +646,12 @@
       "error": { "type": "String" }
     }
   },
+  "failedToUpdateInvoice": "Impossibile aggiornare la fattura: {error}",
+  "@failedToUpdateInvoice": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
   "refreshingExchangeRate": "Aggiornamento tasso di cambio...",
 
   "@_comment_trade_detail_screen_new": "Nuove Stringhe Schermata Dettagli Scambio",

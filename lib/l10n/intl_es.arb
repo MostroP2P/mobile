@@ -616,6 +616,12 @@
       "error": { "type": "String" }
     }
   },
+  "failedToUpdateInvoice": "Error al actualizar factura: {error}",
+  "@failedToUpdateInvoice": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
   "refreshingExchangeRate": "Actualizando tasa de cambio...",
 
   "@_comment_trade_detail_screen_new": "Nuevas cadenas de Pantalla de Detalles de Intercambio",
