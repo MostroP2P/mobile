@@ -7,7 +7,6 @@ import 'package:mostro_mobile/features/mostro/widgets/add_custom_node_dialog.dar
 import 'package:mostro_mobile/features/mostro/widgets/mostro_node_avatar.dart';
 import 'package:mostro_mobile/features/mostro/widgets/trusted_badge.dart';
 import 'package:mostro_mobile/features/restore/restore_manager.dart';
-import 'package:mostro_mobile/features/restore/restore_progress_notifier.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
@@ -317,15 +316,6 @@ class _MostroNodeSelectorState extends ConsumerState<MostroNodeSelector> {
         final success = await restoreService.initRestoreProcess();
 
         if (!success) {
-          // Hide error overlay from failed restore
-          ref.read(restoreProgressProvider.notifier).hide();
-
-          // Revert settings to old node
-          await notifier.selectNode(oldPubkey);
-
-          // Re-restore old node's data (since _clearAll already wiped it)
-          await restoreService.initRestoreProcess();
-
           if (mounted) {
             setState(() {
               _isSwitching = false;
@@ -337,7 +327,7 @@ class _MostroNodeSelectorState extends ConsumerState<MostroNodeSelector> {
             messenger: messenger,
             screenHeight: mediaQuery.size.height,
             statusBarHeight: mediaQuery.padding.top,
-            message: localizations.nodeNotRespondingReverted,
+            message: localizations.errorSwitchingNode,
           );
           return;
         }
