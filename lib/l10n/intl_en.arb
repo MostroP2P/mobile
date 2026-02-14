@@ -1439,6 +1439,14 @@
   "nwcQuotaExceeded": "Wallet spending quota exceeded",
   "nwcRetryPayment": "Retry Payment",
   "nwcPayManually": "Pay manually instead",
-  "nwcPreimageLabel": "Preimage"
+  "nwcPreimageLabel": "Preimage",
+  "nwcGenerateWithWallet": "Generate with Wallet",
+  "nwcInvoiceGenerating": "Generating invoice...",
+  "nwcInvoiceGenerated": "Invoice Generated!",
+  "nwcInvoiceFailed": "Invoice generation failed. Please try again.",
+  "nwcInvoiceTimeout": "Invoice generation timed out. Please try again or enter manually.",
+  "nwcConfirmInvoice": "Confirm & Submit",
+  "nwcRetryInvoice": "Retry",
+  "nwcEnterManually": "Enter manually instead"
 
 }

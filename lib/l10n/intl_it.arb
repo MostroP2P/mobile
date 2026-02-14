@@ -1470,5 +1470,13 @@
   "nwcQuotaExceeded": "Quota di spesa del portafoglio superata",
   "nwcRetryPayment": "Riprova Pagamento",
   "nwcPayManually": "Paga manualmente",
-  "nwcPreimageLabel": "Preimage"
+  "nwcPreimageLabel": "Preimage",
+  "nwcGenerateWithWallet": "Genera con Portafoglio",
+  "nwcInvoiceGenerating": "Generazione fattura...",
+  "nwcInvoiceGenerated": "Fattura Generata!",
+  "nwcInvoiceFailed": "Generazione fattura fallita. Riprova.",
+  "nwcInvoiceTimeout": "Generazione fattura scaduta. Riprova o inserisci manualmente.",
+  "nwcConfirmInvoice": "Conferma e Invia",
+  "nwcRetryInvoice": "Riprova",
+  "nwcEnterManually": "Inserisci manualmente"
 }

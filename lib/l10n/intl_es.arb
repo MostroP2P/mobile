@@ -1415,6 +1415,14 @@
   "nwcQuotaExceeded": "Cuota de gastos de la billetera excedida",
   "nwcRetryPayment": "Reintentar Pago",
   "nwcPayManually": "Pagar manualmente",
-  "nwcPreimageLabel": "Preimagen"
+  "nwcPreimageLabel": "Preimagen",
+  "nwcGenerateWithWallet": "Generar con Billetera",
+  "nwcInvoiceGenerating": "Generando factura...",
+  "nwcInvoiceGenerated": "¡Factura Generada!",
+  "nwcInvoiceFailed": "La generación de la factura falló. Por favor, inténtalo de nuevo.",
+  "nwcInvoiceTimeout": "La generación de la factura expiró. Inténtalo de nuevo o ingresa manualmente.",
+  "nwcConfirmInvoice": "Confirmar y Enviar",
+  "nwcRetryInvoice": "Reintentar",
+  "nwcEnterManually": "Ingresar manualmente"
 
 }
