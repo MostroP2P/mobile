@@ -1,4 +1,4 @@
-# NWC Phase 3: Automatic Invoice Payment (Buyer Flow)
+# NWC Phase 3: Automatic Hold Invoice Payment (Seller Flow)
 
 ## Overview
 
@@ -77,7 +77,7 @@ A self-contained `ConsumerStatefulWidget` that handles the full NWC payment life
 - Retry button resets to idle state for another attempt
 - "Pay manually instead" button triggers fallback callback
 
-**Reusability:** Designed as a shared widget so it can be reused in Phase 4 (seller flow) or any other screen that needs to pay a Lightning invoice.
+**Reusability:** Designed as a shared widget so it can be reused in Phase 4 (buyer flow — auto invoice generation via `make_invoice`) or any other screen that needs to pay a Lightning invoice.
 
 ### NwcNotifier.payInvoice()
 
@@ -128,7 +128,7 @@ Added 11 new strings in EN, ES, IT:
 
 ## What's Next (Phase 4+)
 
-- **Phase 4**: Auto invoice generation (seller receives payment via NWC `make_invoice`)
+- **Phase 4**: Auto invoice generation (buyer receives sats via NWC `make_invoice`)
 - **Phase 5**: Payment notifications (kind 23197 events)
 
 ## References
