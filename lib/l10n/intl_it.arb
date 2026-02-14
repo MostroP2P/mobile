@@ -1469,5 +1469,6 @@
   "nwcRateLimited": "Il portafoglio è limitato. Attendi un momento.",
   "nwcQuotaExceeded": "Quota di spesa del portafoglio superata",
   "nwcRetryPayment": "Riprova Pagamento",
-  "nwcPayManually": "Paga manualmente"
+  "nwcPayManually": "Paga manualmente",
+  "nwcPreimageLabel": "Preimage"
 }

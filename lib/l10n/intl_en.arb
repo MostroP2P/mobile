@@ -1438,6 +1438,7 @@
   "nwcRateLimited": "Wallet is rate limited. Please wait a moment.",
   "nwcQuotaExceeded": "Wallet spending quota exceeded",
   "nwcRetryPayment": "Retry Payment",
-  "nwcPayManually": "Pay manually instead"
+  "nwcPayManually": "Pay manually instead",
+  "nwcPreimageLabel": "Preimage"
 
 }

@@ -1414,6 +1414,7 @@
   "nwcRateLimited": "La billetera está limitada. Espera un momento.",
   "nwcQuotaExceeded": "Cuota de gastos de la billetera excedida",
   "nwcRetryPayment": "Reintentar Pago",
-  "nwcPayManually": "Pagar manualmente"
+  "nwcPayManually": "Pagar manualmente",
+  "nwcPreimageLabel": "Preimagen"
 
 }

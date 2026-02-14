@@ -75,7 +75,11 @@ class _NwcPaymentWidgetState extends ConsumerState<NwcPaymentWidget> {
         _preimage = result.preimage;
       });
 
-      logger.i('NWC: Payment successful! Preimage: ${result.preimage.substring(0, 8)}...');
+      logger.i(
+        _truncatePreimage(result.preimage, 8).isEmpty
+            ? 'NWC: Payment successful! Preimage unavailable'
+            : 'NWC: Payment successful! Preimage: ${_truncatePreimage(result.preimage, 8)}',
+      );
 
       // Notify parent of success
       widget.onPaymentSuccess?.call();
@@ -264,10 +268,10 @@ class _NwcPaymentWidgetState extends ConsumerState<NwcPaymentWidget> {
               fontSize: 14,
             ),
           ),
-          if (_preimage != null) ...[
+          if (_truncatePreimage(_preimage, 16).isNotEmpty) ...[
             const SizedBox(height: 8),
             Text(
-              'Preimage: ${_preimage!.substring(0, 16)}...',
+              '${S.of(context)!.nwcPreimageLabel}: ${_truncatePreimage(_preimage, 16)}',
               style: TextStyle(
                 color: AppTheme.cream1.withAlpha(102),
                 fontSize: 11,
@@ -324,6 +328,11 @@ class _NwcPaymentWidgetState extends ConsumerState<NwcPaymentWidget> {
         foregroundColor: AppTheme.cream1.withAlpha(179),
       ),
     );
+  }
+
+  String _truncatePreimage(String? value, int keep) {
+    if (value == null || value.isEmpty) return '';
+    return value.length <= keep ? value : '${value.substring(0, keep)}...';
   }
 
   String _formatSats(int sats) {
