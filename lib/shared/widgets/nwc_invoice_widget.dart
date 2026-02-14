@@ -134,7 +134,8 @@ class _NwcInvoiceWidgetState extends ConsumerState<NwcInvoiceWidget> {
       case NwcErrorCode.quotaExceeded:
         return S.of(context)!.nwcQuotaExceeded;
       default:
-        return e.message;
+        logger.w('NWC: Unhandled error code ${e.code}: ${e.message}');
+        return S.of(context)!.nwcInvoiceFailed;
     }
   }
 
