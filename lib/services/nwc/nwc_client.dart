@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:dart_nostr/dart_nostr.dart';
-import 'package:nip44/nip44.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
 import 'package:mostro_mobile/services/nwc/nwc_connection.dart';
+import 'package:mostro_mobile/services/nwc/nwc_crypto.dart';
 import 'package:mostro_mobile/services/nwc/nwc_exceptions.dart';
 import 'package:mostro_mobile/services/nwc/nwc_models.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
@@ -39,6 +39,13 @@ class NwcClient {
 
   /// Whether the client is currently connected to relays.
   bool _isConnected = false;
+
+  /// The encryption mode negotiated with the wallet service.
+  ///
+  /// Determined by the wallet's info event (kind 13194). If the info event
+  /// contains an `encryption` tag with `nip44_v2`, NIP-44 is used. Otherwise,
+  /// NIP-04 is assumed per the NIP-47 spec for backwards compatibility.
+  NwcEncryption _encryptionMode = NwcEncryption.nip04;
 
   /// Dedicated Nostr instance for NWC relay communication.
   ///
@@ -91,9 +98,70 @@ class NwcClient {
 
       _isConnected = true;
       logger.i('NWC: Connected successfully');
+
+      // Detect encryption mode from the wallet's info event (kind 13194).
+      // Per NIP-47, if no encryption tag is present, assume NIP-04.
+      await _detectEncryptionMode();
+      logger.i('NWC: Using encryption mode: ${_encryptionMode.name}');
     } catch (e) {
       logger.e('NWC: Connection failed: $e');
       throw NwcNotConnectedException('Failed to connect: $e');
+    }
+  }
+
+  /// Detects the wallet's supported encryption mode from its info event.
+  Future<void> _detectEncryptionMode() async {
+    try {
+      final completer = Completer<NwcEncryption>();
+      final subId = 'nwc_info_${DateTime.now().millisecondsSinceEpoch}';
+
+      final stream = _nostr.services.relays.startEventsSubscription(
+        request: NostrRequest(
+          subscriptionId: subId,
+          filters: [
+            NostrFilter(
+              kinds: const [13194],
+              authors: [connection.walletPubkey],
+              limit: 1,
+            ),
+          ],
+        ),
+      );
+
+      final subscription = stream.stream.listen((event) {
+        // Look for the encryption tag
+        final encTag = event.tags?.firstWhere(
+          (t) => t.isNotEmpty && t[0] == 'encryption',
+          orElse: () => [],
+        );
+
+        NwcEncryption mode = NwcEncryption.nip04; // default per spec
+        if (encTag != null && encTag.length >= 2) {
+          final supported = encTag[1].split(' ');
+          if (supported.contains('nip44_v2')) {
+            mode = NwcEncryption.nip44;
+          }
+        }
+
+        if (!completer.isCompleted) {
+          completer.complete(mode);
+        }
+      });
+
+      // Wait briefly for the info event (it's a replaceable event, should be fast)
+      _encryptionMode = await completer.future.timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          logger.w('NWC: No info event found, defaulting to NIP-04');
+          return NwcEncryption.nip04;
+        },
+      );
+
+      await subscription.cancel();
+      _nostr.services.relays.closeEventsSubscription(subId);
+    } catch (e) {
+      logger.w('NWC: Failed to detect encryption mode: $e, defaulting to NIP-04');
+      _encryptionMode = NwcEncryption.nip04;
     }
   }
 
@@ -218,22 +286,24 @@ class NwcClient {
     final completer = Completer<NwcResponse>();
 
     try {
-      // Encrypt the request payload using NIP-44
+      // Encrypt the request payload using the negotiated encryption mode
       final plaintext = request.toJson();
-      final encrypted = await Nip44.encryptMessage(
+      final encrypted = await NwcCrypto.encrypt(
         plaintext,
         connection.secret,
         connection.walletPubkey,
+        _encryptionMode,
       );
 
       // Create the kind 23194 request event
+      final encryptionTag = NwcCrypto.encryptionTagValue(_encryptionMode);
       final requestEvent = NostrEvent.fromPartialData(
         kind: 23194,
         content: encrypted,
         keyPairs: _keyPair,
         tags: [
           ['p', connection.walletPubkey],
-          ['encryption', 'nip44_v2'],
+          ['encryption', encryptionTag],
         ],
       );
 
@@ -274,11 +344,15 @@ class NwcClient {
 
           logger.d('NWC: Response matched for ${request.method}!');
 
-          // Decrypt the response
-          final decrypted = await Nip44.decryptMessage(
+          // Decrypt the response using the detected encryption mode.
+          // Auto-detect from content format as a safety fallback.
+          final responseMode =
+              NwcCrypto.detectFromContent(event.content!);
+          final decrypted = await NwcCrypto.decrypt(
             event.content!,
             connection.secret,
             connection.walletPubkey,
+            responseMode,
           );
 
           final response = NwcResponse.fromJson(decrypted);
