@@ -296,9 +296,25 @@ class RestoreService {
       final contentList = jsonDecode(rumor.content!) as List<dynamic>;
       final messageData = contentList[0] as Map<String, dynamic>;
 
+      // Check if Mostro returned cant-do
+      if (messageData.containsKey('cant-do')) {
+        logger.w('Restore: Mostro returned cant-do for orders details');
+        return OrdersResponse(orders: []);
+      }
+
       // Extract payload from order wrapper
-      final orderWrapper = messageData['order'] as Map<String, dynamic>;
-      final payload = orderWrapper['payload'] as Map<String, dynamic>;
+      final orderWrapper = messageData['order'] as Map<String, dynamic>?;
+      if (orderWrapper == null) {
+        logger.w('Restore: no order wrapper found, returning empty response');
+        return OrdersResponse(orders: []);
+      }
+
+      final payload = orderWrapper['payload'] as Map<String, dynamic>?;
+      if (payload == null) {
+        logger.w(
+            'Restore: no payload in order wrapper, returning empty response');
+        return OrdersResponse(orders: []);
+      }
 
       final ordersResponse = OrdersResponse.fromJson(payload);
 
