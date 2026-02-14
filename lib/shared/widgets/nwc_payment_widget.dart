@@ -6,11 +6,15 @@ import 'package:mostro_mobile/features/wallet/providers/nwc_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/services/nwc/nwc_exceptions.dart';
+import 'package:mostro_mobile/shared/widgets/nwc_payment_receipt_widget.dart';
 
 /// Payment status for the NWC auto-payment flow.
 enum NwcPaymentStatus {
   /// Ready to pay — waiting for user to tap "Pay with Wallet".
   idle,
+
+  /// Running pre-flight checks (balance verification).
+  checking,
 
   /// Payment request sent to the wallet, waiting for response.
   paying,
@@ -25,7 +29,8 @@ enum NwcPaymentStatus {
 /// Widget that provides a "Pay with Wallet" button for NWC-connected wallets.
 ///
 /// Shows payment progress and handles errors gracefully. Falls back to the
-/// manual flow if payment fails.
+/// manual flow if payment fails. Includes pre-flight balance checks and
+/// payment receipt display.
 class NwcPaymentWidget extends ConsumerStatefulWidget {
   /// The Lightning invoice to pay.
   final String lnInvoice;
@@ -55,13 +60,31 @@ class _NwcPaymentWidgetState extends ConsumerState<NwcPaymentWidget> {
   NwcPaymentStatus _status = NwcPaymentStatus.idle;
   String? _errorMessage;
   String? _preimage;
+  int? _feesPaidMsats;
+  DateTime? _paymentTimestamp;
 
   Future<void> _payWithWallet() async {
     final nwcNotifier = ref.read(nwcProvider.notifier);
 
+    // Pre-flight balance check
+    setState(() {
+      _status = NwcPaymentStatus.checking;
+      _errorMessage = null;
+    });
+
+    final hasBalance = await nwcNotifier.preFlightBalanceCheck(widget.sats);
+    if (!mounted) return;
+
+    if (!hasBalance) {
+      setState(() {
+        _status = NwcPaymentStatus.failed;
+        _errorMessage = S.of(context)!.nwcInsufficientBalance;
+      });
+      return;
+    }
+
     setState(() {
       _status = NwcPaymentStatus.paying;
-      _errorMessage = null;
     });
 
     try {
@@ -73,6 +96,8 @@ class _NwcPaymentWidgetState extends ConsumerState<NwcPaymentWidget> {
       setState(() {
         _status = NwcPaymentStatus.success;
         _preimage = result.preimage;
+        _feesPaidMsats = result.feesPaid;
+        _paymentTimestamp = DateTime.now();
       });
 
       logger.i(
@@ -80,6 +105,9 @@ class _NwcPaymentWidgetState extends ConsumerState<NwcPaymentWidget> {
             ? 'NWC: Payment successful! Preimage unavailable'
             : 'NWC: Payment successful! Preimage: ${_truncatePreimage(result.preimage, 8)}',
       );
+
+      // Verify payment via lookup_invoice if payment_hash available
+      _verifyPayment();
 
       // Notify parent of success
       widget.onPaymentSuccess?.call();
@@ -107,6 +135,22 @@ class _NwcPaymentWidgetState extends ConsumerState<NwcPaymentWidget> {
         _status = NwcPaymentStatus.failed;
         _errorMessage = S.of(context)!.nwcPaymentFailed;
       });
+    }
+  }
+
+  /// Verifies payment via lookup_invoice for extra reliability.
+  Future<void> _verifyPayment() async {
+    try {
+      final nwcNotifier = ref.read(nwcProvider.notifier);
+      final result = await nwcNotifier.lookupInvoice(
+        invoice: widget.lnInvoice,
+      );
+      if (result != null) {
+        logger.i(
+            'NWC: Payment verified via lookup_invoice (state: ${result.state})');
+      }
+    } catch (e) {
+      logger.w('NWC: lookup_invoice verification failed: $e');
     }
   }
 
@@ -142,10 +186,12 @@ class _NwcPaymentWidgetState extends ConsumerState<NwcPaymentWidget> {
     switch (_status) {
       case NwcPaymentStatus.idle:
         return _buildPayButton();
+      case NwcPaymentStatus.checking:
+        return _buildCheckingIndicator();
       case NwcPaymentStatus.paying:
         return _buildPayingIndicator();
       case NwcPaymentStatus.success:
-        return _buildSuccessIndicator();
+        return _buildSuccessReceipt();
       case NwcPaymentStatus.failed:
         return _buildErrorIndicator();
     }
@@ -154,11 +200,63 @@ class _NwcPaymentWidgetState extends ConsumerState<NwcPaymentWidget> {
   Widget _buildPayButton() {
     final nwcState = ref.watch(nwcProvider);
     final balanceSats = nwcState.balanceSats;
-    final hasEnoughBalance =
-        balanceSats == null || balanceSats >= widget.sats;
+    final hasEnoughBalance = balanceSats == null || balanceSats >= widget.sats;
 
     return Column(
       children: [
+        // Connection health warning
+        if (nwcState.status == NwcStatus.connected &&
+            !nwcState.connectionHealthy)
+          Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.orange.withAlpha(26),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.orange.withAlpha(77)),
+            ),
+            child: Row(
+              children: [
+                const Icon(LucideIcons.wifiOff, size: 16, color: Colors.orange),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    S.of(context)!.nwcConnectionUnstable,
+                    style: const TextStyle(
+                      color: Colors.orange,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+        // Low balance warning
+        if (balanceSats != null && !hasEnoughBalance)
+          Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.red.withAlpha(26),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.red.withAlpha(77)),
+            ),
+            child: Row(
+              children: [
+                const Icon(LucideIcons.alertTriangle,
+                    size: 16, color: Colors.red),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    S.of(context)!.nwcBalanceTooLow,
+                    style: const TextStyle(color: Colors.red, fontSize: 12),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
         SizedBox(
           width: double.infinity,
           height: 56,
@@ -190,13 +288,40 @@ class _NwcPaymentWidgetState extends ConsumerState<NwcPaymentWidget> {
               fontSize: 13,
             ),
           ),
-          if (!hasEnoughBalance)
-            Text(
-              S.of(context)!.nwcInsufficientBalance,
-              style: TextStyle(color: Colors.red.shade300, fontSize: 13),
-            ),
         ],
       ],
+    );
+  }
+
+  Widget _buildCheckingIndicator() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+      decoration: BoxDecoration(
+        color: AppTheme.dark1,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.mostroGreen.withAlpha(77)),
+      ),
+      child: Column(
+        children: [
+          const SizedBox(
+            width: 32,
+            height: 32,
+            child: CircularProgressIndicator(
+              color: AppTheme.mostroGreen,
+              strokeWidth: 2.5,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            S.of(context)!.nwcCheckingBalance,
+            style: const TextStyle(
+              color: AppTheme.cream1,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -240,47 +365,12 @@ class _NwcPaymentWidgetState extends ConsumerState<NwcPaymentWidget> {
     );
   }
 
-  Widget _buildSuccessIndicator() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-      decoration: BoxDecoration(
-        color: AppTheme.dark1,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.mostroGreen.withAlpha(128)),
-      ),
-      child: Column(
-        children: [
-          const Icon(LucideIcons.checkCircle, color: AppTheme.mostroGreen, size: 48),
-          const SizedBox(height: 12),
-          Text(
-            S.of(context)!.nwcPaymentSuccess,
-            style: const TextStyle(
-              color: AppTheme.mostroGreen,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '${_formatSats(widget.sats)} sats',
-            style: TextStyle(
-              color: AppTheme.cream1.withAlpha(153),
-              fontSize: 14,
-            ),
-          ),
-          if (_truncatePreimage(_preimage, 16).isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(
-              '${S.of(context)!.nwcPreimageLabel}: ${_truncatePreimage(_preimage, 16)}',
-              style: TextStyle(
-                color: AppTheme.cream1.withAlpha(102),
-                fontSize: 11,
-                fontFamily: 'monospace',
-              ),
-            ),
-          ],
-        ],
-      ),
+  Widget _buildSuccessReceipt() {
+    return NwcPaymentReceiptWidget(
+      amountSats: widget.sats,
+      feesPaidMsats: _feesPaidMsats,
+      preimage: _preimage,
+      timestamp: _paymentTimestamp ?? DateTime.now(),
     );
   }
 
