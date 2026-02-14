@@ -168,7 +168,16 @@ class NwcCrypto {
   static Uint8List _pkcs7Unpad(Uint8List data) {
     if (data.isEmpty) return data;
     final padLength = data.last;
-    if (padLength > 16 || padLength == 0) return data;
+    if (padLength > 16 || padLength == 0) {
+      throw ArgumentError('Invalid PKCS#7 padding length: $padLength');
+    }
+    // Verify all padding bytes are consistent
+    for (var i = data.length - padLength; i < data.length; i++) {
+      if (data[i] != padLength) {
+        throw ArgumentError(
+            'Invalid PKCS#7 padding: expected $padLength at index $i, got ${data[i]}');
+      }
+    }
     return Uint8List.fromList(data.sublist(0, data.length - padLength));
   }
 
