@@ -171,7 +171,7 @@ class _NwcPaymentWidgetState extends ConsumerState<NwcPaymentWidget> {
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.mostroGreen,
-              foregroundColor: Colors.white,
+              foregroundColor: Colors.black,
               disabledBackgroundColor: Colors.grey.shade700,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
