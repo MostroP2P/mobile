@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:dart_nostr/dart_nostr.dart';
-import 'package:nip44/nip44.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
 import 'package:mostro_mobile/services/nwc/nwc_connection.dart';
+import 'package:mostro_mobile/services/nwc/nwc_crypto.dart';
 import 'package:mostro_mobile/services/nwc/nwc_exceptions.dart';
 import 'package:mostro_mobile/services/nwc/nwc_models.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
@@ -40,13 +40,19 @@ class NwcClient {
   /// Whether the client is currently connected to relays.
   bool _isConnected = false;
 
-  /// The underlying Nostr instance.
+  /// The encryption mode negotiated with the wallet service.
   ///
-  /// Currently accesses [Nostr.instance] directly since [NostrService] does
-  /// not expose granular relay subscription methods. The [_nostrService]
-  /// dependency is injected for future refactoring where NWC may use a
-  /// dedicated Nostr instance with its own relay connections.
-  Nostr get _nostr => Nostr.instance;
+  /// Determined by the wallet's info event (kind 13194). If the info event
+  /// contains an `encryption` tag with `nip44_v2`, NIP-44 is used. Otherwise,
+  /// NIP-04 is assumed per the NIP-47 spec for backwards compatibility.
+  NwcEncryption _encryptionMode = NwcEncryption.nip04;
+
+  /// Dedicated Nostr instance for NWC relay communication.
+  ///
+  /// Uses a separate instance from [Nostr.instance] to avoid interference
+  /// with Mostro's relay pool. This ensures subscriptions and events are
+  /// sent only to the NWC wallet relay(s), not broadcast to all app relays.
+  final Nostr _nostr = Nostr();
 
   /// Active subscriptions for response events.
   final Map<String, StreamSubscription<NostrEvent>> _subscriptions = {};
@@ -92,23 +98,77 @@ class NwcClient {
 
       _isConnected = true;
       logger.i('NWC: Connected successfully');
+
+      // Detect encryption mode from the wallet's info event (kind 13194).
+      // Per NIP-47, if no encryption tag is present, assume NIP-04.
+      await _detectEncryptionMode();
+      logger.i('NWC: Using encryption mode: ${_encryptionMode.name}');
     } catch (e) {
       logger.e('NWC: Connection failed: $e');
       throw NwcNotConnectedException('Failed to connect: $e');
     }
   }
 
-  /// Disconnects and cleans up all NWC subscriptions.
+  /// Detects the wallet's supported encryption mode from its info event.
+  Future<void> _detectEncryptionMode() async {
+    try {
+      final completer = Completer<NwcEncryption>();
+      final subId = 'nwc_info_${DateTime.now().millisecondsSinceEpoch}';
+
+      final stream = _nostr.services.relays.startEventsSubscription(
+        request: NostrRequest(
+          subscriptionId: subId,
+          filters: [
+            NostrFilter(
+              kinds: const [13194],
+              authors: [connection.walletPubkey],
+              limit: 1,
+            ),
+          ],
+        ),
+      );
+
+      final subscription = stream.stream.listen((event) {
+        // Look for the encryption tag
+        final encTag = event.tags?.firstWhere(
+          (t) => t.isNotEmpty && t[0] == 'encryption',
+          orElse: () => [],
+        );
+
+        NwcEncryption mode = NwcEncryption.nip04; // default per spec
+        if (encTag != null && encTag.length >= 2) {
+          final supported = encTag[1].split(' ');
+          if (supported.contains('nip44_v2')) {
+            mode = NwcEncryption.nip44;
+          }
+        }
+
+        if (!completer.isCompleted) {
+          completer.complete(mode);
+        }
+      });
+
+      // Wait briefly for the info event (it's a replaceable event, should be fast)
+      _encryptionMode = await completer.future.timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          logger.w('NWC: No info event found, defaulting to NIP-04');
+          return NwcEncryption.nip04;
+        },
+      );
+
+      await subscription.cancel();
+      _nostr.services.relays.closeEventsSubscription(subId);
+    } catch (e) {
+      logger.w('NWC: Failed to detect encryption mode: $e, defaulting to NIP-04');
+      _encryptionMode = NwcEncryption.nip04;
+    }
+  }
+
+  /// Disconnects from relays and cleans up all NWC subscriptions.
   ///
-  /// Cancels all active event subscriptions and closes them on the relay side.
-  ///
-  /// **Relay connection note:** `Nostr.instance` is a shared singleton — its
-  /// `disconnectFromRelays()` API closes *all* relay WebSockets (including
-  /// Mostro's), and `dart_nostr` does not support closing individual relay
-  /// connections. Until NWC gets its own dedicated Nostr instance (future
-  /// refactor), NWC relay WebSocket connections that are not shared with
-  /// Mostro will persist until the app is closed. This is a known limitation
-  /// tracked for Phase 2.
+  /// Cancels all active event subscriptions, closes them on the relay side,
+  /// and disconnects the dedicated NWC Nostr instance from all relays.
   void disconnect() {
     // Cancel all active subscriptions and close them on the relay
     for (final entry in _subscriptions.entries) {
@@ -120,8 +180,16 @@ class NwcClient {
       }
     }
     _subscriptions.clear();
+
+    // Disconnect the dedicated NWC relay connections
+    try {
+      _nostr.services.relays.disconnectFromRelays();
+    } catch (e) {
+      logger.w('NWC: Failed to disconnect relays: $e');
+    }
+
     _isConnected = false;
-    logger.i('NWC: Disconnected and cleaned up subscriptions');
+    logger.i('NWC: Disconnected and cleaned up');
   }
 
   /// Pays a Lightning invoice.
@@ -218,36 +286,37 @@ class NwcClient {
     final completer = Completer<NwcResponse>();
 
     try {
-      // Encrypt the request payload using NIP-44
+      // Encrypt the request payload using the negotiated encryption mode
       final plaintext = request.toJson();
-      final encrypted = await Nip44.encryptMessage(
+      final encrypted = await NwcCrypto.encrypt(
         plaintext,
         connection.secret,
         connection.walletPubkey,
+        _encryptionMode,
       );
 
       // Create the kind 23194 request event
+      final encryptionTag = NwcCrypto.encryptionTagValue(_encryptionMode);
       final requestEvent = NostrEvent.fromPartialData(
         kind: 23194,
         content: encrypted,
         keyPairs: _keyPair,
         tags: [
           ['p', connection.walletPubkey],
-          ['encryption', 'nip44_v2'],
+          ['encryption', encryptionTag],
         ],
       );
 
       final requestId = requestEvent.id!;
       logger.d('NWC: Sending ${request.method} request (id: $requestId)');
 
-      // Subscribe to response events (kind 23195) that reference this request
-      // Use #e tag to filter responses referencing our request event ID,
-      // and #p tag to match our client pubkey.
+      // Subscribe to response events (kind 23195) from the wallet service.
+      // Only filter by kind + author; some NWC relay implementations
+      // (e.g. Primal) don't support #e / #p tag filters, so we verify
+      // the e-tag match in the event handler below.
       final filter = NostrFilter(
         kinds: const [23195],
         authors: [connection.walletPubkey],
-        e: [requestId],
-        p: [_clientPubkey],
       );
 
       final subId = 'nwc_${requestId.substring(0, 8)}';
@@ -260,6 +329,8 @@ class NwcClient {
 
       final subscription = stream.stream.listen((event) async {
         try {
+          logger.d('NWC: Received event kind=${event.kind} from ${event.pubkey.substring(0, 8)}...');
+
           // Verify this response references our request via 'e' tag
           final eTag = event.tags?.firstWhere(
             (t) => t.isNotEmpty && t[0] == 'e',
@@ -267,14 +338,21 @@ class NwcClient {
           );
 
           if (eTag == null || eTag.length < 2 || eTag[1] != requestId) {
+            logger.d('NWC: Ignoring event — e tag mismatch (expected: ${requestId.substring(0, 8)}..., got: ${eTag != null && eTag.length >= 2 ? eTag[1].substring(0, 8) : "none"}...)');
             return; // Not our response
           }
 
-          // Decrypt the response
-          final decrypted = await Nip44.decryptMessage(
+          logger.d('NWC: Response matched for ${request.method}!');
+
+          // Decrypt the response using the detected encryption mode.
+          // Auto-detect from content format as a safety fallback.
+          final responseMode =
+              NwcCrypto.detectFromContent(event.content!);
+          final decrypted = await NwcCrypto.decrypt(
             event.content!,
             connection.secret,
             connection.walletPubkey,
+            responseMode,
           );
 
           final response = NwcResponse.fromJson(decrypted);
@@ -302,9 +380,11 @@ class NwcClient {
       NwcResponse response;
       try {
         // Wait for response with timeout
+        logger.d('NWC: Waiting for ${request.method} response (timeout: ${requestTimeout.inSeconds}s)...');
         response = await completer.future.timeout(
           requestTimeout,
           onTimeout: () {
+            logger.w('NWC: ${request.method} TIMED OUT after ${requestTimeout.inSeconds}s');
             throw NwcTimeoutException(
               '${request.method} request timed out after ${requestTimeout.inSeconds}s',
             );

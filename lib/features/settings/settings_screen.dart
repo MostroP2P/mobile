@@ -14,6 +14,7 @@ import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/shared/widgets/currency_selection_dialog.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
 import 'package:mostro_mobile/shared/widgets/language_selector.dart';
+import 'package:mostro_mobile/features/wallet/widgets/wallet_status_card.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -30,7 +31,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   void initState() {
     super.initState();
     final settings = ref.read(settingsProvider);
-    _lightningAddressController = TextEditingController(text: settings.defaultLightningAddress ?? '');
+    _lightningAddressController =
+        TextEditingController(text: settings.defaultLightningAddress ?? '');
   }
 
   @override
@@ -93,6 +95,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                   // Lightning Address Card
                   _buildLightningAddressCard(context),
+                  const SizedBox(height: 16),
+
+                  // Wallet Card
+                  const WalletStatusCard(),
                   const SizedBox(height: 16),
 
                   // Relays Card
@@ -169,7 +175,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   decoration: BoxDecoration(
                     color: AppTheme.backgroundInput,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                    border:
+                        Border.all(color: Colors.white.withValues(alpha: 0.1)),
                   ),
                   child: Row(
                     children: [
@@ -270,7 +277,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   decoration: BoxDecoration(
                     color: AppTheme.backgroundInput,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                    border:
+                        Border.all(color: Colors.white.withValues(alpha: 0.1)),
                   ),
                   child: Row(
                     children: [
@@ -446,7 +454,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Widget _buildLightningAddressCard(BuildContext context) {
-
     return Container(
       decoration: BoxDecoration(
         color: AppTheme.backgroundCard,
@@ -517,8 +524,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 style: const TextStyle(color: AppTheme.textPrimary),
                 onChanged: (value) {
                   final cleanValue = value.trim().isEmpty ? null : value.trim();
-                  ref.read(settingsProvider.notifier).updateDefaultLightningAddress(cleanValue);
-                  
+                  ref
+                      .read(settingsProvider.notifier)
+                      .updateDefaultLightningAddress(cleanValue);
+
                   // Force sync immediately for empty values
                   if (cleanValue == null) {
                     _lightningAddressController.text = '';

@@ -12,27 +12,30 @@ This improves UX significantly: instead of copy-pasting invoices between apps, p
 
 ## Architecture
 
-All NWC code lives under `lib/services/nwc/` with four files:
+All NWC code lives under `lib/services/nwc/` with five files:
 
 ```text
 lib/services/nwc/
 ├── nwc_connection.dart    # URI parsing & connection model
 ├── nwc_models.dart        # Request/response/command models
 ├── nwc_client.dart        # Core client (relay communication)
+├── nwc_crypto.dart        # NIP-04/NIP-44 encryption helpers
 └── nwc_exceptions.dart    # Typed exceptions & error codes
 ```
 
 ### Design Decisions
 
-1. **Reuse existing Nostr infrastructure**: The client uses `dart_nostr` (already in the project) for relay connections and event handling, and the `nip44` package for NIP-44 encryption — both already dependencies in `pubspec.yaml`.
+1. **Reuse existing Nostr infrastructure**: The client uses `dart_nostr` (already in the project) for relay connections and event handling, `nip44` for NIP-44 encryption, and `pointycastle` for NIP-04 AES-256-CBC — all already dependencies in `pubspec.yaml`.
 
-2. **NostrService dependency injection**: `NwcClient` accepts a `NostrService` parameter following the app's architectural pattern of routing Nostr communication through `NostrService`. Internally, the client accesses `Nostr.instance` directly because `NostrService` does not yet expose granular relay subscription methods. The injected dependency is kept for a future refactor where NWC may use a dedicated Nostr instance with its own relay connections.
+2. **NostrService dependency injection**: `NwcClient` accepts a `NostrService` parameter following the app's architectural pattern. Internally, the client uses a **dedicated `Nostr()` instance** (not the shared `Nostr.instance` singleton) to avoid interference with Mostro's relay pool.
 
-3. **Separate relay management**: NWC wallet relays may differ from Mostro relays. The client connects to wallet-specified relays through `Nostr.instance`, which handles deduplication (if the relay is already connected, it reuses the connection).
+3. **Dedicated relay instance**: NWC wallet relays differ from Mostro relays. The client creates its own `Nostr()` instance so subscriptions and events are sent **only** to the NWC wallet relay(s), not broadcast to all Mostro relays. Relay connections are fully managed and cleaned up on `disconnect()`.
 
-4. **Equatable models**: All models extend `Equatable` following the project's existing pattern (see `pubspec.yaml` dependency and usage in other models).
+4. **Dual encryption support (NIP-04 + NIP-44)**: On connect, the client fetches the wallet's info event (kind 13194) to detect supported encryption. If `nip44_v2` is advertised, NIP-44 is used; otherwise NIP-04 is assumed per the NIP-47 spec. Response decryption auto-detects the format from the content (`?iv=` = NIP-04).
 
-5. **No existing file modifications**: Phase 1 only adds new files. Integration with the UI and providers will come in Phase 2.
+5. **Equatable models**: All models extend `Equatable` following the project's existing pattern.
+
+6. **No existing file modifications**: Phase 1 only adds new files. Integration with the UI and providers comes in Phase 2.
 
 ## Key Components
 
@@ -76,25 +79,40 @@ Command-specific models:
 
 All models support `toMap()` / `fromMap()` serialization and extend `Equatable`.
 
+### NwcCrypto (`nwc_crypto.dart`)
+
+Handles encryption/decryption for NWC protocol messages with dual mode support:
+
+- **NIP-44** (preferred): ChaCha20-Poly1305 via the `nip44` package
+- **NIP-04** (legacy): AES-256-CBC with ECDH shared secret via `pointycastle`
+
+Key features:
+- `encrypt()` / `decrypt()` — dispatch to NIP-04 or NIP-44 based on mode
+- `detectFromContent()` — auto-detects encryption from content format (`?iv=` = NIP-04)
+- `encryptionTagValue()` — returns the correct tag value for kind 23194 events
+- PKCS#7 padding with full validation (all padding bytes verified)
+- ECDH shared secret computation on secp256k1 for NIP-04
+
 ### NwcClient (`nwc_client.dart`)
 
 The core client that:
 
 1. **Accepts** a `NwcConnection` and `NostrService` (dependency injection)
 2. **Derives** a key pair from the connection secret via `NostrUtils.generateKeyPairFromPrivateKey()`
-3. **Connects** to wallet relay(s) using `Nostr.instance.services.relays.init()`
-4. **Signs** request events (kind 23194) with the connection secret
-5. **Encrypts** payloads using NIP-44 via the `nip44` package (`Nip44.encryptMessage()`)
-6. **Subscribes** to response events (kind 23195) filtered by wallet pubkey (`authors`), request event ID (`#e` tag), and client pubkey (`#p` tag)
-7. **Decrypts** responses with `Nip44.decryptMessage()` and maps them to typed result objects
-8. **Handles timeouts** (configurable, default 30s) with automatic subscription cleanup
-9. **Null-safe result handling**: All public methods validate that `response.result` is non-null before parsing, throwing a meaningful `NwcException` instead of a `TypeError` on malformed wallet responses
+3. **Connects** to wallet relay(s) using a **dedicated `Nostr()` instance** (isolated from Mostro's relay pool)
+4. **Detects encryption mode** by fetching the wallet's info event (kind 13194) and reading the `encryption` tag
+5. **Signs** request events (kind 23194) with the connection secret
+6. **Encrypts** payloads using NIP-04 or NIP-44 via `NwcCrypto` based on the detected mode
+7. **Subscribes** to response events (kind 23195) filtered by wallet pubkey (`authors`). The `e` tag match is verified in the event handler (not in the relay filter) for compatibility with custom relay implementations.
+8. **Decrypts** responses with auto-detection of the encryption format
+9. **Handles timeouts** (configurable, default 30s) with automatic subscription cleanup
+10. **Null-safe result handling**: All public methods validate that `response.result` is non-null before parsing
 
 Public API:
 
 ```dart
 final client = NwcClient(connection: conn, nostrService: nostrService);
-await client.connect();
+await client.connect(); // also detects encryption mode
 
 final result = await client.payInvoice(PayInvoiceParams(invoice: 'lnbc...'));
 final balance = await client.getBalance();
@@ -102,16 +120,23 @@ final info = await client.getInfo();
 final invoice = await client.makeInvoice(MakeInvoiceParams(amount: 5000));
 final lookup = await client.lookupInvoice(LookupInvoiceParams(paymentHash: '...'));
 
-client.disconnect();
+client.disconnect(); // cleans up subscriptions + disconnects relays
 ```
 
 #### Subscription Lifecycle
 
-Each request creates a temporary subscription (`nwc_<eventId>`) that is cleaned up in a `finally` block — ensuring cleanup happens even on timeout or error. The `disconnect()` method cancels all remaining subscriptions and closes them on the relay side via `closeEventsSubscription()`.
+Each request creates a temporary subscription (`nwc_<eventId>`) that is cleaned up in a `finally` block — ensuring cleanup happens even on timeout or error. The `disconnect()` method cancels all remaining subscriptions, closes them on the relay side, and disconnects the dedicated NWC relay connections.
 
-#### Known Limitation: Relay Disconnection
+#### Encryption Negotiation
 
-`Nostr.instance` is a shared singleton — its `disconnectFromRelays()` API closes *all* relay WebSockets (including Mostro's), and `dart_nostr` does not support closing individual relay connections. Until NWC gets a dedicated Nostr instance (future refactor), NWC relay connections not shared with Mostro will persist until the app is closed. This is tracked for Phase 2.
+On `connect()`, the client:
+1. Connects to the wallet's relay(s)
+2. Subscribes to kind 13194 (info event) from the wallet pubkey
+3. If the info event has `['encryption', 'nip44_v2 ...']` → uses NIP-44
+4. If no info event or no encryption tag → defaults to NIP-04 (per NIP-47 spec)
+5. All subsequent requests use the detected mode
+
+This ensures compatibility with both modern wallets (Alby Hub → NIP-44) and legacy wallets (Coinos → NIP-04).
 
 ### NwcExceptions (`nwc_exceptions.dart`)
 
@@ -119,16 +144,19 @@ Exception hierarchy:
 - `NwcException` — base class
   - `NwcInvalidUriException` — malformed connection URI
   - `NwcResponseException` — wallet returned an error (includes `NwcErrorCode`)
-  - `NwcTimeoutException` — request timed out (uses `super.message` parameter)
-  - `NwcNotConnectedException` — client not connected to relay (uses `super.message` parameter)
+  - `NwcTimeoutException` — request timed out
+  - `NwcNotConnectedException` — client not connected to relay
 
 `NwcErrorCode` enum maps all NIP-47 error codes: `RATE_LIMITED`, `NOT_IMPLEMENTED`, `INSUFFICIENT_BALANCE`, `QUOTA_EXCEEDED`, `RESTRICTED`, `UNAUTHORIZED`, `INTERNAL`, `PAYMENT_FAILED`, `NOT_FOUND`, `UNSUPPORTED_ENCRYPTION`, `OTHER`.
 
 ## Encryption
 
-NWC uses NIP-44 for E2E encryption between client and wallet service. The project already depends on the `nip44` package (from `MostroP2P/dart-nip44`), which is used extensively in `NostrUtils` for NIP-59 gift wraps. The NWC client uses the same `Nip44.encryptMessage()` / `Nip44.decryptMessage()` functions directly.
+NWC supports both NIP-04 and NIP-44 encryption between client and wallet service. The encryption mode is **automatically negotiated** from the wallet's info event:
 
-The encryption tag `nip44_v2` is included in all request events to indicate the encryption scheme, as specified in NIP-47's encryption negotiation protocol.
+- **NIP-44** (ChaCha20-Poly1305): Preferred, used when wallet advertises `nip44_v2`. Uses the existing `nip44` package from `MostroP2P/dart-nip44`.
+- **NIP-04** (AES-256-CBC): Legacy fallback, used when wallet has no encryption tag or advertises `nip04`. Implemented in `NwcCrypto` using `pointycastle` (already a project dependency).
+
+The encryption tag (`nip44_v2` or `nip04`) is included in all request events per NIP-47's encryption negotiation protocol. Response decryption auto-detects the format from content structure as an additional safety measure.
 
 ## Testing
 
@@ -138,17 +166,7 @@ Tests are in `test/services/nwc/` with **41 unit tests**:
 - **`nwc_models_test.dart`**: JSON serialization/deserialization for all models, edge cases (missing optional fields, unknown error codes, empty params)
 - **`nwc_exceptions_test.dart`**: Error code mapping (`fromString`), exception hierarchy, `toString` output, super parameter usage
 
-The `NwcClient` is not unit-tested in Phase 1 because it requires live relay connections. Integration tests will be added in Phase 2 when we add the provider layer.
-
-## What's Next (Phase 2+)
-
-- **Riverpod providers** for NWC state management
-- **Secure storage** of connection URIs (using `flutter_secure_storage`)
-- **UI integration**: QR scanner for connection URIs, wallet settings screen
-- **Payment flow integration**: Replace manual invoice copy-paste with NWC `pay_invoice`
-- **Balance display** in the app
-- **Notification support** (kind 23197 events)
-- **Dedicated Nostr instance** for NWC relay connections (resolves shared singleton limitation)
+The `NwcClient` is not unit-tested in Phase 1 because it requires live relay connections. Integration tests are added in Phase 2 with the provider layer.
 
 ## References
 
