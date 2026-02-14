@@ -26,8 +26,7 @@ class NwcState extends Equatable {
   });
 
   /// Balance converted from millisatoshis to satoshis.
-  int? get balanceSats =>
-      balanceMsats != null ? (balanceMsats! ~/ 1000) : null;
+  int? get balanceSats => balanceMsats != null ? (balanceMsats! ~/ 1000) : null;
 
   NwcState copyWith({
     NwcStatus? status,
@@ -182,6 +181,42 @@ class NwcNotifier extends StateNotifier<NwcState> {
       state = state.copyWith(balanceMsats: balance.balance);
     } catch (e) {
       logger.w('NWC: Failed to refresh balance after payment: $e');
+    }
+
+    return result;
+  }
+
+  /// Creates a Lightning invoice via the connected NWC wallet.
+  ///
+  /// [amountSats] is the amount in satoshis (converted to msats for NWC).
+  /// [description] is an optional memo for the invoice.
+  ///
+  /// Throws [NwcNotConnectedException] if no wallet is connected.
+  /// Throws [NwcResponseException] if the wallet returns an error.
+  /// Throws [NwcTimeoutException] if the request times out.
+  Future<TransactionResult> makeInvoice(
+    int amountSats, {
+    String? description,
+    int? expiry,
+  }) async {
+    if (_client == null || !_client!.isConnected) {
+      throw const NwcNotConnectedException('No wallet connected');
+    }
+
+    final result = await _client!.makeInvoice(
+      MakeInvoiceParams(
+        amount: amountSats * 1000, // convert sats to msats
+        description: description,
+        expiry: expiry,
+      ),
+    );
+
+    // Refresh balance after invoice creation
+    try {
+      final balance = await _client!.getBalance();
+      state = state.copyWith(balanceMsats: balance.balance);
+    } catch (e) {
+      logger.w('NWC: Failed to refresh balance after make_invoice: $e');
     }
 
     return result;
