@@ -112,6 +112,15 @@ class NwcCrypto {
 
     final encryptedBytes = base64.decode(parts[0]);
     final iv = base64.decode(parts[1]);
+
+    if (iv.length != 16) {
+      throw ArgumentError('Invalid NIP-04 IV length: ${iv.length} (expected 16)');
+    }
+    if (encryptedBytes.isEmpty || encryptedBytes.length % 16 != 0) {
+      throw ArgumentError(
+          'Invalid NIP-04 ciphertext length: ${encryptedBytes.length} (must be a non-zero multiple of 16)');
+    }
+
     final sharedSecret = _computeNip04SharedSecret(privateKeyHex, publicKeyHex);
 
     final cipher = CBCBlockCipher(AESEngine())
