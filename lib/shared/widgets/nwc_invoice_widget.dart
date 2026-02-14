@@ -5,7 +5,7 @@ import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/wallet/providers/nwc_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
-import 'package:mostro_mobile/services/nwc/nwc_exceptions.dart';
+import 'package:mostro_mobile/services/nwc/nwc_exceptions.dart' show NwcResponseException, NwcTimeoutException, NwcErrorCode;
 
 /// Invoice generation status for the NWC auto-invoice flow.
 enum NwcInvoiceStatus {
@@ -85,9 +85,12 @@ class _NwcInvoiceWidgetState extends ConsumerState<NwcInvoiceWidget> {
 
       final invoice = result.invoice;
       if (invoice == null || invoice.isEmpty) {
-        throw const NwcException(
-          'Wallet returned empty invoice',
-        );
+        logger.w('NWC: Wallet returned empty invoice');
+        setState(() {
+          _status = NwcInvoiceStatus.failed;
+          _errorMessage = S.of(context)!.nwcInvoiceFailed;
+        });
+        return;
       }
 
       setState(() {
@@ -282,11 +285,9 @@ class _NwcInvoiceWidgetState extends ConsumerState<NwcInvoiceWidget> {
             width: double.infinity,
             height: 48,
             child: ElevatedButton(
-              onPressed: () {
-                if (_generatedInvoice != null) {
-                  widget.onInvoiceConfirmed(_generatedInvoice!);
-                }
-              },
+              onPressed: _generatedInvoice != null
+                  ? () => widget.onInvoiceConfirmed(_generatedInvoice!)
+                  : null,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.mostroGreen,
                 foregroundColor: Colors.white,
