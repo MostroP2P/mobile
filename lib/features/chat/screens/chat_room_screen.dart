@@ -24,8 +24,6 @@ class ChatRoomScreen extends ConsumerStatefulWidget {
 }
 
 class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
-  // Constant for BottomNavBar height to ensure consistency
-  static const double bottomNavBarHeight = 80;
   String? _selectedInfoType; // null, 'trade', or 'user'
 
   // Scroll controller for the chat messages list
@@ -112,121 +110,80 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
         ),
       ),
       resizeToAvoidBottomInset: true, // Resize when keyboard appears
-      body: RefreshIndicator(
-        onRefresh: () async {},
-        child: Stack(
-          children: [
-            // Main content area
-            Padding(
-              padding: EdgeInsets.only(
-                  // Dynamic bottom padding based on device settings
-                  bottom: MediaQuery.textScalerOf(context).scale(1.0) > 1.0
-                      ? bottomNavBarHeight +
-                          40 // More padding for zoomed-in text
-                      : bottomNavBarHeight +
-                          10), // Normal padding for regular view
-              child: Column(
-                children: [
-                  // Header with peer information
-                  PeerHeader(peerPubkey: peer, session: session),
+      body: Column(
+        children: [
+          // Header with peer information
+          PeerHeader(peerPubkey: peer, session: session),
 
-                  // Info buttons
-                  InfoButtons(
-                    selectedInfoType: _selectedInfoType,
-                    onInfoTypeChanged: (type) {
-                      // Dismiss keyboard when selecting info tabs to prevent overlap
-                      if (type != null) {
-                        FocusScope.of(context).unfocus();
-                      }
-                      setState(() {
-                        _selectedInfoType = type;
-                      });
-                    },
-                  ),
+          // Info buttons
+          InfoButtons(
+            selectedInfoType: _selectedInfoType,
+            onInfoTypeChanged: (type) {
+              // Dismiss keyboard when selecting info tabs to prevent overlap
+              if (type != null) {
+                FocusScope.of(context).unfocus();
+              }
+              setState(() {
+                _selectedInfoType = type;
+              });
+            },
+          ),
 
-                  // Selected info content
-                  if (_selectedInfoType == 'trade')
-                    TradeInformationTab(
-                      order: order?.copyWith(status: orderState.status),
-                      orderId: widget.orderId,
-                    ),
-                  if (_selectedInfoType == 'user')
-                    UserInformationTab(peerPubkey: peer, session: session),
-
-                  // Chat area
-                  Expanded(
-                    child: Container(
-                      color: AppTheme.backgroundDark,
-                      child: Column(
-                        children: [
-                          Expanded(
-                            child: !chatNotifier.isInitialized
-                                ? const Center(
-                                    child: CircularProgressIndicator())
-                                : ChatMessagesList(
-                                    chatRoom: chatDetailState,
-                                    peerPubkey: peer,
-                                    orderId: widget.orderId,
-                                    scrollController: _scrollController,
-                                  ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+          // Selected info content
+          if (_selectedInfoType == 'trade')
+            TradeInformationTab(
+              order: order?.copyWith(status: orderState.status),
+              orderId: widget.orderId,
             ),
+          if (_selectedInfoType == 'user')
+            UserInformationTab(peerPubkey: peer, session: session),
 
-            // Message input positioned above BottomNavBar with padding
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: MediaQuery.of(context).viewInsets.bottom > 0
-                  ? 0 // When keyboard is open, position at bottom
-                  : bottomNavBarHeight, // Use constant for BottomNavBar height
-              child: Container(
-                decoration: BoxDecoration(
-                  color: AppTheme.backgroundDark, // Match background color
-                  border: Border(
-                    top: BorderSide(
-                      color: Colors.grey.withValues(
-                          alpha: 0.03), // 0.03 opacity - extremely subtle
-                      width: 0.3, // Even thinner line
-                    ),
+          // Chat area
+          Expanded(
+            child: !chatNotifier.isInitialized
+                ? const Center(child: CircularProgressIndicator())
+                : ChatMessagesList(
+                    chatRoom: chatDetailState,
+                    peerPubkey: peer,
+                    orderId: widget.orderId,
+                    scrollController: _scrollController,
                   ),
-                ),
-                child: MessageInput(
-                  orderId: widget.orderId,
-                  selectedInfoType: _selectedInfoType,
-                  onInfoTypeChanged: (type) {
-                    // Dismiss keyboard when selecting info tabs to prevent overlap
-                    if (type != null) {
-                      FocusScope.of(context).unfocus();
-                    }
-                    setState(() {
-                      _selectedInfoType = type;
-                    });
-                  },
+          ),
+
+          // Message input
+          Container(
+            decoration: BoxDecoration(
+              color: AppTheme.backgroundDark,
+              border: Border(
+                top: BorderSide(
+                  color: Colors.grey.withValues(alpha: 0.03),
+                  width: 0.3,
                 ),
               ),
             ),
-
-            // Position BottomNavBar at the bottom of the screen
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: MediaQuery.of(context).viewInsets.bottom > 0
-                  ? const SizedBox() // Hide BottomNavBar when keyboard is open
-                  : SafeArea(
-                      top: false,
-                      bottom: true,
-                      child: const BottomNavBar(),
-                    ),
+            child: MessageInput(
+              orderId: widget.orderId,
+              selectedInfoType: _selectedInfoType,
+              onInfoTypeChanged: (type) {
+                // Dismiss keyboard when selecting info tabs to prevent overlap
+                if (type != null) {
+                  FocusScope.of(context).unfocus();
+                }
+                setState(() {
+                  _selectedInfoType = type;
+                });
+              },
             ),
-          ],
-        ),
+          ),
+
+          // Bottom nav bar (hidden when keyboard is open)
+          if (!isKeyboardVisible)
+            SafeArea(
+              top: false,
+              bottom: true,
+              child: const BottomNavBar(),
+            ),
+        ],
       ),
     );
   }

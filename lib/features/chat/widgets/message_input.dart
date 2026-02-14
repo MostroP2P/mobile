@@ -301,11 +301,11 @@ class _MessageInputState extends ConsumerState<MessageInput> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Padding(
-            padding: EdgeInsets.only(
+            padding: const EdgeInsets.only(
               left: 16,
               right: 16,
               top: 12,
-              bottom: 12 + MediaQuery.of(context).padding.bottom,
+              bottom: 12,
             ),
             child: Row(
               children: [
