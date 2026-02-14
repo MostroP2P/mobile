@@ -200,7 +200,7 @@ class _ConnectWalletScreenState extends ConsumerState<ConnectWalletScreen> {
                         ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppTheme.activeColor,
-                          foregroundColor: Colors.white,
+                          foregroundColor: Colors.black,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),

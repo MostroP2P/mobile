@@ -172,7 +172,7 @@ class _NwcInvoiceWidgetState extends ConsumerState<NwcInvoiceWidget> {
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.mostroGreen,
-              foregroundColor: Colors.white,
+              foregroundColor: Colors.black,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -283,7 +283,7 @@ class _NwcInvoiceWidgetState extends ConsumerState<NwcInvoiceWidget> {
                   : null,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.mostroGreen,
-                foregroundColor: Colors.white,
+                foregroundColor: Colors.black,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
