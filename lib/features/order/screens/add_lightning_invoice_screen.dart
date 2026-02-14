@@ -121,8 +121,6 @@ class _AddLightningInvoiceScreenState
         const SizedBox(height: 24),
         NwcInvoiceWidget(
           sats: amount,
-          fiatAmount: fiatAmount,
-          fiatCode: fiatCode,
           orderId: orderIdValue,
           onInvoiceConfirmed: (invoice) async {
             await _submitInvoice(invoice, amount);

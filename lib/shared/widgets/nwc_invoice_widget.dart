@@ -31,12 +31,6 @@ class NwcInvoiceWidget extends ConsumerStatefulWidget {
   /// Amount in satoshis for the invoice.
   final int sats;
 
-  /// Fiat amount for display context.
-  final String fiatAmount;
-
-  /// Fiat currency code for display context.
-  final String fiatCode;
-
   /// Order ID for display context.
   final String orderId;
 
@@ -50,8 +44,6 @@ class NwcInvoiceWidget extends ConsumerStatefulWidget {
   const NwcInvoiceWidget({
     super.key,
     required this.sats,
-    required this.fiatAmount,
-    required this.fiatCode,
     required this.orderId,
     required this.onInvoiceConfirmed,
     this.onFallbackToManual,
