@@ -8,6 +8,20 @@ import 'package:mostro_mobile/services/nwc/nwc_exceptions.dart';
 import 'package:mostro_mobile/services/nwc/nwc_models.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
+/// A decoded NWC notification from the wallet (kind 23196).
+class NwcNotification {
+  /// The notification type (e.g., "payment_received", "payment_sent").
+  final String notificationType;
+
+  /// The notification payload (transaction details).
+  final TransactionResult transaction;
+
+  const NwcNotification({
+    required this.notificationType,
+    required this.transaction,
+  });
+}
+
 /// Core NWC client that communicates with a wallet service over Nostr relays.
 ///
 /// Uses the connection parameters from [NwcConnection] to sign request events
@@ -57,6 +71,19 @@ class NwcClient {
   /// Active subscriptions for response events.
   final Map<String, StreamSubscription<NostrEvent>> _subscriptions = {};
 
+  /// Controller for NWC notification events (kind 23196).
+  final StreamController<NwcNotification> _notificationController =
+      StreamController<NwcNotification>.broadcast();
+
+  /// Stream of real-time notifications from the wallet.
+  ///
+  /// Emits [NwcNotification] events for `payment_received`,
+  /// `payment_sent`, etc. Subscribe after calling [connect].
+  Stream<NwcNotification> get notifications => _notificationController.stream;
+
+  /// Subscription ID for the notification listener.
+  String? _notificationSubId;
+
   NwcClient({
     required this.connection,
     required NostrService nostrService,
@@ -103,6 +130,9 @@ class NwcClient {
       // Per NIP-47, if no encryption tag is present, assume NIP-04.
       await _detectEncryptionMode();
       logger.i('NWC: Using encryption mode: ${_encryptionMode.name}');
+
+      // Subscribe to notification events (kind 23196) for real-time updates.
+      _subscribeToNotifications();
     } catch (e) {
       logger.e('NWC: Connection failed: $e');
       throw NwcNotConnectedException('Failed to connect: $e');
@@ -160,9 +190,68 @@ class NwcClient {
       await subscription.cancel();
       _nostr.services.relays.closeEventsSubscription(subId);
     } catch (e) {
-      logger.w('NWC: Failed to detect encryption mode: $e, defaulting to NIP-04');
+      logger
+          .w('NWC: Failed to detect encryption mode: $e, defaulting to NIP-04');
       _encryptionMode = NwcEncryption.nip04;
     }
+  }
+
+  /// Subscribes to NWC notification events (kind 23196) from the wallet.
+  ///
+  /// NIP-47 defines kind 23196 as the notification event kind. The wallet
+  /// sends these for events like `payment_received` and `payment_sent`.
+  void _subscribeToNotifications() {
+    _notificationSubId = 'nwc_notif_${DateTime.now().millisecondsSinceEpoch}';
+
+    final stream = _nostr.services.relays.startEventsSubscription(
+      request: NostrRequest(
+        subscriptionId: _notificationSubId!,
+        filters: [
+          NostrFilter(
+            kinds: const [23196],
+            authors: [connection.walletPubkey],
+            since: DateTime.now(),
+          ),
+        ],
+      ),
+    );
+
+    final subscription = stream.stream.listen((event) async {
+      try {
+        // Verify the notification is addressed to us via 'p' tag
+        final pTag = event.tags?.firstWhere(
+          (t) => t.isNotEmpty && t[0] == 'p',
+          orElse: () => [],
+        );
+        if (pTag == null || pTag.length < 2 || pTag[1] != _clientPubkey) {
+          return; // Not for us
+        }
+
+        final responseMode = NwcCrypto.detectFromContent(event.content!);
+        final decrypted = await NwcCrypto.decrypt(
+          event.content!,
+          connection.secret,
+          connection.walletPubkey,
+          responseMode,
+        );
+
+        final response = NwcResponse.fromJson(decrypted);
+        if (response.result != null) {
+          final notification = NwcNotification(
+            notificationType: response.resultType,
+            transaction: TransactionResult.fromMap(response.result!),
+          );
+          _notificationController.add(notification);
+          logger.i(
+              'NWC: Received notification: ${notification.notificationType}');
+        }
+      } catch (e) {
+        logger.w('NWC: Failed to process notification: $e');
+      }
+    });
+
+    _subscriptions[_notificationSubId!] = subscription;
+    logger.i('NWC: Subscribed to wallet notifications (kind 23196)');
   }
 
   /// Disconnects from relays and cleans up all NWC subscriptions.
@@ -187,6 +276,8 @@ class NwcClient {
     } catch (e) {
       logger.w('NWC: Failed to disconnect relays: $e');
     }
+
+    _notificationSubId = null;
 
     _isConnected = false;
     logger.i('NWC: Disconnected and cleaned up');
@@ -329,7 +420,8 @@ class NwcClient {
 
       final subscription = stream.stream.listen((event) async {
         try {
-          logger.d('NWC: Received event kind=${event.kind} from ${event.pubkey.substring(0, 8)}...');
+          logger.d(
+              'NWC: Received event kind=${event.kind} from ${event.pubkey.substring(0, 8)}...');
 
           // Verify this response references our request via 'e' tag
           final eTag = event.tags?.firstWhere(
@@ -338,7 +430,8 @@ class NwcClient {
           );
 
           if (eTag == null || eTag.length < 2 || eTag[1] != requestId) {
-            logger.d('NWC: Ignoring event — e tag mismatch (expected: ${requestId.substring(0, 8)}..., got: ${eTag != null && eTag.length >= 2 ? eTag[1].substring(0, 8) : "none"}...)');
+            logger.d(
+                'NWC: Ignoring event — e tag mismatch (expected: ${requestId.substring(0, 8)}..., got: ${eTag != null && eTag.length >= 2 ? eTag[1].substring(0, 8) : "none"}...)');
             return; // Not our response
           }
 
@@ -346,8 +439,7 @@ class NwcClient {
 
           // Decrypt the response using the detected encryption mode.
           // Auto-detect from content format as a safety fallback.
-          final responseMode =
-              NwcCrypto.detectFromContent(event.content!);
+          final responseMode = NwcCrypto.detectFromContent(event.content!);
           final decrypted = await NwcCrypto.decrypt(
             event.content!,
             connection.secret,
@@ -380,11 +472,13 @@ class NwcClient {
       NwcResponse response;
       try {
         // Wait for response with timeout
-        logger.d('NWC: Waiting for ${request.method} response (timeout: ${requestTimeout.inSeconds}s)...');
+        logger.d(
+            'NWC: Waiting for ${request.method} response (timeout: ${requestTimeout.inSeconds}s)...');
         response = await completer.future.timeout(
           requestTimeout,
           onTimeout: () {
-            logger.w('NWC: ${request.method} TIMED OUT after ${requestTimeout.inSeconds}s');
+            logger.w(
+                'NWC: ${request.method} TIMED OUT after ${requestTimeout.inSeconds}s');
             throw NwcTimeoutException(
               '${request.method} request timed out after ${requestTimeout.inSeconds}s',
             );

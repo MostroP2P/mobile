@@ -136,14 +136,18 @@ class WalletSettingsScreen extends ConsumerWidget {
                           Container(
                             width: 8,
                             height: 8,
-                            decoration: const BoxDecoration(
-                              color: Colors.green,
+                            decoration: BoxDecoration(
+                              color: nwcState.connectionHealthy
+                                  ? Colors.green
+                                  : Colors.orange,
                               shape: BoxShape.circle,
                             ),
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            S.of(context)!.walletConnected,
+                            nwcState.connectionHealthy
+                                ? S.of(context)!.walletConnected
+                                : S.of(context)!.nwcConnectionUnstable,
                             style: const TextStyle(
                               color: AppTheme.textSecondary,
                               fontSize: 13,

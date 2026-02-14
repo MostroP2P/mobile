@@ -1,1458 +1,1459 @@
 {
-  "@@locale": "en",
-  "backToHome": "Back to Home",
-  "newOrder": "Your offer has been published! Please wait until another user picks your order. It will be available for {expiration_hours} hours. You can cancel this order before another user picks it up by executing: cancel.",
-  "@newOrder": {
-    "placeholders": {
-      "expiration_hours": {
-        "type": "String",
-        "description": "The expiration time in hours"
-      }
+    "@@locale": "en",
+    "backToHome": "Back to Home",
+    "newOrder": "Your offer has been published! Please wait until another user picks your order. It will be available for {expiration_hours} hours. You can cancel this order before another user picks it up by executing: cancel.",
+    "@newOrder": {
+        "placeholders": {
+            "expiration_hours": {
+                "type": "String",
+                "description": "The expiration time in hours"
+            }
+        }
+    },
+    "canceled": "You have canceled the order ID: {id}.",
+    "payInvoice": "Please pay this hold invoice of {amount} Sats for {fiat_code} {fiat_amount} to start the operation. If you do not pay it within {expiration_seconds} minutes, the trade will be canceled.",
+    "@payInvoice": {
+        "placeholders": {
+            "amount": {
+                "type": "String",
+                "description": "The amount of satoshis"
+            },
+            "expiration_seconds": {
+                "type": "int",
+                "description": "The expiration time in minutes"
+            },
+            "fiat_amount": {
+                "type": "String",
+                "description": "The fiat amount"
+            },
+            "fiat_code": {
+                "type": "String",
+                "description": "The fiat currency code"
+            }
+        }
+    },
+    "addInvoice": "Please send me an invoice for {amount} satoshis equivalent to {fiat_code} {fiat_amount}. This is where I will send the funds upon trade completion. If you don't provide the invoice within {expiration_seconds} minutes, the trade will be canceled.",
+    "@addInvoice": {
+        "placeholders": {
+            "amount": {
+                "type": "String",
+                "description": "The amount of satoshis"
+            },
+            "expiration_seconds": {
+                "type": "int",
+                "description": "The expiration time in minutes"
+            },
+            "fiat_amount": {
+                "type": "String",
+                "description": "The fiat amount"
+            },
+            "fiat_code": {
+                "type": "String",
+                "description": "The fiat currency code"
+            }
+        }
+    },
+    "addInvoicePaymentFailed": "The payment to your previous invoice could not be completed. Please send me a new invoice for {amount} satoshis equivalent to {fiat_amount} {fiat_code} to complete the payment.",
+    "@addInvoicePaymentFailed": {
+        "placeholders": {
+            "amount": {
+                "type": "String",
+                "description": "The amount of satoshis"
+            },
+            "fiat_amount": {
+                "type": "String",
+                "description": "The fiat amount"
+            },
+            "fiat_code": {
+                "type": "String",
+                "description": "The fiat currency code"
+            }
+        }
+    },
+    "waitingSellerToPay": "Please wait. I’ve sent a payment request to the seller to send the Sats for the order ID {id}. If the seller doesn’t complete the payment within {expiration_seconds} minutes, the trade will be canceled.",
+    "@waitingSellerToPay": {
+        "placeholders": {
+            "expiration_seconds": {
+                "type": "int",
+                "description": "The expiration time in minutes"
+            },
+            "id": {
+                "type": "String",
+                "description": "The order ID"
+            }
+        }
+    },
+    "orderTakenWaitingCounterpart": "Your order has been taken by another user. You must wait for them to decide if they want to continue. If they accept, I will notify you to complete your part. For now you don't need to do anything.\nIf they don't respond in {expiration_seconds} minutes, the order will be available again for other users to take.",
+    "@orderTakenWaitingCounterpart": {
+        "placeholders": {
+            "expiration_seconds": {
+                "type": "int",
+                "description": "The expiration time in minutes"
+            }
+        }
+    },
+    "waitingBuyerInvoice": "Payment received! Your Sats are now 'held' in your wallet. I’ve requested the buyer to provide an invoice. If they don’t do so within {expiration_seconds} minutes, your Sats will return to your wallet, and the trade will be canceled.",
+    "@waitingBuyerInvoice": {
+        "placeholders": {
+            "expiration_seconds": {
+                "type": "int",
+                "description": "The expiration time in minutes"
+            }
+        }
+    },
+    "buyerInvoiceAccepted": "The invoice has been successfully saved.",
+    "holdInvoicePaymentAccepted": "Contact the seller {seller_name} to arrange how to send {fiat_code} {fiat_amount} using {payment_method}. Once you’ve sent the fiat money, notify me by pressing the Fiat Sent button.",
+    "buyerTookOrder": "Contact the buyer {buyer_name} to inform them how to send {fiat_code} {fiat_amount} through {payment_method}. You’ll be notified when the buyer confirms the fiat payment. Afterward, verify if it has arrived. If the buyer does not respond, you can initiate a cancellation or a dispute. Remember, an administrator will NEVER contact you to resolve your order unless you open a dispute first.",
+    "fiatSentOkBuyer": "I have informed {seller_name} that you sent the fiat money. If the seller confirms receipt, they will release the funds. If they refuse, you can open a dispute.",
+    "fiatSentOkSeller": "{buyer_name} has informed me that the fiat money has already been sent to you. Once you’ve confirmed receipt, please release the satoshis. By doing so, they will be transferred to the buyer and the action cannot be undone. If you wish to proceed, press the Release button.",
+    "released": "{seller_name} has released the Sats! Expect your invoice to be paid shortly. Ensure your wallet is online to receive via Lightning Network.",
+    "purchaseCompleted": "Your purchase of Bitcoin has been completed successfully. I have paid your invoice; enjoy sound money!",
+    "holdInvoicePaymentSettled": "Your Sats sale has been completed after confirming the payment from {buyer_name}.",
+    "rate": "RATE",
+    "rateReceived": "Rating successfully saved!",
+    "cooperativeCancelInitiatedByYou": "You have initiated the cancellation of the order ID: {id}. Your counterparty must agree. If they do not respond, you can open a dispute. Note that no administrator will contact you regarding this cancellation unless you open a dispute first.",
+    "cooperativeCancelInitiatedByPeer": "Your counterparty wants to cancel order ID: {id}. If you agree, please send me cancel-order-message. Note that no administrator will contact you regarding this cancellation unless you open a dispute first.",
+    "cooperativeCancelAccepted": "Order {id} has been successfully canceled!",
+    "disputeInitiatedByYou": "You have initiated a dispute for order ID: {id}. A solver will be assigned soon. Once assigned, I will share their npub with you, and only they will be able to assist you. Your dispute ID is: {dispute_id}.",
+    "@disputeInitiatedByYou": {
+        "placeholders": {
+            "id": {
+                "type": "String",
+                "example": "abc123"
+            },
+            "dispute_id": {
+                "type": "String",
+                "example": "dispute-456"
+            }
+        }
+    },
+    "disputeInitiatedByPeer": "Your counterparty has initiated a dispute for order ID: {id}. A solver will be assigned soon. Once assigned, I will share their npub with you, and only they will be able to assist you. Your dispute ID is: {dispute_id}.",
+    "@disputeInitiatedByPeer": {
+        "placeholders": {
+            "id": {
+                "type": "String",
+                "example": "abc123"
+            },
+            "dispute_id": {
+                "type": "String",
+                "example": "dispute-456"
+            }
+        }
+    },
+    "adminTookDisputeAdmin": "Here are the details of the dispute order you have taken: {details}. You need to determine which user is correct and decide whether to cancel or complete the order. Please note that your decision will be final and cannot be reversed.",
+    "adminTookDisputeUsers": "A dispute resolver has been assigned to handle your dispute. They will contact you through the app.",
+    "adminCanceledAdmin": "You have canceled the order ID: {id}.",
+    "adminCanceledUsers": "Admin has canceled the order ID: {id}.",
+    "adminSettledAdmin": "You have completed the order ID: {id}.",
+    "adminSettledUsers": "Admin has completed the order ID: {id}.",
+    "paymentFailed": "The payment attempt to your invoice has failed. I will retry {payment_attempts} more times, with an interval of {payment_retries_interval} minutes between each attempt. Please ensure your wallet is online to complete the payment.",
+    "paymentFailedText": "Payment Failed",
+    "invoiceUpdated": "The invoice has been successfully updated!",
+    "holdInvoicePaymentCanceled": "The invoice was canceled; your Sats are available in your wallet again.",
+    "cantDo": "You are not allowed to {action} for this order!",
+    "adminAddSolver": "You have successfully added the solver {npub}.",
+    "invalidSignature": "The action cannot be completed because the signature is invalid.",
+    "invalidTradeIndex": "The trade index is not valid.",
+    "invalidAmount": "The provided amount is invalid. Please verify it and try again.",
+    "invalidInvoice": "The provided Lightning invoice is invalid. Please check the invoice details and try again.",
+    "invalidPaymentRequest": "The payment request is invalid or cannot be processed.",
+    "invalidPeer": "You are not authorized to perform this action.",
+    "invalidRating": "The rating value is invalid or out of range.",
+    "invalidTextMessage": "The text message is invalid or contains prohibited content.",
+    "invalidOrderKind": "The order kind is invalid.",
+    "invalidOrderStatus": "The action cannot be completed due to the current order status.",
+    "invalidPubkey": "The action cannot be completed because the public key is invalid.",
+    "invalidParameters": "The action cannot be completed due to invalid parameters. Please review the provided values and try again.",
+    "orderAlreadyCanceled": "The action cannot be completed because the order has already been canceled.",
+    "cantCreateUser": "The Mostro instance could not create your new user, please try again later.",
+    "isNotYourOrder": "This order does not belong to you.",
+    "notAllowedByStatus": "This action is not allowed in the current state.",
+    "outOfRangeFiatAmount": "The requested fiat amount is outside the acceptable range.",
+    "outOfRangeSatsAmount": "The Sats amount is out of the allowed range.",
+    "isNotYourDispute": "This dispute is not assigned to you.",
+    "disputeCreationError": "A dispute cannot be created for this order.",
+    "notFound": "The requested dispute could not be found.",
+    "invalidDisputeStatus": "The dispute status is invalid.",
+    "invalidAction": "The requested action is invalid.",
+    "invalidFiatCurrency": "This Mostro instance doesn't accept the selected currency, try another instance",
+    "pendingOrderExists": "You already have an order waiting for you, you must complete it or cancel it before taking another one.",
+    "login": "Login",
+    "register": "Register",
+    "pin": "PIN",
+    "pleaseEnterPin": "Please enter your PIN",
+    "pleaseEnterPrivateKey": "Please enter a private key",
+    "invalidPrivateKeyFormat": "Invalid private key format",
+    "privateKeyLabel": "Private Key (nsec or hex)",
+    "pinMustBeAtLeast4Digits": "PIN must be at least 4 digits",
+    "confirmPin": "Confirm PIN",
+    "pinsDoNotMatch": "PINs do not match",
+    "useBiometrics": "Use Biometrics",
+    "generateNewKey": "Generate New Key",
+    "welcomeHeading": "NO-KYC P2P Lightning\nexchange on top of\nnostr",
+    "welcomeDescription": "Peer-to-peer Lightning Network platform over nostr",
+    "registerButton": "REGISTER",
+    "skipForNow": "Skip for now",
+    "noOrdersAvailable": "No orders available",
+    "tryChangingFilters": "Try changing filter settings or check back later",
+    "buyBtc": "BUY BTC",
+    "sellBtc": "SELL BTC",
+    "filter": "FILTER",
+    "statusFilter": "Status",
+    "allStatuses": "All",
+    "all": "All",
+    "statusPending": "Pending",
+    "statusWaitingPayment": "Waiting-Payment",
+    "statusWaitingBuyerInvoice": "Waiting-Buyer-Invoice",
+    "statusActive": "Active",
+    "statusFiatSent": "Fiat-Sent",
+    "statusSuccess": "Success",
+    "statusCanceled": "Canceled",
+    "statusSettledHoldInvoice": "Settled-Hold-Invoice",
+    "offersCount": "{count} offers",
+    "@offersCount": {
+        "placeholders": {
+            "count": {
+                "type": "String"
+            }
+        }
+    },
+    "creatingNewOrder": "CREATING NEW ORDER",
+    "enterSatsAmountBuy": "Enter the Sats amount you want to Buy",
+    "enterSatsAmountSell": "Enter the Sats amount you want to Sell",
+    "enterSatsAmount": "Enter sats amount",
+    "pleaseEnterSatsAmount": "Please enter sats amount",
+    "pleaseEnterNumbersOnly": "Please enter numbers only",
+    "pleaseSelectCurrency": "Please select a currency",
+    "pleaseSelectPaymentMethod": "Please select at least one payment method",
+    "error": "Error",
+    "ok": "OK",
+    "cancel": "Cancel",
+    "submit": "Submit",
+    "settings": "Settings",
+    "currency": "Currency",
+    "setDefaultFiatCurrency": "Set your default fiat currency",
+    "defaultFiatCurrency": "Default Fiat Currency",
+    "setDefaultLightningAddress": "Set your default lightning address",
+    "defaultLightningAddress": "Default Lightning Address",
+    "lightningAddressUsed": "Using your configured Lightning address",
+    "relays": "Relays",
+    "selectNostrRelays": "Select the Nostr relays you connect to",
+    "addRelay": "Add Relay",
+    "mostro": "Mostro",
+    "enterMostroPublicKey": "Enter the public key of the Mostro you will use",
+    "mostroPubkey": "Mostro Pubkey",
+    "orderBook": "Order Book",
+    "myTrades": "My Trades",
+    "chat": "Chat",
+    "navigateToLabel": "Navigate to {label}",
+    "errorLoadingTrades": "Error loading trades",
+    "retry": "Retry",
+    "noTradesAvailable": "No trades available for this type",
+    "welcomeToMostroMobile": "Trade Bitcoin freely — no KYC",
+    "discoverSecurePlatform": "Mostro is a peer-to-peer exchange that lets you trade Bitcoin for any currency and payment method — no KYC, and no need to give your data to anyone.\n\nIt's built on Nostr, which makes it censorship-resistant. No one can stop you from trading.",
+    "easyOnboarding": "Privacy by default",
+    "guidedWalkthroughSimple": "Mostro generates a new identity for every exchange, so your trades can't be linked.\n\nYou can also decide how private you want to be:\n\n• Reputation mode – Lets others see your successful trades and trust level.\n\n• Full privacy mode – No reputation is built, but your activity is completely anonymous.\n\nSwitch modes anytime from the Account screen, where you should also save your secret words — they're the only way to recover your account.",
+    "tradeWithConfidence": "Security at every step",
+    "seamlessPeerToPeer": "Mostro uses Hold Invoices: sats stay in the seller's wallet until the end of the trade. This protects both sides.\n\nThe app is also designed to be intuitive and easy for all kinds of users.",
+    "encryptedChat": "Fully encrypted chat",
+    "encryptedChatDescription": "Each trade has its own private chat, end-to-end encrypted. Only the two users involved can read it.\n\nIn case of a dispute, you can give the shared key to an admin to help resolve the issue.",
+    "takeAnOffer": "Take an offer",
+    "takeAnOfferDescription": "Browse the order book, choose an offer that works for you, and follow the trade flow step by step.\n\nYou'll be able to check the other user's profile, chat securely, and complete the trade with ease.",
+    "cantFindWhatYouNeed": "Can't find what you need?",
+    "createYourOwnOffer": "You can also create your own offer and wait for someone to take it.\n\nSet the amount and preferred payment method — Mostro handles the rest.",
+    "skip": "Skip",
+    "done": "Done",
+    "@_comment_trade_detail_screen_new": "New Trade Detail Screen Strings",
+    "orderDetailsTitle": "ORDER DETAILS",
+    "buyOrderDetailsTitle": "BUY ORDER DETAILS",
+    "sellOrderDetailsTitle": "SELL ORDER DETAILS",
+    "someoneIsSellingTitle": "Someone is Selling Sats",
+    "someoneIsBuyingTitle": "Someone is Buying Sats",
+    "someoneIsSellingFixedTitle": "Someone is Selling {sats} Sats",
+    "someoneIsBuyingFixedTitle": "Someone is Buying {sats} Sats",
+    "youCreatedOfferMessage": "You created this offer. Below are the details of your offer. Wait for another user to take it. It will be published for {expiration_hours} hours. You can cancel it at any time using the 'Cancel' button.",
+    "@youCreatedOfferMessage": {
+        "placeholders": {
+            "expiration_hours": {
+                "type": "String",
+                "description": "The expiration time in hours"
+            }
+        }
+    },
+    "youAreSellingTitle": "You are selling{sats} sats",
+    "youAreBuyingTitle": "You are buying{sats} sats",
+    "forAmount": "for {amount}",
+    "timeLeftLabel": "Time Left: {time}",
+    "@timeLeftLabel": {
+        "placeholders": {
+            "time": {
+                "type": "String"
+            }
+        }
+    },
+    "cancelPendingButton": "CANCEL PENDING",
+    "acceptCancelButton": "CANCEL",
+    "disputeButton": "DISPUTE",
+    "fiatSentButton": "FIAT SENT",
+    "completePurchaseButton": "COMPLETE PURCHASE",
+    "paymentMethodLabel": "Payment Method",
+    "createdOnLabel": "Created On",
+    "orderIdLabel": "Order ID",
+    "creatorReputationLabel": "Creator's Reputation",
+    "ratingTitleLabel": "Rating",
+    "reviewsLabel": "Reviews",
+    "daysLabel": "Days",
+    "cancelTradeDialogTitle": "Cancel Trade",
+    "cooperativeCancelDialogMessage": "If you confirm, you will start a cooperative cancellation with your counterparty.",
+    "acceptCancelDialogMessage": "If you confirm, you will accept the cooperative cancellation initiated by your counterparty.",
+    "orderIdCopiedMessage": "Order ID copied to clipboard",
+    "disputeTradeDialogTitle": "Start Dispute",
+    "disputeTradeDialogContent": "You are about to start a dispute with your counterparty. Do you want to continue?",
+    "disputeCreatedSuccessfully": "Dispute created successfully",
+    "disputeCreationFailed": "Failed to create dispute",
+    "disputeCreationErrorWithMessage": "Error creating dispute: {error}",
+    "@disputeCreationErrorWithMessage": {
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "typeToAdd": "Type to add...",
+    "noneSelected": "None selected",
+    "fiatCurrencies": "Fiat currencies",
+    "paymentMethods": "Payment methods",
+    "invalidMessageMissingId": "Invalid message: missing ID",
+    "invalidImageMessageFormat": "Invalid image message format",
+    "securityErrorInvalidChars": "Security error: Invalid characters in sanitized filename",
+    "ratingLabel": "Rating: {rating}",
+    "buyingBitcoin": "Buying Bitcoin",
+    "sellingBitcoin": "Selling Bitcoin",
+    "bankTransfer": "Bank Transfer",
+    "cashInPerson": "Cash in person",
+    "other": "Other",
+    "createdByYou": "Created by you",
+    "takenByYou": "Taken by you",
+    "active": "Active",
+    "pending": "Pending",
+    "waitingPayment": "Waiting payment",
+    "waitingInvoice": "Waiting invoice",
+    "fiatSent": "Fiat-sent",
+    "settled": "Settled",
+    "completed": "Completed",
+    "dispute": "Dispute",
+    "expired": "Expired",
+    "success": "Success",
+    "orderIdCopied": "Order ID copied to clipboard",
+    "noPaymentMethod": "No payment method",
+    "youAreSellingText": "You are selling{sats} sats for {amount} {price} {premium}",
+    "youAreBuyingText": "You are buying{sats} sats for {amount} {price} {premium}",
+    "withPremium": " with a +{premium}% premium",
+    "withDiscount": " with a {premium}% discount",
+    "createdOn": "Created on:",
+    "paymentMethodsLabel": "Payment methods",
+    "cancelTrade": "Cancel Trade",
+    "areYouSureCancel": "Are you sure you want to cancel this trade?",
+    "cooperativeCancelMessage": "If you confirm, you will start a cooperative cancellation with your counterparty.",
+    "acceptCancelMessage": "If you confirm, you will accept the cooperative cancellation initiated by your counterparty.",
+    "releaseTradeDialogTitle": "Release Bitcoin",
+    "areYouSureRelease": "Are you sure you want to release the Satoshis to the buyer?",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No",
+    "buy": "BUY",
+    "sell": "SELL",
+    "buying": "BUYING",
+    "selling": "SELLING",
+    "youAreBuying": "YOU ARE BUYING",
+    "youAreSelling": "YOU ARE SELLING",
+    "marketPrice": "Market Price",
+    "forSats": "For {amount} sats",
+    "@forSats": {
+        "placeholders": {
+            "amount": {
+                "type": "String"
+            }
+        }
+    },
+    "hoursAgo": "{count} hours ago",
+    "@hoursAgo": {
+        "placeholders": {
+            "count": {
+                "type": "String"
+            }
+        }
+    },
+    "reviews": "reviews",
+    "daysOld": "days old",
+    "reviewsAndDaysOld": "{reviews} reviews • {days} days old",
+    "@reviewsAndDaysOld": {
+        "placeholders": {
+            "reviews": {
+                "type": "String"
+            },
+            "days": {
+                "type": "String"
+            }
+        }
+    },
+    "account": "Account",
+    "about": "About",
+    "walkthrough": "Walkthrough",
+    "version": "Version",
+    "githubRepository": "GitHub Repository",
+    "commitHash": "Commit Hash",
+    "appInformation": "App Information",
+    "mostroNode": "Mostro Node",
+    "generalInfo": "General Info",
+    "pubkey": "Pubkey",
+    "mostroVersion": "Version",
+    "expirationHours": "Expiration Hours",
+    "expirationSeconds": "Expiration Seconds",
+    "fee": "Fee",
+    "proofOfWork": "Proof of Work",
+    "holdInvoiceExpirationWindow": "Hold Invoice Expiration Window",
+    "holdInvoiceCltvDelta": "Hold Invoice CLTV Delta",
+    "invoiceExpirationWindow": "Invoice Expiration Window",
+    "@_comment_order_creation": "Order Creation Form Strings",
+    "youWantToBuyBitcoin": "You want to buy Bitcoin",
+    "youWantToSellBitcoin": "You want to sell Bitcoin",
+    "lightningAddressOptional": "Lightning Address (optional)",
+    "enterLightningAddress": "Enter lightning address",
+    "enterAmountHint": "Enter amount",
+    "pleaseEnterAmount": "Please enter an amount",
+    "pleaseEnterValidAmount": "Please enter a valid amount",
+    "fiatAmountTooHigh": "The fiat amount is too high. The Mostro node you are using allows between {minAmount} and {maxAmount} sats.",
+    "@fiatAmountTooHigh": {
+        "placeholders": {
+            "minAmount": {
+                "type": "String",
+                "description": "The minimum allowed sats amount"
+            },
+            "maxAmount": {
+                "type": "String",
+                "description": "The maximum allowed sats amount"
+            }
+        }
+    },
+    "fiatAmountTooLow": "The fiat amount is too low. The Mostro node you are using allows between {minAmount} and {maxAmount} sats.",
+    "@fiatAmountTooLow": {
+        "placeholders": {
+            "minAmount": {
+                "type": "String",
+                "description": "The minimum allowed sats amount"
+            },
+            "maxAmount": {
+                "type": "String",
+                "description": "The maximum allowed sats amount"
+            }
+        }
+    },
+    "exchangeRateNotAvailable": "Exchange rate not available, please wait or refresh",
+    "mostroInstanceNotAvailable": "Mostro instance data not available, please wait",
+    "enterAmountYouWantToReceive": "Enter amount you want to receive",
+    "enterAmountYouWantToSend": "Enter amount you want to send",
+    "creatingRangeOrder": "Creating a range order (you can receive between min and max amounts)",
+    "creatingRangeOrderBuySend": "Creating a range order (you can send between min and max amounts)",
+    "rangeOrder": "Range Order",
+    "maxAmount": "Max amount",
+    "tapSecondFieldForRange": "💡 Tap the second field to create a range order",
+    "to": "to",
+    "maxMustBeGreaterThanMin": "Maximum amount must be greater than minimum amount",
+    "paymentMethodsForCurrency": "Payment methods for {currency}",
+    "enterCustomPaymentMethod": "Enter custom payment method",
+    "loadingPaymentMethods": "Loading payment methods...",
+    "errorLoadingPaymentMethods": "Error loading payment methods: {error}",
+    "selectPaymentMethods": "Select payment methods",
+    "selectPaymentMethodsTitle": "Select Payment Methods",
+    "premiumTitle": "Premium (%)",
+    "premiumTooltip": "Adjust how much above or below the market price you want your offer. By default, it's set to 0%, with no premium or discount, so if you don't want to change the price, you can leave it as is.",
+    "premiumEditHint": "Edit",
+    "secretWords": "Secret Words",
+    "toRestoreYourAccount": "To restore your account",
+    "privacy": "Privacy",
+    "controlPrivacySettings": "Control your privacy settings",
+    "currentTradeIndex": "Current Trade Index",
+    "yourTradeCounter": "Your trade counter",
+    "incrementsWithEachTrade": "Increments with each trade",
+    "generateNewUser": "Generate New User",
+    "importMostroUser": "Import User",
+    "refreshUser": "Refresh User",
+    "keyImportedSuccessfully": "Key imported successfully",
+    "importFailed": "Import failed: {error}",
+    "@importFailed": {
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "refreshSuccessful": "User data refreshed successfully",
+    "refreshFailed": "Refresh failed: {error}",
+    "@refreshFailed": {
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "noMnemonicFound": "No mnemonic found",
+    "errorLoadingMnemonic": "Error: {error}",
+    "@errorLoadingMnemonic": {
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "noMessagesAvailable": "No messages available",
+    "back": "BACK",
+    "typeAMessage": "Type a message...",
+    "youAreChattingWith": "You are chatting with {handle}",
+    "yourHandle": "Your Handle:",
+    "yourSharedKey": "Your Shared Key:",
+    "payInvoiceButton": "PAY INVOICE",
+    "addInvoiceButton": "ADD INVOICE",
+    "release": "RELEASE",
+    "takeSell": "TAKE SELL",
+    "takeBuy": "TAKE BUY",
+    "noExchangeDataAvailable": "No exchange data available",
+    "errorFetchingCurrencies": "Error fetching currencies",
+    "selectFiatCurrencyPay": "Select the fiat currency you will pay with",
+    "selectFiatCurrencyReceive": "Select the Fiat Currency you want to receive",
+    "loadingCurrencies": "Loading currencies...",
+    "errorLoadingCurrencies": "Error loading currencies",
+    "usDollar": "US Dollar",
+    "searchCurrencies": "Search currencies...",
+    "noCurrenciesFound": "No currencies found",
+    "priceType": "Price type",
+    "fixedPrice": "Fixed price",
+    "market": "Market",
+    "priceTypeTooltip": "• Select Market Price if you want to use the price that Bitcoin has when someone takes your offer.\n\n• Select Fixed Price if you want to define the exact amount of Bitcoin you will exchange.",
+    "@_comment_take_order_screen": "Take Order Screen Strings",
+    "orderDetails": "ORDER DETAILS",
+    "atMarketPrice": "at market price",
+    "withPremiumPercent": "with a +{premium}% premium",
+    "@withPremiumPercent": {
+        "placeholders": {
+            "premium": {
+                "type": "String"
+            }
+        }
+    },
+    "withDiscountPercent": "with a {premium}% discount",
+    "@withDiscountPercent": {
+        "placeholders": {
+            "premium": {
+                "type": "String"
+            }
+        }
+    },
+    "someoneIsSellingBuying": "Someone is {action}{satAmount} sats for {amountString} {price} {premiumText}",
+    "@someoneIsSellingBuying": {
+        "placeholders": {
+            "action": {
+                "type": "String"
+            },
+            "satAmount": {
+                "type": "String"
+            },
+            "amountString": {
+                "type": "String"
+            },
+            "price": {
+                "type": "String"
+            },
+            "premiumText": {
+                "type": "String"
+            }
+        }
+    },
+    "createdOnDate": "Created on: {date}",
+    "@createdOnDate": {
+        "placeholders": {
+            "date": {
+                "type": "String"
+            }
+        }
+    },
+    "paymentMethodsAre": "The payment methods are: {methods}",
+    "@paymentMethodsAre": {
+        "placeholders": {
+            "methods": {
+                "type": "String"
+            }
+        }
+    },
+    "timeLeft": "Time Left: {time}",
+    "@timeLeft": {
+        "placeholders": {
+            "time": {
+                "type": "String"
+            }
+        }
+    },
+    "close": "CLOSE",
+    "take": "TAKE",
+    "enterAmount": "Enter Amount",
+    "enterAmountBetween": "{min} - {max} {currency}",
+    "@enterAmountBetween": {
+        "placeholders": {
+            "min": {
+                "type": "String",
+                "description": "Minimum amount that can be entered"
+            },
+            "max": {
+                "type": "String",
+                "description": "Maximum amount that can be entered"
+            },
+            "currency": {
+                "type": "String",
+                "description": "Currency code or symbol shown after the range"
+            }
+        }
+    },
+    "pleaseEnterValidNumber": "Please enter a valid number.",
+    "amountMustBeBetween": "Amount must be between {min} and {max}.",
+    "@amountMustBeBetween": {
+        "placeholders": {
+            "min": {
+                "type": "String"
+            },
+            "max": {
+                "type": "String"
+            }
+        }
+    },
+    "@_comment_lightning_invoice": "Lightning Invoice Widget Strings",
+    "pleaseEnterLightningInvoiceFor": "Please enter a Lightning Invoice for {sats} Sats equivalent to {fiat_code} {fiat_amount} to continue the exchange for order with ID {order_id}",
+    "@pleaseEnterLightningInvoiceFor": {
+        "placeholders": {
+            "sats": {
+                "type": "String",
+                "description": "The amount of satoshis"
+            },
+            "fiat_code": {
+                "type": "String",
+                "description": "The fiat currency code"
+            },
+            "fiat_amount": {
+                "type": "String",
+                "description": "The fiat amount"
+            },
+            "order_id": {
+                "type": "String",
+                "description": "The order ID"
+            }
+        }
+    },
+    "sats": " sats",
+    "lightningInvoice": "Lightning Invoice",
+    "enterInvoiceHere": "Enter invoice here",
+    "rateButton": "RATE",
+    "contactButton": "CONTACT",
+    "viewDisputeButton": "VIEW DISPUTE",
+    "rateCounterpart": "Rate Counterpart",
+    "submitRating": "Submit Rating",
+    "addLightningInvoice": "Add Lightning Invoice",
+    "payLightningInvoice": "Pay Lightning Invoice",
+    "payInvoiceToContinue": "Pay this invoice for {sats} Sats equivalent to {fiat_code} {fiat_amount} to continue the exchange for order {order_id}",
+    "@payInvoiceToContinue": {
+        "placeholders": {
+            "sats": {
+                "type": "String",
+                "description": "The amount of satoshis"
+            },
+            "fiat_code": {
+                "type": "String",
+                "description": "The fiat currency code"
+            },
+            "fiat_amount": {
+                "type": "String",
+                "description": "The fiat amount"
+            },
+            "order_id": {
+                "type": "String",
+                "description": "The order ID"
+            }
+        }
+    },
+    "failedToGenerateQR": "Failed to generate QR code",
+    "invoiceCopiedToClipboard": "Invoice copied to clipboard",
+    "copiedToClipboard": "Copied to clipboard",
+    "copy": "Copy",
+    "share": "Share",
+    "failedToShareInvoice": "Failed to share invoice. Please try copying instead.",
+    "failedToCancelOrder": "Failed to cancel order: {error}",
+    "@failedToCancelOrder": {
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "failedToUpdateInvoice": "Failed to update invoice: {error}",
+    "@failedToUpdateInvoice": {
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "refreshingExchangeRate": "Refreshing exchange rate...",
+    "language": "Language",
+    "systemDefault": "System Default",
+    "english": "English",
+    "spanish": "Spanish",
+    "italian": "Italian",
+    "loadingOrder": "Loading order...",
+    "chooseLanguageDescription": "Choose your preferred language or use system default",
+    "unsupportedLinkFormat": "Unsupported link format",
+    "failedToOpenLink": "Failed to open link",
+    "failedToLoadOrder": "Failed to load order",
+    "failedToOpenOrder": "Failed to open order",
+    "@_comment_chat": "Chat Section",
+    "messages": "Messages",
+    "disputes": "Disputes",
+    "noDisputesAvailable": "No disputes available",
+    "youAreChatting": "You are chatting with {handle}",
+    "@youAreChatting": {
+        "placeholders": {
+            "handle": {
+                "type": "String"
+            }
+        }
+    },
+    "tradeInformation": "Trade Information",
+    "userInformation": "User Information",
+    "youAreSellingTo": "You are selling sats to",
+    "youAreBuyingFrom": "You are buying sats from",
+    "noMessagesYet": "No messages yet",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "youPrefix": "You: ",
+    "conversationsDescription": "Here you'll find your conversations with other users during trades.",
+    "disputesDescription": "These are your open disputes and the chats with the admin helping resolve them.",
+    "disputeDetails": "Dispute Details",
+    "disputeForOrder": "Dispute for order",
+    "disputeStatusInitiated": "Initiated",
+    "disputeStatusInProgress": "In-progress",
+    "disputeStatusResolved": "Resolved",
+    "disputeStatusClosed": "Closed",
+    "disputeResolvedTitle": "Dispute Resolved",
+    "disputeResolvedMessage": "This dispute has been resolved. The solver made a decision based on the evidence presented. Check your wallet for any refunds or payments.",
+    "disputeInProgress": "This dispute is currently in progress. A solver is reviewing your case.",
+    "disputeSellerRefunded": "This dispute has been resolved with the seller being refunded.",
+    "disputeUnknownStatus": "The status of this dispute is unknown.",
+    "disputeChatClosed": "This dispute has been resolved. The chat is now closed.",
+    "@_comment_dispute_descriptions": "Dispute Description Messages",
+    "disputeDescriptionInitiatedByUser": "You opened this dispute",
+    "disputeDescriptionInitiatedByPeer": "A dispute was opened against you",
+    "disputeDescriptionInitiatedPendingAdmin": "An admin will take this dispute soon",
+    "disputeDescriptionInProgress": "No messages yet",
+    "disputeDescriptionResolved": "Order was completed - buyer received the sats",
+    "disputeDescriptionSellerRefunded": "Order was canceled - seller refunded",
+    "disputeDescriptionUnknown": "Unknown status",
+    "disputeAdminSettledMessage": "The admin settled the order in favor of one party. Check your wallet for any payments.",
+    "disputeSellerRefundedMessage": "The admin canceled the order and refunded the seller. The dispute is now closed.",
+    "disputeSettledBuyerMessage": "The dispute was resolved in your favor. The order was completed successfully and you received the sats. Check your wallet.",
+    "disputeSettledSellerMessage": "The dispute was resolved. The order was completed successfully and the buyer received the sats.",
+    "disputeCanceledBuyerMessage": "The admin canceled the order. The seller was refunded and you did not receive the sats.",
+    "disputeCanceledSellerMessage": "The admin canceled the order and refunded you. The buyer did not receive the sats. Check your wallet for the refund.",
+    "disputeOpenedByYou": "You opened this dispute against the buyer {counterparty}, please read carefully below:",
+    "@disputeOpenedByYou": {
+        "placeholders": {
+            "counterparty": {
+                "type": "String"
+            }
+        }
+    },
+    "disputeOpenedByYouAgainstSeller": "You opened this dispute against the seller {counterparty}, please read carefully below:",
+    "@disputeOpenedByYouAgainstSeller": {
+        "placeholders": {
+            "counterparty": {
+                "type": "String"
+            }
+        }
+    },
+    "disputeOpenedByYouAgainstBuyer": "You opened this dispute against the buyer {counterparty}, please read carefully below:",
+    "@disputeOpenedByYouAgainstBuyer": {
+        "placeholders": {
+            "counterparty": {
+                "type": "String"
+            }
+        }
+    },
+    "disputeOpenedAgainstYou": "This dispute was opened against you by {counterparty}, please read carefully below:",
+    "@disputeOpenedAgainstYou": {
+        "placeholders": {
+            "counterparty": {
+                "type": "String"
+            }
+        }
+    },
+    "disputeWaitingForAdmin": "Waiting for admin assignment",
+    "disputeYouOpened": "You opened this dispute",
+    "disputeOpenedAgainstUser": "A dispute was opened against you",
+    "disputeResolved": "Dispute has been resolved",
+    "disputeInstruction1": "Wait for a solver to take your dispute. Once they arrive, share any relevant evidence to help clarify the situation.",
+    "disputeInstruction2": "The final decision will be made based on the evidence presented.",
+    "disputeInstruction3": "If you don't respond, the system will assume you don't want to cooperate and you might lose the dispute.",
+    "disputeInstruction4": "If you want to share your chat history with {counterparty}, you can give the solver the shared key found in User Info in your conversation with that user.",
+    "@disputeInstruction4": {
+        "placeholders": {
+            "counterparty": {
+                "type": "String"
+            }
+        }
+    },
+    "orderId": "Order ID:",
+    "paymentMethod": "Payment Method:",
+    "sellingSats": "Selling {amount} sats",
+    "@sellingSats": {
+        "placeholders": {
+            "amount": {
+                "type": "String"
+            }
+        }
+    },
+    "buyingSats": "Buying {amount} sats",
+    "@buyingSats": {
+        "placeholders": {
+            "amount": {
+                "type": "String"
+            }
+        }
+    },
+    "forAmountWithCurrency": "for {amount} {currency}",
+    "@forAmountWithCurrency": {
+        "placeholders": {
+            "amount": {
+                "type": "String"
+            },
+            "currency": {
+                "type": "String"
+            }
+        }
+    },
+    "yourInformation": "Your Information",
+    "peerPublicKey": "Peer Public Key:",
+    "notAvailable": "Not available",
+    "unknownDate": "Unknown date",
+    "messageCopiedToClipboard": "Message copied to clipboard",
+    "textCopiedToClipboard": "{text} copied to clipboard",
+    "@textCopiedToClipboard": {
+        "placeholders": {
+            "text": {
+                "type": "String"
+            }
+        }
+    },
+    "@_comment_deep_link_errors": "Deep Link Error Messages",
+    "deepLinkInvalidFormat": "Invalid mostro: URL format",
+    "deepLinkParseError": "Failed to parse mostro: URL",
+    "deepLinkInvalidOrderId": "Invalid order ID format",
+    "deepLinkNoRelays": "No relays specified in URL",
+    "deepLinkOrderNotFound": "Order not found or invalid",
+    "deepLinkNavigationError": "Navigation Error: {error}",
+    "@deepLinkNavigationError": {
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "deepLinkGoHome": "Go Home",
+    "@_comment_order_disabled_messages": "Order Disabled Messages",
+    "orderCompletedMessagingDisabled": "Order completed - messaging disabled",
+    "orderCanceledMessagingDisabled": "Order canceled - messaging disabled",
+    "orderExpiredMessagingDisabled": "Order expired - messaging disabled",
+    "orderSettledMessagingDisabled": "Order settled - messaging disabled",
+    "orderNotActiveMessagingDisabled": "Order is no longer active - messaging disabled",
+    "@_comment_about_screen_new": "About Screen New Strings",
+    "documentation": "Documentation",
+    "usersDocumentationEnglish": "Users Documentation (English)",
+    "usersDocumentationSpanish": "Users Documentation (Spanish)",
+    "technicalDocumentation": "Technical Documentation",
+    "read": "Read",
+    "technicalDetails": "Technical Details",
+    "mostroDaemonVersion": "Mostro Version",
+    "mostroCommitId": "Mostro Commit ID",
+    "orderExpiration": "Order Expiration",
+    "holdInvoiceExpiration": "Hold Invoice Expiration",
+    "lightningNetwork": "Lightning Network",
+    "lndDaemonVersion": "LND Version",
+    "lndNodePublicKey": "LND Node Public Key",
+    "lndCommitId": "LND Commit ID",
+    "lndNodeAlias": "LND Node Alias",
+    "supportedChains": "Supported Chains",
+    "supportedNetworks": "Supported Networks",
+    "lndNodeUri": "LND Node URI",
+    "maxOrderAmount": "Maximum Order Amount",
+    "minOrderAmount": "Minimum Order Amount",
+    "orderLifespan": "Order Lifespan",
+    "serviceFee": "Service Fee",
+    "fiatCurrenciesAccepted": "Fiat Currencies Accepted",
+    "maxOrdersPerResponse": "Max Orders Per Response",
+    "satoshis": "Satoshis",
+    "hour": "hour",
+    "hours": "hours",
+    "sec": "sec",
+    "blocks": "blocks",
+    "seconds": "seconds",
+    "mostroPublicKey": "Mostro's Public Key",
+    "license": "License",
+    "@_comment_mostro_node_field_explanations": "Mostro Node Field Explanations",
+    "mostroPublicKeyExplanation": "The public key of the Mostro instance you are using.",
+    "mostroVersionExplanation": "The version of the Mostro software currently running on this node. This helps users understand which features are available.",
+    "mostroCommitIdExplanation": "The specific Git commit hash of the Mostro software. This provides the exact version information for debugging and compatibility.",
+    "maxOrderAmountExplanation": "The maximum amount of satoshis that can be traded in a single order on this Mostro node. Orders above this limit will be rejected.",
+    "minOrderAmountExplanation": "The minimum amount of satoshis that can be traded in a single order on this Mostro node. Orders below this limit will be rejected.",
+    "orderExpirationExplanation": "The maximum time, in seconds, that an order can remain in waiting status before being canceled or reverted to pending status.",
+    "holdInvoiceExpirationExplanation": "The time window (in seconds) for hold invoices to expire. Hold invoices are used to secure funds during the trade process.",
+    "holdInvoiceCltvDeltaExplanation": "The number of blocks added to the current block height for hold invoice expiration. This provides time for the Lightning Network to process the payment.",
+    "serviceFeeExplanation": "The fee charged by this Mostro node for facilitating trades. This is typically a small percentage of the trade amount, this amount is split between the buyer and seller.",
+    "fiatCurrenciesAcceptedExplanation": "The list of fiat currencies that this Mostro node accepts for trades.",
+    "maxOrdersPerResponseExplanation": "Maximum orders per response in orders action.",
+    "invoiceExpirationWindowExplanation": "The time window (in seconds) for regular Lightning invoices to expire. This ensures invoices don't remain valid indefinitely.",
+    "proofOfWorkExplanation": "The difficulty level required for proof-of-work in Nostr events. This helps prevent spam and ensures quality of service.",
+    "lndDaemonVersionExplanation": "The version of the Lightning Network Daemon (LND) software that this Mostro node uses to process Bitcoin Lightning payments.",
+    "lndNodePublicKeyExplanation": "The public key of the Lightning Network node that handles payments for this Mostro instance. This is used for Lightning Network routing.",
+    "lndCommitIdExplanation": "The specific Git commit hash of the LND software. This provides exact version information for the Lightning Network implementation.",
+    "lndNodeAliasExplanation": "The human-readable name or alias of the Lightning Network node. This makes it easier to identify the node in the Lightning Network.",
+    "supportedChainsExplanation": "The chains supported by the LND node.",
+    "supportedNetworksExplanation": "The specific network environments that this Mostro node operates on (mainnet for real Bitcoin, testnet for testing).",
+    "lndNodeUriExplanation": "The complete network address of the Lightning Network node, including public key and connection information for direct peer connections.",
+    "@_comment_license_text": "MIT License Text",
+    "mitLicenseText": "MIT License\\n\\nCopyright (c) 2025 Mostro team\\n\\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \\\"Software\\\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\\n\\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\\n\\nTHE SOFTWARE IS PROVIDED \\\"AS IS\\\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+    "@_comment_url_launch_errors": "URL Launch Error Messages",
+    "cannotOpenLink": "Cannot open link - no app available",
+    "@_comment_settings_info_dialogs": "Settings Info Dialog Text",
+    "languageInfoText": "Choose your preferred language for the application interface.",
+    "currencyInfoText": "Choose the default currency for your orders.",
+    "lightningAddressInfoText": "A Lightning Address is an email-like identifier (e.g., user@domain.com) that simplifies receiving Bitcoin payments. Setting a default one here will automatically populate it when creating buy orders, making the process faster and more convenient.",
+    "relaysInfoText": "• Relays are servers that help distribute your messages across the Nostr network.\n\n• Adding more relays can improve connectivity and redundancy.\n\n• Relays don't sync with each other, so only those you're connected to will receive your messages.",
+    "mostroInfoText": "• Supports hex and npub formats (displays as hex).\n\n• The Mostro you select will be the one where you post your offers.\n\n• In case of a dispute, a human assigned to that Mostro will be the one to resolve it.",
+    "@_comment_account_info_dialogs": "Account Screen Info Dialog Text",
+    "secretWordsInfoText": "• These are your secret words, the only way to recover your account if you lose access to this app or want to use your identity in another app.\n\n• Write them down carefully and store them in a secure, private location. Never share them with anyone.\n\n• If you lose these words, you'll permanently lose access to your account.",
+    "privacyInfoText": "• Reputation Mode protects your privacy from third parties while allowing you to build a reputation with each completed trade.\n\n• Full privacy mode provides maximum anonymity but limits reputation building features.",
+    "currentTradeIndexInfoText": "With each new trade, a unique Trade Key is generated to ensure your transactions remain private. The trade index indicates how many keys you've used. If you're in 'Reputation Mode,' you allow Mostro to link all your Trade Keys to calculate and maintain your reputation.",
+    "generateNewUserDialogTitle": "Generate a new user?",
+    "generateNewUserDialogContent": "If you continue, a new set of 12 words will be generated as your new user. This new user will have no reputation, and you will have to start from scratch.",
+    "refreshUserDialogTitle": "Refresh user data?",
+    "refreshUserDialogContent": "This will re-fetch your trades and orders from the Mostro instance. Use this if you think your data is out of sync or orders are missing.",
+    "refresh": "Refresh",
+    "continueButton": "Continue",
+    "show": "Show",
+    "hide": "Hide",
+    "reputationMode": "Reputation mode",
+    "fullPrivacyMode": "Full privacy mode",
+    "maximumAnonymity": "Maximum anonymity",
+    "standardPrivacyWithReputation": "Standard privacy with reputation",
+    "@_comment_relay_dialogs": "Relay Dialog Text",
+    "editRelay": "Edit Relay",
+    "relayUrl": "Relay URL",
+    "relayErrorNotValid": "Not a valid Nostr relay - no response to protocol test",
+    "relayErrorOnlySecure": "Only secure websockets (wss://) are allowed",
+    "relayErrorNoHttp": "HTTP URLs are not supported. Use websocket URLs (wss://)",
+    "relayErrorInvalidDomain": "Invalid domain format. Use format like: relay.example.com",
+    "relayErrorAlreadyExists": "This relay is already in your list",
+    "@_comment_dispute_communication": "Dispute Communication Text",
+    "disputeCommunication": "Communication",
+    "waitingAdminAssignment": "Waiting for admin assignment",
+    "waitingAdminDescription": "Your dispute has been submitted. An admin will be assigned to help resolve this issue.",
+    "adminAssignmentDescription": "An admin will be assigned to your dispute soon. Once assigned, you can communicate directly with them here.",
+    "adminAssigned": "Admin assigned",
+    "adminAssignedDescription": "You can now communicate with the admin. Start the conversation by sending a message below.",
+    "admin": "Admin",
+    "you": "You",
+    "errorLoadingChat": "Error loading chat",
+    "adminPubkey": "Admin pubkey",
+    "@_comment_dispute_input": "Dispute Input Text",
+    "failedSendMessage": "Failed to send message: {error}",
+    "@failedSendMessage": {
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "messageSent": "Message sent: {message}",
+    "@messageSent": {
+        "placeholders": {
+            "message": {
+                "type": "String"
+            }
+        }
+    },
+    "waitingAdminAssignmentInput": "Waiting for admin assignment...",
+    "typeYourMessage": "Type your message...",
+    "@_comment_dispute_list": "Dispute List Text",
+    "disputesWillAppear": "Disputes will appear here when you open them from your trades",
+    "failedLoadDisputes": "Failed to load disputes",
+    "disputesNotAvailable": "Disputes not available",
+    "disputesComingSoon": "This feature is coming soon",
+    "@_comment_dispute_info": "Dispute Info Text",
+    "unknown": "Unknown",
+    "disputeWith": "Dispute with {role}: {counterparty}",
+    "@disputeWith": {
+        "placeholders": {
+            "role": {
+                "type": "String"
+            },
+            "counterparty": {
+                "type": "String"
+            }
+        }
+    },
+    "disputeIdLabel": "Dispute ID",
+    "seller": "Seller",
+    "buyer": "Buyer",
+    "@_comment_dispute_screen": "Dispute Screen Text",
+    "disputeNotFound": "Dispute not found",
+    "errorLoadingDispute": "Error loading dispute: {error}",
+    "@errorLoadingDispute": {
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "relayErrorConnectionTimeout": "Relay unreachable - connection timeout",
+    "relayTestingMessage": "Testing relay...",
+    "relayAddedSuccessfully": "Relay added successfully: {url}",
+    "@relayAddedSuccessfully": {
+        "description": "Message shown when a relay is successfully added",
+        "placeholders": {
+            "url": {
+                "type": "String",
+                "description": "The relay URL that was added"
+            }
+        }
+    },
+    "relayAddedUnreachable": "Relay added but appears unreachable: {url}",
+    "addRelayDialogTitle": "Add Relay",
+    "addRelayDialogDescription": "Enter a relay URL to add it to your relay list. The relay will be tested for connectivity.",
+    "addRelayDialogPlaceholder": "Relay URL",
+    "addRelayDialogTesting": "Testing connectivity...",
+    "addRelayDialogCancel": "Cancel",
+    "addRelayDialogAdd": "Add",
+    "addRelayErrorOnlySecure": "Only secure websockets (wss://) are allowed",
+    "addRelayErrorNoHttp": "HTTP URLs are not supported. Use websocket URLs (wss://)",
+    "addRelayErrorInvalidDomain": "Invalid domain format. Use format like: relay.example.com",
+    "addRelayErrorAlreadyExists": "This relay is already in your list",
+    "addRelayErrorNotValid": "Not a valid Nostr relay - no response to protocol test",
+    "addRelayErrorGeneric": "Failed to add relay. Please try again.",
+    "addRelaySuccessMessage": "Relay added successfully: {url}",
+    "@addRelaySuccessMessage": {
+        "placeholders": {
+            "url": {
+                "type": "String"
+            }
+        }
+    },
+    "mostroChangedResetMessage": "Mostro instance changed. Relay settings have been reset for the new instance.",
+    "@relayAddedUnreachable": {
+        "description": "Message shown when a relay is added but not responding",
+        "placeholders": {
+            "url": {
+                "type": "String",
+                "description": "The relay URL that was added"
+            }
+        }
+    },
+    "invalidRelayTitle": "Invalid Relay",
+    "relayUrlHint": "relay.example.com or wss://relay.example.com",
+    "add": "Add",
+    "save": "Save",
+    "apply": "Apply",
+    "selectCurrency": "Select Currency",
+    "noCurrencySelected": "No currency selected",
+    "@_comment_filter_section": "Filter section strings",
+    "rating": "Rating",
+    "reputation": "Reputation",
+    "premiumRange": "Premium/Discount",
+    "discount": "Discount",
+    "premium": "Premium",
+    "clear": "Clear",
+    "min": "Min",
+    "max": "Max",
+    "@_comment_timeout_messages": "Timeout notification messages",
+    "orderTimeoutTaker": "You didn't respond in time. The order will be republished",
+    "orderTimeoutMaker": "Your counterpart didn't respond in time. The order will be republished",
+    "orderTimeout": "Order timeout occurred",
+    "orderCanceled": "The order was canceled",
+    "@_comment_notifications": "Notifications Screen Text",
+    "notifications": "Notifications",
+    "noNotifications": "No notifications",
+    "noNotificationsDescription": "You don't have any notifications yet. New trade alerts and updates will appear here.",
+    "errorLoadingNotifications": "Error loading notifications",
+    "markAsRead": "Mark as read",
+    "markAllAsRead": "Mark all as read",
+    "clearAll": "Clear all",
+    "notification_new_order_title": "New order available",
+    "notification_new_order_message": "New order published in the book",
+    "notAvailableShort": "N/A",
+    "notificationGenericTitle": "Notification",
+    "notification_order_taken_title": "Order taken",
+    "notification_sell_order_taken_message": "Your sell order was taken",
+    "notification_buy_order_taken_message": "Your buy order was taken",
+    "notification_payment_required_title": "Payment required",
+    "notification_payment_required_message": "Invoice payment is required",
+    "notification_fiat_sent_title": "Fiat sent",
+    "notification_fiat_sent_message": "Peer marked fiat as sent",
+    "notification_bitcoin_released_title": "Bitcoin released",
+    "notification_bitcoin_released_message": "The sats have been released",
+    "notification_dispute_started_title": "Dispute started",
+    "notification_dispute_started_message": "A dispute has been initiated",
+    "notification_order_canceled_title": "Order canceled",
+    "notification_order_canceled_message": "The order has been canceled",
+    "notification_cooperative_cancel_initiated_by_you_title": "Cancellation requested",
+    "notification_cooperative_cancel_initiated_by_you_message": "You requested to cancel the order, waiting for peer confirmation",
+    "notification_cooperative_cancel_initiated_by_peer_title": "Cancellation request",
+    "notification_cooperative_cancel_initiated_by_peer_message": "Your counterparty wants to cancel the order",
+    "notification_cooperative_cancel_accepted_title": "Cancellation accepted",
+    "notification_cooperative_cancel_accepted_message": "The cooperative cancellation has been accepted",
+    "notification_fiat_sent_ok_title": "Fiat payment confirmed",
+    "notification_fiat_sent_ok_message": "The fiat payment has been confirmed by your counterparty",
+    "notification_release_title": "Release requested",
+    "notification_release_message": "Bitcoin release has been requested",
+    "notification_buyer_invoice_accepted_title": "Invoice accepted",
+    "notification_buyer_invoice_accepted_message": "Your invoice has been accepted",
+    "notification_purchase_completed_title": "Payment received!",
+    "notification_purchase_completed_message": "Your Bitcoin payment has been successfully completed and received",
+    "notification_hold_invoice_payment_accepted_title": "Payment accepted",
+    "notification_hold_invoice_payment_accepted_message": "The hold invoice payment has been accepted",
+    "notification_hold_invoice_payment_settled_title": "Payment settled",
+    "notification_hold_invoice_payment_settled_message": "The hold invoice payment has been settled",
+    "notification_hold_invoice_payment_canceled_title": "Payment canceled",
+    "notification_hold_invoice_payment_canceled_message": "The hold invoice payment has been canceled",
+    "notification_waiting_seller_to_pay_title": "Waiting for seller",
+    "notification_waiting_seller_to_pay_message": "Waiting for the seller to make the payment",
+    "notification_waiting_buyer_invoice_title": "Waiting for invoice",
+    "notification_waiting_buyer_invoice_message": "Waiting for the buyer to provide the invoice",
+    "notification_add_invoice_title": "Invoice required",
+    "notification_add_invoice_message": "Please add your Lightning invoice",
+    "notification_add_invoice_after_failure_message": "Previous invoice payment failed. Please add a new Lightning invoice",
+    "notification_buyer_took_order_title": "Contact Buyer",
+    "notification_buyer_took_order_message": "A buyer has taken your order",
+    "notification_rate_title": "Rating requested",
+    "notification_rate_message": "Please rate your trading counterparty",
+    "notification_rate_received_title": "Rating received",
+    "notification_rate_received_message": "You have received a rating from your counterparty",
+    "notification_dispute_initiated_by_you_title": "Dispute started",
+    "notification_dispute_initiated_by_you_message": "You have initiated a dispute for this order",
+    "notification_dispute_initiated_by_peer_title": "Dispute started",
+    "notification_dispute_initiated_by_peer_message": "Your counterparty has initiated a dispute",
+    "notification_payment_failed_title": "Payment failed",
+    "notification_payment_failed_message": "The payment attempt has failed",
+    "notification_invoice_updated_title": "Invoice updated",
+    "notification_invoice_updated_message": "The Lightning invoice has been updated",
+    "notification_cant_do_title": "Action not allowed",
+    "notification_cant_do_message": "The requested action cannot be performed",
+    "notification_new_message_title": "New message",
+    "notification_new_message_message": "You have received a new message",
+    "notification_order_update_title": "Order update",
+    "notification_order_update_message": "Your order has been updated",
+    "@_comment_notification_details": "Notification details labels",
+    "notificationBuyer": "Buyer",
+    "notificationSeller": "Seller",
+    "notificationAmount": "Amount",
+    "notificationPaymentMethod": "Payment Method",
+    "notificationTimeout": "Timeout",
+    "notificationMinutes": "minutes",
+    "notificationDisputeId": "Dispute ID",
+    "notificationAttempts": "Attempts left",
+    "notificationRetryInterval": "Retry Interval",
+    "notificationFailedAt": "Failed at",
+    "notificationReason": "Reason",
+    "notificationToken": "Token",
+    "notificationExpiresIn": "Expires in",
+    "notificationRate": "Rate",
+    "notificationOrderId": "Order ID",
+    "notificationDelete": "Delete",
+    "confirmDeleteNotification": "Are you sure you want to delete this notification?",
+    "confirmClearAll": "This will permanently delete all notifications. This action cannot be undone.",
+    "@_comment_notification_units": "Notification time units",
+    "notificationSeconds": "seconds",
+    "@_comment_relay_status": "Relay status messages",
+    "inUse": "In Use",
+    "notInUse": "Not In Use",
+    "noMostroRelaysAvailable": "No relays available from the configured Mostro instance. Please check your Mostro configuration.",
+    "relaysDescription": "Toggle on or off as you prefer, or add new ones.",
+    "activated": "Connected",
+    "deactivated": "Disconnected",
+    "@_comment_blacklist_dialog": "Blacklist default relay dialog strings",
+    "blacklistDefaultRelayTitle": "Disconnect from Default Relay?",
+    "blacklistDefaultRelayMessage": "Are you sure you want to disconnect from the default relay? This may affect connectivity to the Mostro instance.",
+    "blacklistDefaultRelayConfirm": "Disconnect",
+    "blacklistDefaultRelayCancel": "Cancel",
+    "@_comment_last_relay_dialog": "Last relay protection dialog strings",
+    "cannotBlacklistLastRelayTitle": "Cannot Disconnect from Last Relay",
+    "cannotBlacklistLastRelayMessage": "You cannot disconnect from this relay because it's the last connected one. The app needs at least one relay to function properly.",
+    "cannotBlacklistLastRelayOk": "OK",
+    "@_comment_delete_user_relay_dialog": "Delete user relay confirmation dialog strings",
+    "deleteUserRelayTitle": "Sure you want to disconnect from this relay?",
+    "deleteUserRelayMessage": "If you want to use it again later, you'll need to add it manually.",
+    "deleteUserRelayConfirm": "Yes",
+    "deleteUserRelayCancel": "No",
+    "@_comment_session_timeout": "Session timeout message",
+    "sessionTimeoutMessage": "No response received, check your connection and try again later",
+    "@_comment_import_mnemonic_dialog": "Import Mnemonic Dialog strings",
+    "importMostroUserDialogTitle": "Import User",
+    "importMostroUserInfo1": "These are your secret words, the only way to recover your account if you lose access to this app or want to use your identity in another app.",
+    "importMostroUserInfo2": "Write them down carefully and store them in a secure, private location. Never share them with anyone.",
+    "importMostroUserInfo3": "If you lose these words, you'll permanently lose access to your account.",
+    "secretWordsLabel": "Secret Words",
+    "secretWordsPlaceholder": "Enter your 12 secret words separated by spaces",
+    "invalidMnemonic": "Invalid mnemonic. Please check your words",
+    "@_comment_restore_overlay": "Restore overlay messages",
+    "restoringOrders": "Restoring Orders",
+    "restoreRequestingData": "Requesting restore data...",
+    "restoreReceivingOrders": "Receiving orders...",
+    "restoreLoadingDetails": "Loading order details...",
+    "restoreProcessingRoles": "Processing roles...",
+    "restoreFinalizing": "Finalizing restore...",
+    "restoreCompleted": "Restore completed!",
+    "restoreError": "Restore error",
+    "restoreErrorMessage": "Error restoring user data. Please check your connection and try again.",
+    "@_comment_file_messaging": "File messaging strings",
+    "download": "Download",
+    "openFile": "Open File",
+    "encrypted": "Encrypted",
+    "downloadingFile": "Downloading file...",
+    "@_comment_file_confirmation": "File confirmation dialog strings",
+    "confirmFileUpload": "Confirm Upload",
+    "sendThisFile": "Send this file?",
+    "send": "Send",
+    "@_comment_image_decryption": "Image decryption status strings",
+    "decryptingImage": "Decrypting image...",
+    "failedToLoadImage": "Failed to load image",
+    "imageDecryptionError": "Error decrypting image",
+    "imageNotAvailable": "Image not available",
+    "couldNotOpenFile": "Could not open file",
+    "couldNotOpenFileWithMessage": "Could not open file: {message}",
+    "@couldNotOpenFileWithMessage": {
+        "placeholders": {
+            "message": {
+                "type": "String"
+            }
+        }
+    },
+    "errorOpeningFile": "Error opening file",
+    "errorOpeningFileWithMessage": "Error opening file: {error}",
+    "@errorOpeningFileWithMessage": {
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "errorUploadingFile": "Error uploading file: {error}",
+    "@errorUploadingFile": {
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "@_comment_backup_reminder": "Backup reminder notification",
+    "backupAccountReminder": "You must back up your account",
+    "backupAccountReminderMessage": "Back up your secret words to recover your account",
+    "@_comment_validation": "Input validation messages",
+    "invalidKeyFormat": "Invalid key format",
+    "@_comment_logging_ui": "Logging UI strings",
+    "logCapture": "Log Capture",
+    "capturingLogs": "Capturing logs",
+    "captureDisabled": "Capture disabled",
+    "performanceWarning": "Performance Warning",
+    "performanceWarningMessage": "Enabling log capture may impact application performance. Only enable this feature when debugging or troubleshooting issues.",
+    "enable": "Enable",
+    "logsReport": "Logs Report",
+    "clearLogs": "Clear Logs",
+    "totalLogs": "{count} logs",
+    "@totalLogs": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "maxEntries": "Max {count} entries",
+    "@maxEntries": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "searchLogs": "Search logs...",
+    "allLevels": "All",
+    "errors": "Errors",
+    "warnings": "Warnings",
+    "info": "Info",
+    "debug": "Debug",
+    "noLogsAvailable": "No logs available",
+    "logsWillAppearHere": "Logs will appear here when log capture is enabled",
+    "copyLog": "Copy log",
+    "logCopied": "Log copied to clipboard",
+    "saveToDevice": "Save to Device",
+    "saveFile": "Save File",
+    "shareReport": "Share Report",
+    "shareLogs": "Share Logs",
+    "logsExportTitle": "Logs Export",
+    "exportFailed": "Export failed",
+    "logsSavedTo": "Logs saved to {path}",
+    "@logsSavedTo": {
+        "placeholders": {
+            "path": {
+                "type": "String"
+            }
+        }
+    },
+    "saveFailed": "Save failed",
+    "clearLogsConfirmation": "This will permanently delete all captured logs. This action cannot be undone.",
+    "logsCleared": "Logs cleared",
+    "shareFeatureComingSoon": "Share feature coming in Phase 2",
+    "devTools": "Dev Tools",
+    "devToolsWarning": "For debugging and troubleshooting only",
+    "viewAndExportLogs": "View and export application logs",
+    "saveLogs": "Save Logs",
+    "logsExportSuccess": "Logs exported successfully",
+    "logsExportError": "Failed to export logs",
+    "shareLogsError": "Failed to share logs",
+    "exportSettings": "Export Settings",
+    "logsHeaderTitle": "Mostro P2P Application Logs",
+    "logsGeneratedLabel": "Generated",
+    "logsTotalLabel": "Total logs",
+    "logsShareSubject": "Mostro P2P Logs",
+    "logsShareText": "Application logs from Mostro P2P",
+    "pushNotifications": "Push Notifications",
+    "pushNotificationsDescription": "Receive notifications when there are updates to your trades, even when the app is closed.",
+    "pushNotificationsNotSupported": "Push notifications are not supported on this platform.",
+    "notificationPreferences": "Preferences",
+    "notificationSound": "Sound",
+    "notificationSoundDescription": "Play a sound when receiving notifications",
+    "notificationVibration": "Vibration",
+    "notificationVibrationDescription": "Vibrate when receiving notifications",
+    "privacyInfo": "Privacy Information",
+    "pushNotificationsPrivacyInfo": "MostroP2P uses privacy-preserving push notifications. Your message content is never shared with third parties.",
+    "privacyBulletSilentPush": "Silent push notifications - no message content is sent through Firebase",
+    "privacyBulletEncryptedTokens": "Device tokens are encrypted before registration",
+    "privacyBulletLocalDecryption": "All messages are decrypted locally on your device",
+    "notificationSettings": "Notification Settings",
+    "notificationSettingsDescription": "Configure push notification preferences",
+    "fixedPriceDisabledForRange": "Fixed price is not available for range orders. Remove the max amount to use fixed price.",
+    "@_comment_chat_error_screens": "Chat Error Screen Strings",
+    "sessionNotFound": "Session not found",
+    "unableToLoadChatSession": "Unable to load chat session for this order",
+    "peerInformationUnavailable": "Peer information unavailable",
+    "chatPartnerCouldNotBeLoaded": "Chat partner information could not be loaded",
+    "selectMostroNode": "Select Mostro Node",
+    "mostroNodeDescription": "Select the Mostro node you want to trade on",
+    "trustedNodesSection": "Trusted Nodes",
+    "customNodesSection": "Custom Nodes",
+    "addCustomNode": "Add Custom Node",
+    "addCustomNodeTitle": "Add Custom Node",
+    "enterNodePubkey": "Public Key",
+    "enterNodeName": "Name (optional)",
+    "pubkeyHint": "Hex or npub format",
+    "nodeNameHint": "Friendly name for this node",
+    "nodeAlreadyExists": "This node already exists",
+    "invalidPubkeyFormat": "Invalid public key format. Enter 64-char hex or npub",
+    "nodeAddedSuccess": "Node added successfully",
+    "nodeRemovedSuccess": "Node removed",
+    "nodeRemoveFailed": "Failed to remove node, please try again",
+    "cannotRemoveActiveNode": "Cannot remove the currently active node",
+    "deleteCustomNodeTitle": "Remove Custom Node",
+    "deleteCustomNodeMessage": "Are you sure you want to remove this custom node?",
+    "deleteCustomNodeConfirm": "Remove",
+    "deleteCustomNodeCancel": "Cancel",
+    "switchingToNode": "Switching to {nodeName}...",
+    "@switchingToNode": {
+        "placeholders": {
+            "nodeName": {
+                "type": "String"
+            }
+        }
+    },
+    "nodeSwitchedSuccess": "Switched to {nodeName}",
+    "@nodeSwitchedSuccess": {
+        "placeholders": {
+            "nodeName": {
+                "type": "String"
+            }
+        }
+    },
+    "errorSwitchingNode": "Error switching node, please try again",
+    "trusted": "Trusted",
+    "noCustomNodesYet": "No custom nodes added yet",
+    "pubkeyRequired": "Public key is required",
+    "tapToSelectNode": "Tap to change",
+    "nodeNotRespondingReverted": "Node is not responding, reverted to previous node",
+    "wallet": "Wallet",
+    "walletDescription": "Connect your Lightning wallet via NWC",
+    "connectWallet": "Connect Wallet",
+    "disconnectWallet": "Disconnect Wallet",
+    "walletConnected": "Connected",
+    "walletDisconnected": "Not Connected",
+    "walletBalance": "Balance",
+    "pasteNwcUri": "Paste NWC URI",
+    "scanQrCode": "Scan QR Code",
+    "scanQrCodeComingSoon": "QR scanner coming soon",
+    "connecting": "Connecting...",
+    "walletInfo": "Wallet Info",
+    "walletSettings": "Wallet Settings",
+    "nwcConnectionError": "Connection error",
+    "invalidNwcUri": "Invalid NWC URI",
+    "walletDisconnectConfirm": "Are you sure you want to disconnect your wallet?",
+    "connectWalletDescription": "Connect your Lightning wallet using a Nostr Wallet Connect (NWC) URI to view your balance and manage payments.",
+    "refreshBalance": "Refresh balance",
+    "payWithWallet": "Pay with Wallet",
+    "nwcPaymentSending": "Sending payment...",
+    "nwcPaymentSuccess": "Payment Successful!",
+    "nwcPaymentFailed": "Payment failed. Please try again.",
+    "nwcPaymentTimeout": "Payment timed out. Please try again or pay manually.",
+    "nwcInsufficientBalance": "Insufficient wallet balance",
+    "nwcRateLimited": "Wallet is rate limited. Please wait a moment.",
+    "nwcQuotaExceeded": "Wallet spending quota exceeded",
+    "nwcRetryPayment": "Retry Payment",
+    "nwcPayManually": "Pay manually instead",
+    "nwcPreimageLabel": "Preimage",
+    "nwcGenerateWithWallet": "Generate with Wallet",
+    "nwcInvoiceGenerating": "Generating invoice...",
+    "nwcInvoiceGenerated": "Invoice Generated!",
+    "nwcInvoiceFailed": "Invoice generation failed. Please try again.",
+    "nwcInvoiceTimeout": "Invoice generation timed out. Please try again or enter manually.",
+    "nwcConfirmInvoice": "Confirm & Submit",
+    "nwcRetryInvoice": "Retry",
+    "nwcEnterManually": "Enter manually instead",
+    "nwcConnectionUnstable": "Connection unstable",
+    "nwcReconnecting": "Reconnecting...",
+    "nwcBalanceTooLow": "Wallet balance is lower than the payment amount",
+    "nwcCheckingBalance": "Checking balance...",
+    "nwcReceiptAmount": "Amount",
+    "nwcReceiptFees": "Routing fees",
+    "nwcReceiptTotal": "Total",
+    "nwcReceiptTimestamp": "Time",
+    "nwcReceiptDone": "Done",
+    "nwcPreimageCopied": "Preimage copied to clipboard",
+    "nwcPaymentReceived": "Payment received!",
+    "nwcPaymentSent": "Payment sent!",
+    "nwcNotificationPaymentReceived": "Received {amount} sats",
+    "@nwcNotificationPaymentReceived": {
+        "placeholders": {
+            "amount": {
+                "type": "String"
+            }
+        }
+    },
+    "nwcNotificationPaymentSent": "Sent {amount} sats",
+    "@nwcNotificationPaymentSent": {
+        "placeholders": {
+            "amount": {
+                "type": "String"
+            }
+        }
     }
-  },
-  "canceled": "You have canceled the order ID: {id}.",
-  "payInvoice": "Please pay this hold invoice of {amount} Sats for {fiat_code} {fiat_amount} to start the operation. If you do not pay it within {expiration_seconds} minutes, the trade will be canceled.",
-  "@payInvoice": {
-    "placeholders": {
-      "amount": {
-        "type": "String",
-        "description": "The amount of satoshis"
-      },
-      "expiration_seconds": {
-        "type": "int",
-        "description": "The expiration time in minutes"
-      },
-      "fiat_amount": {
-        "type": "String",
-        "description": "The fiat amount"
-      },
-      "fiat_code": {
-        "type": "String",
-        "description": "The fiat currency code"
-      }
-    }
-  },
-  "addInvoice": "Please send me an invoice for {amount} satoshis equivalent to {fiat_code} {fiat_amount}. This is where I will send the funds upon trade completion. If you don't provide the invoice within {expiration_seconds} minutes, the trade will be canceled.",
-  "@addInvoice": {
-    "placeholders": {
-      "amount": {
-        "type": "String",
-        "description": "The amount of satoshis"
-      },
-      "expiration_seconds": {
-        "type": "int",
-        "description": "The expiration time in minutes"
-      },
-      "fiat_amount": {
-        "type": "String",
-        "description": "The fiat amount"
-      },
-      "fiat_code": {
-        "type": "String",
-        "description": "The fiat currency code"
-      }
-    }
-  },
-  "addInvoicePaymentFailed": "The payment to your previous invoice could not be completed. Please send me a new invoice for {amount} satoshis equivalent to {fiat_amount} {fiat_code} to complete the payment.",
-  "@addInvoicePaymentFailed": {
-    "placeholders": {
-      "amount": {
-        "type": "String",
-        "description": "The amount of satoshis"
-      },
-      "fiat_amount": {
-        "type": "String",
-        "description": "The fiat amount"
-      },
-      "fiat_code": {
-        "type": "String",
-        "description": "The fiat currency code"
-      }
-    }
-  },
-  "waitingSellerToPay": "Please wait. I’ve sent a payment request to the seller to send the Sats for the order ID {id}. If the seller doesn’t complete the payment within {expiration_seconds} minutes, the trade will be canceled.",
-  "@waitingSellerToPay": {
-    "placeholders": {
-      "expiration_seconds": {
-        "type": "int",
-        "description": "The expiration time in minutes"
-      },
-      "id": {
-        "type": "String",
-        "description": "The order ID"
-      }
-    }
-  },
-  "orderTakenWaitingCounterpart": "Your order has been taken by another user. You must wait for them to decide if they want to continue. If they accept, I will notify you to complete your part. For now you don't need to do anything.\nIf they don't respond in {expiration_seconds} minutes, the order will be available again for other users to take.",
-  "@orderTakenWaitingCounterpart": {
-    "placeholders": {
-      "expiration_seconds": {
-        "type": "int",
-        "description": "The expiration time in minutes"
-      }
-    }
-  },
-  "waitingBuyerInvoice": "Payment received! Your Sats are now 'held' in your wallet. I’ve requested the buyer to provide an invoice. If they don’t do so within {expiration_seconds} minutes, your Sats will return to your wallet, and the trade will be canceled.",
-  "@waitingBuyerInvoice": {
-    "placeholders": {
-      "expiration_seconds": {
-        "type": "int",
-        "description": "The expiration time in minutes"
-      }
-    }
-  },
-  "buyerInvoiceAccepted": "The invoice has been successfully saved.",
-  "holdInvoicePaymentAccepted": "Contact the seller {seller_name} to arrange how to send {fiat_code} {fiat_amount} using {payment_method}. Once you’ve sent the fiat money, notify me by pressing the Fiat Sent button.",
-  "buyerTookOrder": "Contact the buyer {buyer_name} to inform them how to send {fiat_code} {fiat_amount} through {payment_method}. You’ll be notified when the buyer confirms the fiat payment. Afterward, verify if it has arrived. If the buyer does not respond, you can initiate a cancellation or a dispute. Remember, an administrator will NEVER contact you to resolve your order unless you open a dispute first.",
-  "fiatSentOkBuyer": "I have informed {seller_name} that you sent the fiat money. If the seller confirms receipt, they will release the funds. If they refuse, you can open a dispute.",
-  "fiatSentOkSeller": "{buyer_name} has informed me that the fiat money has already been sent to you. Once you’ve confirmed receipt, please release the satoshis. By doing so, they will be transferred to the buyer and the action cannot be undone. If you wish to proceed, press the Release button.",
-  "released": "{seller_name} has released the Sats! Expect your invoice to be paid shortly. Ensure your wallet is online to receive via Lightning Network.",
-  "purchaseCompleted": "Your purchase of Bitcoin has been completed successfully. I have paid your invoice; enjoy sound money!",
-  "holdInvoicePaymentSettled": "Your Sats sale has been completed after confirming the payment from {buyer_name}.",
-  "rate": "RATE",
-  "rateReceived": "Rating successfully saved!",
-  "cooperativeCancelInitiatedByYou": "You have initiated the cancellation of the order ID: {id}. Your counterparty must agree. If they do not respond, you can open a dispute. Note that no administrator will contact you regarding this cancellation unless you open a dispute first.",
-  "cooperativeCancelInitiatedByPeer": "Your counterparty wants to cancel order ID: {id}. If you agree, please send me cancel-order-message. Note that no administrator will contact you regarding this cancellation unless you open a dispute first.",
-  "cooperativeCancelAccepted": "Order {id} has been successfully canceled!",
-  "disputeInitiatedByYou": "You have initiated a dispute for order ID: {id}. A solver will be assigned soon. Once assigned, I will share their npub with you, and only they will be able to assist you. Your dispute ID is: {dispute_id}.",
-  "@disputeInitiatedByYou": {
-    "placeholders": {
-      "id": {
-        "type": "String",
-        "example": "abc123"
-      },
-      "dispute_id": {
-        "type": "String",
-        "example": "dispute-456"
-      }
-    }
-  },
-  "disputeInitiatedByPeer": "Your counterparty has initiated a dispute for order ID: {id}. A solver will be assigned soon. Once assigned, I will share their npub with you, and only they will be able to assist you. Your dispute ID is: {dispute_id}.",
-  "@disputeInitiatedByPeer": {
-    "placeholders": {
-      "id": {
-        "type": "String",
-        "example": "abc123"
-      },
-      "dispute_id": {
-        "type": "String",
-        "example": "dispute-456"
-      }
-    }
-  },
-  "adminTookDisputeAdmin": "Here are the details of the dispute order you have taken: {details}. You need to determine which user is correct and decide whether to cancel or complete the order. Please note that your decision will be final and cannot be reversed.",
-  "adminTookDisputeUsers": "A dispute resolver has been assigned to handle your dispute. They will contact you through the app.",
-  "adminCanceledAdmin": "You have canceled the order ID: {id}.",
-  "adminCanceledUsers": "Admin has canceled the order ID: {id}.",
-  "adminSettledAdmin": "You have completed the order ID: {id}.",
-  "adminSettledUsers": "Admin has completed the order ID: {id}.",
-  "paymentFailed": "The payment attempt to your invoice has failed. I will retry {payment_attempts} more times, with an interval of {payment_retries_interval} minutes between each attempt. Please ensure your wallet is online to complete the payment.",
-  "paymentFailedText": "Payment Failed",
-  "invoiceUpdated": "The invoice has been successfully updated!",
-  "holdInvoicePaymentCanceled": "The invoice was canceled; your Sats are available in your wallet again.",
-  "cantDo": "You are not allowed to {action} for this order!",
-  "adminAddSolver": "You have successfully added the solver {npub}.",
-  "invalidSignature": "The action cannot be completed because the signature is invalid.",
-  "invalidTradeIndex": "The trade index is not valid.",
-  "invalidAmount": "The provided amount is invalid. Please verify it and try again.",
-  "invalidInvoice": "The provided Lightning invoice is invalid. Please check the invoice details and try again.",
-  "invalidPaymentRequest": "The payment request is invalid or cannot be processed.",
-  "invalidPeer": "You are not authorized to perform this action.",
-  "invalidRating": "The rating value is invalid or out of range.",
-  "invalidTextMessage": "The text message is invalid or contains prohibited content.",
-  "invalidOrderKind": "The order kind is invalid.",
-  "invalidOrderStatus": "The action cannot be completed due to the current order status.",
-  "invalidPubkey": "The action cannot be completed because the public key is invalid.",
-  "invalidParameters": "The action cannot be completed due to invalid parameters. Please review the provided values and try again.",
-  "orderAlreadyCanceled": "The action cannot be completed because the order has already been canceled.",
-  "cantCreateUser": "The Mostro instance could not create your new user, please try again later.",
-  "isNotYourOrder": "This order does not belong to you.",
-  "notAllowedByStatus": "This action is not allowed in the current state.",
-  "outOfRangeFiatAmount": "The requested fiat amount is outside the acceptable range.",
-  "outOfRangeSatsAmount": "The Sats amount is out of the allowed range.",
-  "isNotYourDispute": "This dispute is not assigned to you.",
-  "disputeCreationError": "A dispute cannot be created for this order.",
-  "notFound": "The requested dispute could not be found.",
-  "invalidDisputeStatus": "The dispute status is invalid.",
-  "invalidAction": "The requested action is invalid.",
-  "invalidFiatCurrency": "This Mostro instance doesn't accept the selected currency, try another instance",
-  "pendingOrderExists": "You already have an order waiting for you, you must complete it or cancel it before taking another one.",
-  "login": "Login",
-  "register": "Register",
-  "pin": "PIN",
-  "pleaseEnterPin": "Please enter your PIN",
-  "pleaseEnterPrivateKey": "Please enter a private key",
-  "invalidPrivateKeyFormat": "Invalid private key format",
-  "privateKeyLabel": "Private Key (nsec or hex)",
-  "pinMustBeAtLeast4Digits": "PIN must be at least 4 digits",
-  "confirmPin": "Confirm PIN",
-  "pinsDoNotMatch": "PINs do not match",
-  "useBiometrics": "Use Biometrics",
-  "generateNewKey": "Generate New Key",
-  "welcomeHeading": "NO-KYC P2P Lightning\nexchange on top of\nnostr",
-  "welcomeDescription": "Peer-to-peer Lightning Network platform over nostr",
-  "registerButton": "REGISTER",
-  "skipForNow": "Skip for now",
-  "noOrdersAvailable": "No orders available",
-  "tryChangingFilters": "Try changing filter settings or check back later",
-  "buyBtc": "BUY BTC",
-  "sellBtc": "SELL BTC",
-  "filter": "FILTER",
-  "statusFilter": "Status",
-  "allStatuses": "All",
-  "all": "All",
-  "statusPending": "Pending",
-  "statusWaitingPayment": "Waiting-Payment",
-  "statusWaitingBuyerInvoice": "Waiting-Buyer-Invoice",
-  "statusActive": "Active",
-  "statusFiatSent": "Fiat-Sent",
-  "statusSuccess": "Success",
-  "statusCanceled": "Canceled",
-  "statusSettledHoldInvoice": "Settled-Hold-Invoice",
-  "offersCount": "{count} offers",
-  "@offersCount": {
-    "placeholders": {
-      "count": {
-        "type": "String"
-      }
-    }
-  },
-  "creatingNewOrder": "CREATING NEW ORDER",
-  "enterSatsAmountBuy": "Enter the Sats amount you want to Buy",
-  "enterSatsAmountSell": "Enter the Sats amount you want to Sell",
-  "enterSatsAmount": "Enter sats amount",
-  "pleaseEnterSatsAmount": "Please enter sats amount",
-  "pleaseEnterNumbersOnly": "Please enter numbers only",
-  "pleaseSelectCurrency": "Please select a currency",
-  "pleaseSelectPaymentMethod": "Please select at least one payment method",
-  "error": "Error",
-  "ok": "OK",
-  "cancel": "Cancel",
-  "submit": "Submit",
-  "settings": "Settings",
-  "currency": "Currency",
-  "setDefaultFiatCurrency": "Set your default fiat currency",
-  "defaultFiatCurrency": "Default Fiat Currency",
-  "setDefaultLightningAddress": "Set your default lightning address",
-  "defaultLightningAddress": "Default Lightning Address",
-  "lightningAddressUsed": "Using your configured Lightning address",
-  "relays": "Relays",
-  "selectNostrRelays": "Select the Nostr relays you connect to",
-  "addRelay": "Add Relay",
-  "mostro": "Mostro",
-  "enterMostroPublicKey": "Enter the public key of the Mostro you will use",
-  "mostroPubkey": "Mostro Pubkey",
-  "orderBook": "Order Book",
-  "myTrades": "My Trades",
-  "chat": "Chat",
-  "navigateToLabel": "Navigate to {label}",
-  "errorLoadingTrades": "Error loading trades",
-  "retry": "Retry",
-  "noTradesAvailable": "No trades available for this type",
-  "welcomeToMostroMobile": "Trade Bitcoin freely — no KYC",
-  "discoverSecurePlatform": "Mostro is a peer-to-peer exchange that lets you trade Bitcoin for any currency and payment method — no KYC, and no need to give your data to anyone.\n\nIt's built on Nostr, which makes it censorship-resistant. No one can stop you from trading.",
-  "easyOnboarding": "Privacy by default",
-  "guidedWalkthroughSimple": "Mostro generates a new identity for every exchange, so your trades can't be linked.\n\nYou can also decide how private you want to be:\n\n• Reputation mode – Lets others see your successful trades and trust level.\n\n• Full privacy mode – No reputation is built, but your activity is completely anonymous.\n\nSwitch modes anytime from the Account screen, where you should also save your secret words — they're the only way to recover your account.",
-  "tradeWithConfidence": "Security at every step",
-  "seamlessPeerToPeer": "Mostro uses Hold Invoices: sats stay in the seller's wallet until the end of the trade. This protects both sides.\n\nThe app is also designed to be intuitive and easy for all kinds of users.",
-  "encryptedChat": "Fully encrypted chat",
-  "encryptedChatDescription": "Each trade has its own private chat, end-to-end encrypted. Only the two users involved can read it.\n\nIn case of a dispute, you can give the shared key to an admin to help resolve the issue.",
-  "takeAnOffer": "Take an offer",
-  "takeAnOfferDescription": "Browse the order book, choose an offer that works for you, and follow the trade flow step by step.\n\nYou'll be able to check the other user's profile, chat securely, and complete the trade with ease.",
-  "cantFindWhatYouNeed": "Can't find what you need?",
-  "createYourOwnOffer": "You can also create your own offer and wait for someone to take it.\n\nSet the amount and preferred payment method — Mostro handles the rest.",
-  "skip": "Skip",
-  "done": "Done",
-
-  "@_comment_trade_detail_screen_new": "New Trade Detail Screen Strings",
-  "orderDetailsTitle": "ORDER DETAILS",
-  "buyOrderDetailsTitle": "BUY ORDER DETAILS",
-  "sellOrderDetailsTitle": "SELL ORDER DETAILS",
-  "someoneIsSellingTitle": "Someone is Selling Sats",
-  "someoneIsBuyingTitle": "Someone is Buying Sats",
-  "someoneIsSellingFixedTitle": "Someone is Selling {sats} Sats",
-  "someoneIsBuyingFixedTitle": "Someone is Buying {sats} Sats",
-  "youCreatedOfferMessage": "You created this offer. Below are the details of your offer. Wait for another user to take it. It will be published for {expiration_hours} hours. You can cancel it at any time using the 'Cancel' button.",
-  "@youCreatedOfferMessage": {
-    "placeholders": {
-      "expiration_hours": {
-        "type": "String",
-        "description": "The expiration time in hours"
-      }
-    }
-  },
-  "youAreSellingTitle": "You are selling{sats} sats",
-  "youAreBuyingTitle": "You are buying{sats} sats",
-  "forAmount": "for {amount}",
-  "timeLeftLabel": "Time Left: {time}",
-  "@timeLeftLabel": {
-    "placeholders": {
-      "time": {
-        "type": "String"
-      }
-    }
-  },
-  "cancelPendingButton": "CANCEL PENDING",
-  "acceptCancelButton": "CANCEL",
-  "disputeButton": "DISPUTE",
-  "fiatSentButton": "FIAT SENT",
-  "completePurchaseButton": "COMPLETE PURCHASE",
-  "paymentMethodLabel": "Payment Method",
-  "createdOnLabel": "Created On",
-  "orderIdLabel": "Order ID",
-  "creatorReputationLabel": "Creator's Reputation",
-  "ratingTitleLabel": "Rating",
-  "reviewsLabel": "Reviews",
-  "daysLabel": "Days",
-  "cancelTradeDialogTitle": "Cancel Trade",
-  "cooperativeCancelDialogMessage": "If you confirm, you will start a cooperative cancellation with your counterparty.",
-  "acceptCancelDialogMessage": "If you confirm, you will accept the cooperative cancellation initiated by your counterparty.",
-  "orderIdCopiedMessage": "Order ID copied to clipboard",
-  "disputeTradeDialogTitle": "Start Dispute",
-  "disputeTradeDialogContent": "You are about to start a dispute with your counterparty. Do you want to continue?",
-  "disputeCreatedSuccessfully": "Dispute created successfully",
-  "disputeCreationFailed": "Failed to create dispute",
-  "disputeCreationErrorWithMessage": "Error creating dispute: {error}",
-  "@disputeCreationErrorWithMessage": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "typeToAdd": "Type to add...",
-  "noneSelected": "None selected",
-  "fiatCurrencies": "Fiat currencies",
-  "paymentMethods": "Payment methods",
-  "invalidMessageMissingId": "Invalid message: missing ID",
-  "invalidImageMessageFormat": "Invalid image message format",
-  "securityErrorInvalidChars": "Security error: Invalid characters in sanitized filename",
-  "ratingLabel": "Rating: {rating}",
-  "buyingBitcoin": "Buying Bitcoin",
-  "sellingBitcoin": "Selling Bitcoin",
-  "bankTransfer": "Bank Transfer",
-  "cashInPerson": "Cash in person",
-  "other": "Other",
-  "createdByYou": "Created by you",
-  "takenByYou": "Taken by you",
-  "active": "Active",
-  "pending": "Pending",
-  "waitingPayment": "Waiting payment",
-  "waitingInvoice": "Waiting invoice",
-  "fiatSent": "Fiat-sent",
-  "settled": "Settled",
-  "completed": "Completed",
-  "dispute": "Dispute",
-  "expired": "Expired",
-  "success": "Success",
-  "orderIdCopied": "Order ID copied to clipboard",
-  "noPaymentMethod": "No payment method",
-  "youAreSellingText": "You are selling{sats} sats for {amount} {price} {premium}",
-  "youAreBuyingText": "You are buying{sats} sats for {amount} {price} {premium}",
-  "withPremium": " with a +{premium}% premium",
-  "withDiscount": " with a {premium}% discount",
-  "createdOn": "Created on",
-  "paymentMethodsLabel": "Payment methods",
-  "cancelTrade": "Cancel Trade",
-  "areYouSureCancel": "Are you sure you want to cancel this trade?",
-  "cooperativeCancelMessage": "If you confirm, you will start a cooperative cancellation with your counterparty.",
-  "acceptCancelMessage": "If you confirm, you will accept the cooperative cancellation initiated by your counterparty.",
-  "releaseTradeDialogTitle": "Release Bitcoin",
-  "areYouSureRelease": "Are you sure you want to release the Satoshis to the buyer?",
-  "confirm": "Confirm",
-  "yes": "Yes",
-  "no": "No",
-  "buy": "BUY",
-  "sell": "SELL",
-  "buying": "BUYING",
-  "selling": "SELLING",
-  "youAreBuying": "YOU ARE BUYING",
-  "youAreSelling": "YOU ARE SELLING",
-  "marketPrice": "Market Price",
-  "forSats": "For {amount} sats",
-  "@forSats": {
-    "placeholders": {
-      "amount": {
-        "type": "String"
-      }
-    }
-  },
-  "hoursAgo": "{count} hours ago",
-  "@hoursAgo": {
-    "placeholders": {
-      "count": {
-        "type": "String"
-      }
-    }
-  },
-  "reviews": "reviews",
-  "daysOld": "days old",
-  "reviewsAndDaysOld": "{reviews} reviews • {days} days old",
-  "@reviewsAndDaysOld": {
-    "placeholders": {
-      "reviews": {
-        "type": "String"
-      },
-      "days": {
-        "type": "String"
-      }
-    }
-  },
-  "account": "Account",
-  "about": "About",
-  "walkthrough": "Walkthrough",
-  "version": "Version",
-  "githubRepository": "GitHub Repository",
-  "commitHash": "Commit Hash",
-  "appInformation": "App Information",
-  "mostroNode": "Mostro Node",
-  "generalInfo": "General Info",
-  "pubkey": "Pubkey",
-  "mostroVersion": "Version",
-  "expirationHours": "Expiration Hours",
-  "expirationSeconds": "Expiration Seconds",
-  "fee": "Fee",
-  "proofOfWork": "Proof of Work",
-  "holdInvoiceExpirationWindow": "Hold Invoice Expiration Window",
-  "holdInvoiceCltvDelta": "Hold Invoice CLTV Delta",
-  "invoiceExpirationWindow": "Invoice Expiration Window",
-  
-  "@_comment_order_creation": "Order Creation Form Strings",
-  "youWantToBuyBitcoin": "You want to buy Bitcoin",
-  "youWantToSellBitcoin": "You want to sell Bitcoin",
-  "lightningAddressOptional": "Lightning Address (optional)",
-  "enterLightningAddress": "Enter lightning address",
-  "enterAmountHint": "Enter amount",
-  "pleaseEnterAmount": "Please enter an amount",
-  "pleaseEnterValidAmount": "Please enter a valid amount",
-  "fiatAmountTooHigh": "The fiat amount is too high. The Mostro node you are using allows between {minAmount} and {maxAmount} sats.",
-  "@fiatAmountTooHigh": {
-    "placeholders": {
-      "minAmount": {
-        "type": "String",
-        "description": "The minimum allowed sats amount"
-      },
-      "maxAmount": {
-        "type": "String",
-        "description": "The maximum allowed sats amount"
-      }
-    }
-  },
-  "fiatAmountTooLow": "The fiat amount is too low. The Mostro node you are using allows between {minAmount} and {maxAmount} sats.",
-  "@fiatAmountTooLow": {
-    "placeholders": {
-      "minAmount": {
-        "type": "String",
-        "description": "The minimum allowed sats amount"
-      },
-      "maxAmount": {
-        "type": "String",
-        "description": "The maximum allowed sats amount"
-      }
-    }
-  },
-  "exchangeRateNotAvailable": "Exchange rate not available, please wait or refresh",
-  "mostroInstanceNotAvailable": "Mostro instance data not available, please wait",
-  "enterAmountYouWantToReceive": "Enter amount you want to receive",
-  "enterAmountYouWantToSend": "Enter amount you want to send",
-  "creatingRangeOrder": "Creating a range order (you can receive between min and max amounts)",
-  "creatingRangeOrderBuySend": "Creating a range order (you can send between min and max amounts)",
-  "rangeOrder": "Range Order",
-  "maxAmount": "Max amount",
-  "tapSecondFieldForRange": "💡 Tap the second field to create a range order",
-  "to": "to",
-  "maxMustBeGreaterThanMin": "Maximum amount must be greater than minimum amount",
-  "paymentMethodsForCurrency": "Payment methods for {currency}",
-  "enterCustomPaymentMethod": "Enter custom payment method",
-  "loadingPaymentMethods": "Loading payment methods...",
-  "errorLoadingPaymentMethods": "Error loading payment methods: {error}",
-  "selectPaymentMethods": "Select payment methods",
-  "selectPaymentMethodsTitle": "Select Payment Methods",
-  "premiumTitle": "Premium (%)",
-  "premiumTooltip": "Adjust how much above or below the market price you want your offer. By default, it's set to 0%, with no premium or discount, so if you don't want to change the price, you can leave it as is.",
-  "premiumEditHint": "Edit",
-
-  "secretWords": "Secret Words",
-  "toRestoreYourAccount": "To restore your account",
-  "privacy": "Privacy",
-  "controlPrivacySettings": "Control your privacy settings",
-  "currentTradeIndex": "Current Trade Index",
-  "yourTradeCounter": "Your trade counter",
-  "incrementsWithEachTrade": "Increments with each trade",
-  "generateNewUser": "Generate New User",
-  "importMostroUser": "Import User",
-  "refreshUser": "Refresh User",
-  "keyImportedSuccessfully": "Key imported successfully",
-  "importFailed": "Import failed: {error}",
-  "@importFailed": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "refreshSuccessful": "User data refreshed successfully",
-  "refreshFailed": "Refresh failed: {error}",
-  "@refreshFailed": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "noMnemonicFound": "No mnemonic found",
-  "errorLoadingMnemonic": "Error: {error}",
-  "@errorLoadingMnemonic": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  
-  "noMessagesAvailable": "No messages available",
-  "back": "BACK",
-  "typeAMessage": "Type a message...",
-  "youAreChattingWith": "You are chatting with {handle}",
-  "yourHandle": "Your Handle:",
-  "yourSharedKey": "Your shared key:",
-  
-  "payInvoiceButton": "PAY INVOICE",
-  "addInvoiceButton": "ADD INVOICE",
-  "release": "RELEASE",
-  "takeSell": "TAKE SELL",
-  "takeBuy": "TAKE BUY",
-  
-  "noExchangeDataAvailable": "No exchange data available",
-  "errorFetchingCurrencies": "Error fetching currencies",
-  
-  "selectFiatCurrencyPay": "Select the fiat currency you will pay with",
-  "selectFiatCurrencyReceive": "Select the Fiat Currency you want to receive",
-  "loadingCurrencies": "Loading currencies...",
-  "errorLoadingCurrencies": "Error loading currencies",
-  "usDollar": "US Dollar",
-  "searchCurrencies": "Search currencies...",
-  "noCurrenciesFound": "No currencies found",
-  
-  "priceType": "Price type",
-  "fixedPrice": "Fixed price",
-  "market": "Market",
-  "priceTypeTooltip": "• Select Market Price if you want to use the price that Bitcoin has when someone takes your offer.\n\n• Select Fixed Price if you want to define the exact amount of Bitcoin you will exchange.",
-  
-  "@_comment_take_order_screen": "Take Order Screen Strings",
-  "orderDetails": "ORDER DETAILS",
-  "atMarketPrice": "at market price",
-  "withPremiumPercent": "with a +{premium}% premium",
-  "@withPremiumPercent": {
-    "placeholders": {
-      "premium": {
-        "type": "String"
-      }
-    }
-  },
-  "withDiscountPercent": "with a {premium}% discount",
-  "@withDiscountPercent": {
-    "placeholders": {
-      "premium": {
-        "type": "String"
-      }
-    }
-  },
-  "someoneIsSellingBuying": "Someone is {action}{satAmount} sats for {amountString} {price} {premiumText}",
-  "@someoneIsSellingBuying": {
-    "placeholders": {
-      "action": {
-        "type": "String"
-      },
-      "satAmount": {
-        "type": "String"
-      },
-      "amountString": {
-        "type": "String"
-      },
-      "price": {
-        "type": "String"
-      },
-      "premiumText": {
-        "type": "String"
-      }
-    }
-  },
-  "createdOnDate": "Created on: {date}",
-  "@createdOnDate": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "paymentMethodsAre": "The payment methods are: {methods}",
-  "@paymentMethodsAre": {
-    "placeholders": {
-      "methods": {
-        "type": "String"
-      }
-    }
-  },
-  "timeLeft": "Time Left: {time}",
-  "@timeLeft": {
-    "placeholders": {
-      "time": {
-        "type": "String"
-      }
-    }
-  },
-  "close": "CLOSE",
-  "take": "TAKE",
-  "enterAmount": "Enter Amount",
-  "enterAmountBetween": "{min} - {max} {currency}",
-  "@enterAmountBetween": {
-    "placeholders": {
-      "min": {
-        "type": "String",
-        "description": "Minimum amount that can be entered"
-      },
-      "max": {
-        "type": "String",
-        "description": "Maximum amount that can be entered"
-      },
-      "currency": {
-        "type": "String",
-        "description": "Currency code or symbol shown after the range"
-      }
-    }
-  },
-  "pleaseEnterValidNumber": "Please enter a valid number.",
-  "amountMustBeBetween": "Amount must be between {min} and {max}.",
-  "@amountMustBeBetween": {
-    "placeholders": {
-      "min": {
-        "type": "String"
-      },
-      "max": {
-        "type": "String"
-      }
-    }
-  },
-  
-  "@_comment_lightning_invoice": "Lightning Invoice Widget Strings",
-  "pleaseEnterLightningInvoiceFor": "Please enter a Lightning Invoice for {sats} Sats equivalent to {fiat_code} {fiat_amount} to continue the exchange for order with ID {order_id}",
-  "@pleaseEnterLightningInvoiceFor": {
-    "placeholders": {
-      "sats": {
-        "type": "String",
-        "description": "The amount of satoshis"
-      },
-      "fiat_code": {
-        "type": "String",
-        "description": "The fiat currency code"
-      },      
-      "fiat_amount": {
-        "type": "String",
-        "description": "The fiat amount"
-      },
-      "order_id": {
-        "type": "String",
-        "description": "The order ID"
-      }
-    }
-  },
-  "sats": " sats",
-  "lightningInvoice": "Lightning Invoice",
-  "enterInvoiceHere": "Enter invoice here",
-  
-  "rateButton": "RATE",
-  "contactButton": "CONTACT",
-  "viewDisputeButton": "VIEW DISPUTE",
-  
-  "rateCounterpart": "Rate Counterpart",
-  "submitRating": "Submit Rating",
-  
-  "addLightningInvoice": "Add Lightning Invoice",
-  "payLightningInvoice": "Pay Lightning Invoice",
-  "payInvoiceToContinue": "Pay this invoice for {sats} Sats equivalent to {fiat_code} {fiat_amount} to continue the exchange for order {order_id}",
-  "@payInvoiceToContinue": {
-    "placeholders": {
-      "sats": {
-        "type": "String",
-        "description": "The amount of satoshis"
-      },
-      "fiat_code": {
-        "type": "String",
-        "description": "The fiat currency code"
-      },
-      "fiat_amount": {
-        "type": "String",
-        "description": "The fiat amount"
-      },
-      "order_id": {
-        "type": "String",
-        "description": "The order ID"
-      }
-    }
-  },
-  "failedToGenerateQR": "Failed to generate QR code",
-  "invoiceCopiedToClipboard": "Invoice copied to clipboard",
-  "copiedToClipboard": "Copied to clipboard",
-  "copy": "Copy",
-  "share": "Share",
-  "failedToShareInvoice": "Failed to share invoice. Please try copying instead.",
-  "failedToCancelOrder": "Failed to cancel order: {error}",
-  "@failedToCancelOrder": {
-    "placeholders": {
-      "error": { "type": "String" }
-    }
-  },
-  "failedToUpdateInvoice": "Failed to update invoice: {error}",
-  "@failedToUpdateInvoice": {
-    "placeholders": {
-      "error": { "type": "String" }
-    }
-  },
-  "refreshingExchangeRate": "Refreshing exchange rate...",
-  "language": "Language",
-  "systemDefault": "System Default",
-  "english": "English",
-  "spanish": "Spanish",
-  "italian": "Italian",
-  "loadingOrder": "Loading order...",
-  "chooseLanguageDescription": "Choose your preferred language or use system default",
-  "unsupportedLinkFormat": "Unsupported link format",
-  "failedToOpenLink": "Failed to open link",
-  "failedToLoadOrder": "Failed to load order",
-  "failedToOpenOrder": "Failed to open order",
-
-  "@_comment_chat": "Chat Section",
-  "messages": "Messages",
-  "disputes": "Disputes",
-  "noDisputesAvailable": "No disputes available",
-  "youAreChatting": "You are chatting with {handle}",
-  "@youAreChatting": {
-    "placeholders": {
-      "handle": {
-        "type": "String"
-      }
-    }
-  },
-  "tradeInformation": "Trade Information",
-  "userInformation": "User Information",
-  "youAreSellingTo": "You are selling sats to",
-  "youAreBuyingFrom": "You are buying sats from",
-  "noMessagesYet": "No messages yet",
-  "today": "Today",
-  "yesterday": "Yesterday",
-  "youPrefix": "You: ",
-  "conversationsDescription": "Here you'll find your conversations with other users during trades.",
-  "disputesDescription": "These are your open disputes and the chats with the admin helping resolve them.",
-  "disputeDetails": "Dispute Details",
-  "disputeForOrder": "Dispute for order",
-  "disputeStatusInitiated": "Initiated",
-  "disputeStatusInProgress": "In-progress",
-  "disputeStatusResolved": "Resolved",
-  "disputeStatusClosed": "Closed",
-  "disputeResolvedTitle": "Dispute Resolved",
-  "disputeResolvedMessage": "This dispute has been resolved. The solver made a decision based on the evidence presented. Check your wallet for any refunds or payments.",
-  "disputeInProgress": "This dispute is currently in progress. A solver is reviewing your case.",
-  "disputeSellerRefunded": "This dispute has been resolved with the seller being refunded.",
-  "disputeUnknownStatus": "The status of this dispute is unknown.",
-
-  "disputeChatClosed": "This dispute has been resolved. The chat is now closed.",
-
-  
-  "@_comment_dispute_descriptions": "Dispute Description Messages",
-  "disputeDescriptionInitiatedByUser": "You opened this dispute",
-  "disputeDescriptionInitiatedByPeer": "A dispute was opened against you",
-  "disputeDescriptionInitiatedPendingAdmin": "An admin will take this dispute soon",
-  "disputeDescriptionInProgress": "No messages yet",
-  "disputeDescriptionResolved": "Order was completed - buyer received the sats",
-  "disputeDescriptionSellerRefunded": "Order was canceled - seller refunded",
-  "disputeDescriptionUnknown": "Unknown status",
-  "disputeAdminSettledMessage": "The admin settled the order in favor of one party. Check your wallet for any payments.",
-  "disputeSellerRefundedMessage": "The admin canceled the order and refunded the seller. The dispute is now closed.",
-  "disputeSettledBuyerMessage": "The dispute was resolved in your favor. The order was completed successfully and you received the sats. Check your wallet.",
-  "disputeSettledSellerMessage": "The dispute was resolved. The order was completed successfully and the buyer received the sats.",
-  "disputeCanceledBuyerMessage": "The admin canceled the order. The seller was refunded and you did not receive the sats.",
-  "disputeCanceledSellerMessage": "The admin canceled the order and refunded you. The buyer did not receive the sats. Check your wallet for the refund.",
-  "disputeOpenedByYou": "You opened this dispute against the buyer {counterparty}, please read carefully below:",
-  "@disputeOpenedByYou": {
-    "placeholders": {
-      "counterparty": { "type": "String" }
-    }
-  },
-  "disputeOpenedByYouAgainstSeller": "You opened this dispute against the seller {counterparty}, please read carefully below:",
-  "@disputeOpenedByYouAgainstSeller": {
-    "placeholders": {
-      "counterparty": { "type": "String" }
-    }
-  },
-  "disputeOpenedByYouAgainstBuyer": "You opened this dispute against the buyer {counterparty}, please read carefully below:",
-  "@disputeOpenedByYouAgainstBuyer": {
-    "placeholders": {
-      "counterparty": { "type": "String" }
-    }
-  },
-  "disputeOpenedAgainstYou": "This dispute was opened against you by {counterparty}, please read carefully below:",
-  "@disputeOpenedAgainstYou": {
-    "placeholders": {
-      "counterparty": { "type": "String" }
-    }
-  },
-  "disputeWaitingForAdmin": "Waiting for admin assignment",
-  "disputeYouOpened": "You opened this dispute",
-  "disputeOpenedAgainstUser": "A dispute was opened against you",
-  "disputeResolved": "Dispute has been resolved",
-  "disputeInstruction1": "Wait for a solver to take your dispute. Once they arrive, share any relevant evidence to help clarify the situation.",
-  "disputeInstruction2": "The final decision will be made based on the evidence presented.",
-  "disputeInstruction3": "If you don't respond, the system will assume you don't want to cooperate and you might lose the dispute.",
-  "disputeInstruction4": "If you want to share your chat history with {counterparty}, you can give the solver the shared key found in User Info in your conversation with that user.",
-  "@disputeInstruction4": {
-    "placeholders": {
-      "counterparty": { "type": "String" }
-    }
-  },
-  "orderId": "Order ID:",
-  "paymentMethod": "Payment Method:",
-  "createdOn": "Created on:",
-  "sellingSats": "Selling {amount} sats",
-  "@sellingSats": {
-    "placeholders": {
-      "amount": {
-        "type": "String"
-      }
-    }
-  },
-  "buyingSats": "Buying {amount} sats",
-  "@buyingSats": {
-    "placeholders": {
-      "amount": {
-        "type": "String"
-      }
-    }
-  },
-  "forAmountWithCurrency": "for {amount} {currency}",
-  "@forAmountWithCurrency": {
-    "placeholders": {
-      "amount": {
-        "type": "String"
-      },
-      "currency": {
-        "type": "String"
-      }
-    }
-  },
-  "yourInformation": "Your Information",
-  "yourSharedKey": "Your Shared Key:",
-  "peerPublicKey": "Peer Public Key:",
-  "notAvailable": "Not available",
-  "unknownDate": "Unknown date",
-  "messageCopiedToClipboard": "Message copied to clipboard",
-  "textCopiedToClipboard": "{text} copied to clipboard",
-  "@textCopiedToClipboard": {
-    "placeholders": {
-      "text": { "type": "String" }
-    }
-  },
-
-  "@_comment_deep_link_errors": "Deep Link Error Messages",
-  "deepLinkInvalidFormat": "Invalid mostro: URL format",
-  "deepLinkParseError": "Failed to parse mostro: URL",
-  "deepLinkInvalidOrderId": "Invalid order ID format",
-  "deepLinkNoRelays": "No relays specified in URL",
-  "deepLinkOrderNotFound": "Order not found or invalid",
-  "deepLinkNavigationError": "Navigation Error: {error}",
-  "@deepLinkNavigationError": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "deepLinkGoHome": "Go Home",
-
-  
-  "@_comment_order_disabled_messages": "Order Disabled Messages",
-  "orderCompletedMessagingDisabled": "Order completed - messaging disabled",
-  "orderCanceledMessagingDisabled": "Order canceled - messaging disabled",
-  "orderExpiredMessagingDisabled": "Order expired - messaging disabled",
-  "orderSettledMessagingDisabled": "Order settled - messaging disabled",
-  "orderNotActiveMessagingDisabled": "Order is no longer active - messaging disabled",
-
-
-  "@_comment_about_screen_new": "About Screen New Strings",
-  "documentation": "Documentation",
-  "usersDocumentationEnglish": "Users Documentation (English)",
-  "usersDocumentationSpanish": "Users Documentation (Spanish)",
-  "technicalDocumentation": "Technical Documentation",
-  "read": "Read",
-  "technicalDetails": "Technical Details",
-  "mostroDaemonVersion": "Mostro Version",
-  "mostroCommitId": "Mostro Commit ID",
-  "orderExpiration": "Order Expiration",
-  "holdInvoiceExpiration": "Hold Invoice Expiration",
-  "proofOfWork": "Proof of Work",
-  "lightningNetwork": "Lightning Network",
-  "lndDaemonVersion": "LND Version",
-  "lndNodePublicKey": "LND Node Public Key",
-  "lndCommitId": "LND Commit ID",
-  "lndNodeAlias": "LND Node Alias",
-  "supportedChains": "Supported Chains",
-  "supportedNetworks": "Supported Networks",
-  "lndNodeUri": "LND Node URI",
-  "maxOrderAmount": "Maximum Order Amount",
-  "minOrderAmount": "Minimum Order Amount",
-  "orderLifespan": "Order Lifespan",
-  "serviceFee": "Service Fee",
-  "fiatCurrenciesAccepted": "Fiat Currencies Accepted",
-  "maxOrdersPerResponse": "Max Orders Per Response",
-  "satoshis": "Satoshis",
-  "hour": "hour",
-  "hours": "hours",
-  "sec": "sec",
-  "blocks": "blocks",
-  "seconds": "seconds",
-  "mostroPublicKey": "Mostro's Public Key",
-  "license": "License",
-  
-  "@_comment_mostro_node_field_explanations": "Mostro Node Field Explanations",
-  "mostroPublicKeyExplanation": "The public key of the Mostro instance you are using.",
-  "mostroVersionExplanation": "The version of the Mostro software currently running on this node. This helps users understand which features are available.",
-  "mostroCommitIdExplanation": "The specific Git commit hash of the Mostro software. This provides the exact version information for debugging and compatibility.",
-  "maxOrderAmountExplanation": "The maximum amount of satoshis that can be traded in a single order on this Mostro node. Orders above this limit will be rejected.",
-  "minOrderAmountExplanation": "The minimum amount of satoshis that can be traded in a single order on this Mostro node. Orders below this limit will be rejected.",
-  "orderExpirationExplanation": "The maximum time, in seconds, that an order can remain in waiting status before being canceled or reverted to pending status.",
-  "holdInvoiceExpirationExplanation": "The time window (in seconds) for hold invoices to expire. Hold invoices are used to secure funds during the trade process.",
-  "holdInvoiceCltvDeltaExplanation": "The number of blocks added to the current block height for hold invoice expiration. This provides time for the Lightning Network to process the payment.",
-  "serviceFeeExplanation": "The fee charged by this Mostro node for facilitating trades. This is typically a small percentage of the trade amount, this amount is split between the buyer and seller.",
-  "fiatCurrenciesAcceptedExplanation": "The list of fiat currencies that this Mostro node accepts for trades.",
-  "maxOrdersPerResponseExplanation": "Maximum orders per response in orders action.",
-  "invoiceExpirationWindowExplanation": "The time window (in seconds) for regular Lightning invoices to expire. This ensures invoices don't remain valid indefinitely.",
-  "proofOfWorkExplanation": "The difficulty level required for proof-of-work in Nostr events. This helps prevent spam and ensures quality of service.",
-  "lndDaemonVersionExplanation": "The version of the Lightning Network Daemon (LND) software that this Mostro node uses to process Bitcoin Lightning payments.",
-  "lndNodePublicKeyExplanation": "The public key of the Lightning Network node that handles payments for this Mostro instance. This is used for Lightning Network routing.",
-  "lndCommitIdExplanation": "The specific Git commit hash of the LND software. This provides exact version information for the Lightning Network implementation.",
-  "lndNodeAliasExplanation": "The human-readable name or alias of the Lightning Network node. This makes it easier to identify the node in the Lightning Network.",
-  "supportedChainsExplanation": "The chains supported by the LND node.",
-  "supportedNetworksExplanation": "The specific network environments that this Mostro node operates on (mainnet for real Bitcoin, testnet for testing).",
-  "lndNodeUriExplanation": "The complete network address of the Lightning Network node, including public key and connection information for direct peer connections.",
-  
-  "@_comment_license_text": "MIT License Text",
-  "mitLicenseText": "MIT License\\n\\nCopyright (c) 2025 Mostro team\\n\\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \\\"Software\\\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\\n\\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\\n\\nTHE SOFTWARE IS PROVIDED \\\"AS IS\\\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
-  
-  "@_comment_url_launch_errors": "URL Launch Error Messages",
-  "cannotOpenLink": "Cannot open link - no app available",
-  
-  "@_comment_settings_info_dialogs": "Settings Info Dialog Text",
-  "languageInfoText": "Choose your preferred language for the application interface.",
-  "currencyInfoText": "Choose the default currency for your orders.",
-  "lightningAddressInfoText": "A Lightning Address is an email-like identifier (e.g., user@domain.com) that simplifies receiving Bitcoin payments. Setting a default one here will automatically populate it when creating buy orders, making the process faster and more convenient.",
-  "relaysInfoText": "• Relays are servers that help distribute your messages across the Nostr network.\n\n• Adding more relays can improve connectivity and redundancy.\n\n• Relays don't sync with each other, so only those you're connected to will receive your messages.",
-  "mostroInfoText": "• Supports hex and npub formats (displays as hex).\n\n• The Mostro you select will be the one where you post your offers.\n\n• In case of a dispute, a human assigned to that Mostro will be the one to resolve it.",
-  
-  "@_comment_account_info_dialogs": "Account Screen Info Dialog Text",
-  "secretWordsInfoText": "• These are your secret words, the only way to recover your account if you lose access to this app or want to use your identity in another app.\n\n• Write them down carefully and store them in a secure, private location. Never share them with anyone.\n\n• If you lose these words, you'll permanently lose access to your account.",
-  "privacyInfoText": "• Reputation Mode protects your privacy from third parties while allowing you to build a reputation with each completed trade.\n\n• Full privacy mode provides maximum anonymity but limits reputation building features.",
-  "currentTradeIndexInfoText": "With each new trade, a unique Trade Key is generated to ensure your transactions remain private. The trade index indicates how many keys you've used. If you're in 'Reputation Mode,' you allow Mostro to link all your Trade Keys to calculate and maintain your reputation.",
-  "generateNewUserDialogTitle": "Generate a new user?",
-  "generateNewUserDialogContent": "If you continue, a new set of 12 words will be generated as your new user. This new user will have no reputation, and you will have to start from scratch.",
-  "refreshUserDialogTitle": "Refresh user data?",
-  "refreshUserDialogContent": "This will re-fetch your trades and orders from the Mostro instance. Use this if you think your data is out of sync or orders are missing.",
-  "refresh": "Refresh",
-  "continueButton": "Continue",
-  "show": "Show",
-  "hide": "Hide",
-  "reputationMode": "Reputation mode",
-  "fullPrivacyMode": "Full privacy mode",
-  "maximumAnonymity": "Maximum anonymity",
-  "standardPrivacyWithReputation": "Standard privacy with reputation",
-  
-  "@_comment_relay_dialogs": "Relay Dialog Text",
-  "editRelay": "Edit Relay",
-  "relayUrl": "Relay URL",
-  "relayErrorNotValid": "Not a valid Nostr relay - no response to protocol test",
-  "relayErrorOnlySecure": "Only secure websockets (wss://) are allowed",
-  "relayErrorNoHttp": "HTTP URLs are not supported. Use websocket URLs (wss://)",
-  "relayErrorInvalidDomain": "Invalid domain format. Use format like: relay.example.com",
-  "relayErrorAlreadyExists": "This relay is already in your list",
-  
-  "@_comment_dispute_communication": "Dispute Communication Text",
-  "disputeCommunication": "Communication",
-  "waitingAdminAssignment": "Waiting for admin assignment",
-  "waitingAdminDescription": "Your dispute has been submitted. An admin will be assigned to help resolve this issue.",
-  "adminAssignmentDescription": "An admin will be assigned to your dispute soon. Once assigned, you can communicate directly with them here.",
-  "adminAssigned": "Admin assigned",
-  "adminAssignedDescription": "You can now communicate with the admin. Start the conversation by sending a message below.",
-  "admin": "Admin",
-  "you": "You",
-  "errorLoadingChat": "Error loading chat",
-  "adminPubkey": "Admin pubkey",
-  
-  "@_comment_dispute_input": "Dispute Input Text",
-  "failedSendMessage": "Failed to send message: {error}",
-  "@failedSendMessage": {
-    "placeholders": {
-      "error": { "type": "String" }
-    }
-  },
-  "messageSent": "Message sent: {message}",
-  "@messageSent": {
-    "placeholders": {
-      "message": { "type": "String" }
-    }
-  },
-  "waitingAdminAssignmentInput": "Waiting for admin assignment...",
-  "typeYourMessage": "Type your message...",
-  
-  "@_comment_dispute_list": "Dispute List Text",
-  "disputesWillAppear": "Disputes will appear here when you open them from your trades",
-  "failedLoadDisputes": "Failed to load disputes",
-  "disputesNotAvailable": "Disputes not available",
-  "disputesComingSoon": "This feature is coming soon",
-  "retry": "Retry",
-  
-  "@_comment_dispute_info": "Dispute Info Text",
-  "unknown": "Unknown",
-  "disputeWith": "Dispute with {role}: {counterparty}",
-  "@disputeWith": {
-    "placeholders": {
-      "role": { "type": "String" },
-      "counterparty": { "type": "String" }
-    }
-  },
-  "disputeIdLabel": "Dispute ID",
-  "seller": "Seller",
-  "buyer": "Buyer",
-  
-  "@_comment_dispute_screen": "Dispute Screen Text",
-  "disputeNotFound": "Dispute not found",
-  "errorLoadingDispute": "Error loading dispute: {error}",
-  "@errorLoadingDispute": {
-    "placeholders": {
-      "error": { "type": "String" }
-    }
-  },
-  "relayErrorConnectionTimeout": "Relay unreachable - connection timeout",
-  "relayTestingMessage": "Testing relay...",
-  "relayAddedSuccessfully": "Relay added successfully: {url}",
-  "@relayAddedSuccessfully": {
-    "description": "Message shown when a relay is successfully added",
-    "placeholders": {
-      "url": {
-        "type": "String",
-        "description": "The relay URL that was added"
-      }
-    }
-  },
-  "relayAddedUnreachable": "Relay added but appears unreachable: {url}",
-  "addRelayDialogTitle": "Add Relay",
-  "addRelayDialogDescription": "Enter a relay URL to add it to your relay list. The relay will be tested for connectivity.",
-  "addRelayDialogPlaceholder": "Relay URL",
-  "addRelayDialogTesting": "Testing connectivity...",
-  "addRelayDialogCancel": "Cancel", 
-  "addRelayDialogAdd": "Add",
-  "addRelayErrorOnlySecure": "Only secure websockets (wss://) are allowed",
-  "addRelayErrorNoHttp": "HTTP URLs are not supported. Use websocket URLs (wss://)",
-  "addRelayErrorInvalidDomain": "Invalid domain format. Use format like: relay.example.com",
-  "addRelayErrorAlreadyExists": "This relay is already in your list",
-  "addRelayErrorNotValid": "Not a valid Nostr relay - no response to protocol test",
-  "addRelayErrorGeneric": "Failed to add relay. Please try again.",
-  "addRelaySuccessMessage": "Relay added successfully: {url}",
-  "@addRelaySuccessMessage": {
-    "placeholders": {
-      "url": {
-        "type": "String"
-      }
-    }
-  },
-  "mostroChangedResetMessage": "Mostro instance changed. Relay settings have been reset for the new instance.",
-  "@relayAddedUnreachable": {
-    "description": "Message shown when a relay is added but not responding",
-    "placeholders": {
-      "url": {
-        "type": "String",
-        "description": "The relay URL that was added"
-      }
-    }
-  },
-  "invalidRelayTitle": "Invalid Relay",
-  "relayUrlHint": "relay.example.com or wss://relay.example.com",
-  "add": "Add",
-
-
-
-  "save": "Save",
-  "apply": "Apply",
-  "selectCurrency": "Select Currency",
-  "noCurrencySelected": "No currency selected",
-
-  "@_comment_filter_section": "Filter section strings",
-  "rating": "Rating",
-  "reputation": "Reputation",
-  "premiumRange": "Premium/Discount",
-  "discount": "Discount",
-  "premium": "Premium",
-  "clear": "Clear",
-  "min": "Min",
-  "max": "Max",
-
-  "@_comment_timeout_messages": "Timeout notification messages",
-  "orderTimeoutTaker": "You didn't respond in time. The order will be republished",
-  "orderTimeoutMaker": "Your counterpart didn't respond in time. The order will be republished",
-  "orderTimeout": "Order timeout occurred",
-  "orderCanceled": "The order was canceled",
-  
-  "@_comment_notifications": "Notifications Screen Text",
-  "notifications": "Notifications",
-  "noNotifications": "No notifications",
-  "noNotificationsDescription": "You don't have any notifications yet. New trade alerts and updates will appear here.",
-  "errorLoadingNotifications": "Error loading notifications",
-  "markAsRead": "Mark as read",
-  "markAllAsRead": "Mark all as read",
-  "clearAll": "Clear all",
-  "notification_new_order_title": "New order available",
-  "notification_new_order_message": "New order published in the book",
-  "notAvailableShort": "N/A",
-  "notificationGenericTitle": "Notification",
-  "notification_order_taken_title": "Order taken",
-  "notification_sell_order_taken_message": "Your sell order was taken",
-  "notification_buy_order_taken_message": "Your buy order was taken",
-  "notification_payment_required_title": "Payment required",
-  "notification_payment_required_message": "Invoice payment is required",
-  "notification_fiat_sent_title": "Fiat sent",
-  "notification_fiat_sent_message": "Peer marked fiat as sent",
-  "notification_bitcoin_released_title": "Bitcoin released",
-  "notification_bitcoin_released_message": "The sats have been released",
-  "notification_dispute_started_title": "Dispute started",
-  "notification_dispute_started_message": "A dispute has been initiated",
-  "notification_order_canceled_title": "Order canceled",
-  "notification_order_canceled_message": "The order has been canceled",
-  "notification_cooperative_cancel_initiated_by_you_title": "Cancellation requested",
-  "notification_cooperative_cancel_initiated_by_you_message": "You requested to cancel the order, waiting for peer confirmation",
-  "notification_cooperative_cancel_initiated_by_peer_title": "Cancellation request",
-  "notification_cooperative_cancel_initiated_by_peer_message": "Your counterparty wants to cancel the order",
-  "notification_cooperative_cancel_accepted_title": "Cancellation accepted",
-  "notification_cooperative_cancel_accepted_message": "The cooperative cancellation has been accepted",
-  "notification_fiat_sent_ok_title": "Fiat payment confirmed",
-  "notification_fiat_sent_ok_message": "The fiat payment has been confirmed by your counterparty",
-  "notification_release_title": "Release requested",
-  "notification_release_message": "Bitcoin release has been requested",
-  "notification_buyer_invoice_accepted_title": "Invoice accepted",
-  "notification_buyer_invoice_accepted_message": "Your invoice has been accepted",
-  "notification_purchase_completed_title": "Payment received!",
-  "notification_purchase_completed_message": "Your Bitcoin payment has been successfully completed and received",
-  "notification_hold_invoice_payment_accepted_title": "Payment accepted",
-  "notification_hold_invoice_payment_accepted_message": "The hold invoice payment has been accepted",
-  "notification_hold_invoice_payment_settled_title": "Payment settled",
-  "notification_hold_invoice_payment_settled_message": "The hold invoice payment has been settled",
-  "notification_hold_invoice_payment_canceled_title": "Payment canceled",
-  "notification_hold_invoice_payment_canceled_message": "The hold invoice payment has been canceled",
-  "notification_waiting_seller_to_pay_title": "Waiting for seller",
-  "notification_waiting_seller_to_pay_message": "Waiting for the seller to make the payment",
-  "notification_waiting_buyer_invoice_title": "Waiting for invoice",
-  "notification_waiting_buyer_invoice_message": "Waiting for the buyer to provide the invoice",
-  "notification_add_invoice_title": "Invoice required",
-  "notification_add_invoice_message": "Please add your Lightning invoice",
-  "notification_add_invoice_after_failure_message": "Previous invoice payment failed. Please add a new Lightning invoice",
-  "notification_buyer_took_order_title": "Contact Buyer",
-  "notification_buyer_took_order_message": "A buyer has taken your order",
-  "notification_rate_title": "Rating requested",
-  "notification_rate_message": "Please rate your trading counterparty",
-  "notification_rate_received_title": "Rating received",
-  "notification_rate_received_message": "You have received a rating from your counterparty",
-  "notification_dispute_initiated_by_you_title": "Dispute started",
-  "notification_dispute_initiated_by_you_message": "You have initiated a dispute for this order",
-  "notification_dispute_initiated_by_peer_title": "Dispute started", 
-  "notification_dispute_initiated_by_peer_message": "Your counterparty has initiated a dispute",
-  "notification_payment_failed_title": "Payment failed",
-  "notification_payment_failed_message": "The payment attempt has failed",
-  "notification_invoice_updated_title": "Invoice updated",
-  "notification_invoice_updated_message": "The Lightning invoice has been updated",
-  "notification_cant_do_title": "Action not allowed",
-  "notification_cant_do_message": "The requested action cannot be performed",
-  "notification_new_message_title": "New message",
-  "notification_new_message_message": "You have received a new message",
-  "notification_order_update_title": "Order update",
-  "notification_order_update_message": "Your order has been updated",
-
-  "@_comment_notification_details": "Notification details labels",
-  "notificationBuyer": "Buyer",
-  "notificationSeller": "Seller",
-  "notificationAmount": "Amount",
-  "notificationPaymentMethod": "Payment Method",
-  "notificationTimeout": "Timeout",
-  "notificationMinutes": "minutes",
-  "notificationDisputeId": "Dispute ID",
-  "notificationAttempts": "Attempts left",
-  "notificationRetryInterval": "Retry Interval",
-  "notificationFailedAt": "Failed at",
-  "notificationReason": "Reason",
-  "notificationToken": "Token",
-  "notificationExpiresIn": "Expires in",
-  "notificationRate": "Rate",
-  "notificationOrderId": "Order ID",
-  "notificationDelete": "Delete",
-  "confirmDeleteNotification": "Are you sure you want to delete this notification?",
-  "confirmClearAll": "This will permanently delete all notifications. This action cannot be undone.",
-
-  "@_comment_notification_units": "Notification time units",
-  "notificationSeconds": "seconds",
-
-  "@_comment_relay_status": "Relay status messages",
-  "inUse": "In Use",
-  "notInUse": "Not In Use",
-  "noMostroRelaysAvailable": "No relays available from the configured Mostro instance. Please check your Mostro configuration.",
-  "relaysDescription": "Toggle on or off as you prefer, or add new ones.",
-  "activated": "Connected",
-  "deactivated": "Disconnected",
-
-  "@_comment_blacklist_dialog": "Blacklist default relay dialog strings",
-  "blacklistDefaultRelayTitle": "Disconnect from Default Relay?",
-  "blacklistDefaultRelayMessage": "Are you sure you want to disconnect from the default relay? This may affect connectivity to the Mostro instance.",
-  "blacklistDefaultRelayConfirm": "Disconnect",
-  "blacklistDefaultRelayCancel": "Cancel",
-
-  "@_comment_last_relay_dialog": "Last relay protection dialog strings",
-  "cannotBlacklistLastRelayTitle": "Cannot Disconnect from Last Relay",
-  "cannotBlacklistLastRelayMessage": "You cannot disconnect from this relay because it's the last connected one. The app needs at least one relay to function properly.",
-  "cannotBlacklistLastRelayOk": "OK",
-
-  "@_comment_delete_user_relay_dialog": "Delete user relay confirmation dialog strings",
-  "deleteUserRelayTitle": "Sure you want to disconnect from this relay?",
-  "deleteUserRelayMessage": "If you want to use it again later, you'll need to add it manually.",
-  "deleteUserRelayConfirm": "Yes",
-  "deleteUserRelayCancel": "No",
-
-  "@_comment_session_timeout": "Session timeout message",
-  "sessionTimeoutMessage": "No response received, check your connection and try again later",
-
-  "@_comment_import_mnemonic_dialog": "Import Mnemonic Dialog strings",
-  "importMostroUserDialogTitle": "Import User",
-  "importMostroUserInfo1": "These are your secret words, the only way to recover your account if you lose access to this app or want to use your identity in another app.",
-  "importMostroUserInfo2": "Write them down carefully and store them in a secure, private location. Never share them with anyone.",
-  "importMostroUserInfo3": "If you lose these words, you'll permanently lose access to your account.",
-  "secretWordsLabel": "Secret Words",
-  "secretWordsPlaceholder": "Enter your 12 secret words separated by spaces",
-  "invalidMnemonic": "Invalid mnemonic. Please check your words",
-
-  "@_comment_restore_overlay": "Restore overlay messages",
-  "restoringOrders": "Restoring Orders",
-  "restoreRequestingData": "Requesting restore data...",
-  "restoreReceivingOrders": "Receiving orders...",
-  "restoreLoadingDetails": "Loading order details...",
-  "restoreProcessingRoles": "Processing roles...",
-  "restoreFinalizing": "Finalizing restore...",
-  "restoreCompleted": "Restore completed!",
-  "restoreError": "Restore error",
-  "restoreErrorMessage": "Error restoring user data. Please check your connection and try again.",
-
-  "@_comment_file_messaging": "File messaging strings",
-  "download": "Download",
-  "openFile": "Open File",
-  "encrypted": "Encrypted",
-  "downloadingFile": "Downloading file...",
-
-  "@_comment_file_confirmation": "File confirmation dialog strings",
-  "confirmFileUpload": "Confirm Upload",
-  "sendThisFile": "Send this file?",
-  "send": "Send",
-
-  "@_comment_image_decryption": "Image decryption status strings",
-  "decryptingImage": "Decrypting image...",
-  "failedToLoadImage": "Failed to load image",
-  "imageDecryptionError": "Error decrypting image",
-  "imageNotAvailable": "Image not available",
-  "couldNotOpenFile": "Could not open file",
-  "couldNotOpenFileWithMessage": "Could not open file: {message}",
-  "@couldNotOpenFileWithMessage": {
-    "placeholders": {
-      "message": { "type": "String" }
-    }
-  },
-  "errorOpeningFile": "Error opening file",
-  "errorOpeningFileWithMessage": "Error opening file: {error}",
-  "@errorOpeningFileWithMessage": {
-    "placeholders": {
-      "error": { "type": "String" }
-    }
-  },
-  "errorUploadingFile": "Error uploading file: {error}",
-  "@errorUploadingFile": {
-    "placeholders": {
-      "error": { "type": "String" }
-    }
-  },
-
-  "@_comment_backup_reminder": "Backup reminder notification",
-  "backupAccountReminder": "You must back up your account",
-  "backupAccountReminderMessage": "Back up your secret words to recover your account",
-
-  "@_comment_validation": "Input validation messages",
-  "invalidKeyFormat": "Invalid key format",
-  
-  "@_comment_logging_ui": "Logging UI strings",
-  "logCapture": "Log Capture",
-  "capturingLogs": "Capturing logs",
-  "captureDisabled": "Capture disabled",
-  "performanceWarning": "Performance Warning",
-  "performanceWarningMessage": "Enabling log capture may impact application performance. Only enable this feature when debugging or troubleshooting issues.",
-  "enable": "Enable",
-  "logsReport": "Logs Report",
-  "clearLogs": "Clear Logs",
-  "totalLogs": "{count} logs",
-  "@totalLogs": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "maxEntries": "Max {count} entries",
-  "@maxEntries": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "searchLogs": "Search logs...",
-  "allLevels": "All",
-  "errors": "Errors",
-  "warnings": "Warnings",
-  "info": "Info",
-  "debug": "Debug",
-  "noLogsAvailable": "No logs available",
-  "logsWillAppearHere": "Logs will appear here when log capture is enabled",
-  "copyLog": "Copy log",
-  "logCopied": "Log copied to clipboard",
-  "saveToDevice": "Save to Device",
-  "saveFile": "Save File",
-  "shareReport": "Share Report",
-  "shareLogs": "Share Logs",
-  "logsExportTitle": "Logs Export",
-  "exportFailed": "Export failed",
-  "logsSavedTo": "Logs saved to {path}",
-  "@logsSavedTo": {
-    "placeholders": {
-      "path": {
-        "type": "String"
-      }
-    }
-  },
-  "saveFailed": "Save failed",
-  "clearLogsConfirmation": "This will permanently delete all captured logs. This action cannot be undone.",
-  "logsCleared": "Logs cleared",
-  "shareFeatureComingSoon": "Share feature coming in Phase 2",
-  "devTools": "Dev Tools",
-  "devToolsWarning": "For debugging and troubleshooting only",
-  "viewAndExportLogs": "View and export application logs",
-  "saveLogs": "Save Logs",
-  "logsExportSuccess": "Logs exported successfully",
-  "logsExportError": "Failed to export logs",
-  "shareLogsError": "Failed to share logs",
-  "exportSettings": "Export Settings",
-  "logsHeaderTitle": "Mostro P2P Application Logs",
-  "logsGeneratedLabel": "Generated",
-  "logsTotalLabel": "Total logs",
-  "logsShareSubject": "Mostro P2P Logs",
-  "logsShareText": "Application logs from Mostro P2P",
-  "pushNotifications": "Push Notifications",
-  "pushNotificationsDescription": "Receive notifications when there are updates to your trades, even when the app is closed.",
-  "pushNotificationsNotSupported": "Push notifications are not supported on this platform.",
-  "notificationPreferences": "Preferences",
-  "notificationSound": "Sound",
-  "notificationSoundDescription": "Play a sound when receiving notifications",
-  "notificationVibration": "Vibration",
-  "notificationVibrationDescription": "Vibrate when receiving notifications",
-  "privacyInfo": "Privacy Information",
-  "pushNotificationsPrivacyInfo": "MostroP2P uses privacy-preserving push notifications. Your message content is never shared with third parties.",
-  "privacyBulletSilentPush": "Silent push notifications - no message content is sent through Firebase",
-  "privacyBulletEncryptedTokens": "Device tokens are encrypted before registration",
-  "privacyBulletLocalDecryption": "All messages are decrypted locally on your device",
-  "notificationSettings": "Notification Settings",
-  "notificationSettingsDescription": "Configure push notification preferences",
-
-  "fixedPriceDisabledForRange": "Fixed price is not available for range orders. Remove the max amount to use fixed price.",
-
-  "@_comment_chat_error_screens": "Chat Error Screen Strings",
-  "sessionNotFound": "Session not found",
-  "unableToLoadChatSession": "Unable to load chat session for this order",
-  "peerInformationUnavailable": "Peer information unavailable",
-  "chatPartnerCouldNotBeLoaded": "Chat partner information could not be loaded",
-
-  "selectMostroNode": "Select Mostro Node",
-  "mostroNodeDescription": "Select the Mostro node you want to trade on",
-  "trustedNodesSection": "Trusted Nodes",
-  "customNodesSection": "Custom Nodes",
-  "addCustomNode": "Add Custom Node",
-  "addCustomNodeTitle": "Add Custom Node",
-  "enterNodePubkey": "Public Key",
-  "enterNodeName": "Name (optional)",
-  "pubkeyHint": "Hex or npub format",
-  "nodeNameHint": "Friendly name for this node",
-  "nodeAlreadyExists": "This node already exists",
-  "invalidPubkeyFormat": "Invalid public key format. Enter 64-char hex or npub",
-  "nodeAddedSuccess": "Node added successfully",
-  "nodeRemovedSuccess": "Node removed",
-  "nodeRemoveFailed": "Failed to remove node, please try again",
-  "cannotRemoveActiveNode": "Cannot remove the currently active node",
-  "deleteCustomNodeTitle": "Remove Custom Node",
-  "deleteCustomNodeMessage": "Are you sure you want to remove this custom node?",
-  "deleteCustomNodeConfirm": "Remove",
-  "deleteCustomNodeCancel": "Cancel",
-  "switchingToNode": "Switching to {nodeName}...",
-  "@switchingToNode": {
-    "placeholders": {
-      "nodeName": {"type": "String"}
-    }
-  },
-  "nodeSwitchedSuccess": "Switched to {nodeName}",
-  "@nodeSwitchedSuccess": {
-    "placeholders": {
-      "nodeName": {"type": "String"}
-    }
-  },
-  "errorSwitchingNode": "Error switching node, please try again",
-  "trusted": "Trusted",
-  "noCustomNodesYet": "No custom nodes added yet",
-  "pubkeyRequired": "Public key is required",
-  "tapToSelectNode": "Tap to change",
-  "nodeNotRespondingReverted": "Node is not responding, reverted to previous node",
-  "wallet": "Wallet",
-  "walletDescription": "Connect your Lightning wallet via NWC",
-  "connectWallet": "Connect Wallet",
-  "disconnectWallet": "Disconnect Wallet",
-  "walletConnected": "Connected",
-  "walletDisconnected": "Not Connected",
-  "walletBalance": "Balance",
-  "pasteNwcUri": "Paste NWC URI",
-  "scanQrCode": "Scan QR Code",
-  "scanQrCodeComingSoon": "QR scanner coming soon",
-  "connecting": "Connecting...",
-  "walletInfo": "Wallet Info",
-  "walletSettings": "Wallet Settings",
-  "nwcConnectionError": "Connection error",
-  "invalidNwcUri": "Invalid NWC URI",
-  "walletDisconnectConfirm": "Are you sure you want to disconnect your wallet?",
-  "connectWalletDescription": "Connect your Lightning wallet using a Nostr Wallet Connect (NWC) URI to view your balance and manage payments.",
-  "refreshBalance": "Refresh balance",
-
-  "payWithWallet": "Pay with Wallet",
-  "nwcPaymentSending": "Sending payment...",
-  "nwcPaymentSuccess": "Payment Successful!",
-  "nwcPaymentFailed": "Payment failed. Please try again.",
-  "nwcPaymentTimeout": "Payment timed out. Please try again or pay manually.",
-  "nwcInsufficientBalance": "Insufficient wallet balance",
-  "nwcRateLimited": "Wallet is rate limited. Please wait a moment.",
-  "nwcQuotaExceeded": "Wallet spending quota exceeded",
-  "nwcRetryPayment": "Retry Payment",
-  "nwcPayManually": "Pay manually instead",
-  "nwcPreimageLabel": "Preimage",
-  "nwcGenerateWithWallet": "Generate with Wallet",
-  "nwcInvoiceGenerating": "Generating invoice...",
-  "nwcInvoiceGenerated": "Invoice Generated!",
-  "nwcInvoiceFailed": "Invoice generation failed. Please try again.",
-  "nwcInvoiceTimeout": "Invoice generation timed out. Please try again or enter manually.",
-  "nwcConfirmInvoice": "Confirm & Submit",
-  "nwcRetryInvoice": "Retry",
-  "nwcEnterManually": "Enter manually instead"
-
 }
