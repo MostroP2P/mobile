@@ -1403,6 +1403,18 @@
   "invalidNwcUri": "URI NWC inválida",
   "walletDisconnectConfirm": "¿Estás seguro de que quieres desconectar tu billetera?",
   "connectWalletDescription": "Conecta tu billetera Lightning usando una URI de Nostr Wallet Connect (NWC) para ver tu saldo y gestionar pagos.",
-  "refreshBalance": "Actualizar saldo"
+  "refreshBalance": "Actualizar saldo",
+
+  "payWithWallet": "Pagar con Billetera",
+  "nwcPaymentSending": "Enviando pago...",
+  "nwcPaymentSuccess": "¡Pago Exitoso!",
+  "nwcPaymentFailed": "El pago falló. Por favor intenta de nuevo.",
+  "nwcPaymentTimeout": "El pago expiró. Intenta de nuevo o paga manualmente.",
+  "nwcInsufficientBalance": "Saldo insuficiente en la billetera",
+  "nwcRateLimited": "La billetera está limitada. Espera un momento.",
+  "nwcQuotaExceeded": "Cuota de gastos de la billetera excedida",
+  "nwcRetryPayment": "Reintentar Pago",
+  "nwcPayManually": "Pagar manualmente",
+  "nwcPreimageLabel": "Preimagen"
 
 }

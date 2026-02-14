@@ -1458,5 +1458,17 @@
   "invalidNwcUri": "URI NWC non valida",
   "walletDisconnectConfirm": "Sei sicuro di voler scollegare il tuo portafoglio?",
   "connectWalletDescription": "Collega il tuo portafoglio Lightning usando un URI Nostr Wallet Connect (NWC) per visualizzare il saldo e gestire i pagamenti.",
-  "refreshBalance": "Aggiorna saldo"
+  "refreshBalance": "Aggiorna saldo",
+
+  "payWithWallet": "Paga con Portafoglio",
+  "nwcPaymentSending": "Invio pagamento...",
+  "nwcPaymentSuccess": "Pagamento Riuscito!",
+  "nwcPaymentFailed": "Pagamento fallito. Riprova.",
+  "nwcPaymentTimeout": "Pagamento scaduto. Riprova o paga manualmente.",
+  "nwcInsufficientBalance": "Saldo del portafoglio insufficiente",
+  "nwcRateLimited": "Il portafoglio è limitato. Attendi un momento.",
+  "nwcQuotaExceeded": "Quota di spesa del portafoglio superata",
+  "nwcRetryPayment": "Riprova Pagamento",
+  "nwcPayManually": "Paga manualmente",
+  "nwcPreimageLabel": "Preimage"
 }

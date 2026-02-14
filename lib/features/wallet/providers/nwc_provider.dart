@@ -162,6 +162,31 @@ class NwcNotifier extends StateNotifier<NwcState> {
     logger.i('NWC: Disconnected and cleared stored connection');
   }
 
+  /// Pays a Lightning invoice via the connected NWC wallet.
+  ///
+  /// Throws [NwcNotConnectedException] if no wallet is connected.
+  /// Throws [NwcResponseException] if the wallet returns an error.
+  /// Throws [NwcTimeoutException] if the payment times out.
+  Future<PayInvoiceResult> payInvoice(String invoice) async {
+    if (_client == null || !_client!.isConnected) {
+      throw const NwcNotConnectedException('No wallet connected');
+    }
+
+    final result = await _client!.payInvoice(
+      PayInvoiceParams(invoice: invoice),
+    );
+
+    // Refresh balance after successful payment
+    try {
+      final balance = await _client!.getBalance();
+      state = state.copyWith(balanceMsats: balance.balance);
+    } catch (e) {
+      logger.w('NWC: Failed to refresh balance after payment: $e');
+    }
+
+    return result;
+  }
+
   /// Refreshes the wallet balance.
   Future<void> refreshBalance() async {
     if (_client == null || !_client!.isConnected) return;

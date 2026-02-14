@@ -1427,6 +1427,18 @@
   "invalidNwcUri": "Invalid NWC URI",
   "walletDisconnectConfirm": "Are you sure you want to disconnect your wallet?",
   "connectWalletDescription": "Connect your Lightning wallet using a Nostr Wallet Connect (NWC) URI to view your balance and manage payments.",
-  "refreshBalance": "Refresh balance"
+  "refreshBalance": "Refresh balance",
+
+  "payWithWallet": "Pay with Wallet",
+  "nwcPaymentSending": "Sending payment...",
+  "nwcPaymentSuccess": "Payment Successful!",
+  "nwcPaymentFailed": "Payment failed. Please try again.",
+  "nwcPaymentTimeout": "Payment timed out. Please try again or pay manually.",
+  "nwcInsufficientBalance": "Insufficient wallet balance",
+  "nwcRateLimited": "Wallet is rate limited. Please wait a moment.",
+  "nwcQuotaExceeded": "Wallet spending quota exceeded",
+  "nwcRetryPayment": "Retry Payment",
+  "nwcPayManually": "Pay manually instead",
+  "nwcPreimageLabel": "Preimage"
 
 }
