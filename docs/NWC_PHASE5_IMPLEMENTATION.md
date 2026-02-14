@@ -38,7 +38,7 @@ lib/core/app.dart
   — Integrated NwcNotificationListener at app level
 
 lib/l10n/intl_en.arb, intl_es.arb, intl_it.arb
-  — Added 15 new localization strings for Phase 5 features
+  — Added 14 new localization strings for Phase 5 features
 ```
 
 ### New Files
@@ -165,7 +165,7 @@ The `NwcPaymentWidget` shows the balance below the "Pay with Wallet" button with
 
 ## Localization
 
-Added 15 new strings in EN, ES, IT:
+Added 14 new strings in EN, ES, IT:
 
 | Key | EN |
 |-----|----|
@@ -183,6 +183,8 @@ Added 15 new strings in EN, ES, IT:
 | nwcPaymentSent | Payment sent! |
 | nwcNotificationPaymentReceived | Received {amount} sats |
 | nwcNotificationPaymentSent | Sent {amount} sats |
+
+Note: `nwcConnectionError`, `nwcPaymentSuccess`, and `nwcPreimageLabel` were already added in Phases 2-3.
 
 ## State Changes
 

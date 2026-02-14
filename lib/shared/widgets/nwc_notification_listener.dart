@@ -35,6 +35,16 @@ class _NwcNotificationListenerState
     // Defer subscription to after build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _subscribe();
+      // Re-subscribe when NWC reconnects (provider may be recreated)
+      ref.listenManual(
+        nwcProvider.select((s) => s.status),
+        (previous, next) {
+          if (next == NwcStatus.connected && previous != NwcStatus.connected) {
+            _subscription?.cancel();
+            _subscribe();
+          }
+        },
+      );
     });
   }
 

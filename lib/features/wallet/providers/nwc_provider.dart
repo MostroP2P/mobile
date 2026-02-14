@@ -100,6 +100,9 @@ class NwcNotifier extends StateNotifier<NwcState> {
   /// Number of consecutive reconnect attempts.
   int _reconnectAttempts = 0;
 
+  /// Whether a reconnect loop is currently running.
+  bool _isReconnecting = false;
+
   /// Maximum reconnect attempts before giving up.
   static const int _maxReconnectAttempts = 5;
 
@@ -283,29 +286,48 @@ class NwcNotifier extends StateNotifier<NwcState> {
   }
 
   /// Handles a detected connection drop with auto-reconnect.
+  ///
+  /// Uses an internal retry loop with exponential backoff and a
+  /// reentrancy guard to prevent concurrent reconnect attempts.
   Future<void> _handleConnectionDrop() async {
     if (_savedUri == null ||
         _reconnectAttempts >= _maxReconnectAttempts ||
-        state.status == NwcStatus.connecting) {
+        state.status == NwcStatus.connecting ||
+        _isReconnecting) {
       return;
     }
 
-    _reconnectAttempts++;
-    logger.i(
-        'NWC: Connection drop detected, reconnect attempt $_reconnectAttempts/$_maxReconnectAttempts');
-
+    _isReconnecting = true;
     state = state.copyWith(connectionHealthy: false);
 
-    // Exponential backoff: 2s, 4s, 8s, 16s, 32s
-    final delay = Duration(seconds: 1 << _reconnectAttempts);
-    await Future<void>.delayed(delay);
+    try {
+      while (_reconnectAttempts < _maxReconnectAttempts &&
+          _savedUri != null &&
+          mounted) {
+        _reconnectAttempts++;
+        logger.i(
+            'NWC: Reconnect attempt $_reconnectAttempts/$_maxReconnectAttempts');
 
-    if (_savedUri != null && mounted) {
-      try {
-        await connect(_savedUri!, persist: false);
-      } catch (e) {
-        logger.w('NWC: Reconnect attempt $_reconnectAttempts failed: $e');
+        // Exponential backoff: 2s, 4s, 8s, 16s, 32s
+        final delay = Duration(seconds: 1 << _reconnectAttempts);
+        await Future<void>.delayed(delay);
+
+        if (!mounted) break;
+
+        try {
+          await connect(_savedUri!, persist: false);
+          // connect succeeded — timers restarted, attempts reset inside connect
+          return;
+        } catch (e) {
+          logger.w('NWC: Reconnect attempt $_reconnectAttempts failed: $e');
+        }
       }
+
+      if (_reconnectAttempts >= _maxReconnectAttempts) {
+        logger.w('NWC: Max reconnect attempts reached, giving up');
+      }
+    } finally {
+      _isReconnecting = false;
     }
   }
 

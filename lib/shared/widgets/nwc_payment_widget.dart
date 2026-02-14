@@ -141,6 +141,7 @@ class _NwcPaymentWidgetState extends ConsumerState<NwcPaymentWidget> {
   /// Verifies payment via lookup_invoice for extra reliability.
   Future<void> _verifyPayment() async {
     try {
+      if (!mounted) return;
       final nwcNotifier = ref.read(nwcProvider.notifier);
       final result = await nwcNotifier.lookupInvoice(
         invoice: widget.lnInvoice,

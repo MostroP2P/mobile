@@ -210,6 +210,7 @@ class NwcClient {
           NostrFilter(
             kinds: const [23196],
             authors: [connection.walletPubkey],
+            since: DateTime.now(),
           ),
         ],
       ),
