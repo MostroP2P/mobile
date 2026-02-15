@@ -53,10 +53,12 @@ class _AddLightningInvoiceScreenState
 
         final nwcState = ref.watch(nwcProvider);
         final isNwcConnected = nwcState.status == NwcStatus.connected;
-        final showNwcInvoice =
-            isNwcConnected && !_manualMode && (amount ?? 0) > 0;
         final showLnAddressConfirmation =
-            widget.lnAddress != null && !_manualMode && !showNwcInvoice;
+            widget.lnAddress != null && !_manualMode;
+        final showNwcInvoice = isNwcConnected &&
+            !_manualMode &&
+            !showLnAddressConfirmation &&
+            (amount ?? 0) > 0;
 
         return Scaffold(
           backgroundColor: AppTheme.backgroundDark,
@@ -131,37 +133,23 @@ class _AddLightningInvoiceScreenState
         LnAddressConfirmationWidget(
           lightningAddress: widget.lnAddress!,
           onConfirm: () async {
-            await _submitLnAddress(widget.lnAddress!, amount);
+            await _submitLnAddress(widget.lnAddress!);
           },
           onManualFallback: () {
             setState(() => _manualMode = true);
           },
         ),
         const Spacer(),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            ElevatedButton(
-              onPressed: () async {
-                await _cancelOrder();
-              },
-              style: ElevatedButton.styleFrom(
-                foregroundColor: Colors.white,
-                backgroundColor: Colors.red,
-              ),
-              child: Text(S.of(context)!.cancel),
-            ),
-          ],
-        ),
+        _buildCancelButton(),
       ],
     );
   }
 
-  Future<void> _submitLnAddress(String lnAddress, int? amount) async {
+  Future<void> _submitLnAddress(String lnAddress) async {
     final orderNotifier =
         ref.read(orderNotifierProvider(widget.orderId).notifier);
     try {
-      logger.i('User confirmed Lightning address: $lnAddress');
+      logger.d('User confirmed Lightning address for order ${widget.orderId}');
       await orderNotifier.sendInvoice(widget.orderId, lnAddress, null);
       if (mounted) context.go('/');
     } catch (e) {
@@ -210,20 +198,24 @@ class _AddLightningInvoiceScreenState
           },
         ),
         const Spacer(),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            ElevatedButton(
-              onPressed: () async {
-                await _cancelOrder();
-              },
-              style: ElevatedButton.styleFrom(
-                foregroundColor: Colors.white,
-                backgroundColor: Colors.red,
-              ),
-              child: Text(S.of(context)!.cancel),
-            ),
-          ],
+        _buildCancelButton(),
+      ],
+    );
+  }
+
+  Widget _buildCancelButton() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        ElevatedButton(
+          onPressed: () async {
+            await _cancelOrder();
+          },
+          style: ElevatedButton.styleFrom(
+            foregroundColor: Colors.white,
+            backgroundColor: Colors.red,
+          ),
+          child: Text(S.of(context)!.cancel),
         ),
       ],
     );
