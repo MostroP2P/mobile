@@ -51,7 +51,8 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
             // Skip all old message processing during restore - messages are saved but state is not updated
             final isRestoring = ref.read(isRestoringProvider);
             if (isRestoring) {
-              logger.d('Skipping old message processing during restore: ${msg?.action}');
+              logger.d(
+                  'Skipping old message processing during restore: ${msg?.action}');
               return;
             }
 
@@ -72,15 +73,19 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
                       DateTime.now()
                           .subtract(const Duration(seconds: 60))
                           .millisecondsSinceEpoch) {
-                logger.i('Message timestamp check passed, calling handleEvent for ${msg.action}');
+                logger.i(
+                    'Message timestamp check passed, calling handleEvent for ${msg.action}');
                 unawaited(handleEvent(msg));
               } else {
-                logger.w('Message timestamp check failed for ${msg.action}. Timestamp: ${msg.timestamp}, Current: ${DateTime.now().millisecondsSinceEpoch}, Threshold: ${DateTime.now().subtract(const Duration(seconds: 60)).millisecondsSinceEpoch}');
-                
+                logger.w(
+                    'Message timestamp check failed for ${msg.action}. Timestamp: ${msg.timestamp}, Current: ${DateTime.now().millisecondsSinceEpoch}, Threshold: ${DateTime.now().subtract(const Duration(seconds: 60)).millisecondsSinceEpoch}');
+
                 // Handle dispute actions even if timestamp is old, since they're critical for UI state
                 // but bypass navigation/notification side effects
-                if (msg.action == Action.disputeInitiatedByPeer || msg.action == Action.disputeInitiatedByYou) {
-                  logger.i('Processing dispute action ${msg.action} despite old timestamp (state update only)');
+                if (msg.action == Action.disputeInitiatedByPeer ||
+                    msg.action == Action.disputeInitiatedByYou) {
+                  logger.i(
+                      'Processing dispute action ${msg.action} despite old timestamp (state update only)');
                   unawaited(handleEvent(msg, bypassTimestampGate: true));
                 }
               }
@@ -99,17 +104,22 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
     logger.e(err);
   }
 
-  void sendNotification(Action action, {Map<String, dynamic>? values, bool isTemporary = false, String? eventId}) {
+  void sendNotification(Action action,
+      {Map<String, dynamic>? values,
+      bool isTemporary = false,
+      String? eventId}) {
     final notifProvider = ref.read(notificationActionsProvider.notifier);
-    
+
     if (isTemporary) {
       notifProvider.showTemporary(action, values: values ?? {});
     } else {
-      notifProvider.notify(action, values: values ?? {}, orderId: orderId, eventId: eventId);
+      notifProvider.notify(action,
+          values: values ?? {}, orderId: orderId, eventId: eventId);
     }
   }
 
-  Future<void> handleEvent(MostroMessage event, {bool bypassTimestampGate = false}) async {
+  Future<void> handleEvent(MostroMessage event,
+      {bool bypassTimestampGate = false}) async {
     // Skip if we've already processed this exact event
     final eventKey = '${event.id}_${event.action}_${event.timestamp}';
     if (_processedEventIds.contains(eventKey)) {
@@ -117,7 +127,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
       return;
     }
     _processedEventIds.add(eventKey);
-    
+
     final navProvider = ref.read(navigationProvider.notifier);
 
     // Check if this is a recent event for notification/navigation purposes
@@ -128,8 +138,10 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
                 .millisecondsSinceEpoch;
 
     // Extract notification data using the centralized extractor
-    final notificationData = await NotificationDataExtractor.extractFromMostroMessage(event, ref, session: session);
-    
+    final notificationData =
+        await NotificationDataExtractor.extractFromMostroMessage(event, ref,
+            session: session);
+
     // Only notify for recent events; old disputes still update state below
     if (notificationData != null && (isRecent || !bypassTimestampGate)) {
       sendNotification(
@@ -139,55 +151,62 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         eventId: notificationData.eventId,
       );
     } else if (notificationData != null && bypassTimestampGate) {
-      logger.i('Skipping notification for old event: ${event.action} (timestamp: ${event.timestamp})');
+      logger.i(
+          'Skipping notification for old event: ${event.action} (timestamp: ${event.timestamp})');
     }
 
     /// Handle incoming events and update state accordingly
-    logger.i('handleEvent: Processing action ${event.action} for order $orderId (bypassTimestampGate: $bypassTimestampGate)');
+    logger.i(
+        'handleEvent: Processing action ${event.action} for order $orderId (bypassTimestampGate: $bypassTimestampGate)');
     switch (event.action) {
       case Action.newOrder:
         // Check if Mostro is republishing the order after timeout
         final currentSession = ref.read(sessionProvider(orderId));
-        if (currentSession != null && 
-            (state.status == Status.waitingBuyerInvoice || state.status == Status.waitingPayment)) {
+        if (currentSession != null &&
+            (state.status == Status.waitingBuyerInvoice ||
+                state.status == Status.waitingPayment)) {
           // This is a maker receiving order republication after taker timeout
-          logger.i('MAKER: Received order reactivation from Mostro - taker timed out, order returned to pending');
-          
+          logger.i(
+              'MAKER: Received order reactivation from Mostro - taker timed out, order returned to pending');
+
           // Show notification: counterpart didn't respond, order will be republished
           if (isRecent || !bypassTimestampGate) {
-            final notifProvider = ref.read(notificationActionsProvider.notifier);
+            final notifProvider =
+                ref.read(notificationActionsProvider.notifier);
             notifProvider.showCustomMessage('orderTimeoutMaker');
           }
         }
         break;
-        
+
       case Action.canceled:
         // Handle cancellation sent by Mostro (for both timeout and cancellation scenarios)
         final currentSession = ref.read(sessionProvider(orderId));
         if (currentSession != null) {
-          logger.i('CANCELLATION: Received cancellation message from Mostro for order $orderId');
-          
+          logger.i(
+              'CANCELLATION: Received cancellation message from Mostro for order $orderId');
+
           // Delete session - this applies to both maker and taker scenarios
           final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
           await sessionNotifier.deleteSession(orderId);
-          
+
           logger.i('Session deleted for canceled order $orderId');
-          
+
           // Show cancellation notification
           if (isRecent || !bypassTimestampGate) {
-            final notifProvider = ref.read(notificationActionsProvider.notifier);
+            final notifProvider =
+                ref.read(notificationActionsProvider.notifier);
             notifProvider.showCustomMessage('orderCanceled');
           }
-          
+
           // Navigate to main order book screen
           if (isRecent && !bypassTimestampGate) {
             navProvider.go('/');
           }
-          
+
           return; // Session was deleted, no further processing needed
         }
         break;
-        
+
       case Action.buyerTookOrder:
         final order = event.getPayload<Order>();
         if (order == null) {
@@ -197,7 +216,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
 
         // Update session and state with correct peer based on session role
         final sessionProvider = ref.read(sessionNotifierProvider.notifier);
-        
+
         // Re-fetch session to ensure it's initialized
         final fetchedSession = sessionProvider.getSessionByOrderId(orderId);
         if (fetchedSession == null) {
@@ -219,7 +238,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         final peer = peerPubkey != null ? Peer(publicKey: peerPubkey) : null;
         sessionProvider.updateSession(orderId, (s) => s.peer = peer);
         state = state.copyWith(peer: peer);
-        
+
         // Enable chat and navigate
         final chat = ref.read(chatRoomsProvider(orderId).notifier);
         chat.subscribe();
@@ -245,11 +264,12 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
 
         // Update session and state with correct peer based on session role
         final sessionProvider = ref.read(sessionNotifierProvider.notifier);
-        
+
         // Re-fetch session to ensure it's initialized
         final fetchedSession = sessionProvider.getSessionByOrderId(orderId);
         if (fetchedSession == null) {
-          logger.e('Session not found for order $orderId in holdInvoicePaymentAccepted');
+          logger.e(
+              'Session not found for order $orderId in holdInvoicePaymentAccepted');
           break;
         }
         session = fetchedSession;
@@ -267,30 +287,32 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         final peer = peerPubkey != null ? Peer(publicKey: peerPubkey) : null;
         sessionProvider.updateSession(orderId, (s) => s.peer = peer);
         state = state.copyWith(peer: peer);
-        
+
         // Enable chat
         final chat = ref.read(chatRoomsProvider(orderId).notifier);
         chat.subscribe();
-        
+
         // Check if Lightning address was used and show notification
         if (session.role == Role.buyer) {
           try {
             final storage = ref.read(mostroStorageProvider);
             final messages = await storage.getAllMessagesForOrderId(orderId);
-            
+
             // Find the order confirmation message (incoming Action.newOrder)
             final orderConfirmation = messages
                 .where((m) => m.action == Action.newOrder)
                 .where((m) => m.getPayload<Order>()?.buyerInvoice != null)
                 .firstOrNull;
-            
+
             if (orderConfirmation != null) {
               final confirmationOrder = orderConfirmation.getPayload<Order>();
               final buyerInvoice = confirmationOrder?.buyerInvoice;
-              
-              if (buyerInvoice != null && _isValidLightningAddress(buyerInvoice)) {
+
+              if (buyerInvoice != null &&
+                  _isValidLightningAddress(buyerInvoice)) {
                 // Show Lightning address used notification
-                final notificationNotifier = ref.read(notificationActionsProvider.notifier);
+                final notificationNotifier =
+                    ref.read(notificationActionsProvider.notifier);
                 notificationNotifier.showCustomMessage('lightningAddressUsed');
               }
             }
@@ -350,20 +372,22 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
       case Action.disputeInitiatedByYou:
         final dispute = event.getPayload<Dispute>();
         if (dispute == null) {
-          logger.e('disputeInitiatedByYou: Missing Dispute payload for event ${event.id} with action ${event.action}');
+          logger.e(
+              'disputeInitiatedByYou: Missing Dispute payload for event ${event.id} with action ${event.action}');
           return;
         }
 
         // Ensure dispute has the orderId for proper association and correct status
         // Also ensure createdAt is set from event timestamp if not already present
-        final createdAt = dispute.createdAt ?? 
-            (event.timestamp != null 
+        final createdAt = dispute.createdAt ??
+            (event.timestamp != null
                 ? DateTime.fromMillisecondsSinceEpoch(event.timestamp!)
                 : DateTime.now());
-        
+
         final disputeWithOrderId = dispute.copyWith(
           orderId: orderId,
-          status: dispute.status ?? 'initiated', // Ensure status is set for user-initiated disputes
+          status: dispute.status ??
+              'initiated', // Ensure status is set for user-initiated disputes
           action: 'dispute-initiated-by-you', // Store the action for UI logic
           createdAt: createdAt, // Ensure timestamp is preserved
         );
@@ -373,7 +397,8 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
 
         // Notification handled by centralized NotificationDataExtractor path
         if (kDebugMode) {
-          logger.i('disputeInitiatedByYou: Dispute saved in state, notification handled centrally');
+          logger.i(
+              'disputeInitiatedByYou: Dispute saved in state, notification handled centrally');
         }
 
         break;
@@ -386,7 +411,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         if (kDebugMode) {
           logger.i('disputeInitiatedByPeer: Parsed dispute: $dispute');
         }
-        
+
         // If payload is not a Dispute object, try to create one from the payload map
         if (dispute == null && event.payload != null) {
           try {
@@ -395,16 +420,16 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
             if (kDebugMode) {
               logger.i('disputeInitiatedByPeer: Payload map: $payloadMap');
             }
-            
+
             if (payloadMap.containsKey('dispute')) {
               final disputeId = payloadMap['dispute'] as String;
-              
+
               // Use the event timestamp (from gift-wrapped message) if available,
               // otherwise fall back to DateTime.now().
               final createdAt = event.timestamp != null
                   ? DateTime.fromMillisecondsSinceEpoch(event.timestamp!)
                   : DateTime.now();
-              
+
               dispute = Dispute(
                 disputeId: disputeId,
                 orderId: orderId,
@@ -412,43 +437,47 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
                 action: 'dispute-initiated-by-peer',
                 createdAt: createdAt,
               );
-              logger.i('disputeInitiatedByPeer: Created dispute from ID: $disputeId with timestamp: $createdAt');
+              logger.i(
+                  'disputeInitiatedByPeer: Created dispute from ID: $disputeId with timestamp: $createdAt');
             }
           } catch (e) {
-            logger.e('disputeInitiatedByPeer: Failed to create dispute from payload: $e');
+            logger.e(
+                'disputeInitiatedByPeer: Failed to create dispute from payload: $e');
           }
         }
-        
+
         if (dispute == null) {
-          logger.e('disputeInitiatedByPeer: Could not create or find Dispute for event ${event.id}');
+          logger.e(
+              'disputeInitiatedByPeer: Could not create or find Dispute for event ${event.id}');
           return;
         }
 
+        logger.i(
+            'disputeInitiatedByPeer: Dispute details - ID: ${dispute.disputeId}, Status: ${dispute.status}, Action: ${dispute.action}, createdAt: ${dispute.createdAt}');
 
-        logger.i('disputeInitiatedByPeer: Dispute details - ID: ${dispute.disputeId}, Status: ${dispute.status}, Action: ${dispute.action}, createdAt: ${dispute.createdAt}');
-        
         // Ensure dispute has the orderId for proper association and correct status/action
         // Also ensure createdAt is set from event timestamp if not already present
-        final createdAt = dispute.createdAt ?? 
-            (event.timestamp != null 
+        final createdAt = dispute.createdAt ??
+            (event.timestamp != null
                 ? DateTime.fromMillisecondsSinceEpoch(event.timestamp!)
                 : DateTime.now());
-        
+
         final disputeWithOrderId = dispute.copyWith(
           orderId: orderId,
           status: dispute.status ?? 'initiated', // Ensure status is set
           action: 'dispute-initiated-by-peer', // Store the action for UI logic
           createdAt: createdAt, // Ensure timestamp is preserved
         );
-        logger.i('disputeInitiatedByPeer: Final dispute - ID: ${disputeWithOrderId.disputeId}, Status: ${disputeWithOrderId.status}, Action: ${disputeWithOrderId.action}, createdAt: ${disputeWithOrderId.createdAt}');
-
+        logger.i(
+            'disputeInitiatedByPeer: Final dispute - ID: ${disputeWithOrderId.disputeId}, Status: ${disputeWithOrderId.status}, Action: ${disputeWithOrderId.action}, createdAt: ${disputeWithOrderId.createdAt}');
 
         // Save dispute in state for listing
         state = state.copyWith(dispute: disputeWithOrderId);
 
         // Notification handled by centralized NotificationDataExtractor path
         if (kDebugMode) {
-          logger.i('disputeInitiatedByPeer: Dispute saved in state, notification handled centrally');
+          logger.i(
+              'disputeInitiatedByPeer: Dispute saved in state, notification handled centrally');
         }
 
         break;
@@ -459,14 +488,16 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
 
       case Action.cantDo:
         final cantDo = event.getPayload<CantDo>();
-        
+
         // Cleanup for specific errors
         if (cantDo?.cantDoReason == CantDoReason.outOfRangeSatsAmount) {
           if (event.requestId != null) {
-            ref.read(sessionNotifierProvider.notifier).cleanupRequestSession(event.requestId!);
+            ref
+                .read(sessionNotifierProvider.notifier)
+                .cleanupRequestSession(event.requestId!);
           }
         }
-        
+
         // Cleanup for order taking failures - delete session by orderId
         if (cantDo?.cantDoReason == CantDoReason.pendingOrderExists) {
           ref.read(sessionNotifierProvider.notifier).deleteSession(orderId);
@@ -482,7 +513,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
 
       // Default
       default:
-         break;
+        break;
     }
   }
 
@@ -499,12 +530,12 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
   static void startSessionTimeoutCleanup(String orderId, Ref ref) {
     // Cancel existing timer if any
     _sessionTimeouts[orderId]?.cancel();
-    
+
     _sessionTimeouts[orderId] = Timer(const Duration(seconds: 10), () {
       try {
         ref.read(sessionNotifierProvider.notifier).deleteSession(orderId);
         logger.i('Session cleaned up after 10s timeout: $orderId');
-        
+
         // Show timeout message to user and navigate to order book
         _showTimeoutNotificationAndNavigate(ref);
       } catch (e) {
@@ -512,17 +543,18 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
       }
       _sessionTimeouts.remove(orderId);
     });
-    
+
     logger.i('Started 10s timeout timer for order: $orderId');
   }
-  
+
   /// Shows timeout notification and navigates to order book
   static void _showTimeoutNotificationAndNavigate(Ref ref) {
     try {
       // Show snackbar with localized timeout message
-      final notificationNotifier = ref.read(notificationActionsProvider.notifier);
+      final notificationNotifier =
+          ref.read(notificationActionsProvider.notifier);
       notificationNotifier.showCustomMessage('sessionTimeoutMessage');
-      
+
       // Navigate to main order book screen (home)
       final navProvider = ref.read(navigationProvider.notifier);
       navProvider.go('/');
@@ -530,39 +562,44 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
       logger.e('Failed to show timeout notification or navigate', error: e);
     }
   }
-  
+
   /// Starts a 10-second timer to cleanup orphan sessions for create orders (by requestId)
   static void startSessionTimeoutCleanupForRequestId(int requestId, Ref ref) {
     final key = 'request:$requestId';
     // Cancel existing timer if any
     _sessionTimeouts[key]?.cancel();
-    
+
     _sessionTimeouts[key] = Timer(const Duration(seconds: 10), () {
       try {
-        ref.read(sessionNotifierProvider.notifier).deleteSessionByRequestId(requestId);
-        logger.i('Session cleaned up after 10s timeout for requestId: $requestId');
-        
+        ref
+            .read(sessionNotifierProvider.notifier)
+            .deleteSessionByRequestId(requestId);
+        logger.i(
+            'Session cleaned up after 10s timeout for requestId: $requestId');
+
         // Show timeout message to user and navigate to order book
         _showTimeoutNotificationAndNavigate(ref);
       } catch (e) {
-        logger.e('Failed to cleanup session for requestId: $requestId', error: e);
+        logger.e('Failed to cleanup session for requestId: $requestId',
+            error: e);
       }
       _sessionTimeouts.remove(key);
     });
-    
+
     logger.i('Started 10s timeout timer for requestId: $requestId');
   }
-  
+
   /// Cancels the timeout timer for a specific orderId
   static void cancelSessionTimeoutCleanup(String orderId) {
     final timer = _sessionTimeouts[orderId];
     if (timer != null) {
       timer.cancel();
       _sessionTimeouts.remove(orderId);
-      logger.i('Cancelled 10s timeout timer for order: $orderId - Mostro responded');
+      logger.i(
+          'Cancelled 10s timeout timer for order: $orderId - Mostro responded');
     }
   }
-  
+
   /// Cancels the timeout timer for a specific requestId
   static void cancelSessionTimeoutCleanupForRequestId(int requestId) {
     final key = 'request:$requestId';
@@ -570,51 +607,35 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
     if (timer != null) {
       timer.cancel();
       _sessionTimeouts.remove(key);
-      logger.i('Cancelled 10s timeout timer for requestId: $requestId - Mostro responded');
+      logger.i(
+          'Cancelled 10s timeout timer for requestId: $requestId - Mostro responded');
     }
   }
 
   /// Handles add-invoice action with automatic Lightning address sending if available
-  Future<void> _handleAddInvoiceWithAutoLightningAddress(MostroMessage event) async {
+  Future<void> _handleAddInvoiceWithAutoLightningAddress(
+      MostroMessage event) async {
     // Check if this add-invoice comes after a payment-failed
     // If status is paymentFailed, don't auto-send Lightning address - use manual input
     if (state.status == Status.paymentFailed) {
-      logger.i('add-invoice after payment-failed detected - using manual input instead of auto Lightning address');
+      logger.i(
+          'add-invoice after payment-failed detected - using manual input instead of auto Lightning address');
       _navigateToManualInvoiceInput();
       return;
     }
-    
+
     final settings = ref.read(settingsProvider);
     final lightningAddress = settings.defaultLightningAddress?.trim();
-    
-    if (lightningAddress != null && lightningAddress.isNotEmpty && _isValidLightningAddress(lightningAddress)) {
-      logger.i('Auto-sending Lightning address for add-invoice: $lightningAddress');
-      
-      try {
-        // For Lightning addresses, amount should always be null
-        // because the Lightning address handles the amount automatically
-        const int? amount = null;
-        logger.i('Sending Lightning address with amount: null (Lightning address handles amount)');
-        
-        // Send Lightning address automatically
-        final mostroService = ref.read(mostroServiceProvider);
-        await mostroService.sendInvoice(orderId, lightningAddress, amount);
-        
-        // Check if still mounted after async operation
-        if (!mounted) return;
-        
-        // Show feedback to user
-        final notificationNotifier = ref.read(notificationActionsProvider.notifier);
-        notificationNotifier.showCustomMessage('lightningAddressUsed');
-        
-        logger.i('Lightning address sent successfully for order: $orderId');
-      } catch (e) {
-        logger.e('Failed to send Lightning address automatically: $e');
-        // Check if still mounted after async operation
-        if (!mounted) return;
-        // Fallback to manual input if auto-send fails
-        _navigateToManualInvoiceInput();
-      }
+
+    if (lightningAddress != null &&
+        lightningAddress.isNotEmpty &&
+        _isValidLightningAddress(lightningAddress)) {
+      logger
+          .i('Lightning address available, navigating to confirmation screen');
+      // Navigate to the invoice screen with the Lightning address for user confirmation
+      final navProvider = ref.read(navigationProvider.notifier);
+      navProvider.go(
+          '/add_invoice/$orderId?lnAddress=${Uri.encodeComponent(lightningAddress)}');
     } else {
       // No Lightning address or invalid format - use manual input
       _navigateToManualInvoiceInput();
@@ -625,9 +646,8 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
   bool _isValidLightningAddress(String address) {
     // Lightning address format: user@domain.tld
     // More robust validation with character constraints
-    final lnAddressRegex = RegExp(
-      r'^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-    );
+    final lnAddressRegex =
+        RegExp(r'^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
     return lnAddressRegex.hasMatch(address);
   }
 

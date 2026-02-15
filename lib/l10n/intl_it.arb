@@ -1489,5 +1489,17 @@
                 "type": "String"
             }
         }
+    },
+    "lnAddressConfirmTitle": "Ricezione sats tramite Lightning Address",
+    "lnAddressConfirmDescription": "Il tuo Lightning Address verrà utilizzato per ricevere i sats per questa operazione.",
+    "lnAddressConfirmButton": "Usa questo indirizzo",
+    "lnAddressEnterManually": "Inserisci fattura manualmente",
+    "lnAddressConfirmHeader": "Il tuo Lightning Address verrà utilizzato per ricevere il pagamento dell'ordine {orderId}.",
+    "@lnAddressConfirmHeader": {
+        "placeholders": {
+            "orderId": {
+                "type": "String"
+            }
+        }
     }
 }
