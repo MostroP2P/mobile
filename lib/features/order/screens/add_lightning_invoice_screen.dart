@@ -9,13 +9,22 @@ import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/shared/widgets/add_lightning_invoice_widget.dart';
 import 'package:mostro_mobile/shared/widgets/nwc_invoice_widget.dart';
+import 'package:mostro_mobile/shared/widgets/ln_address_confirmation_widget.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 
 class AddLightningInvoiceScreen extends ConsumerStatefulWidget {
   final String orderId;
 
-  const AddLightningInvoiceScreen({super.key, required this.orderId});
+  /// Pre-configured Lightning Address to confirm, if available.
+  final String? lnAddress;
+
+  const AddLightningInvoiceScreen({
+    super.key,
+    required this.orderId,
+    this.lnAddress,
+  });
 
   @override
   ConsumerState<AddLightningInvoiceScreen> createState() =>
@@ -26,7 +35,7 @@ class _AddLightningInvoiceScreenState
     extends ConsumerState<AddLightningInvoiceScreen> {
   final TextEditingController invoiceController = TextEditingController();
 
-  /// Whether the user chose to enter the invoice manually (fallback from NWC).
+  /// Whether the user chose to enter the invoice manually (fallback from NWC or LN address).
   bool _manualMode = false;
 
   @override
@@ -46,6 +55,8 @@ class _AddLightningInvoiceScreenState
         final isNwcConnected = nwcState.status == NwcStatus.connected;
         final showNwcInvoice =
             isNwcConnected && !_manualMode && (amount ?? 0) > 0;
+        final showLnAddressConfirmation =
+            widget.lnAddress != null && !_manualMode && !showNwcInvoice;
 
         return Scaffold(
           backgroundColor: AppTheme.backgroundDark,
@@ -62,29 +73,34 @@ class _AddLightningInvoiceScreenState
                     border:
                         Border.all(color: Colors.white.withValues(alpha: 0.1)),
                   ),
-                  child: showNwcInvoice
-                      ? _buildNwcInvoiceFlow(
-                          amount: amount ?? 0,
-                          fiatAmount: fiatAmount,
-                          fiatCode: fiatCode,
+                  child: showLnAddressConfirmation
+                      ? _buildLnAddressConfirmation(
                           orderIdValue: orderIdValue,
+                          amount: amount,
                         )
-                      : AddLightningInvoiceWidget(
-                          controller: invoiceController,
-                          onSubmit: () async {
-                            final invoice = invoiceController.text.trim();
-                            if (invoice.isNotEmpty) {
-                              await _submitInvoice(invoice, amount);
-                            }
-                          },
-                          onCancel: () async {
-                            await _cancelOrder();
-                          },
-                          amount: amount ?? 0,
-                          fiatAmount: fiatAmount,
-                          fiatCode: fiatCode,
-                          orderId: orderIdValue,
-                        ),
+                      : showNwcInvoice
+                          ? _buildNwcInvoiceFlow(
+                              amount: amount ?? 0,
+                              fiatAmount: fiatAmount,
+                              fiatCode: fiatCode,
+                              orderIdValue: orderIdValue,
+                            )
+                          : AddLightningInvoiceWidget(
+                              controller: invoiceController,
+                              onSubmit: () async {
+                                final invoice = invoiceController.text.trim();
+                                if (invoice.isNotEmpty) {
+                                  await _submitInvoice(invoice, amount);
+                                }
+                              },
+                              onCancel: () async {
+                                await _cancelOrder();
+                              },
+                              amount: amount ?? 0,
+                              fiatAmount: fiatAmount,
+                              fiatCode: fiatCode,
+                              orderId: orderIdValue,
+                            ),
                 ),
               ),
             ],
@@ -94,6 +110,70 @@ class _AddLightningInvoiceScreenState
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, st) => Center(child: Text('Error: $e')),
     );
+  }
+
+  Widget _buildLnAddressConfirmation({
+    required String orderIdValue,
+    required int? amount,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          S.of(context)!.lnAddressConfirmHeader(orderIdValue),
+          style: const TextStyle(
+            color: AppTheme.textPrimary,
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 24),
+        LnAddressConfirmationWidget(
+          lightningAddress: widget.lnAddress!,
+          onConfirm: () async {
+            await _submitLnAddress(widget.lnAddress!, amount);
+          },
+          onManualFallback: () {
+            setState(() => _manualMode = true);
+          },
+        ),
+        const Spacer(),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ElevatedButton(
+              onPressed: () async {
+                await _cancelOrder();
+              },
+              style: ElevatedButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor: Colors.red,
+              ),
+              child: Text(S.of(context)!.cancel),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Future<void> _submitLnAddress(String lnAddress, int? amount) async {
+    final orderNotifier =
+        ref.read(orderNotifierProvider(widget.orderId).notifier);
+    try {
+      logger.i('User confirmed Lightning address: $lnAddress');
+      await orderNotifier.sendInvoice(widget.orderId, lnAddress, null);
+      if (mounted) context.go('/');
+    } catch (e) {
+      if (mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          SnackBarHelper.showTopSnackBar(
+            context,
+            S.of(context)!.failedToUpdateInvoice(e.toString()),
+          );
+        });
+      }
+    }
   }
 
   Widget _buildNwcInvoiceFlow({
