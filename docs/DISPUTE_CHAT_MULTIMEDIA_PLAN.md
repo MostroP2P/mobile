@@ -86,7 +86,7 @@ Currently the app has two completely different chat mechanisms:
 
 **File:** `test/features/disputes/dispute_shared_key_test.dart`
 
-```
+```text
 group('Dispute Shared Key Computation')
   test('computes identical shared key from both sides (user and admin)')
     - Derive two key pairs (simulate user trade key and admin key)
@@ -105,7 +105,7 @@ group('Dispute Shared Key Computation')
 
 **File:** `test/data/models/nostr_event_wrap_test.dart`
 
-```
+```text
 group('p2pWrap / p2pUnwrap round-trip')
   test('wraps and unwraps a text message correctly')
     - Create a kind 1 inner event with known content
@@ -206,7 +206,7 @@ This is identical to `ChatRoomNotifier.getSharedKey()` — consider extracting t
 
 **File:** `test/features/disputes/dispute_chat_notifier_test.dart`
 
-```
+```text
 group('DisputeChatNotifier message model')
   test('stores unwrapped NostrEvent after receiving message')
     - Mock a gift wrap event arriving
@@ -363,7 +363,7 @@ Plus `getCachedImage()`, `cacheDecryptedImage()`, `getCachedFile()`, `cacheDecry
 
 **File:** `test/features/disputes/dispute_multimedia_rendering_test.dart`
 
-```
+```text
 group('Dispute chat message type detection')
   test('detects encrypted image message from NostrEvent content')
     - Create NostrEvent with content = jsonEncode({"type":"image_encrypted",...})
@@ -389,7 +389,7 @@ group('Decoupled EncryptedImageMessage / EncryptedFileMessage')
 
 **File:** `test/features/chat/widgets/encrypted_image_message_test.dart` (regression)
 
-```
+```text
 group('P2P EncryptedImageMessage regression after decoupling')
   test('still works with chatRoomsProvider-based callbacks')
     - Verify existing P2P rendering still functions after refactor
@@ -467,7 +467,7 @@ Both `MessageInput` and `DisputeMessageInput` call this helper, passing their re
 
 **File:** `test/features/disputes/dispute_file_upload_test.dart`
 
-```
+```text
 group('Dispute chat file upload')
   test('encrypts image with admin shared key and uploads to Blossom')
     - Use real crypto keys (KeyDerivator with test mnemonic)
@@ -559,7 +559,7 @@ These methods are also used for regular Mostro protocol messages (user <-> Mostr
 
 **File:** `test/shared/utils/nostr_utils_shared_key_test.dart`
 
-```
+```text
 group('NostrUtils.sharedKeyToBytes')
   test('converts 64-char hex to 32-byte Uint8List')
   test('throws on invalid hex length')
@@ -568,7 +568,7 @@ group('NostrUtils.sharedKeyToBytes')
 
 **File:** `test/shared/mixins/media_cache_mixin_test.dart`
 
-```
+```text
 group('MediaCacheMixin')
   test('caches and retrieves image data by messageId')
   test('caches and retrieves file data by messageId')
