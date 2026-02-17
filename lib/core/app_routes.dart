@@ -287,6 +287,7 @@ GoRouter createRouter(WidgetRef ref) {
                     state: state,
                     child: AddLightningInvoiceScreen(
                       orderId: state.pathParameters['orderId']!,
+                      lnAddress: state.uri.queryParameters['lnAddress'],
                     )),
           ),
           GoRoute(
