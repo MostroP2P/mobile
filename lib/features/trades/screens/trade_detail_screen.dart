@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
+import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/enums/role.dart';
 import 'package:mostro_mobile/data/models/enums/status.dart';
@@ -101,6 +102,19 @@ class TradeDetailScreen extends ConsumerWidget {
     );
   }
 
+  /// Returns the fiat amount string for display.
+  /// Shows the range only for pending orders; once taken, shows the selected amount.
+  String _displayFiatAmount(Order order) {
+    final isRangeOrder = order.minAmount != null &&
+        order.maxAmount != null &&
+        order.minAmount != order.maxAmount;
+    final isPending = order.status == Status.pending;
+    if (isRangeOrder && isPending) {
+      return "${order.minAmount} - ${order.maxAmount}";
+    }
+    return order.fiatAmount.toString();
+  }
+
   /// Builds a card showing the user is "selling/buying X sats for Y fiat" etc.
   Widget _buildSellerAmount(
       BuildContext context, WidgetRef ref, OrderState tradeState) {
@@ -165,11 +179,7 @@ class TradeDetailScreen extends ConsumerWidget {
             title: selling == S.of(context)!.selling
                 ? S.of(context)!.youAreSellingTitle(satAmount)
                 : S.of(context)!.youAreBuyingTitle(satAmount),
-            amount: (tradeState.order!.minAmount != null &&
-                    tradeState.order!.maxAmount != null &&
-                    tradeState.order!.minAmount != tradeState.order!.maxAmount)
-                ? "${tradeState.order!.minAmount} - ${tradeState.order!.maxAmount}"
-                : tradeState.order!.fiatAmount.toString(),
+            amount: _displayFiatAmount(tradeState.order!),
             currency: tradeState.order!.fiatCode,
             priceText: priceText,
           ),
@@ -228,11 +238,7 @@ class TradeDetailScreen extends ConsumerWidget {
           title: selling == S.of(context)!.selling
               ? S.of(context)!.youAreSellingTitle(satAmount)
               : S.of(context)!.youAreBuyingTitle(satAmount),
-          amount: (tradeState.order!.minAmount != null &&
-                  tradeState.order!.maxAmount != null &&
-                  tradeState.order!.minAmount != tradeState.order!.maxAmount)
-              ? "${tradeState.order!.minAmount} - ${tradeState.order!.maxAmount}"
-              : tradeState.order!.fiatAmount.toString(),
+          amount: _displayFiatAmount(tradeState.order!),
           currency: tradeState.order!.fiatCode,
           priceText: priceText,
         ),
