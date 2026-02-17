@@ -39,6 +39,41 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
+
+    if (isKeyboardVisible && !_wasKeyboardVisible) {
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (_scrollController.hasClients &&
+            _scrollController.position.maxScrollExtent > 0) {
+          try {
+            _scrollController.animateTo(
+              _scrollController.position.maxScrollExtent,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOut,
+            );
+          } catch (e) {
+            // Silently handle any scroll errors
+          }
+        }
+      });
+    }
+
+    _wasKeyboardVisible = isKeyboardVisible;
+  }
+
+  /// Shared callback for dismissing keyboard and updating info type selection.
+  void _handleInfoTypeChanged(String? type) {
+    if (type != null) {
+      FocusScope.of(context).unfocus();
+    }
+    setState(() {
+      _selectedInfoType = type;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final chatDetailState = ref.watch(chatRoomsProvider(widget.orderId));
     final chatNotifier = ref.watch(chatRoomsProvider(widget.orderId).notifier);
@@ -62,31 +97,6 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
 
     // Check if keyboard is visible
     final isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
-
-    // If keyboard just became visible, scroll to bottom
-    if (isKeyboardVisible && !_wasKeyboardVisible) {
-      // Use Future.delayed instead of microtask to ensure the list is built
-      Future.delayed(const Duration(milliseconds: 100), () {
-        // Verify controller is attached and list has content
-        if (_scrollController.hasClients &&
-            chatDetailState.messages.isNotEmpty &&
-            _scrollController.position.maxScrollExtent > 0) {
-          try {
-            _scrollController.animateTo(
-              _scrollController.position.maxScrollExtent,
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOut,
-            );
-          } catch (e) {
-            // Silently handle any scroll errors
-            // This prevents exceptions from breaking the UI
-          }
-        }
-      });
-    }
-
-    // Update keyboard visibility tracking
-    _wasKeyboardVisible = isKeyboardVisible;
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundDark,
@@ -118,15 +128,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
           // Info buttons
           InfoButtons(
             selectedInfoType: _selectedInfoType,
-            onInfoTypeChanged: (type) {
-              // Dismiss keyboard when selecting info tabs to prevent overlap
-              if (type != null) {
-                FocusScope.of(context).unfocus();
-              }
-              setState(() {
-                _selectedInfoType = type;
-              });
-            },
+            onInfoTypeChanged: _handleInfoTypeChanged,
           ),
 
           // Selected info content
@@ -156,23 +158,15 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
               color: AppTheme.backgroundDark,
               border: Border(
                 top: BorderSide(
-                  color: Colors.grey.withValues(alpha: 0.03),
-                  width: 0.3,
+                  color: Colors.grey.withValues(alpha: 0.15),
+                  width: 0.5,
                 ),
               ),
             ),
             child: MessageInput(
               orderId: widget.orderId,
               selectedInfoType: _selectedInfoType,
-              onInfoTypeChanged: (type) {
-                // Dismiss keyboard when selecting info tabs to prevent overlap
-                if (type != null) {
-                  FocusScope.of(context).unfocus();
-                }
-                setState(() {
-                  _selectedInfoType = type;
-                });
-              },
+              onInfoTypeChanged: _handleInfoTypeChanged,
             ),
           ),
 
