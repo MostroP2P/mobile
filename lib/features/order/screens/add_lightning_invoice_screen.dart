@@ -39,6 +39,12 @@ class _AddLightningInvoiceScreenState
   bool _manualMode = false;
 
   @override
+  void dispose() {
+    invoiceController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final orderId = widget.orderId;
     final mostroOrderAsync = ref.watch(mostroOrderStreamProvider(orderId));
@@ -82,7 +88,6 @@ class _AddLightningInvoiceScreenState
                   child: showLnAddressConfirmation
                       ? _buildLnAddressConfirmation(
                           orderIdValue: orderIdValue,
-                          amount: amount,
                         )
                       : showNwcInvoice
                           ? _buildNwcInvoiceFlow(
@@ -121,7 +126,6 @@ class _AddLightningInvoiceScreenState
 
   Widget _buildLnAddressConfirmation({
     required String orderIdValue,
-    required int? amount,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
