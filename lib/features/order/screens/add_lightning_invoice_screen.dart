@@ -63,9 +63,13 @@ class _AddLightningInvoiceScreenState
         return Scaffold(
           backgroundColor: AppTheme.backgroundDark,
           appBar: OrderAppBar(title: S.of(context)!.addLightningInvoice),
-          body: Column(
-            children: [
-              Expanded(
+          body: Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewPadding.bottom,
+            ),
+            child: Column(
+              children: [
+                Expanded(
                 child: Container(
                   margin: const EdgeInsets.all(16),
                   padding: const EdgeInsets.all(20),
@@ -105,7 +109,8 @@ class _AddLightningInvoiceScreenState
                             ),
                 ),
               ),
-            ],
+              ],
+            ),
           ),
         );
       },
