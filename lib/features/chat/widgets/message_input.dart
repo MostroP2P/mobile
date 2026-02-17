@@ -68,6 +68,7 @@ class _MessageInputState extends ConsumerState<MessageInput> {
           .read(chatRoomsProvider(widget.orderId).notifier)
           .sendMessage(text);
       _textController.clear();
+      _focusNode.requestFocus();
     }
   }
 
