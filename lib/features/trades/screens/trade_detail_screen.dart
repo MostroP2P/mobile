@@ -104,11 +104,10 @@ class TradeDetailScreen extends ConsumerWidget {
 
   /// Returns the fiat amount string for display.
   /// Shows the range only for pending orders; once taken, shows the selected amount.
-  String _displayFiatAmount(Order order) {
+  String _displayFiatAmount(Order order, {required bool isPending}) {
     final isRangeOrder = order.minAmount != null &&
         order.maxAmount != null &&
         order.minAmount != order.maxAmount;
-    final isPending = order.status == Status.pending;
     if (isRangeOrder && isPending) {
       return "${order.minAmount} - ${order.maxAmount}";
     }
@@ -179,7 +178,7 @@ class TradeDetailScreen extends ConsumerWidget {
             title: selling == S.of(context)!.selling
                 ? S.of(context)!.youAreSellingTitle(satAmount)
                 : S.of(context)!.youAreBuyingTitle(satAmount),
-            amount: _displayFiatAmount(tradeState.order!),
+            amount: _displayFiatAmount(tradeState.order!, isPending: isPending),
             currency: tradeState.order!.fiatCode,
             priceText: priceText,
           ),
@@ -238,7 +237,7 @@ class TradeDetailScreen extends ConsumerWidget {
           title: selling == S.of(context)!.selling
               ? S.of(context)!.youAreSellingTitle(satAmount)
               : S.of(context)!.youAreBuyingTitle(satAmount),
-          amount: _displayFiatAmount(tradeState.order!),
+          amount: _displayFiatAmount(tradeState.order!, isPending: isPending),
           currency: tradeState.order!.fiatCode,
           priceText: priceText,
         ),
