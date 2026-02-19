@@ -91,7 +91,7 @@ Add a parallel path that skips `NotificationDataExtractor` (which expects Mostro
 
 New keys for all 3 languages (en, es, it):
 - `chat_notification_title`: "New Message" / "Nuevo Mensaje" / "Nuovo Messaggio"
-- `chat_notification_body`: "You have a new message in your trade" / "Tienes un nuevo mensaje en tu operacion" / "Hai un nuovo messaggio nella tua operazione"
+- `chat_notification_body`: "You have a new message in your trade" / "Tienes un nuevo mensaje en tu operación" / "Hai un nuovo messaggio nella tua operazione"
 
 **Files to modify:**
 - `lib/features/notifications/services/background_notification_service.dart`
@@ -185,9 +185,27 @@ subscriptionManager.chat.listen((event) {
   final isChatScreenActive = _isChatRoomActive(session.orderId);
   if (isChatScreenActive) return; // Chat screen handles it
 
-  // Show in-app notification
-  notificationsNotifier.showCustomMessage(localizedChatMessage);
+  // Show in-app notification using a string KEY (not pre-localized)
+  // Following the existing pattern: showCustomMessage passes a key,
+  // NotificationListenerWidget resolves it via S.of(context)
+  notificationsNotifier.showCustomMessage('chatNewMessage');
 });
+```
+
+**Important:** Follow the existing localization pattern — `showCustomMessage()` receives a **string key**, not a pre-localized string. The UI layer (`NotificationListenerWidget`) resolves the key to localized text via `S.of(context)!`. This is the same pattern used for `'orderTimeoutTaker'`, `'orderCanceled'`, etc.
+
+Add the new key to `NotificationListenerWidget`'s switch:
+```dart
+case 'chatNewMessage':
+  message = S.of(context)!.chat_notification_body;
+  break;
+```
+
+And for dispute chat:
+```dart
+case 'disputeChatNewMessage':
+  message = S.of(context)!.dispute_chat_notification_body;
+  break;
 ```
 
 **Option B:** Add the logic inside `SubscriptionManager._handleEvent()` for chat type — but this couples notification logic into subscription management.
@@ -280,7 +298,25 @@ Response: 200 OK | 404 (pubkey not registered)
 
 Simply sends a silent FCM notification to the device registered for that trade pubkey. Same behavior as relay-monitored events, but triggered on-demand.
 
-**Consideration:** Rate limiting on `/api/notify` to prevent abuse (e.g., max 10 calls per trade_pubkey per minute).
+**Authentication model: intentionally unauthenticated (consistent with existing design)**
+
+The existing `/api/register` endpoint is also unauthenticated — no signatures, no auth headers. `/api/notify` follows the same model. Alternatives were considered and rejected:
+
+- **Sender signature authentication** — rejected because it would reveal the sender's trade pubkey to the push server, breaking the privacy guarantee that the server doesn't learn who is messaging whom.
+- **Registration-time counterparty binding** — rejected because it requires the push server to store counterparty relationships (`A trades with B`), which it currently doesn't know and shouldn't.
+
+**Threat analysis for unauthenticated `/api/notify`:**
+
+| Threat | Severity | Mitigation |
+|--------|----------|------------|
+| Data harvest | None | Endpoint accepts a pubkey and returns 200/404. Attacker learns at most whether a pubkey is registered, which is already inferrable from relay observation. |
+| DoS / battery drain | Medium | An attacker could spam notify calls to repeatedly wake a device. **Mitigations:** server-side rate limiting per `trade_pubkey` (e.g., max 5 calls/minute), per-IP rate limiting (e.g., max 60 calls/minute), and exponential backoff on 429 responses in the client. |
+| Unsolicited wake-ups | Low | Silent FCM notifications have minimal user-visible impact. The background service only processes events it can actually decrypt — spurious wake-ups result in a no-op. OS-level battery optimization further limits impact. |
+
+**Required server-side mitigations:**
+- Rate limit per `trade_pubkey`: max 5 calls per minute (429 Too Many Requests)
+- Rate limit per source IP: max 60 calls per minute
+- Client handles 429 with exponential backoff (no retry on chat send failure — fire-and-forget)
 
 #### 4.4 Admin/Dispute Chat Push — Verify existing coverage
 
