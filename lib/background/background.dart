@@ -29,6 +29,12 @@ Future<void> serviceMain(ServiceInstance service) async {
     isAppForeground = data?['is-foreground'] ?? isAppForeground;
   });
 
+  service.on('fcm-wake').listen((data) {
+    // Service is already running with active subscriptions.
+    // Nostr subscriptions will automatically receive new events.
+    logger?.d('FCM wake signal received - subscriptions already active');
+  });
+
   service.on('start').listen((data) async {
     if (data == null) return;
 

@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
+import 'package:mostro_mobile/data/models/enums/storage_keys.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mostro_mobile/firebase_options.dart';
@@ -45,8 +47,32 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
       final service = FlutterBackgroundService();
       final isRunning = await service.isRunning();
 
-      if (!isRunning) {
+      if (isRunning) {
+        // Service is already running — signal it that FCM detected new activity
+        service.invoke('fcm-wake', {});
+      } else {
+        // Service is dead — start it and send settings
         await sharedPrefs.setBool('fcm.pending_fetch', true);
+        await service.startService();
+
+        final settingsJson = await sharedPrefs.getString(
+          SharedPreferencesKeys.appSettings.value,
+        );
+        if (settingsJson != null) {
+          // Wait briefly for service to initialize (FCM handlers must complete quickly)
+          const maxWait = Duration(seconds: 3);
+          final deadline = DateTime.now().add(maxWait);
+          while (!(await service.isRunning())) {
+            if (DateTime.now().isAfter(deadline)) break;
+            await Future.delayed(const Duration(milliseconds: 100));
+          }
+
+          if (await service.isRunning()) {
+            service.invoke('start', {
+              'settings': jsonDecode(settingsJson),
+            });
+          }
+        }
       }
     } catch (e) {
       debugPrint('FCM: background service error: $e');
