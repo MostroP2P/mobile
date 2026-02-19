@@ -59,6 +59,13 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
           SharedPreferencesKeys.appSettings.value,
         );
         if (settingsJson != null) {
+          Map<String, dynamic>? settings;
+          try {
+            settings = jsonDecode(settingsJson) as Map<String, dynamic>?;
+          } catch (e) {
+            debugPrint('FCM: Failed to decode settings: $e');
+          }
+
           // Wait briefly for service to initialize (FCM handlers must complete quickly)
           const maxWait = Duration(seconds: 3);
           final deadline = DateTime.now().add(maxWait);
@@ -67,9 +74,9 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
             await Future.delayed(const Duration(milliseconds: 100));
           }
 
-          if (await service.isRunning()) {
+          if (await service.isRunning() && settings != null) {
             service.invoke('start', {
-              'settings': jsonDecode(settingsJson),
+              'settings': settings,
             });
           }
         }
