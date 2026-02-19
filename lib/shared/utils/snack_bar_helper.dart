@@ -64,10 +64,10 @@ class SnackBarHelper {
   /// dark backgrounds (like red/orange) get white text.
   static Color _textColorFor(Color? background) {
     if (background == null) return Colors.white;
-    // Threshold 0.5: matches W3C relative luminance midpoint.
-    // mostroGreen (#8CC63F) ≈ 0.48 luminance → black text
-    // Colors.orange (#FF9800) ≈ 0.45 luminance → white text
-    // statusError (#EF6A6A) ≈ 0.22 luminance → white text
+    // Threshold 0.45: chosen to correctly split app colors.
+    // mostroGreen (#8CC63F) ≈ 0.463 luminance → black text (above 0.45)
+    // Colors.orange (#FF9800) ≈ 0.437 luminance → white text (below 0.45)
+    // statusError (#EF6A6A) ≈ 0.297 luminance → white text (below 0.45)
     return background.computeLuminance() > 0.45 ? Colors.black : Colors.white;
   }
 
