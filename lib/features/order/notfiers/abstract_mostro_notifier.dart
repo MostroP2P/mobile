@@ -329,14 +329,21 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
 
       case Action.fiatSentOk:
         // The extractor already handles role filtering for fiatSentOk
+        if (isRecent && !bypassTimestampGate) {
+          navProvider.go('/trade_detail/$orderId');
+        }
         break;
 
       case Action.released:
-        // No additional logic needed beyond notification
+        if (isRecent && !bypassTimestampGate) {
+          navProvider.go('/trade_detail/$orderId');
+        }
         break;
 
       case Action.purchaseCompleted:
-        // No additional logic needed beyond notification
+        if (isRecent && !bypassTimestampGate) {
+          navProvider.go('/trade_detail/$orderId');
+        }
         break;
 
       case Action.cooperativeCancelInitiatedByYou:
@@ -344,7 +351,9 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         break;
 
       case Action.cooperativeCancelInitiatedByPeer:
-        // No additional logic needed beyond notification
+        if (isRecent && !bypassTimestampGate) {
+          navProvider.go('/trade_detail/$orderId');
+        }
         break;
 
       case Action.disputeInitiatedByYou:
@@ -374,6 +383,10 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         // Notification handled by centralized NotificationDataExtractor path
         if (kDebugMode) {
           logger.i('disputeInitiatedByYou: Dispute saved in state, notification handled centrally');
+        }
+
+        if (isRecent && !bypassTimestampGate) {
+          navProvider.go('/trade_detail/$orderId');
         }
 
         break;
@@ -451,10 +464,16 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
           logger.i('disputeInitiatedByPeer: Dispute saved in state, notification handled centrally');
         }
 
+        if (isRecent && !bypassTimestampGate) {
+          navProvider.go('/trade_detail/$orderId');
+        }
+
         break;
 
       case Action.adminSettled:
-        // No additional logic needed beyond notification
+        if (isRecent && !bypassTimestampGate) {
+          navProvider.go('/trade_detail/$orderId');
+        }
         break;
 
       case Action.cantDo:
