@@ -119,7 +119,10 @@ class LogsActionsMenu extends ConsumerWidget {
       if (filePath != null && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(localizations.logsExportSuccess),
+            content: Text(
+              localizations.logsExportSuccess,
+              style: const TextStyle(color: Colors.black),
+            ),
             backgroundColor: AppTheme.statusSuccess,
           ),
         );

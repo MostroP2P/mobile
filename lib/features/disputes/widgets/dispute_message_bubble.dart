@@ -93,7 +93,7 @@ class DisputeMessageBubble extends StatelessWidget {
       context,
       S.of(context)!.messageCopiedToClipboard,
       duration: const Duration(seconds: 1),
-      backgroundColor: Colors.green,
+      backgroundColor: AppTheme.mostroGreen,
     );
   }
 

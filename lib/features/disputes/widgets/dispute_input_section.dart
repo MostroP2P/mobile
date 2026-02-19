@@ -131,7 +131,7 @@ class _DisputeInputSectionState extends State<DisputeInputSection> {
         SnackBarHelper.showTopSnackBar(
           context,
           S.of(context)!.messageSent(message),
-          backgroundColor: Colors.green,
+          backgroundColor: AppTheme.mostroGreen,
         );
       }
     } catch (error) {
