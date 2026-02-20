@@ -471,7 +471,7 @@ class RelaySelector extends ConsumerWidget {
                                 SnackBarHelper.showTopSnackBar(
                                   context,
                                   localizations.addRelaySuccessMessage(result.normalizedUrl!),
-                                  backgroundColor: Colors.green,
+                                  backgroundColor: AppTheme.mostroGreen,
                                 );
                               }
                             } else {

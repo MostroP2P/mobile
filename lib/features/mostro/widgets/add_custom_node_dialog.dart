@@ -257,7 +257,7 @@ class _AddCustomNodeDialogContentState
                 screenHeight: widget.screenHeight,
                 statusBarHeight: widget.statusBarPadding,
                 message: localizations.nodeAddedSuccess,
-                backgroundColor: Colors.green,
+                backgroundColor: AppTheme.mostroGreen,
               );
             } else {
               setState(() {

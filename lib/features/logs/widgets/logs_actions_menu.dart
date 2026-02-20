@@ -6,6 +6,7 @@ import 'package:mostro_mobile/features/logs/logs_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/services/logger_export_service.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
+import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
 
 class LogsActionsMenu extends ConsumerWidget {
 
@@ -117,21 +118,19 @@ class LogsActionsMenu extends ConsumerWidget {
       final filePath = await LoggerExportService.exportLogsToFolder(logs, strings);
 
       if (filePath != null && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(localizations.logsExportSuccess),
-            backgroundColor: AppTheme.statusSuccess,
-          ),
+        SnackBarHelper.showTopSnackBar(
+          context,
+          localizations.logsExportSuccess,
+          backgroundColor: AppTheme.statusSuccess,
         );
       }
     } catch (e, stackTrace) {
       logger.e('Error exporting logs', error: e, stackTrace: stackTrace);
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(localizations.logsExportError),
-            backgroundColor: AppTheme.statusError,
-          ),
+        SnackBarHelper.showTopSnackBar(
+          context,
+          localizations.logsExportError,
+          backgroundColor: AppTheme.statusError,
         );
       }
     }
@@ -156,11 +155,10 @@ class LogsActionsMenu extends ConsumerWidget {
     } catch (e, stackTrace) {
       logger.e('Error sharing logs', error: e, stackTrace: stackTrace);
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(localizations.shareLogsError),
-            backgroundColor: AppTheme.statusError,
-          ),
+        SnackBarHelper.showTopSnackBar(
+          context,
+          localizations.shareLogsError,
+          backgroundColor: AppTheme.statusError,
         );
       }
     }

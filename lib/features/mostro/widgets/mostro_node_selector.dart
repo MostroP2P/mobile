@@ -340,7 +340,7 @@ class _MostroNodeSelectorState extends ConsumerState<MostroNodeSelector> {
         screenHeight: mediaQuery.size.height,
         statusBarHeight: mediaQuery.padding.top,
         message: localizations.nodeSwitchedSuccess(node.displayName),
-        backgroundColor: Colors.green,
+        backgroundColor: AppTheme.mostroGreen,
       );
     } catch (e) {
       if (mounted) {

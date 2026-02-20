@@ -2,8 +2,12 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-/// Helper class to show SnackBars at the top of the screen
-/// This ensures the bottom navigation bar remains accessible at all times
+/// Helper class to show SnackBars at the top of the screen.
+/// This ensures the bottom navigation bar remains accessible at all times.
+///
+/// Text color is chosen automatically based on the background luminance
+/// (dark backgrounds → white text, light backgrounds → black text) unless
+/// an explicit [textColor] is provided.
 class SnackBarHelper {
   /// Shows a SnackBar at the top of the screen
   ///
@@ -11,11 +15,13 @@ class SnackBarHelper {
   /// [message] - Text message to display
   /// [duration] - How long to show the SnackBar (default: 2 seconds)
   /// [backgroundColor] - Optional background color for the SnackBar
+  /// [textColor] - Optional text color (auto-detected from background if omitted)
   static void showTopSnackBar(
     BuildContext context,
     String message, {
     Duration duration = const Duration(seconds: 2),
     Color? backgroundColor,
+    Color? textColor,
   }) {
     final mediaQuery = MediaQuery.of(context);
     final messenger = ScaffoldMessenger.of(context);
@@ -27,6 +33,7 @@ class SnackBarHelper {
       message: message,
       duration: duration,
       backgroundColor: backgroundColor,
+      textColor: textColor,
     );
   }
 
@@ -39,6 +46,7 @@ class SnackBarHelper {
     required String message,
     Duration duration = const Duration(seconds: 2),
     Color? backgroundColor,
+    Color? textColor,
   }) {
     _showSnackBarInternal(
       messenger: messenger,
@@ -47,7 +55,20 @@ class SnackBarHelper {
       message: message,
       duration: duration,
       backgroundColor: backgroundColor,
+      textColor: textColor,
     );
+  }
+
+  /// Returns the appropriate text color for a given background.
+  /// Light backgrounds (like mostroGreen) get black text;
+  /// dark backgrounds (like red/orange) get white text.
+  static Color _textColorFor(Color? background) {
+    if (background == null) return Colors.white;
+    // Threshold 0.45: chosen to correctly split app colors.
+    // mostroGreen (#8CC63F) ≈ 0.463 luminance → black text (above 0.45)
+    // Colors.orange (#FF9800) ≈ 0.437 luminance → white text (below 0.45)
+    // statusError (#EF6A6A) ≈ 0.297 luminance → white text (below 0.45)
+    return background.computeLuminance() > 0.45 ? Colors.black : Colors.white;
   }
 
   /// Shared internal logic for both sync and async SnackBar methods
@@ -58,21 +79,29 @@ class SnackBarHelper {
     required String message,
     Duration? duration,
     Color? backgroundColor,
+    Color? textColor,
   }) {
     // Calculate positioning using system values
     final appBarHeight = kToolbarHeight; // Standard AppBar height (56px)
     final extraMargin = 4.0; // Minimal margin for tighter spacing
     final topMargin = statusBarHeight + appBarHeight + extraMargin;
 
-    final estimatedSnackBarHeight = 60.0; // Estimated height optimized for 1-2 line messages
-    final bottomMargin = math.max(0.0, screenHeight - topMargin - estimatedSnackBarHeight);
+    final estimatedSnackBarHeight =
+        60.0; // Estimated height optimized for 1-2 line messages
+    final bottomMargin =
+        math.max(0.0, screenHeight - topMargin - estimatedSnackBarHeight);
+
+    final resolvedTextColor = textColor ?? _textColorFor(backgroundColor);
 
     // Clear any existing SnackBars to prevent stacking
     messenger.clearSnackBars();
 
     messenger.showSnackBar(
       SnackBar(
-        content: Text(message),
+        content: Text(
+          message,
+          style: TextStyle(color: resolvedTextColor),
+        ),
         duration: duration ?? const Duration(seconds: 2),
         backgroundColor: backgroundColor,
         behavior: SnackBarBehavior.floating,
