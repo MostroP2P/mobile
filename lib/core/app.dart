@@ -12,6 +12,7 @@ import 'package:mostro_mobile/features/auth/providers/auth_notifier_provider.dar
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/features/auth/notifiers/auth_state.dart';
 import 'package:mostro_mobile/services/lifecycle_manager.dart';
+import 'package:mostro_mobile/features/notifications/services/background_notification_service.dart';
 import 'package:mostro_mobile/shared/providers/app_init_provider.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/notifiers/locale_notifier.dart';
@@ -32,6 +33,7 @@ class MostroApp extends ConsumerStatefulWidget {
 class _MostroAppState extends ConsumerState<MostroApp> {
   GoRouter? _router;
   bool _deepLinksInitialized = false;
+  bool _notificationLaunchHandled = false;
   DeepLinkInterceptor? _deepLinkInterceptor;
   StreamSubscription<String>? _customUrlSubscription;
 
@@ -156,6 +158,19 @@ class _MostroAppState extends ConsumerState<MostroApp> {
               // This allows retries on subsequent builds
               debugPrint('Failed to initialize deep links: $e');
               debugPrint('Stack trace: $stackTrace');
+            }
+          });
+        }
+
+        // Check if app was launched from a notification tap (terminated state)
+        if (!_notificationLaunchHandled && _router != null) {
+          _notificationLaunchHandled = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) async {
+            final orderId = await getNotificationLaunchOrderId();
+            if (!mounted) return;
+            if (orderId != null && orderId.isNotEmpty) {
+              debugPrint('App launched from notification tap, navigating to order: $orderId');
+              _router!.push('/trade_detail/$orderId');
             }
           });
         }

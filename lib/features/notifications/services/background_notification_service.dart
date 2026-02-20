@@ -37,10 +37,38 @@ Future<void> initializeNotifications() async {
   await flutterLocalNotificationsPlugin.initialize(initSettings, onDidReceiveNotificationResponse: _onNotificationTap);
 }
 
+/// Check if the app was launched by tapping a notification.
+/// Returns the order ID from the notification payload, or null.
+Future<String?> getNotificationLaunchOrderId() async {
+  try {
+    final details = await flutterLocalNotificationsPlugin.getNotificationAppLaunchDetails();
+    if (details != null &&
+        details.didNotificationLaunchApp &&
+        details.notificationResponse != null) {
+      final payload = details.notificationResponse!.payload;
+      if (payload != null && payload.isNotEmpty) {
+        return payload;
+      }
+    }
+  } catch (e) {
+    logger.e('Error checking notification launch details: $e');
+  }
+  return null;
+}
+
 void _onNotificationTap(NotificationResponse response) {
   try {
     final context = MostroApp.navigatorKey.currentContext;
-    if (context != null) {
+    if (context == null) {
+      logger.w('No context available for notification navigation');
+      return;
+    }
+
+    final orderId = response.payload;
+    if (orderId != null && orderId.isNotEmpty) {
+      context.push('/trade_detail/$orderId');
+      logger.i('Navigated to trade detail for order: $orderId');
+    } else {
       context.push('/notifications');
       logger.i('Navigated to notifications screen');
     }
