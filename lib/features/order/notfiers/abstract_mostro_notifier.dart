@@ -499,6 +499,34 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
 
         break;
 
+      case Action.adminTookDispute:
+        // Compute admin shared key and persist on session
+        String? adminPubkey;
+        if (event.payload is Peer) {
+          final peerPayload = event.getPayload<Peer>();
+          if (peerPayload != null && peerPayload.publicKey.isNotEmpty) {
+            adminPubkey = peerPayload.publicKey;
+          }
+        }
+        // Fallback: check dispute in state
+        adminPubkey ??= state.dispute?.adminPubkey;
+
+        if (adminPubkey != null && adminPubkey.isNotEmpty) {
+          final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+          await sessionNotifier.updateSession(
+              orderId, (s) => s.setAdminPeer(adminPubkey!));
+          logger.i(
+              'Admin shared key computed and persisted for order $orderId');
+        } else {
+          logger.w(
+              'adminTookDispute: Could not extract admin pubkey for order $orderId');
+        }
+
+        if (isRecent && !bypassTimestampGate) {
+          navProvider.go('/trade_detail/$orderId');
+        }
+        break;
+
       case Action.adminSettled:
         if (isRecent && !bypassTimestampGate) {
           navProvider.go('/trade_detail/$orderId');

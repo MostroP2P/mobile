@@ -19,6 +19,8 @@ class Session {
   Role? role;
   Peer? _peer;
   NostrKeyPairs? _sharedKey;
+  String? _adminPubkey;
+  NostrKeyPairs? _adminSharedKey;
 
   Session({
     required this.masterKey,
@@ -30,6 +32,7 @@ class Session {
     this.parentOrderId,
     this.role,
     Peer? peer,
+    String? adminPeer,
   }) {
     _peer = peer;
     if (peer != null) {
@@ -37,6 +40,9 @@ class Session {
         tradeKey.private,
         peer.publicKey,
       );
+    }
+    if (adminPeer != null) {
+      setAdminPeer(adminPeer);
     }
   }
 
@@ -49,6 +55,7 @@ class Session {
         'parent_order_id': parentOrderId,
         'role': role?.value,
         'peer': peer?.publicKey,
+        'admin_peer': _adminPubkey,
       };
 
   factory Session.fromJson(Map<String, dynamic> json) {
@@ -146,6 +153,15 @@ class Session {
         }
       }
 
+      // Parse optional admin peer
+      String? adminPeer;
+      final adminPeerValue = json['admin_peer'];
+      if (adminPeerValue != null) {
+        if (adminPeerValue is String && adminPeerValue.isNotEmpty) {
+          adminPeer = adminPeerValue;
+        }
+      }
+
       return Session(
         masterKey: masterKeyValue,
         tradeKey: tradeKeyValue,
@@ -156,6 +172,7 @@ class Session {
         parentOrderId: parentOrderId,
         role: role,
         peer: peer,
+        adminPeer: adminPeer,
       );
     } catch (e) {
       throw FormatException('Failed to parse Session from JSON: $e');
@@ -163,6 +180,18 @@ class Session {
   }
 
   NostrKeyPairs? get sharedKey => _sharedKey;
+
+  String? get adminPubkey => _adminPubkey;
+  NostrKeyPairs? get adminSharedKey => _adminSharedKey;
+
+  /// Compute and store the admin shared key via ECDH
+  void setAdminPeer(String adminPubkey) {
+    _adminPubkey = adminPubkey;
+    _adminSharedKey = NostrUtils.computeSharedKey(
+      tradeKey.private,
+      adminPubkey,
+    );
+  }
 
   Peer? get peer => _peer;
 
