@@ -111,7 +111,7 @@ void main() {
         startTime: DateTime.now(),
         orderId: 'test-order',
         role: Role.buyer,
-        adminPeer: adminPublicKey,
+        adminPubkey: adminPublicKey,
       );
 
       expect(session.adminSharedKey, isNotNull);
@@ -128,7 +128,7 @@ void main() {
         orderId: 'test-order',
         role: Role.buyer,
         peer: Peer(publicKey: peerPublicKey),
-        adminPeer: adminPublicKey,
+        adminPubkey: adminPublicKey,
       );
 
       final json = session.toJson();
@@ -158,7 +158,7 @@ void main() {
         orderId: 'test-order',
         role: Role.buyer,
         peer: Peer(publicKey: peerPublicKey),
-        adminPeer: adminPublicKey,
+        adminPubkey: adminPublicKey,
       );
 
       // Both shared keys exist

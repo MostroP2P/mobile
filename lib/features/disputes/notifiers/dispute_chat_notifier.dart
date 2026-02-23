@@ -163,11 +163,15 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
       if (isFromAdmin) {
         final dispute = await ref.read(disputeDetailsProvider(disputeId).future);
         if (dispute?.adminPubkey == null) {
-          logger.w('Rejecting message: No admin assigned yet for dispute $disputeId');
+          logger.w('Rejecting admin message for dispute $disputeId: '
+              'adminPubkey not yet available (possible race with adminTookDispute). '
+              'eventId=${event.id}, sender=$senderPubkey');
           return;
         }
         if (senderPubkey != dispute!.adminPubkey) {
-          logger.w('SECURITY: Rejecting message from unauthorized pubkey: $senderPubkey');
+          logger.w('SECURITY: Rejecting message from unauthorized pubkey: '
+              '$senderPubkey (expected: ${dispute.adminPubkey}), '
+              'eventId=${event.id}, dispute=$disputeId');
           return;
         }
       }

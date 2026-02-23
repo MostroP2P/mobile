@@ -32,7 +32,7 @@ class Session {
     this.parentOrderId,
     this.role,
     Peer? peer,
-    String? adminPeer,
+    String? adminPubkey,
   }) {
     _peer = peer;
     if (peer != null) {
@@ -41,8 +41,8 @@ class Session {
         peer.publicKey,
       );
     }
-    if (adminPeer != null) {
-      setAdminPeer(adminPeer);
+    if (adminPubkey != null) {
+      setAdminPeer(adminPubkey);
     }
   }
 
@@ -153,12 +153,12 @@ class Session {
         }
       }
 
-      // Parse optional admin peer
-      String? adminPeer;
+      // Parse optional admin pubkey
+      String? adminPubkey;
       final adminPeerValue = json['admin_peer'];
       if (adminPeerValue != null) {
         if (adminPeerValue is String && adminPeerValue.isNotEmpty) {
-          adminPeer = adminPeerValue;
+          adminPubkey = adminPeerValue;
         } else if (adminPeerValue is! String) {
           throw FormatException(
             'Invalid admin_peer type: ${adminPeerValue.runtimeType}',
@@ -176,7 +176,7 @@ class Session {
         parentOrderId: parentOrderId,
         role: role,
         peer: peer,
-        adminPeer: adminPeer,
+        adminPubkey: adminPubkey,
       );
     } catch (e) {
       throw FormatException('Failed to parse Session from JSON: $e');
@@ -190,6 +190,11 @@ class Session {
 
   /// Compute and store the admin shared key via ECDH
   void setAdminPeer(String adminPubkey) {
+    if (adminPubkey.isEmpty || adminPubkey.length != 64) {
+      throw ArgumentError(
+        'Invalid admin pubkey: expected 64-char hex, got ${adminPubkey.length} chars',
+      );
+    }
     _adminPubkey = adminPubkey;
     _adminSharedKey = NostrUtils.computeSharedKey(
       tradeKey.private,
