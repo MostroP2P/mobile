@@ -159,6 +159,10 @@ class Session {
       if (adminPeerValue != null) {
         if (adminPeerValue is String && adminPeerValue.isNotEmpty) {
           adminPeer = adminPeerValue;
+        } else if (adminPeerValue is! String) {
+          throw FormatException(
+            'Invalid admin_peer type: ${adminPeerValue.runtimeType}',
+          );
         }
       }
 

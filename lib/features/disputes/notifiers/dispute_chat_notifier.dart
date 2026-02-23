@@ -481,7 +481,7 @@ final disputeChatNotifierProvider =
     StateNotifierProvider.family<DisputeChatNotifier, DisputeChatState, String>(
   (ref, disputeId) {
     final notifier = DisputeChatNotifier(disputeId, ref);
-    notifier.initialize();
+    unawaited(notifier.initialize());
     return notifier;
   },
 );

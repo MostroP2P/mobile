@@ -515,6 +515,11 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
           final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
           await sessionNotifier.updateSession(
               orderId, (s) => s.setAdminPeer(adminPubkey!));
+          // Re-fetch session to reflect the updated adminSharedKey
+          final refreshed = sessionNotifier.getSessionByOrderId(orderId);
+          if (refreshed != null) {
+            session = refreshed;
+          }
           logger.i(
               'Admin shared key computed and persisted for order $orderId');
         } else {
