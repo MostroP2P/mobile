@@ -105,6 +105,9 @@ dependencies:
   firebase_messaging: ^16.1.0
 
 
+dependency_overrides:
+  bip340: ^0.2.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
