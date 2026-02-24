@@ -177,20 +177,28 @@ class NotificationDataExtractor {
         // No additional values needed
         break;
         
+      case Action.sendDm:
+        // Admin/dispute DM — no payload extraction needed, generic message
+        break;
+
+      case Action.cooperativeCancelAccepted:
+        // No additional values needed
+        break;
+
       case Action.cantDo:
         final cantDo = event.getPayload<CantDo>();
         values['reason'] = cantDo?.cantDoReason.toString();
         isTemporary = true; // cantDo notifications are temporary
         break;
-        
+
       case Action.rate:
         // No additional values needed
         break;
-        
+
       case Action.rateReceived:
         // This action doesn't generate notifications
         return null;
-        
+
       default:
         // Unknown actions generate temporary notifications
         isTemporary = true;

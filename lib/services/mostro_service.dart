@@ -13,6 +13,7 @@ import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
+import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
 class MostroService {
   final Ref ref;
@@ -130,7 +131,7 @@ class MostroService {
       }
 
       // Skip dispute chat messages (they have "dm" key and are handled by DisputeChatNotifier)
-      if (result[0] is Map && (result[0] as Map).containsKey('dm')) {
+      if (NostrUtils.isDmPayload(result[0])) {
         logger.i('Skipping dispute chat message (handled by DisputeChatNotifier)');
         return;
       }

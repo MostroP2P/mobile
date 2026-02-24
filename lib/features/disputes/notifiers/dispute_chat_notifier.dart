@@ -14,6 +14,7 @@ import 'package:mostro_mobile/features/order/providers/order_notifier_provider.d
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
+import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 import 'package:sembast/sembast.dart';
 
 /// State for dispute chat messages
@@ -157,7 +158,7 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
           final messageData = contentData[0];
           
           // Check if it's the CLI format with Message enum (has "dm" key)
-          if (messageData is Map && messageData.containsKey('dm')) {
+          if (NostrUtils.isDmPayload(messageData)) {
             final dmData = messageData['dm'];
             if (dmData is Map && dmData.containsKey('payload')) {
               final payload = dmData['payload'];
