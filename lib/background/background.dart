@@ -22,9 +22,9 @@ Future<void> serviceMain(ServiceInstance service) async {
 
   final Map<String, Map<String, dynamic>> activeSubscriptions = {};
   final nostrService = NostrService();
-  final db = await openMostroDatabase('events.db');
-  final eventStore = EventStorage(db: db);
 
+  // Register event handlers BEFORE awaiting database open to avoid
+  // losing events (e.g. 'start' invoked by FCM handler during db init).
   service.on('app-foreground-status').listen((data) {
     isAppForeground = data?['is-foreground'] ?? isAppForeground;
   });
@@ -55,6 +55,9 @@ Future<void> serviceMain(ServiceInstance service) async {
 
     service.invoke('service-ready', {});
   });
+
+  final db = await openMostroDatabase('events.db');
+  final eventStore = EventStorage(db: db);
 
   service.on('update-settings').listen((data) async {
     if (data == null) return;
