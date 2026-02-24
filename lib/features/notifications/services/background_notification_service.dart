@@ -171,6 +171,16 @@ Future<MostroMessage?> _decryptAndProcessEvent(NostrEvent event) async {
       return null;
     }
 
+    // Detect admin/dispute DM format: [{"dm": {"action": "send-dm", ...}}]
+    final firstItem = result[0];
+    if (firstItem is Map && firstItem.containsKey('dm')) {
+      return MostroMessage(
+        action: mostro_action.Action.sendDm,
+        id: matchingSession.orderId,
+        timestamp: event.createdAt?.millisecondsSinceEpoch,
+      );
+    }
+
     final mostroMessage = MostroMessage.fromJson(result[0]);
     mostroMessage.timestamp = event.createdAt?.millisecondsSinceEpoch;
 
