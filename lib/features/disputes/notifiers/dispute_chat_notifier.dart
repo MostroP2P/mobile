@@ -141,8 +141,10 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
       }
 
       // Check for duplicate events
+      final wrapperEventId = event.id;
+      if (wrapperEventId == null) return;
       final eventStore = ref.read(eventStorageProvider);
-      if (await eventStore.hasItem(event.id!)) {
+      if (await eventStore.hasItem(wrapperEventId)) {
         return;
       }
 
@@ -253,7 +255,7 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
               filteredCount++;
               continue;
             }
-            if (messagePubkey != null && messagePubkey != dispute!.adminPubkey) {
+            if (messagePubkey == null || messagePubkey != dispute!.adminPubkey) {
               logger.w('SECURITY: Filtering historical message from unauthorized pubkey: $messagePubkey');
               filteredCount++;
               continue;
@@ -316,7 +318,12 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
       ],
     );
 
-    final rumorId = rumor.id!;
+    final rumorId = rumor.id;
+    if (rumorId == null) {
+      logger.e('Failed to compute rumor ID for dispute: $disputeId');
+      state = state.copyWith(error: 'Failed to prepare message');
+      return;
+    }
     final rumorTimestamp = rumor.createdAt ?? DateTime.now();
 
     try {
