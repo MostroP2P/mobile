@@ -76,13 +76,27 @@ class RestoredDispute {
   });
 
   factory RestoredDispute.fromJson(Map<String, dynamic> json) {
+    final rawInitiator = json['initiator'] as String?;
+    final normalizedInitiator = _normalizeInitiator(rawInitiator);
+
     return RestoredDispute(
       disputeId: json['dispute_id'] as String,
       orderId: json['order_id'] as String,
       tradeIndex: json['trade_index'] as int,
       status: json['status'] as String,
-      initiator: json['initiator'] as String?,
+      initiator: normalizedInitiator,
     );
+  }
+
+  static String? _normalizeInitiator(String? value) {
+    if (value == null) return null;
+
+    final normalized = value.trim().toLowerCase();
+    if (normalized == 'buyer' || normalized == 'seller') {
+      return normalized;
+    }
+
+    return null;
   }
 
   Map<String, dynamic> toJson() => {
