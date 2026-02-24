@@ -2,18 +2,14 @@ import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
+import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
 /// Tests for DM format detection logic used in background notification service.
 ///
-/// The background service's `_decryptAndProcessEvent()` must distinguish between:
-/// - Standard Mostro messages: [{"order": {"action": "...", ...}}]
-/// - Admin/dispute DM messages: [{"dm": {"action": "send-dm", ...}}]
-///
-/// Since the actual method is a private top-level function that depends on
-/// NostrEvent decryption and database access, we test the detection logic
-/// and MostroMessage construction in isolation.
+/// Tests exercise [NostrUtils.isDmPayload], the same pure function called by
+/// `_decryptAndProcessEvent()`, `MostroService`, and `DisputeChatNotifier`.
 void main() {
-  group('Admin DM format detection', () {
+  group('NostrUtils.isDmPayload', () {
     test('detects dm wrapper key in decoded JSON', () {
       final dmPayload = jsonDecode(
         '[{"dm": {"action": "send-dm", "payload": {"text_message": "Hello"}}}]',
@@ -21,10 +17,7 @@ void main() {
 
       expect(dmPayload, isList);
       expect(dmPayload, isNotEmpty);
-
-      final firstItem = dmPayload[0];
-      expect(firstItem, isA<Map>());
-      expect((firstItem as Map).containsKey('dm'), isTrue);
+      expect(NostrUtils.isDmPayload(dmPayload[0]), isTrue);
     });
 
     test('does not detect dm key in standard Mostro message', () {
@@ -32,10 +25,7 @@ void main() {
         '[{"order": {"action": "new-order", "id": "abc123", "payload": null}}]',
       );
 
-      final firstItem = orderPayload[0];
-      expect(firstItem, isA<Map>());
-      expect((firstItem as Map).containsKey('dm'), isFalse);
-      expect((firstItem as Map).containsKey('order'), isTrue);
+      expect(NostrUtils.isDmPayload(orderPayload[0]), isFalse);
     });
 
     test('does not detect dm key in restore message', () {
@@ -43,8 +33,7 @@ void main() {
         '[{"restore": {"action": "restore-session", "id": "abc123"}}]',
       );
 
-      final firstItem = restorePayload[0];
-      expect((firstItem as Map).containsKey('dm'), isFalse);
+      expect(NostrUtils.isDmPayload(restorePayload[0]), isFalse);
     });
 
     test('does not detect dm key in cant-do message', () {
@@ -52,27 +41,31 @@ void main() {
         '[{"cant-do": {"action": "cant-do", "payload": null}}]',
       );
 
-      final firstItem = cantDoPayload[0];
-      expect((firstItem as Map).containsKey('dm'), isFalse);
+      expect(NostrUtils.isDmPayload(cantDoPayload[0]), isFalse);
+    });
+
+    test('handles dm payload with minimal content', () {
+      final dmPayload = jsonDecode('[{"dm": {}}]');
+
+      expect(NostrUtils.isDmPayload(dmPayload[0]), isTrue);
+    });
+
+    test('returns false for non-Map types', () {
+      expect(NostrUtils.isDmPayload('string'), isFalse);
+      expect(NostrUtils.isDmPayload(42), isFalse);
+      expect(NostrUtils.isDmPayload(null), isFalse);
+      expect(NostrUtils.isDmPayload([]), isFalse);
     });
 
     test('MostroMessage with sendDm action preserves orderId and timestamp', () {
       const testOrderId = 'test-order-123';
       const testTimestamp = 1700000000000;
 
-      // This mirrors what _decryptAndProcessEvent creates for DM detection
       final message = _createDmNotificationMessage(testOrderId, testTimestamp);
 
       expect(message.action, equals(Action.sendDm));
       expect(message.id, equals(testOrderId));
       expect(message.timestamp, equals(testTimestamp));
-    });
-
-    test('handles dm payload with minimal content', () {
-      final dmPayload = jsonDecode('[{"dm": {}}]');
-
-      final firstItem = dmPayload[0];
-      expect((firstItem as Map).containsKey('dm'), isTrue);
     });
   });
 }
