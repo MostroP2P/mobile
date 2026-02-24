@@ -2,12 +2,16 @@ import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
+import 'package:mostro_mobile/data/models/mostro_message.dart';
+import 'package:mostro_mobile/features/notifications/utils/notification_data_extractor.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
-/// Tests for DM format detection logic used in background notification service.
+/// Tests for the admin/dispute DM background notification pipeline (Phase 1).
 ///
-/// Tests exercise [NostrUtils.isDmPayload], the same pure function called by
-/// `_decryptAndProcessEvent()`, `MostroService`, and `DisputeChatNotifier`.
+/// Validates three layers:
+/// 1. [NostrUtils.isDmPayload] — pure detection of the `{"dm": ...}` envelope
+/// 2. [MostroMessage] construction — synthetic message with [Action.sendDm]
+/// 3. [NotificationDataExtractor] — ensures sendDm is NOT marked temporary
 void main() {
   group('NostrUtils.isDmPayload', () {
     test('detects dm wrapper key in decoded JSON', () {
@@ -56,40 +60,75 @@ void main() {
       expect(NostrUtils.isDmPayload(null), isFalse);
       expect(NostrUtils.isDmPayload([]), isFalse);
     });
+  });
 
-    test('MostroMessage with sendDm action preserves orderId and timestamp', () {
+  group('MostroMessage construction for DM', () {
+    test('preserves orderId and timestamp with sendDm action', () {
       const testOrderId = 'test-order-123';
       const testTimestamp = 1700000000000;
 
-      final message = _createDmNotificationMessage(testOrderId, testTimestamp);
+      final message = MostroMessage(
+        action: Action.sendDm,
+        id: testOrderId,
+        timestamp: testTimestamp,
+      );
 
-      expect(message.action, equals(Action.sendDm));
-      expect(message.id, equals(testOrderId));
-      expect(message.timestamp, equals(testTimestamp));
+      expect(message.action, Action.sendDm);
+      expect(message.id, testOrderId);
+      expect(message.timestamp, testTimestamp);
     });
   });
-}
 
-/// Simulates the MostroMessage construction from _decryptAndProcessEvent
-/// when a DM format is detected.
-_DmMessage _createDmNotificationMessage(String orderId, int timestamp) {
-  return _DmMessage(
-    action: Action.sendDm,
-    id: orderId,
-    timestamp: timestamp,
-  );
-}
+  group('NotificationDataExtractor for sendDm', () {
+    test('produces non-temporary notification data', () async {
+      final message = MostroMessage(
+        action: Action.sendDm,
+        id: 'order-abc',
+        timestamp: 1700000000000,
+      );
 
-/// Lightweight wrapper to test the construction without importing MostroMessage
-/// (which requires full Payload generics setup).
-class _DmMessage {
-  final Action action;
-  final String id;
-  final int timestamp;
+      final data = await NotificationDataExtractor.extractFromMostroMessage(
+        message,
+        null,
+      );
 
-  _DmMessage({
-    required this.action,
-    required this.id,
-    required this.timestamp,
+      expect(data, isNotNull);
+      expect(data!.isTemporary, isFalse);
+      expect(data.action, Action.sendDm);
+      expect(data.orderId, 'order-abc');
+    });
+
+    test('returns empty values map (no payload extraction)', () async {
+      final message = MostroMessage(
+        action: Action.sendDm,
+        id: 'order-xyz',
+      );
+
+      final data = await NotificationDataExtractor.extractFromMostroMessage(
+        message,
+        null,
+      );
+
+      expect(data, isNotNull);
+      expect(data!.values, isEmpty);
+    });
+  });
+
+  group('NotificationDataExtractor for cooperativeCancelAccepted', () {
+    test('produces non-temporary notification data', () async {
+      final message = MostroMessage(
+        action: Action.cooperativeCancelAccepted,
+        id: 'order-cancel',
+      );
+
+      final data = await NotificationDataExtractor.extractFromMostroMessage(
+        message,
+        null,
+      );
+
+      expect(data, isNotNull);
+      expect(data!.isTemporary, isFalse);
+      expect(data.action, Action.cooperativeCancelAccepted);
+    });
   });
 }
