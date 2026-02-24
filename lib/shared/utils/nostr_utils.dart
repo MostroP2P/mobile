@@ -379,6 +379,12 @@ class NostrUtils {
     }
   }
 
+  /// Checks if a decoded Mostro payload item is a DM (dispute/admin chat) message.
+  /// DM messages use the format: {"dm": {"action": "send-dm", ...}}
+  static bool isDmPayload(dynamic item) {
+    return item is Map && item.containsKey('dm');
+  }
+
   static Future<String> encryptNIP44(
       String content, String privkey, String pubkey) async {
     try {
