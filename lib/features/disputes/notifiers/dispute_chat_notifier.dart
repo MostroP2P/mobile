@@ -306,13 +306,24 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
       return;
     }
 
-    final rumorId = 'rumor_${DateTime.now().millisecondsSinceEpoch}';
-    final rumorTimestamp = DateTime.now();
+    // Create rumor (kind 1) with plain text content FIRST to get real event ID
+    final rumor = NostrEvent.fromPartialData(
+      keyPairs: session.tradeKey,
+      content: text,
+      kind: 1,
+      tags: [
+        ["p", session.adminSharedKey!.public],
+      ],
+    );
+
+    final rumorId = rumor.id!;
+    final rumorTimestamp = rumor.createdAt ?? DateTime.now();
 
     try {
       logger.i('Sending p2pWrap DM to admin via shared key for dispute: $disputeId');
 
       // Add message to state with isPending=true (optimistic UI)
+      // Uses the real rumor ID so relay echo deduplication works correctly
       final pendingMessage = DisputeChat(
         id: rumorId,
         message: text,
@@ -325,16 +336,6 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
       final deduped = {for (var m in allMessages) m.id: m}.values.toList();
       deduped.sort((a, b) => a.timestamp.compareTo(b.timestamp));
       state = state.copyWith(messages: deduped, error: null);
-
-      // Create rumor (kind 1) with plain text content
-      final rumor = NostrEvent.fromPartialData(
-        keyPairs: session.tradeKey,
-        content: text,
-        kind: 1,
-        tags: [
-          ["p", session.adminSharedKey!.public],
-        ],
-      );
 
       // Wrap using p2pWrap (1-layer, shared key routing)
       final wrappedEvent = await rumor.p2pWrap(
