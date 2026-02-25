@@ -377,18 +377,21 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
     }
   }
 
-  /// Update a message's pending/error state in the current state
+  /// Update a message's pending/error state in the current state.
+  /// Per-message errors stay at message level; state.error is reserved
+  /// for initialization/loading failures only.
   void _updateMessageState(String messageId, {required bool isPending, String? error}) {
     final updatedMessages = state.messages.map((m) {
       if (m.id == messageId) {
-        return m.copyWith(isPending: isPending, error: error);
+        return DisputeChatMessage(
+          event: m.event,
+          isPending: isPending,
+          error: error,
+        );
       }
       return m;
     }).toList();
-    state = state.copyWith(
-      messages: updatedMessages,
-      error: error != null ? 'Failed to send message: $error' : null,
-    );
+    state = state.copyWith(messages: updatedMessages);
   }
 
   /// Get the admin shared key as raw bytes for multimedia encryption
