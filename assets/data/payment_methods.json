@@ -9,7 +9,7 @@
   "CRC": ["Bank transfer (IBAN)", "SINPE Móvil", "Cash"],
   "COP": ["Nequi", "Daviplata", "PSE", "Llaves BRE-B", "Transferencia bancaria", "Efectivo"],
   "CUP": ["Transfermovil", "EnZona", "Tarjeta Clásica", "Saldo móvil", "MiTransfer", "Efectivo"],
-  "EUR": ["SEPA", "Revolut", "Bank Transfer", "Wise", "SEPA instant", "Bizum", "SEPA bank transfer", "Payoneer", "Cash"],
+  "EUR": ["Revolut", "HalCash", "Bank Transfer", "Wise", "SEPA instant", "Bizum", "Payoneer", "Cash"],
   "GBP": ["Revolut", "Monzo", "Wise", "Any national bank", "Bank Transfer", "Cash"],
   "JPY": ["PayPay", "Bank Transfer", "Cash"],
   "MLC": ["Transfermovil", "EnZona"],
