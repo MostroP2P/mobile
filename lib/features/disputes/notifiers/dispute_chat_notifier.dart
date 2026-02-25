@@ -5,7 +5,6 @@ import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/data/models/dispute_chat.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/models/session.dart';
-import 'package:mostro_mobile/features/disputes/providers/dispute_providers.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
@@ -161,22 +160,10 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
       final senderPubkey = unwrappedEvent.pubkey;
       final isFromAdmin = senderPubkey != session.tradeKey.public;
 
-      // SECURITY: Validate sender pubkey for admin messages
-      if (isFromAdmin) {
-        final dispute = await ref.read(disputeDetailsProvider(disputeId).future);
-        if (dispute?.adminPubkey == null) {
-          logger.w('Rejecting admin message for dispute $disputeId: '
-              'adminPubkey not yet available (possible race with adminTookDispute). '
-              'eventId=${event.id}, sender=$senderPubkey');
-          return;
-        }
-        if (senderPubkey != dispute!.adminPubkey) {
-          logger.w('SECURITY: Rejecting message from unauthorized pubkey: '
-              '$senderPubkey (expected: ${dispute.adminPubkey}), '
-              'eventId=${event.id}, dispute=$disputeId');
-          return;
-        }
-      }
+      // SECURITY: The ECDH shared key IS the authentication.
+      // If p2pUnwrap succeeded, the sender holds the admin's private key.
+      // No additional pubkey verification needed — it would introduce a race
+      // condition with disputeDetailsProvider resolution.
 
       final eventId = unwrappedEvent.id ?? event.id ?? 'chat_${DateTime.now().millisecondsSinceEpoch}_${messageText.hashCode}';
       final eventTimestamp = unwrappedEvent.createdAt ?? DateTime.now();
@@ -239,36 +226,19 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
 
       logger.i('Found ${chatEvents.length} historical messages for dispute: $disputeId');
 
-      final dispute = await ref.read(disputeDetailsProvider(disputeId).future);
-
+      // SECURITY: Historical messages were already authenticated via ECDH
+      // when they were received and stored. No additional pubkey filtering needed.
       final List<DisputeChat> messages = [];
-      int filteredCount = 0;
 
       for (final eventData in chatEvents) {
         try {
-          final isFromUser = eventData['is_from_user'] as bool? ?? true;
-          final messagePubkey = eventData['pubkey'] as String?;
-
-          // SECURITY: Filter messages by authorized pubkeys
-          if (!isFromUser) {
-            if (dispute?.adminPubkey == null) {
-              filteredCount++;
-              continue;
-            }
-            if (messagePubkey == null || messagePubkey != dispute!.adminPubkey) {
-              logger.w('SECURITY: Filtering historical message from unauthorized pubkey: $messagePubkey');
-              filteredCount++;
-              continue;
-            }
-          }
-
           messages.add(DisputeChat(
             id: eventData['id'] as String,
             message: eventData['content'] as String? ?? '',
             timestamp: DateTime.fromMillisecondsSinceEpoch(
               (eventData['created_at'] as int) * 1000,
             ),
-            isFromUser: isFromUser,
+            isFromUser: eventData['is_from_user'] as bool? ?? true,
             adminPubkey: eventData['admin_pubkey'] as String?,
             isPending: eventData['isPending'] as bool? ?? false,
             error: eventData['error'] as String?,
@@ -276,10 +246,6 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
         } catch (e) {
           logger.w('Failed to parse dispute chat message: $e');
         }
-      }
-
-      if (filteredCount > 0) {
-        logger.i('Filtered $filteredCount unauthorized messages from dispute $disputeId');
       }
 
       state = state.copyWith(messages: messages, isLoading: false);
@@ -474,6 +440,7 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
         }
       }
 
+      logger.w('No session found matching disputeId: $disputeId');
       return null;
     } catch (e, stackTrace) {
       logger.e('Error getting session for dispute: $e', stackTrace: stackTrace);

@@ -512,16 +512,21 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         adminPubkey ??= state.dispute?.adminPubkey;
 
         if (adminPubkey != null && adminPubkey.isNotEmpty) {
-          final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
-          await sessionNotifier.updateSession(
-              orderId, (s) => s.setAdminPeer(adminPubkey!));
-          // Re-fetch session to reflect the updated adminSharedKey
-          final refreshed = sessionNotifier.getSessionByOrderId(orderId);
-          if (refreshed != null) {
-            session = refreshed;
+          try {
+            final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+            await sessionNotifier.updateSession(
+                orderId, (s) => s.setAdminPeer(adminPubkey!));
+            // Re-fetch session to reflect the updated adminSharedKey
+            final refreshed = sessionNotifier.getSessionByOrderId(orderId);
+            if (refreshed != null) {
+              session = refreshed;
+            }
+            logger.i(
+                'Admin shared key computed and persisted for order $orderId');
+          } catch (e) {
+            logger.e(
+                'adminTookDispute: Failed to set admin peer for order $orderId: $e');
           }
-          logger.i(
-              'Admin shared key computed and persisted for order $orderId');
         } else {
           logger.w(
               'adminTookDispute: Could not extract admin pubkey for order $orderId');
