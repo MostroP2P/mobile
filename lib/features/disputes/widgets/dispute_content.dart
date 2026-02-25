@@ -42,7 +42,7 @@ class _DisputeContentState extends ConsumerState<DisputeContent> {
       if (messages.isNotEmpty) {
         // Show the last message
         final lastMessage = messages.last;
-        descriptionText = lastMessage.message;
+        descriptionText = lastMessage.content;
       }
     }
     
@@ -61,6 +61,9 @@ class _DisputeContentState extends ConsumerState<DisputeContent> {
                 future: DisputeReadStatusService.hasUnreadMessages(
                   widget.dispute.disputeId,
                   ref.watch(disputeChatNotifierProvider(widget.dispute.disputeId)).messages,
+                  isFromUser: ref.read(
+                    disputeChatNotifierProvider(widget.dispute.disputeId).notifier,
+                  ).isFromUser,
                 ),
                 builder: (context, snapshot) {
                   final hasUnread = snapshot.data ?? false;
