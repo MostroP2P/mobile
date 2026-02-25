@@ -23,7 +23,7 @@ Currently the app has two completely different chat mechanisms:
 ---
 
 ## Phase 1: Shared Key for Dispute Chat (Protocol Change)
-**Status:** `TODO`
+**Status:** `DONE`
 **PR scope:** Core encryption/protocol change — no UI changes
 
 ### What you can test after this phase

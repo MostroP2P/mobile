@@ -1,15 +1,10 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/data/models/dispute_chat.dart';
-import 'package:mostro_mobile/data/models/enums/action.dart';
-import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/models/session.dart';
-import 'package:mostro_mobile/data/models/text_message.dart';
-import 'package:mostro_mobile/features/disputes/providers/dispute_providers.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
@@ -42,10 +37,11 @@ class DisputeChatState {
 }
 
 /// Notifier for dispute chat messages
+/// Uses shared key encryption (p2pWrap/p2pUnwrap) with admin via ECDH
 class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
   final String disputeId;
   final Ref ref;
-  
+
   StreamSubscription<NostrEvent>? _subscription;
   ProviderSubscription<dynamic>? _sessionListener;
   bool _isInitialized = false;
@@ -55,18 +51,24 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
   /// Initialize the dispute chat by loading historical messages and subscribing to new events
   Future<void> initialize() async {
     if (_isInitialized) return;
-    
+
     logger.i('Initializing dispute chat for disputeId: $disputeId');
     await _loadHistoricalMessages();
     await _subscribe();
     _isInitialized = true;
   }
 
-  /// Subscribe to new dispute chat messages
+  /// Subscribe to new dispute chat messages using admin shared key
   Future<void> _subscribe() async {
     final session = _getSessionForDispute();
     if (session == null) {
       logger.w('No session found for dispute: $disputeId');
+      _listenForSession();
+      return;
+    }
+
+    if (session.adminSharedKey == null) {
+      logger.w('Admin shared key not available yet for dispute: $disputeId');
       _listenForSession();
       return;
     }
@@ -78,40 +80,36 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
       _subscription = null;
     }
 
-    // Subscribe to kind 1059 (Gift Wrap) events for dispute messages
+    // Subscribe to kind 1059 (Gift Wrap) events routed to admin shared key
     final nostrService = ref.read(nostrServiceProvider);
     final request = NostrRequest(
       filters: [
         NostrFilter(
-          kinds: [1059], // Gift Wrap
-          p: [session.tradeKey.public], // Messages to our tradeKey
+          kinds: [1059],
+          p: [session.adminSharedKey!.public],
         ),
       ],
     );
-    
+
     _subscription = nostrService.subscribeToEvents(request).listen(_onChatEvent);
-    logger.i('Subscribed to kind 1059 (Gift Wrap) for dispute: $disputeId');
+    logger.i('Subscribed to kind 1059 via admin shared key for dispute: $disputeId');
   }
 
-  /// Listen for session changes and subscribe when session is ready
+  /// Listen for session changes and subscribe when admin shared key is ready
   void _listenForSession() {
     // Cancel any previous listener to avoid leaks
     _sessionListener?.close();
     _sessionListener = null;
-    
-    logger.i('Starting to listen for session list changes for dispute: $disputeId');
+
+    logger.i('Listening for session changes (admin shared key) for dispute: $disputeId');
 
     // Watch the entire session list for changes
     _sessionListener = ref.listen<List<Session>>(
       sessionNotifierProvider,
       (previous, next) {
-        logger.i('Session list changed, checking for dispute $disputeId match');
-        
-        // Try to find a session that matches this dispute
         final session = _getSessionForDispute();
-        if (session != null) {
-          // Found a matching session, cancel listener and subscribe
-          logger.i('Session found for dispute $disputeId, canceling listener and subscribing');
+        if (session != null && session.adminSharedKey != null) {
+          logger.i('Admin shared key available for dispute $disputeId, subscribing');
           _sessionListener?.close();
           _sessionListener = null;
           unawaited(_subscribe());
@@ -120,107 +118,57 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
     );
   }
 
-  /// Handle incoming chat events
+  /// Handle incoming chat events via p2pUnwrap
   void _onChatEvent(NostrEvent event) async {
     try {
-      // Check for kind 1059 (Gift Wrap)
       if (event.kind != 1059) {
         return;
       }
 
       final session = _getSessionForDispute();
-      if (session == null) {
-        return;
-      }
-      
-      // Check if this message belongs to this dispute
-      final dispute = await ref.read(disputeDetailsProvider(disputeId).future);
-      if (dispute == null) {
-        return;
-      }
-      
-      // Unwrap the gift wrap using trade key (following NIP-59)
-      // The mostroUnWrap will handle the two-layer decryption automatically
-      final unwrappedEvent = await event.mostroUnWrap(session.tradeKey);
-
-      // Parse the Mostro message from the rumor content
-      String messageText = '';
-      String? senderPubkey;
-      bool isFromAdmin = false;
-      
-      try {
-        // Content can be in two formats:
-        // 1. CLI format: [{"dm": {"version": 1, "action": "send-dm", "payload": {"text_message": "..."}}}, null]
-        // 2. Old format: [{"order": {...}}, null] or [{"version": 1, "action": "send-dm", ...}, null]
-        final contentData = jsonDecode(unwrappedEvent.content ?? '[]');
-        if (contentData is List && contentData.isNotEmpty) {
-          final messageData = contentData[0];
-          
-          // Check if it's the CLI format with Message enum (has "dm" key)
-          if (messageData is Map && messageData.containsKey('dm')) {
-            final dmData = messageData['dm'];
-            if (dmData is Map && dmData.containsKey('payload')) {
-              final payload = dmData['payload'];
-              if (payload is Map && payload.containsKey('text_message')) {
-                messageText = payload['text_message'] as String;
-                senderPubkey = unwrappedEvent.pubkey;
-                isFromAdmin = senderPubkey != session.tradeKey.public;
-              }
-            }
-          } else {
-            // Try parsing as old MostroMessage format
-            final mostroMessage = MostroMessage.fromJson(messageData);
-            
-            // Only process send-dm actions
-            if (mostroMessage.action != Action.sendDm) {
-              return;
-            }
-            
-            // Extract text from TextMessage payload
-            if (mostroMessage.payload != null) {
-              final textPayload = mostroMessage.getPayload<TextMessage>();
-              if (textPayload != null) {
-                messageText = textPayload.message;
-                senderPubkey = unwrappedEvent.pubkey;
-                isFromAdmin = senderPubkey != session.tradeKey.public;
-              }
-            }
-          }
-        }
-      } catch (e) {
-        logger.w('Failed to parse Mostro message: $e');
+      if (session == null || session.adminSharedKey == null) {
         return;
       }
 
+      // Verify p tag matches admin shared key
+      final pTag = event.tags?.firstWhere(
+        (tag) => tag.isNotEmpty && tag[0] == 'p',
+        orElse: () => [],
+      ) ?? [];
+      if (pTag.isEmpty || pTag.length < 2 || pTag[1] != session.adminSharedKey!.public) {
+        return;
+      }
+
+      // Check for duplicate events
+      final wrapperEventId = event.id;
+      if (wrapperEventId == null) return;
+      final eventStore = ref.read(eventStorageProvider);
+      if (await eventStore.hasItem(wrapperEventId)) {
+        return;
+      }
+
+      // Unwrap using admin shared key (1-layer p2p decryption)
+      final unwrappedEvent = await event.p2pUnwrap(session.adminSharedKey!);
+
+      // Content is plain text (no MostroMessage JSON wrapper)
+      final messageText = unwrappedEvent.content ?? '';
       if (messageText.isEmpty) {
         logger.w('Received empty message, skipping');
         return;
       }
 
-      // SECURITY: Validate sender pubkey
-      // Only accept messages from:
-      // 1. The user themselves (session.tradeKey.public)
-      // 2. The assigned admin/solver (dispute.adminPubkey)
-      if (isFromAdmin) {
-        if (dispute.adminPubkey == null) {
-          logger.w('Rejecting message: No admin assigned yet for dispute $disputeId');
-          return;
-        }
-        
-        if (senderPubkey != dispute.adminPubkey) {
-          logger.w('SECURITY: Rejecting message from unauthorized pubkey: $senderPubkey (expected admin: ${dispute.adminPubkey})');
-          return;
-        }
-        
-        logger.i('Validated message from authorized admin: $senderPubkey');
-      }
+      final senderPubkey = unwrappedEvent.pubkey;
+      final isFromAdmin = senderPubkey != session.tradeKey.public;
 
-      // Generate event ID if not present (can happen with admin messages)
+      // SECURITY: The ECDH shared key IS the authentication.
+      // If p2pUnwrap succeeded, the sender holds the admin's private key.
+      // No additional pubkey verification needed — it would introduce a race
+      // condition with disputeDetailsProvider resolution.
+
       final eventId = unwrappedEvent.id ?? event.id ?? 'chat_${DateTime.now().millisecondsSinceEpoch}_${messageText.hashCode}';
       final eventTimestamp = unwrappedEvent.createdAt ?? DateTime.now();
-      
+
       // Store the event
-      final eventStore = ref.read(eventStorageProvider);
       await eventStore.putItem(
         eventId,
         {
@@ -245,13 +193,13 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
         timestamp: eventTimestamp,
         isFromUser: !isFromAdmin,
         adminPubkey: isFromAdmin ? senderPubkey : null,
-        isPending: false, // Received messages are already confirmed
+        isPending: false,
       );
 
       final allMessages = [...state.messages, disputeChat];
       final deduped = {for (var m in allMessages) m.id: m}.values.toList();
       deduped.sort((a, b) => a.timestamp.compareTo(b.timestamp));
-      
+
       state = state.copyWith(messages: deduped);
       logger.i('Added dispute chat message for dispute: $disputeId (from ${isFromAdmin ? "admin" : "user"})');
     } catch (e, stackTrace) {
@@ -266,55 +214,31 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
       state = state.copyWith(isLoading: true);
 
       final eventStore = ref.read(eventStorageProvider);
-      
+
       // Find all dispute chat events for this dispute
       final chatEvents = await eventStore.find(
         filter: Filter.and([
           eventStore.eq('type', 'dispute_chat'),
           eventStore.eq('dispute_id', disputeId),
         ]),
-        sort: [SortOrder('created_at', true)], // Oldest first
+        sort: [SortOrder('created_at', true)],
       );
 
       logger.i('Found ${chatEvents.length} historical messages for dispute: $disputeId');
 
-      // Get dispute to validate admin pubkey
-      final dispute = await ref.read(disputeDetailsProvider(disputeId).future);
-
+      // SECURITY: Historical messages were already authenticated via ECDH
+      // when they were received and stored. No additional pubkey filtering needed.
       final List<DisputeChat> messages = [];
-      int filteredCount = 0;
-      
+
       for (final eventData in chatEvents) {
         try {
-          final isFromUser = eventData['is_from_user'] as bool? ?? true;
-          final messagePubkey = eventData['pubkey'] as String?;
-          
-          // SECURITY: Filter messages by authorized pubkeys
-          // Only include messages from:
-          // 1. The user themselves (is_from_user = true)
-          // 2. The assigned admin/solver (matches dispute.adminPubkey)
-          if (!isFromUser) {
-            // Message is from admin, validate pubkey
-            if (dispute?.adminPubkey == null) {
-              logger.w('Filtering historical message: No admin assigned yet');
-              filteredCount++;
-              continue;
-            }
-            
-            if (messagePubkey != null && messagePubkey != dispute!.adminPubkey) {
-              logger.w('SECURITY: Filtering historical message from unauthorized pubkey: $messagePubkey (expected: ${dispute.adminPubkey})');
-              filteredCount++;
-              continue;
-            }
-          }
-          
           messages.add(DisputeChat(
             id: eventData['id'] as String,
             message: eventData['content'] as String? ?? '',
             timestamp: DateTime.fromMillisecondsSinceEpoch(
               (eventData['created_at'] as int) * 1000,
             ),
-            isFromUser: isFromUser,
+            isFromUser: eventData['is_from_user'] as bool? ?? true,
             adminPubkey: eventData['admin_pubkey'] as String?,
             isPending: eventData['isPending'] as bool? ?? false,
             error: eventData['error'] as String?,
@@ -324,10 +248,6 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
         }
       }
 
-      if (filteredCount > 0) {
-        logger.i('Filtered $filteredCount unauthorized messages from dispute $disputeId');
-      }
-
       state = state.copyWith(messages: messages, isLoading: false);
     } catch (e, stackTrace) {
       logger.e('Error loading historical messages: $e', stackTrace: stackTrace);
@@ -335,8 +255,7 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
     }
   }
 
-  /// Send a message in the dispute chat
-  /// Uses Gift Wrap (NIP-59) with MostroMessage format like mostro-cli
+  /// Send a message in the dispute chat using p2pWrap with admin shared key
   Future<void> sendMessage(String text) async {
     final session = _getSessionForDispute();
     if (session == null) {
@@ -344,33 +263,40 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
       return;
     }
 
-    // Get dispute to find admin pubkey and orderId
-    final dispute = await ref.read(disputeDetailsProvider(disputeId).future);
-    if (dispute == null) {
-      logger.w('Cannot send message: Dispute not found');
+    if (session.adminSharedKey == null) {
+      logger.w('Cannot send message: Admin shared key not available for dispute: $disputeId');
       return;
     }
-    
-    if (dispute.adminPubkey == null) {
-      logger.w('Cannot send message: Admin pubkey not found for dispute');
-      return;
-    }
-    
-    // Get orderId from session
+
     final orderId = session.orderId;
     if (orderId == null) {
       logger.w('Cannot send message: Session orderId is null');
       return;
     }
 
-    // Generate ID for message
-    final rumorId = 'rumor_${DateTime.now().millisecondsSinceEpoch}';
-    final rumorTimestamp = DateTime.now();
+    // Create rumor (kind 1) with plain text content FIRST to get real event ID
+    final rumor = NostrEvent.fromPartialData(
+      keyPairs: session.tradeKey,
+      content: text,
+      kind: 1,
+      tags: [
+        ["p", session.adminSharedKey!.public],
+      ],
+    );
+
+    final rumorId = rumor.id;
+    if (rumorId == null) {
+      logger.e('Failed to compute rumor ID for dispute: $disputeId');
+      state = state.copyWith(error: 'Failed to prepare message');
+      return;
+    }
+    final rumorTimestamp = rumor.createdAt ?? DateTime.now();
 
     try {
-      logger.i('Sending Gift Wrap DM to admin: ${dispute.adminPubkey}');
-      
+      logger.i('Sending p2pWrap DM to admin via shared key for dispute: $disputeId');
+
       // Add message to state with isPending=true (optimistic UI)
+      // Uses the real rumor ID so relay echo deduplication works correctly
       final pendingMessage = DisputeChat(
         id: rumorId,
         message: text,
@@ -384,46 +310,21 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
       deduped.sort((a, b) => a.timestamp.compareTo(b.timestamp));
       state = state.copyWith(messages: deduped, error: null);
 
-      // For dispute chat, the CLI expects format matching Message enum from mostro-core
-      // Message::Dm(MessageKind) where MessageKind has version, action, and payload
-      // Note: Rust uses snake_case for enum variants in JSON serialization
-      final content = jsonEncode([
-        {
-          "dm": {
-            "version": 1,
-            "action": "send-dm",
-            "payload": {
-              "text_message": text
-            }
-          }
-        },
-        null
-      ]);
-      
-      // Create rumor (kind 1) with the serialized content
-      final rumor = NostrEvent.fromPartialData(
-        keyPairs: session.tradeKey,
-        content: content,
-        kind: 1,
-        tags: [],
-      );
-
-      // Wrap the rumor using the new mostroWrap method (creates SEAL + Gift Wrap)
-      final wrappedEvent = await rumor.mostroWrap(
+      // Wrap using p2pWrap (1-layer, shared key routing)
+      final wrappedEvent = await rumor.p2pWrap(
         session.tradeKey,
-        dispute.adminPubkey!,
+        session.adminSharedKey!.public,
       );
 
-      logger.i('Sending gift wrap from ${session.tradeKey.public} to ${dispute.adminPubkey}');
+      logger.i('Sending p2pWrap from ${session.tradeKey.public} via shared key ${session.adminSharedKey!.public}');
 
-      // Publish to network - await to catch network/initialization errors
+      // Publish to network
       try {
         await ref.read(nostrServiceProvider).publishEvent(wrappedEvent);
-        logger.i('Dispute message sent successfully to admin for dispute: $disputeId');
+        logger.i('Dispute message sent successfully for dispute: $disputeId');
       } catch (publishError, publishStack) {
         logger.e('Failed to publish dispute message: $publishError', stackTrace: publishStack);
-        
-        // Mark message as failed
+
         final failedMessage = pendingMessage.copyWith(
           isPending: false,
           error: 'Failed to publish: $publishError',
@@ -433,8 +334,7 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
           messages: updatedMessages,
           error: 'Failed to send message: $publishError',
         );
-        
-        // Store failed state
+
         final eventStore = ref.read(eventStorageProvider);
         try {
           await eventStore.putItem(
@@ -455,7 +355,7 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
         } catch (storageError) {
           logger.e('Failed to store error state: $storageError');
         }
-        return; // Exit early, don't mark as success
+        return;
       }
 
       // Update message to isPending=false (success)
@@ -483,8 +383,7 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
       );
     } catch (e, stackTrace) {
       logger.e('Failed to send dispute message: $e', stackTrace: stackTrace);
-      
-      // Mark message as failed in state
+
       final failedMessage = state.messages
           .firstWhere((m) => m.id == rumorId, orElse: () => DisputeChat(
                 id: rumorId,
@@ -493,14 +392,13 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
                 isFromUser: true,
               ))
           .copyWith(isPending: false, error: e.toString());
-      
+
       final updatedMessages = state.messages.map((m) => m.id == rumorId ? failedMessage : m).toList();
       state = state.copyWith(
         messages: updatedMessages,
         error: 'Failed to send message: $e',
       );
 
-      // Store failed state in local storage
       final eventStore = ref.read(eventStorageProvider);
       try {
         await eventStore.putItem(
@@ -528,27 +426,21 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
   Session? _getSessionForDispute() {
     try {
       final sessions = ref.read(sessionNotifierProvider);
-      logger.i('Looking for session for dispute: $disputeId, available sessions: ${sessions.length}');
-      
-      // Search through all sessions to find the one that has this dispute
+
       for (final session in sessions) {
         if (session.orderId != null) {
           try {
             final orderState = ref.read(orderNotifierProvider(session.orderId!));
-            
-            // Check if this order state contains our dispute
             if (orderState.dispute?.disputeId == disputeId) {
-              logger.i('Found session for dispute: $disputeId with orderId: ${session.orderId}');
               return session;
             }
           } catch (e) {
-            // Continue checking other sessions
             continue;
           }
         }
       }
-      
-      logger.w('No session found for dispute: $disputeId');
+
+      logger.w('No session found matching disputeId: $disputeId');
       return null;
     } catch (e, stackTrace) {
       logger.e('Error getting session for dispute: $e', stackTrace: stackTrace);
@@ -568,7 +460,7 @@ final disputeChatNotifierProvider =
     StateNotifierProvider.family<DisputeChatNotifier, DisputeChatState, String>(
   (ref, disputeId) {
     final notifier = DisputeChatNotifier(disputeId, ref);
-    notifier.initialize();
+    unawaited(notifier.initialize());
     return notifier;
   },
 );

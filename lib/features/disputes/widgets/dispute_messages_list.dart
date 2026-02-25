@@ -33,12 +33,16 @@ class DisputeMessagesList extends ConsumerStatefulWidget {
 
 class _DisputeMessagesListState extends ConsumerState<DisputeMessagesList> {
   late ScrollController _scrollController;
+  int _previousMessageCount = 0;
+
+  /// Threshold in pixels to consider the user "near the bottom"
+  static const _nearBottomThreshold = 150.0;
 
   @override
   void initState() {
     super.initState();
     _scrollController = widget.scrollController ?? ScrollController();
-    
+
     // Scroll to bottom on first load
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollToBottom(animate: false);
@@ -53,17 +57,27 @@ class _DisputeMessagesListState extends ConsumerState<DisputeMessagesList> {
     super.dispose();
   }
 
+  bool _isNearBottom() {
+    if (!_scrollController.hasClients) return true;
+    final position = _scrollController.position;
+    return position.maxScrollExtent - position.pixels <= _nearBottomThreshold;
+  }
+
   void _scrollToBottom({bool animate = true}) {
     if (!_scrollController.hasClients) return;
-    
-    if (animate) {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
-    } else {
-      _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+
+    try {
+      if (animate) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      } else {
+        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+      }
+    } catch (_) {
+      // Silently handle scroll errors (e.g. disposed controller)
     }
   }
 
@@ -90,6 +104,16 @@ class _DisputeMessagesListState extends ConsumerState<DisputeMessagesList> {
     }
     
     final messages = chatState.messages;
+
+    // Auto-scroll when new messages arrive and user is near the bottom
+    if (messages.length > _previousMessageCount && _previousMessageCount > 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_isNearBottom()) {
+          _scrollToBottom();
+        }
+      });
+    }
+    _previousMessageCount = messages.length;
 
     return Container(
       color: AppTheme.backgroundDark,
