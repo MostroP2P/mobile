@@ -761,6 +761,8 @@
     "disputeStatusClosed": "Closed",
     "disputeResolvedTitle": "Dispute Resolved",
     "disputeResolvedMessage": "This dispute has been resolved. The solver made a decision based on the evidence presented. Check your wallet for any refunds or payments.",
+    "disputeClosedUserCompleted": "Dispute closed — the order was successfully completed by the parties.",
+    "disputeClosedCooperativeCancel": "Dispute closed — the order was cooperatively canceled by the parties.",
     "disputeInProgress": "This dispute is currently in progress. A solver is reviewing your case.",
     "disputeSellerRefunded": "This dispute has been resolved with the seller being refunded.",
     "disputeUnknownStatus": "The status of this dispute is unknown.",

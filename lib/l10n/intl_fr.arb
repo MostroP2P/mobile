@@ -761,6 +761,8 @@
     "disputeStatusClosed": "Fermé",
     "disputeResolvedTitle": "Différend résolu",
     "disputeResolvedMessage": "Ce différend a été résolu. Le résolveur a pris une décision basée sur les preuves présentées. Vérifiez votre portefeuille pour tout remboursement ou paiement.",
+    "disputeClosedUserCompleted": "Différend clos — la commande a été complétée avec succès par les parties.",
+    "disputeClosedCooperativeCancel": "Différend clos — la commande a été annulée de manière coopérative par les parties.",
     "disputeInProgress": "Ce différend est actuellement en cours. Un résolveur examine votre cas.",
     "disputeSellerRefunded": "Ce différend a été résolu avec remboursement du vendeur.",
     "disputeUnknownStatus": "Le statut de ce différend est inconnu.",

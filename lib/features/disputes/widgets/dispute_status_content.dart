@@ -55,6 +55,12 @@ class DisputeStatusContent extends ConsumerWidget {
         } else {
           message = S.of(context)!.disputeAdminSettledMessage;
         }
+      } else if (dispute.action == 'user-completed') {
+        // Order was completed by the users themselves (seller released sats)
+        message = S.of(context)!.disputeClosedUserCompleted;
+      } else if (dispute.action == 'cooperative-cancel') {
+        // Order was cooperatively canceled by the parties
+        message = S.of(context)!.disputeClosedCooperativeCancel;
       } else {
         // Fallback for generic resolved status without specific action
         message = S.of(context)!.disputeResolvedMessage;
