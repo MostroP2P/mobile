@@ -467,7 +467,11 @@ class RestoreService {
       case Status.fiatSent:
         return Action.fiatSentOk;
       case Status.settledHoldInvoice:
-        return Action.holdInvoicePaymentSettled;
+        // Buyer: sats payment still in progress, show intermediate state
+        // Seller: their part is done, show as success
+        return userRole == Role.buyer
+            ? Action.released
+            : Action.holdInvoicePaymentSettled;
       case Status.success:
         return Action.purchaseCompleted;
       case Status.canceled:
