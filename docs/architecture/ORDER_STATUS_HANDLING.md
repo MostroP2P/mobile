@@ -153,7 +153,7 @@ Mostro sends different actions to buyer and seller for the same event. The app d
 
 ### Seller Releases Sats — What Each Party Sees
 
-```
+```text
 Seller releases
     │
     ├── Buyer receives: Action.released
@@ -168,7 +168,7 @@ The seller's part is done when they release, so they see success right away. The
 
 ### Payment Failure Cycle (Buyer Only)
 
-```
+```text
 Action.released → settledHoldInvoice ("Paying sats")
     │
     └── LN payment fails
@@ -184,7 +184,7 @@ Action.released → settledHoldInvoice ("Paying sats")
 
 ### Buyer Takes a Sell Order
 
-```
+```text
 Buyer takes sell order
     │
     Action.takeBuy → waitingBuyerInvoice (buyer adds invoice)
@@ -202,7 +202,7 @@ Buyer takes sell order
 
 ### Seller Creates a Sell Order
 
-```
+```text
 Seller creates sell order
     │
     Action.newOrder → pending
