@@ -8,13 +8,14 @@ Currently the app has two completely different chat mechanisms:
 
 | | P2P Chat (User-User) | Dispute Chat (User-Admin) |
 |-|----------------------|--------------------------|
-| **Wrap** | `p2pWrap()` — 1 layer | `mostroWrap()` — 3 layers (Rumor→Seal→Wrap) |
-| **Key** | Shared key (ECDH) | Admin pubkey (direct) |
-| **Routing (`p` tag)** | Shared key pubkey | Trade key / Admin pubkey |
+| **Wrap** | `p2pWrap()` — 1 layer | `p2pWrap()` — 1 layer *(Phase 1)* |
+| **Key** | Shared key (ECDH) | Admin shared key (ECDH) *(Phase 1)* |
+| **Routing (`p` tag)** | Shared key pubkey | Admin shared key pubkey *(Phase 1)* |
 | **Subscription** | `SubscriptionManager.chat` | Independent subscription |
-| **Message model** | `NostrEvent` | `DisputeChat` (plain String) |
-| **Content format** | Plain text / JSON | MostroMessage JSON |
-| **Multimedia** | Images + files via Blossom | Not supported |
+| **Message model** | `NostrEvent` | `DisputeChatMessage(NostrEvent)` *(Phase 2)* |
+| **Storage** | Gift wrap (encrypted) | Gift wrap (encrypted) *(Phase 2)* |
+| **Content format** | Plain text / JSON | Plain text *(Phase 1)* |
+| **Multimedia** | Images + files via Blossom | Not supported yet |
 | **Message bubble** | `MessageBubble` (routes text/image/file) | `DisputeMessageBubble` (text only) |
 | **Input widget** | `MessageInput` (text + attachment) | `DisputeMessageInput` (text only) |
 
@@ -139,7 +140,7 @@ The admin/solver needs to implement the counterpart:
 ---
 
 ## Phase 2: Unify Message Model
-**Status:** `TODO`
+**Status:** `DONE`
 **PR scope:** Internal refactor — model and notifier changes, no visible UI change
 **Depends on:** Phase 1 completed
 
@@ -674,4 +675,4 @@ group('MediaCacheMixin')
 
 ---
 
-*Last updated: 2026-02-16*
+*Last updated: 2026-02-25*

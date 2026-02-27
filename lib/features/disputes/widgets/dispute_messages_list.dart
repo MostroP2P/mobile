@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
-import 'package:mostro_mobile/data/models/dispute_chat.dart';
 import 'package:mostro_mobile/data/models/dispute.dart';
 import 'package:mostro_mobile/features/disputes/notifiers/dispute_chat_notifier.dart';
 import 'package:mostro_mobile/features/disputes/widgets/dispute_message_bubble.dart';
@@ -141,11 +140,12 @@ class _DisputeMessagesListState extends ConsumerState<DisputeMessagesList> {
                       
                       case _ListItemType.message:
                         final message = messages[itemInfo.messageIndex!];
+                        final notifier = ref.read(
+                            disputeChatNotifierProvider(widget.disputeId).notifier);
                         return DisputeMessageBubble(
-                          message: message.message,
-                          isFromUser: message.isFromUser,
+                          message: message.content,
+                          isFromUser: notifier.isFromUser(message),
                           timestamp: message.timestamp,
-                          adminPubkey: message.adminPubkey,
                         );
                     }
                   },
@@ -159,7 +159,7 @@ class _DisputeMessagesListState extends ConsumerState<DisputeMessagesList> {
 
   /// Determine the type of item at the given index
   /// Returns a record with the item type and optional message index
-  ({_ListItemType type, int? messageIndex}) _getItemType(int index, List<DisputeChat> messages) {
+  ({_ListItemType type, int? messageIndex}) _getItemType(int index, List<DisputeChatMessage> messages) {
     if (index == 0) {
       return (type: _ListItemType.infoCard, messageIndex: null);
     }
@@ -175,7 +175,7 @@ class _DisputeMessagesListState extends ConsumerState<DisputeMessagesList> {
   }
 
   /// Build layout for when there are no messages - with scrolling support
-  Widget _buildEmptyMessagesLayout(BuildContext context, List<DisputeChat> messages) {
+  Widget _buildEmptyMessagesLayout(BuildContext context, List<DisputeChatMessage> messages) {
     final isResolvedStatus = _isResolvedStatus(widget.status);
     
     return LayoutBuilder(
@@ -254,7 +254,7 @@ class _DisputeMessagesListState extends ConsumerState<DisputeMessagesList> {
     );
   }
 
-  Widget _buildAdminAssignmentNotification(BuildContext context, List<DisputeChat> messages) {
+  Widget _buildAdminAssignmentNotification(BuildContext context, List<DisputeChatMessage> messages) {
     // Only show admin assignment notification for 'in-progress' status
     // AND only when there are no messages yet
     // Don't show for 'initiated' (no admin yet) or 'resolved' (dispute finished)
@@ -331,7 +331,7 @@ class _DisputeMessagesListState extends ConsumerState<DisputeMessagesList> {
   }
 
   /// Get the total item count for ListView (info card + messages + chat closed message if needed)
-  int _getItemCount(List<DisputeChat> messages) {
+  int _getItemCount(List<DisputeChatMessage> messages) {
     int count = 1; // Always include info card
     count += messages.length; // Add messages
     
