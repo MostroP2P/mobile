@@ -41,7 +41,13 @@ class MostroMessageDetail extends ConsumerWidget {
                   text: formatTextWithBoldUsernames(actionText, context),
                 ),
                 const SizedBox(height: 16),
-                Text('${orderState.status} - ${orderState.action}'),
+                Text(
+                  _getLocalizedStatus(context, orderState.status),
+                  style: TextStyle(
+                    color: Colors.grey[400],
+                    fontSize: 12,
+                  ),
+                ),
               ],
             ),
           ),
@@ -267,6 +273,43 @@ class MostroMessageDetail extends ConsumerWidget {
         return S.of(context)!.pendingOrderExists;
       default:
         return '${tradeState.status.toString()} - ${tradeState.action}';
+    }
+  }
+
+  String _getLocalizedStatus(BuildContext context, Status status) {
+    switch (status) {
+      case Status.active:
+        return S.of(context)!.statusDetailActive;
+      case Status.pending:
+        return S.of(context)!.statusDetailPending;
+      case Status.waitingPayment:
+        return S.of(context)!.statusDetailWaitingPayment;
+      case Status.waitingBuyerInvoice:
+        return S.of(context)!.statusDetailWaitingInvoice;
+      case Status.paymentFailed:
+        return S.of(context)!.statusDetailPaymentFailed;
+      case Status.fiatSent:
+        return S.of(context)!.statusDetailFiatSent;
+      case Status.canceled:
+        return S.of(context)!.statusDetailCanceled;
+      case Status.cooperativelyCanceled:
+        return S.of(context)!.statusDetailCooperativelyCanceled;
+      case Status.canceledByAdmin:
+        return S.of(context)!.statusDetailCanceledByAdmin;
+      case Status.settledByAdmin:
+        return S.of(context)!.statusDetailSettled;
+      case Status.settledHoldInvoice:
+        return S.of(context)!.statusDetailSettledHoldInvoice;
+      case Status.completedByAdmin:
+        return S.of(context)!.statusDetailCompleted;
+      case Status.dispute:
+        return S.of(context)!.statusDetailDispute;
+      case Status.expired:
+        return S.of(context)!.statusDetailExpired;
+      case Status.success:
+        return S.of(context)!.statusDetailSuccess;
+      default:
+        return status.toString();
     }
   }
 

@@ -85,14 +85,19 @@ class TradeInformationTab extends StatelessWidget {
         backgroundColor =
             AppTheme.statusInactiveBackground.withValues(alpha: 0.3);
         textColor = AppTheme.statusInactiveText;
-        label = S.of(context)!.cancel;
+        label = S.of(context)!.canceledStatus;
         break;
       case Status.settledByAdmin:
-      case Status.settledHoldInvoice:
         backgroundColor =
             AppTheme.statusSettledBackground.withValues(alpha: 0.3);
         textColor = AppTheme.statusSettledText;
         label = S.of(context)!.settled;
+        break;
+      case Status.settledHoldInvoice:
+        backgroundColor =
+            AppTheme.statusPendingBackground.withValues(alpha: 0.3);
+        textColor = AppTheme.statusPendingText;
+        label = S.of(context)!.statusSettledHoldInvoice;
         break;
       case Status.completedByAdmin:
         backgroundColor =
