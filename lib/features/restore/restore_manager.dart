@@ -587,8 +587,7 @@ class RestoreService {
                 .getSessionByOrderId(orderDetail.id);
 
             final userInitiated = restoredDispute.initiator != null && session?.role != null
-                ? (session!.role == Role.buyer && restoredDispute.initiator == 'buyer') ||
-                  (session.role == Role.seller && restoredDispute.initiator == 'seller')
+                ? session!.role!.initiatorValue == restoredDispute.initiator
                 : false;
 
             action = userInitiated
