@@ -204,7 +204,8 @@ class OrderState {
     } else if (updatedDispute != null &&
         !const ['resolved', 'seller-refunded', 'closed']
             .contains(updatedDispute.status?.toLowerCase()) &&
-        newStatus == Status.canceled) {
+        newStatus == Status.canceled &&
+        message.action == Action.cooperativeCancelAccepted) {
       updatedDispute = updatedDispute.copyWith(
         status: 'closed',
         action: 'cooperative-cancel',
