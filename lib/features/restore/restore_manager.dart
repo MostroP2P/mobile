@@ -400,47 +400,6 @@ class RestoreService {
     }
   }
 
-  /// Determines if the user initiated the dispute with double verification
-  ///
-  /// Security checks:
-  /// 1. Verify session belongs to this order (compare pubkeys based on role)
-  /// 2. Compare trade_index to determine who initiated the dispute
-  ///
-  /// The dispute's trade_index indicates which party initiated it.
-  /// If it matches the user's session trade_index, the user initiated the dispute.
-  bool _determineIfUserInitiatedDispute({
-    required RestoredDispute restoredDispute,
-    required Session session,
-    required Order order,
-  }) {
-    // Security verification: ensure session's trade pubkey matches order's pubkey for the role
-    final sessionPubkey = session.tradeKey.public;
-    final sessionRole = session.role;
-
-    bool sessionMatchesOrder = false;
-    if (sessionRole == Role.buyer && order.buyerTradePubkey == sessionPubkey) {
-      sessionMatchesOrder = true;
-    } else if (sessionRole == Role.seller &&
-        order.sellerTradePubkey == sessionPubkey) {
-      sessionMatchesOrder = true;
-    }
-
-    if (!sessionMatchesOrder) {
-      logger.w('Restore: session pubkey mismatch for order ${order.id} - '
-          'session role: $sessionRole, session pubkey: $sessionPubkey, '
-          'buyer pubkey: ${order.buyerTradePubkey}, seller pubkey: ${order.sellerTradePubkey}');
-      // Default to peer-initiated if we can't verify session belongs to order
-      return false;
-    }
-
-    // Compare trade indexes: if dispute trade_index matches user's session trade_index,
-    // then the user initiated the dispute
-    final userInitiated = restoredDispute.tradeIndex == session.keyIndex;
-
-    //TODO: Improve dispute initiation detection if protocol changes in future
-    return userInitiated;
-  }
-
   /// Maps Status to the appropriate Action for restored orders
   Action _getActionFromStatus(Status status, Role? userRole) {
     switch (status) {
@@ -631,24 +590,13 @@ class RestoreService {
                 .read(sessionNotifierProvider.notifier)
                 .getSessionByOrderId(orderDetail.id);
 
-            // We need the session to compare trade indexes
-            bool userInitiated = false;
-            if (session == null) {
-              logger.w(
-                  'Restore: no session found for disputed order ${orderDetail.id}, defaulting to peer-initiated');
-              action = Action.disputeInitiatedByPeer;
-            } else {
-              // Determine if user initiated with double verification TODO : improve if protocol changes
-              userInitiated = _determineIfUserInitiatedDispute(
-                restoredDispute: restoredDispute,
-                session: session,
-                order: order,
-              );
+            final userInitiated = restoredDispute.initiator != null && session?.role != null
+                ? session!.role!.initiatorValue == restoredDispute.initiator
+                : false;
 
-              action = userInitiated
-                  ? Action.disputeInitiatedByYou
-                  : Action.disputeInitiatedByPeer;
-            }
+            action = userInitiated
+                ? Action.disputeInitiatedByYou
+                : Action.disputeInitiatedByPeer;
 
             // Create Dispute object
             dispute = Dispute(
