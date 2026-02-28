@@ -136,6 +136,24 @@ This is a pending state. Once the other party accepts, the status changes to `ca
 | `adminSettle` | `settledByAdmin` | Admin resolves dispute by releasing sats to the user |
 | `adminSettled` | `settledByAdmin` | Admin settlement confirmation |
 
+### Dispute Auto-Close on Terminal State
+
+When an order with an active dispute reaches a terminal state through user action (not admin), the dispute is automatically closed. This is handled in `OrderState.updateWith()` after the admin dispute handling block.
+
+| Order reaches | `dispute.status` | `dispute.action` | Trigger |
+|---|---|---|---|
+| `success` | `closed` | `user-completed` | Seller receives `holdInvoicePaymentSettled` |
+| `settledHoldInvoice` | `closed` | `user-completed` | Buyer receives `released` |
+| `canceled` | `closed` | `cooperative-cancel` | Both receive `cooperativeCancelAccepted` |
+
+The dispute status `closed` is distinct from `resolved` (admin settled) and `seller-refunded` (admin canceled). The UI chain handles it automatically:
+
+- `DisputeChatScreen`: input disappears (only rendered for `in-progress`)
+- `DisputeMessagesList`: shows "Chat closed" message with lock icon
+- `DisputeStatusBadge`: gray "Closed" badge
+- `DisputeStatusContent`: role-specific resolution message
+- Dispute list description: differentiates by `dispute.action`
+
 ### Informational Actions (No Status Change)
 
 These actions preserve the current status:
@@ -260,7 +278,7 @@ The status chips in the trades list use short labels for compact display:
 | `paymentFailed` | Payment Failed | Gray |
 | `fiatSent` | Fiat-sent | Green |
 | `canceled` | Cancel | Gray |
-| `cooperativelyCanceled` | Cancel | Gray |
+| `cooperativelyCanceled` | Canceling | Orange |
 | `canceledByAdmin` | Cancel | Gray |
 | `settledByAdmin` | Settled | Green |
 | `settledHoldInvoice` | Paying sats | Yellow |
@@ -307,6 +325,17 @@ The seller sees `success` immediately because they receive `holdInvoicePaymentSe
 
 When a Lightning payment fails, the buyer receives `paymentFailed` followed by `addInvoice` to provide a new invoice. Without preservation, `addInvoice` would change the status to `waitingBuyerInvoice`, losing the payment failure context. By checking the current status, the app keeps `paymentFailed` visible so the UI can show an appropriate message explaining why a new invoice is needed.
 
-### Why Cancellation Types Share the Same Chip Label
+### Why `cooperativelyCanceled` Has a Distinct Chip
 
-In the My Trades list, all cancellation types (`canceled`, `cooperativelyCanceled`, `canceledByAdmin`) display the same short label ("Cancel") because the chip space is limited and the distinction is not critical at a glance. The differentiation is shown in the Order Details screen where there is more space for descriptive text, and in the action text above which provides full context about what happened.
+In the My Trades list, `cooperativelyCanceled` shows "Canceling" in orange instead of "Cancel" in gray. This is because `cooperativelyCanceled` is a pending state — one party initiated the cancellation but the other has not accepted yet. Showing "Cancel" was misleading since the order was not actually canceled. The orange color matches other waiting states (`waitingPayment`, `waitingBuyerInvoice`) to signal that user action is still required. The final `canceled` status (from `cooperativeCancelAccepted`) shows the gray "Cancel" chip.
+
+### Why Disputes Auto-Close on Terminal State Instead of Subscribing to Kind 38386
+
+Mostro publishes updated dispute events (kind 38386) when a dispute is resolved, but the mobile app does not subscribe to that event type. Instead, the app infers dispute closure from order terminal state. This approach was chosen because:
+
+1. **No protocol expansion** — no new subscriptions or message types needed
+2. **No backend changes** — Mostro already handles everything correctly on its side
+3. **Data already available** — `OrderState` holds both the order status and the dispute object in `updateWith()`
+4. **Simple logic** — "order finished = dispute finished"
+
+The `dispute.action` field (`user-completed` vs `cooperative-cancel`) distinguishes the closure reason, following the same pattern used for admin resolutions (`admin-settled` vs `admin-canceled`). This allows the UI to show different messages in both the dispute list and the dispute detail screen without needing the kind 38386 event data.
