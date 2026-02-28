@@ -229,6 +229,7 @@
     "ok": "OK",
     "cancel": "Cancel",
     "canceledStatus": "Canceled",
+    "cancelingStatus": "Canceling",
     "cooperativelyCanceledStatus": "Cooperative cancellation",
     "canceledByAdminStatus": "Order canceled by an administrator",
     "submit": "Submit",

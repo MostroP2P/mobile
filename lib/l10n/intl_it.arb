@@ -228,6 +228,7 @@
     "ok": "OK",
     "cancel": "Annulla",
     "canceledStatus": "Annullato",
+    "cancelingStatus": "Annullamento",
     "cooperativelyCanceledStatus": "Cancellazione cooperativa",
     "canceledByAdminStatus": "Ordine annullato da un amministratore",
     "submit": "Invia",
