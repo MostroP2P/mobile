@@ -278,7 +278,7 @@ The status chips in the trades list use short labels for compact display:
 | `paymentFailed` | Payment Failed | Gray |
 | `fiatSent` | Fiat-sent | Green |
 | `canceled` | Cancel | Gray |
-| `cooperativelyCanceled` | Cancel | Gray |
+| `cooperativelyCanceled` | Canceling | Orange |
 | `canceledByAdmin` | Cancel | Gray |
 | `settledByAdmin` | Settled | Green |
 | `settledHoldInvoice` | Paying sats | Yellow |
@@ -325,9 +325,9 @@ The seller sees `success` immediately because they receive `holdInvoicePaymentSe
 
 When a Lightning payment fails, the buyer receives `paymentFailed` followed by `addInvoice` to provide a new invoice. Without preservation, `addInvoice` would change the status to `waitingBuyerInvoice`, losing the payment failure context. By checking the current status, the app keeps `paymentFailed` visible so the UI can show an appropriate message explaining why a new invoice is needed.
 
-### Why Cancellation Types Share the Same Chip Label
+### Why `cooperativelyCanceled` Has a Distinct Chip
 
-In the My Trades list, all cancellation types (`canceled`, `cooperativelyCanceled`, `canceledByAdmin`) display the same short label ("Cancel") because the chip space is limited and the distinction is not critical at a glance. The differentiation is shown in the Order Details screen where there is more space for descriptive text, and in the action text above which provides full context about what happened.
+In the My Trades list, `cooperativelyCanceled` shows "Canceling" in orange instead of "Cancel" in gray. This is because `cooperativelyCanceled` is a pending state — one party initiated the cancellation but the other has not accepted yet. Showing "Cancel" was misleading since the order was not actually canceled. The orange color matches other waiting states (`waitingPayment`, `waitingBuyerInvoice`) to signal that user action is still required. The final `canceled` status (from `cooperativeCancelAccepted`) shows the gray "Cancel" chip.
 
 ### Why Disputes Auto-Close on Terminal State Instead of Subscribing to Kind 38386
 
