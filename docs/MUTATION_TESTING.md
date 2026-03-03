@@ -21,9 +21,9 @@ El mutation testing es una técnica para evaluar la **calidad de tu suite de tes
 
 ### Mutation Score
 
-```
+```text
 Score = (Mutantes kill / Total mutantes) × 100
-```
+```bash
 
 | Score | Calificación | Significado |
 |-------|--------------|-------------|
@@ -66,13 +66,13 @@ Agrega a `pubspec.yaml` en `dev_dependencies`:
 dev_dependencies:
   mutation_test: ^1.8.0
   # ... resto de dev_dependencies
-```
+```bash
 
 Luego ejecuta:
 
 ```bash
 flutter pub get
-```
+```bash
 
 #### 2. Create configuration file
 
@@ -116,17 +116,17 @@ output:
   - console
 
 report_dir: mutation-test-report
-```
+```bash
 
 #### 3. Add to .gitignore
 
 Agrega a `.gitignore`:
 
-```
+```text
 # Mutation testing
 mutation-test-report/
 *.mutation-test-cache
-```
+```bash
 
 ### Fase 2: Running localmente
 
@@ -134,7 +134,7 @@ mutation-test-report/
 
 ```bash
 dart run mutation_test mutation_test.yaml
-```
+```bash
 
 Esto:
 - Analiza todos los archivos en `lib/`
@@ -146,20 +146,20 @@ Esto:
 
 ```bash
 dart run mutation_test lib/services/key_derivator.dart
-```
+```bash
 
 #### Incremental (solo cambios desde último commit)
 
 ```bash
 dart run mutation_test $(git diff --name-only HEAD~1 -- 'lib/**/*.dart' | grep -v '_test.dart$' | grep -v '.g.dart$' | tr '\n' ' ')
-```
+```bash
 
 #### Con coverage data (más rápido — salta líneas sin cobertura)
 
 ```bash
 flutter test --coverage
 dart run mutation_test mutation_test.yaml --coverage coverage/lcov.info
-```
+```bash
 
 ### Fase 3: Interpretar resultados
 
@@ -169,7 +169,7 @@ Ejecuta `dart run mutation_test mutation_test.yaml` y abre:
 
 ```bash
 open mutation-test-report/index.html
-```
+```bash
 
 El reporte muestra:
 
@@ -179,7 +179,7 @@ El reporte muestra:
 
 #### Ejemplo de output
 
-```
+```text
 Found 45 mutations in 5 source files!
 
 lib/services/key_derivator.dart: 12 mutations
@@ -194,7 +194,7 @@ Results:
   Killed: 40 (88.9%)
   Survived: 5 (11.1%)
   Quality: B - Good
-```
+```bash
 
 ### Fase 4: CI Integration
 
@@ -202,7 +202,7 @@ Results:
 
 ```bash
 cp docs/ci/mutation-testing.yaml .github/workflows/
-```
+```bash
 
 #### Commit and push
 
@@ -216,7 +216,7 @@ git commit -m "ci: add mutation testing workflow
   * Incremental test on PRs
   * Non-blocking initially"
 git push origin feat/mutation-testing
-```
+```bash
 
 #### Workflow details
 
@@ -233,7 +233,7 @@ Para forzar un mutation score mínimo, edita `mutation_test.yaml`:
 threshold:
   failure: 60  # Start conservative, increase gradually
   rating: B
-```
+```bash
 
 ### Fase 5: Gradual Improvement
 
@@ -241,7 +241,7 @@ threshold:
 
 ```bash
 dart run mutation_test mutation_test.yaml
-```
+```bash
 
 Anota el mutation score actual.
 
@@ -251,7 +251,7 @@ Anota el mutation score actual.
 threshold:
   failure: [current_score]  # Por ejemplo: 50
   rating: C
-```
+```bash
 
 #### 3. Fix surviving mutants (prioridad por areas críticas)
 
@@ -274,13 +274,13 @@ threshold:
 
 Cada sprint, aumenta el threshold en 5%:
 
-```
+```bash
 Sprint 1: 50%
 Sprint 2: 55%
 Sprint 3: 60%
 ...
 Target: 80% para módulos críticos
-```
+```bash
 
 ## Tips para mejores resultados
 
@@ -292,7 +292,7 @@ test('creates order', () {
   final order = Order(...);
   expect(order, isNotNull);  // Only checks not null
 });
-```
+```bash
 
 **Good:**
 ```dart
@@ -306,7 +306,7 @@ test('creates order with correct fields', () {
   expect(order.amount, equals(1000));
   expect(order.status, equals(OrderStatus.waiting));
 });
-```
+```bash
 
 ### 2. Test boundary conditions
 
@@ -315,7 +315,7 @@ test('creates order with correct fields', () {
 test('validates amount', () {
   expect(() => Order(amount: 100), returnsNormally);
 });
-```
+```bash
 
 **Good:**
 ```dart
@@ -330,7 +330,7 @@ test('validates amount - negative', () {
 test('validates amount - positive', () {
   expect(() => Order(amount: 1), returnsNormally);
 });
-```
+```bash
 
 ### 3. Test error paths
 
@@ -345,7 +345,7 @@ test('handles network error', () async {
   expect(result, isError);
   expect(result.error, isA<NetworkError>());
 });
-```
+```bash
 
 ### 4. Test state transitions
 
@@ -363,7 +363,7 @@ test('transitions from loading to success', () {
   expect(find.text('Success'), findsOneWidget);
   expect(find.text('Loading'), findsNothing);
 });
-```
+```bash
 
 ## Troubleshooting
 
