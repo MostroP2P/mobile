@@ -143,9 +143,8 @@ class _DisputeMessagesListState extends ConsumerState<DisputeMessagesList> {
                         final notifier = ref.read(
                             disputeChatNotifierProvider(widget.disputeId).notifier);
                         return DisputeMessageBubble(
-                          message: message.content,
+                          message: message,
                           isFromUser: notifier.isFromUser(message),
-                          timestamp: message.timestamp,
                         );
                     }
                   },
