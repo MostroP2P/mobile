@@ -1,0 +1,90 @@
+name: Mutation Testing
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Weekly on Monday 6:00 UTC
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+jobs:
+  mutation-test:
+    name: Run mutation tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run unit tests first
+        run: flutter test
+
+      - name: Run mutation tests
+        # Non-blocking initially — remove continue-on-error once threshold is set
+        continue-on-error: true
+        run: dart run mutation_test mutation_test.yaml
+
+      - name: Upload mutation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-report
+          path: mutation-test-report/
+          retention-days: 30
+
+  # Incremental mutation testing for PRs (only changed files)
+  mutation-test-pr:
+    name: Mutation test (changed files)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Get changed source files
+        id: changed
+        run: |
+          FILES=$(git diff --name-only origin/${{ github.base_ref }} -- 'lib/**/*.dart' | grep -v '_test.dart$' | grep -v '.g.dart$' | grep -v '.freezed.dart$' | grep -v '.gr.dart$' | tr '\n' ' ')
+          echo "files=$FILES" >> $GITHUB_OUTPUT
+          if [ -z "$FILES" ]; then
+            echo "No source files changed, skipping mutation testing"
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "Changed files: $FILES"
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run mutation tests on changed files
+        if: steps.changed.outputs.skip == 'false'
+        continue-on-error: true
+        run: dart run mutation_test ${{ steps.changed.outputs.files }}
+
+      - name: Upload mutation report
+        if: always() && steps.changed.outputs.skip == 'false'
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-report-pr
+          path: mutation-test-report/
+          retention-days: 14
