@@ -123,6 +123,9 @@ dev_dependencies:
   build_runner: ^2.4.0
   riverpod_generator: ^2.6.5
 
+  # Mutation testing for test quality assurance
+  mutation_test: ^1.8.0
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 # The following section is specific to Flutter packages.

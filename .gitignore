@@ -83,3 +83,6 @@ lib/generated/
 
 # FVM Version Cache
 .fvm/
+
+# Mutation testing reports
+mutation-test-report/
