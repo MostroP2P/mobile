@@ -165,11 +165,15 @@ dart run mutation_test mutation_test.yaml --coverage coverage/lcov.info
 
 #### HTML Report
 
-Ejecuta `dart run mutation_test mutation_test.yaml` y abre:
+Ejecuta `dart run mutation_test mutation_test.yaml` y abre el reporte:
 
 ```bash
-open mutation-test-report/index.html
-```bash
+open mutation-test-report/mutation-test-report.html  # macOS
+start mutation-test-report/mutation-test-report.html  # Windows
+xdg-open mutation-test-report/mutation-test-report.html  # Linux
+```
+
+O simplemente abre el archivo `mutation-test-report/mutation-test-report.html` en tu navegador favorito.
 
 El reporte muestra:
 
