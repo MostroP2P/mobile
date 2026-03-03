@@ -1,8 +1,8 @@
 import 'dart:async';
+import 'dart:typed_data';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
-import 'package:mostro_mobile/data/models/dispute_chat.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
@@ -11,9 +11,38 @@ import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:sembast/sembast.dart';
 
+/// Thin wrapper around NostrEvent with UI-only pending/error state
+class DisputeChatMessage {
+  final NostrEvent event;
+  final bool isPending;
+  final String? error;
+
+  const DisputeChatMessage({
+    required this.event,
+    this.isPending = false,
+    this.error,
+  });
+
+  String get id => event.id ?? '';
+  String get content => event.content ?? '';
+  DateTime get timestamp => event.createdAt ?? DateTime.now();
+
+  DisputeChatMessage copyWith({
+    NostrEvent? event,
+    bool? isPending,
+    String? error,
+  }) {
+    return DisputeChatMessage(
+      event: event ?? this.event,
+      isPending: isPending ?? this.isPending,
+      error: error ?? this.error,
+    );
+  }
+}
+
 /// State for dispute chat messages
 class DisputeChatState {
-  final List<DisputeChat> messages;
+  final List<DisputeChatMessage> messages;
   final bool isLoading;
   final String? error;
 
@@ -24,7 +53,7 @@ class DisputeChatState {
   });
 
   DisputeChatState copyWith({
-    List<DisputeChat>? messages,
+    List<DisputeChatMessage>? messages,
     bool? isLoading,
     String? error,
   }) {
@@ -37,7 +66,8 @@ class DisputeChatState {
 }
 
 /// Notifier for dispute chat messages
-/// Uses shared key encryption (p2pWrap/p2pUnwrap) with admin via ECDH
+/// Uses shared key encryption (p2pWrap/p2pUnwrap) with admin via ECDH.
+/// Stores gift wrap events (encrypted) on disk, same pattern as P2P chat.
 class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
   final String disputeId;
   final Ref ref;
@@ -118,17 +148,14 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
     );
   }
 
-  /// Handle incoming chat events via p2pUnwrap
+  /// Handle incoming chat events via p2pUnwrap.
+  /// Stores the gift wrap event (encrypted) to disk, then unwraps for display.
   void _onChatEvent(NostrEvent event) async {
     try {
-      if (event.kind != 1059) {
-        return;
-      }
+      if (event.kind != 1059) return;
 
       final session = _getSessionForDispute();
-      if (session == null || session.adminSharedKey == null) {
-        return;
-      }
+      if (session == null || session.adminSharedKey == null) return;
 
       // Verify p tag matches admin shared key
       final pTag = event.tags?.firstWhere(
@@ -139,79 +166,69 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
         return;
       }
 
-      // Check for duplicate events
+      // Check for duplicate gift wrap events
       final wrapperEventId = event.id;
       if (wrapperEventId == null) return;
       final eventStore = ref.read(eventStorageProvider);
-      if (await eventStore.hasItem(wrapperEventId)) {
-        return;
-      }
+      if (await eventStore.hasItem(wrapperEventId)) return;
+
+      // Store the gift wrap event (encrypted) to disk — same pattern as P2P chat
+      await eventStore.putItem(
+        wrapperEventId,
+        {
+          'id': wrapperEventId,
+          'created_at': event.createdAt!.millisecondsSinceEpoch ~/ 1000,
+          'kind': event.kind,
+          'content': event.content,
+          'pubkey': event.pubkey,
+          'sig': event.sig,
+          'tags': event.tags,
+          'type': 'dispute_chat',
+          'dispute_id': disputeId,
+        },
+      );
 
       // Unwrap using admin shared key (1-layer p2p decryption)
       final unwrappedEvent = await event.p2pUnwrap(session.adminSharedKey!);
 
-      // Content is plain text (no MostroMessage JSON wrapper)
+      // SECURITY: The ECDH shared key IS the authentication.
+      // If p2pUnwrap succeeded, the sender holds the admin's private key.
+
       final messageText = unwrappedEvent.content ?? '';
       if (messageText.isEmpty) {
         logger.w('Received empty message, skipping');
         return;
       }
 
-      final senderPubkey = unwrappedEvent.pubkey;
-      final isFromAdmin = senderPubkey != session.tradeKey.public;
+      final isFromAdmin = unwrappedEvent.pubkey != session.tradeKey.public;
+      final message = DisputeChatMessage(event: unwrappedEvent);
 
-      // SECURITY: The ECDH shared key IS the authentication.
-      // If p2pUnwrap succeeded, the sender holds the admin's private key.
-      // No additional pubkey verification needed — it would introduce a race
-      // condition with disputeDetailsProvider resolution.
-
-      final eventId = unwrappedEvent.id ?? event.id ?? 'chat_${DateTime.now().millisecondsSinceEpoch}_${messageText.hashCode}';
-      final eventTimestamp = unwrappedEvent.createdAt ?? DateTime.now();
-
-      // Store the event
-      await eventStore.putItem(
-        eventId,
-        {
-          'id': eventId,
-          'content': messageText,
-          'created_at': eventTimestamp.millisecondsSinceEpoch ~/ 1000,
-          'kind': unwrappedEvent.kind,
-          'pubkey': senderPubkey,
-          'sig': unwrappedEvent.sig,
-          'tags': unwrappedEvent.tags,
-          'type': 'dispute_chat',
-          'dispute_id': disputeId,
-          'is_from_user': !isFromAdmin,
-          'isPending': false,
-        },
-      );
-
-      // Add to state
-      final disputeChat = DisputeChat(
-        id: eventId,
-        message: messageText,
-        timestamp: eventTimestamp,
-        isFromUser: !isFromAdmin,
-        adminPubkey: isFromAdmin ? senderPubkey : null,
-        isPending: false,
-      );
-
-      final allMessages = [...state.messages, disputeChat];
+      // Dedup by inner event ID (handles relay echo of sent messages)
+      final allMessages = [...state.messages, message];
       final deduped = {for (var m in allMessages) m.id: m}.values.toList();
       deduped.sort((a, b) => a.timestamp.compareTo(b.timestamp));
 
       state = state.copyWith(messages: deduped);
-      logger.i('Added dispute chat message for dispute: $disputeId (from ${isFromAdmin ? "admin" : "user"})');
+      logger.i('Added dispute chat message for dispute: $disputeId '
+          '(from ${isFromAdmin ? "admin" : "user"})');
     } catch (e, stackTrace) {
       logger.e('Error processing dispute chat event: $e', stackTrace: stackTrace);
     }
   }
 
-  /// Load historical messages from storage
+  /// Load historical messages from storage.
+  /// Reconstructs gift wrap events and unwraps them with adminSharedKey.
   Future<void> _loadHistoricalMessages() async {
     try {
       logger.i('Loading historical messages for dispute: $disputeId');
       state = state.copyWith(isLoading: true);
+
+      final session = _getSessionForDispute();
+      if (session == null || session.adminSharedKey == null) {
+        logger.i('Admin shared key not available, skipping historical load');
+        state = state.copyWith(isLoading: false);
+        return;
+      }
 
       final eventStore = ref.read(eventStorageProvider);
 
@@ -226,36 +243,59 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
 
       logger.i('Found ${chatEvents.length} historical messages for dispute: $disputeId');
 
-      // SECURITY: Historical messages were already authenticated via ECDH
-      // when they were received and stored. No additional pubkey filtering needed.
-      final List<DisputeChat> messages = [];
+      final List<DisputeChatMessage> messages = [];
 
       for (final eventData in chatEvents) {
         try {
-          messages.add(DisputeChat(
-            id: eventData['id'] as String,
-            message: eventData['content'] as String? ?? '',
-            timestamp: DateTime.fromMillisecondsSinceEpoch(
-              (eventData['created_at'] as int) * 1000,
-            ),
-            isFromUser: eventData['is_from_user'] as bool? ?? true,
-            adminPubkey: eventData['admin_pubkey'] as String?,
-            isPending: eventData['isPending'] as bool? ?? false,
-            error: eventData['error'] as String?,
-          ));
+          // Check if this is a complete gift wrap event (has all required fields)
+          final hasCompleteData = eventData.containsKey('kind') &&
+              eventData.containsKey('content') &&
+              eventData.containsKey('pubkey') &&
+              eventData.containsKey('sig') &&
+              eventData.containsKey('tags');
+
+          if (!hasCompleteData) {
+            logger.w('Event ${eventData['id']} is incomplete, skipping');
+            continue;
+          }
+
+          // Reconstruct the gift wrap NostrEvent from stored data
+          final storedEvent = NostrEventExtensions.fromMap({
+            'id': eventData['id'],
+            'created_at': eventData['created_at'],
+            'kind': eventData['kind'],
+            'content': eventData['content'],
+            'pubkey': eventData['pubkey'],
+            'sig': eventData['sig'],
+            'tags': eventData['tags'],
+          });
+
+          // Verify p tag matches our admin shared key
+          if (session.adminSharedKey!.public != storedEvent.recipient) {
+            continue;
+          }
+
+          // Decrypt and unwrap the message
+          final unwrappedEvent = await storedEvent.p2pUnwrap(session.adminSharedKey!);
+          messages.add(DisputeChatMessage(event: unwrappedEvent));
         } catch (e) {
-          logger.w('Failed to parse dispute chat message: $e');
+          logger.w('Failed to process historical dispute event ${eventData['id']}: $e');
         }
       }
 
-      state = state.copyWith(messages: messages, isLoading: false);
+      // Dedup by inner event ID
+      final deduped = {for (var m in messages) m.id: m}.values.toList();
+      deduped.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+
+      state = state.copyWith(messages: deduped, isLoading: false);
     } catch (e, stackTrace) {
       logger.e('Error loading historical messages: $e', stackTrace: stackTrace);
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
 
-  /// Send a message in the dispute chat using p2pWrap with admin shared key
+  /// Send a message in the dispute chat using p2pWrap with admin shared key.
+  /// Stores the gift wrap event (encrypted) on success.
   Future<void> sendMessage(String text) async {
     final session = _getSessionForDispute();
     if (session == null) {
@@ -265,12 +305,6 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
 
     if (session.adminSharedKey == null) {
       logger.w('Cannot send message: Admin shared key not available for dispute: $disputeId');
-      return;
-    }
-
-    final orderId = session.orderId;
-    if (orderId == null) {
-      logger.w('Cannot send message: Session orderId is null');
       return;
     }
 
@@ -290,20 +324,11 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
       state = state.copyWith(error: 'Failed to prepare message');
       return;
     }
-    final rumorTimestamp = rumor.createdAt ?? DateTime.now();
 
     try {
-      logger.i('Sending p2pWrap DM to admin via shared key for dispute: $disputeId');
-
       // Add message to state with isPending=true (optimistic UI)
       // Uses the real rumor ID so relay echo deduplication works correctly
-      final pendingMessage = DisputeChat(
-        id: rumorId,
-        message: text,
-        timestamp: rumorTimestamp,
-        isFromUser: true,
-        isPending: true,
-      );
+      final pendingMessage = DisputeChatMessage(event: rumor, isPending: true);
 
       final allMessages = [...state.messages, pendingMessage];
       final deduped = {for (var m in allMessages) m.id: m}.values.toList();
@@ -316,110 +341,84 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
         session.adminSharedKey!.public,
       );
 
-      logger.i('Sending p2pWrap from ${session.tradeKey.public} via shared key ${session.adminSharedKey!.public}');
-
       // Publish to network
       try {
         await ref.read(nostrServiceProvider).publishEvent(wrappedEvent);
         logger.i('Dispute message sent successfully for dispute: $disputeId');
       } catch (publishError, publishStack) {
-        logger.e('Failed to publish dispute message: $publishError', stackTrace: publishStack);
-
-        final failedMessage = pendingMessage.copyWith(
-          isPending: false,
-          error: 'Failed to publish: $publishError',
-        );
-        final updatedMessages = state.messages.map((m) => m.id == rumorId ? failedMessage : m).toList();
-        state = state.copyWith(
-          messages: updatedMessages,
-          error: 'Failed to send message: $publishError',
-        );
-
-        final eventStore = ref.read(eventStorageProvider);
-        try {
-          await eventStore.putItem(
-            rumorId,
-            {
-              'id': rumorId,
-              'content': text,
-              'created_at': rumorTimestamp.millisecondsSinceEpoch ~/ 1000,
-              'kind': rumor.kind,
-              'pubkey': rumor.pubkey,
-              'type': 'dispute_chat',
-              'dispute_id': disputeId,
-              'is_from_user': true,
-              'isPending': false,
-              'error': 'Failed to publish: $publishError',
-            },
-          );
-        } catch (storageError) {
-          logger.e('Failed to store error state: $storageError');
-        }
+        logger.e('Failed to publish dispute message: $publishError',
+            stackTrace: publishStack);
+        _updateMessageState(rumorId, isPending: false, error: 'Failed to publish: $publishError');
         return;
       }
 
-      // Update message to isPending=false (success)
-      final sentMessage = pendingMessage.copyWith(isPending: false);
-      final updatedMessages = state.messages.map((m) => m.id == rumorId ? sentMessage : m).toList();
-      state = state.copyWith(messages: updatedMessages);
-
-      // Store in local storage
+      // On success: store the gift wrap event (encrypted) to disk
       final eventStore = ref.read(eventStorageProvider);
       await eventStore.putItem(
-        rumorId,
+        wrappedEvent.id!,
         {
-          'id': rumorId,
-          'content': text,
-          'created_at': rumorTimestamp.millisecondsSinceEpoch ~/ 1000,
-          'kind': rumor.kind,
-          'pubkey': rumor.pubkey,
-          'sig': rumor.sig,
-          'tags': rumor.tags,
+          'id': wrappedEvent.id,
+          'created_at': wrappedEvent.createdAt!.millisecondsSinceEpoch ~/ 1000,
+          'kind': wrappedEvent.kind,
+          'content': wrappedEvent.content,
+          'pubkey': wrappedEvent.pubkey,
+          'sig': wrappedEvent.sig,
+          'tags': wrappedEvent.tags,
           'type': 'dispute_chat',
           'dispute_id': disputeId,
-          'is_from_user': true,
-          'isPending': false,
         },
       );
+
+      // Update message to isPending=false (success)
+      _updateMessageState(rumorId, isPending: false);
     } catch (e, stackTrace) {
       logger.e('Failed to send dispute message: $e', stackTrace: stackTrace);
-
-      final failedMessage = state.messages
-          .firstWhere((m) => m.id == rumorId, orElse: () => DisputeChat(
-                id: rumorId,
-                message: text,
-                timestamp: rumorTimestamp,
-                isFromUser: true,
-              ))
-          .copyWith(isPending: false, error: e.toString());
-
-      final updatedMessages = state.messages.map((m) => m.id == rumorId ? failedMessage : m).toList();
-      state = state.copyWith(
-        messages: updatedMessages,
-        error: 'Failed to send message: $e',
-      );
-
-      final eventStore = ref.read(eventStorageProvider);
-      try {
-        await eventStore.putItem(
-          rumorId,
-          {
-            'id': rumorId,
-            'content': text,
-            'created_at': rumorTimestamp.millisecondsSinceEpoch ~/ 1000,
-            'kind': 1,
-            'pubkey': session.tradeKey.public,
-            'type': 'dispute_chat',
-            'dispute_id': disputeId,
-            'is_from_user': true,
-            'isPending': false,
-            'error': e.toString(),
-          },
-        );
-      } catch (storageError) {
-        logger.e('Failed to store error state: $storageError');
-      }
+      _updateMessageState(rumorId, isPending: false, error: e.toString());
     }
+  }
+
+  /// Update a message's pending/error state in the current state.
+  /// Per-message errors stay at message level; state.error is reserved
+  /// for initialization/loading failures only.
+  void _updateMessageState(String messageId, {required bool isPending, String? error}) {
+    final updatedMessages = state.messages.map((m) {
+      if (m.id == messageId) {
+        return DisputeChatMessage(
+          event: m.event,
+          isPending: isPending,
+          error: error,
+        );
+      }
+      return m;
+    }).toList();
+    state = state.copyWith(messages: updatedMessages);
+  }
+
+  /// Get the admin shared key as raw bytes for multimedia encryption
+  Future<Uint8List> getAdminSharedKey() async {
+    final session = _getSessionForDispute();
+    if (session == null || session.adminSharedKey == null) {
+      throw Exception('Admin shared key not available for dispute: $disputeId');
+    }
+
+    final hexKey = session.adminSharedKey!.private;
+    if (hexKey.length != 64) {
+      throw Exception('Invalid admin shared key length: expected 64 hex chars, '
+          'got ${hexKey.length}');
+    }
+
+    final bytes = Uint8List(32);
+    for (int i = 0; i < 32; i++) {
+      bytes[i] = int.parse(hexKey.substring(i * 2, i * 2 + 2), radix: 16);
+    }
+    return bytes;
+  }
+
+  /// Determine if a message is from the current user
+  bool isFromUser(DisputeChatMessage message) {
+    final session = _getSessionForDispute();
+    if (session == null) return false;
+    return message.event.pubkey == session.tradeKey.public;
   }
 
   /// Get the session for this dispute
