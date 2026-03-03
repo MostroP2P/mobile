@@ -1,187 +1,107 @@
-# Mutation Testing en Mostro Mobile
+# Mutation Testing
 
-## ¿Qué es el Mutation Testing?
+## What is mutation testing?
 
-El mutation testing es una técnica para evaluar la **calidad de tu suite de tests** introduciendo pequeños cambios controlados (llamados "mutantes") en el código fuente y verificando si los tests detectan esos cambios.
+Mutation testing evaluates the **quality of your test suite** by introducing small changes (mutations) to the source code and checking whether the tests detect them.
 
-### Cómo funciona
+### How it works
 
-1. **Generar mutantes**: El tool crea versiones modificadas del código con pequeños cambios:
-   - Cambiar `==` por `!=`
-   - Cambiar `>` por `>=`
-   - Eliminar líneas de código
-   - Invertir condiciones `true`/`false`
-   - Cambiar valores literales
+1. **Generate mutants**: The tool creates modified versions of the code with small changes:
+   - Change `==` to `!=`
+   - Change `>` to `>=`
+   - Remove lines of code
+   - Flip `true`/`false` conditions
+   - Change literal values
 
-2. **Ejecutar tests**: Se corren todos los tests contra cada versión mutante
+2. **Run tests**: All tests run against each mutated version
 
-3. **Medir supervivencia**:
-   - ✅ **Mutante kill** → Test falló → ¡Bien! Los tests detectaron el "bug artificial"
-   - ❌ **Mutante survived** → Test pasó → ¡Mal! Los tests no detectaron el cambio
+3. **Measure survival**:
+   - ✅ **Killed mutant** → Test failed → Good! Tests detected the artificial bug
+   - ❌ **Survived mutant** → Test passed → Bad! Tests did not catch the change
 
-### Mutation Score
-
-```text
-Score = (Mutantes kill / Total mutantes) × 100
-```bash
-
-| Score | Calificación | Significado |
-|-------|--------------|-------------|
-| >80%  | A - Excellent | Tests excellentes, capturan la mayoría de bugs |
-| >60%  | B - Good      | Cobertura sólida con algunos huecos |
-| >40%  | C - Acceptable| Aceptable, espacio para mejora |
-| >20%  | D - Needs work| Pocos tests efectivos |
-| >0%   | E - Critical  | Tests casi inefectivos |
-
-## ¿Por qué Mutation Testing en Mostro Mobile?
-
-Mostro Mobile es una aplicación de **comercio P2P de Bitcoin con requisitos críticos de seguridad**. Los tests de alta calidad son esenciales para garantizar la seguridad de los fondos de los usuarios y la confiabilidad de la plataforma.
-
-### Beneficios
-
-1. **Verify test quality**: No solo mide cobertura (líneas ejecutadas), sino que verifica que los tests realmente validen el comportamiento
-2. **Detect weak tests**: Encuentra tests que "cubren" código pero no verifican corrección
-3. **Forzar mejores assertions**: Incentiva assertions específicas y estrictas en vez de genéricas
-4. **Find edge cases**: Mutantes supervivientes a menudo revelan condiciones de borde no testeadas
-5. **Documentation viva**: Documenta qué comportamiento está realmente testeado
-6. **CI integration**: Puede fallar builds si el mutation score baja del threshold
-
-### Áreas críticas para Mostro Mobile
-
-- **Key management**: `lib/services/key_derivator.dart` — Gestión de claves privadas
-- **NWC service**: `lib/services/nwc/` — Conexiones Lightning
-- **Order logic**: `lib/features/order/` — Lógica de trading
-- **Auth**: `lib/features/auth/` — Autenticación y sesiones
-- **Disputes**: `lib/features/disputes/` — Resolución de disputas
-
-## Implementación
-
-### Fase 1: Setup
-
-#### 1. Install mutation_test package
-
-Agrega a `pubspec.yaml` en `dev_dependencies`:
-
-```yaml
-dev_dependencies:
-  mutation_test: ^1.8.0
-  # ... resto de dev_dependencies
-```bash
-
-Luego ejecuta:
-
-```bash
-flutter pub get
-```bash
-
-#### 2. Create configuration file
-
-Crea `mutation_test.yaml` en el root del proyecto:
-
-```yaml
-name: Mostro Mobile
-
-targets:
-  lib/**
-  
-exclude:
-  - "**/*.g.dart"
-  - "**/*.freezed.dart"
-  - "**/*.gr.dart"
-  - "**/*_test.dart"
-  - "**/mock_*.dart"
-  - "**/generated/**"
-  - "**/generated_plugin_registrant.dart"
-  
-rules:
-  - equality
-  - relational
-  - unary
-  - conditional_boundary
-  - literal
-  - method_call
-  - arithmetic
-  - logical
-
-threshold:
-  failure: 0
-  rating: A
-
-test_command: flutter test
-
-timeout: 120
-
-output:
-  - html
-  - console
-
-report_dir: mutation-test-report
-```bash
-
-#### 3. Add to .gitignore
-
-Agrega a `.gitignore`:
+### Mutation score
 
 ```text
-# Mutation testing
-mutation-test-report/
-*.mutation-test-cache
-```bash
+Score = (Killed mutants / Total mutants) × 100
+```
 
-### Fase 2: Running localmente
+| Score | Rating | Meaning |
+|-------|--------|---------|
+| >80%  | A - Excellent | Tests catch most bugs |
+| >60%  | B - Good | Solid coverage with some gaps |
+| >40%  | C - Acceptable | Room for improvement |
+| >20%  | D - Needs work | Many untested code paths |
+| >0%   | E - Critical | Tests are ineffective |
 
-#### Full mutation test (todos los archivos)
+## Why mutation testing for Mostro Mobile?
+
+Mostro Mobile is a **P2P Bitcoin trading application with critical security requirements**. High-quality tests are essential for ensuring user fund safety and platform reliability.
+
+### Benefits
+
+1. **Verify test quality**: Measures whether tests actually validate behavior, not just execute code
+2. **Detect weak tests**: Finds tests that "cover" code but don't verify correctness
+3. **Force better assertions**: Encourages specific, strict assertions instead of generic ones
+4. **Find edge cases**: Surviving mutants often reveal untested boundary conditions
+5. **Living documentation**: Documents what behavior is actually tested
+6. **CI integration**: Can fail builds if mutation score drops below threshold
+
+### Critical areas for Mostro Mobile
+
+- **Key management**: `lib/services/key_derivator.dart` — Private key handling
+- **NWC service**: `lib/services/nwc/` — Lightning wallet connections
+- **Order logic**: `lib/features/order/` — Trading logic
+- **Auth**: `lib/features/auth/` — Authentication and sessions
+- **Disputes**: `lib/features/disputes/` — Dispute resolution
+
+## Tool
+
+We use [`mutation_test`](https://pub.dev/packages/mutation_test) (v1.8.0+), a Dart-native mutation testing tool that works with any test command.
+
+## Running locally
+
+### Full mutation test (all configured files)
 
 ```bash
 dart run mutation_test mutation_test.yaml
-```bash
+```
 
-Esto:
-- Analiza todos los archivos en `lib/`
-- Excluye generated files y mocks
-- Aplica todas las reglas de mutación
-- Genera reporte HTML en `mutation-test-report/`
-
-#### Single file
+### Single file
 
 ```bash
 dart run mutation_test lib/services/key_derivator.dart
-```bash
+```
 
-#### Incremental (solo cambios desde último commit)
+### Incremental (only changed files since last commit)
 
 ```bash
 dart run mutation_test $(git diff --name-only HEAD~1 -- 'lib/**/*.dart' | grep -v '_test.dart$' | grep -v '.g.dart$' | tr '\n' ' ')
-```bash
+```
 
-#### Con coverage data (más rápido — salta líneas sin cobertura)
+### With coverage data (faster — skips uncovered lines)
 
 ```bash
 flutter test --coverage
 dart run mutation_test mutation_test.yaml --coverage coverage/lcov.info
-```bash
-
-### Fase 3: Interpretar resultados
-
-#### HTML Report
-
-Ejecuta `dart run mutation_test mutation_test.yaml` y abre el reporte:
-
-```bash
-open mutation-test-report/mutation-test-report.html  # macOS
-start mutation-test-report/mutation-test-report.html  # Windows
-xdg-open mutation-test-report/mutation-test-report.html  # Linux
 ```
 
-O simplemente abre el archivo `mutation-test-report/mutation-test-report.html` en tu navegador favorito.
+## Reports
 
-El reporte muestra:
+Reports are generated in `mutation-test-report/` as HTML files. Open `mutation-test-report/mutation-test-report.html` in a browser to explore:
 
-- **Per-file mutation scores**: Score por cada archivo
-- **Surviving mutants highlighted in red**: Click para ver qué mutación sobrevivió
-- **Quality ratings**: Escala A-E
+- Per-file mutation scores
+- Surviving mutants highlighted in red (click to see the mutation)
+- Quality ratings (A-E scale)
 
-#### Ejemplo de output
+```bash
+open mutation-test-report/mutation-test-report.html    # macOS
+start mutation-test-report/mutation-test-report.html   # Windows
+xdg-open mutation-test-report/mutation-test-report.html # Linux
+```
+
+Or simply open the file in your preferred browser.
+
+### Example output
 
 ```text
 Found 45 mutations in 5 source files!
@@ -198,73 +118,69 @@ Results:
   Killed: 40 (88.9%)
   Survived: 5 (11.1%)
   Quality: B - Good
-```bash
+```
 
-### Fase 4: CI Integration
+## CI Integration
 
-#### Copy workflow file
+After copying `docs/ci/mutation-testing.yaml` to `.github/workflows/mutation-testing.yaml`,
+the GitHub Actions workflow runs:
 
-```bash
-cp docs/ci/mutation-testing.yaml .github/workflows/
-```bash
+1. **Full baseline** on pushes to `main` and weekly (Monday 6:00 UTC)
+2. **Incremental** on PRs (only changed source files)
 
-#### Commit and push
-
-```bash
-git add docs/ci/mutation-testing.yaml .github/workflows/mutation-testing.yaml
-git commit -m "ci: add mutation testing workflow
-
-- mutation-test.yaml: configuration for mutation testing
-- .github/workflows/mutation-testing.yaml: CI workflow
-  * Full test on main push and weekly
-  * Incremental test on PRs
-  * Non-blocking initially"
-git push origin feat/mutation-testing
-```bash
-
-#### Workflow details
-
-El workflow ejecuta:
-
-1. **Full baseline** en pushes a `main` y weekly (Monday 6:00 UTC)
-2. **Incremental** en PRs (solo archivos cambiados)
-
-Ambos jobs son **non-blocking** inicialmente (`continue-on-error: true`).
-
-Para forzar un mutation score mínimo, edita `mutation_test.yaml`:
+Both jobs are **non-blocking** initially (`continue-on-error: true`). To enforce a minimum mutation score, set the `failure` threshold in `mutation_test.yaml`:
 
 ```yaml
 threshold:
-  failure: 60  # Start conservative, increase gradually
-  rating: B
-```bash
+  failure: 60
+```
 
-### Fase 5: Gradual Improvement
+## Configuration
 
-#### 1. Establish baseline
+The `mutation_test.yaml` file controls:
+
+- **Which files to mutate**: `targets` and `exclude` patterns
+- **Test command**: `flutter test` (with 120s timeout)
+- **Exclusion patterns**: Generated files, mocks, annotations
+- **Quality thresholds**: Rating scale and failure threshold
+
+### Adding more source directories
+
+Edit `mutation_test.yaml` to include more targets as test coverage grows:
+
+```yaml
+targets:
+  lib/services/**
+  lib/features/order/**
+  lib/features/auth/**
+```
+
+## Gradual improvement plan
+
+### 1. Establish baseline
 
 ```bash
 dart run mutation_test mutation_test.yaml
-```bash
+```
 
-Anota el mutation score actual.
+Note the current mutation score.
 
-#### 2. Set initial threshold
+### 2. Set initial threshold
 
 ```yaml
 threshold:
-  failure: [current_score]  # Por ejemplo: 50
+  failure: 50  # Start conservative
   rating: C
-```bash
+```
 
-#### 3. Fix surviving mutants (prioridad por areas críticas)
+### 3. Fix surviving mutants (priority by critical areas)
 
 **Key management:**
 - `lib/services/key_derivator.dart`
 - `lib/data/repositories/auth_repository.dart`
 
 **NWC service:**
-- `lib/services/nwc/` (todos los archivos)
+- `lib/services/nwc/` (all files)
 
 **Order logic:**
 - `lib/features/order/models/`
@@ -274,54 +190,47 @@ threshold:
 - `lib/features/auth/notifiers/`
 - `lib/features/auth/providers/`
 
-#### 4. Increase threshold gradually
+### 4. Increase threshold gradually
 
-Cada sprint, aumenta el threshold en 5%:
+Each sprint, increase the threshold by 5%:
 
-```bash
+```text
 Sprint 1: 50%
 Sprint 2: 55%
 Sprint 3: 60%
 ...
-Target: 80% para módulos críticos
-```bash
+Target: 80% for security-critical modules
+```
 
-## Tips para mejores resultados
+## Tips for better results
 
-### 1. Tests específicos > tests genéricos
+### 1. Specific tests > generic tests
 
 **Bad:**
+
 ```dart
 test('creates order', () {
   final order = Order(...);
   expect(order, isNotNull);  // Only checks not null
 });
-```bash
+```
 
 **Good:**
+
 ```dart
 test('creates order with correct fields', () {
   final order = Order(
     id: 'abc123',
     amount: 1000,
-    // ...
   );
   expect(order.id, equals('abc123'));
   expect(order.amount, equals(1000));
   expect(order.status, equals(OrderStatus.waiting));
 });
-```bash
+```
 
 ### 2. Test boundary conditions
 
-**Bad:**
-```dart
-test('validates amount', () {
-  expect(() => Order(amount: 100), returnsNormally);
-});
-```bash
-
-**Good:**
 ```dart
 test('validates amount - zero', () {
   expect(() => Order(amount: 0), throwsException);
@@ -334,70 +243,66 @@ test('validates amount - negative', () {
 test('validates amount - positive', () {
   expect(() => Order(amount: 1), returnsNormally);
 });
-```bash
+```
 
 ### 3. Test error paths
 
-No solo tests para el happy path:
+Don't just test the happy path:
 
 ```dart
 test('handles network error', () async {
   when(mockApi.fetchOrder(any)).thenThrow(SocketException('No connection'));
-  
+
   final result = await getOrderUseCase.execute();
-  
+
   expect(result, isError);
   expect(result.error, isA<NetworkError>());
 });
-```bash
+```
 
 ### 4. Test state transitions
 
-Para widgets con estado:
+For stateful widgets:
 
 ```dart
 test('transitions from loading to success', () {
   final tester = TestBinding();
   tester.pumpWidget(MyWidget());
-  
+
   expect(find.text('Loading'), findsOneWidget);
-  
-  tester.pump(); // Simulate state change
-  
+
+  tester.pump();
+
   expect(find.text('Success'), findsOneWidget);
   expect(find.text('Loading'), findsNothing);
 });
-```bash
+```
 
 ## Troubleshooting
 
 ### "No tests found" error
 
-Asegúrate de que:
-1. Tienes tests en `test/`
-2. Los archivos terminan en `_test.dart`
-3. Ejecutas `flutter test` manualmente y pasa
+Make sure:
+1. You have tests in `test/`
+2. Files end with `_test.dart`
+3. `flutter test` passes when run manually
 
 ### High execution time
 
-- Usa coverage: `dart run mutation_test --coverage coverage/lcov.info`
+- Use coverage: `dart run mutation_test --coverage coverage/lcov.info`
 - Reduce targets: `dart run mutation_test lib/services/`
-- Aumenta timeout: `timeout: 180` en mutation_test.yaml
+- Increase timeout: `timeout: 180` in mutation_test.yaml
 
 ### "Mutation score too low" in CI
 
-1. Revisa el reporte HTML para ver qué mutantes sobreviven
-2. Agrega tests para las líneas críticas
-3. Aumenta el threshold gradualmente (5% por sprint)
+1. Check the HTML report for surviving mutants
+2. Add tests for critical lines
+3. Increase the threshold gradually (5% per sprint)
 
-## Referencias
+## References
 
-- [mutation_test on pub.dev](https://pub.dev/packages/mutation_test) — Package oficial para Dart
-- [Mutation Testing on Wikipedia](https://en.wikipedia.org/wiki/Mutation_testing) — Concepts teóricos
-- [Stryker - Industry standard](https://stryker-mutator.io/) — Mutation testing en JS
-- [Issue #504](https://github.com/MostroP2P/mobile/issues/504) — Tracking issue para Mostro Mobile
-- [Choke mutation testing PR](https://github.com/grunch/choke/pull/39) — Ejemplo de implementación exitosa
-
-## Contact
-
-Para preguntas sobre mutation testing en Mostro Mobile, ping a **Mostronator** 🧌
+- [mutation_test on pub.dev](https://pub.dev/packages/mutation_test) — Official Dart package
+- [Mutation Testing on Wikipedia](https://en.wikipedia.org/wiki/Mutation_testing) — Theoretical concepts
+- [Stryker - Industry standard](https://stryker-mutator.io/) — Mutation testing for JS
+- [Issue #506](https://github.com/MostroP2P/mobile/issues/506) — Tracking issue for Mostro Mobile
+- [Choke mutation testing PR](https://github.com/grunch/choke/pull/39) — Similar implementation
