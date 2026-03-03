@@ -292,7 +292,7 @@ group('DisputeChatNotifier message model')
 
 The upload services are **already fully decoupled**:
 
-```
+```text
 EncryptedImageUploadService.uploadEncryptedImage(imageFile, sharedKey)  // Uint8List param
 EncryptedFileUploadService.uploadEncryptedFile(file, sharedKey)         // Uint8List param
 BlossomUploadHelper.uploadWithRetry(data, mimeType)                    // No key at all
@@ -337,7 +337,7 @@ DisputeMessageBubble({
   - `MessageContentType.encryptedFile` → file placeholder widget
 
 **Image placeholder:** Parse JSON to extract metadata, then show:
-```
+```text
 ┌─────────────────────────────┐
 │  📷  test.jpg               │
 │  50.0 KB · Encrypted        │
@@ -345,7 +345,7 @@ DisputeMessageBubble({
 ```
 
 **File placeholder:** Same pattern:
-```
+```text
 ┌─────────────────────────────┐
 │  📄  document.pdf           │
 │  1.2 MB · Encrypted         │
@@ -750,20 +750,26 @@ Both widgets call this helper, passing their respective `getSharedKey` and `send
 
 `_isImageFile()` and `_getMimeType()` will be duplicated between `MessageInput` and `DisputeMessageInput`. Extract to a shared utility.
 
-### 5.5 Remove dead code
+### 5.5 Add missing `mounted` checks to P2P `MessageInput`
+
+**File:** `lib/features/chat/widgets/message_input.dart`
+
+The P2P `MessageInput._selectAndUploadFile()` is missing `mounted` checks after async operations (`FilePicker.platform.pickFiles()` and `_showFileConfirmationDialog()`). The dispute version (`DisputeMessageInput`) already has them — this was caught during Phase 3 code review. Add the same two `if (!mounted) return;` checks to the P2P widget for consistency.
+
+### 5.6 Remove dead code
 
 - Remove the "dm" skip logic from `MostroService._onData()` (no longer needed after Phase 1)
 - Remove any unused imports or methods related to the old `mostroWrap`/`mostroUnWrap` dispute chat flow
 - Clean up `DisputeChat` model if it's no longer used (or keep it if still needed for other purposes)
 
-### 5.6 Verify `mostroWrap`/`mostroUnWrap` still needed
+### 5.7 Verify `mostroWrap`/`mostroUnWrap` still needed
 
 These methods are also used for regular Mostro protocol messages (user <-> Mostro daemon), not just dispute chat. Verify usage:
 - `mostroWrap`: Check if used in `MostroMessage.wrap()` or other protocol flows
 - `mostroUnWrap`: Check if used in `NostrUtils.decryptNIP59Event()` or similar
 - **Do NOT delete** if still used for non-dispute protocol messages
 
-### 5.7 Tests to create
+### 5.8 Tests to create
 
 **File:** `test/shared/utils/nostr_utils_shared_key_test.dart`
 

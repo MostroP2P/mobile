@@ -70,12 +70,15 @@ class _DisputeMessageInputState extends ConsumerState<DisputeMessageInput> {
         allowMultiple: false,
       );
 
+      if (!mounted) return;
+
       if (result != null && result.files.single.path != null) {
         final file = File(result.files.single.path!);
         final filename = result.files.single.name;
 
         // Show confirmation dialog before uploading
         final shouldUpload = await _showFileConfirmationDialog(filename);
+        if (!mounted) return;
         if (!shouldUpload) {
           return;
         }
