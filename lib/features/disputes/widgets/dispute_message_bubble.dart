@@ -90,7 +90,7 @@ class DisputeMessageBubble extends StatelessWidget {
     }
 
     final filename = metadata['filename'] as String? ?? '';
-    final originalSize = metadata['original_size'] as int? ?? 0;
+    final originalSize = (metadata['original_size'] as num?)?.toInt() ?? 0;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

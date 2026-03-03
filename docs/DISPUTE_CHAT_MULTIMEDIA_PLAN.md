@@ -756,20 +756,26 @@ Both widgets call this helper, passing their respective `getSharedKey` and `send
 
 The P2P `MessageInput._selectAndUploadFile()` is missing `mounted` checks after async operations (`FilePicker.platform.pickFiles()` and `_showFileConfirmationDialog()`). The dispute version (`DisputeMessageInput`) already has them — this was caught during Phase 3 code review. Add the same two `if (!mounted) return;` checks to the P2P widget for consistency.
 
-### 5.6 Remove dead code
+### 5.6 Localize timestamps in `DisputeMessageBubble`
+
+**File:** `lib/features/disputes/widgets/dispute_message_bubble.dart`
+
+The `_formatTime()` method uses hardcoded English strings (`"now"`, `"5m ago"`, etc.). This is preexisting from before Phase 3 — the original bubble had the same code. Replace with the `timeago` package using `timeAgoWithLocale()`, matching the pattern already used in P2P chat's `MessageBubble`. Requires passing `BuildContext` to the method.
+
+### 5.7 Remove dead code
 
 - Remove the "dm" skip logic from `MostroService._onData()` (no longer needed after Phase 1)
 - Remove any unused imports or methods related to the old `mostroWrap`/`mostroUnWrap` dispute chat flow
 - Clean up `DisputeChat` model if it's no longer used (or keep it if still needed for other purposes)
 
-### 5.7 Verify `mostroWrap`/`mostroUnWrap` still needed
+### 5.8 Verify `mostroWrap`/`mostroUnWrap` still needed
 
 These methods are also used for regular Mostro protocol messages (user <-> Mostro daemon), not just dispute chat. Verify usage:
 - `mostroWrap`: Check if used in `MostroMessage.wrap()` or other protocol flows
 - `mostroUnWrap`: Check if used in `NostrUtils.decryptNIP59Event()` or similar
 - **Do NOT delete** if still used for non-dispute protocol messages
 
-### 5.8 Tests to create
+### 5.9 Tests to create
 
 **File:** `test/shared/utils/nostr_utils_shared_key_test.dart`
 
