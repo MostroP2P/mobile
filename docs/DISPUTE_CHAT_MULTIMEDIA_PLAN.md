@@ -264,7 +264,7 @@ group('DisputeChatNotifier message model')
 ---
 
 ## Phase 3: Multimedia Sending in Dispute Chat
-**Status:** `TODO`
+**Status:** `DONE`
 **Branch:** `phase-3-dispute-multimedia-send`
 **PR scope:** UI changes — add attachment button, upload flow, and simple placeholder for sent multimedia
 **Depends on:** Phase 2 completed
