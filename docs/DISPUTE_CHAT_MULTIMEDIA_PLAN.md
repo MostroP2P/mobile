@@ -750,11 +750,14 @@ Both widgets call this helper, passing their respective `getSharedKey` and `send
 
 `_isImageFile()` and `_getMimeType()` will be duplicated between `MessageInput` and `DisputeMessageInput`. Extract to a shared utility.
 
-### 5.5 Add missing `mounted` checks to P2P `MessageInput`
+### 5.5 Align P2P `MessageInput` with dispute chat fixes
 
 **File:** `lib/features/chat/widgets/message_input.dart`
 
-The P2P `MessageInput._selectAndUploadFile()` is missing `mounted` checks after async operations (`FilePicker.platform.pickFiles()` and `_showFileConfirmationDialog()`). The dispute version (`DisputeMessageInput`) already has them — this was caught during Phase 3 code review. Add the same two `if (!mounted) return;` checks to the P2P widget for consistency.
+The P2P `MessageInput._selectAndUploadFile()` has two issues already fixed in the dispute version (`DisputeMessageInput`) during Phase 3 code review:
+
+1. **Missing `mounted` checks** after async operations (`FilePicker.platform.pickFiles()` and `_showFileConfirmationDialog()`). Add the same `if (!mounted) return;` checks.
+2. **Missing file size pre-check** before `readAsBytes()`. Add `file.length()` check against `FileValidationService.maxFileSize` before loading into memory, same as dispute chat does — prevents OOM on large files.
 
 ### 5.6 Localize timestamps in `DisputeMessageBubble`
 

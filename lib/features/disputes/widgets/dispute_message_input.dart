@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
@@ -30,9 +29,9 @@ class DisputeMessageInput extends ConsumerStatefulWidget {
 class _DisputeMessageInputState extends ConsumerState<DisputeMessageInput> {
   final TextEditingController _textController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
-  final EncryptedFileUploadService _fileUploadService =
+  static final EncryptedFileUploadService _fileUploadService =
       EncryptedFileUploadService();
-  final EncryptedImageUploadService _imageUploadService =
+  static final EncryptedImageUploadService _imageUploadService =
       EncryptedImageUploadService();
 
   bool _isUploadingFile = false;
@@ -76,6 +75,20 @@ class _DisputeMessageInputState extends ConsumerState<DisputeMessageInput> {
         final file = File(result.files.single.path!);
         final filename = result.files.single.name;
 
+        // Check file size before loading into memory
+        final fileSize = await file.length();
+        if (fileSize > FileValidationService.maxFileSize) {
+          if (!mounted) return;
+          SnackBarHelper.showTopSnackBar(
+            context,
+            S.of(context)!.errorUploadingFile(
+                'File too large: ${(fileSize / (1024 * 1024)).toStringAsFixed(1)} MB. '
+                'Maximum: ${FileValidationService.maxFileSize ~/ (1024 * 1024)} MB'),
+            backgroundColor: Colors.red,
+          );
+          return;
+        }
+
         // Show confirmation dialog before uploading
         final shouldUpload = await _showFileConfirmationDialog(filename);
         if (!mounted) return;
@@ -89,8 +102,8 @@ class _DisputeMessageInputState extends ConsumerState<DisputeMessageInput> {
             .getAdminSharedKey();
 
         // Determine if this is an image or other file type
-        final fileData = await file.readAsBytes();
-        final isImage = await _isImageFile(fileData, filename);
+        final mimeType = lookupMimeType(filename);
+        final isImage = MediaValidationService.isImageTypeSupported(mimeType ?? '');
 
         if (isImage) {
           final uploadResult = await _imageUploadService.uploadEncryptedImage(
@@ -131,23 +144,6 @@ class _DisputeMessageInputState extends ConsumerState<DisputeMessageInput> {
     await ref
         .read(disputeChatNotifierProvider(widget.disputeId).notifier)
         .sendMessage(messageJson);
-  }
-
-  Future<bool> _isImageFile(Uint8List fileData, String filename) async {
-    try {
-      final mimeType = await _getMimeType(fileData, filename);
-      return MediaValidationService.isImageTypeSupported(mimeType ?? '');
-    } catch (e) {
-      return false;
-    }
-  }
-
-  Future<String?> _getMimeType(Uint8List fileData, String filename) async {
-    final mimeFromBytes = lookupMimeType('', headerBytes: fileData);
-    if (mimeFromBytes != null) {
-      return mimeFromBytes;
-    }
-    return lookupMimeType(filename);
   }
 
   Future<bool> _showFileConfirmationDialog(String filename) async {
