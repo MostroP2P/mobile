@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
-import 'package:mostro_mobile/data/models/dispute_chat.dart';
 import 'package:mostro_mobile/data/models/dispute.dart';
 import 'package:mostro_mobile/features/disputes/notifiers/dispute_chat_notifier.dart';
 import 'package:mostro_mobile/features/disputes/widgets/dispute_message_bubble.dart';
@@ -33,12 +32,16 @@ class DisputeMessagesList extends ConsumerStatefulWidget {
 
 class _DisputeMessagesListState extends ConsumerState<DisputeMessagesList> {
   late ScrollController _scrollController;
+  int _previousMessageCount = 0;
+
+  /// Threshold in pixels to consider the user "near the bottom"
+  static const _nearBottomThreshold = 150.0;
 
   @override
   void initState() {
     super.initState();
     _scrollController = widget.scrollController ?? ScrollController();
-    
+
     // Scroll to bottom on first load
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollToBottom(animate: false);
@@ -53,17 +56,27 @@ class _DisputeMessagesListState extends ConsumerState<DisputeMessagesList> {
     super.dispose();
   }
 
+  bool _isNearBottom() {
+    if (!_scrollController.hasClients) return true;
+    final position = _scrollController.position;
+    return position.maxScrollExtent - position.pixels <= _nearBottomThreshold;
+  }
+
   void _scrollToBottom({bool animate = true}) {
     if (!_scrollController.hasClients) return;
-    
-    if (animate) {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
-    } else {
-      _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+
+    try {
+      if (animate) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      } else {
+        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+      }
+    } catch (_) {
+      // Silently handle scroll errors (e.g. disposed controller)
     }
   }
 
@@ -91,6 +104,16 @@ class _DisputeMessagesListState extends ConsumerState<DisputeMessagesList> {
     
     final messages = chatState.messages;
 
+    // Auto-scroll when new messages arrive and user is near the bottom
+    if (messages.length > _previousMessageCount && _previousMessageCount > 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_isNearBottom()) {
+          _scrollToBottom();
+        }
+      });
+    }
+    _previousMessageCount = messages.length;
+
     return Container(
       color: AppTheme.backgroundDark,
       child: messages.isEmpty
@@ -117,11 +140,12 @@ class _DisputeMessagesListState extends ConsumerState<DisputeMessagesList> {
                       
                       case _ListItemType.message:
                         final message = messages[itemInfo.messageIndex!];
+                        final notifier = ref.read(
+                            disputeChatNotifierProvider(widget.disputeId).notifier);
                         return DisputeMessageBubble(
-                          message: message.message,
-                          isFromUser: message.isFromUser,
+                          message: message.content,
+                          isFromUser: notifier.isFromUser(message),
                           timestamp: message.timestamp,
-                          adminPubkey: message.adminPubkey,
                         );
                     }
                   },
@@ -135,7 +159,7 @@ class _DisputeMessagesListState extends ConsumerState<DisputeMessagesList> {
 
   /// Determine the type of item at the given index
   /// Returns a record with the item type and optional message index
-  ({_ListItemType type, int? messageIndex}) _getItemType(int index, List<DisputeChat> messages) {
+  ({_ListItemType type, int? messageIndex}) _getItemType(int index, List<DisputeChatMessage> messages) {
     if (index == 0) {
       return (type: _ListItemType.infoCard, messageIndex: null);
     }
@@ -151,7 +175,7 @@ class _DisputeMessagesListState extends ConsumerState<DisputeMessagesList> {
   }
 
   /// Build layout for when there are no messages - with scrolling support
-  Widget _buildEmptyMessagesLayout(BuildContext context, List<DisputeChat> messages) {
+  Widget _buildEmptyMessagesLayout(BuildContext context, List<DisputeChatMessage> messages) {
     final isResolvedStatus = _isResolvedStatus(widget.status);
     
     return LayoutBuilder(
@@ -230,7 +254,7 @@ class _DisputeMessagesListState extends ConsumerState<DisputeMessagesList> {
     );
   }
 
-  Widget _buildAdminAssignmentNotification(BuildContext context, List<DisputeChat> messages) {
+  Widget _buildAdminAssignmentNotification(BuildContext context, List<DisputeChatMessage> messages) {
     // Only show admin assignment notification for 'in-progress' status
     // AND only when there are no messages yet
     // Don't show for 'initiated' (no admin yet) or 'resolved' (dispute finished)
@@ -307,7 +331,7 @@ class _DisputeMessagesListState extends ConsumerState<DisputeMessagesList> {
   }
 
   /// Get the total item count for ListView (info card + messages + chat closed message if needed)
-  int _getItemCount(List<DisputeChat> messages) {
+  int _getItemCount(List<DisputeChatMessage> messages) {
     int count = 1; // Always include info card
     count += messages.length; // Add messages
     

@@ -129,12 +129,6 @@ class MostroService {
         return;
       }
 
-      // Skip dispute chat messages (they have "dm" key and are handled by DisputeChatNotifier)
-      if (result[0] is Map && (result[0] as Map).containsKey('dm')) {
-        logger.i('Skipping dispute chat message (handled by DisputeChatNotifier)');
-        return;
-      }
-
       // Skip restore-specific payloads that arrive as historical events due to temporary subscription
       if (result[0] is Map && _isRestorePayload(result[0] as Map<String, dynamic>)) {
         return;

@@ -1,0 +1,54 @@
+name: Mostro Mobile
+
+# Run mutation tests on:
+# - All Dart files in lib/ directory
+# - Exclude generated files (.g.dart, .freezed.dart, .gr.dart)
+# - Exclude test files (_test.dart)
+# - Exclude mocks (mock_*.dart)
+targets:
+  lib/**
+  
+# Exclude patterns (Dart glob syntax)
+exclude:
+  - "**/*.g.dart"
+  - "**/*.freezed.dart"
+  - "**/*.gr.dart"
+  - "**/*_test.dart"
+  - "**/mock_*.dart"
+  - "**/generated/**"
+  - "**/generated_plugin_registrant.dart"
+  
+# Mutation rules to apply
+rules:
+  - equality              # ==, !=
+  - relational            # <, >, <=, >=
+  - unary                   # !, -, ~
+  - conditional_boundary  # if (x > 5) -> if (x >= 5)
+  - literal               # "abc" -> "xyz"
+  - method_call           # remove method calls
+  - arithmetic            # +, -, *, /, %
+  - logical               # &&, ||
+
+# Quality thresholds
+threshold:
+  # Minimum mutation score to pass (percentage)
+  failure: 0
+  # Rating scale (A: >80%, B: >60%, C: >40%, D: >20%, E: >0%)
+  rating: A
+
+# Test command to run
+test_command: flutter test
+
+# Timeout for each test run (seconds)
+timeout: 120
+
+# Coverage file to skip uncovered lines (optional)
+# coverage_file: coverage/lcov.info
+
+# Output format
+output:
+  - html
+  - console
+
+# HTML report output directory
+report_dir: mutation-test-report

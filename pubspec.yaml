@@ -105,6 +105,9 @@ dependencies:
   firebase_messaging: ^16.1.0
 
 
+dependency_overrides:
+  bip340: ^0.2.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -122,6 +125,9 @@ dev_dependencies:
   mockito: ^5.4.5
   build_runner: ^2.4.0
   riverpod_generator: ^2.6.5
+
+  # Mutation testing for test quality assurance
+  mutation_test: ^1.8.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
