@@ -69,6 +69,7 @@ The main problem is that `dart:io` does not exist on web. We need a stub that pr
 ```dart
 /// Stub for dart:io that allows web compilation.
 /// These classes never execute on web — they only satisfy the compiler.
+import 'dart:async';
 
 class Platform {
   static bool get isAndroid => false;
@@ -88,7 +89,12 @@ class WebSocket {
   }
 
   void add(dynamic data) {}
-  Stream<dynamic> listen(void Function(dynamic)? onData) => const Stream.empty();
+  StreamSubscription<dynamic> listen(
+    void Function(dynamic)? onData, {
+    Function? onError,
+    void Function()? onDone,
+    bool? cancelOnError,
+  }) => const Stream<dynamic>.empty().listen(onData);
   Future<void> close([int? code, String? reason]) async {}
 }
 
@@ -103,13 +109,29 @@ class File {
   int lengthSync() => 0;
 }
 
-Future<Directory> getTemporaryDirectory() async {
-  throw UnsupportedError('getTemporaryDirectory not available on web');
+class Directory {
+  final String path;
+  Directory(this.path);
 }
+```
+
+**Create**: `lib/shared/platform/path_provider_stub.dart`
+
+```dart
+/// Stub for path_provider that allows web compilation.
+/// These functions never execute on web — they only satisfy the compiler.
 
 class Directory {
   final String path;
   Directory(this.path);
+}
+
+Future<Directory> getTemporaryDirectory() async {
+  throw UnsupportedError('getTemporaryDirectory not available on web');
+}
+
+Future<Directory> getApplicationSupportDirectory() async {
+  throw UnsupportedError('getApplicationSupportDirectory not available on web');
 }
 ```
 
@@ -213,9 +235,11 @@ BackgroundService createBackgroundService(Settings settings) {
 
 ```dart
 /// Web stub: biometrics not available in browser.
+/// isBiometricsAvailable() returns false, so authenticateWithBiometrics()
+/// should never be called. Returns false as a safety measure.
 class BiometricsHelper {
   Future<bool> isBiometricsAvailable() async => false;
-  Future<bool> authenticateWithBiometrics() async => true; // Skip auth on web
+  Future<bool> authenticateWithBiometrics() async => false; // Reject if somehow called
 }
 ```
 
@@ -403,22 +427,24 @@ fvm flutter run -d chrome
 > **Estimated effort**: 3-5 days
 > **Outcome**: The app can connect to Nostr relays and send/receive events.
 
-### 3.1 — Verify `dart_nostr` on web
+### 3.1 — Fix `dart_nostr` for web
 
-**Investigation needed**: The `dart_nostr` package may already use `web_socket_channel` internally (which is cross-platform). If so, basic Nostr connectivity might work without changes.
+**Status**: Investigated — `dart_nostr` does NOT compile for web, but the fix is minimal.
 
-**Action**: Verify whether `dart_nostr` imports `dart:io` directly or uses an abstraction.
+**Root cause**: 3 files have unused `dart:io` imports that break web compilation. The actual WebSocket implementation already uses `web_socket_channel` (cross-platform), so networking works fine.
 
-```bash
-# Check dart_nostr dependencies
-fvm flutter pub deps | grep nostr
-# Check if it uses web_socket_channel
-```
+| File | Line | Actually uses `dart:io`? |
+|------|------|--------------------------|
+| `lib/nostr/instance/registry.dart` | 1 | No — dead import |
+| `lib/nostr/instance/relays/relays.dart` | 3 | No — dead import |
+| `lib/nostr/model/relay.dart` | 3 | No — dead import |
 
-**Scenarios**:
+**Fix**: Remove the 3 unused `import 'dart:io';` lines.
 
-- **If `dart_nostr` already supports web**: No additional work needed for main connectivity.
-- **If it does NOT support web**: We need a fork or a wrapper that uses `web_socket_channel`.
+**Options to unblock**:
+1. **Submit PR to `anasfik/nostr`** — trivial fix, likely quick merge
+2. **Temporary fork** — while waiting for upstream merge
+3. **Path dependency override** — point to a patched local copy in `pubspec_overrides.yaml`
 
 ### 3.2 — Relay validation WebSocket: abstraction
 
@@ -446,6 +472,7 @@ Future<bool> testWebSocketConnectivity(String url) async {
   try {
     final uri = Uri.parse(url);
     final channel = WebSocketChannel.connect(uri);
+    await channel.ready;
 
     const testReq = '["REQ", "test_conn", {"kinds":[1], "limit":1}]';
     channel.sink.add(testReq);
@@ -528,8 +555,8 @@ flutterfire configure --platforms=web
 
 ```html
 <!-- Before the flutter_bootstrap.js script -->
-<script src="https://www.gstatic.com/firebasejs/10.x.x/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.x.x/firebase-messaging-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.3.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.3.0/firebase-messaging-compat.js"></script>
 ```
 
 ### 4.2 — Push Notification Service: already web-safe
@@ -714,7 +741,7 @@ Uses `dart:io.File`, `path_provider`, `open_file`.
 import 'dart:typed_data';
 import 'package:web/web.dart' as web;
 
-Future<void> openFileInBrowser(Uint8List bytes, String filename, String? mimeType) async {
+Future<void> openFile(Uint8List bytes, String filename, String? mimeType) async {
   final blob = web.Blob(
     [bytes.toJS].toJS,
     web.BlobPropertyBag(type: mimeType ?? 'application/octet-stream'),
@@ -736,7 +763,7 @@ import 'dart:typed_data';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_file/open_file.dart';
 
-Future<void> openFileOnDevice(Uint8List bytes, String filename, String? mimeType) async {
+Future<void> openFile(Uint8List bytes, String filename, String? mimeType) async {
   final tempDir = await getTemporaryDirectory();
   final tempFile = File('${tempDir.path}/$filename');
   await tempFile.writeAsBytes(bytes);
@@ -749,7 +776,7 @@ Future<void> openFileOnDevice(Uint8List bytes, String filename, String? mimeType
 ```dart
 import 'dart:typed_data';
 
-Future<void> openFileOnPlatform(Uint8List bytes, String filename, String? mimeType) async {
+Future<void> openFile(Uint8List bytes, String filename, String? mimeType) async {
   throw UnsupportedError('Platform not supported');
 }
 ```
@@ -880,8 +907,8 @@ On web, push notifications use the Web Push API, not FCM directly.
 **Create**: `web/firebase-messaging-sw.js` (if using Firebase)
 
 ```javascript
-importScripts('https://www.gstatic.com/firebasejs/10.x.x/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.x.x/firebase-messaging-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/12.3.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/12.3.0/firebase-messaging-compat.js');
 
 firebase.initializeApp({
   // Config from firebase_options.dart
@@ -965,7 +992,7 @@ fvm flutter build web --release --web-renderer html
 
 ## New Files by Phase
 
-### Phase 1 (7 new files, 11 modified files)
+### Phase 1 (6 new files, 11 modified files)
 
 | Action | File |
 |--------|------|
@@ -1041,7 +1068,7 @@ fvm flutter build web --release --web-renderer html
 
 | Risk | Description | Mitigation |
 |------|-------------|------------|
-| **`dart_nostr` web support** | Not confirmed whether `dart_nostr` works on web. If it uses `dart:io` internally for WebSocket, this is a major blocker. | Investigate in Phase 3. If unsupported, evaluate fork or alternative package (`nostr_tools`, `ndk`). |
+| **`dart_nostr` web support** | Confirmed: `dart_nostr` does NOT compile for web due to 3 unused `dart:io` imports in `registry.dart`, `relays.dart`, and `relay.dart`. The actual WebSocket implementation already uses `web_socket_channel` (cross-platform), so the networking code works — only the dead imports break compilation. | Minimal fix: remove 3 unused imports. Options: (1) Submit PR to `anasfik/nostr`, (2) temporary fork, (3) local path dependency override. |
 | **Key security on web** | `flutter_secure_storage` uses `localStorage` on web, which is visible in DevTools. For a P2P trading app, this is a security risk. | Phase 2: Document limitation. Future: Implement Web Crypto API + encrypted IndexedDB. |
 | **Web performance** | Flutter web with CanvasKit can be heavy (~2MB initial load). For emerging markets with slow connections, this is a problem. | Evaluate HTML renderer. Implement lazy loading. Optimize assets. |
 
@@ -1066,7 +1093,7 @@ fvm flutter build web --release --web-renderer html
 1. **Which web renderer?** — CanvasKit (faithful to mobile) vs HTML (lighter)
 2. **What to do with key storage on web?** — localStorage acceptable for MVP, or implement Web Crypto API from the start
 3. **Firebase or native Web Push?** — Firebase gives cross-platform FCM, Web Push is simpler
-4. **Does `dart_nostr` support web?** — Potential blocker that must be investigated before Phase 3
+4. **`dart_nostr` web fix strategy** — Confirmed blocker (3 dead `dart:io` imports). Choose: upstream PR, temporary fork, or path override
 5. **PIN as biometrics alternative on web?** — UX decision
 6. **Hosting?** — GitHub Pages, Vercel, Cloudflare Pages, self-hosted
 
@@ -1074,7 +1101,7 @@ fvm flutter build web --release --web-renderer html
 
 ## Recommended Execution Order
 
-```
+```text
 Phase 1 ──→ Phase 2 ──→ Phase 3 ──→ Phase 4 ──→ Phase 5 ──→ Phase 6
  3-5 days    2-3 days    3-5 days    3-4 days    4-5 days    3-5 days
 
