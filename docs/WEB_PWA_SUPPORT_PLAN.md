@@ -603,8 +603,9 @@ Uses `dart:io.File`, `getTemporaryDirectory()`, `FilePicker`, `share_plus`.
 **Create**: `lib/services/logger_export_service_web.dart`
 
 ```dart
-import 'dart:typed_data';
 import 'dart:convert';
+import 'dart:js_interop';
+import 'dart:typed_data';
 import 'package:web/web.dart' as web;
 import 'package:mostro_mobile/services/logger_service.dart';
 
@@ -738,6 +739,7 @@ Uses `dart:io.File`, `path_provider`, `open_file`.
 **Create**: `lib/features/chat/widgets/file_operations_web.dart`
 
 ```dart
+import 'dart:js_interop';
 import 'dart:typed_data';
 import 'package:web/web.dart' as web;
 
@@ -957,21 +959,26 @@ messaging.onBackgroundMessage((message) => {
 ### 6.5 — Web build and deploy
 
 ```bash
-# Optimized web build
-fvm flutter build web --release --web-renderer canvaskit
+# Default web build (CanvasKit renderer)
+fvm flutter build web --release
 
-# Or with HTML renderer (lighter, better SEO)
-fvm flutter build web --release --web-renderer html
+# WebAssembly build (best performance, CanvasKit only)
+fvm flutter build web --release --wasm
+
+# Explicitly disable Wasm (JS-only output)
+fvm flutter build web --release --no-wasm
 
 # Output is in build/web/
 ```
 
-**Web renderer options**:
-- **CanvasKit**: Most faithful rendering to mobile, heavier (~2MB), better for complex apps
-- **HTML**: Lighter (~400KB), uses HTML/CSS/Canvas, may have visual differences
-- **auto** (default): CanvasKit on desktop, HTML on mobile browsers
+**Note**: The `--web-renderer` flag is deprecated. Renderer preference (CanvasKit vs Skwasm) is now configured via `flutter_bootstrap.js` when needed. Builds default to CanvasKit.
 
-**Recommendation for Mostro**: `canvaskit` for visual consistency with mobile.
+**Build options**:
+- **Default (no flag)**: CanvasKit via JS, most faithful rendering to mobile (~2MB), best compatibility
+- **`--wasm`**: CanvasKit via WebAssembly (Skwasm), best performance, requires cross-origin isolation headers
+- **`--no-wasm`**: Forces JS-only output, widest browser support
+
+**Recommendation for Mostro**: Default build (no flags) for initial deployment. Evaluate `--wasm` once hosting supports cross-origin isolation headers.
 
 ### 6.6 — Phase 6 Verification
 
@@ -992,11 +999,12 @@ fvm flutter build web --release --web-renderer html
 
 ## New Files by Phase
 
-### Phase 1 (6 new files, 11 modified files)
+### Phase 1 (7 new files, 11 modified files)
 
 | Action | File |
 |--------|------|
 | **Create** | `lib/shared/platform/io_stub.dart` |
+| **Create** | `lib/shared/platform/path_provider_stub.dart` |
 | **Create** | `lib/background/web_background_service.dart` |
 | **Create** | `lib/shared/utils/biometrics_helper_web.dart` |
 | **Create** | `lib/shared/utils/biometrics_helper_stub.dart` |
@@ -1085,7 +1093,7 @@ fvm flutter build web --release --web-renderer html
 | Risk | Description | Mitigation |
 |------|-------------|------------|
 | **Deep links** | On web they are simply URLs. `app_links` doesn't apply. | GoRouter already handles URL routing. Only needs app_links skip. |
-| **Biometrics** | Don't exist on web. | Return true (skip auth) or use PIN as alternative. |
+| **Biometrics** | Don't exist on web. | Return false (preserve auth); fallback to PIN or session verification on web. |
 | **Permissions** | Web has its own permissions model. | `permission_handler` no-op on web. Use browser Notification API when needed. |
 
 ### Pending Decisions
