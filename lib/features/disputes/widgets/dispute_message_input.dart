@@ -79,11 +79,11 @@ class _DisputeMessageInputState extends ConsumerState<DisputeMessageInput> {
         final fileSize = await file.length();
         if (fileSize > FileValidationService.maxFileSize) {
           if (!mounted) return;
+          final currentMb = (fileSize / (1024 * 1024)).toStringAsFixed(1);
+          final maxMb = (FileValidationService.maxFileSize ~/ (1024 * 1024)).toString();
           SnackBarHelper.showTopSnackBar(
             context,
-            S.of(context)!.errorUploadingFile(
-                'File too large: ${(fileSize / (1024 * 1024)).toStringAsFixed(1)} MB. '
-                'Maximum: ${FileValidationService.maxFileSize ~/ (1024 * 1024)} MB'),
+            S.of(context)!.fileTooLarge(currentMb, maxMb),
             backgroundColor: Colors.red,
           );
           return;

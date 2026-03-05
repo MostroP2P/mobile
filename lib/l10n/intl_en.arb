@@ -1276,6 +1276,17 @@
             }
         }
     },
+    "fileTooLarge": "File too large: {currentSize} MB. Maximum: {maxSize} MB",
+    "@fileTooLarge": {
+        "placeholders": {
+            "currentSize": {
+                "type": "String"
+            },
+            "maxSize": {
+                "type": "String"
+            }
+        }
+    },
     "@_comment_backup_reminder": "Backup reminder notification",
     "backupAccountReminder": "You must back up your account",
     "backupAccountReminderMessage": "Back up your secret words to recover your account",

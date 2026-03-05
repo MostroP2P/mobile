@@ -403,8 +403,8 @@ Minimal change — just pass the full `DisputeChatMessage` wrapper instead of ex
 **New state variables:**
 ```dart
 bool _isUploadingFile = false;
-final EncryptedImageUploadService _imageUploadService = EncryptedImageUploadService();
-final EncryptedFileUploadService _fileUploadService = EncryptedFileUploadService();
+static final EncryptedImageUploadService _imageUploadService = EncryptedImageUploadService();
+static final EncryptedFileUploadService _fileUploadService = EncryptedFileUploadService();
 ```
 
 **New UI element:** Attach button (paper clip icon) to the left of the text field:
@@ -423,7 +423,7 @@ This follows the exact same pipeline as `MessageInput._selectAndUploadFile()`:
 
 1. **File selection:** `FilePicker.platform.pickFiles()` with extensions from `FileValidationService.supportedExtensions`
 2. **Confirmation dialog:** Show filename, ask "Send this file?" with Cancel/Send buttons
-3. **MIME detection:** Use `lookupMimeType()` on bytes + extension fallback (same `_isImageFile` / `_getMimeType` helpers from P2P)
+3. **MIME detection:** Use `lookupMimeType(filename)` for extension-based detection + `MediaValidationService.isImageTypeSupported()` to classify (no byte loading needed)
 4. **Get shared key:** `await ref.read(disputeChatNotifierProvider(disputeId).notifier).getAdminSharedKey()`
 5. **Encrypt + upload:**
    - If image: `_imageUploadService.uploadEncryptedImage(imageFile: file, sharedKey: key, filename: name)`
@@ -435,27 +435,7 @@ This follows the exact same pipeline as `MessageInput._selectAndUploadFile()`:
 - P2P: `chatRoomsProvider(orderId).notifier.getSharedKey()` / `.sendMessage()`
 - Dispute: `disputeChatNotifierProvider(disputeId).notifier.getAdminSharedKey()` / `.sendMessage()`
 
-### 3.4 MIME detection helpers
-
-Copy the two helper methods from `MessageInput` into `DisputeMessageInput`:
-
-```dart
-bool _isImageFile(Uint8List bytes, String filename) {
-  final mimeType = _getMimeType(bytes, filename);
-  return mimeType != null && mimeType.startsWith('image/');
-}
-
-String? _getMimeType(Uint8List bytes, String filename) {
-  final mimeType = lookupMimeType(filename, headerBytes: bytes);
-  if (mimeType != null) return mimeType;
-  final ext = filename.split('.').last.toLowerCase();
-  // extension fallback map...
-}
-```
-
-These are pure functions with no provider coupling — safe to duplicate. Phase 5 can extract them to a shared utility.
-
-### 3.5 Confirmation dialog
+### 3.4 Confirmation dialog
 
 Same pattern as `MessageInput._showFileConfirmationDialog()`:
 
@@ -477,7 +457,7 @@ Future<bool> _showFileConfirmationDialog(String filename) async {
 
 All localization keys (`sendThisFile`, `cancel`, `send`, `errorUploadingFile`) already exist in all three languages.
 
-### 3.6 No changes to `DisputeChatNotifier`
+### 3.5 No changes to `DisputeChatNotifier`
 
 The notifier's `sendMessage(String text)` method already works for any string content — including JSON. When the user sends a file:
 1. Upload service returns `EncryptedImageUploadResult` or `EncryptedFileUploadResult`
@@ -486,7 +466,7 @@ The notifier's `sendMessage(String text)` method already works for any string co
 
 No new methods needed on the notifier for this phase.
 
-### 3.7 Localization
+### 3.6 Localization
 
 **Existing keys (no new keys needed):**
 - `sendThisFile` — "Send this file?" (confirmation dialog)
@@ -502,7 +482,7 @@ No new methods needed on the notifier for this phase.
 
 Add to all three ARB files (`intl_en.arb`, `intl_es.arb`, `intl_it.arb`).
 
-### 3.8 Tests to create
+### 3.7 Tests to create
 
 **File:** `test/features/disputes/dispute_multimedia_send_test.dart`
 
