@@ -35,7 +35,7 @@ For disputes, the "peer" is the admin. The shared key is computed when the admin
 
 Both input widgets delegate to `ChatFileUploadHelper.selectAndUploadFile()`:
 
-```
+```text
 User taps attach -> File picker -> Size check -> Confirmation dialog
 -> MIME detection -> Encrypt (ChaCha20-Poly1305) -> Upload to Blossom
 -> Send JSON metadata as chat message
