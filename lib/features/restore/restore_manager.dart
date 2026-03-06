@@ -620,31 +620,47 @@ class RestoreService {
             action = _getActionFromStatus(order.status, session?.role);
           }
 
-          // Build generic MostroMessage with Order payload
-          // IMPORTAN : we need to create new message due to synchronization with stored messages
-          final mostroMessage = MostroMessage<Order>(
-            id: orderDetail.id,
-            action: action,
-            payload: order,
-            timestamp:
-                orderDetail.createdAt ?? DateTime.now().millisecondsSinceEpoch,
-          );
-
-          // Save message to storage
-          final key =
-              '${orderDetail.id}_restore_${action.value}_${DateTime.now().millisecondsSinceEpoch}';
-          await storage.addMessage(key, mostroMessage);
-
-          // Update state using public method that calls updateWith internally
+          // Build MostroMessage with appropriate payload based on action
+          // For dispute actions, use Dispute payload; for others, use Order payload
           final notifier =
               ref.read(orderNotifierProvider(orderDetail.id).notifier);
-          notifier.updateStateFromMessage(mostroMessage);
 
-          // If dispute exists, update state with dispute object using public method
           if (dispute != null) {
-            notifier.updateDispute(dispute);
+            // Create dispute message with Dispute payload (per Mostro protocol)
+            final disputeMessage = MostroMessage<Dispute>(
+              id: orderDetail.id,
+              action: action,
+              payload: dispute,
+              timestamp:
+                  orderDetail.createdAt ?? DateTime.now().millisecondsSinceEpoch,
+            );
+
+            // Save dispute message to storage
+            final disputeKey =
+                '${orderDetail.id}_restore_${action.value}_${DateTime.now().millisecondsSinceEpoch}';
+            await storage.addMessage(disputeKey, disputeMessage);
+
+            // Update state with dispute message
+            notifier.updateStateFromMessage(disputeMessage);
             logger.i(
-                'Restore: added dispute to state for order ${orderDetail.id}');
+                'Restore: created dispute message for order ${orderDetail.id}');
+          } else {
+            // Create regular order message with Order payload
+            final mostroMessage = MostroMessage<Order>(
+              id: orderDetail.id,
+              action: action,
+              payload: order,
+              timestamp:
+                  orderDetail.createdAt ?? DateTime.now().millisecondsSinceEpoch,
+            );
+
+            // Save order message to storage
+            final key =
+                '${orderDetail.id}_restore_${action.value}_${DateTime.now().millisecondsSinceEpoch}';
+            await storage.addMessage(key, mostroMessage);
+
+            // Update state with order message
+            notifier.updateStateFromMessage(mostroMessage);
           }
         } catch (e, stack) {
           logger.e('Restore: failed to process order ${orderDetail.id}',
