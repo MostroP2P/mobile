@@ -198,9 +198,6 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
       // SECURITY: The ECDH shared key IS the authentication.
       // If p2pUnwrap succeeded, the sender holds the admin's private key.
 
-      // Process special message types (encrypted images/files)
-      await _processMessageContent(unwrappedEvent);
-
       final messageText = unwrappedEvent.content ?? '';
       if (messageText.isEmpty) {
         logger.w('Received empty message, skipping');
@@ -216,6 +213,9 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
       deduped.sort((a, b) => a.timestamp.compareTo(b.timestamp));
 
       state = state.copyWith(messages: deduped);
+
+      // Fire-and-forget: pre-download media after message is in state
+      unawaited(_processMessageContent(unwrappedEvent));
       logger.i('Added dispute chat message for dispute: $disputeId '
           '(from ${isFromAdmin ? "admin" : "user"})');
     } catch (e, stackTrace) {
@@ -284,7 +284,8 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
 
           // Decrypt and unwrap the message
           final unwrappedEvent = await storedEvent.p2pUnwrap(session.adminSharedKey!);
-          await _processMessageContent(unwrappedEvent);
+          // Fire-and-forget: pre-download media without blocking history load
+          unawaited(_processMessageContent(unwrappedEvent));
           messages.add(DisputeChatMessage(event: unwrappedEvent));
         } catch (e) {
           logger.w('Failed to process historical dispute event ${eventData['id']}: $e');
@@ -552,6 +553,10 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
   void dispose() {
     _subscription?.cancel();
     _sessionListener?.close();
+    _imageCache.clear();
+    _imageMetadata.clear();
+    _fileCache.clear();
+    _fileMetadata.clear();
     super.dispose();
   }
 }
