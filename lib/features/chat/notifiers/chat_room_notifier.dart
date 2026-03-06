@@ -508,6 +508,7 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
   void dispose() {
     _subscription?.cancel();
     _sessionListener?.close();
+    clearMediaCaches();
     logger.i('Disposed chat room notifier for orderId: $orderId');
     super.dispose();
   }
