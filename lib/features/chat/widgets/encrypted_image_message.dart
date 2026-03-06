@@ -2,34 +2,38 @@ import 'dart:typed_data';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_file/open_file.dart';
 import 'package:diacritic/diacritic.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
-import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/services/encrypted_image_upload_service.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
 
-class EncryptedImageMessage extends ConsumerStatefulWidget {
+class EncryptedImageMessage extends StatefulWidget {
   final NostrEvent message;
-  final String orderId;
   final bool isOwnMessage;
+  final Future<Uint8List> Function() getSharedKey;
+  final Uint8List? Function(String messageId) getCachedImage;
+  final EncryptedImageUploadResult? Function(String messageId) getImageMetadata;
+  final void Function(String messageId, Uint8List data, EncryptedImageUploadResult meta) cacheDecryptedImage;
 
   const EncryptedImageMessage({
     super.key,
     required this.message,
-    required this.orderId,
     required this.isOwnMessage,
+    required this.getSharedKey,
+    required this.getCachedImage,
+    required this.getImageMetadata,
+    required this.cacheDecryptedImage,
   });
 
   @override
-  ConsumerState<EncryptedImageMessage> createState() => _EncryptedImageMessageState();
+  State<EncryptedImageMessage> createState() => _EncryptedImageMessageState();
 }
 
-class _EncryptedImageMessageState extends ConsumerState<EncryptedImageMessage> {
+class _EncryptedImageMessageState extends State<EncryptedImageMessage> {
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -43,8 +47,7 @@ class _EncryptedImageMessageState extends ConsumerState<EncryptedImageMessage> {
 
   void _loadImageIfNeeded() {
     if (!mounted) return;
-    
-    final chatNotifier = ref.read(chatRoomsProvider(widget.orderId).notifier);
+
     final messageId = widget.message.id;
     if (messageId == null) {
       if (mounted) {
@@ -54,8 +57,8 @@ class _EncryptedImageMessageState extends ConsumerState<EncryptedImageMessage> {
       }
       return;
     }
-    
-    final cachedImage = chatNotifier.getCachedImage(messageId);
+
+    final cachedImage = widget.getCachedImage(messageId);
     if (cachedImage == null && !_isLoading) {
       _loadImage();
     }
@@ -63,17 +66,15 @@ class _EncryptedImageMessageState extends ConsumerState<EncryptedImageMessage> {
 
   @override
   Widget build(BuildContext context) {
-    final chatNotifier = ref.read(chatRoomsProvider(widget.orderId).notifier);
-    
     // Handle null message ID defensively
     final messageId = widget.message.id;
     if (messageId == null) {
       return _buildErrorWidget();
     }
-    
+
     // Check if image is already cached
-    final cachedImage = chatNotifier.getCachedImage(messageId);
-    final imageMetadata = chatNotifier.getImageMetadata(messageId);
+    final cachedImage = widget.getCachedImage(messageId);
+    final imageMetadata = widget.getImageMetadata(messageId);
 
     if (cachedImage != null && imageMetadata != null) {
       return _buildImageWidget(cachedImage, imageMetadata);
@@ -99,7 +100,7 @@ class _EncryptedImageMessageState extends ConsumerState<EncryptedImageMessage> {
         const spacing = 4.0;
         const padding = 8.0; // Total vertical padding
         final availableHeight = constraints.maxHeight - infoRowHeight - spacing - padding;
-        
+
         return Container(
           constraints: BoxConstraints(
             maxWidth: constraints.maxWidth.clamp(0, 280),
@@ -283,7 +284,7 @@ class _EncryptedImageMessageState extends ConsumerState<EncryptedImageMessage> {
 
   Future<void> _loadImage() async {
     if (_isLoading) return;
-    
+
     final messageId = widget.message.id;
     if (messageId == null) {
       if (mounted) {
@@ -300,8 +301,6 @@ class _EncryptedImageMessageState extends ConsumerState<EncryptedImageMessage> {
     });
 
     try {
-      final chatNotifier = ref.read(chatRoomsProvider(widget.orderId).notifier);
-      
       // Parse the message content to get image data
       final content = widget.message.content;
       if (content == null || content.trim().isEmpty) {
@@ -315,7 +314,7 @@ class _EncryptedImageMessageState extends ConsumerState<EncryptedImageMessage> {
       final imageData = EncryptedImageUploadResult.fromJson(parsedJson);
 
       // Get shared key
-      final sharedKey = await chatNotifier.getSharedKey();
+      final sharedKey = await widget.getSharedKey();
 
       // Download and decrypt image
       final uploadService = EncryptedImageUploadService();
@@ -325,7 +324,7 @@ class _EncryptedImageMessageState extends ConsumerState<EncryptedImageMessage> {
       );
 
       // Cache the image
-      chatNotifier.cacheDecryptedImage(messageId, decryptedImage, imageData);
+      widget.cacheDecryptedImage(messageId, decryptedImage, imageData);
 
       if (mounted) {
         setState(() {
@@ -353,25 +352,25 @@ class _EncryptedImageMessageState extends ConsumerState<EncryptedImageMessage> {
     final securityErrorMsg = S.of(context)!.securityErrorInvalidChars;
     final couldNotOpenMsg = S.of(context)!.couldNotOpenFile;
     final errorOpeningMsg = S.of(context)!.errorOpeningFile;
-    
+
     try {
-      
+
       // Save image to temporary directory
       final tempDir = await getTemporaryDirectory();
       final sanitizedFilename = _sanitizeFilename(metadata.filename);
       final tempFile = File('${tempDir.path}/$sanitizedFilename');
-      
+
       // Security check
-      if (sanitizedFilename.contains('/') || sanitizedFilename.contains('\\') || 
+      if (sanitizedFilename.contains('/') || sanitizedFilename.contains('\\') ||
           sanitizedFilename.contains('..') || sanitizedFilename.trim().isEmpty) {
         throw Exception(securityErrorMsg);
       }
-      
+
       await tempFile.writeAsBytes(imageData);
 
       // Open image with system default app
       final result = await OpenFile.open(tempFile.path);
-      
+
       if (mounted) {
         if (result.type != ResultType.done) {
           SnackBarHelper.showTopSnackBar(
@@ -397,16 +396,16 @@ class _EncryptedImageMessageState extends ConsumerState<EncryptedImageMessage> {
   String _sanitizeFilename(String filename) {
     // Get basename only (remove any directory components)
     final basename = filename.split(RegExp(r'[/\\]')).last;
-    
+
     // Normalize using diacritic package for comprehensive Unicode support
     String normalized = removeDiacritics(basename);
-    
+
     // Replace spaces and remove dangerous characters
     final cleaned = normalized
         .replaceAll(RegExp(r'\s+'), '_')
         .replaceAll(RegExp(r'[<>:"|?*\x00-\x1F]'), '_')
         .replaceAll('..', '_');
-    
+
     // Preserve file extension
     String sanitized = cleaned;
     if (sanitized.contains('.')) {
@@ -415,7 +414,7 @@ class _EncryptedImageMessageState extends ConsumerState<EncryptedImageMessage> {
         final extension = parts.last;
         final nameWithoutExt = parts.sublist(0, parts.length - 1).join('_');
         final maxNameLength = 100 - extension.length - 1;
-        final truncatedName = nameWithoutExt.length > maxNameLength 
+        final truncatedName = nameWithoutExt.length > maxNameLength
             ? nameWithoutExt.substring(0, maxNameLength)
             : nameWithoutExt;
         sanitized = '$truncatedName.$extension';
@@ -423,17 +422,17 @@ class _EncryptedImageMessageState extends ConsumerState<EncryptedImageMessage> {
     } else {
       sanitized = sanitized.length > 100 ? sanitized.substring(0, 100) : sanitized;
     }
-    
+
     // Ensure not empty and not Windows reserved names
     final nameOnly = sanitized.contains('.') ? sanitized.split('.').first : sanitized;
     if (sanitized.isEmpty || nameOnly.isEmpty ||
-        ['CON', 'PRN', 'AUX', 'NUL', 'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 
-         'COM6', 'COM7', 'COM8', 'COM9', 'LPT1', 'LPT2', 'LPT3', 'LPT4', 
+        ['CON', 'PRN', 'AUX', 'NUL', 'COM1', 'COM2', 'COM3', 'COM4', 'COM5',
+         'COM6', 'COM7', 'COM8', 'COM9', 'LPT1', 'LPT2', 'LPT3', 'LPT4',
          'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9'].contains(nameOnly.toUpperCase())) {
       final extension = sanitized.contains('.') ? '.${sanitized.split('.').last}' : '';
       return 'image_${DateTime.now().millisecondsSinceEpoch}$extension';
     }
-    
+
     return sanitized;
   }
 }

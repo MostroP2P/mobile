@@ -8,6 +8,7 @@ import 'package:mostro_mobile/shared/providers/avatar_provider.dart';
 import 'package:mostro_mobile/features/chat/widgets/encrypted_image_message.dart';
 import 'package:mostro_mobile/features/chat/widgets/encrypted_file_message.dart';
 import 'package:mostro_mobile/features/chat/utils/message_type_helpers.dart';
+import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
 
 class MessageBubble extends ConsumerWidget {
@@ -32,6 +33,8 @@ class MessageBubble extends ConsumerWidget {
       return const SizedBox.shrink();
     }
     
+    final chatNotifier = ref.read(chatRoomsProvider(orderId).notifier);
+
     // Check if this is an encrypted image message
     if (MessageTypeUtils.isEncryptedImageMessage(message)) {
       return Container(
@@ -59,8 +62,11 @@ class MessageBubble extends ConsumerWidget {
                   ),
                   child: EncryptedImageMessage(
                     message: message,
-                    orderId: orderId,
                     isOwnMessage: !isFromPeer,
+                    getSharedKey: chatNotifier.getSharedKey,
+                    getCachedImage: chatNotifier.getCachedImage,
+                    getImageMetadata: chatNotifier.getImageMetadata,
+                    cacheDecryptedImage: chatNotifier.cacheDecryptedImage,
                   ),
                 ),
               ),
@@ -69,7 +75,7 @@ class MessageBubble extends ConsumerWidget {
         ),
       );
     }
-    
+
     // Check if this is an encrypted file message
     if (MessageTypeUtils.isEncryptedFileMessage(message)) {
       return Container(
@@ -97,8 +103,11 @@ class MessageBubble extends ConsumerWidget {
                   ),
                   child: EncryptedFileMessage(
                     message: message,
-                    orderId: orderId,
                     isOwnMessage: !isFromPeer,
+                    getSharedKey: chatNotifier.getSharedKey,
+                    getCachedFile: chatNotifier.getCachedFile,
+                    getFileMetadata: chatNotifier.getFileMetadata,
+                    cacheDecryptedFile: chatNotifier.cacheDecryptedFile,
                   ),
                 ),
               ),

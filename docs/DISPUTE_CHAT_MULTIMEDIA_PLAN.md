@@ -23,6 +23,33 @@ Currently the app has two completely different chat mechanisms:
 
 ---
 
+## Phase Reordering Justification (2026-03-03)
+
+The original plan had this order:
+- Phase 3: Multimedia **Rendering** (receive & display images/files from admin)
+- Phase 4: Multimedia **Sending** (upload images/files to admin)
+
+**The order has been reversed.** Here's why:
+
+### 1. User need is sending, not receiving
+In a dispute, the user needs to send evidence (screenshots, receipts, documents) to the admin. The admin has their own tools to view what they receive. The user does **not** urgently need to see multimedia from the admin — text instructions are sufficient for now.
+
+### 2. Sending does not require desacoplamiento
+The original Phase 3 (rendering) required a significant refactor: decoupling `EncryptedImageMessage` and `EncryptedFileMessage` widgets from `chatRoomsProvider`, adding media cache infrastructure to `DisputeChatNotifier`, and ensuring P2P regression. This is a lot of work with regression risk, and it's not needed just to upload files.
+
+The upload services (`EncryptedImageUploadService`, `EncryptedFileUploadService`, `BlossomUploadHelper`) are **already fully decoupled** — they accept `Uint8List sharedKey` as a parameter and have zero coupling to any chat provider. They can be used directly from the dispute input widget.
+
+### 3. Placeholder is sufficient for sent messages
+After sending multimedia, the user sees the message in their own chat. A simple placeholder (icon + filename + size) is acceptable UX — the user already knows what they sent. Full inline rendering (downloading, decrypting, and displaying the image they just uploaded) is unnecessary overhead for this phase.
+
+### 4. Clean phase boundary
+- **New Phase 3**: Sending + placeholder (self-contained, no P2P widget changes)
+- **New Phase 4**: Full rendering for received multimedia (desacoplamiento, cache, P2P regression — can be done later when needed)
+
+This means Phase 3 can ship as a single PR that only touches dispute chat files, with zero risk to existing P2P chat.
+
+---
+
 ## Phase 1: Shared Key for Dispute Chat (Protocol Change)
 **Status:** `DONE`
 **PR scope:** Core encryption/protocol change — no UI changes
@@ -236,59 +263,299 @@ group('DisputeChatNotifier message model')
 
 ---
 
-## Phase 3: Multimedia Rendering in Dispute Chat
-**Status:** `TODO`
-**PR scope:** UI changes — display multimedia messages in dispute bubbles
+## Phase 3: Multimedia Sending in Dispute Chat
+**Status:** `DONE`
+**Branch:** `phase-3-dispute-multimedia-send`
+**PR scope:** UI changes — add attachment button, upload flow, and simple placeholder for sent multimedia
 **Depends on:** Phase 2 completed
 
 ### What you can test after this phase
 
-> **Second visible milestone:** If the admin sends you an image or file (using the same JSON format as P2P chat), you can **see it rendered inline** in the dispute chat. You can tap images to view full-size and download files.
+> **Second visible milestone:** You can **send images and files** to the admin from the dispute chat. The admin receives them encrypted and can decrypt/view them on their side. Sent multimedia shows as a simple placeholder (icon + filename + size) in your own chat.
 
 **Manual testing checklist:**
-- [ ] Admin sends an encrypted image message (JSON with `type: "image_encrypted"`) — image renders inline in the dispute chat
-- [ ] Admin sends an encrypted file message (JSON with `type: "file_encrypted"`) — file card renders with filename, size, download button
+- [ ] Attachment button (paper clip icon) appears in dispute chat input
+- [ ] Tap attachment — file picker opens with correct allowed file types
+- [ ] Select an image — confirmation dialog shows filename
+- [ ] Confirm — loading spinner appears on the attach button
+- [ ] Image uploads, encrypts, sends — admin receives and can decrypt/view it
+- [ ] Select a document (PDF, etc.) — same flow, admin receives the file
+- [ ] Cancel the confirmation dialog — nothing happens, no upload
+- [ ] Upload error (no network) — snackbar shows error message
+- [ ] After sending image — placeholder shows in chat (camera icon + filename + size), NOT raw JSON
+- [ ] After sending file — placeholder shows in chat (file icon + filename + size), NOT raw JSON
+- [ ] Regular text messages still render normally (no regression)
+- [ ] P2P chat still works completely (no changes to P2P files)
+- [ ] Historical messages with multimedia placeholders load correctly after app restart
+
+### Why this works without decoupling P2P widgets
+
+The upload services are **already fully decoupled**:
+
+```text
+EncryptedImageUploadService.uploadEncryptedImage(imageFile, sharedKey)  // Uint8List param
+EncryptedFileUploadService.uploadEncryptedFile(file, sharedKey)         // Uint8List param
+BlossomUploadHelper.uploadWithRetry(data, mimeType)                    // No key at all
+EncryptionService.encryptChaCha20Poly1305(key, plaintext)              // Pure function
+MediaValidationService.validateAndSanitizeImageLight(imageData)        // Pure function
+FileValidationService.validateFile(file)                               // Pure function
+```
+
+None of these depend on any chat provider. They all accept raw parameters. The dispute input widget can use them directly with `getAdminSharedKey()`.
+
+The only coupling is in the **rendering** widgets (`EncryptedImageMessage`, `EncryptedFileMessage`) which call `chatRoomsProvider(orderId)` — but we don't use those in this phase. We use a simple placeholder instead.
+
+### 3.1 Update `DisputeMessageBubble` to support multimedia placeholders
+
+**File:** `lib/features/disputes/widgets/dispute_message_bubble.dart`
+
+**Current interface:**
+```dart
+DisputeMessageBubble({
+  required String message,       // plain text content
+  required bool isFromUser,
+  required DateTime timestamp,
+  String? adminPubkey,
+})
+```
+
+**New interface:**
+```dart
+DisputeMessageBubble({
+  required DisputeChatMessage message,  // full wrapper with NostrEvent
+  required bool isFromUser,
+})
+```
+
+**Changes:**
+- Accept `DisputeChatMessage` instead of `String message` + `DateTime timestamp`
+- Extract `content`, `timestamp` from `message.event`
+- Detect message type using `MessageTypeUtils.getMessageType(message.event)`
+- Route rendering:
+  - `MessageContentType.text` → existing text bubble (no change)
+  - `MessageContentType.encryptedImage` → image placeholder widget
+  - `MessageContentType.encryptedFile` → file placeholder widget
+
+**Image placeholder:** Parse JSON to extract metadata, then show:
+```text
+┌─────────────────────────────┐
+│  📷  test.jpg               │
+│  50.0 KB · Encrypted        │
+└─────────────────────────────┘
+```
+
+**File placeholder:** Same pattern:
+```text
+┌─────────────────────────────┐
+│  📄  document.pdf           │
+│  1.2 MB · Encrypted         │
+└─────────────────────────────┘
+```
+
+**Design details:**
+- Use `Icons.image` for images, `Icons.insert_drive_file` for files
+- Show filename (from JSON `filename` field)
+- Show human-readable size (from JSON `original_size` field)
+- Show "Encrypted" badge (reuse existing `encrypted` localization key)
+- Same bubble color scheme as text messages (user vs admin differentiation)
+- Long-press to copy is NOT applicable for multimedia placeholders
+
+**Helper method for size formatting:**
+```dart
+String _formatFileSize(int bytes) {
+  if (bytes < 1024) return '$bytes B';
+  if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+  return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+}
+```
+
+### 3.2 Update `DisputeMessagesList` to pass full message to bubble
+
+**File:** `lib/features/disputes/widgets/dispute_messages_list.dart`
+
+**Current (line ~141-149):**
+```dart
+DisputeMessageBubble(
+  message: message.content,
+  isFromUser: notifier.isFromUser(message),
+  timestamp: message.timestamp,
+)
+```
+
+**New:**
+```dart
+DisputeMessageBubble(
+  message: message,
+  isFromUser: notifier.isFromUser(message),
+)
+```
+
+Minimal change — just pass the full `DisputeChatMessage` wrapper instead of extracting `.content`.
+
+### 3.3 Add attachment capability to `DisputeMessageInput`
+
+**File:** `lib/features/disputes/widgets/dispute_message_input.dart`
+
+**Current state:** Text-only input with send button (~117 lines).
+
+**Add the following, following the same pattern as `message_input.dart`:**
+
+**New state variables:**
+```dart
+bool _isUploadingFile = false;
+static final EncryptedImageUploadService _imageUploadService = EncryptedImageUploadService();
+static final EncryptedFileUploadService _fileUploadService = EncryptedFileUploadService();
+```
+
+**New UI element:** Attach button (paper clip icon) to the left of the text field:
+```dart
+IconButton(
+  icon: _isUploadingFile
+    ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+    : Icon(Icons.attach_file),
+  onPressed: _isUploadingFile ? null : _selectAndUploadFile,
+)
+```
+
+**Upload flow (`_selectAndUploadFile()`):**
+
+This follows the exact same pipeline as `MessageInput._selectAndUploadFile()`:
+
+1. **File selection:** `FilePicker.platform.pickFiles()` with extensions from `FileValidationService.supportedExtensions`
+2. **Confirmation dialog:** Show filename, ask "Send this file?" with Cancel/Send buttons
+3. **MIME detection:** Use `lookupMimeType(filename)` for extension-based detection + `MediaValidationService.isImageTypeSupported()` to classify (no byte loading needed)
+4. **Get shared key:** `await ref.read(disputeChatNotifierProvider(disputeId).notifier).getAdminSharedKey()`
+5. **Encrypt + upload:**
+   - If image: `_imageUploadService.uploadEncryptedImage(imageFile: file, sharedKey: key, filename: name)`
+   - If file: `_fileUploadService.uploadEncryptedFile(file: file, sharedKey: key)`
+6. **Send JSON metadata:** `await ref.read(disputeChatNotifierProvider(disputeId).notifier).sendMessage(jsonEncode(result.toJson()))`
+7. **Error handling:** try/catch, show snackbar with `errorUploadingFile` localized message
+
+**Why duplicate instead of extract to helper?** The upload logic in `MessageInput` is ~70 lines embedded in the widget. Extracting to a shared helper is a Phase 5 cleanup task. For now, adapting the same pattern in `DisputeMessageInput` is simpler and avoids touching `MessageInput` (zero P2P regression risk). The two implementations are nearly identical except for how they get the shared key and send the message:
+- P2P: `chatRoomsProvider(orderId).notifier.getSharedKey()` / `.sendMessage()`
+- Dispute: `disputeChatNotifierProvider(disputeId).notifier.getAdminSharedKey()` / `.sendMessage()`
+
+### 3.4 Confirmation dialog
+
+Same pattern as `MessageInput._showFileConfirmationDialog()`:
+
+```dart
+Future<bool> _showFileConfirmationDialog(String filename) async {
+  return await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(S.of(context)!.sendThisFile),
+      content: Text(filename),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context, false), child: Text(S.of(context)!.cancel)),
+        TextButton(onPressed: () => Navigator.pop(context, true), child: Text(S.of(context)!.send)),
+      ],
+    ),
+  ) ?? false;
+}
+```
+
+All localization keys (`sendThisFile`, `cancel`, `send`, `errorUploadingFile`) already exist in all three languages.
+
+### 3.5 No changes to `DisputeChatNotifier`
+
+The notifier's `sendMessage(String text)` method already works for any string content — including JSON. When the user sends a file:
+1. Upload service returns `EncryptedImageUploadResult` or `EncryptedFileUploadResult`
+2. Widget calls `sendMessage(jsonEncode(result.toJson()))`
+3. Notifier wraps it in `p2pWrap()`, publishes, stores gift wrap — same as text
+
+No new methods needed on the notifier for this phase.
+
+### 3.6 Localization
+
+**Existing keys (no new keys needed):**
+- `sendThisFile` — "Send this file?" (confirmation dialog)
+- `send` — "Send" (button)
+- `cancel` — "Cancel" (button)
+- `errorUploadingFile` — "Error uploading file: {error}" (snackbar)
+- `encrypted` — "Encrypted" (badge on placeholder)
+- `failedSendMessage` — "Failed to send message: {error}" (send error)
+
+**New keys needed for placeholders:**
+- `imageSent` — "Image" (placeholder label for sent images)
+- `fileSent` — "File" (placeholder label for sent files)
+
+Add to all three ARB files (`intl_en.arb`, `intl_es.arb`, `intl_it.arb`).
+
+### 3.7 Tests to create
+
+**File:** `test/features/disputes/dispute_multimedia_send_test.dart`
+
+```text
+group('Dispute chat multimedia sending')
+  test('encrypts image with admin shared key and uploads to Blossom')
+    - Use real crypto keys (KeyDerivator with test mnemonic)
+    - Compute admin shared key (ECDH)
+    - Encrypt a test image with EncryptedImageUploadService (mock Blossom upload)
+    - Decrypt with same shared key
+    - Assert decrypted data matches original
+
+  test('encrypts file with admin shared key and uploads to Blossom')
+    - Same as above but with EncryptedFileUploadService
+
+  test('upload result JSON round-trips correctly')
+    - Create EncryptedImageUploadResult, serialize to JSON, deserialize back
+    - Assert all fields match
+
+  test('file encrypted with P2P shared key cannot be decrypted with admin shared key')
+    - Encrypt with P2P shared key
+    - Try to decrypt with admin shared key
+    - Assert fails (session isolation)
+```
+
+**File:** `test/features/disputes/dispute_message_bubble_test.dart`
+
+```text
+group('DisputeMessageBubble multimedia placeholders')
+  test('renders text message as text bubble')
+    - Create DisputeChatMessage with plain text content
+    - Assert text bubble rendered, no placeholder
+
+  test('renders image_encrypted as image placeholder')
+    - Create DisputeChatMessage with content = jsonEncode({"type":"image_encrypted","filename":"test.jpg","original_size":50000,...})
+    - Assert image icon and filename displayed
+    - Assert "Encrypted" badge shown
+    - Assert raw JSON NOT visible
+
+  test('renders file_encrypted as file placeholder')
+    - Create DisputeChatMessage with content = jsonEncode({"type":"file_encrypted","filename":"doc.pdf","original_size":1200000,...})
+    - Assert file icon and filename displayed
+
+  test('renders malformed JSON as plain text')
+    - Create DisputeChatMessage with content = "{invalid json"
+    - Assert treated as text message (graceful fallback)
+```
+
+**Note:** The existing `test/features/chat/file_messaging_test.dart` already tests encryption round-trips for P2P. The dispute tests follow the same pattern but verify the admin shared key path.
+
+---
+
+## Phase 4: Multimedia Rendering in Dispute Chat (Receive & Display)
+**Status:** `TODO` (future)
+**PR scope:** UI changes — display multimedia messages from admin with inline rendering
+**Depends on:** Phase 3 completed
+
+### What you can test after this phase
+
+> **Third visible milestone:** If the admin sends you an image or file, you can **see it rendered inline** in the dispute chat. You can tap images to view full-size and download files. Combined with Phase 3, this completes bidirectional multimedia.
+
+**Manual testing checklist:**
+- [ ] Admin sends an encrypted image message — image renders inline in the dispute chat
+- [ ] Admin sends an encrypted file message — file card renders with filename, size, download button
 - [ ] Tap on received image — opens full-size view
 - [ ] Tap download on received file — file downloads, decrypts, and opens
+- [ ] Your own sent images also render inline (upgrade from placeholder)
 - [ ] Regular text messages still render normally (no regression)
 - [ ] P2P chat multimedia still works (no regression from widget decoupling)
 - [ ] Mixed messages (text + images + files) display in correct order
 - [ ] Loading spinner shows while image/file is being downloaded and decrypted
 
-**How to test without admin multimedia support:**
-You can simulate receiving multimedia by having the admin dev send a chat message with this exact content (as plain text, which gets wrapped in p2pWrap):
-```json
-{"type":"image_encrypted","blossom_url":"https://blossom.example.com/abc123","nonce":"aabbccdd...","mime_type":"image/jpeg","original_size":50000,"width":800,"height":600,"filename":"test.jpg","encrypted_size":50100}
-```
-The image won't actually decrypt (fake URL), but you'll see the bubble attempt to render it — confirming the type detection and UI routing work.
-
-### 3.1 Add message type detection to dispute chat
-
-Since dispute messages will now be `NostrEvent` objects (after Phase 2), the existing `MessageTypeUtils` from P2P chat works directly:
-
-**File:** `lib/features/chat/utils/message_type_helpers.dart`
-
-- No changes needed — `MessageTypeUtils.isEncryptedImageMessage()`, `isEncryptedFileMessage()`, and `getMessageType()` all operate on `NostrEvent` and are reusable as-is
-
-### 3.2 Create unified message bubble or reuse existing
-
-**Two approaches:**
-
-**Approach A (Recommended): Reuse `MessageBubble` directly**
-- The P2P `MessageBubble` (`lib/features/chat/widgets/message_bubble.dart`) already routes between text/image/file rendering
-- It takes `NostrEvent message`, `String peerPubkey`, `String orderId`
-- For dispute chat: `peerPubkey` = admin pubkey, `orderId` = session's orderId
-- It already handles `isOwnMessage` detection by comparing `message.pubkey` with trade key
-- The `EncryptedImageMessage` and `EncryptedFileMessage` widgets need the `orderId` to access `chatRoomsProvider(orderId)` for `getCachedImage()` and `getSharedKey()`
-- **Problem:** These widgets call `chatRoomsProvider(orderId)` which is the P2P chat notifier, not the dispute chat notifier. This needs decoupling.
-
-**Approach B: Extract shared rendering into reusable widgets**
-- Create a shared interface/callback for getting the shared key and cache
-- Pass `getSharedKey` and cache functions as parameters to `EncryptedImageMessage`/`EncryptedFileMessage` instead of hardcoding `chatRoomsProvider`
-
-**Recommended:** Approach B — decouple the multimedia widgets from `chatRoomsProvider`:
-
-### 3.3 Decouple multimedia widgets from P2P chat provider
+### 4.1 Decouple multimedia widgets from P2P chat provider
 
 **File:** `lib/features/chat/widgets/encrypted_image_message.dart`
 
@@ -316,29 +583,7 @@ Then both P2P chat and dispute chat pass their own implementations:
 - P2P: passes `chatRoomNotifier.getSharedKey`, `chatRoomNotifier.getCachedImage`, etc.
 - Dispute: passes `disputeChatNotifier.getAdminSharedKey`, dispute-specific cache methods
 
-### 3.4 Update `DisputeMessageBubble` to support multimedia
-
-**Option A:** Replace `DisputeMessageBubble` with the refactored `MessageBubble` from P2P chat.
-
-**Option B (Recommended):** Create a new `DisputeMessageBubble` that delegates to the same shared rendering components:
-
-```dart
-// In dispute_message_bubble.dart
-if (MessageTypeUtils.isEncryptedImageMessage(event)) {
-  return EncryptedImageMessage(
-    message: event,
-    getSharedKey: () => disputeNotifier.getAdminSharedKey(),
-    getCachedImage: (id) => disputeNotifier.getCachedImage(id),
-    cacheImage: (id, data, meta) => disputeNotifier.cacheDecryptedImage(id, data, meta),
-  );
-}
-if (MessageTypeUtils.isEncryptedFileMessage(event)) {
-  return EncryptedFileMessage(...);
-}
-return /* text bubble */;
-```
-
-### 3.5 Add image/file cache to `DisputeChatNotifier`
+### 4.2 Add image/file cache to `DisputeChatNotifier`
 
 Add the same cache maps that `ChatRoomNotifier` has:
 
@@ -353,39 +598,55 @@ Plus `getCachedImage()`, `cacheDecryptedImage()`, `getCachedFile()`, `cacheDecry
 
 **Consider:** Extracting these caches into a shared mixin or utility class to avoid duplication between `ChatRoomNotifier` and `DisputeChatNotifier`.
 
-### 3.6 Update `DisputeMessagesList` to use new bubble
+### 4.3 Update `DisputeMessageBubble` to use full rendering
 
-**File:** `lib/features/disputes/widgets/dispute_messages_list.dart`
+Replace the placeholders from Phase 3 with the decoupled `EncryptedImageMessage` / `EncryptedFileMessage` widgets:
 
-- Update the message rendering to use the new multimedia-aware bubble
-- Pass the `NostrEvent` (or wrapper) instead of plain string
+```dart
+if (MessageTypeUtils.isEncryptedImageMessage(event)) {
+  return EncryptedImageMessage(
+    message: event,
+    getSharedKey: () => disputeNotifier.getAdminSharedKey(),
+    getCachedImage: (id) => disputeNotifier.getCachedImage(id),
+    cacheImage: (id, data, meta) => disputeNotifier.cacheDecryptedImage(id, data, meta),
+  );
+}
+```
 
-### 3.7 Tests to create
+### 4.4 Add message content processing to `DisputeChatNotifier`
+
+Add `_processMessageContent()` to auto-download images when messages arrive (same pattern as `ChatRoomNotifier`):
+
+```dart
+Future<void> _processMessageContent(NostrEvent message) async {
+  try {
+    final content = message.content;
+    if (content == null || !content.startsWith('{')) return;
+    final jsonData = jsonDecode(content) as Map<String, dynamic>;
+    if (MessageTypeUtils.isEncryptedImageMessage(message)) {
+      await _processEncryptedImageMessage(message, jsonData);
+    } else if (MessageTypeUtils.isEncryptedFileMessage(message)) {
+      await _processEncryptedFileMessage(message, jsonData);
+    }
+  } catch (e) {
+    // Don't rethrow — message still displays as text/placeholder
+  }
+}
+```
+
+### 4.5 Tests to create
 
 **File:** `test/features/disputes/dispute_multimedia_rendering_test.dart`
 
 ```text
 group('Dispute chat message type detection')
   test('detects encrypted image message from NostrEvent content')
-    - Create NostrEvent with content = jsonEncode({"type":"image_encrypted",...})
-    - Assert MessageTypeUtils.isEncryptedImageMessage() returns true
-
   test('detects encrypted file message from NostrEvent content')
-    - Create NostrEvent with content = jsonEncode({"type":"file_encrypted",...})
-    - Assert MessageTypeUtils.isEncryptedFileMessage() returns true
-
   test('plain text message is not detected as multimedia')
-    - Create NostrEvent with content = "hello"
-    - Assert both detection methods return false
 
 group('Decoupled EncryptedImageMessage / EncryptedFileMessage')
   test('calls getSharedKey callback when loading image')
-    - Provide mock getSharedKey that returns test key bytes
-    - Verify callback was invoked
-
   test('calls cacheImage callback after successful download')
-    - Mock download service
-    - Verify cacheImage callback was invoked with correct data
 ```
 
 **File:** `test/features/chat/widgets/encrypted_image_message_test.dart` (regression)
@@ -393,109 +654,12 @@ group('Decoupled EncryptedImageMessage / EncryptedFileMessage')
 ```text
 group('P2P EncryptedImageMessage regression after decoupling')
   test('still works with chatRoomsProvider-based callbacks')
-    - Verify existing P2P rendering still functions after refactor
 ```
-
----
-
-## Phase 4: Multimedia Sending in Dispute Chat
-**Status:** `TODO`
-**PR scope:** UI changes — add attachment button and upload flow
-**Depends on:** Phase 3 completed
-
-### What you can test after this phase
-
-> **Third visible milestone (feature complete):** You can now **send images and files** to the admin from the dispute chat. The full multimedia flow is complete in both directions.
-
-**Manual testing checklist:**
-- [ ] Attachment button (paper clip icon) appears in dispute chat input when status is 'in-progress'
-- [ ] Attachment button does NOT appear when dispute status is 'initiated' or 'resolved'
-- [ ] Tap attachment — file picker opens with correct allowed file types
-- [ ] Select an image — confirmation dialog shows filename
-- [ ] Confirm — loading spinner appears on the button
-- [ ] Image uploads, encrypts, sends — admin receives and can decrypt/view it
-- [ ] Select a document (PDF, etc.) — same flow, admin receives the file
-- [ ] Cancel the confirmation dialog — nothing happens, no upload
-- [ ] Upload error (no network) — snackbar shows error message
-- [ ] Send a mix of text, images, and files — all render correctly in the conversation
-- [ ] Admin sends multimedia back — you can see/download it (Phase 3 already covers this)
-
-### 4.1 Add attachment capability to `DisputeMessageInput`
-
-**File:** `lib/features/disputes/widgets/dispute_message_input.dart`
-
-Add the same attachment flow that `MessageInput` has:
-- Add `+` / attach button (paper clip icon) to the left of the text field
-- Add `_isUploadingFile` state with loading spinner
-- Add `_selectAndUploadFile()` method
-- Add confirmation dialog before upload
-- Add file picker with same allowed extensions
-
-**Key dependency:** The method needs access to the admin shared key to encrypt files. It will call `disputeChatNotifier.getAdminSharedKey()`.
-
-### 4.2 Implement file upload flow in dispute context
-
-The upload flow is identical to P2P:
-1. Select file via `FilePicker`
-2. Detect if image or document via MIME detection
-3. Get admin shared key from `DisputeChatNotifier`
-4. Encrypt with `EncryptedImageUploadService` or `EncryptedFileUploadService` (both accept `Uint8List sharedKey`)
-5. Upload to Blossom via existing services
-6. Send JSON metadata as chat message via `disputeChatNotifier.sendMessage(jsonEncode(result.toJson()))`
-
-### 4.3 Maximize code reuse for upload logic
-
-**Current P2P implementation:** `MessageInput._selectAndUploadFile()` is ~70 lines of upload logic embedded in the widget.
-
-**Refactor opportunity:** Extract the upload logic into a shared utility/service:
-
-```dart
-// lib/shared/utils/chat_file_upload_helper.dart
-class ChatFileUploadHelper {
-  static Future<void> selectAndUploadFile({
-    required BuildContext context,
-    required Future<Uint8List> Function() getSharedKey,
-    required Future<void> Function(String jsonMessage) sendMessage,
-    required VoidCallback onUploadStart,
-    required VoidCallback onUploadEnd,
-  }) async { ... }
-}
-```
-
-Both `MessageInput` and `DisputeMessageInput` call this helper, passing their respective `getSharedKey` and `sendMessage` implementations.
-
-### 4.4 Tests to create
-
-**File:** `test/features/disputes/dispute_file_upload_test.dart`
-
-```text
-group('Dispute chat file upload')
-  test('encrypts image with admin shared key and uploads to Blossom')
-    - Use real crypto keys (KeyDerivator with test mnemonic)
-    - Compute admin shared key
-    - Encrypt a test image with EncryptedImageUploadService (mock Blossom upload)
-    - Decrypt with same shared key
-    - Assert decrypted data matches original
-
-  test('encrypts file with admin shared key and uploads to Blossom')
-    - Same as above but with EncryptedFileUploadService
-
-  test('upload result JSON round-trips correctly')
-    - Create EncryptedImageUploadResult, serialize to JSON, deserialize back
-    - Assert all fields match
-
-  test('file encrypted with P2P shared key cannot be decrypted with admin shared key')
-    - Encrypt with P2P shared key
-    - Try to decrypt with admin shared key
-    - Assert fails (session isolation)
-```
-
-**Note:** The existing `test/features/chat/file_messaging_test.dart` already tests encryption round-trips and session isolation for P2P. The dispute tests follow the same pattern but verify the admin shared key path.
 
 ---
 
 ## Phase 5: Cleanup and Code Deduplication
-**Status:** `TODO`
+**Status:** `TODO` (future)
 **PR scope:** Refactor — no functional changes
 **Depends on:** Phase 4 completed
 
@@ -543,20 +707,58 @@ mixin MediaCacheMixin {
 }
 ```
 
-### 5.3 Remove dead code
+### 5.3 Extract shared upload helper
+
+Both `MessageInput` and `DisputeMessageInput` will have similar upload logic. Extract to:
+
+```dart
+// lib/shared/utils/chat_file_upload_helper.dart
+class ChatFileUploadHelper {
+  static Future<void> selectAndUploadFile({
+    required BuildContext context,
+    required Future<Uint8List> Function() getSharedKey,
+    required Future<void> Function(String jsonMessage) sendMessage,
+    required VoidCallback onUploadStart,
+    required VoidCallback onUploadEnd,
+  }) async { ... }
+}
+```
+
+Both widgets call this helper, passing their respective `getSharedKey` and `sendMessage` implementations.
+
+### 5.4 Extract MIME detection helpers
+
+`_isImageFile()` and `_getMimeType()` will be duplicated between `MessageInput` and `DisputeMessageInput`. Extract to a shared utility.
+
+### 5.5 Align P2P `MessageInput` with dispute chat fixes
+
+**File:** `lib/features/chat/widgets/message_input.dart`
+
+The P2P `MessageInput._selectAndUploadFile()` has two issues already fixed in the dispute version (`DisputeMessageInput`) during Phase 3 code review:
+
+1. **Missing `mounted` checks** after async operations (`FilePicker.platform.pickFiles()` and `_showFileConfirmationDialog()`). Add the same `if (!mounted) return;` checks.
+2. **Missing file size pre-check** before `readAsBytes()`. Add `file.length()` check against `FileValidationService.maxFileSize` before loading into memory, same as dispute chat does — prevents OOM on large files.
+
+### 5.6 Localize timestamps in `DisputeMessageBubble`
+
+**File:** `lib/features/disputes/widgets/dispute_message_bubble.dart`
+
+The `_formatTime()` method uses hardcoded English strings (`"now"`, `"5m ago"`, etc.). This is preexisting from before Phase 3 — the original bubble had the same code. Replace with the `timeago` package using `timeAgoWithLocale()`, matching the pattern already used in P2P chat's `MessageBubble`. Requires passing `BuildContext` to the method.
+
+### 5.7 Remove dead code
 
 - Remove the "dm" skip logic from `MostroService._onData()` (no longer needed after Phase 1)
 - Remove any unused imports or methods related to the old `mostroWrap`/`mostroUnWrap` dispute chat flow
 - Clean up `DisputeChat` model if it's no longer used (or keep it if still needed for other purposes)
 
-### 5.4 Verify `mostroWrap`/`mostroUnWrap` still needed
+### 5.8 Verify `mostroWrap`/`mostroUnWrap` still needed
 
 These methods are also used for regular Mostro protocol messages (user <-> Mostro daemon), not just dispute chat. Verify usage:
 - `mostroWrap`: Check if used in `MostroMessage.wrap()` or other protocol flows
 - `mostroUnWrap`: Check if used in `NostrUtils.decryptNIP59Event()` or similar
 - **Do NOT delete** if still used for non-dispute protocol messages
 
-### 5.5 Tests to create
+### 5.9 Tests to create
 
 **File:** `test/shared/utils/nostr_utils_shared_key_test.dart`
 
@@ -587,8 +789,8 @@ group('MediaCacheMixin')
 |-------|---------------------|-------------------|
 | **Phase 1** | **Immediately** | Send/receive **text messages** to admin with shared key. First end-to-end verification with admin dev. |
 | **Phase 2** | No visible change | Regression only — everything works the same, internal model is unified. |
-| **Phase 3** | **After admin sends multimedia** | **See images and files** sent by admin rendered inline. Download and open files. |
-| **Phase 4** | **Feature complete** | **Send images and files** to admin. Full bidirectional multimedia. |
+| **Phase 3** | **Feature milestone** | **Send images and files** to admin. Sent multimedia shows as placeholder in your chat. |
+| **Phase 4** | **Full multimedia** | **See images and files** from admin rendered inline. Full bidirectional multimedia. |
 | **Phase 5** | No visible change | Full regression — clean code, all tests green. |
 
 ## Test Files Summary
@@ -598,9 +800,10 @@ group('MediaCacheMixin')
 | `test/features/disputes/dispute_shared_key_test.dart` | 1 | ECDH computation, session isolation, admin key independence |
 | `test/data/models/nostr_event_wrap_test.dart` | 1 | p2pWrap/p2pUnwrap round-trip, wrong key rejection, event structure |
 | `test/features/disputes/dispute_chat_notifier_test.dart` | 2 | NostrEvent state management, pending/error, history, getAdminSharedKey |
-| `test/features/disputes/dispute_multimedia_rendering_test.dart` | 3 | Message type detection, decoupled widget callbacks |
-| `test/features/chat/widgets/encrypted_image_message_test.dart` | 3 | P2P regression after widget decoupling |
-| `test/features/disputes/dispute_file_upload_test.dart` | 4 | Encrypt/upload with admin shared key, session isolation |
+| `test/features/disputes/dispute_multimedia_send_test.dart` | 3 | Encrypt/upload with admin shared key, session isolation, JSON round-trip |
+| `test/features/disputes/dispute_message_bubble_test.dart` | 3 | Placeholder rendering, type detection, graceful fallback |
+| `test/features/disputes/dispute_multimedia_rendering_test.dart` | 4 | Decoupled widget callbacks, message type detection |
+| `test/features/chat/widgets/encrypted_image_message_test.dart` | 4 | P2P regression after widget decoupling |
 | `test/shared/utils/nostr_utils_shared_key_test.dart` | 5 | sharedKeyToBytes utility |
 | `test/shared/mixins/media_cache_mixin_test.dart` | 5 | Cache operations |
 
@@ -615,50 +818,60 @@ group('MediaCacheMixin')
 
 ## File Impact Summary
 
-### Files to Modify
+### Phase 3 Files (Current Phase)
+
+**Files to modify:**
+
+| File | Change |
+|------|--------|
+| `lib/features/disputes/widgets/dispute_message_bubble.dart` | Accept `DisputeChatMessage`, add multimedia placeholders |
+| `lib/features/disputes/widgets/dispute_messages_list.dart` | Pass full `DisputeChatMessage` to bubble |
+| `lib/features/disputes/widgets/dispute_message_input.dart` | Add attach button, upload flow, confirmation dialog |
+| `lib/l10n/intl_en.arb` | Add `imageSent`, `fileSent` keys |
+| `lib/l10n/intl_es.arb` | Add `imageSent`, `fileSent` keys |
+| `lib/l10n/intl_it.arb` | Add `imageSent`, `fileSent` keys |
+
+**Files NOT modified (zero P2P regression risk):**
+
+| File | Why not touched |
+|------|----------------|
+| `lib/features/chat/widgets/encrypted_image_message.dart` | No decoupling in this phase |
+| `lib/features/chat/widgets/encrypted_file_message.dart` | No decoupling in this phase |
+| `lib/features/chat/widgets/message_bubble.dart` | No changes needed |
+| `lib/features/chat/widgets/message_input.dart` | No extraction in this phase |
+| `lib/features/disputes/notifiers/dispute_chat_notifier.dart` | `sendMessage()` already works for JSON |
+
+**Test files to create:**
+
+| File | Purpose |
+|------|---------|
+| `test/features/disputes/dispute_multimedia_send_test.dart` | Encryption round-trip with admin key, JSON serialization |
+| `test/features/disputes/dispute_message_bubble_test.dart` | Placeholder rendering, type detection |
+
+**Services reused without changes:**
+
+| File | Used for |
+|------|----------|
+| `lib/services/encrypted_image_upload_service.dart` | Image encrypt + upload |
+| `lib/services/encrypted_file_upload_service.dart` | File encrypt + upload |
+| `lib/services/blossom_upload_helper.dart` | Blossom server upload |
+| `lib/services/encryption_service.dart` | ChaCha20-Poly1305 |
+| `lib/services/media_validation_service.dart` | Image validation |
+| `lib/services/file_validation_service.dart` | File validation |
+| `lib/features/chat/utils/message_type_helpers.dart` | Type detection |
+
+### Phase 4+ Files (Future)
 
 | File | Phase | Change |
 |------|-------|--------|
-| `lib/data/models/session.dart` | 1 | Add `adminSharedKey` field + setter |
-| `lib/features/order/models/order_state.dart` | 1 | Compute admin shared key on `adminTookDispute` |
-| `lib/features/disputes/notifiers/dispute_chat_notifier.dart` | 1,2,3 | Shared key wrap/unwrap, NostrEvent model, media cache |
-| `lib/services/mostro_service.dart` | 1 | Remove "dm" skip logic |
-| `lib/features/disputes/widgets/dispute_message_bubble.dart` | 3 | Multimedia-aware rendering |
-| `lib/features/disputes/widgets/dispute_messages_list.dart` | 3 | Pass NostrEvent to bubbles |
-| `lib/features/disputes/widgets/dispute_message_input.dart` | 4 | Add attachment button + upload flow |
-| `lib/features/chat/widgets/encrypted_image_message.dart` | 3 | Decouple from `chatRoomsProvider` |
-| `lib/features/chat/widgets/encrypted_file_message.dart` | 3 | Decouple from `chatRoomsProvider` |
-| `lib/features/chat/widgets/message_bubble.dart` | 3 | Update to use decoupled widgets |
-| `lib/features/chat/widgets/message_input.dart` | 4,5 | Use shared upload helper |
-
-### Files to Create
-
-| File | Phase | Purpose |
-|------|-------|---------|
-| `lib/shared/utils/chat_file_upload_helper.dart` | 4 | Shared file upload logic |
-| `lib/shared/mixins/media_cache_mixin.dart` | 5 | Shared media cache logic |
-| `test/features/disputes/dispute_shared_key_test.dart` | 1 | Shared key computation tests |
-| `test/data/models/nostr_event_wrap_test.dart` | 1 | Wrap/unwrap round-trip tests |
-| `test/features/disputes/dispute_chat_notifier_test.dart` | 2 | Notifier state management tests |
-| `test/features/disputes/dispute_multimedia_rendering_test.dart` | 3 | Multimedia type detection tests |
-| `test/features/disputes/dispute_file_upload_test.dart` | 4 | File upload encryption tests |
-| `test/shared/utils/nostr_utils_shared_key_test.dart` | 5 | Utility tests |
-| `test/shared/mixins/media_cache_mixin_test.dart` | 5 | Cache mixin tests |
-
-### Files Reused Without Changes
-
-| File | Used In |
-|------|---------|
-| `lib/services/encryption_service.dart` | All phases — ChaCha20-Poly1305 |
-| `lib/services/encrypted_image_upload_service.dart` | Phase 4 — image encrypt/upload/download |
-| `lib/services/encrypted_file_upload_service.dart` | Phase 4 — file encrypt/upload/download |
-| `lib/services/blossom_upload_helper.dart` | Phase 4 — Blossom upload |
-| `lib/services/blossom_download_service.dart` | Phase 3 — Blossom download |
-| `lib/services/media_validation_service.dart` | Phase 4 — image validation |
-| `lib/services/file_validation_service.dart` | Phase 4 — file validation |
-| `lib/features/chat/utils/message_type_helpers.dart` | Phase 3 — type detection |
-| `lib/shared/utils/nostr_utils.dart` | Phase 1 — `computeSharedKey()` |
-| `lib/data/models/nostr_event.dart` | Phase 1 — `p2pWrap()`/`p2pUnwrap()` |
+| `lib/features/chat/widgets/encrypted_image_message.dart` | 4 | Decouple from `chatRoomsProvider` |
+| `lib/features/chat/widgets/encrypted_file_message.dart` | 4 | Decouple from `chatRoomsProvider` |
+| `lib/features/chat/widgets/message_bubble.dart` | 4 | Update to use decoupled widgets |
+| `lib/features/disputes/notifiers/dispute_chat_notifier.dart` | 4 | Add media cache + message processing |
+| `lib/features/disputes/widgets/dispute_message_bubble.dart` | 4 | Replace placeholders with inline rendering |
+| `lib/features/chat/widgets/message_input.dart` | 5 | Use shared upload helper |
+| `lib/shared/utils/chat_file_upload_helper.dart` | 5 | New — shared upload logic |
+| `lib/shared/mixins/media_cache_mixin.dart` | 5 | New — shared cache logic |
 
 ---
 
@@ -670,9 +883,11 @@ group('MediaCacheMixin')
 | Breaking existing dispute flow | Phase 1 is the only risky phase — test thoroughly with checklist above |
 | `mostroWrap`/`mostroUnWrap` removal breaks protocol messages | Verify usage before removing — they're used for Mostro daemon communication too |
 | Large PR size | Each phase is a separate PR with clear scope |
-| Multimedia widget coupling | Phase 3 decoupling is the key architectural decision — do it right |
-| Regression in P2P chat | Phase 3 widget refactor must include P2P regression tests |
+| Phase 3 upload regression | Upload services are pure/decoupled — no P2P files touched |
+| Multimedia widget coupling (Phase 4) | Deferred to its own phase — no risk in Phase 3 |
+| Code duplication (MIME helpers, upload logic) | Acceptable in Phase 3, cleaned up in Phase 5 |
+| Regression in P2P chat | Phase 3 does NOT touch any P2P files — zero risk |
 
 ---
 
-*Last updated: 2026-02-25*
+*Last updated: 2026-03-03*

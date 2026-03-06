@@ -191,6 +191,29 @@ class OrderState {
       logger.i('Dispute status updated to: ${updatedDispute.status}');
     }
 
+    // Auto-close dispute when order reaches terminal state by user action
+    final disputeAlreadyTerminal = const ['resolved', 'seller-refunded', 'closed']
+        .contains(updatedDispute?.status?.toLowerCase());
+
+    if (updatedDispute != null &&
+        !disputeAlreadyTerminal &&
+        const [Status.success, Status.settledHoldInvoice].contains(newStatus)) {
+      updatedDispute = updatedDispute.copyWith(
+        status: 'closed',
+        action: 'user-completed',
+      );
+      logger.i('Auto-closed dispute: order completed by users');
+    } else if (updatedDispute != null &&
+        !disputeAlreadyTerminal &&
+        newStatus == Status.canceled &&
+        message.action == Action.cooperativeCancelAccepted) {
+      updatedDispute = updatedDispute.copyWith(
+        status: 'closed',
+        action: 'cooperative-cancel',
+      );
+      logger.i('Auto-closed dispute: cooperative cancellation');
+    }
+
     final newState = copyWith(
       status: newStatus,
       action: message.action,
