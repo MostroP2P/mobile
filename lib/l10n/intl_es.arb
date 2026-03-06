@@ -1475,5 +1475,6 @@
                 "type": "String"
             }
         }
-    }
+    },
+    "cameraPermissionDenied": "Se requiere permiso de cámara para escanear códigos QR"
 }

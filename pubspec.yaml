@@ -36,6 +36,7 @@ dependencies:
   http: ^1.2.2
   dart_nostr: ^9.0.0
   qr_flutter: ^4.0.0
+  mobile_scanner: ^7.0.1
   heroicons: ^0.11.0
   crypto: ^3.0.5
   convert: ^3.1.1

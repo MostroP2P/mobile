@@ -1500,5 +1500,6 @@
                 "type": "String"
             }
         }
-    }
+    },
+    "cameraPermissionDenied": "Camera permission is required to scan QR codes"
 }

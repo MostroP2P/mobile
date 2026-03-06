@@ -8,6 +8,8 @@ import 'package:mostro_mobile/features/wallet/providers/nwc_provider.dart';
 import 'package:mostro_mobile/services/nwc/nwc_connection.dart';
 import 'package:mostro_mobile/services/nwc/nwc_exceptions.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:mostro_mobile/shared/widgets/qr_scanner_screen.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 /// Screen for connecting a wallet via NWC URI.
 ///
@@ -155,9 +157,9 @@ class _ConnectWalletScreenState extends ConsumerState<ConnectWalletScreen> {
                           suffixIcon: IconButton(
                             icon: const Icon(
                               LucideIcons.scanLine,
-                              color: AppTheme.textSecondary,
+                              color: AppTheme.activeColor,
                             ),
-                            onPressed: () => _showQrComingSoon(context),
+                            onPressed: () => _openQrScanner(context),
                             tooltip: S.of(context)!.scanQrCode,
                           ),
                         ),
@@ -241,13 +243,36 @@ class _ConnectWalletScreenState extends ConsumerState<ConnectWalletScreen> {
     ref.read(nwcProvider.notifier).connect(uri);
   }
 
-  void _showQrComingSoon(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(S.of(context)!.scanQrCodeComingSoon),
-        backgroundColor: AppTheme.backgroundCard,
-        behavior: SnackBarBehavior.floating,
+  Future<void> _openQrScanner(BuildContext context) async {
+    // Request camera permission
+    final status = await Permission.camera.request();
+    if (!status.isGranted) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(S.of(context)!.cameraPermissionDenied),
+            backgroundColor: AppTheme.backgroundCard,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+      return;
+    }
+
+    if (!mounted) return;
+
+    final result = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            const QrScannerScreen(uriPrefix: 'nostr+walletconnect://'),
       ),
     );
+
+    if (result != null && mounted) {
+      _uriController.text = result;
+      // Clear any previous validation error
+      setState(() => _validationError = null);
+    }
   }
 }
