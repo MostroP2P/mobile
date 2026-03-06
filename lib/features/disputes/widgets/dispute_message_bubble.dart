@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/shared/utils/datetime_extensions_utils.dart';
 import 'package:mostro_mobile/features/chat/utils/message_type_helpers.dart';
 import 'package:mostro_mobile/features/chat/widgets/encrypted_image_message.dart';
 import 'package:mostro_mobile/features/chat/widgets/encrypted_file_message.dart';
@@ -104,7 +105,7 @@ class DisputeMessageBubble extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 6),
-            _buildTimestamp(),
+            _buildTimestamp(context),
           ],
         ),
       ),
@@ -123,9 +124,9 @@ class DisputeMessageBubble extends ConsumerWidget {
     );
   }
 
-  Widget _buildTimestamp() {
+  Widget _buildTimestamp(BuildContext context) {
     return Text(
-      _formatTime(message.timestamp),
+      message.timestamp.timeAgoWithLocale(context),
       style: const TextStyle(
         color: Colors.white70,
         fontSize: 12,
@@ -149,20 +150,4 @@ class DisputeMessageBubble extends ConsumerWidget {
     );
   }
 
-  String _formatTime(DateTime dateTime) {
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-
-    if (difference.inMinutes < 1) {
-      return 'now';
-    } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes}m ago';
-    } else if (difference.inHours < 24) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays}d ago';
-    } else {
-      return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
-    }
-  }
 }

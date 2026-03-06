@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
+import 'dart:typed_data';
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:dart_nostr/dart_nostr.dart';
@@ -268,6 +269,21 @@ class NostrUtils {
     final sharedKey = Nip44.computeSharedSecret(privateKey, publicKey);
     final nkey = hex.encode(sharedKey);
     return NostrKeyPairs(private: nkey);
+  }
+
+  /// Convert a NostrKeyPairs shared key to raw bytes for encryption operations.
+  /// Used by both P2P chat and dispute chat for multimedia encryption.
+  static Uint8List sharedKeyToBytes(NostrKeyPairs sharedKey) {
+    final hexKey = sharedKey.private;
+    if (hexKey.length != 64) {
+      throw Exception(
+          'Invalid shared key length: expected 64 hex chars, got ${hexKey.length}');
+    }
+    final bytes = Uint8List(32);
+    for (int i = 0; i < 32; i++) {
+      bytes[i] = int.parse(hexKey.substring(i * 2, i * 2 + 2), radix: 16);
+    }
+    return bytes;
   }
 
   /// Creates a NIP-59 encrypted event with the following structure:
