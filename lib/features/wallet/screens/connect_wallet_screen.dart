@@ -244,13 +244,18 @@ class _ConnectWalletScreenState extends ConsumerState<ConnectWalletScreen> {
   }
 
   Future<void> _openQrScanner(BuildContext context) async {
+    // Capture context-dependent values before async gap
+    final messenger = ScaffoldMessenger.of(context);
+    final permDeniedMsg = S.of(context)!.cameraPermissionDenied;
+    final navigator = Navigator.of(context);
+
     // Request camera permission
     final status = await Permission.camera.request();
     if (!status.isGranted) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        messenger.showSnackBar(
           SnackBar(
-            content: Text(S.of(context)!.cameraPermissionDenied),
+            content: Text(permDeniedMsg),
             backgroundColor: AppTheme.backgroundCard,
             behavior: SnackBarBehavior.floating,
           ),
@@ -261,8 +266,7 @@ class _ConnectWalletScreenState extends ConsumerState<ConnectWalletScreen> {
 
     if (!mounted) return;
 
-    final result = await Navigator.push<String>(
-      context,
+    final result = await navigator.push<String>(
       MaterialPageRoute(
         builder: (_) =>
             const QrScannerScreen(uriPrefix: 'nostr+walletconnect://'),
