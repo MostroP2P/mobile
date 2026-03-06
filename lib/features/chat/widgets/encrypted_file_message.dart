@@ -2,50 +2,52 @@ import 'dart:typed_data';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_file/open_file.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
-import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/services/encrypted_file_upload_service.dart';
 import 'package:mostro_mobile/services/file_validation_service.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
 
-class EncryptedFileMessage extends ConsumerStatefulWidget {
+class EncryptedFileMessage extends StatefulWidget {
   final NostrEvent message;
-  final String orderId;
   final bool isOwnMessage;
+  final Future<Uint8List> Function() getSharedKey;
+  final Uint8List? Function(String messageId) getCachedFile;
+  final EncryptedFileUploadResult? Function(String messageId) getFileMetadata;
+  final void Function(String messageId, Uint8List? data, EncryptedFileUploadResult meta) cacheDecryptedFile;
 
   const EncryptedFileMessage({
     super.key,
     required this.message,
-    required this.orderId,
     required this.isOwnMessage,
+    required this.getSharedKey,
+    required this.getCachedFile,
+    required this.getFileMetadata,
+    required this.cacheDecryptedFile,
   });
 
   @override
-  ConsumerState<EncryptedFileMessage> createState() => _EncryptedFileMessageState();
+  State<EncryptedFileMessage> createState() => _EncryptedFileMessageState();
 }
 
-class _EncryptedFileMessageState extends ConsumerState<EncryptedFileMessage> {
+class _EncryptedFileMessageState extends State<EncryptedFileMessage> {
   bool _isLoading = false;
   String? _errorMessage;
 
   @override
   Widget build(BuildContext context) {
-    final chatNotifier = ref.read(chatRoomsProvider(widget.orderId).notifier);
-    
     // Check if message ID is valid
     final messageId = widget.message.id;
     if (messageId == null) {
       return _buildErrorWidget();
     }
-    
+
     // Check if file is already cached
-    final cachedFile = chatNotifier.getCachedFile(messageId);
-    final fileMetadata = chatNotifier.getFileMetadata(messageId);
+    final cachedFile = widget.getCachedFile(messageId);
+    final fileMetadata = widget.getFileMetadata(messageId);
 
     if (cachedFile != null && fileMetadata != null) {
       // Check if it's an image and show preview
@@ -194,7 +196,7 @@ class _EncryptedFileMessageState extends ConsumerState<EncryptedFileMessage> {
   Widget _buildFileWidget(Uint8List? fileData, EncryptedFileUploadResult metadata) {
     final icon = _getFileIcon(metadata.fileType);
     final isDownloaded = fileData != null;
-    
+
     return Container(
       constraints: const BoxConstraints(
         maxWidth: 280,
@@ -423,15 +425,14 @@ class _EncryptedFileMessageState extends ConsumerState<EncryptedFileMessage> {
     }
 
     try {
-      final chatNotifier = ref.read(chatRoomsProvider(widget.orderId).notifier);
       final metadata = _parseFileMetadata();
-      
+
       if (metadata == null) {
         throw Exception('Invalid file message format');
       }
 
       // Get shared key
-      final sharedKey = await chatNotifier.getSharedKey();
+      final sharedKey = await widget.getSharedKey();
 
       // Download and decrypt file
       final uploadService = EncryptedFileUploadService();
@@ -443,7 +444,7 @@ class _EncryptedFileMessageState extends ConsumerState<EncryptedFileMessage> {
       // Cache the file
       final messageId = widget.message.id;
       if (messageId != null) {
-        chatNotifier.cacheDecryptedFile(messageId, decryptedFile, metadata);
+        widget.cacheDecryptedFile(messageId, decryptedFile, metadata);
       }
 
       if (mounted) {
@@ -467,11 +468,10 @@ class _EncryptedFileMessageState extends ConsumerState<EncryptedFileMessage> {
       if (messageId == null) {
         throw Exception('Invalid message: missing ID');
       }
-      
-      final chatNotifier = ref.read(chatRoomsProvider(widget.orderId).notifier);
-      final cachedFile = chatNotifier.getCachedFile(messageId);
-      final metadata = chatNotifier.getFileMetadata(messageId);
-      
+
+      final cachedFile = widget.getCachedFile(messageId);
+      final metadata = widget.getFileMetadata(messageId);
+
       if (cachedFile == null || metadata == null) {
         throw Exception('File not available');
       }
@@ -480,19 +480,18 @@ class _EncryptedFileMessageState extends ConsumerState<EncryptedFileMessage> {
       final tempDir = await getTemporaryDirectory();
       final sanitizedFilename = _sanitizeFilename(metadata.filename);
       final tempFile = File('${tempDir.path}/$sanitizedFilename');
-      
+
       // Basic security check: ensure sanitized filename is safe
-      // The sanitization function already handles most security concerns
-      if (sanitizedFilename.contains('/') || sanitizedFilename.contains('\\') || 
+      if (sanitizedFilename.contains('/') || sanitizedFilename.contains('\\') ||
           sanitizedFilename.contains('..') || sanitizedFilename.trim().isEmpty) {
         throw Exception('Security error: Invalid characters in sanitized filename');
       }
-      
+
       await tempFile.writeAsBytes(cachedFile);
 
       // Open file with system default app
       final result = await OpenFile.open(tempFile.path);
-      
+
       if (mounted) {
         if (result.type != ResultType.done) {
           SnackBarHelper.showTopSnackBar(
@@ -528,7 +527,7 @@ class _EncryptedFileMessageState extends ConsumerState<EncryptedFileMessage> {
   String _sanitizeFilename(String filename) {
     // 1. Get basename only (remove any directory components)
     final basename = filename.split(RegExp(r'[/\\]')).last;
-    
+
     // 2. Normalize accented characters to prevent encoding issues
     String normalized = basename
         .replaceAll('á', 'a').replaceAll('é', 'e').replaceAll('í', 'i')
@@ -536,13 +535,13 @@ class _EncryptedFileMessageState extends ConsumerState<EncryptedFileMessage> {
         .replaceAll('ü', 'u').replaceAll('Á', 'A').replaceAll('É', 'E')
         .replaceAll('Í', 'I').replaceAll('Ó', 'O').replaceAll('Ú', 'U')
         .replaceAll('Ñ', 'N').replaceAll('Ü', 'U');
-    
+
     // 3. Replace spaces with underscores and remove dangerous characters
     final cleaned = normalized
         .replaceAll(RegExp(r'\s+'), '_')  // Replace spaces with underscores
         .replaceAll(RegExp(r'[<>:"|?*\x00-\x1F]'), '_')  // Remove dangerous chars
         .replaceAll('..', '_');  // Prevent directory traversal patterns
-    
+
     // 4. Preserve file extension
     String sanitized = cleaned;
     if (sanitized.contains('.')) {
@@ -551,7 +550,7 @@ class _EncryptedFileMessageState extends ConsumerState<EncryptedFileMessage> {
         final extension = parts.last;
         final nameWithoutExt = parts.sublist(0, parts.length - 1).join('_');
         final maxNameLength = 100 - extension.length - 1;
-        final truncatedName = nameWithoutExt.length > maxNameLength 
+        final truncatedName = nameWithoutExt.length > maxNameLength
             ? nameWithoutExt.substring(0, maxNameLength)
             : nameWithoutExt;
         sanitized = '$truncatedName.$extension';
@@ -560,18 +559,17 @@ class _EncryptedFileMessageState extends ConsumerState<EncryptedFileMessage> {
       // No extension, just limit length
       sanitized = sanitized.length > 100 ? sanitized.substring(0, 100) : sanitized;
     }
-    
+
     // 5. Ensure not empty and not Windows reserved names
     final nameOnly = sanitized.contains('.') ? sanitized.split('.').first : sanitized;
     if (sanitized.isEmpty || nameOnly.isEmpty ||
-        ['CON', 'PRN', 'AUX', 'NUL', 'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 
-         'COM6', 'COM7', 'COM8', 'COM9', 'LPT1', 'LPT2', 'LPT3', 'LPT4', 
+        ['CON', 'PRN', 'AUX', 'NUL', 'COM1', 'COM2', 'COM3', 'COM4', 'COM5',
+         'COM6', 'COM7', 'COM8', 'COM9', 'LPT1', 'LPT2', 'LPT3', 'LPT4',
          'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9'].contains(nameOnly.toUpperCase())) {
       final extension = sanitized.contains('.') ? '.${sanitized.split('.').last}' : '';
       return 'file_${DateTime.now().millisecondsSinceEpoch}$extension';
     }
-    
+
     return sanitized;
   }
 }
-
