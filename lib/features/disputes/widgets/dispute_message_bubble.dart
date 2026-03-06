@@ -1,24 +1,28 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/chat/utils/message_type_helpers.dart';
+import 'package:mostro_mobile/features/chat/widgets/encrypted_image_message.dart';
+import 'package:mostro_mobile/features/chat/widgets/encrypted_file_message.dart';
 import 'package:mostro_mobile/features/disputes/notifiers/dispute_chat_notifier.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
 
-class DisputeMessageBubble extends StatelessWidget {
+class DisputeMessageBubble extends ConsumerWidget {
   final DisputeChatMessage message;
   final bool isFromUser;
+  final String disputeId;
 
   const DisputeMessageBubble({
     super.key,
     required this.message,
     required this.isFromUser,
+    required this.disputeId,
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final messageType = MessageTypeUtils.getMessageType(message.event);
 
     return Container(
@@ -34,7 +38,7 @@ class DisputeMessageBubble extends StatelessWidget {
                 maxWidth: MediaQuery.of(context).size.width * 0.75,
                 minWidth: 0,
               ),
-              child: _buildBubbleContent(context, messageType),
+              child: _buildBubbleContent(context, ref, messageType),
             ),
           ),
         ],
@@ -43,15 +47,43 @@ class DisputeMessageBubble extends StatelessWidget {
   }
 
   Widget _buildBubbleContent(
-      BuildContext context, MessageContentType messageType) {
+      BuildContext context, WidgetRef ref, MessageContentType messageType) {
     switch (messageType) {
       case MessageContentType.encryptedImage:
-        return _buildMediaPlaceholder(context, isImage: true);
+        return _buildMultimediaWidget(context, ref, isImage: true);
       case MessageContentType.encryptedFile:
-        return _buildMediaPlaceholder(context, isImage: false);
+        return _buildMultimediaWidget(context, ref, isImage: false);
       case MessageContentType.text:
         return _buildTextBubble(context);
     }
+  }
+
+  Widget _buildMultimediaWidget(BuildContext context, WidgetRef ref,
+      {required bool isImage}) {
+    final notifier =
+        ref.read(disputeChatNotifierProvider(disputeId).notifier);
+
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: _bubbleDecoration(),
+      child: isImage
+          ? EncryptedImageMessage(
+              message: message.event,
+              isOwnMessage: isFromUser,
+              getSharedKey: notifier.getAdminSharedKey,
+              getCachedImage: notifier.getCachedImage,
+              getImageMetadata: notifier.getImageMetadata,
+              cacheDecryptedImage: notifier.cacheDecryptedImage,
+            )
+          : EncryptedFileMessage(
+              message: message.event,
+              isOwnMessage: isFromUser,
+              getSharedKey: notifier.getAdminSharedKey,
+              getCachedFile: notifier.getCachedFile,
+              getFileMetadata: notifier.getFileMetadata,
+              cacheDecryptedFile: notifier.cacheDecryptedFile,
+            ),
+    );
   }
 
   Widget _buildTextBubble(BuildContext context) {
@@ -75,90 +107,6 @@ class DisputeMessageBubble extends StatelessWidget {
             _buildTimestamp(),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildMediaPlaceholder(BuildContext context,
-      {required bool isImage}) {
-    Map<String, dynamic>? metadata;
-    try {
-      metadata = jsonDecode(message.content) as Map<String, dynamic>;
-    } catch (_) {
-      // Malformed JSON — fall back to text bubble
-      return _buildTextBubble(context);
-    }
-
-    final filename = metadata['filename'] as String? ?? '';
-    final originalSize = (metadata['original_size'] as num?)?.toInt() ?? 0;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: _bubbleDecoration(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                isImage ? Icons.image : Icons.insert_drive_file,
-                color: AppTheme.cream1,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  filename,
-                  style: const TextStyle(
-                    color: AppTheme.cream1,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                _formatFileSize(originalSize),
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 12,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                '·',
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 12,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Icon(
-                Icons.lock,
-                color: Colors.white70,
-                size: 12,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                S.of(context)!.encrypted,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          _buildTimestamp(),
-        ],
       ),
     );
   }
@@ -199,14 +147,6 @@ class DisputeMessageBubble extends StatelessWidget {
       duration: const Duration(seconds: 1),
       backgroundColor: Colors.green,
     );
-  }
-
-  String _formatFileSize(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) {
-      return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    }
-    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 
   String _formatTime(DateTime dateTime) {

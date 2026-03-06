@@ -145,6 +145,7 @@ class _DisputeMessagesListState extends ConsumerState<DisputeMessagesList> {
                         return DisputeMessageBubble(
                           message: message,
                           isFromUser: notifier.isFromUser(message),
+                          disputeId: widget.disputeId,
                         );
                     }
                   },

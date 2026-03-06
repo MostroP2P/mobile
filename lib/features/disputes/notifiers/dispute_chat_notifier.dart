@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +7,9 @@ import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
+import 'package:mostro_mobile/features/chat/utils/message_type_helpers.dart';
+import 'package:mostro_mobile/services/encrypted_image_upload_service.dart';
+import 'package:mostro_mobile/services/encrypted_file_upload_service.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
@@ -209,6 +213,9 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
       deduped.sort((a, b) => a.timestamp.compareTo(b.timestamp));
 
       state = state.copyWith(messages: deduped);
+
+      // Fire-and-forget: pre-download media after message is in state
+      unawaited(_processMessageContent(unwrappedEvent));
       logger.i('Added dispute chat message for dispute: $disputeId '
           '(from ${isFromAdmin ? "admin" : "user"})');
     } catch (e, stackTrace) {
@@ -277,6 +284,8 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
 
           // Decrypt and unwrap the message
           final unwrappedEvent = await storedEvent.p2pUnwrap(session.adminSharedKey!);
+          // Fire-and-forget: pre-download media without blocking history load
+          unawaited(_processMessageContent(unwrappedEvent));
           messages.add(DisputeChatMessage(event: unwrappedEvent));
         } catch (e) {
           logger.w('Failed to process historical dispute event ${eventData['id']}: $e');
@@ -414,6 +423,99 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
     return bytes;
   }
 
+  // Media cache for decrypted images
+  final Map<String, Uint8List> _imageCache = {};
+  final Map<String, EncryptedImageUploadResult> _imageMetadata = {};
+
+  // Media cache for decrypted files
+  final Map<String, Uint8List> _fileCache = {};
+  final Map<String, EncryptedFileUploadResult> _fileMetadata = {};
+
+  void cacheDecryptedImage(String messageId, Uint8List data, EncryptedImageUploadResult meta) {
+    _imageCache[messageId] = data;
+    _imageMetadata[messageId] = meta;
+  }
+
+  Uint8List? getCachedImage(String messageId) => _imageCache[messageId];
+  EncryptedImageUploadResult? getImageMetadata(String messageId) => _imageMetadata[messageId];
+
+  void cacheDecryptedFile(String messageId, Uint8List? data, EncryptedFileUploadResult meta) {
+    if (data != null) {
+      _fileCache[messageId] = data;
+    }
+    _fileMetadata[messageId] = meta;
+  }
+
+  Uint8List? getCachedFile(String messageId) => _fileCache[messageId];
+  EncryptedFileUploadResult? getFileMetadata(String messageId) => _fileMetadata[messageId];
+
+  /// Process special message content (encrypted images/files) for auto-download
+  Future<void> _processMessageContent(NostrEvent message) async {
+    try {
+      final content = message.content;
+      if (content == null || !content.startsWith('{')) return;
+
+      Map<String, dynamic>? jsonContent;
+      try {
+        final decoded = jsonDecode(content);
+        if (decoded is Map<String, dynamic>) {
+          jsonContent = decoded;
+        }
+      } catch (_) {
+        return;
+      }
+
+      if (jsonContent != null) {
+        if (MessageTypeUtils.isEncryptedImageMessage(message)) {
+          await _processEncryptedImageMessage(message, jsonContent);
+        } else if (MessageTypeUtils.isEncryptedFileMessage(message)) {
+          await _processEncryptedFileMessage(message, jsonContent);
+        }
+      }
+    } catch (e) {
+      logger.w('Error processing message content: $e');
+    }
+  }
+
+  Future<void> _processEncryptedImageMessage(NostrEvent message, Map<String, dynamic> imageData) async {
+    try {
+      final result = EncryptedImageUploadResult.fromJson(imageData);
+      final sharedKey = await getAdminSharedKey();
+      final uploadService = EncryptedImageUploadService();
+      final decryptedImage = await uploadService.downloadAndDecryptImage(
+        blossomUrl: result.blossomUrl,
+        sharedKey: sharedKey,
+      );
+      cacheDecryptedImage(message.id!, decryptedImage, result);
+    } catch (e) {
+      logger.e('Failed to process encrypted image: $e');
+    }
+  }
+
+  Future<void> _processEncryptedFileMessage(NostrEvent message, Map<String, dynamic> fileData) async {
+    try {
+      final result = EncryptedFileUploadResult.fromJson(fileData);
+      if (result.fileType == 'image') {
+        try {
+          final sharedKey = await getAdminSharedKey();
+          final uploadService = EncryptedFileUploadService();
+          final decryptedFile = await uploadService.downloadAndDecryptFile(
+            blossomUrl: result.blossomUrl,
+            sharedKey: sharedKey,
+          );
+          cacheDecryptedFile(message.id!, decryptedFile, result);
+        } catch (e) {
+          logger.e('Failed to auto-download image file: $e');
+          cacheDecryptedFile(message.id!, null, result);
+        }
+      } else {
+        cacheDecryptedFile(message.id!, null, result);
+      }
+    } catch (e) {
+      logger.e('Failed to process encrypted file: $e');
+    }
+  }
+
   /// Determine if a message is from the current user
   bool isFromUser(DisputeChatMessage message) {
     final session = _getSessionForDispute();
@@ -451,6 +553,10 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
   void dispose() {
     _subscription?.cancel();
     _sessionListener?.close();
+    _imageCache.clear();
+    _imageMetadata.clear();
+    _fileCache.clear();
+    _fileMetadata.clear();
     super.dispose();
   }
 }
