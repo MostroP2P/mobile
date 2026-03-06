@@ -52,6 +52,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
+          tooltip: S.of(context)!.close,
           icon: const HeroIcon(HeroIcons.xMark, color: Colors.white),
           onPressed: () => context.pop(),
         ),
@@ -65,6 +66,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
         ),
         actions: [
           IconButton(
+            tooltip: S.of(context)!.toggleTorch,
             icon: Icon(
               _torchOn ? Icons.flash_on : Icons.flash_off,
               color: _torchOn ? AppTheme.activeColor : Colors.white,
@@ -75,6 +77,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
             },
           ),
           IconButton(
+            tooltip: S.of(context)!.switchCamera,
             icon: const Icon(Icons.cameraswitch, color: Colors.white),
             onPressed: () => _controller.switchCamera(),
           ),

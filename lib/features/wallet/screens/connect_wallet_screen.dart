@@ -253,13 +253,15 @@ class _ConnectWalletScreenState extends ConsumerState<ConnectWalletScreen> {
     final status = await Permission.camera.request();
     if (!status.isGranted) {
       if (mounted) {
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text(permDeniedMsg),
-            backgroundColor: AppTheme.backgroundCard,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          messenger.showSnackBar(
+            SnackBar(
+              content: Text(permDeniedMsg),
+              backgroundColor: AppTheme.backgroundCard,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        });
       }
       return;
     }

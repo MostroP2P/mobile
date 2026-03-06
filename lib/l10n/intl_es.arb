@@ -1476,5 +1476,7 @@
             }
         }
     },
-    "cameraPermissionDenied": "Se requiere permiso de cámara para escanear códigos QR"
+    "cameraPermissionDenied": "Se requiere permiso de cámara para escanear códigos QR",
+    "toggleTorch": "Activar/desactivar linterna",
+    "switchCamera": "Cambiar cámara"
 }

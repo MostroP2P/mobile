@@ -1501,5 +1501,7 @@
             }
         }
     },
-    "cameraPermissionDenied": "L'autorisation de la caméra est requise pour scanner les codes QR"
+    "cameraPermissionDenied": "L'autorisation de la caméra est requise pour scanner les codes QR",
+    "toggleTorch": "Activer/désactiver la lampe",
+    "switchCamera": "Changer de caméra"
 }
