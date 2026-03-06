@@ -58,6 +58,7 @@ class ChatFileUploadHelper {
         if (!isMounted()) return false;
         final currentMb = (fileSize / (1024 * 1024)).toStringAsFixed(1);
         SnackBarHelper.showTopSnackBar(
+          // ignore: use_build_context_synchronously
           context,
           l10n.fileTooLarge(currentMb, maxMb),
           backgroundColor: Colors.red,
@@ -66,6 +67,7 @@ class ChatFileUploadHelper {
       }
 
       // Show confirmation dialog before uploading
+      // ignore: use_build_context_synchronously
       final shouldUpload = await _showFileConfirmationDialog(context, filename);
       if (!isMounted()) return false;
       if (!shouldUpload) return false;
@@ -97,6 +99,7 @@ class ChatFileUploadHelper {
     } catch (e) {
       if (isMounted()) {
         SnackBarHelper.showTopSnackBar(
+          // ignore: use_build_context_synchronously
           context,
           l10n.errorUploadingFile(e.toString()),
           backgroundColor: Colors.red,
