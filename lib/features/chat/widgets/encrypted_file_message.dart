@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_file/open_file.dart';
+import 'package:diacritic/diacritic.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/services/encrypted_file_upload_service.dart';
 import 'package:mostro_mobile/services/file_validation_service.dart';
@@ -528,13 +529,8 @@ class _EncryptedFileMessageState extends State<EncryptedFileMessage> {
     // 1. Get basename only (remove any directory components)
     final basename = filename.split(RegExp(r'[/\\]')).last;
 
-    // 2. Normalize accented characters to prevent encoding issues
-    String normalized = basename
-        .replaceAll('á', 'a').replaceAll('é', 'e').replaceAll('í', 'i')
-        .replaceAll('ó', 'o').replaceAll('ú', 'u').replaceAll('ñ', 'n')
-        .replaceAll('ü', 'u').replaceAll('Á', 'A').replaceAll('É', 'E')
-        .replaceAll('Í', 'I').replaceAll('Ó', 'O').replaceAll('Ú', 'U')
-        .replaceAll('Ñ', 'N').replaceAll('Ü', 'U');
+    // 2. Normalize accented characters using diacritic package
+    String normalized = removeDiacritics(basename);
 
     // 3. Replace spaces with underscores and remove dangerous characters
     final cleaned = normalized

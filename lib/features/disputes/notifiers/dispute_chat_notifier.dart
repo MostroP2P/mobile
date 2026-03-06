@@ -284,6 +284,7 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
 
           // Decrypt and unwrap the message
           final unwrappedEvent = await storedEvent.p2pUnwrap(session.adminSharedKey!);
+          await _processMessageContent(unwrappedEvent);
           messages.add(DisputeChatMessage(event: unwrappedEvent));
         } catch (e) {
           logger.w('Failed to process historical dispute event ${eventData['id']}: $e');
