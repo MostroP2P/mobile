@@ -3,6 +3,8 @@ import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/dispute.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
+import 'package:mostro_mobile/data/models/enums/order_type.dart';
+import 'package:mostro_mobile/data/models/enums/status.dart';
 
 void main() {
   group('MostroMessage<Dispute> Serialization', () {
@@ -147,6 +149,56 @@ void main() {
       expect(restoredDispute.status, originalDispute.status);
       expect(restoredDispute.action, originalDispute.action);
       expect(restoredDispute.createdAt, originalDispute.createdAt);
+    });
+
+    test('should serialize and deserialize Dispute with nested Order object', () {
+      // Arrange - Create a nested Order within Dispute (regression test for casting bug)
+      final nestedOrder = Order(
+        id: 'nested-order-789',
+        kind: OrderType.buy,
+        status: Status.pending,
+        fiatCode: 'USD',
+        fiatAmount: 100,
+        paymentMethod: 'cash',
+        premium: 0,
+        amount: 10000,
+      );
+
+      final disputeWithOrder = Dispute(
+        disputeId: 'dispute-with-order-123',
+        orderId: 'nested-order-789',
+        status: 'in-progress',
+        action: 'dispute-initiated-by-peer',
+        order: nestedOrder, // Include nested order
+        createdAt: DateTime(2024, 3, 6, 16, 0),
+      );
+
+      final message = MostroMessage<Dispute>(
+        id: 'nested-order-789',
+        action: Action.disputeInitiatedByPeer,
+        payload: disputeWithOrder,
+        timestamp: 1709740800000,
+      );
+
+      // Act - Serialize and deserialize
+      final json = message.toJson();
+      final restored = MostroMessage.fromJson(json);
+      final restoredDispute = restored.getPayload<Dispute>();
+
+      // Assert - Dispute fields preserved
+      expect(restoredDispute, isNotNull);
+      expect(restoredDispute!.disputeId, 'dispute-with-order-123');
+      expect(restoredDispute.orderId, 'nested-order-789');
+      expect(restoredDispute.status, 'in-progress');
+
+      // Assert - Nested Order is preserved (regression test for json['order'] casting)
+      expect(restoredDispute.order, isNotNull,
+          reason: 'Nested order should be preserved through serialization');
+      expect(restoredDispute.order!.id, nestedOrder.id,
+          reason: 'Nested order ID should match original');
+      expect(restoredDispute.order!.fiatCode, nestedOrder.fiatCode);
+      expect(restoredDispute.order!.fiatAmount, nestedOrder.fiatAmount);
+      expect(restoredDispute.order!.paymentMethod, nestedOrder.paymentMethod);
     });
   });
 }

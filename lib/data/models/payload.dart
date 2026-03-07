@@ -13,7 +13,11 @@ abstract class Payload {
   Map<String, dynamic> toJson();
 
   factory Payload.fromJson(Map<String, dynamic> json) {
-    if (json.containsKey('order')) {
+    // Check for dispute first, as a Dispute can contain a nested Order
+    // If we check 'order' first, Disputes with nested Orders will be incorrectly parsed as Orders
+    if (json.containsKey('dispute')) {
+      return Dispute.fromJson(json);
+    } else if (json.containsKey('order')) {
       return Order.fromJson(json['order']);
     } else if (json.containsKey('payment_request')) {
       return PaymentRequest.fromJson(json['payment_request']);
@@ -21,8 +25,6 @@ abstract class Payload {
       return CantDo.fromJson(json);
     } else if (json.containsKey('peer')) {
       return Peer.fromJson(json['peer']);
-    } else if (json.containsKey('dispute')) {
-      return Dispute.fromJson(json);
     } else if (json.containsKey('rating_user')) {
       return RatingUser.fromJson(json['rating_user']);
     } else if (json.containsKey('payment_failed')) {
