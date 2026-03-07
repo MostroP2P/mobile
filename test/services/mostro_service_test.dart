@@ -127,6 +127,8 @@ void main() {
     );
     when(mockRef.read(sessionNotifierProvider.notifier))
         .thenReturn(mockSessionNotifier);
+    when(mockRef.read(sessionNotifierProvider))
+        .thenReturn(<Session>[]);
 
     // Create mockSubscriptionManager with the stubbed mockRef
     mockSubscriptionManager = MockSubscriptionManager(mockRef);
