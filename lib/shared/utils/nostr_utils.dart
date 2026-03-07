@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import 'dart:math';
-import 'dart:typed_data';
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:dart_nostr/dart_nostr.dart';
@@ -538,14 +537,27 @@ class NostrUtils {
   /// Creates a new event with a `["nonce", "<value>", "<difficulty>"]` tag
   /// that produces an event id with the required number of leading zero bits.
   ///
+  /// Maximum supported PoW difficulty to prevent abuse from misconfigured
+  /// or hostile Mostro nodes that could trigger unbounded CPU work.
+  static const int maxPowDifficulty = 24;
+
   /// The mining runs in a separate isolate to avoid blocking the UI.
   /// Difficulty of 0 returns the event unchanged.
+  /// Throws [ArgumentError] if difficulty exceeds [maxPowDifficulty].
   static Future<NostrEvent> mineProofOfWork(
     NostrEvent event,
     int difficulty,
     NostrKeyPairs keyPairs,
   ) async {
     if (difficulty <= 0) return event;
+
+    if (difficulty > maxPowDifficulty) {
+      throw ArgumentError.value(
+        difficulty,
+        'difficulty',
+        'PoW difficulty exceeds supported maximum $maxPowDifficulty',
+      );
+    }
 
     final createdAt = event.createdAt ?? DateTime.now();
     final createdAtSeconds = createdAt.millisecondsSinceEpoch ~/ 1000;

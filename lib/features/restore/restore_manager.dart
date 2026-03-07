@@ -904,10 +904,9 @@ class RestoreService {
         error: e,
         stackTrace: stack,
       );
-      final errorMessage = e.toString();
       ref
           .read(restoreProgressProvider.notifier)
-          .showError('Restore failed: $errorMessage');
+          .showError('Restore failed. Please try again.');
     } finally {
       // Cleanup: always cancel subscription and clear keys
       logger.i('Restore: cleaning up subscription and keys');

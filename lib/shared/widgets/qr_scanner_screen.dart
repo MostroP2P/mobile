@@ -73,6 +73,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
             ),
             onPressed: () async {
               await _controller.toggleTorch();
+              if (!mounted) return;
               setState(() => _torchOn = !_torchOn);
             },
           ),
