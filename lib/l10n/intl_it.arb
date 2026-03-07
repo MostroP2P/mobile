@@ -1534,5 +1534,8 @@
                 "type": "String"
             }
         }
-    }
+    },
+    "cameraPermissionDenied": "È necessaria l'autorizzazione della fotocamera per scansionare i codici QR",
+    "toggleTorch": "Attiva/disattiva torcia",
+    "switchCamera": "Cambia fotocamera"
 }
