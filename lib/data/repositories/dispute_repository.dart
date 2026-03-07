@@ -47,12 +47,12 @@ class DisputeRepository {
       final mostroInstance =
           _ref.read(orderRepositoryProvider).mostroInstance;
       if (mostroInstance == null) {
-        logger.e(
-          'Mostro instance info is unavailable, cannot determine PoW for dispute creation',
+        logger.w(
+          'Mostro instance info unavailable, sending dispute with PoW 0 — '
+          'event may be rejected if node requires PoW',
         );
-        return false;
       }
-      final mostroPow = mostroInstance.pow;
+      final mostroPow = mostroInstance?.pow ?? 0;
       final event = await disputeMessage.wrap(
         tradeKey: session.tradeKey,
         recipientPubKey: _mostroPubkey,
