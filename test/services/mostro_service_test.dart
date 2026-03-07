@@ -26,6 +26,8 @@ import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
+import 'package:mostro_mobile/data/repositories/open_orders_repository.dart';
+import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 
 import '../mocks.dart';
 import '../mocks.mocks.dart';
@@ -40,6 +42,9 @@ void main() {
         '6d5c471d0e88c8c688c85dd8a3d84e3c7c5e8a3b6d7a6b2c9e8c5d9a7b3e6c8a',
     defaultFiatCode: 'USD',
   ));
+
+  // Add dummy for OpenOrdersRepository
+  provideDummy<OpenOrdersRepository>(MockOpenOrdersRepository());
 
   // Add dummy for MostroStorage
   provideDummy<MostroStorage>(MockMostroStorage());
@@ -129,6 +134,10 @@ void main() {
         .thenReturn(mockSessionNotifier);
     when(mockRef.read(sessionNotifierProvider))
         .thenReturn(<Session>[]);
+
+    // Stub orderRepositoryProvider so publishOrder can read PoW difficulty
+    final mockOrderRepo = MockOpenOrdersRepository();
+    when(mockRef.read(orderRepositoryProvider)).thenReturn(mockOrderRepo);
 
     // Create mockSubscriptionManager with the stubbed mockRef
     mockSubscriptionManager = MockSubscriptionManager(mockRef);
