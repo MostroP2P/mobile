@@ -10,6 +10,8 @@ import 'package:mostro_mobile/features/order/providers/order_notifier_provider.d
 import 'package:mostro_mobile/features/chat/utils/message_type_helpers.dart';
 import 'package:mostro_mobile/services/encrypted_image_upload_service.dart';
 import 'package:mostro_mobile/services/encrypted_file_upload_service.dart';
+import 'package:mostro_mobile/shared/mixins/media_cache_mixin.dart';
+import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
@@ -72,7 +74,7 @@ class DisputeChatState {
 /// Notifier for dispute chat messages
 /// Uses shared key encryption (p2pWrap/p2pUnwrap) with admin via ECDH.
 /// Stores gift wrap events (encrypted) on disk, same pattern as P2P chat.
-class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
+class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCacheMixin {
   final String disputeId;
   final Ref ref;
 
@@ -409,45 +411,8 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
     if (session == null || session.adminSharedKey == null) {
       throw Exception('Admin shared key not available for dispute: $disputeId');
     }
-
-    final hexKey = session.adminSharedKey!.private;
-    if (hexKey.length != 64) {
-      throw Exception('Invalid admin shared key length: expected 64 hex chars, '
-          'got ${hexKey.length}');
-    }
-
-    final bytes = Uint8List(32);
-    for (int i = 0; i < 32; i++) {
-      bytes[i] = int.parse(hexKey.substring(i * 2, i * 2 + 2), radix: 16);
-    }
-    return bytes;
+    return NostrUtils.sharedKeyToBytes(session.adminSharedKey!);
   }
-
-  // Media cache for decrypted images
-  final Map<String, Uint8List> _imageCache = {};
-  final Map<String, EncryptedImageUploadResult> _imageMetadata = {};
-
-  // Media cache for decrypted files
-  final Map<String, Uint8List> _fileCache = {};
-  final Map<String, EncryptedFileUploadResult> _fileMetadata = {};
-
-  void cacheDecryptedImage(String messageId, Uint8List data, EncryptedImageUploadResult meta) {
-    _imageCache[messageId] = data;
-    _imageMetadata[messageId] = meta;
-  }
-
-  Uint8List? getCachedImage(String messageId) => _imageCache[messageId];
-  EncryptedImageUploadResult? getImageMetadata(String messageId) => _imageMetadata[messageId];
-
-  void cacheDecryptedFile(String messageId, Uint8List? data, EncryptedFileUploadResult meta) {
-    if (data != null) {
-      _fileCache[messageId] = data;
-    }
-    _fileMetadata[messageId] = meta;
-  }
-
-  Uint8List? getCachedFile(String messageId) => _fileCache[messageId];
-  EncryptedFileUploadResult? getFileMetadata(String messageId) => _fileMetadata[messageId];
 
   /// Process special message content (encrypted images/files) for auto-download
   Future<void> _processMessageContent(NostrEvent message) async {
@@ -553,10 +518,7 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> {
   void dispose() {
     _subscription?.cancel();
     _sessionListener?.close();
-    _imageCache.clear();
-    _imageMetadata.clear();
-    _fileCache.clear();
-    _fileMetadata.clear();
+    clearMediaCaches();
     super.dispose();
   }
 }
