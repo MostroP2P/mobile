@@ -316,7 +316,12 @@ class MostroService {
 
     // Read PoW difficulty from the connected Mostro instance (kind 38385)
     final mostroInstance = ref.read(orderRepositoryProvider).mostroInstance;
-    final difficulty = mostroInstance?.pow ?? 0;
+    if (mostroInstance == null) {
+      throw StateError(
+        'Mostro instance info is unavailable, cannot determine PoW requirement',
+      );
+    }
+    final difficulty = mostroInstance.pow;
 
     final event = await order.wrap(
       tradeKey: session.tradeKey,
