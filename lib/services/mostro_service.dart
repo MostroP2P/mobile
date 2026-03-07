@@ -13,6 +13,7 @@ import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
+import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 
 class MostroService {
   final Ref ref;
@@ -25,21 +26,27 @@ class MostroService {
   void init() {
     // Subscribe to the orders stream from SubscriptionManager
     // The SubscriptionManager will automatically manage subscriptions based on SessionNotifier changes
-    _ordersSubscription = ref.read(subscriptionManagerProvider).orders.listen(
-      _onData,
-      onError: (error, stackTrace) {
-        logger.e('Error in orders subscription',
-            error: error, stackTrace: stackTrace);
-      },
-      cancelOnError: false,
-    );
+    _ordersSubscription = ref
+        .read(subscriptionManagerProvider)
+        .orders
+        .listen(
+          _onData,
+          onError: (error, stackTrace) {
+            logger.e(
+              'Error in orders subscription',
+              error: error,
+              stackTrace: stackTrace,
+            );
+          },
+          cancelOnError: false,
+        );
   }
 
   void dispose() {
     _ordersSubscription?.cancel();
     logger.i('MostroService disposed');
   }
-  
+
   //IMPORTANT : The app always use trade index 1 for restore-related messages
   // When subscribtions are created from restore process for real orders, restore related messages may be avoided
   bool _isRestorePayload(Map<String, dynamic> json) {
@@ -98,13 +105,10 @@ class MostroService {
     final eventStore = ref.read(eventStorageProvider);
 
     if (await eventStore.hasItem(event.id!)) return;
-    await eventStore.putItem(
-      event.id!,
-      {
-        'id': event.id,
-        'created_at': event.createdAt!.millisecondsSinceEpoch ~/ 1000,
-      },
-    );
+    await eventStore.putItem(event.id!, {
+      'id': event.id,
+      'created_at': event.createdAt!.millisecondsSinceEpoch ~/ 1000,
+    });
 
     final sessions = ref.read(sessionNotifierProvider);
     final matchingSession = sessions.firstWhereOrNull(
@@ -122,7 +126,7 @@ class MostroService {
       if (decryptedEvent.content == null) return;
 
       final result = jsonDecode(decryptedEvent.content!);
-      
+
       // Ensure result is a non-empty List before accessing elements
       if (result is! List || result.isEmpty) {
         logger.w('Received empty or invalid payload, skipping');
@@ -130,17 +134,21 @@ class MostroService {
       }
 
       // Skip restore-specific payloads that arrive as historical events due to temporary subscription
-      if (result[0] is Map && _isRestorePayload(result[0] as Map<String, dynamic>)) {
+      if (result[0] is Map &&
+          _isRestorePayload(result[0] as Map<String, dynamic>)) {
         return;
       }
 
       final msg = MostroMessage.fromJson(result[0]);
 
       final messageStorage = ref.read(mostroStorageProvider);
-      
+
       // Use decryptedEvent.id if available, otherwise fall back to original event.id
       // This handles cases where admin messages might not have an id in the decrypted event
-      final messageKey = decryptedEvent.id ?? event.id ?? 'msg_${DateTime.now().millisecondsSinceEpoch}';
+      final messageKey =
+          decryptedEvent.id ??
+          event.id ??
+          'msg_${DateTime.now().millisecondsSinceEpoch}';
       await messageStorage.addMessage(messageKey, msg);
       logger.i(
         'Received DM, Event ID: ${decryptedEvent.id ?? event.id} with payload: ${decryptedEvent.content}',
@@ -184,32 +192,23 @@ class MostroService {
   Future<void> takeBuyOrder(String orderId, int? amount) async {
     final amt = amount != null ? Amount(amount: amount) : null;
     await publishOrder(
-      MostroMessage(
-        action: Action.takeBuy,
-        id: orderId,
-        payload: amt,
-      ),
+      MostroMessage(action: Action.takeBuy, id: orderId, payload: amt),
     );
   }
 
   Future<void> takeSellOrder(
-      String orderId, int? amount, String? lnAddress) async {
+    String orderId,
+    int? amount,
+    String? lnAddress,
+  ) async {
     final payload = lnAddress != null
-        ? PaymentRequest(
-            order: null,
-            lnInvoice: lnAddress,
-            amount: amount,
-          )
+        ? PaymentRequest(order: null, lnInvoice: lnAddress, amount: amount)
         : amount != null
-            ? Amount(amount: amount)
-            : null;
+        ? Amount(amount: amount)
+        : null;
 
     await publishOrder(
-      MostroMessage(
-        action: Action.takeSell,
-        id: orderId,
-        payload: payload,
-      ),
+      MostroMessage(action: Action.takeSell, id: orderId, payload: payload),
     );
   }
 
@@ -220,21 +219,12 @@ class MostroService {
       amount: amount,
     );
     await publishOrder(
-      MostroMessage(
-        action: Action.addInvoice,
-        id: orderId,
-        payload: payload,
-      ),
+      MostroMessage(action: Action.addInvoice, id: orderId, payload: payload),
     );
   }
 
   Future<void> cancelOrder(String orderId) async {
-    await publishOrder(
-      MostroMessage(
-        action: Action.cancel,
-        id: orderId,
-      ),
-    );
+    await publishOrder(MostroMessage(action: Action.cancel, id: orderId));
   }
 
   Future<void> sendFiatSent(String orderId) async {
@@ -244,11 +234,7 @@ class MostroService {
     );
 
     await publishOrder(
-      MostroMessage(
-        action: Action.fiatSent,
-        id: orderId,
-        payload: payload,
-      ),
+      MostroMessage(action: Action.fiatSent, id: orderId, payload: payload),
     );
   }
 
@@ -259,11 +245,7 @@ class MostroService {
     );
 
     await publishOrder(
-      MostroMessage(
-        action: Action.release,
-        id: orderId,
-        payload: payload,
-      ),
+      MostroMessage(action: Action.release, id: orderId, payload: payload),
     );
   }
 
@@ -312,19 +294,11 @@ class MostroService {
       );
     }
 
-    return NextTrade(
-      key: nextTradeKey.public,
-      index: nextKeyIndex,
-    );
+    return NextTrade(key: nextTradeKey.public, index: nextKeyIndex);
   }
 
   Future<void> disputeOrder(String orderId) async {
-    await publishOrder(
-      MostroMessage(
-        action: Action.dispute,
-        id: orderId,
-      ),
-    );
+    await publishOrder(MostroMessage(action: Action.dispute, id: orderId));
   }
 
   Future<void> submitRating(String orderId, int rating) async {
@@ -340,14 +314,20 @@ class MostroService {
   Future<void> publishOrder(MostroMessage order) async {
     final session = await _getSession(order);
 
+    // Read PoW difficulty from the connected Mostro instance (kind 38385)
+    final mostroInstance = ref.read(orderRepositoryProvider).mostroInstance;
+    final difficulty = mostroInstance?.pow ?? 0;
+
     final event = await order.wrap(
       tradeKey: session.tradeKey,
       recipientPubKey: _settings.mostroPublicKey,
       masterKey: session.fullPrivacy ? null : session.masterKey,
       keyIndex: session.fullPrivacy ? null : session.keyIndex,
+      difficulty: difficulty,
     );
-    logger
-        .i('Sending DM, Event ID: ${event.id} with payload: ${order.toJson()}');
+    logger.i(
+      'Sending DM, Event ID: ${event.id} (PoW: $difficulty) with payload: ${order.toJson()}',
+    );
     await ref.read(nostrServiceProvider).publishEvent(event);
   }
 
