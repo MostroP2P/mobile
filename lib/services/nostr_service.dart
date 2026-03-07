@@ -14,27 +14,25 @@ import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 class NostrService {
   Settings? _settings;
   final Nostr _nostr = Nostr.instance;
-  
+
   bool _isInitialized = false;
 
   NostrService();
-  
+
   /// Safe getter for settings with fallback
-  Settings get settings => _settings ?? Settings(
-    relays: [],
-    fullPrivacyMode: false,
-    mostroPublicKey: '',
-  );
+  Settings get settings =>
+      _settings ??
+      Settings(relays: [], fullPrivacyMode: false, mostroPublicKey: '');
 
   Future<void> init(Settings settings) async {
     // Validate settings before initialization
     if (settings.relays.isEmpty) {
       throw Exception('Cannot initialize NostrService: No relays provided');
     }
-    
+
     logger.i('Initializing NostrService with relays: ${settings.relays}');
     _settings = settings;
-    
+
     try {
       await _nostr.services.relays.init(
         relaysUrl: settings.relays,
@@ -48,9 +46,13 @@ class NostrService {
           } else if (receivedData is NostrNotice) {
             logger.i('Notice from $relayUrl: ${receivedData.message}');
           } else if (receivedData is NostrEventOkCommand) {
-            logger.d('OK from $relayUrl: ${receivedData.eventId} (accepted: ${receivedData.isEventAccepted})');
+            logger.d(
+              'OK from $relayUrl: ${receivedData.eventId} (accepted: ${receivedData.isEventAccepted})',
+            );
           } else if (receivedData is NostrRequestEoseCommand) {
-            logger.d('EOSE from $relayUrl for subscription: ${receivedData.subscriptionId}');
+            logger.d(
+              'EOSE from $relayUrl for subscription: ${receivedData.subscriptionId}',
+            );
           } else if (receivedData is NostrCountResponse) {
             logger.d('Count from $relayUrl: ${receivedData.count}');
           }
@@ -62,9 +64,11 @@ class NostrService {
           logger.i('Successfully connected to relay: $relay');
         },
       );
-      
+
       _isInitialized = true;
-      logger.i('NostrService initialized successfully with ${settings.relays.length} relays');
+      logger.i(
+        'NostrService initialized successfully with ${settings.relays.length} relays',
+      );
     } catch (e) {
       _isInitialized = false;
       logger.e('Failed to initialize NostrService: $e');
@@ -74,7 +78,9 @@ class NostrService {
 
   Future<void> updateSettings(Settings newSettings) async {
     if (!ListEquality().equals(settings.relays, newSettings.relays)) {
-      logger.i('Updating relays from ${settings.relays} to ${newSettings.relays}');
+      logger.i(
+        'Updating relays from ${settings.relays} to ${newSettings.relays}',
+      );
 
       if (newSettings.relays.isEmpty) {
         logger.w('Warning: Attempting to update with empty relay list');
@@ -91,7 +97,9 @@ class NostrService {
       } catch (e) {
         // init() failed on new relays but existing connections are still live.
         // Restore previous settings and keep the service operational.
-        logger.w('Failed to connect to new relays, current relays remain active: $e');
+        logger.w(
+          'Failed to connect to new relays, current relays remain active: $e',
+        );
         _settings = previousSettings;
         _isInitialized = true;
       }
@@ -113,31 +121,38 @@ class NostrService {
 
     // Defensive check: ensure relay list is not empty
     if (settings.relays.isEmpty) {
-      throw Exception('Cannot publish event: No relays configured. Please add at least one relay.');
+      throw Exception(
+        'Cannot publish event: No relays configured. Please add at least one relay.',
+      );
     }
 
     try {
       logger.i('Publishing event ${event.id} to relays: ${settings.relays}');
-      
+
       await _nostr.services.relays.sendEventToRelaysAsync(
         event,
         timeout: Config.nostrConnectionTimeout,
       );
-      
+
       logger.i('Successfully published event ${event.id}');
     } catch (e) {
       logger.w('Failed to publish event ${event.id}: $e');
-      
+
       // If it's the empty relay list assertion error, provide better context
       if (e.toString().contains('relaysUrl.isNotEmpty')) {
-        throw Exception('Cannot publish event: Relay list is empty or not properly initialized. Current relays: ${settings.relays}');
+        throw Exception(
+          'Cannot publish event: Relay list is empty or not properly initialized. Current relays: ${settings.relays}',
+        );
       }
-      
+
       rethrow;
     }
   }
 
-  Future<List<NostrEvent>> fetchEvents(NostrFilter filter, {List<String>? specificRelays}) async {
+  Future<List<NostrEvent>> fetchEvents(
+    NostrFilter filter, {
+    List<String>? specificRelays,
+  }) async {
     if (!_isInitialized) {
       throw Exception('Nostr is not initialized. Call init() first.');
     }
@@ -160,8 +175,9 @@ class NostrService {
       throw Exception('Nostr is not initialized. Call init() first.');
     }
 
-    final subscription =
-        _nostr.services.relays.startEventsSubscription(request: request);
+    final subscription = _nostr.services.relays.startEventsSubscription(
+      request: request,
+    );
 
     return subscription.stream;
   }
@@ -190,7 +206,11 @@ class NostrService {
   }
 
   Future<NostrEvent> createNIP59Event(
-      String content, String recipientPubKey, String senderPrivateKey) async {
+    String content,
+    String recipientPubKey,
+    String senderPrivateKey, {
+    int difficulty = 0,
+  }) async {
     if (!_isInitialized) {
       throw Exception('Nostr is not initialized. Call init() first.');
     }
@@ -199,23 +219,27 @@ class NostrService {
       content,
       recipientPubKey,
       senderPrivateKey,
+      difficulty: difficulty,
     );
   }
 
   Future<NostrEvent> decryptNIP59Event(
-      NostrEvent event, String privateKey) async {
+    NostrEvent event,
+    String privateKey,
+  ) async {
     if (!_isInitialized) {
       throw Exception('Nostr is not initialized. Call init() first.');
     }
 
-    return NostrUtils.decryptNIP59Event(
-      event,
-      privateKey,
-    );
+    return NostrUtils.decryptNIP59Event(event, privateKey);
   }
 
-  Future<String> createRumor(NostrKeyPairs senderKeyPair, String wrapperKey,
-      String recipientPubKey, String content) async {
+  Future<String> createRumor(
+    NostrKeyPairs senderKeyPair,
+    String wrapperKey,
+    String recipientPubKey,
+    String content,
+  ) async {
     return NostrUtils.createRumor(
       senderKeyPair,
       wrapperKey,
@@ -224,8 +248,12 @@ class NostrService {
     );
   }
 
-  Future<String> createSeal(NostrKeyPairs senderKeyPair, String wrapperKey,
-      String recipientPubKey, String encryptedContent) async {
+  Future<String> createSeal(
+    NostrKeyPairs senderKeyPair,
+    String wrapperKey,
+    String recipientPubKey,
+    String encryptedContent,
+  ) async {
     return NostrUtils.createSeal(
       senderKeyPair,
       wrapperKey,
@@ -234,8 +262,11 @@ class NostrService {
     );
   }
 
-  Future<NostrEvent> createWrap(NostrKeyPairs wrapperKeyPair,
-      String sealedContent, String recipientPubKey) async {
+  Future<NostrEvent> createWrap(
+    NostrKeyPairs wrapperKeyPair,
+    String sealedContent,
+    String recipientPubKey,
+  ) async {
     return NostrUtils.createWrap(
       wrapperKeyPair,
       sealedContent,
@@ -253,8 +284,10 @@ class NostrService {
 
   /// Fetches an event by its ID from specified relays or default relays
   /// Returns an Order if the event is a valid NIP-69 order, null otherwise
-  Future<Order?> fetchEventById(String eventId,
-      [List<String>? specificRelays]) async {
+  Future<Order?> fetchEventById(
+    String eventId, [
+    List<String>? specificRelays,
+  ]) async {
     if (!_isInitialized) {
       throw Exception('Nostr is not initialized. Call init() first.');
     }
@@ -311,8 +344,10 @@ class NostrService {
 
   /// Fetches order information from an event by extracting the 'd' tag (order ID) and 'k' tag (order type)
   /// This is specifically for deep link handling where the mostro: URL provides order information
-  Future<OrderInfo?> fetchOrderInfoByEventId(String eventId,
-      [List<String>? specificRelays]) async {
+  Future<OrderInfo?> fetchOrderInfoByEventId(
+    String eventId, [
+    List<String>? specificRelays,
+  ]) async {
     try {
       logger.i('Fetching order ID from event: $eventId');
 
@@ -389,7 +424,8 @@ class NostrService {
       }
 
       logger.i(
-          'Successfully extracted order info - ID: $dTag, Type: ${orderType.value} from event: $eventId');
+        'Successfully extracted order info - ID: $dTag, Type: ${orderType.value} from event: $eventId',
+      );
       return OrderInfo(orderId: dTag, orderType: orderType);
     } catch (e) {
       logger.e('Error fetching order ID from event: $e');
