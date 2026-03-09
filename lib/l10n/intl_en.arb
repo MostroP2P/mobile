@@ -1500,5 +1500,8 @@
                 "type": "String"
             }
         }
-    }
+    },
+    "cameraPermissionDenied": "Camera permission is required to scan QR codes",
+    "toggleTorch": "Toggle flashlight",
+    "switchCamera": "Switch camera"
 }
