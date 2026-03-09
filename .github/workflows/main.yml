@@ -45,5 +45,11 @@ jobs:
       - name: Generate localization and other required files
         run: dart run build_runner build -d
 
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Run tests
+        run: flutter test
+
       - name: Build APK (debug check)
         run: flutter build apk --debug
