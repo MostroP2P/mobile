@@ -108,14 +108,17 @@ jobs:
         id: extract_version
         shell: bash
         run: |
-          version=$(grep '^version: ' pubspec.yaml | cut -d ' ' -f 2 | tr -d '\r')
-          if [[ -z "$version" ]]; then
+          full_version=$(grep '^version: ' pubspec.yaml | cut -d ' ' -f 2 | tr -d '\r')
+          if [[ -z "$full_version" ]]; then
             echo "ERROR: Could not extract version from pubspec.yaml"
             exit 1
           fi
+          # Strip build number for tag/release naming (1.2.1+936 → 1.2.1)
+          version=${full_version%%+*}
           echo "VERSION=$version" >> $GITHUB_ENV
           echo "version=$version" >> $GITHUB_OUTPUT
-          echo "Version: $version"
+          echo "Full version: $full_version"
+          echo "Release version: $version"
 
       # 10. Analyze code (optional)
       - name: Analyze code
