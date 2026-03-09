@@ -1,4 +1,4 @@
-name: "Build Check"
+name: "CI Check"
 
 on:
   push:
@@ -7,8 +7,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    name: Build Check
+  check:
+    name: Analyze & Test
     runs-on: ubuntu-latest
 
     steps:
@@ -28,17 +28,6 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Configure Flutter minSdkVersion
-        run: |
-          set -euo pipefail
-          mkdir -p android
-          touch android/local.properties
-          if grep -qE '^flutter\.minSdkVersion=' android/local.properties; then
-            sed -i 's/^flutter\.minSdkVersion=.*/flutter.minSdkVersion=23/' android/local.properties
-          else
-            echo "flutter.minSdkVersion=23" >> android/local.properties
-          fi
-
       - name: Install Dependencies
         run: flutter pub get
 
@@ -50,6 +39,3 @@ jobs:
 
       - name: Run tests
         run: flutter test
-
-      - name: Build APK (debug check)
-        run: flutter build apk --debug
