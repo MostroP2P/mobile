@@ -181,8 +181,14 @@ class RestoreService {
     );
 
     // Respect full privacy mode: if enabled, don't pass master key, wrap will be done just with trade key
-    final mostroPow =
-        ref.read(orderRepositoryProvider).mostroInstance?.pow ?? 0;
+    final mostroInstance = ref.read(orderRepositoryProvider).mostroInstance;
+    final mostroPow = mostroInstance?.pow ?? 0;
+    if (mostroInstance == null) {
+      logger.w(
+        'Mostro instance info unavailable, sending with PoW 0 — '
+        'event may be rejected if node requires PoW',
+      );
+    }
     final wrappedEvent = await mostroMessage.wrap(
       tradeKey: _tempTradeKey!,
       recipientPubKey: settings.mostroPublicKey,
@@ -283,8 +289,14 @@ class RestoreService {
     );
 
     // Respect full privacy mode: if enabled, don't pass master key, wrap will be done just with trade key
-    final mostroPow =
-        ref.read(orderRepositoryProvider).mostroInstance?.pow ?? 0;
+    final mostroInstance = ref.read(orderRepositoryProvider).mostroInstance;
+    final mostroPow = mostroInstance?.pow ?? 0;
+    if (mostroInstance == null) {
+      logger.w(
+        'Mostro instance info unavailable, sending with PoW 0 — '
+        'event may be rejected if node requires PoW',
+      );
+    }
     final wrappedEvent = await mostroMessage.wrap(
       tradeKey: _tempTradeKey!,
       recipientPubKey: settings.mostroPublicKey,
@@ -370,8 +382,14 @@ class RestoreService {
     );
 
     // Respect full privacy mode: if enabled, don't pass master key, wrap will be done just with trade key
-    final mostroPow =
-        ref.read(orderRepositoryProvider).mostroInstance?.pow ?? 0;
+    final mostroInstance = ref.read(orderRepositoryProvider).mostroInstance;
+    final mostroPow = mostroInstance?.pow ?? 0;
+    if (mostroInstance == null) {
+      logger.w(
+        'Mostro instance info unavailable, sending with PoW 0 — '
+        'event may be rejected if node requires PoW',
+      );
+    }
     final wrappedEvent = await mostroMessage.wrap(
       tradeKey: _tempTradeKey!,
       recipientPubKey: settings.mostroPublicKey,
@@ -906,7 +924,7 @@ class RestoreService {
       );
       ref
           .read(restoreProgressProvider.notifier)
-          .showError('Restore failed. Please try again.');
+          .showError('restore_error');  // overlay displays localized restoreErrorMessage
     } finally {
       // Cleanup: always cancel subscription and clear keys
       logger.i('Restore: cleaning up subscription and keys');
