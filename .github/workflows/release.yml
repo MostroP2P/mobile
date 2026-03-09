@@ -1,0 +1,248 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build Android & Create Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG=${GITHUB_REF#refs/tags/v}
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "full_tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+          # Get the previous tag for changelog range
+          PREV_TAG=$(git tag --sort=-v:refname | grep '^v' | sed -n '2p')
+          if [ -z "$PREV_TAG" ]; then
+            echo "prev_tag=" >> $GITHUB_OUTPUT
+            echo "is_first=true" >> $GITHUB_OUTPUT
+          else
+            echo "prev_tag=$PREV_TAG" >> $GITHUB_OUTPUT
+            echo "is_first=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          TAG=${{ steps.version.outputs.full_tag }}
+          PREV_TAG=${{ steps.version.outputs.prev_tag }}
+          IS_FIRST=${{ steps.version.outputs.is_first }}
+
+          if [ "$IS_FIRST" = "true" ]; then
+            COMMITS=$(git log --pretty=format:"- %s (%h)" --no-merges)
+          else
+            COMMITS=$(git log --pretty=format:"- %s (%h)" --no-merges "${PREV_TAG}..${TAG}")
+          fi
+
+          # Categorize commits
+          FEATURES=$(echo "$COMMITS" | grep -iE "^- (feat|add|new)" || true)
+          FIXES=$(echo "$COMMITS" | grep -iE "^- (fix|bug|patch|hotfix)" || true)
+          DOCS=$(echo "$COMMITS" | grep -iE "^- (doc|docs|readme)" || true)
+          OTHER=$(echo "$COMMITS" | grep -ivE "^- (feat|add|new|fix|bug|patch|hotfix|doc|docs|readme|chore: update)" || true)
+
+          {
+            echo "## What's New in $TAG"
+            echo ""
+
+            if [ -n "$FEATURES" ]; then
+              echo "### ✨ New Features"
+              echo "$FEATURES"
+              echo ""
+            fi
+
+            if [ -n "$FIXES" ]; then
+              echo "### 🐛 Bug Fixes"
+              echo "$FIXES"
+              echo ""
+            fi
+
+            if [ -n "$DOCS" ]; then
+              echo "### 📚 Documentation"
+              echo "$DOCS"
+              echo ""
+            fi
+
+            if [ -n "$OTHER" ]; then
+              echo "### 🔧 Other Changes"
+              echo "$OTHER"
+              echo ""
+            fi
+
+            if [ "$IS_FIRST" != "true" ]; then
+              echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${TAG}"
+            fi
+          } > RELEASE_NOTES.md
+
+          cat RELEASE_NOTES.md
+
+      - name: Commit version bump to main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git checkout main
+          git merge --ff-only ${{ steps.version.outputs.full_tag }}
+
+          # Apply version bump after checkout to avoid losing changes
+          VERSION=${{ steps.version.outputs.tag }}
+          BUILD=$(git rev-list --count HEAD)
+          sed -i "s/^version: .*/version: ${VERSION}+${BUILD}/" pubspec.yaml
+          echo "Updated pubspec.yaml to version: ${VERSION}+${BUILD}"
+
+          git add pubspec.yaml
+          git diff --cached --quiet || git commit -m "chore: update version for ${{ steps.version.outputs.full_tag }}"
+          git push origin main
+
+      - name: Checkout tag for build
+        run: git checkout ${{ steps.version.outputs.full_tag }}
+
+      - name: Verify signing secrets
+        run: |
+          missing=""
+          [ -z "${{ secrets.ANDROID_KEYSTORE_FILE }}" ] && missing="$missing ANDROID_KEYSTORE_FILE"
+          [ -z "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" ] && missing="$missing ANDROID_KEYSTORE_PASSWORD"
+          [ -z "${{ secrets.ANDROID_KEY_PASSWORD }}" ] && missing="$missing ANDROID_KEY_PASSWORD"
+          [ -z "${{ secrets.ANDROID_KEY_ALIAS }}" ] && missing="$missing ANDROID_KEY_ALIAS"
+          if [ -n "$missing" ]; then
+            echo "::error::Missing signing secrets:$missing"
+            exit 1
+          fi
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android keystore
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_FILE }}" | base64 --decode > android/app/upload-keystore.jks
+          echo "storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" > android/key.properties
+          echo "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}" >> android/key.properties
+          echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" >> android/key.properties
+          echo "storeFile=upload-keystore.jks" >> android/key.properties
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.32.2'
+          channel: stable
+          cache: true
+
+      - name: Configure Flutter minSdkVersion
+        run: |
+          set -euo pipefail
+          mkdir -p android
+          touch android/local.properties
+          if grep -qE '^flutter\.minSdkVersion=' android/local.properties; then
+            sed -i 's/^flutter\.minSdkVersion=.*/flutter.minSdkVersion=23/' android/local.properties
+          else
+            echo "flutter.minSdkVersion=23" >> android/local.properties
+          fi
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate localization and other required files
+        run: dart run build_runner build -d
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Run tests
+        run: flutter test
+
+      - name: Update version in pubspec for build
+        run: |
+          VERSION=${{ steps.version.outputs.tag }}
+          BUILD=$(git rev-list --count HEAD)
+          sed -i "s/^version: .*/version: ${VERSION}+${BUILD}/" pubspec.yaml
+
+      - name: Build APK (split per ABI)
+        run: flutter build apk --split-per-abi --dart-define=APP_VERSION=${{ steps.version.outputs.tag }} --dart-define=GIT_COMMIT=${{ github.sha }}
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEYSTORE_FILE: upload-keystore.jks
+
+      - name: Build appBundle
+        run: flutter build appbundle --release --dart-define=APP_VERSION=${{ steps.version.outputs.tag }} --dart-define=GIT_COMMIT=${{ github.sha }}
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEYSTORE_FILE: upload-keystore.jks
+
+      - name: Rename split APKs
+        run: |
+          set -euo pipefail
+          VERSION=${{ steps.version.outputs.full_tag }}
+          mv build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk \
+             build/app/outputs/flutter-apk/mostro-${VERSION}-armeabi-v7a.apk
+          mv build/app/outputs/flutter-apk/app-arm64-v8a-release.apk \
+             build/app/outputs/flutter-apk/mostro-${VERSION}-arm64-v8a.apk
+          ls -lh build/app/outputs/flutter-apk/mostro-${VERSION}-*.apk
+
+      - name: Verify APK signing
+        run: |
+          set -euo pipefail
+          VERSION=${{ steps.version.outputs.full_tag }}
+          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+          APKSIGNER=$(find "$SDK_ROOT"/build-tools -name apksigner -type f 2>/dev/null | sort -V | tail -1 || true)
+
+          for ARCH in armeabi-v7a arm64-v8a; do
+            APK="build/app/outputs/flutter-apk/mostro-${VERSION}-${ARCH}.apk"
+            echo "Verifying ${ARCH}..."
+            jarsigner -verify "$APK" > /dev/null
+            if [ -n "$APKSIGNER" ]; then
+              "$APKSIGNER" verify --print-certs "$APK"
+            fi
+            echo "✅ ${ARCH} verified"
+          done
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Releases
+          path: |
+            build/app/outputs/flutter-apk/mostro-${{ steps.version.outputs.full_tag }}-armeabi-v7a.apk
+            build/app/outputs/flutter-apk/mostro-${{ steps.version.outputs.full_tag }}-arm64-v8a.apk
+            build/app/outputs/bundle/release/app-release.aab
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: RELEASE_NOTES.md
+          files: |
+            build/app/outputs/flutter-apk/mostro-${{ steps.version.outputs.full_tag }}-armeabi-v7a.apk
+            build/app/outputs/flutter-apk/mostro-${{ steps.version.outputs.full_tag }}-arm64-v8a.apk
+            build/app/outputs/bundle/release/app-release.aab
+          generate_release_notes: false
+          draft: false
+          prerelease: false
+
+      - name: Trigger desktop builds
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          event-type: build-desktop
+          client-payload: '{"version": "${{ steps.version.outputs.tag }}"}'
+
+      - name: Cleanup keystore
+        if: always()
+        run: rm -f android/app/upload-keystore.jks android/key.properties

@@ -1,8 +1,6 @@
 name: Build Flutter Desktop (Multi-Platform)
 
 on:
-  push:
-    tags: ['v*.*.*']          # run only when a tag like v1.2.3 is pushed
   workflow_dispatch:
     inputs:
       flutter_version:
