@@ -80,7 +80,9 @@ class Dispute implements Payload {
     }
 
     if (order != null) {
-      json['order'] = order!.toJson();
+      final orderJson = order!.toJson();
+      // Order.toJson() wraps content in {type: {...}}, extract the inner content
+      json['order'] = orderJson[order!.type];
     }
 
 
