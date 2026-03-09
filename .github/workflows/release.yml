@@ -90,21 +90,20 @@ jobs:
 
           cat RELEASE_NOTES.md
 
-      - name: Update version in pubspec.yaml
-        run: |
-          VERSION=${{ steps.version.outputs.tag }}
-          BUILD=$(git rev-list --count HEAD)
-          sed -i "s/^version: .*/version: ${VERSION}+${BUILD}/" pubspec.yaml
-          echo "Updated pubspec.yaml to version: ${VERSION}+${BUILD}"
-          grep "^version:" pubspec.yaml
-
       - name: Commit version bump to main
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git fetch origin main
           git checkout main
-          git merge --ff-only ${{ steps.version.outputs.full_tag }} || true
+          git merge --ff-only ${{ steps.version.outputs.full_tag }}
+
+          # Apply version bump after checkout to avoid losing changes
+          VERSION=${{ steps.version.outputs.tag }}
+          BUILD=$(git rev-list --count HEAD)
+          sed -i "s/^version: .*/version: ${VERSION}+${BUILD}/" pubspec.yaml
+          echo "Updated pubspec.yaml to version: ${VERSION}+${BUILD}"
+
           git add pubspec.yaml
           git diff --cached --quiet || git commit -m "chore: update version for ${{ steps.version.outputs.full_tag }}"
           git push origin main
