@@ -36,7 +36,7 @@ jobs:
             echo "is_first=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Generate changelog
+      - name: Generate changelog and release notes
         id: changelog
         run: |
           TAG=${{ steps.version.outputs.full_tag }}
@@ -55,6 +55,7 @@ jobs:
           DOCS=$(echo "$COMMITS" | grep -iE "^- (doc|docs|readme)" || true)
           OTHER=$(echo "$COMMITS" | grep -ivE "^- (feat|add|new|fix|bug|patch|hotfix|doc|docs|readme|chore: update)" || true)
 
+          # --- RELEASE_NOTES.md: used by GitHub Release body ---
           {
             echo "## What's New in $TAG"
             echo ""
@@ -90,7 +91,101 @@ jobs:
 
           cat RELEASE_NOTES.md
 
-      - name: Commit version bump to main
+          # --- CHANGELOG.md: prepend new entry to existing file ---
+          DATESTAMP=$(date -u +"%Y-%m-%d")
+          {
+            echo "# Changelog"
+            echo ""
+            echo "All notable changes to this project will be documented in this file."
+            echo ""
+            echo "The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),"
+            echo "and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html)."
+            echo ""
+            echo "## [$TAG] - $DATESTAMP"
+            echo ""
+
+            if [ -n "$FEATURES" ]; then
+              echo "### Added"
+              echo "$FEATURES"
+              echo ""
+            fi
+
+            if [ -n "$FIXES" ]; then
+              echo "### Fixed"
+              echo "$FIXES"
+              echo ""
+            fi
+
+            if [ -n "$DOCS" ]; then
+              echo "### Documentation"
+              echo "$DOCS"
+              echo ""
+            fi
+
+            if [ -n "$OTHER" ]; then
+              echo "### Changed"
+              echo "$OTHER"
+              echo ""
+            fi
+
+            # Append previous changelog content (skip the header block — first 6 lines)
+            if [ -f CHANGELOG.md ]; then
+              tail -n +7 CHANGELOG.md
+            fi
+          } > CHANGELOG_NEW.md
+
+          mv CHANGELOG_NEW.md CHANGELOG.md
+
+      - name: Generate release description
+        id: description
+        run: |
+          TAG=${{ steps.version.outputs.full_tag }}
+
+          # Read categorized sections from RELEASE_NOTES.md
+          FEATURES=$(sed -n '/### ✨/,/^###\|^$/p' RELEASE_NOTES.md | grep "^-" || true)
+          FIXES=$(sed -n '/### 🐛/,/^###\|^$/p' RELEASE_NOTES.md | grep "^-" || true)
+
+          {
+            echo "# ⚡ Mostro Mobile ${TAG}"
+            echo ""
+            echo "A new version of the Mostro P2P Bitcoin trading app is here!"
+            echo ""
+
+            if [ -n "$FEATURES" ]; then
+              FEATURE_COUNT=$(echo "$FEATURES" | wc -l)
+              echo "This release brings **${FEATURE_COUNT} new feature(s)**:"
+              echo ""
+              echo "$FEATURES"
+              echo ""
+            fi
+
+            if [ -n "$FIXES" ]; then
+              FIX_COUNT=$(echo "$FIXES" | wc -l)
+              echo "We also squashed **${FIX_COUNT} bug(s)** 🐛:"
+              echo ""
+              echo "$FIXES"
+              echo ""
+            fi
+
+            echo "---"
+            echo ""
+            echo "### 📥 Install"
+            echo "Download the APK for your device architecture below:"
+            echo "- \`mostro-${TAG}-arm64-v8a.apk\` — most modern Android phones (64-bit)"
+            echo "- \`mostro-${TAG}-armeabi-v7a.apk\` — older Android phones (32-bit)"
+            echo ""
+            echo "> The \`.aab\` (Android App Bundle) is for Google Play Store distribution."
+            echo ""
+            echo "### 🖥️ Desktop"
+            echo "Linux and macOS builds are triggered separately and will be attached to this release shortly."
+            echo ""
+            echo "### 📋 Full Changelog"
+            echo "See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for the complete history."
+          } > RELEASE_BODY.md
+
+          cat RELEASE_BODY.md
+
+      - name: Commit changelog and version bump to main
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -98,14 +193,14 @@ jobs:
           git checkout main
           git merge --ff-only ${{ steps.version.outputs.full_tag }}
 
-          # Apply version bump after checkout to avoid losing changes
+          # Apply version bump after checkout
           VERSION=${{ steps.version.outputs.tag }}
           BUILD=$(git rev-list --count HEAD)
           sed -i "s/^version: .*/version: ${VERSION}+${BUILD}/" pubspec.yaml
           echo "Updated pubspec.yaml to version: ${VERSION}+${BUILD}"
 
-          git add pubspec.yaml
-          git diff --cached --quiet || git commit -m "chore: update version for ${{ steps.version.outputs.full_tag }}"
+          git add pubspec.yaml CHANGELOG.md
+          git diff --cached --quiet || git commit -m "chore: update changelog and version for ${{ steps.version.outputs.full_tag }}"
           git push origin main
 
       - name: Checkout tag for build
@@ -228,7 +323,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          body_path: RELEASE_NOTES.md
+          body_path: RELEASE_BODY.md
           files: |
             build/app/outputs/flutter-apk/mostro-${{ steps.version.outputs.full_tag }}-armeabi-v7a.apk
             build/app/outputs/flutter-apk/mostro-${{ steps.version.outputs.full_tag }}-arm64-v8a.apk
