@@ -22,6 +22,11 @@ import 'package:mostro_mobile/shared/mixins/media_cache_mixin.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
 class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
+  static final EncryptedImageUploadService _imageUploadService =
+      EncryptedImageUploadService();
+  static final EncryptedFileUploadService _fileUploadService =
+      EncryptedFileUploadService();
+
   /// Reload the chat room by re-subscribing to events.
   void reload() {
     // Cancel the current subscription if it exists
@@ -151,10 +156,7 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
       }
 
       final chat = await event.p2pUnwrap(session.sharedKey!);
-      
-      // Process special message types (e.g., encrypted images)
-      await _processMessageContent(chat);
-      
+
       // Check if message already exists to prevent duplicates
       final messageExists = state.messages.any((m) => m.id == chat.id);
       if (!messageExists) {
@@ -166,6 +168,9 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
       } else {
         logger.d('Message already exists in state, skipping duplicate');
       }
+
+      // Fire-and-forget: pre-download media after message is in state
+      unawaited(_processMessageContent(chat));
 
       // Notify the chat rooms list to update when new messages arrive
       try {
@@ -436,8 +441,7 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
       final sharedKey = await getSharedKey();
       
       // Download and decrypt image in background
-      final uploadService = EncryptedImageUploadService();
-      final decryptedImage = await uploadService.downloadAndDecryptImage(
+      final decryptedImage = await _imageUploadService.downloadAndDecryptImage(
         blossomUrl: result.blossomUrl,
         sharedKey: sharedKey,
       );
@@ -476,8 +480,7 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
           final sharedKey = await getSharedKey();
           
           // Download and decrypt image in background
-          final uploadService = EncryptedFileUploadService();
-          final decryptedFile = await uploadService.downloadAndDecryptFile(
+          final decryptedFile = await _fileUploadService.downloadAndDecryptFile(
             blossomUrl: result.blossomUrl,
             sharedKey: sharedKey,
           );
