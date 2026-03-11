@@ -15,7 +15,6 @@ import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
-import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 import 'package:sembast/sembast.dart';
 
 /// Thin wrapper around NostrEvent with UI-only pending/error state
@@ -162,66 +161,14 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
       if (event.kind != 1059) return;
 
       final session = _getSessionForDispute();
-      if (session == null) {
-        return;
-      }
-      
-      // Check if this message belongs to this dispute
-      final dispute = await ref.read(disputeDetailsProvider(disputeId).future);
-      if (dispute == null) {
-        return;
-      }
-      
-      // Unwrap the gift wrap using trade key (following NIP-59)
-      // The mostroUnWrap will handle the two-layer decryption automatically
-      final unwrappedEvent = await event.mostroUnWrap(session.tradeKey);
+      if (session == null || session.adminSharedKey == null) return;
 
-      // Parse the Mostro message from the rumor content
-      String messageText = '';
-      String? senderPubkey;
-      bool isFromAdmin = false;
-      
-      try {
-        // Content can be in two formats:
-        // 1. CLI format: [{"dm": {"version": 1, "action": "send-dm", "payload": {"text_message": "..."}}}, null]
-        // 2. Old format: [{"order": {...}}, null] or [{"version": 1, "action": "send-dm", ...}, null]
-        final contentData = jsonDecode(unwrappedEvent.content ?? '[]');
-        if (contentData is List && contentData.isNotEmpty) {
-          final messageData = contentData[0];
-          
-          // Check if it's the CLI format with Message enum (has "dm" key)
-          if (NostrUtils.isDmPayload(messageData)) {
-            final dmData = messageData['dm'];
-            if (dmData is Map && dmData.containsKey('payload')) {
-              final payload = dmData['payload'];
-              if (payload is Map && payload.containsKey('text_message')) {
-                messageText = payload['text_message'] as String;
-                senderPubkey = unwrappedEvent.pubkey;
-                isFromAdmin = senderPubkey != session.tradeKey.public;
-              }
-            }
-          } else {
-            // Try parsing as old MostroMessage format
-            final mostroMessage = MostroMessage.fromJson(messageData);
-            
-            // Only process send-dm actions
-            if (mostroMessage.action != Action.sendDm) {
-              return;
-            }
-            
-            // Extract text from TextMessage payload
-            if (mostroMessage.payload != null) {
-              final textPayload = mostroMessage.getPayload<TextMessage>();
-              if (textPayload != null) {
-                messageText = textPayload.message;
-                senderPubkey = unwrappedEvent.pubkey;
-                isFromAdmin = senderPubkey != session.tradeKey.public;
-              }
-            }
-          }
-        }
-      } catch (e) {
-        logger.w('Failed to parse Mostro message: $e');
+      // Verify p tag matches admin shared key
+      final pTag = event.tags?.firstWhere(
+        (tag) => tag.isNotEmpty && tag[0] == 'p',
+        orElse: () => [],
+      );
+      if (pTag == null || pTag.length < 2 || pTag[1] != session.adminSharedKey!.public) {
         return;
       }
 
@@ -253,7 +200,30 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
       // SECURITY: The ECDH shared key IS the authentication.
       // If p2pUnwrap succeeded, the sender holds the admin's private key.
 
-      final messageText = unwrappedEvent.content ?? '';
+      // Content may be plain text (from admin) or DM payload format
+      String messageText = unwrappedEvent.content ?? '';
+
+      // Check if the content is a DM payload format (from background/CLI)
+      if (messageText.startsWith('[') || messageText.startsWith('{')) {
+        try {
+          final contentData = jsonDecode(messageText);
+          if (contentData is List && contentData.isNotEmpty) {
+            final firstItem = contentData[0];
+            if (NostrUtils.isDmPayload(firstItem)) {
+              final dmData = firstItem['dm'];
+              if (dmData is Map && dmData.containsKey('payload')) {
+                final payload = dmData['payload'];
+                if (payload is Map && payload.containsKey('text_message')) {
+                  messageText = payload['text_message'] as String;
+                }
+              }
+            }
+          }
+        } catch (_) {
+          // Not JSON — treat as plain text message
+        }
+      }
+
       if (messageText.isEmpty) {
         logger.w('Received empty message, skipping');
         return;
