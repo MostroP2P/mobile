@@ -147,7 +147,7 @@ Clients must offer a more private version where the client never send the identi
             "payload": null
           }
         },
-        null
+        null // Signature is not needed in full privacy mode
       ],
       "created_at": 1691518405,
       "tags": []

@@ -1,32 +1,29 @@
 # Creating a new sell order
 
-To create a new sell order the user should send a Gift wrap Nostr event to Mostro, the rumor event should have the following rumor's content:
+To create a new sell order the user should send a Gift wrap Nostr event to Mostro, the message should look like this:
 
 ```json
-[
-  {
-    "order": {
-      "version": 1,
-      "action": "new-order",
-      "trade_index": 1,
-      "payload": {
-        "order": {
-          "kind": "sell",
-          "status": "pending",
-          "amount": 0,
-          "fiat_code": "VES",
-          "min_amount": null,
-          "max_amount": null,
-          "fiat_amount": 100,
-          "payment_method": "face to face,bank transfer,mobile",
-          "premium": 1,
-          "created_at": 0
-        }
+{
+  "order": {
+    "version": 1,
+    "action": "new-order",
+    "trade_index": 1,
+    "payload": {
+      "order": {
+        "kind": "sell",
+        "status": "pending",
+        "amount": 0,
+        "fiat_code": "VES",
+        "min_amount": null,
+        "max_amount": null,
+        "fiat_amount": 100,
+        "payment_method": "face to face,bank transfer,mobile",
+        "premium": 1,
+        "created_at": 0
       }
     }
-  },
-  null
-]
+  }
+}
 ```
 
 Let's explain some of the fields:

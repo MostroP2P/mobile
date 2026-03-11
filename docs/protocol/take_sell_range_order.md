@@ -40,8 +40,8 @@ In order to continue the buyer needs to send a lightning network invoice to Most
           "fiat_amount": 15,
           "payment_method": "face to face",
           "premium": 1,
-          "master_buyer_pubkey": null,
-          "master_seller_pubkey": null,
+          "buyer_trade_pubkey": null,
+          "seller_trade_pubkey": null,
           "buyer_invoice": null,
           "created_at": null,
           "expires_at": null
@@ -90,14 +90,17 @@ Mostro updates the addressable event with `d` tag `<Order Id>` to change the sta
 The buyer can use a [lightning address](https://github.com/andrerfneves/lightning-address) to receive funds and avoid to create and send lightning invoices on each trade, with a range order we set the fiat amount as the third element of the `payment_request` array, to acomplish this the buyer will send a message in a Gift wrap Nostr event to Mostro with the following rumor's content:
 
 ```json
-{
-  "order": {
-    "version": 1,
-    "id": "<Order Id>",
-    "action": "take-sell",
-    "payload": {
-      "payment_request": [null, "mostro_p2p@ln.tips", 15]
+[
+  {
+    "order": {
+      "version": 1,
+      "id": "<Order Id>",
+      "action": "take-sell",
+      "payload": {
+        "payment_request": [null, "mostro_p2p@ln.tips", 15]
+      }
     }
-  }
-}
+  },
+  null
+]
 ```

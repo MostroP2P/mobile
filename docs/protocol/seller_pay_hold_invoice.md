@@ -50,8 +50,8 @@ After the hold invoice is paid and the buyer already sent the invoice to receive
           "fiat_amount": 100,
           "payment_method": "face to face",
           "premium": 1,
-          "master_buyer_pubkey": "<Buyer's trade pubkey>",
-          "master_seller_pubkey": "<Seller's trade pubkey>",
+          "buyer_trade_pubkey": "<Buyer's trade pubkey>",
+          "seller_trade_pubkey": "<Seller's trade pubkey>",
           "buyer_invoice": null,
           "created_at": 1698937797
         }
@@ -81,8 +81,8 @@ Mostro also send a message to the buyer, this way they can both write to each ot
           "fiat_amount": 100,
           "payment_method": "face to face",
           "premium": 1,
-          "master_buyer_pubkey": "<Buyer's trade pubkey>",
-          "master_seller_pubkey": "<Seller's trade pubkey>",
+          "buyer_trade_pubkey": "<Buyer's trade pubkey>",
+          "seller_trade_pubkey": "<Seller's trade pubkey>",
           "buyer_invoice": null,
           "created_at": 1698937797
         }

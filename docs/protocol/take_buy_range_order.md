@@ -15,10 +15,10 @@ If the order fiat amount is a range like `10-20` the seller must indicate a fiat
       }
     }
   },
-  "<index N signature of the sha256 hash of the serialized first element of content>"
+  null
 ]
 ```
 
 ## Mostro response
 
-Response is the same as we explained in the [Taking a buy order](./take_buy.md) section.
+Response is the same as we explained in the [Taking a buy order](./take_buy.md) section with the seller receiving a hold invoice to pay and the buyer waiting for that payment.

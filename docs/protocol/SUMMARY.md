@@ -2,12 +2,15 @@
 
 [Home](./overview.md)
 
+---
+
 - [Keys management](./key_management.md)
 - [Creating a Sell order](./new_sell_order.md)
 - [Creating a Sell range order](./new_sell_range_order.md)
 - [Creating a Buy order](./new_buy_order.md)
 - [Creating a Buy order with a LN address](./new_buy_order_ln_address.md)
 - [List orders](./list_orders.md)
+- [Request order details](./orders.md)
 - [Take sell order](./take_sell.md)
 - [Take sell order with a LN address](./take_sell_ln_address.md)
 - [Take range sell order](./take_sell_range_order.md)
@@ -18,13 +21,15 @@
 - [Release](./release.md)
 - [Rate user](./user_rating.md)
 - [Cancel](./cancel.md)
-- [Dispute](./dispute.md)
 - [Peer-to-peer Chat](./chat.md)
+- [Dispute](./dispute.md)
+- [Dispute Chat](./dispute_chat.md)
 - [List disputes](./list_disputes.md)
 - [Admin Settle order](./admin_settle_order.md)
 - [Admin Cancel order](./admin_cancel_order.md)
 - [Admin Add Solver](./admin_add_solver.md)
 - [Restore session](./restore_session.md)
+- [Last Trade Index](./last_trade_index.md)
 - [Actions](./actions.md)
   - [Message suggestions for actions](./message_suggestions_for_actions.md)
 - [P2P Order event. NIP-69](./order_event.md)

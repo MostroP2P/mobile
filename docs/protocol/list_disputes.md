@@ -1,6 +1,6 @@
 # Listing Disputes
 
-Mostro publishes new disputes with event kind `38383` and status `initiated`:
+Mostro publishes new disputes with event kind `38386` and status `initiated`:
 
 ```json
 [
@@ -10,7 +10,7 @@ Mostro publishes new disputes with event kind `38383` and status `initiated`:
     "id": "<Event id>",
     "pubkey": "<Mostro's pubkey>",
     "created_at": 1703016565,
-    "kind": 38383,
+    "kind": 38386,
     "tags": [
       ["d", "<Dispute Id>"],
       ["s", "initiated"],
@@ -23,4 +23,4 @@ Mostro publishes new disputes with event kind `38383` and status `initiated`:
 ]
 ```
 
-Clients can query this events by nostr event kind `38383`, nostr event author, dispute status (`s`), type (`z`)
+Clients can query these events by nostr event kind `38386`, nostr event author, dispute status (`s`), type (`z`)

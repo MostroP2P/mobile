@@ -36,8 +36,8 @@ In order to continue the buyer needs to send a lightning network invoice to Most
           "fiat_amount": 100,
           "payment_method": "face to face",
           "premium": 1,
-          "buyer_pubkey": null,
-          "seller_pubkey": null
+          "buyer_trade_pubkey": null,
+          "seller_trade_pubkey": null
         }
       }
     }

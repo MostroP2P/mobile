@@ -7,13 +7,16 @@ To restore a session from the mnemonic seed on a new device (e.g., moving from m
 Client sends a Gift wrap Nostr event to Mostro with the following rumor's content:
 
 ```json
-{
-  "restore": {
-    "version": 1,
-    "action": "restore-session",
-    "payload": null
-  }
-}
+[
+  {
+    "restore": {
+      "version": 1,
+      "action": "restore-session",
+      "payload": null
+    }
+  },
+  null
+]
 ```
 
 ## Response
@@ -21,47 +24,50 @@ Client sends a Gift wrap Nostr event to Mostro with the following rumor's conten
 Mostro will respond with a message containing all non-finalized orders (e.g., statuses such as `pending`, `active`, `fiat-sent`, `waiting-buyer-invoice`, `waiting-payment`, `settled-hold-invoice`) and any active disputes. The response format will be:
 
 ```json
-{
-  "restore": {
-    "version": 1,
-    "action": "restore-session",
-    "payload": {
-      "restore_data": {
-        "orders": [
-          {
-            "id": "<Order Id>",
-            "trade_index": 1,
-            "status": "pending"
-          },
-          {
-            "id": "<Order Id>",
-            "trade_index": 2,
-            "status": "active"
-          },
-          {
-            "id": "<Order Id>",
-            "trade_index": 3,
-            "status": "fiat-sent"
-          }
-        ],
-        "disputes": [
-          {
-            "dispute_id": "<Dispute Id>",
-            "order_id": "<Order Id>",
-            "trade_index": 4,
-            "status": "initiated"
-          }
-        ]
+[
+  {
+    "restore": {
+      "version": 1,
+      "action": "restore-session",
+      "payload": {
+        "restore_data": {
+          "orders": [
+            {
+              "order_id": "<Order Id>",
+              "trade_index": 1,
+              "status": "pending"
+            },
+            {
+              "order_id": "<Order Id>",
+              "trade_index": 2,
+              "status": "active"
+            },
+            {
+              "order_id": "<Order Id>",
+              "trade_index": 3,
+              "status": "fiat-sent"
+            }
+          ],
+          "disputes": [
+            {
+              "dispute_id": "<Dispute Id>",
+              "order_id": "<Order Id>",
+              "trade_index": 4,
+              "status": "initiated"
+            }
+          ]
+        }
       }
     }
-  }
-}
+  },
+  null
+]
 ```
 
 ### Fields
 
 * `restore_data`: Wrapper object that contains the session recovery data.
-* `restore_data.orders`: An array of active or ongoing orders with their `id`, `trade_index`, and current `status`.
+* `restore_data.orders`: An array of active or ongoing orders with their `order_id`, `trade_index`, and current `status`.
 * `restore_data.disputes`: An array of ongoing disputes with `dispute_id`, the associated `order_id`, and `trade_index` and current `status` of the dispute.
 
 ## Example Use Case
@@ -75,23 +81,26 @@ A user has the following:
 When switching to desktop, after restoring the mnemonic, the client sends `restore-session` and receives:
 
 ```json
-{
-  "restore": {
-    "version": 1,
-    "action": "restore-session",
-    "payload": {
-      "restore_data": {
-        "orders": [
-          { "id": "abc-123", "trade_index": 1, "status": "pending" },
-          { "id": "def-456", "trade_index": 2, "status": "pending" },
-          { "id": "ghi-789", "trade_index": 3, "status": "active" },
-          { "id": "xyz-999", "trade_index": 4, "status": "dispute" }
-        ],
-        "disputes": [
-          { "dispute_id": "dis-001", "order_id": "xyz-999", "trade_index": 4, "status": "initiated" }
-        ]
+[
+  {
+    "restore": {
+      "version": 1,
+      "action": "restore-session",
+      "payload": {
+        "restore_data": {
+          "orders": [
+            { "order_id": "abc-123", "trade_index": 1, "status": "pending" },
+            { "order_id": "def-456", "trade_index": 2, "status": "pending" },
+            { "order_id": "ghi-789", "trade_index": 3, "status": "active" },
+            { "order_id": "xyz-999", "trade_index": 4, "status": "dispute" }
+          ],
+          "disputes": [
+            { "dispute_id": "dis-001", "order_id": "xyz-999", "trade_index": 4, "status": "initiated" }
+          ]
+        }
       }
     }
-  }
-}
+  },
+  null
+]
 ```
