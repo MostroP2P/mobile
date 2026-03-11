@@ -205,7 +205,30 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
       // SECURITY: The ECDH shared key IS the authentication.
       // If p2pUnwrap succeeded, the sender holds the admin's private key.
 
-      final messageText = unwrappedEvent.content ?? '';
+      // Content may be plain text (from admin) or DM payload format
+      String messageText = unwrappedEvent.content ?? '';
+
+      // Check if the content is a DM payload format (from background/CLI)
+      if (messageText.startsWith('[') || messageText.startsWith('{')) {
+        try {
+          final contentData = jsonDecode(messageText);
+          if (contentData is List && contentData.isNotEmpty) {
+            final firstItem = contentData[0];
+            if (NostrUtils.isDmPayload(firstItem)) {
+              final dmData = firstItem['dm'];
+              if (dmData is Map && dmData.containsKey('payload')) {
+                final payload = dmData['payload'];
+                if (payload is Map && payload.containsKey('text_message')) {
+                  messageText = payload['text_message'] as String;
+                }
+              }
+            }
+          }
+        } catch (_) {
+          // Not JSON — treat as plain text message
+        }
+      }
+
       if (messageText.isEmpty) {
         logger.w('Received empty message, skipping');
         return;
