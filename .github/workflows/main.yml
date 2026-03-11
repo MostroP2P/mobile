@@ -1,4 +1,4 @@
-name: "Build"
+name: "CI Check"
 
 on:
   push:
@@ -6,241 +6,36 @@ on:
       - main
   workflow_dispatch:
 
-jobs:  
-  build:      
-    name: Build & Release 
+jobs:
+  check:
+    name: Analyze & Test
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 2
-          fetch-tags: true
-
-      - name: Check if version changed
-        id: check_version_change
-        run: |
-          # Get current version
-          CURRENT_VERSION=$(grep '^version: ' pubspec.yaml | cut -d ' ' -f 2 | tr -d '\r')
-          echo "Current version: $CURRENT_VERSION"
-
-          # Get previous version (from previous commit) with safeguard for shallow history
-          if git rev-parse --quiet --verify HEAD~1 >/dev/null; then
-            git checkout HEAD~1 pubspec.yaml
-            PREVIOUS_VERSION=$(grep '^version: ' pubspec.yaml | cut -d ' ' -f 2 | tr -d '\r')
-            git checkout -q HEAD pubspec.yaml
-            echo "Previous version: $PREVIOUS_VERSION"
-          else
-            echo "No previous commit - assuming version unchanged"
-            PREVIOUS_VERSION=$CURRENT_VERSION
-          fi
-
-          # Compare versions and set output
-          if [ "$CURRENT_VERSION" != "$PREVIOUS_VERSION" ]; then
-            echo "Version changed from $PREVIOUS_VERSION to $CURRENT_VERSION"
-            echo "VERSION_CHANGED=true" >> $GITHUB_OUTPUT
-          else
-            echo "Version unchanged: $CURRENT_VERSION"
-            echo "VERSION_CHANGED=false" >> $GITHUB_OUTPUT
-          fi
-
-          # Always store the current version for later steps
-          echo "VERSION=$CURRENT_VERSION" >> $GITHUB_ENV
-
-      - name: Check if build should continue
-        id: should_build
-        run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            echo "Building because workflow was manually triggered"
-            echo "SHOULD_BUILD=true" >> $GITHUB_OUTPUT
-          elif [[ "${{ steps.check_version_change.outputs.VERSION_CHANGED }}" == "true" ]]; then
-            echo "Building because version changed"
-            echo "SHOULD_BUILD=true" >> $GITHUB_OUTPUT
-          else
-            echo "Skipping build because version did not change"
-            echo "SHOULD_BUILD=false" >> $GITHUB_OUTPUT
-          fi
+        uses: actions/checkout@v4
 
       - name: Set Up Java
-        if: steps.should_build.outputs.SHOULD_BUILD == 'true'
-        uses: actions/setup-java@v3.12.0
+        uses: actions/setup-java@v4
         with:
-          distribution: 'oracle'
+          distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Android Keystore
-        if: steps.should_build.outputs.SHOULD_BUILD == 'true'
-        run: |
-          # Create the keystore file from the secret
-          echo "${{ secrets.ANDROID_KEYSTORE_FILE }}" | base64 --decode > android/app/upload-keystore.jks
-
-          # Set environment variables for signing
-          echo "ANDROID_KEYSTORE_PASSWORD=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" >> $GITHUB_ENV
-          echo "ANDROID_KEY_PASSWORD=${{ secrets.ANDROID_KEY_PASSWORD }}" >> $GITHUB_ENV
-          echo "ANDROID_KEY_ALIAS=${{ secrets.ANDROID_KEY_ALIAS }}" >> $GITHUB_ENV
-          echo "ANDROID_KEYSTORE_FILE=upload-keystore.jks" >> $GITHUB_ENV
-
-          # Write key.properties so Gradle can pick it up without extra config
-          echo "storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" > android/key.properties
-          echo "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}" >> android/key.properties
-          echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" >> android/key.properties
-          echo "storeFile=${{ env.ANDROID_KEYSTORE_FILE }}" >> android/key.properties
       - name: Set Up Flutter
-        if: steps.should_build.outputs.SHOULD_BUILD == 'true'
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.32.2'
           channel: 'stable'
+          cache: true
 
-      - name: Configure Flutter minSdkVersion
-        if: steps.should_build.outputs.SHOULD_BUILD == 'true'
-        run: |
-          set -euo pipefail
-          mkdir -p android
-          touch android/local.properties
-          if grep -qE '^flutter\.minSdkVersion=' android/local.properties; then
-            sed -i 's/^flutter\.minSdkVersion=.*/flutter.minSdkVersion=23/' android/local.properties
-          else
-            echo "flutter.minSdkVersion=23" >> android/local.properties
-          fi
-          echo "Resulting android/local.properties:"
-          sed -n '1,120p' android/local.properties
-
-      - name: Cache Dart & Pub artifacts
-        if: steps.should_build.outputs.SHOULD_BUILD == 'true'
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.pub-cache
-            .dart_tool
-          key: ${{ runner.os }}-dart-${{ hashFiles('**/pubspec.yaml') }}
-          
       - name: Install Dependencies
-        if: steps.should_build.outputs.SHOULD_BUILD == 'true'
         run: flutter pub get
 
       - name: Generate localization and other required files
-        if: steps.should_build.outputs.SHOULD_BUILD == 'true'
         run: dart run build_runner build -d
 
-      - name: Extract version from pubspec.yaml
-        if: steps.should_build.outputs.SHOULD_BUILD == 'true'
-        id: extract_version
-        run: |
-          version=$(grep '^version: ' pubspec.yaml | cut -d ' ' -f 2 | tr -d '\r')
-          echo "VERSION=$version" >> $GITHUB_ENV
+      - name: Analyze
+        run: flutter analyze
 
-      - name: Build APK
-        if: steps.should_build.outputs.SHOULD_BUILD == 'true'
-        run: flutter build apk --split-per-abi --dart-define=APP_VERSION=${{ env.VERSION }} --dart-define=GIT_COMMIT=${{ github.sha }}
-        env:
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEYSTORE_FILE: upload-keystore.jks
-
-      - name: Build appBundle
-        if: steps.should_build.outputs.SHOULD_BUILD == 'true'
-        run: flutter build appbundle --release --dart-define=APP_VERSION=${{ env.VERSION }} --dart-define=GIT_COMMIT=${{ github.sha }}
-        env:
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEYSTORE_FILE: upload-keystore.jks
-
-      - name: Rename Split APKs
-        if: steps.should_build.outputs.SHOULD_BUILD == 'true'
-        run: |
-          set -euo pipefail
-          
-          # Rename APKs with version and architecture
-          mv build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk \
-             build/app/outputs/flutter-apk/mostro-v${{ env.VERSION }}-armeabi-v7a.apk
-          mv build/app/outputs/flutter-apk/app-arm64-v8a-release.apk \
-             build/app/outputs/flutter-apk/mostro-v${{ env.VERSION }}-arm64-v8a.apk
-          
-          # Verify renamed files exist
-          ls -lh build/app/outputs/flutter-apk/mostro-v${{ env.VERSION }}-*.apk || \
-            (echo "❌ Split APKs not found after rename" && exit 1)
-      - name: Verify APK Signing
-        if: steps.should_build.outputs.SHOULD_BUILD == 'true'
-        run: |
-          set -euo pipefail
-          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
-          APKSIGNER=$(find "$SDK_ROOT"/build-tools -name apksigner -type f 2>/dev/null | sort -V | tail -1 || true)
-
-          # Function to verify a single APK
-          verify_apk() {
-            local APK_PATH=$1
-            local APK_NAME=$2
-
-            if [ -f "$APK_PATH" ]; then
-              echo "✅ $APK_NAME built successfully"
-              echo "Verifying $APK_NAME with jarsigner..."
-              local SAFE_APK_NAME=$(echo "$APK_NAME" | tr ' ' '_')
-              jarsigner -verify -verbose -certs "$APK_PATH" > "/tmp/jarsigner-${SAFE_APK_NAME}.out"
-              sed -n '1,120p' "/tmp/jarsigner-${SAFE_APK_NAME}.out"
-
-              # Try apksigner if available
-              if [ -n "$APKSIGNER" ]; then
-                echo "Verifying $APK_NAME with apksigner..."
-                "$APKSIGNER" verify --print-certs "$APK_PATH"
-
-                # Optional: enforce signer fingerprint if provided
-                if [ -n "${{ secrets.ANDROID_CERT_SHA256 }}" ]; then
-                  FPR=$("$APKSIGNER" verify --print-certs "$APK_PATH" 2>/dev/null \
-                    | awk -F': ' '/SHA-256 digest/{print $2}' | tr -d ' ')
-                  if [ "$FPR" != "${{ secrets.ANDROID_CERT_SHA256 }}" ]; then
-                    echo "❌ $APK_NAME cert SHA-256 mismatch"
-                    exit 1
-                  fi
-                fi
-              fi
-              echo ""
-            else
-              echo "❌ $APK_NAME build failed - file not found: $APK_PATH"
-              exit 1
-            fi
-          }
-
-          # Verify both split APKs
-          verify_apk "build/app/outputs/flutter-apk/mostro-v${{ env.VERSION }}-armeabi-v7a.apk" "armeabi-v7a APK"
-          verify_apk "build/app/outputs/flutter-apk/mostro-v${{ env.VERSION }}-arm64-v8a.apk" "arm64-v8a APK"
-
-          echo "✅ All APKs verified successfully"
-
-      - name: Upload Artifacts
-        if: steps.should_build.outputs.SHOULD_BUILD == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: Releases
-          path: |
-            build/app/outputs/flutter-apk/mostro-v${{ env.VERSION }}-armeabi-v7a.apk
-            build/app/outputs/flutter-apk/mostro-v${{ env.VERSION }}-arm64-v8a.apk
-            build/app/outputs/bundle/release/app-release.aab
-
-
-
-      - name: Create Release
-        if: steps.should_build.outputs.SHOULD_BUILD == 'true'
-        uses: ncipollo/release-action@v1
-        with:
-          artifacts: "build/app/outputs/flutter-apk/mostro-v${{ env.VERSION }}-armeabi-v7a.apk,build/app/outputs/flutter-apk/mostro-v${{ env.VERSION }}-arm64-v8a.apk,build/app/outputs/bundle/release/app-release.aab"
-          tag: v${{ env.VERSION }}
-          allowUpdates: true
-          omitBodyDuringUpdate: true
-          replacesArtifacts: true
-
-      - name: Trigger Desktop Builds
-        if: steps.should_build.outputs.SHOULD_BUILD == 'true'
-        uses: peter-evans/repository-dispatch@v3
-        with:
-          event-type: build-desktop
-          client-payload: '{"version": "${{ env.VERSION }}"}'
-
-      - name: Cleanup Keystore
-        if: always() && steps.should_build.outputs.SHOULD_BUILD == 'true'
-        run: |
-          # Remove keystore file for security
-          rm -f android/app/upload-keystore.jks android/key.properties
+      - name: Run tests
+        run: flutter test

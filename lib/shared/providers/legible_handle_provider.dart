@@ -130,6 +130,22 @@ const List<String> kNouns = [
   'faixaPreta',
   'laVecinaDeArriba',
   'mempool',
+  // Venezuelan culture
+  'pana',
+  'chamo',
+  'catire',
+  'arepa',
+  'cachapa',
+  'tequeño',
+  'hallaca',
+  'roraima',
+  'canaima',
+  'turpial',
+  'araguaney',
+  'cunaguaro',
+  'chiguire',
+  'mamarracho',
+  'cambur',
 ];
 
 /// Convert a 32-byte hex string (64 hex chars) into a fun, deterministic handle.

@@ -80,7 +80,9 @@ class Dispute implements Payload {
     }
 
     if (order != null) {
-      json['order'] = order!.toJson();
+      final orderJson = order!.toJson();
+      // Order.toJson() wraps content in {type: {...}}, extract the inner content
+      json['order'] = orderJson[order!.type];
     }
 
 
@@ -497,6 +499,7 @@ class DisputeData {
         return DisputeDescriptionKey.inProgress;
       case 'resolved':
       case 'solved':
+      case 'closed':
         return DisputeDescriptionKey.resolved;
       case 'seller-refunded':
         return DisputeDescriptionKey.sellerRefunded;
@@ -523,6 +526,11 @@ class DisputeData {
       case DisputeDescriptionKey.inProgress:
         return l10n.disputeDescriptionInProgress;
       case DisputeDescriptionKey.resolved:
+        if (action == 'user-completed') {
+          return l10n.disputeClosedUserCompleted;
+        } else if (action == 'cooperative-cancel') {
+          return l10n.disputeClosedCooperativeCancel;
+        }
         return l10n.disputeDescriptionResolved;
       case DisputeDescriptionKey.sellerRefunded:
         return l10n.disputeDescriptionSellerRefunded;

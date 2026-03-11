@@ -208,7 +208,7 @@
     "statusFiatSent": "Fiat-Sent",
     "statusSuccess": "Success",
     "statusCanceled": "Canceled",
-    "statusSettledHoldInvoice": "Settled-Hold-Invoice",
+    "statusSettledHoldInvoice": "Paying sats",
     "offersCount": "{count} offers",
     "@offersCount": {
         "placeholders": {
@@ -228,6 +228,10 @@
     "error": "Error",
     "ok": "OK",
     "cancel": "Cancel",
+    "canceledStatus": "Canceled",
+    "cancelingStatus": "Canceling",
+    "cooperativelyCanceledStatus": "Cooperative cancellation",
+    "canceledByAdminStatus": "Order canceled by an administrator",
     "submit": "Submit",
     "settings": "Settings",
     "currency": "Currency",
@@ -344,6 +348,21 @@
     "dispute": "Dispute",
     "expired": "Expired",
     "success": "Success",
+    "statusDetailActive": "Active order",
+    "statusDetailPending": "Pending order",
+    "statusDetailWaitingPayment": "Waiting for seller payment",
+    "statusDetailWaitingInvoice": "Waiting for buyer invoice",
+    "statusDetailFiatSent": "Fiat sent",
+    "statusDetailPaymentFailed": "Payment failed",
+    "statusDetailCanceled": "Order canceled",
+    "statusDetailCooperativelyCanceled": "Cooperative cancellation",
+    "statusDetailCanceledByAdmin": "Order canceled by an administrator",
+    "statusDetailSettled": "Sats released by an administrator",
+    "statusDetailCompleted": "Sats released by an administrator",
+    "statusDetailDispute": "Order in dispute",
+    "statusDetailExpired": "Order expired",
+    "statusDetailSuccess": "Successful order",
+    "statusDetailSettledHoldInvoice": "Paying sats",
     "orderIdCopied": "Order ID copied to clipboard",
     "noPaymentMethod": "No payment method",
     "youAreSellingText": "You are selling{sats} sats for {amount} {price} {premium}",
@@ -706,6 +725,7 @@
     "english": "English",
     "spanish": "Spanish",
     "italian": "Italian",
+    "french": "French",
     "loadingOrder": "Loading order...",
     "chooseLanguageDescription": "Choose your preferred language or use system default",
     "unsupportedLinkFormat": "Unsupported link format",
@@ -742,6 +762,8 @@
     "disputeStatusClosed": "Closed",
     "disputeResolvedTitle": "Dispute Resolved",
     "disputeResolvedMessage": "This dispute has been resolved. The solver made a decision based on the evidence presented. Check your wallet for any refunds or payments.",
+    "disputeClosedUserCompleted": "Dispute closed — the order was successfully completed by the parties.",
+    "disputeClosedCooperativeCancel": "Dispute closed — the order was cooperatively canceled by the parties.",
     "disputeInProgress": "This dispute is currently in progress. A solver is reviewing your case.",
     "disputeSellerRefunded": "This dispute has been resolved with the seller being refunded.",
     "disputeUnknownStatus": "The status of this dispute is unknown.",
@@ -1257,6 +1279,17 @@
             }
         }
     },
+    "fileTooLarge": "File too large: {currentSize} MB. Maximum: {maxSize} MB",
+    "@fileTooLarge": {
+        "placeholders": {
+            "currentSize": {
+                "type": "String"
+            },
+            "maxSize": {
+                "type": "String"
+            }
+        }
+    },
     "@_comment_backup_reminder": "Backup reminder notification",
     "backupAccountReminder": "You must back up your account",
     "backupAccountReminderMessage": "Back up your secret words to recover your account",
@@ -1467,5 +1500,8 @@
                 "type": "String"
             }
         }
-    }
+    },
+    "cameraPermissionDenied": "Camera permission is required to scan QR codes",
+    "toggleTorch": "Toggle flashlight",
+    "switchCamera": "Switch camera"
 }

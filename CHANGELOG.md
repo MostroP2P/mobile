@@ -5,6 +5,63 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.2.1] - 2026-03-09
+
+### Added
+- feat: enable QR scanner for NWC wallet import (#516) (12eaee4d)
+- feat: add multimedia rendering in dispute chat (Phase 4) (#514) (795302e5)
+- feat: auto-close dispute UI when order reaches terminal state  (#503) (e4ebe4ab)
+- feat: add Venezuelan-themed nouns to handle generator (#510) (e8d61c42)
+- feat: add mutation testing for test quality assurance (#505) (bd26b248)
+- feat: migrate dispute chat to shared key encryption Phase 1 (#495) (5e8b542d)
+- add HalCash, remove SEPA payment method (#493) (3aa870b1)
+- feat: add French translation (#500) (dfab8f7f)
+- feat: add automatic navigation to trade detail for key order actions (38f37742)
+- feat: consolidate notification tap handling in background_notification_service (c87104c7)
+- feat: implement FCM notification tap handling for background and terminated states (abea608c)
+
+### Fixed
+- fix: release workflow — prevent double build number and fix changelog generation (#524) (3d651e0f)
+- fix: strip build number from desktop release version (#522) (7f75ae76)
+- fix: override bip340 dependency to 0.2.0 to fix Schnorr signature padding bug (#496) (195b6fad)
+- fix(chat): retain input focus after sending a message (#483) (31499730)
+- fix: replace Stack layout with Column in chat screen to prevent input bar overlap (#466) (11754595)
+- fix: display selected fiat amount instead of range for taken orders (#477) (236459ab)
+- fix: dispose invoiceController and remove unused amount parameter (#479) (75f0f6de)
+- fix: use black text on green buttons for consistency (#473) (d749733b)
+- fix: prevent restore crash and revert loop on node switching (#468) (fe415115)
+- fix: update supported NIPs list in zapstore.yaml (#464) (89e5b57e)
+- fix: add mounted check before navigation in notification launch handler (931380c2)
+
+### Documentation
+- docs: add PWA migration plan for web compilation support (#499) (4870ca2f)
+- docs: fix Spanish typo and clarify in-app notification localization pattern (#XXX) (1d4dfad4)
+- docs: add technical plan for chat notifications across all app states (#XXX) (a1902739)
+- docs: add technical plan for dispute chat shared key and multimedia support (#478) (e00259de)
+
+### Changed
+- chore: remove empty v1.2.1 changelog entry before re-release (4e025d89)
+- ci: generate release body and update changelog (#523) (fdb706a6)
+- Revert "chore: update version for v1.2.1" (a273208c)
+- Revert "chore: update version for v1.2.1" (b1a9f6f8)
+- refactor: unify release workflow to tag-based trigger (#521) (e6e5c22f)
+- phase 5 Chat user-admin cleanup and code deduplication for dispute chat multimedia (#515) (40fcd2e7)
+- phase 3 add multimedia sending to dispute chat (#509) 12 (55262105)
+- Phase 2 user-admin chat: unify dispute chat message model with NostrEvent and gift  wrap storage (#501) (5e5d1894)
+- Improve UX by showing human-readable status labels in Order Details (#502) (4f1bde5e)
+- chore: bump version to 1.2.0+2 (#484) (e0e1bb64)
+- refactor: clean up chat room screen — extract side effects and deduplicate (#481) (3e680008)
+- refactor: pass isPending to _displayFiatAmount instead of re-deriving (#480) (9a8ac505)
+- UX: Add confirmation step before using Lightning Address to receive sats (#475) (00afba26)
+- [NWC] Phase 5: Payment notifications and enhanced UX (#472) (0da34dc7)
+- [NWC] Phase 4: Automatic invoice generation for buyers via NWC (#469) (f220dcf2)
+- refactor: remove banks from payment methods, keep only actual payment methods (#471) (b62a6d40)
+- [NWC] Phase 3: Automatic hold invoice payment for sellers via NWC (#467) (1308d90b)
+- [NWC] Phase 2: Wallet connection management UI (#463) (47326575)
+- [NWC] Phase 1: Core NWC protocol library (#461) (52b199c2)
+- Update zapstore config file (#462) (0314031d)
+
+
 ## [v1.1.1]
 
 ### Added

@@ -192,6 +192,10 @@
     "error": "Error",
     "ok": "OK",
     "cancel": "Cancelar",
+    "canceledStatus": "Cancelada",
+    "cancelingStatus": "Cancelando",
+    "cooperativelyCanceledStatus": "Cancelación cooperativa",
+    "canceledByAdminStatus": "Orden cancelada por un administrador",
     "submit": "Enviar",
     "settings": "Configuración",
     "currency": "Moneda",
@@ -253,6 +257,21 @@
     "dispute": "Disputa",
     "expired": "Expirado",
     "success": "Éxito",
+    "statusDetailActive": "Orden activa",
+    "statusDetailPending": "Orden pendiente",
+    "statusDetailWaitingPayment": "Esperando pago del vendedor",
+    "statusDetailWaitingInvoice": "Esperando factura del comprador",
+    "statusDetailFiatSent": "Fiat enviado",
+    "statusDetailPaymentFailed": "Pago fallido",
+    "statusDetailCanceled": "Orden cancelada",
+    "statusDetailCooperativelyCanceled": "Cancelación cooperativa",
+    "statusDetailCanceledByAdmin": "Orden cancelada por un administrador",
+    "statusDetailSettled": "Sats liberados por un administrador",
+    "statusDetailCompleted": "Sats liberados por un administrador",
+    "statusDetailDispute": "Orden en disputa",
+    "statusDetailExpired": "Orden expirada",
+    "statusDetailSuccess": "Orden exitosa",
+    "statusDetailSettledHoldInvoice": "Pagando sats",
     "orderIdCopied": "ID de orden copiado al portapapeles",
     "orderDetails": "DETALLES DE LA ORDEN",
     "noPaymentMethod": "Sin método de pago",
@@ -672,6 +691,7 @@
     "english": "Inglés",
     "spanish": "Español",
     "italian": "Italiano",
+    "french": "Francés",
     "chooseLanguageDescription": "Elige tu idioma preferido o usa el predeterminado del sistema",
     "statusFilter": "Estado",
     "allStatuses": "Todos",
@@ -683,7 +703,7 @@
     "statusFiatSent": "Fiat-Enviado",
     "statusSuccess": "Éxito",
     "statusCanceled": "Cancelado",
-    "statusSettledHoldInvoice": "Factura-Retenida-Liquidada",
+    "statusSettledHoldInvoice": "Pagando sats",
     "loadingOrder": "Cargando orden...",
     "unsupportedLinkFormat": "Formato de enlace no compatible",
     "failedToOpenLink": "Error al abrir enlace",
@@ -740,6 +760,8 @@
     "disputeStatusClosed": "Cerrada",
     "disputeResolvedTitle": "Disputa resuelta",
     "disputeResolvedMessage": "Esta disputa ha sido resuelta. El mediador tomó una decisión basada en la evidencia presentada. Revisa tu billetera para ver reembolsos o pagos.",
+    "disputeClosedUserCompleted": "Disputa cerrada — la orden fue completada exitosamente por las partes.",
+    "disputeClosedCooperativeCancel": "Disputa cerrada — la orden fue cancelada cooperativamente por las partes.",
     "disputeInProgress": "Esta disputa está actualmente en progreso. Un mediador está revisando tu caso.",
     "disputeSellerRefunded": "Esta disputa se ha resuelto con el vendedor siendo reembolsado.",
     "disputeUnknownStatus": "El estado de esta disputa es desconocido.",
@@ -1232,6 +1254,17 @@
             }
         }
     },
+    "fileTooLarge": "Archivo demasiado grande: {currentSize} MB. Máximo: {maxSize} MB",
+    "@fileTooLarge": {
+        "placeholders": {
+            "currentSize": {
+                "type": "String"
+            },
+            "maxSize": {
+                "type": "String"
+            }
+        }
+    },
     "@_comment_backup_reminder": "Recordatorio de respaldo de cuenta",
     "backupAccountReminder": "Debes respaldar tu cuenta",
     "backupAccountReminderMessage": "Respalda tus palabras secretas para recuperar tu cuenta",
@@ -1442,5 +1475,8 @@
                 "type": "String"
             }
         }
-    }
+    },
+    "cameraPermissionDenied": "Se requiere permiso de cámara para escanear códigos QR",
+    "toggleTorch": "Activar/desactivar linterna",
+    "switchCamera": "Cambiar cámara"
 }

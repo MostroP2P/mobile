@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/disputes/notifiers/dispute_chat_notifier.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:mostro_mobile/shared/utils/chat_file_upload_helper.dart';
 
 class DisputeMessageInput extends ConsumerStatefulWidget {
   final String disputeId;
@@ -13,12 +14,15 @@ class DisputeMessageInput extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<DisputeMessageInput> createState() => _DisputeMessageInputState();
+  ConsumerState<DisputeMessageInput> createState() =>
+      _DisputeMessageInputState();
 }
 
 class _DisputeMessageInputState extends ConsumerState<DisputeMessageInput> {
   final TextEditingController _textController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
+
+  bool _isUploadingFile = false;
 
   @override
   void dispose() {
@@ -30,9 +34,31 @@ class _DisputeMessageInputState extends ConsumerState<DisputeMessageInput> {
   void _sendMessage() {
     final text = _textController.text.trim();
     if (text.isNotEmpty) {
-      // Send message through the dispute chat notifier
-      ref.read(disputeChatNotifierProvider(widget.disputeId).notifier).sendMessage(text);
+      ref
+          .read(disputeChatNotifierProvider(widget.disputeId).notifier)
+          .sendMessage(text);
       _textController.clear();
+      _focusNode.requestFocus();
+    }
+  }
+
+  Future<void> _selectAndUploadFile() async {
+    setState(() => _isUploadingFile = true);
+
+    try {
+      final notifier =
+          ref.read(disputeChatNotifierProvider(widget.disputeId).notifier);
+
+      await ChatFileUploadHelper.selectAndUploadFile(
+        context: context,
+        getSharedKey: notifier.getAdminSharedKey,
+        sendMessage: (json) => notifier.sendMessage(json),
+        isMounted: () => mounted,
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isUploadingFile = false);
+      }
     }
   }
 
@@ -54,6 +80,40 @@ class _DisputeMessageInputState extends ConsumerState<DisputeMessageInput> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
+              // Attach file button
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: AppTheme.backgroundDark,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: AppTheme.textSecondary.withValues(alpha: 0.3),
+                    width: 1,
+                  ),
+                ),
+                child: IconButton(
+                  icon: _isUploadingFile
+                      ? SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: AppTheme.cream1,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : Icon(
+                          Icons.attach_file,
+                          color: AppTheme.cream1,
+                          size: 20,
+                        ),
+                  onPressed: _isUploadingFile ? null : _selectAndUploadFile,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Text input field
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
@@ -71,10 +131,11 @@ class _DisputeMessageInputState extends ConsumerState<DisputeMessageInput> {
                     decoration: InputDecoration(
                       hintText: S.of(context)!.typeAMessage,
                       hintStyle: TextStyle(
-                          color: AppTheme.textSecondary.withValues(alpha: 0.6), // 0.6 opacity
+                          color:
+                              AppTheme.textSecondary.withValues(alpha: 0.6),
                           fontSize: 15),
-                      contentPadding:
-                          const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
                       border: InputBorder.none,
                       enabledBorder: InputBorder.none,
                       focusedBorder: InputBorder.none,
@@ -89,7 +150,8 @@ class _DisputeMessageInputState extends ConsumerState<DisputeMessageInput> {
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
+              // Send button
               Container(
                 width: 42,
                 height: 42,

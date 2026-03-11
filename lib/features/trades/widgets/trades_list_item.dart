@@ -226,18 +226,28 @@ class TradesListItem extends ConsumerWidget {
         break;
       case Status.canceled:
       case Status.canceledByAdmin:
-      case Status.cooperativelyCanceled:
         backgroundColor =
             AppTheme.statusInactiveBackground.withValues(alpha: 0.3);
         textColor = AppTheme.statusInactiveText;
-        label = S.of(context)!.cancel;
+        label = S.of(context)!.canceledStatus;
+        break;
+      case Status.cooperativelyCanceled:
+        backgroundColor =
+            AppTheme.statusWaitingBackground.withValues(alpha: 0.3);
+        textColor = AppTheme.statusWaitingText;
+        label = S.of(context)!.cancelingStatus;
         break;
       case Status.settledByAdmin:
-      case Status.settledHoldInvoice:
         backgroundColor =
             AppTheme.statusSettledBackground.withValues(alpha: 0.3);
         textColor = AppTheme.statusSettledText;
         label = S.of(context)!.settled;
+        break;
+      case Status.settledHoldInvoice:
+        backgroundColor =
+            AppTheme.statusPendingBackground.withValues(alpha: 0.3);
+        textColor = AppTheme.statusPendingText;
+        label = S.of(context)!.statusSettledHoldInvoice;
         break;
       case Status.completedByAdmin:
         backgroundColor =

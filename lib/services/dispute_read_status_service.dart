@@ -1,5 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:mostro_mobile/data/models/dispute_chat.dart';
+import 'package:mostro_mobile/features/disputes/notifiers/dispute_chat_notifier.dart';
 
 class DisputeReadStatusService {
   static const String _keyPrefix = 'dispute_last_read_';
@@ -21,26 +21,30 @@ class DisputeReadStatusService {
 
   /// Check if there are unread messages in a dispute chat
   /// Returns true if any messages (from admin or peer) are newer than the last read timestamp
-  static Future<bool> hasUnreadMessages(String disputeId, List<DisputeChat> messages) async {
+  static Future<bool> hasUnreadMessages(
+    String disputeId,
+    List<DisputeChatMessage> messages, {
+    required bool Function(DisputeChatMessage) isFromUser,
+  }) async {
     final lastReadTime = await getLastReadTime(disputeId);
-    
+
     // If no read time is stored, consider all non-user messages as unread
     if (lastReadTime == null) {
-      return messages.any((message) => !message.isFromUser);
+      return messages.any((message) => !isFromUser(message));
     }
 
     // Check if any non-user messages are newer than the last read time
     for (final message in messages) {
       // Skip messages from the current user
-      if (message.isFromUser) continue;
-      
+      if (isFromUser(message)) continue;
+
       // Check if message timestamp is newer than last read time
       final messageTime = message.timestamp.millisecondsSinceEpoch;
       if (messageTime > lastReadTime) {
         return true;
       }
     }
-    
+
     return false;
   }
 }

@@ -18,8 +18,10 @@ import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/features/chat/utils/message_type_helpers.dart';
+import 'package:mostro_mobile/shared/mixins/media_cache_mixin.dart';
+import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
-class ChatRoomNotifier extends StateNotifier<ChatRoom> {
+class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
   /// Reload the chat room by re-subscribing to events.
   void reload() {
     // Cancel the current subscription if it exists
@@ -370,34 +372,13 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
     }
   }
 
-  /// Get the shared key for this chat session (used by MessageInput)
+  /// Get the shared key for this chat session as raw bytes
   Future<Uint8List> getSharedKey() async {
     final session = ref.read(sessionProvider(orderId));
     if (session == null || session.sharedKey == null) {
       throw Exception('Session or shared key not available for orderId: $orderId');
     }
-    
-    final hexKey = session.sharedKey!.private; // This should be hex string
-    
-    // Validate hex key length
-    if (hexKey.length != 64) {
-      throw Exception('Invalid shared key length for orderId $orderId: expected 64 hex chars, got ${hexKey.length}');
-    }
-    
-    // Convert from NostrKeyPairs to Uint8List (32 bytes)
-    final sharedKeyBytes = Uint8List(32);
-    
-    try {
-      // Convert hex string to bytes
-      for (int i = 0; i < 32; i++) {
-        final byte = int.parse(hexKey.substring(i * 2, i * 2 + 2), radix: 16);
-        sharedKeyBytes[i] = byte;
-      }
-    } catch (e) {
-      throw Exception('Malformed shared key for orderId $orderId: invalid hex format - $e');
-    }
-    
-    return sharedKeyBytes;
+    return NostrUtils.sharedKeyToBytes(session.sharedKey!);
   }
 
   /// Process special message content (e.g., encrypted images)
@@ -473,35 +454,6 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
     }
   }
 
-  // Simple cache for decrypted images
-  final Map<String, Uint8List> _imageCache = {};
-  final Map<String, EncryptedImageUploadResult> _imageMetadata = {};
-  
-  // Simple cache for decrypted files
-  final Map<String, Uint8List> _fileCache = {};
-  final Map<String, EncryptedFileUploadResult> _fileMetadata = {};
-
-  /// Cache a decrypted image for quick display
-  void cacheDecryptedImage(
-    String messageId, 
-    Uint8List imageData, 
-    EncryptedImageUploadResult metadata
-  ) {
-    _imageCache[messageId] = imageData;
-    _imageMetadata[messageId] = metadata;
-    logger.d('🗄️ Cached decrypted image for message: $messageId');
-  }
-
-  /// Get cached decrypted image data
-  Uint8List? getCachedImage(String messageId) {
-    return _imageCache[messageId];
-  }
-
-  /// Get cached image metadata
-  EncryptedImageUploadResult? getImageMetadata(String messageId) {
-    return _imageMetadata[messageId];
-  }
-
   /// Process encrypted file message by pre-downloading and caching
   Future<void> _processEncryptedFileMessage(
     NostrEvent message, 
@@ -552,34 +504,11 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> {
     }
   }
 
-  /// Cache a decrypted file for quick display
-  void cacheDecryptedFile(
-    String messageId, 
-    Uint8List? fileData, 
-    EncryptedFileUploadResult metadata
-  ) {
-    if (fileData != null) {
-      _fileCache[messageId] = fileData;
-    }
-    _fileMetadata[messageId] = metadata;
-    logger.d('🗄️ Cached file metadata for message: $messageId');
-  }
-
-  /// Get cached decrypted file data
-  Uint8List? getCachedFile(String messageId) {
-    return _fileCache[messageId];
-  }
-
-  /// Get cached file metadata
-  EncryptedFileUploadResult? getFileMetadata(String messageId) {
-    return _fileMetadata[messageId];
-  }
-
-
   @override
   void dispose() {
     _subscription?.cancel();
     _sessionListener?.close();
+    clearMediaCaches();
     logger.i('Disposed chat room notifier for orderId: $orderId');
     super.dispose();
   }

@@ -19,6 +19,8 @@ class Session {
   Role? role;
   Peer? _peer;
   NostrKeyPairs? _sharedKey;
+  String? _adminPubkey;
+  NostrKeyPairs? _adminSharedKey;
 
   Session({
     required this.masterKey,
@@ -30,6 +32,7 @@ class Session {
     this.parentOrderId,
     this.role,
     Peer? peer,
+    String? adminPubkey,
   }) {
     _peer = peer;
     if (peer != null) {
@@ -37,6 +40,9 @@ class Session {
         tradeKey.private,
         peer.publicKey,
       );
+    }
+    if (adminPubkey != null) {
+      setAdminPeer(adminPubkey);
     }
   }
 
@@ -49,6 +55,7 @@ class Session {
         'parent_order_id': parentOrderId,
         'role': role?.value,
         'peer': peer?.publicKey,
+        'admin_peer': _adminPubkey,
       };
 
   factory Session.fromJson(Map<String, dynamic> json) {
@@ -146,6 +153,19 @@ class Session {
         }
       }
 
+      // Parse optional admin pubkey
+      String? adminPubkey;
+      final adminPeerValue = json['admin_peer'];
+      if (adminPeerValue != null) {
+        if (adminPeerValue is String && adminPeerValue.isNotEmpty) {
+          adminPubkey = adminPeerValue;
+        } else if (adminPeerValue is! String) {
+          throw FormatException(
+            'Invalid admin_peer type: ${adminPeerValue.runtimeType}',
+          );
+        }
+      }
+
       return Session(
         masterKey: masterKeyValue,
         tradeKey: tradeKeyValue,
@@ -156,6 +176,7 @@ class Session {
         parentOrderId: parentOrderId,
         role: role,
         peer: peer,
+        adminPubkey: adminPubkey,
       );
     } catch (e) {
       throw FormatException('Failed to parse Session from JSON: $e');
@@ -163,6 +184,23 @@ class Session {
   }
 
   NostrKeyPairs? get sharedKey => _sharedKey;
+
+  String? get adminPubkey => _adminPubkey;
+  NostrKeyPairs? get adminSharedKey => _adminSharedKey;
+
+  /// Compute and store the admin shared key via ECDH
+  void setAdminPeer(String adminPubkey) {
+    if (adminPubkey.isEmpty || adminPubkey.length != 64) {
+      throw ArgumentError(
+        'Invalid admin pubkey: expected 64-char hex, got ${adminPubkey.length} chars',
+      );
+    }
+    _adminPubkey = adminPubkey;
+    _adminSharedKey = NostrUtils.computeSharedKey(
+      tradeKey.private,
+      adminPubkey,
+    );
+  }
 
   Peer? get peer => _peer;
 

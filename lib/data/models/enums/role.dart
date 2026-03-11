@@ -22,6 +22,8 @@ enum Role {
     return action;
   }
 
+  String get initiatorValue => value;
+
   @override
   String toString() {
     return value;

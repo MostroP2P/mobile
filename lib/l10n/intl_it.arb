@@ -207,7 +207,7 @@
     "statusFiatSent": "Fiat-Inviato",
     "statusSuccess": "Successo",
     "statusCanceled": "Annullato",
-    "statusSettledHoldInvoice": "Fattura-Trattenuta-Liquidata",
+    "statusSettledHoldInvoice": "Pagamento sats",
     "offersCount": "{count} offerte",
     "@offersCount": {
         "placeholders": {
@@ -227,6 +227,10 @@
     "error": "Errore",
     "ok": "OK",
     "cancel": "Annulla",
+    "canceledStatus": "Annullato",
+    "cancelingStatus": "Annullamento",
+    "cooperativelyCanceledStatus": "Cancellazione cooperativa",
+    "canceledByAdminStatus": "Ordine annullato da un amministratore",
     "submit": "Invia",
     "settings": "Impostazioni",
     "currency": "Valuta",
@@ -287,6 +291,21 @@
     "dispute": "Disputa",
     "expired": "Scaduto",
     "success": "Successo",
+    "statusDetailActive": "Ordine attivo",
+    "statusDetailPending": "Ordine in attesa",
+    "statusDetailWaitingPayment": "In attesa del pagamento del venditore",
+    "statusDetailWaitingInvoice": "In attesa della fattura del compratore",
+    "statusDetailFiatSent": "Fiat inviato",
+    "statusDetailPaymentFailed": "Pagamento fallito",
+    "statusDetailCanceled": "Ordine annullato",
+    "statusDetailCooperativelyCanceled": "Cancellazione cooperativa",
+    "statusDetailCanceledByAdmin": "Ordine annullato da un amministratore",
+    "statusDetailSettled": "Sats rilasciati da un amministratore",
+    "statusDetailCompleted": "Sats rilasciati da un amministratore",
+    "statusDetailDispute": "Ordine in disputa",
+    "statusDetailExpired": "Ordine scaduto",
+    "statusDetailSuccess": "Ordine riuscito",
+    "statusDetailSettledHoldInvoice": "Pagamento sats",
     "orderIdCopied": "ID ordine copiato negli appunti",
     "orderDetails": "DETTAGLI ORDINE",
     "noPaymentMethod": "Nessun metodo di pagamento",
@@ -738,6 +757,7 @@
     "english": "Inglese",
     "spanish": "Spagnolo",
     "italian": "Italiano",
+    "french": "Francese",
     "chooseLanguageDescription": "Scegli la tua lingua preferita o usa il predefinito di sistema",
     "loadingOrder": "Caricamento ordine...",
     "unsupportedLinkFormat": "Formato di link non supportato",
@@ -795,6 +815,8 @@
     "disputeStatusClosed": "Chiusa",
     "disputeResolvedTitle": "Disputa risolta",
     "disputeResolvedMessage": "Questa disputa è stata risolta. Il risolutore ha preso una decisione sulla base delle prove presentate. Controlla il tuo wallet per eventuali rimborsi o pagamenti.",
+    "disputeClosedUserCompleted": "Disputa chiusa — l'ordine è stato completato con successo dalle parti.",
+    "disputeClosedCooperativeCancel": "Disputa chiusa — l'ordine è stato annullato in modo cooperativo dalle parti.",
     "disputeInProgress": "Questa disputa è attualmente in corso. Un risolutore sta esaminando il tuo caso.",
     "disputeSellerRefunded": "Questa disputa è stata risolta con il venditore che è stato rimborsato.",
     "disputeUnknownStatus": "Lo stato di questa disputa è sconosciuto.",
@@ -1291,6 +1313,17 @@
             }
         }
     },
+    "fileTooLarge": "File troppo grande: {currentSize} MB. Massimo: {maxSize} MB",
+    "@fileTooLarge": {
+        "placeholders": {
+            "currentSize": {
+                "type": "String"
+            },
+            "maxSize": {
+                "type": "String"
+            }
+        }
+    },
     "@_comment_backup_reminder": "Promemoria backup account",
     "backupAccountReminder": "Devi fare il backup del tuo account",
     "backupAccountReminderMessage": "Salva le tue parole segrete per recuperare il tuo account",
@@ -1501,5 +1534,8 @@
                 "type": "String"
             }
         }
-    }
+    },
+    "cameraPermissionDenied": "È necessaria l'autorizzazione della fotocamera per scansionare i codici QR",
+    "toggleTorch": "Attiva/disattiva torcia",
+    "switchCamera": "Cambia fotocamera"
 }

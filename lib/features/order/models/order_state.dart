@@ -191,6 +191,29 @@ class OrderState {
       logger.i('Dispute status updated to: ${updatedDispute.status}');
     }
 
+    // Auto-close dispute when order reaches terminal state by user action
+    final disputeAlreadyTerminal = const ['resolved', 'seller-refunded', 'closed']
+        .contains(updatedDispute?.status?.toLowerCase());
+
+    if (updatedDispute != null &&
+        !disputeAlreadyTerminal &&
+        const [Status.success, Status.settledHoldInvoice].contains(newStatus)) {
+      updatedDispute = updatedDispute.copyWith(
+        status: 'closed',
+        action: 'user-completed',
+      );
+      logger.i('Auto-closed dispute: order completed by users');
+    } else if (updatedDispute != null &&
+        !disputeAlreadyTerminal &&
+        newStatus == Status.canceled &&
+        message.action == Action.cooperativeCancelAccepted) {
+      updatedDispute = updatedDispute.copyWith(
+        status: 'closed',
+        action: 'cooperative-cancel',
+      );
+      logger.i('Auto-closed dispute: cooperative cancellation');
+    }
+
     final newState = copyWith(
       status: newStatus,
       action: message.action,
@@ -255,10 +278,13 @@ class OrderState {
       case Action.fiatSentOk:
         return Status.fiatSent;
 
-      // Actions that should set status to success (completed)
-      case Action.purchaseCompleted:
+      // Actions that indicate hold invoice settled but buyer payment still in progress
       case Action.released:
       case Action.release:
+        return Status.settledHoldInvoice;
+
+      // Actions that should set status to success (completed)
+      case Action.purchaseCompleted:
       case Action.rate:
       case Action.rateReceived:
       case Action.holdInvoicePaymentSettled:
