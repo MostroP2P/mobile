@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
+import 'package:mostro_mobile/data/models/enums/storage_keys.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mostro_mobile/firebase_options.dart';
@@ -16,6 +18,10 @@ import 'package:mostro_mobile/firebase_options.dart';
 /// - FCM sends silent/empty notifications (no content)
 /// - This handler wakes up the app
 /// - The existing background service handles fetching and processing events
+///
+/// NOTE: This handler runs in a separate Dart isolate where the project's
+/// logger singleton is not available (IsolateNameServer port may not be
+/// registered). We use debugPrint as an exception to the logger convention.
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   try {
@@ -45,13 +51,53 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
       final service = FlutterBackgroundService();
       final isRunning = await service.isRunning();
 
-      if (!isRunning) {
-        await sharedPrefs.setBool('fcm.pending_fetch', true);
+      if (isRunning) {
+        // Service is already running — signal it that FCM detected new activity
+        service.invoke('fcm-wake', {});
+      } else {
+        // Service is dead — start it and send settings
+        final started = await service.startService();
+        if (!started) {
+          debugPrint('FCM: startService() returned false, aborting');
+          return;
+        }
+
+        final settingsJson = await sharedPrefs.getString(
+          SharedPreferencesKeys.appSettings.value,
+        );
+        if (settingsJson == null) {
+          debugPrint('FCM: No settings found, service started without relay config');
+          return;
+        }
+
+        Map<String, dynamic>? settings;
+        try {
+          settings = jsonDecode(settingsJson) as Map<String, dynamic>?;
+        } catch (e) {
+          debugPrint('FCM: Failed to decode settings: $e');
+        }
+
+        if (settings == null) return;
+
+        // Wait for service to initialize with exponential backoff
+        // (FCM handlers must complete quickly, ~20s budget on Android)
+        var delay = const Duration(milliseconds: 100);
+        const maxWait = Duration(seconds: 3);
+        final deadline = DateTime.now().add(maxWait);
+        while (!(await service.isRunning())) {
+          if (DateTime.now().isAfter(deadline)) break;
+          await Future.delayed(delay);
+          delay *= 2;
+        }
+
+        if (await service.isRunning()) {
+          service.invoke('start', {
+            'settings': settings,
+          });
+        }
       }
     } catch (e) {
       debugPrint('FCM: background service error: $e');
-      // Set pending flag as fallback
-      await sharedPrefs.setBool('fcm.pending_fetch', true);
     }
   } catch (e) {
     debugPrint('FCM: background handler error: $e');
@@ -119,9 +165,6 @@ class FCMService {
 
       // Register background message handler
       FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-
-      // Check for pending fetch from previous background wake
-      await _checkPendingFetch();
 
       _isInitialized = true;
       debugPrint('FCM: Initialized successfully');
@@ -217,18 +260,6 @@ class FCMService {
         logger.e('Error receiving foreground message: $error');
       },
     );
-  }
-
-  Future<void> _checkPendingFetch() async {
-    try {
-      final hasPending = await _prefs.getBool('fcm.pending_fetch') ?? false;
-      if (hasPending) {
-        await _prefs.setBool('fcm.pending_fetch', false);
-        // The background service will handle fetching when it starts
-      }
-    } catch (e) {
-      logger.e('Error checking pending fetch: $e');
-    }
   }
 
   Future<String?> getToken() async {
