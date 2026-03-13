@@ -162,34 +162,39 @@ Future<MostroMessage?> _decryptAndProcessEvent(NostrEvent event) async {
       return null;
     }
 
-    final decryptedEvent = await event.unWrap(matchingSession.tradeKey.private);
-    if (decryptedEvent.content == null) {
-      return null;
-    }
-
-    final result = jsonDecode(decryptedEvent.content!);
-    if (result is! List || result.isEmpty) {
-      return null;
-    }
-
-    // Detect admin/dispute DM format: [{"dm": {"action": "send-dm", ...}}]
-    final firstItem = result[0];
-    if (NostrUtils.isDmPayload(firstItem)) {
-      return MostroMessage(
-        action: mostro_action.Action.sendDm,
-        id: matchingSession.orderId,
-        timestamp: event.createdAt?.millisecondsSinceEpoch,
-      );
-    }
-
-    final mostroMessage = MostroMessage.fromJson(result[0]);
-    mostroMessage.timestamp = event.createdAt?.millisecondsSinceEpoch;
-
-    return mostroMessage;
+    return _handleTradeKeyEvent(event, matchingSession);
   } catch (e) {
     logger.e('Decrypt error: $e');
     return null;
   }
+}
+
+/// Handle events matched by tradeKey (Mostro protocol + admin/dispute DMs)
+Future<MostroMessage?> _handleTradeKeyEvent(NostrEvent event, Session session) async {
+  final decryptedEvent = await event.unWrap(session.tradeKey.private);
+  if (decryptedEvent.content == null) {
+    return null;
+  }
+
+  final result = jsonDecode(decryptedEvent.content!);
+  if (result is! List || result.isEmpty) {
+    return null;
+  }
+
+  // Detect admin/dispute DM format: [{"dm": {"action": "send-dm", ...}}]
+  final firstItem = result[0];
+  if (NostrUtils.isDmPayload(firstItem)) {
+    return MostroMessage(
+      action: mostro_action.Action.sendDm,
+      id: session.orderId,
+      timestamp: event.createdAt?.millisecondsSinceEpoch,
+    );
+  }
+
+  final mostroMessage = MostroMessage.fromJson(result[0]);
+  mostroMessage.timestamp = event.createdAt?.millisecondsSinceEpoch;
+
+  return mostroMessage;
 }
 
 Future<List<Session>> _loadSessionsFromDatabase() async {
