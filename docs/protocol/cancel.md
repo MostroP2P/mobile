@@ -34,7 +34,7 @@ Mostro will send a message with action `cancel` confirming the order was cancele
 ]
 ```
 
-Mostro updates the parameterized replaceable event with `d` tag `<Order Id>` to change the status to `canceled`:
+Mostro updates the addressable event with `d` tag `<Order Id>` to change the status to `canceled`:
 
 ```json
 [
@@ -71,68 +71,83 @@ Mostro updates the parameterized replaceable event with `d` tag `<Order Id>` to 
 A user can cancel an `active` order, but will need the counterparty to agree, let's look at an example where the seller initiates a cooperative cancellation:
 
 ```json
-{
-  "order": {
-    "version": 1,
-    "id": "<Order Id>",
-    "action": "cancel",
-    "payload": null
-  }
-}
+[
+  {
+    "order": {
+      "version": 1,
+      "id": "<Order Id>",
+      "action": "cancel",
+      "payload": null
+    }
+  },
+  null
+]
 ```
 
 Mostro will send this message to the seller:
 
 ```json
-{
-  "order": {
-    "version": 1,
-    "id": "<Order Id>",
-    "action": "cooperative-cancel-initiated-by-you",
-    "payload": null
-  }
-}
+[
+  {
+    "order": {
+      "version": 1,
+      "id": "<Order Id>",
+      "action": "cooperative-cancel-initiated-by-you",
+      "payload": null
+    }
+  },
+  null
+]
 ```
 
 And this message to the buyer:
 
 ```json
-{
-  "order": {
-    "version": 1,
-    "id": "<Order Id>",
-    "action": "cooperative-cancel-initiated-by-peer",
-    "payload": null
-  }
-}
+[
+  {
+    "order": {
+      "version": 1,
+      "id": "<Order Id>",
+      "action": "cooperative-cancel-initiated-by-peer",
+      "payload": null
+    }
+  },
+  null
+]
 ```
 
 The buyer can accept the cooperative cancellation sending this message:
 
 ```json
-{
-  "order": {
-    "version": 1,
-    "id": "<Order Id>",
-    "action": "cancel",
-    "payload": null
-  }
-}
+[
+  {
+    "order": {
+      "version": 1,
+      "id": "<Order Id>",
+      "action": "cancel",
+      "payload": null
+    }
+  },
+  null
+]
 ```
 
 And Mostro will send this message to both parties:
 
 ```json
-{
-  "order": {
-    "version": 1,
-    "id": "<Order Id>",
-    "action": "cooperative-cancel-accepted",
-    "payload": null
-  }
-}
+[
+  {
+    "order": {
+      "version": 1,
+      "id": "<Order Id>",
+      "action": "cooperative-cancel-accepted",
+      "payload": null
+    }
+  },
+  null
+]
 ```
-Mostro updates the parameterized replaceable event with `d` tag `<Order Id>` to change the status to `canceled`:
+Mostro updates the addressable event with `d` tag `<Order Id>` to change the status to `canceled`:
 
 ```json
 [
@@ -152,6 +167,9 @@ Mostro updates the parameterized replaceable event with `d` tag `<Order Id>` to 
       ["fa", "100"],
       ["pm", "face to face"],
       ["premium", "1"],
+      ["network", "mainnet"],
+      ["layer", "lightning"],
+      ["expiration", "1719391096"],
       ["y", "mostro"],
       ["z", "order"]
     ],

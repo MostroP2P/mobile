@@ -1,30 +1,27 @@
 # Creating a new buy order
 
-To create a new buy order the user should send a Gift wrap Nostr event to Mostro with the following rumor's content:
+To create a new buy order the user should send a Gift wrap Nostr event to Mostro with the following message:
 
 ```json
-[
-  {
-    "order": {
-      "version": 1,
-      "action": "new-order",
-      "trade_index": 1,
-      "payload": {
-        "order": {
-          "kind": "buy",
-          "status": "pending",
-          "amount": 0,
-          "fiat_code": "VES",
-          "fiat_amount": 100,
-          "payment_method": "face to face",
-          "premium": 1,
-          "created_at": 0
-        }
+{
+  "order": {
+    "version": 1,
+    "action": "new-order",
+    "trade_index": 1,
+    "payload": {
+      "order": {
+        "kind": "buy",
+        "status": "pending",
+        "amount": 0,
+        "fiat_code": "VES",
+        "fiat_amount": 100,
+        "payment_method": "face to face",
+        "premium": 1,
+        "created_at": 0
       }
     }
-  },
-  "<index N signature of the sha256 hash of the serialized first element of content>"
-]
+  }
+}
 ```
 
 The nostr event will look like this:
@@ -43,7 +40,7 @@ The nostr event will look like this:
 
 ## Confirmation message
 
-Mostro will send back a nip59 event as a confirmation message, the content of the rumor looks like the following:
+Mostro will send back a nip59 event as a confirmation message, the message in the rumor looks like the following:
 
 ```json
 [
@@ -62,8 +59,8 @@ Mostro will send back a nip59 event as a confirmation message, the content of th
           "fiat_amount": 100,
           "payment_method": "face to face",
           "premium": 1,
-          "master_buyer_pubkey": null,
-          "master_seller_pubkey": null,
+          "buyer_trade_pubkey": null,
+          "seller_trade_pubkey": null,
           "buyer_invoice": null,
           "created_at": 1698870173
         }

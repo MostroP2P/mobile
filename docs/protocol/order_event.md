@@ -1,5 +1,18 @@
 # Peer-to-peer Order events. NIP-69
 
+## Mostro Event Kinds
+
+Mostro uses different event kinds for different types of data:
+
+| Event Type | Kind  | Document (`z` tag) |
+|------------|-------|--------------------|
+| Orders     | 38383 | `order`            |
+| Ratings    | 38384 | `rating`           |
+| Info       | 38385 | `info`             |
+| Disputes   | 38386 | `dispute`          |
+
+This document focuses on the **Order** event (kind `38383`), which is used for the P2P order book.
+
 ## Abstract
 
 Peer-to-peer (P2P) platforms have seen an upturn in recent years, while having more and more options is positive, in the specific case of p2p, having several options contributes to the liquidity split, meaning sometimes there's not enough assets available for trading. If we combine all these individual solutions into one big pool of orders, it will make them much more competitive compared to centralized systems, where a single authority controls the liquidity.
@@ -27,7 +40,7 @@ Events are [addressable events](https://github.com/nostr-protocol/nips/blob/mast
     ["premium", "1"],
     [
       "rating",
-      "{\"total_reviews\":1,\"total_rating\":3.0,\"last_rating\":3,\"max_rate\":5,\"min_rate\":1}"
+      "{\"total_reviews\":1,\"total_rating\":3.0,\"last_rating\":3,\"max_rate\":5,\"min_rate\":1,\"days\":21}"
     ],
     ["source", "https://t.me/p2plightning/xxxxxxx"],
     ["network", "mainnet"],
@@ -35,7 +48,8 @@ Events are [addressable events](https://github.com/nostr-protocol/nips/blob/mast
     ["name", "Nakamoto"],
     ["g", "<geohash>"],
     ["bond", "0"],
-    ["expiration", "1719391096"],
+    ["expires_at", "1719391096"],
+    ["expiration", "1719995896"],
     ["y", "lnp2pbot"],
     ["z", "order"]
   ],
@@ -49,7 +63,7 @@ Events are [addressable events](https://github.com/nostr-protocol/nips/blob/mast
 - `d` < Order ID >: A unique identifier for the order.
 - `k` < Order type >: `sell` or `buy`. This specifies the type of transaction in terms of bitcoin. "sell" means selling bitcoin, while "buy" indicates buying bitcoin.
 - `f` < Currency >: The fiat asset being traded, using the [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) standard.
-- `s` < Status >: `pending`, `canceled`, `in-progress`, `success`.
+- `s` < Status >: `pending`, `canceled`, `in-progress`, `success`, `expired`.
 - `amt` < Amount >: The amount of Bitcoin to be traded, the amount is defined in satoshis, if `0` means that the amount of satoshis will be obtained from a public API after the taker accepts the order.
 - `fa` < Fiat amount >: The fiat amount being traded, for range orders two values are expected, the minimum and maximum amount.
 - `pm` < Payment method >: The payment method used for the trade, if the order has multiple payment methods, they should be separated by a comma.
@@ -61,7 +75,8 @@ Events are [addressable events](https://github.com/nostr-protocol/nips/blob/mast
 - `name` [Name]: The name of the maker.
 - `g` [Geohash]: The geohash of the operation, it can be useful in a face to face trade.
 - `bond` [Bond]: The bond amount, the bond is a security deposit that both parties must pay.
-- `expiration` < Expiration\>: The expiration date of the order ([NIP-40](https://github.com/nostr-protocol/nips/blob/master/40.md)).
+- `expires_at` < Expires At\>: The expiration date of the event being published in `pending` status, after this time the event status SHOULD be changed to `expired`.
+- `expiration` < Expiration\>: The expiration date of the event, after this time the relay SHOULD delete it ([NIP-40](40.md)).
 - `y` < Platform >: The platform that created the order.
 - `z` < Document >: `order`.
 
@@ -74,6 +89,8 @@ Currently implemented on the following platforms:
 - [Mostro](https://github.com/MostroP2P/mostro)
 - [@lnp2pBot](https://github.com/lnp2pBot/bot)
 - [Robosats](https://github.com/RoboSats/robosats/pull/1362)
+- Peach
+- Hodlhodl
 
 ## This document is inspired on
 

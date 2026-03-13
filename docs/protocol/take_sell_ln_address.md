@@ -11,7 +11,7 @@ The buyer can use a [lightning address](https://github.com/andrerfneves/lightnin
       "action": "take-sell",
       "trade_index": 1,
       "payload": {
-        "payment_request": [null, "mostro_p2p@ln.tips"]
+        "payment_request": [null, "mostro_p2p@ln.tips", null]
       }
     }
   },

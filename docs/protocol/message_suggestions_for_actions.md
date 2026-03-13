@@ -144,3 +144,9 @@ Mostro also handles messages with the `CantDo` action for various reasons. The d
 
 - **out-of-range-sats-amount:**  
   The allowed Sats amount for this Mostro is between min `min_order_amount` and max `max_order_amount`. Please enter an amount within this range.
+
+- **too-many-requests:**
+  User exceeds the allowed request rate.
+
+- **invalid-fiat-currency:**
+  Prevents proceeding with unrecognized fiat currencies.

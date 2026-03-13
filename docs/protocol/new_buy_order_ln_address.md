@@ -47,29 +47,32 @@ The nostr event will look like this:
 Mostro will send back a nip59 event as a confirmation message to the user like the following:
 
 ```json
-{
-  "order": {
-    "version": 1,
-    "id": "<Order Id>",
-    "action": "new-order",
-    "payload": {
-      "order": {
-        "id": "<Order Id>",
-        "kind": "buy",
-        "status": "pending",
-        "amount": 0,
-        "fiat_code": "VES",
-        "fiat_amount": 100,
-        "payment_method": "face to face,mobile",
-        "premium": 1,
-        "master_buyer_pubkey": null,
-        "master_seller_pubkey": null,
-        "buyer_invoice": "mostro_p2p@ln.tips",
-        "created_at": 1698870173
+[
+  {
+    "order": {
+      "version": 1,
+      "id": "<Order Id>",
+      "action": "new-order",
+      "payload": {
+        "order": {
+          "id": "<Order Id>",
+          "kind": "buy",
+          "status": "pending",
+          "amount": 0,
+          "fiat_code": "VES",
+          "fiat_amount": 100,
+          "payment_method": "face to face,mobile",
+          "premium": 1,
+          "buyer_trade_pubkey": null,
+          "seller_trade_pubkey": null,
+          "buyer_invoice": "mostro_p2p@ln.tips",
+          "created_at": 1698870173
+        }
       }
     }
-  }
-}
+  },
+  null
+]
 ```
 
 Mostro publishes this order as an event kind `38383` with status `pending`:
