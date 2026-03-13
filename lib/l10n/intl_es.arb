@@ -1,6 +1,7 @@
 {
     "@@locale": "es",
     "backToHome": "Volver al inicio",
+    "tooManyRequests": "Has excedido la tasa de solicitudes permitida. Por favor, inténtalo de nuevo más tarde.",
     "newOrder": "¡Tu oferta ha sido publicada! Por favor espera hasta que otro usuario elija tu orden. Estará disponible durante {expiration_hours} horas. Puedes cancelar esta orden antes de que otro usuario la tome ejecutando: cancel.",
     "@newOrder": {
         "placeholders": {

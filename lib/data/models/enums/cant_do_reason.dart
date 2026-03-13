@@ -23,7 +23,8 @@ enum CantDoReason {
   invalidDisputeStatus('invalid_dispute_status'),
   invalidAction('invalid_action'),
   invalidFiatCurrency('invalid_fiat_currency'),
-  pendingOrderExists('pending_order_exists');
+  pendingOrderExists('pending_order_exists'),
+  tooManyRequests('too_many_requests');
 
   final String value;
 

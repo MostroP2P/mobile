@@ -28,6 +28,7 @@ class CantDoNotificationMapper {
     'invalid_order_kind': (context) => S.of(context)!.invalidOrderKind,
     'invalid_order_status': (context) => S.of(context)!.invalidOrderStatus,
     'invalid_fiat_currency': (context) => S.of(context)!.invalidFiatCurrency,
+    'too_many_requests': (context) => S.of(context)!.tooManyRequests,
   };
   
   static String getMessage(BuildContext context, String cantDoReason) {
