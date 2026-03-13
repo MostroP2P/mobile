@@ -214,38 +214,21 @@ Future<MostroMessage?> _decryptAndProcessEvent(NostrEvent event) async {
       orElse: () => null,
     );
 
-    if (matchingSession == null) {
-      return null;
+    if (matchingSession != null) {
+      return _handleTradeKeyEvent(event, matchingSession);
     }
 
-    final decryptedEvent = await event.unWrap(matchingSession.tradeKey.private);
-    if (decryptedEvent.content == null) {
-      return null;
+    // P2P chat: match by sharedKey.public
+    final chatMatch = sessions.cast<Session?>().firstWhere(
+      (s) => s?.sharedKey?.public == event.recipient,
+      orElse: () => null,
+    );
+
+    if (chatMatch != null) {
+      return _handleP2PChatEvent(event, chatMatch);
     }
 
-    final result = jsonDecode(decryptedEvent.content!);
-    if (result is! List || result.isEmpty) {
-      return null;
-    }
-
-    // Detect admin/dispute DM format that arrived via tradeKey
-    final firstItem = result[0];
-    if (NostrUtils.isDmPayload(firstItem)) {
-      if (matchingSession.orderId == null) {
-        logger.w('DM received but session has no orderId (recipient: ${event.recipient}), skipping notification');
-        return null;
-      }
-      return MostroMessage(
-        action: mostro_action.Action.sendDm,
-        id: matchingSession.orderId,
-        timestamp: event.createdAt?.millisecondsSinceEpoch,
-      );
-    }
-
-    final mostroMessage = MostroMessage.fromJson(result[0]);
-    mostroMessage.timestamp = event.createdAt?.millisecondsSinceEpoch;
-
-    return mostroMessage;
+    return null;
   } catch (e) {
     logger.e('Decrypt error: $e');
     return null;
@@ -271,6 +254,25 @@ Future<MostroMessage?> _processAdminDm(NostrEvent event, Session session) async 
     );
   } catch (e) {
     logger.e('Admin DM decrypt error: $e');
+    return null;
+  }
+}
+
+/// Handle P2P chat events matched by sharedKey
+Future<MostroMessage?> _handleP2PChatEvent(NostrEvent event, Session session) async {
+  try {
+    final decryptedEvent = await event.p2pUnwrap(session.sharedKey!);
+    if (decryptedEvent.content == null || decryptedEvent.content!.isEmpty) {
+      return null;
+    }
+
+    return MostroMessage(
+      action: mostro_action.Action.sendDm,
+      id: session.orderId,
+      timestamp: event.createdAt?.millisecondsSinceEpoch,
+    );
+  } catch (e) {
+    logger.e('P2P chat decrypt error: $e');
     return null;
   }
 }
