@@ -75,6 +75,11 @@ class DisputeChatState {
 /// Uses shared key encryption (p2pWrap/p2pUnwrap) with admin via ECDH.
 /// Stores gift wrap events (encrypted) on disk, same pattern as P2P chat.
 class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCacheMixin {
+  static final EncryptedImageUploadService _imageUploadService =
+      EncryptedImageUploadService();
+  static final EncryptedFileUploadService _fileUploadService =
+      EncryptedFileUploadService();
+
   final String disputeId;
   final Ref ref;
 
@@ -446,8 +451,7 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
     try {
       final result = EncryptedImageUploadResult.fromJson(imageData);
       final sharedKey = await getAdminSharedKey();
-      final uploadService = EncryptedImageUploadService();
-      final decryptedImage = await uploadService.downloadAndDecryptImage(
+      final decryptedImage = await _imageUploadService.downloadAndDecryptImage(
         blossomUrl: result.blossomUrl,
         sharedKey: sharedKey,
       );
@@ -463,8 +467,7 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
       if (result.fileType == 'image') {
         try {
           final sharedKey = await getAdminSharedKey();
-          final uploadService = EncryptedFileUploadService();
-          final decryptedFile = await uploadService.downloadAndDecryptFile(
+          final decryptedFile = await _fileUploadService.downloadAndDecryptFile(
             blossomUrl: result.blossomUrl,
             sharedKey: sharedKey,
           );
