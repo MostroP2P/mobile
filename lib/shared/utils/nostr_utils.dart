@@ -308,7 +308,8 @@ class NostrUtils {
     final hexKey = sharedKey.private;
     if (hexKey.length != 64) {
       throw Exception(
-          'Invalid shared key length: expected 64 hex chars, got ${hexKey.length}');
+        'Invalid shared key length: expected 64 hex chars, got ${hexKey.length}',
+      );
     }
     final bytes = Uint8List(32);
     for (int i = 0; i < 32; i++) {

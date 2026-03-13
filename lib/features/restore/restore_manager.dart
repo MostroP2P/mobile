@@ -497,6 +497,7 @@ class RestoreService {
     // TODO: Improve dispute initiation detection if protocol changes in future
     return userInitiated;
   }
+
   /// Maps Status to the appropriate Action for restored orders
   Action _getActionFromStatus(Status status, Role? userRole) {
     switch (status) {
@@ -744,8 +745,9 @@ class RestoreService {
 
           // Build MostroMessage with appropriate payload based on action
           // For dispute actions, use Dispute payload; for others, use Order payload
-          final notifier =
-              ref.read(orderNotifierProvider(orderDetail.id).notifier);
+          final notifier = ref.read(
+            orderNotifierProvider(orderDetail.id).notifier,
+          );
 
           if (dispute != null) {
             // Create dispute message with Dispute payload (per Mostro protocol)
@@ -754,7 +756,8 @@ class RestoreService {
               action: action,
               payload: dispute,
               timestamp:
-                  orderDetail.createdAt ?? DateTime.now().millisecondsSinceEpoch,
+                  orderDetail.createdAt ??
+                  DateTime.now().millisecondsSinceEpoch,
             );
 
             // Save dispute message to storage
@@ -774,7 +777,8 @@ class RestoreService {
               action: action,
               payload: order,
               timestamp:
-                  orderDetail.createdAt ?? DateTime.now().millisecondsSinceEpoch,
+                  orderDetail.createdAt ??
+                  DateTime.now().millisecondsSinceEpoch,
             );
 
             // Save order message to storage
@@ -924,7 +928,9 @@ class RestoreService {
       );
       ref
           .read(restoreProgressProvider.notifier)
-          .showError('restore_error');  // overlay displays localized restoreErrorMessage
+          .showError(
+            'restore_error',
+          ); // overlay displays localized restoreErrorMessage
     } finally {
       // Cleanup: always cancel subscription and clear keys
       logger.i('Restore: cleaning up subscription and keys');

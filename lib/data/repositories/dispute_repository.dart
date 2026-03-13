@@ -44,8 +44,7 @@ class DisputeRepository {
       final disputeMessage = MostroMessage(action: Action.dispute, id: orderId);
 
       // Wrap message using Gift Wrap protocol (NIP-59) with PoW from Mostro instance
-      final mostroInstance =
-          _ref.read(orderRepositoryProvider).mostroInstance;
+      final mostroInstance = _ref.read(orderRepositoryProvider).mostroInstance;
       if (mostroInstance == null) {
         logger.w(
           'Mostro instance info unavailable, sending dispute with PoW 0 — '
