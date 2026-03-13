@@ -18,6 +18,7 @@ import 'package:mostro_mobile/features/key_manager/key_derivator.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager.dart';
 import 'package:mostro_mobile/features/key_manager/key_storage.dart';
 import 'package:mostro_mobile/features/notifications/utils/notification_data_extractor.dart';
+import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 import 'package:mostro_mobile/features/notifications/utils/notification_message_mapper.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/generated/l10n_en.dart';
@@ -157,26 +158,70 @@ Future<MostroMessage?> _decryptAndProcessEvent(NostrEvent event) async {
       orElse: () => null,
     );
 
-    if (matchingSession == null) {
-      return null;
+    if (matchingSession != null) {
+      return _handleTradeKeyEvent(event, matchingSession);
     }
 
-    final decryptedEvent = await event.unWrap(matchingSession.tradeKey.private);
-    if (decryptedEvent.content == null) {
-      return null;
+    // P2P chat: match by sharedKey.public
+    final chatMatch = sessions.cast<Session?>().firstWhere(
+      (s) => s?.sharedKey?.public == event.recipient,
+      orElse: () => null,
+    );
+
+    if (chatMatch != null) {
+      return _handleP2PChatEvent(event, chatMatch);
     }
 
-    final result = jsonDecode(decryptedEvent.content!);
-    if (result is! List || result.isEmpty) {
-      return null;
-    }
-
-    final mostroMessage = MostroMessage.fromJson(result[0]);
-    mostroMessage.timestamp = event.createdAt?.millisecondsSinceEpoch;
-
-    return mostroMessage;
+    return null;
   } catch (e) {
     logger.e('Decrypt error: $e');
+    return null;
+  }
+}
+
+/// Handle events matched by tradeKey (Mostro protocol + admin/dispute DMs)
+Future<MostroMessage?> _handleTradeKeyEvent(NostrEvent event, Session session) async {
+  final decryptedEvent = await event.unWrap(session.tradeKey.private);
+  if (decryptedEvent.content == null) {
+    return null;
+  }
+
+  final result = jsonDecode(decryptedEvent.content!);
+  if (result is! List || result.isEmpty) {
+    return null;
+  }
+
+  // Detect admin/dispute DM format: [{"dm": {"action": "send-dm", ...}}]
+  final firstItem = result[0];
+  if (NostrUtils.isDmPayload(firstItem)) {
+    return MostroMessage(
+      action: mostro_action.Action.sendDm,
+      id: session.orderId,
+      timestamp: event.createdAt?.millisecondsSinceEpoch,
+    );
+  }
+
+  final mostroMessage = MostroMessage.fromJson(result[0]);
+  mostroMessage.timestamp = event.createdAt?.millisecondsSinceEpoch;
+
+  return mostroMessage;
+}
+
+/// Handle P2P chat events matched by sharedKey
+Future<MostroMessage?> _handleP2PChatEvent(NostrEvent event, Session session) async {
+  try {
+    final decryptedEvent = await event.p2pUnwrap(session.sharedKey!);
+    if (decryptedEvent.content == null || decryptedEvent.content!.isEmpty) {
+      return null;
+    }
+
+    return MostroMessage(
+      action: mostro_action.Action.sendDm,
+      id: session.orderId,
+      timestamp: event.createdAt?.millisecondsSinceEpoch,
+    );
+  } catch (e) {
+    logger.e('P2P chat decrypt error: $e');
     return null;
   }
 }
