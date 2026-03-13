@@ -25,7 +25,6 @@ class MostroMessage<T extends Payload> {
     this.timestamp,
   }) : _payload = payload;
 
-
   Map<String, dynamic> toJson() {
     Map<String, dynamic> json = {
       'version': Config.mostroVersion,
@@ -37,7 +36,7 @@ class MostroMessage<T extends Payload> {
     }
     json['action'] = action.value;
     // Serialize EmptyPayload as null to match protocol specification
-    json['payload'] = (_payload is EmptyPayload) ? null :_payload?.toJson();
+    json['payload'] = (_payload is EmptyPayload) ? null : _payload?.toJson();
     return json;
   }
 
@@ -100,7 +99,10 @@ class MostroMessage<T extends Payload> {
 
   String sign(NostrKeyPairs keyPair) {
     //IMPORTANT : Use 'restore' key for restore and last-trade-index actions, 'order' for everything else, as per protocol
-    final wrapperKey = action == Action.restore || action == Action.lastTradeIndex ? 'restore' : 'order';
+    final wrapperKey =
+        action == Action.restore || action == Action.lastTradeIndex
+        ? 'restore'
+        : 'order';
     final message = {wrapperKey: toJson()};
     final serializedEvent = jsonEncode(message);
     final bytes = utf8.encode(serializedEvent);
@@ -112,7 +114,10 @@ class MostroMessage<T extends Payload> {
 
   String serialize({NostrKeyPairs? keyPair}) {
     //IMPORTANT : Use 'restore' key for restore and last-trade-index actions, 'order' for everything else, as per protocol
-    final wrapperKey = action == Action.restore || action == Action.lastTradeIndex ? 'restore' : 'order';
+    final wrapperKey =
+        action == Action.restore || action == Action.lastTradeIndex
+        ? 'restore'
+        : 'order';
     final message = {wrapperKey: toJson()};
     final serializedEvent = jsonEncode(message);
     final signature = (keyPair != null) ? '"${sign(keyPair)}"' : null;
@@ -125,20 +130,33 @@ class MostroMessage<T extends Payload> {
     required String recipientPubKey,
     NostrKeyPairs? masterKey,
     int? keyIndex,
+    int difficulty = 0,
   }) async {
     tradeIndex = keyIndex;
     final content = serialize(keyPair: masterKey != null ? tradeKey : null);
     final keySet = masterKey ?? tradeKey;
 
     final encryptedContent = await NostrUtils.createRumor(
-        tradeKey, keySet.private, recipientPubKey, content);
+      tradeKey,
+      keySet.private,
+      recipientPubKey,
+      content,
+    );
 
     final wrapperKeyPair = NostrUtils.generateKeyPair();
 
     String sealedContent = await NostrUtils.createSeal(
-        keySet, wrapperKeyPair.private, recipientPubKey, encryptedContent);
+      keySet,
+      wrapperKeyPair.private,
+      recipientPubKey,
+      encryptedContent,
+    );
 
     return await NostrUtils.createWrap(
-        wrapperKeyPair, sealedContent, recipientPubKey);
+      wrapperKeyPair,
+      sealedContent,
+      recipientPubKey,
+      difficulty: difficulty,
+    );
   }
 }

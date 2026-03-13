@@ -1,7 +1,7 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import 'dart:math';
-import 'dart:typed_data';
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:dart_nostr/dart_nostr.dart';
@@ -25,8 +25,9 @@ class NostrUtils {
   }
 
   static NostrKeyPairs generateKeyPairFromPrivateKey(String privateKey) {
-    return _instance.services.keys
-        .generateKeyPairFromExistingPrivateKey(privateKey);
+    return _instance.services.keys.generateKeyPairFromExistingPrivateKey(
+      privateKey,
+    );
   }
 
   static String generatePrivateKey() {
@@ -72,14 +73,22 @@ class NostrUtils {
 
   // Signing and verification
   static String signMessage(String message, String privateKey) {
-    return _instance.services.keys
-        .sign(privateKey: privateKey, message: message);
+    return _instance.services.keys.sign(
+      privateKey: privateKey,
+      message: message,
+    );
   }
 
   static bool verifySignature(
-      String signature, String message, String publicKey) {
-    return _instance.services.keys
-        .verify(publicKey: publicKey, message: message, signature: signature);
+    String signature,
+    String message,
+    String publicKey,
+  ) {
+    return _instance.services.keys.verify(
+      publicKey: publicKey,
+      message: message,
+      signature: signature,
+    );
   }
 
   // Event creation
@@ -163,19 +172,18 @@ class NostrUtils {
           .where((relay) => relay.isNotEmpty)
           .toList();
 
-      return {
-        'orderId': orderId,
-        'relays': relays,
-      };
+      return {'orderId': orderId, 'relays': relays};
     } catch (e) {
       return null;
     }
   }
 
   static Future<String?> pubKeyFromIdentifierNip05(
-      String internetIdentifier) async {
-    return await _instance.services.utils
-        .pubKeyFromIdentifierNip05(internetIdentifier: internetIdentifier);
+    String internetIdentifier,
+  ) async {
+    return await _instance.services.utils.pubKeyFromIdentifierNip05(
+      internetIdentifier: internetIdentifier,
+    );
   }
 
   // Method to generate event ID in Nostr
@@ -186,7 +194,7 @@ class NostrUtils {
       eventData['created_at'], // Timestamp
       eventData['kind'], // Event type
       eventData['tags'], // Event tags
-      eventData['content'] // Event content
+      eventData['content'], // Event content
     ]);
 
     // Calculate SHA-256 hash to generate ID
@@ -210,31 +218,39 @@ class NostrUtils {
     return now.subtract(Duration(seconds: randomSeconds));
   }
 
-  static Future<String> createRumor(NostrKeyPairs senderKeyPair,
-      String wrapperKey, String recipientPubKey, String content) async {
+  static Future<String> createRumor(
+    NostrKeyPairs senderKeyPair,
+    String wrapperKey,
+    String recipientPubKey,
+    String content,
+  ) async {
     final rumorEvent = NostrEvent.fromPartialData(
       kind: 1,
       keyPairs: senderKeyPair,
       content: content,
       createdAt: DateTime.now(),
       tags: [
-        ["p", recipientPubKey]
+        ["p", recipientPubKey],
       ],
     );
 
     try {
       return await encryptNIP44(
-          jsonEncode(rumorEvent.toMap()), wrapperKey, recipientPubKey);
+        jsonEncode(rumorEvent.toMap()),
+        wrapperKey,
+        recipientPubKey,
+      );
     } catch (e) {
       throw Exception('Failed to encrypt content: $e');
     }
   }
 
   static Future<String> createSeal(
-      NostrKeyPairs senderKeyPair,
-      String wrapperKey,
-      String recipientPubKey,
-      String encryptedContent) async {
+    NostrKeyPairs senderKeyPair,
+    String wrapperKey,
+    String recipientPubKey,
+    String encryptedContent,
+  ) async {
     final sealEvent = NostrEvent.fromPartialData(
       kind: 13,
       keyPairs: senderKeyPair,
@@ -243,24 +259,39 @@ class NostrUtils {
     );
 
     return await encryptNIP44(
-        jsonEncode(sealEvent.toMap()), wrapperKey, recipientPubKey);
+      jsonEncode(sealEvent.toMap()),
+      wrapperKey,
+      recipientPubKey,
+    );
   }
 
-  /// Creates a NIP-59 wrapper event with NIP-13 proof-of-work as required by Mostro
-  /// This adds computational proof to demonstrate the event is not spam
-  static Future<NostrEvent> createWrap(NostrKeyPairs wrapperKeyPair,
-      String sealedContent, String recipientPubKey) async {
-    
-    // Create a simple wrapper event without proof-of-work
+  /// Creates a NIP-59 wrapper event with optional NIP-13 proof-of-work.
+  ///
+  /// When [difficulty] is greater than 0, the wrapper event is mined to
+  /// produce an event id with the required number of leading zero bits,
+  /// as specified in NIP-13. This is required by Mostro instances that
+  /// set a `pow` value in their kind 38385 info event.
+  ///
+  /// Mining runs in a separate isolate to avoid blocking the UI thread.
+  static Future<NostrEvent> createWrap(
+    NostrKeyPairs wrapperKeyPair,
+    String sealedContent,
+    String recipientPubKey, {
+    int difficulty = 0,
+  }) async {
     final wrapEvent = NostrEvent.fromPartialData(
       kind: 1059,
       content: sealedContent,
       keyPairs: wrapperKeyPair,
       tags: [
-        ["p", recipientPubKey]
+        ["p", recipientPubKey],
       ],
       createdAt: randomNow(),
     );
+
+    if (difficulty > 0) {
+      return mineProofOfWork(wrapEvent, difficulty, wrapperKeyPair);
+    }
 
     return wrapEvent;
   }
@@ -277,7 +308,8 @@ class NostrUtils {
     final hexKey = sharedKey.private;
     if (hexKey.length != 64) {
       throw Exception(
-          'Invalid shared key length: expected 64 hex chars, got ${hexKey.length}');
+        'Invalid shared key length: expected 64 hex chars, got ${hexKey.length}',
+      );
     }
     final bytes = Uint8List(32);
     for (int i = 0; i < 32; i++) {
@@ -291,7 +323,11 @@ class NostrUtils {
   /// 2. Seal event (kind 13): Encrypted inner event
   /// 3. Wrapper event (kind 1059): Final encrypted package
   static Future<NostrEvent> createNIP59Event(
-      String content, String recipientPubKey, String senderPrivateKey) async {
+    String content,
+    String recipientPubKey,
+    String senderPrivateKey, {
+    int difficulty = 0,
+  }) async {
     // Validate inputs
     if (content.isEmpty) throw ArgumentError('Content cannot be empty');
     if (recipientPubKey.length != 64) {
@@ -304,21 +340,35 @@ class NostrUtils {
     final senderKeyPair = generateKeyPairFromPrivateKey(senderPrivateKey);
 
     String encryptedContent = await createRumor(
-        senderKeyPair, senderKeyPair.private, recipientPubKey, content);
+      senderKeyPair,
+      senderKeyPair.private,
+      recipientPubKey,
+      content,
+    );
 
     final wrapperKeyPair = generateKeyPair();
 
-    String sealedContent = await createSeal(senderKeyPair,
-        wrapperKeyPair.private, recipientPubKey, encryptedContent);
+    String sealedContent = await createSeal(
+      senderKeyPair,
+      wrapperKeyPair.private,
+      recipientPubKey,
+      encryptedContent,
+    );
 
-    final wrapEvent =
-        await createWrap(wrapperKeyPair, sealedContent, recipientPubKey);
+    final wrapEvent = await createWrap(
+      wrapperKeyPair,
+      sealedContent,
+      recipientPubKey,
+      difficulty: difficulty,
+    );
 
     return wrapEvent;
   }
 
   static Future<NostrEvent> decryptNIP59Event(
-      NostrEvent event, String privateKey) async {
+    NostrEvent event,
+    String privateKey,
+  ) async {
     if (event.kind != 1059) {
       throw ArgumentError('Wrong kind: ${event.kind}');
     }
@@ -337,8 +387,9 @@ class NostrUtils {
         event.pubkey,
       );
 
-      final rumorEvent =
-          NostrEvent.deserialized('["EVENT", "", $decryptedContent]');
+      final rumorEvent = NostrEvent.deserialized(
+        '["EVENT", "", $decryptedContent]',
+      );
 
       final finalDecryptedContent = await decryptNIP44(
         rumorEvent.content!,
@@ -364,9 +415,7 @@ class NostrUtils {
           (wrap['tags'] as List)
               .map(
                 (nestedElem) => (nestedElem as List)
-                    .map(
-                      (nestedElemContent) => nestedElemContent.toString(),
-                    )
+                    .map((nestedElemContent) => nestedElemContent.toString())
                     .toList(),
               )
               .toList(),
@@ -386,7 +435,7 @@ class NostrUtils {
       'content',
       'pubkey',
       'created_at',
-      'tags'
+      'tags',
     ];
     for (final field in requiredFields) {
       if (!event.containsKey(field)) {
@@ -396,7 +445,10 @@ class NostrUtils {
   }
 
   static Future<String> encryptNIP44(
-      String content, String privkey, String pubkey) async {
+    String content,
+    String privkey,
+    String pubkey,
+  ) async {
     try {
       return await Nip44.encryptMessage(content, privkey, pubkey);
     } catch (e) {
@@ -406,7 +458,10 @@ class NostrUtils {
   }
 
   static Future<String> decryptNIP44(
-      String encryptedContent, String privkey, String pubkey) async {
+    String encryptedContent,
+    String privkey,
+    String pubkey,
+  ) async {
     try {
       return await Nip44.decryptMessage(encryptedContent, privkey, pubkey);
     } catch (e) {
@@ -415,4 +470,134 @@ class NostrUtils {
     }
   }
 
+  /// Counts the number of leading zero bits in a hex string (NIP-13).
+  static int _countLeadingZeroBits(String hex) {
+    int count = 0;
+    for (int i = 0; i < hex.length; i++) {
+      final nibble = int.parse(hex[i], radix: 16);
+      if (nibble == 0) {
+        count += 4;
+      } else {
+        // Count leading zeros in this nibble
+        if (nibble < 2) {
+          count += 3;
+        } else if (nibble < 4) {
+          count += 2;
+        } else if (nibble < 8) {
+          count += 1;
+        }
+        break;
+      }
+    }
+    return count;
+  }
+
+  /// Mines a NIP-13 proof-of-work nonce for the given event parameters.
+  ///
+  /// This is designed to run in a separate isolate via [compute] to avoid
+  /// blocking the UI thread.
+  ///
+  /// Returns a map with 'nonce' (the winning nonce) and 'id' (the mined event id).
+  static Map<String, String> _mineNonce(Map<String, dynamic> params) {
+    final int kind = params['kind'];
+    final String contentStr = params['content'];
+    final int createdAtSeconds = params['createdAt'];
+    final String pubkey = params['pubkey'];
+    final List<List<String>> baseTags = (params['tags'] as List)
+        .map((t) => (t as List).map((e) => e.toString()).toList())
+        .toList();
+    final int difficulty = params['difficulty'];
+
+    // Add nonce tag placeholder
+    final nonceTagIndex = baseTags.length;
+    baseTags.add(['nonce', '0', difficulty.toString()]);
+
+    for (int nonce = 0; nonce < 0x7FFFFFFF; nonce++) {
+      baseTags[nonceTagIndex] = [
+        'nonce',
+        nonce.toString(),
+        difficulty.toString(),
+      ];
+
+      final data = [0, pubkey, createdAtSeconds, kind, baseTags, contentStr];
+      final serialized = jsonEncode(data);
+      final bytes = utf8.encode(serialized);
+      final digest = sha256.convert(bytes);
+      final id = hex.encode(digest.bytes);
+
+      if (_countLeadingZeroBits(id) >= difficulty) {
+        return {'nonce': nonce.toString(), 'id': id};
+      }
+    }
+
+    throw Exception('Failed to mine PoW after max iterations');
+  }
+
+  /// Mines NIP-13 proof-of-work for a NostrEvent.
+  ///
+  /// Creates a new event with a `["nonce", "<value>", "<difficulty>"]` tag
+  /// that produces an event id with the required number of leading zero bits.
+  ///
+  /// Maximum supported PoW difficulty to prevent abuse from misconfigured
+  /// or hostile Mostro nodes that could trigger unbounded CPU work.
+  static const int maxPowDifficulty = 24;
+
+  /// The mining runs in a separate isolate to avoid blocking the UI.
+  /// Difficulty of 0 returns the event unchanged.
+  /// Throws [ArgumentError] if difficulty exceeds [maxPowDifficulty].
+  static Future<NostrEvent> mineProofOfWork(
+    NostrEvent event,
+    int difficulty,
+    NostrKeyPairs keyPairs,
+  ) async {
+    if (difficulty <= 0) return event;
+
+    if (difficulty > maxPowDifficulty) {
+      throw ArgumentError.value(
+        difficulty,
+        'difficulty',
+        'PoW difficulty exceeds supported maximum $maxPowDifficulty',
+      );
+    }
+
+    final createdAt = event.createdAt ?? DateTime.now();
+    final createdAtSeconds = createdAt.millisecondsSinceEpoch ~/ 1000;
+
+    // Prepare base tags (without nonce — it will be added in the mining loop)
+    final baseTags = (event.tags ?? [])
+        .where((tag) => tag.isNotEmpty && tag[0] != 'nonce')
+        .map((tag) => tag.toList())
+        .toList();
+
+    final result = await compute(_mineNonce, {
+      'kind': event.kind,
+      'content': event.content ?? '',
+      'createdAt': createdAtSeconds,
+      'pubkey': event.pubkey,
+      'tags': baseTags.map((t) => t.toList()).toList(),
+      'difficulty': difficulty,
+    });
+
+    final minedNonce = result['nonce']!;
+    final minedId = result['id']!;
+
+    // Reconstruct tags with the winning nonce
+    final finalTags = [
+      ...baseTags,
+      ['nonce', minedNonce, difficulty.toString()],
+    ];
+
+    // Sign the mined event id
+    final sig = keyPairs.sign(minedId);
+
+    return NostrEvent(
+      id: minedId,
+      kind: event.kind!,
+      content: event.content ?? '',
+      sig: sig,
+      pubkey: event.pubkey,
+      createdAt: createdAt,
+      tags: finalTags,
+    );
+  }
 }

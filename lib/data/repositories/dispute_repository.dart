@@ -4,6 +4,8 @@ import 'package:mostro_mobile/data/models/dispute.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
+import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
+import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
@@ -23,32 +25,37 @@ class DisputeRepository {
 
       // Get user's session for the order to get the trade key
       final sessions = _ref.read(sessionNotifierProvider);
-      final session = sessions.firstWhereOrNull(
-            (s) => s.orderId == orderId,
-          );
+      final session = sessions.firstWhereOrNull((s) => s.orderId == orderId);
 
       if (session == null) {
-        logger
-            .e('No session found for order: $orderId, cannot create dispute');
+        logger.e('No session found for order: $orderId, cannot create dispute');
         return false;
       }
 
       // Validate trade key is present
       if (session.tradeKey.private.isEmpty) {
-        logger.e('Trade key is empty for order: $orderId, cannot create dispute');
+        logger.e(
+          'Trade key is empty for order: $orderId, cannot create dispute',
+        );
         return false;
       }
 
       // Create dispute message using Gift Wrap protocol (NIP-59)
-      final disputeMessage = MostroMessage(
-        action: Action.dispute,
-        id: orderId,
-      );
+      final disputeMessage = MostroMessage(action: Action.dispute, id: orderId);
 
-      // Wrap message using Gift Wrap protocol (NIP-59)
+      // Wrap message using Gift Wrap protocol (NIP-59) with PoW from Mostro instance
+      final mostroInstance = _ref.read(orderRepositoryProvider).mostroInstance;
+      if (mostroInstance == null) {
+        logger.w(
+          'Mostro instance info unavailable, sending dispute with PoW 0 — '
+          'event may be rejected if node requires PoW',
+        );
+      }
+      final mostroPow = mostroInstance?.pow ?? 0;
       final event = await disputeMessage.wrap(
         tradeKey: session.tradeKey,
         recipientPubKey: _mostroPubkey,
+        difficulty: mostroPow,
       );
 
       // Send the wrapped event to Mostro
@@ -74,13 +81,17 @@ class DisputeRepository {
         if (session.orderId != null) {
           try {
             // Get the order state for this session
-            final orderState = _ref.read(orderNotifierProvider(session.orderId!));
-            
+            final orderState = _ref.read(
+              orderNotifierProvider(session.orderId!),
+            );
+
             if (orderState.dispute != null) {
               disputes.add(orderState.dispute!);
             }
           } catch (e) {
-            logger.w('Failed to get order state for order ${session.orderId}: $e');
+            logger.w(
+              'Failed to get order state for order ${session.orderId}: $e',
+            );
           }
         }
       }
@@ -96,19 +107,19 @@ class DisputeRepository {
   Future<Dispute?> getDispute(String disputeId) async {
     try {
       logger.d('Getting dispute by ID: $disputeId');
-      
+
       // Get all user disputes and find the one with matching ID
       final disputes = await getUserDisputes();
       final dispute = disputes.firstWhereOrNull(
         (d) => d.disputeId == disputeId,
       );
-      
+
       if (dispute != null) {
         logger.d('Found dispute with ID: $disputeId');
       } else {
         logger.w('No dispute found with ID: $disputeId');
       }
-      
+
       return dispute;
     } catch (e) {
       logger.e('Failed to get dispute by ID $disputeId: $e');
