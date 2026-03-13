@@ -1,6 +1,7 @@
 {
     "@@locale": "it",
     "backToHome": "Torna alla home",
+    "tooManyRequests": "Hai superato il limite di richieste consentito. Per favore riprova più tardi.",
     "newOrder": "La tua offerta è stata pubblicata! Attendi fino a quando un altro utente accetta il tuo ordine. Sarà disponibile per {expiration_hours} ore. Puoi annullare questo ordine prima che un altro utente lo prenda premendo: Cancella.",
     "@newOrder": {
         "placeholders": {
