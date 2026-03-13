@@ -1,6 +1,7 @@
 {
     "@@locale": "en",
     "backToHome": "Back to Home",
+    "tooManyRequests": "You have exceeded the allowed request rate. Please try again later.",
     "newOrder": "Your offer has been published! Please wait until another user picks your order. It will be available for {expiration_hours} hours. You can cancel this order before another user picks it up by executing: cancel.",
     "@newOrder": {
         "placeholders": {
