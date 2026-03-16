@@ -1130,6 +1130,7 @@
     "notification_dispute_started_message": "A dispute has been initiated",
     "notification_order_canceled_title": "Order canceled",
     "notification_order_canceled_message": "The order has been canceled",
+    "notification_order_canceled_by_timeout_message": "The counterparty did not respond in time. The order has been canceled.",
     "notification_cooperative_cancel_initiated_by_you_title": "Cancellation requested",
     "notification_cooperative_cancel_initiated_by_you_message": "You requested to cancel the order, waiting for peer confirmation",
     "notification_cooperative_cancel_initiated_by_peer_title": "Cancellation request",

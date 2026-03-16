@@ -94,11 +94,19 @@ class NotificationMessageMapper {
   /// Maps an action to its corresponding notification message key with context values
   static String getMessageKeyWithContext(mostro.Action action, Map<String, dynamic>? values) {
     // Handle special cases with context
-    if (values != null && action == mostro.Action.addInvoice) {
-      if (values.containsKey('fiat_amount') && values.containsKey('failed_at')) {
+    if (values != null) {
+      if (action == mostro.Action.addInvoice &&
+          values.containsKey('fiat_amount') &&
+          values.containsKey('failed_at')) {
         return 'notification_add_invoice_after_failure_message';
       }
+
+      if (action == mostro.Action.canceled &&
+          values['reason'] == 'counterparty-timeout') {
+        return 'notification_order_canceled_by_timeout_message';
+      }
     }
+
     // Fall back to normal message key
     return getMessageKey(action);
   }
@@ -314,6 +322,8 @@ class NotificationMessageMapper {
         return s.notification_order_canceled_title;
       case 'notification_order_canceled_message':
         return s.notification_order_canceled_message;
+      case 'notification_order_canceled_by_timeout_message':
+        return s.notification_order_canceled_by_timeout_message;
       case 'notification_cooperative_cancel_initiated_by_you_title':
         return s.notification_cooperative_cancel_initiated_by_you_title;
       case 'notification_cooperative_cancel_initiated_by_you_message':
