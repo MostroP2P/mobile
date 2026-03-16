@@ -1130,6 +1130,7 @@
     "notification_dispute_started_message": "Un différend a été initié",
     "notification_order_canceled_title": "Commande annulée",
     "notification_order_canceled_message": "La commande a été annulée",
+    "notification_order_canceled_peer_timeout_message": "La contrepartie n'a pas répondu à temps. La commande a été annulée.",
     "notification_cooperative_cancel_initiated_by_you_title": "Annulation demandée",
     "notification_cooperative_cancel_initiated_by_you_message": "Vous avez demandé d'annuler la commande, en attente de confirmation du pair",
     "notification_cooperative_cancel_initiated_by_peer_title": "Demande d'annulation",

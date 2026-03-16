@@ -148,8 +148,15 @@ class NotificationDataExtractor {
         break;
         
       case Action.canceled:
-        // Canceled orders don't generate persistent notifications
-        return null;
+        final order = event.getPayload<Order>();
+        final currentSession = session;
+
+        // Maker-side expirations arrive as canceled events for a pending order with no peer.
+        // Preserve that context so the notification copy can explain the timeout clearly.
+        if (order?.status == Status.pending && currentSession?.peer == null) {
+          values['cancellation_reason'] = 'peer_timeout';
+        }
+        break;
         
       case Action.cooperativeCancelInitiatedByYou:
         // No additional values needed

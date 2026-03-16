@@ -1044,6 +1044,7 @@
     "notification_dispute_started_message": "Se ha iniciado una disputa",
     "notification_order_canceled_title": "Orden cancelada",
     "notification_order_canceled_message": "La orden ha sido cancelada",
+    "notification_order_canceled_peer_timeout_message": "La contraparte no respondió a tiempo. La orden ha sido cancelada.",
     "notification_cooperative_cancel_initiated_by_you_title": "Cancelación solicitada",
     "notification_cooperative_cancel_initiated_by_you_message": "Solicitaste cancelar la orden, esperando confirmación del par",
     "notification_cooperative_cancel_initiated_by_peer_title": "Solicitud de cancelación",
