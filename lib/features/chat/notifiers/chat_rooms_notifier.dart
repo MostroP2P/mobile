@@ -25,10 +25,14 @@ class ChatRoomsNotifier extends StateNotifier<List<ChatRoom>> {
       try {
         final notifier = ref.read(chatRoomsProvider(chat.orderId).notifier);
         if (notifier.mounted) {
-          futures.add(notifier.reload());
+          futures.add(
+            notifier.reload().catchError((e) {
+              logger.e('Failed to reload chat for orderId ${chat.orderId}: $e');
+            }),
+          );
         }
       } catch (e) {
-        logger.e('Failed to reload chat for orderId ${chat.orderId}: $e');
+        logger.e('Failed to setup reload for orderId ${chat.orderId}: $e');
       }
     }
 

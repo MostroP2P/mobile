@@ -210,14 +210,19 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
         session.sharedKey!.public,
       );
 
-      // Publish to network first - await to catch network/initialization errors
+      // Publish to network - await to catch network/initialization errors
       try {
         await ref.read(nostrServiceProvider).publishEvent(wrappedEvent);
         logger.d('Message sent successfully to network');
+      } catch (publishError, publishStack) {
+        logger.e('Failed to publish message: $publishError', stackTrace: publishStack);
+        rethrow; // Re-throw to be caught by outer catch
+      }
 
-        // Persist the wrapped event to disk immediately after successful publish.
-        // This prevents message loss if the relay echo doesn't arrive
-        // (e.g., connection drop after send). _onChatEvent will skip it via hasItem().
+      // Persist the wrapped event to disk immediately after successful publish.
+      // This prevents message loss if the relay echo doesn't arrive
+      // (e.g., connection drop after send). _onChatEvent will skip it via hasItem().
+      try {
         final eventStore = ref.read(eventStorageProvider);
         await eventStore.putItem(
           wrappedEvent.id!,
@@ -235,22 +240,21 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
           },
         );
         logger.d('Wrapped event persisted to storage for orderId: $orderId');
+      } catch (storageError) {
+        logger.e('Failed to persist message to storage: $storageError');
+        // Continue - message was published, just won't survive crash
+      }
 
-        // Add the inner event to state immediately for optimistic UI
-        // The relay will echo it back and _onChatEvent will handle deduplication
-        final messageExists = state.messages.any((m) => m.id == innerEvent.id);
-        if (!messageExists) {
-          final updatedMessages = [...state.messages, innerEvent];
-          updatedMessages.sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
-          state = state.copy(messages: updatedMessages);
-          logger.d('Message added to state optimistically, total messages: ${updatedMessages.length}');
-        } else {
-          logger.d('Message already exists in state, skipping add');
-        }
-
-      } catch (publishError, publishStack) {
-        logger.e('Failed to publish message: $publishError', stackTrace: publishStack);
-        rethrow; // Re-throw to be caught by outer catch
+      // Add the inner event to state immediately for optimistic UI
+      // The relay will echo it back and _onChatEvent will handle deduplication
+      final messageExists = state.messages.any((m) => m.id == innerEvent.id);
+      if (!messageExists) {
+        final updatedMessages = [...state.messages, innerEvent];
+        updatedMessages.sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
+        state = state.copy(messages: updatedMessages);
+        logger.d('Message added to state optimistically, total messages: ${updatedMessages.length}');
+      } else {
+        logger.d('Message already exists in state, skipping add');
       }
 
       // Notify the chat rooms list to update after successful publish
