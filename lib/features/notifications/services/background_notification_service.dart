@@ -20,6 +20,7 @@ import 'package:mostro_mobile/features/key_manager/key_storage.dart';
 import 'package:mostro_mobile/features/notifications/utils/notification_data_extractor.dart';
 import 'package:mostro_mobile/features/notifications/utils/notification_message_mapper.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:mostro_mobile/generated/l10n_de.dart';
 import 'package:mostro_mobile/generated/l10n_en.dart';
 import 'package:mostro_mobile/generated/l10n_es.dart';
 import 'package:mostro_mobile/generated/l10n_it.dart';
@@ -212,6 +213,7 @@ Future<NotificationText> _getLocalizedNotificationText(mostro_action.Action acti
     final S localizations = switch (languageCode) {
       'es' => SEs(),
       'it' => SIt(),
+      'de' => SDe(),
       _ => SEn(),
     };
     
@@ -240,6 +242,7 @@ String? _getExpandedText(Map<String, dynamic> values) {
   final S localizations = switch (languageCode) {
     'es' => SEs(),
     'it' => SIt(),
+    'de' => SDe(),
     _ => SEn(),
   };
   
