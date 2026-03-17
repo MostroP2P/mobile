@@ -15,17 +15,25 @@ class ChatRoomsNotifier extends StateNotifier<List<ChatRoom>> {
   }
   
 
-  void reloadAllChats() {
+  Future<void> reloadAllChats() async {
+    // Reload all chats in parallel, awaiting all to complete
+    // before refreshing the list. This prevents the race condition
+    // where refreshChatList() filters out chats whose messages
+    // haven't loaded yet.
+    final futures = <Future<void>>[];
     for (final chat in state) {
       try {
         final notifier = ref.read(chatRoomsProvider(chat.orderId).notifier);
         if (notifier.mounted) {
-          notifier.reload();
+          futures.add(notifier.reload());
         }
       } catch (e) {
         logger.e('Failed to reload chat for orderId ${chat.orderId}: $e');
       }
     }
+
+    await Future.wait(futures);
+    await refreshChatList();
 
     _refreshAllSubscriptions();
   }

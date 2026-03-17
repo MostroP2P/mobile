@@ -27,10 +27,10 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
   static final EncryptedFileUploadService _fileUploadService =
       EncryptedFileUploadService();
 
-  /// Reload the chat room by re-subscribing to events.
-  void reload() {
-    // Cancel the current subscription if it exists
+  /// Reload the chat room by loading historical messages and re-subscribing.
+  Future<void> reload() async {
     _subscription?.cancel();
+    await _loadHistoricalMessages();
     subscribe();
   }
 
@@ -214,7 +214,28 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
       try {
         await ref.read(nostrServiceProvider).publishEvent(wrappedEvent);
         logger.d('Message sent successfully to network');
-        
+
+        // Persist the wrapped event to disk immediately after successful publish.
+        // This prevents message loss if the relay echo doesn't arrive
+        // (e.g., connection drop after send). _onChatEvent will skip it via hasItem().
+        final eventStore = ref.read(eventStorageProvider);
+        await eventStore.putItem(
+          wrappedEvent.id!,
+          {
+            'id': wrappedEvent.id,
+            'created_at':
+                wrappedEvent.createdAt!.millisecondsSinceEpoch ~/ 1000,
+            'kind': wrappedEvent.kind,
+            'content': wrappedEvent.content,
+            'pubkey': wrappedEvent.pubkey,
+            'sig': wrappedEvent.sig,
+            'tags': wrappedEvent.tags,
+            'type': 'chat',
+            'order_id': orderId,
+          },
+        );
+        logger.d('Wrapped event persisted to storage for orderId: $orderId');
+
         // Add the inner event to state immediately for optimistic UI
         // The relay will echo it back and _onChatEvent will handle deduplication
         final messageExists = state.messages.any((m) => m.id == innerEvent.id);
@@ -226,7 +247,7 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
         } else {
           logger.d('Message already exists in state, skipping add');
         }
-        
+
       } catch (publishError, publishStack) {
         logger.e('Failed to publish message: $publishError', stackTrace: publishStack);
         rethrow; // Re-throw to be caught by outer catch
