@@ -297,6 +297,9 @@ class OrderState {
       case Action.adminCancel:
       case Action.cooperativeCancelAccepted:
       case Action.holdInvoicePaymentCanceled:
+        if (payloadStatus == Status.expired) {
+          return Status.expired;
+        }
         return Status.canceled;
 
       // Actions that should set status to cooperatively canceled (pending cancellation)

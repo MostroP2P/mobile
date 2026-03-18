@@ -70,6 +70,9 @@ class MostroMessageDetail extends ConsumerWidget {
                 24;
         return S.of(context)!.newOrder(expHrs.toString());
       case actions.Action.canceled:
+        if (tradeState.status == Status.expired) {
+          return S.of(context)!.canceledByTimeout;
+        }
         return S.of(context)!.canceled(orderPayload?.id ?? '');
       case actions.Action.payInvoice:
         final expSecs = ref

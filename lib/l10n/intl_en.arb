@@ -11,6 +11,7 @@
         }
     },
     "canceled": "You have canceled the order ID: {id}.",
+    "canceledByTimeout": "The counterparty did not respond in time. The order has been canceled.",
     "payInvoice": "Please pay this hold invoice of {amount} Sats for {fiat_code} {fiat_amount} to start the operation. If you do not pay it within {expiration_seconds} minutes, the trade will be canceled.",
     "@payInvoice": {
         "placeholders": {

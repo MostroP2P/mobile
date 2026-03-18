@@ -10,6 +10,7 @@
         }
     },
     "canceled": "Has cancelado la orden ID: {id}.",
+    "canceledByTimeout": "Tu contraparte no respondió a tiempo. La orden ha sido cancelada.",
     "payInvoice": "Por favor paga esta factura retenida de {amount} Sats por {fiat_amount} {fiat_code} para iniciar la operación. Si no la pagas antes de {expiration_seconds} minutos, el intercambio será cancelado.",
     "@payInvoice": {
         "placeholders": {
