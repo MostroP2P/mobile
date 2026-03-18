@@ -92,16 +92,17 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
             'Session update received for orderId: $orderId, session is null: ${next == null}, sharedKey is null: ${next?.sharedKey == null}');
 
         if (next != null && next.sharedKey != null) {
-          // Session is now ready with shared key, subscribe to chat
           _sessionListener?.close();
           _sessionListener = null;
 
-          logger.i(
-              'Session with shared key is now available, subscribing to chat for orderId: $orderId');
-
-          // Use SubscriptionManager to create a subscription for this specific chat room
-          final subscriptionManager = ref.read(subscriptionManagerProvider);
-          _subscription = subscriptionManager.chat.listen(_onChatEvent);
+          unawaited(() async {
+            logger.i(
+                'Session with shared key is now available, loading history and subscribing for orderId: $orderId');
+            await _loadHistoricalMessages();
+            if (!mounted) return;
+            final subscriptionManager = ref.read(subscriptionManagerProvider);
+            _subscription = subscriptionManager.chat.listen(_onChatEvent);
+          }());
         }
       },
     );
