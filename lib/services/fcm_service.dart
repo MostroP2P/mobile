@@ -6,13 +6,14 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:mostro_mobile/data/models/enums/storage_keys.dart';
-import 'package:mostro_mobile/services/logger_service.dart';
+import 'package:mostro_mobile/services/logger_service.dart'
+    show backgroundLog, logger;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mostro_mobile/firebase_options.dart';
 
 
-/// FCM background message handler - wakes up the app to process new events
-/// This is called when the app is in background or terminated
+/// FCM background message handler - wakes up the app to process new events.
+/// This is called when the app is in background or terminated.
 ///
 /// The handler follows MIP-05 approach:
 /// - FCM sends silent/empty notifications (no content)
@@ -20,8 +21,8 @@ import 'package:mostro_mobile/firebase_options.dart';
 /// - The existing background service handles fetching and processing events
 ///
 /// NOTE: This handler runs in a separate Dart isolate where the project's
-/// logger singleton is not available (IsolateNameServer port may not be
-/// registered). We use debugPrint as an exception to the logger convention.
+/// logger singleton is unavailable. All logging goes through backgroundLog()
+/// (see logger_service.dart) instead of the main logger.
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   try {
@@ -55,10 +56,28 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
         // Service is already running — signal it that FCM detected new activity
         service.invoke('fcm-wake', {});
       } else {
-        // Service is dead — start it and send settings
+        // Service is dead — start it and send settings.
+        // We set up listeners BEFORE startService() so we never miss events
+        // that the background isolate emits during its synchronous setup.
+
+        // 1. Listen for handlers-registered (emitted by serviceMain right
+        //    after it registers its event handlers, before opening the DB).
+        final handlersReady = Completer<void>();
+        final handlersSub = service.on('handlers-registered').listen((_) {
+          if (!handlersReady.isCompleted) handlersReady.complete();
+        });
+
+        // 2. Listen for service-ready (emitted after NostrService.init()).
+        final serviceReady = Completer<void>();
+        final readySub = service.on('service-ready').listen((_) {
+          if (!serviceReady.isCompleted) serviceReady.complete();
+        });
+
         final started = await service.startService();
         if (!started) {
-          debugPrint('FCM: startService() returned false, aborting');
+          backgroundLog('startService() returned false, aborting');
+          await handlersSub.cancel();
+          await readySub.cancel();
           return;
         }
 
@@ -66,7 +85,9 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
           SharedPreferencesKeys.appSettings.value,
         );
         if (settingsJson == null) {
-          debugPrint('FCM: No settings found, service started without relay config');
+          backgroundLog('No settings found, service started without relay config');
+          await handlersSub.cancel();
+          await readySub.cancel();
           return;
         }
 
@@ -74,33 +95,45 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
         try {
           settings = jsonDecode(settingsJson) as Map<String, dynamic>?;
         } catch (e) {
-          debugPrint('FCM: Failed to decode settings: $e');
+          backgroundLog('Failed to decode settings: $e');
         }
 
-        if (settings == null) return;
-
-        // Wait for service to initialize with exponential backoff
-        // (FCM handlers must complete quickly, ~20s budget on Android)
-        var delay = const Duration(milliseconds: 100);
-        const maxWait = Duration(seconds: 3);
-        final deadline = DateTime.now().add(maxWait);
-        while (!(await service.isRunning())) {
-          if (DateTime.now().isAfter(deadline)) break;
-          await Future.delayed(delay);
-          delay *= 2;
+        if (settings == null) {
+          await handlersSub.cancel();
+          await readySub.cancel();
+          return;
         }
 
-        if (await service.isRunning()) {
-          service.invoke('start', {
-            'settings': settings,
-          });
+        // 3. Wait for handlers to be registered (guarantees on('start') is
+        //    active so our invoke won't be dropped).
+        try {
+          await handlersReady.future.timeout(const Duration(seconds: 5));
+        } catch (_) {
+          backgroundLog('Timeout waiting for handlers-registered, proceeding anyway');
         }
+        await handlersSub.cancel();
+
+        // 4. Send start and wait for ack (service-ready). Retry once on timeout.
+        service.invoke('start', {'settings': settings});
+
+        try {
+          await serviceReady.future.timeout(const Duration(seconds: 5));
+        } catch (_) {
+          backgroundLog('No service-ready ack, retrying start');
+          service.invoke('start', {'settings': settings});
+          try {
+            await serviceReady.future.timeout(const Duration(seconds: 3));
+          } catch (_) {
+            backgroundLog('Service did not acknowledge start after retry');
+          }
+        }
+        await readySub.cancel();
       }
     } catch (e) {
-      debugPrint('FCM: background service error: $e');
+      backgroundLog('background service error: $e');
     }
   } catch (e) {
-    debugPrint('FCM: background handler error: $e');
+    backgroundLog('background handler error: $e');
   }
 }
 

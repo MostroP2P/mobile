@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:isolate';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:logger/logger.dart';
+import 'package:mostro_mobile/data/models/enums/storage_keys.dart';
 import 'package:mostro_mobile/data/models/nostr_filter.dart';
 import 'package:mostro_mobile/data/repositories/event_storage.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
@@ -11,6 +13,7 @@ import 'package:mostro_mobile/features/notifications/services/background_notific
 import 'package:mostro_mobile/services/nostr_service.dart';
 import 'package:mostro_mobile/services/logger_service.dart' as logger_service;
 import 'package:mostro_mobile/shared/providers/mostro_database_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 bool isAppForeground = true;
 String currentLanguage = 'en';
@@ -22,6 +25,8 @@ Future<void> serviceMain(ServiceInstance service) async {
 
   final Map<String, Map<String, dynamic>> activeSubscriptions = {};
   final nostrService = NostrService();
+
+  bool initialized = false;
 
   // Register event handlers BEFORE awaiting database open to avoid
   // losing events (e.g. 'start' invoked by FCM handler during db init).
@@ -41,6 +46,13 @@ Future<void> serviceMain(ServiceInstance service) async {
     final settingsMap = data['settings'];
     if (settingsMap == null) return;
 
+    // Idempotent: skip if already initialized (e.g. duplicate invoke from
+    // both FCM handler retry and MobileBackgroundService.on('on-start')).
+    if (initialized) {
+      service.invoke('service-ready', {});
+      return;
+    }
+
     loggerSendPort = IsolateNameServer.lookupPortByName(logger_service.isolatePortName);
 
     logger = Logger(
@@ -53,8 +65,48 @@ Future<void> serviceMain(ServiceInstance service) async {
     currentLanguage = settings.selectedLanguage ?? PlatformDispatcher.instance.locale.languageCode;
     await nostrService.init(settings);
 
+    // Restore persisted subscription filters so the background service can
+    // do useful work even when revived from a dead state (e.g. FCM wake
+    // after app kill — no LifecycleManager to transfer subscriptions).
+    try {
+      final prefs = SharedPreferencesAsync();
+      final filtersJson = await prefs.getString(
+        SharedPreferencesKeys.backgroundFilters.value,
+      );
+      if (filtersJson != null) {
+        final filterList = jsonDecode(filtersJson) as List<dynamic>;
+        if (filterList.isNotEmpty) {
+          final request = NostrRequestX.fromJson(filterList);
+          final subscription = nostrService.subscribeToEvents(request);
+
+          activeSubscriptions[request.subscriptionId!] = {
+            'filters': filterList,
+            'subscription': subscription,
+          };
+
+          subscription.listen((event) async {
+            try {
+              await notification_service.retryNotification(event);
+            } catch (e) {
+              logger?.e('Error processing restored subscription event', error: e);
+            }
+          });
+
+          logger?.i('Restored ${filterList.length} persisted background filters');
+        }
+      }
+    } catch (e) {
+      logger?.e('Failed to restore background filters: $e');
+    }
+
+    initialized = true;
     service.invoke('service-ready', {});
   });
+
+  // Signal that Dart handlers are registered and ready to receive events.
+  // Sent before database open so callers (e.g. FCM handler) can safely
+  // invoke('start') without it being dropped.
+  service.invoke('handlers-registered', {});
 
   final db = await openMostroDatabase('events.db');
   final eventStore = EventStorage(db: db);
