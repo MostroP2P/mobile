@@ -58,7 +58,12 @@ Future<void> serviceMain(ServiceInstance service) async {
     // This prevents two overlapping async inits when both FCM handler and
     // MobileBackgroundService fire start before the first one completes.
     if (initInFlight != null) {
-      await initInFlight!.future;
+      try {
+        await initInFlight!.future;
+      } catch (_) {
+        // First caller's init failed — don't ack readiness.
+        return;
+      }
       service.invoke('service-ready', {});
       return;
     }
@@ -67,57 +72,62 @@ Future<void> serviceMain(ServiceInstance service) async {
     // other callback can enter the init path.
     initInFlight = Completer<void>();
 
-    loggerSendPort = IsolateNameServer.lookupPortByName(logger_service.isolatePortName);
-
-    logger = Logger(
-      printer: logger_service.SimplePrinter(),
-      output: logger_service.IsolateLogOutput(loggerSendPort),
-      level: Level.debug,
-    );
-
-    final settings = Settings.fromJson(settingsMap);
-    currentLanguage = settings.selectedLanguage ?? PlatformDispatcher.instance.locale.languageCode;
-    await nostrService.init(settings);
-
-    // Restore persisted subscription filters so the background service can
-    // do useful work even when revived from a dead state (e.g. FCM wake
-    // after app kill — no LifecycleManager to transfer subscriptions).
     try {
-      final prefs = SharedPreferencesAsync();
-      final filtersJson = await prefs.getString(
-        SharedPreferencesKeys.backgroundFilters.value,
+      loggerSendPort = IsolateNameServer.lookupPortByName(logger_service.isolatePortName);
+
+      logger = Logger(
+        printer: logger_service.SimplePrinter(),
+        output: logger_service.IsolateLogOutput(loggerSendPort),
+        level: Level.debug,
       );
-      if (filtersJson != null) {
-        final filterList = jsonDecode(filtersJson) as List<dynamic>;
-        if (filterList.isNotEmpty) {
-          final request = NostrRequestX.fromJson(filterList);
-          final subscription = nostrService.subscribeToEvents(request);
 
-          activeSubscriptions[request.subscriptionId!] = {
-            'filters': filterList,
-            'subscription': subscription,
-          };
+      final settings = Settings.fromJson(settingsMap);
+      currentLanguage = settings.selectedLanguage ?? PlatformDispatcher.instance.locale.languageCode;
+      await nostrService.init(settings);
 
-          subscription.listen((event) async {
-            try {
-              final store = eventStore;
-              if (store != null && await store.hasItem(event.id!)) return;
-              await notification_service.retryNotification(event);
-            } catch (e) {
-              logger?.e('Error processing restored subscription event', error: e);
-            }
-          });
+      // Restore persisted subscription filters so the background service can
+      // do useful work even when revived from a dead state (e.g. FCM wake
+      // after app kill — no LifecycleManager to transfer subscriptions).
+      try {
+        final prefs = SharedPreferencesAsync();
+        final filtersJson = await prefs.getString(
+          SharedPreferencesKeys.backgroundFilters.value,
+        );
+        if (filtersJson != null) {
+          final filterList = jsonDecode(filtersJson) as List<dynamic>;
+          if (filterList.isNotEmpty) {
+            final request = NostrRequestX.fromJson(filterList);
+            final subscription = nostrService.subscribeToEvents(request);
 
-          logger?.i('Restored ${filterList.length} persisted background filters');
+            activeSubscriptions[request.subscriptionId!] = {
+              'filters': filterList,
+              'subscription': subscription,
+            };
+
+            subscription.listen((event) async {
+              try {
+                final store = eventStore;
+                if (store != null && await store.hasItem(event.id!)) return;
+                await notification_service.retryNotification(event);
+              } catch (e) {
+                logger?.e('Error processing restored subscription event', error: e);
+              }
+            });
+
+            logger?.i('Restored ${filterList.length} persisted background filters');
+          }
         }
+      } catch (e) {
+        logger?.e('Failed to restore background filters: $e');
       }
-    } catch (e) {
-      logger?.e('Failed to restore background filters: $e');
-    }
 
-    initialized = true;
-    initInFlight!.complete();
-    service.invoke('service-ready', {});
+      initialized = true;
+      initInFlight!.complete();
+      service.invoke('service-ready', {});
+    } catch (e) {
+      logger?.e('Background service initialization failed', error: e);
+      initInFlight!.completeError(e);
+    }
   });
 
   // Signal that Dart handlers are registered and ready to receive events.
