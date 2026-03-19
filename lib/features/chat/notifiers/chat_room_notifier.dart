@@ -58,6 +58,15 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
     await _loadHistoricalMessages();
     subscribe();
     _isInitialized = true;
+
+    // Refresh the chat list now that messages are loaded. loadChats() may have
+    // already run and filtered this chat out because its async initialization
+    // hadn't completed yet.
+    try {
+      ref.read(chatRoomsNotifierProvider.notifier).refreshChatList();
+    } catch (e) {
+      logger.w('Could not refresh chat list after init of $orderId: $e');
+    }
   }
 
   void subscribe() {
