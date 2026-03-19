@@ -25,8 +25,10 @@ Future<void> serviceMain(ServiceInstance service) async {
 
   final Map<String, Map<String, dynamic>> activeSubscriptions = {};
   final nostrService = NostrService();
+  EventStorage? eventStore;
 
   bool initialized = false;
+  Completer<void>? initInFlight;
 
   // Register event handlers BEFORE awaiting database open to avoid
   // losing events (e.g. 'start' invoked by FCM handler during db init).
@@ -46,12 +48,24 @@ Future<void> serviceMain(ServiceInstance service) async {
     final settingsMap = data['settings'];
     if (settingsMap == null) return;
 
-    // Idempotent: skip if already initialized (e.g. duplicate invoke from
-    // both FCM handler retry and MobileBackgroundService.on('on-start')).
+    // Already fully initialized — just ack.
     if (initialized) {
       service.invoke('service-ready', {});
       return;
     }
+
+    // Another start callback is already initializing — await it and ack.
+    // This prevents two overlapping async inits when both FCM handler and
+    // MobileBackgroundService fire start before the first one completes.
+    if (initInFlight != null) {
+      await initInFlight!.future;
+      service.invoke('service-ready', {});
+      return;
+    }
+
+    // Claim the in-flight slot synchronously (before any await) so no
+    // other callback can enter the init path.
+    initInFlight = Completer<void>();
 
     loggerSendPort = IsolateNameServer.lookupPortByName(logger_service.isolatePortName);
 
@@ -86,6 +100,8 @@ Future<void> serviceMain(ServiceInstance service) async {
 
           subscription.listen((event) async {
             try {
+              final store = eventStore;
+              if (store != null && await store.hasItem(event.id!)) return;
               await notification_service.retryNotification(event);
             } catch (e) {
               logger?.e('Error processing restored subscription event', error: e);
@@ -100,6 +116,7 @@ Future<void> serviceMain(ServiceInstance service) async {
     }
 
     initialized = true;
+    initInFlight!.complete();
     service.invoke('service-ready', {});
   });
 
@@ -109,7 +126,7 @@ Future<void> serviceMain(ServiceInstance service) async {
   service.invoke('handlers-registered', {});
 
   final db = await openMostroDatabase('events.db');
-  final eventStore = EventStorage(db: db);
+  eventStore = EventStorage(db: db);
 
   service.on('update-settings').listen((data) async {
     if (data == null) return;
@@ -142,7 +159,8 @@ Future<void> serviceMain(ServiceInstance service) async {
 
     subscription.listen((event) async {
       try {
-        if (await eventStore.hasItem(event.id!)) {
+        final store = eventStore;
+        if (store != null && await store.hasItem(event.id!)) {
           return;
         }
         await notification_service.retryNotification(event);

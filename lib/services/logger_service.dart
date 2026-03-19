@@ -295,7 +295,7 @@ Logger get logger {
 /// calling debugPrint directly, so the convention is centralized and easy to
 /// upgrade if cross-isolate logging becomes possible in the future.
 void backgroundLog(String message) {
-  debugPrint('[BackgroundIsolate] $message');
+  debugPrint('[BackgroundIsolate] ${cleanMessage(message)}');
 }
 
 class IsolateLogOutput extends LogOutput {

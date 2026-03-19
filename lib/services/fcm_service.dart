@@ -73,61 +73,66 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
           if (!serviceReady.isCompleted) serviceReady.complete();
         });
 
-        final started = await service.startService();
-        if (!started) {
-          backgroundLog('startService() returned false, aborting');
-          await handlersSub.cancel();
-          await readySub.cancel();
-          return;
-        }
-
-        final settingsJson = await sharedPrefs.getString(
-          SharedPreferencesKeys.appSettings.value,
-        );
-        if (settingsJson == null) {
-          backgroundLog('No settings found, service started without relay config');
-          await handlersSub.cancel();
-          await readySub.cancel();
-          return;
-        }
-
-        Map<String, dynamic>? settings;
+        bool serviceStarted = false;
         try {
-          settings = jsonDecode(settingsJson) as Map<String, dynamic>?;
-        } catch (e) {
-          backgroundLog('Failed to decode settings: $e');
-        }
-
-        if (settings == null) {
-          await handlersSub.cancel();
-          await readySub.cancel();
-          return;
-        }
-
-        // 3. Wait for handlers to be registered (guarantees on('start') is
-        //    active so our invoke won't be dropped).
-        try {
-          await handlersReady.future.timeout(const Duration(seconds: 5));
-        } catch (_) {
-          backgroundLog('Timeout waiting for handlers-registered, proceeding anyway');
-        }
-        await handlersSub.cancel();
-
-        // 4. Send start and wait for ack (service-ready). Retry once on timeout.
-        service.invoke('start', {'settings': settings});
-
-        try {
-          await serviceReady.future.timeout(const Duration(seconds: 5));
-        } catch (_) {
-          backgroundLog('No service-ready ack, retrying start');
-          service.invoke('start', {'settings': settings});
-          try {
-            await serviceReady.future.timeout(const Duration(seconds: 3));
-          } catch (_) {
-            backgroundLog('Service did not acknowledge start after retry');
+          final started = await service.startService();
+          if (!started) {
+            backgroundLog('startService() returned false, aborting');
+            return;
           }
+          serviceStarted = true;
+
+          final settingsJson = await sharedPrefs.getString(
+            SharedPreferencesKeys.appSettings.value,
+          );
+          if (settingsJson == null) {
+            backgroundLog('No settings found, stopping service');
+            service.invoke('stop');
+            return;
+          }
+
+          Map<String, dynamic>? settings;
+          try {
+            settings = jsonDecode(settingsJson) as Map<String, dynamic>?;
+          } catch (e) {
+            backgroundLog('Failed to decode settings: $e');
+          }
+
+          if (settings == null) {
+            service.invoke('stop');
+            return;
+          }
+
+          // 3. Wait for handlers to be registered (guarantees on('start') is
+          //    active so our invoke won't be dropped).
+          try {
+            await handlersReady.future.timeout(const Duration(seconds: 5));
+          } catch (_) {
+            backgroundLog('Timeout waiting for handlers-registered, proceeding anyway');
+          }
+
+          // 4. Send start and wait for ack (service-ready). Retry once on timeout.
+          service.invoke('start', {'settings': settings});
+
+          try {
+            await serviceReady.future.timeout(const Duration(seconds: 5));
+          } catch (_) {
+            backgroundLog('No service-ready ack, retrying start');
+            service.invoke('start', {'settings': settings});
+            try {
+              await serviceReady.future.timeout(const Duration(seconds: 3));
+            } catch (_) {
+              backgroundLog('Service did not acknowledge start after retry, stopping');
+              service.invoke('stop');
+            }
+          }
+        } catch (e) {
+          backgroundLog('Error during service startup: $e');
+          if (serviceStarted) service.invoke('stop');
+        } finally {
+          await handlersSub.cancel();
+          await readySub.cancel();
         }
-        await readySub.cancel();
       }
     } catch (e) {
       backgroundLog('background service error: $e');
