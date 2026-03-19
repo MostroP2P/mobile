@@ -726,6 +726,7 @@
     "spanish": "Spanish",
     "italian": "Italian",
     "french": "French",
+    "german": "German",
     "loadingOrder": "Loading order...",
     "chooseLanguageDescription": "Choose your preferred language or use system default",
     "unsupportedLinkFormat": "Unsupported link format",

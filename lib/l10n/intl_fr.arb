@@ -726,6 +726,7 @@
     "spanish": "Espagnol",
     "italian": "Italien",
     "french": "Français",
+    "german": "Allemand",
     "loadingOrder": "Chargement de la commande...",
     "chooseLanguageDescription": "Choisissez votre langue préférée ou utilisez celle du système",
     "unsupportedLinkFormat": "Format de lien non supporté",
