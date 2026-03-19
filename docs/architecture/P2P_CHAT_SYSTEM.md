@@ -22,7 +22,7 @@ For the **protocol specification** (NIP-59, ECDH, event format), see the [Mostro
 
 ## Message Flow: Receiving
 
-```
+```text
 Relay
   │  kind 1059 gift wrap events (encrypted)
   ▼
@@ -64,7 +64,7 @@ The relay sends events for all chats through this single subscription. Events ar
 
 ## Message Flow: Sending
 
-```
+```text
 User types message
   │
   ▼
@@ -161,7 +161,7 @@ On app restart:
 
 ### App startup (`app_init_provider.dart`)
 
-```
+```text
 1. NostrService.init()         → relay connections
 2. KeyManager.init()           → crypto keys from secure storage
 3. MostroNodes.init()          → node metadata
@@ -199,7 +199,7 @@ When the app returns to foreground after losing connection:
 
 ## Historical Loading (`_loadHistoricalMessages`)
 
-```
+```text
 Sembast query: WHERE type = 'chat' AND order_id = orderId
   │
   ▼
