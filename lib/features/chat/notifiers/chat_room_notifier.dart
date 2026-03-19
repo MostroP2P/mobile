@@ -115,13 +115,34 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
         return;
       }
 
-      // Check if event is already processed to prevent duplicate notifications
+      // Verify ownership BEFORE any disk write. The broadcast stream delivers
+      // events for ALL chats to every ChatRoomNotifier. Without this early
+      // check, multiple notifiers race to store the same event with their own
+      // orderId, causing messages to be stored under the wrong order and
+      // disappear after app restart.
+      final session = ref.read(sessionProvider(orderId));
+      if (session == null || session.sharedKey == null) {
+        return;
+      }
+
+      final pTag = event.tags?.firstWhere(
+            (tag) => tag.isNotEmpty && tag[0] == 'p',
+            orElse: () => [],
+          ) ??
+          [];
+
+      if (pTag.isEmpty ||
+          pTag.length < 2 ||
+          pTag[1] != session.sharedKey!.public) {
+        return;
+      }
+
+      // Event belongs to this chat — now check for duplicates and store
       final eventStore = ref.read(eventStorageProvider);
       if (await eventStore.hasItem(event.id!)) {
         return;
       }
 
-      // Store the complete event to prevent future duplicates and enable historical loading
       await eventStore.putItem(
         event.id!,
         {
@@ -136,25 +157,6 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
           'order_id': orderId,
         },
       );
-
-      final session = ref.read(sessionProvider(orderId));
-      if (session == null || session.sharedKey == null) {
-        logger.e('Session or shared key is null when processing chat event');
-        return;
-      }
-
-      final pTag = event.tags?.firstWhere(
-            (tag) => tag.isNotEmpty && tag[0] == 'p',
-            orElse: () => [],
-          ) ??
-          [];
-
-      if (pTag.isEmpty ||
-          pTag.length < 2 ||
-          pTag[1] != session.sharedKey!.public) {
-        logger.w('Event not addressed to our shared key, ignoring');
-        return;
-      }
 
       final chat = await event.p2pUnwrap(session.sharedKey!);
 
