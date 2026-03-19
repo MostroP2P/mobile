@@ -29,7 +29,7 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
 
   /// Reload the chat room by loading historical messages and re-subscribing.
   Future<void> reload() async {
-    _subscription?.cancel();
+    await _subscription?.cancel();
     await _loadHistoricalMessages();
     subscribe();
   }
@@ -228,7 +228,7 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
         logger.d('Message sent successfully to network');
       } catch (publishError, publishStack) {
         logger.e('Failed to publish message: $publishError', stackTrace: publishStack);
-        rethrow; // Re-throw to be caught by outer catch
+        return;
       }
 
       // Persist the wrapped event to disk immediately after successful publish.
