@@ -27,7 +27,7 @@ Or from your device: **Settings → Apps → Mostro → Uninstall**, then instal
 
 Configure your local development to use the same keystore for both debug and release builds. This way you can switch between `flutter run` and release APKs without conflicts.
 
-**See the complete setup guide:** [`docs/GITHUB_SECRETS_SETUP.md`](docs/GITHUB_SECRETS_SETUP.md)
+**See the complete setup guide:** [`docs/ci/GITHUB_SECRETS_SETUP.md`](../ci/GITHUB_SECRETS_SETUP.md)
 
 The guide covers:
 - Creating a keystore from scratch

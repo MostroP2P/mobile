@@ -232,7 +232,7 @@ The implementation is divided into multiple phases (Pull Requests) to facilitate
 - `android/settings.gradle` - Google Services plugin
 - `pubspec.yaml` - Firebase dependencies
 - `.gitignore` - Allow Firebase config files
-- `docs/FIREBASE_LINUX_NOTE.md` - Linux compatibility notes
+- `docs/guides/FIREBASE_LINUX_NOTE.md` - Linux compatibility notes
 
 ### Testing
 - ✅ `flutter analyze` passes without errors
@@ -519,7 +519,7 @@ See `mostro-push-server/docs/cryptography.md` for server-side specification.
 - `crypto: ^3.0.5` - HKDF key derivation
 
 ### Related Documentation
-- `docs/FIREBASE_LINUX_NOTE.md` - Linux compatibility notes
+- `docs/guides/FIREBASE_LINUX_NOTE.md` - Linux compatibility notes
 - [MIP-05 specification](https://github.com/marmot-protocol/marmot/pull/18) - Privacy-preserving push notifications approach
 - [mostro-push-server](https://github.com/MostroP2P/mostro-push-server) - Custom notification server repository
 - [Firebase Cloud Messaging documentation](https://firebase.google.com/docs/cloud-messaging)

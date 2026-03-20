@@ -63,4 +63,15 @@ This directory contains comprehensive technical documentation for the Mostro Mob
 - Document the generation process, not generated content
 
 
+## 📡 Mostro Protocol Reference
+
+The Mostro protocol documentation is maintained in its own repository and should always be consulted from the official source:
+
+- **Official docs**: https://mostro.network/protocol/
+- **Repository**: https://github.com/MostroP2P/protocol
+
+> **Important**: This project does not maintain a local copy of the protocol documentation. Always refer to the official source above to ensure you are reading the latest version.
+
+---
+
 **Remember**: Documentation is code infrastructure. Treat it with the same care and attention as the application code itself. Well-maintained documentation accelerates development, reduces bugs, and enables confident architectural changes.

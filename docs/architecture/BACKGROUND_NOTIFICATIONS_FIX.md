@@ -227,7 +227,7 @@ If issues arise:
 
 ## Related Documents
 
-- [FCM Implementation](../FCM_IMPLEMENTATION.md)
+- [FCM Implementation](FCM_IMPLEMENTATION.md)
 - [Session Recovery Architecture](./SESSION_RECOVERY_ARCHITECTURE.md)
 - [App Initialization Analysis](./APP_INITIALIZATION_ANALYSIS.md)
 

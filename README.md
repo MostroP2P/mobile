@@ -257,7 +257,7 @@ This project maintains **zero Flutter analyze issues** and follows modern Flutte
 ## 📚 Documentation
 
 ### User Guides
-- **[ADDING_NEW_LANGUAGE.md](docs/ADDING_NEW_LANGUAGE.md)** - Complete localization guide
+- **[ADDING_NEW_LANGUAGE.md](docs/guides/ADDING_NEW_LANGUAGE.md)** - Complete localization guide
 - **[CLAUDE.md](CLAUDE.md)** - Development environment setup and project conventions
 
 ### Technical Documentation
@@ -281,7 +281,7 @@ We welcome contributions of all sizes! Here's how to get started:
 - Add appropriate tests for new functionality
 
 ### Language Support
-📖 **[ADDING_NEW_LANGUAGE.md](docs/ADDING_NEW_LANGUAGE.md)** - Step-by-step instructions for adding new language support
+📖 **[ADDING_NEW_LANGUAGE.md](docs/guides/ADDING_NEW_LANGUAGE.md)** - Step-by-step instructions for adding new language support
 
 Currently supported languages:
 - **English** (en) - Base language
