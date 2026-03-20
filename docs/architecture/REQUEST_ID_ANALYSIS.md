@@ -527,4 +527,4 @@ It is essential for the correct functioning of the Mostro protocol and the secur
 
 - [Order Creation Process](ORDER_CREATION_PROCESS.md)
 - [Session and Key Management](SESSION_AND_KEY_MANAGEMENT.md)
-- [Mostro Protocol Overview](../protocol/overview.md)
+- [Mostro Protocol Overview](https://mostro.network/protocol/)

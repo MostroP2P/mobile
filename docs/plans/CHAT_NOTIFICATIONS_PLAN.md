@@ -53,7 +53,9 @@ NotificationDataExtractor → NotificationMessageMapper → local notification
 
 ## Implementation Phases
 
-### Phase 1: Admin/Dispute Chat Background Notifications
+### Phase 1: Admin/Dispute Chat Background Notifications (COMPLETED)
+
+**Status:** Merged to main.
 
 **Scope:** Detect and display generic notifications for admin DM messages that arrive in background.
 
@@ -105,7 +107,9 @@ New keys for all 3 languages (en, es, it):
 
 ---
 
-### Phase 2: P2P Chat Background Notifications
+### Phase 2: P2P Chat Background Notifications (IN REVIEW)
+
+**Status:** Open PR, pending merge.
 
 **Scope:** Detect and display generic notifications for P2P chat messages that arrive in background.
 
@@ -159,7 +163,7 @@ Ensure the `p2pUnwrap` extension method is accessible from the background isolat
 
 ---
 
-### Phase 3: In-App Notifications (Foreground, Outside Chat Screen)
+### Phase 3: In-App Notifications (Foreground, Outside Chat Screen) — PENDING
 
 **Scope:** When the user is in the app but NOT on the specific chat screen, show a temporary in-app notification (toast/snackbar).
 
@@ -236,7 +240,7 @@ Add a simple mechanism to track if a specific chat screen is open:
 
 ---
 
-### Phase 4: Push/FCM for P2P Chat (App Killed)
+### Phase 4: Push/FCM for P2P Chat (App Killed) — PENDING
 
 **Scope:** When the app is completely killed, P2P chat messages should wake the app via FCM.
 

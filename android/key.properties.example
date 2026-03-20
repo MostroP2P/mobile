@@ -4,7 +4,7 @@
 # Then fill with your actual keystore values
 # 
 # NEVER commit key.properties to git - it's already in .gitignore
-# For complete setup instructions, see: docs/GITHUB_SECRETS_SETUP.md
+# For complete setup instructions, see: docs/ci/GITHUB_SECRETS_SETUP.md
 
 storeFile=upload-keystore.jks
 storePassword=YOUR_STORE_PASSWORD_HERE

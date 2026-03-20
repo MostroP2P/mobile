@@ -55,7 +55,7 @@ SharedPreferences (custom) ──┘           │
 - `lib/features/mostro/mostro_nodes_provider.dart` — Riverpod provider
 - `test/features/mostro/mostro_node_test.dart` — Model serialization tests
 - `test/features/mostro/mostro_nodes_notifier_test.dart` — Notifier CRUD + backward compat tests
-- `docs/MULTI_MOSTRO_SUPPORT.md` — This document
+- `docs/architecture/MULTI_MOSTRO_SUPPORT.md` — This document
 
 **Files Modified**:
 - `lib/core/config.dart` — Add `trustedMostroNodes` list constant
@@ -196,7 +196,7 @@ Settings Screen
 
 **Files Modified**:
 - `CLAUDE.md` — Added "Multi-Mostro Instance Support" subsection under Architecture Overview (10 bullet points covering node types, core files, UI components, kind 0 metadata, storage, node switching, backward compatibility, error resilience)
-- `docs/MULTI_MOSTRO_SUPPORT.md` — This section (Phase 5 expanded and marked completed)
+- `docs/architecture/MULTI_MOSTRO_SUPPORT.md` — This section (Phase 5 expanded and marked completed)
 
 **Performance Test Details** (5 tests):
 

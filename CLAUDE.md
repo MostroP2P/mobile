@@ -2,6 +2,15 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Mostro Protocol Reference
+
+The Mostro protocol documentation is **not** maintained in this repository. Always consult the official source:
+
+- **Official docs**: https://mostro.network/protocol/
+- **Repository**: https://github.com/MostroP2P/protocol
+
+When implementing or debugging protocol-related features (order flows, actions, gift wrap messages, NIP integrations, etc.), refer to the official protocol documentation to verify how the protocol works. Do not rely on local copies or assumptions.
+
 ## Common Development Commands
 
 ### Build and Development
@@ -102,7 +111,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Node Switching**: `selectNode()` → `SettingsNotifier.updateMostroInstance()` → blacklist/userRelays reset → relay reconnection → `RestoreService.initRestoreProcess()`
 - **Backward Compatibility**: Unrecognized `mostroPublicKey` auto-imported as custom node; pubkey validated as 64-char hex; malformed values silently skipped
 - **Error Resilience**: Persist-before-state pattern prevents memory/disk divergence; all persistence errors logged but never crash the app
-- **Implementation**: Located in `features/mostro/` with full documentation in `docs/MULTI_MOSTRO_SUPPORT.md`
+- **Implementation**: Located in `features/mostro/` with full documentation in `docs/architecture/MULTI_MOSTRO_SUPPORT.md`
 
 ## App Initialization Process
 
