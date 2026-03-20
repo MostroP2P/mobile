@@ -16,7 +16,7 @@ Trade-off: required migrating ~30+ files from `print()` calls (one-time effort, 
 
 ## Architecture
 
-```
+```text
 Main Isolate:
   logger (singleton) → MemoryLogOutput → UI (LogsScreen)
                      ↘ ConsoleOutput
