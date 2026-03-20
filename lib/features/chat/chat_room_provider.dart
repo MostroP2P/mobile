@@ -38,7 +38,6 @@ Future<void> _initializeChatRoomSafely(
     // Check if the provider is still mounted before updating state
     // This prevents state updates on disposed objects
     if (ref.container.read(chatRoomsProvider(chatId).notifier).mounted) {
-      // Mark as initialized only if the provider is still active
       ref.read(chatRoomInitializedProvider(chatId).notifier).state = true;
       logger.d('Chat room $chatId initialized successfully');
     } else {

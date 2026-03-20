@@ -15,17 +15,29 @@ class ChatRoomsNotifier extends StateNotifier<List<ChatRoom>> {
   }
   
 
-  void reloadAllChats() {
-    for (final chat in state) {
+  Future<void> reloadAllChats() async {
+    // Iterate over sessions (source of truth) instead of state, which may be
+    // empty if loadChats() filtered out chats before async init completed.
+    final sessions = ref.read(sessionNotifierProvider);
+    final futures = <Future<void>>[];
+    for (final session in sessions) {
+      if (session.orderId == null || session.peer == null) continue;
       try {
-        final notifier = ref.read(chatRoomsProvider(chat.orderId).notifier);
+        final notifier = ref.read(chatRoomsProvider(session.orderId!).notifier);
         if (notifier.mounted) {
-          notifier.reload();
+          futures.add(
+            notifier.reload().catchError((e) {
+              logger.e('Failed to reload chat for orderId ${session.orderId}: $e');
+            }),
+          );
         }
       } catch (e) {
-        logger.e('Failed to reload chat for orderId ${chat.orderId}: $e');
+        logger.e('Failed to setup reload for orderId ${session.orderId}: $e');
       }
     }
+
+    await Future.wait(futures);
+    await refreshChatList();
 
     _refreshAllSubscriptions();
   }

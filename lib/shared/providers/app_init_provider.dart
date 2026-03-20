@@ -40,7 +40,7 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
     ref.read(orderNotifierProvider(session.orderId!).notifier);
 
     if (session.peer != null) {
-      ref.read(chatRoomsProvider(session.orderId!).notifier).subscribe();
+      ref.read(chatRoomsProvider(session.orderId!));
     }
   }
 });

@@ -27,10 +27,10 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
   static final EncryptedFileUploadService _fileUploadService =
       EncryptedFileUploadService();
 
-  /// Reload the chat room by re-subscribing to events.
-  void reload() {
-    // Cancel the current subscription if it exists
-    _subscription?.cancel();
+  /// Reload the chat room by loading historical messages and re-subscribing.
+  Future<void> reload() async {
+    await _subscription?.cancel();
+    await _loadHistoricalMessages();
     subscribe();
   }
 
@@ -58,6 +58,15 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
     await _loadHistoricalMessages();
     subscribe();
     _isInitialized = true;
+
+    // Refresh the chat list now that messages are loaded. loadChats() may have
+    // already run and filtered this chat out because its async initialization
+    // hadn't completed yet.
+    try {
+      ref.read(chatRoomsNotifierProvider.notifier).refreshChatList();
+    } catch (e) {
+      logger.w('Could not refresh chat list after init of $orderId: $e');
+    }
   }
 
   void subscribe() {
@@ -92,16 +101,17 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
             'Session update received for orderId: $orderId, session is null: ${next == null}, sharedKey is null: ${next?.sharedKey == null}');
 
         if (next != null && next.sharedKey != null) {
-          // Session is now ready with shared key, subscribe to chat
           _sessionListener?.close();
           _sessionListener = null;
 
-          logger.i(
-              'Session with shared key is now available, subscribing to chat for orderId: $orderId');
-
-          // Use SubscriptionManager to create a subscription for this specific chat room
-          final subscriptionManager = ref.read(subscriptionManagerProvider);
-          _subscription = subscriptionManager.chat.listen(_onChatEvent);
+          unawaited(() async {
+            logger.i(
+                'Session with shared key is now available, loading history and subscribing for orderId: $orderId');
+            await _loadHistoricalMessages();
+            if (!mounted) return;
+            final subscriptionManager = ref.read(subscriptionManagerProvider);
+            _subscription = subscriptionManager.chat.listen(_onChatEvent);
+          }());
         }
       },
     );
@@ -114,13 +124,34 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
         return;
       }
 
-      // Check if event is already processed to prevent duplicate notifications
+      // Verify ownership BEFORE any disk write. The broadcast stream delivers
+      // events for ALL chats to every ChatRoomNotifier. Without this early
+      // check, multiple notifiers race to store the same event with their own
+      // orderId, causing messages to be stored under the wrong order and
+      // disappear after app restart.
+      final session = ref.read(sessionProvider(orderId));
+      if (session == null || session.sharedKey == null) {
+        return;
+      }
+
+      final pTag = event.tags?.firstWhere(
+            (tag) => tag.isNotEmpty && tag[0] == 'p',
+            orElse: () => [],
+          ) ??
+          [];
+
+      if (pTag.isEmpty ||
+          pTag.length < 2 ||
+          pTag[1] != session.sharedKey!.public) {
+        return;
+      }
+
+      // Event belongs to this chat — now check for duplicates and store
       final eventStore = ref.read(eventStorageProvider);
       if (await eventStore.hasItem(event.id!)) {
         return;
       }
 
-      // Store the complete event to prevent future duplicates and enable historical loading
       await eventStore.putItem(
         event.id!,
         {
@@ -135,25 +166,6 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
           'order_id': orderId,
         },
       );
-
-      final session = ref.read(sessionProvider(orderId));
-      if (session == null || session.sharedKey == null) {
-        logger.e('Session or shared key is null when processing chat event');
-        return;
-      }
-
-      final pTag = event.tags?.firstWhere(
-            (tag) => tag.isNotEmpty && tag[0] == 'p',
-            orElse: () => [],
-          ) ??
-          [];
-
-      if (pTag.isEmpty ||
-          pTag.length < 2 ||
-          pTag[1] != session.sharedKey!.public) {
-        logger.w('Event not addressed to our shared key, ignoring');
-        return;
-      }
 
       final chat = await event.p2pUnwrap(session.sharedKey!);
 
@@ -210,26 +222,51 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
         session.sharedKey!.public,
       );
 
-      // Publish to network first - await to catch network/initialization errors
+      // Publish to network - await to catch network/initialization errors
       try {
         await ref.read(nostrServiceProvider).publishEvent(wrappedEvent);
         logger.d('Message sent successfully to network');
-        
-        // Add the inner event to state immediately for optimistic UI
-        // The relay will echo it back and _onChatEvent will handle deduplication
-        final messageExists = state.messages.any((m) => m.id == innerEvent.id);
-        if (!messageExists) {
-          final updatedMessages = [...state.messages, innerEvent];
-          updatedMessages.sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
-          state = state.copy(messages: updatedMessages);
-          logger.d('Message added to state optimistically, total messages: ${updatedMessages.length}');
-        } else {
-          logger.d('Message already exists in state, skipping add');
-        }
-        
       } catch (publishError, publishStack) {
         logger.e('Failed to publish message: $publishError', stackTrace: publishStack);
-        rethrow; // Re-throw to be caught by outer catch
+        return;
+      }
+
+      // Persist the wrapped event to disk immediately after successful publish.
+      // This prevents message loss if the relay echo doesn't arrive
+      // (e.g., connection drop after send). _onChatEvent will skip it via hasItem().
+      try {
+        final eventStore = ref.read(eventStorageProvider);
+        await eventStore.putItem(
+          wrappedEvent.id!,
+          {
+            'id': wrappedEvent.id,
+            'created_at':
+                wrappedEvent.createdAt!.millisecondsSinceEpoch ~/ 1000,
+            'kind': wrappedEvent.kind,
+            'content': wrappedEvent.content,
+            'pubkey': wrappedEvent.pubkey,
+            'sig': wrappedEvent.sig,
+            'tags': wrappedEvent.tags,
+            'type': 'chat',
+            'order_id': orderId,
+          },
+        );
+        logger.d('Wrapped event persisted to storage for orderId: $orderId');
+      } catch (storageError) {
+        logger.e('Failed to persist message to storage: $storageError');
+        // Continue - message was published, just won't survive crash
+      }
+
+      // Add the inner event to state immediately for optimistic UI
+      // The relay will echo it back and _onChatEvent will handle deduplication
+      final messageExists = state.messages.any((m) => m.id == innerEvent.id);
+      if (!messageExists) {
+        final updatedMessages = [...state.messages, innerEvent];
+        updatedMessages.sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
+        state = state.copy(messages: updatedMessages);
+        logger.d('Message added to state optimistically, total messages: ${updatedMessages.length}');
+      } else {
+        logger.d('Message already exists in state, skipping add');
       }
 
       // Notify the chat rooms list to update after successful publish
