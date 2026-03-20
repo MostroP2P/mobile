@@ -52,6 +52,10 @@ class LifecycleManager extends WidgetsBindingObserver {
       _isInBackground = false;
       logger.i("Switching to foreground");
 
+      // Clear persisted background filters since foreground takes over
+      final prefs = SharedPreferencesAsync();
+      await prefs.remove(SharedPreferencesKeys.backgroundFilters.value);
+
       // Stop background service
       final backgroundService = ref.read(backgroundServiceProvider);
       await backgroundService.setForegroundStatus(true);
@@ -92,7 +96,7 @@ class LifecycleManager extends WidgetsBindingObserver {
       // Get the subscription manager
       final subscriptionManager = ref.read(subscriptionManagerProvider);
       final activeFilters = <NostrFilter>[];
-      
+
       // Get actual filters for each subscription type
       for (final type in SubscriptionType.values) {
         final filters = subscriptionManager.getActiveFilters(type);
@@ -102,6 +106,8 @@ class LifecycleManager extends WidgetsBindingObserver {
         }
       }
 
+      final prefs = SharedPreferencesAsync();
+
       if (activeFilters.isNotEmpty) {
         _isInBackground = true;
         logger.i("Switching to background");
@@ -110,7 +116,6 @@ class LifecycleManager extends WidgetsBindingObserver {
         // if revived from a dead state (e.g. FCM wake after app is killed).
         try {
           final filterMaps = activeFilters.map((f) => f.toMap()).toList();
-          final prefs = SharedPreferencesAsync();
           await prefs.setString(
             SharedPreferencesKeys.backgroundFilters.value,
             jsonEncode(filterMaps),
@@ -120,6 +125,7 @@ class LifecycleManager extends WidgetsBindingObserver {
         }
 
         subscriptionManager.unsubscribeAll();
+
         // Transfer active subscriptions to background service
         final backgroundService = ref.read(backgroundServiceProvider);
         await backgroundService.setForegroundStatus(false);
@@ -127,7 +133,11 @@ class LifecycleManager extends WidgetsBindingObserver {
             "Transferring ${activeFilters.length} active filters to background service");
         backgroundService.subscribe(activeFilters);
       } else {
+        _isInBackground = true;
         logger.w("No active subscriptions to transfer to background service");
+        // Clear any previously persisted filters to prevent stale subscriptions
+        // on service revival
+        await prefs.remove(SharedPreferencesKeys.backgroundFilters.value);
       }
 
       logger.i("Background transition complete");
