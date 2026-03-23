@@ -4,7 +4,8 @@ enum SharedPreferencesKeys {
   fullPrivacy('full_privacy'),
   firstRunComplete('first_run_complete'),
   mostroCustomNodes('mostro_custom_nodes'),
-  trustedNodeMetadata('trusted_node_metadata');
+  trustedNodeMetadata('trusted_node_metadata'),
+  backgroundFilters('background_filters');
 
   final String value;
 

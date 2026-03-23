@@ -1,21 +1,28 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
-import 'package:mostro_mobile/services/logger_service.dart';
+import 'package:mostro_mobile/data/models/enums/storage_keys.dart';
+import 'package:mostro_mobile/services/logger_service.dart'
+    show backgroundLog, logger;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mostro_mobile/firebase_options.dart';
 
 
-/// FCM background message handler - wakes up the app to process new events
-/// This is called when the app is in background or terminated
+/// FCM background message handler - wakes up the app to process new events.
+/// This is called when the app is in background or terminated.
 ///
 /// The handler follows MIP-05 approach:
 /// - FCM sends silent/empty notifications (no content)
 /// - This handler wakes up the app
 /// - The existing background service handles fetching and processing events
+///
+/// NOTE: This handler runs in a separate Dart isolate where the project's
+/// logger singleton is unavailable. All logging goes through backgroundLog()
+/// (see logger_service.dart) instead of the main logger.
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   try {
@@ -45,16 +52,93 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
       final service = FlutterBackgroundService();
       final isRunning = await service.isRunning();
 
-      if (!isRunning) {
-        await sharedPrefs.setBool('fcm.pending_fetch', true);
+      if (isRunning) {
+        // Service is already running — signal it that FCM detected new activity
+        service.invoke('fcm-wake', {});
+      } else {
+        // Service is dead — start it and send settings.
+        // We set up listeners BEFORE startService() so we never miss events
+        // that the background isolate emits during its synchronous setup.
+
+        // 1. Listen for handlers-registered (emitted by serviceMain right
+        //    after it registers its event handlers, before opening the DB).
+        final handlersReady = Completer<void>();
+        final handlersSub = service.on('handlers-registered').listen((_) {
+          if (!handlersReady.isCompleted) handlersReady.complete();
+        });
+
+        // 2. Listen for service-ready (emitted after NostrService.init()).
+        final serviceReady = Completer<void>();
+        final readySub = service.on('service-ready').listen((_) {
+          if (!serviceReady.isCompleted) serviceReady.complete();
+        });
+
+        bool serviceStarted = false;
+        try {
+          final started = await service.startService();
+          if (!started) {
+            backgroundLog('startService() returned false, aborting');
+            return;
+          }
+          serviceStarted = true;
+
+          final settingsJson = await sharedPrefs.getString(
+            SharedPreferencesKeys.appSettings.value,
+          );
+          if (settingsJson == null) {
+            backgroundLog('No settings found, stopping service');
+            service.invoke('stop');
+            return;
+          }
+
+          Map<String, dynamic>? settings;
+          try {
+            settings = jsonDecode(settingsJson) as Map<String, dynamic>?;
+          } catch (e) {
+            backgroundLog('Failed to decode settings: $e');
+          }
+
+          if (settings == null) {
+            service.invoke('stop');
+            return;
+          }
+
+          // 3. Wait for handlers to be registered (guarantees on('start') is
+          //    active so our invoke won't be dropped).
+          try {
+            await handlersReady.future.timeout(const Duration(seconds: 5));
+          } catch (_) {
+            backgroundLog('Timeout waiting for handlers-registered, proceeding anyway');
+          }
+
+          // 4. Send start and wait for ack (service-ready). Retry once on timeout.
+          service.invoke('start', {'settings': settings});
+
+          try {
+            await serviceReady.future.timeout(const Duration(seconds: 5));
+          } catch (_) {
+            backgroundLog('No service-ready ack, retrying start');
+            service.invoke('start', {'settings': settings});
+            try {
+              await serviceReady.future.timeout(const Duration(seconds: 3));
+            } catch (_) {
+              backgroundLog('Service did not acknowledge start after retry, stopping');
+              service.invoke('stop');
+            }
+          }
+        } catch (e) {
+          backgroundLog('Error during service startup: $e');
+          if (serviceStarted) service.invoke('stop');
+        } finally {
+          await handlersSub.cancel();
+          await readySub.cancel();
+        }
       }
     } catch (e) {
-      debugPrint('FCM: background service error: $e');
-      // Set pending flag as fallback
-      await sharedPrefs.setBool('fcm.pending_fetch', true);
+      backgroundLog('background service error: $e');
     }
   } catch (e) {
-    debugPrint('FCM: background handler error: $e');
+    backgroundLog('background handler error: $e');
   }
 }
 
@@ -119,9 +203,6 @@ class FCMService {
 
       // Register background message handler
       FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-
-      // Check for pending fetch from previous background wake
-      await _checkPendingFetch();
 
       _isInitialized = true;
       debugPrint('FCM: Initialized successfully');
@@ -217,18 +298,6 @@ class FCMService {
         logger.e('Error receiving foreground message: $error');
       },
     );
-  }
-
-  Future<void> _checkPendingFetch() async {
-    try {
-      final hasPending = await _prefs.getBool('fcm.pending_fetch') ?? false;
-      if (hasPending) {
-        await _prefs.setBool('fcm.pending_fetch', false);
-        // The background service will handle fetching when it starts
-      }
-    } catch (e) {
-      logger.e('Error checking pending fetch: $e');
-    }
   }
 
   Future<String?> getToken() async {

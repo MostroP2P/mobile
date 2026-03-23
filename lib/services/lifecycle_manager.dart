@@ -1,8 +1,10 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:dart_nostr/nostr/model/request/filter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mostro_mobile/data/models/enums/storage_keys.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_type.dart';
@@ -11,6 +13,7 @@ import 'package:mostro_mobile/shared/providers/background_service_provider.dart'
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_manager_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LifecycleManager extends WidgetsBindingObserver {
   final Ref ref;
@@ -48,6 +51,10 @@ class LifecycleManager extends WidgetsBindingObserver {
     try {
       _isInBackground = false;
       logger.i("Switching to foreground");
+
+      // Clear persisted background filters since foreground takes over
+      final prefs = SharedPreferencesAsync();
+      await prefs.remove(SharedPreferencesKeys.backgroundFilters.value);
 
       // Stop background service
       final backgroundService = ref.read(backgroundServiceProvider);
@@ -90,7 +97,7 @@ class LifecycleManager extends WidgetsBindingObserver {
       // Get the subscription manager
       final subscriptionManager = ref.read(subscriptionManagerProvider);
       final activeFilters = <NostrFilter>[];
-      
+
       // Get actual filters for each subscription type
       for (final type in SubscriptionType.values) {
         final filters = subscriptionManager.getActiveFilters(type);
@@ -100,10 +107,26 @@ class LifecycleManager extends WidgetsBindingObserver {
         }
       }
 
+      final prefs = SharedPreferencesAsync();
+
       if (activeFilters.isNotEmpty) {
         _isInBackground = true;
         logger.i("Switching to background");
+
+        // Persist filters so the background service can restore subscriptions
+        // if revived from a dead state (e.g. FCM wake after app is killed).
+        try {
+          final filterMaps = activeFilters.map((f) => f.toMap()).toList();
+          await prefs.setString(
+            SharedPreferencesKeys.backgroundFilters.value,
+            jsonEncode(filterMaps),
+          );
+        } catch (e) {
+          logger.e('Failed to persist background filters: $e');
+        }
+
         subscriptionManager.unsubscribeAll();
+
         // Transfer active subscriptions to background service
         final backgroundService = ref.read(backgroundServiceProvider);
         await backgroundService.setForegroundStatus(false);
@@ -111,7 +134,11 @@ class LifecycleManager extends WidgetsBindingObserver {
             "Transferring ${activeFilters.length} active filters to background service");
         backgroundService.subscribe(activeFilters);
       } else {
+        _isInBackground = true;
         logger.w("No active subscriptions to transfer to background service");
+        // Clear any previously persisted filters to prevent stale subscriptions
+        // on service revival
+        await prefs.remove(SharedPreferencesKeys.backgroundFilters.value);
       }
 
       logger.i("Background transition complete");

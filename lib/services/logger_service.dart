@@ -287,6 +287,17 @@ Logger get logger {
   return _cachedLogger!;
 }
 
+/// Log wrapper for isolated Dart entry points (e.g., FCM background handler)
+/// where the main logger singleton is unavailable because the
+/// IsolateNameServer port has not been registered.
+///
+/// All background-isolate logging should go through this function instead of
+/// calling debugPrint directly, so the convention is centralized and easy to
+/// upgrade if cross-isolate logging becomes possible in the future.
+void backgroundLog(String message) {
+  debugPrint('[BackgroundIsolate] ${cleanMessage(message)}');
+}
+
 class IsolateLogOutput extends LogOutput {
   final SendPort? sendPort;
 
