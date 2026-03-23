@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.2.2] - 2026-03-23
+
+### Added
+- feat: Add complete German (de) translation (#531) (0af6476c)
+- feat: implement NIP-13 proof-of-work mining for Mostro events (#519) (d693cfeb)
+
+### Fixed
+- fix: start background service from FCM handler when service is dead (#489) (fe0cd793)
+- fix: resolve chat history loss after reconnection or app restart (#538) (8b46931c)
+- fix: P2P chat messages with images block rendering until download completes (#526) (4a0f2bfb)
+
+### Documentation
+- docs: reorganize documentation structure and remove local protocol copy (#540) (f76ab3d5)
+
+### Changed
+- chore: remove debug APK build from CI, keep analyze + test (#525) (902a650f)
+- Check initiator to restored dispute data (#497) (aae48c2c)
+
+
 ## [v1.2.1] - 2026-03-09
 
 ### Added
