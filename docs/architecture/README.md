@@ -42,7 +42,7 @@ This directory contains comprehensive technical documentation for the Mostro Mob
 
 ### **Code Example Standards**
 - Use actual code from the codebase, not pseudo-code
-- Include file paths: `lib/features/order/notfiers/order_notifier.dart`
+- Include file paths: `lib/features/order/notifiers/order_notifier.dart`
 - Add line numbers for specific references: `// Line 45-67`
 - Show complete context, not just isolated snippets
 - Validate examples still compile and work

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models.dart';
 import 'package:mostro_mobile/shared/providers.dart';
-import 'package:mostro_mobile/features/order/notfiers/abstract_mostro_notifier.dart';
+import 'package:mostro_mobile/features/order/notifiers/abstract_mostro_notifier.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/services/logger_service.dart';

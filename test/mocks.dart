@@ -18,7 +18,7 @@ import 'package:mostro_mobile/services/mostro_service.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
 import 'package:mostro_mobile/shared/notifiers/session_notifier.dart';
 import 'package:mostro_mobile/features/order/models/order_state.dart';
-import 'package:mostro_mobile/features/order/notfiers/order_notifier.dart';
+import 'package:mostro_mobile/features/order/notifiers/order_notifier.dart';
 import 'package:mostro_mobile/services/blossom_client.dart';
 import 'package:mostro_mobile/services/encrypted_file_upload_service.dart';
 import 'package:mostro_mobile/services/encrypted_image_upload_service.dart';

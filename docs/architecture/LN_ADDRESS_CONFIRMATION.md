@@ -36,7 +36,7 @@ All three receiving methods follow the same confirm-then-send pattern:
 |------|--------|
 | `lib/shared/widgets/ln_address_confirmation_widget.dart` | Confirmation widget with address display and confirm/fallback buttons |
 | `lib/features/order/screens/add_lightning_invoice_screen.dart` | Shows confirmation when `lnAddress` param present |
-| `lib/features/order/notfiers/abstract_mostro_notifier.dart` | Navigates to confirmation screen instead of auto-sending |
+| `lib/features/order/notifiers/abstract_mostro_notifier.dart` | Navigates to confirmation screen instead of auto-sending |
 | `lib/core/app_routes.dart` | Passes `lnAddress` query parameter to the screen |
 
 ## Design Decisions
