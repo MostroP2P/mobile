@@ -154,6 +154,17 @@ Future<MostroMessage?> _decryptAndProcessEvent(NostrEvent event) async {
 
     final sessions = await _loadSessionsFromDatabase();
 
+    // Try matching by adminSharedKey first (dispute chat DMs)
+    final adminSession = sessions.cast<Session?>().firstWhere(
+      (s) => s?.adminSharedKey?.public == event.recipient,
+      orElse: () => null,
+    );
+
+    if (adminSession != null) {
+      return _processAdminDm(event, adminSession);
+    }
+
+    // Standard Mostro message: match by tradeKey
     final matchingSession = sessions.cast<Session?>().firstWhere(
       (s) => s?.tradeKey.public == event.recipient,
       orElse: () => null,
@@ -173,7 +184,7 @@ Future<MostroMessage?> _decryptAndProcessEvent(NostrEvent event) async {
       return null;
     }
 
-    // Detect admin/dispute DM format: [{"dm": {"action": "send-dm", ...}}]
+    // Detect admin/dispute DM format that arrived via tradeKey
     final firstItem = result[0];
     if (NostrUtils.isDmPayload(firstItem)) {
       if (matchingSession.orderId == null) {
@@ -193,6 +204,29 @@ Future<MostroMessage?> _decryptAndProcessEvent(NostrEvent event) async {
     return mostroMessage;
   } catch (e) {
     logger.e('Decrypt error: $e');
+    return null;
+  }
+}
+
+Future<MostroMessage?> _processAdminDm(NostrEvent event, Session session) async {
+  try {
+    final unwrapped = await event.p2pUnwrap(session.adminSharedKey!);
+    if (unwrapped.content == null || unwrapped.content!.isEmpty) {
+      return null;
+    }
+
+    if (session.orderId == null) {
+      logger.w('Admin DM received but session has no orderId, skipping notification');
+      return null;
+    }
+
+    return MostroMessage(
+      action: mostro_action.Action.sendDm,
+      id: session.orderId,
+      timestamp: event.createdAt?.millisecondsSinceEpoch,
+    );
+  } catch (e) {
+    logger.e('Admin DM decrypt error: $e');
     return null;
   }
 }
