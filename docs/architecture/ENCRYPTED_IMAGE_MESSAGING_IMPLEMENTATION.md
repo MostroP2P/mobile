@@ -6,10 +6,12 @@ This document details the complete implementation of encrypted file messaging fo
 
 ### Supported File Types
 
-- **Images**: JPG, PNG, GIF, WEBP (with auto-preview)
-- **Documents**: PDF, DOC, TXT, RTF
-- **Videos**: MP4, MOV, AVI, WEBM
+- **Images**: JPEG/JPG, PNG (with auto-preview)
+- **Documents**: PDF, DOC, DOCX (macros blocked)
+- **Videos**: MP4, MOV, AVI
 - **Size limit**: 25MB per file
+
+File type validation is enforced by `FileValidationService` using MIME type detection (magic bytes with extension fallback). Images are sanitized by `MediaValidationService` (re-encoded to strip EXIF/metadata). Documents are validated for correct headers and rejected if they contain macros (VBA).
 
 ## Table of Contents
 
@@ -573,17 +575,6 @@ final Map<String, EncryptedFileUploadResult> _fileMetadata = {};
 - **Session-based**: Cache tied to current app session only
 - **Size**: No explicit size limits (relies on system memory management)
 
-### TODO: Persistent Cache Implementation
-
-A session-linked persistent cache system has been developed but not yet integrated:
-
-- **SessionFileCache**: Stores files per trading session (72h lifetime)
-- **Automatic Cleanup**: Files deleted when sessions expire 
-- **Organized Storage**: Files grouped by type (images/documents/videos)
-- **Metadata Preservation**: JSON metadata stored alongside file data
-
-This will be implemented in a future update to provide better user experience.
-
 ### Performance Optimizations
 
 1. **Image Compression**: 85% quality during selection
@@ -648,140 +639,19 @@ testWidgets('should upload and display encrypted image', (tester) async {
 
 ### 1. Persistent Caching
 
-**Current Limitation**: Images re-download on app restart
+**Problem:** Every time the app restarts or a chat is reopened, all files are re-downloaded from Blossom. With files up to 25MB this is a poor user experience.
 
-**Proposed Solution**:
-```dart
-class PersistentImageCache {
-  static const String _cacheDir = 'encrypted_images';
-  
-  Future<void> cacheImage(String messageId, Uint8List data) async {
-    final dir = await getApplicationCacheDirectory();
-    final file = File('${dir.path}/$_cacheDir/$messageId.enc');
-    await file.writeAsBytes(data);
-  }
-  
-  Future<Uint8List?> getCachedImage(String messageId) async {
-    final dir = await getApplicationCacheDirectory();
-    final file = File('${dir.path}/$_cacheDir/$messageId.enc');
-    if (await file.exists()) {
-      return await file.readAsBytes();
-    }
-    return null;
-  }
-}
-```
+**Security concern:** The current `MediaCacheMixin` stores already-decrypted bytes in memory. A naive persistent cache that writes those decrypted bytes to disk would allow any app or process with filesystem access to read the files in plain.
 
-### 2. Nostr Authentication for Blossom
+**Correct approach:** Cache files on disk **as downloaded from Blossom** — still encrypted with ChaCha20-Poly1305. Decrypt only at display time. This way the on-disk cache has the same security as the file on the server: useless without the conversation's shared key.
 
-**Current**: Anonymous uploads to public servers
+The concrete design (directory structure, expiration policy, size limits) is yet to be defined, but the principle is clear: **cache the encrypted blob, not the decrypted content.**
 
-**Proposed**: NIP-98 HTTP Auth for Blossom
-```dart
-class AuthenticatedBlossomClient {
-  final NostrKeyPairs keyPair;
-  
-  Future<String> uploadWithAuth(Uint8List data) async {
-    final authEvent = await createNIP98AuthEvent(
-      url: '$serverUrl/upload',
-      method: 'PUT',
-      body: data,
-    );
-    
-    final headers = {
-      'Authorization': 'Nostr ${base64Encode(utf8.encode(jsonEncode(authEvent)))}',
-      'Content-Type': 'application/octet-stream',
-    };
-    
-    // ... rest of upload logic
-  }
-}
-```
+### 2. Download Progress Indication
 
-### 3. Image Compression Options
+**Problem:** Files up to 25MB download with no visual feedback. The user cannot tell whether a download is in progress, stalled, or how much remains.
 
-```dart
-enum CompressionLevel { low, medium, high, lossless }
-
-class ImageCompressionService {
-  static Future<Uint8List> compress(
-    Uint8List imageData, 
-    CompressionLevel level
-  ) async {
-    switch (level) {
-      case CompressionLevel.low:
-        return await FlutterImageCompress.compressWithList(
-          imageData, quality: 95
-        );
-      // ... other levels
-    }
-  }
-}
-```
-
-### 4. Multiple Image Selection
-
-```dart
-Future<void> _selectMultipleImages() async {
-  final pickedFiles = await _imagePicker.pickMultiImage();
-  
-  for (final file in pickedFiles) {
-    await _uploadSingleImage(file);
-  }
-}
-```
-
-### 5. Video Support
-
-```dart
-class EncryptedVideoUploadService {
-  Future<EncryptedVideoUploadResult> uploadEncryptedVideo({
-    required File videoFile,
-    required Uint8List sharedKey,
-  }) async {
-    // Similar to image upload but for video files
-  }
-}
-```
-
-### 6. Download Progress Indication
-
-```dart
-class ProgressTrackingDownloader {
-  Stream<DownloadProgress> downloadWithProgress(String url) async* {
-    final request = http.Request('GET', Uri.parse(url));
-    final response = await request.send();
-    
-    final contentLength = response.contentLength ?? 0;
-    int downloadedBytes = 0;
-    
-    await for (final chunk in response.stream) {
-      downloadedBytes += chunk.length;
-      yield DownloadProgress(downloadedBytes, contentLength);
-    }
-  }
-}
-```
-
-### 7. Image Gallery View
-
-```dart
-class ImageGalleryScreen extends StatelessWidget {
-  final List<EncryptedImageMessage> images;
-  
-  @override
-  Widget build(BuildContext context) {
-    return PageView.builder(
-      itemCount: images.length,
-      itemBuilder: (context, index) {
-        return InteractiveViewer(
-          child: images[index],
-        );
-      },
-    );
-  }
-}
-```
+**Solution:** A `Stream<double>` (0.0 to 1.0) consumed by the download widget to display a progress bar or percentage. When the server does not send a `Content-Length` header, fall back to an indeterminate progress indicator instead of a percentage.
 
 ---
 
@@ -791,15 +661,15 @@ The encrypted file messaging system provides a robust, secure, and user-friendly
 
 Key achievements:
 - ✅ End-to-end encryption using ChaCha20-Poly1305
-- ✅ Support for images, documents (PDF/DOC/TXT), and videos (MP4/MOV)
+- ✅ Support for images (JPEG, PNG), documents (PDF, DOC, DOCX), and videos (MP4, MOV, AVI)
 - ✅ Decentralized storage via Blossom protocol
 - ✅ Auto-preview for images, download-on-demand for files
 - ✅ Native file picker with system app integration
 - ✅ Seamless integration with existing chat UI
 - ✅ Automatic fallback across multiple servers
 - ✅ Responsive design with proper error handling
-- ✅ Zero analyzer errors and passing test suite
+- ✅ File validation with magic bytes, macro detection, and image sanitization
 
-**Current Status**: The system is production-ready with temporary cache storage. Files are re-downloaded after app restart but remain secure and functional.
+**Current Status**: The system is production-ready with in-memory cache only. Files are re-downloaded after app restart but remain secure and functional.
 
-**Next Steps**: Integration of persistent cache system (already implemented) for improved user experience with file persistence across app sessions.
+**Next Steps**: Persistent cache (encrypted blobs on disk) and download progress indication. See [Future Improvements](#future-improvements) for details.
