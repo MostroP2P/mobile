@@ -4,8 +4,10 @@ import 'dart:math';
 import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
+import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:mostro_mobile/core/app.dart';
@@ -66,14 +68,44 @@ void _onNotificationTap(NotificationResponse response) {
       return;
     }
 
-    final orderId = response.payload;
-    if (orderId != null && orderId.isNotEmpty) {
-      context.push('/trade_detail/$orderId');
-      logger.i('Navigated to trade detail for order: $orderId');
-    } else {
+    final payload = response.payload;
+    if (payload == null || payload.isEmpty) {
       context.push('/notifications');
       logger.i('Navigated to notifications screen');
+      return;
     }
+
+    // Try parsing as JSON for rich payloads (e.g. admin DM with orderId)
+    try {
+      final data = jsonDecode(payload) as Map<String, dynamic>;
+      final type = data['type'] as String?;
+      final orderId = data['orderId'] as String?;
+
+      if (type == 'admin_dm' && orderId != null) {
+        // Read disputeId from the order state (app is in foreground at tap time)
+        try {
+          final container = ProviderScope.containerOf(context);
+          final orderState = container.read(orderNotifierProvider(orderId));
+          final disputeId = orderState.dispute?.disputeId;
+          if (disputeId != null) {
+            context.push('/dispute_details/$disputeId');
+            logger.i('Navigated to dispute chat for dispute: $disputeId');
+            return;
+          }
+        } catch (e) {
+          logger.w('Could not read dispute state, falling back to trade detail: $e');
+        }
+        // Fallback to trade detail if disputeId not available
+        context.push('/trade_detail/$orderId');
+        logger.i('Navigated to trade detail for order: $orderId');
+        return;
+      }
+    } catch (_) {
+      // Not JSON — treat as plain orderId (legacy format)
+    }
+
+    context.push('/trade_detail/$payload');
+    logger.i('Navigated to trade detail for order: $payload');
   } catch (e) {
     logger.e('Navigation error: $e');
   }
@@ -130,13 +162,18 @@ Future<void> showLocalNotification(NostrEvent event) async {
       ),
     );
 
+    // Build payload: JSON for admin DMs, plain orderId for standard notifications
+    final notificationPayload = notificationData.action == mostro_action.Action.sendDm
+        ? jsonEncode({'type': 'admin_dm', 'orderId': mostroMessage.id})
+        : mostroMessage.id;
+
     // Use fixed ID (0) with tag for replacement - Android uses tag+id combo
     await flutterLocalNotificationsPlugin.show(
       0, // Fixed ID - tag 'mostro-trade' makes it unique and replaceable
       notificationText.title,
       notificationText.body,
       details,
-      payload: mostroMessage.id,
+      payload: notificationPayload,
     );
 
     logger.i('Shown: ${notificationText.title} - ${notificationText.body}');
