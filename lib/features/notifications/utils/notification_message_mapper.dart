@@ -330,6 +330,10 @@ class NotificationMessageMapper {
         return s.notification_new_message_title;
       case 'notification_new_message_message':
         return s.notification_new_message_message;
+      case 'notification_admin_message_title':
+        return s.notification_admin_message_title;
+      case 'notification_admin_message_message':
+        return s.notification_admin_message_message;
       case 'notification_order_update_title':
         return s.notification_order_update_title;
       case 'notification_order_update_message':
