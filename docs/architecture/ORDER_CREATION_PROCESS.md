@@ -9,8 +9,8 @@ This document provides a detailed explanation of how order creation works in the
 ### Key Files and Classes
 
 - **`lib/services/mostro_service.dart`** - Main service for Mostro communication
-- **`lib/features/order/notfiers/order_notifier.dart`** - Manages order state and lifecycle
-- **`lib/features/order/notfiers/abstract_mostro_notifier.dart`** - Base class for Mostro message handling
+- **`lib/features/order/notifiers/order_notifier.dart`** - Manages order state and lifecycle
+- **`lib/features/order/notifiers/abstract_mostro_notifier.dart`** - Base class for Mostro message handling
 - **`lib/data/repositories/mostro_storage.dart`** - Local storage for Mostro messages
 - **`lib/features/order/models/order_state.dart`** - Order state management
 - **`lib/shared/providers/mostro_storage_provider.dart`** - Riverpod providers for message streams
@@ -33,7 +33,7 @@ The user creates an order through the UI (sell or buy order). This typically hap
 When the user submits the order, the `AddOrderNotifier` handles the complete flow:
 
 ```dart
-// lib/features/order/notfiers/add_order_notifier.dart:71-85
+// lib/features/order/notifiers/add_order_notifier.dart:71-85
 Future<void> submitOrder(Order order) async {
   // 1. Create MostroMessage with new-order action
   final message = MostroMessage<Order>(
@@ -191,7 +191,7 @@ Future<void> _onData(NostrEvent event) async {
 When Mostro sends the confirmation message back with the order ID, the `AddOrderNotifier` processes it:
 
 ```dart
-// lib/features/order/notfiers/add_order_notifier.dart:28-58
+// lib/features/order/notifiers/add_order_notifier.dart:28-58
 @override
 void subscribe() {
   subscription = ref.listen(
@@ -227,7 +227,7 @@ void subscribe() {
 
 **Confirmation Processing**:
 ```dart
-// lib/features/order/notfiers/add_order_notifier.dart:60-69
+// lib/features/order/notifiers/add_order_notifier.dart:60-69
 Future<void> _confirmOrder(MostroMessage message) async {
   // 1. Update state with confirmed order
   state = state.updateWith(message);
@@ -320,7 +320,7 @@ Future<void> addMessage(String key, MostroMessage message) async {
 After confirmation, the `OrderNotifier` takes over for ongoing trade management:
 
 ```dart
-// lib/features/order/notfiers/order_notifier.dart:15-25
+// lib/features/order/notifiers/order_notifier.dart:15-25
 class OrderNotifier extends AbstractMostroNotifier {
   late final MostroService mostroService;
   
@@ -344,7 +344,7 @@ class OrderNotifier extends AbstractMostroNotifier {
 The notifier subscribes to message streams using Riverpod providers:
 
 ```dart
-// lib/features/order/notfiers/abstract_mostro_notifier.dart:35-55
+// lib/features/order/notifiers/abstract_mostro_notifier.dart:35-55
 void subscribe() {
   subscription = ref.listen(
     mostroMessageStreamProvider(orderId),
@@ -470,7 +470,7 @@ OrderState updateWith(MostroMessage message) {
 The `new-order` action is handled in the `AbstractMostroNotifier`:
 
 ```dart
-// lib/features/order/notfiers/abstract_mostro_notifier.dart lines 75-77
+// lib/features/order/notifiers/abstract_mostro_notifier.dart lines 75-77
 switch (event.action) {
   case Action.newOrder:
     break; // No special handling needed, state is already updated
