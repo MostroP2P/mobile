@@ -1176,6 +1176,8 @@
     "notification_cant_do_message": "The requested action cannot be performed",
     "notification_new_message_title": "New message",
     "notification_new_message_message": "You have received a new message",
+    "notification_admin_message_title": "Message from admin",
+    "notification_admin_message_message": "You have received a message from the dispute admin",
     "notification_order_update_title": "Order update",
     "notification_order_update_message": "Your order has been updated",
     "@_comment_notification_details": "Notification details labels",

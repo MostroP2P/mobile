@@ -1176,6 +1176,8 @@
     "notification_cant_do_message": "Die angeforderte Aktion kann nicht ausgeführt werden",
     "notification_new_message_title": "Neue Nachricht",
     "notification_new_message_message": "Du hast eine neue Nachricht erhalten",
+    "notification_admin_message_title": "Nachricht vom Administrator",
+    "notification_admin_message_message": "Du hast eine Nachricht vom Streitadministrator erhalten",
     "notification_order_update_title": "Order-Update",
     "notification_order_update_message": "Deine Order wurde aktualisiert",
     "@_comment_notification_details": "Labels für Benachrichtigungsdetails",
