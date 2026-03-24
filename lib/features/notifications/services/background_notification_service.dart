@@ -176,6 +176,10 @@ Future<MostroMessage?> _decryptAndProcessEvent(NostrEvent event) async {
     // Detect admin/dispute DM format: [{"dm": {"action": "send-dm", ...}}]
     final firstItem = result[0];
     if (NostrUtils.isDmPayload(firstItem)) {
+      if (matchingSession.orderId == null) {
+        logger.w('DM received but session has no orderId, skipping notification');
+        return null;
+      }
       return MostroMessage(
         action: mostro_action.Action.sendDm,
         id: matchingSession.orderId,

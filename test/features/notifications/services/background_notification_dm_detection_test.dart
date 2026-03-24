@@ -48,17 +48,26 @@ void main() {
       expect(NostrUtils.isDmPayload(cantDoPayload[0]), isFalse);
     });
 
-    test('handles dm payload with minimal content', () {
-      final dmPayload = jsonDecode('[{"dm": {}}]');
-
-      expect(NostrUtils.isDmPayload(dmPayload[0]), isTrue);
-    });
-
     test('returns false for non-Map types', () {
       expect(NostrUtils.isDmPayload('string'), isFalse);
       expect(NostrUtils.isDmPayload(42), isFalse);
       expect(NostrUtils.isDmPayload(null), isFalse);
       expect(NostrUtils.isDmPayload([]), isFalse);
+    });
+
+    test('returns false when dm value is not a Map', () {
+      expect(NostrUtils.isDmPayload({'dm': 'not-a-map'}), isFalse);
+    });
+
+    test('returns false when dm Map has no action', () {
+      expect(NostrUtils.isDmPayload({'dm': {}}), isFalse);
+    });
+
+    test('returns false when dm action is not send-dm', () {
+      expect(
+        NostrUtils.isDmPayload({'dm': {'action': 'different-action'}}),
+        isFalse,
+      );
     });
   });
 
