@@ -100,7 +100,7 @@ Similarly:
 
 ### Primary Files
 
-#### A. `lib/features/order/notfiers/add_order_notifier.dart`
+#### A. `lib/features/order/notifiers/add_order_notifier.dart`
 ```dart
 class AddOrderNotifier extends AbstractMostroNotifier {
   late int requestId;  // Line 13

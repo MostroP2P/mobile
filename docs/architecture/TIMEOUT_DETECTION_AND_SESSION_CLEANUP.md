@@ -46,7 +46,7 @@ The timeout detection system receives direct instructions from Mostro via encryp
 #### **OrderNotifier Implementation**
 
 ```dart
-// lib/features/order/notfiers/order_notifier.dart
+// lib/features/order/notifiers/order_notifier.dart
 class OrderNotifier extends AbstractMostroNotifier {
   // Simplified implementation - timeout/cancellation logic moved to AbstractMostroNotifier
   @override
@@ -69,7 +69,7 @@ The system processes timeout and cancellation instructions directly from Mostro 
 #### **AbstractMostroNotifier Gift Wrap Processing**
 
 ```dart
-// lib/features/order/notfiers/abstract_mostro_notifier.dart
+// lib/features/order/notifiers/abstract_mostro_notifier.dart
 Future<void> handleEvent(MostroMessage event, {bool bypassTimestampGate = false}) async {
   switch (event.action) {
     case Action.newOrder:
@@ -773,7 +773,7 @@ final session = ref.read(sessionNotifierProvider.notifier).getSessionByOrderId(o
 ## Related Documentation
 
 ### Implementation Files
-- **`lib/features/order/notfiers/order_notifier.dart`** - Core timeout detection and synthetic event creation
+- **`lib/features/order/notifiers/order_notifier.dart`** - Core timeout detection and synthetic event creation
 - **`lib/data/models/mostro_message.dart`** - MostroMessage.createTimeoutReversal() factory
 - **`lib/shared/providers/time_provider.dart`** - Countdown timer system  
 - **`lib/shared/notifiers/session_notifier.dart`** - Session management
@@ -797,7 +797,7 @@ The system automatically starts cleanup timers for both order creation and order
 When users take orders, a cleanup timer is automatically started to prevent sessions from becoming orphaned if Mostro doesn't respond:
 
 ```dart
-// lib/features/order/notfiers/abstract_mostro_notifier.dart - startSessionTimeoutCleanup method
+// lib/features/order/notifiers/abstract_mostro_notifier.dart - startSessionTimeoutCleanup method
 static void startSessionTimeoutCleanup(String orderId, Ref ref) {
   // Cancel existing timer if any
   _sessionTimeouts[orderId]?.cancel();
@@ -824,7 +824,7 @@ static void startSessionTimeoutCleanup(String orderId, Ref ref) {
 The cleanup timer is automatically cancelled when any response is received from Mostro:
 
 ```dart
-// lib/features/order/notfiers/abstract_mostro_notifier.dart:92-93
+// lib/features/order/notifiers/abstract_mostro_notifier.dart:92-93
 void handleEvent(MostroMessage event) {
   // Cancel timer on ANY response from Mostro for this order
   _cancelSessionTimeoutCleanup(orderId);
@@ -836,7 +836,7 @@ void handleEvent(MostroMessage event) {
 When users create new orders, a similar cleanup timer prevents orphan sessions if Mostro doesn't respond to the order creation request:
 
 ```dart
-// lib/features/order/notfiers/abstract_mostro_notifier.dart
+// lib/features/order/notifiers/abstract_mostro_notifier.dart
 static void startSessionTimeoutCleanupForRequestId(int requestId, Ref ref) {
   final key = 'request:$requestId';
   // Cancel existing timer if any
@@ -865,7 +865,7 @@ static void startSessionTimeoutCleanupForRequestId(int requestId, Ref ref) {
 The cleanup timer is started automatically when users take orders:
 
 ```dart
-// lib/features/order/notfiers/order_notifier.dart:107-108
+// lib/features/order/notifiers/order_notifier.dart:107-108
 Future<void> takeSellOrder(String orderId, int? amount, String? lnAddress) async {
   // ... session creation
   
@@ -880,7 +880,7 @@ Future<void> takeSellOrder(String orderId, int? amount, String? lnAddress) async
 The cleanup timer is started automatically when users create orders:
 
 ```dart
-// lib/features/order/notfiers/add_order_notifier.dart
+// lib/features/order/notifiers/add_order_notifier.dart
 Future<void> submitOrder(Order order) async {
   // ... session creation
   
@@ -898,7 +898,7 @@ Future<void> submitOrder(Order order) async {
 When the 10-second timer expires, users receive a localized notification and are automatically navigated back to the order book:
 
 ```dart
-// lib/features/order/notfiers/abstract_mostro_notifier.dart:381-393
+// lib/features/order/notifiers/abstract_mostro_notifier.dart:381-393
 static void _showTimeoutNotificationAndNavigate(Ref ref) {
   try {
     // Show snackbar with localized timeout message
