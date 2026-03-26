@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:test/test.dart';
-import 'package:mostro_mobile/services/nostr_exchange_service.dart';
 
 void main() {
   group('NostrExchangeService._parseRatesContent', () {

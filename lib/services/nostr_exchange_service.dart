@@ -136,9 +136,11 @@ class NostrExchangeService extends ExchangeService {
     }
 
     // Take the most recent event.
-    final event = events.reduce(
-      (a, b) => (a.createdAt?.compareTo(b.createdAt ?? '') ?? 0) >= 0 ? a : b,
-    );
+    final event = events.reduce((a, b) {
+      final aTime = a.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+      final bTime = b.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+      return aTime.isAfter(bTime) ? a : b;
+    });
 
     // CRITICAL: verify pubkey (defense-in-depth — filter already limits
     // authors, but relays are untrusted).
