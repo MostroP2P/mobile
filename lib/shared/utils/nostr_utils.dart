@@ -153,7 +153,7 @@ class NostrUtils {
   }
 
   /// Parses a mostro: URL and returns order information
-  /// Format: mostro:order-id?relays=wss://relay1,wss://relay2&mostro=<pubkey>
+  /// Format: `mostro:order-id?relays=wss://relay1,wss://relay2&mostro=pubkey`
   /// Returns a map with 'orderId', 'relays', and optionally 'mostroPubkey' keys
   static Map<String, dynamic>? parseMostroUrl(String url) {
     if (!isValidMostroUrl(url)) return null;
