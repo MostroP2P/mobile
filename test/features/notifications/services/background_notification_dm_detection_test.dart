@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
+import 'package:mostro_mobile/features/notifications/services/background_notification_service.dart';
 import 'package:mostro_mobile/features/notifications/utils/notification_data_extractor.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
@@ -183,6 +184,64 @@ void main() {
       expect(data, isNotNull);
       expect(data!.isTemporary, isFalse);
       expect(data.action, Action.cooperativeCancelAccepted);
+    });
+  });
+
+  group('resolveNotificationRoute', () {
+    test('navigates to notifications screen when payload is null', () {
+      expect(resolveNotificationRoute(null), '/notifications');
+    });
+
+    test('navigates to notifications screen when payload is empty', () {
+      expect(resolveNotificationRoute(''), '/notifications');
+    });
+
+    test('navigates to dispute chat when admin_dm has disputeId', () {
+      final payload = jsonEncode({
+        'type': 'admin_dm',
+        'orderId': 'order-123',
+        'disputeId': 'dispute-456',
+      });
+      expect(
+        resolveNotificationRoute(payload),
+        '/dispute_details/dispute-456',
+      );
+    });
+
+    test('falls back to trade detail when admin_dm has no disputeId', () {
+      final payload = jsonEncode({
+        'type': 'admin_dm',
+        'orderId': 'order-123',
+      });
+      expect(resolveNotificationRoute(payload), '/trade_detail/order-123');
+    });
+
+    test('falls back to trade detail when admin_dm orderId is null', () {
+      final payload = jsonEncode({
+        'type': 'admin_dm',
+        'orderId': null,
+      });
+      expect(resolveNotificationRoute(payload), '/trade_detail/$payload');
+    });
+
+    test('treats plain string as legacy orderId payload', () {
+      expect(
+        resolveNotificationRoute('legacy-order-id'),
+        '/trade_detail/legacy-order-id',
+      );
+    });
+
+    test('handles JSON that is not an object gracefully', () {
+      expect(resolveNotificationRoute('"just-a-string"'), '/trade_detail/"just-a-string"');
+      expect(resolveNotificationRoute('[1,2,3]'), '/trade_detail/[1,2,3]');
+    });
+
+    test('handles unknown type in JSON payload', () {
+      final payload = jsonEncode({
+        'type': 'unknown_type',
+        'orderId': 'order-789',
+      });
+      expect(resolveNotificationRoute(payload), '/trade_detail/$payload');
     });
   });
 }

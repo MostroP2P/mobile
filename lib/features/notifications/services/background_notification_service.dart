@@ -58,6 +58,39 @@ Future<String?> getNotificationLaunchOrderId() async {
   return null;
 }
 
+/// Resolves the navigation route from a notification payload string.
+///
+/// Returns the route path to navigate to. Pure function, no side effects.
+String resolveNotificationRoute(String? payload) {
+  if (payload == null || payload.isEmpty) {
+    return '/notifications';
+  }
+
+  try {
+    final decoded = jsonDecode(payload);
+    if (decoded is! Map<String, dynamic>) {
+      throw FormatException('Payload is not a JSON object');
+    }
+
+    final type = decoded['type'] as String?;
+    final orderId = decoded['orderId'] as String?;
+    final disputeId = decoded['disputeId'] as String?;
+
+    if (type == 'admin_dm' && orderId != null) {
+      if (disputeId != null) {
+        return '/dispute_details/$disputeId';
+      }
+      return '/trade_detail/$orderId';
+    }
+  } on FormatException {
+    // Not JSON — treat as plain orderId (legacy format)
+  } catch (e) {
+    logger.e('Unexpected error parsing notification payload: $e');
+  }
+
+  return '/trade_detail/$payload';
+}
+
 void _onNotificationTap(NotificationResponse response) {
   try {
     final context = MostroApp.navigatorKey.currentContext;
@@ -66,43 +99,9 @@ void _onNotificationTap(NotificationResponse response) {
       return;
     }
 
-    final payload = response.payload;
-    if (payload == null || payload.isEmpty) {
-      context.push('/notifications');
-      logger.i('Navigated to notifications screen');
-      return;
-    }
-
-    // Try parsing as JSON for rich payloads (e.g. admin DM with orderId)
-    try {
-      final decoded = jsonDecode(payload);
-      if (decoded is! Map<String, dynamic>) {
-        throw FormatException('Payload is not a JSON object');
-      }
-
-      final type = decoded['type'] as String?;
-      final orderId = decoded['orderId'] as String?;
-      final disputeId = decoded['disputeId'] as String?;
-
-      if (type == 'admin_dm' && orderId != null) {
-        if (disputeId != null) {
-          context.push('/dispute_details/$disputeId');
-          logger.i('Navigated to dispute chat for dispute: $disputeId');
-          return;
-        }
-        // Fallback to trade detail if disputeId not available
-        context.push('/trade_detail/$orderId');
-        logger.i('Navigated to trade detail for order: $orderId');
-        return;
-      }
-    } on FormatException {
-      // Not JSON — treat as plain orderId (legacy format)
-    } catch (e) {
-      logger.e('Unexpected error parsing notification payload: $e');
-    }
-
-    context.push('/trade_detail/$payload');
-    logger.i('Navigated to trade detail for order: $payload');
+    final route = resolveNotificationRoute(response.payload);
+    context.push(route);
+    logger.i('Navigated to: $route');
   } catch (e) {
     logger.e('Navigation error: $e');
   }
