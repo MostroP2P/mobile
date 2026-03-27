@@ -8,7 +8,7 @@ This solves the censorship problem: the Yadio API is blocked in Venezuela and ot
 
 ## How It Works
 
-```
+```text
 Request rate for USD
         │
         ▼
@@ -38,7 +38,7 @@ The daemon publishes a NIP-33 addressable event:
 
 ## Security
 
-The client **always** verifies `event.pubkey == settings.mostroPublicKey` before parsing rates. This prevents price manipulation attacks from malicious actors publishing fake events.
+The client verifies event origin by comparing `event.pubkey == settings.mostroPublicKey` before parsing rates. This prevents price manipulation attacks from malicious actors publishing fake events via untrusted relays.
 
 ## Files
 
@@ -51,7 +51,7 @@ The client **always** verifies `event.pubkey == settings.mostroPublicKey` before
 ## Configuration
 
 No new configuration needed. The service uses:
-- `settings.mostroPublicKey` — to verify event signatures
+- `settings.mostroPublicKey` — to verify event pubkey matches the connected Mostro instance
 - The same relay list configured for Mostro orders
 
 ## References

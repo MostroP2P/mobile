@@ -24,8 +24,8 @@ const Duration _maxCacheAge = Duration(hours: 1);
 /// Exchange service that fetches rates from Nostr (NIP-33 kind 30078),
 /// falling back to Yadio HTTP API, then to a local SharedPreferences cache.
 ///
-/// The service verifies that events are signed by the connected Mostro
-/// instance pubkey to prevent price manipulation attacks.
+/// The service verifies that events originate from the connected Mostro
+/// instance by comparing event.pubkey to settings.mostroPublicKey.
 class NostrExchangeService extends ExchangeService {
   final NostrService _nostrService;
   final String _mostroPubkey;
@@ -35,6 +35,10 @@ class NostrExchangeService extends ExchangeService {
   /// Keys are uppercase currency codes ("USD", "EUR", …), values are the
   /// price of 1 BTC in that currency.
   Map<String, double>? _cachedRates;
+
+  /// Timestamp when [_cachedRates] was last populated.
+  /// Used to enforce the same 1-hour freshness as SharedPreferences.
+  DateTime? _cachedRatesFetchedAt;
 
   NostrExchangeService({
     required NostrService nostrService,
@@ -52,9 +56,13 @@ class NostrExchangeService extends ExchangeService {
       throw ArgumentError('Currency codes cannot be empty');
     }
 
-    // If we already have rates in memory, return immediately.
+    // If we already have fresh rates in memory, return immediately.
     final cached = _cachedRates;
-    if (cached != null && cached.containsKey(fromCurrency)) {
+    final fetchedAt = _cachedRatesFetchedAt;
+    if (cached != null &&
+        fetchedAt != null &&
+        DateTime.now().difference(fetchedAt) < _maxCacheAge &&
+        cached.containsKey(fromCurrency)) {
       return cached[fromCurrency]!;
     }
 
@@ -86,6 +94,7 @@ class NostrExchangeService extends ExchangeService {
         const Duration(seconds: 10),
       );
       _cachedRates = rates;
+      _cachedRatesFetchedAt = DateTime.now();
       await _persistToCache(rates);
       return;
     } catch (e) {
@@ -98,6 +107,7 @@ class NostrExchangeService extends ExchangeService {
         const Duration(seconds: 30),
       );
       _cachedRates = rates;
+      _cachedRatesFetchedAt = DateTime.now();
       await _persistToCache(rates);
       return;
     } catch (e) {
@@ -105,12 +115,18 @@ class NostrExchangeService extends ExchangeService {
     }
 
     // 3. SharedPreferences cache
-    final cached = await _loadFromCache();
-    if (cached != null) {
+    final result = await _loadFromCache();
+    if (result != null) {
       logger.i('Using cached exchange rates');
-      _cachedRates = cached;
+      _cachedRates = result.rates;
+      // Preserve the original persisted timestamp, not DateTime.now()
+      _cachedRatesFetchedAt = result.fetchedAt;
       return;
     }
+
+    // All sources failed — clear stale in-memory cache
+    _cachedRates = null;
+    _cachedRatesFetchedAt = null;
 
     throw Exception(
       'Failed to fetch exchange rates from all sources (Nostr, HTTP, cache)',
@@ -135,21 +151,40 @@ class NostrExchangeService extends ExchangeService {
       throw Exception('No exchange rate event found on relays');
     }
 
-    // Take the most recent event.
-    final event = events.reduce((a, b) {
+    // Filter events to only include those with correct kind and d-tag.
+    // Defense-in-depth: relays may return events that don't match the filter.
+    final validEvents = events.where((event) {
+      // Verify kind
+      if (event.kind != _exchangeRatesEventKind) return false;
+
+      // Verify d-tag
+      final tags = event.tags;
+      if (tags == null) return false;
+      final hasDTag = tags.any(
+        (tag) =>
+            tag.length >= 2 && tag[0] == 'd' && tag[1] == _exchangeRatesDTag,
+      );
+      if (!hasDTag) return false;
+
+      // Verify pubkey
+      if (event.pubkey != _mostroPubkey) return false;
+
+      return true;
+    }).toList();
+
+    if (validEvents.isEmpty) {
+      throw Exception(
+        'No valid exchange rate event found (kind=$_exchangeRatesEventKind, '
+        'd-tag=$_exchangeRatesDTag, pubkey=$_mostroPubkey)',
+      );
+    }
+
+    // Take the most recent valid event.
+    final event = validEvents.reduce((a, b) {
       final aTime = a.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
       final bTime = b.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
       return aTime.isAfter(bTime) ? a : b;
     });
-
-    // CRITICAL: verify pubkey (defense-in-depth — filter already limits
-    // authors, but relays are untrusted).
-    if (event.pubkey != _mostroPubkey) {
-      throw Exception(
-        'Exchange rate event pubkey mismatch: '
-        'expected $_mostroPubkey, got ${event.pubkey}',
-      );
-    }
 
     return _parseRatesContent(event.content ?? '');
   }
@@ -171,6 +206,11 @@ class NostrExchangeService extends ExchangeService {
         rates[entry.key as String] = value.toDouble();
       }
     }
+
+    if (rates.isEmpty) {
+      throw Exception('No usable rates from Yadio response');
+    }
+
     return rates;
   }
 
@@ -219,7 +259,7 @@ class NostrExchangeService extends ExchangeService {
     }
   }
 
-  Future<Map<String, double>?> _loadFromCache() async {
+  Future<_CacheResult?> _loadFromCache() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final json = prefs.getString(_cacheKey);
@@ -227,10 +267,10 @@ class NostrExchangeService extends ExchangeService {
 
       if (json == null || ts == null) return null;
 
+      final fetchedAt = DateTime.fromMillisecondsSinceEpoch(ts);
+
       // Check staleness
-      final age = DateTime.now().difference(
-        DateTime.fromMillisecondsSinceEpoch(ts),
-      );
+      final age = DateTime.now().difference(fetchedAt);
       if (age > _maxCacheAge) {
         logger.w('Cached exchange rates too old (${age.inMinutes} min)');
         return null;
@@ -239,10 +279,19 @@ class NostrExchangeService extends ExchangeService {
       final decoded = jsonDecode(json);
       if (decoded is! Map<String, dynamic>) return null;
 
-      return decoded.map((k, v) => MapEntry(k, (v as num).toDouble()));
+      final rates = decoded.map((k, v) => MapEntry(k, (v as num).toDouble()));
+      return _CacheResult(rates: rates, fetchedAt: fetchedAt);
     } catch (e) {
       logger.w('Failed to load cached exchange rates: $e');
       return null;
     }
   }
+}
+
+/// Internal helper to bundle cached rates with their original timestamp.
+class _CacheResult {
+  final Map<String, double> rates;
+  final DateTime fetchedAt;
+
+  const _CacheResult({required this.rates, required this.fetchedAt});
 }

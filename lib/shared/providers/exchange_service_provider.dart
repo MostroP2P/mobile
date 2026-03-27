@@ -22,7 +22,7 @@ final exchangeRateProvider =
       AsyncValue<double>,
       String
     >((ref, currency) {
-      final exchangeService = ref.read(exchangeServiceProvider);
+      final exchangeService = ref.watch(exchangeServiceProvider);
       final notifier = ExchangeRateNotifier(exchangeService);
       notifier.fetchExchangeRate(currency);
       return notifier;
