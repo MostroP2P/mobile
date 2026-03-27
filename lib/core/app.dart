@@ -166,11 +166,12 @@ class _MostroAppState extends ConsumerState<MostroApp> {
         if (!_notificationLaunchHandled && _router != null) {
           _notificationLaunchHandled = true;
           WidgetsBinding.instance.addPostFrameCallback((_) async {
-            final orderId = await getNotificationLaunchOrderId();
+            final payload = await getNotificationLaunchOrderId();
             if (!mounted) return;
-            if (orderId != null && orderId.isNotEmpty) {
-              debugPrint('App launched from notification tap, navigating to order: $orderId');
-              _router!.push('/trade_detail/$orderId');
+            if (payload != null && payload.isNotEmpty) {
+              final route = resolveNotificationRoute(payload);
+              debugPrint('App launched from notification tap, navigating to: $route');
+              _router!.push(route);
             }
           });
         }
