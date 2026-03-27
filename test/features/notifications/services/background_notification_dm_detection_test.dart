@@ -69,6 +69,51 @@ void main() {
         isFalse,
       );
     });
+
+    test('returns false when payload is null', () {
+      expect(
+        NostrUtils.isDmPayload({
+          'dm': {'action': 'send-dm', 'payload': null}
+        }),
+        isFalse,
+      );
+    });
+
+    test('returns false when payload is not a Map', () {
+      expect(
+        NostrUtils.isDmPayload({
+          'dm': {'action': 'send-dm', 'payload': []}
+        }),
+        isFalse,
+      );
+      expect(
+        NostrUtils.isDmPayload({
+          'dm': {'action': 'send-dm', 'payload': 'string'}
+        }),
+        isFalse,
+      );
+    });
+
+    test('returns false when dm has action but no payload', () {
+      expect(
+        NostrUtils.isDmPayload({
+          'dm': {'action': 'send-dm'}
+        }),
+        isFalse,
+      );
+    });
+
+    test('returns true with valid payload structure', () {
+      expect(
+        NostrUtils.isDmPayload({
+          'dm': {
+            'action': 'send-dm',
+            'payload': {'text_message': 'Hello admin'}
+          }
+        }),
+        isTrue,
+      );
+    });
   });
 
   group('MostroMessage construction for DM', () {

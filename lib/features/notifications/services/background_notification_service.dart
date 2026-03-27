@@ -4,10 +4,8 @@ import 'dart:math';
 import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
-import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:mostro_mobile/core/app.dart';
@@ -77,31 +75,30 @@ void _onNotificationTap(NotificationResponse response) {
 
     // Try parsing as JSON for rich payloads (e.g. admin DM with orderId)
     try {
-      final data = jsonDecode(payload) as Map<String, dynamic>;
-      final type = data['type'] as String?;
-      final orderId = data['orderId'] as String?;
+      final decoded = jsonDecode(payload);
+      if (decoded is! Map<String, dynamic>) {
+        throw FormatException('Payload is not a JSON object');
+      }
+
+      final type = decoded['type'] as String?;
+      final orderId = decoded['orderId'] as String?;
+      final disputeId = decoded['disputeId'] as String?;
 
       if (type == 'admin_dm' && orderId != null) {
-        // Read disputeId from the order state (app is in foreground at tap time)
-        try {
-          final container = ProviderScope.containerOf(context);
-          final orderState = container.read(orderNotifierProvider(orderId));
-          final disputeId = orderState.dispute?.disputeId;
-          if (disputeId != null) {
-            context.push('/dispute_details/$disputeId');
-            logger.i('Navigated to dispute chat for dispute: $disputeId');
-            return;
-          }
-        } catch (e) {
-          logger.w('Could not read dispute state, falling back to trade detail: $e');
+        if (disputeId != null) {
+          context.push('/dispute_details/$disputeId');
+          logger.i('Navigated to dispute chat for dispute: $disputeId');
+          return;
         }
         // Fallback to trade detail if disputeId not available
         context.push('/trade_detail/$orderId');
         logger.i('Navigated to trade detail for order: $orderId');
         return;
       }
-    } catch (_) {
+    } on FormatException {
       // Not JSON — treat as plain orderId (legacy format)
+    } catch (e) {
+      logger.e('Unexpected error parsing notification payload: $e');
     }
 
     context.push('/trade_detail/$payload');
@@ -225,7 +222,7 @@ Future<MostroMessage?> _decryptAndProcessEvent(NostrEvent event) async {
     final firstItem = result[0];
     if (NostrUtils.isDmPayload(firstItem)) {
       if (matchingSession.orderId == null) {
-        logger.w('DM received but session has no orderId, skipping notification');
+        logger.w('DM received but session has no orderId (recipient: ${event.recipient}), skipping notification');
         return null;
       }
       return MostroMessage(
@@ -253,7 +250,7 @@ Future<MostroMessage?> _processAdminDm(NostrEvent event, Session session) async 
     }
 
     if (session.orderId == null) {
-      logger.w('Admin DM received but session has no orderId, skipping notification');
+      logger.w('Admin DM received but session has no orderId (recipient: ${event.recipient}), skipping notification');
       return null;
     }
 

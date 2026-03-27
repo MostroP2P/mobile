@@ -107,6 +107,12 @@ class MostroService {
 
     if (await eventStore.hasItem(event.id!)) return;
 
+    // Reserve event ID immediately to prevent duplicate processing from multiple relays
+    await eventStore.putItem(event.id!, {
+      'id': event.id,
+      'created_at': event.createdAt!.millisecondsSinceEpoch ~/ 1000,
+    });
+
     final sessions = ref.read(sessionNotifierProvider);
     final matchingSession = sessions.firstWhereOrNull(
       (s) => s.tradeKey.public == event.recipient,
@@ -130,18 +136,12 @@ class MostroService {
         return;
       }
 
-      // Skip dispute chat messages before reserving in eventStorage
-      // so DisputeChatNotifier can still process them
+      // Skip dispute chat DMs — DisputeChatNotifier handles these
+      // via its own adminSharedKey subscription
       if (NostrUtils.isDmPayload(result[0])) {
         logger.i('Skipping dispute chat message (handled by DisputeChatNotifier)');
         return;
       }
-
-      // Reserve event ID after confirming this is a Mostro message
-      await eventStore.putItem(event.id!, {
-        'id': event.id,
-        'created_at': event.createdAt!.millisecondsSinceEpoch ~/ 1000,
-      });
 
       // Skip restore-specific payloads that arrive as historical events due to temporary subscription
       if (result[0] is Map &&
