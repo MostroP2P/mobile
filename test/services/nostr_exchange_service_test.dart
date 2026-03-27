@@ -1,45 +1,13 @@
 import 'dart:convert';
 import 'package:test/test.dart';
+import 'package:mostro_mobile/services/nostr_exchange_service.dart';
 
 void main() {
-  group('NostrExchangeService._parseRatesContent', () {
-    // Use the static method via a test helper since it is private.
-    // We test the same logic indirectly by calling the static parse helper.
-    // Since _parseRatesContent is private, we test via the public class by
-    // exercising the JSON parsing logic directly.
-
-    Map<String, double> parseRates(String content) {
-      // Replicate the parsing logic from NostrExchangeService._parseRatesContent
-      final decoded = jsonDecode(content);
-      if (decoded is! Map<String, dynamic>) {
-        throw const FormatException('Expected JSON object');
-      }
-
-      final btcRates = decoded['BTC'];
-      if (btcRates is! Map<String, dynamic>) {
-        throw const FormatException('Missing or invalid "BTC" key');
-      }
-
-      final rates = <String, double>{};
-      for (final entry in btcRates.entries) {
-        if (entry.key == 'BTC') continue;
-        final value = entry.value;
-        if (value is num) {
-          rates[entry.key] = value.toDouble();
-        }
-      }
-
-      if (rates.isEmpty) {
-        throw const FormatException('No valid rates found');
-      }
-
-      return rates;
-    }
-
+  group('NostrExchangeService.parseRatesContent', () {
     test('parses valid Yadio format correctly', () {
       const content =
           '{"BTC": {"USD": 50000.0, "EUR": 45000.0, "VES": 850000000.0}}';
-      final rates = parseRates(content);
+      final rates = NostrExchangeService.parseRatesContent(content);
 
       expect(rates['USD'], 50000.0);
       expect(rates['EUR'], 45000.0);
@@ -49,7 +17,7 @@ void main() {
 
     test('skips BTC→BTC entry', () {
       const content = '{"BTC": {"BTC": 1, "USD": 50000.0}}';
-      final rates = parseRates(content);
+      final rates = NostrExchangeService.parseRatesContent(content);
 
       expect(rates.containsKey('BTC'), isFalse);
       expect(rates['USD'], 50000.0);
@@ -58,7 +26,7 @@ void main() {
 
     test('handles integer values', () {
       const content = '{"BTC": {"ARS": 105000000}}';
-      final rates = parseRates(content);
+      final rates = NostrExchangeService.parseRatesContent(content);
 
       expect(rates['ARS'], 105000000.0);
       expect(rates['ARS'], isA<double>());
@@ -66,25 +34,37 @@ void main() {
 
     test('throws on missing BTC key', () {
       const content = '{"ETH": {"USD": 3000.0}}';
-      expect(() => parseRates(content), throwsFormatException);
+      expect(
+        () => NostrExchangeService.parseRatesContent(content),
+        throwsFormatException,
+      );
     });
 
-    test('throws on empty rates', () {
+    test('throws on empty rates (only BTC→BTC)', () {
       const content = '{"BTC": {"BTC": 1}}';
-      expect(() => parseRates(content), throwsFormatException);
+      expect(
+        () => NostrExchangeService.parseRatesContent(content),
+        throwsFormatException,
+      );
     });
 
     test('throws on invalid JSON', () {
-      expect(() => parseRates('not json'), throwsA(anything));
+      expect(
+        () => NostrExchangeService.parseRatesContent('not json'),
+        throwsA(anything),
+      );
     });
 
     test('throws on non-object content', () {
-      expect(() => parseRates('"just a string"'), throwsFormatException);
+      expect(
+        () => NostrExchangeService.parseRatesContent('"just a string"'),
+        throwsFormatException,
+      );
     });
 
     test('ignores non-numeric values', () {
       const content = '{"BTC": {"USD": 50000.0, "INVALID": "not a number"}}';
-      final rates = parseRates(content);
+      final rates = NostrExchangeService.parseRatesContent(content);
 
       expect(rates['USD'], 50000.0);
       expect(rates.containsKey('INVALID'), isFalse);
@@ -104,7 +84,7 @@ void main() {
         'BRL': 250000.0,
       };
       final content = jsonEncode({'BTC': btcRates});
-      final rates = parseRates(content);
+      final rates = NostrExchangeService.parseRatesContent(content);
 
       // BTC→BTC is skipped
       expect(rates.length, btcRates.length - 1);
@@ -118,7 +98,7 @@ void main() {
       const expectedPubkey = 'abc123';
       const eventPubkey = 'wrong_pubkey';
 
-      // Simulate the verification check
+      // Simulate the verification check from NostrExchangeService
       expect(eventPubkey == expectedPubkey, isFalse);
     });
 

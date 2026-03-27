@@ -186,7 +186,7 @@ class NostrExchangeService extends ExchangeService {
       return aTime.isAfter(bTime) ? a : b;
     });
 
-    return _parseRatesContent(event.content ?? '');
+    return parseRatesContent(event.content ?? '');
   }
 
   /// Fetch all BTC rates from Yadio HTTP API and return them as a map.
@@ -217,7 +217,9 @@ class NostrExchangeService extends ExchangeService {
   /// Parse the JSON content of a Nostr exchange rates event.
   ///
   /// Expected format: `{"BTC": {"USD": 50000.0, "EUR": 45000.0, ...}}`
-  static Map<String, double> _parseRatesContent(String content) {
+  ///
+  /// Exposed as public static for testability.
+  static Map<String, double> parseRatesContent(String content) {
     final decoded = jsonDecode(content);
     if (decoded is! Map<String, dynamic>) {
       throw const FormatException('Expected JSON object');
