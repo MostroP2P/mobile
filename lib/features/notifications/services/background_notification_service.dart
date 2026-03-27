@@ -160,7 +160,11 @@ Future<void> showLocalNotification(NostrEvent event) async {
 
     // Build payload: JSON for admin DMs, plain orderId for standard notifications
     final notificationPayload = notificationData.action == mostro_action.Action.sendDm
-        ? jsonEncode({'type': 'admin_dm', 'orderId': mostroMessage.id})
+        ? jsonEncode({
+            'type': 'admin_dm',
+            'orderId': mostroMessage.id,
+            'disputeId': matchingSession?.disputeId,
+          })
         : mostroMessage.id;
 
     // Use fixed ID (0) with tag for replacement - Android uses tag+id combo

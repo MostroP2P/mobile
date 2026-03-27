@@ -21,6 +21,7 @@ class Session {
   NostrKeyPairs? _sharedKey;
   String? _adminPubkey;
   NostrKeyPairs? _adminSharedKey;
+  String? disputeId;
 
   Session({
     required this.masterKey,
@@ -31,6 +32,7 @@ class Session {
     this.orderId,
     this.parentOrderId,
     this.role,
+    this.disputeId,
     Peer? peer,
     String? adminPubkey,
   }) {
@@ -56,6 +58,7 @@ class Session {
         'role': role?.value,
         'peer': peer?.publicKey,
         'admin_peer': _adminPubkey,
+        'dispute_id': disputeId,
       };
 
   factory Session.fromJson(Map<String, dynamic> json) {
@@ -166,6 +169,13 @@ class Session {
         }
       }
 
+      // Parse optional dispute ID
+      String? disputeId;
+      final disputeIdValue = json['dispute_id'];
+      if (disputeIdValue != null && disputeIdValue is String && disputeIdValue.isNotEmpty) {
+        disputeId = disputeIdValue;
+      }
+
       return Session(
         masterKey: masterKeyValue,
         tradeKey: tradeKeyValue,
@@ -177,6 +187,7 @@ class Session {
         role: role,
         peer: peer,
         adminPubkey: adminPubkey,
+        disputeId: disputeId,
       );
     } catch (e) {
       throw FormatException('Failed to parse Session from JSON: $e');
