@@ -153,8 +153,8 @@ class NostrUtils {
   }
 
   /// Parses a mostro: URL and returns order information
-  /// Format: mostro:order-id&relays=wss://relay1,wss://relay2
-  /// Returns a map with 'orderId' and 'relays' keys
+  /// Format: mostro:order-id?relays=wss://relay1,wss://relay2&mostro=<pubkey>
+  /// Returns a map with 'orderId', 'relays', and optionally 'mostroPubkey' keys
   static Map<String, dynamic>? parseMostroUrl(String url) {
     if (!isValidMostroUrl(url)) return null;
 
@@ -172,7 +172,15 @@ class NostrUtils {
           .where((relay) => relay.isNotEmpty)
           .toList();
 
-      return {'orderId': orderId, 'relays': relays};
+      final result = <String, dynamic>{'orderId': orderId, 'relays': relays};
+
+      // Extract optional Mostro instance pubkey
+      final mostroPubkey = uri.queryParameters['mostro'];
+      if (mostroPubkey != null && mostroPubkey.isNotEmpty) {
+        result['mostroPubkey'] = mostroPubkey;
+      }
+
+      return result;
     } catch (e) {
       return null;
     }

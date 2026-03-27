@@ -15,14 +15,17 @@ class OrderInfo {
   final String orderId;
   final OrderType orderType;
 
+  /// Mostro instance pubkey from the deep link, if present.
+  final String? mostroPubkey;
+
   const OrderInfo({
     required this.orderId,
     required this.orderType,
+    this.mostroPubkey,
   });
 }
 
 class DeepLinkService {
-  
   final AppLinks _appLinks = AppLinks();
 
   // Stream controller for deep link events
@@ -51,7 +54,7 @@ class DeepLinkService {
 
       // NOTE: We don't process the initial link here to avoid GoRouter conflicts
       // The initial link will be handled by the app initialization in app.dart
-      
+
       _isInitialized = true;
       logger.i('DeepLinkService initialized successfully');
     } catch (e) {
@@ -87,6 +90,7 @@ class DeepLinkService {
 
       final orderId = orderInfo['orderId'] as String;
       final relays = orderInfo['relays'] as List<String>;
+      final mostroPubkey = orderInfo['mostroPubkey'] as String?;
 
       // Validate order ID format (UUID-like string)
       if (orderId.isEmpty || orderId.length < 10) {
@@ -105,6 +109,7 @@ class DeepLinkService {
         orderId,
         relays,
         nostrService,
+        mostroPubkey: mostroPubkey,
       );
 
       if (fetchedOrderInfo == null) {
@@ -126,14 +131,15 @@ class DeepLinkService {
   Future<OrderInfo?> _fetchOrderInfoById(
     String orderId,
     List<String> relays,
-    NostrService nostrService,
-  ) async {
+    NostrService nostrService, {
+    String? mostroPubkey,
+  }) async {
     try {
       // Create a filter to search for NIP-69 order events with the specific order ID
       final filter = NostrFilter(
         kinds: [38383], // NIP-69 order events
         additionalFilters: {
-          '#d': [orderId]
+          '#d': [orderId],
         }, // Order ID is stored in 'd' tag
       );
 
@@ -142,7 +148,10 @@ class DeepLinkService {
       // First try to fetch from specified relays
       if (relays.isNotEmpty) {
         // Use the specific relays from the deep link URL
-        final orderEvents = await nostrService.fetchEvents(filter, specificRelays: relays);
+        final orderEvents = await nostrService.fetchEvents(
+          filter,
+          specificRelays: relays,
+        );
         events.addAll(orderEvents);
       }
 
@@ -165,12 +174,14 @@ class DeepLinkService {
 
         if (kTag != null && kTag.length > 1) {
           final orderTypeValue = kTag[1];
-          final orderType =
-              orderTypeValue == 'sell' ? OrderType.sell : OrderType.buy;
+          final orderType = orderTypeValue == 'sell'
+              ? OrderType.sell
+              : OrderType.buy;
 
           return OrderInfo(
             orderId: orderId,
             orderType: orderType,
+            mostroPubkey: mostroPubkey,
           );
         }
       }
@@ -197,8 +208,9 @@ class DeepLinkService {
   void navigateToOrder(GoRouter router, OrderInfo orderInfo) {
     final route = getNavigationRoute(orderInfo);
     logger.i(
-        'Navigating to: $route (Order: ${orderInfo.orderId}, Type: ${orderInfo.orderType.value})');
-    
+      'Navigating to: $route (Order: ${orderInfo.orderId}, Type: ${orderInfo.orderType.value})',
+    );
+
     // Use post-frame callback to ensure navigation happens after the current frame
     // This prevents GoRouter assertion failures during app lifecycle transitions
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -235,24 +247,14 @@ class DeepLinkResult {
   final OrderInfo? orderInfo;
   final String? error;
 
-  const DeepLinkResult._({
-    required this.isSuccess,
-    this.orderInfo,
-    this.error,
-  });
+  const DeepLinkResult._({required this.isSuccess, this.orderInfo, this.error});
 
   factory DeepLinkResult.success(OrderInfo orderInfo) {
-    return DeepLinkResult._(
-      isSuccess: true,
-      orderInfo: orderInfo,
-    );
+    return DeepLinkResult._(isSuccess: true, orderInfo: orderInfo);
   }
 
   factory DeepLinkResult.error(String error) {
-    return DeepLinkResult._(
-      isSuccess: false,
-      error: error,
-    );
+    return DeepLinkResult._(isSuccess: false, error: error);
   }
 }
 
