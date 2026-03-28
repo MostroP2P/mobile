@@ -90,30 +90,56 @@ void main() {
     });
   });
 
-  group('DeepLinkService.OrderInfo — mostroPubkey field', () {
-    // Import is indirect since OrderInfo is in deep_link_service.dart
-    // which depends on Flutter. We test the parsing logic here instead.
+  group('Mostro instance comparison via parseMostroUrl', () {
+    const currentPubkey =
+        '82fa8cb978b43c79b2156585bac2c011176a21d2aead6d9f7c575c005be88390';
 
-    test('same pubkey comparison works', () {
-      const current =
-          '82fa8cb978b43c79b2156585bac2c011176a21d2aead6d9f7c575c005be88390';
-      const link =
-          '82fa8cb978b43c79b2156585bac2c011176a21d2aead6d9f7c575c005be88390';
-      expect(current == link, isTrue);
+    test('same pubkey in link matches current instance', () {
+      final url =
+          'mostro:order-123?relays=wss://relay.mostro.network&mostro=$currentPubkey';
+      final result = NostrUtils.parseMostroUrl(url);
+
+      expect(result, isNotNull);
+      expect(result!['mostroPubkey'] == currentPubkey, isTrue);
     });
 
-    test('different pubkey comparison works', () {
-      const current =
-          '82fa8cb978b43c79b2156585bac2c011176a21d2aead6d9f7c575c005be88390';
-      const link =
+    test('different pubkey in link does not match current instance', () {
+      const otherPubkey =
           'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
-      expect(current == link, isFalse);
+      final url =
+          'mostro:order-123?relays=wss://relay.mostro.network&mostro=$otherPubkey';
+      final result = NostrUtils.parseMostroUrl(url);
+
+      expect(result, isNotNull);
+      expect(result!['mostroPubkey'] == currentPubkey, isFalse);
+      expect(result['mostroPubkey'], otherPubkey);
     });
 
-    test('null pubkey means same instance (backward compatible)', () {
-      const String? linkPubkey = null;
-      // When mostroPubkey is null, app should treat it as same instance
-      expect(linkPubkey == null, isTrue);
+    test('mixed-case pubkey is normalized and matches lowercase', () {
+      final url =
+          'mostro:order-123?relays=wss://relay.mostro.network&mostro=82FA8CB978B43C79B2156585BAC2C011176A21D2AEAD6D9F7C575C005BE88390';
+      final result = NostrUtils.parseMostroUrl(url);
+
+      expect(result, isNotNull);
+      expect(result!['mostroPubkey'] == currentPubkey, isTrue);
+    });
+
+    test('absent mostro param means same instance (backward compatible)', () {
+      const url = 'mostro:order-123?relays=wss://relay.mostro.network';
+      final result = NostrUtils.parseMostroUrl(url);
+
+      expect(result, isNotNull);
+      // null mostroPubkey → app treats as same instance (no switch dialog)
+      expect(result!['mostroPubkey'], isNull);
+    });
+
+    test('malformed pubkey is silently dropped (treated as same instance)', () {
+      const url =
+          'mostro:order-123?relays=wss://relay.mostro.network&mostro=not-a-valid-key';
+      final result = NostrUtils.parseMostroUrl(url);
+
+      expect(result, isNotNull);
+      expect(result!['mostroPubkey'], isNull);
     });
   });
 }
