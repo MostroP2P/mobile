@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -153,56 +154,76 @@ class DeepLinkHandler {
   }
 
   /// Shows a confirmation dialog when a deep link targets a different Mostro instance.
+  ///
+  /// [targetName] and [currentName] are optional human-readable labels for the
+  /// Mostro instances. When empty, truncated pubkeys are shown instead.
   Future<bool?> _showMostroSwitchDialog(
     BuildContext context,
     String linkPubkey,
-    String currentPubkey,
-  ) {
+    String currentPubkey, {
+    String targetName = '',
+    String currentName = '',
+  }) {
+    final completer = Completer<bool?>();
     final s = S.of(context)!;
     final truncatedLink =
         '${linkPubkey.substring(0, 8)}...${linkPubkey.substring(linkPubkey.length - 8)}';
     final truncatedCurrent =
         '${currentPubkey.substring(0, 8)}...${currentPubkey.substring(currentPubkey.length - 8)}';
 
-    return showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Row(
-          children: [
-            const Icon(Icons.warning_amber_rounded, color: Colors.orange),
-            const SizedBox(width: 8),
-            Expanded(child: Text(s.deepLinkDifferentMostroTitle)),
+    final targetLabel = targetName.isNotEmpty ? targetName : truncatedLink;
+    final currentLabel = currentName.isNotEmpty
+        ? currentName
+        : truncatedCurrent;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!context.mounted) {
+        completer.complete(null);
+        return;
+      }
+      final result = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Row(
+            children: [
+              const Icon(Icons.warning_amber_rounded, color: Colors.orange),
+              const SizedBox(width: 8),
+              Expanded(child: Text(s.deepLinkDifferentMostroTitle)),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(s.deepLinkDifferentMostroBody),
+              const SizedBox(height: 12),
+              Text(
+                '${s.deepLinkDifferentMostroFrom}\n$targetLabel',
+                style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '${s.deepLinkDifferentMostroCurrent}\n$currentLabel',
+                style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(s.cancel),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(s.deepLinkSwitchAndView),
+            ),
           ],
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(s.deepLinkDifferentMostroBody),
-            const SizedBox(height: 12),
-            Text(
-              '${s.deepLinkDifferentMostroFrom}\n$truncatedLink',
-              style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '${s.deepLinkDifferentMostroCurrent}\n$truncatedCurrent',
-              style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(s.cancel),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(s.deepLinkSwitchAndView),
-          ),
-        ],
-      ),
-    );
+      );
+      completer.complete(result);
+    });
+
+    return completer.future;
   }
 
   /// Shows a loading dialog

@@ -48,6 +48,36 @@ void main() {
       expect(result!['mostroPubkey'], isNull);
     });
 
+    test('rejects malformed pubkey (too short)', () {
+      const url =
+          'mostro:e215c07e-b1f9-45b0-9640-0295067ee99a?relays=wss://relay.mostro.network&mostro=abc123';
+      final result = NostrUtils.parseMostroUrl(url);
+
+      expect(result, isNotNull);
+      expect(result!['mostroPubkey'], isNull);
+    });
+
+    test('rejects pubkey with non-hex characters', () {
+      const url =
+          'mostro:e215c07e-b1f9-45b0-9640-0295067ee99a?relays=wss://relay.mostro.network&mostro=zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz';
+      final result = NostrUtils.parseMostroUrl(url);
+
+      expect(result, isNotNull);
+      expect(result!['mostroPubkey'], isNull);
+    });
+
+    test('normalizes uppercase pubkey to lowercase', () {
+      const url =
+          'mostro:e215c07e-b1f9-45b0-9640-0295067ee99a?relays=wss://relay.mostro.network&mostro=82FA8CB978B43C79B2156585BAC2C011176A21D2AEAD6D9F7C575C005BE88390';
+      final result = NostrUtils.parseMostroUrl(url);
+
+      expect(result, isNotNull);
+      expect(
+        result!['mostroPubkey'],
+        '82fa8cb978b43c79b2156585bac2c011176a21d2aead6d9f7c575c005be88390',
+      );
+    });
+
     test('isValidMostroUrl accepts URL with mostro param', () {
       const url =
           'mostro:e215c07e?relays=wss://relay.mostro.network&mostro=abc123';

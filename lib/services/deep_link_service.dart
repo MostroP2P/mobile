@@ -174,9 +174,15 @@ class DeepLinkService {
 
         if (kTag != null && kTag.length > 1) {
           final orderTypeValue = kTag[1];
-          final orderType = orderTypeValue == 'sell'
-              ? OrderType.sell
-              : OrderType.buy;
+          final OrderType? orderType;
+          if (orderTypeValue == 'sell') {
+            orderType = OrderType.sell;
+          } else if (orderTypeValue == 'buy') {
+            orderType = OrderType.buy;
+          } else {
+            logger.w('Unknown order type in k tag: $orderTypeValue');
+            return null;
+          }
 
           return OrderInfo(
             orderId: orderId,

@@ -1504,5 +1504,10 @@
     },
     "cameraPermissionDenied": "L'autorisation de la caméra est requise pour scanner les codes QR",
     "toggleTorch": "Activer/désactiver la lampe",
-    "switchCamera": "Changer de caméra"
+    "switchCamera": "Changer de caméra",
+    "deepLinkDifferentMostroTitle": "Instance Mostro différente",
+    "deepLinkDifferentMostroBody": "Cette commande a été créée sur un nœud Mostro différent. Voulez-vous basculer vers ce Mostro et voir la commande ?",
+    "deepLinkDifferentMostroFrom": "Commande de :",
+    "deepLinkDifferentMostroCurrent": "Actuellement connecté à :",
+    "deepLinkSwitchAndView": "Basculer et voir"
 }

@@ -101,7 +101,7 @@
             }
         }
     },
-        "buyerInvoiceAccepted": "Die Rechnung wurde erfolgreich gespeichert.",
+    "buyerInvoiceAccepted": "Die Rechnung wurde erfolgreich gespeichert.",
     "holdInvoicePaymentAccepted": "Kontaktiere den Verkäufer {seller_name}, um zu vereinbaren, wie du {fiat_code} {fiat_amount} mit {payment_method} sendest. Sobald du das Fiat-Geld gesendet hast, benachrichtige mich durch Drücken der Schaltfläche 'Fiat gesendet'.",
     "buyerTookOrder": "Kontaktiere den Käufer {buyer_name}, um ihm mitzuteilen, wie er {fiat_code} {fiat_amount} über {payment_method} senden soll. Du wirst benachrichtigt, wenn der Käufer die Fiat-Zahlung bestätigt. Überprüfe danach, ob das Geld angekommen ist. Wenn der Käufer nicht antwortet, kannst du eine Stornierung oder einen Streitfall (Dispute) einleiten. Denke daran: Ein Administrator wird dich NIEMALS von sich aus kontaktieren, um deine Order zu klären, es sei denn, du eröffnest zuerst einen Streitfall.",
     "fiatSentOkBuyer": "Ich habe {seller_name} darüber informiert, dass du das Fiat-Geld gesendet hast. Wenn der Verkäufer den Erhalt bestätigt, wird er die Beträge freigeben. Wenn er sich weigert, kannst du einen Streitfall eröffnen.",
@@ -198,7 +198,7 @@
     "buyBtc": "BTC KAUFEN",
     "sellBtc": "BTC VERKAUFEN",
     "filter": "FILTER",
-        "statusFilter": "Status",
+    "statusFilter": "Status",
     "allStatuses": "Alle",
     "all": "Alle",
     "statusPending": "Ausstehend",
@@ -298,7 +298,7 @@
     "cancelPendingButton": "AUSSTEHENDE STORNIEREN",
     "acceptCancelButton": "ABBRECHEN",
     "disputeButton": "STREITFALL",
-        "fiatSentButton": "FIAT GESENDET",
+    "fiatSentButton": "FIAT GESENDET",
     "completePurchaseButton": "KAUF ABSCHLIESSEN",
     "paymentMethodLabel": "Zahlungsmethode",
     "createdOnLabel": "Erstellt am",
@@ -498,7 +498,7 @@
     "generateNewUser": "Neuen Nutzer generieren",
     "importMostroUser": "Nutzer importieren",
     "refreshUser": "Nutzer aktualisieren",
-        "keyImportedSuccessfully": "Schlüssel erfolgreich importiert",
+    "keyImportedSuccessfully": "Schlüssel erfolgreich importiert",
     "importFailed": "Import fehlgeschlagen: {error}",
     "@importFailed": {
         "placeholders": {
@@ -698,7 +698,7 @@
         }
     },
     "failedToGenerateQR": "QR-Code konnte nicht generiert werden",
-       "invoiceCopiedToClipboard": "Rechnung in die Zwischenablage kopiert",
+    "invoiceCopiedToClipboard": "Rechnung in die Zwischenablage kopiert",
     "copiedToClipboard": "In die Zwischenablage kopiert",
     "copy": "Kopieren",
     "share": "Teilen",
@@ -899,7 +899,7 @@
     "usersDocumentationSpanish": "Benutzerdokumentation (Spanisch)",
     "technicalDocumentation": "Technische Dokumentation",
     "read": "Lesen",
-       "technicalDetails": "Technische Details",
+    "technicalDetails": "Technische Details",
     "mostroDaemonVersion": "Mostro-Version",
     "mostroCommitId": "Mostro Commit-ID",
     "orderExpiration": "Order-Ablaufzeit",
@@ -1099,7 +1099,7 @@
     "discount": "Rabatt",
     "premium": "Aufschlag",
     "clear": "Löschen",
-        "min": "Min",
+    "min": "Min",
     "max": "Max",
     "@_comment_timeout_messages": "Nachrichten für Zeitüberschreitungen",
     "orderTimeoutTaker": "Du hast nicht rechtzeitig geantwortet. Die Order wird neu veröffentlicht.",
@@ -1299,7 +1299,7 @@
     "@_comment_logging_ui": "Logging-UI Texte",
     "logCapture": "Log-Erfassung",
     "capturingLogs": "Logs werden erfasst",
-       "captureDisabled": "Erfassung deaktiviert",
+    "captureDisabled": "Erfassung deaktiviert",
     "performanceWarning": "Leistungswarnung",
     "performanceWarningMessage": "Das Aktivieren der Log-Erfassung kann die Anwendungsleistung beeinträchtigen. Aktiviere diese Funktion nur zum Debuggen oder zur Fehlersuche.",
     "enable": "Aktivieren",
@@ -1504,5 +1504,10 @@
     },
     "cameraPermissionDenied": "Kamerazugriff wird benötigt, um QR-Codes zu scannen",
     "toggleTorch": "Taschenlampe umschalten",
-    "switchCamera": "Kamera wechseln"
+    "switchCamera": "Kamera wechseln",
+    "deepLinkDifferentMostroTitle": "Andere Mostro-Instanz",
+    "deepLinkDifferentMostroBody": "Diese Bestellung wurde auf einem anderen Mostro-Knoten erstellt. Möchten Sie zu diesem Mostro wechseln und die Bestellung ansehen?",
+    "deepLinkDifferentMostroFrom": "Bestellung von:",
+    "deepLinkDifferentMostroCurrent": "Derzeit verbunden mit:",
+    "deepLinkSwitchAndView": "Wechseln und ansehen"
 }

@@ -174,10 +174,17 @@ class NostrUtils {
 
       final result = <String, dynamic>{'orderId': orderId, 'relays': relays};
 
-      // Extract optional Mostro instance pubkey
-      final mostroPubkey = uri.queryParameters['mostro'];
-      if (mostroPubkey != null && mostroPubkey.isNotEmpty) {
-        result['mostroPubkey'] = mostroPubkey;
+      // Extract and validate optional Mostro instance pubkey (must be 64-char hex)
+      final rawMostroPubkey = uri.queryParameters['mostro'];
+      if (rawMostroPubkey != null && rawMostroPubkey.isNotEmpty) {
+        final normalized = rawMostroPubkey.trim().toLowerCase().replaceFirst(
+          '0x',
+          '',
+        );
+        if (normalized.length == 64 &&
+            RegExp(r'^[0-9a-f]{64}$').hasMatch(normalized)) {
+          result['mostroPubkey'] = normalized;
+        }
       }
 
       return result;
