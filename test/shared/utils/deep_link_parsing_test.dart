@@ -29,7 +29,7 @@ void main() {
 
     test('parses URL with multiple relays and mostro pubkey', () {
       const pubkey =
-          'abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890ab';
+          'abcdef1234567890abcdef1234567890abcdef1234567890abcdef12345678ab';
       final url =
           'mostro:order-id-123?relays=wss://relay1.example.com,wss://relay2.example.com&mostro=$pubkey';
       final result = NostrUtils.parseMostroUrl(url);
