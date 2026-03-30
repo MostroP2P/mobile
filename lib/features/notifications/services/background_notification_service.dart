@@ -69,7 +69,7 @@ String resolveNotificationRoute(String? payload) {
   try {
     final decoded = jsonDecode(payload);
     if (decoded is! Map<String, dynamic>) {
-      throw FormatException('Payload is not a JSON object');
+      return '/notifications';
     }
 
     final type = decoded['type'] as String?;
@@ -82,10 +82,17 @@ String resolveNotificationRoute(String? payload) {
       }
       return '/trade_detail/$orderId';
     }
+
+    // Valid JSON but unknown type — use orderId if available, else notifications
+    if (orderId != null) {
+      return '/trade_detail/$orderId';
+    }
+    return '/notifications';
   } on FormatException {
     // Not JSON — treat as plain orderId (legacy format)
   } catch (e) {
     logger.e('Unexpected error parsing notification payload: $e');
+    return '/notifications';
   }
 
   return '/trade_detail/$payload';

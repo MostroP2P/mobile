@@ -216,12 +216,12 @@ void main() {
       expect(resolveNotificationRoute(payload), '/trade_detail/order-123');
     });
 
-    test('falls back to trade detail when admin_dm orderId is null', () {
+    test('routes to notifications when admin_dm has no orderId', () {
       final payload = jsonEncode({
         'type': 'admin_dm',
         'orderId': null,
       });
-      expect(resolveNotificationRoute(payload), '/trade_detail/$payload');
+      expect(resolveNotificationRoute(payload), '/notifications');
     });
 
     test('treats plain string as legacy orderId payload', () {
@@ -231,17 +231,24 @@ void main() {
       );
     });
 
-    test('handles JSON that is not an object gracefully', () {
-      expect(resolveNotificationRoute('"just-a-string"'), '/trade_detail/"just-a-string"');
-      expect(resolveNotificationRoute('[1,2,3]'), '/trade_detail/[1,2,3]');
+    test('routes to notifications when JSON is not an object', () {
+      expect(resolveNotificationRoute('"just-a-string"'), '/notifications');
+      expect(resolveNotificationRoute('[1,2,3]'), '/notifications');
     });
 
-    test('handles unknown type in JSON payload', () {
+    test('routes to trade detail when unknown type has orderId', () {
       final payload = jsonEncode({
         'type': 'unknown_type',
         'orderId': 'order-789',
       });
-      expect(resolveNotificationRoute(payload), '/trade_detail/$payload');
+      expect(resolveNotificationRoute(payload), '/trade_detail/order-789');
+    });
+
+    test('routes to notifications when unknown type has no orderId', () {
+      final payload = jsonEncode({
+        'type': 'unknown_type',
+      });
+      expect(resolveNotificationRoute(payload), '/notifications');
     });
   });
 }
