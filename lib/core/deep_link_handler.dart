@@ -13,6 +13,13 @@ class DeepLinkHandler {
   final Ref _ref;
   StreamSubscription<Uri>? _subscription;
 
+  bool _isHandlingMostroDeepLink = false;
+  String? _lastHandledDeepLinkUrl;
+  DateTime? _lastHandledDeepLinkAt;
+
+  BuildContext? _loadingDialogContext;
+  bool _isLoadingDialogVisible = false;
+
   DeepLinkHandler(this._ref);
 
   /// Initializes deep link handling for the app
@@ -63,6 +70,21 @@ class DeepLinkHandler {
 
   /// Handles mostro: scheme deep links
   Future<void> _handleMostroDeepLink(String url, GoRouter router) async {
+    final now = DateTime.now();
+    final isDuplicateRecent =
+        _lastHandledDeepLinkUrl == url &&
+        _lastHandledDeepLinkAt != null &&
+        now.difference(_lastHandledDeepLinkAt!) < const Duration(seconds: 2);
+
+    if (_isHandlingMostroDeepLink || isDuplicateRecent) {
+      logger.i('Ignoring duplicate/concurrent deep link handling for: $url');
+      return;
+    }
+
+    _isHandlingMostroDeepLink = true;
+    _lastHandledDeepLinkUrl = url;
+    _lastHandledDeepLinkAt = now;
+
     BuildContext? context;
     try {
       // Show loading indicator
@@ -90,13 +112,7 @@ class DeepLinkHandler {
         processingContext,
       );
 
-      // Get fresh context after async operation
-      final currentContext = router.routerDelegate.navigatorKey.currentContext;
-
-      // Hide loading indicator
-      if (currentContext != null && currentContext.mounted) {
-        Navigator.of(currentContext).pop();
-      }
+      _hideLoadingDialog();
 
       if (result.isSuccess && result.orderInfo != null) {
         final orderInfo = result.orderInfo!;
@@ -144,11 +160,14 @@ class DeepLinkHandler {
       }
     } catch (e) {
       logger.e('Error processing mostro deep link: $e');
+      _hideLoadingDialog();
+
       final errorContext = router.routerDelegate.navigatorKey.currentContext;
       if (errorContext != null && errorContext.mounted) {
-        Navigator.of(errorContext).pop(); // Hide loading if still showing
         _showErrorSnackBar(errorContext, S.of(errorContext)!.failedToOpenOrder);
       }
+    } finally {
+      _isHandlingMostroDeepLink = false;
     }
   }
 
@@ -227,25 +246,50 @@ class DeepLinkHandler {
 
   /// Shows a loading dialog
   void _showLoadingDialog(BuildContext context) {
+    if (_isLoadingDialogVisible) {
+      return;
+    }
+
+    _isLoadingDialogVisible = true;
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (dialogContext) => Center(
-        child: Card(
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const CircularProgressIndicator(),
-                const SizedBox(height: 16),
-                Text(S.of(dialogContext)!.loadingOrder),
-              ],
+      builder: (dialogContext) {
+        _loadingDialogContext = dialogContext;
+        return Center(
+          child: Card(
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text(S.of(dialogContext)!.loadingOrder),
+                ],
+              ),
             ),
           ),
-        ),
-      ),
-    );
+        );
+      },
+    ).whenComplete(() {
+      _isLoadingDialogVisible = false;
+      _loadingDialogContext = null;
+    });
+  }
+
+  void _hideLoadingDialog() {
+    if (!_isLoadingDialogVisible) {
+      return;
+    }
+
+    final dialogContext = _loadingDialogContext;
+    if (dialogContext != null && dialogContext.mounted) {
+      Navigator.of(dialogContext).pop();
+    }
+
+    _isLoadingDialogVisible = false;
+    _loadingDialogContext = null;
   }
 
   /// Shows an error snack bar
@@ -264,6 +308,7 @@ class DeepLinkHandler {
   void dispose() {
     _subscription?.cancel();
     _subscription = null;
+    _hideLoadingDialog();
     // DeepLinkService disposal is handled by Riverpod provider
   }
 }
