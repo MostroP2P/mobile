@@ -162,9 +162,24 @@ class DeepLinkService {
         events.addAll(defaultEvents);
       }
 
+      // When mostroPubkey is specified, only accept events authored by that node.
+      // This prevents a crafted link from switching the app to a fraudulent node
+      // by resolving a legitimate order published by a different Mostro instance.
+      final candidateEvents = mostroPubkey != null
+          ? events.where((e) => e.pubkey == mostroPubkey).toList()
+          : events;
+
+      if (candidateEvents.isEmpty && mostroPubkey != null) {
+        logger.w(
+          'Order $orderId not found for Mostro pubkey $mostroPubkey '
+          '(found \${events.length} event(s) from other nodes)',
+        );
+        return null;
+      }
+
       // Process the first matching event
-      if (events.isNotEmpty) {
-        final event = events.first;
+      if (candidateEvents.isNotEmpty) {
+        final event = candidateEvents.first;
 
         // Extract order type from 'k' tag
         final kTag = event.tags?.firstWhere(
