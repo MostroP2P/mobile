@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
+import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
@@ -40,6 +41,7 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
   @override
   Widget build(BuildContext context) {
     final order = ref.watch(eventProvider(widget.orderId));
+    final orderEventsAsync = ref.watch(orderEventsProvider);
 
     // Listen for messages to reset loading state on CantDo
     ref.listen(mostroMessageStreamProvider(widget.orderId), (_, next) {
@@ -64,7 +66,15 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
             : S.of(context)!.sellOrderDetailsTitle,
       ),
       body: order == null
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(
+              child: orderEventsAsync.isLoading
+                  ? const CircularProgressIndicator()
+                  : const Icon(
+                      Icons.search_off,
+                      size: 48,
+                      color: Colors.white38,
+                    ),
+            )
           : SingleChildScrollView(
               padding: EdgeInsets.fromLTRB(
                 16.0,
@@ -85,7 +95,8 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
                   const SizedBox(height: 16),
                   _buildCreatorReputation(order),
                   const SizedBox(height: 24),
-                  _CountdownWidget(order: order),
+                  if (order.status == Status.pending)
+                    _CountdownWidget(order: order),
                   const SizedBox(height: 36),
                   _buildActionButtons(context, ref, order),
                 ],
@@ -409,6 +420,7 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
                         }
                       } else {
                         // Dialog was dismissed without entering amount, reset loading state
+                        if (!mounted) return;
                         setState(() {
                           _isSubmitting = false;
                         });

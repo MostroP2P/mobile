@@ -1506,8 +1506,8 @@
     "toggleTorch": "Taschenlampe umschalten",
     "switchCamera": "Kamera wechseln",
     "deepLinkDifferentMostroTitle": "Andere Mostro-Instanz",
-    "deepLinkDifferentMostroBody": "Diese Bestellung wurde auf einem anderen Mostro-Knoten erstellt. Möchten Sie zu diesem Mostro wechseln und die Bestellung ansehen?",
-    "deepLinkDifferentMostroFrom": "Bestellung von:",
-    "deepLinkDifferentMostroCurrent": "Derzeit verbunden mit:",
+    "deepLinkDifferentMostroBody": "Diese Order wurde auf einem anderen Mostro-Knoten erstellt. Möchtest du zu diesem Mostro wechseln und die Order ansehen?",
+    "deepLinkDifferentMostroFrom": "Order von:",
+    "deepLinkDifferentMostroCurrent": "Aktuell verbunden mit:",
     "deepLinkSwitchAndView": "Wechseln und ansehen"
 }
