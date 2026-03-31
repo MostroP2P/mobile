@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
+import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
@@ -49,10 +50,12 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
         if (msg == null || msg.action == _lastSeenAction) return;
         _lastSeenAction = msg.action;
 
-        // Reset loading state for every terminal outcome so the CTA
-        // is never left permanently disabled after a submit attempt.
-        // isTerminal is defined centrally in Action enum.
-        if (msg.action.isTerminal && _isSubmitting) {
+        // Reset loading state when Mostro rejects or cancels the take attempt.
+        // Only cantDo and canceled can arrive for an order in pending status
+        // per the Mostro protocol — cooperative/admin actions and later-stage
+        // outcomes (released, paymentFailed, etc.) cannot occur at this point.
+        if ((msg.action == Action.cantDo || msg.action == Action.canceled) &&
+            _isSubmitting) {
           setState(() {
             _isSubmitting = false;
           });
