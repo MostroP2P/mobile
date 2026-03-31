@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
-import 'package:mostro_mobile/data/models/enums/action.dart';
+import 'package:mostro_mobile/data/models/enums/action.dart' as mostro_action;
 import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
@@ -54,7 +54,8 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
         // Only cantDo and canceled can arrive for an order in pending status
         // per the Mostro protocol — cooperative/admin actions and later-stage
         // outcomes (released, paymentFailed, etc.) cannot occur at this point.
-        if ((msg.action == Action.cantDo || msg.action == Action.canceled) &&
+        if ((msg.action == mostro_action.Action.cantDo ||
+                msg.action == mostro_action.Action.canceled) &&
             _isSubmitting) {
           setState(() {
             _isSubmitting = false;
