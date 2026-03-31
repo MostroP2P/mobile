@@ -442,6 +442,8 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
   }
 
   void _submitOrder() {
+    // Force-commit any pending text field changes (e.g. premium debounce timer)
+    primaryFocus?.unfocus();
     if (_formKey.currentState?.validate() ?? false) {
       final selectedFiatCode = ref.read(selectedFiatCodeProvider);
 
