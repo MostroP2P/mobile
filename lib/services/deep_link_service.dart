@@ -147,7 +147,6 @@ class DeepLinkService {
 
       // First try to fetch from specified relays
       if (relays.isNotEmpty) {
-        // Use the specific relays from the deep link URL
         final orderEvents = await nostrService.fetchEvents(
           filter,
           specificRelays: relays,
@@ -155,30 +154,38 @@ class DeepLinkService {
         events.addAll(orderEvents);
       }
 
-      // If no events found and we have default relays, try those
-      if (events.isEmpty) {
-        logger.i('Order not found in specified relays, trying default relays');
-        final defaultEvents = await nostrService.fetchEvents(filter);
-        events.addAll(defaultEvents);
+      // Helper to build the candidate list from a set of raw events.
+      // When mostroPubkey is present only events authored by that node are
+      // accepted. isVerified() failures are logged but not treated as hard
+      // rejections due to a known dart_nostr limitation (consistent with
+      // how mostro_nodes_notifier.dart handles kind-0 events).
+      List<NostrEvent> buildCandidates(List<NostrEvent> raw) {
+        if (mostroPubkey == null) return raw;
+        return raw.where((e) {
+          if (!e.isVerified()) {
+            logger.w(
+              'Event ${e.id} from pubkey ${e.pubkey} failed signature '
+              'verification (possible dart_nostr limitation).',
+            );
+          }
+          return e.pubkey == mostroPubkey;
+        }).toList();
       }
 
-      // When mostroPubkey is specified, only accept events authored by that node.
-      // This prevents a crafted link from switching the app to a fraudulent node
-      // by resolving a legitimate order published by a different Mostro instance.
-      // Note: isVerified() may return false for valid events due to a known
-      // dart_nostr limitation; log a warning but do not reject — consistent with
-      // how mostro_nodes_notifier.dart handles metadata events.
-      final candidateEvents = mostroPubkey != null
-          ? events.where((e) {
-              if (!e.isVerified()) {
-                logger.w(
-                  'Event ${e.id} from pubkey ${e.pubkey} failed signature '
-                  'verification (possible dart_nostr limitation).',
-                );
-              }
-              return e.pubkey == mostroPubkey;
-            }).toList()
-          : events;
+      var candidateEvents = buildCandidates(events);
+
+      // If no matching candidate was found in the link relays, retry with the
+      // app's default relays. This covers the case where events from other
+      // Mostro nodes were returned by the link relays (events non-empty but
+      // candidateEvents empty), which previously skipped the fallback entirely.
+      if (candidateEvents.isEmpty) {
+        logger.i(
+          'No matching event in specified relays, trying default relays',
+        );
+        final defaultEvents = await nostrService.fetchEvents(filter);
+        events.addAll(defaultEvents);
+        candidateEvents = buildCandidates(events);
+      }
 
       if (candidateEvents.isEmpty && mostroPubkey != null) {
         logger.w(

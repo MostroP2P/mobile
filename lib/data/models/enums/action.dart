@@ -51,7 +51,7 @@ enum Action {
   ///
   /// Throws an ArgumentError if the string doesn't match any Action value.
   static final _valueMap = {
-    for (var action in Action.values) action.value: action
+    for (var action in Action.values) action.value: action,
   };
 
   static Action fromString(String value) {
@@ -61,6 +61,23 @@ enum Action {
     }
     return action;
   }
+
+  /// Returns true for every action that terminates a take-order submit flow.
+  /// Used in TakeOrderScreen to reliably reset the submitting state without
+  /// maintaining a partial hard-coded set in the UI layer.
+  bool get isTerminal => const {
+    cantDo,
+    canceled,
+    adminCanceled,
+    adminSettled,
+    cooperativeCancelAccepted,
+    released,
+    rateReceived,
+    paymentFailed,
+    holdInvoicePaymentCanceled,
+    holdInvoicePaymentSettled,
+    purchaseCompleted,
+  }.contains(this);
 
   @override
   String toString() {

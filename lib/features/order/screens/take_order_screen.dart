@@ -51,13 +51,8 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
 
         // Reset loading state for every terminal outcome so the CTA
         // is never left permanently disabled after a submit attempt.
-        const terminalActions = {
-          actions.Action.cantDo,
-          actions.Action.canceled,
-          actions.Action.paymentFailed,
-          actions.Action.holdInvoicePaymentCanceled,
-        };
-        if (terminalActions.contains(msg.action) && _isSubmitting) {
+        // isTerminal is defined centrally in Action enum.
+        if (msg.action.isTerminal && _isSubmitting) {
           setState(() {
             _isSubmitting = false;
           });
@@ -74,7 +69,14 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
       ),
       body: order == null
           ? Center(
-              child: orderEventsAsync.isLoading
+              // Show spinner until the stream has emitted at least once.
+              // isLoading is not reliable here because orderEventsProvider
+              // is a StreamProvider backed by a repository that updates in
+              // place on settings changes (e.g. updateMostroInstance),
+              // so the stream never re-enters loading after a Mostro switch.
+              // Using !hasValue ensures we wait for the first emission
+              // before showing the empty-state icon.
+              child: !orderEventsAsync.hasValue
                   ? const CircularProgressIndicator()
                   : const Icon(
                       Icons.search_off,
