@@ -1149,6 +1149,8 @@
     "notification_cant_do_message": "L'azione richiesta non può essere eseguita",
     "notification_new_message_title": "Nuovo messaggio",
     "notification_new_message_message": "Hai ricevuto un nuovo messaggio",
+    "notification_admin_message_title": "Messaggio dall'amministratore",
+    "notification_admin_message_message": "Hai ricevuto un messaggio dall'amministratore della disputa",
     "notification_order_update_title": "Aggiornamento ordine",
     "notification_order_update_message": "Il tuo ordine è stato aggiornato",
     "@_comment_notification_details": "Etichette dei dettagli delle notifiche",

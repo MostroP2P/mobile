@@ -14,6 +14,7 @@ import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
+import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
 class MostroService {
   final Ref ref;
@@ -105,6 +106,8 @@ class MostroService {
     final eventStore = ref.read(eventStorageProvider);
 
     if (await eventStore.hasItem(event.id!)) return;
+
+    // Reserve event ID immediately to prevent duplicate processing from multiple relays
     await eventStore.putItem(event.id!, {
       'id': event.id,
       'created_at': event.createdAt!.millisecondsSinceEpoch ~/ 1000,
@@ -130,6 +133,13 @@ class MostroService {
       // Ensure result is a non-empty List before accessing elements
       if (result is! List || result.isEmpty) {
         logger.w('Received empty or invalid payload, skipping');
+        return;
+      }
+
+      // Skip dispute chat DMs — DisputeChatNotifier handles these
+      // via its own adminSharedKey subscription
+      if (NostrUtils.isDmPayload(result[0])) {
+        logger.i('Skipping dispute chat message (handled by DisputeChatNotifier)');
         return;
       }
 

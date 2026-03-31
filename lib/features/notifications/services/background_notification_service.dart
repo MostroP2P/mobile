@@ -18,6 +18,7 @@ import 'package:mostro_mobile/features/key_manager/key_derivator.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager.dart';
 import 'package:mostro_mobile/features/key_manager/key_storage.dart';
 import 'package:mostro_mobile/features/notifications/utils/notification_data_extractor.dart';
+import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 import 'package:mostro_mobile/features/notifications/utils/notification_message_mapper.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/generated/l10n_de.dart';
@@ -57,6 +58,46 @@ Future<String?> getNotificationLaunchOrderId() async {
   return null;
 }
 
+/// Resolves the navigation route from a notification payload string.
+///
+/// Returns the route path to navigate to. Pure function, no side effects.
+String resolveNotificationRoute(String? payload) {
+  if (payload == null || payload.isEmpty) {
+    return '/notifications';
+  }
+
+  try {
+    final decoded = jsonDecode(payload);
+    if (decoded is! Map<String, dynamic>) {
+      return '/notifications';
+    }
+
+    final type = decoded['type'] as String?;
+    final orderId = decoded['orderId'] as String?;
+    final disputeId = decoded['disputeId'] as String?;
+
+    if (type == 'admin_dm' && orderId != null) {
+      if (disputeId != null) {
+        return '/dispute_details/$disputeId';
+      }
+      return '/trade_detail/$orderId';
+    }
+
+    // Valid JSON but unknown type — use orderId if available, else notifications
+    if (orderId != null) {
+      return '/trade_detail/$orderId';
+    }
+    return '/notifications';
+  } on FormatException {
+    // Not JSON — treat as plain orderId (legacy format)
+  } catch (e) {
+    logger.e('Unexpected error parsing notification payload: $e');
+    return '/notifications';
+  }
+
+  return '/trade_detail/$payload';
+}
+
 void _onNotificationTap(NotificationResponse response) {
   try {
     final context = MostroApp.navigatorKey.currentContext;
@@ -65,14 +106,9 @@ void _onNotificationTap(NotificationResponse response) {
       return;
     }
 
-    final orderId = response.payload;
-    if (orderId != null && orderId.isNotEmpty) {
-      context.push('/trade_detail/$orderId');
-      logger.i('Navigated to trade detail for order: $orderId');
-    } else {
-      context.push('/notifications');
-      logger.i('Navigated to notifications screen');
-    }
+    final route = resolveNotificationRoute(response.payload);
+    context.push(route);
+    logger.i('Navigated to: $route');
   } catch (e) {
     logger.e('Navigation error: $e');
   }
@@ -129,13 +165,22 @@ Future<void> showLocalNotification(NostrEvent event) async {
       ),
     );
 
+    // Build payload: JSON for admin DMs, plain orderId for standard notifications
+    final notificationPayload = notificationData.action == mostro_action.Action.sendDm
+        ? jsonEncode({
+            'type': 'admin_dm',
+            'orderId': mostroMessage.id,
+            'disputeId': matchingSession?.disputeId,
+          })
+        : mostroMessage.id;
+
     // Use fixed ID (0) with tag for replacement - Android uses tag+id combo
     await flutterLocalNotificationsPlugin.show(
       0, // Fixed ID - tag 'mostro-trade' makes it unique and replaceable
       notificationText.title,
       notificationText.body,
       details,
-      payload: mostroMessage.id,
+      payload: notificationPayload,
     );
 
     logger.i('Shown: ${notificationText.title} - ${notificationText.body}');
@@ -153,6 +198,17 @@ Future<MostroMessage?> _decryptAndProcessEvent(NostrEvent event) async {
 
     final sessions = await _loadSessionsFromDatabase();
 
+    // Try matching by adminSharedKey first (dispute chat DMs)
+    final adminSession = sessions.cast<Session?>().firstWhere(
+      (s) => s?.adminSharedKey?.public == event.recipient,
+      orElse: () => null,
+    );
+
+    if (adminSession != null) {
+      return _processAdminDm(event, adminSession);
+    }
+
+    // Standard Mostro message: match by tradeKey
     final matchingSession = sessions.cast<Session?>().firstWhere(
       (s) => s?.tradeKey.public == event.recipient,
       orElse: () => null,
@@ -172,12 +228,49 @@ Future<MostroMessage?> _decryptAndProcessEvent(NostrEvent event) async {
       return null;
     }
 
+    // Detect admin/dispute DM format that arrived via tradeKey
+    final firstItem = result[0];
+    if (NostrUtils.isDmPayload(firstItem)) {
+      if (matchingSession.orderId == null) {
+        logger.w('DM received but session has no orderId (recipient: ${event.recipient}), skipping notification');
+        return null;
+      }
+      return MostroMessage(
+        action: mostro_action.Action.sendDm,
+        id: matchingSession.orderId,
+        timestamp: event.createdAt?.millisecondsSinceEpoch,
+      );
+    }
+
     final mostroMessage = MostroMessage.fromJson(result[0]);
     mostroMessage.timestamp = event.createdAt?.millisecondsSinceEpoch;
 
     return mostroMessage;
   } catch (e) {
     logger.e('Decrypt error: $e');
+    return null;
+  }
+}
+
+Future<MostroMessage?> _processAdminDm(NostrEvent event, Session session) async {
+  try {
+    final unwrapped = await event.p2pUnwrap(session.adminSharedKey!);
+    if (unwrapped.content == null || unwrapped.content!.isEmpty) {
+      return null;
+    }
+
+    if (session.orderId == null) {
+      logger.w('Admin DM received but session has no orderId (recipient: ${event.recipient}), skipping notification');
+      return null;
+    }
+
+    return MostroMessage(
+      action: mostro_action.Action.sendDm,
+      id: session.orderId,
+      timestamp: event.createdAt?.millisecondsSinceEpoch,
+    );
+  } catch (e) {
+    logger.e('Admin DM decrypt error: $e');
     return null;
   }
 }

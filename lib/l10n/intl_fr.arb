@@ -1176,6 +1176,8 @@
     "notification_cant_do_message": "L'action demandée ne peut pas être effectuée",
     "notification_new_message_title": "Nouveau message",
     "notification_new_message_message": "Vous avez reçu un nouveau message",
+    "notification_admin_message_title": "Message de l'administrateur",
+    "notification_admin_message_message": "Vous avez reçu un message de l'administrateur du litige",
     "notification_order_update_title": "Mise à jour de commande",
     "notification_order_update_message": "Votre commande a été mise à jour",
     "@_comment_notification_details": "Notification details labels",

@@ -23,10 +23,12 @@ class SubscriptionManager {
 
   final _ordersController = StreamController<NostrEvent>.broadcast();
   final _chatController = StreamController<NostrEvent>.broadcast();
+  final _disputeChatController = StreamController<NostrEvent>.broadcast();
   final _relayListController = StreamController<RelayListEvent>.broadcast();
 
   Stream<NostrEvent> get orders => _ordersController.stream;
   Stream<NostrEvent> get chat => _chatController.stream;
+  Stream<NostrEvent> get disputeChat => _disputeChatController.stream;
   Stream<RelayListEvent> get relayList => _relayListController.stream;
 
   SubscriptionManager(this.ref) {
@@ -141,6 +143,16 @@ class SubscriptionManager {
               .map((s) => s.sharedKey!.public)
               .toList(),
         );
+      case SubscriptionType.disputeChat:
+        final adminKeys = sessions
+            .where((s) => s.adminSharedKey?.public != null)
+            .map((s) => s.adminSharedKey!.public)
+            .toList();
+        if (adminKeys.isEmpty) return null;
+        return NostrFilter(
+          kinds: [1059],
+          p: adminKeys,
+        );
       case SubscriptionType.relayList:
         // Relay list subscriptions are handled separately via subscribeToMostroRelayList
         return null;
@@ -155,6 +167,9 @@ class SubscriptionManager {
           break;
         case SubscriptionType.chat:
           _chatController.add(event);
+          break;
+        case SubscriptionType.disputeChat:
+          _disputeChatController.add(event);
           break;
         case SubscriptionType.relayList:
           final relayListEvent = RelayListEvent.fromEvent(event);
@@ -207,6 +222,8 @@ class SubscriptionManager {
         return orders;
       case SubscriptionType.chat:
         return chat;
+      case SubscriptionType.disputeChat:
+        return disputeChat;
       case SubscriptionType.relayList:
         // RelayList subscriptions should use subscribeToMostroRelayList() instead
         throw UnsupportedError('Use subscribeToMostroRelayList() for relay list subscriptions');
@@ -328,6 +345,7 @@ class SubscriptionManager {
     unsubscribeAll();
     _ordersController.close();
     _chatController.close();
+    _disputeChatController.close();
     _relayListController.close();
   }
 }

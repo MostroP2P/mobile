@@ -404,6 +404,12 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         // Save dispute in state for listing
         state = state.copyWith(dispute: disputeWithOrderId);
 
+        // Persist disputeId on session for background notification routing
+        final sessionNotifierForDispute = ref.read(sessionNotifierProvider.notifier);
+        await sessionNotifierForDispute.updateSession(
+          orderId, (s) => s.disputeId = disputeWithOrderId.disputeId,
+        );
+
         // Notification handled by centralized NotificationDataExtractor path
         if (kDebugMode) {
           logger.i(
@@ -486,6 +492,12 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
 
         // Save dispute in state for listing
         state = state.copyWith(dispute: disputeWithOrderId);
+
+        // Persist disputeId on session for background notification routing
+        final sessionNotifierForPeerDispute = ref.read(sessionNotifierProvider.notifier);
+        await sessionNotifierForPeerDispute.updateSession(
+          orderId, (s) => s.disputeId = disputeWithOrderId.disputeId,
+        );
 
         // Notification handled by centralized NotificationDataExtractor path
         if (kDebugMode) {
