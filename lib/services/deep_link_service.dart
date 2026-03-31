@@ -165,14 +165,25 @@ class DeepLinkService {
       // When mostroPubkey is specified, only accept events authored by that node.
       // This prevents a crafted link from switching the app to a fraudulent node
       // by resolving a legitimate order published by a different Mostro instance.
+      // Note: isVerified() may return false for valid events due to a known
+      // dart_nostr limitation; log a warning but do not reject — consistent with
+      // how mostro_nodes_notifier.dart handles metadata events.
       final candidateEvents = mostroPubkey != null
-          ? events.where((e) => e.pubkey == mostroPubkey).toList()
+          ? events.where((e) {
+              if (!e.isVerified()) {
+                logger.w(
+                  'Event ${e.id} from pubkey ${e.pubkey} failed signature '
+                  'verification (possible dart_nostr limitation).',
+                );
+              }
+              return e.pubkey == mostroPubkey;
+            }).toList()
           : events;
 
       if (candidateEvents.isEmpty && mostroPubkey != null) {
         logger.w(
           'Order $orderId not found for Mostro pubkey $mostroPubkey '
-          '(found \${events.length} event(s) from other nodes)',
+          '(found ${events.length} event(s) from other nodes)',
         );
         return null;
       }

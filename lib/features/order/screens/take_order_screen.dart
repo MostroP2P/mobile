@@ -49,8 +49,15 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
         if (msg == null || msg.action == _lastSeenAction) return;
         _lastSeenAction = msg.action;
 
-        // Reset loading state only on CantDo message
-        if (msg.action == actions.Action.cantDo && _isSubmitting) {
+        // Reset loading state for every terminal outcome so the CTA
+        // is never left permanently disabled after a submit attempt.
+        const terminalActions = {
+          actions.Action.cantDo,
+          actions.Action.canceled,
+          actions.Action.paymentFailed,
+          actions.Action.holdInvoicePaymentCanceled,
+        };
+        if (terminalActions.contains(msg.action) && _isSubmitting) {
           setState(() {
             _isSubmitting = false;
           });
@@ -404,19 +411,26 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
                       );
 
                       if (enteredAmount != null) {
-                        if (widget.orderType == OrderType.buy) {
-                          await orderDetailsNotifier.takeBuyOrder(
-                            order.orderId!,
-                            enteredAmount,
-                          );
-                        } else {
-                          final lndAddress = widget._lndAddressController.text
-                              .trim();
-                          await orderDetailsNotifier.takeSellOrder(
-                            order.orderId!,
-                            enteredAmount,
-                            lndAddress.isEmpty ? null : lndAddress,
-                          );
+                        try {
+                          if (widget.orderType == OrderType.buy) {
+                            await orderDetailsNotifier.takeBuyOrder(
+                              order.orderId!,
+                              enteredAmount,
+                            );
+                          } else {
+                            final lndAddress = widget._lndAddressController.text
+                                .trim();
+                            await orderDetailsNotifier.takeSellOrder(
+                              order.orderId!,
+                              enteredAmount,
+                              lndAddress.isEmpty ? null : lndAddress,
+                            );
+                          }
+                        } catch (e) {
+                          if (!mounted) return;
+                          setState(() {
+                            _isSubmitting = false;
+                          });
                         }
                       } else {
                         // Dialog was dismissed without entering amount, reset loading state
@@ -430,19 +444,26 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
                       final fiatAmount = int.tryParse(
                         widget._fiatAmountController.text.trim(),
                       );
-                      if (widget.orderType == OrderType.buy) {
-                        await orderDetailsNotifier.takeBuyOrder(
-                          order.orderId!,
-                          fiatAmount,
-                        );
-                      } else {
-                        final lndAddress = widget._lndAddressController.text
-                            .trim();
-                        await orderDetailsNotifier.takeSellOrder(
-                          order.orderId!,
-                          fiatAmount,
-                          lndAddress.isEmpty ? null : lndAddress,
-                        );
+                      try {
+                        if (widget.orderType == OrderType.buy) {
+                          await orderDetailsNotifier.takeBuyOrder(
+                            order.orderId!,
+                            fiatAmount,
+                          );
+                        } else {
+                          final lndAddress = widget._lndAddressController.text
+                              .trim();
+                          await orderDetailsNotifier.takeSellOrder(
+                            order.orderId!,
+                            fiatAmount,
+                            lndAddress.isEmpty ? null : lndAddress,
+                          );
+                        }
+                      } catch (e) {
+                        if (!mounted) return;
+                        setState(() {
+                          _isSubmitting = false;
+                        });
                       }
                     }
                   },
