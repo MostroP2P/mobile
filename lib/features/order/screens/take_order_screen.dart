@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/data/models/enums/action.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
@@ -427,7 +429,12 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
                               lndAddress.isEmpty ? null : lndAddress,
                             );
                           }
-                        } catch (e) {
+                        } catch (e, stackTrace) {
+                          logger.e(
+                            'Failed to take order',
+                            error: e,
+                            stackTrace: stackTrace,
+                          );
                           if (!mounted) return;
                           setState(() {
                             _isSubmitting = false;
@@ -460,7 +467,12 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
                             lndAddress.isEmpty ? null : lndAddress,
                           );
                         }
-                      } catch (e) {
+                      } catch (e, stackTrace) {
+                        logger.e(
+                          'Failed to take order',
+                          error: e,
+                          stackTrace: stackTrace,
+                        );
                         if (!mounted) return;
                         setState(() {
                           _isSubmitting = false;
