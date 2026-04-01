@@ -24,12 +24,10 @@ jobs:
         id: version
         run: |
           FULL_TAG=${GITHUB_REF#refs/tags/}
-          # Strip 'v' prefix and any build metadata (+NNN)
           TAG=$(echo "${FULL_TAG#v}" | cut -d'+' -f1)
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "full_tag=$FULL_TAG" >> $GITHUB_OUTPUT
 
-          # Get the previous tag for changelog range
           PREV_TAG=$(git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sed -n '2p')
           if [ -z "$PREV_TAG" ]; then
             echo "prev_tag=" >> $GITHUB_OUTPUT
@@ -54,54 +52,28 @@ jobs:
             COMMITS=$(git log --pretty=format:"- %s (%h)" --no-merges "${PREV_TAG}..${TAG}")
           fi
 
-          # Categorize commits
           FEATURES=$(echo "$COMMITS" | grep -iE "^- (feat|add|new)" || true)
           FIXES=$(echo "$COMMITS" | grep -iE "^- (fix|bug|patch|hotfix)" || true)
           DOCS=$(echo "$COMMITS" | grep -iE "^- (doc|docs|readme)" || true)
           OTHER=$(echo "$COMMITS" | grep -ivE "^- (feat|add|new|fix|bug|patch|hotfix|doc|docs|readme|chore: update version|chore: update changelog)" || true)
 
-          # --- RELEASE_NOTES.md: categorized notes for internal use ---
           {
             echo "## What's New in $TAG"
             echo ""
-
-            if [ -n "$FEATURES" ]; then
-              echo "### ✨ New Features"
-              echo "$FEATURES"
-              echo ""
-            fi
-
-            if [ -n "$FIXES" ]; then
-              echo "### 🐛 Bug Fixes"
-              echo "$FIXES"
-              echo ""
-            fi
-
-            if [ -n "$DOCS" ]; then
-              echo "### 📚 Documentation"
-              echo "$DOCS"
-              echo ""
-            fi
-
-            if [ -n "$OTHER" ]; then
-              echo "### 🔧 Other Changes"
-              echo "$OTHER"
-              echo ""
-            fi
-
+            if [ -n "$FEATURES" ]; then echo "### ✨ New Features"; echo "$FEATURES"; echo ""; fi
+            if [ -n "$FIXES" ]; then echo "### 🐛 Bug Fixes"; echo "$FIXES"; echo ""; fi
+            if [ -n "$DOCS" ]; then echo "### 📚 Documentation"; echo "$DOCS"; echo ""; fi
+            if [ -n "$OTHER" ]; then echo "### 🔧 Other Changes"; echo "$OTHER"; echo ""; fi
             if [ "$IS_FIRST" != "true" ]; then
               echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${TAG}"
             fi
           } > RELEASE_NOTES.md
 
-          echo "=== RELEASE_NOTES.md ==="
           cat RELEASE_NOTES.md
 
       - name: Generate release description
         run: |
           TAG=${{ steps.version.outputs.full_tag }}
-
-          # Read categorized sections from RELEASE_NOTES.md
           FEATURES=$(sed -n '/### ✨/,/^###\|^$/p' RELEASE_NOTES.md | grep "^-" || true)
           FIXES=$(sed -n '/### 🐛/,/^###\|^$/p' RELEASE_NOTES.md | grep "^-" || true)
 
@@ -110,25 +82,17 @@ jobs:
             echo ""
             echo "A new version of the Mostro P2P Bitcoin trading app is here!"
             echo ""
-
             if [ -n "$FEATURES" ]; then
               FEATURE_COUNT=$(echo "$FEATURES" | wc -l)
               echo "This release brings **${FEATURE_COUNT} new feature(s)**:"
-              echo ""
-              echo "$FEATURES"
-              echo ""
+              echo ""; echo "$FEATURES"; echo ""
             fi
-
             if [ -n "$FIXES" ]; then
               FIX_COUNT=$(echo "$FIXES" | wc -l)
               echo "We also squashed **${FIX_COUNT} bug(s)** 🐛:"
-              echo ""
-              echo "$FIXES"
-              echo ""
+              echo ""; echo "$FIXES"; echo ""
             fi
-
-            echo "---"
-            echo ""
+            echo "---"; echo ""
             echo "### 📥 Install"
             echo "Download the APK for your device architecture below:"
             echo "- \`mostro-${TAG}-arm64-v8a.apk\` — most modern Android phones (64-bit)"
@@ -143,7 +107,6 @@ jobs:
             echo "See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for the complete history."
           } > RELEASE_BODY.md
 
-          echo "=== RELEASE_BODY.md ==="
           cat RELEASE_BODY.md
 
       - name: Verify signing secrets
@@ -153,10 +116,7 @@ jobs:
           [ -z "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" ] && missing="$missing ANDROID_KEYSTORE_PASSWORD"
           [ -z "${{ secrets.ANDROID_KEY_PASSWORD }}" ] && missing="$missing ANDROID_KEY_PASSWORD"
           [ -z "${{ secrets.ANDROID_KEY_ALIAS }}" ] && missing="$missing ANDROID_KEY_ALIAS"
-          if [ -n "$missing" ]; then
-            echo "::error::Missing signing secrets:$missing"
-            exit 1
-          fi
+          if [ -n "$missing" ]; then echo "::error::Missing signing secrets:$missing"; exit 1; fi
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -204,7 +164,6 @@ jobs:
 
       - name: Update version in pubspec for build
         run: |
-          # Use clean semver from tag — never read from pubspec (avoids double +BUILD)
           VERSION=${{ steps.version.outputs.tag }}
           BUILD=$(git rev-list --count HEAD)
           sed -i "s/^version: .*/version: ${VERSION}+${BUILD}/" pubspec.yaml
@@ -242,14 +201,11 @@ jobs:
           VERSION=${{ steps.version.outputs.full_tag }}
           SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
           APKSIGNER=$(find "$SDK_ROOT"/build-tools -name apksigner -type f 2>/dev/null | sort -V | tail -1 || true)
-
           for ARCH in armeabi-v7a arm64-v8a; do
             APK="build/app/outputs/flutter-apk/mostro-${VERSION}-${ARCH}.apk"
             echo "Verifying ${ARCH}..."
             jarsigner -verify "$APK" > /dev/null
-            if [ -n "$APKSIGNER" ]; then
-              "$APKSIGNER" verify --print-certs "$APK"
-            fi
+            if [ -n "$APKSIGNER" ]; then "$APKSIGNER" verify --print-certs "$APK"; fi
             echo "✅ ${ARCH} verified"
           done
 
@@ -284,14 +240,24 @@ jobs:
           BRANCH="chore/changelog-${TAG}"
           DATESTAMP=$(date -u +"%Y-%m-%d")
 
-          # Create a new branch from the tag
+          # Idempotency: skip if branch already exists on remote
+          git fetch origin
+          if git ls-remote --exit-code origin "refs/heads/${BRANCH}" > /dev/null 2>&1; then
+            echo "Branch ${BRANCH} already exists — checking for open PR..."
+            EXISTING_PR=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number' 2>/dev/null || true)
+            if [ -n "$EXISTING_PR" ]; then
+              echo "PR #${EXISTING_PR} already open for ${BRANCH} — skipping."
+            else
+              echo "Branch exists but no open PR — skipping to avoid duplicate push."
+            fi
+            exit 0
+          fi
+
           git checkout -b "$BRANCH"
 
-          # Apply version bump
           BUILD=$(git rev-list --count HEAD)
           sed -i "s/^version: .*/version: ${VERSION}+${BUILD}/" pubspec.yaml
 
-          # Generate updated CHANGELOG.md
           FEATURES=$(sed -n '/### ✨/,/^###\|^$/p' RELEASE_NOTES.md | grep "^-" || true)
           FIXES=$(sed -n '/### 🐛/,/^###\|^$/p' RELEASE_NOTES.md | grep "^-" || true)
           DOCS=$(sed -n '/### 📚/,/^###\|^$/p' RELEASE_NOTES.md | grep "^-" || true)
@@ -307,52 +273,31 @@ jobs:
             echo ""
             echo "## [${TAG}] - ${DATESTAMP}"
             echo ""
-
-            if [ -n "$FEATURES" ]; then
-              echo "### Added"
-              echo "$FEATURES"
-              echo ""
-            fi
-
-            if [ -n "$FIXES" ]; then
-              echo "### Fixed"
-              echo "$FIXES"
-              echo ""
-            fi
-
-            if [ -n "$DOCS" ]; then
-              echo "### Documentation"
-              echo "$DOCS"
-              echo ""
-            fi
-
-            if [ -n "$OTHER" ]; then
-              echo "### Changed"
-              echo "$OTHER"
-              echo ""
-            fi
-
-            # Append previous changelog content (skip header — first 6 lines)
-            if [ -f CHANGELOG.md ]; then
-              tail -n +7 CHANGELOG.md
-            fi
+            if [ -n "$FEATURES" ]; then echo "### Added"; echo "$FEATURES"; echo ""; fi
+            if [ -n "$FIXES" ]; then echo "### Fixed"; echo "$FIXES"; echo ""; fi
+            if [ -n "$DOCS" ]; then echo "### Documentation"; echo "$DOCS"; echo ""; fi
+            if [ -n "$OTHER" ]; then echo "### Changed"; echo "$OTHER"; echo ""; fi
+            if [ -f CHANGELOG.md ]; then tail -n +7 CHANGELOG.md; fi
           } > CHANGELOG_NEW.md
 
           mv CHANGELOG_NEW.md CHANGELOG.md
 
           git add pubspec.yaml CHANGELOG.md
-          git diff --cached --quiet || git commit -m "chore: update changelog and version for ${TAG}"
+          if git diff --cached --quiet; then
+            echo "No changes to commit — skipping PR creation."
+            exit 0
+          fi
+
+          git commit -m "chore: update changelog and version for ${TAG}"
           git push origin "$BRANCH"
 
-          # Open PR via GitHub CLI
+          # Write PR body to file to avoid YAML indentation issues with --body
+          printf 'Automated changelog and version bump for `%s`.\n\n- Updates `CHANGELOG.md` with commits since the previous tag\n- Bumps `version:` in `pubspec.yaml` to `%s+%s`\n\n**Merge this after the release is published.**\n' \
+            "$TAG" "$VERSION" "$BUILD" > PR_BODY.md
+
           gh pr create \
             --title "chore: update changelog and version for ${TAG}" \
-            --body "Automated changelog and version bump generated by the release workflow for \`${TAG}\`.
-
-  - Updates \`CHANGELOG.md\` with commits since the previous tag
-  - Bumps \`version:\` in \`pubspec.yaml\` to \`${VERSION}+${BUILD}\`
-
-  **Merge this after the release is published.**" \
+            --body-file PR_BODY.md \
             --base main \
             --head "$BRANCH"
         env:
