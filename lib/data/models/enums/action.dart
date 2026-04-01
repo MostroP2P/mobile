@@ -51,7 +51,7 @@ enum Action {
   ///
   /// Throws an ArgumentError if the string doesn't match any Action value.
   static final _valueMap = {
-    for (var action in Action.values) action.value: action
+    for (var action in Action.values) action.value: action,
   };
 
   static Action fromString(String value) {

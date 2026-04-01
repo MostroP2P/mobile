@@ -15,14 +15,17 @@ class OrderInfo {
   final String orderId;
   final OrderType orderType;
 
+  /// Mostro instance pubkey from the deep link, if present.
+  final String? mostroPubkey;
+
   const OrderInfo({
     required this.orderId,
     required this.orderType,
+    this.mostroPubkey,
   });
 }
 
 class DeepLinkService {
-  
   final AppLinks _appLinks = AppLinks();
 
   // Stream controller for deep link events
@@ -51,7 +54,7 @@ class DeepLinkService {
 
       // NOTE: We don't process the initial link here to avoid GoRouter conflicts
       // The initial link will be handled by the app initialization in app.dart
-      
+
       _isInitialized = true;
       logger.i('DeepLinkService initialized successfully');
     } catch (e) {
@@ -87,6 +90,7 @@ class DeepLinkService {
 
       final orderId = orderInfo['orderId'] as String;
       final relays = orderInfo['relays'] as List<String>;
+      final mostroPubkey = orderInfo['mostroPubkey'] as String?;
 
       // Validate order ID format (UUID-like string)
       if (orderId.isEmpty || orderId.length < 10) {
@@ -105,6 +109,7 @@ class DeepLinkService {
         orderId,
         relays,
         nostrService,
+        mostroPubkey: mostroPubkey,
       );
 
       if (fetchedOrderInfo == null) {
@@ -126,14 +131,15 @@ class DeepLinkService {
   Future<OrderInfo?> _fetchOrderInfoById(
     String orderId,
     List<String> relays,
-    NostrService nostrService,
-  ) async {
+    NostrService nostrService, {
+    String? mostroPubkey,
+  }) async {
     try {
       // Create a filter to search for NIP-69 order events with the specific order ID
       final filter = NostrFilter(
         kinds: [38383], // NIP-69 order events
         additionalFilters: {
-          '#d': [orderId]
+          '#d': [orderId],
         }, // Order ID is stored in 'd' tag
       );
 
@@ -141,21 +147,58 @@ class DeepLinkService {
 
       // First try to fetch from specified relays
       if (relays.isNotEmpty) {
-        // Use the specific relays from the deep link URL
-        final orderEvents = await nostrService.fetchEvents(filter, specificRelays: relays);
+        final orderEvents = await nostrService.fetchEvents(
+          filter,
+          specificRelays: relays,
+        );
         events.addAll(orderEvents);
       }
 
-      // If no events found and we have default relays, try those
-      if (events.isEmpty) {
-        logger.i('Order not found in specified relays, trying default relays');
+      // Helper to build the candidate list from a set of raw events.
+      // When mostroPubkey is present only events authored by that node are
+      // accepted. isVerified() failures are logged but not treated as hard
+      // rejections due to a known dart_nostr limitation (consistent with
+      // how mostro_nodes_notifier.dart handles kind-0 events).
+      List<NostrEvent> buildCandidates(List<NostrEvent> raw) {
+        if (mostroPubkey == null) return raw;
+        return raw.where((e) {
+          if (!e.isVerified()) {
+            logger.w(
+              'Event \${e.id} from pubkey \${e.pubkey} failed signature '
+              'verification — rejecting to prevent spoofing.',
+            );
+            return false;
+          }
+          return e.pubkey == mostroPubkey;
+        }).toList();
+      }
+
+      var candidateEvents = buildCandidates(events);
+
+      // If no matching candidate was found in the link relays, retry with the
+      // app's default relays. This covers the case where events from other
+      // Mostro nodes were returned by the link relays (events non-empty but
+      // candidateEvents empty), which previously skipped the fallback entirely.
+      if (candidateEvents.isEmpty) {
+        logger.i(
+          'No matching event in specified relays, trying default relays',
+        );
         final defaultEvents = await nostrService.fetchEvents(filter);
         events.addAll(defaultEvents);
+        candidateEvents = buildCandidates(events);
+      }
+
+      if (candidateEvents.isEmpty && mostroPubkey != null) {
+        logger.w(
+          'Order $orderId not found for Mostro pubkey $mostroPubkey '
+          '(found ${events.length} event(s) from other nodes)',
+        );
+        return null;
       }
 
       // Process the first matching event
-      if (events.isNotEmpty) {
-        final event = events.first;
+      if (candidateEvents.isNotEmpty) {
+        final event = candidateEvents.first;
 
         // Extract order type from 'k' tag
         final kTag = event.tags?.firstWhere(
@@ -165,12 +208,20 @@ class DeepLinkService {
 
         if (kTag != null && kTag.length > 1) {
           final orderTypeValue = kTag[1];
-          final orderType =
-              orderTypeValue == 'sell' ? OrderType.sell : OrderType.buy;
+          final OrderType? orderType;
+          if (orderTypeValue == 'sell') {
+            orderType = OrderType.sell;
+          } else if (orderTypeValue == 'buy') {
+            orderType = OrderType.buy;
+          } else {
+            logger.w('Unknown order type in k tag: $orderTypeValue');
+            return null;
+          }
 
           return OrderInfo(
             orderId: orderId,
             orderType: orderType,
+            mostroPubkey: mostroPubkey,
           );
         }
       }
@@ -197,8 +248,9 @@ class DeepLinkService {
   void navigateToOrder(GoRouter router, OrderInfo orderInfo) {
     final route = getNavigationRoute(orderInfo);
     logger.i(
-        'Navigating to: $route (Order: ${orderInfo.orderId}, Type: ${orderInfo.orderType.value})');
-    
+      'Navigating to: $route (Order: ${orderInfo.orderId}, Type: ${orderInfo.orderType.value})',
+    );
+
     // Use post-frame callback to ensure navigation happens after the current frame
     // This prevents GoRouter assertion failures during app lifecycle transitions
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -235,24 +287,14 @@ class DeepLinkResult {
   final OrderInfo? orderInfo;
   final String? error;
 
-  const DeepLinkResult._({
-    required this.isSuccess,
-    this.orderInfo,
-    this.error,
-  });
+  const DeepLinkResult._({required this.isSuccess, this.orderInfo, this.error});
 
   factory DeepLinkResult.success(OrderInfo orderInfo) {
-    return DeepLinkResult._(
-      isSuccess: true,
-      orderInfo: orderInfo,
-    );
+    return DeepLinkResult._(isSuccess: true, orderInfo: orderInfo);
   }
 
   factory DeepLinkResult.error(String error) {
-    return DeepLinkResult._(
-      isSuccess: false,
-      error: error,
-    );
+    return DeepLinkResult._(isSuccess: false, error: error);
   }
 }
 

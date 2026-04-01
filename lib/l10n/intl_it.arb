@@ -1540,5 +1540,10 @@
     },
     "cameraPermissionDenied": "È necessaria l'autorizzazione della fotocamera per scansionare i codici QR",
     "toggleTorch": "Attiva/disattiva torcia",
-    "switchCamera": "Cambia fotocamera"
+    "switchCamera": "Cambia fotocamera",
+    "deepLinkDifferentMostroTitle": "Istanza Mostro diversa",
+    "deepLinkDifferentMostroBody": "Questo ordine è stato creato su un nodo Mostro diverso. Vuoi passare a questo Mostro e visualizzare l'ordine?",
+    "deepLinkDifferentMostroFrom": "Ordine da:",
+    "deepLinkDifferentMostroCurrent": "Attualmente connesso a:",
+    "deepLinkSwitchAndView": "Cambia e visualizza"
 }

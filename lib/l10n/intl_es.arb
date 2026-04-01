@@ -1481,5 +1481,10 @@
     },
     "cameraPermissionDenied": "Se requiere permiso de cámara para escanear códigos QR",
     "toggleTorch": "Activar/desactivar linterna",
-    "switchCamera": "Cambiar cámara"
+    "switchCamera": "Cambiar cámara",
+    "deepLinkDifferentMostroTitle": "Instancia de Mostro diferente",
+    "deepLinkDifferentMostroBody": "Esta orden fue creada en un nodo Mostro diferente. ¿Deseas cambiar a este Mostro y ver la orden?",
+    "deepLinkDifferentMostroFrom": "Orden de:",
+    "deepLinkDifferentMostroCurrent": "Actualmente conectado a:",
+    "deepLinkSwitchAndView": "Cambiar y ver"
 }

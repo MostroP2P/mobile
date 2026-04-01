@@ -1506,5 +1506,10 @@
     },
     "cameraPermissionDenied": "Camera permission is required to scan QR codes",
     "toggleTorch": "Toggle flashlight",
-    "switchCamera": "Switch camera"
+    "switchCamera": "Switch camera",
+    "deepLinkDifferentMostroTitle": "Different Mostro Instance",
+    "deepLinkDifferentMostroBody": "This order was created on a different Mostro node. Do you want to switch to this Mostro and view the order?",
+    "deepLinkDifferentMostroFrom": "Order from:",
+    "deepLinkDifferentMostroCurrent": "Currently connected to:",
+    "deepLinkSwitchAndView": "Switch & View"
 }
