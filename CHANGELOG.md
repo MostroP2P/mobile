@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.2.3] - 2026-04-01
+
+### Added
+- feat: handle deep links from different Mostro instances (#552) (2518c377)
+- feat: detect admin/dispute DMs in background notification pipeline (#498) (62ea948a)
+- feat: fetch exchange rates from Nostr with HTTP/cache fallback (#551) (1bde6341)
+
+### Fixed
+- fix(ci): remove direct push to main from release workflow (#556) (b0445a42)
+- fix: commit premium field value before order submission (#555) (a4a9b642)
+- fix: remove fictional SessionFileCache docs and rewrite Future Improvements (#545) (3e276a2a)
+- fix: rename notfiers → notifiers directory (#547) (22a0fbdf)
+
+### Documentation
+- docs: add branch protection rules (#549) (30f69852)
+
+### Changed
+- chore: remove unused WelcomeScreen, RegisterScreen, LoginScreen (#553) (09b72174)
+
+
 ## [v1.2.2] - 2026-03-23
 
 ### Added
