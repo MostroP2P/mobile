@@ -44,7 +44,6 @@ dependencies:
   equatable: ^2.0.5
   logger: ^2.5.0
   local_auth: ^2.3.0
-  google_fonts: ^8.0.0
   timeago: ^3.7.0
   flutter_riverpod: ^2.6.1
   collection: ^1.18.0
@@ -108,7 +107,7 @@ dependencies:
 
 dependency_overrides:
   bip340: ^0.2.0
-  analyzer: '>=7.0.0 <9.0.0'
+  analyzer: ^8.0.0
 
 dev_dependencies:
   flutter_test:

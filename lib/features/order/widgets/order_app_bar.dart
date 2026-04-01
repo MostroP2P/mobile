@@ -22,7 +22,7 @@ class OrderAppBar extends StatelessWidget implements PreferredSizeWidget {
       ),
       title: Text(
         title,
-        style: TextStyle(
+        style: const TextStyle(
           color: AppTheme.cream1,
           fontFamily: 'Roboto Condensed',
         ),
