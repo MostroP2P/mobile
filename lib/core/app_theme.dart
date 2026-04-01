@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   // Original colors
@@ -98,12 +97,14 @@ class AppTheme {
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: dark2,
-        titleTextStyle: GoogleFonts.robotoCondensed(
+        titleTextStyle: const TextStyle(
+          fontFamily: 'Roboto Condensed',
           fontWeight: FontWeight.bold,
           fontSize: 20.0,
           color: cream1,
         ),
-        contentTextStyle: GoogleFonts.robotoCondensed(
+        contentTextStyle: const TextStyle(
+          fontFamily: 'Roboto Condensed',
           fontWeight: FontWeight.w400,
           fontSize: 16.0,
           color: grey,
@@ -117,7 +118,8 @@ class AppTheme {
         style: ElevatedButton.styleFrom(
           foregroundColor: Colors.black,
           backgroundColor: mostroGreen,
-          textStyle: GoogleFonts.robotoCondensed(
+          textStyle: const TextStyle(
+            fontFamily: 'Roboto Condensed',
             fontWeight: FontWeight.w500,
             fontSize: 14.0,
           ),
@@ -133,7 +135,8 @@ class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: mostroGreen,
-          textStyle: GoogleFonts.robotoCondensed(
+          textStyle: const TextStyle(
+            fontFamily: 'Roboto Condensed',
             fontWeight: FontWeight.w500,
             fontSize: 14.0,
           ),
@@ -143,7 +146,8 @@ class AppTheme {
         style: OutlinedButton.styleFrom(
           foregroundColor: mostroGreen,
           side: const BorderSide(color: mostroGreen),
-          textStyle: GoogleFonts.robotoCondensed(
+          textStyle: const TextStyle(
+            fontFamily: 'Roboto Condensed',
             fontWeight: FontWeight.w500,
             fontSize: 14.0,
           ),
@@ -174,58 +178,28 @@ class AppTheme {
         color: cream1,
         size: 24.0,
       ),
-      listTileTheme: ListTileThemeData(
+      listTileTheme: const ListTileThemeData(
         titleTextStyle: TextStyle(
           color: grey,
-          fontFamily: GoogleFonts.robotoCondensed().fontFamily,
+          fontFamily: 'Roboto Condensed',
         ),
       ),
     );
   }
 
   static TextTheme _buildTextTheme() {
-    return GoogleFonts.robotoCondensedTextTheme(
-      const TextTheme(
-        displayLarge: TextStyle(
-          fontSize: 24.0,
-        ),
-        displayMedium: TextStyle(
-          fontWeight: FontWeight.w700,
-          fontSize: 20.0,
-        ),
-        displaySmall: TextStyle(
-          fontWeight: FontWeight.w700,
-          fontSize: 16.0,
-        ),
-        headlineMedium: TextStyle(
-          fontWeight: FontWeight.w700,
-          fontSize: 16.0,
-        ),
-        headlineSmall: TextStyle(
-          fontWeight: FontWeight.w500,
-          fontSize: 14.0,
-        ),
-        titleMedium: TextStyle(
-          fontWeight: FontWeight.w500,
-          fontSize: 16.0,
-        ),
-        titleLarge: TextStyle(
-          fontWeight: FontWeight.w500,
-          fontSize: 18.0,
-        ),
-        bodyLarge: TextStyle(
-          fontWeight: FontWeight.w400,
-          fontSize: 16.0,
-        ),
-        bodyMedium: TextStyle(
-          fontWeight: FontWeight.w400,
-          fontSize: 14.0,
-        ),
-        labelLarge: TextStyle(
-          fontWeight: FontWeight.w500,
-          fontSize: 14.0,
-        ),
-      ),
+    const fontFamily = 'Roboto Condensed';
+    return const TextTheme(
+      displayLarge: TextStyle(fontFamily: fontFamily, fontSize: 24.0),
+      displayMedium: TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w700, fontSize: 20.0),
+      displaySmall: TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w700, fontSize: 16.0),
+      headlineMedium: TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w700, fontSize: 16.0),
+      headlineSmall: TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w500, fontSize: 14.0),
+      titleMedium: TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w500, fontSize: 16.0),
+      titleLarge: TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w500, fontSize: 18.0),
+      bodyLarge: TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w400, fontSize: 16.0),
+      bodyMedium: TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w400, fontSize: 14.0),
+      labelLarge: TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w500, fontSize: 14.0),
     ).apply(
       bodyColor: cream1,
       displayColor: cream1,
