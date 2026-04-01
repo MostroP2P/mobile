@@ -164,9 +164,10 @@ class DeepLinkService {
         return raw.where((e) {
           if (!e.isVerified()) {
             logger.w(
-              'Event ${e.id} from pubkey ${e.pubkey} failed signature '
-              'verification (possible dart_nostr limitation).',
+              'Event \${e.id} from pubkey \${e.pubkey} failed signature '
+              'verification — rejecting to prevent spoofing.',
             );
+            return false;
           }
           return e.pubkey == mostroPubkey;
         }).toList();
