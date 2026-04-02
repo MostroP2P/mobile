@@ -103,22 +103,28 @@ jobs:
       - name: Generate required files
         run: dart run build_runner build -d
 
-      # 9. Extract version from pubspec.yaml
+      # 9. Extract version: prefer client_payload from repository_dispatch (set by release.yml),
+      #    fall back to pubspec.yaml for manual workflow_dispatch runs.
       - name: Extract version
         id: extract_version
         shell: bash
         run: |
-          full_version=$(grep '^version: ' pubspec.yaml | cut -d ' ' -f 2 | tr -d '\r')
-          if [[ -z "$full_version" ]]; then
-            echo "ERROR: Could not extract version from pubspec.yaml"
-            exit 1
+          PAYLOAD_VERSION="${{ github.event.client_payload.version }}"
+          if [[ -n "$PAYLOAD_VERSION" ]]; then
+            version="$PAYLOAD_VERSION"
+            echo "Using version from client_payload: $version"
+          else
+            full_version=$(grep '^version: ' pubspec.yaml | cut -d ' ' -f 2 | tr -d '\r')
+            if [[ -z "$full_version" ]]; then
+              echo "ERROR: Could not extract version from pubspec.yaml"
+              exit 1
+            fi
+            # Strip build number for tag/release naming (1.2.1+936 → 1.2.1)
+            version=${full_version%%+*}
+            echo "Using version from pubspec.yaml: $version"
           fi
-          # Strip build number for tag/release naming (1.2.1+936 → 1.2.1)
-          version=${full_version%%+*}
-          echo "VERSION=$version" >> $GITHUB_ENV
-          echo "version=$version" >> $GITHUB_OUTPUT
-          echo "Full version: $full_version"
-          echo "Release version: $version"
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
       # 10. Analyze code
       - name: Analyze code
@@ -183,9 +189,14 @@ jobs:
       - name: Extract version
         id: version
         run: |
-          full_version=$(grep '^version: ' pubspec.yaml | cut -d ' ' -f 2 | tr -d '\r')
-          version=${full_version%%+*}
-          echo "version=$version" >> $GITHUB_OUTPUT
+          PAYLOAD_VERSION="${{ github.event.client_payload.version }}"
+          if [[ -n "$PAYLOAD_VERSION" ]]; then
+            version="$PAYLOAD_VERSION"
+          else
+            full_version=$(grep '^version: ' pubspec.yaml | cut -d ' ' -f 2 | tr -d '\r')
+            version=${full_version%%+*}
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Download all desktop artifacts
         uses: actions/download-artifact@v4
