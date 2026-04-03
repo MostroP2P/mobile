@@ -98,6 +98,7 @@ class NotificationModel {
         return NotificationType.tradeUpdate;
       
       case Action.sendDm:
+      case Action.chatMessage:
         return NotificationType.message;
       case Action.cantDo:
       case Action.tradePubkey:
