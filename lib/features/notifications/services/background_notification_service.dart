@@ -298,6 +298,11 @@ Future<MostroMessage?> _handleP2PChatEvent(NostrEvent event, Session session) as
       return null;
     }
 
+    if (session.orderId == null) {
+      logger.w('P2P chat received but session has no orderId (recipient: ${event.recipient}), skipping notification');
+      return null;
+    }
+
     return MostroMessage(
       action: mostro_action.Action.sendDm,
       id: session.orderId,
