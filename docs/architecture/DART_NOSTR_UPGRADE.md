@@ -16,7 +16,8 @@
 **Date:** April 2026  
 **Branch:** `feat/upgrade-dart-nostr-parallel-relay-connections`  
 **Related:** [RELAY_CONNECTION_BLOCKING_BUG.md](RELAY_CONNECTION_BLOCKING_BUG.md) — full root cause analysis  
-**Upstream PR:** https://github.com/anasfik/nostr/pull/19
+**Upstream PR:** https://github.com/anasfik/nostr/pull/19  
+**Note:** File and line number references throughout this document are accurate as of the branch and date listed above. Line numbers may shift as the code evolves.
 
 ---
 
@@ -164,7 +165,9 @@ This is standard Dart/Flutter practice. The pinned commit ensures reproducible b
 
 Upgrading from dart_nostr 9.1.1 to main changes two transitive dependencies:
 
-### 5.1 bip340: ^0.1.0 → ^0.3.0
+### 5.1 bip340: ^0.2.0 → ^0.3.0 (via dependency_override removal)
+
+> The app overrides bip340 to `^0.2.0` in pubspec.yaml (to fix the `bigToBytes` padding bug in 0.1.0). dart_nostr 9.1.1 declares `bip340: ^0.1.0` upstream, but the effective version the app runs is 0.2.0. With dart_nostr main depending on `bip340: ^0.3.0`, the real upgrade from the app's perspective is 0.2.0 → 0.3.0.
 
 #### What Changed in bip340
 
@@ -396,6 +399,8 @@ timeout: Config.nostrOperationTimeout,              // 20s for relay OK
 // fetchEvents():
 timeout: Config.nostrOperationTimeout,              // 20s for EOSE
 ```
+
+**Note on timeout reduction:** This splits the original single `nostrConnectionTimeout` (30s) into two values: 5s for connection + 20s for operations. This intentionally reduces the operation timeout (publish/fetch) by 10 seconds compared to before. This is acceptable because: (1) the original 30s was designed to absorb slow relay connections, which are now capped at 5s per relay; (2) 20s is more than sufficient for EOSE and OK responses from healthy relays; (3) faster operation timeouts provide better UX when relays are genuinely unresponsive.
 
 ### Verification Steps
 
