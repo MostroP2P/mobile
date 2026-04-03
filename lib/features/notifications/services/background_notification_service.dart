@@ -258,6 +258,38 @@ Future<MostroMessage?> _processAdminDm(NostrEvent event, Session session) async 
   }
 }
 
+/// Handle events matched by tradeKey (Mostro protocol + admin/dispute DMs)
+Future<MostroMessage?> _handleTradeKeyEvent(NostrEvent event, Session session) async {
+  final decryptedEvent = await event.unWrap(session.tradeKey.private);
+  if (decryptedEvent.content == null) {
+    return null;
+  }
+
+  final result = jsonDecode(decryptedEvent.content!);
+  if (result is! List || result.isEmpty) {
+    return null;
+  }
+
+  // Detect admin/dispute DM format that arrived via tradeKey
+  final firstItem = result[0];
+  if (NostrUtils.isDmPayload(firstItem)) {
+    if (session.orderId == null) {
+      logger.w('DM received but session has no orderId (recipient: ${event.recipient}), skipping notification');
+      return null;
+    }
+    return MostroMessage(
+      action: mostro_action.Action.sendDm,
+      id: session.orderId,
+      timestamp: event.createdAt?.millisecondsSinceEpoch,
+    );
+  }
+
+  final mostroMessage = MostroMessage.fromJson(result[0]);
+  mostroMessage.timestamp = event.createdAt?.millisecondsSinceEpoch;
+
+  return mostroMessage;
+}
+
 /// Handle P2P chat events matched by sharedKey
 Future<MostroMessage?> _handleP2PChatEvent(NostrEvent event, Session session) async {
   try {
