@@ -12,7 +12,7 @@
 8. [Implementation](#8-implementation)
 9. [Reverting to pub.dev](#9-reverting-to-pubdev)
 
-**Status:** In progress  
+**Status:** Complete  
 **Date:** April 2026  
 **Branch:** `feat/upgrade-dart-nostr-parallel-relay-connections`  
 **Related:** [RELAY_CONNECTION_BLOCKING_BUG.md](RELAY_CONNECTION_BLOCKING_BUG.md) — full root cause analysis  
@@ -212,7 +212,7 @@ Additive — new optimization function. Does not affect existing code.
 
 **4. Removal of bip340 dependency_override**
 
-The app currently has:
+The app previously had (removed in this PR):
 ```yaml
 dependency_overrides:
   bip340: ^0.2.0
