@@ -5,14 +5,14 @@ import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/features/notifications/services/background_notification_service.dart';
 import 'package:mostro_mobile/features/notifications/utils/notification_data_extractor.dart';
+import 'package:mostro_mobile/features/notifications/utils/notification_message_mapper.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
-/// Tests for the admin/dispute DM background notification pipeline (Phase 1).
-///
-/// Validates three layers:
+/// Tests for the background notification pipeline covering:
 /// 1. [NostrUtils.isDmPayload] — pure detection of the `{"dm": ...}` envelope
 /// 2. [MostroMessage] construction — synthetic message with [Action.sendDm]
 /// 3. [NotificationDataExtractor] — ensures sendDm is NOT marked temporary
+/// 4. P2P chat vs admin DM action separation
 void main() {
   group('NostrUtils.isDmPayload', () {
     test('detects dm wrapper key in decoded JSON', () {
@@ -249,6 +249,63 @@ void main() {
         'type': 'unknown_type',
       });
       expect(resolveNotificationRoute(payload), '/notifications');
+    });
+
+    test('routes P2P chat notification (plain orderId) to trade detail', () {
+      expect(
+        resolveNotificationRoute('p2p-chat-order-id'),
+        '/trade_detail/p2p-chat-order-id',
+      );
+    });
+  });
+
+  group('P2P chat notification uses chatMessage action', () {
+    test('MostroMessage with chatMessage action preserves orderId', () {
+      final message = MostroMessage(
+        action: Action.chatMessage,
+        id: 'order-p2p',
+        timestamp: 1700000000000,
+      );
+
+      expect(message.action, Action.chatMessage);
+      expect(message.id, 'order-p2p');
+    });
+
+    test('chatMessage action is distinct from sendDm', () {
+      expect(Action.chatMessage, isNot(equals(Action.sendDm)));
+      expect(Action.chatMessage.value, 'chat-message');
+      expect(Action.sendDm.value, 'send-dm');
+    });
+
+    test('NotificationDataExtractor produces non-temporary data for chatMessage', () async {
+      final message = MostroMessage(
+        action: Action.chatMessage,
+        id: 'order-p2p-123',
+      );
+
+      final data = await NotificationDataExtractor.extractFromMostroMessage(
+        message,
+        null,
+      );
+
+      expect(data, isNotNull);
+      expect(data!.isTemporary, isFalse);
+      expect(data.action, Action.chatMessage);
+      expect(data.orderId, 'order-p2p-123');
+    });
+
+    test('chatMessage maps to generic message keys, not admin keys', () {
+      final chatTitle = NotificationMessageMapper.getTitleKey(Action.chatMessage);
+      final chatMessage = NotificationMessageMapper.getMessageKey(Action.chatMessage);
+      final adminTitle = NotificationMessageMapper.getTitleKey(Action.sendDm);
+      final adminMessage = NotificationMessageMapper.getMessageKey(Action.sendDm);
+
+      expect(chatTitle, 'notification_new_message_title');
+      expect(chatMessage, 'notification_new_message_message');
+      expect(adminTitle, 'notification_admin_message_title');
+      expect(adminMessage, 'notification_admin_message_message');
+      expect(chatTitle, isNot(equals(adminTitle)));
+      expect(chatMessage, isNot(equals(adminMessage)));
     });
   });
 }

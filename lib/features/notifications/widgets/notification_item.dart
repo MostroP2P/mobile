@@ -99,6 +99,7 @@ class NotificationItem extends ConsumerWidget {
         case mostro_action.Action.cooperativeCancelInitiatedByYou:
         case mostro_action.Action.cooperativeCancelInitiatedByPeer:
         case mostro_action.Action.sendDm:
+        case mostro_action.Action.chatMessage:
           context.push('/trade_detail/${notification.orderId}');
           break;
         case mostro_action.Action.cantDo:

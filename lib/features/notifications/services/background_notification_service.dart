@@ -304,7 +304,7 @@ Future<MostroMessage?> _handleP2PChatEvent(NostrEvent event, Session session) as
     }
 
     return MostroMessage(
-      action: mostro_action.Action.sendDm,
+      action: mostro_action.Action.chatMessage,
       id: session.orderId,
       timestamp: event.createdAt?.millisecondsSinceEpoch,
     );
