@@ -36,7 +36,7 @@ class NostrService {
     try {
       await _nostr.services.relays.init(
         relaysUrl: settings.relays,
-        connectionTimeout: Config.nostrConnectionTimeout,
+        connectionTimeout: Config.relayConnectionTimeout,
         shouldReconnectToRelayOnNotice: true,
         retryOnClose: true,
         retryOnError: true,
@@ -131,7 +131,7 @@ class NostrService {
 
       await _nostr.services.relays.sendEventToRelaysAsync(
         event,
-        timeout: Config.nostrConnectionTimeout,
+        timeout: Config.nostrOperationTimeout,
       );
 
       logger.i('Successfully published event ${event.id}');
@@ -166,7 +166,7 @@ class NostrService {
     final request = NostrRequest(filters: [filter]);
     return await _nostr.services.relays.startEventsSubscriptionAsync(
       request: request,
-      timeout: Config.nostrConnectionTimeout,
+      timeout: Config.nostrOperationTimeout,
     );
   }
 

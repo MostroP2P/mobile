@@ -29,9 +29,11 @@ class Config {
   static const String dBName = 'mostro.db';
   static const String dBPassword = 'mostro';
 
-  // Timeout for relay connections
+  // Timeout for relay connections (WebSocket handshake per relay)
+  static const Duration relayConnectionTimeout = Duration(seconds: 5);
 
-  static const Duration nostrConnectionTimeout = Duration(seconds: 30);
+  // Timeout for relay operations (EOSE responses, publish OK)
+  static const Duration nostrOperationTimeout = Duration(seconds: 20);
 
   static bool fullPrivacyMode = false;
 
