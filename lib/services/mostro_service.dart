@@ -25,6 +25,9 @@ class MostroService {
   MostroService(this.ref) : _settings = ref.read(settingsProvider);
 
   void init() {
+    // Cancel any existing subscription to prevent leaks on re-init
+    _ordersSubscription?.cancel();
+
     // Subscribe to the orders stream from SubscriptionManager
     // The SubscriptionManager will automatically manage subscriptions based on SessionNotifier changes
     _ordersSubscription = ref
