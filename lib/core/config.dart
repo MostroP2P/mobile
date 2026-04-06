@@ -18,6 +18,26 @@ class Config {
       'pubkey': _defaultMostroPubKey,
       'name': 'Mostro P2P',
     },
+    {
+      'pubkey':
+          '00000235a3e904cfe1213a8a54d6f1ec1bef7cc6bfaabd6193e82931ccf1366a',
+      'name': 'Mostro Cuba',
+    },
+    {
+      'pubkey':
+          '0000cc02101ec29eea9ce623258752b9d7da66c27845ed26846dd0b0fc736b40',
+      'name': 'Mostro Espa\u{00F1}a',
+    },
+    {
+      'pubkey':
+          '00000978acc594c506976c655b6decbf2d4af25ffdaa6680f2a9568b0a88441b',
+      'name': 'Mostro Colombia',
+    },
+    {
+      'pubkey':
+          '00007cb3305fb972f5cc83f83a8fbca1e64e93c9d1369880a9fd62ef95d23f91',
+      'name': 'Mostro Bolivia',
+    },
   ];
 
   // Mostro hexkey (backward compatible, overridable via env variable)

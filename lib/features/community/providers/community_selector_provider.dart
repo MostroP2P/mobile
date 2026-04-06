@@ -1,0 +1,91 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mostro_mobile/core/config/communities.dart';
+import 'package:mostro_mobile/data/models/enums/storage_keys.dart';
+import 'package:mostro_mobile/features/community/community.dart';
+import 'package:mostro_mobile/features/community/community_fetcher.dart';
+import 'package:mostro_mobile/shared/providers/storage_providers.dart';
+
+/// Whether the user has already selected a community.
+final communitySelectedProvider =
+    StateNotifierProvider<CommunitySelectedNotifier, AsyncValue<bool>>((ref) {
+  final prefs = ref.read(sharedPreferencesProvider);
+  return CommunitySelectedNotifier(prefs);
+});
+
+class CommunitySelectedNotifier extends StateNotifier<AsyncValue<bool>> {
+  final dynamic _prefs;
+
+  CommunitySelectedNotifier(this._prefs) : super(const AsyncValue.loading()) {
+    _init();
+  }
+
+  Future<void> _init() async {
+    try {
+      final selected = await _prefs.getBool(
+        SharedPreferencesKeys.communitySelected.value,
+      );
+      if (selected == true) {
+        state = const AsyncValue.data(true);
+        return;
+      }
+
+      // Backward compatibility: existing users who completed onboarding
+      // before community selector existed should not be interrupted.
+      final firstRunComplete = await _prefs.getBool(
+        SharedPreferencesKeys.firstRunComplete.value,
+      );
+      if (firstRunComplete == true) {
+        // Auto-mark as selected so existing users are not interrupted
+        await _prefs.setBool(
+          SharedPreferencesKeys.communitySelected.value,
+          true,
+        );
+        state = const AsyncValue.data(true);
+        return;
+      }
+
+      state = const AsyncValue.data(false);
+    } catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
+    }
+  }
+
+  Future<void> markCommunitySelected() async {
+    try {
+      await _prefs.setBool(
+        SharedPreferencesKeys.communitySelected.value,
+        true,
+      );
+      state = const AsyncValue.data(true);
+    } catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
+    }
+  }
+}
+
+/// Fetches community data from Nostr relays. Returns enriched Community list.
+final communityListProvider = FutureProvider<List<Community>>((ref) async {
+  // Start with static config
+  final communities =
+      trustedCommunities.map((c) => Community.fromConfig(c)).toList();
+
+  // Fetch metadata from Nostr
+  final pubkeys = communities.map((c) => c.pubkey).toList();
+  final metadata = await CommunityFetcher.fetch(pubkeys);
+
+  // Enrich communities with fetched data
+  return communities.map((community) {
+    final meta = metadata[community.pubkey];
+    if (meta == null) return community;
+
+    return community.copyWith(
+      name: meta.name,
+      about: meta.about,
+      picture: meta.picture,
+      currencies: meta.currencies,
+      minAmount: meta.minAmount,
+      maxAmount: meta.maxAmount,
+      fee: meta.fee,
+    );
+  }).toList();
+});

@@ -1545,5 +1545,22 @@
     "deepLinkDifferentMostroBody": "Questo ordine è stato creato su un nodo Mostro diverso. Vuoi passare a questo Mostro e visualizzare l'ordine?",
     "deepLinkDifferentMostroFrom": "Ordine da:",
     "deepLinkDifferentMostroCurrent": "Attualmente connesso a:",
-    "deepLinkSwitchAndView": "Cambia e visualizza"
+    "deepLinkSwitchAndView": "Cambia e visualizza",
+    "chooseYourCommunity": "Scegli la tua comunità",
+    "communitySearchHint": "Cerca comunità...",
+    "communityFee": "Commissione",
+    "communityRange": "Intervallo",
+    "useCustomNode": "Usa un nodo personalizzato",
+    "skipForNow": "Salta per ora",
+    "communityLoadingError": "Impossibile caricare i dati della comunità",
+    "communityRetry": "Riprova",
+    "noCommunityResults": "Nessuna comunità trovata",
+    "communityFormatSats": "{amount} sats",
+    "@communityFormatSats": {
+        "placeholders": {
+            "amount": {
+                "type": "String"
+            }
+        }
+    }
 }

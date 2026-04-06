@@ -1511,5 +1511,22 @@
     "deepLinkDifferentMostroBody": "This order was created on a different Mostro node. Do you want to switch to this Mostro and view the order?",
     "deepLinkDifferentMostroFrom": "Order from:",
     "deepLinkDifferentMostroCurrent": "Currently connected to:",
-    "deepLinkSwitchAndView": "Switch & View"
+    "deepLinkSwitchAndView": "Switch & View",
+    "chooseYourCommunity": "Choose your community",
+    "communitySearchHint": "Search communities...",
+    "communityFee": "Fee",
+    "communityRange": "Range",
+    "useCustomNode": "Use a custom node",
+    "skipForNow": "Skip for now",
+    "communityLoadingError": "Could not load community data",
+    "communityRetry": "Retry",
+    "noCommunityResults": "No communities found",
+    "communityFormatSats": "{amount} sats",
+    "@communityFormatSats": {
+        "placeholders": {
+            "amount": {
+                "type": "String"
+            }
+        }
+    }
 }
