@@ -1511,5 +1511,21 @@
     "deepLinkDifferentMostroBody": "Diese Order wurde auf einem anderen Mostro-Knoten erstellt. Möchtest du zu diesem Mostro wechseln und die Order ansehen?",
     "deepLinkDifferentMostroFrom": "Order von:",
     "deepLinkDifferentMostroCurrent": "Aktuell verbunden mit:",
-    "deepLinkSwitchAndView": "Wechseln und ansehen"
+    "deepLinkSwitchAndView": "Wechseln und ansehen",
+    "chooseYourCommunity": "Wähle deine Community",
+    "communitySearchHint": "Communities suchen...",
+    "communityFee": "Gebühr",
+    "communityRange": "Bereich",
+    "useCustomNode": "Eigenen Knoten verwenden",
+    "communityLoadingError": "Community-Daten konnten nicht geladen werden",
+    "communityRetry": "Erneut versuchen",
+    "noCommunityResults": "Keine Communities gefunden",
+    "communityFormatSats": "{amount} sats",
+    "@communityFormatSats": {
+        "placeholders": {
+            "amount": {
+                "type": "String"
+            }
+        }
+    }
 }
