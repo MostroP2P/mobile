@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-part 'event_bus.g.dart';
 
 class EventBus {
   final _controller = StreamController<MostroMessage>.broadcast();
@@ -14,9 +12,8 @@ class EventBus {
   void dispose() => _controller.close();
 }
 
-@riverpod
-EventBus eventBus(Ref ref) {
+final eventBusProvider = AutoDisposeProvider<EventBus>((ref) {
   final bus = EventBus();
   // ref.onDispose(bus.dispose);
   return bus;
-}
+});
