@@ -1492,7 +1492,6 @@
     "communityFee": "Comisión",
     "communityRange": "Rango",
     "useCustomNode": "Usar un nodo personalizado",
-    "skipForNow": "Omitir por ahora",
     "communityLoadingError": "No se pudieron cargar los datos de la comunidad",
     "communityRetry": "Reintentar",
     "noCommunityResults": "No se encontraron comunidades",

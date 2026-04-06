@@ -25,6 +25,7 @@ class CommunitySelectedNotifier extends StateNotifier<AsyncValue<bool>> {
         SharedPreferencesKeys.communitySelected.value,
       );
       if (selected == true) {
+        if (!mounted) return;
         state = const AsyncValue.data(true);
         return;
       }
@@ -40,12 +41,15 @@ class CommunitySelectedNotifier extends StateNotifier<AsyncValue<bool>> {
           SharedPreferencesKeys.communitySelected.value,
           true,
         );
+        if (!mounted) return;
         state = const AsyncValue.data(true);
         return;
       }
 
+      if (!mounted) return;
       state = const AsyncValue.data(false);
     } catch (error, stackTrace) {
+      if (!mounted) return;
       state = AsyncValue.error(error, stackTrace);
     }
   }
@@ -56,8 +60,10 @@ class CommunitySelectedNotifier extends StateNotifier<AsyncValue<bool>> {
         SharedPreferencesKeys.communitySelected.value,
         true,
       );
+      if (!mounted) return;
       state = const AsyncValue.data(true);
     } catch (error, stackTrace) {
+      if (!mounted) return;
       state = AsyncValue.error(error, stackTrace);
     }
   }

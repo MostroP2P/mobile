@@ -81,9 +81,7 @@ class CommunityCard extends StatelessWidget {
             if (community.about != null && community.about!.isNotEmpty) ...[
               const SizedBox(height: 10),
               Text(
-                community.about!.length > 120
-                    ? '${community.about!.substring(0, 120)}...'
-                    : community.about!,
+                community.about!,
                 style: const TextStyle(
                   color: AppTheme.textSecondary,
                   fontSize: 13,
@@ -250,8 +248,11 @@ class CommunityCard extends StatelessWidget {
 
   Future<void> _launchUrl(String url) async {
     final uri = Uri.tryParse(url);
-    if (uri != null) {
+    if (uri == null) return;
+    try {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      // Silently fail - social links are non-critical
     }
   }
 }

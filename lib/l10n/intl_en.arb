@@ -1517,7 +1517,6 @@
     "communityFee": "Fee",
     "communityRange": "Range",
     "useCustomNode": "Use a custom node",
-    "skipForNow": "Skip for now",
     "communityLoadingError": "Could not load community data",
     "communityRetry": "Retry",
     "noCommunityResults": "No communities found",

@@ -63,7 +63,7 @@ GoRouter createRouter(WidgetRef ref) {
             final communityState = ref.read(communitySelectedProvider);
             final communitySelected = communityState.when(
               data: (selected) => selected,
-              loading: () => true, // Don't block on loading
+              loading: () => false, // Redirect while loading
               error: (_, __) => true, // Don't block on error
             );
             if (!communitySelected) {
