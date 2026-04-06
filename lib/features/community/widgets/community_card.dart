@@ -200,6 +200,10 @@ class CommunityCard extends StatelessWidget {
           width: 44,
           height: 44,
           fit: BoxFit.cover,
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return NymAvatar(pubkeyHex: community.pubkey, size: 44);
+          },
           errorBuilder: (_, __, ___) =>
               NymAvatar(pubkeyHex: community.pubkey, size: 44),
         ),

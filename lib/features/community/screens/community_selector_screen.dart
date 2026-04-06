@@ -6,7 +6,6 @@ import 'package:mostro_mobile/core/config/communities.dart';
 import 'package:mostro_mobile/features/community/community.dart';
 import 'package:mostro_mobile/features/community/providers/community_selector_provider.dart';
 import 'package:mostro_mobile/features/community/widgets/community_card.dart';
-import 'package:mostro_mobile/features/mostro/mostro_nodes_notifier.dart';
 import 'package:mostro_mobile/features/mostro/mostro_nodes_provider.dart';
 import 'package:mostro_mobile/features/mostro/widgets/add_custom_node_dialog.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
@@ -313,17 +312,19 @@ class _CommunitySelectorScreenState
   }
 
   Future<void> _onUseCustomNode(BuildContext context) async {
-    final nodesBefore = ref.read(mostroNodesProvider).length;
+    final pubkeysBefore =
+        ref.read(mostroNodesProvider).map((n) => n.pubkey).toSet();
     await AddCustomNodeDialog.show(context, ref);
     if (!mounted) return;
 
-    // Check if a new node was added
-    final nodesAfter = ref.read(mostroNodesProvider);
-    if (nodesAfter.length > nodesBefore) {
-      final lastNode = nodesAfter.last;
+    // Detect newly added node via set difference
+    final pubkeysAfter =
+        ref.read(mostroNodesProvider).map((n) => n.pubkey).toSet();
+    final newPubkeys = pubkeysAfter.difference(pubkeysBefore);
+    if (newPubkeys.isNotEmpty) {
       setState(() => _isSelecting = true);
       try {
-        await _selectAndProceed(lastNode.pubkey);
+        await _selectAndProceed(newPubkeys.first);
       } finally {
         if (mounted) setState(() => _isSelecting = false);
       }
@@ -331,11 +332,11 @@ class _CommunitySelectorScreenState
   }
 
   Future<void> _selectAndProceed(String pubkey) async {
-    // Ensure the pubkey exists as a node (add to trusted if from community list)
-    final nodesNotifier = ref.read(mostroNodesProvider.notifier);
-    _ensureNodeExists(nodesNotifier, pubkey);
+    // Ensure the pubkey exists as a node
+    await _ensureNodeExists(pubkey);
 
     // Select the node
+    final nodesNotifier = ref.read(mostroNodesProvider.notifier);
     await nodesNotifier.selectNode(pubkey);
 
     // Mark community as selected
@@ -348,12 +349,11 @@ class _CommunitySelectorScreenState
     }
   }
 
-  void _ensureNodeExists(MostroNodesNotifier notifier, String pubkey) {
-    // If the pubkey is already known, nothing to do
+  Future<void> _ensureNodeExists(String pubkey) async {
     final allNodes = ref.read(mostroNodesProvider);
     if (allNodes.any((n) => n.pubkey == pubkey)) return;
 
-    // Otherwise add it as custom node
-    notifier.addCustomNode(pubkey);
+    final notifier = ref.read(mostroNodesProvider.notifier);
+    await notifier.addCustomNode(pubkey);
   }
 }

@@ -1,9 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/config/communities.dart';
 import 'package:mostro_mobile/data/models/enums/storage_keys.dart';
+import 'package:mostro_mobile/data/repositories/community_repository.dart';
 import 'package:mostro_mobile/features/community/community.dart';
-import 'package:mostro_mobile/features/community/community_fetcher.dart';
 import 'package:mostro_mobile/shared/providers/storage_providers.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Whether the user has already selected a community.
 final communitySelectedProvider =
@@ -13,7 +14,7 @@ final communitySelectedProvider =
 });
 
 class CommunitySelectedNotifier extends StateNotifier<AsyncValue<bool>> {
-  final dynamic _prefs;
+  final SharedPreferencesAsync _prefs;
 
   CommunitySelectedNotifier(this._prefs) : super(const AsyncValue.loading()) {
     _init();
@@ -69,15 +70,21 @@ class CommunitySelectedNotifier extends StateNotifier<AsyncValue<bool>> {
   }
 }
 
+/// Provides the CommunityRepository instance.
+final communityRepositoryProvider = Provider<CommunityRepository>((ref) {
+  return CommunityRepository();
+});
+
 /// Fetches community data from Nostr relays. Returns enriched Community list.
 final communityListProvider = FutureProvider<List<Community>>((ref) async {
   // Start with static config
   final communities =
       trustedCommunities.map((c) => Community.fromConfig(c)).toList();
 
-  // Fetch metadata from Nostr
+  // Fetch metadata from Nostr via repository
+  final repository = ref.read(communityRepositoryProvider);
   final pubkeys = communities.map((c) => c.pubkey).toList();
-  final metadata = await CommunityFetcher.fetch(pubkeys);
+  final metadata = await repository.fetchCommunityMetadata(pubkeys);
 
   // Enrich communities with fetched data
   return communities.map((community) {

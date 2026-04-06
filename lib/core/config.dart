@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:mostro_mobile/core/config/communities.dart';
 
 class Config {
   // Nostr configuration
@@ -13,32 +14,14 @@ class Config {
   static const String _defaultMostroPubKey =
       '82fa8cb978b43c79b2156585bac2c011176a21d2aead6d9f7c575c005be88390';
 
-  static const List<Map<String, String>> trustedMostroNodes = [
-    {
-      'pubkey': _defaultMostroPubKey,
-      'name': 'Mostro P2P',
-    },
-    {
-      'pubkey':
-          '00000235a3e904cfe1213a8a54d6f1ec1bef7cc6bfaabd6193e82931ccf1366a',
-      'name': 'Mostro Cuba',
-    },
-    {
-      'pubkey':
-          '0000cc02101ec29eea9ce623258752b9d7da66c27845ed26846dd0b0fc736b40',
-      'name': 'Mostro Espa\u{00F1}a',
-    },
-    {
-      'pubkey':
-          '00000978acc594c506976c655b6decbf2d4af25ffdaa6680f2a9568b0a88441b',
-      'name': 'Mostro Colombia',
-    },
-    {
-      'pubkey':
-          '00007cb3305fb972f5cc83f83a8fbca1e64e93c9d1369880a9fd62ef95d23f91',
-      'name': 'Mostro Bolivia',
-    },
-  ];
+  // Derived from trustedCommunities to maintain single source of truth
+  static final List<Map<String, String>> trustedMostroNodes =
+      trustedCommunities
+          .map((c) => {
+                'pubkey': c.pubkey,
+                'name': c.region,
+              })
+          .toList();
 
   // Mostro hexkey (backward compatible, overridable via env variable)
   static const String mostroPubKey = String.fromEnvironment(

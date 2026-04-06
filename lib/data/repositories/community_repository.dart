@@ -4,15 +4,17 @@ import 'dart:io';
 import 'dart:math';
 import 'package:mostro_mobile/services/logger_service.dart';
 
-/// Standalone WebSocket fetcher for community metadata from Nostr relays.
-/// Fetches kind 0 (profile) and kind 38385 (Mostro info) events.
-class CommunityFetcher {
+/// Repository that fetches community metadata from Nostr relays.
+/// Uses a standalone WebSocket connection to fetch kind 0 (profile) and
+/// kind 38385 (Mostro info) events without depending on NostrService.
+class CommunityRepository {
   static const String _relayUrl = 'wss://relay.mostro.network';
   static const Duration _timeout = Duration(seconds: 10);
 
   /// Fetches kind 0 and kind 38385 events for the given pubkeys.
   /// Returns a map of pubkey -> CommunityMetadata.
-  static Future<Map<String, CommunityMetadata>> fetch(
+  /// Throws on connection or timeout failures so callers can handle errors.
+  Future<Map<String, CommunityMetadata>> fetchCommunityMetadata(
     List<String> pubkeys,
   ) async {
     final results = <String, CommunityMetadata>{};
@@ -74,16 +76,16 @@ class CommunityFetcher {
         },
         onError: (e) {
           logger.e('WebSocket error: $e');
-          if (!completer.isCompleted) completer.complete();
+          if (!completer.isCompleted) {
+            completer.completeError(e);
+          }
         },
         onDone: () {
           if (!completer.isCompleted) completer.complete();
         },
       );
 
-      await completer.future.timeout(_timeout, onTimeout: () {
-        logger.w('Community fetch timed out after ${_timeout.inSeconds}s');
-      });
+      await completer.future.timeout(_timeout);
 
       // Close subscriptions
       ws.add(jsonEncode(['CLOSE', subIdKind0]));
@@ -91,6 +93,7 @@ class CommunityFetcher {
       await subscription.cancel();
     } catch (e) {
       logger.e('Failed to fetch community data: $e');
+      rethrow;
     } finally {
       try {
         await ws?.close();
@@ -100,7 +103,7 @@ class CommunityFetcher {
     return results;
   }
 
-  static void _processEvent(
+  void _processEvent(
     Map<String, dynamic> event,
     Map<String, CommunityMetadata> results,
   ) {
@@ -132,7 +135,7 @@ class CommunityFetcher {
     }
   }
 
-  static Map<String, String> _extractTags(Map<String, dynamic> event) {
+  Map<String, String> _extractTags(Map<String, dynamic> event) {
     final tags = event['tags'] as List<dynamic>? ?? [];
     final result = <String, String>{};
     for (final tag in tags) {
@@ -144,7 +147,7 @@ class CommunityFetcher {
     return result;
   }
 
-  static String _randomSubId() {
+  String _randomSubId() {
     final random = Random();
     return 'community_${random.nextInt(999999).toString().padLeft(6, '0')}';
   }
