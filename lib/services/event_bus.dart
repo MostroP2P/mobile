@@ -14,6 +14,6 @@ class EventBus {
 
 final eventBusProvider = AutoDisposeProvider<EventBus>((ref) {
   final bus = EventBus();
-  // ref.onDispose(bus.dispose);
+  ref.onDispose(bus.dispose);
   return bus;
 });
