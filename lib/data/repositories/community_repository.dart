@@ -71,7 +71,8 @@ class CommunityRepository {
         },
       ]));
 
-      int eoseCount = 0;
+      var eoseCount = 0;
+      var hasEvents = false;
       final completer = Completer<void>();
 
       final subscription = ws.listen(
@@ -85,6 +86,7 @@ class CommunityRepository {
             if (type == 'EVENT' && msg.length >= 3) {
               final event = msg[2] as Map<String, dynamic>;
               _processEvent(event, results);
+              hasEvents = true;
             } else if (type == 'EOSE') {
               eoseCount++;
               if (eoseCount >= 2 && !completer.isCompleted) {
@@ -106,11 +108,21 @@ class CommunityRepository {
         },
       );
 
-      await completer.future.timeout(_timeout);
+      try {
+        await completer.future.timeout(_timeout);
+      } on TimeoutException {
+        if (!hasEvents) rethrow;
+        logger.w(
+          'Timeout on $relayUrl ($eoseCount/2 EOSEs), '
+          'returning partial results',
+        );
+      }
 
       // Close subscriptions
-      ws.add(jsonEncode(['CLOSE', subIdKind0]));
-      ws.add(jsonEncode(['CLOSE', subIdKind38385]));
+      try {
+        ws.add(jsonEncode(['CLOSE', subIdKind0]));
+        ws.add(jsonEncode(['CLOSE', subIdKind38385]));
+      } catch (_) {}
       await subscription.cancel();
     } catch (e) {
       logger.e('Failed to fetch community data from $relayUrl: $e');
