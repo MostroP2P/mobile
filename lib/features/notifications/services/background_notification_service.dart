@@ -11,8 +11,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mostro_mobile/core/app.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
+import 'package:mostro_mobile/data/models/order.dart';
+import 'package:mostro_mobile/data/models/peer.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as mostro_action;
+import 'package:mostro_mobile/data/models/enums/role.dart';
 import 'package:mostro_mobile/data/repositories/session_storage.dart';
 import 'package:mostro_mobile/features/key_manager/key_derivator.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager.dart';
@@ -304,7 +307,88 @@ Future<MostroMessage?> _handleTradeKeyEvent(NostrEvent event, Session session) a
   final mostroMessage = MostroMessage.fromJson(result[0]);
   mostroMessage.timestamp = event.createdAt?.millisecondsSinceEpoch;
 
+  // If this event transitions the order to Active, learn the counterpart's
+  // tradeKey from the Order payload and persist it on the session so the
+  // background service can immediately subscribe to P2P chat events.
+  // Without this, DMs arriving while the app is in background are never
+  // notified until the user reopens the app and the foreground re-processes
+  // this event.
+  await _maybeUpdateSessionWithPeer(mostroMessage, session);
+
   return mostroMessage;
+}
+
+/// Persists the peer on the given session when [message] is an action that
+/// reveals the counterpart's tradeKey (buyer took order / hold invoice
+/// payment accepted), and triggers a live chat subscription in the
+/// background service.
+Future<void> _maybeUpdateSessionWithPeer(
+  MostroMessage message,
+  Session session,
+) async {
+  final action = message.action;
+  if (action != mostro_action.Action.buyerTookOrder &&
+      action != mostro_action.Action.holdInvoicePaymentAccepted) {
+    return;
+  }
+
+  // Already learned the peer — nothing to do.
+  if (session.peer != null) {
+    return;
+  }
+
+  if (session.orderId == null) {
+    logger.w('Cannot update peer: session has no orderId');
+    return;
+  }
+
+  try {
+    final order = message.getPayload<Order>();
+    if (order == null) {
+      logger.w('${action.value} event has no Order payload');
+      return;
+    }
+
+    String? peerPubkey;
+    if (session.role == Role.buyer) {
+      peerPubkey = order.sellerTradePubkey;
+    } else if (session.role == Role.seller) {
+      peerPubkey = order.buyerTradePubkey;
+    }
+
+    if (peerPubkey == null || peerPubkey.isEmpty) {
+      logger.w('${action.value} payload missing peer tradeKey for role ${session.role}');
+      return;
+    }
+
+    // Setting peer on the session computes the shared key via ECDH.
+    session.peer = Peer(publicKey: peerPubkey);
+
+    final db = await openMostroDatabase('mostro.db');
+    const secureStorage = FlutterSecureStorage();
+    final sharedPrefs = SharedPreferencesAsync();
+    final keyStorage = KeyStorage(
+      secureStorage: secureStorage,
+      sharedPrefs: sharedPrefs,
+    );
+    final keyDerivator = KeyDerivator("m/44'/1237'/38383'/0");
+    final keyManager = KeyManager(keyStorage, keyDerivator);
+    await keyManager.init();
+    final sessionStorage = SessionStorage(keyManager, db: db);
+    await sessionStorage.putSession(session);
+
+    logger.i('Background persisted peer for order ${session.orderId}');
+
+    final sharedKeyPublic = session.sharedKey?.public;
+    if (sharedKeyPublic != null) {
+      bg.addChatSubscriptionFromBackground?.call(sharedKeyPublic);
+    }
+  } catch (e, stackTrace) {
+    logger.e(
+      'Failed to update session with peer in background: $e',
+      stackTrace: stackTrace,
+    );
+  }
 }
 
 /// Handle P2P chat events matched by sharedKey
