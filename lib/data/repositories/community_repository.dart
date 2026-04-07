@@ -106,7 +106,15 @@ class CommunityRepository {
           }
         },
         onDone: () {
-          if (!completer.isCompleted) completer.complete();
+          if (!completer.isCompleted) {
+            if (!hasEvents && eoseCount < 2) {
+              completer.completeError(
+                Exception('Connection closed without verified events'),
+              );
+            } else {
+              completer.complete();
+            }
+          }
         },
       );
 
