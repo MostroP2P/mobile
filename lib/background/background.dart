@@ -15,7 +15,15 @@ import 'package:mostro_mobile/services/logger_service.dart' as logger_service;
 import 'package:mostro_mobile/shared/providers/mostro_database_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-bool isAppForeground = true;
+/// Tracks whether the foreground app is currently active.
+///
+/// Defaults to `false` so that notifications fire by default when the
+/// background service is revived from a dead state (e.g. FCM wake after the
+/// app was killed), where no `app-foreground-status` message is sent.
+///
+/// Updated via the `app-foreground-status` message from the foreground app
+/// through `MobileBackgroundService.setForegroundStatus()`.
+bool isAppForeground = false;
 String currentLanguage = 'en';
 
 @pragma('vm:entry-point')
@@ -106,6 +114,11 @@ Future<void> serviceMain(ServiceInstance service) async {
 
             subscription.listen((event) async {
               try {
+                // Suppress background notifications while the foreground app
+                // is active — the foreground handles events directly and
+                // showing a local notification would be redundant (and, for
+                // chat echoes, would notify the user of their own messages).
+                if (isAppForeground) return;
                 final store = eventStore;
                 if (store != null && await store.hasItem(event.id!)) return;
                 await notification_service.retryNotification(event);
@@ -169,6 +182,11 @@ Future<void> serviceMain(ServiceInstance service) async {
 
     subscription.listen((event) async {
       try {
+        // Suppress background notifications while the foreground app is
+        // active — the foreground handles events directly and showing a
+        // local notification would be redundant (and, for chat echoes,
+        // would notify the user of their own messages).
+        if (isAppForeground) return;
         final store = eventStore;
         if (store != null && await store.hasItem(event.id!)) {
           return;

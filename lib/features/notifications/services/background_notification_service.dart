@@ -298,6 +298,13 @@ Future<MostroMessage?> _handleP2PChatEvent(NostrEvent event, Session session) as
       return null;
     }
 
+    // Skip notifications for messages sent by the user themselves. The relay
+    // echoes back any message we publish, and without this check the background
+    // service would notify the user of their own outgoing messages.
+    if (decryptedEvent.pubkey == session.tradeKey.public) {
+      return null;
+    }
+
     if (session.orderId == null) {
       logger.w('P2P chat received but session has no orderId (recipient: ${event.recipient}), skipping notification');
       return null;
