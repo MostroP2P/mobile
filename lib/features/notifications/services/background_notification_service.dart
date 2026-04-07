@@ -196,11 +196,20 @@ Future<MostroMessage?> _decryptAndProcessEvent(NostrEvent event) async {
       return null;
     }
 
+    final recipient = event.recipient;
+    if (recipient == null) {
+      return null;
+    }
+
     final sessions = await _loadSessionsFromDatabase();
 
-    // Try matching by adminSharedKey first (dispute chat DMs)
+    // Try matching by adminSharedKey first (dispute chat DMs).
+    // Require non-null on both sides to prevent spurious null == null matches.
     final adminSession = sessions.cast<Session?>().firstWhere(
-      (s) => s?.adminSharedKey?.public == event.recipient,
+      (s) {
+        final adminPub = s?.adminSharedKey?.public;
+        return adminPub != null && adminPub == recipient;
+      },
       orElse: () => null,
     );
 
@@ -210,7 +219,7 @@ Future<MostroMessage?> _decryptAndProcessEvent(NostrEvent event) async {
 
     // Standard Mostro message: match by tradeKey
     final matchingSession = sessions.cast<Session?>().firstWhere(
-      (s) => s?.tradeKey.public == event.recipient,
+      (s) => s?.tradeKey.public == recipient,
       orElse: () => null,
     );
 
@@ -218,9 +227,13 @@ Future<MostroMessage?> _decryptAndProcessEvent(NostrEvent event) async {
       return _handleTradeKeyEvent(event, matchingSession);
     }
 
-    // P2P chat: match by sharedKey.public
+    // P2P chat: match by sharedKey.public.
+    // Require non-null on both sides to prevent spurious null == null matches.
     final chatMatch = sessions.cast<Session?>().firstWhere(
-      (s) => s?.sharedKey?.public == event.recipient,
+      (s) {
+        final sharedPub = s?.sharedKey?.public;
+        return sharedPub != null && sharedPub == recipient;
+      },
       orElse: () => null,
     );
 
@@ -237,7 +250,11 @@ Future<MostroMessage?> _decryptAndProcessEvent(NostrEvent event) async {
 
 Future<MostroMessage?> _processAdminDm(NostrEvent event, Session session) async {
   try {
-    final unwrapped = await event.p2pUnwrap(session.adminSharedKey!);
+    final adminSharedKey = session.adminSharedKey;
+    if (adminSharedKey == null) {
+      return null;
+    }
+    final unwrapped = await event.p2pUnwrap(adminSharedKey);
     if (unwrapped.content == null || unwrapped.content!.isEmpty) {
       return null;
     }
@@ -293,7 +310,11 @@ Future<MostroMessage?> _handleTradeKeyEvent(NostrEvent event, Session session) a
 /// Handle P2P chat events matched by sharedKey
 Future<MostroMessage?> _handleP2PChatEvent(NostrEvent event, Session session) async {
   try {
-    final decryptedEvent = await event.p2pUnwrap(session.sharedKey!);
+    final sharedKey = session.sharedKey;
+    if (sharedKey == null) {
+      return null;
+    }
+    final decryptedEvent = await event.p2pUnwrap(sharedKey);
     if (decryptedEvent.content == null || decryptedEvent.content!.isEmpty) {
       return null;
     }
