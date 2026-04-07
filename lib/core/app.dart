@@ -16,6 +16,7 @@ import 'package:mostro_mobile/features/notifications/services/background_notific
 import 'package:mostro_mobile/shared/providers/app_init_provider.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/notifiers/locale_notifier.dart';
+import 'package:mostro_mobile/features/community/providers/community_selector_provider.dart';
 import 'package:mostro_mobile/features/walkthrough/providers/first_run_provider.dart';
 import 'package:mostro_mobile/features/restore/restore_overlay.dart';
 import 'package:mostro_mobile/shared/widgets/nwc_notification_listener.dart';
@@ -122,8 +123,12 @@ class _MostroAppState extends ConsumerState<MostroApp> {
 
     return initAsyncValue.when(
       data: (_) {
-        // Initialize first run provider
+        // Watch providers that affect routing
         ref.watch(firstRunProvider);
+        // Refresh router when community selection state resolves
+        ref.listen(communitySelectedProvider, (_, __) {
+          _router?.refresh();
+        });
 
         ref.listen<AuthState>(authNotifierProvider, (previous, state) {
           WidgetsBinding.instance.addPostFrameCallback((_) {

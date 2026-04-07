@@ -61,14 +61,12 @@ GoRouter createRouter(WidgetRef ref) {
               state.matchedLocation != '/community_selector' &&
               state.matchedLocation != '/walkthrough') {
             final communityState = ref.read(communitySelectedProvider);
-            final communitySelected = communityState.when(
-              data: (selected) => selected,
-              loading: () => false, // Redirect while loading
-              error: (_, __) => true, // Don't block on error
+            final redirect = communityState.when(
+              data: (selected) => selected ? null : '/community_selector',
+              loading: () => null, // Wait for provider to resolve
+              error: (_, __) => null,
             );
-            if (!communitySelected) {
-              return '/community_selector';
-            }
+            if (redirect != null) return redirect;
           }
 
           return null;
