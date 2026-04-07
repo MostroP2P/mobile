@@ -1502,5 +1502,6 @@
                 "type": "String"
             }
         }
-    }
+    },
+    "communityAllCurrencies": "Todas las monedas"
 }

@@ -93,31 +93,21 @@ class CommunityCard extends StatelessWidget {
             ],
 
             // Currencies
-            if (community.currencies.isNotEmpty) ...[
+            if (community.currencies.isNotEmpty ||
+                (community.hasTradeInfo && community.currencies.isEmpty)) ...[
               const SizedBox(height: 10),
               Wrap(
                 spacing: 6,
                 runSpacing: 4,
-                children: community.currencies.map((currency) {
-                  return Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppTheme.activeColor.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      currency,
-                      style: const TextStyle(
-                        color: AppTheme.activeColor,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  );
-                }).toList(),
+                children: community.currencies.isNotEmpty
+                    ? community.currencies.map((currency) {
+                        return _buildCurrencyTag(currency);
+                      }).toList()
+                    : [
+                        _buildCurrencyTag(
+                          S.of(context)!.communityAllCurrencies,
+                        ),
+                      ],
               ),
             ],
 
@@ -187,6 +177,24 @@ class CommunityCard extends StatelessWidget {
               ),
             ],
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCurrencyTag(String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppTheme.activeColor.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: AppTheme.activeColor,
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
         ),
       ),
     );

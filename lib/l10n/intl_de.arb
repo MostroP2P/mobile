@@ -1527,5 +1527,6 @@
                 "type": "String"
             }
         }
-    }
+    },
+    "communityAllCurrencies": "Alle Währungen"
 }

@@ -13,6 +13,7 @@ class Community {
   final String? picture;
 
   // From kind 38385 (Mostro info)
+  final bool hasTradeInfo;
   final List<String> currencies;
   final int? minAmount;
   final int? maxAmount;
@@ -26,6 +27,7 @@ class Community {
     this.name,
     this.about,
     this.picture,
+    this.hasTradeInfo = false,
     this.currencies = const [],
     this.minAmount,
     this.maxAmount,
@@ -50,6 +52,7 @@ class Community {
     String? name,
     String? about,
     String? picture,
+    bool? hasTradeInfo,
     List<String>? currencies,
     int? minAmount,
     int? maxAmount,
@@ -63,6 +66,7 @@ class Community {
       name: name ?? this.name,
       about: about ?? this.about,
       picture: picture ?? this.picture,
+      hasTradeInfo: hasTradeInfo ?? this.hasTradeInfo,
       currencies: currencies ?? this.currencies,
       minAmount: minAmount ?? this.minAmount,
       maxAmount: maxAmount ?? this.maxAmount,

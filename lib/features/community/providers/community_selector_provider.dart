@@ -95,6 +95,7 @@ final communityListProvider = FutureProvider<List<Community>>((ref) async {
       name: meta.name,
       about: meta.about,
       picture: meta.picture,
+      hasTradeInfo: meta.hasTradeInfo,
       currencies: meta.currencies,
       minAmount: meta.minAmount,
       maxAmount: meta.maxAmount,

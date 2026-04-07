@@ -162,6 +162,8 @@ class CommunityMetadata {
 
   CommunityMetadata();
 
+  bool get hasTradeInfo => kind38385Tags != null;
+
   String? get name => kind0?['name'] as String?;
   String? get about => kind0?['about'] as String?;
   String? get picture {
