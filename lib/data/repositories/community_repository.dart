@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:math';
 import 'package:crypto/crypto.dart';
 import 'package:dart_nostr/dart_nostr.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 
@@ -85,8 +86,9 @@ class CommunityRepository {
 
             if (type == 'EVENT' && msg.length >= 3) {
               final event = msg[2] as Map<String, dynamic>;
-              _processEvent(event, results);
-              hasEvents = true;
+              if (_processEvent(event, results)) {
+                hasEvents = true;
+              }
             } else if (type == 'EOSE') {
               eoseCount++;
               if (eoseCount >= 2 && !completer.isCompleted) {
@@ -139,7 +141,8 @@ class CommunityRepository {
   /// Verifies a raw Nostr event per NIP-01:
   /// 1. Recomputes the event ID from the serialized content
   /// 2. Verifies the Schnorr signature over the ID
-  bool _verifyEvent(Map<String, dynamic> event) {
+  @visibleForTesting
+  bool verifyEvent(Map<String, dynamic> event) {
     try {
       final id = event['id'] as String?;
       final pubkey = event['pubkey'] as String?;
@@ -183,22 +186,24 @@ class CommunityRepository {
     }
   }
 
-  void _processEvent(
+  /// Processes a raw event, applying it to [results] if it passes
+  /// verification. Returns true if the event was verified and applied.
+  bool _processEvent(
     Map<String, dynamic> event,
     Map<String, CommunityMetadata> results,
   ) {
     final pubkey = event['pubkey'] as String?;
     final kind = event['kind'] as int?;
-    if (pubkey == null || kind == null) return;
+    if (pubkey == null || kind == null) return false;
 
     final meta = results[pubkey];
-    if (meta == null) return;
+    if (meta == null) return false;
 
-    if (!_verifyEvent(event)) {
+    if (!verifyEvent(event)) {
       logger.w(
         'Rejecting kind $kind event from $pubkey: verification failed',
       );
-      return;
+      return false;
     }
 
     final createdAt = event['created_at'] as int? ?? 0;
@@ -210,16 +215,21 @@ class CommunityRepository {
               jsonDecode(event['content'] as String) as Map<String, dynamic>;
           meta.kind0 = content;
           meta.kind0CreatedAt = createdAt;
+          return true;
         } catch (e) {
           logger.w('Failed to parse kind 0 content for $pubkey: $e');
+          return false;
         }
       }
     } else if (kind == 38385) {
       if (createdAt >= (meta.kind38385CreatedAt ?? 0)) {
         meta.kind38385Tags = _extractTags(event);
         meta.kind38385CreatedAt = createdAt;
+        return true;
       }
     }
+
+    return false;
   }
 
   Map<String, String> _extractTags(Map<String, dynamic> event) {

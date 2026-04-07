@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/community/community.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
@@ -232,17 +233,11 @@ class CommunityCard extends StatelessWidget {
   }
 
   String _formatSats(BuildContext context, int amount) {
-    if (amount >= 1000000) {
-      return S.of(context)!.communityFormatSats(
-        '${(amount / 1000000).toStringAsFixed(1)}M',
-      );
-    }
-    if (amount >= 1000) {
-      return S.of(context)!.communityFormatSats(
-        '${(amount / 1000).toStringAsFixed(0)}K',
-      );
-    }
-    return S.of(context)!.communityFormatSats(amount.toString());
+    final locale = Localizations.localeOf(context).toString();
+    final formatted = amount < 1000
+        ? NumberFormat.decimalPattern(locale).format(amount)
+        : NumberFormat.compact(locale: locale).format(amount);
+    return '$formatted sats';
   }
 
   IconData _socialIcon(String type) {

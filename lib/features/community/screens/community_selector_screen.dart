@@ -10,6 +10,7 @@ import 'package:mostro_mobile/features/community/widgets/community_card.dart';
 import 'package:mostro_mobile/features/mostro/mostro_nodes_provider.dart';
 import 'package:mostro_mobile/features/mostro/widgets/add_custom_node_dialog.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 
 class CommunitySelectorScreen extends ConsumerStatefulWidget {
   const CommunitySelectorScreen({super.key});
@@ -296,22 +297,11 @@ class _CommunitySelectorScreenState
 
   Future<void> _onConfirm(BuildContext context) async {
     if (_selectedPubkey == null) return;
-    setState(() => _isSelecting = true);
-
-    try {
-      await _selectAndProceed(_selectedPubkey!);
-    } finally {
-      if (mounted) setState(() => _isSelecting = false);
-    }
+    await _runSelection(() => _selectAndProceed(_selectedPubkey!));
   }
 
   Future<void> _onSkip(BuildContext context) async {
-    setState(() => _isSelecting = true);
-    try {
-      await _selectAndProceed(defaultMostroPubkey);
-    } finally {
-      if (mounted) setState(() => _isSelecting = false);
-    }
+    await _runSelection(() => _selectAndProceed(defaultMostroPubkey));
   }
 
   Future<void> _onUseCustomNode(BuildContext context) async {
@@ -325,24 +315,34 @@ class _CommunitySelectorScreenState
         ref.read(mostroNodesProvider).map((n) => n.pubkey).toSet();
     final newPubkeys = pubkeysAfter.difference(pubkeysBefore);
     if (newPubkeys.isNotEmpty) {
-      setState(() => _isSelecting = true);
-      try {
-        await _selectAndProceed(newPubkeys.first);
-      } finally {
-        if (mounted) setState(() => _isSelecting = false);
+      await _runSelection(() => _selectAndProceed(newPubkeys.first));
+    }
+  }
+
+  Future<void> _runSelection(Future<void> Function() action) async {
+    setState(() => _isSelecting = true);
+    try {
+      await action();
+    } catch (e) {
+      logger.e('Community selection failed: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(S.of(context)!.communityLoadingError),
+          ),
+        );
       }
+    } finally {
+      if (mounted) setState(() => _isSelecting = false);
     }
   }
 
   Future<void> _selectAndProceed(String pubkey) async {
-    // Ensure the pubkey exists as a node
     await _ensureNodeExists(pubkey);
 
-    // Select the node
     final nodesNotifier = ref.read(mostroNodesProvider.notifier);
     await nodesNotifier.selectNode(pubkey);
 
-    // Mark community as selected
     await ref
         .read(communitySelectedProvider.notifier)
         .markCommunitySelected();

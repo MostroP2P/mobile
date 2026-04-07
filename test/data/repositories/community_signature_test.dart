@@ -3,36 +3,16 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mostro_mobile/data/repositories/community_repository.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
-/// Reproduces the verification logic used in CommunityRepository.
-/// Returns true only if the event ID matches the content hash AND
-/// the Schnorr signature is valid for that ID.
-bool verifyRawEvent(Map<String, dynamic> event) {
-  final id = event['id'] as String?;
-  final pubkey = event['pubkey'] as String?;
-  final sig = event['sig'] as String?;
-  final createdAt = event['created_at'] as int?;
-  final kind = event['kind'] as int?;
-  final content = event['content'] as String? ?? '';
-  final tags = event['tags'] as List<dynamic>?;
-
-  if (id == null || pubkey == null || sig == null ||
-      createdAt == null || kind == null) {
-    return false;
-  }
-
-  // Step 1: Verify event ID matches content hash (NIP-01)
-  final serialized =
-      jsonEncode([0, pubkey, createdAt, kind, tags ?? [], content]);
-  final computedId = sha256.convert(utf8.encode(serialized)).toString();
-  if (computedId != id) return false;
-
-  // Step 2: Verify Schnorr signature over the event ID
-  return NostrKeyPairs.verify(pubkey, id, sig);
-}
-
 void main() {
+  late CommunityRepository repository;
+
+  setUp(() {
+    repository = CommunityRepository();
+  });
+
   group('CommunityRepository event verification', () {
     test('accepts valid kind 0 event', () {
       final keyPair = NostrUtils.generateKeyPair();
@@ -45,7 +25,7 @@ void main() {
         ],
       );
 
-      expect(verifyRawEvent(event.toMap()), isTrue);
+      expect(repository.verifyEvent(event.toMap()), isTrue);
     });
 
     test('accepts valid kind 38385 event with empty content', () {
@@ -61,7 +41,7 @@ void main() {
         ],
       );
 
-      expect(verifyRawEvent(event.toMap()), isTrue);
+      expect(repository.verifyEvent(event.toMap()), isTrue);
     });
 
     test('rejects event with tampered content', () {
@@ -75,8 +55,7 @@ void main() {
       final tampered = Map<String, dynamic>.from(event.toMap());
       tampered['content'] = '{"name":"Spoofed Node"}';
 
-      // ID no longer matches the tampered content
-      expect(verifyRawEvent(tampered), isFalse);
+      expect(repository.verifyEvent(tampered), isFalse);
     });
 
     test('rejects event with tampered pubkey', () {
@@ -91,7 +70,7 @@ void main() {
       final tampered = Map<String, dynamic>.from(event.toMap());
       tampered['pubkey'] = otherKeyPair.public;
 
-      expect(verifyRawEvent(tampered), isFalse);
+      expect(repository.verifyEvent(tampered), isFalse);
     });
 
     test('rejects event with forged id and signature', () {
@@ -104,7 +83,6 @@ void main() {
         keyPairs: keyPair,
       );
 
-      // Attacker creates a new event with spoofed content but original pubkey
       final spoofedContent = '{"name":"Spoofed"}';
       final originalMap = original.toMap();
       final serialized = jsonEncode([
@@ -116,7 +94,6 @@ void main() {
         spoofedContent,
       ]);
       final forgedId = sha256.convert(utf8.encode(serialized)).toString();
-      // Attacker signs with their own key
       final forgedSig = attackerKeyPair.sign(forgedId);
 
       final tampered = Map<String, dynamic>.from(originalMap);
@@ -124,8 +101,7 @@ void main() {
       tampered['id'] = forgedId;
       tampered['sig'] = forgedSig;
 
-      // Signature was made by attacker, not by the original pubkey
-      expect(verifyRawEvent(tampered), isFalse);
+      expect(repository.verifyEvent(tampered), isFalse);
     });
 
     test('handles event with null content as empty string', () {
@@ -140,11 +116,9 @@ void main() {
       );
 
       final rawMap = event.toMap();
-      // Simulate relay sending null content (edge case)
       rawMap.remove('content');
 
-      // Should still work — defaults to empty string
-      expect(verifyRawEvent(rawMap), isTrue);
+      expect(repository.verifyEvent(rawMap), isTrue);
     });
   });
 }

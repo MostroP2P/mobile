@@ -13,19 +13,19 @@ Existing users are never interrupted. The selector is shown only once after the 
 
 ### New User
 
-```
+```text
 App install -> Walkthrough (complete or skip) -> Community Selector -> Home
 ```
 
 ### Existing User (upgrade)
 
-```
+```text
 App launch -> Home (auto-migrated, no interruption)
 ```
 
 ### Returning to Community Selection
 
-```
+```text
 Home -> Settings -> Mostro Card -> Node Selector (existing feature)
 ```
 
@@ -47,12 +47,12 @@ Mirrored from [mostro.community](https://github.com/MostroP2P/community). Define
 
 ### Data Flow
 
-```
+```text
 trustedCommunities (static config)
         |
         v
 CommunityRepository.fetchCommunityMetadata(pubkeys)
-        |   WebSocket -> wss://relay.mostro.network
+        |   WebSocket -> Config.nostrRelays (with fallback)
         |   REQ kind 0 (profile: name, about, picture)
         |   REQ kind 38385 (trade info: currencies, fee, min/max)
         |   Timeout: 10s, partial data OK
@@ -79,7 +79,7 @@ Home Screen
 
 ### File Structure
 
-```
+```text
 lib/
   core/
     config/
@@ -159,14 +159,14 @@ When kind 38385 event exists (`hasTradeInfo = true`) but `fiat_currencies_accept
 
 In `lib/core/app_routes.dart`, the redirect logic evaluates two providers sequentially:
 
-```
+```text
 1. firstRunProvider:
    - loading -> redirect to /walkthrough
    - data(isFirstRun=true) -> redirect to /walkthrough
    - data(isFirstRun=false) -> proceed to step 2
 
 2. communitySelectedProvider:
-   - loading -> redirect to /community_selector (prevents flash of home)
+   - loading -> no redirect (wait for provider to resolve; router refreshes on change)
    - data(false) -> redirect to /community_selector
    - data(true) -> no redirect (proceed to requested route)
    - error -> no redirect (don't block on errors)
@@ -233,7 +233,7 @@ Previously hardcoded as a single entry (`Mostro P2P`). Now derived from `trusted
 
 ### UI Layout
 
-```
+```text
 +-----------------------------+
 |  bolt  Choose your community |  <- Title with bolt icon
 |  [search icon] Search...     |  <- Search bar (filters by name, region, currency, about)
