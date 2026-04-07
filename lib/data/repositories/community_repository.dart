@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
+import 'package:crypto/crypto.dart';
+import 'package:dart_nostr/dart_nostr.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 
 /// Repository that fetches community metadata from Nostr relays.
@@ -103,6 +105,53 @@ class CommunityRepository {
     return results;
   }
 
+  /// Verifies a raw Nostr event per NIP-01:
+  /// 1. Recomputes the event ID from the serialized content
+  /// 2. Verifies the Schnorr signature over the ID
+  bool _verifyEvent(Map<String, dynamic> event) {
+    try {
+      final id = event['id'] as String?;
+      final pubkey = event['pubkey'] as String?;
+      final sig = event['sig'] as String?;
+      final createdAt = event['created_at'] as int?;
+      final kind = event['kind'] as int?;
+      final content = event['content'] as String? ?? '';
+      final tags = event['tags'] as List<dynamic>?;
+
+      if (id == null ||
+          pubkey == null ||
+          sig == null ||
+          createdAt == null ||
+          kind == null) {
+        return false;
+      }
+
+      // Verify event ID matches content hash
+      final serialized =
+          jsonEncode([0, pubkey, createdAt, kind, tags ?? [], content]);
+      final computedId =
+          sha256.convert(utf8.encode(serialized)).toString();
+
+      if (computedId != id) {
+        logger.w(
+          'Event ID mismatch for $pubkey: expected $computedId, got $id',
+        );
+        return false;
+      }
+
+      // Verify Schnorr signature
+      if (!NostrKeyPairs.verify(pubkey, id, sig)) {
+        logger.w('Signature verification failed for kind $kind from $pubkey');
+        return false;
+      }
+
+      return true;
+    } catch (e) {
+      logger.w('Signature verification error: $e');
+      return false;
+    }
+  }
+
   void _processEvent(
     Map<String, dynamic> event,
     Map<String, CommunityMetadata> results,
@@ -113,6 +162,13 @@ class CommunityRepository {
 
     final meta = results[pubkey];
     if (meta == null) return;
+
+    if (!_verifyEvent(event)) {
+      logger.w(
+        'Rejecting kind $kind event from $pubkey: verification failed',
+      );
+      return;
+    }
 
     final createdAt = event['created_at'] as int? ?? 0;
 

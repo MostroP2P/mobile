@@ -86,20 +86,24 @@ final communityListProvider = FutureProvider<List<Community>>((ref) async {
   final pubkeys = communities.map((c) => c.pubkey).toList();
   final metadata = await repository.fetchCommunityMetadata(pubkeys);
 
-  // Enrich communities with fetched data
-  return communities.map((community) {
-    final meta = metadata[community.pubkey];
-    if (meta == null) return community;
+  // Enrich communities with fetched data and filter out nodes without
+  // updated trade info (no valid kind 38385 event received).
+  return communities
+      .map((community) {
+        final meta = metadata[community.pubkey];
+        if (meta == null) return community;
 
-    return community.copyWith(
-      name: meta.name,
-      about: meta.about,
-      picture: meta.picture,
-      hasTradeInfo: meta.hasTradeInfo,
-      currencies: meta.currencies,
-      minAmount: meta.minAmount,
-      maxAmount: meta.maxAmount,
-      fee: meta.fee,
-    );
-  }).toList();
+        return community.copyWith(
+          name: meta.name,
+          about: meta.about,
+          picture: meta.picture,
+          hasTradeInfo: meta.hasTradeInfo,
+          currencies: meta.currencies,
+          minAmount: meta.minAmount,
+          maxAmount: meta.maxAmount,
+          fee: meta.fee,
+        );
+      })
+      .where((c) => c.hasTradeInfo)
+      .toList();
 });
