@@ -184,12 +184,9 @@ class MessageBubble extends ConsumerWidget {
 
   String _formatTime(BuildContext context) {
     if (message.createdAt == null) return '';
-    final date = message.createdAt is int
-        ? DateTime.fromMillisecondsSinceEpoch(
-            (message.createdAt as int) * 1000)
-        : message.createdAt as DateTime;
     final use24h = MediaQuery.alwaysUse24HourFormatOf(context);
-    return DateFormat(use24h ? 'HH:mm' : 'h:mm a').format(date.toLocal());
+    return DateFormat(use24h ? 'HH:mm' : 'h:mm a')
+        .format(message.createdAt!.toLocal());
   }
 
   Widget _buildTimestamp(BuildContext context) {
