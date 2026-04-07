@@ -4,19 +4,38 @@ import 'dart:io';
 import 'dart:math';
 import 'package:crypto/crypto.dart';
 import 'package:dart_nostr/dart_nostr.dart';
+import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 
 /// Repository that fetches community metadata from Nostr relays.
 /// Uses a standalone WebSocket connection to fetch kind 0 (profile) and
 /// kind 38385 (Mostro info) events without depending on NostrService.
 class CommunityRepository {
-  static const String _relayUrl = 'wss://relay.mostro.network';
   static const Duration _timeout = Duration(seconds: 10);
 
   /// Fetches kind 0 and kind 38385 events for the given pubkeys.
-  /// Returns a map of pubkey -> CommunityMetadata.
-  /// Throws on connection or timeout failures so callers can handle errors.
+  /// Tries each relay from [Config.nostrRelays] until one succeeds.
+  /// Throws if all relays fail.
   Future<Map<String, CommunityMetadata>> fetchCommunityMetadata(
+    List<String> pubkeys,
+  ) async {
+    final relays = Config.nostrRelays;
+    Object? lastError;
+
+    for (final relayUrl in relays) {
+      try {
+        return await _fetchFromRelay(relayUrl, pubkeys);
+      } catch (e) {
+        logger.w('Community fetch failed on $relayUrl: $e');
+        lastError = e;
+      }
+    }
+
+    throw lastError ?? Exception('No relays configured');
+  }
+
+  Future<Map<String, CommunityMetadata>> _fetchFromRelay(
+    String relayUrl,
     List<String> pubkeys,
   ) async {
     final results = <String, CommunityMetadata>{};
@@ -26,7 +45,7 @@ class CommunityRepository {
 
     WebSocket? ws;
     try {
-      ws = await WebSocket.connect(_relayUrl).timeout(_timeout);
+      ws = await WebSocket.connect(relayUrl).timeout(_timeout);
 
       final subIdKind0 = _randomSubId();
       final subIdKind38385 = _randomSubId();
@@ -94,7 +113,7 @@ class CommunityRepository {
       ws.add(jsonEncode(['CLOSE', subIdKind38385]));
       await subscription.cancel();
     } catch (e) {
-      logger.e('Failed to fetch community data: $e');
+      logger.e('Failed to fetch community data from $relayUrl: $e');
       rethrow;
     } finally {
       try {
