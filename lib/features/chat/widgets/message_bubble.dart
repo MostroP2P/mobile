@@ -73,7 +73,7 @@ class MessageBubble extends ConsumerWidget {
                         getImageMetadata: chatNotifier.getImageMetadata,
                         cacheDecryptedImage: chatNotifier.cacheDecryptedImage,
                       ),
-                      _buildTimestamp(),
+                      _buildTimestamp(context),
                     ],
                   ),
                 ),
@@ -121,7 +121,7 @@ class MessageBubble extends ConsumerWidget {
                         getFileMetadata: chatNotifier.getFileMetadata,
                         cacheDecryptedFile: chatNotifier.cacheDecryptedFile,
                       ),
-                      _buildTimestamp(),
+                      _buildTimestamp(context),
                     ],
                   ),
                 ),
@@ -170,7 +170,7 @@ class MessageBubble extends ConsumerWidget {
                         ),
                         softWrap: true,
                       ),
-                      _buildTimestamp(),
+                      _buildTimestamp(context),
                     ],
                   ),
                 ),
@@ -182,17 +182,18 @@ class MessageBubble extends ConsumerWidget {
     );
   }
 
-  String _formatTime() {
+  String _formatTime(BuildContext context) {
     if (message.createdAt == null) return '';
     final date = message.createdAt is int
         ? DateTime.fromMillisecondsSinceEpoch(
             (message.createdAt as int) * 1000)
         : message.createdAt as DateTime;
-    return DateFormat.Hm().format(date.toLocal());
+    final use24h = MediaQuery.alwaysUse24HourFormatOf(context);
+    return DateFormat(use24h ? 'HH:mm' : 'h:mm a').format(date.toLocal());
   }
 
-  Widget _buildTimestamp() {
-    final time = _formatTime();
+  Widget _buildTimestamp(BuildContext context) {
+    final time = _formatTime(context);
     if (time.isEmpty) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.only(top: 4),

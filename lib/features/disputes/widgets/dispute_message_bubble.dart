@@ -88,7 +88,7 @@ class DisputeMessageBubble extends ConsumerWidget {
                   getFileMetadata: notifier.getFileMetadata,
                   cacheDecryptedFile: notifier.cacheDecryptedFile,
                 ),
-          _buildTimestamp(),
+          _buildTimestamp(context),
         ],
       ),
     );
@@ -112,7 +112,7 @@ class DisputeMessageBubble extends ConsumerWidget {
                 height: 1.4,
               ),
             ),
-            _buildTimestamp(),
+            _buildTimestamp(context),
           ],
         ),
       ),
@@ -131,11 +131,12 @@ class DisputeMessageBubble extends ConsumerWidget {
     );
   }
 
-  Widget _buildTimestamp() {
+  Widget _buildTimestamp(BuildContext context) {
+    final use24h = MediaQuery.alwaysUse24HourFormatOf(context);
     return Padding(
       padding: const EdgeInsets.only(top: 4),
       child: Text(
-        DateFormat.Hm().format(message.timestamp.toLocal()),
+        DateFormat(use24h ? 'HH:mm' : 'h:mm a').format(message.timestamp.toLocal()),
         style: TextStyle(
           color: AppTheme.cream1.withValues(alpha: 0.6),
           fontSize: 11,
