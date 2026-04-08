@@ -980,7 +980,7 @@ class RestoreService {
     } catch (e) {
       logger.e('syncTradeIndex: failed', error: e);
     } finally {
-      _tempSubscription?.cancel();
+      await _tempSubscription?.cancel();
       _tempSubscription = null;
       _tempTradeKey = null;
       _masterKey = null;
