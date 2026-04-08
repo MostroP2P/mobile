@@ -822,6 +822,11 @@ class RestoreService {
   // 5. Request last trade index (Stage 3: GettingTradeIndex)
   // 6. Complete restore process
   Future<bool> initRestoreProcess() async {
+    if (_operationInProgress) {
+      logger.w('initRestoreProcess: another operation in progress, skipping');
+      return false;
+    }
+
     _operationInProgress = true;
     bool success = false;
     try {
