@@ -52,6 +52,7 @@ class RestoreService {
   NostrKeyPairs?
   _tempTradeKey; // Temporary trade key (index 1) used during restore process
   NostrKeyPairs? _masterKey; // Master key pair used during restore process
+  bool _operationInProgress = false;
 
   RestoreService(this.ref);
 
@@ -821,6 +822,7 @@ class RestoreService {
   // 5. Request last trade index (Stage 3: GettingTradeIndex)
   // 6. Complete restore process
   Future<bool> initRestoreProcess() async {
+    _operationInProgress = true;
     bool success = false;
     try {
       // Clear existing data
@@ -939,6 +941,7 @@ class RestoreService {
       _currentCompleter = null;
       _tempTradeKey = null;
       _masterKey = null;
+      _operationInProgress = false;
 
       // Only call completeRestore if not in error state
       final currentState = ref.read(restoreProgressProvider);
@@ -954,12 +957,18 @@ class RestoreService {
   /// and updates local storage. Used when local trade index is stale
   /// (e.g., SharedPreferences deleted but secure storage preserved).
   Future<void> syncTradeIndex() async {
+    if (_operationInProgress) {
+      logger.w('syncTradeIndex: another operation in progress, skipping');
+      return;
+    }
+
     final keyManager = ref.read(keyManagerProvider);
     if (keyManager.masterKeyPair == null) {
       logger.w('syncTradeIndex: no master key, skipping');
       return;
     }
 
+    _operationInProgress = true;
     try {
       _masterKey = keyManager.masterKeyPair;
       _tempTradeKey = await keyManager.deriveTradeKeyFromIndex(1);
@@ -977,13 +986,14 @@ class RestoreService {
           'syncTradeIndex: updated local trade index to ${response.tradeIndex + 1}',
         );
       }
-    } catch (e) {
-      logger.e('syncTradeIndex: failed', error: e);
+    } catch (e, stack) {
+      logger.e('syncTradeIndex: failed', error: e, stackTrace: stack);
     } finally {
       await _tempSubscription?.cancel();
       _tempSubscription = null;
       _tempTradeKey = null;
       _masterKey = null;
+      _operationInProgress = false;
     }
   }
 }

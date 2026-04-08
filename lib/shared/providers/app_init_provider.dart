@@ -21,10 +21,10 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
   final hadMasterKey = await keyManager.hasMasterKey();
   await keyManager.init();
 
-  // If master key existed but trade index is at default (1), it means
+  // If master key existed but trade index is not persisted, it means
   // secure storage survived but SharedPreferences was deleted.
   // Sync trade index from Mostro to prevent invalid_trade_index errors.
-  if (hadMasterKey && keyManager.tradeKeyIndex == 1) {
+  if (hadMasterKey && !await keyManager.hasPersistedTradeKeyIndex()) {
     unawaited(ref.read(restoreServiceProvider).syncTradeIndex());
   }
 

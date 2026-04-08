@@ -271,6 +271,8 @@ class MostroMessageDetail extends ConsumerWidget {
         return S.of(context)!.invalidAction;
       case CantDoReason.pendingOrderExists:
         return S.of(context)!.pendingOrderExists;
+      case CantDoReason.tooManyRequests:
+        return S.of(context)!.tooManyRequests;
       default:
         return '${tradeState.status.toString()} - ${tradeState.action}';
     }

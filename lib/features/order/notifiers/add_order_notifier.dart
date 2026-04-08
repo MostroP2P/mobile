@@ -117,9 +117,9 @@ class AddOrderNotifier extends AbstractMostroNotifier {
     subscribe();
   }
 
-  /// Clean up session and navigate back for invalid_fiat_currency error
+  /// Clean up session and navigate back for terminal errors
   void _cleanupSessionAndNavigateBack() {
-    logger.i('Cleaning up session and navigating back after invalid_fiat_currency');
+    logger.i('Cleaning up session and navigating back after terminal error');
     
     // Delete the session from SessionNotifier
     ref.read(sessionNotifierProvider.notifier).deleteSessionByRequestId(requestId);
