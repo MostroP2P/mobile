@@ -1528,5 +1528,8 @@
             }
         }
     },
-    "communityAllCurrencies": "Toutes les devises"
+    "communityAllCurrencies": "Toutes les devises",
+    "communityDisclaimerTitle": "Avis Important",
+    "communityDisclaimerBody": "L'equipe de developpement de Mostro n'est pas responsable de l'utilisation que font les operateurs de noeuds de la plateforme. Chaque operateur controle son propre noeud Mostro et est seul responsable de ses actions. En utilisant Mostro, vous acceptez l'entiere responsabilite de vos transactions et reconnaissez que l'equipe de developpement n'a aucun controle sur les operateurs de noeuds individuels.",
+    "communityDisclaimerAccept": "Accepter"
 }

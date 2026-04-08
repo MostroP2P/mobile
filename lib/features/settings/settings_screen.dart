@@ -751,6 +751,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
               ),
             ),
+            Container(
+              margin: const EdgeInsets.only(top: 16),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+              ),
+              child: Text(
+                S.of(context)!.communityDisclaimerBody,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.amber.shade900,
+                ),
+              ),
+            ),
           ],
         ),
       ),

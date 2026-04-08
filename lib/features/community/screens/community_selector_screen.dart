@@ -27,175 +27,204 @@ class _CommunitySelectorScreenState
   bool _isSelecting = false;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _showDisclaimerDialog();
+    });
+  }
+
+  void _showDisclaimerDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: Text(S.of(ctx)!.communityDisclaimerTitle),
+        content: SingleChildScrollView(
+          child: Text(S.of(ctx)!.communityDisclaimerBody),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(S.of(ctx)!.communityDisclaimerAccept),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final communitiesAsync = ref.watch(communityListProvider);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light,
-      child: Scaffold(
-        backgroundColor: AppTheme.backgroundDark,
-        body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 32),
-              // Title
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+        value: SystemUiOverlayStyle.light,
+        child: Scaffold(
+          backgroundColor: AppTheme.backgroundDark,
+          body: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Icon(
-                    Icons.bolt,
-                    color: AppTheme.activeColor,
-                    size: 28,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    S.of(context)!.chooseYourCommunity,
-                    style: const TextStyle(
-                      color: AppTheme.textPrimary,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              // Search bar
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(
-                  color: AppTheme.backgroundInput,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.1),
-                  ),
-                ),
-                child: TextField(
-                  style: const TextStyle(color: AppTheme.textPrimary),
-                  decoration: InputDecoration(
-                    icon: const Icon(
-                      Icons.search,
-                      color: AppTheme.textSecondary,
-                      size: 20,
-                    ),
-                    hintText: S.of(context)!.communitySearchHint,
-                    hintStyle: const TextStyle(color: AppTheme.textSecondary),
-                    border: InputBorder.none,
-                  ),
-                  onChanged: (value) => setState(() => _searchQuery = value),
-                ),
-              ),
-              const SizedBox(height: 16),
-              // Community list
-              Expanded(
-                child: communitiesAsync.when(
-                  loading: () => _buildLoadingSkeleton(),
-                  error: (error, _) => _buildErrorState(context),
-                  data: (communities) {
-                    final filtered = _filterCommunities(communities);
-                    if (filtered.isEmpty) {
-                      return Center(
-                        child: Text(
-                          S.of(context)!.noCommunityResults,
-                          style: const TextStyle(
-                            color: AppTheme.textSecondary,
-                            fontSize: 15,
-                          ),
+                  const SizedBox(height: 32),
+                  // Title
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.bolt,
+                        color: AppTheme.activeColor,
+                        size: 28,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        S.of(context)!.chooseYourCommunity,
+                        style: const TextStyle(
+                          color: AppTheme.textPrimary,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
                         ),
-                      );
-                    }
-                    return ListView.builder(
-                      itemCount: filtered.length,
-                      itemBuilder: (context, index) {
-                        final community = filtered[index];
-                        return CommunityCard(
-                          community: community,
-                          isSelected: _selectedPubkey == community.pubkey,
-                          onTap: () => setState(
-                            () => _selectedPubkey = community.pubkey,
-                          ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  // Search bar
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: AppTheme.backgroundInput,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.1),
+                      ),
+                    ),
+                    child: TextField(
+                      style: const TextStyle(color: AppTheme.textPrimary),
+                      decoration: InputDecoration(
+                        icon: const Icon(
+                          Icons.search,
+                          color: AppTheme.textSecondary,
+                          size: 20,
+                        ),
+                        hintText: S.of(context)!.communitySearchHint,
+                        hintStyle:
+                            const TextStyle(color: AppTheme.textSecondary),
+                        border: InputBorder.none,
+                      ),
+                      onChanged: (value) =>
+                          setState(() => _searchQuery = value),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Community list
+                  Expanded(
+                    child: communitiesAsync.when(
+                      loading: () => _buildLoadingSkeleton(),
+                      error: (error, _) => _buildErrorState(context),
+                      data: (communities) {
+                        final filtered = _filterCommunities(communities);
+                        if (filtered.isEmpty) {
+                          return Center(
+                            child: Text(
+                              S.of(context)!.noCommunityResults,
+                              style: const TextStyle(
+                                color: AppTheme.textSecondary,
+                                fontSize: 15,
+                              ),
+                            ),
+                          );
+                        }
+                        return ListView.builder(
+                          itemCount: filtered.length,
+                          itemBuilder: (context, index) {
+                            final community = filtered[index];
+                            return CommunityCard(
+                              community: community,
+                              isSelected: _selectedPubkey == community.pubkey,
+                              onTap: () => setState(
+                                () => _selectedPubkey = community.pubkey,
+                              ),
+                            );
+                          },
                         );
                       },
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 12),
-              // Use custom node
-              TextButton(
-                onPressed: _isSelecting
-                    ? null
-                    : () => _onUseCustomNode(context),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.settings,
-                      size: 18,
-                      color: AppTheme.textSecondary,
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      S.of(context)!.useCustomNode,
+                  ),
+                  const SizedBox(height: 12),
+                  // Use custom node
+                  TextButton(
+                    onPressed:
+                        _isSelecting ? null : () => _onUseCustomNode(context),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.settings,
+                          size: 18,
+                          color: AppTheme.textSecondary,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          S.of(context)!.useCustomNode,
+                          style: const TextStyle(
+                            color: AppTheme.textSecondary,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  // Confirm button
+                  if (_selectedPubkey != null)
+                    ElevatedButton(
+                      onPressed:
+                          _isSelecting ? null : () => _onConfirm(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.activeColor,
+                        foregroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      child: _isSelecting
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.black,
+                              ),
+                            )
+                          : Text(
+                              S.of(context)!.done,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                    ),
+                  // Skip button
+                  TextButton(
+                    onPressed: _isSelecting ? null : () => _onSkip(context),
+                    child: Text(
+                      S.of(context)!.skipForNow,
                       style: const TextStyle(
                         color: AppTheme.textSecondary,
                         fontSize: 14,
                       ),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              // Confirm button
-              if (_selectedPubkey != null)
-                ElevatedButton(
-                  onPressed: _isSelecting ? null : () => _onConfirm(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.activeColor,
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
-                  child: _isSelecting
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.black,
-                          ),
-                        )
-                      : Text(
-                          S.of(context)!.done,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                ),
-              // Skip button
-              TextButton(
-                onPressed: _isSelecting ? null : () => _onSkip(context),
-                child: Text(
-                  S.of(context)!.skipForNow,
-                  style: const TextStyle(
-                    color: AppTheme.textSecondary,
-                    fontSize: 14,
+                  SizedBox(
+                    height: MediaQuery.of(context).viewPadding.bottom + 8,
                   ),
-                ),
+                ],
               ),
-              SizedBox(
-                height: MediaQuery.of(context).viewPadding.bottom + 8,
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
-    ));
+        ));
   }
 
   List<Community> _filterCommunities(List<Community> communities) {
@@ -343,9 +372,7 @@ class _CommunitySelectorScreenState
     final nodesNotifier = ref.read(mostroNodesProvider.notifier);
     await nodesNotifier.selectNode(pubkey);
 
-    await ref
-        .read(communitySelectedProvider.notifier)
-        .markCommunitySelected();
+    await ref.read(communitySelectedProvider.notifier).markCommunitySelected();
 
     if (mounted) {
       context.go('/');

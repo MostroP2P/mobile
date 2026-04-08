@@ -1528,5 +1528,8 @@
             }
         }
     },
-    "communityAllCurrencies": "Alle Währungen"
+    "communityAllCurrencies": "Alle Währungen",
+    "communityDisclaimerTitle": "Wichtiger Hinweis",
+    "communityDisclaimerBody": "Das Mostro-Entwicklungsteam ist nicht verantwortlich fuer die Nutzung der Plattform durch Node-Betreiber. Jeder Betreiber kontrolliert seinen eigenen Mostro-Node und ist allein verantwortlich fuer seine Handlungen. Mit der Nutzung von Mostro akzeptieren Sie die volle Verantwortung fuer Ihre Transaktionen und erkennen an, dass das Entwicklungsteam keine Kontrolle ueber einzelne Node-Betreiber hat.",
+    "communityDisclaimerAccept": "Akzeptieren"
 }
