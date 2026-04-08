@@ -540,6 +540,19 @@ class KeyStorage {
         ) ??
         1;  // Default to first trade key
   }
+
+  // Selective clear: removes only keys owned by KeyStorage and
+  // user-identity data. Preserves app preferences (mostro_settings,
+  // first_run_complete, community_selected) to avoid resetting
+  // the selected Mostro instance or re-showing onboarding screens.
+  Future<void> clear() async {
+    await secureStorage.deleteAll();
+    await sharedPrefs.remove(SharedPreferencesKeys.keyIndex.value);
+    await sharedPrefs.remove(SharedPreferencesKeys.mostroCustomNodes.value);
+    await sharedPrefs.remove(SharedPreferencesKeys.trustedNodeMetadata.value);
+    await sharedPrefs.remove(SharedPreferencesKeys.backgroundFilters.value);
+    await sharedPrefs.remove(SharedPreferencesKeys.fullPrivacy.value);
+  }
 }
 ```
 

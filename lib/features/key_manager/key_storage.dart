@@ -53,6 +53,13 @@ class KeyStorage {
 
   Future<void> clear() async {
     await secureStorage.deleteAll();
-    await sharedPrefs.clear();
+    // Remove only key-related and user-identity data.
+    // Preserved: mostro_settings (instance + language), first_run_complete,
+    // community_selected — these are app preferences, not user identity.
+    await sharedPrefs.remove(SharedPreferencesKeys.keyIndex.value);
+    await sharedPrefs.remove(SharedPreferencesKeys.mostroCustomNodes.value);
+    await sharedPrefs.remove(SharedPreferencesKeys.trustedNodeMetadata.value);
+    await sharedPrefs.remove(SharedPreferencesKeys.backgroundFilters.value);
+    await sharedPrefs.remove(SharedPreferencesKeys.fullPrivacy.value);
   }
 }
