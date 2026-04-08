@@ -949,6 +949,43 @@ class RestoreService {
 
     return success;
   }
+
+  /// Lightweight trade index sync: fetches last-trade-index from Mostro
+  /// and updates local storage. Used when local trade index is stale
+  /// (e.g., SharedPreferences deleted but secure storage preserved).
+  Future<void> syncTradeIndex() async {
+    final keyManager = ref.read(keyManagerProvider);
+    if (keyManager.masterKeyPair == null) {
+      logger.w('syncTradeIndex: no master key, skipping');
+      return;
+    }
+
+    try {
+      _masterKey = keyManager.masterKeyPair;
+      _tempTradeKey = await keyManager.deriveTradeKeyFromIndex(1);
+
+      _tempSubscription = await _createTempSubscription();
+      _currentStage = RestoreStage.gettingTradeIndex;
+
+      await _sendLastTradeIndexRequest();
+      final event = await _waitForEvent(RestoreStage.gettingTradeIndex);
+      final response = await _extractLastTradeIndex(event);
+
+      if (response.tradeIndex > 0) {
+        await keyManager.setCurrentKeyIndex(response.tradeIndex + 1);
+        logger.i(
+          'syncTradeIndex: updated local trade index to ${response.tradeIndex + 1}',
+        );
+      }
+    } catch (e) {
+      logger.e('syncTradeIndex: failed', error: e);
+    } finally {
+      _tempSubscription?.cancel();
+      _tempSubscription = null;
+      _tempTradeKey = null;
+      _masterKey = null;
+    }
+  }
 }
 
 final restoreServiceProvider = Provider<RestoreService>((ref) {

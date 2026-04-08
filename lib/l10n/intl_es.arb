@@ -1506,5 +1506,6 @@
     "communityAllCurrencies": "Todas las monedas",
     "communityDisclaimerTitle": "Aviso Importante",
     "communityDisclaimerBody": "El equipo de desarrollo de Mostro no se hace responsable del uso que los operadores de nodos hagan de la plataforma. Cada operador controla su propio nodo Mostro y es el unico responsable de sus acciones. Al usar Mostro, aceptas la plena responsabilidad de tus operaciones y reconoces que el equipo de desarrollo no tiene control sobre los operadores de nodos individuales.",
-    "communityDisclaimerAccept": "Aceptar"
+    "communityDisclaimerAccept": "Aceptar",
+    "tooManyRequests": "Demasiadas solicitudes, por favor inténtalo más tarde."
 }

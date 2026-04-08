@@ -5,6 +5,7 @@ import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/features/mostro/mostro_nodes_provider.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
+import 'package:mostro_mobile/features/restore/restore_manager.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/providers/background_service_provider.dart';
@@ -17,7 +18,15 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
   await nostrService.init(ref.read(settingsProvider));
 
   final keyManager = ref.read(keyManagerProvider);
+  final hadMasterKey = await keyManager.hasMasterKey();
   await keyManager.init();
+
+  // If master key existed but trade index is at default (1), it means
+  // secure storage survived but SharedPreferences was deleted.
+  // Sync trade index from Mostro to prevent invalid_trade_index errors.
+  if (hadMasterKey && keyManager.tradeKeyIndex == 1) {
+    unawaited(ref.read(restoreServiceProvider).syncTradeIndex());
+  }
 
   final mostroNodes = ref.read(mostroNodesProvider.notifier);
   await mostroNodes.init();
