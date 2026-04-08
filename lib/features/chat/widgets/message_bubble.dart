@@ -2,6 +2,7 @@ import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/providers/avatar_provider.dart';
@@ -60,13 +61,20 @@ class MessageBubble extends ConsumerWidget {
                       bottomRight: Radius.circular(isFromPeer ? 16 : 4),
                     ),
                   ),
-                  child: EncryptedImageMessage(
-                    message: message,
-                    isOwnMessage: !isFromPeer,
-                    getSharedKey: chatNotifier.getSharedKey,
-                    getCachedImage: chatNotifier.getCachedImage,
-                    getImageMetadata: chatNotifier.getImageMetadata,
-                    cacheDecryptedImage: chatNotifier.cacheDecryptedImage,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      EncryptedImageMessage(
+                        message: message,
+                        isOwnMessage: !isFromPeer,
+                        getSharedKey: chatNotifier.getSharedKey,
+                        getCachedImage: chatNotifier.getCachedImage,
+                        getImageMetadata: chatNotifier.getImageMetadata,
+                        cacheDecryptedImage: chatNotifier.cacheDecryptedImage,
+                      ),
+                      _buildTimestamp(context),
+                    ],
                   ),
                 ),
               ),
@@ -101,13 +109,20 @@ class MessageBubble extends ConsumerWidget {
                       bottomRight: Radius.circular(isFromPeer ? 16 : 4),
                     ),
                   ),
-                  child: EncryptedFileMessage(
-                    message: message,
-                    isOwnMessage: !isFromPeer,
-                    getSharedKey: chatNotifier.getSharedKey,
-                    getCachedFile: chatNotifier.getCachedFile,
-                    getFileMetadata: chatNotifier.getFileMetadata,
-                    cacheDecryptedFile: chatNotifier.cacheDecryptedFile,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      EncryptedFileMessage(
+                        message: message,
+                        isOwnMessage: !isFromPeer,
+                        getSharedKey: chatNotifier.getSharedKey,
+                        getCachedFile: chatNotifier.getCachedFile,
+                        getFileMetadata: chatNotifier.getFileMetadata,
+                        cacheDecryptedFile: chatNotifier.cacheDecryptedFile,
+                      ),
+                      _buildTimestamp(context),
+                    ],
                   ),
                 ),
               ),
@@ -142,20 +157,49 @@ class MessageBubble extends ConsumerWidget {
                       bottomRight: Radius.circular(isFromPeer ? 16 : 4),
                     ),
                   ),
-                  child: Text(
-                    content,
-                    style: const TextStyle(
-                      color: AppTheme.cream1,
-                      fontSize: 16,
-                      height: 1.4, // Better line height for readability
-                    ),
-                    softWrap: true,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        content,
+                        style: const TextStyle(
+                          color: AppTheme.cream1,
+                          fontSize: 16,
+                          height: 1.4,
+                        ),
+                        softWrap: true,
+                      ),
+                      _buildTimestamp(context),
+                    ],
                   ),
                 ),
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  String _formatTime(BuildContext context) {
+    if (message.createdAt == null) return '';
+    final use24h = MediaQuery.alwaysUse24HourFormatOf(context);
+    return DateFormat(use24h ? 'HH:mm' : 'h:mm a')
+        .format(message.createdAt!.toLocal());
+  }
+
+  Widget _buildTimestamp(BuildContext context) {
+    final time = _formatTime(context);
+    if (time.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Text(
+        time,
+        style: TextStyle(
+          color: AppTheme.cream1.withValues(alpha: 0.6),
+          fontSize: 11,
+        ),
       ),
     );
   }

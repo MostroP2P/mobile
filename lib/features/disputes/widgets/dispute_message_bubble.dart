@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
-import 'package:mostro_mobile/shared/utils/datetime_extensions_utils.dart';
 import 'package:mostro_mobile/features/chat/utils/message_type_helpers.dart';
 import 'package:mostro_mobile/features/chat/widgets/encrypted_image_message.dart';
 import 'package:mostro_mobile/features/chat/widgets/encrypted_file_message.dart';
@@ -67,23 +67,30 @@ class DisputeMessageBubble extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: _bubbleDecoration(),
-      child: isImage
-          ? EncryptedImageMessage(
-              message: message.event,
-              isOwnMessage: isFromUser,
-              getSharedKey: notifier.getAdminSharedKey,
-              getCachedImage: notifier.getCachedImage,
-              getImageMetadata: notifier.getImageMetadata,
-              cacheDecryptedImage: notifier.cacheDecryptedImage,
-            )
-          : EncryptedFileMessage(
-              message: message.event,
-              isOwnMessage: isFromUser,
-              getSharedKey: notifier.getAdminSharedKey,
-              getCachedFile: notifier.getCachedFile,
-              getFileMetadata: notifier.getFileMetadata,
-              cacheDecryptedFile: notifier.cacheDecryptedFile,
-            ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          isImage
+              ? EncryptedImageMessage(
+                  message: message.event,
+                  isOwnMessage: isFromUser,
+                  getSharedKey: notifier.getAdminSharedKey,
+                  getCachedImage: notifier.getCachedImage,
+                  getImageMetadata: notifier.getImageMetadata,
+                  cacheDecryptedImage: notifier.cacheDecryptedImage,
+                )
+              : EncryptedFileMessage(
+                  message: message.event,
+                  isOwnMessage: isFromUser,
+                  getSharedKey: notifier.getAdminSharedKey,
+                  getCachedFile: notifier.getCachedFile,
+                  getFileMetadata: notifier.getFileMetadata,
+                  cacheDecryptedFile: notifier.cacheDecryptedFile,
+                ),
+          _buildTimestamp(context),
+        ],
+      ),
     );
   }
 
@@ -94,7 +101,8 @@ class DisputeMessageBubble extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: _bubbleDecoration(),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               message.content,
@@ -104,7 +112,6 @@ class DisputeMessageBubble extends ConsumerWidget {
                 height: 1.4,
               ),
             ),
-            const SizedBox(height: 6),
             _buildTimestamp(context),
           ],
         ),
@@ -125,11 +132,15 @@ class DisputeMessageBubble extends ConsumerWidget {
   }
 
   Widget _buildTimestamp(BuildContext context) {
-    return Text(
-      message.timestamp.timeAgoWithLocale(context),
-      style: const TextStyle(
-        color: Colors.white70,
-        fontSize: 12,
+    final use24h = MediaQuery.alwaysUse24HourFormatOf(context);
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Text(
+        DateFormat(use24h ? 'HH:mm' : 'h:mm a').format(message.timestamp.toLocal()),
+        style: TextStyle(
+          color: AppTheme.cream1.withValues(alpha: 0.6),
+          fontSize: 11,
+        ),
       ),
     );
   }
