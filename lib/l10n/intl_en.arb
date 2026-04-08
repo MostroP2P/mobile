@@ -1511,5 +1511,25 @@
     "deepLinkDifferentMostroBody": "This order was created on a different Mostro node. Do you want to switch to this Mostro and view the order?",
     "deepLinkDifferentMostroFrom": "Order from:",
     "deepLinkDifferentMostroCurrent": "Currently connected to:",
-    "deepLinkSwitchAndView": "Switch & View"
+    "deepLinkSwitchAndView": "Switch & View",
+    "chooseYourCommunity": "Choose your community",
+    "communitySearchHint": "Search communities...",
+    "communityFee": "Fee",
+    "communityRange": "Range",
+    "useCustomNode": "Use a custom node",
+    "communityLoadingError": "Could not load community data",
+    "communityRetry": "Retry",
+    "noCommunityResults": "No communities found",
+    "communityFormatSats": "{amount} sats",
+    "@communityFormatSats": {
+        "placeholders": {
+            "amount": {
+                "type": "String"
+            }
+        }
+    },
+    "communityAllCurrencies": "All currencies",
+    "communityDisclaimerTitle": "Important Notice",
+    "communityDisclaimerBody": "The Mostro development team is not responsible for how node operators use the platform. Each operator controls their own Mostro node and is solely responsible for their actions. By using Mostro, you accept full responsibility for your trades and acknowledge that the development team has no control over individual node operators.",
+    "communityDisclaimerAccept": "Accept"
 }

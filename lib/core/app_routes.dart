@@ -29,6 +29,8 @@ import 'package:mostro_mobile/features/logs/screens/logs_screen.dart';
 import 'package:mostro_mobile/features/logs/widgets/logs_recording_indicator.dart';
 
 import 'package:mostro_mobile/core/app.dart';
+import 'package:mostro_mobile/features/community/providers/community_selector_provider.dart';
+import 'package:mostro_mobile/features/community/screens/community_selector_screen.dart';
 import 'package:mostro_mobile/features/walkthrough/providers/first_run_provider.dart';
 import 'package:mostro_mobile/shared/widgets/navigation_listener_widget.dart';
 import 'package:mostro_mobile/shared/widgets/notification_listener_widget.dart';
@@ -53,6 +55,20 @@ GoRouter createRouter(WidgetRef ref) {
           if (isFirstRun && state.matchedLocation != '/walkthrough') {
             return '/walkthrough';
           }
+
+          // After walkthrough, check if community was selected
+          if (!isFirstRun &&
+              state.matchedLocation != '/community_selector' &&
+              state.matchedLocation != '/walkthrough') {
+            final communityState = ref.read(communitySelectedProvider);
+            final redirect = communityState.when(
+              data: (selected) => selected ? null : '/community_selector',
+              loading: () => null, // Wait for provider to resolve
+              error: (_, __) => null,
+            );
+            if (redirect != null) return redirect;
+          }
+
           return null;
         },
         loading: () {
@@ -202,6 +218,15 @@ GoRouter createRouter(WidgetRef ref) {
                   context: context,
                   state: state,
                   child: WalkthroughScreen(),
+                ),
+          ),
+          GoRoute(
+            path: '/community_selector',
+            pageBuilder: (context, state) =>
+                buildPageWithDefaultTransition<void>(
+                  context: context,
+                  state: state,
+                  child: const CommunitySelectorScreen(),
                 ),
           ),
           GoRoute(

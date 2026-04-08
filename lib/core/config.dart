@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:mostro_mobile/core/config/communities.dart';
 
 class Config {
   // Nostr configuration
@@ -9,21 +10,19 @@ class Config {
     //'ws://10.0.2.2:7000', // mobile emulator
   ];
 
-  // Trusted Mostro nodes registry
-  static const String _defaultMostroPubKey =
-      '82fa8cb978b43c79b2156585bac2c011176a21d2aead6d9f7c575c005be88390';
-
-  static const List<Map<String, String>> trustedMostroNodes = [
-    {
-      'pubkey': _defaultMostroPubKey,
-      'name': 'Mostro P2P',
-    },
-  ];
+  // Derived from trustedCommunities to maintain single source of truth
+  static final List<Map<String, String>> trustedMostroNodes =
+      trustedCommunities
+          .map((c) => {
+                'pubkey': c.pubkey,
+                'name': c.region,
+              })
+          .toList();
 
   // Mostro hexkey (backward compatible, overridable via env variable)
   static const String mostroPubKey = String.fromEnvironment(
     'MOSTRO_PUB_KEY',
-    defaultValue: _defaultMostroPubKey,
+    defaultValue: defaultMostroPubkey,
   );
 
   static const String dBName = 'mostro.db';

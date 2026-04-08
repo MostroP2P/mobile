@@ -1545,5 +1545,25 @@
     "deepLinkDifferentMostroBody": "Questo ordine è stato creato su un nodo Mostro diverso. Vuoi passare a questo Mostro e visualizzare l'ordine?",
     "deepLinkDifferentMostroFrom": "Ordine da:",
     "deepLinkDifferentMostroCurrent": "Attualmente connesso a:",
-    "deepLinkSwitchAndView": "Cambia e visualizza"
+    "deepLinkSwitchAndView": "Cambia e visualizza",
+    "chooseYourCommunity": "Scegli la tua comunità",
+    "communitySearchHint": "Cerca comunità...",
+    "communityFee": "Commissione",
+    "communityRange": "Intervallo",
+    "useCustomNode": "Usa un nodo personalizzato",
+    "communityLoadingError": "Impossibile caricare i dati della comunità",
+    "communityRetry": "Riprova",
+    "noCommunityResults": "Nessuna comunità trovata",
+    "communityFormatSats": "{amount} sats",
+    "@communityFormatSats": {
+        "placeholders": {
+            "amount": {
+                "type": "String"
+            }
+        }
+    },
+    "communityAllCurrencies": "Tutte le valute",
+    "communityDisclaimerTitle": "Avviso Importante",
+    "communityDisclaimerBody": "Il team di sviluppo di Mostro non e' responsabile di come gli operatori dei nodi utilizzano la piattaforma. Ogni operatore controlla il proprio nodo Mostro ed e' l'unico responsabile delle proprie azioni. Utilizzando Mostro, accetti la piena responsabilita' per le tue operazioni e riconosci che il team di sviluppo non ha alcun controllo sui singoli operatori dei nodi.",
+    "communityDisclaimerAccept": "Accetta"
 }

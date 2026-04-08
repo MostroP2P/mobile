@@ -1486,5 +1486,25 @@
     "deepLinkDifferentMostroBody": "Esta orden fue creada en un nodo Mostro diferente. ¿Deseas cambiar a este Mostro y ver la orden?",
     "deepLinkDifferentMostroFrom": "Orden de:",
     "deepLinkDifferentMostroCurrent": "Actualmente conectado a:",
-    "deepLinkSwitchAndView": "Cambiar y ver"
+    "deepLinkSwitchAndView": "Cambiar y ver",
+    "chooseYourCommunity": "Elige tu comunidad",
+    "communitySearchHint": "Buscar comunidades...",
+    "communityFee": "Comisión",
+    "communityRange": "Rango",
+    "useCustomNode": "Usar un nodo personalizado",
+    "communityLoadingError": "No se pudieron cargar los datos de la comunidad",
+    "communityRetry": "Reintentar",
+    "noCommunityResults": "No se encontraron comunidades",
+    "communityFormatSats": "{amount} sats",
+    "@communityFormatSats": {
+        "placeholders": {
+            "amount": {
+                "type": "String"
+            }
+        }
+    },
+    "communityAllCurrencies": "Todas las monedas",
+    "communityDisclaimerTitle": "Aviso Importante",
+    "communityDisclaimerBody": "El equipo de desarrollo de Mostro no se hace responsable del uso que los operadores de nodos hagan de la plataforma. Cada operador controla su propio nodo Mostro y es el unico responsable de sus acciones. Al usar Mostro, aceptas la plena responsabilidad de tus operaciones y reconoces que el equipo de desarrollo no tiene control sobre los operadores de nodos individuales.",
+    "communityDisclaimerAccept": "Aceptar"
 }

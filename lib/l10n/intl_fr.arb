@@ -1511,5 +1511,25 @@
     "deepLinkDifferentMostroBody": "Cette commande a été créée sur un nœud Mostro différent. Voulez-vous basculer vers ce Mostro et voir la commande ?",
     "deepLinkDifferentMostroFrom": "Commande de :",
     "deepLinkDifferentMostroCurrent": "Actuellement connecté à :",
-    "deepLinkSwitchAndView": "Basculer et voir"
+    "deepLinkSwitchAndView": "Basculer et voir",
+    "chooseYourCommunity": "Choisissez votre communauté",
+    "communitySearchHint": "Rechercher des communautés...",
+    "communityFee": "Frais",
+    "communityRange": "Plage",
+    "useCustomNode": "Utiliser un nœud personnalisé",
+    "communityLoadingError": "Impossible de charger les données de la communauté",
+    "communityRetry": "Réessayer",
+    "noCommunityResults": "Aucune communauté trouvée",
+    "communityFormatSats": "{amount} sats",
+    "@communityFormatSats": {
+        "placeholders": {
+            "amount": {
+                "type": "String"
+            }
+        }
+    },
+    "communityAllCurrencies": "Toutes les devises",
+    "communityDisclaimerTitle": "Avis Important",
+    "communityDisclaimerBody": "L'equipe de developpement de Mostro n'est pas responsable de l'utilisation que font les operateurs de noeuds de la plateforme. Chaque operateur controle son propre noeud Mostro et est seul responsable de ses actions. En utilisant Mostro, vous acceptez l'entiere responsabilite de vos transactions et reconnaissez que l'equipe de developpement n'a aucun controle sur les operateurs de noeuds individuels.",
+    "communityDisclaimerAccept": "Accepter"
 }

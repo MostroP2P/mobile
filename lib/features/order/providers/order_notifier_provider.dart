@@ -5,8 +5,6 @@ import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/features/order/notifiers/add_order_notifier.dart';
 import 'package:mostro_mobile/features/order/notifiers/order_notifier.dart';
 import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-part 'order_notifier_provider.g.dart';
 
 final orderNotifierProvider =
     StateNotifierProvider.family<OrderNotifier, OrderState, String>(
@@ -28,14 +26,16 @@ final addOrderNotifierProvider =
   },
 );
 
-// This provider tracks the currently selected OrderType tab
-@riverpod
-class OrderTypeNotifier extends _$OrderTypeNotifier {
-  @override
-  OrderType build() => OrderType.sell;
+class OrderTypeNotifier extends StateNotifier<OrderType> {
+  OrderTypeNotifier() : super(OrderType.sell);
 
   void set(OrderType value) => state = value;
 }
+
+final orderTypeNotifierProvider =
+    AutoDisposeStateNotifierProvider<OrderTypeNotifier, OrderType>((ref) {
+  return OrderTypeNotifier();
+});
 
 final addOrderEventsProvider = StreamProvider.family<MostroMessage?, int>(
   (ref, requestId) {

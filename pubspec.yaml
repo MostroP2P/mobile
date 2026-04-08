@@ -66,7 +66,6 @@ dependencies:
   sembast_web: ^2.4.1
   circular_countdown: ^2.1.0
   introduction_screen: ^3.1.17
-  riverpod_annotation: ^2.6.1
   lucide_icons: ^0.257.0 
   url_launcher: ^6.3.2
 
@@ -125,8 +124,6 @@ dev_dependencies:
   flutter_intl: ^0.0.1
   mockito: ^5.4.5
   build_runner: ^2.4.0
-  riverpod_generator: ^2.6.5
-
   # Mutation testing for test quality assurance
   mutation_test: ^1.8.0
 

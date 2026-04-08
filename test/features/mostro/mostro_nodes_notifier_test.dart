@@ -65,7 +65,7 @@ void main() {
       expect(notifier.trustedNodes.length, Config.trustedMostroNodes.length);
       expect(notifier.trustedNodes.first.pubkey, trustedPubkey);
       expect(notifier.trustedNodes.first.isTrusted, true);
-      expect(notifier.trustedNodes.first.name, 'Mostro P2P');
+      expect(notifier.trustedNodes.first.name, Config.trustedMostroNodes.first['name']);
     });
 
     test('init loads custom nodes from SharedPreferences', () async {
@@ -323,7 +323,7 @@ void main() {
       await notifier.updateCustomNodeName(trustedPubkey, 'Hacked Name');
 
       final trusted = notifier.trustedNodes.first;
-      expect(trusted.name, 'Mostro P2P');
+      expect(trusted.name, Config.trustedMostroNodes.first['name']);
     });
 
     test('updateNodeMetadata updates metadata for any node', () async {

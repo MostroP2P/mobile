@@ -171,7 +171,7 @@ class _WalkthroughScreenState extends ConsumerState<WalkthroughScreen> {
     // Show backup reminder for first-time users
     ref.read(backupReminderProvider.notifier).showBackupReminder();
     if (context.mounted) {
-      context.go('/');
+      context.go('/community_selector');
     }
   }
 
