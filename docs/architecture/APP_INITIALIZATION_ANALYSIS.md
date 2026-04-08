@@ -224,9 +224,6 @@ Future<void> generateAndStoreMasterKeyFromMnemonic(String mnemonic) async {
 
 **Note on `_storage.clear()`**: This method clears SecureStorage (keys) and removes only user-identity-related SharedPreferences keys. It intentionally preserves `mostro_settings`, `first_run_complete`, and `community_selected` so that creating or importing a user does not reset the selected Mostro instance, language, or navigation state. Previously this used `sharedPrefs.clear()` which wiped all SharedPreferences, causing the app to fall back to the default Mostro instance on restart.
 
-```dart
-```
-
 #### **Returning User Flow**:
 **For Returning Users**:
 1. **Check for existing master key**: `hasMasterKey()` returns `true`
