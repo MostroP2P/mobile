@@ -8,7 +8,6 @@ import 'package:mostro_mobile/data/repositories/session_storage.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
 import 'package:mostro_mobile/shared/providers/notifications_history_repository_provider.dart';
-import 'package:mostro_mobile/data/repositories/notifications_history_repository.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:sembast/sembast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -62,8 +61,7 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     }
     final eventStore = ref.read(eventStorageProvider);
     final mostroStore = ref.read(mostroStorageProvider);
-    final notificationsStore =
-        ref.read(notificationsRepositoryProvider) as NotificationsStorage;
+    final notificationsRepo = ref.read(notificationsRepositoryProvider);
 
     await eventStore.deleteWhere(Filter.equals('order_id', orderId));
     if (session.disputeId != null) {
@@ -71,7 +69,7 @@ class SessionNotifier extends StateNotifier<List<Session>> {
           Filter.equals('dispute_id', session.disputeId));
     }
     await mostroStore.deleteAllMessagesByOrderId(orderId);
-    await notificationsStore.deleteWhere(Filter.equals('orderId', orderId));
+    await notificationsRepo.deleteByOrderId(orderId);
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('chat_last_read_$orderId');

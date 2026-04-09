@@ -53,7 +53,7 @@ class TradeHistorySelector extends ConsumerWidget {
               value: hours,
               child: Row(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.schedule,
                     color: AppTheme.mostroGreen,
                     size: 20,

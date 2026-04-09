@@ -11,6 +11,7 @@ abstract class NotificationsRepository {
   Future<void> markAsRead(String notificationId);
   Future<void> markAllAsRead();
   Future<void> deleteNotification(String notificationId);
+  Future<void> deleteByOrderId(String orderId);
   Future<void> clearAll();
   Stream<List<NotificationModel>> watchNotifications();
   Future<List<NotificationModel>> getUnreadNotifications();
@@ -110,6 +111,11 @@ class NotificationsStorage extends BaseStorage<NotificationModel>
   @override
   Future<void> deleteNotification(String notificationId) async {
     await deleteItem(notificationId);
+  }
+
+  @override
+  Future<void> deleteByOrderId(String orderId) async {
+    await deleteWhere(Filter.equals('orderId', orderId));
   }
 
   @override
