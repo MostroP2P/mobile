@@ -54,7 +54,7 @@ jobs:
           fi
 
           echo "VERSION=$version" >> "$GITHUB_ENV"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "VERSION=$version" >> "$GITHUB_OUTPUT"
 
   build-desktop:
     strategy:
@@ -148,7 +148,7 @@ jobs:
 
       # 9. Version is already validated by setup-version job
       - name: Log version
-        run: echo "Building version ${{ needs.setup-version.outputs.version }}"
+        run: echo "Building version ${{ needs.setup-version.outputs.VERSION }}"
 
       # 10. Analyze code
       - name: Analyze code
@@ -174,7 +174,7 @@ jobs:
         if: matrix.platform == 'linux'
         run: |
           mkdir -p ./dist
-          tar -czf ./dist/mostro-desktop-${{ needs.setup-version.outputs.version }}-${{ matrix.artifact-name }} \
+          tar -czf ./dist/mostro-desktop-${{ needs.setup-version.outputs.VERSION }}-${{ matrix.artifact-name }} \
             -C ${{ matrix.artifact-path }} .
 
       # 14. Package build (macOS)
@@ -183,7 +183,7 @@ jobs:
         run: |
           mkdir -p ./dist
           find ${{ matrix.artifact-path }} -name "*.app" -type d | head -1 | xargs -I {} \
-            zip -r ./dist/mostro-desktop-${{ needs.setup-version.outputs.version }}-${{ matrix.artifact-name }} {}
+            zip -r ./dist/mostro-desktop-${{ needs.setup-version.outputs.VERSION }}-${{ matrix.artifact-name }} {}
 
       # 15. Package build (Windows)
       - name: Package Windows build
@@ -192,14 +192,14 @@ jobs:
         run: |
           if (-not (Test-Path "./dist")) { New-Item -ItemType Directory -Path "./dist" | Out-Null }
           Compress-Archive -Path "${{ matrix.artifact-path }}/*" `
-            -DestinationPath "./dist/mostro-desktop-${{ needs.setup-version.outputs.version }}-${{ matrix.artifact-name }}"
+            -DestinationPath "./dist/mostro-desktop-${{ needs.setup-version.outputs.VERSION }}-${{ matrix.artifact-name }}"
 
       # 16. Upload as artifact (for publish job)
       - name: Upload ${{ matrix.platform }} artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.platform }}-release
-          path: ./dist/mostro-desktop-${{ needs.setup-version.outputs.version }}-${{ matrix.artifact-name }}
+          path: ./dist/mostro-desktop-${{ needs.setup-version.outputs.VERSION }}-${{ matrix.artifact-name }}
 
   # Publish all desktop assets in a single release update (avoids race conditions)
   publish:
@@ -220,7 +220,7 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           artifacts: "./dist/*"
-          tag: v${{ needs.setup-version.outputs.version }}
+          tag: v${{ needs.setup-version.outputs.VERSION }}
           allowUpdates: true
           omitBodyDuringUpdate: true
           replacesArtifacts: false
