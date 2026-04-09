@@ -93,7 +93,11 @@ class SessionNotifier extends StateNotifier<List<Session>> {
         } else {
           await _storage.deleteSession(session.orderId!);
           _sessions.remove(session.orderId!);
-          await _cleanupSessionData(session);
+          try {
+            await _cleanupSessionData(session);
+          } catch (e) {
+            logger.e('Failed to cleanup data for session ${session.orderId}: $e');
+          }
         }
       }
     }
@@ -128,7 +132,11 @@ class SessionNotifier extends StateNotifier<List<Session>> {
       if (session.startTime.isBefore(cutoff)) {
         await _storage.deleteSession(session.orderId!);
         _sessions.remove(session.orderId!);
-        await _cleanupSessionData(session);
+        try {
+          await _cleanupSessionData(session);
+        } catch (e) {
+          logger.e('Failed to cleanup data for session ${session.orderId}: $e');
+        }
       }
     }
 
