@@ -286,7 +286,7 @@ Future<void> init() async {
 
 **Critical Aspects**:
 - Loads sessions from Sembast database
-- Filters expired sessions (older than 720 hours / 30 days)
+- Filters expired sessions based on user-configured retention period (default: 720 hours / 30 days, configurable in Settings). Expired sessions and all associated data (events, messages, notifications, read status) are cascade-deleted. If set to "never", all sessions are loaded without filtering.
 - Updates `state` which triggers all listeners
 - **Must complete before SubscriptionManager setup**
 

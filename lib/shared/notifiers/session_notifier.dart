@@ -5,7 +5,13 @@ import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/enums/role.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/data/repositories/session_storage.dart';
+import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
+import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
+import 'package:mostro_mobile/shared/providers/notifications_history_repository_provider.dart';
+import 'package:mostro_mobile/data/repositories/notifications_history_repository.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
+import 'package:sembast/sembast.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/services/push_notification_service.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
@@ -48,6 +54,28 @@ class SessionNotifier extends StateNotifier<List<Session>> {
 
   bool get _isForever => _expirationHours == 0;
 
+  Future<void> _cleanupSessionData(Session session) async {
+    final orderId = session.orderId!;
+    final eventStore = ref.read(eventStorageProvider);
+    final mostroStore = ref.read(mostroStorageProvider);
+    final notificationsStore =
+        ref.read(notificationsRepositoryProvider) as NotificationsStorage;
+
+    await eventStore.deleteWhere(Filter.equals('order_id', orderId));
+    if (session.disputeId != null) {
+      await eventStore.deleteWhere(
+          Filter.equals('dispute_id', session.disputeId));
+    }
+    await mostroStore.deleteAllMessagesByOrderId(orderId);
+    await notificationsStore.deleteWhere(Filter.equals('orderId', orderId));
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('chat_last_read_$orderId');
+    if (session.disputeId != null) {
+      await prefs.remove('dispute_last_read_${session.disputeId}');
+    }
+  }
+
   Future<void> init() async {
     final allSessions = await _storage.getAllSessions();
     if (_isForever) {
@@ -63,6 +91,7 @@ class SessionNotifier extends StateNotifier<List<Session>> {
         } else {
           await _storage.deleteSession(session.orderId!);
           _sessions.remove(session.orderId!);
+          await _cleanupSessionData(session);
         }
       }
     }
@@ -92,10 +121,12 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     final cutoff = DateTime.now()
         .subtract(Duration(hours: _expirationHours));
     final expiredSessions = await _storage.getAllSessions();
+
     for (final session in expiredSessions) {
       if (session.startTime.isBefore(cutoff)) {
         await _storage.deleteSession(session.orderId!);
         _sessions.remove(session.orderId!);
+        await _cleanupSessionData(session);
       }
     }
 
