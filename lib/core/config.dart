@@ -48,7 +48,7 @@ class Config {
   static const int expirationSeconds = 900;
   static const int expirationHours = 24;
   static const int cleanupIntervalMinutes = 30;
-  static const int sessionExpirationHours = 72;
+  static const int sessionExpirationHours = 720;
 
   // Notification configuration
   static String notificationChannelId = 'mostro_mobile';
