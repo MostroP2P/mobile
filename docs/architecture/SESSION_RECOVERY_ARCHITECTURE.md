@@ -63,12 +63,26 @@ Future<void> importMnemonic(String mnemonic) async {
 
 Future<void> generateAndStoreMasterKeyFromMnemonic(String mnemonic) async {
   final masterKeyHex = _derivator.extendedKeyFromMnemonic(mnemonic);
-  await _storage.clear();
+  await _storage.clear(); // Selective clear — see note below
   await _storage.storeMnemonic(mnemonic);
   await _storage.storeMasterKey(masterKeyHex);
   await setCurrentKeyIndex(1);
   masterKeyPair = await _getMasterKey();
   tradeKeyIndex = await getCurrentKeyIndex();
+}
+```
+
+**Important**: `_storage.clear()` performs a **selective** cleanup. It removes cryptographic keys from SecureStorage and user-identity-related data from SharedPreferences (`keyIndex`, `mostroCustomNodes`, `trustedNodeMetadata`, `backgroundFilters`, `fullPrivacy`), but **preserves app-level preferences**: `mostro_settings` (selected Mostro instance and language), `first_run_complete`, and `community_selected`. This prevents the app from losing the user's chosen Mostro instance and showing the walkthrough/community selector again after importing or creating a new user.
+
+```dart
+// KeyStorage.clear() — selective removal
+Future<void> clear() async {
+  await secureStorage.deleteAll();
+  await sharedPrefs.remove(SharedPreferencesKeys.keyIndex.value);
+  await sharedPrefs.remove(SharedPreferencesKeys.mostroCustomNodes.value);
+  await sharedPrefs.remove(SharedPreferencesKeys.trustedNodeMetadata.value);
+  await sharedPrefs.remove(SharedPreferencesKeys.backgroundFilters.value);
+  await sharedPrefs.remove(SharedPreferencesKeys.fullPrivacy.value);
 }
 ```
 

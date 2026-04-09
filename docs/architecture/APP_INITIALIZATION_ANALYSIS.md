@@ -213,7 +213,7 @@ Future<void> generateAndStoreMasterKey() async {
 Future<void> generateAndStoreMasterKeyFromMnemonic(String mnemonic) async {
   final masterKeyHex = _derivator.extendedKeyFromMnemonic(mnemonic);
   
-  await _storage.clear(); // Clear any existing data
+  await _storage.clear(); // Selective clear (see below)
   await _storage.storeMnemonic(mnemonic); // Store in secure storage
   await _storage.storeMasterKey(masterKeyHex); // Store derived master key
   await setCurrentKeyIndex(1); // Initialize trade key index
@@ -221,6 +221,8 @@ Future<void> generateAndStoreMasterKeyFromMnemonic(String mnemonic) async {
   tradeKeyIndex = await getCurrentKeyIndex();
 }
 ```
+
+**Note on `_storage.clear()`**: This method clears SecureStorage (keys) and removes only user-identity-related SharedPreferences keys. It intentionally preserves `mostro_settings`, `first_run_complete`, and `community_selected` so that creating or importing a user does not reset the selected Mostro instance, language, or navigation state. Previously this used `sharedPrefs.clear()` which wiped all SharedPreferences, causing the app to fall back to the default Mostro instance on restart.
 
 #### **Returning User Flow**:
 **For Returning Users**:
