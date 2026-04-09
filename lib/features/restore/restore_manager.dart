@@ -52,6 +52,8 @@ class RestoreService {
   NostrKeyPairs?
   _tempTradeKey; // Temporary trade key (index 1) used during restore process
   NostrKeyPairs? _masterKey; // Master key pair used during restore process
+  bool _operationInProgress = false;
+  Completer<bool>? _operationCompleter;
 
   RestoreService(this.ref);
 
@@ -821,6 +823,16 @@ class RestoreService {
   // 5. Request last trade index (Stage 3: GettingTradeIndex)
   // 6. Complete restore process
   Future<bool> initRestoreProcess() async {
+    if (_operationInProgress) {
+      logger.w('initRestoreProcess: another operation in progress, awaiting');
+      if (_operationCompleter != null) {
+        return _operationCompleter!.future;
+      }
+      return false;
+    }
+
+    _operationInProgress = true;
+    _operationCompleter = Completer<bool>();
     bool success = false;
     try {
       // Clear existing data
@@ -939,6 +951,9 @@ class RestoreService {
       _currentCompleter = null;
       _tempTradeKey = null;
       _masterKey = null;
+      _operationInProgress = false;
+      _operationCompleter?.complete(success);
+      _operationCompleter = null;
 
       // Only call completeRestore if not in error state
       final currentState = ref.read(restoreProgressProvider);
@@ -948,6 +963,63 @@ class RestoreService {
     }
 
     return success;
+  }
+
+  /// Lightweight trade index sync: fetches last-trade-index from Mostro
+  /// and updates local storage. Used when local trade index is stale
+  /// (e.g., SharedPreferences deleted but secure storage preserved).
+  Future<void> syncTradeIndex() async {
+    if (_operationInProgress) {
+      logger.w('syncTradeIndex: another operation in progress, skipping');
+      return;
+    }
+
+    final keyManager = ref.read(keyManagerProvider);
+    if (keyManager.masterKeyPair == null) {
+      logger.w('syncTradeIndex: no master key, skipping');
+      return;
+    }
+
+    _operationInProgress = true;
+    _operationCompleter = Completer<bool>();
+    try {
+      _masterKey = keyManager.masterKeyPair;
+      _tempTradeKey = await keyManager.deriveTradeKeyFromIndex(1);
+
+      _tempSubscription = await _createTempSubscription();
+
+      // Arm the completer before sending the request to avoid a race where
+      // the reply arrives before _waitForEvent() sets up _currentCompleter.
+      _currentStage = RestoreStage.gettingTradeIndex;
+      _currentCompleter = Completer<NostrEvent>();
+
+      await _sendLastTradeIndexRequest();
+      final event = await _currentCompleter!.future.timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          throw TimeoutException(
+            'Stage ${RestoreStage.gettingTradeIndex} timed out after 10s',
+          );
+        },
+      );
+      final response = await _extractLastTradeIndex(event);
+
+      await keyManager.setCurrentKeyIndex(response.tradeIndex + 1);
+      logger.i(
+        'syncTradeIndex: updated local trade index to ${response.tradeIndex + 1}',
+      );
+    } catch (e, stack) {
+      logger.e('syncTradeIndex: failed', error: e, stackTrace: stack);
+    } finally {
+      await _tempSubscription?.cancel();
+      _tempSubscription = null;
+      _currentCompleter = null;
+      _tempTradeKey = null;
+      _masterKey = null;
+      _operationInProgress = false;
+      _operationCompleter?.complete(false);
+      _operationCompleter = null;
+    }
   }
 }
 

@@ -107,6 +107,10 @@ class KeyManager {
     return await _storage.readTradeKeyIndex();
   }
 
+  Future<bool> hasPersistedTradeKeyIndex() async {
+    return _storage.hasPersistedTradeKeyIndex();
+  }
+
   Future<int> getNextKeyIndex() async {
     final currentIndex = await getCurrentKeyIndex();
     await setCurrentKeyIndex(currentIndex + 1);

@@ -99,7 +99,7 @@ class SessionNotifier extends StateNotifier<List<Session>> {
 
   Future<Session> newSession(
       {String? orderId, int? requestId, Role? role}) async {
-    if (state.any((s) => s.orderId == orderId)) {
+    if (orderId != null && state.any((s) => s.orderId == orderId)) {
       return state.firstWhere((s) => s.orderId == orderId);
     }
     final masterKey = ref.read(keyManagerProvider).masterKeyPair!;

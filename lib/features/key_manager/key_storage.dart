@@ -51,6 +51,11 @@ class KeyStorage {
         1;
   }
 
+  Future<bool> hasPersistedTradeKeyIndex() async {
+    return await sharedPrefs.getInt(SharedPreferencesKeys.keyIndex.value) !=
+        null;
+  }
+
   Future<void> clear() async {
     await secureStorage.deleteAll();
     await sharedPrefs.clear();

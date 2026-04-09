@@ -1531,5 +1531,6 @@
     "communityAllCurrencies": "All currencies",
     "communityDisclaimerTitle": "Important Notice",
     "communityDisclaimerBody": "The Mostro development team is not responsible for how node operators use the platform. Each operator controls their own Mostro node and is solely responsible for their actions. By using Mostro, you accept full responsibility for your trades and acknowledge that the development team has no control over individual node operators.",
-    "communityDisclaimerAccept": "Accept"
+    "communityDisclaimerAccept": "Accept",
+    "tooManyRequests": "Too many requests, please try again later."
 }
