@@ -286,7 +286,7 @@ Future<void> init() async {
 
 **Critical Aspects**:
 - Loads sessions from Sembast database
-- Filters expired sessions (older than 72 hours)
+- Filters expired sessions (older than 720 hours / 30 days)
 - Updates `state` which triggers all listeners
 - **Must complete before SubscriptionManager setup**
 

@@ -202,7 +202,7 @@ class SessionNotifier extends StateNotifier<List<Session>> {
 ```
 
 **Key Features**:
-- **Automatic expiration**: Removes sessions older than 36 hours (Config.sessionExpirationHours)
+- **Automatic expiration**: Removes sessions older than 720 hours / 30 days (Config.sessionExpirationHours)
 - **Periodic cleanup**: Scheduled cleanup every 30 minutes to prevent memory leaks
 - **State synchronization**: Updates trigger automatic UI updates
 - **Storage persistence**: Sessions survive app restarts
@@ -675,7 +675,7 @@ final expHours = mostroInstance?.expirationHours ?? 24;       // Default 24h for
 final expSecs = mostroInstance?.expirationSeconds ?? 900;     // Default 15min for waiting
 
 // Session expiration
-const sessionExpirationHours = 36; // Defined in Config class (lib/core/config.dart)
+const sessionExpirationHours = 720; // Defined in Config class (lib/core/config.dart)
 const cleanupIntervalMinutes = 30;  // Cleanup frequency
 ```
 
@@ -684,7 +684,7 @@ const cleanupIntervalMinutes = 30;  // Cleanup frequency
 ```dart
 // lib/core/config.dart
 class Config {
-  static const int sessionExpirationHours = 72;
+  static const int sessionExpirationHours = 720;
 }
 
 // Timeout durations (currently hardcoded, could be made configurable)
