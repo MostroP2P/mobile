@@ -55,7 +55,11 @@ class SessionNotifier extends StateNotifier<List<Session>> {
   bool get _isForever => _expirationHours == 0;
 
   Future<void> _cleanupSessionData(Session session) async {
-    final orderId = session.orderId!;
+    final orderId = session.orderId;
+    if (orderId == null) {
+      logger.w('Skipping cleanup for session with null orderId');
+      return;
+    }
     final eventStore = ref.read(eventStorageProvider);
     final mostroStore = ref.read(mostroStorageProvider);
     final notificationsStore =

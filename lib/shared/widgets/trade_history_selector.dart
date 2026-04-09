@@ -24,9 +24,12 @@ class TradeHistorySelector extends ConsumerWidget {
 
     // Map null (no user preference) to Config default, which is 720
     final effectiveValue = currentValue ?? Config.sessionExpirationHours;
-    // If stored value doesn't match any preset, show default (1 month)
+    // If stored value doesn't match any preset, fall back to config default
+    final defaultValue = _optionKeys.containsKey(Config.sessionExpirationHours)
+        ? Config.sessionExpirationHours
+        : _optionKeys.keys.first;
     final displayValue =
-        _optionKeys.containsKey(effectiveValue) ? effectiveValue : 720;
+        _optionKeys.containsKey(effectiveValue) ? effectiveValue : defaultValue;
 
     return Container(
       decoration: BoxDecoration(
