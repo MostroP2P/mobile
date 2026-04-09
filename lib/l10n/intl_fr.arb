@@ -1532,5 +1532,14 @@
     "communityDisclaimerTitle": "Avis Important",
     "communityDisclaimerBody": "L'equipe de developpement de Mostro n'est pas responsable de l'utilisation que font les operateurs de noeuds de la plateforme. Chaque operateur controle son propre noeud Mostro et est seul responsable de ses actions. En utilisant Mostro, vous acceptez l'entiere responsabilite de vos transactions et reconnaissez que l'equipe de developpement n'a aucun controle sur les operateurs de noeuds individuels.",
     "communityDisclaimerAccept": "Accepter",
-    "tooManyRequests": "Trop de requêtes, veuillez réessayer plus tard."
+    "tooManyRequests": "Trop de requêtes, veuillez réessayer plus tard.",
+    "tradeHistory": "Historique des trades",
+    "tradeHistoryDescription": "Choisissez combien de temps conserver vos trades terminés. Les plus anciens seront automatiquement supprimés.",
+    "tradeHistoryInfoText": "Ce paramètre contrôle la durée de stockage de vos sessions de trade et messages de chat sur votre appareil. Après la période sélectionnée, ils sont automatiquement supprimés.",
+    "oneWeek": "1 semaine",
+    "oneMonth": "1 mois",
+    "threeMonths": "3 mois",
+    "sixMonths": "6 mois",
+    "oneYear": "1 an",
+    "never": "Jamais"
 }

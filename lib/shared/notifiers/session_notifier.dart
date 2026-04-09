@@ -43,16 +43,27 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     this._settings,
   ) : super([]);
 
+  int get _expirationHours =>
+      _settings.sessionExpirationHours ?? Config.sessionExpirationHours;
+
+  bool get _isForever => _expirationHours == 0;
+
   Future<void> init() async {
     final allSessions = await _storage.getAllSessions();
-    final cutoff = DateTime.now()
-        .subtract(const Duration(hours: Config.sessionExpirationHours));
-    for (final session in allSessions) {
-      if (session.startTime.isAfter(cutoff)) {
+    if (_isForever) {
+      for (final session in allSessions) {
         _sessions[session.orderId!] = session;
-      } else {
-        await _storage.deleteSession(session.orderId!);
-        _sessions.remove(session.orderId!);
+      }
+    } else {
+      final cutoff = DateTime.now()
+          .subtract(Duration(hours: _expirationHours));
+      for (final session in allSessions) {
+        if (session.startTime.isAfter(cutoff)) {
+          _sessions[session.orderId!] = session;
+        } else {
+          await _storage.deleteSession(session.orderId!);
+          _sessions.remove(session.orderId!);
+        }
       }
     }
     _emitState();
@@ -76,8 +87,10 @@ class SessionNotifier extends StateNotifier<List<Session>> {
   }
 
   void _cleanup() async {
+    if (_isForever) return;
+
     final cutoff = DateTime.now()
-        .subtract(const Duration(hours: Config.sessionExpirationHours));
+        .subtract(Duration(hours: _expirationHours));
     final expiredSessions = await _storage.getAllSessions();
     for (final session in expiredSessions) {
       if (session.startTime.isBefore(cutoff)) {

@@ -205,5 +205,12 @@ class SettingsNotifier extends StateNotifier<Settings> {
     await _saveToPrefs();
   }
 
+  Future<void> updateSessionExpirationHours(int newValue) async {
+    final oldValue = state.sessionExpirationHours;
+    state = state.copyWith(sessionExpirationHours: newValue);
+    await _saveToPrefs();
+    logger.i('Session expiration changed: $oldValue → $newValue hours');
+  }
+
   Settings get settings => state.copyWith();
 }

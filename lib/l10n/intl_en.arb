@@ -1532,5 +1532,14 @@
     "communityDisclaimerTitle": "Important Notice",
     "communityDisclaimerBody": "The Mostro development team is not responsible for how node operators use the platform. Each operator controls their own Mostro node and is solely responsible for their actions. By using Mostro, you accept full responsibility for your trades and acknowledge that the development team has no control over individual node operators.",
     "communityDisclaimerAccept": "Accept",
-    "tooManyRequests": "Too many requests, please try again later."
+    "tooManyRequests": "Too many requests, please try again later.",
+    "tradeHistory": "Trade history",
+    "tradeHistoryDescription": "Choose how long to keep your completed trades. Older trades will be automatically removed.",
+    "tradeHistoryInfoText": "This setting controls how long your trade sessions and chat messages are stored on your device. After the selected period, they are automatically deleted.",
+    "oneWeek": "1 week",
+    "oneMonth": "1 month",
+    "threeMonths": "3 months",
+    "sixMonths": "6 months",
+    "oneYear": "1 year",
+    "never": "Never"
 }

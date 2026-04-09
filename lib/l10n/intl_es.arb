@@ -1507,5 +1507,14 @@
     "communityDisclaimerTitle": "Aviso Importante",
     "communityDisclaimerBody": "El equipo de desarrollo de Mostro no se hace responsable del uso que los operadores de nodos hagan de la plataforma. Cada operador controla su propio nodo Mostro y es el unico responsable de sus acciones. Al usar Mostro, aceptas la plena responsabilidad de tus operaciones y reconoces que el equipo de desarrollo no tiene control sobre los operadores de nodos individuales.",
     "communityDisclaimerAccept": "Aceptar",
-    "tooManyRequests": "Demasiadas solicitudes, por favor inténtalo más tarde."
+    "tooManyRequests": "Demasiadas solicitudes, por favor inténtalo más tarde.",
+    "tradeHistory": "Historial de trades",
+    "tradeHistoryDescription": "Elige cuánto tiempo conservar tus trades completados. Los más antiguos se eliminarán automáticamente.",
+    "tradeHistoryInfoText": "Esta configuración controla cuánto tiempo se almacenan tus sesiones de trade y mensajes de chat en tu dispositivo. Después del periodo seleccionado, se eliminan automáticamente.",
+    "oneWeek": "1 semana",
+    "oneMonth": "1 mes",
+    "threeMonths": "3 meses",
+    "sixMonths": "6 meses",
+    "oneYear": "1 año",
+    "never": "Nunca"
 }

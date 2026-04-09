@@ -41,10 +41,15 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
     ref.read(backgroundServiceProvider).updateSettings(next);
   });
 
-  final cutoff = DateTime.now().subtract(const Duration(hours: Config.sessionExpirationHours));
+  final settings = ref.read(settingsProvider);
+  final expirationHours = settings.sessionExpirationHours ?? Config.sessionExpirationHours;
+  final isForever = expirationHours == 0;
+  final cutoff = isForever
+      ? null
+      : DateTime.now().subtract(Duration(hours: expirationHours));
 
   for (final session in sessionManager.sessions) {
-    if(session.orderId == null || session.startTime.isBefore(cutoff)) continue;
+    if(session.orderId == null || (cutoff != null && session.startTime.isBefore(cutoff))) continue;
 
     ref.read(orderNotifierProvider(session.orderId!).notifier);
 

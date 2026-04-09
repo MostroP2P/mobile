@@ -1532,5 +1532,14 @@
     "communityDisclaimerTitle": "Wichtiger Hinweis",
     "communityDisclaimerBody": "Das Mostro-Entwicklungsteam ist nicht verantwortlich fuer die Nutzung der Plattform durch Node-Betreiber. Jeder Betreiber kontrolliert seinen eigenen Mostro-Node und ist allein verantwortlich fuer seine Handlungen. Mit der Nutzung von Mostro akzeptieren Sie die volle Verantwortung fuer Ihre Transaktionen und erkennen an, dass das Entwicklungsteam keine Kontrolle ueber einzelne Node-Betreiber hat.",
     "communityDisclaimerAccept": "Akzeptieren",
-    "tooManyRequests": "Zu viele Anfragen, bitte versuche es später erneut."
+    "tooManyRequests": "Zu viele Anfragen, bitte versuche es später erneut.",
+    "tradeHistory": "Trade-Verlauf",
+    "tradeHistoryDescription": "Wähle, wie lange deine abgeschlossenen Trades gespeichert werden. Ältere Trades werden automatisch entfernt.",
+    "tradeHistoryInfoText": "Diese Einstellung steuert, wie lange deine Trade-Sitzungen und Chat-Nachrichten auf deinem Gerät gespeichert werden. Nach dem gewählten Zeitraum werden sie automatisch gelöscht.",
+    "oneWeek": "1 Woche",
+    "oneMonth": "1 Monat",
+    "threeMonths": "3 Monate",
+    "sixMonths": "6 Monate",
+    "oneYear": "1 Jahr",
+    "never": "Nie"
 }
