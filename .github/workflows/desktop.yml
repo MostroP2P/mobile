@@ -14,6 +14,48 @@ env:
   FLUTTER_VERSION: '3.32.2'  # Default Flutter version
 
 jobs:
+  # ── Setup: extract and validate version once ──────────────────────────────
+  setup-version:
+    name: Determine version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.VERSION }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract version
+        id: version
+        shell: bash
+        run: |
+          PAYLOAD_VERSION="${{ github.event.client_payload.version }}"
+          if [[ -n "$PAYLOAD_VERSION" ]]; then
+            version="$PAYLOAD_VERSION"
+            echo "Using version from client_payload: $version"
+          else
+            full_version=$(grep '^version: ' pubspec.yaml | cut -d ' ' -f 2 | tr -d '\r')
+            if [[ -z "$full_version" ]]; then
+              echo "ERROR: Could not extract version from pubspec.yaml" >&2
+              exit 1
+            fi
+            # Strip build number for tag/release naming (1.2.1+936 → 1.2.1)
+            version=${full_version%%+*}
+            echo "Using version from pubspec.yaml: $version"
+          fi
+
+          # Validate: must be non-empty and match semver (X.Y.Z)
+          if [[ -z "$version" ]]; then
+            echo "ERROR: Extracted version is empty" >&2
+            exit 1
+          fi
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "ERROR: Version '$version' does not match semver format (expected X.Y.Z)" >&2
+            exit 1
+          fi
+
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
   build-desktop:
     strategy:
       matrix:
@@ -39,6 +81,7 @@ jobs:
       fail-fast: false  # Continue other builds even if one fails
 
     runs-on: ${{ matrix.os }}
+    needs: setup-version
 
     steps:
       # 1. Check-out source
@@ -103,28 +146,9 @@ jobs:
       - name: Generate required files
         run: dart run build_runner build -d
 
-      # 9. Extract version: prefer client_payload from repository_dispatch (set by release.yml),
-      #    fall back to pubspec.yaml for manual workflow_dispatch runs.
-      - name: Extract version
-        id: extract_version
-        shell: bash
-        run: |
-          PAYLOAD_VERSION="${{ github.event.client_payload.version }}"
-          if [[ -n "$PAYLOAD_VERSION" ]]; then
-            version="$PAYLOAD_VERSION"
-            echo "Using version from client_payload: $version"
-          else
-            full_version=$(grep '^version: ' pubspec.yaml | cut -d ' ' -f 2 | tr -d '\r')
-            if [[ -z "$full_version" ]]; then
-              echo "ERROR: Could not extract version from pubspec.yaml"
-              exit 1
-            fi
-            # Strip build number for tag/release naming (1.2.1+936 → 1.2.1)
-            version=${full_version%%+*}
-            echo "Using version from pubspec.yaml: $version"
-          fi
-          echo "VERSION=$version" >> "$GITHUB_ENV"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
+      # 9. Version is already validated by setup-version job
+      - name: Log version
+        run: echo "Building version ${{ needs.setup-version.outputs.version }}"
 
       # 10. Analyze code
       - name: Analyze code
@@ -150,7 +174,7 @@ jobs:
         if: matrix.platform == 'linux'
         run: |
           mkdir -p ./dist
-          tar -czf ./dist/mostro-desktop-${{ steps.extract_version.outputs.version }}-${{ matrix.artifact-name }} \
+          tar -czf ./dist/mostro-desktop-${{ needs.setup-version.outputs.version }}-${{ matrix.artifact-name }} \
             -C ${{ matrix.artifact-path }} .
 
       # 14. Package build (macOS)
@@ -159,7 +183,7 @@ jobs:
         run: |
           mkdir -p ./dist
           find ${{ matrix.artifact-path }} -name "*.app" -type d | head -1 | xargs -I {} \
-            zip -r ./dist/mostro-desktop-${{ steps.extract_version.outputs.version }}-${{ matrix.artifact-name }} {}
+            zip -r ./dist/mostro-desktop-${{ needs.setup-version.outputs.version }}-${{ matrix.artifact-name }} {}
 
       # 15. Package build (Windows)
       - name: Package Windows build
@@ -168,36 +192,21 @@ jobs:
         run: |
           if (-not (Test-Path "./dist")) { New-Item -ItemType Directory -Path "./dist" | Out-Null }
           Compress-Archive -Path "${{ matrix.artifact-path }}/*" `
-            -DestinationPath "./dist/mostro-desktop-${{ steps.extract_version.outputs.version }}-${{ matrix.artifact-name }}"
+            -DestinationPath "./dist/mostro-desktop-${{ needs.setup-version.outputs.version }}-${{ matrix.artifact-name }}"
 
       # 16. Upload as artifact (for publish job)
       - name: Upload ${{ matrix.platform }} artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.platform }}-release
-          path: ./dist/mostro-desktop-${{ steps.extract_version.outputs.version }}-${{ matrix.artifact-name }}
+          path: ./dist/mostro-desktop-${{ needs.setup-version.outputs.version }}-${{ matrix.artifact-name }}
 
   # Publish all desktop assets in a single release update (avoids race conditions)
   publish:
     name: Publish desktop assets to release
-    needs: build-desktop
+    needs: [build-desktop, setup-version]
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Extract version
-        id: version
-        run: |
-          PAYLOAD_VERSION="${{ github.event.client_payload.version }}"
-          if [[ -n "$PAYLOAD_VERSION" ]]; then
-            version="$PAYLOAD_VERSION"
-          else
-            full_version=$(grep '^version: ' pubspec.yaml | cut -d ' ' -f 2 | tr -d '\r')
-            version=${full_version%%+*}
-          fi
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-
       - name: Download all desktop artifacts
         uses: actions/download-artifact@v4
         with:
@@ -211,7 +220,7 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           artifacts: "./dist/*"
-          tag: v${{ steps.version.outputs.version }}
+          tag: v${{ needs.setup-version.outputs.version }}
           allowUpdates: true
           omitBodyDuringUpdate: true
           replacesArtifacts: false
