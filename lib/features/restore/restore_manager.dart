@@ -981,6 +981,7 @@ class RestoreService {
     }
 
     _operationInProgress = true;
+    _operationCompleter = Completer<bool>();
     try {
       _masterKey = keyManager.masterKeyPair;
       _tempTradeKey = await keyManager.deriveTradeKeyFromIndex(1);
@@ -1012,9 +1013,12 @@ class RestoreService {
     } finally {
       await _tempSubscription?.cancel();
       _tempSubscription = null;
+      _currentCompleter = null;
       _tempTradeKey = null;
       _masterKey = null;
       _operationInProgress = false;
+      _operationCompleter?.complete(false);
+      _operationCompleter = null;
     }
   }
 }
