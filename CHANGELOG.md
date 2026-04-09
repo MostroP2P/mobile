@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.2.4] - 2026-04-09
+
+### Added
+- feat: add timestamp to P2P chat message bubbles (#565) (a1fbf600)
+- feat: add community discovery and node selector on first launch (#564) (728abfe3)
+
+### Fixed
+- fix(ci): use client_payload.version in desktop workflow (#559) (2eded43b)
+- fix: add tooManyRequests i18n key to DE and FR locales (#568) (9def78bf)
+- fix: preserve app settings during key import/creation (#567) (bb245751)
+- fix: resolve trade index desync, session lookup crash (#566) (e96671b9)
+- fix: upgrade dart_nostr to main with parallel relay connections and per-relay timeout   - Switch dart_nostr from pub.dev 9.1.1 to git ref ca07ddd   - Split nostrConnectionTimeout (30s) into relayConnectionTimeout (5s) and nostrOperationTimeout (20s)   - Remove bip340 dependency_override (no longer needed with bip340 ^0.3.0 from upstream) (2b1aab64)
+
+### Documentation
+- docs coderabbit suggestions (e2afb35a)
+- docs coderabbit suggestions (86053574)
+- docs: add dart_nostr upgrade analysis for relay connection blocking fix (0abe8a38)
+
+### Changed
+-   feat: increase session expiration from 72 hours to 30 days (#569) (3be5ed35)
+
+
 ## [v1.2.3] - 2026-04-01
 
 ### Added
