@@ -139,7 +139,7 @@ Future<void> showLocalNotification(NostrEvent event) async {
 
     final details = NotificationDetails(
       android: AndroidNotificationDetails(
-        'mostro_notifications', // Must match FCM channel_id for replacement
+        'mostro_notifications',
         'Mostro Notifications',
         channelDescription: 'Notifications for Mostro trades and messages',
         importance: Importance.max,
@@ -149,8 +149,8 @@ Future<void> showLocalNotification(NostrEvent event) async {
         enableVibration: true,
         ticker: notificationText.title,
         icon: '@drawable/ic_notification',
-        // Tag must match FCM notification tag for replacement to work
         tag: 'mostro-trade',
+        groupKey: 'mostro-trade',
         styleInformation: expandedText != null
             ? BigTextStyleInformation(expandedText, contentTitle: notificationText.title)
             : null,
@@ -163,7 +163,6 @@ Future<void> showLocalNotification(NostrEvent event) async {
         presentSound: true,
         interruptionLevel: InterruptionLevel.critical,
         subtitle: expandedText,
-        // Thread ID must match FCM for grouping/replacement
         threadIdentifier: 'mostro-trade',
       ),
     );
@@ -177,9 +176,13 @@ Future<void> showLocalNotification(NostrEvent event) async {
           })
         : mostroMessage.id;
 
-    // Use fixed ID (0) with tag for replacement - Android uses tag+id combo
+    // Unique id per event so each notification is independent: dismissing one
+    // does not suppress the heads-up of the next (which was the observed bug
+    // when reusing a single id), while groupKey keeps them grouped visually.
+    final notificationId = (event.id?.hashCode ?? 0) & 0x7FFFFFFF;
+
     await flutterLocalNotificationsPlugin.show(
-      0, // Fixed ID - tag 'mostro-trade' makes it unique and replaceable
+      notificationId,
       notificationText.title,
       notificationText.body,
       details,
