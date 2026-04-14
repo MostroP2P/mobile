@@ -27,6 +27,21 @@ enum Status {
     );
   }
 
+  /// Whether this status represents a completed/final state
+  /// where the session can be safely deleted during cleanup.
+  bool get isTerminal => switch (this) {
+        Status.success ||
+        Status.canceled ||
+        Status.canceledByAdmin ||
+        Status.settledByAdmin ||
+        Status.completedByAdmin ||
+        Status.cooperativelyCanceled ||
+        Status.expired ||
+        Status.settledHoldInvoice =>
+          true,
+        _ => false,
+      };
+
   @override
   String toString() {
     return value;

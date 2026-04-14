@@ -11,6 +11,7 @@ import 'package:mostro_mobile/shared/providers/notifications_history_repository_
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:sembast/sembast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/services/push_notification_service.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
@@ -78,6 +79,18 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     }
   }
 
+  /// Returns true if the session has an active (non-terminal) trade
+  /// and should be protected from cleanup.
+  Future<bool> _isActiveSession(Session session) async {
+    final orderId = session.orderId;
+    if (orderId == null) return false;
+    final mostroStore = ref.read(mostroStorageProvider);
+    final lastMessage = await mostroStore.getLatestMessageById(orderId);
+    if (lastMessage == null) return false;
+    final order = lastMessage.getPayload<Order>();
+    return order != null && !order.status.isTerminal;
+  }
+
   Future<void> init() async {
     final allSessions = await _storage.getAllSessions();
     if (_isForever) {
@@ -91,6 +104,11 @@ class SessionNotifier extends StateNotifier<List<Session>> {
         if (session.startTime.isAfter(cutoff)) {
           _sessions[session.orderId!] = session;
         } else {
+          if (await _isActiveSession(session)) {
+            logger.i('Skipping cleanup for active session ${session.orderId}');
+            _sessions[session.orderId!] = session;
+            continue;
+          }
           await _storage.deleteSession(session.orderId!);
           _sessions.remove(session.orderId!);
           try {
@@ -130,6 +148,10 @@ class SessionNotifier extends StateNotifier<List<Session>> {
 
     for (final session in expiredSessions) {
       if (session.startTime.isBefore(cutoff)) {
+        if (await _isActiveSession(session)) {
+          logger.i('Skipping cleanup for active session ${session.orderId}');
+          continue;
+        }
         await _storage.deleteSession(session.orderId!);
         _sessions.remove(session.orderId!);
         try {
