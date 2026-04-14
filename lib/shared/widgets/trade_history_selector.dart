@@ -71,13 +71,50 @@ class TradeHistorySelector extends ConsumerWidget {
             );
           }).toList(),
           onChanged: (int? newValue) {
-            if (newValue != null) {
-              ref
-                  .read(settingsProvider.notifier)
-                  .updateSessionExpirationHours(newValue);
+            if (newValue != null && newValue != displayValue) {
+              _showConfirmationDialog(context, ref, newValue);
             }
           },
         ),
+      ),
+    );
+  }
+
+  void _showConfirmationDialog(
+      BuildContext context, WidgetRef ref, int newValue) {
+    showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: AppTheme.dark1,
+        title: Text(
+          S.of(context)!.tradeHistory,
+          style: const TextStyle(color: AppTheme.cream1),
+        ),
+        content: Text(
+          S.of(context)!.tradeHistoryInfoText,
+          style: const TextStyle(color: AppTheme.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(
+              S.of(context)!.cancel,
+              style: const TextStyle(color: AppTheme.textSecondary),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              ref
+                  .read(settingsProvider.notifier)
+                  .updateSessionExpirationHours(newValue);
+              Navigator.of(dialogContext).pop();
+            },
+            child: Text(
+              S.of(context)!.confirm,
+              style: const TextStyle(color: AppTheme.mostroGreen),
+            ),
+          ),
+        ],
       ),
     );
   }

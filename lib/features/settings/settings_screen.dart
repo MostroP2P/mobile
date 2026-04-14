@@ -260,23 +260,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const Spacer(),
-                InkWell(
-                  onTap: () => _showInfoDialog(
-                    context,
-                    S.of(context)!.tradeHistory,
-                    S.of(context)!.tradeHistoryInfoText,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  child: const Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child: Icon(
-                      Icons.info_outline,
-                      size: 20,
-                      color: AppTheme.textSecondary,
-                    ),
-                  ),
-                ),
               ],
             ),
             const SizedBox(height: 20),
