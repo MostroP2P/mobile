@@ -114,10 +114,45 @@ When `addInvoice` is received while in `paymentFailed` status, the status is pre
 
 | Action | Status | When |
 |---|---|---|
-| `cooperativeCancelInitiatedByYou` | `cooperativelyCanceled` | User initiated cooperative cancellation |
-| `cooperativeCancelInitiatedByPeer` | `cooperativelyCanceled` | Counterpart initiated cooperative cancellation |
+| `cooperativeCancelInitiatedByYou` | `cooperativelyCanceled` | User initiated cooperative cancellation (generic, remapped internally) |
+| `cooperativeCancelInitiatedByPeer` | `cooperativelyCanceled` | Counterpart initiated cooperative cancellation (generic, remapped internally) |
+| `cooperativeCancelNoFiatByYou` | `cooperativelyCanceled` | User initiated cancel, fiat was NOT sent |
+| `cooperativeCancelNoFiatByPeer` | `cooperativelyCanceled` | Counterpart initiated cancel, fiat was NOT sent |
+| `cooperativeCancelFiatSentByYou` | `cooperativelyCanceled` | User initiated cancel, fiat WAS sent |
+| `cooperativeCancelFiatSentByPeer` | `cooperativelyCanceled` | Counterpart initiated cancel, fiat WAS sent |
 
 This is a pending state. Once the other party accepts, the status changes to `canceled` via `cooperativeCancelAccepted`.
+
+#### Semantic Action Remapping
+
+The Mostro protocol sends `cooperativeCancelInitiatedByYou` or `cooperativeCancelInitiatedByPeer`. The app remaps these to semantic variants inside `OrderState.updateWith()` based on a `fiatWasSent` flag that tracks whether `fiatSent`/`fiatSentOk` was processed at any point during the order lifecycle.
+
+This remapping determines which buttons are available during the cooperative cancellation pending state:
+
+**Seller buttons in `cooperativelyCanceled`:**
+
+| Action | Buttons | Rationale |
+|---|---|---|
+| `cooperativeCancelNoFiatByYou` | sendDm, dispute | No fiat sent, no hold invoice to release |
+| `cooperativeCancelNoFiatByPeer` | sendDm, dispute, cancel | No fiat sent, can accept cancel |
+| `cooperativeCancelFiatSentByYou` | sendDm, dispute, release | Fiat was sent, seller can release |
+| `cooperativeCancelFiatSentByPeer` | sendDm, dispute, cancel, release | Fiat was sent, can accept cancel or release |
+
+**Buyer buttons in `cooperativelyCanceled`:**
+
+| Action | Buttons | Rationale |
+|---|---|---|
+| `cooperativeCancelNoFiatByYou` | sendDm, dispute | Buyer initiated, already canceling |
+| `cooperativeCancelNoFiatByPeer` | sendDm, dispute, cancel, fiatSent | Can accept cancel or send fiat to complete trade |
+| `cooperativeCancelFiatSentByYou` | sendDm, dispute | Fiat already sent, buyer initiated cancel |
+| `cooperativeCancelFiatSentByPeer` | sendDm, dispute, cancel | Fiat already sent, can accept cancel |
+
+#### Origins
+
+Cooperative cancellation can be initiated from three statuses:
+- **`active`** — fiat not yet sent (`fiatWasSent = false`)
+- **`fiatSent`** — fiat was sent (`fiatWasSent = true`)
+- **`dispute`** — could have come from either `active` or `fiatSent`; the `fiatWasSent` flag preserves the context through the dispute transition
 
 ### Dispute
 
@@ -139,6 +174,8 @@ This is a pending state. Once the other party accepts, the status changes to `ca
 ### Dispute Auto-Close on Terminal State
 
 When an order with an active dispute reaches a terminal state through user action (not admin), the dispute is automatically closed. This is handled in `OrderState.updateWith()` after the admin dispute handling block.
+
+Note: Cooperative cancellation can be initiated from within a dispute by either party. The dispute is NOT auto-closed when cooperative cancel is initiated (it remains `in-progress`), only when the cancel is accepted via `cooperativeCancelAccepted`.
 
 | Order reaches | `dispute.status` | `dispute.action` | Trigger |
 |---|---|---|---|
@@ -251,7 +288,7 @@ When the app restores sessions after restart, it receives orders with a status b
 | `success` | `purchaseCompleted` | `purchaseCompleted` |
 | `canceled` | `canceled` | `canceled` |
 | `canceledByAdmin` | `adminCanceled` | `adminCanceled` |
-| `cooperativelyCanceled` | `cooperativeCancelAccepted` | `cooperativeCancelAccepted` |
+| `cooperativelyCanceled` | `cooperativeCancelInitiatedByPeer`* | `cooperativeCancelInitiatedByPeer`* |
 | `settledByAdmin` | `adminSettled` | `adminSettled` |
 | `completedByAdmin` | `adminSettled` | `adminSettled` |
 | `dispute` | `disputeInitiatedByPeer` | `disputeInitiatedByPeer` |
@@ -260,6 +297,8 @@ When the app restores sessions after restart, it receives orders with a status b
 | `inProgress` | `buyerTookOrder` | `buyerTookOrder` |
 
 The role differentiation in restore is critical for `settledHoldInvoice`: the buyer sees the intermediate "Paying sats" state, while the seller sees success.
+
+\* For `cooperativelyCanceled`, the restore manager uses `cooperativeCancelInitiatedByPeer` as the generic action. Before processing, it checks the stored message history for `fiatSent`/`fiatSentOk` actions and sets `fiatWasSent` on the notifier state. When `updateWith()` processes the message, it remaps the generic action to the correct semantic variant (`cooperativeCancelNoFiat*` or `cooperativeCancelFiatSent*`) based on the flag. The same `fiatWasSent` check is also performed for `dispute` status orders to ensure cooperative cancel from dispute works correctly after restore.
 
 ## UI Presentation
 
@@ -328,6 +367,21 @@ When a Lightning payment fails, the buyer receives `paymentFailed` followed by `
 ### Why `cooperativelyCanceled` Has a Distinct Chip
 
 In the My Trades list, `cooperativelyCanceled` shows "Canceling" in orange instead of "Cancel" in gray. This is because `cooperativelyCanceled` is a pending state — one party initiated the cancellation but the other has not accepted yet. Showing "Cancel" was misleading since the order was not actually canceled. The orange color matches other waiting states (`waitingPayment`, `waitingBuyerInvoice`) to signal that user action is still required. The final `canceled` status (from `cooperativeCancelAccepted`) shows the gray "Cancel" chip.
+
+### Why Cooperative Cancel Uses Semantic Action Variants
+
+The original FSM had a single set of actions (`cooperativeCancelInitiatedByYou/ByPeer`) for the `cooperativelyCanceled` status, which showed the same buttons regardless of context. This was incorrect:
+
+- **Seller saw `release` even if fiat was never sent** — pressing it was a no-op since there was no hold invoice to release
+- **Buyer lost the `fiatSent` button** — they could not mark fiat as sent to complete the trade before the cancellation was finalized
+
+The root cause was that the FSM had no memory of the previous status. Cooperative cancellation can be initiated from `active` (no fiat), `fiatSent` (fiat was sent), or `dispute` (which itself came from either `active` or `fiatSent`).
+
+The solution uses 4 semantic actions that encode whether fiat was sent, determined by a `fiatWasSent` boolean on `OrderState`. This flag is set when `fiatSent`/`fiatSentOk` is processed and flows through all subsequent transitions via `copyWith()`. When a cooperative cancel arrives, `updateWith()` remaps the generic protocol action to the correct semantic variant. This approach:
+
+1. **Keeps the matrix static** — no conditional logic in button lookup
+2. **Persists across restarts** — the restore manager reconstructs `fiatWasSent` from stored message history
+3. **Handles the dispute chain** — `active → fiatSent → dispute → cooperativeCancel` works because the flag survives through all transitions
 
 ### Why Disputes Auto-Close on Terminal State Instead of Subscribing to Kind 38386
 

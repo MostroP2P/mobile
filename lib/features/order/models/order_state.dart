@@ -11,6 +11,7 @@ class OrderState {
   final Dispute? dispute;
   final Peer? peer;
   final PaymentFailed? paymentFailed;
+  final bool fiatWasSent;
 
   OrderState({
     required this.status,
@@ -21,6 +22,7 @@ class OrderState {
     this.dispute,
     this.peer,
     this.paymentFailed,
+    this.fiatWasSent = false,
   });
 
   factory OrderState.fromMostroMessage(MostroMessage message) {
@@ -38,7 +40,7 @@ class OrderState {
 
   @override
   String toString() =>
-      'OrderState(status: $status, action: $action, order: $order, paymentRequest: $paymentRequest, cantDo: $cantDo, dispute: $dispute, peer: $peer, paymentFailed: $paymentFailed)';
+      'OrderState(status: $status, action: $action, order: $order, paymentRequest: $paymentRequest, cantDo: $cantDo, dispute: $dispute, peer: $peer, paymentFailed: $paymentFailed, fiatWasSent: $fiatWasSent)';
 
   @override
   bool operator ==(Object other) =>
@@ -51,7 +53,8 @@ class OrderState {
           other.cantDo == cantDo &&
           other.dispute == dispute &&
           other.paymentFailed == paymentFailed &&
-          other.peer == peer;
+          other.peer == peer &&
+          other.fiatWasSent == fiatWasSent;
 
   @override
   int get hashCode => Object.hash(
@@ -63,6 +66,7 @@ class OrderState {
         dispute,
         peer,
         paymentFailed,
+        fiatWasSent,
       );
 
   OrderState copyWith({
@@ -74,6 +78,7 @@ class OrderState {
     Dispute? dispute,
     Peer? peer,
     PaymentFailed? paymentFailed,
+    bool? fiatWasSent,
   }) {
     return OrderState(
       status: status ?? this.status,
@@ -84,6 +89,7 @@ class OrderState {
       dispute: dispute ?? this.dispute,
       peer: peer ?? this.peer,
       paymentFailed: paymentFailed ?? this.paymentFailed,
+      fiatWasSent: fiatWasSent ?? this.fiatWasSent,
     );
   }
 
@@ -95,12 +101,32 @@ class OrderState {
       return copyWith(cantDo: message.getPayload<CantDo>());
     }
 
+    // Track whether fiat was sent at any point in this order's lifecycle
+    final bool newFiatWasSent = fiatWasSent ||
+        message.action == Action.fiatSent ||
+        message.action == Action.fiatSentOk;
+
+    // Remap generic cooperative cancel actions to semantic variants
+    // based on whether fiat was sent before the cancel was initiated
+    Action effectiveAction = message.action;
+    if (message.action == Action.cooperativeCancelInitiatedByYou) {
+      effectiveAction = newFiatWasSent
+          ? Action.cooperativeCancelFiatSentByYou
+          : Action.cooperativeCancelNoFiatByYou;
+      logger.i('Remapped ${message.action} → $effectiveAction (fiatWasSent: $newFiatWasSent)');
+    } else if (message.action == Action.cooperativeCancelInitiatedByPeer) {
+      effectiveAction = newFiatWasSent
+          ? Action.cooperativeCancelFiatSentByPeer
+          : Action.cooperativeCancelNoFiatByPeer;
+      logger.i('Remapped ${message.action} → $effectiveAction (fiatWasSent: $newFiatWasSent)');
+    }
+
     // Determine the new status based on the action received
     Status newStatus = _getStatusFromAction(
-        message.action, message.getPayload<Order>()?.status);
+        effectiveAction, message.getPayload<Order>()?.status);
 
     // DEBUG: Log status mapping
-    logger.i('Status mapping: ${message.action} → $newStatus');
+    logger.i('Status mapping: $effectiveAction → $newStatus');
 
     // Preserve PaymentRequest correctly
     PaymentRequest? newPaymentRequest;
@@ -216,7 +242,7 @@ class OrderState {
 
     final newState = copyWith(
       status: newStatus,
-      action: message.action,
+      action: effectiveAction,
       order: message.payload is Order
           ? message.getPayload<Order>()
           : message.payload is PaymentRequest
@@ -227,6 +253,7 @@ class OrderState {
       dispute: updatedDispute,
       peer: newPeer,
       paymentFailed: message.getPayload<PaymentFailed>() ?? paymentFailed,
+      fiatWasSent: newFiatWasSent,
     );
 
     logger.i('New state: ${newState.status} - ${newState.action}');
@@ -302,6 +329,10 @@ class OrderState {
       // Actions that should set status to cooperatively canceled (pending cancellation)
       case Action.cooperativeCancelInitiatedByYou:
       case Action.cooperativeCancelInitiatedByPeer:
+      case Action.cooperativeCancelNoFiatByYou:
+      case Action.cooperativeCancelNoFiatByPeer:
+      case Action.cooperativeCancelFiatSentByYou:
+      case Action.cooperativeCancelFiatSentByPeer:
         return Status.cooperativelyCanceled;
 
       // Actions that should set status to dispute
@@ -442,12 +473,23 @@ class OrderState {
         Action.cooperativeCancelAccepted: [],
       },
       Status.cooperativelyCanceled: {
-        Action.cooperativeCancelInitiatedByYou: [
+        // From active: no fiat sent, so no release button for seller
+        Action.cooperativeCancelNoFiatByYou: [
+          Action.sendDm,
+          Action.dispute,
+        ],
+        Action.cooperativeCancelNoFiatByPeer: [
+          Action.sendDm,
+          Action.dispute,
+          Action.cancel,
+        ],
+        // From fiat-sent: fiat was sent, seller can release
+        Action.cooperativeCancelFiatSentByYou: [
           Action.sendDm,
           Action.dispute,
           Action.release,
         ],
-        Action.cooperativeCancelInitiatedByPeer: [
+        Action.cooperativeCancelFiatSentByPeer: [
           Action.sendDm,
           Action.dispute,
           Action.cancel,
@@ -567,11 +609,23 @@ class OrderState {
         Action.cooperativeCancelAccepted: [],
       },
       Status.cooperativelyCanceled: {
-        Action.cooperativeCancelInitiatedByYou: [
+        // From active: no fiat sent, buyer can still send fiat to complete trade
+        Action.cooperativeCancelNoFiatByYou: [
           Action.sendDm,
           Action.dispute,
         ],
-        Action.cooperativeCancelInitiatedByPeer: [
+        Action.cooperativeCancelNoFiatByPeer: [
+          Action.sendDm,
+          Action.dispute,
+          Action.cancel,
+          Action.fiatSent,
+        ],
+        // From fiat-sent: fiat already sent, no fiatSent button needed
+        Action.cooperativeCancelFiatSentByYou: [
+          Action.sendDm,
+          Action.dispute,
+        ],
+        Action.cooperativeCancelFiatSentByPeer: [
           Action.sendDm,
           Action.dispute,
           Action.cancel,

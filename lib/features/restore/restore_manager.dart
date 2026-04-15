@@ -549,7 +549,8 @@ class RestoreService {
       case Status.paymentFailed:
         return Action.paymentFailed;
       case Status.cooperativelyCanceled:
-        return Action.cooperativeCancelAccepted;
+        // Return generic action; will be remapped by updateWith based on fiatWasSent
+        return Action.cooperativeCancelInitiatedByPeer;
       case Status.inProgress:
         return Action.buyerTookOrder;
     }
@@ -752,6 +753,23 @@ class RestoreService {
           );
 
           if (dispute != null) {
+            // For disputed orders, check if fiat was sent before the dispute
+            // so future cooperative cancel actions get remapped correctly
+            final disputeMessages = await storage.getAllMessagesForOrderId(
+              orderDetail.id,
+            );
+            final hadFiatSent = disputeMessages.any(
+              (m) =>
+                  m.action == Action.fiatSent ||
+                  m.action == Action.fiatSentOk,
+            );
+            if (hadFiatSent) {
+              notifier.setFiatWasSent();
+              logger.i(
+                'Restore: fiatWasSent=true for disputed order ${orderDetail.id}',
+              );
+            }
+
             // Create dispute message with Dispute payload (per Mostro protocol)
             final disputeMessage = MostroMessage<Dispute>(
               id: orderDetail.id,
@@ -773,6 +791,27 @@ class RestoreService {
               'Restore: created dispute message for order ${orderDetail.id}',
             );
           } else {
+            // For cooperativelyCanceled orders, check message history to
+            // determine if fiat was sent before the cancel was initiated.
+            // This sets fiatWasSent so updateWith can remap to the correct
+            // semantic action variant.
+            if (order.status == Status.cooperativelyCanceled) {
+              final messages = await storage.getAllMessagesForOrderId(
+                orderDetail.id,
+              );
+              final hadFiatSent = messages.any(
+                (m) =>
+                    m.action == Action.fiatSent ||
+                    m.action == Action.fiatSentOk,
+              );
+              if (hadFiatSent) {
+                notifier.setFiatWasSent();
+                logger.i(
+                  'Restore: fiatWasSent=true for cooperativelyCanceled order ${orderDetail.id}',
+                );
+              }
+            }
+
             // Create regular order message with Order payload
             final mostroMessage = MostroMessage<Order>(
               id: orderDetail.id,

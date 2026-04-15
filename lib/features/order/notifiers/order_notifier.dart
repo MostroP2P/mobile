@@ -147,6 +147,14 @@ class OrderNotifier extends AbstractMostroNotifier {
     }
   }
 
+  /// Set fiatWasSent flag (used during restore to provide context
+  /// for cooperative cancel action remapping)
+  void setFiatWasSent() {
+    if (mounted) {
+      state = state.copyWith(fiatWasSent: true);
+    }
+  }
+
   /// Update dispute in state (used during restore)
   void updateDispute(Dispute dispute) {
     if (mounted) {
