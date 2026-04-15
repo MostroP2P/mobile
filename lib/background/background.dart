@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:isolate';
 import 'dart:ui';
+import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:logger/logger.dart';
@@ -15,8 +16,33 @@ import 'package:mostro_mobile/services/logger_service.dart' as logger_service;
 import 'package:mostro_mobile/shared/providers/mostro_database_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-bool isAppForeground = true;
+/// Tracks whether the foreground app is currently active.
+///
+/// Defaults to `false` so notifications fire by default when the background
+/// service starts in a state where the foreground app is not up (e.g. after
+/// being revived from a kill). The flag is updated via the
+/// `app-foreground-status` message sent by the foreground app through
+/// `MobileBackgroundService.setForegroundStatus()`.
+bool isAppForeground = false;
 String currentLanguage = 'en';
+
+/// Callback set by `serviceMain` so that `background_notification_service`
+/// can request a new P2P chat subscription when a session transitions to
+/// Active while the app is in background.
+///
+/// Without this, the background service would only have the `orders`
+/// subscription (keyed by `tradeKey`). When the counterpart takes the
+/// order or the hold invoice is accepted, the peer's tradeKey becomes
+/// known, the session can compute the shared key, and we must start
+/// listening for P2P chat events on that shared key immediately —
+/// otherwise DMs that arrive while the app stays in background would
+/// never trigger a notification until the user reopens the app.
+///
+/// The callback is set inside `serviceMain` (background isolate) so it
+/// has access to the local `activeSubscriptions` map, `nostrService`,
+/// `eventStore`, and the `logger`. It is `null` in the foreground
+/// isolate and any call there is a no-op.
+void Function(String sharedKeyPublic)? addChatSubscriptionFromBackground;
 
 @pragma('vm:entry-point')
 Future<void> serviceMain(ServiceInstance service) async {
@@ -106,6 +132,11 @@ Future<void> serviceMain(ServiceInstance service) async {
 
             subscription.listen((event) async {
               try {
+                // Suppress background notifications while the foreground app
+                // is active — the foreground handles events directly and
+                // showing a local notification would be redundant (and, for
+                // chat echoes, would notify the user of their own messages).
+                if (isAppForeground) return;
                 final store = eventStore;
                 if (store != null && await store.hasItem(event.id!)) return;
                 await notification_service.retryNotification(event);
@@ -120,6 +151,80 @@ Future<void> serviceMain(ServiceInstance service) async {
       } catch (e) {
         logger?.e('Failed to restore background filters: $e');
       }
+
+      // Expose a hook that `background_notification_service` can call after
+      // it has persisted a peer update to add a live chat subscription
+      // without waiting for the foreground app to come back.
+      addChatSubscriptionFromBackground = (String sharedKeyPublic) async {
+        try {
+          // Avoid creating duplicate subscriptions for the same shared key.
+          final alreadySubscribed = activeSubscriptions.values.any((entry) {
+            final filters = entry['filters'];
+            if (filters is! List) return false;
+            return filters.any((f) {
+              if (f is! Map) return false;
+              final p = f['#p'];
+              return p is List && p.contains(sharedKeyPublic);
+            });
+          });
+          if (alreadySubscribed) {
+            logger?.d('Chat sub for $sharedKeyPublic already active');
+            return;
+          }
+
+          final filter = NostrFilter(
+            kinds: [1059],
+            p: [sharedKeyPublic],
+          );
+          final request = NostrRequest(filters: [filter]);
+          final subscription = nostrService.subscribeToEvents(request);
+
+          activeSubscriptions[request.subscriptionId!] = {
+            'filters': [filter.toMap()],
+            'subscription': subscription,
+          };
+
+          subscription.listen((event) async {
+            try {
+              if (isAppForeground) return;
+              final store = eventStore;
+              if (store != null && await store.hasItem(event.id!)) return;
+              await notification_service.retryNotification(event);
+            } catch (e) {
+              logger?.e('Error processing chat subscription event', error: e);
+            }
+          });
+
+          // Persist the new filter so that if the background service is
+          // restarted (OS kill, settings update, etc.) the restore path
+          // recreates this chat subscription too, not only the original
+          // orders filter.
+          try {
+            final prefs = SharedPreferencesAsync();
+            final existingJson = await prefs.getString(
+              SharedPreferencesKeys.backgroundFilters.value,
+            );
+            final currentFilters = existingJson != null
+                ? (jsonDecode(existingJson) as List<dynamic>)
+                : <dynamic>[];
+            currentFilters.add(filter.toMap());
+            await prefs.setString(
+              SharedPreferencesKeys.backgroundFilters.value,
+              jsonEncode(currentFilters),
+            );
+          } catch (e) {
+            logger?.e('Failed to persist updated chat filter: $e');
+          }
+
+          logger?.i('Added background chat subscription for $sharedKeyPublic');
+        } catch (e, stackTrace) {
+          logger?.e(
+            'Failed to add background chat subscription',
+            error: e,
+            stackTrace: stackTrace,
+          );
+        }
+      };
 
       initialized = true;
       initInFlight!.complete();
@@ -169,6 +274,11 @@ Future<void> serviceMain(ServiceInstance service) async {
 
     subscription.listen((event) async {
       try {
+        // Suppress background notifications while the foreground app is
+        // active — the foreground handles events directly and showing a
+        // local notification would be redundant (and, for chat echoes,
+        // would notify the user of their own messages).
+        if (isAppForeground) return;
         final store = eventStore;
         if (store != null && await store.hasItem(event.id!)) {
           return;

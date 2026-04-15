@@ -181,6 +181,10 @@ class NotificationDataExtractor {
         // Admin/dispute DM — no payload extraction needed, generic message
         break;
 
+      case Action.chatMessage:
+        // P2P chat message — no payload extraction needed
+        break;
+
       case Action.cooperativeCancelAccepted:
         // No additional values needed
         break;

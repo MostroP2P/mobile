@@ -38,6 +38,7 @@ enum Action {
   paymentFailed('payment-failed'),
   invoiceUpdated('invoice-updated'),
   sendDm('send-dm'),
+  chatMessage('chat-message'),
   tradePubkey('trade-pubkey'),
   restore('restore-session'),
   orders('orders'),

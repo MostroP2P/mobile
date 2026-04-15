@@ -71,6 +71,8 @@ class NotificationMessageMapper {
         return 'notification_cooperative_cancel_accepted_title';
       case mostro.Action.sendDm:
         return 'notification_admin_message_title';
+      case mostro.Action.chatMessage:
+        return 'notification_new_message_title';
       case mostro.Action.cancel:
       case mostro.Action.adminCancel:
       case mostro.Action.adminCanceled:
@@ -167,6 +169,8 @@ class NotificationMessageMapper {
         return 'notification_cooperative_cancel_accepted_message';
       case mostro.Action.sendDm:
         return 'notification_admin_message_message';
+      case mostro.Action.chatMessage:
+        return 'notification_new_message_message';
       case mostro.Action.cancel:
       case mostro.Action.adminCancel:
       case mostro.Action.adminCanceled:
