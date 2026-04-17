@@ -5,7 +5,13 @@ import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/enums/role.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/data/repositories/session_storage.dart';
+import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
+import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
+import 'package:mostro_mobile/shared/providers/notifications_history_repository_provider.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
+import 'package:sembast/sembast.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/services/push_notification_service.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
@@ -43,16 +49,74 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     this._settings,
   ) : super([]);
 
+  int get _expirationHours =>
+      _settings.sessionExpirationHours ?? Config.sessionExpirationHours;
+
+  bool get _isForever => _expirationHours == 0;
+
+  Future<void> _cleanupSessionData(Session session) async {
+    final orderId = session.orderId;
+    if (orderId == null) {
+      logger.w('Skipping cleanup for session with null orderId');
+      return;
+    }
+    final eventStore = ref.read(eventStorageProvider);
+    final mostroStore = ref.read(mostroStorageProvider);
+    final notificationsRepo = ref.read(notificationsRepositoryProvider);
+
+    await eventStore.deleteWhere(Filter.equals('order_id', orderId));
+    if (session.disputeId != null) {
+      await eventStore.deleteWhere(
+          Filter.equals('dispute_id', session.disputeId));
+    }
+    await mostroStore.deleteAllMessagesByOrderId(orderId);
+    await notificationsRepo.deleteByOrderId(orderId);
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('chat_last_read_$orderId');
+    if (session.disputeId != null) {
+      await prefs.remove('dispute_last_read_${session.disputeId}');
+    }
+  }
+
+  /// Returns true if the session has an active (non-terminal) trade
+  /// and should be protected from cleanup.
+  Future<bool> _isActiveSession(Session session) async {
+    final orderId = session.orderId;
+    if (orderId == null) return false;
+    final mostroStore = ref.read(mostroStorageProvider);
+    final lastMessage = await mostroStore.getLatestMessageById(orderId);
+    if (lastMessage == null) return false;
+    final order = lastMessage.getPayload<Order>();
+    return order != null && !order.status.isTerminal;
+  }
+
   Future<void> init() async {
     final allSessions = await _storage.getAllSessions();
-    final cutoff = DateTime.now()
-        .subtract(const Duration(hours: Config.sessionExpirationHours));
-    for (final session in allSessions) {
-      if (session.startTime.isAfter(cutoff)) {
+    if (_isForever) {
+      for (final session in allSessions) {
         _sessions[session.orderId!] = session;
-      } else {
-        await _storage.deleteSession(session.orderId!);
-        _sessions.remove(session.orderId!);
+      }
+    } else {
+      final cutoff = DateTime.now()
+          .subtract(Duration(hours: _expirationHours));
+      for (final session in allSessions) {
+        if (session.startTime.isAfter(cutoff)) {
+          _sessions[session.orderId!] = session;
+        } else {
+          if (await _isActiveSession(session)) {
+            logger.i('Skipping cleanup for active session ${session.orderId}');
+            _sessions[session.orderId!] = session;
+            continue;
+          }
+          await _storage.deleteSession(session.orderId!);
+          _sessions.remove(session.orderId!);
+          try {
+            await _cleanupSessionData(session);
+          } catch (e) {
+            logger.e('Failed to cleanup data for session ${session.orderId}: $e');
+          }
+        }
       }
     }
     _emitState();
@@ -76,13 +140,25 @@ class SessionNotifier extends StateNotifier<List<Session>> {
   }
 
   void _cleanup() async {
+    if (_isForever) return;
+
     final cutoff = DateTime.now()
-        .subtract(const Duration(hours: Config.sessionExpirationHours));
+        .subtract(Duration(hours: _expirationHours));
     final expiredSessions = await _storage.getAllSessions();
+
     for (final session in expiredSessions) {
       if (session.startTime.isBefore(cutoff)) {
+        if (await _isActiveSession(session)) {
+          logger.i('Skipping cleanup for active session ${session.orderId}');
+          continue;
+        }
         await _storage.deleteSession(session.orderId!);
         _sessions.remove(session.orderId!);
+        try {
+          await _cleanupSessionData(session);
+        } catch (e) {
+          logger.e('Failed to cleanup data for session ${session.orderId}: $e');
+        }
       }
     }
 

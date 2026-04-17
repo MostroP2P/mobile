@@ -1566,5 +1566,14 @@
     "communityDisclaimerTitle": "Avviso Importante",
     "communityDisclaimerBody": "Il team di sviluppo di Mostro non e' responsabile di come gli operatori dei nodi utilizzano la piattaforma. Ogni operatore controlla il proprio nodo Mostro ed e' l'unico responsabile delle proprie azioni. Utilizzando Mostro, accetti la piena responsabilita' per le tue operazioni e riconosci che il team di sviluppo non ha alcun controllo sui singoli operatori dei nodi.",
     "communityDisclaimerAccept": "Accetta",
-    "tooManyRequests": "Troppe richieste, riprova più tardi."
+    "tooManyRequests": "Troppe richieste, riprova più tardi.",
+    "tradeHistory": "Cronologia trade",
+    "tradeHistoryDescription": "Scegli per quanto tempo conservare i trade completati. I più vecchi verranno rimossi automaticamente.",
+    "tradeHistoryInfoText": "Questa impostazione controlla per quanto tempo le sessioni di trade e i messaggi di chat vengono memorizzati sul tuo dispositivo. Dopo il periodo selezionato, vengono eliminati automaticamente.",
+    "oneWeek": "1 settimana",
+    "oneMonth": "1 mese",
+    "threeMonths": "3 mesi",
+    "sixMonths": "6 mesi",
+    "oneYear": "1 anno",
+    "never": "Mai"
 }

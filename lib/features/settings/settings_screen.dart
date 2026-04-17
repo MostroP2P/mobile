@@ -14,6 +14,7 @@ import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/shared/widgets/currency_selection_dialog.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
 import 'package:mostro_mobile/shared/widgets/language_selector.dart';
+import 'package:mostro_mobile/shared/widgets/trade_history_selector.dart';
 import 'package:mostro_mobile/features/wallet/widgets/wallet_status_card.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
@@ -107,6 +108,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                   // Notification Settings Card
                   _buildNotificationSettingsCard(context),
+                  const SizedBox(height: 16),
+
+                  // Trade History Card
+                  _buildTradeHistoryCard(context),
                   const SizedBox(height: 16),
 
                   // Dev Tools Card
@@ -221,6 +226,52 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTradeHistoryCard(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.backgroundCard,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(
+                  LucideIcons.history,
+                  color: AppTheme.activeColor,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  S.of(context)!.tradeHistory,
+                  style: const TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Text(
+              S.of(context)!.tradeHistoryDescription,
+              style: const TextStyle(
+                color: AppTheme.textSecondary,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const TradeHistorySelector(),
           ],
         ),
       ),

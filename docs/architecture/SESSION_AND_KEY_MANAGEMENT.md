@@ -216,7 +216,7 @@ Sessions are persisted using `SessionStorage` (`lib/data/repositories/session_st
 
 - **Active Sessions**: Stored in memory (`SessionNotifier._sessions` map)
 - **Persistent Storage**: Serialized to Sembast for app restart recovery
-- **Cleanup**: Automatic cleanup of expired sessions (720 hours / 30 days default)
+- **Cleanup**: User-configurable automatic cleanup (presets: 1 week, 1 month, 3 months, 6 months, 1 year, never). Default: 1 month (720 hours). When a session expires, all associated data is cascade-deleted: chat events, dispute chat events, mostro messages, notifications, and read status keys.
 
 ### Session Recovery from Mnemonic
 
@@ -292,7 +292,7 @@ Sessions can be deleted through several mechanisms:
 1. **Automatic Cleanup**: 10-second timer when no response from Mostro (both session types)
 2. **Timeout Detection**: Real-time detection via public events (taker scenarios)
 3. **Cancellation**: When orders are cancelled (pending/waiting states only)
-4. **Expiration**: Periodic cleanup of sessions older than 720 hours (30 days)
+4. **Expiration**: Periodic cleanup based on user-configured retention period (default 30 days, configurable in Settings: 1 week / 1 month / 3 months / 6 months / 1 year / never). Cascade-deletes all associated data (events, messages, notifications, read status).
 5. **Manual**: User-initiated session cleanup through settings
 
 #### **Session Cleanup Implementation**

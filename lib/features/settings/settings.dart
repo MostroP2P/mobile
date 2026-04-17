@@ -12,6 +12,7 @@ class Settings {
   final bool pushNotificationsEnabled;
   final bool notificationSoundEnabled;
   final bool notificationVibrationEnabled;
+  final int? sessionExpirationHours;
 
   Settings({
     required this.relays,
@@ -26,6 +27,7 @@ class Settings {
     this.pushNotificationsEnabled = true,
     this.notificationSoundEnabled = true,
     this.notificationVibrationEnabled = true,
+    this.sessionExpirationHours,
   });
 
   Settings copyWith({
@@ -42,6 +44,8 @@ class Settings {
     bool? pushNotificationsEnabled,
     bool? notificationSoundEnabled,
     bool? notificationVibrationEnabled,
+    int? sessionExpirationHours,
+    bool clearSessionExpiration = false,
   }) {
     return Settings(
       relays: relays ?? this.relays,
@@ -58,6 +62,9 @@ class Settings {
       pushNotificationsEnabled: pushNotificationsEnabled ?? this.pushNotificationsEnabled,
       notificationSoundEnabled: notificationSoundEnabled ?? this.notificationSoundEnabled,
       notificationVibrationEnabled: notificationVibrationEnabled ?? this.notificationVibrationEnabled,
+      sessionExpirationHours: clearSessionExpiration
+          ? null
+          : (sessionExpirationHours ?? this.sessionExpirationHours),
     );
   }
 
@@ -73,6 +80,7 @@ class Settings {
         'pushNotificationsEnabled': pushNotificationsEnabled,
         'notificationSoundEnabled': notificationSoundEnabled,
         'notificationVibrationEnabled': notificationVibrationEnabled,
+        'sessionExpirationHours': sessionExpirationHours,
       };
 
   factory Settings.fromJson(Map<String, dynamic> json) {
@@ -90,6 +98,7 @@ class Settings {
       pushNotificationsEnabled: json['pushNotificationsEnabled'] as bool? ?? true,
       notificationSoundEnabled: json['notificationSoundEnabled'] as bool? ?? true,
       notificationVibrationEnabled: json['notificationVibrationEnabled'] as bool? ?? true,
+      sessionExpirationHours: json['sessionExpirationHours'] as int?,
     );
   }
 }

@@ -174,38 +174,92 @@ class SessionNotifier extends StateNotifier<List<Session>> {
   final Map<int, Session> _requestIdToSession = {}; // For temporary orders
   Timer? _cleanupTimer;
 
+  // Reads from user settings, falls back to Config.sessionExpirationHours (720h)
+  // Value of 0 means "never" (no automatic cleanup)
+  int get _expirationHours =>
+      _settings.sessionExpirationHours ?? Config.sessionExpirationHours;
+
+  bool get _isForever => _expirationHours == 0;
+
   Future<void> init() async {
-    // Load all sessions and expire old ones
     final allSessions = await _storage.getAllSessions();
-    final cutoff = DateTime.now()
-        .subtract(const Duration(hours: Config.sessionExpirationHours));
-    
-    for (final session in allSessions) {
-      if (session.startTime.isAfter(cutoff)) {
+    if (_isForever) {
+      // "Never" mode: load all sessions without filtering
+      for (final session in allSessions) {
         _sessions[session.orderId!] = session;
-      } else {
-        await _storage.deleteSession(session.orderId!);
-        _sessions.remove(session.orderId!);
+      }
+    } else {
+      final cutoff = DateTime.now()
+          .subtract(Duration(hours: _expirationHours));
+      for (final session in allSessions) {
+        if (session.startTime.isAfter(cutoff)) {
+          _sessions[session.orderId!] = session;
+        } else {
+          await _storage.deleteSession(session.orderId!);
+          _sessions.remove(session.orderId!);
+          await _cleanupSessionData(session); // Cascade delete all associated data
+        }
       }
     }
-    
-    state = sessions; // Triggers all listeners
-    _scheduleCleanup(); // Schedule periodic cleanup
+    _emitState();
+    _scheduleCleanup();
   }
 
-  Future<void> deleteSession(String sessionId) async {
-    _sessions.remove(sessionId);
-    await _storage.deleteSession(sessionId);
-    state = sessions; // Update state to trigger UI updates
+  void _cleanup() async {
+    if (_isForever) return; // Skip cleanup entirely in "never" mode
+    // ... same cascade logic as init()
+  }
+
+  /// Deletes all data associated with an expired session
+  Future<void> _cleanupSessionData(Session session) async {
+    final orderId = session.orderId!;
+    // 1. Chat events from eventStore (keyed by order_id)
+    await eventStore.deleteWhere(Filter.equals('order_id', orderId));
+    // 2. Dispute chat events from eventStore (keyed by dispute_id)
+    if (session.disputeId != null) {
+      await eventStore.deleteWhere(Filter.equals('dispute_id', session.disputeId));
+    }
+    // 3. Mostro protocol messages from mostroStorage
+    await mostroStore.deleteAllMessagesByOrderId(orderId);
+    // 4. Notifications from notificationsRepository
+    await notificationsStore.deleteWhere(Filter.equals('orderId', orderId));
+    // 5. Chat/dispute read status from SharedPreferences
+    await prefs.remove('chat_last_read_$orderId');
+    if (session.disputeId != null) {
+      await prefs.remove('dispute_last_read_${session.disputeId}');
+    }
   }
 }
 ```
 
 **Key Features**:
-- **Automatic expiration**: Removes sessions older than 720 hours / 30 days (Config.sessionExpirationHours)
-- **Periodic cleanup**: Scheduled cleanup every 30 minutes to prevent memory leaks
+- **User-configurable expiration**: Users choose retention period in Settings (1 week, 1 month, 3 months, 6 months, 1 year, or never)
+- **Default**: 1 month (720 hours), stored in `Settings.sessionExpirationHours`, falls back to `Config.sessionExpirationHours`
+- **"Never" mode**: Value `0` disables automatic cleanup entirely — sessions and data persist indefinitely
+- **Cascading cleanup**: When a session expires, ALL associated data is deleted (see below)
+- **Periodic cleanup**: Scheduled every 30 minutes (`Config.cleanupIntervalMinutes`)
 - **State synchronization**: Updates trigger automatic UI updates
 - **Storage persistence**: Sessions survive app restarts
+
+#### What Gets Cleaned Up
+
+When a session expires, the following data is deleted:
+
+| Storage | What's deleted | Filter |
+|---|---|---|
+| sessionStorage | Session record | `orderId` |
+| eventStore | Chat gift wrap events | `order_id = orderId` |
+| eventStore | Dispute chat gift wrap events | `dispute_id = disputeId` |
+| mostroStorage | Mostro protocol messages | `id = orderId` |
+| notificationsRepository | Order notifications | `orderId = orderId` |
+| SharedPreferences | Chat read status | `chat_last_read_{orderId}` |
+| SharedPreferences | Dispute read status | `dispute_last_read_{disputeId}` |
+
+#### What Is NOT Cleaned Up (by design)
+
+| Storage | What remains | Why |
+|---|---|---|
+| eventStore | MostroService dedup stubs (`id` + `created_at` only) | These are the only deduplication mechanism. Deleting them could cause duplicate event processing if a relay re-delivers old events. They have no `order_id` field and are ~100 bytes each — negligible impact. |
 
 ### Session Provider Pattern
 
@@ -674,7 +728,7 @@ The system uses dynamic configuration from the Mostro Instance Nostr event:
 final expHours = mostroInstance?.expirationHours ?? 24;       // Default 24h for pending
 final expSecs = mostroInstance?.expirationSeconds ?? 900;     // Default 15min for waiting
 
-// Session expiration
+// Session expiration (user-configurable, this is the default fallback)
 const sessionExpirationHours = 720; // Defined in Config class (lib/core/config.dart)
 const cleanupIntervalMinutes = 30;  // Cleanup frequency
 ```
@@ -684,8 +738,17 @@ const cleanupIntervalMinutes = 30;  // Cleanup frequency
 ```dart
 // lib/core/config.dart
 class Config {
-  static const int sessionExpirationHours = 720;
+  static const int sessionExpirationHours = 720; // Default: 30 days
+  static const int cleanupIntervalMinutes = 30;
 }
+
+// User-configurable presets (stored in Settings.sessionExpirationHours):
+//   168  = 1 week
+//   720  = 1 month (default)
+//   2160 = 3 months
+//   4320 = 6 months
+//   8760 = 1 year
+//   0    = never (no automatic cleanup)
 
 // Timeout durations (currently hardcoded, could be made configurable)
 static const Duration sessionCleanupTimeout = Duration(seconds: 5);
@@ -765,8 +828,9 @@ final session = ref.read(sessionNotifierProvider.notifier).getSessionByOrderId(o
 **Memory Management**:
 - Automatic timer cleanup when no listeners
 - Proper provider disposal handling
-- Session cleanup removes expired entries
+- Session cleanup removes expired entries and all associated data (events, messages, notifications, read status)
 - Race condition flags prevent resource leaks
+- MostroService dedup stubs are intentionally retained to prevent duplicate event processing
 
 ---
 
