@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/models/session.dart';
+import 'package:mostro_mobile/features/chat/providers/active_chat_screens_provider.dart';
+import 'package:mostro_mobile/features/notifications/providers/notifications_provider.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/chat/utils/message_type_helpers.dart';
 import 'package:mostro_mobile/services/encrypted_image_upload_service.dart';
@@ -221,12 +223,32 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
 
       state = state.copyWith(messages: deduped);
 
+      if (isFromAdmin) {
+        _maybeShowInAppNotification();
+      }
+
       // Fire-and-forget: pre-download media after message is in state
       unawaited(_processMessageContent(unwrappedEvent));
       logger.i('Added dispute chat message for dispute: $disputeId '
           '(from ${isFromAdmin ? "admin" : "user"})');
     } catch (e, stackTrace) {
       logger.e('Error processing dispute chat event: $e', stackTrace: stackTrace);
+    }
+  }
+
+  /// Show an in-app snackbar for incoming admin messages when the user is not
+  /// currently on this dispute chat screen. Messages the user sent themselves
+  /// are filtered upstream (`isFromAdmin`).
+  void _maybeShowInAppNotification() {
+    try {
+      final activeScreens = ref.read(activeChatScreensProvider);
+      if (activeScreens.contains(disputeId)) return;
+
+      ref
+          .read(notificationActionsProvider.notifier)
+          .showCustomMessage('disputeChatNewMessage');
+    } catch (e) {
+      logger.w('Failed to show in-app dispute chat notification: $e');
     }
   }
 

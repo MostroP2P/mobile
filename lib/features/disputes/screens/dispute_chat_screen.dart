@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/enums.dart' as enums;
+import 'package:mostro_mobile/features/chat/providers/active_chat_screens_provider.dart';
 import 'package:mostro_mobile/features/disputes/widgets/dispute_communication_section.dart';
 import 'package:mostro_mobile/features/disputes/widgets/dispute_message_input.dart';
 import 'package:mostro_mobile/features/disputes/providers/dispute_providers.dart';
@@ -31,11 +32,23 @@ class _DisputeChatScreenState extends ConsumerState<DisputeChatScreen> {
     super.initState();
     // Mark dispute as read when screen is opened
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       DisputeReadStatusService.markDisputeAsRead(widget.disputeId);
       // Notify that the dispute has been marked as read
-      ref.read(disputeReadStatusProvider(widget.disputeId).notifier).state = 
+      ref.read(disputeReadStatusProvider(widget.disputeId).notifier).state =
           DateTime.now().millisecondsSinceEpoch;
+      ref
+          .read(activeChatScreensProvider.notifier)
+          .register(widget.disputeId);
     });
+  }
+
+  @override
+  void dispose() {
+    ref
+        .read(activeChatScreensProvider.notifier)
+        .unregister(widget.disputeId);
+    super.dispose();
   }
 
   @override

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/features/chat/providers/active_chat_screens_provider.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/features/chat/widgets/chat_error_screen.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
@@ -33,7 +34,21 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
   bool _wasKeyboardVisible = false;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref
+          .read(activeChatScreensProvider.notifier)
+          .register(widget.orderId);
+    });
+  }
+
+  @override
   void dispose() {
+    ref
+        .read(activeChatScreensProvider.notifier)
+        .unregister(widget.orderId);
     _scrollController.dispose();
     super.dispose();
   }

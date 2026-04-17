@@ -74,6 +74,12 @@ class NotificationListenerWidget extends ConsumerWidget {
             case 'lightningAddressUsed':
               message = S.of(context)!.lightningAddressUsed;
               break;
+            case 'chatNewMessage':
+              message = S.of(context)!.notification_new_message_message;
+              break;
+            case 'disputeChatNewMessage':
+              message = S.of(context)!.notification_admin_message_message;
+              break;
             default:
               message = next.customMessage!;
           }
