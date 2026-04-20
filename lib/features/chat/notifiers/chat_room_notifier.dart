@@ -12,7 +12,9 @@ import 'package:mostro_mobile/services/encrypted_image_upload_service.dart';
 import 'package:mostro_mobile/services/encrypted_file_upload_service.dart';
 import 'package:sembast/sembast.dart';
 
+import 'package:mostro_mobile/features/chat/providers/active_chat_screens_provider.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
+import 'package:mostro_mobile/features/notifications/providers/notifications_provider.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_manager_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
@@ -177,6 +179,8 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
         updatedMessages.sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
         state = state.copy(messages: updatedMessages);
         logger.d('New message added from relay, total messages: ${updatedMessages.length}');
+
+        _maybeShowInAppNotification(chat, session);
       } else {
         logger.d('Message already exists in state, skipping duplicate');
       }
@@ -277,6 +281,24 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
       }
     } catch (e, stackTrace) {
       logger.e('Failed to send message: $e', stackTrace: stackTrace);
+    }
+  }
+
+  /// Show an in-app snackbar for new incoming P2P messages when the user is
+  /// not currently on this chat screen. Self-messages (relay echo of messages
+  /// sent by the current user) are suppressed.
+  void _maybeShowInAppNotification(NostrEvent chat, Session session) {
+    try {
+      if (chat.pubkey == session.tradeKey.public) return;
+
+      final activeScreens = ref.read(activeChatScreensProvider);
+      if (activeScreens.contains(orderId)) return;
+
+      ref
+          .read(notificationActionsProvider.notifier)
+          .showCustomMessage('chatNewMessage');
+    } catch (e) {
+      logger.w('Failed to show in-app chat notification: $e');
     }
   }
 
