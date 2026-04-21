@@ -710,6 +710,14 @@
             }
         }
     },
+    "canceledTradeTitle": "Scambio di {sats} sats",
+    "@canceledTradeTitle": {
+        "placeholders": {
+            "sats": {
+                "description": "Amount of satoshis in a canceled trade"
+            }
+        }
+    },
     "forAmount": "per {amount}",
     "@forAmount": {
         "placeholders": {

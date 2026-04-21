@@ -286,6 +286,7 @@
     },
     "youAreSellingTitle": "You are selling{sats} sats",
     "youAreBuyingTitle": "You are buying{sats} sats",
+    "canceledTradeTitle": "Trade of{sats} sats",
     "forAmount": "for {amount}",
     "timeLeftLabel": "Time Left: {time}",
     "@timeLeftLabel": {

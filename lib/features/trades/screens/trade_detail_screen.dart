@@ -231,12 +231,18 @@ class TradeDetailScreen extends ConsumerWidget {
       context,
     );
 
+    final isCanceledWithoutSession =
+        tradeState.status == Status.canceled && session == null;
+    final titleText = isCanceledWithoutSession
+        ? S.of(context)!.canceledTradeTitle(satAmount)
+        : selling == S.of(context)!.selling
+            ? S.of(context)!.youAreSellingTitle(satAmount)
+            : S.of(context)!.youAreBuyingTitle(satAmount);
+
     return Column(
       children: [
         OrderAmountCard(
-          title: selling == S.of(context)!.selling
-              ? S.of(context)!.youAreSellingTitle(satAmount)
-              : S.of(context)!.youAreBuyingTitle(satAmount),
+          title: titleText,
           amount: _displayFiatAmount(tradeState.order!, isPending: isPending),
           currency: tradeState.order!.fiatCode,
           priceText: priceText,
