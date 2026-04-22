@@ -694,7 +694,7 @@
             }
         }
     },
-    "youAreSellingTitle": "Stai vendendo {sats} sats",
+    "youAreSellingTitle": "Stai vendendo{sats} sats",
     "@youAreSellingTitle": {
         "placeholders": {
             "sats": {
@@ -702,7 +702,7 @@
             }
         }
     },
-    "youAreBuyingTitle": "Stai comprando {sats} sats",
+    "youAreBuyingTitle": "Stai comprando{sats} sats",
     "@youAreBuyingTitle": {
         "placeholders": {
             "sats": {
@@ -710,7 +710,7 @@
             }
         }
     },
-    "canceledTradeTitle": "Scambio di {sats} sats",
+    "canceledTradeTitle": "Scambio di{sats} sats",
     "@canceledTradeTitle": {
         "placeholders": {
             "sats": {

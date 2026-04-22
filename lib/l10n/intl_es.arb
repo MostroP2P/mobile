@@ -650,9 +650,9 @@
             }
         }
     },
-    "youAreSellingTitle": "Estás vendiendo {sats} sats",
-    "youAreBuyingTitle": "Estás comprando {sats} sats",
-    "canceledTradeTitle": "Intercambio de {sats} sats",
+    "youAreSellingTitle": "Estás vendiendo{sats} sats",
+    "youAreBuyingTitle": "Estás comprando{sats} sats",
+    "canceledTradeTitle": "Intercambio de{sats} sats",
     "forAmount": "por {amount}",
     "timeLeftLabel": "Tiempo restante: {time}",
     "@timeLeftLabel": {

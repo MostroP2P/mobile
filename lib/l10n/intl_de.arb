@@ -284,9 +284,9 @@
             }
         }
     },
-    "youAreSellingTitle": "Du verkaufst {sats} Sats",
-    "youAreBuyingTitle": "Du kaufst {sats} Sats",
-    "canceledTradeTitle": "Handel über {sats} Sats",
+    "youAreSellingTitle": "Du verkaufst{sats} Sats",
+    "youAreBuyingTitle": "Du kaufst{sats} Sats",
+    "canceledTradeTitle": "Handel über{sats} Sats",
     "forAmount": "für {amount}",
     "timeLeftLabel": "Verbleibende Zeit: {time}",
     "@timeLeftLabel": {
