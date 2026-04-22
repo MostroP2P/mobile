@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
@@ -253,6 +254,8 @@ class OrderFilterState extends ConsumerState<OrderFilter> {
   double ratingMax = 5.0;
   double premiumMin = -10.0;
   double premiumMax = 10.0;
+  int minDays = 0;
+  final TextEditingController _daysController = TextEditingController(text: '0');
 
   // Options for the multi-select fields.
   
@@ -284,7 +287,8 @@ class OrderFilterState extends ConsumerState<OrderFilter> {
       final paymentMethods = ref.read(paymentMethodFilterProvider);
       final currentRatingRange = ref.read(ratingFilterProvider);
       final currentPremiumRange = ref.read(premiumRangeFilterProvider);
-      
+      final currentMinDays = ref.read(minDaysFilterProvider);
+
       setState(() {
         selectedFiatCurrencies = List.from(currencies);
         selectedPaymentMethods = List.from(paymentMethods);
@@ -293,8 +297,16 @@ class OrderFilterState extends ConsumerState<OrderFilter> {
         ratingMax = rMax;
         premiumMin = currentPremiumRange.min;
         premiumMax = currentPremiumRange.max;
+        minDays = currentMinDays;
+        _daysController.text = currentMinDays.toString();
       });
     });
+  }
+
+  @override
+  void dispose() {
+    _daysController.dispose();
+    super.dispose();
   }
 
   @override
@@ -640,6 +652,136 @@ class OrderFilterState extends ConsumerState<OrderFilter> {
               ),
             ],
           ),
+          const SizedBox(height: 12),
+          // Minimum days of use filter (maker's account age).
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                S.of(context)!.daysOfUse,
+                style: const TextStyle(
+                  color: AppTheme.textPrimary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.3,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Text(
+                    "${S.of(context)!.days}: 0",
+                    style: const TextStyle(
+                      color: AppTheme.textSecondary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const Spacer(),
+                  SizedBox(
+                    width: 72,
+                    child: Text(
+                      "${S.of(context)!.days}: ${minDays > 20 ? minDays : 20}",
+                      textAlign: TextAlign.end,
+                      style: const TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SliderTheme(
+                data: SliderTheme.of(context).copyWith(
+                  activeTrackColor: AppTheme.textSecondary,
+                  inactiveTrackColor: AppTheme.backgroundInput,
+                  thumbColor: AppTheme.textSecondary,
+                  overlayColor: AppTheme.textSecondary.withValues(alpha: 0.2),
+                  valueIndicatorColor: AppTheme.textSecondary,
+                  valueIndicatorTextStyle: const TextStyle(
+                    color: AppTheme.backgroundDark,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  trackHeight: 4,
+                  thumbShape: const RoundSliderThumbShape(
+                    enabledThumbRadius: 8,
+                  ),
+                ),
+                child: Slider(
+                  value: minDays.clamp(0, 20).toDouble(),
+                  min: 0.0,
+                  max: 20.0,
+                  divisions: 20,
+                  label: minDays.toString(),
+                  onChanged: (value) {
+                    final v = value.round();
+                    setState(() {
+                      minDays = v;
+                    });
+                    _daysController.text = v.toString();
+                    _daysController.selection = TextSelection.collapsed(
+                      offset: _daysController.text.length,
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerRight,
+                child: SizedBox(
+                  width: 72,
+                  height: 32,
+                  child: TextField(
+                    controller: _daysController,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'^\d{0,4}$')),
+                    ],
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: AppTheme.textPrimary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: AppTheme.backgroundInput,
+                      contentPadding: EdgeInsets.zero,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          width: 1,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          width: 1,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(
+                          color: AppTheme.textSecondary,
+                          width: 1.5,
+                        ),
+                      ),
+                    ),
+                    onChanged: (text) {
+                      final parsed = int.tryParse(text);
+                      setState(() {
+                        minDays = parsed == null ? 0 : parsed.clamp(0, 9999);
+                      });
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
                 ],
               ),
             ),
@@ -663,12 +805,15 @@ class OrderFilterState extends ConsumerState<OrderFilter> {
                         ratingMax = 5.0;
                         premiumMin = -10.0;
                         premiumMax = 10.0;
+                        minDays = 0;
+                        _daysController.text = '0';
                       });
-                      
+
                       ref.read(currencyFilterProvider.notifier).state = [];
                       ref.read(paymentMethodFilterProvider.notifier).state = [];
                       ref.read(ratingFilterProvider.notifier).state = (min: 0.0, max: 5.0);
                       ref.read(premiumRangeFilterProvider.notifier).state = (min: -10.0, max: 10.0);
+                      ref.read(minDaysFilterProvider.notifier).state = 0;
                       
                       Navigator.of(context).pop();
                     },
@@ -707,6 +852,7 @@ class OrderFilterState extends ConsumerState<OrderFilter> {
                       ref.read(paymentMethodFilterProvider.notifier).state = selectedPaymentMethods;
                       ref.read(ratingFilterProvider.notifier).state = (min: ratingMin, max: ratingMax);
                       ref.read(premiumRangeFilterProvider.notifier).state = (min: premiumMin, max: premiumMax);
+                      ref.read(minDaysFilterProvider.notifier).state = minDays;
                       
                       Navigator.of(context).pop();
                     },

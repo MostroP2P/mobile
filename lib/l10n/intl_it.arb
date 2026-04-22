@@ -1072,6 +1072,8 @@
     "clear": "Cancella",
     "min": "Min",
     "max": "Max",
+    "daysOfUse": "Giorni di utilizzo",
+    "days": "Giorni",
     "selectCurrency": "Seleziona Valuta",
     "noCurrencySelected": "Nessuna valuta selezionata",
     "@_comment_timeout_messages": "Messaggi di notifica timeout",

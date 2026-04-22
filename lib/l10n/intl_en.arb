@@ -1101,6 +1101,8 @@
     "clear": "Clear",
     "min": "Min",
     "max": "Max",
+    "daysOfUse": "Days of use",
+    "days": "Days",
     "@_comment_timeout_messages": "Timeout notification messages",
     "orderTimeoutTaker": "You didn't respond in time. The order will be republished",
     "orderTimeoutMaker": "Your counterpart didn't respond in time. The order will be republished",
