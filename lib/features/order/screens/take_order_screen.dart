@@ -126,8 +126,7 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
           order.currency!,
           currencyData,
         );
-        final amountString =
-            '${order.fiatAmount} ${order.currency} $currencyFlag';
+        final amountString = '${order.fiatAmount} $currencyFlag';
         String priceText = '';
         if (order.amount == '0') {
           final premium = order.premium;

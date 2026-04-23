@@ -694,7 +694,7 @@
             }
         }
     },
-    "youAreSellingTitle": "Stai vendendo {sats} sats",
+    "youAreSellingTitle": "Stai vendendo{sats} sats",
     "@youAreSellingTitle": {
         "placeholders": {
             "sats": {
@@ -702,11 +702,19 @@
             }
         }
     },
-    "youAreBuyingTitle": "Stai comprando {sats} sats",
+    "youAreBuyingTitle": "Stai comprando{sats} sats",
     "@youAreBuyingTitle": {
         "placeholders": {
             "sats": {
                 "description": "Amount of satoshis being bought"
+            }
+        }
+    },
+    "canceledTradeTitle": "Scambio di{sats} sats",
+    "@canceledTradeTitle": {
+        "placeholders": {
+            "sats": {
+                "description": "Amount of satoshis in a canceled trade"
             }
         }
     },

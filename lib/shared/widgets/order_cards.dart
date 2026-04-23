@@ -33,7 +33,7 @@ class OrderAmountCard extends ConsumerWidget {
     final currencyData = ref.watch(currencyCodesProvider).asData?.value;
     final currencyFlag =
         CurrencyUtils.getFlagFromCurrencyData(currency, currencyData);
-    final amountString = '$amount $currency $currencyFlag';
+    final amountString = '$amount $currencyFlag';
 
 
     return CustomCard(
