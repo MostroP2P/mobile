@@ -672,7 +672,7 @@ class OrderFilterState extends ConsumerState<OrderFilter> {
                   Text(
                     "${S.of(context)!.days}: 0",
                     style: const TextStyle(
-                      color: AppTheme.textSecondary,
+                      color: AppTheme.sellColor,
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                     ),
@@ -684,7 +684,7 @@ class OrderFilterState extends ConsumerState<OrderFilter> {
                       "${S.of(context)!.days}: ${minDays > 20 ? minDays : 20}",
                       textAlign: TextAlign.end,
                       style: const TextStyle(
-                        color: AppTheme.textSecondary,
+                        color: AppTheme.buyColor,
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
                       ),
@@ -714,7 +714,7 @@ class OrderFilterState extends ConsumerState<OrderFilter> {
                   min: 0.0,
                   max: 20.0,
                   divisions: 20,
-                  label: minDays.toString(),
+                  label: minDays.clamp(0, 20).toString(),
                   onChanged: (value) {
                     final v = value.round();
                     setState(() {
