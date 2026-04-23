@@ -289,7 +289,11 @@ class TradeDetailScreen extends ConsumerWidget {
               tradeState.status == Status.fiatSent ||
               tradeState.status == Status.cooperativelyCanceled) {
             if (tradeState.action ==
-                actions.Action.cooperativeCancelInitiatedByPeer) {
+                    actions.Action.cooperativeCancelInitiatedByPeer ||
+                tradeState.action ==
+                    actions.Action.cooperativeCancelNoFiatByPeer ||
+                tradeState.action ==
+                    actions.Action.cooperativeCancelFiatSentByPeer) {
               cancelMessage = S.of(context)!.acceptCancelMessage;
             } else {
               cancelMessage = S.of(context)!.cooperativeCancelMessage;
@@ -471,6 +475,8 @@ class TradeDetailScreen extends ConsumerWidget {
           break;
 
         case actions.Action.cooperativeCancelInitiatedByYou:
+        case actions.Action.cooperativeCancelNoFiatByYou:
+        case actions.Action.cooperativeCancelFiatSentByYou:
           widgets.add(_buildNostrButton(
             S.of(context)!.cancelPendingButton,
             action: actions.Action.cooperativeCancelInitiatedByYou,

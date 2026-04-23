@@ -77,6 +77,10 @@ class NotificationModel {
       case Action.canceled:
       case Action.cooperativeCancelInitiatedByYou:
       case Action.cooperativeCancelInitiatedByPeer:
+      case Action.cooperativeCancelNoFiatByYou:
+      case Action.cooperativeCancelNoFiatByPeer:
+      case Action.cooperativeCancelFiatSentByYou:
+      case Action.cooperativeCancelFiatSentByPeer:
       case Action.cooperativeCancelAccepted:
       case Action.adminCancel:
       case Action.adminCanceled:

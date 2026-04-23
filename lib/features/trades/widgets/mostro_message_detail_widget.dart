@@ -202,10 +202,14 @@ class MostroMessageDetail extends ConsumerWidget {
       case actions.Action.rateReceived:
         return S.of(context)!.rateReceived;
       case actions.Action.cooperativeCancelInitiatedByYou:
+      case actions.Action.cooperativeCancelNoFiatByYou:
+      case actions.Action.cooperativeCancelFiatSentByYou:
         return S
             .of(context)!
             .cooperativeCancelInitiatedByYou(orderPayload!.id ?? '');
       case actions.Action.cooperativeCancelInitiatedByPeer:
+      case actions.Action.cooperativeCancelNoFiatByPeer:
+      case actions.Action.cooperativeCancelFiatSentByPeer:
         return S
             .of(context)!
             .cooperativeCancelInitiatedByPeer(orderPayload!.id ?? '');

@@ -369,10 +369,14 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         break;
 
       case Action.cooperativeCancelInitiatedByYou:
+      case Action.cooperativeCancelNoFiatByYou:
+      case Action.cooperativeCancelFiatSentByYou:
         // No additional logic needed beyond notification
         break;
 
       case Action.cooperativeCancelInitiatedByPeer:
+      case Action.cooperativeCancelNoFiatByPeer:
+      case Action.cooperativeCancelFiatSentByPeer:
         if (isRecent && !bypassTimestampGate) {
           navProvider.go('/trade_detail/$orderId');
         }

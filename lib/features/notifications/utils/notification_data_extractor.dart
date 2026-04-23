@@ -152,10 +152,14 @@ class NotificationDataExtractor {
         return null;
         
       case Action.cooperativeCancelInitiatedByYou:
+      case Action.cooperativeCancelNoFiatByYou:
+      case Action.cooperativeCancelFiatSentByYou:
         // No additional values needed
         break;
-        
+
       case Action.cooperativeCancelInitiatedByPeer:
+      case Action.cooperativeCancelNoFiatByPeer:
+      case Action.cooperativeCancelFiatSentByPeer:
         // No additional values needed
         break;
         

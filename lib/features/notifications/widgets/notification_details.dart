@@ -153,6 +153,10 @@ class NotificationDetails extends StatelessWidget {
 
       case mostro_action.Action.cooperativeCancelInitiatedByYou:
       case mostro_action.Action.cooperativeCancelInitiatedByPeer:
+      case mostro_action.Action.cooperativeCancelNoFiatByYou:
+      case mostro_action.Action.cooperativeCancelNoFiatByPeer:
+      case mostro_action.Action.cooperativeCancelFiatSentByYou:
+      case mostro_action.Action.cooperativeCancelFiatSentByPeer:
       case mostro_action.Action.cooperativeCancelAccepted:
         if (data.containsKey('id')) {
           widgets.add(DetailRow(

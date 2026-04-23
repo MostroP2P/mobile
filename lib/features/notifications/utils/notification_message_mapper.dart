@@ -64,8 +64,12 @@ class NotificationMessageMapper {
       case mostro.Action.canceled:
         return 'notification_order_canceled_title';
       case mostro.Action.cooperativeCancelInitiatedByYou:
+      case mostro.Action.cooperativeCancelNoFiatByYou:
+      case mostro.Action.cooperativeCancelFiatSentByYou:
         return 'notification_cooperative_cancel_initiated_by_you_title';
       case mostro.Action.cooperativeCancelInitiatedByPeer:
+      case mostro.Action.cooperativeCancelNoFiatByPeer:
+      case mostro.Action.cooperativeCancelFiatSentByPeer:
         return 'notification_cooperative_cancel_initiated_by_peer_title';
       case mostro.Action.cooperativeCancelAccepted:
         return 'notification_cooperative_cancel_accepted_title';
@@ -162,8 +166,12 @@ class NotificationMessageMapper {
       case mostro.Action.canceled:
         return 'notification_order_canceled_message';
       case mostro.Action.cooperativeCancelInitiatedByYou:
+      case mostro.Action.cooperativeCancelNoFiatByYou:
+      case mostro.Action.cooperativeCancelFiatSentByYou:
         return 'notification_cooperative_cancel_initiated_by_you_message';
       case mostro.Action.cooperativeCancelInitiatedByPeer:
+      case mostro.Action.cooperativeCancelNoFiatByPeer:
+      case mostro.Action.cooperativeCancelFiatSentByPeer:
         return 'notification_cooperative_cancel_initiated_by_peer_message';
       case mostro.Action.cooperativeCancelAccepted:
         return 'notification_cooperative_cancel_accepted_message';

@@ -184,6 +184,166 @@ void main() {
     });
   });
 
+  group('Cooperative cancel action remapping', () {
+    test('remaps cooperativeCancelInitiatedByYou to NoFiat when from active',
+        () {
+      final state = OrderState(
+        status: Status.active,
+        action: Action.holdInvoicePaymentAccepted,
+        order: _testOrder(),
+      );
+
+      final updated = state
+          .updateWith(_message(Action.cooperativeCancelInitiatedByYou));
+
+      expect(updated.status, equals(Status.cooperativelyCanceled));
+      expect(
+          updated.action, equals(Action.cooperativeCancelNoFiatByYou));
+      expect(updated.fiatWasSent, isFalse);
+    });
+
+    test(
+        'remaps cooperativeCancelInitiatedByPeer to NoFiat when from active',
+        () {
+      final state = OrderState(
+        status: Status.active,
+        action: Action.holdInvoicePaymentAccepted,
+        order: _testOrder(),
+      );
+
+      final updated = state
+          .updateWith(_message(Action.cooperativeCancelInitiatedByPeer));
+
+      expect(updated.status, equals(Status.cooperativelyCanceled));
+      expect(
+          updated.action, equals(Action.cooperativeCancelNoFiatByPeer));
+      expect(updated.fiatWasSent, isFalse);
+    });
+
+    test(
+        'remaps cooperativeCancelInitiatedByYou to FiatSent when from fiatSent',
+        () {
+      final state = OrderState(
+        status: Status.fiatSent,
+        action: Action.fiatSentOk,
+        order: _testOrder(),
+        fiatWasSent: true,
+      );
+
+      final updated = state
+          .updateWith(_message(Action.cooperativeCancelInitiatedByYou));
+
+      expect(updated.status, equals(Status.cooperativelyCanceled));
+      expect(updated.action,
+          equals(Action.cooperativeCancelFiatSentByYou));
+      expect(updated.fiatWasSent, isTrue);
+    });
+
+    test(
+        'remaps cooperativeCancelInitiatedByPeer to FiatSent when from fiatSent',
+        () {
+      final state = OrderState(
+        status: Status.fiatSent,
+        action: Action.fiatSentOk,
+        order: _testOrder(),
+        fiatWasSent: true,
+      );
+
+      final updated = state
+          .updateWith(_message(Action.cooperativeCancelInitiatedByPeer));
+
+      expect(updated.status, equals(Status.cooperativelyCanceled));
+      expect(updated.action,
+          equals(Action.cooperativeCancelFiatSentByPeer));
+      expect(updated.fiatWasSent, isTrue);
+    });
+
+    test('fiatWasSent is set when fiatSent action is processed', () {
+      final state = OrderState(
+        status: Status.active,
+        action: Action.holdInvoicePaymentAccepted,
+        order: _testOrder(),
+      );
+
+      expect(state.fiatWasSent, isFalse);
+
+      final updated = state.updateWith(_message(Action.fiatSentOk));
+
+      expect(updated.fiatWasSent, isTrue);
+    });
+
+    test(
+        'remaps to FiatSent from dispute when fiatWasSent was set earlier',
+        () {
+      // Simulate: active → fiatSent → dispute → cooperativeCancel
+      final state = OrderState(
+        status: Status.dispute,
+        action: Action.disputeInitiatedByPeer,
+        order: _testOrder(),
+        fiatWasSent: true,
+        dispute: Dispute(
+          disputeId: 'dispute-1',
+          orderId: 'test-order-id',
+          status: 'in-progress',
+        ),
+      );
+
+      final updated = state
+          .updateWith(_message(Action.cooperativeCancelInitiatedByPeer));
+
+      expect(updated.status, equals(Status.cooperativelyCanceled));
+      expect(updated.action,
+          equals(Action.cooperativeCancelFiatSentByPeer));
+      expect(updated.fiatWasSent, isTrue);
+    });
+
+    test('remaps to NoFiat from dispute when fiatWasSent was never set',
+        () {
+      // Simulate: active → dispute → cooperativeCancel (no fiat sent)
+      final state = OrderState(
+        status: Status.dispute,
+        action: Action.disputeInitiatedByPeer,
+        order: _testOrder(),
+        dispute: Dispute(
+          disputeId: 'dispute-1',
+          orderId: 'test-order-id',
+          status: 'in-progress',
+        ),
+      );
+
+      final updated = state
+          .updateWith(_message(Action.cooperativeCancelInitiatedByYou));
+
+      expect(updated.status, equals(Status.cooperativelyCanceled));
+      expect(
+          updated.action, equals(Action.cooperativeCancelNoFiatByYou));
+      expect(updated.fiatWasSent, isFalse);
+    });
+
+    test('fiatWasSent persists through multiple state transitions', () {
+      var state = OrderState(
+        status: Status.active,
+        action: Action.holdInvoicePaymentAccepted,
+        order: _testOrder(),
+      );
+
+      // Process fiatSent
+      state = state.updateWith(_message(Action.fiatSentOk));
+      expect(state.fiatWasSent, isTrue);
+
+      // Transition to dispute
+      state = state.updateWith(_message(Action.disputeInitiatedByPeer));
+      expect(state.fiatWasSent, isTrue);
+
+      // Cooperative cancel from dispute
+      state = state
+          .updateWith(_message(Action.cooperativeCancelInitiatedByPeer));
+      expect(state.fiatWasSent, isTrue);
+      expect(state.action,
+          equals(Action.cooperativeCancelFiatSentByPeer));
+    });
+  });
+
   group('DisputeData.getLocalizedDescription delegation', () {
     test('DisputeDescriptionKey maps closed to resolved', () {
       final dispute = Dispute(
