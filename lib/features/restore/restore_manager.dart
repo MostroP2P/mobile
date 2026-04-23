@@ -584,6 +584,11 @@ class RestoreService {
           );
         }
 
+        final restoredDispute = disputes.where((d) => d.orderId == orderId).firstOrNull;
+        final adminPubkey = restoredDispute?.solverPubkey?.isNotEmpty == true
+            ? restoredDispute!.solverPubkey
+            : null;
+
         final session = Session(
           masterKey: _masterKey!,
           tradeKey: tradeKey,
@@ -593,6 +598,8 @@ class RestoreService {
           orderId: orderDetail.id,
           role: role,
           peer: peer,
+          adminPubkey: adminPubkey,
+          disputeId: restoredDispute?.disputeId,
         );
 
         // Store session
