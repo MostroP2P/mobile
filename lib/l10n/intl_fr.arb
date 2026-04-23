@@ -1102,6 +1102,8 @@
     "clear": "Effacer",
     "min": "Min",
     "max": "Max",
+    "daysOfUse": "Jours d'utilisation",
+    "days": "Jours",
     "@_comment_timeout_messages": "Timeout notification messages",
     "orderTimeoutTaker": "Vous n'avez pas répondu à temps. La commande sera republiée",
     "orderTimeoutMaker": "Votre contrepartie n'a pas répondu à temps. La commande sera republiée",

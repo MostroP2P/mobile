@@ -1014,6 +1014,8 @@
     "clear": "Limpiar",
     "min": "Mín",
     "max": "Máx",
+    "daysOfUse": "Días de uso",
+    "days": "Días",
     "selectCurrency": "Seleccionar Moneda",
     "noCurrencySelected": "Ninguna moneda seleccionada",
     "@_comment_timeout_messages": "Mensajes de notificación de timeout",

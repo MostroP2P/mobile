@@ -1102,6 +1102,8 @@
     "clear": "Löschen",
     "min": "Min",
     "max": "Max",
+    "daysOfUse": "Nutzungstage",
+    "days": "Tage",
     "@_comment_timeout_messages": "Nachrichten für Zeitüberschreitungen",
     "orderTimeoutTaker": "Du hast nicht rechtzeitig geantwortet. Die Order wird neu veröffentlicht.",
     "orderTimeoutMaker": "Dein Handelspartner hat nicht rechtzeitig geantwortet. Die Order wird neu veröffentlicht.",

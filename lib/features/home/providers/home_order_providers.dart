@@ -12,6 +12,7 @@ final currencyFilterProvider = StateProvider<List<String>>((ref) => []);
 final paymentMethodFilterProvider = StateProvider<List<String>>((ref) => []);
 final ratingFilterProvider = StateProvider<({double min, double max})>((ref) => (min: 0.0, max: 5.0));
 final premiumRangeFilterProvider = StateProvider<({double min, double max})>((ref) => (min: -10.0, max: 10.0));
+final minDaysFilterProvider = StateProvider<int>((ref) => 0);
 
 final filteredOrdersProvider = Provider<List<NostrEvent>>((ref) {
   final allOrdersAsync = ref.watch(orderEventsProvider);
@@ -20,6 +21,7 @@ final filteredOrdersProvider = Provider<List<NostrEvent>>((ref) {
   final selectedPaymentMethods = ref.watch(paymentMethodFilterProvider);
   final ratingRange = ref.watch(ratingFilterProvider);
   final premiumRange = ref.watch(premiumRangeFilterProvider);
+  final minDays = ref.watch(minDaysFilterProvider);
 
   return allOrdersAsync.maybeWhen(
     data: (allOrders) {
@@ -51,6 +53,11 @@ final filteredOrdersProvider = Provider<List<NostrEvent>>((ref) {
             return methodsLower.any(pmLower.contains);
           });
         });
+      }
+
+      // Apply minimum days filter (maker's account age as reported in rating.days)
+      if (minDays > 0) {
+        filtered = filtered.where((o) => (o.rating?.days ?? 0) >= minDays);
       }
 
       // Apply rating filter
