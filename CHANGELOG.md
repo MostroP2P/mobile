@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.2.5] - 2026-04-23
+
+### Added
+- feat: filter offers by maker's account age in order book   - New Days of use filter in the order book filter dialog, reading the days field from the rating tag of kind 38383 events.   - Slider 0..20 with the same gray palette as the reputation and premium filters, adjacent text input accepts higher values (clamped to 0..9999).   - Right-side label switches from Days: 20 to the typed value when the user enters a higher number.   - New minDaysFilterProvider in home_order_providers.dart; offers are excluded when rating.days < minDays.   - Localization keys daysOfUse and days added to en, es, it, de and fr. (bfcba519)
+- feat: in-app snackbar notifications for chat messages outside chat screen (#578) (38ed8eef)
+- feat: add configurable trade history retention in settings (#571) (8116311d)
+- Add P2P chat background notifications (Phase 2) (#529) (4dc0a311)
+
+### Fixed
+- fix: prevent wrong role text on canceled order detail screen (#580) (8007b354)
+- fix: context-aware buttons during cooperative cancellation (#576) (c885098e)
+
+### Changed
+- style(days-filter): align label colors with other filters and clamp thumb label (a323e703)
+
+
 ## [v1.2.4] - 2026-04-09
 
 ### Added
