@@ -895,7 +895,7 @@ class RestoreService {
         );
         final lastTradeIndex = lastTradeIndexResponse.tradeIndex;
         await keyManager.setCurrentKeyIndex(lastTradeIndex + 1);
-        progress.completeRestore();
+        success = true;
         return true;
       }
 
