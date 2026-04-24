@@ -37,6 +37,8 @@ import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/notifications/providers/notifications_provider.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
+import 'package:mostro_mobile/features/disputes/notifiers/dispute_chat_notifier.dart';
+
 
 enum RestoreStage {
   gettingRestoreData,
@@ -80,9 +82,14 @@ class RestoreService {
     try {
       logger.i('Restore: clearing all existing data before restore');
 
-      // Get current chat orderIds BEFORE clearing
+      // Get current chat orderIds and disputesIds before clearing
       final currentChats = ref.read(chatRoomsNotifierProvider);
       final chatOrderIds = currentChats.map((c) => c.orderId).toList();
+      final disputeIds = ref
+          .read(sessionNotifierProvider)
+          .where((s) => s.disputeId != null)
+          .map((s) => s.disputeId!)
+          .toList();
 
       // Clear storage
       await ref.read(sessionNotifierProvider.notifier).reset();
@@ -98,7 +105,15 @@ class RestoreService {
         ref.invalidate(chatRoomInitializedProvider(orderId));
       }
 
-      logger.i('Restore: cleared ${chatOrderIds.length} chat providers');
+      // Invalidate dispute chat providers to cancel stale subscriptions
+      for (final disputeId in disputeIds) {
+        ref.invalidate(disputeChatNotifierProvider(disputeId));
+      }
+
+      logger.i(
+        'Restore: cleared ${chatOrderIds.length} chat providers, '
+        '${disputeIds.length} dispute chat providers',
+      );    
     } catch (e) {
       logger.w('Restore: cleanup error', error: e);
     }
