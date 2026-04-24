@@ -11,7 +11,7 @@ continue communicating with the assigned admin (solver).
 
 ### Protocol Flow
 
-```
+```text
 User enters mnemonic
         │
         ▼
@@ -151,7 +151,7 @@ sessions automatically, but dispute chat subscriptions must re-initialize indepe
 
 #### Error
 
-```
+```text
 FormatException: Failed to parse Peer from JSON: FormatException: Public key cannot be empty
 #0   MostroService._onData (mostro_service.dart:172)
 ```

@@ -113,7 +113,7 @@ class RestoreService {
       logger.i(
         'Restore: cleared ${chatOrderIds.length} chat providers, '
         '${disputeIds.length} dispute chat providers',
-      );    
+      );
     } catch (e) {
       logger.w('Restore: cleanup error', error: e);
     }
