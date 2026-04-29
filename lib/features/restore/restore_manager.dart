@@ -37,6 +37,8 @@ import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/notifications/providers/notifications_provider.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
+import 'package:mostro_mobile/features/disputes/notifiers/dispute_chat_notifier.dart';
+
 
 enum RestoreStage {
   gettingRestoreData,
@@ -80,9 +82,14 @@ class RestoreService {
     try {
       logger.i('Restore: clearing all existing data before restore');
 
-      // Get current chat orderIds BEFORE clearing
+      // Get current chat orderIds and disputesIds before clearing
       final currentChats = ref.read(chatRoomsNotifierProvider);
       final chatOrderIds = currentChats.map((c) => c.orderId).toList();
+      final disputeIds = ref
+          .read(sessionNotifierProvider)
+          .where((s) => s.disputeId != null)
+          .map((s) => s.disputeId!)
+          .toList();
 
       // Clear storage
       await ref.read(sessionNotifierProvider.notifier).reset();
@@ -98,7 +105,15 @@ class RestoreService {
         ref.invalidate(chatRoomInitializedProvider(orderId));
       }
 
-      logger.i('Restore: cleared ${chatOrderIds.length} chat providers');
+      // Invalidate dispute chat providers to cancel stale subscriptions
+      for (final disputeId in disputeIds) {
+        ref.invalidate(disputeChatNotifierProvider(disputeId));
+      }
+
+      logger.i(
+        'Restore: cleared ${chatOrderIds.length} chat providers, '
+        '${disputeIds.length} dispute chat providers',
+      );
     } catch (e) {
       logger.w('Restore: cleanup error', error: e);
     }
@@ -457,49 +472,6 @@ class RestoreService {
     }
   }
 
-  /// Determines if the user initiated the dispute with double verification
-  ///
-  /// Security checks:
-  /// 1. Verify session belongs to this order (compare pubkeys based on role)
-  /// 2. Compare trade_index to determine who initiated the dispute
-  ///
-  /// The dispute's trade_index indicates which party initiated it.
-  /// If it matches the user's session trade_index, the user initiated the dispute.
-  bool _determineIfUserInitiatedDispute({
-    required RestoredDispute restoredDispute,
-    required Session session,
-    required Order order,
-  }) {
-    // Security verification: ensure session's trade pubkey matches order's pubkey for the role
-    final sessionPubkey = session.tradeKey.public;
-    final sessionRole = session.role;
-
-    bool sessionMatchesOrder = false;
-    if (sessionRole == Role.buyer && order.buyerTradePubkey == sessionPubkey) {
-      sessionMatchesOrder = true;
-    } else if (sessionRole == Role.seller &&
-        order.sellerTradePubkey == sessionPubkey) {
-      sessionMatchesOrder = true;
-    }
-
-    if (!sessionMatchesOrder) {
-      logger.w(
-        'Restore: session pubkey mismatch for order ${order.id} - '
-        'session role: $sessionRole, session pubkey: $sessionPubkey, '
-        'buyer pubkey: ${order.buyerTradePubkey}, seller pubkey: ${order.sellerTradePubkey}',
-      );
-      // Default to peer-initiated if we can't verify session belongs to order
-      return false;
-    }
-
-    // Compare trade indexes: if dispute trade_index matches user's session trade_index,
-    // then the user initiated the dispute
-    final userInitiated = restoredDispute.tradeIndex == session.keyIndex;
-
-    // TODO: Improve dispute initiation detection if protocol changes in future
-    return userInitiated;
-  }
-
   /// Maps Status to the appropriate Action for restored orders
   Action _getActionFromStatus(Status status, Role? userRole) {
     switch (status) {
@@ -627,6 +599,11 @@ class RestoreService {
           );
         }
 
+        final restoredDispute = disputes.where((d) => d.orderId == orderId).firstOrNull;
+        final adminPubkey = restoredDispute?.solverPubkey?.isNotEmpty == true
+            ? restoredDispute!.solverPubkey
+            : null;
+
         final session = Session(
           masterKey: _masterKey!,
           tradeKey: tradeKey,
@@ -636,6 +613,8 @@ class RestoreService {
           orderId: orderDetail.id,
           role: role,
           peer: peer,
+          adminPubkey: adminPubkey,
+          disputeId: restoredDispute?.disputeId,
         );
 
         // Store session
@@ -699,26 +678,14 @@ class RestoreService {
           Dispute? dispute;
 
           if (restoredDispute != null && order.status == Status.dispute) {
-            // This is a disputed order - determine who initiated
             final session = ref
                 .read(sessionNotifierProvider.notifier)
                 .getSessionByOrderId(orderDetail.id);
 
-            // We need the session to compare trade indexes
-            bool userInitiated = false;
-            if (session == null) {
-              logger.w(
-                'Restore: no session found for disputed order ${orderDetail.id}, defaulting to peer-initiated',
-              );
-              action = Action.disputeInitiatedByPeer;
-            } else {
-              // Determine if user initiated with double verification.
-              userInitiated = _determineIfUserInitiatedDispute(
-                restoredDispute: restoredDispute,
-                session: session,
-                order: order,
-              );
-            }
+            final initiator = restoredDispute.initiator;
+            final bool userInitiated =
+                (initiator == 'buyer' && session?.role == Role.buyer) ||
+                (initiator == 'seller' && session?.role == Role.seller);
 
             action = userInitiated
                 ? Action.disputeInitiatedByYou
@@ -928,7 +895,7 @@ class RestoreService {
         );
         final lastTradeIndex = lastTradeIndexResponse.tradeIndex;
         await keyManager.setCurrentKeyIndex(lastTradeIndex + 1);
-        progress.completeRestore();
+        success = true;
         return true;
       }
 

@@ -66,6 +66,7 @@ class RestoredDispute {
   final int tradeIndex;
   final String status;
   final String? initiator;
+  final String? solverPubkey;
 
   RestoredDispute({
     required this.disputeId,
@@ -73,6 +74,7 @@ class RestoredDispute {
     required this.tradeIndex,
     required this.status,
     this.initiator,
+    this.solverPubkey,
   });
 
   factory RestoredDispute.fromJson(Map<String, dynamic> json) {
@@ -85,6 +87,7 @@ class RestoredDispute {
       tradeIndex: json['trade_index'] as int,
       status: json['status'] as String,
       initiator: normalizedInitiator,
+      solverPubkey: json['solver_pubkey'] as String?,
     );
   }
 
@@ -105,5 +108,6 @@ class RestoredDispute {
     'trade_index': tradeIndex,
     'status': status,
     if (initiator != null) 'initiator': initiator,
+    if (solverPubkey != null) 'solver_pubkey': solverPubkey,
   };
 }

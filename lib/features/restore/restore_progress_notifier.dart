@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:flutter/scheduler.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/features/restore/restore_progress_state.dart';
@@ -10,54 +12,74 @@ class RestoreProgressNotifier extends StateNotifier<RestoreProgressState> {
 
   RestoreProgressNotifier() : super(RestoreProgressState.initial());
 
+  bool get _canUpdateState => mounted;
+
+  void _setStateSafely(RestoreProgressState newState) {
+    if (!_canUpdateState) return;
+
+    final schedulerPhase = WidgetsBinding.instance.schedulerPhase;
+    if (schedulerPhase == SchedulerPhase.persistentCallbacks) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_canUpdateState) {
+          state = newState;
+        }
+      });
+      return;
+    }
+
+    state = newState;
+  }
+
   void startRestore() {
     logger.i('Starting restore overlay');
     _cancelAutoHideTimer();
-    state = RestoreProgressState.initial().copyWith(
+    _setStateSafely(RestoreProgressState.initial().copyWith(
       isVisible: true,
       step: RestoreStep.requesting,
-    );
+    ));
 
     _startTimeoutTimer();
   }
 
   void updateStep(RestoreStep step, {int? current, int? total}) {
     logger.i('Restore step: $step (${current ?? 0}/${total ?? 0})');
-    state = state.copyWith(
+    _setStateSafely(state.copyWith(
       step: step,
       currentProgress: current ?? state.currentProgress,
       totalProgress: total ?? state.totalProgress,
-    );
+    ));
 
     _resetTimeoutTimer();
   }
 
   void setOrdersReceived(int count) {
     logger.i('Received $count orders');
-    state = state.copyWith(
+    _setStateSafely(state.copyWith(
       step: RestoreStep.receivingOrders,
       totalProgress: count,
       currentProgress: 0,
-    );
+    ));
 
     _resetTimeoutTimer();
   }
 
   void incrementProgress() {
-    state = state.copyWith(
+    _setStateSafely(state.copyWith(
       currentProgress: state.currentProgress + 1,
-    );
+    ));
 
     _resetTimeoutTimer();
   }
 
   void completeRestore() {
+    if (!_canUpdateState || state.step == RestoreStep.completed) return;
+
     logger.i('Restore completed successfully');
     _cancelTimeoutTimer();
 
-    state = state.copyWith(
+    _setStateSafely(state.copyWith(
       step: RestoreStep.completed,
-    );
+    ));
 
     // Auto-hide after 3 seconds (cancellable)
     _cancelAutoHideTimer();
@@ -69,13 +91,15 @@ class RestoreProgressNotifier extends StateNotifier<RestoreProgressState> {
   }
 
   void showError(String message) {
+    if (!_canUpdateState || state.step == RestoreStep.error) return;
+
     logger.w('Restore error: $message');
     _cancelTimeoutTimer();
 
-    state = state.copyWith(
+    _setStateSafely(state.copyWith(
       step: RestoreStep.error,
       errorMessage: message,
-    );
+    ));
 
     // Auto-hide after 3 seconds (cancellable)
     _cancelAutoHideTimer();
@@ -87,10 +111,12 @@ class RestoreProgressNotifier extends StateNotifier<RestoreProgressState> {
   }
 
   void hide() {
+    if (!_canUpdateState) return;
+
     logger.i('Hiding restore overlay');
     _cancelTimeoutTimer();
     _cancelAutoHideTimer();
-    state = RestoreProgressState.initial();
+    _setStateSafely(RestoreProgressState.initial());
   }
 
   void _startTimeoutTimer() {

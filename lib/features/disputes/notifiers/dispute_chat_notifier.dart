@@ -93,16 +93,20 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
 
   /// Initialize the dispute chat by loading historical messages and subscribing to new events
   Future<void> initialize() async {
-    if (_isInitialized) return;
+    if (_isInitialized || !mounted) return;
 
     logger.i('Initializing dispute chat for disputeId: $disputeId');
     await _loadHistoricalMessages();
+    if (!mounted) return;
     await _subscribe();
+    if (!mounted) return;
     _isInitialized = true;
   }
 
   /// Subscribe to new dispute chat messages using admin shared key
   Future<void> _subscribe() async {
+    if (!mounted) return;
+
     final session = _getSessionForDispute();
     if (session == null) {
       logger.w('No session found for dispute: $disputeId');
@@ -120,6 +124,7 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
     if (_subscription != null) {
       logger.i('Cancelling previous subscription for dispute: $disputeId');
       await _subscription!.cancel();
+      if (!mounted) return;
       _subscription = null;
     }
 
@@ -140,6 +145,8 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
 
   /// Listen for session changes and subscribe when admin shared key is ready
   void _listenForSession() {
+    if (!mounted) return;
+
     // Cancel any previous listener to avoid leaks
     _sessionListener?.close();
     _sessionListener = null;
@@ -150,6 +157,8 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
     _sessionListener = ref.listen<List<Session>>(
       sessionNotifierProvider,
       (previous, next) {
+        if (!mounted) return;
+
         final session = _getSessionForDispute();
         if (session != null && session.adminSharedKey != null) {
           logger.i('Admin shared key available for dispute $disputeId, subscribing');
@@ -165,7 +174,7 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
   /// Stores the gift wrap event (encrypted) to disk, then unwraps for display.
   void _onChatEvent(NostrEvent event) async {
     try {
-      if (event.kind != 1059) return;
+      if (!mounted || event.kind != 1059) return;
 
       final session = _getSessionForDispute();
       if (session == null || session.adminSharedKey == null) return;
@@ -200,9 +209,11 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
           'dispute_id': disputeId,
         },
       );
+      if (!mounted) return;
 
       // Unwrap using admin shared key (1-layer p2p decryption)
       final unwrappedEvent = await event.p2pUnwrap(session.adminSharedKey!);
+      if (!mounted) return;
 
       // SECURITY: The ECDH shared key IS the authentication.
       // If p2pUnwrap succeeded, the sender holds the admin's private key.
@@ -241,6 +252,8 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
   /// are filtered upstream (`isFromAdmin`).
   void _maybeShowInAppNotification() {
     try {
+      if (!mounted) return;
+
       final activeScreens = ref.read(activeChatScreensProvider);
       if (activeScreens.contains(disputeId)) return;
 
@@ -256,6 +269,7 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
   /// Reconstructs gift wrap events and unwraps them with adminSharedKey.
   Future<void> _loadHistoricalMessages() async {
     try {
+      if (!mounted) return;
       logger.i('Loading historical messages for dispute: $disputeId');
       state = state.copyWith(isLoading: true);
 
@@ -278,6 +292,7 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
       );
 
       logger.i('Found ${chatEvents.length} historical messages for dispute: $disputeId');
+      if (!mounted) return;
 
       final List<DisputeChatMessage> messages = [];
 
@@ -313,6 +328,7 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
 
           // Decrypt and unwrap the message
           final unwrappedEvent = await storedEvent.p2pUnwrap(session.adminSharedKey!);
+          if (!mounted) return;
           // Fire-and-forget: pre-download media without blocking history load
           unawaited(_processMessageContent(unwrappedEvent));
           messages.add(DisputeChatMessage(event: unwrappedEvent));
@@ -325,9 +341,11 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
       final deduped = {for (var m in messages) m.id: m}.values.toList();
       deduped.sort((a, b) => a.timestamp.compareTo(b.timestamp));
 
+      if (!mounted) return;
       state = state.copyWith(messages: deduped, isLoading: false);
     } catch (e, stackTrace) {
       logger.e('Error loading historical messages: $e', stackTrace: stackTrace);
+      if (!mounted) return;
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
@@ -335,6 +353,8 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
   /// Send a message in the dispute chat using p2pWrap with admin shared key.
   /// Stores the gift wrap event (encrypted) on success.
   Future<void> sendMessage(String text) async {
+    if (!mounted) return;
+
     final session = _getSessionForDispute();
     if (session == null) {
       logger.w('Cannot send message: Session is null for dispute: $disputeId');
@@ -378,10 +398,12 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
         session.tradeKey,
         session.adminSharedKey!.public,
       );
+      if (!mounted) return;
 
       // Publish to network
       try {
         await ref.read(nostrServiceProvider).publishEvent(wrappedEvent);
+        if (!mounted) return;
         logger.i('Dispute message sent successfully for dispute: $disputeId');
       } catch (publishError, publishStack) {
         logger.e('Failed to publish dispute message: $publishError',
@@ -406,6 +428,7 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
           'dispute_id': disputeId,
         },
       );
+      if (!mounted) return;
 
       // Update message to isPending=false (success)
       _updateMessageState(rumorId, isPending: false);
@@ -419,6 +442,8 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
   /// Per-message errors stay at message level; state.error is reserved
   /// for initialization/loading failures only.
   void _updateMessageState(String messageId, {required bool isPending, String? error}) {
+    if (!mounted) return;
+
     final updatedMessages = state.messages.map((m) {
       if (m.id == messageId) {
         return DisputeChatMessage(
