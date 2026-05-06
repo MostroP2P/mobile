@@ -1246,7 +1246,7 @@
     "restoreNoPreviousData": "Keine vorherigen Daten für diesen Nutzer in diesem Mostro",
     "restoreError": "Wiederherstellungsfehler",
     "restoreErrorMessage": "Fehler beim Wiederherstellen der Nutzerdaten. Bitte prüfe deine Verbindung und versuche es erneut.",
-    "restoreInvalidTradeIndex": "Ungültiger Trade-Index",
+    "restoreInvalidTradeIndex": "Ungültiger Handelsindex",
     "@_comment_file_messaging": "Dateiversand-Strings",
     "download": "Herunterladen",
     "openFile": "Datei öffnen",
