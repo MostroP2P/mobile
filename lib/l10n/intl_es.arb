@@ -1221,6 +1221,7 @@
     "restoreNoPreviousData": "No hay datos previos de este usuario en este Mostro",
     "restoreError": "Error de restauración",
     "restoreErrorMessage": "Error al restaurar datos del usuario. Verifica tu conexión e inténtalo más tarde.",
+    "restoreInvalidTradeIndex": "Índice de trade inválido",
     "@_comment_file_messaging": "File messaging strings",
     "download": "Descargar",
     "openFile": "Abrir Archivo",

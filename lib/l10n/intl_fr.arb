@@ -1246,6 +1246,7 @@
     "restoreNoPreviousData": "Aucune donnée précédente pour cet utilisateur sur ce Mostro",
     "restoreError": "Erreur de restauration",
     "restoreErrorMessage": "Erreur lors de la restauration des données utilisateur. Veuillez vérifier votre connexion et réessayer.",
+    "restoreInvalidTradeIndex": "Index de trade invalide",
     "@_comment_file_messaging": "File messaging strings",
     "download": "Télécharger",
     "openFile": "Ouvrir le fichier",

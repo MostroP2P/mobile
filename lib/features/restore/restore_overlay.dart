@@ -76,6 +76,19 @@ class RestoreOverlay extends ConsumerWidget {
                   textAlign: TextAlign.center,
                 ),
               ],
+              if (state.step == RestoreStep.error &&
+                  state.errorMessage == 'invalid_trade_index') ...[
+                SizedBox(height: isSmallScreen ? 6 : 8),
+                Text(
+                  S.of(context)!.restoreInvalidTradeIndex,
+                  style: TextStyle(
+                    color: AppTheme.textSecondary.withValues(alpha: 0.75),
+                    fontSize: messageFontSize - 1,
+                    fontStyle: FontStyle.italic,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
               SizedBox(height: isSmallScreen ? 16 : 24),
               _buildProgressIndicator(state, iconSize),
             ],

@@ -430,6 +430,12 @@ class RestoreService {
         final cantDoWrapper = messageData['cant-do'] as Map<String, dynamic>?;
         final cantDoPayload = cantDoWrapper?['payload'] as Map<String, dynamic>?;
         final reasonStr = _extractCantDoReason(cantDoPayload);
+        if (reasonStr == CantDoReason.invalidTradeIndex.value) {
+          logger.w(
+            'Restore: Mostro returned cant-do: invalid_trade_index for last trade index',
+          );
+          throw const RestoreInvalidTradeIndexException();
+        }
         final isNotFound = reasonStr == CantDoReason.notFound.value;
         logger.w(
           'Restore: Mostro returned cant-do for last trade index '
@@ -993,11 +999,12 @@ class RestoreService {
         error: e,
         stackTrace: stack,
       );
+      final errorKey = e is RestoreInvalidTradeIndexException
+          ? 'invalid_trade_index'
+          : 'restore_error';
       ref
           .read(restoreProgressProvider.notifier)
-          .showError(
-            'restore_error',
-          ); // overlay displays localized restoreErrorMessage
+          .showError(errorKey); // overlay maps the key to a localized message
     } finally {
       // Cleanup: always cancel subscription and clear keys
       logger.i('Restore: cleaning up subscription and keys');
@@ -1096,6 +1103,15 @@ class RestoreService {
     }
     return null;
   }
+}
+
+/// Thrown when Mostro responds with cant-do: invalid_trade_index to
+/// Action.lastTradeIndex during the restore flow.
+class RestoreInvalidTradeIndexException implements Exception {
+  const RestoreInvalidTradeIndexException();
+
+  @override
+  String toString() => 'RestoreInvalidTradeIndexException';
 }
 
 final restoreServiceProvider = Provider<RestoreService>((ref) {

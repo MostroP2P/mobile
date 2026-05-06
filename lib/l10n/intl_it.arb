@@ -1287,6 +1287,7 @@
     "restoreNoPreviousData": "Nessun dato precedente per questo utente in questo Mostro",
     "restoreError": "Errore di ripristino",
     "restoreErrorMessage": "Errore nel ripristino dei dati utente. Verifica la tua connessione e riprova più tardi.",
+    "restoreInvalidTradeIndex": "Indice di trade non valido",
     "@_comment_file_messaging": "File messaging strings",
     "download": "Scarica",
     "openFile": "Apri File",
