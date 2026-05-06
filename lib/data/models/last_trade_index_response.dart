@@ -2,8 +2,12 @@ import 'package:mostro_mobile/data/models/payload.dart';
 
 class LastTradeIndexResponse implements Payload {
   final int tradeIndex;
+  final bool noHistoryFound;
 
-  const LastTradeIndexResponse({required this.tradeIndex});
+  const LastTradeIndexResponse({
+    required this.tradeIndex,
+    this.noHistoryFound = false,
+  });
 
   @override
   String get type => 'last-trade-index';
