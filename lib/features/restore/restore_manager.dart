@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
+import 'package:mostro_mobile/data/models/enums/cant_do_reason.dart';
 import 'package:mostro_mobile/data/models/enums/role.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/enums/status.dart';
@@ -424,12 +425,20 @@ class RestoreService {
       final contentList = jsonDecode(rumor.content!) as List<dynamic>;
       final messageData = contentList[0] as Map<String, dynamic>;
 
-      // Check if Mostro returned cant-do (not found)
+      // Check if Mostro returned cant-do
       if (messageData.containsKey('cant-do')) {
+        final cantDoWrapper = messageData['cant-do'] as Map<String, dynamic>?;
+        final cantDoPayload = cantDoWrapper?['payload'] as Map<String, dynamic>?;
+        final reasonStr = _extractCantDoReason(cantDoPayload);
+        final isNotFound = reasonStr == CantDoReason.notFound.value;
         logger.w(
-          'Restore: Mostro returned cant-do for last trade index, defaulting to 0',
+          'Restore: Mostro returned cant-do for last trade index '
+          '(reason: ${reasonStr ?? 'unknown'}), defaulting to 0',
         );
-        return LastTradeIndexResponse(tradeIndex: 0);
+        return LastTradeIndexResponse(
+          tradeIndex: 0,
+          noHistoryFound: isNotFound,
+        );
       }
 
       // Extract trade_index from restore wrapper
@@ -873,6 +882,7 @@ class RestoreService {
     _operationInProgress = true;
     _operationCompleter = Completer<bool>();
     bool success = false;
+    bool noHistoryFound = false;
     try {
       // Clear existing data
       await _clearAll();
@@ -928,7 +938,12 @@ class RestoreService {
         );
         final lastTradeIndex = lastTradeIndexResponse.tradeIndex;
         await keyManager.setCurrentKeyIndex(lastTradeIndex + 1);
-        progress.completeRestore();
+        if (lastTradeIndexResponse.noHistoryFound) {
+          progress.completeAsNewUser();
+        } else {
+          progress.completeRestore();
+        }
+        success = true;
         return true;
       }
 
@@ -953,6 +968,7 @@ class RestoreService {
         lastTradeIndexEvent,
       );
       final lastTradeIndex = lastTradeIndexResponse.tradeIndex;
+      noHistoryFound = lastTradeIndexResponse.noHistoryFound;
 
       // IMPORTANT: Cancel temporary subscription before proceeding to avoid interference
       await _tempSubscription?.cancel();
@@ -994,10 +1010,15 @@ class RestoreService {
       _operationCompleter?.complete(success);
       _operationCompleter = null;
 
-      // Only call completeRestore if not in error state
+      // Only call completeRestore if not in error state and not already finalized
       final currentState = ref.read(restoreProgressProvider);
-      if (currentState.step != RestoreStep.error) {
-        ref.read(restoreProgressProvider.notifier).completeRestore();
+      if (currentState.step != RestoreStep.error &&
+          currentState.step != RestoreStep.completed) {
+        if (noHistoryFound) {
+          ref.read(restoreProgressProvider.notifier).completeAsNewUser();
+        } else {
+          ref.read(restoreProgressProvider.notifier).completeRestore();
+        }
       }
     }
 
@@ -1059,6 +1080,21 @@ class RestoreService {
       _operationCompleter?.complete(false);
       _operationCompleter = null;
     }
+  }
+
+  // Extracts the cant-do reason string from the inner payload.
+  // Mostro wire format: payload may be {"cant_do": "<reason>"} or
+  // {"cant_do": {"cant-do": "<reason>"}}.
+  String? _extractCantDoReason(Map<String, dynamic>? payload) {
+    if (payload == null) return null;
+    final raw = payload['cant_do'];
+    if (raw == null) return null;
+    if (raw is String) return raw;
+    if (raw is Map<String, dynamic>) {
+      final inner = raw['cant-do'];
+      return inner?.toString();
+    }
+    return null;
   }
 }
 

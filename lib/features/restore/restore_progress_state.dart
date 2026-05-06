@@ -14,6 +14,7 @@ class RestoreProgressState {
   final int totalProgress;
   final String? errorMessage;
   final bool isVisible;
+  final bool noHistoryFound;
 
   const RestoreProgressState({
     required this.step,
@@ -21,6 +22,7 @@ class RestoreProgressState {
     this.totalProgress = 0,
     this.errorMessage,
     this.isVisible = false,
+    this.noHistoryFound = false,
   });
 
   RestoreProgressState copyWith({
@@ -29,6 +31,7 @@ class RestoreProgressState {
     int? totalProgress,
     String? errorMessage,
     bool? isVisible,
+    bool? noHistoryFound,
   }) {
     return RestoreProgressState(
       step: step ?? this.step,
@@ -36,6 +39,7 @@ class RestoreProgressState {
       totalProgress: totalProgress ?? this.totalProgress,
       errorMessage: errorMessage ?? this.errorMessage,
       isVisible: isVisible ?? this.isVisible,
+      noHistoryFound: noHistoryFound ?? this.noHistoryFound,
     );
   }
 

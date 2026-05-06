@@ -1243,6 +1243,7 @@
     "restoreProcessingRoles": "Rollen werden verarbeitet...",
     "restoreFinalizing": "Wiederherstellung wird abgeschlossen...",
     "restoreCompleted": "Wiederherstellung abgeschlossen!",
+    "restoreNoPreviousData": "Keine vorherigen Daten für diesen Nutzer in diesem Mostro",
     "restoreError": "Wiederherstellungsfehler",
     "restoreErrorMessage": "Fehler beim Wiederherstellen der Nutzerdaten. Bitte prüfe deine Verbindung und versuche es erneut.",
     "@_comment_file_messaging": "Dateiversand-Strings",

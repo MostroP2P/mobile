@@ -1243,6 +1243,7 @@
     "restoreProcessingRoles": "Traitement des rôles...",
     "restoreFinalizing": "Finalisation de la restauration...",
     "restoreCompleted": "Restauration terminée !",
+    "restoreNoPreviousData": "Aucune donnée précédente pour cet utilisateur sur ce Mostro",
     "restoreError": "Erreur de restauration",
     "restoreErrorMessage": "Erreur lors de la restauration des données utilisateur. Veuillez vérifier votre connexion et réessayer.",
     "@_comment_file_messaging": "File messaging strings",
