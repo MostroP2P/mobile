@@ -451,14 +451,15 @@ class RestoreService {
           );
           throw const RestoreInvalidTradeIndexException();
         }
-        final isNotFound = reasonStr == CantDoReason.notFound.value;
-        logger.w(
-          'Restore: Mostro returned cant-do for last trade index '
-          '(reason: ${reasonStr ?? 'unknown'}), defaulting to 0',
-        );
-        return LastTradeIndexResponse(
-          tradeIndex: 0,
-          noHistoryFound: isNotFound,
+        if (reasonStr == CantDoReason.notFound.value) {
+          logger.w('Restore: no previous trade history found');
+          return const LastTradeIndexResponse(
+            tradeIndex: 0,
+            noHistoryFound: true,
+          );
+        }
+        throw Exception(
+          'Restore: cant-do on last trade index (reason: ${reasonStr ?? 'unknown'})',
         );
       }
 
