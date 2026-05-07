@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io' show Platform;
 
-import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
+import 'package:flutter/foundation.dart' show kIsWeb, debugPrint, visibleForTesting;
 import 'package:http/http.dart' as http;
 import 'package:mostro_mobile/services/logger_service.dart';
 
@@ -26,6 +26,9 @@ String _shortenPubkey(String pubkey, [int maxLength = 16]) {
 class PushNotificationService {
   final FCMService _fcmService;
   final String _pushServerUrl;
+  final http.Client _httpClient;
+  final bool? _isSupportedOverride;
+  final String? _platformOverride;
 
   bool _isInitialized = false;
 
@@ -36,14 +39,26 @@ class PushNotificationService {
   /// Set this from the app to integrate with user preferences
   bool Function()? isPushEnabledInSettings;
 
+  /// Callback returning the active Mostro instance pubkey (64 hex chars).
+  /// Sent in the `mostro_pubkey` field of `/api/register` so the push server
+  /// can apply its trusted-instance whitelist when enabled.
+  String Function()? getMostroPubkey;
+
   PushNotificationService({
     required FCMService fcmService,
     String? pushServerUrl,
+    http.Client? httpClient,
+    @visibleForTesting bool? isSupportedOverride,
+    @visibleForTesting String? platformOverride,
   })  : _fcmService = fcmService,
-        _pushServerUrl = pushServerUrl ?? Config.pushServerUrl;
+        _pushServerUrl = pushServerUrl ?? Config.pushServerUrl,
+        _httpClient = httpClient ?? http.Client(),
+        _isSupportedOverride = isSupportedOverride,
+        _platformOverride = platformOverride;
 
   /// Check if push notifications are supported on this platform
   bool get isSupported {
+    if (_isSupportedOverride != null) return _isSupportedOverride;
     if (kIsWeb) return false;
     return Platform.isAndroid || Platform.isIOS;
   }
@@ -51,7 +66,8 @@ class PushNotificationService {
   bool get isInitialized => _isInitialized;
 
   /// Get the current platform identifier
-  String get _platform => Platform.isIOS ? 'ios' : 'android';
+  String get _platform =>
+      _platformOverride ?? (Platform.isIOS ? 'ios' : 'android');
 
   /// Initialize the service
   Future<bool> initialize() async {
@@ -65,7 +81,7 @@ class PushNotificationService {
     try {
       debugPrint('PushService: Checking server health...');
 
-      final response = await http
+      final response = await _httpClient
           .get(Uri.parse('$_pushServerUrl/api/health'))
           .timeout(const Duration(seconds: 10));
 
@@ -114,16 +130,25 @@ class PushNotificationService {
 
       debugPrint('PushService: Registering token for trade ${_shortenPubkey(tradePubkey)}');
 
-      // Send plaintext token to server (Phase 3 - unencrypted)
-      final response = await http
+      // Send plaintext token to server (Phase 3 - unencrypted).
+      // `mostro_pubkey` enables the server-side trusted-instance whitelist
+      // (gated by TRUSTED_WHITELIST_ENABLED on the server). Servers without
+      // the flag enabled simply ignore the field.
+      final body = <String, dynamic>{
+        'trade_pubkey': tradePubkey,
+        'token': fcmToken,
+        'platform': _platform,
+      };
+      final mostroPubkey = getMostroPubkey?.call();
+      if (mostroPubkey != null && mostroPubkey.isNotEmpty) {
+        body['mostro_pubkey'] = mostroPubkey;
+      }
+
+      final response = await _httpClient
           .post(
             Uri.parse('$_pushServerUrl/api/register'),
             headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'trade_pubkey': tradePubkey,
-              'token': fcmToken,
-              'platform': _platform,
-            }),
+            body: jsonEncode(body),
           )
           .timeout(const Duration(seconds: 10));
 
@@ -188,6 +213,47 @@ class PushNotificationService {
     }
   }
 
+  /// Wake the peer's device by triggering a silent push via `/api/notify`.
+  ///
+  /// Used after sending a P2P chat message: the push server's Nostr listener
+  /// only matches `kind 1059` events on the recipient's `tradeKey.public`,
+  /// and P2P chat events use `sharedKey.public`. This sender-triggered call
+  /// closes that gap without registering shared keys server-side.
+  ///
+  /// Strictly fire-and-forget. The server contract (see mostro-push-server
+  /// docs/api.md) guarantees indistinguishable responses for registered vs
+  /// unregistered pubkeys, so the caller cannot — and must not try to —
+  /// branch on the outcome:
+  ///
+  /// - 202 `{"accepted":true}` on parse-valid input (always).
+  /// - 400 on malformed pubkey (logged as a client bug).
+  /// - 429 on rate-limit hit (dropped silently, no retry).
+  Future<void> notifyPeer(String peerTradePubkey) async {
+    if (!isSupported) return;
+
+    if (isPushEnabledInSettings != null && !isPushEnabledInSettings!()) {
+      return;
+    }
+
+    try {
+      final response = await _httpClient
+          .post(
+            Uri.parse('$_pushServerUrl/api/notify'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'trade_pubkey': peerTradePubkey}),
+          )
+          .timeout(const Duration(seconds: 5));
+
+      if (response.statusCode == 400) {
+        logger.w(
+            'notifyPeer: invalid pubkey rejected by server (${_shortenPubkey(peerTradePubkey)})');
+      }
+    } catch (e) {
+      // Network error / timeout: never fail the chat send because of this.
+      debugPrint('PushService: notifyPeer transport error (ignored): $e');
+    }
+  }
+
   /// Unregister a device token for a specific trade
   Future<bool> unregisterToken(String tradePubkey) async {
     if (!isSupported) {
@@ -198,7 +264,7 @@ class PushNotificationService {
       debugPrint(
           'PushService: Unregistering token for trade ${_shortenPubkey(tradePubkey)}');
 
-      final response = await http
+      final response = await _httpClient
           .post(
             Uri.parse('$_pushServerUrl/api/unregister'),
             headers: {'Content-Type': 'application/json'},

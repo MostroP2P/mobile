@@ -107,7 +107,7 @@ New keys for all 3 languages (en, es, it):
 
 ---
 
-### Phase 2: P2P Chat Background Notifications (IN REVIEW)
+### Phase 2: P2P Chat Background Notifications (COMPLETE)
 
 **Status:** Open PR, pending merge.
 
@@ -163,7 +163,7 @@ Ensure the `p2pUnwrap` extension method is accessible from the background isolat
 
 ---
 
-### Phase 3: In-App Notifications (Foreground, Outside Chat Screen) — PENDING
+### Phase 3: In-App Notifications (Foreground, Outside Chat Screen) — (COMPLETE)
 
 **Scope:** When the user is in the app but NOT on the specific chat screen, show a temporary in-app notification (toast/snackbar).
 
@@ -244,67 +244,89 @@ Add a simple mechanism to track if a specific chat screen is open:
 
 **Scope:** When the app is completely killed, P2P chat messages should wake the app via FCM.
 
-**Problem:** Push server monitors relays for `tradeKey.public` in the `p` tag. P2P chat events use `sharedKey.public` — the push server doesn't know about these keys and cannot decrypt or match them.
+**Problem:** The push server's Nostr listener monitors relays for `kind 1059` events and looks up tokens by the `p` tag. P2P chat events use `sharedKey.public` as the `p` tag — the push server has no `sharedKey → token` mapping and cannot match them via the listener path.
 
-**Solution: Sender-triggered notification**
+**Solution: Sender-triggered notification via existing `/api/notify`**
 
-When User A sends a P2P chat message to User B:
-1. Publish encrypted event to relay (existing)
-2. Call push server: `POST /api/notify { "trade_pubkey": "<peer's tradeKey.public>" }`
+The push server already exposes `POST /api/notify` (see `mostro-push-server/docs/api.md`). When User A sends a P2P chat message to User B:
+1. Publish encrypted event to relay (existing).
+2. Call `POST /api/notify { "trade_pubkey": "<peer's tradeKey.public>" }` — fire-and-forget.
 
 This works because:
-- User A knows `session.peer.publicKey` (the counterparty's trade pubkey)
-- The push server already has User B's `tradeKey → FCM token` mapping
-- No new data revealed — push server already knows the trade pubkey
-- No message content transmitted — just a "wake up" signal
-- Push server doesn't learn the sharedKey ↔ tradeKey relationship
+- User A knows `session.peer.publicKey` (the counterparty's trade pubkey).
+- The push server already has User B's `tradeKey → FCM token` mapping.
+- No new data revealed — the trade pubkey is the same identifier used in `/api/register`.
+- No message content transmitted — only a "wake up" signal.
+- Push server never learns the `sharedKey ↔ tradeKey` relationship.
 
-**Why this approach vs registering sharedKey:**
-- No additional pubkey registration needed
-- Push server doesn't learn the sharedKey ↔ tradeKey relationship
-- Simpler server-side implementation
-- Same privacy guarantees as existing Mostro event notifications
+**Why this approach vs registering `sharedKey`:**
+- No additional pubkey registration needed.
+- Push server doesn't learn the `sharedKey ↔ tradeKey` relationship.
+- Simpler server-side implementation.
+- Same privacy guarantees as existing Mostro event notifications.
 
 #### 4.1 Add `notifyPeer()` to `PushNotificationService`
 
+The endpoint is **strictly fire-and-forget** because of the privacy contract enforced server-side (see `mostro-push-server/CLAUDE.md` "Hard constraints"):
+
+- Always `202 { "accepted": true }` on parse-valid input — registered vs unregistered pubkeys are **indistinguishable** (status, body, headers, timing). There is no `200`, no `404`.
+- `400` only on JSON parse failure or invalid pubkey (64 hex chars).
+- `429` on rate-limit hit. Body is **byte-identical** between per-IP and per-pubkey paths; clients cannot tell which limiter tripped. `Retry-After` header carries whole seconds (min 1).
+- No `sender_pubkey`, no signature, no `Authorization` header, no `Idempotency-Key` — anything that would let the operator correlate sender and recipient is rejected at the boundary.
+- Inbound `X-Request-Id` is stripped server-side; the response carries a server-generated UUIDv4.
+
+Implementation:
+
 ```dart
-Future<bool> notifyPeer(String peerTradePubkey) async {
-  final response = await http.post(
-    Uri.parse('$_pushServerUrl/api/notify'),
-    headers: {'Content-Type': 'application/json'},
-    body: jsonEncode({'trade_pubkey': peerTradePubkey}),
-  ).timeout(const Duration(seconds: 10));
-  return response.statusCode == 200;
+Future<void> notifyPeer(String peerTradePubkey) async {
+  try {
+    final response = await http.post(
+      Uri.parse('$_pushServerUrl/api/notify'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'trade_pubkey': peerTradePubkey}),
+    ).timeout(const Duration(seconds: 5));
+
+    // 202 = accepted (registered/unregistered indistinguishable by contract).
+    // 400 = malformed pubkey -> client bug, log it.
+    // 429 = rate-limited -> drop silently (fire-and-forget, no retry).
+    if (response.statusCode == 400) {
+      logger.w('notifyPeer: invalid pubkey rejected by server');
+    }
+  } catch (_) {
+    // Network error / timeout: never fail the chat send because of this.
+  }
 }
 ```
 
+No boolean return, no retry loop, no body parsing. The server contract makes any client-side branching on registration state both impossible and unwanted.
+
 #### 4.2 Call `notifyPeer()` after sending P2P chat message
 
-In `ChatRoomNotifier.sendMessage()`, after successful `publishEvent()`:
+In `ChatRoomNotifier.sendMessage()`, immediately after `await publishEvent(wrappedEvent)` succeeds and **before** `eventStore.putItem()` so the wake-up does not depend on local persistence:
 
 ```dart
-// After publishing the wrapped event
-final pushService = ref.read(pushNotificationServiceProvider);
-pushService.notifyPeer(session.peer!.publicKey);
+await ref.read(nostrServiceProvider).publishEvent(wrappedEvent);
+
+// Fire-and-forget: wake the peer's device if registered.
+unawaited(
+  ref.read(pushNotificationServiceProvider).notifyPeer(session.peer!.publicKey),
+);
 ```
 
-Fire-and-forget (don't block on the response, don't fail the send if push fails).
+Fire-and-forget — never block the send and never surface the result to the user.
 
-#### 4.3 Push server changes (external)
+#### 4.3 Push server side — already implemented, verify only
 
-New endpoint needed on the push server:
+`POST /api/notify` is already deployed and documented in [`mostro-push-server/docs/api.md`](https://github.com/MostroP2P/mostro-push-server/blob/main/docs/api.md). No server changes are required for this phase. Quick verification checklist:
 
-```
-POST /api/notify
-Body: { "trade_pubkey": "<64-char hex>" }
-Response: 200 OK | 404 (pubkey not registered)
-```
-
-Simply sends a silent FCM notification to the device registered for that trade pubkey. Same behavior as relay-monitored events, but triggered on-demand.
+- [ ] `curl -i -X POST $SERVER/api/notify -H 'content-type: application/json' -d '{"trade_pubkey":"<64-hex>"}'` returns `202 {"accepted":true}`.
+- [ ] Malformed pubkey returns `400`.
+- [ ] Sustained traffic above the per-pubkey limit returns `429` with `Retry-After`.
+- [ ] Response carries a server-generated `x-request-id`.
 
 **Authentication model: intentionally unauthenticated (consistent with existing design)**
 
-The existing `/api/register` endpoint is also unauthenticated — no signatures, no auth headers. `/api/notify` follows the same model. Alternatives were considered and rejected:
+The existing `/api/register` endpoint is also unauthenticated. `/api/notify` follows the same model. Alternatives were considered and rejected:
 
 - **Sender signature authentication** — rejected because it would reveal the sender's trade pubkey to the push server, breaking the privacy guarantee that the server doesn't learn who is messaging whom.
 - **Registration-time counterparty binding** — rejected because it requires the push server to store counterparty relationships (`A trades with B`), which it currently doesn't know and shouldn't.
@@ -313,29 +335,56 @@ The existing `/api/register` endpoint is also unauthenticated — no signatures,
 
 | Threat | Severity | Mitigation |
 |--------|----------|------------|
-| Data harvest | None | Endpoint accepts a pubkey and returns 200/404. Attacker learns at most whether a pubkey is registered, which is already inferrable from relay observation. |
-| DoS / battery drain | Medium | An attacker could spam notify calls to repeatedly wake a device. **Mitigations:** server-side rate limiting per `trade_pubkey` (e.g., max 5 calls/minute), per-IP rate limiting (e.g., max 60 calls/minute), and exponential backoff on 429 responses in the client. |
-| Unsolicited wake-ups | Low | Silent FCM notifications have minimal user-visible impact. The background service only processes events it can actually decrypt — spurious wake-ups result in a no-op. OS-level battery optimization further limits impact. |
+| Data harvest / enumeration | None | Endpoint always returns `202` regardless of registration state. The 202/400/429 set leaks no information about which pubkeys are registered. |
+| DoS / battery drain | Medium | Server-side rate limits already in place: per-`trade_pubkey` and per-IP limiters (`governor`); spawn pile capped at 50 permits; client is fire-and-forget with no retry on 429. |
+| Unsolicited wake-ups | Low | FCM notifications are silent. The background service only processes events it can decrypt; spurious wake-ups are no-ops. OS battery optimization further limits impact. |
 
-**Required server-side mitigations:**
-- Rate limit per `trade_pubkey`: max 5 calls per minute (429 Too Many Requests)
-- Rate limit per source IP: max 60 calls per minute
-- Client handles 429 with exponential backoff (no retry on chat send failure — fire-and-forget)
+**Server-side rate limits (already configured, defaults):**
+- Per-`trade_pubkey`: `30/min`, burst `10` (env `NOTIFY_RATE_PER_PUBKEY_PER_MIN`).
+- Per-IP: `120/min`, burst `30` (env `NOTIFY_RATE_PER_IP_PER_MIN`).
+- Both must allow the request; on 429 the body is byte-identical to prevent oracle behavior.
 
-#### 4.4 Admin/Dispute Chat Push — Verify existing coverage
+Client handles 429 by dropping the call silently — fire-and-forget on a chat send must never block, retry, or surface an error to the user.
 
-Admin events already use `tradeKey.public` as the `p` tag. The push server's relay monitoring should already cover these. Verify this works end-to-end. If not, add `notifyPeer()` call in `DisputeChatNotifier.sendMessage()` as well.
+#### 4.4 Admin/Dispute Chat Push — no `notifyPeer()` needed
+
+Dispute chat is fully covered by the existing listener path; **no client-side `notifyPeer()` call is required**.
+
+Why: admin DMs in disputes are sent user-to-user as `kind 1059` gift wraps, with `p = recipient's tradeKey.public`. The push server's listener (`src/nostr/listener.rs`) deliberately does **not** apply an `authors` filter — this is a hard constraint in `mostro-push-server/CLAUDE.md` precisely because Gift Wrap uses ephemeral outer keys and admin DMs are not Mostro-daemon-signed. So:
+
+- **Admin → user:** kind 1059 hits the relay → listener picks it up by the `p` tag → token lookup against the user's registered `tradeKey` → silent FCM. Already works.
+- **User → admin:** admins typically run desktop/CLI clients that are not registered with the push server. Out of scope for the mobile app.
+
+The existing Phase 1 code path (DM payload detection in `_decryptAndProcessEvent`) handles the rendering once the device wakes. **Do not add `notifyPeer()` to `DisputeChatNotifier.sendMessage()`** — it would only serve to wake the sender's own counterpart in non-dispute scenarios and muddy the model.
+
+#### 4.5 Align `/api/register` with the trusted-instance whitelist
+
+Out-of-band but tightly adjacent: `mostro-push-server` v1.1 added an opt-in whitelist of trusted Mostro instance pubkeys. When `TRUSTED_WHITELIST_ENABLED=true` and the embedded list is non-empty, `/api/register` requires a `mostro_pubkey` field and rejects clients that omit it with `403 "Mostro instance pubkey required"`.
+
+The flag currently defaults to `false`, so today's clients keep working. To avoid breakage when the operator flips it after the mobile rollout, this PR should add `mostro_pubkey` to the registration body.
+
+```dart
+body: jsonEncode({
+  'trade_pubkey': tradePubkey,
+  'token': fcmToken,
+  'platform': _platform,
+  'mostro_pubkey': selectedMostroNodePubkey, // 64-hex of active Mostro instance
+}),
+```
+
+Source: `MostroNodesNotifier` / `selectedMostroNodeProvider` already tracks the active node. The field is request-only and does not affect response shape, so it is backwards-compatible with servers that ignore it.
 
 **Files to modify:**
-- `lib/services/push_notification_service.dart` — add `notifyPeer()` method
-- `lib/features/chat/notifiers/chat_room_notifier.dart` — call `notifyPeer()` after send
-- `lib/features/disputes/notifiers/dispute_chat_notifier.dart` — call `notifyPeer()` if needed
-- Push server repository (external) — add `/api/notify` endpoint
+- `lib/services/push_notification_service.dart` — add `notifyPeer()`; add `mostro_pubkey` to `registerToken()` body.
+- `lib/features/chat/notifiers/chat_room_notifier.dart` — fire-and-forget `notifyPeer()` after `publishEvent`.
+- (No changes to `DisputeChatNotifier` — see 4.4.)
+- (No changes to push server — already implemented.)
 
 **Tests:**
-- Unit test: verify `notifyPeer()` makes correct HTTP call
-- Unit test: verify `sendMessage()` calls `notifyPeer()` after publish
-- Integration test: end-to-end P2P message → FCM wake → background notification
+- Unit test: `notifyPeer()` posts the expected body and never throws on `202`/`400`/`429`/network error.
+- Unit test: `sendMessage()` invokes `notifyPeer()` exactly once after a successful `publishEvent`, and does not await it.
+- Unit test: `registerToken()` includes `mostro_pubkey` in the request body.
+- Manual / integration: end-to-end P2P message → FCM wake → background notification on a real device.
 
 ---
 
@@ -346,7 +395,7 @@ Admin events already use `tradeKey.public` as the `p` tag. The push server's rel
 | 1 | Admin DM background notifications | Low | 4 | None |
 | 2 | P2P chat background notifications | Low-Medium | 1 | None |
 | 3 | In-app notifications (foreground) | Medium | 5-6 | None |
-| 4 | Push/FCM for P2P chat (app killed) | Medium | 3-4 | New endpoint |
+| 4 | Push/FCM for P2P chat (app killed) + register whitelist alignment | Medium | 2 | None (`/api/notify` already deployed) |
 
 ## Privacy Considerations
 
@@ -367,6 +416,6 @@ Admin events already use `tradeKey.public` as the `p` tag. The push server's rel
 
 3. **Notification tap action:** Should tapping a chat notification navigate to the specific chat room or to the notifications screen? Current trade notifications go to `/notifications`.
 
-4. **Rate limiting for Phase 4:** Exact rate limits for `/api/notify` — needs coordination with push server maintainers.
+4. ~~**Rate limiting for Phase 4:**~~ **Resolved:** server enforces `30/min` per `trade_pubkey` (burst 10) and `120/min` per IP (burst 30). Client is fire-and-forget with no retry on 429.
 
-5. **Dispute chat push verification:** Need to confirm whether the push server's relay monitoring already catches admin DM events targeting `tradeKey.public`, or if explicit notify calls are needed.
+5. ~~**Dispute chat push verification:**~~ **Resolved:** the push-server listener has no `authors` filter (hard constraint), so admin DMs targeting `tradeKey.public` are caught by the listener path. No `notifyPeer()` call is needed for dispute chat.
