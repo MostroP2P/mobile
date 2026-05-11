@@ -32,7 +32,7 @@ class PayBondInvoiceScreen extends ConsumerWidget {
           style: const TextStyle(color: AppTheme.cream1),
         ),
         content: Text(
-          s.bondCancelConfirmMessage,
+          s.areYouSureCancel,
           style: const TextStyle(color: AppTheme.cream1),
         ),
         actions: [

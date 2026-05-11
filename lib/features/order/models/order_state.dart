@@ -389,6 +389,12 @@ class OrderState {
           Action.cancel,
         ],
       },
+      Status.waitingTakerBond: {
+        Action.payBondInvoice: [
+          Action.payBondInvoice,
+          Action.cancel,
+        ],
+      },
       Status.waitingPayment: {
         Action.payInvoice: [
           Action.payInvoice,
@@ -530,6 +536,12 @@ class OrderState {
           Action.cancel,
         ],
         Action.takeSell: [
+          Action.cancel,
+        ],
+      },
+      Status.waitingTakerBond: {
+        Action.payBondInvoice: [
+          Action.payBondInvoice,
           Action.cancel,
         ],
       },
