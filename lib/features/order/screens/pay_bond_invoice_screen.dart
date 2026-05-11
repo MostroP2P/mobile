@@ -11,7 +11,6 @@ import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
-import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 
 class PayBondInvoiceScreen extends ConsumerWidget {
   final String orderId;
@@ -95,97 +94,93 @@ class PayBondInvoiceScreen extends ConsumerWidget {
       backgroundColor: AppTheme.dark1,
       appBar: OrderAppBar(title: s.bondScreenTitle),
       body: SingleChildScrollView(
-        padding: EdgeInsets.only(
-          bottom: 16 + MediaQuery.of(context).viewPadding.bottom,
+        padding: EdgeInsets.fromLTRB(
+          16,
+          16,
+          16,
+          16 + MediaQuery.of(context).viewPadding.bottom,
         ),
-        child: CustomCard(
-          padding: const EdgeInsets.all(16),
-          child: Material(
-            color: AppTheme.dark2,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              s.bondExplanation,
+              style: const TextStyle(
+                color: AppTheme.cream1,
+                fontSize: 15,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Center(
+              child: Container(
+                padding: const EdgeInsets.all(8.0),
+                color: AppTheme.cream1,
+                child: QrImageView(
+                  data: lnInvoice,
+                  version: QrVersions.auto,
+                  size: 250.0,
+                  backgroundColor: AppTheme.cream1,
+                  errorStateBuilder: (cxt, err) {
+                    return Center(
+                      child: Text(
+                        s.failedToGenerateQR,
+                        textAlign: TextAlign.center,
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                Text(
-                  s.bondExplanation,
-                  style: const TextStyle(
-                    color: AppTheme.cream1,
-                    fontSize: 15,
-                    height: 1.4,
+                ElevatedButton.icon(
+                  onPressed: lnInvoice.isEmpty
+                      ? null
+                      : () {
+                          Clipboard.setData(ClipboardData(text: lnInvoice));
+                          logger.i('Copied bond invoice to clipboard');
+                          SnackBarHelper.showTopSnackBar(
+                            context,
+                            s.invoiceCopiedToClipboard,
+                            duration: const Duration(seconds: 2),
+                          );
+                        },
+                  icon: const Icon(Icons.copy),
+                  label: Text(s.copy),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.mostroGreen,
                   ),
                 ),
-                const SizedBox(height: 20),
-                Center(
-                  child: Container(
-                    padding: const EdgeInsets.all(8.0),
-                    color: AppTheme.cream1,
-                    child: QrImageView(
-                      data: lnInvoice,
-                      version: QrVersions.auto,
-                      size: 250.0,
-                      backgroundColor: AppTheme.cream1,
-                      errorStateBuilder: (cxt, err) {
-                        return Center(
-                          child: Text(
-                            s.failedToGenerateQR,
-                            textAlign: TextAlign.center,
-                          ),
-                        );
-                      },
-                    ),
+                ElevatedButton.icon(
+                  onPressed: lnInvoice.isEmpty
+                      ? null
+                      : () => _shareInvoice(context, lnInvoice),
+                  icon: const Icon(Icons.share),
+                  label: Text(s.share),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.mostroGreen,
                   ),
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    ElevatedButton.icon(
-                      onPressed: lnInvoice.isEmpty
-                          ? null
-                          : () {
-                              Clipboard.setData(
-                                  ClipboardData(text: lnInvoice));
-                              logger.i('Copied bond invoice to clipboard');
-                              SnackBarHelper.showTopSnackBar(
-                                context,
-                                s.invoiceCopiedToClipboard,
-                                duration: const Duration(seconds: 2),
-                              );
-                            },
-                      icon: const Icon(Icons.copy),
-                      label: Text(s.copy),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.mostroGreen,
-                      ),
-                    ),
-                    ElevatedButton.icon(
-                      onPressed: lnInvoice.isEmpty
-                          ? null
-                          : () => _shareInvoice(context, lnInvoice),
-                      icon: const Icon(Icons.share),
-                      label: Text(s.share),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.mostroGreen,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    ElevatedButton(
-                      onPressed: () => _confirmAndCancel(context, ref),
-                      style: ElevatedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        backgroundColor: Colors.red,
-                      ),
-                      child: Text(s.cancel),
-                    ),
-                  ],
                 ),
               ],
             ),
-          ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  onPressed: () => _confirmAndCancel(context, ref),
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.red,
+                  ),
+                  child: Text(s.cancel),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
