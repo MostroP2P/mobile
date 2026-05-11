@@ -489,6 +489,9 @@ class RestoreService {
         return userRole == Role.seller
             ? Action.payInvoice
             : Action.waitingSellerToPay;
+      case Status.waitingTakerBond:
+        // Order is in the anti-abuse bond payment window; taker pays the bond
+        return Action.payBondInvoice;
       case Status.active:
         // If user is buyer, they need to confirm fiat sent
         // If user is seller, buyer took the order and seller waits

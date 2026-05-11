@@ -252,6 +252,13 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         ref.read(sessionNotifierProvider.notifier).saveSession(session);
         break;
 
+      case Action.payBondInvoice:
+        if (event.payload is PaymentRequest) {
+          navProvider.go('/pay_bond/${event.id!}');
+        }
+        ref.read(sessionNotifierProvider.notifier).saveSession(session);
+        break;
+
       case Action.addInvoice:
         final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
         sessionNotifier.saveSession(session);

@@ -647,6 +647,13 @@
     "copy": "Copia",
     "share": "Condividi",
     "failedToShareInvoice": "Errore nel condividere la fattura. Per favore prova a copiarla invece.",
+    "bondScreenTitle": "Deposito anti-abuso",
+    "bondExplanation": "Per prendere questo ordine devi pagare un deposito anti-abuso. Funziona così:\n\n• I tuoi sats vengono trattenuti nel tuo wallet, non vengono spesi.\n• Se lo scambio si conclude correttamente, recuperi il deposito automaticamente.\n• Se hai una disputa su questo ordine e la perdi, perderai il deposito.\n• Questo meccanismo protegge tutti gli utenti dai truffatori.\n\nPaga la fattura per continuare, oppure annulla se non sei d'accordo.",
+    "bondCancelConfirmTitle": "Annullare?",
+    "bondCancelConfirmMessage": "Se annulli, perdi il tuo turno e l'ordine diventa disponibile ad altri utenti. Annullare comunque?",
+    "bondCancelConfirmYes": "Sì, annulla",
+    "bondCancelConfirmNo": "No, indietro",
+    "statusWaitingTakerBond": "In attesa del pagamento del deposito",
     "failedToCancelOrder": "Impossibile annullare l'ordine: {error}",
     "@failedToCancelOrder": {
         "placeholders": {
