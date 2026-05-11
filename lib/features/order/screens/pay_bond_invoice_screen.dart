@@ -95,6 +95,9 @@ class PayBondInvoiceScreen extends ConsumerWidget {
       backgroundColor: AppTheme.dark1,
       appBar: OrderAppBar(title: s.bondScreenTitle),
       body: SingleChildScrollView(
+        padding: EdgeInsets.only(
+          bottom: 16 + MediaQuery.of(context).viewPadding.bottom,
+        ),
         child: CustomCard(
           padding: const EdgeInsets.all(16),
           child: Material(
