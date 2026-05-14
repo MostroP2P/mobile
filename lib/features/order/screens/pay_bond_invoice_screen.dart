@@ -123,6 +123,7 @@ class PayBondInvoiceScreen extends ConsumerWidget {
     final s = S.of(context)!;
     final orderState = ref.watch(orderNotifierProvider(orderId));
     final lnInvoice = orderState.paymentRequest?.lnInvoice ?? '';
+    final bondAmount = orderState.paymentRequest?.order?.amount;
 
     return Scaffold(
       backgroundColor: AppTheme.dark1,
@@ -145,6 +146,18 @@ class PayBondInvoiceScreen extends ConsumerWidget {
                 height: 1.4,
               ),
             ),
+            if (bondAmount != null) ...[
+              const SizedBox(height: 16),
+              Text(
+                s.bondPayInvoicePrompt(bondAmount),
+                style: const TextStyle(
+                  color: AppTheme.cream1,
+                  fontSize: 15,
+                  height: 1.4,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
             const SizedBox(height: 20),
             Center(
               child: Container(
