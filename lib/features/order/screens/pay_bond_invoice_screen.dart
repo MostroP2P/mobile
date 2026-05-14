@@ -146,7 +146,7 @@ class PayBondInvoiceScreen extends ConsumerWidget {
                 height: 1.4,
               ),
             ),
-            if (bondAmount != null) ...[
+            if (bondAmount != null && bondAmount > 0) ...[
               const SizedBox(height: 16),
               Text(
                 s.bondPayInvoicePrompt(bondAmount),
