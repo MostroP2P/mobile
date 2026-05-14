@@ -271,6 +271,10 @@ class OrderState {
       case Action.payInvoice:
         return Status.waitingPayment;
 
+      // Action that should set status to waiting-taker-bond (Phase 1.5 anti-abuse bond)
+      case Action.payBondInvoice:
+        return Status.waitingTakerBond;
+
       // Actions that should set status to waiting-buyer-invoice
       case Action.waitingBuyerInvoice:
         return Status.waitingBuyerInvoice;
@@ -382,6 +386,12 @@ class OrderState {
           Action.cancel,
         ],
         Action.takeBuy: [
+          Action.cancel,
+        ],
+      },
+      Status.waitingTakerBond: {
+        Action.payBondInvoice: [
+          Action.payBondInvoice,
           Action.cancel,
         ],
       },
@@ -526,6 +536,12 @@ class OrderState {
           Action.cancel,
         ],
         Action.takeSell: [
+          Action.cancel,
+        ],
+      },
+      Status.waitingTakerBond: {
+        Action.payBondInvoice: [
+          Action.payBondInvoice,
           Action.cancel,
         ],
       },

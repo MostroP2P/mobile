@@ -704,6 +704,12 @@
     "copy": "Copy",
     "share": "Share",
     "failedToShareInvoice": "Failed to share invoice. Please try copying instead.",
+    "bondScreenTitle": "Anti-abuse deposit",
+    "bondExplanation": "To take this order you must pay an anti-abuse deposit. Here's how it works:\n\n• Your sats are held in your wallet, they are not spent.\n• If the exchange completes successfully, you get your deposit back automatically.\n• If you have a dispute on this order and lose it, you will lose the deposit.\n• This mechanism protects all users against scammers.",
+    "bondPayInvoicePrompt": "Pay the following invoice for {amount} sats to continue, or cancel if you don't agree.",
+    "statusWaitingTakerBond": "Awaiting deposit payment",
+    "payBondMessage": "Please pay the anti-abuse deposit to continue this order.",
+    "payBondButton": "Pay deposit",
     "failedToCancelOrder": "Failed to cancel order: {error}",
     "@failedToCancelOrder": {
         "placeholders": {

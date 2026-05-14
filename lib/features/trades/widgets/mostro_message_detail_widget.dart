@@ -84,6 +84,8 @@ class MostroMessageDetail extends ConsumerWidget {
               orderPayload?.fiatAmount.toString() ?? '',
               orderPayload?.fiatCode ?? '',
             );
+      case actions.Action.payBondInvoice:
+        return S.of(context)!.payBondMessage;
       case actions.Action.addInvoice:
         final expSecs = ref
                 .read(orderRepositoryProvider)
@@ -290,6 +292,8 @@ class MostroMessageDetail extends ConsumerWidget {
         return S.of(context)!.statusDetailPending;
       case Status.waitingPayment:
         return S.of(context)!.statusDetailWaitingPayment;
+      case Status.waitingTakerBond:
+        return S.of(context)!.statusWaitingTakerBond;
       case Status.waitingBuyerInvoice:
         return S.of(context)!.statusDetailWaitingInvoice;
       case Status.paymentFailed:

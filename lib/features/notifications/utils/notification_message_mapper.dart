@@ -17,6 +17,7 @@ class NotificationMessageMapper {
       case mostro.Action.takeSell:
         return 'notification_order_taken_title';
       case mostro.Action.payInvoice:
+      case mostro.Action.payBondInvoice:
         return 'notification_payment_required_title';
       case mostro.Action.fiatSent:
         return 'notification_fiat_sent_title';
@@ -119,6 +120,7 @@ class NotificationMessageMapper {
       case mostro.Action.takeSell:
         return 'notification_buy_order_taken_message';
       case mostro.Action.payInvoice:
+      case mostro.Action.payBondInvoice:
         return 'notification_payment_required_message';
       case mostro.Action.fiatSent:
         return 'notification_fiat_sent_message';

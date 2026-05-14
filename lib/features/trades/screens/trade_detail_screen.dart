@@ -332,6 +332,18 @@ class TradeDetailScreen extends ConsumerWidget {
           }
           break;
 
+        case actions.Action.payBondInvoice:
+          final hasPaymentRequest = tradeState.paymentRequest != null;
+          if (hasPaymentRequest) {
+            widgets.add(_buildNostrButton(
+              S.of(context)!.payBondButton,
+              action: actions.Action.payBondInvoice,
+              backgroundColor: AppTheme.mostroGreen,
+              onPressed: () => context.push('/pay_bond/$orderId'),
+            ));
+          }
+          break;
+
         case actions.Action.addInvoice:
           if (userRole == Role.buyer) {
             widgets.add(_buildNostrButton(

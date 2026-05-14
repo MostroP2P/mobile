@@ -16,6 +16,7 @@ import 'package:mostro_mobile/features/trades/screens/trade_detail_screen.dart';
 import 'package:mostro_mobile/features/trades/screens/trades_screen.dart';
 import 'package:mostro_mobile/features/relays/relays_screen.dart';
 import 'package:mostro_mobile/features/order/screens/add_lightning_invoice_screen.dart';
+import 'package:mostro_mobile/features/order/screens/pay_bond_invoice_screen.dart';
 import 'package:mostro_mobile/features/order/screens/pay_lightning_invoice_screen.dart';
 import 'package:mostro_mobile/features/order/screens/take_order_screen.dart';
 import 'package:mostro_mobile/features/walkthrough/screens/walkthrough_screen.dart';
@@ -281,6 +282,17 @@ GoRouter createRouter(WidgetRef ref) {
                   context: context,
                   state: state,
                   child: PayLightningInvoiceScreen(
+                    orderId: state.pathParameters['orderId']!,
+                  ),
+                ),
+          ),
+          GoRoute(
+            path: '/pay_bond/:orderId',
+            pageBuilder: (context, state) =>
+                buildPageWithDefaultTransition<void>(
+                  context: context,
+                  state: state,
+                  child: PayBondInvoiceScreen(
                     orderId: state.pathParameters['orderId']!,
                   ),
                 ),
