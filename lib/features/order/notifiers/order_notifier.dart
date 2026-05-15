@@ -117,6 +117,18 @@ class OrderNotifier extends AbstractMostroNotifier {
     );
   }
 
+  Future<void> sendBondInvoice(
+    String orderId,
+    String invoice,
+    int? amount,
+  ) async {
+    await mostroService.sendBondInvoice(
+      orderId,
+      invoice,
+      amount,
+    );
+  }
+
   Future<void> cancelOrder() async {
     await mostroService.cancelOrder(orderId);
   }

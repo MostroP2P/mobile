@@ -623,6 +623,44 @@
     "statusWaitingTakerBond": "Esperando pago del depósito",
     "payBondMessage": "Por favor paga el depósito anti-abuso para continuar con esta orden.",
     "payBondButton": "Pagar depósito",
+    "addBondInvoiceTitle": "Cobra tu parte",
+    "addBondInvoiceMessage": "Ganaste la disputa. Envía una factura Lightning para cobrar tu parte del depósito anti-abuso confiscado.",
+    "addBondInvoiceWonLine": "Ganaste la disputa por la orden {order_id}.",
+    "@addBondInvoiceWonLine": {
+        "placeholders": {
+            "order_id": {
+                "type": "String"
+            }
+        }
+    },
+    "addBondInvoiceSubmitLine": "Envía una factura Lightning por {amount} sats para cobrar la parte que te corresponde del depósito cobrado a tu contraparte.",
+    "@addBondInvoiceSubmitLine": {
+        "placeholders": {
+            "amount": {
+                "type": "Object"
+            }
+        }
+    },
+    "addBondInvoiceDeadline": "Debes reclamarlo antes del {date}.",
+    "@addBondInvoiceDeadline": {
+        "placeholders": {
+            "date": {
+                "type": "String"
+            }
+        }
+    },
+    "addBondInvoiceInputLabel": "Factura Lightning",
+    "addBondInvoiceInputHint": "Pega aquí tu factura bolt11",
+    "addBondInvoiceButton": "COBRAR",
+    "addBondInvoiceSubmitButton": "ENVIAR FACTURA",
+    "addBondInvoiceFailedToSubmit": "Error al enviar la factura: {error}",
+    "@addBondInvoiceFailedToSubmit": {
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
     "failedToCancelOrder": "Error al cancelar orden: {error}",
     "@failedToCancelOrder": {
         "placeholders": {

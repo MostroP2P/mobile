@@ -42,6 +42,7 @@ class NotificationMessageMapper {
       case mostro.Action.waitingBuyerInvoice:
         return 'notification_waiting_buyer_invoice_title';
       case mostro.Action.addInvoice:
+      case mostro.Action.addBondInvoice:
         return 'notification_add_invoice_title';
       case mostro.Action.buyerTookOrder:
         return 'notification_buyer_took_order_title';
@@ -145,6 +146,7 @@ class NotificationMessageMapper {
       case mostro.Action.waitingBuyerInvoice:
         return 'notification_waiting_buyer_invoice_message';
       case mostro.Action.addInvoice:
+      case mostro.Action.addBondInvoice:
         return 'notification_add_invoice_message';
       case mostro.Action.buyerTookOrder:
         return 'notification_buyer_took_order_message';

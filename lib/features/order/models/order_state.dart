@@ -356,6 +356,11 @@ class OrderState {
       case Action.paymentFailed:
         return Status.paymentFailed;
 
+      // Bond payout is orthogonal to the trade FSM. Payload status is null
+      // and would otherwise wipe the real trade status.
+      case Action.addBondInvoice:
+        return status;
+
       // Informational actions that should preserve current status
       case Action.rateUser:
       case Action.invoiceUpdated:
@@ -481,6 +486,14 @@ class OrderState {
         Action.canceled: [],
         Action.adminCanceled: [],
         Action.cooperativeCancelAccepted: [],
+        Action.addBondInvoice: [
+          Action.addBondInvoice,
+        ],
+      },
+      Status.settledByAdmin: {
+        Action.addBondInvoice: [
+          Action.addBondInvoice,
+        ],
       },
       Status.cooperativelyCanceled: {
         // From active: no fiat sent, so no release button for seller
@@ -623,6 +636,14 @@ class OrderState {
         Action.canceled: [],
         Action.adminCanceled: [],
         Action.cooperativeCancelAccepted: [],
+        Action.addBondInvoice: [
+          Action.addBondInvoice,
+        ],
+      },
+      Status.settledByAdmin: {
+        Action.addBondInvoice: [
+          Action.addBondInvoice,
+        ],
       },
       Status.cooperativelyCanceled: {
         // From active: no fiat sent, buyer can still send fiat to complete trade

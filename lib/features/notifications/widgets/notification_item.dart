@@ -76,6 +76,9 @@ class NotificationItem extends ConsumerWidget {
         case mostro_action.Action.addInvoice:
           context.push('/add_invoice/${notification.orderId}');
           break;
+        case mostro_action.Action.addBondInvoice:
+          context.push('/add_bond_invoice/${notification.orderId}');
+          break;
         case mostro_action.Action.payBondInvoice:
           context.push('/pay_bond/${notification.orderId}');
           break;

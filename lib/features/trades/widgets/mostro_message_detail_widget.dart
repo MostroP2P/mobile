@@ -86,6 +86,8 @@ class MostroMessageDetail extends ConsumerWidget {
             );
       case actions.Action.payBondInvoice:
         return S.of(context)!.payBondMessage;
+      case actions.Action.addBondInvoice:
+        return S.of(context)!.addBondInvoiceMessage;
       case actions.Action.addInvoice:
         final expSecs = ref
                 .read(orderRepositoryProvider)

@@ -84,8 +84,9 @@ class Order implements Payload {
         }
       }
 
-      // Validate required fields
-      ['kind', 'status', 'fiat_code', 'fiat_amount', 'payment_method']
+      // `status` is intentionally NOT required: the add-bond-invoice payload
+      // nulls it out while still carrying the rest of the order context.
+      ['kind', 'fiat_code', 'fiat_amount', 'payment_method']
           .forEach(validateField);
 
       // Parse and validate integer fields with type safety
@@ -160,7 +161,9 @@ class Order implements Payload {
       return Order(
         id: parseOptionalStringField('id'),
         kind: OrderType.fromString(parseStringField('kind')),
-        status: Status.fromString(parseStringField('status')),
+        status: json['status'] == null
+            ? Status.pending
+            : Status.fromString(parseStringField('status')),
         amount: amount,
         fiatCode: parseStringField('fiat_code'),
         minAmount: minAmount,

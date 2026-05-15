@@ -710,6 +710,44 @@
     "statusWaitingTakerBond": "Awaiting deposit payment",
     "payBondMessage": "Please pay the anti-abuse deposit to continue this order.",
     "payBondButton": "Pay deposit",
+    "addBondInvoiceTitle": "Claim your share",
+    "addBondInvoiceMessage": "You won the dispute. Submit a Lightning invoice to claim your share of the slashed bond.",
+    "addBondInvoiceWonLine": "You won the dispute for order {order_id}.",
+    "@addBondInvoiceWonLine": {
+        "placeholders": {
+            "order_id": {
+                "type": "String"
+            }
+        }
+    },
+    "addBondInvoiceSubmitLine": "Send a Lightning invoice for {amount} sats to claim your share of the deposit collected from your counterparty.",
+    "@addBondInvoiceSubmitLine": {
+        "placeholders": {
+            "amount": {
+                "type": "Object"
+            }
+        }
+    },
+    "addBondInvoiceDeadline": "You must claim it before {date}.",
+    "@addBondInvoiceDeadline": {
+        "placeholders": {
+            "date": {
+                "type": "String"
+            }
+        }
+    },
+    "addBondInvoiceInputLabel": "Lightning invoice",
+    "addBondInvoiceInputHint": "Paste your bolt11 invoice here",
+    "addBondInvoiceButton": "CLAIM YOUR SHARE",
+    "addBondInvoiceSubmitButton": "SUBMIT INVOICE",
+    "addBondInvoiceFailedToSubmit": "Failed to submit invoice: {error}",
+    "@addBondInvoiceFailedToSubmit": {
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
     "failedToCancelOrder": "Fehler beim Abbrechen der Order: {error}",
     "@failedToCancelOrder": {
         "placeholders": {

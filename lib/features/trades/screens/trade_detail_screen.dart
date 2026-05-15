@@ -355,6 +355,15 @@ class TradeDetailScreen extends ConsumerWidget {
           }
           break;
 
+        case actions.Action.addBondInvoice:
+          widgets.add(_buildNostrButton(
+            S.of(context)!.addBondInvoiceButton,
+            action: actions.Action.addBondInvoice,
+            backgroundColor: AppTheme.mostroGreen,
+            onPressed: () => context.push('/add_bond_invoice/$orderId'),
+          ));
+          break;
+
         case actions.Action.fiatSent:
           if (userRole == Role.buyer) {
             widgets.add(_buildNostrButton(

@@ -153,6 +153,7 @@ class MostroService {
       }
 
       final msg = MostroMessage.fromJson(result[0]);
+      msg.timestamp ??= decryptedEvent.createdAt?.millisecondsSinceEpoch;
 
       final messageStorage = ref.read(mostroStorageProvider);
 
@@ -233,6 +234,19 @@ class MostroService {
     );
     await publishOrder(
       MostroMessage(action: Action.addInvoice, id: orderId, payload: payload),
+    );
+  }
+
+  Future<void> sendBondInvoice(
+      String orderId, String invoice, int? amount) async {
+    final payload = PaymentRequest(
+      order: null,
+      lnInvoice: invoice,
+      amount: amount,
+    );
+    await publishOrder(
+      MostroMessage(
+          action: Action.addBondInvoice, id: orderId, payload: payload),
     );
   }
 

@@ -27,6 +27,7 @@ enum Action {
   waitingSellerToPay('waiting-seller-to-pay'),
   waitingBuyerInvoice('waiting-buyer-invoice'),
   addInvoice('add-invoice'),
+  addBondInvoice('add-bond-invoice'),
   buyerTookOrder('buyer-took-order'),
   rate('rate'),
   rateUser('rate-user'),

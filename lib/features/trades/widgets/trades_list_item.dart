@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/data/models/enums/action.dart' as mostro_action;
 import 'package:mostro_mobile/data/models/enums/role.dart';
 import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
@@ -70,7 +71,9 @@ class TradesListItem extends ConsumerWidget {
                     // Second row: Status and role chips + Premium/Discount
                     Row(
                       children: [
-                        _buildStatusChip(context, orderState.status),
+                        orderState.action == mostro_action.Action.addBondInvoice
+                            ? _buildBondClaimChip(context)
+                            : _buildStatusChip(context, orderState.status),
                         const SizedBox(width: 8),
                         _buildRoleChip(context, isCreator),
                         const Spacer(),
@@ -155,6 +158,27 @@ class TradesListItem extends ConsumerWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  /// Chip shown when mostrod is awaiting a bond-payout invoice from the user.
+  /// Takes precedence over the trade status chip because the actionable
+  /// thing for the user is to claim, not to look at the closed trade.
+  Widget _buildBondClaimChip(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: AppTheme.statusWaitingBackground.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        S.of(context)!.addBondInvoiceTitle,
+        style: const TextStyle(
+          color: AppTheme.statusWaitingText,
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
         ),
       ),
     );

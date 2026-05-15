@@ -653,6 +653,44 @@
     "statusWaitingTakerBond": "In attesa del pagamento del deposito",
     "payBondMessage": "Per favore paga il deposito anti-abuso per continuare questo ordine.",
     "payBondButton": "Paga deposito",
+    "addBondInvoiceTitle": "Riscuoti la tua parte",
+    "addBondInvoiceMessage": "Hai vinto la disputa. Invia una fattura Lightning per riscuotere la tua parte del deposito confiscato.",
+    "addBondInvoiceWonLine": "Hai vinto la disputa per l'ordine {order_id}.",
+    "@addBondInvoiceWonLine": {
+        "placeholders": {
+            "order_id": {
+                "type": "String"
+            }
+        }
+    },
+    "addBondInvoiceSubmitLine": "Invia una fattura Lightning di {amount} sats per riscuotere la tua parte del deposito confiscato alla controparte.",
+    "@addBondInvoiceSubmitLine": {
+        "placeholders": {
+            "amount": {
+                "type": "Object"
+            }
+        }
+    },
+    "addBondInvoiceDeadline": "Devi riscuoterlo entro il {date}.",
+    "@addBondInvoiceDeadline": {
+        "placeholders": {
+            "date": {
+                "type": "String"
+            }
+        }
+    },
+    "addBondInvoiceInputLabel": "Fattura Lightning",
+    "addBondInvoiceInputHint": "Incolla qui la tua fattura bolt11",
+    "addBondInvoiceButton": "RISCUOTI",
+    "addBondInvoiceSubmitButton": "INVIA FATTURA",
+    "addBondInvoiceFailedToSubmit": "Errore nell'invio della fattura: {error}",
+    "@addBondInvoiceFailedToSubmit": {
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
     "failedToCancelOrder": "Impossibile annullare l'ordine: {error}",
     "@failedToCancelOrder": {
         "placeholders": {

@@ -265,6 +265,13 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         await _handleAddInvoiceWithAutoLightningAddress(event);
         break;
 
+      case Action.addBondInvoice:
+        if (event.payload is BondPayoutRequest) {
+          navProvider.go('/add_bond_invoice/${event.id!}');
+        }
+        ref.read(sessionNotifierProvider.notifier).saveSession(session);
+        break;
+
       case Action.holdInvoicePaymentAccepted:
         final order = event.getPayload<Order>();
         if (order == null) return;
