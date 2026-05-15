@@ -220,6 +220,13 @@ class PushNotificationService {
   /// and P2P chat events use `sharedKey.public`. This sender-triggered call
   /// closes that gap without registering shared keys server-side.
   ///
+  /// Intentionally NOT gated on `isPushEnabledInSettings`: that flag is the
+  /// local *receive* preference and controls this device's own token
+  /// registration. Whether the peer is woken is governed by the peer's own
+  /// registration state, server-side. Suppressing outgoing notify calls based
+  /// on the sender's local preference would silently break delivery for a
+  /// correctly opted-in recipient.
+  ///
   /// Strictly fire-and-forget. The server contract (see mostro-push-server
   /// docs/api.md) guarantees indistinguishable responses for registered vs
   /// unregistered pubkeys, so the caller cannot — and must not try to —
@@ -230,10 +237,6 @@ class PushNotificationService {
   /// - 429 on rate-limit hit (dropped silently, no retry).
   Future<void> notifyPeer(String peerTradePubkey) async {
     if (!isSupported) return;
-
-    if (isPushEnabledInSettings != null && !isPushEnabledInSettings!()) {
-      return;
-    }
 
     try {
       final response = await _httpClient

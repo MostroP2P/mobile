@@ -127,20 +127,24 @@ void main() {
       );
     });
 
-    test('returns early when push notifications are disabled in settings',
-        () async {
+    test(
+        'still fires when the sender has push disabled locally '
+        '(the flag is a receive preference, not a send guard)', () async {
       var called = false;
       final mockClient = MockClient((_) async {
         called = true;
         return http.Response('{"accepted":true}', 202);
       });
 
+      // Sender turned off their own push notifications. The peer may still
+      // be registered and expecting wake-ups; suppressing the call here
+      // would silently break delivery for a correctly opted-in recipient.
       await _buildService(
         httpClient: mockClient,
         isPushEnabled: false,
       ).notifyPeer(_validPubkey);
 
-      expect(called, isFalse);
+      expect(called, isTrue);
     });
 
     test('returns early when platform is not supported', () async {
