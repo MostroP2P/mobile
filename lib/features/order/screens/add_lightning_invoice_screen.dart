@@ -67,55 +67,42 @@ class _AddLightningInvoiceScreenState
             (amount ?? 0) > 0;
 
         return Scaffold(
-          backgroundColor: AppTheme.backgroundDark,
+          backgroundColor: AppTheme.dark1,
           appBar: OrderAppBar(title: S.of(context)!.addLightningInvoice),
           body: Padding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewPadding.bottom,
+            padding: EdgeInsets.fromLTRB(
+              16,
+              16,
+              16,
+              16 + MediaQuery.of(context).viewPadding.bottom,
             ),
-            child: Column(
-              children: [
-                Expanded(
-                child: Container(
-                  margin: const EdgeInsets.all(16),
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: AppTheme.backgroundCard,
-                    borderRadius: BorderRadius.circular(16),
-                    border:
-                        Border.all(color: Colors.white.withValues(alpha: 0.1)),
-                  ),
-                  child: showLnAddressConfirmation
-                      ? _buildLnAddressConfirmation(
-                          orderIdValue: orderIdValue,
-                        )
-                      : showNwcInvoice
-                          ? _buildNwcInvoiceFlow(
-                              amount: amount ?? 0,
-                              fiatAmount: fiatAmount,
-                              fiatCode: fiatCode,
-                              orderIdValue: orderIdValue,
-                            )
-                          : AddLightningInvoiceWidget(
-                              controller: invoiceController,
-                              onSubmit: () async {
-                                final invoice = invoiceController.text.trim();
-                                if (invoice.isNotEmpty) {
-                                  await _submitInvoice(invoice, amount);
-                                }
-                              },
-                              onCancel: () async {
-                                await _cancelOrder();
-                              },
-                              amount: amount ?? 0,
-                              fiatAmount: fiatAmount,
-                              fiatCode: fiatCode,
-                              orderId: orderIdValue,
-                            ),
-                ),
-              ),
-              ],
-            ),
+            child: showLnAddressConfirmation
+                ? _buildLnAddressConfirmation(
+                    orderIdValue: orderIdValue,
+                  )
+                : showNwcInvoice
+                    ? _buildNwcInvoiceFlow(
+                        amount: amount ?? 0,
+                        fiatAmount: fiatAmount,
+                        fiatCode: fiatCode,
+                        orderIdValue: orderIdValue,
+                      )
+                    : AddLightningInvoiceWidget(
+                        controller: invoiceController,
+                        onSubmit: () async {
+                          final invoice = invoiceController.text.trim();
+                          if (invoice.isNotEmpty) {
+                            await _submitInvoice(invoice, amount);
+                          }
+                        },
+                        onCancel: () async {
+                          await _cancelOrder();
+                        },
+                        amount: amount ?? 0,
+                        fiatAmount: fiatAmount,
+                        fiatCode: fiatCode,
+                        orderId: orderIdValue,
+                      ),
           ),
         );
       },
