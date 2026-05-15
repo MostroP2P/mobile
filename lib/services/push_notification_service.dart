@@ -152,6 +152,16 @@ class PushNotificationService {
           )
           .timeout(const Duration(seconds: 10));
 
+      // 202 Accepted: treat as success without body parsing. The push server
+      // may switch /api/register to an async/queued ack in the future; accept
+      // it defensively so the client stays forward-compatible.
+      if (response.statusCode == 202) {
+        debugPrint(
+            'PushService: Token registered for trade ${_shortenPubkey(tradePubkey)}');
+        _registeredTradePubkeys.add(tradePubkey);
+        return true;
+      }
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true) {
@@ -253,7 +263,7 @@ class PushNotificationService {
       }
     } catch (e) {
       // Network error / timeout: never fail the chat send because of this.
-      debugPrint('PushService: notifyPeer transport error (ignored): $e');
+      logger.w('PushService: notifyPeer transport error (ignored): $e');
     }
   }
 

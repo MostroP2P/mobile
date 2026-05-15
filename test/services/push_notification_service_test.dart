@@ -167,6 +167,29 @@ void main() {
   });
 
   group('PushNotificationService.registerToken', () {
+    test('treats HTTP 202 Accepted as successful registration', () async {
+      http.Request? captured;
+      final mockClient = MockClient((request) async {
+        if (request.url.path == '/api/health') {
+          return http.Response('{"status":"ok"}', 200);
+        }
+        captured = request;
+        // 202 with no parseable success flag — the server may switch to an
+        // async/queued ack model; the client must accept it as success.
+        return http.Response(
+          '{"success":true,"message":"ok","platform":"android"}',
+          202,
+        );
+      });
+
+      final ok =
+          await _buildService(httpClient: mockClient).registerToken(_validPubkey);
+
+      expect(ok, isTrue);
+      expect(captured, isNotNull);
+      expect(captured!.url.path, '/api/register');
+    });
+
     test('includes mostro_pubkey when callback returns a non-empty value',
         () async {
       http.Request? captured;
