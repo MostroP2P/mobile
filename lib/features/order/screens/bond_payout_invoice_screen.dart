@@ -9,6 +9,7 @@ import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/shared/utils/bond_payout_helpers.dart';
 import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
@@ -81,12 +82,19 @@ class _BondPayoutInvoiceScreenState
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Text(
-            e.toString(),
-            style: const TextStyle(color: AppTheme.textPrimary),
-          ),
-        ),
+        error: (e, stack) {
+          logger.e(
+            'Failed to load bond payout history for ${widget.orderId}',
+            error: e,
+            stackTrace: stack,
+          );
+          return Center(
+            child: Text(
+              s.errorLoadingBondPayout,
+              style: const TextStyle(color: AppTheme.textPrimary),
+            ),
+          );
+        },
       ),
     );
   }

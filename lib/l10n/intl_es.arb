@@ -1568,5 +1568,6 @@
             }
         }
     },
-    "bondPayoutBadge": "COBRO PENDIENTE"
+    "bondPayoutBadge": "COBRO PENDIENTE",
+    "errorLoadingBondPayout": "Error al cargar los datos del cobro"
 }

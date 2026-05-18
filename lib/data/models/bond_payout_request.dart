@@ -78,9 +78,11 @@ class BondPayoutOrder {
       };
 
   factory BondPayoutOrder.fromJson(Map<String, dynamic> json) {
-    int parseInt(String field, {int defaultValue = 0}) {
+    int parseInt(String field) {
       final value = json[field];
-      if (value == null) return defaultValue;
+      if (value == null) {
+        throw FormatException('BondPayoutOrder: missing $field');
+      }
       if (value is int) return value;
       if (value is String) {
         final parsed = int.tryParse(value);
@@ -114,7 +116,7 @@ class BondPayoutOrder {
       maxAmount: parseOptionalInt('max_amount'),
       fiatAmount: parseInt('fiat_amount'),
       paymentMethod: parseString('payment_method'),
-      premium: parseInt('premium'),
+      premium: parseOptionalInt('premium') ?? 0,
     );
   }
 }

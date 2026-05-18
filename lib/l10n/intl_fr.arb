@@ -1593,5 +1593,6 @@
             }
         }
     },
-    "bondPayoutBadge": "PAIEMENT EN ATTENTE"
+    "bondPayoutBadge": "PAIEMENT EN ATTENTE",
+    "errorLoadingBondPayout": "Erreur lors du chargement des données de paiement"
 }

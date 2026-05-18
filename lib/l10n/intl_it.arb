@@ -1634,5 +1634,6 @@
             }
         }
     },
-    "bondPayoutBadge": "RISCATTO IN ATTESA"
+    "bondPayoutBadge": "RISCATTO IN ATTESA",
+    "errorLoadingBondPayout": "Errore nel caricamento dei dati del riscatto"
 }

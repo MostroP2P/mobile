@@ -21,7 +21,10 @@ bool hasPendingBondClaim(
   List<MostroMessage> messages,
   int claimWindowDays,
 ) {
-  for (final msg in messages) {
+  final sorted = [...messages]..sort(
+      (a, b) => (b.timestamp ?? 0).compareTo(a.timestamp ?? 0),
+    );
+  for (final msg in sorted) {
     if (msg.action != Action.addBondInvoice) continue;
     final payload = msg.payload;
     if (payload is BondPayoutRequest) {

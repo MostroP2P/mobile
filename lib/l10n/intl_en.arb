@@ -1593,5 +1593,6 @@
             }
         }
     },
-    "bondPayoutBadge": "PAYOUT PENDING"
+    "bondPayoutBadge": "PAYOUT PENDING",
+    "errorLoadingBondPayout": "Error loading payout data"
 }

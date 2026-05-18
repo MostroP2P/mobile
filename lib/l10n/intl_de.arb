@@ -1593,5 +1593,6 @@
             }
         }
     },
-    "bondPayoutBadge": "AUSZAHLUNG OFFEN"
+    "bondPayoutBadge": "AUSZAHLUNG OFFEN",
+    "errorLoadingBondPayout": "Fehler beim Laden der Auszahlungsdaten"
 }

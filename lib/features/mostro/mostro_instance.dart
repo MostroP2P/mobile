@@ -79,12 +79,18 @@ class MostroInstance {
 
 extension MostroInstanceExtensions on NostrEvent {
   String _getTagValue(String key) {
-    final tag = tags?.firstWhere((t) => t[0] == key, orElse: () => []);
+    final tag = tags?.firstWhere(
+      (t) => t.isNotEmpty && t[0] == key,
+      orElse: () => const [],
+    );
     return (tag != null && tag.length > 1) ? tag[1] : 'Tag: $key not found';
   }
 
   String? _getOptionalTagValue(String key) {
-    final tag = tags?.firstWhere((t) => t[0] == key, orElse: () => []);
+    final tag = tags?.firstWhere(
+      (t) => t.isNotEmpty && t[0] == key,
+      orElse: () => const [],
+    );
     if (tag == null || tag.length < 2) return null;
     return tag[1];
   }
@@ -118,6 +124,8 @@ extension MostroInstanceExtensions on NostrEvent {
   int get bondPayoutClaimWindowDays {
     final raw = _getOptionalTagValue('bond_payout_claim_window_days');
     if (raw == null) return 15;
-    return int.tryParse(raw) ?? 15;
+    final parsed = int.tryParse(raw);
+    if (parsed == null || parsed <= 0) return 15;
+    return parsed;
   }
 }
