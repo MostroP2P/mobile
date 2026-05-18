@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
-import 'package:mostro_mobile/data/models/bond_payout_request.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
@@ -75,7 +74,6 @@ class TradeDetailScreen extends ConsumerWidget {
                 const SizedBox(height: 16),
                 _buildOrderId(context),
                 const SizedBox(height: 16),
-                _buildBondPayoutBanner(context, ref),
                 // For pending orders created by the user, show creator's reputation
                 if (isPending && isCreator) ...[
                   // TODO: Change this to use `orderPayload` after Order model is updated
@@ -269,91 +267,25 @@ class TradeDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildBondPayoutBanner(BuildContext context, WidgetRef ref) {
-    final historyAsync = ref.watch(mostroMessageHistoryProvider(orderId));
+  bool _hasPendingBondClaim(WidgetRef ref) {
+    final history = ref.watch(mostroMessageHistoryProvider(orderId));
     final instance = ref.watch(orderRepositoryProvider).mostroInstance;
     final claimWindowDays = instance?.bondPayoutClaimWindowDays ?? 15;
-
-    final request = historyAsync.maybeWhen(
-      data: (msgs) => _latestPendingBondPayoutRequest(msgs, claimWindowDays),
-      orElse: () => null,
-    );
-    if (request == null) return const SizedBox.shrink();
-
-    final s = S.of(context)!;
-    final deadline =
-        bondClaimDeadline(request.slashedAt, claimWindowDays);
-    final formattedDeadline =
-        DateFormat.yMMMd().add_jm().format(deadline);
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppTheme.statusPendingBackground.withValues(alpha: 0.3),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: AppTheme.statusPendingText.withValues(alpha: 0.4),
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              s.addBondInvoiceSubmitLine(request.order.amount.toString()),
-              style: const TextStyle(
-                color: AppTheme.textPrimary,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              s.addBondInvoiceDeadline(formattedDeadline),
-              style: const TextStyle(
-                color: AppTheme.statusPendingText,
-                fontSize: 13,
-              ),
-            ),
-            const SizedBox(height: 12),
-            ElevatedButton(
-              key: const Key('bondPayoutClaimButton'),
-              onPressed: () =>
-                  context.push('/bond_payout/$orderId'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.activeColor,
-                foregroundColor: Colors.black,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
-              child: Text(
-                s.addBondInvoiceButton,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+    return history.maybeWhen(
+      data: (msgs) => hasPendingBondClaim(msgs, claimWindowDays),
+      orElse: () => false,
     );
   }
 
-  BondPayoutRequest? _latestPendingBondPayoutRequest(
-    List<MostroMessage> messages,
-    int claimWindowDays,
-  ) {
-    if (!hasPendingBondClaim(messages, claimWindowDays)) return null;
-    for (final msg in messages) {
-      if (msg.action != actions.Action.addBondInvoice) continue;
-      final payload = msg.payload;
-      if (payload is BondPayoutRequest) return payload;
-    }
-    return null;
+  Widget _buildBondPayoutClaimButton(BuildContext context) {
+    return ElevatedButton(
+      key: const Key('bondPayoutClaimButton'),
+      onPressed: () => context.push('/bond_payout/$orderId'),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppTheme.mostroGreen,
+      ),
+      child: Text(S.of(context)!.addBondInvoiceButton),
+    );
   }
 
   /// Main action button area, switching on `orderPayload.status`.
@@ -910,6 +842,10 @@ class TradeDetailScreen extends ConsumerWidget {
         tradeState.dispute?.disputeId != null) {
       extraButtons
           .add(_buildViewDisputeButton(context, tradeState.dispute!.disputeId));
+    }
+
+    if (_hasPendingBondClaim(ref)) {
+      extraButtons.add(_buildBondPayoutClaimButton(context));
     }
 
     final allButtons = [
