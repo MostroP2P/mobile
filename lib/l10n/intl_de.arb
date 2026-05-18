@@ -1550,5 +1550,48 @@
     "threeMonths": "3 Monate",
     "sixMonths": "6 Monate",
     "oneYear": "1 Jahr",
-    "never": "Nie"
+    "never": "Nie",
+    "addBondInvoiceTitle": "Anteil einfordern",
+    "addBondInvoiceMessage": "Du hast den Streit gewonnen. Sende eine Lightning-Rechnung, um deinen Anteil der eingezogenen Anti-Missbrauchs-Kaution einzufordern.",
+    "addBondInvoiceWonLine": "Du hast den Streit für Order {order_id} gewonnen.",
+    "@addBondInvoiceWonLine": {
+        "placeholders": {
+            "order_id": {
+                "type": "String",
+                "description": "The order ID"
+            }
+        }
+    },
+    "addBondInvoiceSubmitLine": "Sende eine Lightning-Rechnung über {amount} Sats, um deinen Anteil an der Anti-Missbrauchs-Kaution einzufordern.",
+    "@addBondInvoiceSubmitLine": {
+        "placeholders": {
+            "amount": {
+                "type": "String",
+                "description": "The amount of satoshis"
+            }
+        }
+    },
+    "addBondInvoiceDeadline": "Du musst sie vor dem {date} einfordern.",
+    "@addBondInvoiceDeadline": {
+        "placeholders": {
+            "date": {
+                "type": "String",
+                "description": "The claim deadline"
+            }
+        }
+    },
+    "addBondInvoiceInputLabel": "Lightning-Rechnung",
+    "addBondInvoiceInputHint": "Füge hier deine bolt11-Rechnung ein",
+    "addBondInvoiceButton": "EINFORDERN",
+    "addBondInvoiceSubmitButton": "RECHNUNG SENDEN",
+    "addBondInvoiceFailedToSubmit": "Rechnung konnte nicht gesendet werden: {error}",
+    "@addBondInvoiceFailedToSubmit": {
+        "placeholders": {
+            "error": {
+                "type": "String",
+                "description": "The error message"
+            }
+        }
+    },
+    "bondPayoutBadge": "AUSZAHLUNG OFFEN"
 }

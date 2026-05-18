@@ -1550,5 +1550,48 @@
     "threeMonths": "3 mois",
     "sixMonths": "6 mois",
     "oneYear": "1 an",
-    "never": "Jamais"
+    "never": "Jamais",
+    "addBondInvoiceTitle": "Réclamer votre part",
+    "addBondInvoiceMessage": "Vous avez gagné le litige. Envoyez une facture Lightning pour réclamer votre part du dépôt anti-abus confisqué.",
+    "addBondInvoiceWonLine": "Vous avez gagné le litige pour la commande {order_id}.",
+    "@addBondInvoiceWonLine": {
+        "placeholders": {
+            "order_id": {
+                "type": "String",
+                "description": "The order ID"
+            }
+        }
+    },
+    "addBondInvoiceSubmitLine": "Envoyez une facture Lightning de {amount} sats pour réclamer votre part du dépôt anti-abus.",
+    "@addBondInvoiceSubmitLine": {
+        "placeholders": {
+            "amount": {
+                "type": "String",
+                "description": "The amount of satoshis"
+            }
+        }
+    },
+    "addBondInvoiceDeadline": "Vous devez la réclamer avant le {date}.",
+    "@addBondInvoiceDeadline": {
+        "placeholders": {
+            "date": {
+                "type": "String",
+                "description": "The claim deadline"
+            }
+        }
+    },
+    "addBondInvoiceInputLabel": "Facture Lightning",
+    "addBondInvoiceInputHint": "Collez votre facture bolt11 ici",
+    "addBondInvoiceButton": "RÉCLAMER",
+    "addBondInvoiceSubmitButton": "ENVOYER LA FACTURE",
+    "addBondInvoiceFailedToSubmit": "Échec de l'envoi de la facture : {error}",
+    "@addBondInvoiceFailedToSubmit": {
+        "placeholders": {
+            "error": {
+                "type": "String",
+                "description": "The error message"
+            }
+        }
+    },
+    "bondPayoutBadge": "PAIEMENT EN ATTENTE"
 }

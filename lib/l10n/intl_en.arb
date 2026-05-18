@@ -1550,5 +1550,48 @@
     "threeMonths": "3 months",
     "sixMonths": "6 months",
     "oneYear": "1 year",
-    "never": "Never"
+    "never": "Never",
+    "addBondInvoiceTitle": "Claim your share",
+    "addBondInvoiceMessage": "You won the dispute. Submit a Lightning invoice to claim your share of the slashed anti-abuse bond.",
+    "addBondInvoiceWonLine": "You won the dispute for order {order_id}.",
+    "@addBondInvoiceWonLine": {
+        "placeholders": {
+            "order_id": {
+                "type": "String",
+                "description": "The order ID"
+            }
+        }
+    },
+    "addBondInvoiceSubmitLine": "Submit a Lightning invoice for {amount} sats to claim your share of the anti-abuse bond.",
+    "@addBondInvoiceSubmitLine": {
+        "placeholders": {
+            "amount": {
+                "type": "String",
+                "description": "The amount of satoshis"
+            }
+        }
+    },
+    "addBondInvoiceDeadline": "You must claim it before {date}.",
+    "@addBondInvoiceDeadline": {
+        "placeholders": {
+            "date": {
+                "type": "String",
+                "description": "The claim deadline"
+            }
+        }
+    },
+    "addBondInvoiceInputLabel": "Lightning invoice",
+    "addBondInvoiceInputHint": "Paste your bolt11 invoice here",
+    "addBondInvoiceButton": "CLAIM",
+    "addBondInvoiceSubmitButton": "SUBMIT INVOICE",
+    "addBondInvoiceFailedToSubmit": "Failed to submit invoice: {error}",
+    "@addBondInvoiceFailedToSubmit": {
+        "placeholders": {
+            "error": {
+                "type": "String",
+                "description": "The error message"
+            }
+        }
+    },
+    "bondPayoutBadge": "PAYOUT PENDING"
 }
