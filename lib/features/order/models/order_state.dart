@@ -362,6 +362,7 @@ class OrderState {
       case Action.sendDm:
       case Action.tradePubkey:
       case Action.adminAddSolver:
+      case Action.addBondInvoice:
         return payloadStatus ?? status;
 
       // For actions that include Order payload, use the payload status
