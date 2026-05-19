@@ -1584,15 +1584,7 @@
     "addBondInvoiceInputHint": "Collez votre facture bolt11 ici",
     "addBondInvoiceButton": "RÉCLAMER",
     "addBondInvoiceSubmitButton": "ENVOYER LA FACTURE",
-    "addBondInvoiceFailedToSubmit": "Échec de l'envoi de la facture : {error}",
-    "@addBondInvoiceFailedToSubmit": {
-        "placeholders": {
-            "error": {
-                "type": "String",
-                "description": "The error message"
-            }
-        }
-    },
+    "addBondInvoiceFailedToSubmit": "Échec de l'envoi de la facture. Veuillez réessayer.",
     "bondPayoutBadge": "PAIEMENT EN ATTENTE",
     "errorLoadingBondPayout": "Erreur lors du chargement des données de paiement"
 }

@@ -9,6 +9,7 @@ import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/shared/providers/legible_handle_provider.dart';
+import 'package:mostro_mobile/shared/utils/bond_payout_helpers.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 import 'package:mostro_mobile/shared/utils/text_formatting.dart';
 
@@ -257,14 +258,7 @@ class MostroMessageDetail extends ConsumerWidget {
   String _getBondPayoutMessage(BuildContext context, WidgetRef ref) {
     final historyAsync = ref.watch(mostroMessageHistoryProvider(orderId));
     final amount = historyAsync.maybeWhen(
-      data: (msgs) {
-        for (final msg in msgs) {
-          if (msg.action != actions.Action.addBondInvoice) continue;
-          final payload = msg.payload;
-          if (payload is BondPayoutRequest) return payload.order.amount;
-        }
-        return null;
-      },
+      data: (msgs) => latestBondPayoutRequest(msgs)?.order.amount,
       orElse: () => null,
     );
     return S

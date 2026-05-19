@@ -1559,15 +1559,7 @@
     "addBondInvoiceInputHint": "Pega aquí tu factura bolt11",
     "addBondInvoiceButton": "COBRAR",
     "addBondInvoiceSubmitButton": "ENVIAR FACTURA",
-    "addBondInvoiceFailedToSubmit": "Error al enviar la factura: {error}",
-    "@addBondInvoiceFailedToSubmit": {
-        "placeholders": {
-            "error": {
-                "type": "String",
-                "description": "The error message"
-            }
-        }
-    },
+    "addBondInvoiceFailedToSubmit": "Error al enviar la factura. Intenta de nuevo.",
     "bondPayoutBadge": "COBRO PENDIENTE",
     "errorLoadingBondPayout": "Error al cargar los datos del cobro"
 }

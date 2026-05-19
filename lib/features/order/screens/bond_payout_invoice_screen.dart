@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/bond_payout_request.dart';
-import 'package:mostro_mobile/data/models/enums/action.dart' as mostro_action;
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
@@ -46,7 +45,7 @@ class _BondPayoutInvoiceScreenState
       appBar: OrderAppBar(title: s.addBondInvoiceTitle),
       body: historyAsync.when(
         data: (messages) {
-          final request = _latestBondPayoutRequest(messages);
+          final request = latestBondPayoutRequest(messages);
           if (request == null) {
             return Center(
               child: Padding(
@@ -97,15 +96,6 @@ class _BondPayoutInvoiceScreenState
         },
       ),
     );
-  }
-
-  BondPayoutRequest? _latestBondPayoutRequest(List<dynamic> messages) {
-    for (final msg in messages) {
-      if (msg.action != mostro_action.Action.addBondInvoice) continue;
-      final payload = msg.payload;
-      if (payload is BondPayoutRequest) return payload;
-    }
-    return null;
   }
 
   Widget _buildBody({
@@ -219,7 +209,12 @@ class _BondPayoutInvoiceScreenState
     try {
       await notifier.sendBondPayoutInvoice(invoice);
       if (mounted) context.go('/');
-    } catch (e) {
+    } catch (e, stack) {
+      logger.e(
+        'Failed to submit bond payout invoice for ${widget.orderId}',
+        error: e,
+        stackTrace: stack,
+      );
       if (!mounted) return;
       setState(() => _submitting = false);
       final s = S.of(context)!;
@@ -227,7 +222,7 @@ class _BondPayoutInvoiceScreenState
         if (mounted) {
           SnackBarHelper.showTopSnackBar(
             context,
-            s.addBondInvoiceFailedToSubmit(e.toString()),
+            s.addBondInvoiceFailedToSubmit,
           );
         }
       });

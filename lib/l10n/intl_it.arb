@@ -1625,15 +1625,7 @@
     "addBondInvoiceInputHint": "Incolla qui la tua fattura bolt11",
     "addBondInvoiceButton": "RISCATTA",
     "addBondInvoiceSubmitButton": "INVIA FATTURA",
-    "addBondInvoiceFailedToSubmit": "Errore nell'invio della fattura: {error}",
-    "@addBondInvoiceFailedToSubmit": {
-        "placeholders": {
-            "error": {
-                "type": "String",
-                "description": "The error message"
-            }
-        }
-    },
+    "addBondInvoiceFailedToSubmit": "Errore nell'invio della fattura. Riprova.",
     "bondPayoutBadge": "RISCATTO IN ATTESA",
     "errorLoadingBondPayout": "Errore nel caricamento dei dati del riscatto"
 }

@@ -1584,15 +1584,7 @@
     "addBondInvoiceInputHint": "Paste your bolt11 invoice here",
     "addBondInvoiceButton": "CLAIM",
     "addBondInvoiceSubmitButton": "SUBMIT INVOICE",
-    "addBondInvoiceFailedToSubmit": "Failed to submit invoice: {error}",
-    "@addBondInvoiceFailedToSubmit": {
-        "placeholders": {
-            "error": {
-                "type": "String",
-                "description": "The error message"
-            }
-        }
-    },
+    "addBondInvoiceFailedToSubmit": "Failed to submit invoice. Please try again.",
     "bondPayoutBadge": "PAYOUT PENDING",
     "errorLoadingBondPayout": "Error loading payout data"
 }

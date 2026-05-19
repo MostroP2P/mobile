@@ -1584,15 +1584,7 @@
     "addBondInvoiceInputHint": "Füge hier deine bolt11-Rechnung ein",
     "addBondInvoiceButton": "EINFORDERN",
     "addBondInvoiceSubmitButton": "RECHNUNG SENDEN",
-    "addBondInvoiceFailedToSubmit": "Rechnung konnte nicht gesendet werden: {error}",
-    "@addBondInvoiceFailedToSubmit": {
-        "placeholders": {
-            "error": {
-                "type": "String",
-                "description": "The error message"
-            }
-        }
-    },
+    "addBondInvoiceFailedToSubmit": "Rechnung konnte nicht gesendet werden. Bitte erneut versuchen.",
     "bondPayoutBadge": "AUSZAHLUNG OFFEN",
     "errorLoadingBondPayout": "Fehler beim Laden der Auszahlungsdaten"
 }
