@@ -261,9 +261,10 @@ class MostroMessageDetail extends ConsumerWidget {
       data: (msgs) => latestBondPayoutRequest(msgs)?.order.amount,
       orElse: () => null,
     );
-    return S
-        .of(context)!
-        .addBondInvoiceSubmitLine((amount ?? 0).toString());
+    if (amount == null) {
+      return S.of(context)!.addBondInvoiceMessage;
+    }
+    return S.of(context)!.addBondInvoiceSubmitLine(amount.toString());
   }
 
   String _getCantDoMessage(BuildContext context, WidgetRef ref) {

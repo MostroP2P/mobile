@@ -1,7 +1,5 @@
-import 'package:mostro_mobile/data/models/bond_payout_request.dart';
-import 'package:mostro_mobile/data/models/enums/action.dart';
-import 'package:mostro_mobile/data/models/mostro_message.dart';
-import 'package:mostro_mobile/data/models/payment_request.dart';
+import 'package:mostro_mobile/data/enums.dart';
+import 'package:mostro_mobile/data/models.dart';
 
 DateTime bondClaimDeadline(int slashedAt, int claimWindowDays) {
   return DateTime.fromMillisecondsSinceEpoch(
