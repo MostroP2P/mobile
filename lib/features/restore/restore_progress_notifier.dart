@@ -90,6 +90,26 @@ class RestoreProgressNotifier extends StateNotifier<RestoreProgressState> {
     });
   }
 
+  void completeAsNewUser() {
+    if (!_canUpdateState || state.step == RestoreStep.completed) return;
+
+    logger.i('Restore completed: no previous history for this Mostro');
+    _cancelTimeoutTimer();
+
+    _setStateSafely(state.copyWith(
+      step: RestoreStep.completed,
+      noHistoryFound: true,
+    ));
+
+    // Extended auto-hide so the user has time to read the secondary line.
+    _cancelAutoHideTimer();
+    _autoHideTimer = Timer(const Duration(seconds: 5), () {
+      if (mounted) {
+        hide();
+      }
+    });
+  }
+
   void showError(String message) {
     if (!_canUpdateState || state.step == RestoreStep.error) return;
 
