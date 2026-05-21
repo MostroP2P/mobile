@@ -22,6 +22,7 @@ class MostroInstance {
   final String lndNodeUri;
   final String fiatCurrenciesAccepted;
   final int maxOrdersPerResponse;
+  final int bondPayoutClaimWindowDays;
 
   MostroInstance(
     this.pubKey,
@@ -45,6 +46,7 @@ class MostroInstance {
     this.lndNodeUri,
     this.fiatCurrenciesAccepted,
     this.maxOrdersPerResponse,
+    this.bondPayoutClaimWindowDays,
   );
 
   factory MostroInstance.fromEvent(NostrEvent event) {
@@ -70,14 +72,27 @@ class MostroInstance {
       event.lndNodeUri,
       event.fiatCurrenciesAccepted,
       event.maxOrdersPerResponse,
+      event.bondPayoutClaimWindowDays,
     );
   }
 }
 
 extension MostroInstanceExtensions on NostrEvent {
   String _getTagValue(String key) {
-    final tag = tags?.firstWhere((t) => t[0] == key, orElse: () => []);
+    final tag = tags?.firstWhere(
+      (t) => t.isNotEmpty && t[0] == key,
+      orElse: () => const [],
+    );
     return (tag != null && tag.length > 1) ? tag[1] : 'Tag: $key not found';
+  }
+
+  String? _getOptionalTagValue(String key) {
+    final tag = tags?.firstWhere(
+      (t) => t.isNotEmpty && t[0] == key,
+      orElse: () => const [],
+    );
+    if (tag == null || tag.length < 2) return null;
+    return tag[1];
   }
 
   String get pubKey => _getTagValue('d');
@@ -104,4 +119,13 @@ extension MostroInstanceExtensions on NostrEvent {
   String get lndNodeUri => _getTagValue('lnd_uris');
   String get fiatCurrenciesAccepted => _getTagValue('fiat_currencies_accepted');
   int get maxOrdersPerResponse => int.parse(_getTagValue('max_orders_per_response'));
+
+  /// Days from `slashed_at` to claim a slashed-bond share before forfeit.
+  int get bondPayoutClaimWindowDays {
+    final raw = _getOptionalTagValue('bond_payout_claim_window_days');
+    if (raw == null) return 15;
+    final parsed = int.tryParse(raw);
+    if (parsed == null || parsed <= 0) return 15;
+    return parsed;
+  }
 }

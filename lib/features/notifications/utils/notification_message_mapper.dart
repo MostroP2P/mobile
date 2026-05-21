@@ -94,6 +94,7 @@ class NotificationMessageMapper {
       case mostro.Action.restore:
       case mostro.Action.orders:
       case mostro.Action.lastTradeIndex:
+      case mostro.Action.addBondInvoice:
         return 'TODO: implement  title key if needed';
     }
   }
@@ -197,8 +198,9 @@ class NotificationMessageMapper {
       case mostro.Action.restore:
       case mostro.Action.orders:
       case mostro.Action.lastTradeIndex:
+      case mostro.Action.addBondInvoice:
         return 'TODO: implement message key if needed';
-      
+
     }
   }
 

@@ -1527,5 +1527,41 @@
     "threeMonths": "3 meses",
     "sixMonths": "6 meses",
     "oneYear": "1 año",
-    "never": "Nunca"
+    "never": "Nunca",
+    "addBondInvoiceTitle": "Cobra tu parte",
+    "addBondInvoiceMessage": "Ganaste la disputa. Envía una factura Lightning para cobrar tu parte del depósito anti-abuso confiscado.",
+    "addBondInvoiceWonLine": "Ganaste la disputa por la orden {order_id}.",
+    "@addBondInvoiceWonLine": {
+        "placeholders": {
+            "order_id": {
+                "type": "String",
+                "description": "The order ID"
+            }
+        }
+    },
+    "addBondInvoiceSubmitLine": "Envía una factura Lightning por {amount} sats para cobrar la parte que te corresponde del depósito anti-abuso.",
+    "@addBondInvoiceSubmitLine": {
+        "placeholders": {
+            "amount": {
+                "type": "String",
+                "description": "The amount of satoshis"
+            }
+        }
+    },
+    "addBondInvoiceDeadline": "Debes reclamarlo antes del {date}.",
+    "@addBondInvoiceDeadline": {
+        "placeholders": {
+            "date": {
+                "type": "String",
+                "description": "The claim deadline"
+            }
+        }
+    },
+    "addBondInvoiceInputLabel": "Factura Lightning",
+    "addBondInvoiceInputHint": "Pega aquí tu factura bolt11",
+    "addBondInvoiceButton": "COBRAR",
+    "addBondInvoiceSubmitButton": "ENVIAR FACTURA",
+    "addBondInvoiceFailedToSubmit": "Error al enviar la factura. Intenta de nuevo.",
+    "bondPayoutBadge": "COBRO PENDIENTE",
+    "errorLoadingBondPayout": "Error al cargar los datos del cobro"
 }

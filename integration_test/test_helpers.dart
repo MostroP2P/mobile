@@ -291,6 +291,8 @@ class FakeMostroService implements MostroService {
 
   @override
   Future<void> sendInvoice(String orderId, String invoice, int? amount) async {}
+  @override
+  Future<void> sendBondPayoutInvoice(String orderId, String invoice) async {}
 
   @override
   Future<void> cancelOrder(String orderId) async {}

@@ -132,6 +132,7 @@ class NotificationItem extends ConsumerWidget {
         case mostro_action.Action.restore:
         case mostro_action.Action.orders:
         case mostro_action.Action.lastTradeIndex:
+        case mostro_action.Action.addBondInvoice:
           break;
       }
     }

@@ -4,6 +4,7 @@ enum Action {
   takeBuy('take-buy'),
   payInvoice('pay-invoice'),
   payBondInvoice('pay-bond-invoice'),
+  addBondInvoice('add-bond-invoice'),
   fiatSent('fiat-sent'),
   fiatSentOk('fiat-sent-ok'),
   release('release'),

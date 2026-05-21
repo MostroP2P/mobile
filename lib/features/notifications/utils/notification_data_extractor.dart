@@ -207,6 +207,9 @@ class NotificationDataExtractor {
         // This action doesn't generate notifications
         return null;
 
+      case Action.addBondInvoice:
+        return null;
+
       default:
         // Unknown actions generate temporary notifications
         isTemporary = true;
