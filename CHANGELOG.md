@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.2.7] - 2026-05-21
+
+### Added
+- feat: add Venezuela community node (#599) (6d23e45c)
+- feat: P2P chat push wake-up + register mostro_pubkey whitelist field (#590) (a79ff882)
+- feat(restore): differentiate restore outcomes by cant-do reason (#588) (cc6fe3a6)
+
+### Changed
+- Revert "chore: update changelog and version for v1.2.6 (#597)" (#598) (ad59fbcc)
+- flatten pay-invoice and add-invoice screens (#593) (48d4bb5d)
+-   feat(bond): support Phase 1.5 anti-abuse bond invoice flow (#592) (35a544ae)
+- Restore dispute chats (#561) (b8bbee92)
+
+
 ## [v1.2.5] - 2026-04-23
 
 ### Added
