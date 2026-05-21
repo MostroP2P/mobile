@@ -114,6 +114,11 @@ void _initializePushNotificationIntegration(
       return container.read(settingsProvider).pushNotificationsEnabled;
     };
 
+    // Provide the active Mostro instance pubkey for /api/register
+    pushServices.pushService.getMostroPubkey = () {
+      return container.read(settingsProvider).mostroPublicKey;
+    };
+
     debugPrint('Push notification integration initialized');
   } catch (e) {
     debugPrint('Failed to initialize push notification integration: $e');
