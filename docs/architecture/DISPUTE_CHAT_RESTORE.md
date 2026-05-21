@@ -191,39 +191,19 @@ case and degrade gracefully (e.g. strip the peer field and continue parsing).
 
 ### Issue 3 — Dispute State Not Persisted After Restore + App Kill
 
-#### Description
+**Status: Fixed** — `lib/services/mostro_service.dart`
 
-After a successful restore, if the user force-kills the app and relaunches, disputed order
-state is not recovered. The orders either show an incorrect status or disappear from
-"My Trades". This does **not** happen for users who have never performed a restore.
+#### Root Cause
 
-#### Root Cause (Preliminary)
+During restore, `MostroService._onData` saved all relay-replayed historical gift-wrap events
+to `mostroStorage` with `DateTime.now()` timestamps — newer than the authoritative synthetic
+messages written by the restore process (which use `orderDetail.createdAt`). On the next
+app launch, `OrderNotifier.sync()` replayed messages in ascending timestamp order, ending on
+a stale relay event representing an earlier trade stage instead of the correct restored state.
 
-The normal (non-restore) app startup path relies on `mostroStorage` containing
-`MostroMessage` records that were received live from the relay. On restart,
-`OrderNotifier.sync()` reads all messages for each orderId from storage and reconstructs
-state by replaying them in timestamp order.
+#### Fix
 
-After restore, `restore_manager` calls `storage.deleteAll()` to clear relay-replayed events
-and then writes fresh `MostroMessage` records derived from `OrdersResponse`. These records
-are written with `orderDetail.createdAt` timestamps (original order creation time, which
-may be months old). On the next app start, `sync()` replays these messages correctly — but
-relay-replayed events that arrive after `isRestoringProvider = false` may be stored with
-`DateTime.now()` timestamps (see `MostroService._onData` timestamp behavior) and therefore
-sort after the restore messages in `watchLatestMessage` (DESC), causing `state.updateWith`
-to apply a stale relay event over the correct restored state.
-
-Additionally, if the `Session` persisted to Sembast after restore does not include
-`adminPubkey` / `disputeId` (e.g. due to a serialization gap in `Session.toJson` /
-`Session.fromJson`), then on relaunch `adminSharedKey` will be null and dispute chat
-subscriptions will not start.
-
-#### Scope
-
-Out of scope for the current restore feature milestone. Tracked here for future resolution.
-
-#### Suspected Files
-
-- `lib/features/order/notifiers/abstract_mostro_notifier.dart` — `sync()` and `subscribe()` replay logic
-- `lib/services/mostro_service.dart` — timestamp assignment on relay-replayed events
-- `lib/data/models/session.dart` — `toJson()` / `fromJson()` for `adminPubkey` / `disputeId`
+Added `isRestoringProvider` check in `_onData` to skip `addMessage` during restore. Event
+IDs are still registered in `eventStorage` for deduplication, preventing relay re-processing
+after restore completes. Only the authoritative synthetic messages written after the
+10-second delay remain in `mostroStorage`, ensuring correct state on relaunch.

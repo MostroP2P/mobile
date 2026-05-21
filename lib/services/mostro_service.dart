@@ -15,6 +15,7 @@ import 'package:mostro_mobile/features/order/providers/order_notifier_provider.d
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
+import 'package:mostro_mobile/features/restore/restore_mode_provider.dart';
 
 class MostroService {
   final Ref ref;
@@ -162,6 +163,11 @@ class MostroService {
           decryptedEvent.id ??
           event.id ??
           'msg_${DateTime.now().millisecondsSinceEpoch}';
+      if (ref.read(isRestoringProvider)) {
+        logger.i('Restore in progress, skipping storage write for ${msg.action}');
+        return;
+      }
+
       await messageStorage.addMessage(messageKey, msg);
       logger.i(
         'Received DM, Event ID: ${decryptedEvent.id ?? event.id} with payload: ${decryptedEvent.content}',
