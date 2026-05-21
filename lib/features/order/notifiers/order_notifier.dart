@@ -126,18 +126,10 @@ class OrderNotifier extends AbstractMostroNotifier {
       payload: PaymentRequest(lnInvoice: invoice),
       timestamp: timestamp,
     );
-    try {
-      await ref.read(mostroStorageProvider).addMessage(
-            'outbound_addBondInvoice_${orderId}_$timestamp',
-            outbound,
-          );
-    } catch (e, stack) {
-      logger.e(
-        'Failed to persist outbound add-bond-invoice for $orderId',
-        error: e,
-        stackTrace: stack,
-      );
-    }
+    await ref.read(mostroStorageProvider).addMessage(
+          'outbound_addBondInvoice_${orderId}_$timestamp',
+          outbound,
+        );
   }
 
   Future<void> cancelOrder() async {
