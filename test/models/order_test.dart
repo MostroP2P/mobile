@@ -27,6 +27,32 @@ void main() {
       expect(order.amount, equals(0));
       expect(order.fiatAmount, equals(100));
     });
+
+    test(
+        'fromJson accepts a SmallOrder with null status (Phase 3.5 bond ack)',
+        () {
+      final smallOrder = {
+        'id': '6fec64ea-f2d1-453b-ba1d-929c3cb62244',
+        'kind': 'sell',
+        'status': null,
+        'amount': 250,
+        'fiat_code': 'CUP',
+        'min_amount': null,
+        'max_amount': null,
+        'fiat_amount': 222,
+        'payment_method': 'hhhh',
+        'premium': 0,
+        'created_at': null,
+        'expires_at': null,
+      };
+
+      final order = Order.fromJson(smallOrder);
+
+      expect(order.status, equals(Status.pending));
+      expect(order.amount, equals(250));
+      expect(order.fiatCode, equals('CUP'));
+      expect(order.kind, equals(OrderType.sell));
+    });
   });
 
   group('Order Tests with JSON', () {

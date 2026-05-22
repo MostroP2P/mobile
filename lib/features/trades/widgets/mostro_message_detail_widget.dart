@@ -62,7 +62,51 @@ class MostroMessageDetail extends ConsumerWidget {
     WidgetRef ref,
   ) {
     final tradeState = ref.watch(orderNotifierProvider(orderId));
-    final action = tradeState.action;
+    final historyAsync = ref.watch(mostroMessageHistoryProvider(orderId));
+    final messages = historyAsync.maybeWhen<List<MostroMessage>>(
+      data: (m) => m,
+      orElse: () => const <MostroMessage>[],
+    );
+    final bondPhase = bondPayoutPhase(messages);
+
+    if (bondPhase == BondPayoutPhase.acknowledged) {
+      return S.of(context)!.bondInvoiceAcceptedMessage;
+    }
+
+    if (bondPhase == BondPayoutPhase.completed) {
+      final prev = _previousNonBondAction(messages) ?? tradeState.action;
+      final base = _renderActionMessage(context, ref, tradeState, prev);
+      final canRate =
+          messages.any((m) => m.action == actions.Action.rate);
+      final extension = canRate
+          ? S.of(context)!.bondPayoutCompletedWithRating
+          : S.of(context)!.bondPayoutCompletedMessage;
+      return '$base\n\n$extension';
+    }
+
+    return _renderActionMessage(context, ref, tradeState, tradeState.action);
+  }
+
+  actions.Action? _previousNonBondAction(List<MostroMessage> messages) {
+    final sorted = [...messages]..sort(
+        (a, b) => (b.timestamp ?? 0).compareTo(a.timestamp ?? 0),
+      );
+    for (final msg in sorted) {
+      final a = msg.action;
+      if (a == actions.Action.addBondInvoice) continue;
+      if (a == actions.Action.bondInvoiceAccepted) continue;
+      if (a == actions.Action.bondPayoutCompleted) continue;
+      return a;
+    }
+    return null;
+  }
+
+  String _renderActionMessage(
+    BuildContext context,
+    WidgetRef ref,
+    OrderState tradeState,
+    actions.Action? action,
+  ) {
     final orderPayload = tradeState.order;
     switch (action) {
       case actions.Action.newOrder:

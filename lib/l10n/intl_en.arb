@@ -1588,5 +1588,10 @@
     "addBondInvoiceSubmitButton": "SUBMIT INVOICE",
     "addBondInvoiceFailedToSubmit": "Failed to submit invoice. Please try again.",
     "bondPayoutBadge": "PAYOUT PENDING",
+    "bondPayoutInProgressBadge": "PAYOUT IN PROGRESS",
+    "bondInvoiceAcceptedMessage": "Mostro has accepted the Lightning invoice you provided to receive your share of the anti-abuse bond. Please wait for the payment to complete.",
+    "bondPayoutCompletedMessage": "You have received the payment of your share of the anti-abuse bond.",
+    "bondPayoutCompletedWithRating": "You have received the payment of your share of the anti-abuse bond. You can rate your counterparty.",
+    "bondPayoutCloseButton": "CLOSE",
     "errorLoadingBondPayout": "Error loading payout data"
 }

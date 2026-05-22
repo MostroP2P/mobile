@@ -1588,5 +1588,10 @@
     "addBondInvoiceSubmitButton": "ENVOYER LA FACTURE",
     "addBondInvoiceFailedToSubmit": "Échec de l'envoi de la facture. Veuillez réessayer.",
     "bondPayoutBadge": "PAIEMENT EN ATTENTE",
+    "bondPayoutInProgressBadge": "PAIEMENT EN COURS",
+    "bondInvoiceAcceptedMessage": "Mostro a accepté la facture Lightning que vous avez fournie pour recevoir votre part du dépôt anti-abus. Veuillez patienter jusqu'à ce que le paiement soit terminé.",
+    "bondPayoutCompletedMessage": "Vous avez reçu le paiement de votre part du dépôt anti-abus.",
+    "bondPayoutCompletedWithRating": "Vous avez reçu le paiement de votre part du dépôt anti-abus. Vous pouvez évaluer votre contrepartie.",
+    "bondPayoutCloseButton": "FERMER",
     "errorLoadingBondPayout": "Erreur lors du chargement des données de paiement"
 }
