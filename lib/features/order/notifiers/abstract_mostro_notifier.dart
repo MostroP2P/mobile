@@ -48,6 +48,13 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
     _userInitiatedCancels.add(orderId);
   }
 
+  /// Clears the user-initiated cancel flag for [orderId]. Used to roll back
+  /// the marker when the outbound cancel request fails so a later, unrelated
+  /// Action.canceled is not misclassified as user-initiated.
+  static void unmarkUserInitiatedCancel(String orderId) {
+    _userInitiatedCancels.remove(orderId);
+  }
+
   AbstractMostroNotifier(
     this.orderId,
     this.ref, {

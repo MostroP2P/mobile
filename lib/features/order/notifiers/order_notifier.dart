@@ -166,13 +166,16 @@ class OrderNotifier extends AbstractMostroNotifier {
     }
     // Flag this cancel as user-initiated so the upcoming Action.canceled
     // response is not misattributed to counterparty inactivity when the
-    // order is in waiting-payment / waiting-buyer-invoice.
+    // order is in waiting-payment / waiting-buyer-invoice. Roll back the
+    // flag if the outbound request fails, otherwise a future canceled event
+    // for the same orderId would be misclassified as user-initiated.
     AbstractMostroNotifier.markUserInitiatedCancel(orderId);
-    await mostroService.cancelOrder(orderId);
-    // The cancel was sent by the user: its `canceled` response means the
-    // bond is returned (no slash), so the session can be deleted immediately
-    // instead of waiting for a bond-slashed notice that will never arrive.
-    AbstractMostroNotifier.markUserInitiatedCancel(orderId);
+    try {
+      await mostroService.cancelOrder(orderId);
+    } catch (_) {
+      AbstractMostroNotifier.unmarkUserInitiatedCancel(orderId);
+      rethrow;
+    }
   }
 
   Future<void> sendFiatSent() async {
