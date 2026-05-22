@@ -114,7 +114,7 @@ class _BondPayoutInvoiceScreenState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            s.addBondInvoiceMessage,
+            s.addBondInvoiceSubmitLine(request.order.amount.toString()),
             style: const TextStyle(
               color: AppTheme.textPrimary,
               fontSize: 16,
