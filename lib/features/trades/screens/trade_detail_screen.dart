@@ -27,6 +27,7 @@ import 'package:mostro_mobile/shared/providers/time_provider.dart';
 import 'package:mostro_mobile/shared/widgets/dynamic_countdown_widget.dart';
 import 'package:mostro_mobile/features/disputes/providers/dispute_providers.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:mostro_mobile/shared/utils/bond_payout_helpers.dart';
 import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
 
 class TradeDetailScreen extends ConsumerWidget {
@@ -263,6 +264,27 @@ class TradeDetailScreen extends ConsumerWidget {
   Widget _buildOrderId(BuildContext context) {
     return OrderIdCard(
       orderId: orderId,
+    );
+  }
+
+  bool _hasPendingBondClaim(WidgetRef ref) {
+    final history = ref.watch(mostroMessageHistoryProvider(orderId));
+    final instance = ref.watch(orderRepositoryProvider).mostroInstance;
+    final claimWindowDays = instance?.bondPayoutClaimWindowDays ?? 15;
+    return history.maybeWhen(
+      data: (msgs) => hasPendingBondClaim(msgs, claimWindowDays),
+      orElse: () => false,
+    );
+  }
+
+  Widget _buildBondPayoutClaimButton(BuildContext context) {
+    return ElevatedButton(
+      key: const Key('bondPayoutClaimButton'),
+      onPressed: () => context.push('/bond_payout/$orderId'),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppTheme.mostroGreen,
+      ),
+      child: Text(S.of(context)!.addBondInvoiceButton),
     );
   }
 
@@ -820,6 +842,10 @@ class TradeDetailScreen extends ConsumerWidget {
         tradeState.dispute?.disputeId != null) {
       extraButtons
           .add(_buildViewDisputeButton(context, tradeState.dispute!.disputeId));
+    }
+
+    if (_hasPendingBondClaim(ref)) {
+      extraButtons.add(_buildBondPayoutClaimButton(context));
     }
 
     final allButtons = [

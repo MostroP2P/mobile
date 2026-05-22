@@ -1593,5 +1593,41 @@
     "threeMonths": "3 mesi",
     "sixMonths": "6 mesi",
     "oneYear": "1 anno",
-    "never": "Mai"
+    "never": "Mai",
+    "addBondInvoiceTitle": "Riscatta la tua parte",
+    "addBondInvoiceMessage": "Hai vinto la disputa. Invia una fattura Lightning per riscattare la tua parte del deposito anti-abuso confiscato.",
+    "addBondInvoiceWonLine": "Hai vinto la disputa per l'ordine {order_id}.",
+    "@addBondInvoiceWonLine": {
+        "placeholders": {
+            "order_id": {
+                "type": "String",
+                "description": "The order ID"
+            }
+        }
+    },
+    "addBondInvoiceSubmitLine": "Invia una fattura Lightning di {amount} sat per riscattare la parte del deposito anti-abuso che ti spetta.",
+    "@addBondInvoiceSubmitLine": {
+        "placeholders": {
+            "amount": {
+                "type": "String",
+                "description": "The amount of satoshis"
+            }
+        }
+    },
+    "addBondInvoiceDeadline": "Devi riscattarla entro il {date}.",
+    "@addBondInvoiceDeadline": {
+        "placeholders": {
+            "date": {
+                "type": "String",
+                "description": "The claim deadline"
+            }
+        }
+    },
+    "addBondInvoiceInputLabel": "Fattura Lightning",
+    "addBondInvoiceInputHint": "Incolla qui la tua fattura bolt11",
+    "addBondInvoiceButton": "RISCATTA",
+    "addBondInvoiceSubmitButton": "INVIA FATTURA",
+    "addBondInvoiceFailedToSubmit": "Errore nell'invio della fattura. Riprova.",
+    "bondPayoutBadge": "RISCATTO IN ATTESA",
+    "errorLoadingBondPayout": "Errore nel caricamento dei dati del riscatto"
 }

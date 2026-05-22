@@ -117,6 +117,21 @@ class OrderNotifier extends AbstractMostroNotifier {
     );
   }
 
+  Future<void> sendBondPayoutInvoice(String invoice) async {
+    await mostroService.sendBondPayoutInvoice(orderId, invoice);
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final outbound = MostroMessage(
+      action: Action.addBondInvoice,
+      id: orderId,
+      payload: PaymentRequest(lnInvoice: invoice),
+      timestamp: timestamp,
+    );
+    await ref.read(mostroStorageProvider).addMessage(
+          'outbound_addBondInvoice_${orderId}_$timestamp',
+          outbound,
+        );
+  }
+
   Future<void> cancelOrder() async {
     await mostroService.cancelOrder(orderId);
   }

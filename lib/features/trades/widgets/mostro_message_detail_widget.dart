@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/enums.dart';
-import 'package:mostro_mobile/data/models/session.dart';
+import 'package:mostro_mobile/data/models.dart';
 import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
@@ -9,6 +9,7 @@ import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/shared/providers/legible_handle_provider.dart';
+import 'package:mostro_mobile/shared/utils/bond_payout_helpers.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 import 'package:mostro_mobile/shared/utils/text_formatting.dart';
 
@@ -247,9 +248,23 @@ class MostroMessageDetail extends ConsumerWidget {
         return S.of(context)!.holdInvoicePaymentCanceled;
       case actions.Action.cantDo:
         return _getCantDoMessage(context, ref);
+      case actions.Action.addBondInvoice:
+        return _getBondPayoutMessage(context, ref);
       default:
         return 'No message found for action ${tradeState.action}'; // This is a fallback message for developers
     }
+  }
+
+  String _getBondPayoutMessage(BuildContext context, WidgetRef ref) {
+    final historyAsync = ref.watch(mostroMessageHistoryProvider(orderId));
+    final amount = historyAsync.maybeWhen(
+      data: (msgs) => latestBondPayoutRequest(msgs)?.order.amount,
+      orElse: () => null,
+    );
+    if (amount == null) {
+      return S.of(context)!.addBondInvoiceMessage;
+    }
+    return S.of(context)!.addBondInvoiceSubmitLine(amount.toString());
   }
 
   String _getCantDoMessage(BuildContext context, WidgetRef ref) {

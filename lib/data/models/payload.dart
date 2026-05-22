@@ -1,3 +1,4 @@
+import 'package:mostro_mobile/data/models/bond_payout_request.dart';
 import 'package:mostro_mobile/data/models/cant_do.dart';
 import 'package:mostro_mobile/data/models/dispute.dart';
 import 'package:mostro_mobile/data/models/next_trade.dart';
@@ -17,6 +18,8 @@ abstract class Payload {
     // If we check 'order' first, Disputes with nested Orders will be incorrectly parsed as Orders
     if (json.containsKey('dispute')) {
       return Dispute.fromJson(json);
+    } else if (json.containsKey('bond_payout_request')) {
+      return BondPayoutRequest.fromJson(json['bond_payout_request']);
     } else if (json.containsKey('order')) {
       return Order.fromJson(json['order']);
     } else if (json.containsKey('payment_request')) {

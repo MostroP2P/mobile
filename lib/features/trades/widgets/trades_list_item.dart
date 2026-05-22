@@ -7,10 +7,14 @@ import 'package:mostro_mobile/data/models/enums/role.dart';
 import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
+import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
+import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
+import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/time_provider.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
+import 'package:mostro_mobile/shared/utils/bond_payout_helpers.dart';
 import 'package:mostro_mobile/shared/utils/currency_utils.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
@@ -27,6 +31,14 @@ class TradesListItem extends ConsumerWidget {
     final role = session?.role;
     final isBuying = role == Role.buyer;
     final orderState = ref.watch(orderNotifierProvider(trade.orderId!));
+    final messageHistory =
+        ref.watch(mostroMessageHistoryProvider(trade.orderId!));
+    final instance = ref.watch(orderRepositoryProvider).mostroInstance;
+    final claimWindowDays = instance?.bondPayoutClaimWindowDays ?? 15;
+    final showBondPayoutBadge = messageHistory.maybeWhen(
+      data: (msgs) => hasPendingBondClaim(msgs, claimWindowDays),
+      orElse: () => false,
+    );
 
     // Determine if the user is the creator of the order based on role and order type
     final isCreator = isBuying
@@ -70,7 +82,11 @@ class TradesListItem extends ConsumerWidget {
                     // Second row: Status and role chips + Premium/Discount
                     Row(
                       children: [
-                        _buildStatusChip(context, orderState.status),
+                        _buildStatusChip(
+                          context,
+                          orderState.status,
+                          showBondPayoutBadge: showBondPayoutBadge,
+                        ),
                         const SizedBox(width: 8),
                         _buildRoleChip(context, isCreator),
                         const Spacer(),
@@ -180,10 +196,36 @@ class TradesListItem extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatusChip(BuildContext context, Status status) {
+  Widget _buildStatusChip(
+    BuildContext context,
+    Status status, {
+    bool showBondPayoutBadge = false,
+  }) {
     Color backgroundColor;
     Color textColor;
     String label;
+
+    if (showBondPayoutBadge) {
+      backgroundColor =
+          AppTheme.statusPendingBackground.withValues(alpha: 0.6);
+      textColor = AppTheme.statusPendingText;
+      label = S.of(context)!.bondPayoutBadge;
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: textColor,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      );
+    }
 
     switch (status) {
       case Status.active:

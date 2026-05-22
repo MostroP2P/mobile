@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models.dart';
+import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/features/restore/restore_mode_provider.dart';
 import 'package:mostro_mobile/shared/providers.dart';
@@ -12,6 +13,7 @@ import 'package:mostro_mobile/features/notifications/providers/notifications_pro
 import 'package:mostro_mobile/features/notifications/utils/notification_data_extractor.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
+import 'package:mostro_mobile/shared/utils/bond_payout_helpers.dart';
 
 class AbstractMostroNotifier extends StateNotifier<OrderState> {
   final String orderId;
@@ -263,6 +265,16 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
         sessionNotifier.saveSession(session);
         await _handleAddInvoiceWithAutoLightningAddress(event);
+        break;
+
+      case Action.addBondInvoice:
+        final request = event.getPayload<BondPayoutRequest>();
+        if (request == null) break;
+        final instance = ref.read(orderRepositoryProvider).mostroInstance;
+        final claimWindowDays = instance?.bondPayoutClaimWindowDays ?? 15;
+        if (isBondClaimExpired(request.slashedAt, claimWindowDays)) break;
+        ref.read(sessionNotifierProvider.notifier).saveSession(session);
+        navProvider.go('/bond_payout/$orderId');
         break;
 
       case Action.holdInvoicePaymentAccepted:
