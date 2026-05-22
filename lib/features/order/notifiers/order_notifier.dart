@@ -23,13 +23,16 @@ class OrderNotifier extends AbstractMostroNotifier {
 
   @override
   Future<void> handleEvent(MostroMessage event,
-      {bool bypassTimestampGate = false, Status? previousStatus}) async {
+      {bool bypassTimestampGate = false,
+      Status? previousStatus,
+      bool wasUserInitiatedCancel = false}) async {
     logger.i('OrderNotifier received event: ${event.action} for order $orderId');
 
     // Handle the event normally - timeout/cancellation logic is now in AbstractMostroNotifier
     await super.handleEvent(event,
         bypassTimestampGate: bypassTimestampGate,
-        previousStatus: previousStatus);
+        previousStatus: previousStatus,
+        wasUserInitiatedCancel: wasUserInitiatedCancel);
   }
 
   Future<void> sync() async {
@@ -161,6 +164,10 @@ class OrderNotifier extends AbstractMostroNotifier {
       await sessionNotifier.deleteSession(orderId);
       return;
     }
+    // Flag this cancel as user-initiated so the upcoming Action.canceled
+    // response is not misattributed to counterparty inactivity when the
+    // order is in waiting-payment / waiting-buyer-invoice.
+    AbstractMostroNotifier.markUserInitiatedCancel(orderId);
     await mostroService.cancelOrder(orderId);
     // The cancel was sent by the user: its `canceled` response means the
     // bond is returned (no slash), so the session can be deleted immediately
@@ -228,12 +235,15 @@ class OrderNotifier extends AbstractMostroNotifier {
             final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
             await sessionNotifier.deleteSession(orderId);
             
-            // Persist expiration in notification history (and show SnackBar)
+            // Persist expiration in notification history (and show SnackBar).
+            // Use a stable eventId so repeated public-event emissions for the
+            // same auto-expiration are deduplicated by the notifications store.
             final notifProvider = ref.read(notificationActionsProvider.notifier);
             await notifProvider.notify(
               Action.canceled,
               values: {'previous_status': Status.pending.value},
               orderId: orderId,
+              eventId: 'auto_expire:$orderId',
             );
 
             ref.invalidateSelf();
