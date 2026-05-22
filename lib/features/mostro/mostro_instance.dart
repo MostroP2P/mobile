@@ -126,10 +126,19 @@ extension MostroInstanceExtensions on NostrEvent {
   ///
   /// Use this for optional tags where absence is semantically meaningful
   /// (e.g. anti-abuse bond tags, which only appear on modern daemons).
+  ///
+  /// Empty or whitespace-only values are treated as missing so they cannot
+  /// be misparsed as legitimate data downstream (e.g. an empty
+  /// `bond_enabled=""` would otherwise be classified as `disabled` instead
+  /// of `unsupported`, breaking the three-state semantics).
   String? _getOptionalTagValue(String key) {
-    final tag = tags?.firstWhere((t) => t[0] == key, orElse: () => []);
+    final tag = tags?.firstWhere(
+      (t) => t.isNotEmpty && t[0] == key,
+      orElse: () => const <String>[],
+    );
     if (tag == null || tag.length < 2) return null;
-    return tag[1];
+    final value = tag[1].trim();
+    return value.isEmpty ? null : value;
   }
 
   String get pubKey => _getTagValue('d');
@@ -185,29 +194,49 @@ extension MostroInstanceExtensions on NostrEvent {
     }
   }
 
+  /// Parses `bond_slash_on_waiting_timeout`. Returns `null` for any value
+  /// other than `"true"` or `"false"` (case-insensitive) so malformed data
+  /// is not silently collapsed into a valid policy state.
   bool? get bondSlashOnWaitingTimeout {
-    final raw = _getOptionalTagValue('bond_slash_on_waiting_timeout');
-    if (raw == null) return null;
-    return raw.toLowerCase() == 'true';
+    final raw = _getOptionalTagValue('bond_slash_on_waiting_timeout')
+        ?.toLowerCase();
+    if (raw == 'true') return true;
+    if (raw == 'false') return false;
+    return null;
   }
 
+  /// Bond fraction of the order amount. Must be a percentage in `[0.0, 1.0]`;
+  /// out-of-range values are treated as invalid and yield `null`.
   double? get bondAmountPct {
     final raw = _getOptionalTagValue('bond_amount_pct');
-    return raw == null ? null : double.tryParse(raw);
+    final value = raw == null ? null : double.tryParse(raw);
+    if (value == null) return null;
+    return (value >= 0.0 && value <= 1.0) ? value : null;
   }
 
+  /// Minimum bond floor in sats. Negative values are treated as invalid.
   int? get bondBaseAmountSats {
     final raw = _getOptionalTagValue('bond_base_amount_sats');
-    return raw == null ? null : int.tryParse(raw);
+    final value = raw == null ? null : int.tryParse(raw);
+    if (value == null) return null;
+    return value >= 0 ? value : null;
   }
 
+  /// Node share of a slashed bond. Spec constrains this to `[0.0, 1.0]`;
+  /// out-of-range values are treated as invalid and yield `null`.
   double? get bondSlashNodeSharePct {
     final raw = _getOptionalTagValue('bond_slash_node_share_pct');
-    return raw == null ? null : double.tryParse(raw);
+    final value = raw == null ? null : double.tryParse(raw);
+    if (value == null) return null;
+    return (value >= 0.0 && value <= 1.0) ? value : null;
   }
 
+  /// Payout claim window in days. Must be positive; non-positive or
+  /// unparseable values yield `null`.
   int? get bondPayoutClaimWindowDays {
     final raw = _getOptionalTagValue('bond_payout_claim_window_days');
-    return raw == null ? null : int.tryParse(raw);
+    final value = raw == null ? null : int.tryParse(raw);
+    if (value == null) return null;
+    return value > 0 ? value : null;
   }
 }

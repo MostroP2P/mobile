@@ -146,5 +146,113 @@ void main() {
       expect(instance.fee, 0.006);
       expect(instance.expirationSeconds, 900);
     });
+
+    test('bondSlashOnWaitingTimeout parses true and false case-insensitively', () {
+      for (final entry in {
+        'true': true,
+        'TRUE': true,
+        'false': false,
+        'FALSE': false,
+      }.entries) {
+        final event = buildEvent([
+          const ['bond_enabled', 'true'],
+          ['bond_slash_on_waiting_timeout', entry.key],
+        ]);
+        final instance = MostroInstance.fromEvent(event);
+        expect(instance.bondSlashOnWaitingTimeout, entry.value,
+            reason: entry.key);
+      }
+    });
+
+    test('bondSlashOnWaitingTimeout returns null for malformed values', () {
+      for (final raw in ['foo', 'yes', 'no', '1', '0', '']) {
+        final event = buildEvent([
+          const ['bond_enabled', 'true'],
+          ['bond_slash_on_waiting_timeout', raw],
+        ]);
+        final instance = MostroInstance.fromEvent(event);
+        expect(instance.bondSlashOnWaitingTimeout, isNull, reason: '"$raw"');
+      }
+    });
+
+    test('empty tag value is treated as missing (preserves three-state semantics)', () {
+      // bond_enabled with an empty value must not collapse to disabled —
+      // it has to behave as if the tag were absent (unsupported).
+      final event = buildEvent(const [
+        ['bond_enabled', ''],
+      ]);
+      final instance = MostroInstance.fromEvent(event);
+      expect(instance.bondPolicy, BondPolicy.unsupported);
+    });
+
+    test('whitespace-only tag value is treated as missing', () {
+      final event = buildEvent(const [
+        ['bond_enabled', '   '],
+      ]);
+      final instance = MostroInstance.fromEvent(event);
+      expect(instance.bondPolicy, BondPolicy.unsupported);
+    });
+
+    test('bondSlashNodeSharePct out of [0.0, 1.0] range → null', () {
+      for (final raw in ['-0.1', '1.5', '2', '-1']) {
+        final event = buildEvent([
+          const ['bond_enabled', 'true'],
+          ['bond_slash_node_share_pct', raw],
+        ]);
+        final instance = MostroInstance.fromEvent(event);
+        expect(instance.bondSlashNodeSharePct, isNull, reason: raw);
+      }
+    });
+
+    test('bondSlashNodeSharePct accepts boundary values 0.0 and 1.0', () {
+      for (final raw in ['0.0', '1.0', '0.5']) {
+        final event = buildEvent([
+          const ['bond_enabled', 'true'],
+          ['bond_slash_node_share_pct', raw],
+        ]);
+        final instance = MostroInstance.fromEvent(event);
+        expect(instance.bondSlashNodeSharePct, double.parse(raw), reason: raw);
+      }
+    });
+
+    test('bondAmountPct out of [0.0, 1.0] range → null', () {
+      for (final raw in ['-0.01', '1.5', '2']) {
+        final event = buildEvent([
+          const ['bond_enabled', 'true'],
+          ['bond_amount_pct', raw],
+        ]);
+        final instance = MostroInstance.fromEvent(event);
+        expect(instance.bondAmountPct, isNull, reason: raw);
+      }
+    });
+
+    test('bondBaseAmountSats negative value → null', () {
+      final event = buildEvent(const [
+        ['bond_enabled', 'true'],
+        ['bond_base_amount_sats', '-100'],
+      ]);
+      final instance = MostroInstance.fromEvent(event);
+      expect(instance.bondBaseAmountSats, isNull);
+    });
+
+    test('bondBaseAmountSats accepts zero', () {
+      final event = buildEvent(const [
+        ['bond_enabled', 'true'],
+        ['bond_base_amount_sats', '0'],
+      ]);
+      final instance = MostroInstance.fromEvent(event);
+      expect(instance.bondBaseAmountSats, 0);
+    });
+
+    test('bondPayoutClaimWindowDays zero or negative → null', () {
+      for (final raw in ['0', '-1', '-15']) {
+        final event = buildEvent([
+          const ['bond_enabled', 'true'],
+          ['bond_payout_claim_window_days', raw],
+        ]);
+        final instance = MostroInstance.fromEvent(event);
+        expect(instance.bondPayoutClaimWindowDays, isNull, reason: raw);
+      }
+    });
   });
 }
