@@ -22,11 +22,14 @@ class OrderNotifier extends AbstractMostroNotifier {
   }
 
   @override
-  Future<void> handleEvent(MostroMessage event, {bool bypassTimestampGate = false}) async {
+  Future<void> handleEvent(MostroMessage event,
+      {bool bypassTimestampGate = false, Status? previousStatus}) async {
     logger.i('OrderNotifier received event: ${event.action} for order $orderId');
 
     // Handle the event normally - timeout/cancellation logic is now in AbstractMostroNotifier
-    await super.handleEvent(event, bypassTimestampGate: bypassTimestampGate);
+    await super.handleEvent(event,
+        bypassTimestampGate: bypassTimestampGate,
+        previousStatus: previousStatus);
   }
 
   Future<void> sync() async {
@@ -225,10 +228,14 @@ class OrderNotifier extends AbstractMostroNotifier {
             final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
             await sessionNotifier.deleteSession(orderId);
             
-            // Show expiration notification
+            // Persist expiration in notification history (and show SnackBar)
             final notifProvider = ref.read(notificationActionsProvider.notifier);
-            notifProvider.showCustomMessage('orderCanceled');
-            
+            await notifProvider.notify(
+              Action.canceled,
+              values: {'previous_status': Status.pending.value},
+              orderId: orderId,
+            );
+
             ref.invalidateSelf();
           }
         } catch (e, stack) {

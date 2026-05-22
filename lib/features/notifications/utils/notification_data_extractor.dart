@@ -10,7 +10,7 @@ import 'package:mostro_mobile/shared/providers.dart';
 class NotificationDataExtractor {
   /// Extract notification data from MostroMessage
   /// If ref is null, will use fallback methods for nickname resolution
-  static Future<NotificationData?> extractFromMostroMessage(MostroMessage event, Ref? ref, {Session? session}) async {
+  static Future<NotificationData?> extractFromMostroMessage(MostroMessage event, Ref? ref, {Session? session, Status? previousStatus}) async {
     Map<String, dynamic> values = {};
     bool isTemporary = false;
     
@@ -148,8 +148,13 @@ class NotificationDataExtractor {
         break;
         
       case Action.canceled:
-        // Canceled orders don't generate persistent notifications
-        return null;
+        // Persist cancellations in notification history with a variant message
+        // based on the order's previous status, so the user can review what
+        // happened to the order later from the notifications screen.
+        if (previousStatus != null) {
+          values['previous_status'] = previousStatus.value;
+        }
+        break;
         
       case Action.cooperativeCancelInitiatedByYou:
       case Action.cooperativeCancelNoFiatByYou:

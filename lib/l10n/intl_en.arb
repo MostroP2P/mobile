@@ -1207,6 +1207,8 @@
     "notification_dispute_started_message": "A dispute has been initiated",
     "notification_order_canceled_title": "Order canceled",
     "notification_order_canceled_message": "The order has been canceled",
+    "notification_order_canceled_by_seller_inactivity_message": "The seller did not continue the order. The order has been cancelled.",
+    "notification_order_canceled_by_buyer_inactivity_message": "The buyer did not continue the order. The order has been cancelled.",
     "notification_cooperative_cancel_initiated_by_you_title": "Cancellation requested",
     "notification_cooperative_cancel_initiated_by_you_message": "You requested to cancel the order, waiting for peer confirmation",
     "notification_cooperative_cancel_initiated_by_peer_title": "Cancellation request",

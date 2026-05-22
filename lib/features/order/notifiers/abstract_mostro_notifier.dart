@@ -84,6 +84,11 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
               // Cancel timer on ANY response from Mostro for this order
               cancelSessionTimeoutCleanup(orderId);
 
+              // Capture previous status before updating state, so downstream
+              // notification handlers can differentiate messages (e.g. show a
+              // counterparty-specific cancellation reason).
+              final previousStatus = state.status;
+
               if (mounted) {
                 state = state.updateWith(msg);
               }
@@ -94,7 +99,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
                           .millisecondsSinceEpoch) {
                 logger.i(
                     'Message timestamp check passed, calling handleEvent for ${msg.action}');
-                unawaited(handleEvent(msg));
+                unawaited(handleEvent(msg, previousStatus: previousStatus));
               } else {
                 logger.w(
                     'Message timestamp check failed for ${msg.action}. Timestamp: ${msg.timestamp}, Current: ${DateTime.now().millisecondsSinceEpoch}, Threshold: ${DateTime.now().subtract(const Duration(seconds: 60)).millisecondsSinceEpoch}');
@@ -105,7 +110,9 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
                     msg.action == Action.disputeInitiatedByYou) {
                   logger.i(
                       'Processing dispute action ${msg.action} despite old timestamp (state update only)');
-                  unawaited(handleEvent(msg, bypassTimestampGate: true));
+                  unawaited(handleEvent(msg,
+                      bypassTimestampGate: true,
+                      previousStatus: previousStatus));
                 }
               }
             }
@@ -138,7 +145,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
   }
 
   Future<void> handleEvent(MostroMessage event,
-      {bool bypassTimestampGate = false}) async {
+      {bool bypassTimestampGate = false, Status? previousStatus}) async {
     // Skip if we've already processed this exact event
     final eventKey = '${event.id}_${event.action}_${event.timestamp}';
     if (_processedEventIds.contains(eventKey)) {
@@ -159,7 +166,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
     // Extract notification data using the centralized extractor
     final notificationData =
         await NotificationDataExtractor.extractFromMostroMessage(event, ref,
-            session: session);
+            session: session, previousStatus: previousStatus);
 
     // Only notify for recent events; old disputes still update state below
     if (notificationData != null && (isRecent || !bypassTimestampGate)) {
@@ -221,12 +228,8 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
             logger.i('Session deleted for canceled order $orderId');
           }
 
-          // Show cancellation notification
-          if (isRecent || !bypassTimestampGate) {
-            final notifProvider =
-                ref.read(notificationActionsProvider.notifier);
-            notifProvider.showCustomMessage('orderCanceled');
-          }
+          // SnackBar + history entry are delivered via the centralized
+          // NotificationDataExtractor + notify() path above.
 
           // Navigate to main order book screen
           if (isRecent && !bypassTimestampGate) {
