@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as mostro_action;
 import 'package:mostro_mobile/data/models/notification.dart';
 import 'package:mostro_mobile/features/notifications/providers/notifications_provider.dart';
-import 'package:mostro_mobile/features/notifications/utils/notification_message_mapper.dart';
-import 'package:mostro_mobile/features/notifications/widgets/detail_row.dart';
 import 'package:mostro_mobile/features/notifications/widgets/notification_type_icon.dart';
 import 'package:mostro_mobile/features/notifications/widgets/notification_content.dart';
 import 'package:mostro_mobile/features/notifications/widgets/notification_menu.dart';
@@ -174,10 +171,10 @@ class NotificationItem extends ConsumerWidget {
   void _showBondSlashedDialog(BuildContext context) {
     final s = S.of(context)!;
     final data = notification.data;
-    final amount = data['amount'];
+    final amount = (data['amount'] ?? '').toString();
     final orderId =
         (data['order_id'] ?? notification.orderId ?? '').toString();
-    final fiatAmount = data['fiat_amount'];
+    final fiatAmount = (data['fiat_amount'] ?? '').toString();
     final fiatCode = (data['fiat_code'] ?? '').toString();
     final paymentMethod = (data['payment_method'] ?? '').toString();
 
@@ -186,118 +183,29 @@ class NotificationItem extends ConsumerWidget {
       builder: (context) => AlertDialog(
         backgroundColor: AppTheme.backgroundDark,
         title: Text(
-          NotificationMessageMapper.getLocalizedTitle(
-              context, mostro_action.Action.bondSlashed),
+          s.notification_bond_slashed_title,
           style: const TextStyle(color: AppTheme.textPrimary),
         ),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                NotificationMessageMapper.getLocalizedMessage(
-                    context, mostro_action.Action.bondSlashed),
-                style: const TextStyle(color: AppTheme.textSecondary),
-              ),
-              const SizedBox(height: 16),
-              _bondSlashedDetails(
-                context,
-                bond: amount != null ? '$amount sats' : s.notAvailable,
-                orderId: orderId,
-                fiat: fiatAmount != null ? '$fiatAmount $fiatCode' : fiatCode,
-                paymentMethod: paymentMethod,
-              ),
-            ],
-          ),
+        content: Text(
+          s.notification_bond_slashed_detail(
+              amount, orderId, fiatAmount, fiatCode, paymentMethod),
+          style: const TextStyle(color: AppTheme.textSecondary),
         ),
         actions: [
-          TextButton(
+          ElevatedButton(
             onPressed: () => Navigator.of(context).pop(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.activeColor,
+              foregroundColor: Colors.black,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            ),
             child: Text(
               s.close,
-              style: const TextStyle(color: AppTheme.textSecondary),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _bondSlashedDetails(
-    BuildContext context, {
-    required String bond,
-    required String orderId,
-    required String fiat,
-    required String paymentMethod,
-  }) {
-    final s = S.of(context)!;
-    return Container(
-      width: double.infinity,
-      padding: AppTheme.smallPadding,
-      decoration: BoxDecoration(
-        color: AppTheme.backgroundInput.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: AppTheme.textInactive.withValues(alpha: 0.2),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          DetailRow(
-            label: s.notificationBondAmount,
-            value: bond,
-            icon: HeroIcons.banknotes,
-          ),
-          // Order id is shown in full, so it wraps instead of truncating.
-          _orderIdRow(context, s.notificationOrderId, orderId),
-          DetailRow(
-            label: s.notificationAmount,
-            value: fiat,
-            icon: HeroIcons.currencyDollar,
-          ),
-          DetailRow(
-            label: s.notificationPaymentMethod,
-            value: paymentMethod,
-            icon: HeroIcons.creditCard,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _orderIdRow(BuildContext context, String label, String value) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          HeroIcon(
-            HeroIcons.hashtag,
-            style: HeroIconStyle.outline,
-            size: 14,
-            color: theme.iconTheme.color?.withValues(alpha: 0.7),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            '$label:',
-            style: theme.textTheme.bodySmall?.copyWith(
-              fontWeight: FontWeight.w500,
-              color:
-                  theme.textTheme.bodySmall?.color?.withValues(alpha: 0.8),
-            ),
-          ),
-          const SizedBox(width: 4),
-          Expanded(
-            child: Text(
-              value,
-              style: theme.textTheme.bodySmall?.copyWith(
-                fontFamily: 'monospace',
-                color: theme.textTheme.bodySmall?.color,
-              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
           ),
         ],

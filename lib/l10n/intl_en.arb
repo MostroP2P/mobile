@@ -1205,9 +1205,28 @@
     "notificationExpiresIn": "Expires in",
     "notificationRate": "Rate",
     "notificationOrderId": "Order ID",
-    "notificationBondAmount": "Bond",
     "notification_bond_slashed_title": "Anti-abuse bond lost",
     "notification_bond_slashed_message": "You lost your anti-abuse bond because you didn't respond within the required time.",
+    "notification_bond_slashed_detail": "You lost your anti-abuse bond of {amount} sats for order {orderId}, for {fiatAmount} {fiatCode} with payment method {paymentMethod}, because you didn't respond within the required time.",
+    "@notification_bond_slashed_detail": {
+        "placeholders": {
+            "amount": {
+                "type": "String"
+            },
+            "orderId": {
+                "type": "String"
+            },
+            "fiatAmount": {
+                "type": "String"
+            },
+            "fiatCode": {
+                "type": "String"
+            },
+            "paymentMethod": {
+                "type": "String"
+            }
+        }
+    },
     "notificationDelete": "Delete",
     "confirmDeleteNotification": "Are you sure you want to delete this notification?",
     "confirmClearAll": "This will permanently delete all notifications. This action cannot be undone.",
