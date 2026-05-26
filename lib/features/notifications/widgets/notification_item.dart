@@ -135,6 +135,7 @@ class NotificationItem extends ConsumerWidget {
         case mostro_action.Action.addBondInvoice:
         case mostro_action.Action.bondInvoiceAccepted:
         case mostro_action.Action.bondPayoutCompleted:
+        case mostro_action.Action.bondSlashed:
           break;
       }
     }

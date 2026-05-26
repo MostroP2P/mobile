@@ -210,6 +210,7 @@ class NotificationDataExtractor {
       case Action.addBondInvoice:
       case Action.bondInvoiceAccepted:
       case Action.bondPayoutCompleted:
+      case Action.bondSlashed:
         return null;
 
       default:

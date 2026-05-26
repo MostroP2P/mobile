@@ -97,6 +97,7 @@ class NotificationMessageMapper {
       case mostro.Action.addBondInvoice:
       case mostro.Action.bondInvoiceAccepted:
       case mostro.Action.bondPayoutCompleted:
+      case mostro.Action.bondSlashed:
         return 'TODO: implement  title key if needed';
     }
   }
@@ -203,6 +204,7 @@ class NotificationMessageMapper {
       case mostro.Action.addBondInvoice:
       case mostro.Action.bondInvoiceAccepted:
       case mostro.Action.bondPayoutCompleted:
+      case mostro.Action.bondSlashed:
         return 'TODO: implement message key if needed';
 
     }

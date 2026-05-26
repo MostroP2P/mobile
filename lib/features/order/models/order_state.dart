@@ -240,12 +240,12 @@ class OrderState {
       logger.i('Auto-closed dispute: cooperative cancellation');
     }
 
-    // Phase 3.5: bond payout acks carry a SmallOrder whose `amount` is the
-    // counterparty share and whose `status` is null. They must NOT overwrite
-    // the tracked trade order, which holds the real trade amount and status.
+    // Bond acks (3.5) and slash notice (4): their SmallOrder has a null status
+    // and a bond-sized amount; don't let it overwrite the tracked trade order.
     final bool isBondPayoutAck =
         message.action == Action.bondInvoiceAccepted ||
-            message.action == Action.bondPayoutCompleted;
+            message.action == Action.bondPayoutCompleted ||
+            message.action == Action.bondSlashed;
 
     final newState = copyWith(
       status: newStatus,
@@ -372,13 +372,11 @@ class OrderState {
       case Action.addBondInvoice:
         return payloadStatus ?? status;
 
-      // Phase 3.5 bond payout acks: always preserve current status.
-      // Their payload is an `Order` (SmallOrder) whose `status` is null on
-      // the wire; `Order.fromJson` defaults that null to `Status.pending`,
-      // which would otherwise overwrite the real terminal status of the
-      // order (success / settledByAdmin / canceledByAdmin / etc.).
+      // Bond acks (3.5) and slash notice (4): SmallOrder status is null;
+      // keep the order's real status instead of defaulting to pending.
       case Action.bondInvoiceAccepted:
       case Action.bondPayoutCompleted:
+      case Action.bondSlashed:
         return status;
 
       // For actions that include Order payload, use the payload status
