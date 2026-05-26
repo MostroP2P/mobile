@@ -27,6 +27,10 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
   // Timer storage for orphan session cleanup
   static final Map<String, Timer> _sessionTimeouts = {};
 
+  // Deferred session deletion for canceled bonded orders, so a trailing
+  // bond-slashed notice can still be received before the trade key is dropped.
+  static final Map<String, Timer> _bondCancelDeletionTimers = {};
+
   AbstractMostroNotifier(
     this.orderId,
     this.ref, {
@@ -187,11 +191,17 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
           logger.i(
               'CANCELLATION: Received cancellation message from Mostro for order $orderId');
 
-          // Delete session - this applies to both maker and taker scenarios
+          // If this order had a bond, a bond-slashed notice may still be in
+          // flight. Defer deleting the session (and its trade key) so the
+          // notice can still be received; otherwise delete immediately.
           final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
-          await sessionNotifier.deleteSession(orderId);
-
-          logger.i('Session deleted for canceled order $orderId');
+          if (await _orderHadBond(orderId)) {
+            _startBondCancelDeletion(orderId, ref);
+            logger.i('Deferred session deletion for bonded order $orderId');
+          } else {
+            await sessionNotifier.deleteSession(orderId);
+            logger.i('Session deleted for canceled order $orderId');
+          }
 
           // Show cancellation notification
           if (isRecent || !bypassTimestampGate) {
@@ -205,8 +215,17 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
             navProvider.go('/');
           }
 
-          return; // Session was deleted, no further processing needed
+          return; // Cancellation handled; nothing else to process
         }
+        break;
+
+      case Action.bondSlashed:
+        // The forfeiture notification was already persisted at the top of
+        // handleEvent. The notice arrived, so cancel the deferred deletion
+        // and release the session now.
+        _bondCancelDeletionTimers.remove(orderId)?.cancel();
+        await ref.read(sessionNotifierProvider.notifier).deleteSession(orderId);
+        logger.i('Session deleted after bond-slashed for order $orderId');
         break;
 
       case Action.buyerTookOrder:
@@ -702,6 +721,36 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
       logger.i(
           'Cancelled 10s timeout timer for requestId: $requestId - Mostro responded');
     }
+  }
+
+  /// Whether a bond was requested for this order (a pay-bond-invoice was sent).
+  Future<bool> _orderHadBond(String orderId) async {
+    try {
+      final messages = await ref
+          .read(mostroStorageProvider)
+          .getAllMessagesForOrderId(orderId);
+      return messages.any((m) => m.action == Action.payBondInvoice);
+    } catch (e) {
+      logger.e('Failed to check bond for order $orderId', error: e);
+      return false;
+    }
+  }
+
+  /// Defers deletion of a canceled bonded order's session for 60s so a trailing
+  /// bond-slashed notice can still be received and surfaced. Cancelled early by
+  /// the bond-slashed handler when the notice arrives.
+  static void _startBondCancelDeletion(String orderId, Ref ref) {
+    _bondCancelDeletionTimers[orderId]?.cancel();
+    _bondCancelDeletionTimers[orderId] = Timer(const Duration(seconds: 60), () {
+      _bondCancelDeletionTimers.remove(orderId);
+      try {
+        ref.read(sessionNotifierProvider.notifier).deleteSession(orderId);
+        logger.i('Session deleted after bond-cancel grace window: $orderId');
+      } catch (e) {
+        logger.e('Failed to delete session after grace window: $orderId',
+            error: e);
+      }
+    });
   }
 
   /// Handles add-invoice action with automatic Lightning address sending if available
