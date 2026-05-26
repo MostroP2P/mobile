@@ -35,9 +35,17 @@ class TradesListItem extends ConsumerWidget {
         ref.watch(mostroMessageHistoryProvider(trade.orderId!));
     final instance = ref.watch(orderRepositoryProvider).mostroInstance;
     final claimWindowDays = instance?.bondPayoutClaimWindowDays ?? 15;
-    final showBondPayoutBadge = messageHistory.maybeWhen(
-      data: (msgs) => hasPendingBondClaim(msgs, claimWindowDays),
-      orElse: () => false,
+    final bondBadgeLabel = messageHistory.maybeWhen<String?>(
+      data: (msgs) {
+        if (hasPendingBondClaim(msgs, claimWindowDays)) {
+          return S.of(context)!.bondPayoutBadge;
+        }
+        if (bondPayoutPhase(msgs) == BondPayoutPhase.acknowledged) {
+          return S.of(context)!.bondPayoutInProgressBadge;
+        }
+        return null;
+      },
+      orElse: () => null,
     );
 
     // Determine if the user is the creator of the order based on role and order type
@@ -85,7 +93,7 @@ class TradesListItem extends ConsumerWidget {
                         _buildStatusChip(
                           context,
                           orderState.status,
-                          showBondPayoutBadge: showBondPayoutBadge,
+                          bondBadgeLabel: bondBadgeLabel,
                         ),
                         const SizedBox(width: 8),
                         _buildRoleChip(context, isCreator),
@@ -199,17 +207,17 @@ class TradesListItem extends ConsumerWidget {
   Widget _buildStatusChip(
     BuildContext context,
     Status status, {
-    bool showBondPayoutBadge = false,
+    String? bondBadgeLabel,
   }) {
     Color backgroundColor;
     Color textColor;
     String label;
 
-    if (showBondPayoutBadge) {
+    if (bondBadgeLabel != null) {
       backgroundColor =
           AppTheme.statusPendingBackground.withValues(alpha: 0.6);
       textColor = AppTheme.statusPendingText;
-      label = S.of(context)!.bondPayoutBadge;
+      label = bondBadgeLabel;
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
         decoration: BoxDecoration(

@@ -43,6 +43,22 @@ MostroMessage<PaymentRequest> _paymentReplyMsg({required int timestamp}) {
   );
 }
 
+MostroMessage _invoiceAcceptedMsg({required int timestamp}) {
+  return MostroMessage(
+    action: Action.bondInvoiceAccepted,
+    id: 'order-1',
+    timestamp: timestamp,
+  );
+}
+
+MostroMessage _payoutCompletedMsg({required int timestamp}) {
+  return MostroMessage(
+    action: Action.bondPayoutCompleted,
+    id: 'order-1',
+    timestamp: timestamp,
+  );
+}
+
 void main() {
   group('latestBondPayoutRequest', () {
     test('returns null on empty message list', () {
@@ -94,6 +110,63 @@ void main() {
     });
   });
 
+  group('bondPayoutPhase', () {
+    test('none when there is no bond-flow message', () {
+      expect(bondPayoutPhase([]), BondPayoutPhase.none);
+      final unrelated = MostroMessage(
+        action: Action.fiatSent,
+        id: 'order-1',
+        timestamp: 100,
+      );
+      expect(bondPayoutPhase([unrelated]), BondPayoutPhase.none);
+    });
+
+    test('pending when latest is an inbound BondPayoutRequest', () {
+      final messages = [_addBondInvoiceMsg(timestamp: 100)];
+      expect(bondPayoutPhase(messages), BondPayoutPhase.pending);
+    });
+
+    test('acknowledged when latest is bondInvoiceAccepted', () {
+      final messages = [
+        _addBondInvoiceMsg(timestamp: 100),
+        _paymentReplyMsg(timestamp: 200),
+        _invoiceAcceptedMsg(timestamp: 300),
+      ];
+      expect(bondPayoutPhase(messages), BondPayoutPhase.acknowledged);
+    });
+
+    test('completed when latest is bondPayoutCompleted', () {
+      final messages = [
+        _addBondInvoiceMsg(timestamp: 100),
+        _paymentReplyMsg(timestamp: 200),
+        _invoiceAcceptedMsg(timestamp: 300),
+        _payoutCompletedMsg(timestamp: 400),
+      ];
+      expect(bondPayoutPhase(messages), BondPayoutPhase.completed);
+    });
+
+    test('retry: new addBondInvoice after acknowledged returns to pending',
+        () {
+      final messages = [
+        _addBondInvoiceMsg(timestamp: 100),
+        _paymentReplyMsg(timestamp: 200),
+        _invoiceAcceptedMsg(timestamp: 300),
+        _addBondInvoiceMsg(timestamp: 400, slashedAt: 9999),
+      ];
+      expect(bondPayoutPhase(messages), BondPayoutPhase.pending);
+    });
+
+    test('phase is decided by timestamp ordering, not input order', () {
+      final messages = [
+        _payoutCompletedMsg(timestamp: 400),
+        _invoiceAcceptedMsg(timestamp: 300),
+        _addBondInvoiceMsg(timestamp: 100),
+        _paymentReplyMsg(timestamp: 200),
+      ];
+      expect(bondPayoutPhase(messages), BondPayoutPhase.completed);
+    });
+  });
+
   group('hasPendingBondClaim', () {
     test('false when no add-bond-invoice is present', () {
       expect(hasPendingBondClaim([], _claimWindowDays), isFalse);
@@ -124,6 +197,26 @@ void main() {
         _paymentReplyMsg(timestamp: 200),
       ];
       expect(hasPendingBondClaim(messages, _claimWindowDays), isFalse);
+    });
+
+    test('false after bondInvoiceAccepted (acknowledged phase)', () {
+      final slashedAtSecs = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+      final messages = [
+        _addBondInvoiceMsg(timestamp: 100, slashedAt: slashedAtSecs),
+        _invoiceAcceptedMsg(timestamp: 200),
+      ];
+      expect(hasPendingBondClaim(messages, _claimWindowDays), isFalse);
+    });
+
+    test('true again when a retry addBondInvoice arrives after acknowledged',
+        () {
+      final slashedAtSecs = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+      final messages = [
+        _addBondInvoiceMsg(timestamp: 100, slashedAt: slashedAtSecs),
+        _invoiceAcceptedMsg(timestamp: 200),
+        _addBondInvoiceMsg(timestamp: 300, slashedAt: slashedAtSecs),
+      ];
+      expect(hasPendingBondClaim(messages, _claimWindowDays), isTrue);
     });
   });
 }

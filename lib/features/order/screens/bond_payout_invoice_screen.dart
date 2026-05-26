@@ -45,6 +45,21 @@ class _BondPayoutInvoiceScreenState
       appBar: OrderAppBar(title: s.addBondInvoiceTitle),
       body: historyAsync.when(
         data: (messages) {
+          final phase = bondPayoutPhase(messages);
+
+          if (phase == BondPayoutPhase.acknowledged) {
+            return _buildInfoBody(
+              s: s,
+              message: s.bondInvoiceAcceptedMessage,
+            );
+          }
+          if (phase == BondPayoutPhase.completed) {
+            return _buildInfoBody(
+              s: s,
+              message: s.bondPayoutCompletedMessage,
+            );
+          }
+
           final request = latestBondPayoutRequest(messages);
           if (request == null) {
             return Center(
@@ -192,6 +207,53 @@ class _BondPayoutInvoiceScreenState
                         fontWeight: FontWeight.w600,
                       ),
                     ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoBody({required S s, required String message}) {
+    return SingleChildScrollView(
+      padding: EdgeInsets.fromLTRB(
+        16,
+        16,
+        16,
+        16 + MediaQuery.of(context).viewPadding.bottom,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            message,
+            style: const TextStyle(
+              color: AppTheme.textPrimary,
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              key: const Key('bondPayoutCloseButton'),
+              onPressed: () => context.go('/'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.activeColor,
+                foregroundColor: Colors.black,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+              child: Text(
+                s.bondPayoutCloseButton,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ),
         ],

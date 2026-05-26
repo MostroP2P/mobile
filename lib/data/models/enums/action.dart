@@ -5,6 +5,8 @@ enum Action {
   payInvoice('pay-invoice'),
   payBondInvoice('pay-bond-invoice'),
   addBondInvoice('add-bond-invoice'),
+  bondInvoiceAccepted('bond-invoice-accepted'),
+  bondPayoutCompleted('bond-payout-completed'),
   fiatSent('fiat-sent'),
   fiatSentOk('fiat-sent-ok'),
   release('release'),

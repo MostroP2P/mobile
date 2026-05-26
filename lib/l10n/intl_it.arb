@@ -1629,5 +1629,10 @@
     "addBondInvoiceSubmitButton": "INVIA FATTURA",
     "addBondInvoiceFailedToSubmit": "Errore nell'invio della fattura. Riprova.",
     "bondPayoutBadge": "RISCATTO IN ATTESA",
+    "bondPayoutInProgressBadge": "RISCATTO IN CORSO",
+    "bondInvoiceAcceptedMessage": "Mostro ha accettato la fattura Lightning che hai fornito per ricevere la tua parte del deposito anti-abuso. Attendi il completamento del pagamento.",
+    "bondPayoutCompletedMessage": "Hai ricevuto il pagamento della tua parte del deposito anti-abuso.",
+    "bondPayoutCompletedWithRating": "Hai ricevuto il pagamento della tua parte del deposito anti-abuso. Puoi valutare la tua controparte.",
+    "bondPayoutCloseButton": "CHIUDI",
     "errorLoadingBondPayout": "Errore nel caricamento dei dati del riscatto"
 }

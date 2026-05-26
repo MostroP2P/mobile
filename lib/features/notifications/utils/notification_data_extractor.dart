@@ -208,6 +208,8 @@ class NotificationDataExtractor {
         return null;
 
       case Action.addBondInvoice:
+      case Action.bondInvoiceAccepted:
+      case Action.bondPayoutCompleted:
         return null;
 
       default:

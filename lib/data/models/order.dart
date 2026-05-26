@@ -84,8 +84,10 @@ class Order implements Payload {
         }
       }
 
-      // Validate required fields
-      ['kind', 'status', 'fiat_code', 'fiat_amount', 'payment_method']
+      // Validate required fields. `status` is intentionally not required:
+      // Phase 3.5 bond payout acks (`bond-invoice-accepted` /
+      // `bond-payout-completed`) carry a SmallOrder with `status: null`.
+      ['kind', 'fiat_code', 'fiat_amount', 'payment_method']
           .forEach(validateField);
 
       // Parse and validate integer fields with type safety
@@ -157,10 +159,13 @@ class Order implements Payload {
             'Min amount ($minAmount) cannot be greater than max amount ($maxAmount)');
       }
 
+      final statusRaw = parseOptionalStringField('status');
       return Order(
         id: parseOptionalStringField('id'),
         kind: OrderType.fromString(parseStringField('kind')),
-        status: Status.fromString(parseStringField('status')),
+        status: statusRaw != null
+            ? Status.fromString(statusRaw)
+            : Status.pending,
         amount: amount,
         fiatCode: parseStringField('fiat_code'),
         minAmount: minAmount,

@@ -1588,5 +1588,10 @@
     "addBondInvoiceSubmitButton": "RECHNUNG SENDEN",
     "addBondInvoiceFailedToSubmit": "Rechnung konnte nicht gesendet werden. Bitte erneut versuchen.",
     "bondPayoutBadge": "AUSZAHLUNG OFFEN",
+    "bondPayoutInProgressBadge": "AUSZAHLUNG LÄUFT",
+    "bondInvoiceAcceptedMessage": "Mostro hat die Lightning-Rechnung akzeptiert, die du zum Erhalt deines Anteils der Anti-Missbrauchs-Kaution bereitgestellt hast. Bitte warte, bis die Zahlung abgeschlossen ist.",
+    "bondPayoutCompletedMessage": "Du hast die Auszahlung deines Anteils der Anti-Missbrauchs-Kaution erhalten.",
+    "bondPayoutCompletedWithRating": "Du hast die Auszahlung deines Anteils der Anti-Missbrauchs-Kaution erhalten. Du kannst deinen Handelspartner bewerten.",
+    "bondPayoutCloseButton": "SCHLIESSEN",
     "errorLoadingBondPayout": "Fehler beim Laden der Auszahlungsdaten"
 }
