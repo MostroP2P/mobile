@@ -118,7 +118,10 @@ class MostroInstance {
 
 extension MostroInstanceExtensions on NostrEvent {
   String _getTagValue(String key) {
-    final tag = tags?.firstWhere((t) => t[0] == key, orElse: () => []);
+    final tag = tags?.firstWhere(
+      (t) => t.isNotEmpty && t[0] == key,
+      orElse: () => const <String>[],
+    );
     return (tag != null && tag.length > 1) ? tag[1] : 'Tag: $key not found';
   }
 
@@ -171,13 +174,19 @@ extension MostroInstanceExtensions on NostrEvent {
   ///
   /// - Tag absent → [BondPolicy.unsupported] (legacy daemon).
   /// - `"true"` → [BondPolicy.enabled].
-  /// - Any other value → [BondPolicy.disabled].
+  /// - `"false"` → [BondPolicy.disabled].
+  /// - Any other value → [BondPolicy.unsupported] (defensive: malformed
+  ///   payloads must not masquerade as an intentional policy state).
   BondPolicy get bondPolicy {
-    final raw = _getOptionalTagValue('bond_enabled');
-    if (raw == null) return BondPolicy.unsupported;
-    return raw.toLowerCase() == 'true'
-        ? BondPolicy.enabled
-        : BondPolicy.disabled;
+    final raw = _getOptionalTagValue('bond_enabled')?.toLowerCase();
+    switch (raw) {
+      case 'true':
+        return BondPolicy.enabled;
+      case 'false':
+        return BondPolicy.disabled;
+      default:
+        return BondPolicy.unsupported;
+    }
   }
 
   BondApplyTo? get bondApplyTo {

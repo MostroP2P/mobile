@@ -193,6 +193,40 @@ void main() {
       expect(instance.bondPolicy, BondPolicy.unsupported);
     });
 
+    test('bond_enabled with malformed value → unsupported (strict parse)', () {
+      // Anything other than "true"/"false" must not masquerade as a
+      // deliberate disabled policy. Corrupt payloads collapse to unsupported
+      // so callers can fall back to legacy behaviour.
+      for (final raw in ['yes', 'no', '1', '0', 'enabled', 'maybe']) {
+        final event = buildEvent([
+          ['bond_enabled', raw],
+        ]);
+        final instance = MostroInstance.fromEvent(event);
+        expect(instance.bondPolicy, BondPolicy.unsupported, reason: raw);
+      }
+    });
+
+    test('empty tag entry in event does not throw on required getters', () {
+      // Guards against a regression where `_getTagValue` indexed `t[0]`
+      // without first checking the tag was non-empty, throwing RangeError
+      // on malformed events that carry an empty tag list.
+      final event = NostrEvent(
+        id: 'a' * 64,
+        kind: 38385,
+        content: '',
+        sig: 'b' * 128,
+        pubkey: 'c' * 64,
+        createdAt: DateTime(2025),
+        tags: [
+          const <String>[],
+          ['d', 'c' * 64],
+          ['mostro_version', '0.13.0'],
+        ],
+      );
+      expect(() => event.mostroVersion, returnsNormally);
+      expect(event.mostroVersion, '0.13.0');
+    });
+
     test('bondSlashNodeSharePct out of [0.0, 1.0] range → null', () {
       for (final raw in ['-0.1', '1.5', '2', '-1']) {
         final event = buildEvent([
