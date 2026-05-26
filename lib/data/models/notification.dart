@@ -84,6 +84,7 @@ class NotificationModel {
       case Action.cooperativeCancelAccepted:
       case Action.adminCancel:
       case Action.adminCanceled:
+      case Action.bondSlashed:
         return NotificationType.cancellation;
       
       case Action.dispute:

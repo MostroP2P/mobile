@@ -210,8 +210,20 @@ class NotificationDataExtractor {
       case Action.addBondInvoice:
       case Action.bondInvoiceAccepted:
       case Action.bondPayoutCompleted:
-      case Action.bondSlashed:
         return null;
+
+      case Action.bondSlashed:
+        // SmallOrder carries the slashed bond amount and the order context.
+        final order = event.getPayload<Order>();
+        if (order == null) return null;
+        values = {
+          'amount': order.amount,
+          'order_id': order.id,
+          'fiat_code': order.fiatCode,
+          'fiat_amount': order.fiatAmount,
+          'payment_method': order.paymentMethod,
+        };
+        break;
 
       default:
         // Unknown actions generate temporary notifications
