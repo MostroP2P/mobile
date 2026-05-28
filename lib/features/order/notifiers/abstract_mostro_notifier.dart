@@ -13,6 +13,7 @@ import 'package:mostro_mobile/features/notifications/providers/notifications_pro
 import 'package:mostro_mobile/features/notifications/utils/notification_data_extractor.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
+import 'package:mostro_mobile/shared/utils/bond_cancel_helpers.dart';
 import 'package:mostro_mobile/shared/utils/bond_payout_helpers.dart';
 
 class AbstractMostroNotifier extends StateNotifier<OrderState> {
@@ -209,7 +210,10 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
           // otherwise delete immediately as before.
           final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
           final userInitiated = _userInitiatedCancels.remove(orderId);
-          if (!userInitiated && await _orderHadBond(orderId)) {
+          if (shouldDeferBondCancelDeletion(
+            userInitiated: userInitiated,
+            hadBond: await _orderHadBond(orderId),
+          )) {
             _startBondCancelDeletion(orderId, ref);
             logger.i('Deferred session deletion for bonded order $orderId');
           } else {
@@ -769,6 +773,15 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
 
   static const Duration _bondCancelGraceWindow = Duration(seconds: 60);
 
+  /// Clears any pending bond-cancel deletion state for an order. Called when a
+  /// fresh session is taken, so a stale grace timer (or user-cancel flag) from
+  /// a previous cycle on the same orderId can't delete the new session.
+  @protected
+  static void clearBondCancelDeletion(String orderId) {
+    _bondCancelDeletionTimers.remove(orderId)?.cancel();
+    _userInitiatedCancels.remove(orderId);
+  }
+
   /// Restart-resilient cleanup for a canceled bonded order. The deferred
   /// deletion above relies on an in-memory timer that is lost if the app
   /// closes within the grace window, which would orphan the session forever
@@ -781,31 +794,39 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
   Future<void> reconcileCanceledBondedSession() async {
     // A live cancel arms the timer itself; don't interfere with it.
     if (_bondCancelDeletionTimers.containsKey(orderId)) return;
-    // Session already cleaned up (e.g. bond-slashed handled before close).
-    if (ref.read(sessionProvider(orderId)) == null) return;
-    // Non-bonded cancels are deleted immediately by the live handler.
-    if (!await _orderHadBond(orderId)) return;
 
-    final messages =
-        await ref.read(mostroStorageProvider).getAllMessagesForOrderId(orderId);
-    // The bond-slashed notice already arrived: grace window no longer needed.
-    final bondSlashedReceived =
-        messages.any((m) => m.action == Action.bondSlashed);
-    // Newest canceled timestamp, to measure how much of the grace window is left.
-    final canceledTs = messages
-        .where((m) => m.action == Action.canceled)
-        .map((m) => m.timestamp ?? 0)
-        .fold<int>(0, (a, b) => a > b ? a : b);
-    final elapsed = DateTime.now().millisecondsSinceEpoch - canceledTs;
+    final sessionExists = ref.read(sessionProvider(orderId)) != null;
+    final hadBond = sessionExists && await _orderHadBond(orderId);
 
-    if (bondSlashedReceived ||
-        canceledTs == 0 ||
-        elapsed >= _bondCancelGraceWindow.inMilliseconds) {
-      await ref.read(sessionNotifierProvider.notifier).deleteSession(orderId);
-      logger.i('Reconcile: deleted orphaned canceled bonded session $orderId');
-    } else {
-      _startBondCancelDeletion(orderId, ref);
-      logger.i('Reconcile: re-armed bond-cancel grace timer for $orderId');
+    var bondSlashedReceived = false;
+    var canceledTs = 0;
+    if (hadBond) {
+      final messages = await ref
+          .read(mostroStorageProvider)
+          .getAllMessagesForOrderId(orderId);
+      bondSlashedReceived = messages.any((m) => m.action == Action.bondSlashed);
+      canceledTs = latestCanceledTimestamp(messages);
+    }
+
+    final decision = reconcileBondCancelAction(
+      sessionExists: sessionExists,
+      hadBond: hadBond,
+      bondSlashedReceived: bondSlashedReceived,
+      latestCanceledTimestamp: canceledTs,
+      nowMs: DateTime.now().millisecondsSinceEpoch,
+      graceWindowMs: _bondCancelGraceWindow.inMilliseconds,
+    );
+
+    switch (decision) {
+      case BondCancelReconcileAction.none:
+        return;
+      case BondCancelReconcileAction.deleteNow:
+        await ref.read(sessionNotifierProvider.notifier).deleteSession(orderId);
+        logger.i(
+            'Reconcile: deleted orphaned canceled bonded session $orderId');
+      case BondCancelReconcileAction.rearm:
+        _startBondCancelDeletion(orderId, ref);
+        logger.i('Reconcile: re-armed bond-cancel grace timer for $orderId');
     }
   }
 

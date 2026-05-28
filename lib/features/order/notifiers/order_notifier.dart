@@ -85,7 +85,11 @@ class OrderNotifier extends AbstractMostroNotifier {
       orderId: orderId,
       role: Role.buyer,
     );
-    
+
+    // Drop any stale grace timer/flag from a previous cycle on this order so
+    // it can't delete the session we just created (retake within 60s).
+    AbstractMostroNotifier.clearBondCancelDeletion(orderId);
+
     // Start 10s timeout cleanup timer for orphan session prevention
     AbstractMostroNotifier.startSessionTimeoutCleanup(orderId, ref);
     
@@ -102,7 +106,11 @@ class OrderNotifier extends AbstractMostroNotifier {
       orderId: orderId,
       role: Role.seller,
     );
-    
+
+    // Drop any stale grace timer/flag from a previous cycle on this order so
+    // it can't delete the session we just created (retake within 60s).
+    AbstractMostroNotifier.clearBondCancelDeletion(orderId);
+
     // Start 10s timeout cleanup timer for orphan session prevention
     AbstractMostroNotifier.startSessionTimeoutCleanup(orderId, ref);
     
