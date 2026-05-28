@@ -60,6 +60,13 @@ class OrderNotifier extends AbstractMostroNotifier {
 
       logger.i(
           'Synced order $orderId to state: ${state.status} - ${state.action}');
+
+      // Restart-resilient cleanup: a canceled bonded order whose in-memory
+      // grace timer was lost when the app closed would otherwise stay an
+      // orphan in My Trades and block retaking.
+      if (state.status == Status.canceled) {
+        await reconcileCanceledBondedSession();
+      }
     } catch (e, stack) {
       logger.e(
         'Error syncing order state for $orderId',
