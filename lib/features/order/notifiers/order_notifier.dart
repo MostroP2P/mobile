@@ -141,6 +141,10 @@ class OrderNotifier extends AbstractMostroNotifier {
 
   Future<void> cancelOrder() async {
     await mostroService.cancelOrder(orderId);
+    // The cancel was sent by the user: its `canceled` response means the
+    // bond is returned (no slash), so the session can be deleted immediately
+    // instead of waiting for a bond-slashed notice that will never arrive.
+    AbstractMostroNotifier.markUserInitiatedCancel(orderId);
   }
 
   Future<void> sendFiatSent() async {

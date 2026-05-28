@@ -31,6 +31,18 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
   // bond-slashed notice can still be received before the trade key is dropped.
   static final Map<String, Timer> _bondCancelDeletionTimers = {};
 
+  // Orders the user explicitly asked to cancel. A voluntary cancel returns the
+  // taker's bond (no slash, so no trailing bond-slashed), so its `canceled`
+  // response can delete the session immediately instead of deferring 60s.
+  static final Set<String> _userInitiatedCancels = <String>{};
+
+  /// Marks an order as cancelled by the user, so the matching `canceled`
+  /// response is treated as a voluntary cancel (immediate session deletion).
+  @protected
+  static void markUserInitiatedCancel(String orderId) {
+    _userInitiatedCancels.add(orderId);
+  }
+
   AbstractMostroNotifier(
     this.orderId,
     this.ref, {
@@ -191,11 +203,13 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
           logger.i(
               'CANCELLATION: Received cancellation message from Mostro for order $orderId');
 
-          // If this order had a bond, a bond-slashed notice may still be in
-          // flight. Defer deleting the session (and its trade key) so the
-          // notice can still be received; otherwise delete immediately.
+          // A bond-slashed notice only follows a *timeout* slash, never a
+          // voluntary cancel (the daemon returns the taker's bond). So defer
+          // deletion only for a bonded order the user did NOT cancel itself;
+          // otherwise delete immediately as before.
           final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
-          if (await _orderHadBond(orderId)) {
+          final userInitiated = _userInitiatedCancels.remove(orderId);
+          if (!userInitiated && await _orderHadBond(orderId)) {
             _startBondCancelDeletion(orderId, ref);
             logger.i('Deferred session deletion for bonded order $orderId');
           } else {
