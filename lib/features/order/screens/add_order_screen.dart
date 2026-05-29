@@ -325,6 +325,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
                           validateSatsRange: _validateSatsRange,
                           validationError: _validationError,
                           onRangeModeChanged: _onRangeModeChanged,
+                          fiatCode: selectedFiatCode,
                         ),
                         const SizedBox(height: 16),
                         PaymentMethodsSection(

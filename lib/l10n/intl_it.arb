@@ -463,8 +463,24 @@
     },
     "exchangeRateNotAvailable": "Tasso di cambio non disponibile, per favore attendi o aggiorna",
     "mostroInstanceNotAvailable": "Dati dell'istanza Mostro non disponibili, per favore attendi",
-    "enterAmountYouWantToReceive": "Inserisci l'importo che vuoi ricevere",
-    "enterAmountYouWantToSend": "Inserisci l'importo che vuoi inviare",
+    "enterAmountYouWantToReceiveCurrency": "Inserisci l'importo in {currency} che vuoi ricevere",
+    "@enterAmountYouWantToReceiveCurrency": {
+        "placeholders": {
+            "currency": {
+                "type": "String",
+                "description": "The selected fiat code, or \"fiat\" when none is selected"
+            }
+        }
+    },
+    "enterAmountYouWantToSendCurrency": "Inserisci l'importo in {currency} che vuoi inviare",
+    "@enterAmountYouWantToSendCurrency": {
+        "placeholders": {
+            "currency": {
+                "type": "String",
+                "description": "The selected fiat code, or \"fiat\" when none is selected"
+            }
+        }
+    },
     "creatingRangeOrder": "Creazione ordine intervallo (puoi ricevere tra importi minimo e massimo)",
     "creatingRangeOrderBuySend": "Creazione ordine intervallo (puoi inviare tra importi minimo e massimo)",
     "rangeOrder": "Ordine Intervallo",

@@ -521,8 +521,24 @@
     },
     "exchangeRateNotAvailable": "Taux de change non disponible, veuillez attendre ou actualiser",
     "mostroInstanceNotAvailable": "Données de l'instance Mostro non disponibles, veuillez attendre",
-    "enterAmountYouWantToReceive": "Entrez le montant que vous voulez recevoir",
-    "enterAmountYouWantToSend": "Entrez le montant que vous voulez envoyer",
+    "enterAmountYouWantToReceiveCurrency": "Entrez le montant en {currency} que vous voulez recevoir",
+    "@enterAmountYouWantToReceiveCurrency": {
+        "placeholders": {
+            "currency": {
+                "type": "String",
+                "description": "The selected fiat code, or \"fiat\" when none is selected"
+            }
+        }
+    },
+    "enterAmountYouWantToSendCurrency": "Entrez le montant en {currency} que vous voulez envoyer",
+    "@enterAmountYouWantToSendCurrency": {
+        "placeholders": {
+            "currency": {
+                "type": "String",
+                "description": "The selected fiat code, or \"fiat\" when none is selected"
+            }
+        }
+    },
     "creatingRangeOrder": "Création d'une commande de plage (vous pouvez recevoir entre les montants min et max)",
     "creatingRangeOrderBuySend": "Création d'une commande de plage (vous pouvez envoyer entre les montants min et max)",
     "rangeOrder": "Commande de plage",

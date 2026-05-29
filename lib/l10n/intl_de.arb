@@ -521,8 +521,24 @@
     },
     "exchangeRateNotAvailable": "Wechselkurs nicht verfügbar, bitte warten oder aktualisieren",
     "mostroInstanceNotAvailable": "Mostro-Instanzdaten nicht verfügbar, bitte warten",
-    "enterAmountYouWantToReceive": "Betrag eingeben, den du erhalten möchtest",
-    "enterAmountYouWantToSend": "Betrag eingeben, den du senden möchtest",
+    "enterAmountYouWantToReceiveCurrency": "Gib den Betrag in {currency} ein, den du erhalten möchtest",
+    "@enterAmountYouWantToReceiveCurrency": {
+        "placeholders": {
+            "currency": {
+                "type": "String",
+                "description": "The selected fiat code, or \"fiat\" when none is selected"
+            }
+        }
+    },
+    "enterAmountYouWantToSendCurrency": "Gib den Betrag in {currency} ein, den du senden möchtest",
+    "@enterAmountYouWantToSendCurrency": {
+        "placeholders": {
+            "currency": {
+                "type": "String",
+                "description": "The selected fiat code, or \"fiat\" when none is selected"
+            }
+        }
+    },
     "creatingRangeOrder": "Erstelle eine Range-Order (du kannst zwischen Minimum und Maximum wählen)",
     "creatingRangeOrderBuySend": "Erstelle eine Range-Order (du kannst zwischen Minimum und Maximum senden)",
     "rangeOrder": "Range-Order",
