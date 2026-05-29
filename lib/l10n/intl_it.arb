@@ -411,6 +411,40 @@
             }
         }
     },
+    "fiatAmountTooLowRange": "L'importo è troppo basso. Questo nodo Mostro consente tra {minAmount} e {maxAmount} {fiatCode}.",
+    "@fiatAmountTooLowRange": {
+        "placeholders": {
+            "minAmount": {
+                "type": "String",
+                "description": "The minimum allowed amount in fiat"
+            },
+            "maxAmount": {
+                "type": "String",
+                "description": "The maximum allowed amount in fiat"
+            },
+            "fiatCode": {
+                "type": "String",
+                "description": "The selected fiat currency code"
+            }
+        }
+    },
+    "fiatAmountTooHighRange": "L'importo è troppo alto. Questo nodo Mostro consente tra {minAmount} e {maxAmount} {fiatCode}.",
+    "@fiatAmountTooHighRange": {
+        "placeholders": {
+            "minAmount": {
+                "type": "String",
+                "description": "The minimum allowed amount in fiat"
+            },
+            "maxAmount": {
+                "type": "String",
+                "description": "The maximum allowed amount in fiat"
+            },
+            "fiatCode": {
+                "type": "String",
+                "description": "The selected fiat currency code"
+            }
+        }
+    },
     "exchangeRateNotAvailable": "Tasso di cambio non disponibile, per favore attendi o aggiorna",
     "mostroInstanceNotAvailable": "Dati dell'istanza Mostro non disponibili, per favore attendi",
     "enterAmountYouWantToReceive": "Inserisci l'importo che vuoi ricevere",

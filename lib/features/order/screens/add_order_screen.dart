@@ -23,6 +23,7 @@ import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:mostro_mobile/shared/utils/order_amount_limits.dart';
 import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
 
 class AddOrderScreen extends ConsumerStatefulWidget {
@@ -182,25 +183,42 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
     final minAllowed = mostroInstance.minOrderAmount;
     final maxAllowed = mostroInstance.maxOrderAmount;
 
-    // Debug logging
-    debugPrint(
-        'Validation: fiat=$fiatAmount, rate=$exchangeRate, sats=$satsAmount, min=$minAllowed, max=$maxAllowed');
-
-    // Check if sats amount is outside range
-    if (satsAmount < minAllowed) {
-      return S.of(context)!.fiatAmountTooLow(
-            minAllowed.toString(),
-            maxAllowed.toString(),
-          );
-    } else if (satsAmount > maxAllowed) {
-      return S.of(context)!.fiatAmountTooHigh(
-            minAllowed.toString(),
-            maxAllowed.toString(),
-          );
+    if (satsAmount >= minAllowed && satsAmount <= maxAllowed) {
+      return null; // Validation passed
     }
 
-    // Validation passed
-    return null;
+    // Express the limits in the fiat currency the user typed in, since the
+    // sats bounds mean nothing to most users. Fall back to sats when the range
+    // collapses below 1 fiat unit (no whole number would be enterable).
+    final fiatLimits = fiatAmountLimits(
+      minSats: minAllowed,
+      maxSats: maxAllowed,
+      exchangeRate: exchangeRate,
+    );
+
+    if (satsAmount < minAllowed) {
+      return fiatLimits.isDisplayable
+          ? S.of(context)!.fiatAmountTooLowRange(
+              fiatLimits.minFiat.toString(),
+              fiatLimits.maxFiat.toString(),
+              selectedFiatCode,
+            )
+          : S.of(context)!.fiatAmountTooLow(
+              minAllowed.toString(),
+              maxAllowed.toString(),
+            );
+    } else {
+      return fiatLimits.isDisplayable
+          ? S.of(context)!.fiatAmountTooHighRange(
+              fiatLimits.minFiat.toString(),
+              fiatLimits.maxFiat.toString(),
+              selectedFiatCode,
+            )
+          : S.of(context)!.fiatAmountTooHigh(
+              minAllowed.toString(),
+              maxAllowed.toString(),
+            );
+    }
   }
 
   /// Comprehensive validation for all fiat amount inputs

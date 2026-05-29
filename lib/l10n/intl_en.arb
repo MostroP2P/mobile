@@ -469,6 +469,40 @@
             }
         }
     },
+    "fiatAmountTooLowRange": "The amount is too low. This Mostro node allows between {minAmount} and {maxAmount} {fiatCode}.",
+    "@fiatAmountTooLowRange": {
+        "placeholders": {
+            "minAmount": {
+                "type": "String",
+                "description": "The minimum allowed amount in fiat"
+            },
+            "maxAmount": {
+                "type": "String",
+                "description": "The maximum allowed amount in fiat"
+            },
+            "fiatCode": {
+                "type": "String",
+                "description": "The selected fiat currency code"
+            }
+        }
+    },
+    "fiatAmountTooHighRange": "The amount is too high. This Mostro node allows between {minAmount} and {maxAmount} {fiatCode}.",
+    "@fiatAmountTooHighRange": {
+        "placeholders": {
+            "minAmount": {
+                "type": "String",
+                "description": "The minimum allowed amount in fiat"
+            },
+            "maxAmount": {
+                "type": "String",
+                "description": "The maximum allowed amount in fiat"
+            },
+            "fiatCode": {
+                "type": "String",
+                "description": "The selected fiat currency code"
+            }
+        }
+    },
     "exchangeRateNotAvailable": "Exchange rate not available, please wait or refresh",
     "mostroInstanceNotAvailable": "Mostro instance data not available, please wait",
     "enterAmountYouWantToReceive": "Enter amount you want to receive",
