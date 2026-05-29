@@ -17,7 +17,7 @@ void main() {
     });
 
     test('floors the minimum at 1 when the converted value is below 1', () {
-      // min converts to 0.5 -> shown as 1 (field rejects decimals and < 1).
+      // min converts to 0.05 -> shown as 1 (field rejects decimals and < 1).
       final limits = fiatAmountLimits(
         minSats: 50,
         maxSats: 1000000,
