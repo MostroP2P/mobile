@@ -202,6 +202,8 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
               fiatLimits.minFiat.toString(),
               fiatLimits.maxFiat.toString(),
               selectedFiatCode,
+              minAllowed.toString(),
+              maxAllowed.toString(),
             )
           : S.of(context)!.fiatAmountTooLow(
               minAllowed.toString(),
@@ -213,6 +215,8 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
               fiatLimits.minFiat.toString(),
               fiatLimits.maxFiat.toString(),
               selectedFiatCode,
+              minAllowed.toString(),
+              maxAllowed.toString(),
             )
           : S.of(context)!.fiatAmountTooHigh(
               minAllowed.toString(),

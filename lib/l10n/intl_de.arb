@@ -469,7 +469,7 @@
             }
         }
     },
-    "fiatAmountTooLowRange": "Der Betrag ist zu niedrig. Dieser Mostro-Node erlaubt zwischen {minAmount} und {maxAmount} {fiatCode}.",
+    "fiatAmountTooLowRange": "Der Betrag ist zu niedrig. Dieser Mostro-Node erlaubt zwischen {minAmount} und {maxAmount} {fiatCode} ({minSats} - {maxSats} Sats).",
     "@fiatAmountTooLowRange": {
         "placeholders": {
             "minAmount": {
@@ -483,10 +483,18 @@
             "fiatCode": {
                 "type": "String",
                 "description": "The selected fiat currency code"
+            },
+            "minSats": {
+                "type": "String",
+                "description": "The minimum allowed amount in sats"
+            },
+            "maxSats": {
+                "type": "String",
+                "description": "The maximum allowed amount in sats"
             }
         }
     },
-    "fiatAmountTooHighRange": "Der Betrag ist zu hoch. Dieser Mostro-Node erlaubt zwischen {minAmount} und {maxAmount} {fiatCode}.",
+    "fiatAmountTooHighRange": "Der Betrag ist zu hoch. Dieser Mostro-Node erlaubt zwischen {minAmount} und {maxAmount} {fiatCode} ({minSats} - {maxSats} Sats).",
     "@fiatAmountTooHighRange": {
         "placeholders": {
             "minAmount": {
@@ -500,6 +508,14 @@
             "fiatCode": {
                 "type": "String",
                 "description": "The selected fiat currency code"
+            },
+            "minSats": {
+                "type": "String",
+                "description": "The minimum allowed amount in sats"
+            },
+            "maxSats": {
+                "type": "String",
+                "description": "The maximum allowed amount in sats"
             }
         }
     },

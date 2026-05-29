@@ -469,7 +469,7 @@
             }
         }
     },
-    "fiatAmountTooLowRange": "Le montant est trop bas. Ce nœud Mostro permet entre {minAmount} et {maxAmount} {fiatCode}.",
+    "fiatAmountTooLowRange": "Le montant est trop bas. Ce nœud Mostro permet entre {minAmount} et {maxAmount} {fiatCode} ({minSats} - {maxSats} sats).",
     "@fiatAmountTooLowRange": {
         "placeholders": {
             "minAmount": {
@@ -483,10 +483,18 @@
             "fiatCode": {
                 "type": "String",
                 "description": "The selected fiat currency code"
+            },
+            "minSats": {
+                "type": "String",
+                "description": "The minimum allowed amount in sats"
+            },
+            "maxSats": {
+                "type": "String",
+                "description": "The maximum allowed amount in sats"
             }
         }
     },
-    "fiatAmountTooHighRange": "Le montant est trop élevé. Ce nœud Mostro permet entre {minAmount} et {maxAmount} {fiatCode}.",
+    "fiatAmountTooHighRange": "Le montant est trop élevé. Ce nœud Mostro permet entre {minAmount} et {maxAmount} {fiatCode} ({minSats} - {maxSats} sats).",
     "@fiatAmountTooHighRange": {
         "placeholders": {
             "minAmount": {
@@ -500,6 +508,14 @@
             "fiatCode": {
                 "type": "String",
                 "description": "The selected fiat currency code"
+            },
+            "minSats": {
+                "type": "String",
+                "description": "The minimum allowed amount in sats"
+            },
+            "maxSats": {
+                "type": "String",
+                "description": "The maximum allowed amount in sats"
             }
         }
     },
