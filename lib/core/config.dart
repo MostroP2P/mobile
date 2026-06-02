@@ -5,6 +5,7 @@ class Config {
   // Nostr configuration
   static const List<String> nostrRelays = [
     'wss://relay.mostro.network',
+    'wss://mostro-p2p.tech',
     //'ws://127.0.0.1:7000',
     //'ws://192.168.1.103:7000',
     //'ws://10.0.2.2:7000', // mobile emulator

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:dart_nostr/nostr/model/ease.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/core/models/relay_list_event.dart';
 import 'package:mostro_mobile/features/settings/settings_notifier.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_manager.dart';
@@ -55,13 +56,14 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
     
     final loadedRelays = <Relay>[];
     
-    // Always ensure default relay exists for initial connection
-    final defaultRelay = Relay.fromDefault('wss://relay.mostro.network');
-    loadedRelays.add(defaultRelay);
-    
-    // Load Mostro relays from settings.relays (excluding default to avoid duplicates)
+    // Always ensure default relays exist for initial connection
+    for (final url in Config.nostrRelays) {
+      loadedRelays.add(Relay.fromDefault(url));
+    }
+
+    // Load Mostro relays from settings.relays (excluding defaults to avoid duplicates)
     final relaysFromSettings = saved.relays
-        .where((url) => url != 'wss://relay.mostro.network') // Avoid duplicates
+        .where((url) => !Config.nostrRelays.contains(_normalizeRelayUrl(url)))
         .map((url) => Relay.fromMostro(url))
         .toList();
     loadedRelays.addAll(relaysFromSettings);
@@ -692,12 +694,11 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
     try {
       logger.i('Cleaning all relays and performing fresh sync...');
       
-      // CLEAR ALL relays (only keep default)
-      final defaultRelay = Relay.fromDefault('wss://relay.mostro.network');
-      state = [defaultRelay];
+      // CLEAR ALL relays (only keep defaults)
+      state = Config.nostrRelays.map(Relay.fromDefault).toList();
       await _saveRelays();
-      
-      logger.i('Reset to default relay only, starting fresh sync');
+
+      logger.i('Reset to default relays only, starting fresh sync');
       
       // Reset hash and timestamp for completely fresh sync with new Mostro
       _lastRelayListHash = null;
