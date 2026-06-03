@@ -148,6 +148,16 @@ class OrderNotifier extends AbstractMostroNotifier {
   }
 
   Future<void> cancelOrder() async {
+    final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+    final currentSession = sessionNotifier.getSessionByOrderId(orderId);
+    // A maker bond is still uncommitted; the daemon rejects an explicit cancel
+    // while the order sits at WaitingMakerBond. Abandon locally instead — the
+    // bond hold invoice expires server-side and the stranded order is deleted.
+    if (currentSession?.bondPending == true) {
+      await ref.read(mostroStorageProvider).deleteAllMessagesByOrderId(orderId);
+      await sessionNotifier.deleteSession(orderId);
+      return;
+    }
     await mostroService.cancelOrder(orderId);
     // The cancel was sent by the user: its `canceled` response means the
     // bond is returned (no slash), so the session can be deleted immediately
