@@ -746,6 +746,12 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
     }
   }
 
+  /// Test-only: whether a create-order timeout timer is currently armed for
+  /// [requestId]. Lets tests assert the maker-bond flow tears the timer down.
+  @visibleForTesting
+  static bool hasRequestTimeout(int requestId) =>
+      _sessionTimeouts.containsKey('request:$requestId');
+
   /// Whether a bond was requested for this order (a pay-bond-invoice was sent).
   Future<bool> _orderHadBond(String orderId) async {
     try {
