@@ -136,6 +136,9 @@ class NotificationItem extends ConsumerWidget {
         case mostro_action.Action.bondInvoiceAccepted:
         case mostro_action.Action.bondPayoutCompleted:
           break;
+        case mostro_action.Action.bondSlashed:
+          _showBondSlashedDialog(context);
+          break;
       }
     }
   }
@@ -163,6 +166,51 @@ class NotificationItem extends ConsumerWidget {
         _showDeleteConfirmationDialog(context, ref);
         break;
     }
+  }
+
+  void _showBondSlashedDialog(BuildContext context) {
+    final s = S.of(context)!;
+    final data = notification.data;
+    final amount = (data['amount'] ?? '').toString();
+    final orderId =
+        (data['order_id'] ?? notification.orderId ?? '').toString();
+    final fiatAmount = (data['fiat_amount'] ?? '').toString();
+    final fiatCode = (data['fiat_code'] ?? '').toString();
+    final paymentMethod = (data['payment_method'] ?? '').toString();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.backgroundDark,
+        title: Text(
+          s.notification_bond_slashed_title,
+          style: const TextStyle(color: AppTheme.textPrimary),
+        ),
+        content: Text(
+          s.notification_bond_slashed_detail(
+              amount, orderId, fiatAmount, fiatCode, paymentMethod),
+          style: const TextStyle(color: AppTheme.textSecondary),
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.activeColor,
+              foregroundColor: Colors.black,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            ),
+            child: Text(
+              s.close,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showDeleteConfirmationDialog(BuildContext context, WidgetRef ref) {

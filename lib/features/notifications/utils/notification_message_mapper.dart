@@ -98,6 +98,8 @@ class NotificationMessageMapper {
       case mostro.Action.bondInvoiceAccepted:
       case mostro.Action.bondPayoutCompleted:
         return 'TODO: implement  title key if needed';
+      case mostro.Action.bondSlashed:
+        return 'notification_bond_slashed_title';
     }
   }
 
@@ -204,6 +206,8 @@ class NotificationMessageMapper {
       case mostro.Action.bondInvoiceAccepted:
       case mostro.Action.bondPayoutCompleted:
         return 'TODO: implement message key if needed';
+      case mostro.Action.bondSlashed:
+        return 'notification_bond_slashed_message';
 
     }
   }
@@ -360,6 +364,10 @@ class NotificationMessageMapper {
         return s.notification_order_update_message;
       case 'notification_add_invoice_after_failure_message':
         return s.notification_add_invoice_after_failure_message;
+      case 'notification_bond_slashed_title':
+        return s.notification_bond_slashed_title;
+      case 'notification_bond_slashed_message':
+        return s.notification_bond_slashed_message;
       default:
         return key; // Fallback to key if not found
     }

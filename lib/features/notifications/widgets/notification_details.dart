@@ -13,6 +13,9 @@ class NotificationDetails extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final details = _buildDetailsWidgets(context);
+    // No detail rows for this action: don't render an empty bordered box.
+    if (details.isEmpty) return const SizedBox.shrink();
     return Container(
       width: double.infinity,
       padding: AppTheme.smallPadding,
@@ -26,7 +29,7 @@ class NotificationDetails extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: _buildDetailsWidgets(context),
+        children: details,
       ),
     );
   }
