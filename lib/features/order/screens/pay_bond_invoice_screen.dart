@@ -10,6 +10,7 @@ import 'package:mostro_mobile/features/order/providers/order_notifier_provider.d
 import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
+import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
 
 class PayBondInvoiceScreen extends ConsumerWidget {
@@ -124,6 +125,14 @@ class PayBondInvoiceScreen extends ConsumerWidget {
     final orderState = ref.watch(orderNotifierProvider(orderId));
     final lnInvoice = orderState.paymentRequest?.lnInvoice ?? '';
     final bondAmount = orderState.paymentRequest?.order?.amount;
+    // A maker creating an order pays the bond before it is published, so the
+    // copy must warn them to keep the screen open or the order won't be created.
+    final isMakerBond = ref
+            .read(sessionNotifierProvider.notifier)
+            .getSessionByOrderId(orderId)
+            ?.bondPending ??
+        false;
+    final explanation = isMakerBond ? s.bondExplanationMaker : s.bondExplanation;
 
     return Scaffold(
       backgroundColor: AppTheme.dark1,
@@ -139,7 +148,7 @@ class PayBondInvoiceScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              s.bondExplanation,
+              explanation,
               style: const TextStyle(
                 color: AppTheme.cream1,
                 fontSize: 15,
