@@ -73,6 +73,8 @@ class AddOrderNotifier extends AbstractMostroNotifier {
     
     state = state.updateWith(message);
     session.orderId = message.id;
+    // Order confirmed (bond locked and published, or no bond): persist for real.
+    session.bondPending = false;
     ref.read(sessionNotifierProvider.notifier).saveSession(session);
     ref.read(orderNotifierProvider(message.id!).notifier).subscribe();
     ref.read(navigationProvider.notifier).go(
@@ -92,6 +94,7 @@ class AddOrderNotifier extends AbstractMostroNotifier {
 
     state = state.updateWith(message);
     session.orderId = message.id;
+    session.bondPending = true;
     ref.read(sessionNotifierProvider.notifier).registerSessionInMemory(session);
     ref.read(navigationProvider.notifier).go('/pay_bond/${message.id!}');
   }

@@ -295,7 +295,12 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         if (event.payload is PaymentRequest) {
           navProvider.go('/pay_bond/${event.id!}');
         }
-        ref.read(sessionNotifierProvider.notifier).saveSession(session);
+        // A maker bond is still uncommitted: keep it ephemeral (in memory only)
+        // so an abandoned order never survives a restart. The taker bond and
+        // the post-confirmation maker order persist normally.
+        if (!session.bondPending) {
+          ref.read(sessionNotifierProvider.notifier).saveSession(session);
+        }
         break;
 
       case Action.addInvoice:
