@@ -34,7 +34,10 @@ class AddOrderNotifier extends AbstractMostroNotifier {
         next.when(
           data: (msg) {
             if (msg != null) {
-              if (msg.payload is Order) {
+              if (msg.action == Action.payBondInvoice &&
+                  msg.payload is PaymentRequest) {
+                _handleMakerBondInvoice(msg);
+              } else if (msg.payload is Order) {
                 if (msg.action == Action.newOrder) {
                   _confirmOrder(msg);
                 } else {
@@ -76,6 +79,21 @@ class AddOrderNotifier extends AbstractMostroNotifier {
           '/order_confirmed/${message.id!}',
         );
     ref.invalidateSelf();
+  }
+
+  /// Maker anti-abuse bond: Mostro parked the order at WaitingMakerBond and is
+  /// asking the maker to pay a bond before publishing it. Show the pay-bond
+  /// screen and keep this notifier alive — the bond bolt11 and the publication
+  /// ack both return on this requestId, so _confirmOrder fires once the bond
+  /// locks. The session stays in memory only (ephemeral) until then.
+  void _handleMakerBondInvoice(MostroMessage message) {
+    // A response arrived: stop the create-order timeout cleanup.
+    AbstractMostroNotifier.cancelSessionTimeoutCleanupForRequestId(requestId);
+
+    state = state.updateWith(message);
+    session.orderId = message.id;
+    ref.read(sessionNotifierProvider.notifier).registerSessionInMemory(session);
+    ref.read(navigationProvider.notifier).go('/pay_bond/${message.id!}');
   }
 
   Future<void> submitOrder(Order order) async {
