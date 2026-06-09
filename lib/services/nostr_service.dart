@@ -1,5 +1,6 @@
 import 'package:collection/collection.dart';
 import 'package:dart_nostr/dart_nostr.dart';
+import 'package:flutter/foundation.dart';
 import 'package:dart_nostr/nostr/model/ease.dart';
 import 'package:dart_nostr/nostr/model/ok.dart';
 import 'package:dart_nostr/nostr/model/relay_informations.dart';
@@ -34,17 +35,21 @@ class NostrService {
   /// Number of relays currently considered alive.
   int get liveRelayCount => _connectedRelays.length;
 
+  /// Relays to connect to: the configured relays, or the defensive bootstrap
+  /// relays as a fail-safe when none are configured (cold start before any kind
+  /// 10002 discovery), so init never fails on an empty list.
+  @visibleForTesting
+  static List<String> effectiveRelays(List<String> configured) =>
+      configured.isEmpty ? Config.bootstrapRelays : configured;
+
   Future<void> init(Settings settings) async {
-    // Fail-safe: with no relays configured (e.g. cold start before any kind
-    // 10002 discovery) connect to the defensive bootstrap relays instead of
-    // failing, so the app can still discover the Mostro's relay list.
-    var effectiveSettings = settings;
-    if (effectiveSettings.relays.isEmpty) {
+    final relays = effectiveRelays(settings.relays);
+    if (settings.relays.isEmpty) {
       logger.w(
         'No relays configured; falling back to bootstrap relays for discovery',
       );
-      effectiveSettings = settings.copyWith(relays: Config.bootstrapRelays);
     }
+    final effectiveSettings = settings.copyWith(relays: relays);
 
     logger.i(
         'Initializing NostrService with relays: ${effectiveSettings.relays}');

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
@@ -26,6 +27,11 @@ class RelayHealthMonitor {
     _timer = Timer.periodic(Config.relayDiscoveryTimeout, (_) => _check());
     ref.onDispose(() => _timer?.cancel());
   }
+
+  /// Runs a single health check synchronously. Exposed for tests so the
+  /// periodic timer does not need to be awaited.
+  @visibleForTesting
+  Future<void> checkNow() => _check();
 
   Future<void> _check() async {
     if (_recovering) return;

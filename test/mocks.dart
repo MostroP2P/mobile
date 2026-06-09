@@ -50,6 +50,10 @@ import 'mocks.mocks.dart';
   EncryptedImageUploadService,
   BlossomDownloadService,
   ChatRoomNotifier,
+], customMocks: [
+  // Spy mock used to verify SubscriptionManager calls (the hand-written
+  // MockSubscriptionManager below keeps its name; this one has a distinct name).
+  MockSpec<SubscriptionManager>(as: #MockSubscriptionManagerSpy),
 ])
 
 // Custom mock for SettingsNotifier that returns a specific Settings object

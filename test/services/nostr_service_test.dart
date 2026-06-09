@@ -28,6 +28,17 @@ void main() {
     });
   });
 
+  group('cold-start relay fail-safe', () {
+    test('falls back to bootstrap relays when none are configured', () {
+      expect(NostrService.effectiveRelays(const []), Config.bootstrapRelays);
+    });
+
+    test('keeps the configured relays when present', () {
+      const configured = ['wss://a.example.com', 'wss://b.example.com'];
+      expect(NostrService.effectiveRelays(configured), configured);
+    });
+  });
+
   group('bootstrap relay configuration', () {
     test('bootstrap relays are non-empty secure websocket urls', () {
       expect(Config.bootstrapRelays, isNotEmpty);
