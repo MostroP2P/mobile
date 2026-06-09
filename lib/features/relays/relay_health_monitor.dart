@@ -38,11 +38,19 @@ class RelayHealthMonitor {
 
     final nostrService = ref.read(nostrServiceProvider);
     if (!nostrService.isInitialized) return;
-    if (nostrService.liveRelayCount > 0) return;
+
+    // Only relays from the operating set (discovered + user, which never
+    // includes bootstrap) count as healthy. A live bootstrap-only socket must
+    // not mask a dead discovered-relay layer, otherwise recovery would stop
+    // while the app is surviving on bootstrap connectivity alone.
+    final operatingRelays = ref.read(settingsProvider).relays.toSet();
+    final hasLiveOperatingRelay =
+        nostrService.connectedRelays.any(operatingRelays.contains);
+    if (hasLiveOperatingRelay) return;
 
     _recovering = true;
     try {
-      logger.w('No live relays detected; engaging bootstrap relays');
+      logger.w('No live operating relay; engaging bootstrap relays');
       await nostrService.ensureBootstrapConnectivity();
 
       // Re-issue subscriptions so they reach the newly connected relays

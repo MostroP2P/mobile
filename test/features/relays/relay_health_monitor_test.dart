@@ -10,11 +10,14 @@ import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 
 import '../../mocks.mocks.dart';
 
-/// Settings notifier with a fixed Mostro pubkey for tests.
+/// Settings notifier with a fixed Mostro pubkey and operating relay list.
 class _FixedSettingsNotifier extends SettingsNotifier {
-  _FixedSettingsNotifier(String pubkey) : super(MockSharedPreferencesAsync()) {
+  _FixedSettingsNotifier({
+    String pubkey = 'test',
+    List<String> relays = const [],
+  }) : super(MockSharedPreferencesAsync()) {
     state = Settings(
-      relays: const [],
+      relays: relays,
       fullPrivacyMode: false,
       mostroPublicKey: pubkey,
     );
@@ -28,28 +31,33 @@ void main() {
   setUp(() {
     nostrService = MockNostrService();
     subscriptionManager = MockSubscriptionManagerSpy();
-    when(nostrService.ensureBootstrapConnectivity())
-        .thenAnswer((_) async {});
+    when(nostrService.ensureBootstrapConnectivity()).thenAnswer((_) async {});
+    when(nostrService.isInitialized).thenReturn(true);
+    when(nostrService.connectedRelays).thenReturn(<String>{});
   });
 
-  ProviderContainer buildContainer({String pubkey = 'test'}) {
+  ProviderContainer buildContainer({
+    String pubkey = 'test',
+    List<String> relays = const [],
+  }) {
     final container = ProviderContainer(overrides: [
       nostrServiceProvider.overrideWithValue(nostrService),
       subscriptionManagerProvider.overrideWithValue(subscriptionManager),
-      settingsProvider.overrideWith((ref) => _FixedSettingsNotifier(pubkey)),
+      settingsProvider.overrideWith(
+          (ref) => _FixedSettingsNotifier(pubkey: pubkey, relays: relays)),
     ]);
     addTearDown(container.dispose);
     return container;
   }
 
   group('RelayHealthMonitor', () {
-    test('engages bootstrap and re-subscribes when no relay is alive',
+    test('engages bootstrap and re-subscribes when no operating relay is alive',
         () async {
-      when(nostrService.isInitialized).thenReturn(true);
-      when(nostrService.liveRelayCount).thenReturn(0);
+      // Operating relay configured but not connected.
+      when(nostrService.connectedRelays).thenReturn(<String>{});
 
-      final monitor =
-          buildContainer().read(relayHealthMonitorProvider);
+      final monitor = buildContainer(relays: ['wss://discovered.example.com'])
+          .read(relayHealthMonitorProvider);
       await monitor.checkNow();
 
       verify(nostrService.ensureBootstrapConnectivity()).called(1);
@@ -57,24 +65,38 @@ void main() {
       verify(subscriptionManager.subscribeToMostroRelayList('test')).called(1);
     });
 
-    test('does nothing while at least one relay is alive', () async {
-      when(nostrService.isInitialized).thenReturn(true);
-      when(nostrService.liveRelayCount).thenReturn(2);
+    test('stays idle while an operating relay is alive', () async {
+      when(nostrService.connectedRelays)
+          .thenReturn({'wss://discovered.example.com'});
 
-      final monitor =
-          buildContainer().read(relayHealthMonitorProvider);
+      final monitor = buildContainer(relays: ['wss://discovered.example.com'])
+          .read(relayHealthMonitorProvider);
       await monitor.checkNow();
 
       verifyNever(nostrService.ensureBootstrapConnectivity());
       verifyNever(subscriptionManager.subscribeAll());
     });
 
+    test(
+        'still recovers when only a bootstrap relay is alive '
+        '(does not mask a dead discovered layer)', () async {
+      // A bootstrap relay is connected, but the operating (discovered) relay is
+      // not. The watchdog must NOT treat this as healthy.
+      when(nostrService.connectedRelays).thenReturn({'wss://relay.damus.io'});
+
+      final monitor = buildContainer(relays: ['wss://discovered.example.com'])
+          .read(relayHealthMonitorProvider);
+      await monitor.checkNow();
+
+      verify(nostrService.ensureBootstrapConnectivity()).called(1);
+      verify(subscriptionManager.subscribeAll()).called(1);
+    });
+
     test('does nothing before NostrService is initialized', () async {
       when(nostrService.isInitialized).thenReturn(false);
-      when(nostrService.liveRelayCount).thenReturn(0);
 
-      final monitor =
-          buildContainer().read(relayHealthMonitorProvider);
+      final monitor = buildContainer(relays: ['wss://discovered.example.com'])
+          .read(relayHealthMonitorProvider);
       await monitor.checkNow();
 
       verifyNever(nostrService.ensureBootstrapConnectivity());
@@ -83,9 +105,6 @@ void main() {
 
     test('skips relay-list re-subscription when no Mostro is configured',
         () async {
-      when(nostrService.isInitialized).thenReturn(true);
-      when(nostrService.liveRelayCount).thenReturn(0);
-
       final monitor =
           buildContainer(pubkey: '').read(relayHealthMonitorProvider);
       await monitor.checkNow();
