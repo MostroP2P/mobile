@@ -62,8 +62,10 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
     }
 
     // Load Mostro relays from settings.relays (excluding defaults to avoid duplicates)
+    final normalizedDefaults =
+        Config.nostrRelays.map(_normalizeRelayUrl).toSet();
     final relaysFromSettings = saved.relays
-        .where((url) => !Config.nostrRelays.contains(_normalizeRelayUrl(url)))
+        .where((url) => !normalizedDefaults.contains(_normalizeRelayUrl(url)))
         .map((url) => Relay.fromMostro(url))
         .toList();
     loadedRelays.addAll(relaysFromSettings);
