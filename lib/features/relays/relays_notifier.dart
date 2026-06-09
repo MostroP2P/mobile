@@ -54,14 +54,11 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
     logger.i('Loading user relays from settings: ${saved.userRelays}');
     
     final loadedRelays = <Relay>[];
-    
-    // Always ensure default relay exists for initial connection
-    final defaultRelay = Relay.fromDefault('wss://relay.mostro.network');
-    loadedRelays.add(defaultRelay);
-    
-    // Load Mostro relays from settings.relays (excluding default to avoid duplicates)
+
+    // Load discovered Mostro relays from settings.relays. Bootstrap relays are
+    // never seeded into the list; NostrService connects to them defensively
+    // (cold start / all discovered down) without exposing them here.
     final relaysFromSettings = saved.relays
-        .where((url) => url != 'wss://relay.mostro.network') // Avoid duplicates
         .map((url) => Relay.fromMostro(url))
         .toList();
     loadedRelays.addAll(relaysFromSettings);
@@ -687,25 +684,29 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
     });
   }
 
-  /// Clean all relays (except default) and perform fresh sync with new Mostro
+  /// Clean all relays and perform fresh sync with new Mostro
   Future<void> _cleanAllRelaysAndResync() async {
     try {
       logger.i('Cleaning all relays and performing fresh sync...');
-      
-      // CLEAR ALL relays (only keep default)
-      final defaultRelay = Relay.fromDefault('wss://relay.mostro.network');
-      state = [defaultRelay];
+
+      // Clear the whole list. Bootstrap relays (NostrService level) keep
+      // connectivity while the new instance's relay list is discovered.
+      state = [];
       await _saveRelays();
-      
-      logger.i('Reset to default relay only, starting fresh sync');
-      
+
+      // Ensure bootstrap connectivity so the new instance's kind 10002 can be
+      // fetched: the previous instance's relays may not carry it.
+      await ref.read(nostrServiceProvider).ensureBootstrapConnectivity();
+
+      logger.i('Reset relays, starting fresh sync');
+
       // Reset hash and timestamp for completely fresh sync with new Mostro
       _lastRelayListHash = null;
       _lastProcessedEventTime = null;
-      
+
       // Start completely fresh sync with new Mostro
       await syncWithMostroInstance();
-      
+
     } catch (e, stackTrace) {
       logger.e('Error during relay cleanup and resync',
           error: e, stackTrace: stackTrace);
