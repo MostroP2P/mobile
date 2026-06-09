@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:dart_nostr/nostr/model/ease.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/core/models/relay_list_event.dart';
 import 'package:mostro_mobile/features/settings/settings_notifier.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_manager.dart';
@@ -552,7 +553,21 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
           .whereType<String>()  // Filter out any null results
           .toSet() // Remove duplicates
           .toList();
-      
+
+      // Discovery + logical-retirement logging: discovered relays now drive the
+      // app; bootstrap relays absent from the 10002 stay connected but idle
+      // (NostrService has no per-relay disconnect, so this is logical only).
+      logger.i('Discovered ${normalizedRelays.length} relays from Mostro 10002: '
+          '$normalizedRelays');
+      final normalizedBootstrap =
+          Config.bootstrapRelays.map(_normalizeRelayUrl).toSet();
+      final retiredBootstrap =
+          normalizedBootstrap.where((b) => !normalizedRelays.contains(b)).toList();
+      if (retiredBootstrap.isNotEmpty) {
+        logger.i('Bootstrap relays not in 10002 are now idle '
+            '(logical retirement, not disconnected): $retiredBootstrap');
+      }
+
       // Get blacklisted relays from settings and normalize them for consistent matching
       final blacklistedUrls = settings.state.blacklistedRelays
           .map((url) => _normalizeRelayUrl(url))
