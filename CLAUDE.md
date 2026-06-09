@@ -74,6 +74,7 @@ When implementing or debugging protocol-related features (order flows, actions, 
 - **Source Tracking**: Relays tagged by source (user, mostro, default) for appropriate handling and storage strategy
 - **Smart Re-enablement**: Manual relay addition automatically removes from blacklist, Mostro relay re-activation removes from blacklist during sync
 - **URL Normalization**: All relay URLs normalized by removing trailing slashes to ensure consistent matching
+- **Bootstrap Discovery Layer**: Hardcoded relays are NOT seeded into the visible list; `Config.bootstrapRelays` are defensive connections used only to discover a Mostro's kind 10002 (cold start via `NostrService.init` fail-safe, all-down via `RelayHealthMonitor` watchdog, instance switch via `ensureBootstrapConnectivity()`). Engaged additively (never `disconnectFromRelays()`); retirement is logical only since dart_nostr has no per-relay disconnect. See `docs/architecture/RELAY_SYNC_IMPLEMENTATION.md` ("Bootstrap Relay Discovery Layer")
 - **Implementation**: Located in `features/relays/` with core logic in `RelaysNotifier`
 
 #### Manual Relay Addition
