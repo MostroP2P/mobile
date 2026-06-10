@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/enums.dart';
-import 'package:mostro_mobile/data/models/session.dart';
+import 'package:mostro_mobile/data/models.dart';
 import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
@@ -9,6 +9,7 @@ import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/shared/providers/legible_handle_provider.dart';
+import 'package:mostro_mobile/shared/utils/bond_payout_helpers.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 import 'package:mostro_mobile/shared/utils/text_formatting.dart';
 
@@ -61,7 +62,51 @@ class MostroMessageDetail extends ConsumerWidget {
     WidgetRef ref,
   ) {
     final tradeState = ref.watch(orderNotifierProvider(orderId));
-    final action = tradeState.action;
+    final historyAsync = ref.watch(mostroMessageHistoryProvider(orderId));
+    final messages = historyAsync.maybeWhen<List<MostroMessage>>(
+      data: (m) => m,
+      orElse: () => const <MostroMessage>[],
+    );
+    final bondPhase = bondPayoutPhase(messages);
+
+    if (bondPhase == BondPayoutPhase.acknowledged) {
+      return S.of(context)!.bondInvoiceAcceptedMessage;
+    }
+
+    if (bondPhase == BondPayoutPhase.completed) {
+      final prev = _previousNonBondAction(messages) ?? tradeState.action;
+      final base = _renderActionMessage(context, ref, tradeState, prev);
+      final canRate =
+          messages.any((m) => m.action == actions.Action.rate);
+      final extension = canRate
+          ? S.of(context)!.bondPayoutCompletedWithRating
+          : S.of(context)!.bondPayoutCompletedMessage;
+      return '$base\n\n$extension';
+    }
+
+    return _renderActionMessage(context, ref, tradeState, tradeState.action);
+  }
+
+  actions.Action? _previousNonBondAction(List<MostroMessage> messages) {
+    final sorted = [...messages]..sort(
+        (a, b) => (b.timestamp ?? 0).compareTo(a.timestamp ?? 0),
+      );
+    for (final msg in sorted) {
+      final a = msg.action;
+      if (a == actions.Action.addBondInvoice) continue;
+      if (a == actions.Action.bondInvoiceAccepted) continue;
+      if (a == actions.Action.bondPayoutCompleted) continue;
+      return a;
+    }
+    return null;
+  }
+
+  String _renderActionMessage(
+    BuildContext context,
+    WidgetRef ref,
+    OrderState tradeState,
+    actions.Action? action,
+  ) {
     final orderPayload = tradeState.order;
     switch (action) {
       case actions.Action.newOrder:
@@ -84,6 +129,8 @@ class MostroMessageDetail extends ConsumerWidget {
               orderPayload?.fiatAmount.toString() ?? '',
               orderPayload?.fiatCode ?? '',
             );
+      case actions.Action.payBondInvoice:
+        return S.of(context)!.payBondMessage;
       case actions.Action.addInvoice:
         final expSecs = ref
                 .read(orderRepositoryProvider)
@@ -245,9 +292,23 @@ class MostroMessageDetail extends ConsumerWidget {
         return S.of(context)!.holdInvoicePaymentCanceled;
       case actions.Action.cantDo:
         return _getCantDoMessage(context, ref);
+      case actions.Action.addBondInvoice:
+        return _getBondPayoutMessage(context, ref);
       default:
         return 'No message found for action ${tradeState.action}'; // This is a fallback message for developers
     }
+  }
+
+  String _getBondPayoutMessage(BuildContext context, WidgetRef ref) {
+    final historyAsync = ref.watch(mostroMessageHistoryProvider(orderId));
+    final amount = historyAsync.maybeWhen(
+      data: (msgs) => latestBondPayoutRequest(msgs)?.order.amount,
+      orElse: () => null,
+    );
+    if (amount == null) {
+      return S.of(context)!.addBondInvoiceMessage;
+    }
+    return S.of(context)!.addBondInvoiceSubmitLine(amount.toString());
   }
 
   String _getCantDoMessage(BuildContext context, WidgetRef ref) {
@@ -290,6 +351,8 @@ class MostroMessageDetail extends ConsumerWidget {
         return S.of(context)!.statusDetailPending;
       case Status.waitingPayment:
         return S.of(context)!.statusDetailWaitingPayment;
+      case Status.waitingTakerBond:
+        return S.of(context)!.statusWaitingTakerBond;
       case Status.waitingBuyerInvoice:
         return S.of(context)!.statusDetailWaitingInvoice;
       case Status.paymentFailed:

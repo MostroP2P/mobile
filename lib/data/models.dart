@@ -1,4 +1,5 @@
 export 'package:mostro_mobile/data/models/amount.dart';
+export 'package:mostro_mobile/data/models/bond_payout_request.dart';
 export 'package:mostro_mobile/data/models/cant_do.dart';
 export 'package:mostro_mobile/data/models/dispute.dart';
 export 'package:mostro_mobile/data/models/mostro_message.dart';

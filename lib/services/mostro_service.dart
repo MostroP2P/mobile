@@ -242,6 +242,17 @@ class MostroService {
     );
   }
 
+  Future<void> sendBondPayoutInvoice(String orderId, String invoice) async {
+    final payload = PaymentRequest(order: null, lnInvoice: invoice);
+    await publishOrder(
+      MostroMessage(
+        action: Action.addBondInvoice,
+        id: orderId,
+        payload: payload,
+      ),
+    );
+  }
+
   Future<void> cancelOrder(String orderId) async {
     await publishOrder(MostroMessage(action: Action.cancel, id: orderId));
   }

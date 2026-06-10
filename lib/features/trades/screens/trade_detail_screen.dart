@@ -27,6 +27,7 @@ import 'package:mostro_mobile/shared/providers/time_provider.dart';
 import 'package:mostro_mobile/shared/widgets/dynamic_countdown_widget.dart';
 import 'package:mostro_mobile/features/disputes/providers/dispute_providers.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:mostro_mobile/shared/utils/bond_payout_helpers.dart';
 import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
 
 class TradeDetailScreen extends ConsumerWidget {
@@ -266,6 +267,27 @@ class TradeDetailScreen extends ConsumerWidget {
     );
   }
 
+  bool _hasPendingBondClaim(WidgetRef ref) {
+    final history = ref.watch(mostroMessageHistoryProvider(orderId));
+    final instance = ref.watch(orderRepositoryProvider).mostroInstance;
+    final claimWindowDays = instance?.bondPayoutClaimWindowDays ?? 15;
+    return history.maybeWhen(
+      data: (msgs) => hasPendingBondClaim(msgs, claimWindowDays),
+      orElse: () => false,
+    );
+  }
+
+  Widget _buildBondPayoutClaimButton(BuildContext context) {
+    return ElevatedButton(
+      key: const Key('bondPayoutClaimButton'),
+      onPressed: () => context.push('/bond_payout/$orderId'),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppTheme.mostroGreen,
+      ),
+      child: Text(S.of(context)!.addBondInvoiceButton),
+    );
+  }
+
   /// Main action button area, switching on `orderPayload.status`.
   /// Additional checks use `message.action` to refine which button to show.
   /// Following the Mostro protocol state machine for order flow.
@@ -329,6 +351,18 @@ class TradeDetailScreen extends ConsumerWidget {
                 onPressed: () => context.push('/pay_invoice/$orderId'),
               ));
             }
+          }
+          break;
+
+        case actions.Action.payBondInvoice:
+          final hasPaymentRequest = tradeState.paymentRequest != null;
+          if (hasPaymentRequest) {
+            widgets.add(_buildNostrButton(
+              S.of(context)!.payBondButton,
+              action: actions.Action.payBondInvoice,
+              backgroundColor: AppTheme.mostroGreen,
+              onPressed: () => context.push('/pay_bond/$orderId'),
+            ));
           }
           break;
 
@@ -808,6 +842,10 @@ class TradeDetailScreen extends ConsumerWidget {
         tradeState.dispute?.disputeId != null) {
       extraButtons
           .add(_buildViewDisputeButton(context, tradeState.dispute!.disputeId));
+    }
+
+    if (_hasPendingBondClaim(ref)) {
+      extraButtons.add(_buildBondPayoutClaimButton(context));
     }
 
     final allButtons = [

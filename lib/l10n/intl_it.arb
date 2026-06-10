@@ -411,10 +411,76 @@
             }
         }
     },
+    "fiatAmountTooLowRange": "L'importo è troppo basso. Questo nodo Mostro consente tra {minAmount} e {maxAmount} {fiatCode} ({minSats} - {maxSats} sats).",
+    "@fiatAmountTooLowRange": {
+        "placeholders": {
+            "minAmount": {
+                "type": "String",
+                "description": "The minimum allowed amount in fiat"
+            },
+            "maxAmount": {
+                "type": "String",
+                "description": "The maximum allowed amount in fiat"
+            },
+            "fiatCode": {
+                "type": "String",
+                "description": "The selected fiat currency code"
+            },
+            "minSats": {
+                "type": "String",
+                "description": "The minimum allowed amount in sats"
+            },
+            "maxSats": {
+                "type": "String",
+                "description": "The maximum allowed amount in sats"
+            }
+        }
+    },
+    "fiatAmountTooHighRange": "L'importo è troppo alto. Questo nodo Mostro consente tra {minAmount} e {maxAmount} {fiatCode} ({minSats} - {maxSats} sats).",
+    "@fiatAmountTooHighRange": {
+        "placeholders": {
+            "minAmount": {
+                "type": "String",
+                "description": "The minimum allowed amount in fiat"
+            },
+            "maxAmount": {
+                "type": "String",
+                "description": "The maximum allowed amount in fiat"
+            },
+            "fiatCode": {
+                "type": "String",
+                "description": "The selected fiat currency code"
+            },
+            "minSats": {
+                "type": "String",
+                "description": "The minimum allowed amount in sats"
+            },
+            "maxSats": {
+                "type": "String",
+                "description": "The maximum allowed amount in sats"
+            }
+        }
+    },
     "exchangeRateNotAvailable": "Tasso di cambio non disponibile, per favore attendi o aggiorna",
     "mostroInstanceNotAvailable": "Dati dell'istanza Mostro non disponibili, per favore attendi",
-    "enterAmountYouWantToReceive": "Inserisci l'importo che vuoi ricevere",
-    "enterAmountYouWantToSend": "Inserisci l'importo che vuoi inviare",
+    "enterAmountYouWantToReceiveCurrency": "Inserisci l'importo in {currency} che vuoi ricevere",
+    "@enterAmountYouWantToReceiveCurrency": {
+        "placeholders": {
+            "currency": {
+                "type": "String",
+                "description": "The selected fiat code, or \"fiat\" when none is selected"
+            }
+        }
+    },
+    "enterAmountYouWantToSendCurrency": "Inserisci l'importo in {currency} che vuoi inviare",
+    "@enterAmountYouWantToSendCurrency": {
+        "placeholders": {
+            "currency": {
+                "type": "String",
+                "description": "The selected fiat code, or \"fiat\" when none is selected"
+            }
+        }
+    },
     "creatingRangeOrder": "Creazione ordine intervallo (puoi ricevere tra importi minimo e massimo)",
     "creatingRangeOrderBuySend": "Creazione ordine intervallo (puoi inviare tra importi minimo e massimo)",
     "rangeOrder": "Ordine Intervallo",
@@ -647,6 +713,13 @@
     "copy": "Copia",
     "share": "Condividi",
     "failedToShareInvoice": "Errore nel condividere la fattura. Per favore prova a copiarla invece.",
+    "bondScreenTitle": "Deposito anti-abuso",
+    "bondExplanation": "Per prendere questo ordine devi pagare un deposito anti-abuso. Funziona così:\n\n• I tuoi sats vengono trattenuti nel tuo wallet, non vengono spesi.\n• Se lo scambio si conclude correttamente, recuperi il deposito automaticamente.\n• Se hai una disputa su questo ordine e la perdi, perderai il deposito.\n• Questo meccanismo protegge tutti gli utenti dai truffatori.",
+    "bondExplanationMaker": "Prima che il tuo ordine possa essere creato, devi pagare un deposito anti-abuso. Tieni aperta questa schermata fino al completamento del pagamento: se la chiudi o non paghi, l'ordine non verrà creato. Funziona così:\n\n• I tuoi sats vengono trattenuti nel tuo wallet, non vengono spesi.\n• Se lo scambio si conclude correttamente, recuperi il deposito automaticamente.\n• Se hai una disputa su questo ordine e la perdi, perderai il deposito.\n• Questo meccanismo protegge tutti gli utenti dai truffatori.",
+    "bondPayInvoicePrompt": "Paga la seguente fattura di {amount} sats per continuare, oppure annulla se non sei d'accordo.",
+    "statusWaitingTakerBond": "In attesa del pagamento del deposito",
+    "payBondMessage": "Per favore paga il deposito anti-abuso per continuare questo ordine.",
+    "payBondButton": "Paga deposito",
     "failedToCancelOrder": "Impossibile annullare l'ordine: {error}",
     "@failedToCancelOrder": {
         "placeholders": {
@@ -1179,6 +1252,9 @@
     "notificationExpiresIn": "Scade tra",
     "notificationRate": "Valutazione",
     "notificationOrderId": "ID Ordine",
+    "notification_bond_slashed_title": "Deposito anti-abuso perso",
+    "notification_bond_slashed_message": "Hai perso il tuo deposito anti-abuso perché non hai risposto entro il tempo previsto.",
+    "notification_bond_slashed_detail": "Hai perso il tuo deposito anti-abuso di {amount} sats per l'ordine {orderId}, di {fiatAmount} {fiatCode} con metodo di pagamento {paymentMethod}, perché non hai risposto entro il tempo previsto.",
     "notificationDelete": "Elimina",
     "confirmDeleteNotification": "Sei sicuro di voler eliminare questa notifica?",
     "confirmClearAll": "Questo eliminerà permanentemente tutte le notifiche. Questa azione non può essere annullata.",
@@ -1284,8 +1360,10 @@
     "restoreProcessingRoles": "Elaborazione ruoli...",
     "restoreFinalizing": "Finalizzazione ripristino...",
     "restoreCompleted": "Ripristino completato!",
+    "restoreNoPreviousData": "Nessun dato precedente per questo utente in questo Mostro",
     "restoreError": "Errore di ripristino",
     "restoreErrorMessage": "Errore nel ripristino dei dati utente. Verifica la tua connessione e riprova più tardi.",
+    "restoreInvalidTradeIndex": "Indice di scambio non valido",
     "@_comment_file_messaging": "File messaging strings",
     "download": "Scarica",
     "openFile": "Apri File",
@@ -1585,5 +1663,46 @@
     "threeMonths": "3 mesi",
     "sixMonths": "6 mesi",
     "oneYear": "1 anno",
-    "never": "Mai"
+    "never": "Mai",
+    "addBondInvoiceTitle": "Riscatta la tua parte",
+    "addBondInvoiceMessage": "Hai vinto la disputa. Invia una fattura Lightning per riscattare la tua parte del deposito anti-abuso confiscato.",
+    "addBondInvoiceWonLine": "Hai vinto la disputa per l'ordine {order_id}.",
+    "@addBondInvoiceWonLine": {
+        "placeholders": {
+            "order_id": {
+                "type": "String",
+                "description": "The order ID"
+            }
+        }
+    },
+    "addBondInvoiceSubmitLine": "Invia una fattura Lightning di {amount} sat per riscattare la parte del deposito anti-abuso che ti spetta.",
+    "@addBondInvoiceSubmitLine": {
+        "placeholders": {
+            "amount": {
+                "type": "String",
+                "description": "The amount of satoshis"
+            }
+        }
+    },
+    "addBondInvoiceDeadline": "Devi riscattarla entro il {date}.",
+    "@addBondInvoiceDeadline": {
+        "placeholders": {
+            "date": {
+                "type": "String",
+                "description": "The claim deadline"
+            }
+        }
+    },
+    "addBondInvoiceInputLabel": "Fattura Lightning",
+    "addBondInvoiceInputHint": "Incolla qui la tua fattura bolt11",
+    "addBondInvoiceButton": "RISCATTA",
+    "addBondInvoiceSubmitButton": "INVIA FATTURA",
+    "addBondInvoiceFailedToSubmit": "Errore nell'invio della fattura. Riprova.",
+    "bondPayoutBadge": "RISCATTO IN ATTESA",
+    "bondPayoutInProgressBadge": "RISCATTO IN CORSO",
+    "bondInvoiceAcceptedMessage": "Mostro ha accettato la fattura Lightning che hai fornito per ricevere la tua parte del deposito anti-abuso. Attendi il completamento del pagamento.",
+    "bondPayoutCompletedMessage": "Hai ricevuto il pagamento della tua parte del deposito anti-abuso.",
+    "bondPayoutCompletedWithRating": "Hai ricevuto il pagamento della tua parte del deposito anti-abuso. Puoi valutare la tua controparte.",
+    "bondPayoutCloseButton": "CHIUDI",
+    "errorLoadingBondPayout": "Errore nel caricamento dei dati del riscatto"
 }

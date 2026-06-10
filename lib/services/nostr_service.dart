@@ -1,5 +1,6 @@
 import 'package:collection/collection.dart';
 import 'package:dart_nostr/dart_nostr.dart';
+import 'package:flutter/foundation.dart';
 import 'package:dart_nostr/nostr/model/ease.dart';
 import 'package:dart_nostr/nostr/model/ok.dart';
 import 'package:dart_nostr/nostr/model/relay_informations.dart';
@@ -17,6 +18,10 @@ class NostrService {
 
   bool _isInitialized = false;
 
+  /// Relays from which we have received data (proven alive). Maintained from
+  /// the relay connection callbacks; used to detect "no live relay" situations.
+  final Set<String> _connectedRelays = {};
+
   NostrService();
 
   /// Safe getter for settings with fallback
@@ -24,23 +29,42 @@ class NostrService {
       _settings ??
       Settings(relays: [], fullPrivacyMode: false, mostroPublicKey: '');
 
-  Future<void> init(Settings settings) async {
-    // Validate settings before initialization
-    if (settings.relays.isEmpty) {
-      throw Exception('Cannot initialize NostrService: No relays provided');
-    }
+  /// Relays currently considered alive (have sent us data since connecting).
+  Set<String> get connectedRelays => Set.unmodifiable(_connectedRelays);
 
-    logger.i('Initializing NostrService with relays: ${settings.relays}');
-    _settings = settings;
+  /// Number of relays currently considered alive.
+  int get liveRelayCount => _connectedRelays.length;
+
+  /// Relays to connect to: the configured relays, or the defensive bootstrap
+  /// relays as a fail-safe when none are configured (cold start before any kind
+  /// 10002 discovery), so init never fails on an empty list.
+  @visibleForTesting
+  static List<String> effectiveRelays(List<String> configured) =>
+      configured.isEmpty ? Config.bootstrapRelays : configured;
+
+  Future<void> init(Settings settings) async {
+    final relays = effectiveRelays(settings.relays);
+    if (settings.relays.isEmpty) {
+      logger.w(
+        'No relays configured; falling back to bootstrap relays for discovery',
+      );
+    }
+    final effectiveSettings = settings.copyWith(relays: relays);
+
+    logger.i(
+        'Initializing NostrService with relays: ${effectiveSettings.relays}');
+    _settings = effectiveSettings;
 
     try {
       await _nostr.services.relays.init(
-        relaysUrl: settings.relays,
+        relaysUrl: effectiveSettings.relays,
         connectionTimeout: Config.relayConnectionTimeout,
         shouldReconnectToRelayOnNotice: true,
         retryOnClose: true,
         retryOnError: true,
         onRelayListening: (relayUrl, receivedData, channel) {
+          // Any data from a relay proves it is alive.
+          _connectedRelays.add(relayUrl);
           if (receivedData is NostrEvent) {
             logger.d('Event from $relayUrl: ${receivedData.id}');
           } else if (receivedData is NostrNotice) {
@@ -58,16 +82,19 @@ class NostrService {
           }
         },
         onRelayConnectionError: (relay, error, channel) {
+          _connectedRelays.remove(relay);
           logger.w('Failed to connect to relay $relay: $error');
         },
         onRelayConnectionDone: (relay, socket) {
-          logger.i('Successfully connected to relay: $relay');
+          // Fired when the relay websocket is closed (disconnected).
+          _connectedRelays.remove(relay);
+          logger.i('Relay disconnected (socket closed): $relay');
         },
       );
 
       _isInitialized = true;
       logger.i(
-        'NostrService initialized successfully with ${settings.relays.length} relays',
+        'NostrService initialized successfully with ${effectiveSettings.relays.length} relays',
       );
     } catch (e) {
       _isInitialized = false;
@@ -188,6 +215,25 @@ class NostrService {
     await _nostr.services.relays.disconnectFromRelays();
     _isInitialized = false;
     logger.i('Disconnected from all relays');
+  }
+
+  /// Connects the defensive bootstrap relays without dropping any existing
+  /// connection (additive init). Idempotent: returns early when they are
+  /// already part of the active relay set. Used as a fallback to keep relay
+  /// discovery possible when no discovered relay is reachable.
+  Future<void> ensureBootstrapConnectivity() async {
+    final current = settings.relays;
+    final merged = {...current, ...Config.bootstrapRelays}.toList();
+
+    if (ListEquality().equals(current, merged)) {
+      logger.d('Bootstrap relays already part of the active relay set');
+      return;
+    }
+
+    logger.i(
+      'Bootstrap: connecting to defensive relays: ${Config.bootstrapRelays}',
+    );
+    await updateSettings(settings.copyWith(relays: merged));
   }
 
   bool get isInitialized => _isInitialized;

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:dart_nostr/nostr/model/ease.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/core/models/relay_list_event.dart';
 import 'package:mostro_mobile/features/settings/settings_notifier.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_manager.dart';
@@ -54,14 +55,11 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
     logger.i('Loading user relays from settings: ${saved.userRelays}');
     
     final loadedRelays = <Relay>[];
-    
-    // Always ensure default relay exists for initial connection
-    final defaultRelay = Relay.fromDefault('wss://relay.mostro.network');
-    loadedRelays.add(defaultRelay);
-    
-    // Load Mostro relays from settings.relays (excluding default to avoid duplicates)
+
+    // Load discovered Mostro relays from settings.relays. Bootstrap relays are
+    // never seeded into the list; NostrService connects to them defensively
+    // (cold start / all discovered down) without exposing them here.
     final relaysFromSettings = saved.relays
-        .where((url) => url != 'wss://relay.mostro.network') // Avoid duplicates
         .map((url) => Relay.fromMostro(url))
         .toList();
     loadedRelays.addAll(relaysFromSettings);
@@ -555,7 +553,21 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
           .whereType<String>()  // Filter out any null results
           .toSet() // Remove duplicates
           .toList();
-      
+
+      // Discovery + logical-retirement logging: discovered relays now drive the
+      // app; bootstrap relays absent from the 10002 stay connected but idle
+      // (NostrService has no per-relay disconnect, so this is logical only).
+      logger.i('Discovered ${normalizedRelays.length} relays from Mostro 10002: '
+          '$normalizedRelays');
+      final normalizedBootstrap =
+          Config.bootstrapRelays.map(_normalizeRelayUrl).toSet();
+      final retiredBootstrap =
+          normalizedBootstrap.where((b) => !normalizedRelays.contains(b)).toList();
+      if (retiredBootstrap.isNotEmpty) {
+        logger.i('Bootstrap relays not in 10002 are now idle '
+            '(logical retirement, not disconnected): $retiredBootstrap');
+      }
+
       // Get blacklisted relays from settings and normalize them for consistent matching
       final blacklistedUrls = settings.state.blacklistedRelays
           .map((url) => _normalizeRelayUrl(url))
@@ -687,25 +699,29 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
     });
   }
 
-  /// Clean all relays (except default) and perform fresh sync with new Mostro
+  /// Clean all relays and perform fresh sync with new Mostro
   Future<void> _cleanAllRelaysAndResync() async {
     try {
       logger.i('Cleaning all relays and performing fresh sync...');
-      
-      // CLEAR ALL relays (only keep default)
-      final defaultRelay = Relay.fromDefault('wss://relay.mostro.network');
-      state = [defaultRelay];
+
+      // Clear the whole list. Bootstrap relays (NostrService level) keep
+      // connectivity while the new instance's relay list is discovered.
+      state = [];
       await _saveRelays();
-      
-      logger.i('Reset to default relay only, starting fresh sync');
-      
+
+      // Ensure bootstrap connectivity so the new instance's kind 10002 can be
+      // fetched: the previous instance's relays may not carry it.
+      await ref.read(nostrServiceProvider).ensureBootstrapConnectivity();
+
+      logger.i('Reset relays, starting fresh sync');
+
       // Reset hash and timestamp for completely fresh sync with new Mostro
       _lastRelayListHash = null;
       _lastProcessedEventTime = null;
-      
+
       // Start completely fresh sync with new Mostro
       await syncWithMostroInstance();
-      
+
     } catch (e, stackTrace) {
       logger.e('Error during relay cleanup and resync',
           error: e, stackTrace: stackTrace);

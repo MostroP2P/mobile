@@ -23,6 +23,11 @@ class Session {
   NostrKeyPairs? _adminSharedKey;
   String? disputeId;
 
+  /// Transient marker (never persisted): set while a maker-created order is in
+  /// the anti-abuse bond limbo, so the shared pay-bond handler skips persisting
+  /// the still-uncommitted session. Cleared and persisted on confirmation.
+  bool bondPending = false;
+
   Session({
     required this.masterKey,
     required this.tradeKey,

@@ -18,6 +18,7 @@ import 'package:mostro_mobile/features/notifications/providers/notifications_pro
 import 'package:mostro_mobile/features/subscriptions/subscription_manager_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
+import 'package:mostro_mobile/shared/providers/push_notification_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/features/chat/utils/message_type_helpers.dart';
 import 'package:mostro_mobile/shared/mixins/media_cache_mixin.dart';
@@ -233,6 +234,17 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
       } catch (publishError, publishStack) {
         logger.e('Failed to publish message: $publishError', stackTrace: publishStack);
         return;
+      }
+
+      // Wake the peer's device via the push server (fire-and-forget).
+      // Required for P2P chat because the server's Nostr listener only matches
+      // kind 1059 events on the recipient's tradeKey.public, and P2P chat
+      // events use sharedKey.public.
+      final peerPubkey = session.peer?.publicKey;
+      if (peerPubkey != null) {
+        unawaited(
+          ref.read(pushNotificationServiceProvider).notifyPeer(peerPubkey),
+        );
       }
 
       // Persist the wrapped event to disk immediately after successful publish.

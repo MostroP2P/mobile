@@ -469,10 +469,76 @@
             }
         }
     },
+    "fiatAmountTooLowRange": "Der Betrag ist zu niedrig. Dieser Mostro-Node erlaubt zwischen {minAmount} und {maxAmount} {fiatCode} ({minSats} - {maxSats} Sats).",
+    "@fiatAmountTooLowRange": {
+        "placeholders": {
+            "minAmount": {
+                "type": "String",
+                "description": "The minimum allowed amount in fiat"
+            },
+            "maxAmount": {
+                "type": "String",
+                "description": "The maximum allowed amount in fiat"
+            },
+            "fiatCode": {
+                "type": "String",
+                "description": "The selected fiat currency code"
+            },
+            "minSats": {
+                "type": "String",
+                "description": "The minimum allowed amount in sats"
+            },
+            "maxSats": {
+                "type": "String",
+                "description": "The maximum allowed amount in sats"
+            }
+        }
+    },
+    "fiatAmountTooHighRange": "Der Betrag ist zu hoch. Dieser Mostro-Node erlaubt zwischen {minAmount} und {maxAmount} {fiatCode} ({minSats} - {maxSats} Sats).",
+    "@fiatAmountTooHighRange": {
+        "placeholders": {
+            "minAmount": {
+                "type": "String",
+                "description": "The minimum allowed amount in fiat"
+            },
+            "maxAmount": {
+                "type": "String",
+                "description": "The maximum allowed amount in fiat"
+            },
+            "fiatCode": {
+                "type": "String",
+                "description": "The selected fiat currency code"
+            },
+            "minSats": {
+                "type": "String",
+                "description": "The minimum allowed amount in sats"
+            },
+            "maxSats": {
+                "type": "String",
+                "description": "The maximum allowed amount in sats"
+            }
+        }
+    },
     "exchangeRateNotAvailable": "Wechselkurs nicht verfügbar, bitte warten oder aktualisieren",
     "mostroInstanceNotAvailable": "Mostro-Instanzdaten nicht verfügbar, bitte warten",
-    "enterAmountYouWantToReceive": "Betrag eingeben, den du erhalten möchtest",
-    "enterAmountYouWantToSend": "Betrag eingeben, den du senden möchtest",
+    "enterAmountYouWantToReceiveCurrency": "Gib den Betrag in {currency} ein, den du erhalten möchtest",
+    "@enterAmountYouWantToReceiveCurrency": {
+        "placeholders": {
+            "currency": {
+                "type": "String",
+                "description": "The selected fiat code, or \"fiat\" when none is selected"
+            }
+        }
+    },
+    "enterAmountYouWantToSendCurrency": "Gib den Betrag in {currency} ein, den du senden möchtest",
+    "@enterAmountYouWantToSendCurrency": {
+        "placeholders": {
+            "currency": {
+                "type": "String",
+                "description": "The selected fiat code, or \"fiat\" when none is selected"
+            }
+        }
+    },
     "creatingRangeOrder": "Erstelle eine Range-Order (du kannst zwischen Minimum und Maximum wählen)",
     "creatingRangeOrderBuySend": "Erstelle eine Range-Order (du kannst zwischen Minimum und Maximum senden)",
     "rangeOrder": "Range-Order",
@@ -704,6 +770,13 @@
     "copy": "Kopieren",
     "share": "Teilen",
     "failedToShareInvoice": "Teilen der Rechnung fehlgeschlagen. Bitte versuche stattdessen, sie zu kopieren.",
+    "bondScreenTitle": "Anti-Missbrauchs-Kaution",
+    "bondExplanation": "Um diese Order anzunehmen, musst du eine Anti-Missbrauchs-Kaution zahlen. So funktioniert es:\n\n• Deine Sats werden in deiner Wallet gehalten, sie werden nicht ausgegeben.\n• Wenn der Tausch erfolgreich abgeschlossen wird, erhältst du deine Kaution automatisch zurück.\n• Wenn du bei dieser Order einen Streit hast und ihn verlierst, verlierst du die Kaution.\n• Dieser Mechanismus schützt alle Nutzer vor Betrügern.",
+    "bondExplanationMaker": "Bevor deine Order erstellt werden kann, musst du eine Anti-Missbrauchs-Kaution zahlen. Lass diesen Bildschirm geöffnet, bis die Zahlung abgeschlossen ist – wenn du ihn schließt oder nicht zahlst, wird die Order nicht erstellt. So funktioniert es:\n\n• Deine Sats werden in deiner Wallet gehalten, sie werden nicht ausgegeben.\n• Wenn der Tausch erfolgreich abgeschlossen wird, erhältst du deine Kaution automatisch zurück.\n• Wenn du bei dieser Order einen Streit hast und ihn verlierst, verlierst du die Kaution.\n• Dieser Mechanismus schützt alle Nutzer vor Betrügern.",
+    "bondPayInvoicePrompt": "Zahle die folgende Rechnung über {amount} Sats, um fortzufahren, oder brich ab, wenn du nicht einverstanden bist.",
+    "statusWaitingTakerBond": "Warte auf Kautionszahlung",
+    "payBondMessage": "Bitte zahle die Anti-Missbrauchs-Kaution, um diese Order fortzusetzen.",
+    "payBondButton": "Kaution zahlen",
     "failedToCancelOrder": "Fehler beim Abbrechen der Order: {error}",
     "@failedToCancelOrder": {
         "placeholders": {
@@ -1199,6 +1272,9 @@
     "notificationExpiresIn": "Läuft ab in",
     "notificationRate": "Bewertung",
     "notificationOrderId": "Order-ID",
+    "notification_bond_slashed_title": "Anti-Missbrauchs-Kaution verloren",
+    "notification_bond_slashed_message": "Du hast deine Anti-Missbrauchs-Kaution verloren, weil du nicht rechtzeitig geantwortet hast.",
+    "notification_bond_slashed_detail": "Du hast deine Anti-Missbrauchs-Kaution von {amount} Sats für die Bestellung {orderId}, über {fiatAmount} {fiatCode} mit Zahlungsmethode {paymentMethod}, verloren, weil du nicht rechtzeitig geantwortet hast.",
     "notificationDelete": "Löschen",
     "confirmDeleteNotification": "Bist du sicher, dass du diese Benachrichtigung löschen möchtest?",
     "confirmClearAll": "Dies wird alle Benachrichtigungen dauerhaft löschen. Diese Aktion kann nicht rückgängig gemacht werden.",
@@ -1243,8 +1319,10 @@
     "restoreProcessingRoles": "Rollen werden verarbeitet...",
     "restoreFinalizing": "Wiederherstellung wird abgeschlossen...",
     "restoreCompleted": "Wiederherstellung abgeschlossen!",
+    "restoreNoPreviousData": "Keine vorherigen Daten für diesen Nutzer in diesem Mostro",
     "restoreError": "Wiederherstellungsfehler",
     "restoreErrorMessage": "Fehler beim Wiederherstellen der Nutzerdaten. Bitte prüfe deine Verbindung und versuche es erneut.",
+    "restoreInvalidTradeIndex": "Ungültiger Handelsindex",
     "@_comment_file_messaging": "Dateiversand-Strings",
     "download": "Herunterladen",
     "openFile": "Datei öffnen",
@@ -1544,5 +1622,46 @@
     "threeMonths": "3 Monate",
     "sixMonths": "6 Monate",
     "oneYear": "1 Jahr",
-    "never": "Nie"
+    "never": "Nie",
+    "addBondInvoiceTitle": "Anteil einfordern",
+    "addBondInvoiceMessage": "Du hast den Streit gewonnen. Sende eine Lightning-Rechnung, um deinen Anteil der eingezogenen Anti-Missbrauchs-Kaution einzufordern.",
+    "addBondInvoiceWonLine": "Du hast den Streit für Order {order_id} gewonnen.",
+    "@addBondInvoiceWonLine": {
+        "placeholders": {
+            "order_id": {
+                "type": "String",
+                "description": "The order ID"
+            }
+        }
+    },
+    "addBondInvoiceSubmitLine": "Sende eine Lightning-Rechnung über {amount} Sats, um deinen Anteil an der Anti-Missbrauchs-Kaution einzufordern.",
+    "@addBondInvoiceSubmitLine": {
+        "placeholders": {
+            "amount": {
+                "type": "String",
+                "description": "The amount of satoshis"
+            }
+        }
+    },
+    "addBondInvoiceDeadline": "Du musst sie vor dem {date} einfordern.",
+    "@addBondInvoiceDeadline": {
+        "placeholders": {
+            "date": {
+                "type": "String",
+                "description": "The claim deadline"
+            }
+        }
+    },
+    "addBondInvoiceInputLabel": "Lightning-Rechnung",
+    "addBondInvoiceInputHint": "Füge hier deine bolt11-Rechnung ein",
+    "addBondInvoiceButton": "EINFORDERN",
+    "addBondInvoiceSubmitButton": "RECHNUNG SENDEN",
+    "addBondInvoiceFailedToSubmit": "Rechnung konnte nicht gesendet werden. Bitte erneut versuchen.",
+    "bondPayoutBadge": "AUSZAHLUNG OFFEN",
+    "bondPayoutInProgressBadge": "AUSZAHLUNG LÄUFT",
+    "bondInvoiceAcceptedMessage": "Mostro hat die Lightning-Rechnung akzeptiert, die du zum Erhalt deines Anteils der Anti-Missbrauchs-Kaution bereitgestellt hast. Bitte warte, bis die Zahlung abgeschlossen ist.",
+    "bondPayoutCompletedMessage": "Du hast die Auszahlung deines Anteils der Anti-Missbrauchs-Kaution erhalten.",
+    "bondPayoutCompletedWithRating": "Du hast die Auszahlung deines Anteils der Anti-Missbrauchs-Kaution erhalten. Du kannst deinen Handelspartner bewerten.",
+    "bondPayoutCloseButton": "SCHLIESSEN",
+    "errorLoadingBondPayout": "Fehler beim Laden der Auszahlungsdaten"
 }

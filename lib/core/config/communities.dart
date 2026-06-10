@@ -64,6 +64,12 @@ const List<CommunityConfig> trustedCommunities = [
     ],
   ),
   CommunityConfig(
+    pubkey:
+        '000009ee1e4b1dc7add19ab30e4ef854d7b562e208b62686fd9002b50b24dabb',
+    region: '\u{1F1FB}\u{1F1EA} Venezuela',
+    social: [SocialLink(type: 'telegram', url: 'https://t.me/MostroVzla')],
+  ),
+  CommunityConfig(
     pubkey: defaultMostroPubkey,
     region: '\u{1F310} Default',
     social: [],

@@ -17,6 +17,7 @@ class NotificationMessageMapper {
       case mostro.Action.takeSell:
         return 'notification_order_taken_title';
       case mostro.Action.payInvoice:
+      case mostro.Action.payBondInvoice:
         return 'notification_payment_required_title';
       case mostro.Action.fiatSent:
         return 'notification_fiat_sent_title';
@@ -93,7 +94,12 @@ class NotificationMessageMapper {
       case mostro.Action.restore:
       case mostro.Action.orders:
       case mostro.Action.lastTradeIndex:
+      case mostro.Action.addBondInvoice:
+      case mostro.Action.bondInvoiceAccepted:
+      case mostro.Action.bondPayoutCompleted:
         return 'TODO: implement  title key if needed';
+      case mostro.Action.bondSlashed:
+        return 'notification_bond_slashed_title';
     }
   }
 
@@ -119,6 +125,7 @@ class NotificationMessageMapper {
       case mostro.Action.takeSell:
         return 'notification_buy_order_taken_message';
       case mostro.Action.payInvoice:
+      case mostro.Action.payBondInvoice:
         return 'notification_payment_required_message';
       case mostro.Action.fiatSent:
         return 'notification_fiat_sent_message';
@@ -195,8 +202,13 @@ class NotificationMessageMapper {
       case mostro.Action.restore:
       case mostro.Action.orders:
       case mostro.Action.lastTradeIndex:
+      case mostro.Action.addBondInvoice:
+      case mostro.Action.bondInvoiceAccepted:
+      case mostro.Action.bondPayoutCompleted:
         return 'TODO: implement message key if needed';
-      
+      case mostro.Action.bondSlashed:
+        return 'notification_bond_slashed_message';
+
     }
   }
 
@@ -352,6 +364,10 @@ class NotificationMessageMapper {
         return s.notification_order_update_message;
       case 'notification_add_invoice_after_failure_message':
         return s.notification_add_invoice_after_failure_message;
+      case 'notification_bond_slashed_title':
+        return s.notification_bond_slashed_title;
+      case 'notification_bond_slashed_message':
+        return s.notification_bond_slashed_message;
       default:
         return key; // Fallback to key if not found
     }

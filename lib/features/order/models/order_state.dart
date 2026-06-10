@@ -240,10 +240,17 @@ class OrderState {
       logger.i('Auto-closed dispute: cooperative cancellation');
     }
 
+    // Bond acks (3.5) and slash notice (4): their SmallOrder has a null status
+    // and a bond-sized amount; don't let it overwrite the tracked trade order.
+    final bool isBondPayoutAck =
+        message.action == Action.bondInvoiceAccepted ||
+            message.action == Action.bondPayoutCompleted ||
+            message.action == Action.bondSlashed;
+
     final newState = copyWith(
       status: newStatus,
       action: effectiveAction,
-      order: message.payload is Order
+      order: (message.payload is Order && !isBondPayoutAck)
           ? message.getPayload<Order>()
           : message.payload is PaymentRequest
               ? message.getPayload<PaymentRequest>()!.order
@@ -270,6 +277,10 @@ class OrderState {
       case Action.waitingSellerToPay:
       case Action.payInvoice:
         return Status.waitingPayment;
+
+      // Action that should set status to waiting-taker-bond (Phase 1.5 anti-abuse bond)
+      case Action.payBondInvoice:
+        return Status.waitingTakerBond;
 
       // Actions that should set status to waiting-buyer-invoice
       case Action.waitingBuyerInvoice:
@@ -358,7 +369,15 @@ class OrderState {
       case Action.sendDm:
       case Action.tradePubkey:
       case Action.adminAddSolver:
+      case Action.addBondInvoice:
         return payloadStatus ?? status;
+
+      // Bond acks (3.5) and slash notice (4): SmallOrder status is null;
+      // keep the order's real status instead of defaulting to pending.
+      case Action.bondInvoiceAccepted:
+      case Action.bondPayoutCompleted:
+      case Action.bondSlashed:
+        return status;
 
       // For actions that include Order payload, use the payload status
       case Action.newOrder:
@@ -382,6 +401,12 @@ class OrderState {
           Action.cancel,
         ],
         Action.takeBuy: [
+          Action.cancel,
+        ],
+      },
+      Status.waitingTakerBond: {
+        Action.payBondInvoice: [
+          Action.payBondInvoice,
           Action.cancel,
         ],
       },
@@ -526,6 +551,12 @@ class OrderState {
           Action.cancel,
         ],
         Action.takeSell: [
+          Action.cancel,
+        ],
+      },
+      Status.waitingTakerBond: {
+        Action.payBondInvoice: [
+          Action.payBondInvoice,
           Action.cancel,
         ],
       },

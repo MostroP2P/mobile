@@ -60,6 +60,13 @@ class OrderNotifier extends AbstractMostroNotifier {
 
       logger.i(
           'Synced order $orderId to state: ${state.status} - ${state.action}');
+
+      // Restart-resilient cleanup: a canceled bonded order whose in-memory
+      // grace timer was lost when the app closed would otherwise stay an
+      // orphan in My Trades and block retaking.
+      if (state.status == Status.canceled) {
+        await reconcileCanceledBondedSession();
+      }
     } catch (e, stack) {
       logger.e(
         'Error syncing order state for $orderId',
@@ -78,7 +85,11 @@ class OrderNotifier extends AbstractMostroNotifier {
       orderId: orderId,
       role: Role.buyer,
     );
-    
+
+    // Drop any stale grace timer/flag from a previous cycle on this order so
+    // it can't delete the session we just created (retake within 60s).
+    AbstractMostroNotifier.clearBondCancelDeletion(orderId);
+
     // Start 10s timeout cleanup timer for orphan session prevention
     AbstractMostroNotifier.startSessionTimeoutCleanup(orderId, ref);
     
@@ -95,7 +106,11 @@ class OrderNotifier extends AbstractMostroNotifier {
       orderId: orderId,
       role: Role.seller,
     );
-    
+
+    // Drop any stale grace timer/flag from a previous cycle on this order so
+    // it can't delete the session we just created (retake within 60s).
+    AbstractMostroNotifier.clearBondCancelDeletion(orderId);
+
     // Start 10s timeout cleanup timer for orphan session prevention
     AbstractMostroNotifier.startSessionTimeoutCleanup(orderId, ref);
     
@@ -117,8 +132,37 @@ class OrderNotifier extends AbstractMostroNotifier {
     );
   }
 
+  Future<void> sendBondPayoutInvoice(String invoice) async {
+    await mostroService.sendBondPayoutInvoice(orderId, invoice);
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final outbound = MostroMessage(
+      action: Action.addBondInvoice,
+      id: orderId,
+      payload: PaymentRequest(lnInvoice: invoice),
+      timestamp: timestamp,
+    );
+    await ref.read(mostroStorageProvider).addMessage(
+          'outbound_addBondInvoice_${orderId}_$timestamp',
+          outbound,
+        );
+  }
+
   Future<void> cancelOrder() async {
+    final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+    final currentSession = sessionNotifier.getSessionByOrderId(orderId);
+    // A maker bond is still uncommitted; the daemon rejects an explicit cancel
+    // while the order sits at WaitingMakerBond. Abandon locally instead — the
+    // bond hold invoice expires server-side and the stranded order is deleted.
+    if (currentSession?.bondPending == true) {
+      await ref.read(mostroStorageProvider).deleteAllMessagesByOrderId(orderId);
+      await sessionNotifier.deleteSession(orderId);
+      return;
+    }
     await mostroService.cancelOrder(orderId);
+    // The cancel was sent by the user: its `canceled` response means the
+    // bond is returned (no slash), so the session can be deleted immediately
+    // instead of waiting for a bond-slashed notice that will never arrive.
+    AbstractMostroNotifier.markUserInitiatedCancel(orderId);
   }
 
   Future<void> sendFiatSent() async {

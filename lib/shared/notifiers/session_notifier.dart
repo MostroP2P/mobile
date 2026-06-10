@@ -213,6 +213,19 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     _registerPushToken(session.tradeKey.public);
   }
 
+  /// Registers [session] in memory keyed by its orderId WITHOUT persisting it
+  /// to disk. Used for the maker anti-abuse bond limbo: the order is not yet
+  /// committed, so it stays ephemeral (gone on restart) while remaining
+  /// reachable by orderId for the pay-bond screen and cancel flow. The session
+  /// is persisted for real only once the order is confirmed via saveSession.
+  void registerSessionInMemory(Session session) {
+    final orderId = session.orderId;
+    if (orderId == null) return;
+    _sessions[orderId] = session;
+    _requestIdToSession.removeWhere((_, value) => identical(value, session));
+    _emitState();
+  }
+
   /// Register push notification token for a trade pubkey
   void _registerPushToken(String tradePubkey) {
     if (_pushService == null) {
