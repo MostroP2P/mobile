@@ -295,7 +295,12 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         if (event.payload is PaymentRequest) {
           navProvider.go('/pay_bond/${event.id!}');
         }
-        ref.read(sessionNotifierProvider.notifier).saveSession(session);
+        // A maker bond is still uncommitted: keep it ephemeral (in memory only)
+        // so an abandoned order never survives a restart. The taker bond and
+        // the post-confirmation maker order persist normally.
+        if (!session.bondPending) {
+          ref.read(sessionNotifierProvider.notifier).saveSession(session);
+        }
         break;
 
       case Action.addInvoice:
@@ -740,6 +745,12 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
           'Cancelled 10s timeout timer for requestId: $requestId - Mostro responded');
     }
   }
+
+  /// Test-only: whether a create-order timeout timer is currently armed for
+  /// [requestId]. Lets tests assert the maker-bond flow tears the timer down.
+  @visibleForTesting
+  static bool hasRequestTimeout(int requestId) =>
+      _sessionTimeouts.containsKey('request:$requestId');
 
   /// Whether a bond was requested for this order (a pay-bond-invoice was sent).
   Future<bool> _orderHadBond(String orderId) async {
