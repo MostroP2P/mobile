@@ -247,10 +247,9 @@ class RelaySelector extends ConsumerWidget {
   /// Handle relay toggle with safety checks and confirmation dialogs
   Future<void> _handleRelayToggle(BuildContext context, WidgetRef ref, MostroRelayInfo relayInfo) async {
     final isCurrentlyBlacklisted = !relayInfo.isActive;
-    final isDefaultMostroRelay = relayInfo.url.startsWith('wss://relay.mostro.network');
     final relaysNotifier = ref.read(relaysProvider.notifier);
-    
-    // Detect relay type (user vs mostro/default)
+
+    // Detect relay type (user vs mostro)
     final currentRelays = ref.read(relaysProvider);
     final relay = currentRelays.firstWhere(
       (r) => r.url == relayInfo.url, 
@@ -298,47 +297,8 @@ class RelaySelector extends ConsumerWidget {
     if (isUserRelay) {
       // User relay: Delete completely (no blacklisting needed)
       await relaysNotifier.removeRelay(relayInfo.url);
-    } else if (isDefaultMostroRelay) {
-      // Default relay: Show confirmation dialog before blacklisting
-      final shouldProceed = await showDialog<bool>(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            backgroundColor: AppTheme.dark2,
-            title: Text(
-              S.of(context)!.blacklistDefaultRelayTitle,
-              style: const TextStyle(color: AppTheme.cream1),
-            ),
-            content: Text(
-              S.of(context)!.blacklistDefaultRelayMessage,
-              style: const TextStyle(color: AppTheme.textSecondary),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: Text(
-                  S.of(context)!.blacklistDefaultRelayCancel,
-                  style: const TextStyle(color: AppTheme.textSecondary),
-                ),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: Text(
-                  S.of(context)!.blacklistDefaultRelayConfirm,
-                  style: const TextStyle(color: Colors.red),
-                ),
-              ),
-            ],
-          );
-        },
-      );
-      
-      // Proceed only if user confirmed
-      if (shouldProceed == true) {
-        await relaysNotifier.toggleMostroRelayBlacklist(relayInfo.url);
-      }
     } else {
-      // Regular Mostro relay - proceed directly with blacklisting
+      // Mostro relay: blacklist it directly
       await relaysNotifier.toggleMostroRelayBlacklist(relayInfo.url);
     }
   }

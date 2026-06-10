@@ -27,7 +27,10 @@ class SettingsNotifier extends StateNotifier<Settings> {
 
   static Settings _defaultSettings() {
     return Settings(
-      relays: Config.nostrRelays,
+      // No relays are seeded: the active list holds only relays discovered from
+      // the Mostro kind 10002 plus user relays. On a fresh install this is empty
+      // and NostrService connects to the bootstrap relays to discover them.
+      relays: const [],
       fullPrivacyMode: Config.fullPrivacyMode,
       mostroPublicKey: Config.mostroPubKey,
       selectedLanguage: null,

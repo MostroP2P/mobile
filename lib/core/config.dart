@@ -10,6 +10,16 @@ class Config {
     //'ws://10.0.2.2:7000', // mobile emulator
   ];
 
+  // Defensive bootstrap relays: connected only to discover a Mostro's kind
+  // 10002 relay list at cold start or when no discovered relay is reachable.
+  // Not persisted nor shown in the relay list; they idle once relays are found.
+  static const List<String> bootstrapRelays = [
+    'wss://relay.mostro.network',
+    'wss://mostro-p2p.tech',
+    'wss://nos.lol',
+    'wss://relay.damus.io',
+  ];
+
   // Derived from trustedCommunities to maintain single source of truth
   static final List<Map<String, String>> trustedMostroNodes =
       trustedCommunities
@@ -33,6 +43,9 @@ class Config {
 
   // Timeout for relay operations (EOSE responses, publish OK)
   static const Duration nostrOperationTimeout = Duration(seconds: 20);
+
+  // Grace period for discovered relays to connect before engaging bootstrap.
+  static const Duration relayDiscoveryTimeout = Duration(seconds: 6);
 
   static bool fullPrivacyMode = false;
 
