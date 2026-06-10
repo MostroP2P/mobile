@@ -9,6 +9,7 @@ import 'package:mostro_mobile/features/subscriptions/subscription.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_type.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
+import 'package:mostro_mobile/features/restore/restore_mode_provider.dart';
 
 /// Manages Nostr subscriptions across different parts of the application.
 ///
@@ -128,6 +129,7 @@ class SubscriptionManager {
         return NostrFilter(
           kinds: [1059],
           p: sessions.map((s) => s.tradeKey.public).toList(),
+          limit: ref.read(isRestoringProvider) ? 0 : null,
         );
       case SubscriptionType.chat:
         if (sessions.isEmpty) {

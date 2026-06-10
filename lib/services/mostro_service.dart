@@ -22,6 +22,7 @@ class MostroService {
 
   Settings _settings;
   StreamSubscription<NostrEvent>? _ordersSubscription;
+  final List<NostrEvent> _restoreBuffer = [];
 
   MostroService(this.ref) : _settings = ref.read(settingsProvider);
 
@@ -45,6 +46,13 @@ class MostroService {
           },
           cancelOnError: false,
         );
+
+    // Flush buffered live events when restore completes (success or error path)
+    ref.listen<bool>(isRestoringProvider, (previous, next) {
+      if (previous == true && next == false) {
+        unawaited(_flushRestoreBuffer());
+      }
+    });
   }
 
   void dispose() {
@@ -164,7 +172,8 @@ class MostroService {
           event.id ??
           'msg_${DateTime.now().millisecondsSinceEpoch}';
       if (ref.read(isRestoringProvider)) {
-        logger.i('Restore in progress, skipping storage write for ${msg.action}');
+        _restoreBuffer.add(event);
+        logger.i('Restore: buffered live event ${event.id} for ${msg.action}');
         return;
       }
 
@@ -176,6 +185,16 @@ class MostroService {
       await _maybeLinkChildOrder(msg, matchingSession);
     } catch (e) {
       logger.e('Error processing event', error: e);
+    }
+  }
+
+  Future<void> _flushRestoreBuffer() async {
+    if (_restoreBuffer.isEmpty) return;
+    final buffer = List<NostrEvent>.from(_restoreBuffer);
+    _restoreBuffer.clear();
+    logger.i('Restore: flushing ${buffer.length} buffered live events');
+    for (final event in buffer) {
+      await _onData(event);
     }
   }
 
