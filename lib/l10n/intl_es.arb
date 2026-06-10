@@ -381,10 +381,76 @@
             }
         }
     },
+    "fiatAmountTooLowRange": "La cantidad es demasiado baja. Este nodo de Mostro permite entre {minAmount} y {maxAmount} {fiatCode} ({minSats} - {maxSats} sats).",
+    "@fiatAmountTooLowRange": {
+        "placeholders": {
+            "minAmount": {
+                "type": "String",
+                "description": "The minimum allowed amount in fiat"
+            },
+            "maxAmount": {
+                "type": "String",
+                "description": "The maximum allowed amount in fiat"
+            },
+            "fiatCode": {
+                "type": "String",
+                "description": "The selected fiat currency code"
+            },
+            "minSats": {
+                "type": "String",
+                "description": "The minimum allowed amount in sats"
+            },
+            "maxSats": {
+                "type": "String",
+                "description": "The maximum allowed amount in sats"
+            }
+        }
+    },
+    "fiatAmountTooHighRange": "La cantidad es demasiado alta. Este nodo de Mostro permite entre {minAmount} y {maxAmount} {fiatCode} ({minSats} - {maxSats} sats).",
+    "@fiatAmountTooHighRange": {
+        "placeholders": {
+            "minAmount": {
+                "type": "String",
+                "description": "The minimum allowed amount in fiat"
+            },
+            "maxAmount": {
+                "type": "String",
+                "description": "The maximum allowed amount in fiat"
+            },
+            "fiatCode": {
+                "type": "String",
+                "description": "The selected fiat currency code"
+            },
+            "minSats": {
+                "type": "String",
+                "description": "The minimum allowed amount in sats"
+            },
+            "maxSats": {
+                "type": "String",
+                "description": "The maximum allowed amount in sats"
+            }
+        }
+    },
     "exchangeRateNotAvailable": "Tasa de cambio no disponible, por favor espera o actualiza",
     "mostroInstanceNotAvailable": "Datos de instancia Mostro no disponibles, por favor espera",
-    "enterAmountYouWantToReceive": "Ingresa la cantidad que quieres recibir",
-    "enterAmountYouWantToSend": "Ingresa la cantidad que quieres enviar",
+    "enterAmountYouWantToReceiveCurrency": "Ingresa la cantidad de {currency} que quieres recibir",
+    "@enterAmountYouWantToReceiveCurrency": {
+        "placeholders": {
+            "currency": {
+                "type": "String",
+                "description": "The selected fiat code, or \"fiat\" when none is selected"
+            }
+        }
+    },
+    "enterAmountYouWantToSendCurrency": "Ingresa la cantidad de {currency} que quieres enviar",
+    "@enterAmountYouWantToSendCurrency": {
+        "placeholders": {
+            "currency": {
+                "type": "String",
+                "description": "The selected fiat code, or \"fiat\" when none is selected"
+            }
+        }
+    },
     "creatingRangeOrder": "Creando orden de rango (puedes recibir entre cantidades mínima y máxima)",
     "creatingRangeOrderBuySend": "Creando orden de rango (puedes enviar entre cantidades mínima y máxima)",
     "rangeOrder": "Orden de Rango",

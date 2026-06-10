@@ -12,6 +12,11 @@ class AmountSection extends StatefulWidget {
   final String? validationError;
   final ValueChanged<bool>? onRangeModeChanged;
 
+  /// Currently selected fiat code, used to label the amount field
+  /// (e.g. "Enter the amount of USD you want to receive"). Null/empty falls
+  /// back to the generic word "fiat".
+  final String? fiatCode;
+
   const AmountSection({
     super.key,
     required this.orderType,
@@ -19,6 +24,7 @@ class AmountSection extends StatefulWidget {
     this.validateSatsRange,
     this.validationError,
     this.onRangeModeChanged,
+    this.fiatCode,
   });
 
   @override
@@ -107,9 +113,12 @@ class _AmountSectionState extends State<AmountSection> {
           ? S.of(context)!.creatingRangeOrderBuySend
           : S.of(context)!.creatingRangeOrder;
     }
+    final currency = (widget.fiatCode != null && widget.fiatCode!.isNotEmpty)
+        ? widget.fiatCode!
+        : 'fiat';
     return widget.orderType == OrderType.buy
-        ? S.of(context)!.enterAmountYouWantToSend
-        : S.of(context)!.enterAmountYouWantToReceive;
+        ? S.of(context)!.enterAmountYouWantToSendCurrency(currency)
+        : S.of(context)!.enterAmountYouWantToReceiveCurrency(currency);
   }
 
   Widget? _getTopRightWidget() {
