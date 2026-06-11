@@ -6,12 +6,12 @@ on:
       flutter_version:
         description: 'Flutter version (or "latest")'
         required: false
-        default: '3.32.2'
+        default: '3.44.1'
   repository_dispatch:
     types: [build-desktop]    # triggered by release.yml after Android build
 
 env:
-  FLUTTER_VERSION: '3.32.2'  # Default Flutter version
+  FLUTTER_VERSION: '3.44.1'  # Default Flutter version
 
 jobs:
   # ── Setup: extract and validate version once ──────────────────────────────
