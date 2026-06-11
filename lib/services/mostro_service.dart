@@ -22,16 +22,15 @@ class MostroService {
 
   Settings _settings;
   StreamSubscription<NostrEvent>? _ordersSubscription;
+  ProviderSubscription<bool>? _restoreListener;
   final List<NostrEvent> _restoreBuffer = [];
 
   MostroService(this.ref) : _settings = ref.read(settingsProvider);
 
   void init() {
-    // Cancel any existing subscription to prevent leaks on re-init
     _ordersSubscription?.cancel();
+    _restoreListener?.close();
 
-    // Subscribe to the orders stream from SubscriptionManager
-    // The SubscriptionManager will automatically manage subscriptions based on SessionNotifier changes
     _ordersSubscription = ref
         .read(subscriptionManagerProvider)
         .orders
@@ -48,7 +47,7 @@ class MostroService {
         );
 
     // Flush buffered live events when restore completes (success or error path)
-    ref.listen<bool>(isRestoringProvider, (previous, next) {
+    _restoreListener = ref.listen<bool>(isRestoringProvider, (previous, next) {
       if (previous == true && next == false) {
         unawaited(_flushRestoreBuffer());
       }
@@ -57,6 +56,7 @@ class MostroService {
 
   void dispose() {
     _ordersSubscription?.cancel();
+    _restoreListener?.close();
     logger.i('MostroService disposed');
   }
 

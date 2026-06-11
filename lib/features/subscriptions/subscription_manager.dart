@@ -21,6 +21,7 @@ class SubscriptionManager {
   final Map<SubscriptionType, Subscription> _subscriptions = {};
   
   late final ProviderSubscription _sessionListener;
+  ProviderSubscription<bool>? _restoreModeListener;
 
   final _ordersController = StreamController<NostrEvent>.broadcast();
   final _chatController = StreamController<NostrEvent>.broadcast();
@@ -34,9 +35,23 @@ class SubscriptionManager {
 
   SubscriptionManager(this.ref) {
     _initSessionListener();
+    _initRestoreModeListener();
     // Ensure resources are released with provider/container lifecycle
     ref.onDispose(dispose);
     _initializeExistingSessions();
+  }
+
+  void _initRestoreModeListener() {
+    _restoreModeListener = ref.listen<bool>(
+      isRestoringProvider,
+      (previous, next) {
+        if (previous == true && next == false) {
+          // Rebuild subscriptions without limit:0 so relay backfill works normally
+          _updateAllSubscriptions(ref.read(sessionNotifierProvider));
+        }
+      },
+      fireImmediately: false,
+    );
   }
 
   void _initSessionListener() {
@@ -344,6 +359,7 @@ class SubscriptionManager {
 
   void dispose() {
     _sessionListener.close();
+    _restoreModeListener?.close();
     unsubscribeAll();
     _ordersController.close();
     _chatController.close();

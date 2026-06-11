@@ -62,7 +62,10 @@ RestoreService.importMnemonicAndRestore()
                 ▼
          restore(ordersMap, lastTradeIndex, ordersResponse, disputes)
           ├─ keyManager.setCurrentKeyIndex(lastTradeIndex + 1)
-          ├─ isRestoringProvider = true   (blocks MostroService._onData processing)
+          ├─ isRestoringProvider = true
+          │   ├─ SubscriptionManager: orders filter uses limit:0
+          │   │    → relay delivers NO historical events during restore window
+          │   └─ MostroService: any arriving event goes to _restoreBuffer
           │
           ├─ FOR EACH order in ordersIds:
           │   ├─ derive tradeKey from tradeIndex
@@ -75,24 +78,26 @@ RestoreService.importMnemonicAndRestore()
           │   │  )
           │   ├─ sessionNotifier.saveSession(session)
           │   │    └─ triggers SubscriptionManager._updateAllSubscriptions()
-          │   │         → relay REQ recreated for this tradeKey
+          │   │         → relay REQ with limit:0 (no historical replay)
           │   └─ if peer != null: chatRoomsProvider.subscribe()
           │
           ├─ Future.delayed(10 seconds)
-          │   └─ relay delivers historical gift-wrap events during this window;
-          │      MostroService._onData stores them in mostroStorage but
-          │      isRestoringProvider=true blocks state.updateWith()
-          │
-          ├─ storage.deleteAll()
-          │   └─ clears relay-replayed events that arrived during 10s window
-          │      (prevents stale events from overwriting restore messages)
+          │   └─ only genuinely live events can arrive (limit:0 blocks history);
+          │      MostroService buffers them in _restoreBuffer instead of storing
           │
           ├─ FOR EACH order in ordersResponse:
           │   ├─ build MostroMessage from OrderDetail + dispute state
-          │   ├─ storage.addMessage(key, message)
+          │   ├─ storage.addMessage(key, message)   ← authoritative synthetic state
           │   └─ notifier.updateStateFromMessage(message)
           │
-          └─ isRestoringProvider = false
+          ├─ isRestoringProvider = false
+          │   ├─ MostroService._restoreListener fires → _flushRestoreBuffer()
+          │   │    → buffered live events processed on top of synthetic state
+          │   └─ SubscriptionManager._restoreModeListener fires
+          │        → _updateAllSubscriptions() with limit:null
+          │             → relay backfill resumes normally; eventStorage dedup
+          │                discards already-seen events
+          └─ (done)
 ```
 
 ### Dispute Chat Subscription During Restore
