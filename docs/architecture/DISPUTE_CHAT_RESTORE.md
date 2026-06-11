@@ -191,7 +191,7 @@ case and degrade gracefully (e.g. strip the peer field and continue parsing).
 
 ### Issue 3 — Dispute State Not Persisted After Restore + App Kill
 
-**Status: Fixed** — `lib/services/mostro_service.dart`
+**Status: Fixed** — `lib/services/mostro_service.dart`, `lib/features/subscriptions/subscription_manager.dart`
 
 #### Root Cause
 
@@ -203,7 +203,15 @@ a stale relay event representing an earlier trade stage instead of the correct r
 
 #### Fix
 
-Added `isRestoringProvider` check in `_onData` to skip `addMessage` during restore. Event
-IDs are still registered in `eventStorage` for deduplication, preventing relay re-processing
-after restore completes. Only the authoritative synthetic messages written after the
-10-second delay remain in `mostroStorage`, ensuring correct state on relaunch.
+Two-part fix:
+
+1. **`SubscriptionManager`** passes `limit: 0` on the orders filter while `isRestoringProvider`
+   is true. Relays deliver only new events during the restore window — no historical replay.
+
+2. **`MostroService._onData`** buffers any live event that arrives during restore into
+   `_restoreBuffer` instead of discarding it. A `ref.listen(isRestoringProvider)` in `init()`
+   flushes the buffer through normal `_onData` processing once restore completes, so live
+   events are applied on top of the synthetic messages written by the restore process.
+
+This guarantees: historical events never arrive during restore (relay-side filter), live events
+are not lost (client-side buffer), and state on relaunch is always correct.
