@@ -22,11 +22,17 @@ class OrderNotifier extends AbstractMostroNotifier {
   }
 
   @override
-  Future<void> handleEvent(MostroMessage event, {bool bypassTimestampGate = false}) async {
+  Future<void> handleEvent(MostroMessage event,
+      {bool bypassTimestampGate = false,
+      Status? previousStatus,
+      bool wasUserInitiatedCancel = false}) async {
     logger.i('OrderNotifier received event: ${event.action} for order $orderId');
 
     // Handle the event normally - timeout/cancellation logic is now in AbstractMostroNotifier
-    await super.handleEvent(event, bypassTimestampGate: bypassTimestampGate);
+    await super.handleEvent(event,
+        bypassTimestampGate: bypassTimestampGate,
+        previousStatus: previousStatus,
+        wasUserInitiatedCancel: wasUserInitiatedCancel);
   }
 
   Future<void> sync() async {
@@ -158,11 +164,18 @@ class OrderNotifier extends AbstractMostroNotifier {
       await sessionNotifier.deleteSession(orderId);
       return;
     }
-    await mostroService.cancelOrder(orderId);
-    // The cancel was sent by the user: its `canceled` response means the
-    // bond is returned (no slash), so the session can be deleted immediately
-    // instead of waiting for a bond-slashed notice that will never arrive.
+    // Flag this cancel as user-initiated so the upcoming Action.canceled
+    // response is not misattributed to counterparty inactivity when the
+    // order is in waiting-payment / waiting-buyer-invoice. Roll back the
+    // flag if the outbound request fails, otherwise a future canceled event
+    // for the same orderId would be misclassified as user-initiated.
     AbstractMostroNotifier.markUserInitiatedCancel(orderId);
+    try {
+      await mostroService.cancelOrder(orderId);
+    } catch (_) {
+      AbstractMostroNotifier.unmarkUserInitiatedCancel(orderId);
+      rethrow;
+    }
   }
 
   Future<void> sendFiatSent() async {
@@ -225,10 +238,17 @@ class OrderNotifier extends AbstractMostroNotifier {
             final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
             await sessionNotifier.deleteSession(orderId);
             
-            // Show expiration notification
+            // Persist expiration in notification history (and show SnackBar).
+            // Use a stable eventId so repeated public-event emissions for the
+            // same auto-expiration are deduplicated by the notifications store.
             final notifProvider = ref.read(notificationActionsProvider.notifier);
-            notifProvider.showCustomMessage('orderCanceled');
-            
+            await notifProvider.notify(
+              Action.canceled,
+              values: {'previous_status': Status.pending.value},
+              orderId: orderId,
+              eventId: 'auto_expire:$orderId',
+            );
+
             ref.invalidateSelf();
           }
         } catch (e, stack) {
