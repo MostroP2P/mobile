@@ -5,6 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.2.8] - 2026-06-12
+
+### Added
+- feat(notifications): persist order cancellations in history with context (#602) (fbad36c5)
+- feat(bond): maker anti-abuse bond on order creation (Phase 5) (#608) (9a6f8a8c)
+- feat(relays): bootstrap relay discovery instead of pinned default relays (#610) (e776adca)
+- feat(order): show amount limits in fiat in the create order screen (#605) (338b48f0)
+- feat(bond): defer session deletion on cancel to receive bond-slashed   - canceled handler: if the order had a bond, defer deleting the session 60s so a trailing bond-slashed notice can still be received and decrypted; otherwise delete immediately as before   - Add bondSlashed handler: cancels the deferred deletion and releases the session once the notice arrives   - Out-of-order safe: if bond-slashed arrives first, the later canceled finds no session and no-ops (da7016d8)
+- feat(bond): surface bond-slashed notification with detail dialog (bb3a702c)
+- feat(bond): recognize bond-slashed action   - Add Action.bondSlashed so the slash forfeiture notice parses instead of being dropped in MostroMessage.fromJson   - order_state.dart: its SmallOrder has a null status and bond-sized amount; preserve the tracked order's real status amount instead of overwriting   - notifications: add bondSlashed as no-op to the exhaustive switches, grouped with the other not-yet-wired bond actions (9377971d)
+- feat(bond): strengthen bondPolicy parsing and guard against malformed tag arrays (835d1516)
+- feat: validate and sanitize anti-abuse bond policy fields from Mostro info events (ab51fdc1)
+- feat: parse anti-abuse bond policy from Mostro info events (913717d5)
+- feat(bond): Phase 3.5 payout confirmation actions on mobile (75b7bba7)
+- add invoice amount to winner (794c12d5)
+- feat(bond): bond payout banner in Trade Details with claim button (0a52114b)
+- feat(bond): show PAYOUT PENDING badge on My Trades for unanswered claims (727410b3)
+- feat(bond): bond payout claim screen with auto-navigation on add-bond-invoice (ac75aa9a)
+- feat(bond): publish bond payout invoice on Action::AddBondInvoice (fcdc91a5)
+- feat(bond): recognize Action::AddBondInvoice and BondPayoutRequest payload (577c485c)
+
+### Fixed
+- fix(bond): delete session immediately on user-initiated cancel (41b5dffa)
+- fix(bond): reconcile orphaned canceled bonded sessions on restart (5c80a1ed)
+- fix(bond): isolate bond-slashed tap case from the no-op switch group (b226af3c)
+- fix(bond): propagate persistence error in sendBondPayoutInvoice (f57c075a)
+- fix(bond): apply barrel imports and amount-loading fallback (8ccc8385)
+- fix(bond): tighten ordering and error UX in bond payout flow (49b587e9)
+
+### Changed
+- test(bond): cover restart/voluntary-cancel/retake; drop stale timer on retake (70f40da5)
+- refactor(bond): bond-slashed dialog as prose with a green close button (507c0226)
+- test(bond): bond-slashed must not overwrite the tracked order (5575c213)
+- test(bond): add unit tests for latestBondPayoutRequest and hasPendingBondClaim (4e79a050)
+- coderabbit suggestions (fef4c547)
+- render the claim button outside the FSM gating (d2dc6207)
+
+
 ## [v1.2.7] - 2026-05-21
 
 ### Added
