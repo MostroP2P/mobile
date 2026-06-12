@@ -32,7 +32,6 @@ void main() {
     late MockKeyManager mockKeyManager;
     late MockSessionNotifier mockSessionNotifier;
     late MockMostroStorage mockMostroStorage;
-    late MockRef ref;
     const testOrderId = "test_order_id";
 
     setUp(() {
@@ -44,12 +43,17 @@ void main() {
       mockSessionStorage = MockSessionStorage();
       mockKeyManager = MockKeyManager();
       mockMostroStorage = MockMostroStorage();
-      ref = MockRef();
-      
+
       // Create test settings
       final testSettings = MockSettings();
-      
-      mockSessionNotifier = MockSessionNotifier(ref, mockKeyManager, mockSessionStorage, testSettings);
+
+      // Riverpod 3.x: Ref is sealed and can't be mocked. Mint a real Ref from a
+      // throwaway container for the MockSessionNotifier (which overrides every
+      // method the tests exercise, so the ref is only stored, never read).
+      final refContainer = ProviderContainer();
+      addTearDown(refContainer.dispose);
+      mockSessionNotifier = MockSessionNotifier(createTestRef(refContainer),
+          mockKeyManager, mockSessionStorage, testSettings);
       
       // Stub the KeyManager methods
       when(mockKeyManager.masterKeyPair).thenReturn(

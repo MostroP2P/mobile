@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:convert/convert.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mostro_mobile/core/config.dart';
@@ -62,19 +63,17 @@ void main() {
     order: null,
   ));
 
-  // Create dummy values for Mockito
-  final dummyRef = MockRef();
+  // Create dummy values for Mockito. Riverpod 3.x made Ref sealed (unmockable),
+  // so dummies that need a Ref get a real one from a throwaway container whose
+  // sessionNotifierProvider is overridden (SubscriptionManager listens to it).
+  final dummyContainer = ProviderContainer(overrides: [
+    sessionNotifierProvider.overrideWith((ref) => MockSessionNotifier(
+        ref, MockKeyManager(), MockSessionStorage(), MockSettings())),
+  ]);
+  final dummyRef = createTestRef(dummyContainer);
   final dummyKeyManager = MockKeyManager();
   final dummySessionStorage = MockSessionStorage();
   final dummySettings = MockSettings();
-
-  // Stub listen on dummyRef to prevent errors when creating MockSubscriptionManager
-  when(dummyRef.listen<List<Session>>(
-    any,
-    any,
-    onError: anyNamed('onError'),
-    fireImmediately: anyNamed('fireImmediately'),
-  )).thenReturn(MockProviderSubscription<List<Session>>());
 
   // Create and provide dummy values
   final dummySessionNotifier = MockSessionNotifier(
@@ -90,63 +89,72 @@ void main() {
   late MockServerTradeIndex mockServerTradeIndex;
   late MockNostrService mockNostrService;
   late MockSessionNotifier mockSessionNotifier;
-  late MockRef mockRef;
+  late ProviderContainer container;
+  late Ref ref;
   late MockSubscriptionManager mockSubscriptionManager;
   late MockKeyManager mockKeyManager;
   late MockSessionStorage mockSessionStorage;
 
+  // Test-controlled OrderState returned by the orderNotifierProvider family
+  // override, keyed by orderId. Populated by the ReleaseOrder tests.
+  final orderStateOverrides = <String, OrderState>{};
+
   setUp(() {
     // Initialize all mocks first
-    mockRef = MockRef();
     mockKeyManager = MockKeyManager();
     mockSessionStorage = MockSessionStorage();
     mockNostrService = MockNostrService();
     mockServerTradeIndex = MockServerTradeIndex();
     keyDerivator = KeyDerivator(Config.keyDerivationPath);
+    orderStateOverrides.clear();
 
     // Stub mockKeyManager.getNextKeyIndex() to return deterministic value
     when(mockKeyManager.getNextKeyIndex()).thenAnswer((_) async => 5);
 
-    // Setup all stubs before creating any objects that use them
     final testSettings = MockSettings();
     when(testSettings.mostroPublicKey).thenReturn(
         '9d9d0455a96871f2dc4289b8312429db2e925f167b37c77bf7b28014be235980');
-    when(mockRef.read(settingsProvider)).thenReturn(testSettings);
-    when(mockRef.read(mostroStorageProvider)).thenReturn(MockMostroStorage());
-    when(mockRef.read(nostrServiceProvider)).thenReturn(mockNostrService);
 
-    // Stub the listen method before creating SubscriptionManager
-    when(mockRef.listen<List<Session>>(
-      any,
-      any,
-      onError: anyNamed('onError'),
-      fireImmediately: anyNamed('fireImmediately'),
-    )).thenReturn(MockProviderSubscription<List<Session>>());
-
-    // Create mockSessionNotifier
-    mockSessionNotifier = MockSessionNotifier(
-      mockRef,
-      mockKeyManager,
-      mockSessionStorage,
-      testSettings,
-    );
-    when(mockRef.read(sessionNotifierProvider.notifier))
-        .thenReturn(mockSessionNotifier);
-    when(mockRef.read(sessionNotifierProvider))
-        .thenReturn(<Session>[]);
-
-    // Stub orderRepositoryProvider so publishOrder can read PoW difficulty
     final mockOrderRepo = MockOpenOrdersRepository();
     when(mockOrderRepo.mostroInstance).thenReturn(null);
-    when(mockRef.read(orderRepositoryProvider)).thenReturn(mockOrderRepo);
 
-    // Create mockSubscriptionManager with the stubbed mockRef
-    mockSubscriptionManager = MockSubscriptionManager(mockRef);
-    when(mockRef.read(subscriptionManagerProvider))
-        .thenReturn(mockSubscriptionManager);
+    // Riverpod 3.x: Ref is sealed and can no longer be mocked. Drive
+    // ref.read/ref.listen through a real container with overrides instead.
+    container = ProviderContainer(overrides: [
+      settingsProvider.overrideWith((ref) {
+        final n = MockSettingsNotifier();
+        n.state = testSettings;
+        return n;
+      }),
+      mostroStorageProvider.overrideWithValue(MockMostroStorage()),
+      nostrServiceProvider.overrideWithValue(mockNostrService),
+      sessionNotifierProvider.overrideWith((ref) => mockSessionNotifier),
+      orderRepositoryProvider.overrideWithValue(mockOrderRepo),
+      subscriptionManagerProvider.overrideWith((ref) => mockSubscriptionManager),
+      keyManagerProvider.overrideWithValue(mockKeyManager),
+      orderNotifierProvider.overrideWith((ref, orderId) {
+        final st = orderStateOverrides[orderId] ??
+            OrderState(
+                status: Status.pending, action: Action.newOrder, order: null);
+        final m = MockOrderNotifier();
+        when(m.addListener(any, fireImmediately: anyNamed('fireImmediately')))
+            .thenAnswer((inv) {
+          (inv.positionalArguments[0] as void Function(OrderState))(st);
+          return () {};
+        });
+        when(m.state).thenReturn(st);
+        return m;
+      }),
+    ]);
+    addTearDown(container.dispose);
+    ref = createTestRef(container);
 
-    // Finally create the service under test
-    mostroService = MostroService(mockRef);
+    // Order matters: build the session notifier first (it is returned by the
+    // sessionNotifierProvider override that the subscription manager listens to).
+    mockSessionNotifier = MockSessionNotifier(
+        ref, mockKeyManager, mockSessionStorage, testSettings);
+    mockSubscriptionManager = MockSubscriptionManager(ref);
+    mostroService = MostroService(ref);
   });
 
   tearDown(() {
@@ -426,7 +434,7 @@ void main() {
 
     setUp(() {
       capturedMessages = [];
-      svc = TestableReleaseOrderService(mockRef, capturedMessages);
+      svc = TestableReleaseOrderService(ref, capturedMessages);
 
       // Create key pairs for testing
       final mnemonic = keyDerivator.generateMnemonic();
@@ -455,9 +463,6 @@ void main() {
         () async {
       // Arrange
       const orderId = 'range-order-id';
-
-      // Stub keyManagerProvider to return our mock
-      when(mockRef.read(keyManagerProvider)).thenReturn(mockKeyManager);
 
       // Stub mockKeyManager.deriveTradeKeyFromIndex to return a mock key pair
       when(mockKeyManager.deriveTradeKeyFromIndex(5))
@@ -491,9 +496,8 @@ void main() {
         order: mockOrder,
       );
 
-      // Stub the order notifier provider to return our mock
-      when(mockRef.read(orderNotifierProvider(orderId)))
-          .thenReturn(mockOrderState);
+      // Drive the order notifier provider override to return our mock state
+      orderStateOverrides[orderId] = mockOrderState;
 
       // Act
       await svc.releaseOrder(orderId);
@@ -514,9 +518,6 @@ void main() {
         () async {
       // Arrange
       const orderId = 'fixed-order-id';
-
-      // Stub keyManagerProvider to return our mock
-      when(mockRef.read(keyManagerProvider)).thenReturn(mockKeyManager);
 
       // Stub mockKeyManager.deriveTradeKeyFromIndex to return a mock key pair
       when(mockKeyManager.deriveTradeKeyFromIndex(5))
@@ -550,9 +551,8 @@ void main() {
         order: mockOrder,
       );
 
-      // Stub the order notifier provider to return our mock
-      when(mockRef.read(orderNotifierProvider(orderId)))
-          .thenReturn(mockOrderState);
+      // Drive the order notifier provider override to return our mock state
+      orderStateOverrides[orderId] = mockOrderState;
 
       // Act
       await svc.releaseOrder(orderId);
