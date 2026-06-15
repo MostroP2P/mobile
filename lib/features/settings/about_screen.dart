@@ -548,21 +548,25 @@ class AboutScreen extends ConsumerWidget {
         _buildInfoRowWithDialog(
           context,
           s.bondSlashOnTimeoutLabel,
-          (instance.bondSlashOnWaitingTimeout ?? false) ? s.yes : s.no,
+          instance.bondSlashOnWaitingTimeout == null
+              ? s.notAvailableShort
+              : (instance.bondSlashOnWaitingTimeout! ? s.yes : s.no),
           s.bondSlashOnTimeoutExplanation,
         ),
         const SizedBox(height: 16),
         _buildInfoRowWithDialog(
           context,
           s.bondNodeShareLabel,
-          _formatBondPercent(instance.bondSlashNodeSharePct),
+          _formatBondPercent(s, instance.bondSlashNodeSharePct),
           s.bondNodeShareExplanation,
         ),
         const SizedBox(height: 16),
         _buildInfoRowWithDialog(
           context,
           s.bondClaimWindowLabel,
-          s.bondClaimWindowValue(instance.bondPayoutClaimWindowDays ?? 0),
+          instance.bondPayoutClaimWindowDays == null
+              ? s.notAvailableShort
+              : s.bondClaimWindowValue(instance.bondPayoutClaimWindowDays!),
           s.bondClaimWindowExplanation,
         ),
       ]);
@@ -614,28 +618,30 @@ class AboutScreen extends ConsumerWidget {
       case BondApplyTo.both:
         return s.bondAppliesToBoth;
       case null:
-        return '—';
+        return s.notAvailableShort;
     }
   }
 
   String _bondAmountValue(S s, MostroInstance instance) {
-    final percent = _formatPercentNumber(instance.bondAmountPct);
     final base = instance.bondBaseAmountSats;
-    final min =
-        base == null ? '—' : NumberFormat.decimalPattern().format(base);
+    if (instance.bondAmountPct == null || base == null) {
+      return s.notAvailableShort;
+    }
+    final percent = _formatPercentNumber(s, instance.bondAmountPct);
+    final min = NumberFormat.decimalPattern().format(base);
     return s.bondAmountValue(percent, min);
   }
 
   /// Formats a `[0,1]` fraction as a percent number without trailing zeros,
-  /// e.g. 0.5 -> "50", 0.015 -> "1.5". Returns "—" for null.
-  String _formatPercentNumber(double? fraction) {
-    if (fraction == null) return '—';
+  /// e.g. 0.5 -> "50", 0.015 -> "1.5". Returns the localized "N/A" for null.
+  String _formatPercentNumber(S s, double? fraction) {
+    if (fraction == null) return s.notAvailableShort;
     return NumberFormat('0.##').format(fraction * 100);
   }
 
-  String _formatBondPercent(double? fraction) {
-    if (fraction == null) return '—';
-    return '${_formatPercentNumber(fraction)}%';
+  String _formatBondPercent(S s, double? fraction) {
+    if (fraction == null) return s.notAvailableShort;
+    return '${_formatPercentNumber(s, fraction)}%';
   }
 
   Widget _buildInfoRow(String label, String value) {
