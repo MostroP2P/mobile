@@ -1640,5 +1640,43 @@
     "bondPayoutCompletedMessage": "Ya recibiste el pago de tu parte del bono anti-abuso.",
     "bondPayoutCompletedWithRating": "Ya recibiste el pago de tu parte del bono anti-abuso. Puedes calificar a tu contraparte.",
     "bondPayoutCloseButton": "CERRAR",
-    "errorLoadingBondPayout": "Error al cargar los datos del cobro"
+    "errorLoadingBondPayout": "Error al cargar los datos del cobro",
+    "antiAbuseBond": "Depósito anti-abuso",
+    "antiAbuseBondExplanation": "El depósito anti-abuso es un mecanismo opcional que algunos nodos de Mostro usan para hacer los intercambios más seguros. Al entrar en una operación pones en garantía una pequeña cantidad de sats que recuperas por completo si actúas de buena fe, pero que pierdes si intentas estafar a tu contraparte. Así el estafador arriesga su propio dinero, lo que desalienta el abuso.",
+    "bondStatusLabel": "Estado",
+    "bondStatusExplanation": "Si este nodo exige un depósito anti-abuso para operar. 'Deshabilitado' significa que no hace falta ninguno.",
+    "bondEnabled": "Habilitado",
+    "bondDisabled": "Deshabilitado",
+    "bondAppliesToLabel": "Aplica a",
+    "bondAppliesToExplanation": "Qué lado debe bloquear un depósito: takers, makers o ambos.",
+    "bondAppliesToTakers": "Takers",
+    "bondAppliesToMakers": "Makers",
+    "bondAppliesToBoth": "Makers y takers",
+    "bondAmountLabel": "Monto del depósito",
+    "bondAmountExplanation": "El tamaño del depósito: un porcentaje del monto de la orden, con un mínimo en sats. Se aplica el mayor de los dos.",
+    "bondAmountValue": "{percent}% del monto (mín. {min} sats)",
+    "@bondAmountValue": {
+        "placeholders": {
+            "percent": {
+                "type": "String"
+            },
+            "min": {
+                "type": "String"
+            }
+        }
+    },
+    "bondSlashOnTimeoutLabel": "Slash por timeout",
+    "bondSlashOnTimeoutExplanation": "Si tu depósito puede retenerse por no cumplir un plazo (por ejemplo, no pagar o no enviar una factura a tiempo). Si es 'No', solo se retiene por decisión de un resolutor de disputa.",
+    "bondNodeShareLabel": "Retención del nodo",
+    "bondNodeShareExplanation": "Si un depósito se retiene, la fracción que se queda el nodo. El resto se paga a la contraparte honesta.",
+    "bondClaimWindowLabel": "Ventana de reclamo",
+    "bondClaimWindowExplanation": "Si eres la parte honesta cuando un depósito se retiene, cuántos días tienes para reclamar tu parte antes de perderla.",
+    "bondClaimWindowValue": "{days, plural, =1{1 día} other{{days} días}}",
+    "@bondClaimWindowValue": {
+        "placeholders": {
+            "days": {
+                "type": "int"
+            }
+        }
+    }
 }

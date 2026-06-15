@@ -1665,5 +1665,43 @@
     "bondPayoutCompletedMessage": "Du hast die Auszahlung deines Anteils der Anti-Missbrauchs-Kaution erhalten.",
     "bondPayoutCompletedWithRating": "Du hast die Auszahlung deines Anteils der Anti-Missbrauchs-Kaution erhalten. Du kannst deinen Handelspartner bewerten.",
     "bondPayoutCloseButton": "SCHLIESSEN",
-    "errorLoadingBondPayout": "Fehler beim Laden der Auszahlungsdaten"
+    "errorLoadingBondPayout": "Fehler beim Laden der Auszahlungsdaten",
+    "antiAbuseBond": "Anti-Missbrauchs-Kaution",
+    "antiAbuseBondExplanation": "Die Anti-Missbrauchs-Kaution ist ein optionaler Mechanismus, den manche Mostro-Knoten nutzen, um Trades sicherer zu machen. Beim Einstieg in einen Trade hinterlegst du eine kleine Menge Sats als Sicherheit, die vollständig zurückerstattet wird, wenn du ehrlich handelst, aber verloren geht, wenn du versuchst, deine Gegenpartei zu betrügen. So riskiert der Betrüger sein eigenes Geld, was Missbrauch entgegenwirkt.",
+    "bondStatusLabel": "Status",
+    "bondStatusExplanation": "Ob dieser Knoten zum Handeln eine Anti-Missbrauchs-Kaution verlangt. 'Deaktiviert' bedeutet, dass keine nötig ist.",
+    "bondEnabled": "Aktiviert",
+    "bondDisabled": "Deaktiviert",
+    "bondAppliesToLabel": "Gilt für",
+    "bondAppliesToExplanation": "Welche Seite eine Kaution hinterlegen muss: Taker, Maker oder beide.",
+    "bondAppliesToTakers": "Taker",
+    "bondAppliesToMakers": "Maker",
+    "bondAppliesToBoth": "Maker und Taker",
+    "bondAmountLabel": "Kautionsbetrag",
+    "bondAmountExplanation": "Die Höhe der Kaution: ein Prozentsatz des Orderbetrags, mit einem Mindestbetrag in Sats. Es gilt der größere der beiden Werte.",
+    "bondAmountValue": "{percent}% des Betrags (min. {min} Sats)",
+    "@bondAmountValue": {
+        "placeholders": {
+            "percent": {
+                "type": "String"
+            },
+            "min": {
+                "type": "String"
+            }
+        }
+    },
+    "bondSlashOnTimeoutLabel": "Slash bei Timeout",
+    "bondSlashOnTimeoutExplanation": "Ob deine Kaution einbehalten werden kann, wenn du eine Frist verpasst (zum Beispiel nicht zahlst oder nicht rechtzeitig eine Rechnung lieferst). Bei 'Nein' wird sie nur durch die Entscheidung eines Streitschlichters einbehalten.",
+    "bondNodeShareLabel": "Knoten-Anteil",
+    "bondNodeShareExplanation": "Wenn eine Kaution einbehalten wird, der Anteil, den der Knoten behält. Der Rest wird an die ehrliche Gegenpartei gezahlt.",
+    "bondClaimWindowLabel": "Anspruchsfrist",
+    "bondClaimWindowExplanation": "Wenn du die ehrliche Partei bist, wenn eine Kaution einbehalten wird, wie viele Tage du hast, um deinen Anteil zu beanspruchen, bevor er verfällt.",
+    "bondClaimWindowValue": "{days, plural, =1{1 Tag} other{{days} Tage}}",
+    "@bondClaimWindowValue": {
+        "placeholders": {
+            "days": {
+                "type": "int"
+            }
+        }
+    }
 }

@@ -313,6 +313,9 @@ class AboutScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 20),
 
+            // Anti-abuse bond Section (hidden when the node doesn't advertise it)
+            _buildAntiAbuseBondSection(context, instance),
+
             // Technical Details Section
             Text(
               S.of(context)!.technicalDetails,
@@ -499,6 +502,140 @@ class AboutScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  /// Anti-abuse bond section. Hidden entirely for legacy daemons that don't
+  /// advertise the policy ([BondPolicy.unsupported]); shows only a status row
+  /// when disabled, and the full parameter set when enabled.
+  Widget _buildAntiAbuseBondSection(
+      BuildContext context, MostroInstance instance) {
+    if (instance.bondPolicy == BondPolicy.unsupported) {
+      return const SizedBox.shrink();
+    }
+    final s = S.of(context)!;
+    final enabled = instance.bondPolicy == BondPolicy.enabled;
+    final children = <Widget>[
+      _buildSectionHeaderWithInfo(
+        context,
+        s.antiAbuseBond,
+        s.antiAbuseBondExplanation,
+      ),
+      const SizedBox(height: 12),
+      _buildInfoRowWithDialog(
+        context,
+        s.bondStatusLabel,
+        enabled ? s.bondEnabled : s.bondDisabled,
+        s.bondStatusExplanation,
+      ),
+    ];
+    if (enabled) {
+      children.addAll([
+        const SizedBox(height: 16),
+        _buildInfoRowWithDialog(
+          context,
+          s.bondAppliesToLabel,
+          _bondAppliesToValue(s, instance.bondApplyTo),
+          s.bondAppliesToExplanation,
+        ),
+        const SizedBox(height: 16),
+        _buildInfoRowWithDialog(
+          context,
+          s.bondAmountLabel,
+          _bondAmountValue(s, instance),
+          s.bondAmountExplanation,
+        ),
+        const SizedBox(height: 16),
+        _buildInfoRowWithDialog(
+          context,
+          s.bondSlashOnTimeoutLabel,
+          (instance.bondSlashOnWaitingTimeout ?? false) ? s.yes : s.no,
+          s.bondSlashOnTimeoutExplanation,
+        ),
+        const SizedBox(height: 16),
+        _buildInfoRowWithDialog(
+          context,
+          s.bondNodeShareLabel,
+          _formatBondPercent(instance.bondSlashNodeSharePct),
+          s.bondNodeShareExplanation,
+        ),
+        const SizedBox(height: 16),
+        _buildInfoRowWithDialog(
+          context,
+          s.bondClaimWindowLabel,
+          s.bondClaimWindowValue(instance.bondPayoutClaimWindowDays ?? 0),
+          s.bondClaimWindowExplanation,
+        ),
+      ]);
+    }
+    children.add(const SizedBox(height: 20));
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: children,
+    );
+  }
+
+  /// Section header matching the plain headers but with a tappable info icon
+  /// that opens the concept explanation dialog.
+  Widget _buildSectionHeaderWithInfo(
+      BuildContext context, String title, String explanation) {
+    return Row(
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            color: AppTheme.activeColor,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(width: 6),
+        InkWell(
+          onTap: () => _showInfoDialog(context, title, explanation),
+          borderRadius: BorderRadius.circular(12),
+          child: const Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Icon(
+              Icons.info_outline,
+              size: 16,
+              color: AppTheme.activeColor,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _bondAppliesToValue(S s, BondApplyTo? applyTo) {
+    switch (applyTo) {
+      case BondApplyTo.take:
+        return s.bondAppliesToTakers;
+      case BondApplyTo.make:
+        return s.bondAppliesToMakers;
+      case BondApplyTo.both:
+        return s.bondAppliesToBoth;
+      case null:
+        return '—';
+    }
+  }
+
+  String _bondAmountValue(S s, MostroInstance instance) {
+    final percent = _formatPercentNumber(instance.bondAmountPct);
+    final base = instance.bondBaseAmountSats;
+    final min =
+        base == null ? '—' : NumberFormat.decimalPattern().format(base);
+    return s.bondAmountValue(percent, min);
+  }
+
+  /// Formats a `[0,1]` fraction as a percent number without trailing zeros,
+  /// e.g. 0.5 -> "50", 0.015 -> "1.5". Returns "—" for null.
+  String _formatPercentNumber(double? fraction) {
+    if (fraction == null) return '—';
+    return NumberFormat('0.##').format(fraction * 100);
+  }
+
+  String _formatBondPercent(double? fraction) {
+    if (fraction == null) return '—';
+    return '${_formatPercentNumber(fraction)}%';
   }
 
   Widget _buildInfoRow(String label, String value) {
