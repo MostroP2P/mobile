@@ -135,7 +135,7 @@ user to **pay** a bolt11) versus `add-bond-invoice` (Mostro asks the winner to
 When `apply_to ∈ {take, both}` and the taker takes an order, the daemon parks
 the order at `waiting-taker-bond` and sends the taker a `pay-bond-invoice`.
 
-```
+```text
 take-buy / take-sell
         │
         ▼
@@ -184,7 +184,7 @@ Crucially, the client does **not** use a dedicated `waiting-maker-bond` status.
 The maker side reuses `pay-bond-invoice` and tracks the limbo with an ephemeral
 session flag.
 
-```
+```text
 submit new-order
         │
         ▼
@@ -233,7 +233,7 @@ so it can forward their share. This is the only bond flow with a multi-step
 state machine on the client, modelled by `BondPayoutPhase`
 (`bond_payout_helpers.dart:4-22`).
 
-```
+```text
 add-bond-invoice (BondPayoutRequest { order, slashed_at })
         │
         ▼
