@@ -1706,5 +1706,43 @@
     "bondPayoutCompletedMessage": "Hai ricevuto il pagamento della tua parte del deposito anti-abuso.",
     "bondPayoutCompletedWithRating": "Hai ricevuto il pagamento della tua parte del deposito anti-abuso. Puoi valutare la tua controparte.",
     "bondPayoutCloseButton": "CHIUDI",
-    "errorLoadingBondPayout": "Errore nel caricamento dei dati del riscatto"
+    "errorLoadingBondPayout": "Errore nel caricamento dei dati del riscatto",
+    "antiAbuseBond": "Deposito anti-abuso",
+    "antiAbuseBondExplanation": "Il deposito anti-abuso è un meccanismo opzionale che alcuni nodi Mostro usano per rendere gli scambi più sicuri. Quando entri in uno scambio depositi una piccola quantità di sats come garanzia, che ti viene restituita per intero se agisci in buona fede, ma che perdi se cerchi di truffare la tua controparte. Così il truffatore mette a rischio il proprio denaro, scoraggiando gli abusi.",
+    "bondStatusLabel": "Stato",
+    "bondStatusExplanation": "Se questo nodo richiede un deposito anti-abuso per fare trading. 'Disabilitato' significa che non ne serve nessuno.",
+    "bondEnabled": "Abilitato",
+    "bondDisabled": "Disabilitato",
+    "bondAppliesToLabel": "Si applica a",
+    "bondAppliesToExplanation": "Quale lato deve bloccare un deposito: taker, maker o entrambi.",
+    "bondAppliesToTakers": "Taker",
+    "bondAppliesToMakers": "Maker",
+    "bondAppliesToBoth": "Maker e taker",
+    "bondAmountLabel": "Importo del deposito",
+    "bondAmountExplanation": "La dimensione del deposito: una percentuale dell'importo dell'ordine, con un minimo in sats. Si applica il maggiore dei due.",
+    "bondAmountValue": "{percent}% dell'importo (min. {min} sats)",
+    "@bondAmountValue": {
+        "placeholders": {
+            "percent": {
+                "type": "String"
+            },
+            "min": {
+                "type": "String"
+            }
+        }
+    },
+    "bondSlashOnTimeoutLabel": "Slash su timeout",
+    "bondSlashOnTimeoutExplanation": "Se il tuo deposito può essere trattenuto per il mancato rispetto di una scadenza (ad esempio non pagare o non fornire una fattura in tempo). Se 'No', viene trattenuto solo per decisione di un risolutore di dispute.",
+    "bondNodeShareLabel": "Quota del nodo",
+    "bondNodeShareExplanation": "Se un deposito viene trattenuto, la frazione che il nodo trattiene. Il resto è pagato alla controparte onesta.",
+    "bondClaimWindowLabel": "Finestra di reclamo",
+    "bondClaimWindowExplanation": "Se sei la parte onesta quando un deposito viene trattenuto, quanti giorni hai per reclamare la tua quota prima di perderla.",
+    "bondClaimWindowValue": "{days, plural, =1{1 giorno} other{{days} giorni}}",
+    "@bondClaimWindowValue": {
+        "placeholders": {
+            "days": {
+                "type": "int"
+            }
+        }
+    }
 }

@@ -1665,5 +1665,43 @@
     "bondPayoutCompletedMessage": "Vous avez reçu le paiement de votre part du dépôt anti-abus.",
     "bondPayoutCompletedWithRating": "Vous avez reçu le paiement de votre part du dépôt anti-abus. Vous pouvez évaluer votre contrepartie.",
     "bondPayoutCloseButton": "FERMER",
-    "errorLoadingBondPayout": "Erreur lors du chargement des données de paiement"
+    "errorLoadingBondPayout": "Erreur lors du chargement des données de paiement",
+    "antiAbuseBond": "Dépôt anti-abus",
+    "antiAbuseBondExplanation": "Le dépôt anti-abus est un mécanisme optionnel que certains nœuds Mostro utilisent pour rendre les échanges plus sûrs. En entrant dans un échange, vous déposez une petite quantité de sats en garantie, intégralement remboursée si vous agissez de bonne foi, mais perdue si vous tentez d'escroquer votre contrepartie. Ainsi, l'escroc risque son propre argent, ce qui décourage les abus.",
+    "bondStatusLabel": "Statut",
+    "bondStatusExplanation": "Si ce nœud exige un dépôt anti-abus pour échanger. 'Désactivé' signifie qu'aucun dépôt n'est requis.",
+    "bondEnabled": "Activé",
+    "bondDisabled": "Désactivé",
+    "bondAppliesToLabel": "S'applique à",
+    "bondAppliesToExplanation": "Quel côté doit bloquer un dépôt : preneurs, créateurs ou les deux.",
+    "bondAppliesToTakers": "Preneurs",
+    "bondAppliesToMakers": "Créateurs",
+    "bondAppliesToBoth": "Créateurs et preneurs",
+    "bondAmountLabel": "Montant du dépôt",
+    "bondAmountExplanation": "La taille du dépôt : un pourcentage du montant de l'ordre, avec un minimum en sats. Le plus élevé des deux s'applique.",
+    "bondAmountValue": "{percent}% du montant (min. {min} sats)",
+    "@bondAmountValue": {
+        "placeholders": {
+            "percent": {
+                "type": "String"
+            },
+            "min": {
+                "type": "String"
+            }
+        }
+    },
+    "bondSlashOnTimeoutLabel": "Slash en cas de délai",
+    "bondSlashOnTimeoutExplanation": "Si votre dépôt peut être conservé en cas de délai non respecté (par exemple, ne pas payer ou ne pas fournir une facture à temps). Si 'Non', il n'est conservé que sur décision d'un médiateur de litige.",
+    "bondNodeShareLabel": "Part du nœud",
+    "bondNodeShareExplanation": "Si un dépôt est conservé, la fraction que le nœud retient. Le reste est versé à la contrepartie honnête.",
+    "bondClaimWindowLabel": "Délai de réclamation",
+    "bondClaimWindowExplanation": "Si vous êtes la partie honnête lorsqu'un dépôt est conservé, combien de jours vous avez pour réclamer votre part avant de la perdre.",
+    "bondClaimWindowValue": "{days, plural, =1{1 jour} other{{days} jours}}",
+    "@bondClaimWindowValue": {
+        "placeholders": {
+            "days": {
+                "type": "int"
+            }
+        }
+    }
 }
