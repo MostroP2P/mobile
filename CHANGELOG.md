@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.2.9] - 2026-06-16
+
+### Added
+- feat(about): show anti-abuse bond policy from node info event (#617) (fe4fe4ab)
+
+### Documentation
+- docs: add anti-abuse bond documentation (#616) (23f13366)
+
+
 ## [v1.2.8] - 2026-06-12
 
 ### Added
