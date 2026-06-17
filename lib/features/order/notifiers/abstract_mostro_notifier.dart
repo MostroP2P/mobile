@@ -15,6 +15,7 @@ import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/shared/utils/bond_cancel_helpers.dart';
 import 'package:mostro_mobile/shared/utils/bond_payout_helpers.dart';
+import 'package:mostro_mobile/shared/utils/bond_slash_helpers.dart';
 
 class AbstractMostroNotifier extends StateNotifier<OrderState> {
   final String orderId;
@@ -266,12 +267,23 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         break;
 
       case Action.bondSlashed:
-        // The forfeiture notification was already persisted at the top of
-        // handleEvent. The notice arrived, so cancel the deferred deletion
-        // and release the session now.
+        // Cancel any deferred deletion timer (only the timeout/canceled path sets one).
         _bondCancelDeletionTimers.remove(orderId)?.cancel();
-        await ref.read(sessionNotifierProvider.notifier).deleteSession(orderId);
-        logger.i('Session deleted after bond-slashed for order $orderId');
+        // Delete only on a timeout slash (order returned to the book). A dispute
+        // slash is a terminal trade that stays in My Trades with its role intact.
+        final bondSlashMessages = await ref
+            .read(mostroStorageProvider)
+            .getAllMessagesForOrderId(orderId);
+        if (bondSlashIsTimeout(bondSlashMessages)) {
+          await ref
+              .read(sessionNotifierProvider.notifier)
+              .deleteSession(orderId);
+          logger.i(
+              'Session deleted after timeout bond-slashed for order $orderId');
+        } else {
+          logger
+              .i('Dispute bond-slashed: keeping session for order $orderId');
+        }
         break;
 
       case Action.buyerTookOrder:

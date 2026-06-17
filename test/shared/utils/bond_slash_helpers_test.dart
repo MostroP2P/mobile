@@ -104,6 +104,46 @@ void main() {
     });
   });
 
+  group('bondSlashIsTimeout', () {
+    test('true when a plain canceled message is present (timeout path)', () {
+      expect(
+        bondSlashIsTimeout([
+          _msg(Action.payBondInvoice),
+          _msg(Action.canceled),
+          _bondSlashedMsg(300),
+        ]),
+        isTrue,
+      );
+    });
+
+    test('false for a dispute resolution (admin-settled, no canceled)', () {
+      expect(
+        bondSlashIsTimeout([
+          _msg(Action.disputeInitiatedByYou),
+          _msg(Action.adminSettled),
+          _bondSlashedMsg(300),
+        ]),
+        isFalse,
+      );
+    });
+
+    test('false for an admin-canceled dispute (no plain canceled)', () {
+      expect(
+        bondSlashIsTimeout([
+          _msg(Action.adminCanceled),
+          _bondSlashedMsg(300),
+        ]),
+        isFalse,
+      );
+    });
+
+    test('false (safe default) when neither marker is present yet', () {
+      // Early-arrival race: bond-slashed before the preceding message lands.
+      expect(bondSlashIsTimeout([_bondSlashedMsg(300)]), isFalse);
+      expect(bondSlashIsTimeout([]), isFalse);
+    });
+  });
+
   group('slashedBondAmount', () {
     test('returns the amount from the bond-slashed payload', () {
       expect(

@@ -34,6 +34,12 @@ BondSlashCause bondSlashCause(List<MostroMessage> messages) {
 bool orderBondWasSlashed(List<MostroMessage> messages) =>
     messages.any((m) => m.action == Action.bondSlashed);
 
+/// Whether a bond slash is a timeout slash, identified positively by a plain
+/// `canceled` in the history. Dispute slashes carry admin-settled/canceled, so
+/// the false default keeps the session — the safe choice for an irreversible delete.
+bool bondSlashIsTimeout(List<MostroMessage> messages) =>
+    messages.any((m) => m.action == Action.canceled);
+
 /// The slashed bond amount carried by the order's `bond-slashed` notice, or
 /// null when there is no such message or its payload is missing.
 int? slashedBondAmount(List<MostroMessage> messages) {
