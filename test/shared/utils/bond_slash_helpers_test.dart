@@ -142,6 +142,17 @@ void main() {
       expect(bondSlashIsTimeout([_bondSlashedMsg(300)]), isFalse);
       expect(bondSlashIsTimeout([]), isFalse);
     });
+
+    test('false when canceled and a dispute marker conflict (conflict-safe)', () {
+      expect(
+        bondSlashIsTimeout([
+          _msg(Action.canceled),
+          _msg(Action.adminSettled),
+          _bondSlashedMsg(300),
+        ]),
+        isFalse,
+      );
+    });
   });
 
   group('slashedBondAmount', () {

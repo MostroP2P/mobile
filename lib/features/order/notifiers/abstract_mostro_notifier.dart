@@ -267,13 +267,21 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         break;
 
       case Action.bondSlashed:
-        // Cancel any deferred deletion timer (only the timeout/canceled path sets one).
-        _bondCancelDeletionTimers.remove(orderId)?.cancel();
+        // Read history first; on failure leave the deferred timer intact as the
+        // fallback cleanup instead of stranding the session.
+        late final List<MostroMessage> bondSlashMessages;
+        try {
+          bondSlashMessages = await ref
+              .read(mostroStorageProvider)
+              .getAllMessagesForOrderId(orderId);
+        } catch (e) {
+          logger.e('Failed to read history for bond-slashed order $orderId',
+              error: e);
+          break;
+        }
         // Delete only on a timeout slash (order returned to the book). A dispute
         // slash is a terminal trade that stays in My Trades with its role intact.
-        final bondSlashMessages = await ref
-            .read(mostroStorageProvider)
-            .getAllMessagesForOrderId(orderId);
+        _bondCancelDeletionTimers.remove(orderId)?.cancel();
         if (bondSlashIsTimeout(bondSlashMessages)) {
           await ref
               .read(sessionNotifierProvider.notifier)
