@@ -689,7 +689,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
         logger.i('Detected REAL Mostro pubkey change: $currentPubkey -> $newPubkey');
         currentPubkey = newPubkey;
         
-        // 🔥 RESET COMPLETO: Limpiar todos los relays y hacer sync fresco
+        // FULL RESET: clear all relays and perform a fresh sync
         _cleanAllRelaysAndResync();
       } else if (newPubkey != currentPubkey) {
         // Just update the tracking variable without reset (initial load)

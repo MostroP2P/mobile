@@ -30,7 +30,7 @@ void main() {
     late MockDatabase mockDatabase;
     late MockSessionStorage mockSessionStorage;
     late MockKeyManager mockKeyManager;
-    late MockSessionNotifier mockSessionNotifier;
+    late MockSettings testSettings;
     late MockMostroStorage mockMostroStorage;
     const testOrderId = "test_order_id";
 
@@ -45,16 +45,8 @@ void main() {
       mockMostroStorage = MockMostroStorage();
 
       // Create test settings
-      final testSettings = MockSettings();
+      testSettings = MockSettings();
 
-      // Riverpod 3.x: Ref is sealed and can't be mocked. Mint a real Ref from a
-      // throwaway container for the MockSessionNotifier (which overrides every
-      // method the tests exercise, so the ref is only stored, never read).
-      final refContainer = ProviderContainer();
-      addTearDown(refContainer.dispose);
-      mockSessionNotifier = MockSessionNotifier(createTestRef(refContainer),
-          mockKeyManager, mockSessionStorage, testSettings);
-      
       // Stub the KeyManager methods
       when(mockKeyManager.masterKeyPair).thenReturn(
         NostrKeyPairs(
@@ -123,7 +115,8 @@ void main() {
         eventDatabaseProvider.overrideWithValue(mockDatabase),
         sessionStorageProvider.overrideWithValue(mockSessionStorage),
         keyManagerProvider.overrideWithValue(mockKeyManager),
-        sessionNotifierProvider.overrideWith((ref) => mockSessionNotifier),
+        sessionNotifierProvider.overrideWith((ref) => MockSessionNotifier(
+            ref, mockKeyManager, mockSessionStorage, testSettings)),
         settingsProvider.overrideWith((ref) {
           final mockSettings = MockSettingsNotifier();
           mockSettings.state = Settings(
@@ -192,7 +185,8 @@ void main() {
         eventDatabaseProvider.overrideWithValue(mockDatabase),
         sessionStorageProvider.overrideWithValue(mockSessionStorage),
         keyManagerProvider.overrideWithValue(mockKeyManager),
-        sessionNotifierProvider.overrideWith((ref) => mockSessionNotifier),
+        sessionNotifierProvider.overrideWith((ref) => MockSessionNotifier(
+            ref, mockKeyManager, mockSessionStorage, testSettings)),
         settingsProvider.overrideWith((ref) {
           final mockSettings = MockSettingsNotifier();
           mockSettings.state = Settings(
@@ -260,7 +254,8 @@ void main() {
         eventDatabaseProvider.overrideWithValue(mockDatabase),
         sessionStorageProvider.overrideWithValue(mockSessionStorage),
         keyManagerProvider.overrideWithValue(mockKeyManager),
-        sessionNotifierProvider.overrideWith((ref) => mockSessionNotifier),
+        sessionNotifierProvider.overrideWith((ref) => MockSessionNotifier(
+            ref, mockKeyManager, mockSessionStorage, testSettings)),
         settingsProvider.overrideWith((ref) {
           final mockSettings = MockSettingsNotifier();
           mockSettings.state = Settings(
@@ -315,7 +310,8 @@ void main() {
         eventDatabaseProvider.overrideWithValue(mockDatabase),
         sessionStorageProvider.overrideWithValue(mockSessionStorage),
         keyManagerProvider.overrideWithValue(mockKeyManager),
-        sessionNotifierProvider.overrideWith((ref) => mockSessionNotifier),
+        sessionNotifierProvider.overrideWith((ref) => MockSessionNotifier(
+            ref, mockKeyManager, mockSessionStorage, testSettings)),
         settingsProvider.overrideWith((ref) {
           final mockSettings = MockSettingsNotifier();
           mockSettings.state = Settings(

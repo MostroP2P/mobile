@@ -84,6 +84,10 @@ void main() {
   final dummySubscriptionManagerForMockito = MockSubscriptionManager(dummyRef);
   provideDummy<SubscriptionManager>(dummySubscriptionManagerForMockito);
 
+  // Dispose the dummy container at suite end so the subscription manager's
+  // listeners and onDispose handlers don't outlive the suite.
+  tearDownAll(dummyContainer.dispose);
+
   late MostroService mostroService;
   late KeyDerivator keyDerivator;
   late MockServerTradeIndex mockServerTradeIndex;
