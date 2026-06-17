@@ -1257,6 +1257,8 @@
     "notification_bond_slashed_title": "Deposito anti-abuso perso",
     "notification_bond_slashed_message": "Hai perso il tuo deposito anti-abuso perché non hai risposto entro il tempo previsto.",
     "notification_bond_slashed_detail": "Hai perso il tuo deposito anti-abuso di {amount} sats per l'ordine {orderId}, di {fiatAmount} {fiatCode} con metodo di pagamento {paymentMethod}, perché non hai risposto entro il tempo previsto.",
+    "notification_bond_slashed_dispute_message": "Hai perso il tuo deposito anti-abuso a causa della risoluzione della disputa di questo ordine.",
+    "notification_bond_slashed_dispute_detail": "Hai perso il tuo deposito anti-abuso di {amount} sats per l'ordine {orderId}, di {fiatAmount} {fiatCode} con metodo di pagamento {paymentMethod}, a causa della risoluzione della disputa.",
     "notificationDelete": "Elimina",
     "confirmDeleteNotification": "Sei sicuro di voler eliminare questa notifica?",
     "confirmClearAll": "Questo eliminerà permanentemente tutte le notifiche. Questa azione non può essere annullata.",

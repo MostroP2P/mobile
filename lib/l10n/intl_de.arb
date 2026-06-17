@@ -1277,6 +1277,8 @@
     "notification_bond_slashed_title": "Anti-Missbrauchs-Kaution verloren",
     "notification_bond_slashed_message": "Du hast deine Anti-Missbrauchs-Kaution verloren, weil du nicht rechtzeitig geantwortet hast.",
     "notification_bond_slashed_detail": "Du hast deine Anti-Missbrauchs-Kaution von {amount} Sats für die Bestellung {orderId}, über {fiatAmount} {fiatCode} mit Zahlungsmethode {paymentMethod}, verloren, weil du nicht rechtzeitig geantwortet hast.",
+    "notification_bond_slashed_dispute_message": "Du hast deine Anti-Missbrauchs-Kaution durch die Schlichtung der Streitigkeit dieser Bestellung verloren.",
+    "notification_bond_slashed_dispute_detail": "Du hast deine Anti-Missbrauchs-Kaution von {amount} Sats für die Bestellung {orderId}, über {fiatAmount} {fiatCode} mit Zahlungsmethode {paymentMethod}, durch die Schlichtung der Streitigkeit verloren.",
     "notificationDelete": "Löschen",
     "confirmDeleteNotification": "Bist du sicher, dass du diese Benachrichtigung löschen möchtest?",
     "confirmClearAll": "Dies wird alle Benachrichtigungen dauerhaft löschen. Diese Aktion kann nicht rückgängig gemacht werden.",
