@@ -1193,6 +1193,7 @@
     "notification_bond_slashed_detail": "Has perdido tu bono anti-abuso de {amount} sats por la orden {orderId}, de {fiatAmount} {fiatCode} y método de pago {paymentMethod}, porque no respondiste dentro del tiempo establecido.",
     "notification_bond_slashed_dispute_message": "Has perdido tu bono anti-abuso por la resolución de la disputa de esta orden.",
     "notification_bond_slashed_dispute_detail": "Has perdido tu bono anti-abuso de {amount} sats por la orden {orderId}, de {fiatAmount} {fiatCode} y método de pago {paymentMethod}, por la resolución de la disputa.",
+    "bondLostByDisputeNotice": "Perdiste el bono anti-abuso de {amount} sats de esta orden por la resolución de la disputa.",
     "notificationDelete": "Eliminar",
     "confirmDeleteNotification": "¿Estás seguro de que quieres eliminar esta notificación?",
     "confirmClearAll": "Esto eliminará permanentemente todas las notificaciones. Esta acción no se puede deshacer.",

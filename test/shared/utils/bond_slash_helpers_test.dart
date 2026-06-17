@@ -1,10 +1,24 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
+import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
+import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/shared/utils/bond_slash_helpers.dart';
 
 MostroMessage _msg(Action action) =>
     MostroMessage(action: action, id: 'order-1');
+
+MostroMessage<Order> _bondSlashedMsg(int amount) => MostroMessage<Order>(
+      action: Action.bondSlashed,
+      id: 'order-1',
+      payload: Order(
+        kind: OrderType.sell,
+        amount: amount,
+        fiatCode: 'CUP',
+        fiatAmount: 200,
+        paymentMethod: 'ggg',
+      ),
+    );
 
 void main() {
   group('bondSlashCause', () {
@@ -87,6 +101,32 @@ void main() {
 
     test('false for an empty history', () {
       expect(orderBondWasSlashed([]), isFalse);
+    });
+  });
+
+  group('slashedBondAmount', () {
+    test('returns the amount from the bond-slashed payload', () {
+      expect(
+        slashedBondAmount([
+          _msg(Action.payBondInvoice),
+          _bondSlashedMsg(300),
+        ]),
+        300,
+      );
+    });
+
+    test('returns null when there is no bond-slashed message', () {
+      expect(
+        slashedBondAmount([
+          _msg(Action.payBondInvoice),
+          _msg(Action.canceled),
+        ]),
+        isNull,
+      );
+    });
+
+    test('returns null for an empty history', () {
+      expect(slashedBondAmount([]), isNull);
     });
   });
 }

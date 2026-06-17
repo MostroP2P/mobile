@@ -33,3 +33,15 @@ BondSlashCause bondSlashCause(List<MostroMessage> messages) {
 /// history). Drives the dispute-only notice shown in order details.
 bool orderBondWasSlashed(List<MostroMessage> messages) =>
     messages.any((m) => m.action == Action.bondSlashed);
+
+/// The slashed bond amount carried by the order's `bond-slashed` notice, or
+/// null when there is no such message or its payload is missing.
+int? slashedBondAmount(List<MostroMessage> messages) {
+  for (final m in messages) {
+    if (m.action == Action.bondSlashed) {
+      final order = m.getPayload<Order>();
+      if (order != null) return order.amount;
+    }
+  }
+  return null;
+}
