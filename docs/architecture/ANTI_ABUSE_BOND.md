@@ -45,6 +45,7 @@ on locking, releasing, slashing and paying out.
 | Payout request payload | `lib/data/models/bond_payout_request.dart` |
 | Pure payout-phase helpers | `lib/shared/utils/bond_payout_helpers.dart` |
 | Pure cancel-lifecycle helpers | `lib/shared/utils/bond_cancel_helpers.dart` |
+| Pure slash-cause helpers | `lib/shared/utils/bond_slash_helpers.dart` |
 | Message handling / session logic | `lib/features/order/notifiers/abstract_mostro_notifier.dart` |
 | Maker-bond create flow | `lib/features/order/notifiers/add_order_notifier.dart` |
 | Pay-bond screen | `lib/features/order/screens/pay_bond_invoice_screen.dart` |
@@ -307,39 +308,76 @@ catch keeps the user on the form rather than silently losing the submission
 
 ## 7. Forfeiture notice (`bond-slashed`)
 
-`bond-slashed` is a **best-effort** notice the daemon sends to a taker whose
-bond was slashed on a **waiting-state timeout** (it complements the
-`Action::Canceled` the user already gets for the order). It is *not* sent on a
-voluntary cancel — that returns the bond.
+`bond-slashed` is a **best-effort** notice the daemon sends to the slashed party
+when their bond is forfeited. It complements the resolution message the user
+already gets for the order, and is sent for **both** slash causes:
 
-- **Payload.** `Order` (a `SmallOrder`) whose `amount` is the **slashed bond
-  amount**, not the trade amount, and whose `status` is `null`.
-- **Ordering.** The daemon sends `canceled` first, then `bond-slashed` ~150 ms
-  later, both to the same trade pubkey. This ordering is why the client must
-  defer session deletion (§8).
+- **Timeout slash** — the user missed a waiting-state deadline. The daemon sends
+  `canceled` first, then `bond-slashed` ~150 ms later. (Not sent on a voluntary
+  cancel — that returns the bond.) This `canceled`-then-`bond-slashed` ordering
+  is why the client must defer session deletion (§8).
+- **Dispute-resolution slash** — a solver directed the slash while resolving a
+  dispute. The daemon sends `admin-settled` / `admin-canceled` first, then
+  `bond-slashed`.
+
+- **Payload (identical for both causes).** `Order` (a `SmallOrder`) whose
+  `amount` is the **slashed bond amount**, not the trade amount, and whose
+  `status` is `null`. There is **no `reason` field** — the wire message does not
+  say which cause triggered it.
 - **Why it was being dropped before.** Two bugs, both fixed: (1) the action was
   not in the enum, so `MostroMessage.fromJson` threw and discarded it; (2) the
   `canceled` handler deleted the session immediately, dropping the trade key
   from the subscription filter and the decryption key, so the trailing notice
   could never be received or decrypted.
 
+### Inferring the cause
+
+Because the payload is identical, the client infers the cause from the order's
+message history, in the pure helper `lib/shared/utils/bond_slash_helpers.dart`:
+
+- `bondSlashCause(messages)` → `dispute` when the history contains a
+  dispute/admin action (`dispute-initiated-by-you/peer`, `admin-settled`,
+  `admin-canceled`); `timeout` otherwise (and for an empty history).
+- The two causes are **mutually exclusive**: a timeout slash only happens in a
+  waiting state, before any dispute; once disputed, the only slash path is the
+  admin resolution. So a single dispute/admin action in the history
+  unambiguously marks a dispute slash.
+
+The cause is computed **once, at notification creation** — in the `bond-slashed`
+case of `notification_data_extractor.dart`, where storage is reachable via `ref`
+— and persisted into the notification's `data['slash_cause']`, so the
+notification stays self-contained (it does not depend on the order history still
+being present when later opened). When `ref` is unavailable (background) the
+inference defaults to `timeout`.
+
 ### Rendering
 
-- **Extraction** (`notification_data_extractor.dart:222-232`): pulls
-  `{amount, order_id, fiat_code, fiat_amount, payment_method}` from the payload
-  and persists a non-temporary notification. The other payout acks
-  (`add-bond-invoice`, `bond-invoice-accepted`, `bond-payout-completed`) return
-  `null` here — no notification (`:217-219`).
+- **Extraction** (`notification_data_extractor.dart`, `bond-slashed` case):
+  pulls `{amount, order_id, fiat_code, fiat_amount, payment_method}` from the
+  payload plus the inferred `slash_cause`, and persists a non-temporary
+  notification. The other payout acks (`add-bond-invoice`,
+  `bond-invoice-accepted`, `bond-payout-completed`) return `null` here — no
+  notification.
 - **Mapping** (`notification.dart:87`): `bond-slashed` →
-  `NotificationType.cancellation`. List preview uses the short
-  `notification_bond_slashed_title` / `_message` keys
-  (`notification_message_mapper.dart:102,219`).
-- **Tap → detail dialog** (`notification_item.dart:139-140`, `:171-215`):
-  `_showBondSlashedDialog` shows the forfeiture detail in **prose**
-  (`notification_bond_slashed_detail`, parameterized with
-  amount/orderId/fiatAmount/fiatCode/paymentMethod) with a **green** close
-  button (`AppTheme.activeColor`). The `bond-slashed` case is isolated from the
-  no-op action group in the switch to avoid fall-through (commit `b226af3c`).
+  `NotificationType.cancellation`. The **title** is the same for both causes;
+  the **message** key is chosen by cause in
+  `notification_message_mapper.dart::getMessageKeyWithContext`
+  (timeout → `notification_bond_slashed_message`, dispute →
+  `notification_bond_slashed_dispute_message`).
+- **Tap → detail dialog** (`notification_item.dart`, `_showBondSlashedDialog`):
+  picks the `notification_bond_slashed_detail` vs `_dispute_detail` variant from
+  `data['slash_cause']`; prose with a **green** close button
+  (`AppTheme.activeColor`). The `bond-slashed` case is isolated from the no-op
+  action group in the switch to avoid fall-through (commit `b226af3c`).
+
+### Order-details notice (dispute only)
+
+`trade_detail_screen.dart::_buildBondLostDisputeNotice` shows a durable line in
+the order detail **only** when `orderBondWasSlashed(messages) && bondSlashCause
+== dispute`. A timeout slash shows nothing there (the notification already
+covers it). The amount comes from the `bond-slashed` message via
+`slashedBondAmount(messages)`, rendered with the `bondLostByDisputeNotice`
+localized key.
 
 ---
 
@@ -461,6 +499,7 @@ when generated mocks are stale:
 |------|--------|
 | `test/shared/utils/bond_payout_helpers_test.dart` | phase model, deadline, expiry, `hasPendingBondClaim` |
 | `test/shared/utils/bond_cancel_helpers_test.dart` | defer/reconcile truth tables, window boundary |
+| `test/shared/utils/bond_slash_helpers_test.dart` | slash-cause inference (timeout vs dispute), slashed-amount extraction |
 | `test/features/order/models/order_state_bond_slashed_test.dart` | slash notice must not overwrite the tracked order |
 | `test/features/order/models/order_state_maker_bond_test.dart` | maker bond status handling |
 | `test/features/order/notifiers/maker_bond_timeout_test.dart` | maker-bond flow disarms the create timeout |
@@ -472,7 +511,8 @@ when generated mocks are stale:
 > `getSessionByOrderId` / `sessions` with fixed fields and bypasses the real
 > session map, which makes `deleteSession`-wiring assertions fragile. The
 > decision logic was extracted into `bond_payout_helpers.dart` /
-> `bond_cancel_helpers.dart` so the truth tables can be tested without mocks.
+> `bond_cancel_helpers.dart` / `bond_slash_helpers.dart` so the truth tables can
+> be tested without mocks.
 
 ---
 
@@ -485,10 +525,14 @@ when generated mocks are stale:
   open, not refreshed live.
 - **Offline correctness** of the 60 s deferral depends on relay retention of the
   trailing `bond-slashed` gift wrap.
+- **Slash-cause inference is a heuristic.** The daemon ships no `reason` on
+  `bond-slashed`, so the client infers timeout vs dispute from order history
+  (§7). It defaults to `timeout` when the history is unavailable. A daemon-side
+  `reason` field would make this unambiguous.
 
 ---
 
-**Last Updated**: 2026-06-15
+**Last Updated**: 2026-06-16
 **Related docs**: `MULTI_MOSTRO_SUPPORT.md` (info-event parsing),
 `ORDER_STATUS_HANDLING.md` (status model),
 `TIMEOUT_DETECTION_AND_SESSION_CLEANUP.md` (session cleanup),

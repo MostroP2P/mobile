@@ -177,6 +177,14 @@ class NotificationItem extends ConsumerWidget {
     final fiatAmount = (data['fiat_amount'] ?? '').toString();
     final fiatCode = (data['fiat_code'] ?? '').toString();
     final paymentMethod = (data['payment_method'] ?? '').toString();
+    // Same bond-slashed notice covers both timeout and dispute slashes; the
+    // cause was inferred and persisted at notification creation.
+    final isDispute = data['slash_cause'] == 'dispute';
+    final detail = isDispute
+        ? s.notification_bond_slashed_dispute_detail(
+            amount, orderId, fiatAmount, fiatCode, paymentMethod)
+        : s.notification_bond_slashed_detail(
+            amount, orderId, fiatAmount, fiatCode, paymentMethod);
 
     showDialog(
       context: context,
@@ -187,8 +195,7 @@ class NotificationItem extends ConsumerWidget {
           style: const TextStyle(color: AppTheme.textPrimary),
         ),
         content: Text(
-          s.notification_bond_slashed_detail(
-              amount, orderId, fiatAmount, fiatCode, paymentMethod),
+          detail,
           style: const TextStyle(color: AppTheme.textSecondary),
         ),
         actions: [

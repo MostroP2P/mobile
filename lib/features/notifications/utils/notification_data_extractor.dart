@@ -6,6 +6,7 @@ import 'package:mostro_mobile/data/models.dart';
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/shared/providers/legible_handle_provider.dart';
 import 'package:mostro_mobile/shared/providers.dart';
+import 'package:mostro_mobile/shared/utils/bond_slash_helpers.dart';
 
 class NotificationDataExtractor {
   /// Extract notification data from MostroMessage
@@ -223,12 +224,28 @@ class NotificationDataExtractor {
         // SmallOrder carries the slashed bond amount and the order context.
         final order = event.getPayload<Order>();
         if (order == null) return null;
+        // The daemon sends the same bond-slashed notice for a timeout slash
+        // and a dispute-resolution slash; infer which from the order history
+        // (best-effort: defaults to timeout when history is unavailable).
+        var slashCause = BondSlashCause.timeout;
+        if (ref != null && event.id != null) {
+          try {
+            final messages = await ref
+                .read(mostroStorageProvider)
+                .getAllMessagesForOrderId(event.id!);
+            slashCause = bondSlashCause(messages);
+          } catch (e) {
+            logger.e('Failed to infer bond-slash cause for order ${event.id}',
+                error: e);
+          }
+        }
         values = {
           'amount': order.amount,
           'order_id': order.id,
           'fiat_code': order.fiatCode,
           'fiat_amount': order.fiatAmount,
           'payment_method': order.paymentMethod,
+          'slash_cause': slashCause.name,
         };
         break;
 
