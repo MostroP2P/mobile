@@ -28,7 +28,6 @@ import 'package:mostro_mobile/shared/widgets/dynamic_countdown_widget.dart';
 import 'package:mostro_mobile/features/disputes/providers/dispute_providers.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/utils/bond_payout_helpers.dart';
-import 'package:mostro_mobile/shared/utils/bond_slash_helpers.dart';
 import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
 
 class TradeDetailScreen extends ConsumerWidget {
@@ -86,7 +85,6 @@ class TradeDetailScreen extends ConsumerWidget {
                   // Detailed info: includes the last Mostro message action text
                   MostroMessageDetail(orderId: orderId),
                 ],
-                _buildBondLostDisputeNotice(context, ref),
                 const SizedBox(height: 24),
                 // Show countdown timer only for specific statuses
                 _CountdownWidget(
@@ -266,34 +264,6 @@ class TradeDetailScreen extends ConsumerWidget {
   Widget _buildOrderId(BuildContext context) {
     return OrderIdCard(
       orderId: orderId,
-    );
-  }
-
-  /// Durable notice shown ONLY when this order's bond was slashed by a dispute
-  /// resolution. A timeout slash shows nothing here (the notification covers
-  /// it); the amount comes from the bond-slashed message itself.
-  Widget _buildBondLostDisputeNotice(BuildContext context, WidgetRef ref) {
-    final history = ref.watch(mostroMessageHistoryProvider(orderId));
-    return history.maybeWhen(
-      data: (msgs) {
-        if (!orderBondWasSlashed(msgs) ||
-            bondSlashCause(msgs) != BondSlashCause.dispute) {
-          return const SizedBox.shrink();
-        }
-        final amount = slashedBondAmount(msgs);
-        if (amount == null) return const SizedBox.shrink();
-        return Padding(
-          padding: const EdgeInsets.only(top: 16),
-          child: Text(
-            S.of(context)!.bondLostByDisputeNotice(amount.toString()),
-            style: const TextStyle(
-              color: AppTheme.textSecondary,
-              fontSize: 14,
-            ),
-          ),
-        );
-      },
-      orElse: () => const SizedBox.shrink(),
     );
   }
 
