@@ -1538,6 +1538,7 @@
     "nwcQuotaExceeded": "Ausgabenlimit der Wallet überschritten",
     "nwcRetryPayment": "Zahlung wiederholen",
     "nwcPayManually": "Stattdessen manuell zahlen",
+    "nwcShowInvoice": "Rechnung anzeigen",
     "nwcPreimageLabel": "Preimage",
     "nwcGenerateWithWallet": "Mit Wallet generieren",
     "nwcInvoiceGenerating": "Rechnung wird generiert...",
