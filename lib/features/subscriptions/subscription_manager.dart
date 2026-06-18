@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/core/models/relay_list_event.dart';
 import 'package:mostro_mobile/data/models/session.dart';
+import 'package:mostro_mobile/features/mostro/transport.dart';
+import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_type.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
@@ -125,10 +127,26 @@ class SubscriptionManager {
         if (sessions.isEmpty) {
           return null;
         }
-        return NostrFilter(
-          kinds: [1059],
-          p: sessions.map((s) => s.tradeKey.public).toList(),
-        );
+        final tradeKeys = sessions.map((s) => s.tradeKey.public).toList();
+        // Transport selected per node (§4.1). Phase A always resolves to
+        // giftWrap, so the emitted filter is identical to the v1 behaviour;
+        // Phase C wires the real protocol_version resolution.
+        switch (resolveTransport(null)) {
+          case Transport.giftWrap:
+            return NostrFilter(
+              kinds: [1059],
+              p: tradeKeys,
+            );
+          case Transport.nip44:
+            // v2 Mostro replies are kind 14 authored by the node and addressed
+            // (p) to the trade key; the authors pin disambiguates them from
+            // NIP-17 peer chat, which is also kind 14 (§3.4).
+            return NostrFilter(
+              kinds: [14],
+              authors: [ref.read(settingsProvider).mostroPublicKey],
+              p: tradeKeys,
+            );
+        }
       case SubscriptionType.chat:
         if (sessions.isEmpty) {
           return null;
