@@ -442,6 +442,82 @@ class NostrUtils {
     }
   }
 
+  /// Decrypts a protocol-v2 (NIP-44 direct) Mostro event.
+  ///
+  /// Sibling of [decryptNIP59Event] for the kind-14 transport (§3.3, §5 Phase
+  /// A). Unlike the gift-wrap path (rumor -> seal -> wrap, whose inner content
+  /// is the message tuple), the decrypted content here **is** the tuple
+  /// directly. Steps:
+  /// 1. Verify the event is a kind-14 authored by [expectedAuthor] (the node)
+  ///    and that its signature is valid — for v2 the author signature is
+  ///    load-bearing.
+  /// 2. NIP-44 decrypt `content` with [privateKey] (the trade key) and
+  ///    `event.pubkey` (the node).
+  ///
+  /// Returns the decrypted tuple JSON string `[message, tradeSig?, identityProof?]`;
+  /// the caller decodes it and takes `tuple[0]`.
+  static Future<String> decryptNIP44DirectEvent(
+    NostrEvent event,
+    String privateKey, {
+    required String expectedAuthor,
+  }) async {
+    if (event.kind != 14) {
+      throw ArgumentError('Wrong kind: ${event.kind}');
+    }
+    if (event.content == null || event.content!.isEmpty) {
+      throw ArgumentError('Event content is empty');
+    }
+    if (!isValidPrivateKey(privateKey)) {
+      throw ArgumentError('Invalid private key');
+    }
+    if (event.pubkey != expectedAuthor) {
+      throw ArgumentError(
+        'Unexpected author: expected $expectedAuthor, got ${event.pubkey}',
+      );
+    }
+    if (!_isValidEventSignature(event)) {
+      throw ArgumentError('Invalid kind-14 event signature');
+    }
+
+    try {
+      return await decryptNIP44(
+        event.content!,
+        privateKey,
+        event.pubkey,
+      );
+    } catch (e) {
+      throw Exception('Failed to decrypt NIP-44 direct event: $e');
+    }
+  }
+
+  /// Verifies a Nostr event's id and Schnorr signature (NIP-01): recomputes the
+  /// id from the serialized event and checks the signature over it.
+  static bool _isValidEventSignature(NostrEvent event) {
+    final id = event.id;
+    final sig = event.sig;
+    final createdAt = event.createdAt;
+    if (id == null || sig == null || createdAt == null) {
+      return false;
+    }
+    try {
+      final serialized = jsonEncode([
+        0,
+        event.pubkey,
+        createdAt.millisecondsSinceEpoch ~/ 1000,
+        event.kind,
+        event.tags ?? [],
+        event.content ?? '',
+      ]);
+      final computedId = sha256.convert(utf8.encode(serialized)).toString();
+      if (computedId != id) {
+        return false;
+      }
+      return NostrKeyPairs.verify(event.pubkey, id, sig);
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// Validates the structure of a decrypted event
   static void _validateEventStructure(Map<String, dynamic> event) {
     final requiredFields = [

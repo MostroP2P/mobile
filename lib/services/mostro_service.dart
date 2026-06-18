@@ -127,11 +127,26 @@ class MostroService {
     final privateKey = matchingSession.tradeKey.private;
 
     try {
-      final decryptedEvent = await event.unWrap(privateKey);
+      // Transport branch (§5 Phase A): v1 gift wrap (kind 1059) yields an inner
+      // rumor whose content is the message tuple; v2 NIP-44 direct (kind 14)
+      // decrypts straight to the tuple. Both converge on jsonDecode below.
+      String? content;
+      String? decryptedId;
+      if (event.kind == 14) {
+        content = await NostrUtils.decryptNIP44DirectEvent(
+          event,
+          privateKey,
+          expectedAuthor: _settings.mostroPublicKey,
+        );
+      } else {
+        final decryptedEvent = await event.unWrap(privateKey);
+        content = decryptedEvent.content;
+        decryptedId = decryptedEvent.id;
+      }
 
-      if (decryptedEvent.content == null) return;
+      if (content == null) return;
 
-      final result = jsonDecode(decryptedEvent.content!);
+      final result = jsonDecode(content);
 
       // Ensure result is a non-empty List before accessing elements
       if (result is! List || result.isEmpty) {
@@ -156,15 +171,15 @@ class MostroService {
 
       final messageStorage = ref.read(mostroStorageProvider);
 
-      // Use decryptedEvent.id if available, otherwise fall back to original event.id
-      // This handles cases where admin messages might not have an id in the decrypted event
+      // Use the inner rumor id if available (v1), otherwise fall back to the
+      // original event id. v2 has no inner rumor, so it always falls back.
       final messageKey =
-          decryptedEvent.id ??
+          decryptedId ??
           event.id ??
           'msg_${DateTime.now().millisecondsSinceEpoch}';
       await messageStorage.addMessage(messageKey, msg);
       logger.i(
-        'Received DM, Event ID: ${decryptedEvent.id ?? event.id} with payload: ${decryptedEvent.content}',
+        'Received DM, Event ID: ${decryptedId ?? event.id} with payload: $content',
       );
 
       await _maybeLinkChildOrder(msg, matchingSession);

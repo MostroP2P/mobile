@@ -18,8 +18,10 @@ during the migration window.
 > - **Reference client (CLI)**: `MostroP2P/mostro-cli` PRs #176, #177, #178 and
 >   its `docs/TRANSPORT_V2_SPEC.md`.
 >
-> **Status.** Design specification. No `lib/` code has been changed yet; this
-> document drives the implementation phases (§5).
+> **Status.** Living design specification. **Phase A (dual receive) is
+> implemented** in this branch, including `protocol_version` auto-detection and
+> per-node transport resolution on the receive path. The remaining phases (§5)
+> are pending.
 
 ---
 
@@ -251,6 +253,7 @@ for either transport without the two drifting apart.
 | Publish + PoW + recipient | `lib/services/mostro_service.dart:338-360` |
 | Receive subscription filters (kind 1059) | `lib/features/subscriptions/subscription_manager.dart:121-160` |
 | Receive decrypt (unWrap → `result[0]`) | `lib/services/mostro_service.dart:129-155` |
+| Background receive decrypt (unWrap → `result[0]`) | `lib/features/notifications/services/background_notification_service.dart:199-322` |
 | NIP-59 unwrap | `lib/shared/utils/nostr_utils.dart:383-443` |
 | Node info / `protocol_version` parse | `lib/features/mostro/mostro_instance.dart:119-251` |
 | Global `version` constant | `lib/core/config.dart:56` |
@@ -263,12 +266,21 @@ The phases below define the code work for **subsequent branches**; this
 document does not execute them. Each phase keeps the v1 path behaviourally
 unchanged.
 
-### Phase A — Dual receive
+### Phase A — Dual receive (with receive-side auto-detection)
 
+- Parse `protocol_version` into `MostroInstance.protocolVersion` (default v1 when
+  absent or unparseable) — `lib/features/mostro/mostro_instance.dart`. Resolve a
+  per-node `Transport` from it (`lib/features/mostro/transport.dart`), degrading
+  to v1 on an unsupported value and logging it (version-skew guard, §4.1).
+  > Receive-side detection lives here (not Phase C) so the dual-receive path is
+  > actually reachable and reviewable; Phase C only threads the resolved
+  > transport into the **send** path.
 - Make the subscription filters transport-aware
-  (`lib/features/subscriptions/subscription_manager.dart:121-160`): for a v2
-  node, subscribe to kind `14` pinned to `authors = [mostroPubkey]` and
-  `p = [tradeKeys]`, instead of kind `1059`.
+  (`lib/features/subscriptions/subscription_manager.dart`): for a v2 node,
+  subscribe to kind `14` pinned to `authors = [mostroPubkey]` and
+  `p = [tradeKeys]`, instead of kind `1059`. The node info (kind 38385) arrives
+  asynchronously, so the manager listens to `OpenOrdersRepository`'s info-event
+  stream and re-subscribes when the resolved transport changes.
 - Add a v2 unwrap (sibling to `NostrUtils.decryptNIP59Event`,
   `lib/shared/utils/nostr_utils.dart:383-443`): verify the kind-14 event
   signature (author = node), NIP-44 decrypt `content` with `tradeKey.private` +
@@ -276,6 +288,14 @@ unchanged.
 - Branch `MostroService` receive (`lib/services/mostro_service.dart:129-155`):
   v1 yields an inner rumor whose content is the 2-tuple; v2's decrypted content
   **is** the tuple directly. Both converge on `MostroMessage.fromJson(tuple[0])`.
+- Apply the **same receive branch to the background isolate**
+  (`lib/features/notifications/services/background_notification_service.dart`):
+  accept kind `14` in `_decryptAndProcessEvent` and branch `_handleTradeKeyEvent`
+  on `event.kind`. The background isolate has no Riverpod settings provider, so
+  the node pubkey (the v2 author to verify) is read from persisted settings
+  (`SharedPreferencesKeys.appSettings`). Without this, v2 replies received while
+  the app is backgrounded would be silently dropped once a node advertises
+  `protocol_version=2`.
 
 ### Phase B — Dual send
 
@@ -291,13 +311,17 @@ unchanged.
   `lib/shared/utils/nostr_utils.dart:564-630`) for the first-contact lane — the
   daemon may still require PoW on the kind-14 event id.
 
-### Phase C — Auto-detection and wiring
+### Phase C — Send-side wiring
 
-- Parse `protocol_version` into `MostroInstance.protocolVersion`
-  (default v1 when absent) — `lib/features/mostro/mostro_instance.dart`.
-- Resolve transport per node (§4.1) and thread it into send and receive.
-- Degrade to v1 on absent tag / unreachable node (version-skew guard), and
-  **log the downgrade explicitly** (`warn`) so the degraded state is observable.
+> `protocol_version` parsing and per-node transport resolution already landed in
+> Phase A (receive). This phase only threads that same resolved transport into
+> the **send** path.
+
+- Thread the resolved `Transport` (§4.1) into `MostroService.publishOrder` so
+  outbound messages use the v2 `wrap` from Phase B against a v2 node, while v1
+  nodes keep the gift-wrap path.
+- Reuse the version-skew guard from Phase A: degrade to v1 on an unsupported /
+  unreachable node, keeping the existing explicit downgrade logging.
 
 ### Phase D — Tests
 

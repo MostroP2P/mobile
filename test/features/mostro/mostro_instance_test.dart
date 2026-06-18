@@ -289,4 +289,71 @@ void main() {
       }
     });
   });
+
+  group('MostroInstance protocol_version tag', () {
+    NostrEvent buildEvent(List<List<String>> extraTags) {
+      return NostrEvent(
+        id: 'a' * 64,
+        kind: 38385,
+        content: '',
+        sig: 'b' * 128,
+        pubkey: 'c' * 64,
+        createdAt: DateTime(2025),
+        tags: [
+          ['d', 'c' * 64],
+          ['mostro_version', '0.13.0'],
+          ['mostro_commit_hash', 'deadbeef'],
+          ['max_order_amount', '1000000'],
+          ['min_order_amount', '1'],
+          ['expiration_hours', '24'],
+          ['expiration_seconds', '900'],
+          ['fee', '0.006'],
+          ['pow', '0'],
+          ['hold_invoice_expiration_window', '300'],
+          ['hold_invoice_cltv_delta', '144'],
+          ['invoice_expiration_window', '300'],
+          ['lnd_version', '0.18.0'],
+          ['lnd_node_pubkey', 'd' * 66],
+          ['lnd_commit_hash', 'cafebabe'],
+          ['lnd_node_alias', 'mostro-lnd'],
+          ['lnd_chains', 'bitcoin'],
+          ['lnd_networks', 'mainnet'],
+          ['lnd_uris', 'lnd://example'],
+          ['fiat_currencies_accepted', 'USD,EUR'],
+          ['max_orders_per_response', '100'],
+          ...extraTags,
+        ],
+      );
+    }
+
+    test('tag absent → getter null, model defaults to v1', () {
+      final event = buildEvent(const []);
+      expect(event.protocolVersion, isNull);
+      expect(MostroInstance.fromEvent(event).protocolVersion, 1);
+    });
+
+    test('protocol_version="2" → v2', () {
+      final event = buildEvent(const [
+        ['protocol_version', '2'],
+      ]);
+      expect(event.protocolVersion, 2);
+      expect(MostroInstance.fromEvent(event).protocolVersion, 2);
+    });
+
+    test('protocol_version="1" → v1', () {
+      final event = buildEvent(const [
+        ['protocol_version', '1'],
+      ]);
+      expect(event.protocolVersion, 1);
+      expect(MostroInstance.fromEvent(event).protocolVersion, 1);
+    });
+
+    test('unparseable value → getter null, model defaults to v1', () {
+      final event = buildEvent(const [
+        ['protocol_version', 'abc'],
+      ]);
+      expect(event.protocolVersion, isNull);
+      expect(MostroInstance.fromEvent(event).protocolVersion, 1);
+    });
+  });
 }

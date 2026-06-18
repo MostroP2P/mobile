@@ -38,6 +38,11 @@ class MostroInstance {
   final String fiatCurrenciesAccepted;
   final int maxOrdersPerResponse;
 
+  /// Wire transport advertised via the `protocol_version` tag (§2 of the
+  /// transport v2 migration). Defaults to `1` (NIP-59 gift wrap) when the tag
+  /// is absent or unparseable, matching the legacy-daemon behaviour.
+  final int protocolVersion;
+
   /// Bond policy state. See [BondPolicy] for the three-state semantics.
   final BondPolicy bondPolicy;
 
@@ -73,6 +78,7 @@ class MostroInstance {
     this.lndNodeUri,
     this.fiatCurrenciesAccepted,
     this.maxOrdersPerResponse, {
+    this.protocolVersion = 1,
     this.bondPolicy = BondPolicy.unsupported,
     this.bondApplyTo,
     this.bondSlashOnWaitingTimeout,
@@ -105,6 +111,7 @@ class MostroInstance {
       event.lndNodeUri,
       event.fiatCurrenciesAccepted,
       event.maxOrdersPerResponse,
+      protocolVersion: event.protocolVersion ?? 1,
       bondPolicy: event.bondPolicy,
       bondApplyTo: event.bondApplyTo,
       bondSlashOnWaitingTimeout: event.bondSlashOnWaitingTimeout,
@@ -169,6 +176,17 @@ extension MostroInstanceExtensions on NostrEvent {
   String get fiatCurrenciesAccepted => _getTagValue('fiat_currencies_accepted');
   int get maxOrdersPerResponse =>
       int.parse(_getTagValue('max_orders_per_response'));
+
+  /// Parses the wire transport version from the `protocol_version` tag (§2).
+  ///
+  /// Returns `null` when the tag is absent or unparseable. Callers treat
+  /// `null` as legacy v1 (NIP-59 gift wrap); the nullable form is preserved so
+  /// the transport resolver can distinguish "not advertised" from an explicit
+  /// version when deciding whether to log a version-skew downgrade.
+  int? get protocolVersion {
+    final raw = _getOptionalTagValue('protocol_version');
+    return raw == null ? null : int.tryParse(raw);
+  }
 
   /// Parses the anti-abuse bond policy from the `bond_enabled` tag.
   ///
