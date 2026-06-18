@@ -5,11 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/core/models/relay_list_event.dart';
 import 'package:mostro_mobile/data/models/session.dart';
+import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/features/mostro/transport.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_type.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
+import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 
 /// Manages Nostr subscriptions across different parts of the application.
@@ -20,8 +22,16 @@ import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 class SubscriptionManager {
   final Ref ref;
   final Map<SubscriptionType, Subscription> _subscriptions = {};
-  
+
   late final ProviderSubscription _sessionListener;
+
+  /// Listener for the connected node's kind-38385 info event, used to switch the
+  /// orders subscription transport once `protocol_version` becomes known.
+  StreamSubscription<NostrEvent>? _mostroInstanceListener;
+
+  /// Transport currently applied to the orders subscription, tracked so the
+  /// info-event listener only re-subscribes when the resolved transport changes.
+  Transport? _appliedOrdersTransport;
 
   final _ordersController = StreamController<NostrEvent>.broadcast();
   final _chatController = StreamController<NostrEvent>.broadcast();
@@ -38,6 +48,49 @@ class SubscriptionManager {
     // Ensure resources are released with provider/container lifecycle
     ref.onDispose(dispose);
     _initializeExistingSessions();
+    _initMostroInstanceListener();
+  }
+
+  /// Watches the connected node's info event so the orders subscription can
+  /// switch to the v2 (kind 14) transport once the node advertises
+  /// `protocol_version=2`. The info event arrives asynchronously after the
+  /// initial subscription, so without this the orders filter would stay pinned
+  /// to the transport resolved at subscription time (typically v1 at cold
+  /// start). Re-subscribes only when the resolved transport actually changes.
+  void _initMostroInstanceListener() {
+    try {
+      _mostroInstanceListener =
+          ref.read(orderRepositoryProvider).mostroInstanceStream.listen(
+        (_) {
+          final newTransport = _resolveOrdersTransport();
+          if (newTransport == _appliedOrdersTransport) return;
+          final sessions = ref.read(sessionNotifierProvider);
+          if (sessions.isEmpty) return;
+          logger.i('Orders transport changed to $newTransport, re-subscribing');
+          _updateSubscription(SubscriptionType.orders, sessions);
+        },
+        onError: (error, stackTrace) {
+          logger.e('Error in mostro instance listener',
+              error: error, stackTrace: stackTrace);
+        },
+      );
+    } catch (e, stackTrace) {
+      logger.e('Failed to init mostro instance listener',
+          error: e, stackTrace: stackTrace);
+    }
+  }
+
+  /// Resolves the transport for the orders subscription from the connected
+  /// node's advertised `protocol_version` (§2, §4.1). Defaults to v1 gift wrap
+  /// when the node info is not yet available or unreadable.
+  Transport _resolveOrdersTransport() {
+    try {
+      final infoEvent = ref.read(orderRepositoryProvider).mostroInstance;
+      return resolveTransport(infoEvent?.protocolVersion);
+    } catch (e) {
+      logger.w('Failed to resolve orders transport, defaulting to v1: $e');
+      return Transport.giftWrap;
+    }
   }
 
   void _initSessionListener() {
@@ -128,10 +181,12 @@ class SubscriptionManager {
           return null;
         }
         final tradeKeys = sessions.map((s) => s.tradeKey.public).toList();
-        // Transport selected per node (§4.1). Phase A always resolves to
-        // giftWrap, so the emitted filter is identical to the v1 behaviour;
-        // Phase C wires the real protocol_version resolution.
-        switch (resolveTransport(null)) {
+        // Transport selected per node from its advertised protocol_version
+        // (§2, §4.1). Tracked so the info-event listener can detect a change
+        // and re-subscribe when the node info arrives after this subscription.
+        final transport = _resolveOrdersTransport();
+        _appliedOrdersTransport = transport;
+        switch (transport) {
           case Transport.giftWrap:
             return NostrFilter(
               kinds: [1059],
@@ -360,6 +415,7 @@ class SubscriptionManager {
 
   void dispose() {
     _sessionListener.close();
+    _mostroInstanceListener?.cancel();
     unsubscribeAll();
     _ordersController.close();
     _chatController.close();

@@ -1,4 +1,4 @@
-import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 
 /// Wire transport a Mostro node speaks.
 ///
@@ -13,11 +13,28 @@ import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 enum Transport { giftWrap, nip44 }
 
 /// Resolves the wire transport for a node from its advertised
-/// `protocol_version` (§4.1).
+/// `protocol_version` (§2, §4.1).
 ///
-/// Phase A (dual receive) keeps the v1 path behaviourally unchanged, so this
-/// always resolves to [Transport.giftWrap]. Phase C (auto-detection and wiring)
-/// replaces the body with the real per-node resolution driven by
-/// [MostroInstance.protocolVersion] and the explicit downgrade logging required
-/// by the version-skew guard.
-Transport resolveTransport(MostroInstance? instance) => Transport.giftWrap;
+/// - `2` → [Transport.nip44] (v2).
+/// - `1` → [Transport.giftWrap] (v1, explicitly advertised).
+/// - `null` → [Transport.giftWrap]. The tag is absent or the node info has not
+///   been fetched yet; during the migration window this is the common legacy
+///   case, so it resolves to v1 without noise.
+/// - any other value → [Transport.giftWrap], logged at `warn`. We do not speak
+///   that protocol, so we degrade to v1 (version-skew guard) and surface the
+///   degraded state so a misconfigured node is not silently mis-paired.
+Transport resolveTransport(int? protocolVersion) {
+  switch (protocolVersion) {
+    case 2:
+      return Transport.nip44;
+    case 1:
+    case null:
+      return Transport.giftWrap;
+    default:
+      logger.w(
+        'Unsupported protocol_version $protocolVersion; '
+        'degrading to v1 gift wrap',
+      );
+      return Transport.giftWrap;
+  }
+}

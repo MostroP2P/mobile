@@ -19,10 +19,20 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
 
   final StreamController<List<NostrEvent>> _eventStreamController =
       StreamController.broadcast();
+
+  /// Emits the connected node's kind-38385 info event whenever it is (re)loaded.
+  /// Consumers (e.g. the transport resolver in [SubscriptionManager]) listen to
+  /// this to react when the node's `protocol_version` becomes known, since the
+  /// info event arrives asynchronously after the initial subscription.
+  final StreamController<NostrEvent> _mostroInstanceController =
+      StreamController.broadcast();
   final Map<String, NostrEvent> _events = {};
   StreamSubscription<NostrEvent>? _subscription;
 
   NostrEvent? get mostroInstance => _mostroInstance;
+
+  Stream<NostrEvent> get mostroInstanceStream =>
+      _mostroInstanceController.stream;
 
   OpenOrdersRepository(this._nostrService, this._settings) {
     // Subscribe to orders and initialize data
@@ -56,6 +66,9 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
           event.pubkey == _settings.mostroPublicKey) {
         logger.i('Mostro instance info loaded: $event');
         _mostroInstance = event;
+        if (!_mostroInstanceController.isClosed) {
+          _mostroInstanceController.add(event);
+        }
       }
     }, onError: (error) {
       logger.e('Error in order subscription: $error');
@@ -76,6 +89,7 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
   void dispose() {
     _subscription?.cancel();
     _eventStreamController.close();
+    _mostroInstanceController.close();
     _events.clear();
   }
 
