@@ -1557,6 +1557,7 @@
     "nwcQuotaExceeded": "Wallet spending quota exceeded",
     "nwcRetryPayment": "Retry Payment",
     "nwcPayManually": "Pay manually instead",
+    "nwcShowInvoice": "Show invoice",
     "nwcPreimageLabel": "Preimage",
     "nwcGenerateWithWallet": "Generate with Wallet",
     "nwcInvoiceGenerating": "Generating invoice...",

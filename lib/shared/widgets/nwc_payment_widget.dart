@@ -62,6 +62,7 @@ class _NwcPaymentWidgetState extends ConsumerState<NwcPaymentWidget> {
   String? _preimage;
   int? _feesPaidMsats;
   DateTime? _paymentTimestamp;
+  bool _refreshingBalance = false;
 
   Future<void> _payWithWallet() async {
     final nwcNotifier = ref.read(nwcProvider.notifier);
@@ -172,10 +173,16 @@ class _NwcPaymentWidgetState extends ConsumerState<NwcPaymentWidget> {
 
   @override
   Widget build(BuildContext context) {
+    // Show the "Show invoice" fallback whenever the user is not actively
+    // paying or already done, so they can always pay from another wallet
+    // (e.g. when the NWC wallet has insufficient balance).
+    final showFallback = _status == NwcPaymentStatus.idle ||
+        _status == NwcPaymentStatus.failed;
+
     return Column(
       children: [
         _buildPaymentArea(),
-        if (_status == NwcPaymentStatus.failed) ...[
+        if (showFallback) ...[
           const SizedBox(height: 12),
           _buildFallbackButton(),
         ],
@@ -280,14 +287,21 @@ class _NwcPaymentWidgetState extends ConsumerState<NwcPaymentWidget> {
         ),
         if (balanceSats != null) ...[
           const SizedBox(height: 8),
-          Text(
-            '${S.of(context)!.walletBalance}: ${_formatSats(balanceSats)} sats',
-            style: TextStyle(
-              color: hasEnoughBalance
-                  ? AppTheme.cream1.withAlpha(153)
-                  : Colors.red.shade300,
-              fontSize: 13,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                '${S.of(context)!.walletBalance}: ${_formatSats(balanceSats)} sats',
+                style: TextStyle(
+                  color: hasEnoughBalance
+                      ? AppTheme.cream1.withAlpha(153)
+                      : Colors.red.shade300,
+                  fontSize: 13,
+                ),
+              ),
+              const SizedBox(width: 4),
+              _buildRefreshBalanceButton(hasEnoughBalance),
+            ],
           ),
         ],
       ],
@@ -414,11 +428,51 @@ class _NwcPaymentWidgetState extends ConsumerState<NwcPaymentWidget> {
     return TextButton.icon(
       onPressed: widget.onFallbackToManual,
       icon: const Icon(LucideIcons.qrCode, size: 16),
-      label: Text(S.of(context)!.nwcPayManually),
+      label: Text(S.of(context)!.nwcShowInvoice),
       style: TextButton.styleFrom(
         foregroundColor: AppTheme.cream1.withAlpha(179),
       ),
     );
+  }
+
+  Widget _buildRefreshBalanceButton(bool hasEnoughBalance) {
+    if (_refreshingBalance) {
+      return const SizedBox(
+        width: 14,
+        height: 14,
+        child: CircularProgressIndicator(
+          color: AppTheme.mostroGreen,
+          strokeWidth: 2,
+        ),
+      );
+    }
+
+    return InkWell(
+      onTap: _refreshBalance,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.all(2),
+        child: Icon(
+          LucideIcons.refreshCw,
+          size: 14,
+          color: hasEnoughBalance
+              ? AppTheme.cream1.withAlpha(153)
+              : Colors.red.shade300,
+        ),
+      ),
+    );
+  }
+
+  /// Manually refreshes the wallet balance (e.g. after the user tops up the
+  /// connected wallet from outside the app).
+  Future<void> _refreshBalance() async {
+    if (_refreshingBalance) return;
+    setState(() => _refreshingBalance = true);
+    try {
+      await ref.read(nwcProvider.notifier).refreshBalance();
+    } finally {
+      if (mounted) setState(() => _refreshingBalance = false);
+    }
   }
 
   String _truncatePreimage(String? value, int keep) {

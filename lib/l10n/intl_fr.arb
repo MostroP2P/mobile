@@ -1538,6 +1538,7 @@
     "nwcQuotaExceeded": "Quota de dépenses du portefeuille dépassé",
     "nwcRetryPayment": "Réessayer le paiement",
     "nwcPayManually": "Payer manuellement à la place",
+    "nwcShowInvoice": "Afficher la facture",
     "nwcPreimageLabel": "Preimage",
     "nwcGenerateWithWallet": "Générer avec le portefeuille",
     "nwcInvoiceGenerating": "Génération de facture...",

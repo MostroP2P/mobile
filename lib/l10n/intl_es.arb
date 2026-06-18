@@ -1513,6 +1513,7 @@
     "nwcQuotaExceeded": "Cuota de gastos de la billetera excedida",
     "nwcRetryPayment": "Reintentar Pago",
     "nwcPayManually": "Pagar manualmente",
+    "nwcShowInvoice": "Mostrar factura",
     "nwcPreimageLabel": "Preimagen",
     "nwcGenerateWithWallet": "Generar con Billetera",
     "nwcInvoiceGenerating": "Generando factura...",
