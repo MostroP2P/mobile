@@ -17,7 +17,7 @@ during the migration window.
 > - **Daemon repo**: https://github.com/MostroP2P/mostro
 > - **Reference client (CLI)**: `MostroP2P/mostro-cli` PRs #176, #177, #178 and
 >   its `docs/TRANSPORT_V2_SPEC.md`.
-
+>
 > **Status.** Design specification. No `lib/` code has been changed yet; this
 > document drives the implementation phases (§5).
 
@@ -78,7 +78,7 @@ manual override: detection is automatic (decision below).
 A node advertises its transport in its kind-`38385` info event via a
 `protocol_version` tag:
 
-```
+```text
 ["protocol_version", "1"]   → NIP-59 gift wrap (kind 1059), DEPRECATED
 ["protocol_version", "2"]   → NIP-44 direct (kind 14)
 (tag absent)                → legacy daemon → treat as v1
@@ -164,7 +164,7 @@ This string becomes the rumor content, sealed and gift-wrapped by
   `["<identity pubkey>", "<identity sig>"]`, where the signature is over a
   domain-tagged payload:
 
-  ```
+  ```text
   mostro-transport-v2-identity:<trade pubkey hex>:<message JSON>
   ```
 
@@ -189,7 +189,7 @@ receive by **author** and **`p` tag**: a v2 Mostro reply is authored by
 
 ### 3.5 Send/receive flow comparison
 
-```
+```text
 v1 (gift wrap)                          v2 (NIP-44 direct)
 --------------                          ------------------
 build message JSON (version:1)          build message JSON (version:2)
