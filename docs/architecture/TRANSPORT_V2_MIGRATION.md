@@ -251,6 +251,7 @@ for either transport without the two drifting apart.
 | Publish + PoW + recipient | `lib/services/mostro_service.dart:338-360` |
 | Receive subscription filters (kind 1059) | `lib/features/subscriptions/subscription_manager.dart:121-160` |
 | Receive decrypt (unWrap → `result[0]`) | `lib/services/mostro_service.dart:129-155` |
+| Background receive decrypt (unWrap → `result[0]`) | `lib/features/notifications/services/background_notification_service.dart:199-322` |
 | NIP-59 unwrap | `lib/shared/utils/nostr_utils.dart:383-443` |
 | Node info / `protocol_version` parse | `lib/features/mostro/mostro_instance.dart:119-251` |
 | Global `version` constant | `lib/core/config.dart:56` |
@@ -276,6 +277,14 @@ unchanged.
 - Branch `MostroService` receive (`lib/services/mostro_service.dart:129-155`):
   v1 yields an inner rumor whose content is the 2-tuple; v2's decrypted content
   **is** the tuple directly. Both converge on `MostroMessage.fromJson(tuple[0])`.
+- Apply the **same receive branch to the background isolate**
+  (`lib/features/notifications/services/background_notification_service.dart`):
+  accept kind `14` in `_decryptAndProcessEvent` and branch `_handleTradeKeyEvent`
+  on `event.kind`. The background isolate has no Riverpod settings provider, so
+  the node pubkey (the v2 author to verify) is read from persisted settings
+  (`SharedPreferencesKeys.appSettings`). Without this, v2 replies received while
+  the app is backgrounded would be silently dropped once Phase C flips the
+  transport.
 
 ### Phase B — Dual send
 
