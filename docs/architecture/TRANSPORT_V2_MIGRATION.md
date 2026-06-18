@@ -209,24 +209,36 @@ publish                                   - optional PoW (NIP-13, first-contact)
 
 ### 4.1 Per-node transport resolution
 
-A single source of truth: the connected node's transport, derived from
-`MostroInstance.protocolVersion` (§2). One small resolver maps the node to a
-transport value consumed by **both** the send path and the receive subscription
-filters. No UI, no persisted setting, no per-message override.
+A single source of truth: the connected node's transport, modelled as a small
+enum rather than a raw integer threaded through the code, so send and receive
+cannot drift out of sync and the `version` field can never be set independently
+of the chosen transport:
+
+```dart
+enum Transport { giftWrap, nip44 } // v1 / v2
+```
+
+One small resolver maps the node (via `MostroInstance.protocolVersion`, §2) to a
+`Transport`, and that single value is consumed by **both** the send path and the
+receive subscription filters. No UI, no persisted setting, no per-message
+override.
 
 Degrade safely: when the `protocol_version` tag is absent or the node is
-unreachable, resolve to **v1 (gift wrap)** rather than mis-pairing — this is the
-version-skew guard.
+unreachable, resolve to **`Transport.giftWrap` (v1)** rather than mis-pairing —
+this is the version-skew guard. The downgrade must be **logged explicitly** (at
+`warn`) so a misconfigured or unreachable node cannot silently leave the app in
+a degraded transport without anyone noticing.
 
 ### 4.2 `version` field stops being a global constant
 
 `Config.mostroVersion` is currently a hardcoded `1`
 (`lib/core/config.dart:56`) read by `MostroMessage.toJson()`
 (`lib/data/models/mostro_message.dart:30`). The message `version` must instead
-be **derived from the resolved transport** (1 for gift wrap, 2 for NIP-44 —
-decision #2). The cleanest seam is to pass the transport (or its version number)
-into the serialize/wrap path rather than reading a global, so a single
-`MostroMessage` can be wrapped for either transport.
+be **derived from the resolved `Transport`** (1 for `giftWrap`, 2 for `nip44` —
+decision #2). The cleanest seam is to pass the `Transport` (not a raw int) into
+the serialize/wrap path rather than reading a global, so the version number is
+always a function of the transport and a single `MostroMessage` can be wrapped
+for either transport without the two drifting apart.
 
 ### 4.3 Touch points (current v1 code → where v2 plugs in)
 
@@ -284,7 +296,8 @@ unchanged.
 - Parse `protocol_version` into `MostroInstance.protocolVersion`
   (default v1 when absent) — `lib/features/mostro/mostro_instance.dart`.
 - Resolve transport per node (§4.1) and thread it into send and receive.
-- Degrade to v1 on absent tag / unreachable node (version-skew guard).
+- Degrade to v1 on absent tag / unreachable node (version-skew guard), and
+  **log the downgrade explicitly** (`warn`) so the degraded state is observable.
 
 ### Phase D — Tests
 
@@ -301,7 +314,8 @@ unchanged.
 ## 6. Backward compatibility and edge cases
 
 - **Legacy node (no `protocol_version` tag)** → resolve to v1; behaviour
-  identical to today.
+  identical to today. The resolver logs this downgrade at `warn` (§4.1) so a
+  misconfigured node is not silently left on the degraded transport.
 - **`version` field** → v1 keeps `version: 1` on the wire (decision #2), so
   already-deployed pre-0.13 daemons are unaffected. (A 0.13+ daemon dispatches
   on event **kind**, not on `version`, and `verify()` checks action↔payload
