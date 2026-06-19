@@ -40,10 +40,13 @@ class DisputeRepository {
         return false;
       }
 
-      // Create dispute message using Gift Wrap protocol (NIP-59)
+      // Create dispute message
       final disputeMessage = MostroMessage(action: Action.dispute, id: orderId);
 
-      // Wrap message using Gift Wrap protocol (NIP-59) with PoW from Mostro instance
+      // Wrap the message for the transport advertised by the connected node
+      // (v1 gift wrap kind 1059 / v2 NIP-44 direct kind 14), with PoW from the
+      // Mostro instance. In reputation mode the master key and key index bind
+      // the identity proof; full privacy omits both.
       final mostroInstance = _ref.read(orderRepositoryProvider).mostroInstance;
       if (mostroInstance == null) {
         logger.w(
@@ -52,9 +55,12 @@ class DisputeRepository {
         );
       }
       final mostroPow = mostroInstance?.pow ?? 0;
-      final event = await disputeMessage.wrap(
+      final event = await disputeMessage.wrapForTransport(
+        protocolVersion: mostroInstance?.protocolVersion,
         tradeKey: session.tradeKey,
         recipientPubKey: _mostroPubkey,
+        masterKey: session.fullPrivacy ? null : session.masterKey,
+        keyIndex: session.fullPrivacy ? null : session.keyIndex,
         difficulty: mostroPow,
       );
 
