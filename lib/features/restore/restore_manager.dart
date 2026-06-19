@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:dart_nostr/nostr/core/key_pairs.dart';
 import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:dart_nostr/nostr/model/request/filter.dart';
@@ -152,33 +153,18 @@ class RestoreService {
     }
   }
 
-  /// Decrypts a restore response and returns its message map, handling both
-  /// transports: v2 (kind 14, NIP-44 direct, decrypted straight to the tuple)
-  /// and v1 (kind 1059, gift wrap unwrapped to a rumor whose content is the
-  /// tuple). Both converge on `tuple[0]`.
-  Future<Map<String, dynamic>> _decodeRestoreMessage(NostrEvent event) async {
+  /// Decrypts a restore response into its message map, reading the temp trade
+  /// key and node pubkey from the manager state. Delegates the transport branch
+  /// to the top-level [decodeRestoreMessage].
+  Future<Map<String, dynamic>> _decodeRestoreMessage(NostrEvent event) {
     if (_tempTradeKey == null) {
       throw Exception('Temp trade key not initialized');
     }
-
-    final String content;
-    if (event.kind == 14) {
-      content = await NostrUtils.decryptNIP44DirectEvent(
-        event,
-        _tempTradeKey!.private,
-        expectedAuthor: ref.read(settingsProvider).mostroPublicKey,
-      );
-    } else {
-      final rumor = await event.mostroUnWrap(_tempTradeKey!);
-      content = rumor.content ?? '';
-    }
-
-    if (content.isEmpty) {
-      throw Exception('Restore message content is empty');
-    }
-
-    final contentList = jsonDecode(content) as List<dynamic>;
-    return contentList[0] as Map<String, dynamic>;
+    return decodeRestoreMessage(
+      event,
+      _tempTradeKey!,
+      ref.read(settingsProvider).mostroPublicKey,
+    );
   }
 
   Future<StreamSubscription<NostrEvent>> _createTempSubscription() async {
@@ -1077,6 +1063,39 @@ class RestoreService {
     }
     return null;
   }
+}
+
+/// Decodes a restore response into its message map, handling both transports:
+/// v2 (kind 14, NIP-44 direct, decrypted straight to the tuple) and v1
+/// (kind 1059, gift wrap unwrapped to a rumor whose content is the tuple). Both
+/// converge on `tuple[0]`.
+///
+/// Top-level (not a private method) so the transport branch can be
+/// regression-tested without the full [RestoreService] / Riverpod orchestration.
+@visibleForTesting
+Future<Map<String, dynamic>> decodeRestoreMessage(
+  NostrEvent event,
+  NostrKeyPairs tempTradeKey,
+  String mostroPubkey,
+) async {
+  final String content;
+  if (event.kind == 14) {
+    content = await NostrUtils.decryptNIP44DirectEvent(
+      event,
+      tempTradeKey.private,
+      expectedAuthor: mostroPubkey,
+    );
+  } else {
+    final rumor = await event.mostroUnWrap(tempTradeKey);
+    content = rumor.content ?? '';
+  }
+
+  if (content.isEmpty) {
+    throw Exception('Restore message content is empty');
+  }
+
+  final contentList = jsonDecode(content) as List<dynamic>;
+  return contentList[0] as Map<String, dynamic>;
 }
 
 /// Thrown when Mostro responds with cant-do: invalid_trade_index to

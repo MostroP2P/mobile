@@ -151,7 +151,13 @@ Future<void> importMnemonicAndRestore(String mnemonic) async {
 
 **File**: `lib/features/restore/restore_manager.dart:116-141`
 
-Creates a temporary subscription using trade key index 1 to receive Mostro responses:
+Creates a temporary subscription using trade key index 1 to receive Mostro
+responses. To interoperate across the transport v2 migration it listens on
+**both** wire transports at once — v1 gift wrap (kind 1059) and v2 NIP-44 direct
+(kind 14) — because the node info (kind 38385) that advertises `protocol_version`
+may not have loaded yet when restore starts. The node answers on whichever
+transport it speaks; the v2 filter pins `authors = [mostroPubkey]` to disambiguate
+from NIP-17 chat (also kind 14). See `TRANSPORT_V2_MIGRATION.md`.
 
 ```dart
 Future<StreamSubscription<NostrEvent>> _createTempSubscription() async {
@@ -159,18 +165,30 @@ Future<StreamSubscription<NostrEvent>> _createTempSubscription() async {
     throw Exception('Temp trade key not initialized');
   }
 
-  final filter = NostrFilter(
+  final mostroPubkey = ref.read(settingsProvider).mostroPublicKey;
+  final v1Filter = NostrFilter(
     kinds: [1059],
     p: [_tempTradeKey!.public],
     limit: 0, // No historical events, only new ones
   );
+  final v2Filter = NostrFilter(
+    kinds: [14],
+    authors: [mostroPubkey],
+    p: [_tempTradeKey!.public],
+    limit: 0,
+  );
 
-  final request = NostrRequest(filters: [filter]);
+  final request = NostrRequest(filters: [v1Filter, v2Filter]);
   final stream = ref.read(nostrServiceProvider).subscribeToEvents(request);
-  
+
   return stream.listen(_handleTempSubscriptionsResponse);
 }
 ```
+
+The response is decoded by the top-level `decodeRestoreMessage(event, tempTradeKey,
+mostroPubkey)`, which branches on `event.kind`: kind 14 is NIP-44 decrypted (and
+the node signature verified) straight to the tuple, while kind 1059 is gift-wrap
+unwrapped to a rumor whose content is the tuple. Both converge on `tuple[0]`.
 
 ### Stage 3: Data Request Sequence
 
