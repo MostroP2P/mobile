@@ -363,7 +363,10 @@ class MostroService {
       );
     }
 
-    final event = await order.wrap(
+    // Route through the transport advertised by the connected node (§5 Phase
+    // B). v1 nodes (default) keep the gift-wrap path byte-for-byte.
+    final event = await order.wrapForTransport(
+      protocolVersion: mostroInstance?.protocolVersion,
       tradeKey: session.tradeKey,
       recipientPubKey: _settings.mostroPublicKey,
       masterKey: session.fullPrivacy ? null : session.masterKey,
@@ -371,7 +374,8 @@ class MostroService {
       difficulty: difficulty,
     );
     logger.i(
-      'Sending DM, Event ID: ${event.id} (PoW: $difficulty) with payload: ${order.toJson()}',
+      'Sending DM (kind ${event.kind}), Event ID: ${event.id} '
+      '(PoW: $difficulty) with payload: ${order.toJson()}',
     );
     await ref.read(nostrServiceProvider).publishEvent(event);
   }
