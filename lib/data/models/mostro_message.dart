@@ -6,6 +6,7 @@ import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/payload.dart';
+import 'package:mostro_mobile/features/mostro/transport.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
 class MostroMessage<T extends Payload> {
@@ -232,5 +233,40 @@ class MostroMessage<T extends Payload> {
       return NostrUtils.mineProofOfWork(event, difficulty, tradeKey);
     }
     return event;
+  }
+
+  /// Wraps the message for the transport advertised by the node's
+  /// [protocolVersion] (§5 Phase B): v2 (NIP-44 direct, kind 14) via
+  /// [wrapNip44] or v1 (gift wrap, kind 1059) via [wrap].
+  ///
+  /// Single entry point so every outbound Mostro send — order actions, restore
+  /// requests, dispute creation — selects the transport consistently from the
+  /// connected node, instead of hard-coding the v1 path.
+  Future<NostrEvent> wrapForTransport({
+    required int? protocolVersion,
+    required NostrKeyPairs tradeKey,
+    required String recipientPubKey,
+    NostrKeyPairs? masterKey,
+    int? keyIndex,
+    int difficulty = 0,
+  }) {
+    switch (resolveTransport(protocolVersion)) {
+      case Transport.nip44:
+        return wrapNip44(
+          tradeKey: tradeKey,
+          recipientPubKey: recipientPubKey,
+          masterKey: masterKey,
+          keyIndex: keyIndex,
+          difficulty: difficulty,
+        );
+      case Transport.giftWrap:
+        return wrap(
+          tradeKey: tradeKey,
+          recipientPubKey: recipientPubKey,
+          masterKey: masterKey,
+          keyIndex: keyIndex,
+          difficulty: difficulty,
+        );
+    }
   }
 }

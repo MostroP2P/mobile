@@ -207,7 +207,8 @@ class RestoreService {
         'event may be rejected if node requires PoW',
       );
     }
-    final wrappedEvent = await mostroMessage.wrap(
+    final wrappedEvent = await mostroMessage.wrapForTransport(
+      protocolVersion: mostroInstance?.protocolVersion,
       tradeKey: _tempTradeKey!,
       recipientPubKey: settings.mostroPublicKey,
       masterKey: settings.fullPrivacyMode ? null : _masterKey,
@@ -315,7 +316,8 @@ class RestoreService {
         'event may be rejected if node requires PoW',
       );
     }
-    final wrappedEvent = await mostroMessage.wrap(
+    final wrappedEvent = await mostroMessage.wrapForTransport(
+      protocolVersion: mostroInstance?.protocolVersion,
       tradeKey: _tempTradeKey!,
       recipientPubKey: settings.mostroPublicKey,
       masterKey: settings.fullPrivacyMode ? null : _masterKey,
@@ -408,7 +410,8 @@ class RestoreService {
         'event may be rejected if node requires PoW',
       );
     }
-    final wrappedEvent = await mostroMessage.wrap(
+    final wrappedEvent = await mostroMessage.wrapForTransport(
+      protocolVersion: mostroInstance?.protocolVersion,
       tradeKey: _tempTradeKey!,
       recipientPubKey: settings.mostroPublicKey,
       masterKey: settings.fullPrivacyMode ? null : _masterKey,

@@ -14,7 +14,6 @@ import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
-import 'package:mostro_mobile/features/mostro/transport.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
 class MostroService {
@@ -366,31 +365,17 @@ class MostroService {
 
     // Route through the transport advertised by the connected node (§5 Phase
     // B). v1 nodes (default) keep the gift-wrap path byte-for-byte.
-    final transport = resolveTransport(mostroInstance?.protocolVersion);
-    final NostrEvent event;
-    switch (transport) {
-      case Transport.nip44:
-        event = await order.wrapNip44(
-          tradeKey: session.tradeKey,
-          recipientPubKey: _settings.mostroPublicKey,
-          masterKey: session.fullPrivacy ? null : session.masterKey,
-          keyIndex: session.fullPrivacy ? null : session.keyIndex,
-          difficulty: difficulty,
-        );
-        break;
-      case Transport.giftWrap:
-        event = await order.wrap(
-          tradeKey: session.tradeKey,
-          recipientPubKey: _settings.mostroPublicKey,
-          masterKey: session.fullPrivacy ? null : session.masterKey,
-          keyIndex: session.fullPrivacy ? null : session.keyIndex,
-          difficulty: difficulty,
-        );
-        break;
-    }
+    final event = await order.wrapForTransport(
+      protocolVersion: mostroInstance?.protocolVersion,
+      tradeKey: session.tradeKey,
+      recipientPubKey: _settings.mostroPublicKey,
+      masterKey: session.fullPrivacy ? null : session.masterKey,
+      keyIndex: session.fullPrivacy ? null : session.keyIndex,
+      difficulty: difficulty,
+    );
     logger.i(
-      'Sending DM ($transport), Event ID: ${event.id} (PoW: $difficulty) '
-      'with payload: ${order.toJson()}',
+      'Sending DM (kind ${event.kind}), Event ID: ${event.id} '
+      '(PoW: $difficulty) with payload: ${order.toJson()}',
     );
     await ref.read(nostrServiceProvider).publishEvent(event);
   }

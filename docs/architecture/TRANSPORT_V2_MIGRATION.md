@@ -304,11 +304,15 @@ unchanged.
   `version: 2`; computes the trade signature; computes the identity proof
   (domain-tagged string signed with the master key, `null` in full-privacy);
   NIP-44 encrypts the 3-tuple toward the node; emits a kind-`14` event **signed
-  by the trade key** with `p` and NIP-40 `expiration` tags.
-- Route `MostroService.publishOrder` through the resolved transport (reuses the
-  Phase A resolver / `protocol_version`). **Preserve PoW**
-  (`NostrUtils.mineProofOfWork`) for the first-contact lane — the daemon may
-  still require PoW on the kind-14 event id.
+  by the trade key** with a `p` tag (the NIP-40 `expiration` tag is omitted; see
+  the note below).
+- Route **every** outbound Mostro send through the resolved transport via a
+  single `MostroMessage.wrapForTransport(protocolVersion: …)` entry point — not
+  just `MostroService.publishOrder`, but also the `RestoreManager` requests
+  (restore, order-details, last-trade-index) and
+  `DisputeRepository.createDispute`, so a v2 node never receives a stray v1 gift
+  wrap. **Preserve PoW** (`NostrUtils.mineProofOfWork`) for the first-contact
+  lane — the daemon may still require PoW on the kind-14 event id.
 - **Identity proof signature** mirrors `mostro-core`'s `transport.rs`: the
   trade-key signature (tuple element 1) is the existing `MostroMessage.sign`
   (SHA-256 hex digest then Schnorr), and the identity proof (element 2) is the

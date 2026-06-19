@@ -52,7 +52,8 @@ class DisputeRepository {
         );
       }
       final mostroPow = mostroInstance?.pow ?? 0;
-      final event = await disputeMessage.wrap(
+      final event = await disputeMessage.wrapForTransport(
+        protocolVersion: mostroInstance?.protocolVersion,
         tradeKey: session.tradeKey,
         recipientPubKey: _mostroPubkey,
         difficulty: mostroPow,
