@@ -1095,6 +1095,9 @@ Future<Map<String, dynamic>> decodeRestoreMessage(
   }
 
   final contentList = jsonDecode(content) as List<dynamic>;
+  if (contentList.isEmpty) {
+    throw Exception('Restore message tuple is empty');
+  }
   return contentList[0] as Map<String, dynamic>;
 }
 
