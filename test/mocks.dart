@@ -39,8 +39,6 @@ import 'mocks.mocks.dart';
   KeyManager,
   MostroStorage,
   Settings,
-  Ref,
-  ProviderSubscription,
   RelaysNotifier,
   OrderState,
   OrderNotifier,
@@ -55,6 +53,18 @@ import 'mocks.mocks.dart';
   // MockSubscriptionManager below keeps its name; this one has a distinct name).
   MockSpec<SubscriptionManager>(as: #MockSubscriptionManagerSpy),
 ])
+
+/// Returns a real [Ref] backed by [container].
+///
+/// Riverpod 3.x made [Ref] a sealed type that can no longer be generated as a
+/// Mockito mock. Tests obtain a genuine [Ref] through a throwaway probe provider
+/// and drive behavior via container overrides instead of stubbing `ref.read`.
+Ref createTestRef(ProviderContainer container) {
+  late Ref captured;
+  final probe = Provider<void>((ref) => captured = ref);
+  container.read(probe);
+  return captured;
+}
 
 // Custom mock for SettingsNotifier that returns a specific Settings object
 class MockSettingsNotifier extends SettingsNotifier {

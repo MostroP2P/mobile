@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:dart_nostr/nostr/model/ease.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/core/models/relay_list_event.dart';
 import 'package:mostro_mobile/features/settings/settings_notifier.dart';
@@ -688,7 +689,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
         logger.i('Detected REAL Mostro pubkey change: $currentPubkey -> $newPubkey');
         currentPubkey = newPubkey;
         
-        // 🔥 RESET COMPLETO: Limpiar todos los relays y hacer sync fresco
+        // FULL RESET: clear all relays and perform a fresh sync
         _cleanAllRelaysAndResync();
       } else if (newPubkey != currentPubkey) {
         // Just update the tracking variable without reset (initial load)

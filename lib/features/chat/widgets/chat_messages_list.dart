@@ -1,5 +1,6 @@
 import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/chat_room.dart';
 import 'package:mostro_mobile/features/chat/widgets/message_bubble.dart';
@@ -115,7 +116,7 @@ class _ChatMessagesListState extends State<ChatMessagesList> {
         // Add physics for better scrolling performance with many messages
         physics: const AlwaysScrollableScrollPhysics(),
         // Add caching for better performance with many messages
-        cacheExtent: 1000,
+        scrollCacheExtent: const ScrollCacheExtent.pixels(1000),
         // Add padding to prevent messages from being cut off
         padding: const EdgeInsets.only(
           top: 12,

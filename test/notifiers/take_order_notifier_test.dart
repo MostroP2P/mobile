@@ -30,9 +30,8 @@ void main() {
     late MockDatabase mockDatabase;
     late MockSessionStorage mockSessionStorage;
     late MockKeyManager mockKeyManager;
-    late MockSessionNotifier mockSessionNotifier;
+    late MockSettings testSettings;
     late MockMostroStorage mockMostroStorage;
-    late MockRef ref;
     const testOrderId = "test_order_id";
 
     setUp(() {
@@ -44,13 +43,10 @@ void main() {
       mockSessionStorage = MockSessionStorage();
       mockKeyManager = MockKeyManager();
       mockMostroStorage = MockMostroStorage();
-      ref = MockRef();
-      
+
       // Create test settings
-      final testSettings = MockSettings();
-      
-      mockSessionNotifier = MockSessionNotifier(ref, mockKeyManager, mockSessionStorage, testSettings);
-      
+      testSettings = MockSettings();
+
       // Stub the KeyManager methods
       when(mockKeyManager.masterKeyPair).thenReturn(
         NostrKeyPairs(
@@ -119,7 +115,8 @@ void main() {
         eventDatabaseProvider.overrideWithValue(mockDatabase),
         sessionStorageProvider.overrideWithValue(mockSessionStorage),
         keyManagerProvider.overrideWithValue(mockKeyManager),
-        sessionNotifierProvider.overrideWith((ref) => mockSessionNotifier),
+        sessionNotifierProvider.overrideWith((ref) => MockSessionNotifier(
+            ref, mockKeyManager, mockSessionStorage, testSettings)),
         settingsProvider.overrideWith((ref) {
           final mockSettings = MockSettingsNotifier();
           mockSettings.state = Settings(
@@ -188,7 +185,8 @@ void main() {
         eventDatabaseProvider.overrideWithValue(mockDatabase),
         sessionStorageProvider.overrideWithValue(mockSessionStorage),
         keyManagerProvider.overrideWithValue(mockKeyManager),
-        sessionNotifierProvider.overrideWith((ref) => mockSessionNotifier),
+        sessionNotifierProvider.overrideWith((ref) => MockSessionNotifier(
+            ref, mockKeyManager, mockSessionStorage, testSettings)),
         settingsProvider.overrideWith((ref) {
           final mockSettings = MockSettingsNotifier();
           mockSettings.state = Settings(
@@ -256,7 +254,8 @@ void main() {
         eventDatabaseProvider.overrideWithValue(mockDatabase),
         sessionStorageProvider.overrideWithValue(mockSessionStorage),
         keyManagerProvider.overrideWithValue(mockKeyManager),
-        sessionNotifierProvider.overrideWith((ref) => mockSessionNotifier),
+        sessionNotifierProvider.overrideWith((ref) => MockSessionNotifier(
+            ref, mockKeyManager, mockSessionStorage, testSettings)),
         settingsProvider.overrideWith((ref) {
           final mockSettings = MockSettingsNotifier();
           mockSettings.state = Settings(
@@ -311,7 +310,8 @@ void main() {
         eventDatabaseProvider.overrideWithValue(mockDatabase),
         sessionStorageProvider.overrideWithValue(mockSessionStorage),
         keyManagerProvider.overrideWithValue(mockKeyManager),
-        sessionNotifierProvider.overrideWith((ref) => mockSessionNotifier),
+        sessionNotifierProvider.overrideWith((ref) => MockSessionNotifier(
+            ref, mockKeyManager, mockSessionStorage, testSettings)),
         settingsProvider.overrideWith((ref) {
           final mockSettings = MockSettingsNotifier();
           mockSettings.state = Settings(

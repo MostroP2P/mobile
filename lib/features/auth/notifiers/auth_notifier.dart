@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 import 'package:mostro_mobile/data/repositories/auth_repository.dart';
 import 'auth_state.dart';

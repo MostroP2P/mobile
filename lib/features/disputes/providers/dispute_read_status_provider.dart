@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
 /// Provider to track when disputes are marked as read
 /// This triggers UI updates when a dispute's read status changes
