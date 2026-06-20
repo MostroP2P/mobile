@@ -13,6 +13,7 @@
   "GBP": ["Revolut", "Monzo", "Wise", "Any national bank", "Bank Transfer", "Cash"],
   "JPY": ["PayPay", "Bank Transfer", "Cash"],
   "MLC": ["Transfermovil", "EnZona"],
+  "MWK": ["Airtel Money", "TNM Mpamba", "Bank Transfer", "Cash"],
   "MXN": ["SPEI", "CoDi", "Retiro Cajero BBVA", "Efectivo"],
   "NGN": ["Bank Transfer", "Cash"],
   "PEN": ["Yape", "Plin", "QR Yape", "Transferencia bancaria", "Cash"],
