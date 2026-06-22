@@ -228,7 +228,7 @@ void main() {
 
       final messageContent = {
         'order': {
-          'version': Config.mostroVersion,
+          'version': 1,
           'id': orderId,
           'action': 'take-sell',
           'payload': {
@@ -289,7 +289,7 @@ void main() {
         userPubKey: userPubKey,
         messageContent: {
           'order': {
-            'version': Config.mostroVersion,
+            'version': 1,
             'id': orderId,
             'action': 'take-sell',
             'payload': {
@@ -349,7 +349,7 @@ void main() {
         userPubKey: userPubKey,
         messageContent: {
           'order': {
-            'version': Config.mostroVersion,
+            'version': 1,
             'id': orderId,
             'action': 'take-sell',
             'payload': {
@@ -407,7 +407,7 @@ void main() {
       // Simulate server-side verification
       final messageContent = {
         'order': {
-          'version': Config.mostroVersion,
+          'version': 1,
           'id': orderId,
           'action': 'take-sell',
           'payload': {

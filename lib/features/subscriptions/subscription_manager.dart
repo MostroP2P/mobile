@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
@@ -186,22 +187,11 @@ class SubscriptionManager {
         // and re-subscribe when the node info arrives after this subscription.
         final transport = _resolveOrdersTransport();
         _appliedOrdersTransport = transport;
-        switch (transport) {
-          case Transport.giftWrap:
-            return NostrFilter(
-              kinds: [1059],
-              p: tradeKeys,
-            );
-          case Transport.nip44:
-            // v2 Mostro replies are kind 14 authored by the node and addressed
-            // (p) to the trade key; the authors pin disambiguates them from
-            // NIP-17 peer chat, which is also kind 14 (§3.4).
-            return NostrFilter(
-              kinds: [14],
-              authors: [ref.read(settingsProvider).mostroPublicKey],
-              p: tradeKeys,
-            );
-        }
+        return buildOrdersFilter(
+          transport,
+          tradeKeys,
+          ref.read(settingsProvider).mostroPublicKey,
+        );
       case SubscriptionType.chat:
         if (sessions.isEmpty) {
           return null;
@@ -421,5 +411,35 @@ class SubscriptionManager {
     _chatController.close();
     _disputeChatController.close();
     _relayListController.close();
+  }
+}
+
+/// Builds the orders subscription filter for the resolved [transport] (§4.1).
+///
+/// - v1 ([Transport.giftWrap]): kind 1059 addressed (`p`) to the trade keys.
+/// - v2 ([Transport.nip44]): kind 14 authored by the node ([mostroPubkey]) and
+///   addressed to the trade keys — the `authors` pin disambiguates Mostro v2
+///   replies from NIP-17 peer chat, which is also kind 14 (§3.4).
+///
+/// Top-level so the transport → filter mapping can be unit-tested without the
+/// full [SubscriptionManager] / Riverpod orchestration.
+@visibleForTesting
+NostrFilter buildOrdersFilter(
+  Transport transport,
+  List<String> tradeKeys,
+  String mostroPubkey,
+) {
+  switch (transport) {
+    case Transport.giftWrap:
+      return NostrFilter(
+        kinds: [1059],
+        p: tradeKeys,
+      );
+    case Transport.nip44:
+      return NostrFilter(
+        kinds: [14],
+        authors: [mostroPubkey],
+        p: tradeKeys,
+      );
   }
 }
