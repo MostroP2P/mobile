@@ -6,7 +6,6 @@ import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/payload.dart';
-import 'package:mostro_mobile/features/mostro/transport.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
 class MostroMessage<T extends Payload> {
@@ -26,9 +25,9 @@ class MostroMessage<T extends Payload> {
     this.timestamp,
   }) : _payload = payload;
 
-  Map<String, dynamic> toJson({int? version}) {
+  Map<String, dynamic> toJson() {
     Map<String, dynamic> json = {
-      'version': version ?? Config.mostroVersion,
+      'version': Config.mostroVersion,
       'request_id': requestId,
       'trade_index': tradeIndex,
     };
@@ -98,37 +97,30 @@ class MostroMessage<T extends Payload> {
     return null;
   }
 
-  String sign(NostrKeyPairs keyPair, {int? version}) {
+  String sign(NostrKeyPairs keyPair) {
     //IMPORTANT : Use 'restore' key for restore and last-trade-index actions, 'order' for everything else, as per protocol
     final wrapperKey =
         action == Action.restore || action == Action.lastTradeIndex
         ? 'restore'
         : 'order';
-    final message = {wrapperKey: toJson(version: version)};
+    final message = {wrapperKey: toJson()};
     final serializedEvent = jsonEncode(message);
-    return _mostroSign(serializedEvent, keyPair);
-  }
-
-  /// Signs a UTF-8 string the Mostro way: SHA-256 digest, hex-encoded, then
-  /// Schnorr-signed. Shared by the message [sign] and the protocol-v2 identity
-  /// proof so both produce signatures the daemon can verify identically.
-  String _mostroSign(String message, NostrKeyPairs keyPair) {
-    final bytes = utf8.encode(message);
+    final bytes = utf8.encode(serializedEvent);
     final digest = sha256.convert(bytes);
     final hash = hex.encode(digest.bytes);
-    return keyPair.sign(hash);
+    final signature = keyPair.sign(hash);
+    return signature;
   }
 
-  String serialize({NostrKeyPairs? keyPair, int? version}) {
+  String serialize({NostrKeyPairs? keyPair}) {
     //IMPORTANT : Use 'restore' key for restore and last-trade-index actions, 'order' for everything else, as per protocol
     final wrapperKey =
         action == Action.restore || action == Action.lastTradeIndex
         ? 'restore'
         : 'order';
-    final message = {wrapperKey: toJson(version: version)};
+    final message = {wrapperKey: toJson()};
     final serializedEvent = jsonEncode(message);
-    final signature =
-        (keyPair != null) ? '"${sign(keyPair, version: version)}"' : null;
+    final signature = (keyPair != null) ? '"${sign(keyPair)}"' : null;
     final content = '[$serializedEvent, $signature]';
     return content;
   }
@@ -166,107 +158,5 @@ class MostroMessage<T extends Payload> {
       recipientPubKey,
       difficulty: difficulty,
     );
-  }
-
-  /// Wraps the message for protocol v2 (NIP-44 direct, kind 14).
-  ///
-  /// Produces the 3-tuple `[message, tradeSig, identityProof]` (§3.3), NIP-44
-  /// encrypts it toward [recipientPubKey] with the trade key, and emits a
-  /// kind-14 event **signed by the trade key** carrying a `p` tag. Mirrors
-  /// `mostro-core`'s `transport.rs` wrap:
-  /// - the message JSON carries `version: 2`;
-  /// - in reputation mode (master key present) `tradeSig` is the trade-key
-  ///   signature over the message and `identityProof` is
-  ///   `[identityPubkey, sig]` where the signature is over
-  ///   `mostro-transport-v2-identity:<tradePubkey>:<messageJSON>` made with the
-  ///   master key;
-  /// - in full-privacy mode (no master key) both are `null`.
-  ///
-  /// PoW (NIP-13), when [difficulty] > 0, is mined on the kind-14 event id and
-  /// signed by the trade key — the first-contact lane is preserved.
-  Future<NostrEvent> wrapNip44({
-    required NostrKeyPairs tradeKey,
-    required String recipientPubKey,
-    NostrKeyPairs? masterKey,
-    int? keyIndex,
-    int difficulty = 0,
-  }) async {
-    tradeIndex = keyIndex;
-
-    final wrapperKey =
-        action == Action.restore || action == Action.lastTradeIndex
-        ? 'restore'
-        : 'order';
-    final messageMap = {wrapperKey: toJson(version: 2)};
-    final messageJson = jsonEncode(messageMap);
-
-    // Reputation mode binds the identity; full privacy omits both signatures.
-    final String? tradeSig =
-        masterKey != null ? _mostroSign(messageJson, tradeKey) : null;
-
-    List<String>? identityProof;
-    if (masterKey != null) {
-      final payload =
-          'mostro-transport-v2-identity:${tradeKey.public}:$messageJson';
-      identityProof = [masterKey.public, _mostroSign(payload, masterKey)];
-    }
-
-    final tuple = jsonEncode([messageMap, tradeSig, identityProof]);
-
-    final encrypted = await NostrUtils.encryptNIP44(
-      tuple,
-      tradeKey.private,
-      recipientPubKey,
-    );
-
-    final event = NostrEvent.fromPartialData(
-      kind: 14,
-      content: encrypted,
-      keyPairs: tradeKey,
-      tags: [
-        ['p', recipientPubKey],
-      ],
-      createdAt: DateTime.now(),
-    );
-
-    if (difficulty > 0) {
-      return NostrUtils.mineProofOfWork(event, difficulty, tradeKey);
-    }
-    return event;
-  }
-
-  /// Wraps the message for the transport advertised by the node's
-  /// [protocolVersion] (§5 Phase B): v2 (NIP-44 direct, kind 14) via
-  /// [wrapNip44] or v1 (gift wrap, kind 1059) via [wrap].
-  ///
-  /// Single entry point so every outbound Mostro send — order actions, restore
-  /// requests, dispute creation — selects the transport consistently from the
-  /// connected node, instead of hard-coding the v1 path.
-  Future<NostrEvent> wrapForTransport({
-    required int? protocolVersion,
-    required NostrKeyPairs tradeKey,
-    required String recipientPubKey,
-    NostrKeyPairs? masterKey,
-    int? keyIndex,
-    int difficulty = 0,
-  }) {
-    switch (resolveTransport(protocolVersion)) {
-      case Transport.nip44:
-        return wrapNip44(
-          tradeKey: tradeKey,
-          recipientPubKey: recipientPubKey,
-          masterKey: masterKey,
-          keyIndex: keyIndex,
-          difficulty: difficulty,
-        );
-      case Transport.giftWrap:
-        return wrap(
-          tradeKey: tradeKey,
-          recipientPubKey: recipientPubKey,
-          masterKey: masterKey,
-          keyIndex: keyIndex,
-          difficulty: difficulty,
-        );
-    }
   }
 }
