@@ -975,6 +975,8 @@
     "read": "Lire",
     "technicalDetails": "Détails techniques",
     "mostroDaemonVersion": "Version de Mostro",
+    "protocolVersion": "Version du Protocole",
+    "protocolVersionExplanation": "Le protocole de transport utilisé par ce nœud : 1 = gift wrap NIP-59, 2 = messages directs NIP-44. L'application le détecte automatiquement et utilise le transport correspondant.",
     "mostroCommitId": "ID de commit Mostro",
     "orderExpiration": "Expiration de commande",
     "holdInvoiceExpiration": "Expiration hold invoice",
