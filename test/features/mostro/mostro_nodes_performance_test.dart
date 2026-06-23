@@ -1,4 +1,3 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mostro_mobile/core/config.dart';
@@ -31,13 +30,13 @@ void main() {
 
   group('Performance with many custom nodes', () {
     late MockSharedPreferencesAsync mockPrefs;
-    late ProviderContainer container;
-    late Ref ref;
+    late MockRef mockRef;
     late MockSettingsNotifier mockSettingsNotifier;
     late Map<String, String> storage;
 
     setUp(() {
       mockPrefs = MockSharedPreferencesAsync();
+      mockRef = MockRef();
       mockSettingsNotifier = MockSettingsNotifier();
       storage = <String, String>{};
 
@@ -54,17 +53,14 @@ void main() {
         mostroPublicKey: trustedPubkey,
       );
 
-      // Riverpod 3.x: Ref is sealed. Drive ref.read via a real container with
-      // a settingsProvider override instead of stubbing the Ref directly.
-      container = ProviderContainer(overrides: [
-        settingsProvider.overrideWith((ref) => mockSettingsNotifier),
-      ]);
-      addTearDown(container.dispose);
-      ref = createTestRef(container);
+      when(mockRef.read(settingsProvider))
+          .thenAnswer((_) => mockSettingsNotifier.state);
+      when(mockRef.read(settingsProvider.notifier))
+          .thenReturn(mockSettingsNotifier);
     });
 
     MostroNodesNotifier createNotifier() {
-      return MostroNodesNotifier(mockPrefs, ref);
+      return MostroNodesNotifier(mockPrefs, mockRef);
     }
 
     test('add $nodeCount custom nodes and verify all persisted', () async {

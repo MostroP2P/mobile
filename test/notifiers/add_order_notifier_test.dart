@@ -31,7 +31,9 @@ void main() {
     late MockDatabase mockDatabase;
     late MockSessionStorage mockSessionStorage;
     late MockKeyManager mockKeyManager;
+    late MockSessionNotifier mockSessionNotifier;
     late MockMostroStorage mockMostroStorage;
+    late MockRef ref;
     const testUuid = "12345678-1234-1234-1234-123456789abc";
 
     setUp(() {
@@ -42,9 +44,13 @@ void main() {
       mockSessionStorage = MockSessionStorage();
       mockKeyManager = MockKeyManager();
       mockMostroStorage = MockMostroStorage();
+      ref = MockRef();
 
       // Create test settings
       final testSettings = MockSettings();
+
+      mockSessionNotifier =
+          MockSessionNotifier(ref, mockKeyManager, mockSessionStorage, testSettings);
 
       // Stub the KeyManager methods
       when(mockKeyManager.masterKeyPair).thenReturn(
@@ -73,8 +79,7 @@ void main() {
           eventDatabaseProvider.overrideWithValue(mockDatabase),
           sessionStorageProvider.overrideWithValue(mockSessionStorage),
           keyManagerProvider.overrideWithValue(mockKeyManager),
-          sessionNotifierProvider.overrideWith((ref) => MockSessionNotifier(
-              ref, mockKeyManager, mockSessionStorage, testSettings)),
+          sessionNotifierProvider.overrideWith((ref) => mockSessionNotifier),
           settingsProvider.overrideWith((ref) {
             final mockSettings = MockSettingsNotifier();
             mockSettings.state = testSettings;

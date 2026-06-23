@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mostro_mobile/core/config.dart';
@@ -34,8 +33,7 @@ void main() {
 
   group('Multi-Mostro Integration Tests', () {
     late MockSharedPreferencesAsync mockPrefs;
-    late ProviderContainer container;
-    late Ref ref;
+    late MockRef mockRef;
     late MockSettingsNotifier mockSettingsNotifier;
 
     // In-memory storage to enable persistence round-trips
@@ -58,6 +56,7 @@ void main() {
 
     setUp(() {
       mockPrefs = MockSharedPreferencesAsync();
+      mockRef = MockRef();
       mockSettingsNotifier = MockSettingsNotifier();
       storage = <String, String>{};
 
@@ -70,18 +69,16 @@ void main() {
       });
 
       mockSettingsNotifier.state = makeSettings();
-      // Riverpod 3.x: Ref is sealed. Drive ref.read via a real container with a
-      // settingsProvider override. Reads return the current state dynamically so
-      // changes from updateMostroInstance are visible to subsequent reads.
-      container = ProviderContainer(overrides: [
-        settingsProvider.overrideWith((ref) => mockSettingsNotifier),
-      ]);
-      addTearDown(container.dispose);
-      ref = createTestRef(container);
+      // Return current state dynamically so changes from updateMostroInstance
+      // are visible to subsequent reads (e.g. selectedNode, removeCustomNode)
+      when(mockRef.read(settingsProvider))
+          .thenAnswer((_) => mockSettingsNotifier.state);
+      when(mockRef.read(settingsProvider.notifier))
+          .thenReturn(mockSettingsNotifier);
     });
 
     MostroNodesNotifier createNotifier() {
-      return MostroNodesNotifier(mockPrefs, ref);
+      return MostroNodesNotifier(mockPrefs, mockRef);
     }
 
     group('Node switching flows', () {
