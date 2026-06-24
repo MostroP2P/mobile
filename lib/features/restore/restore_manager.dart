@@ -1066,6 +1066,11 @@ class RestoreService {
 
     _operationInProgress = true;
     _operationCompleter = Completer<bool>();
+    // Hold the shared session lock across the whole index repair so order/take
+    // flows cannot create a session (and publish) reading a stale trade index
+    // while it is being updated by setCurrentKeyIndex below.
+    final releaseSessionLock =
+        await ref.read(sessionLifecycleLockProvider).acquire();
     try {
       _masterKey = keyManager.masterKeyPair;
       _tempTradeKey = await keyManager.deriveTradeKeyFromIndex(1);
@@ -1101,6 +1106,7 @@ class RestoreService {
     } catch (e, stack) {
       logger.e('syncTradeIndex: failed', error: e, stackTrace: stack);
     } finally {
+      releaseSessionLock();
       await _tempSubscription?.cancel();
       _tempSubscription = null;
       _currentCompleter = null;
