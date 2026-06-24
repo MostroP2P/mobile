@@ -1084,6 +1084,12 @@ class RestoreService {
       _masterKey = keyManager.masterKeyPair;
       _tempTradeKey = await keyManager.deriveTradeKeyFromIndex(1);
 
+      // Wait for the node info event (kind 38385) before sending: at app init
+      // mostroInstance is still null, which makes wrapForTransport default to v1
+      // gift wrap. On a protocol v2 node the request would then go out as kind
+      // 1059 and never be answered, leaving the local key index stale.
+      await _waitForNodeConnectivity(ref.read(settingsProvider).mostroPublicKey);
+
       _tempSubscription = await _createTempSubscription();
 
       // Arm the completer before sending the request to avoid a race where
