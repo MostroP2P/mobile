@@ -37,6 +37,7 @@ import 'package:mostro_mobile/shared/providers/navigation_notifier_provider.dart
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/notifications_history_repository_provider.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
+import 'package:mostro_mobile/shared/providers/session_lifecycle_lock_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/notifications/providers/notifications_provider.dart';
@@ -61,25 +62,7 @@ class RestoreService {
   bool _operationInProgress = false;
   Completer<bool>? _operationCompleter;
 
-  /// Tail of the session critical-section lock chain. See [acquireSessionLock].
-  Future<void> _sessionLockTail = Future.value();
-
   RestoreService(this.ref);
-
-  /// Acquires the session critical-section lock, serializing the restore session
-  /// reset ([_clearAll] in [initRestoreProcess]) with session-creating flows
-  /// (e.g. order creation) so they never interleave. This closes the TOCTOU
-  /// window that a wait-only check would leave open: a caller holding the lock
-  /// is guaranteed no reset runs until it releases, and vice versa.
-  ///
-  /// Returns a release callback the caller MUST invoke in a `finally` block.
-  Future<void Function()> acquireSessionLock() async {
-    final previous = _sessionLockTail;
-    final completer = Completer<void>();
-    _sessionLockTail = completer.future;
-    await previous;
-    return () => completer.complete();
-  }
 
   Future<void> importMnemonicAndRestore(String mnemonic) async {
     logger.i('Restore: importing mnemonic');
@@ -915,9 +898,10 @@ class RestoreService {
 
     _operationInProgress = true;
     _operationCompleter = Completer<bool>();
-    // Hold the session lock for the whole restore so order creation cannot
-    // interleave with the session reset (and rebuild) below.
-    final releaseSessionLock = await acquireSessionLock();
+    // Hold the shared session lock for the whole restore so order/take flows
+    // cannot interleave with the session reset (and rebuild) below.
+    final releaseSessionLock =
+        await ref.read(sessionLifecycleLockProvider).acquire();
     bool success = false;
     bool noHistoryFound = false;
     try {

@@ -86,44 +86,54 @@ class OrderNotifier extends AbstractMostroNotifier {
 
   Future<void> takeSellOrder(
       String orderId, int? amount, String? lnAddress) async {
-    final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
-    session = await sessionNotifier.newSession(
-      orderId: orderId,
-      role: Role.buyer,
-    );
+    // Serialize session creation + publish with the restore reset behind the
+    // shared session lock so the new session can't be wiped by a concurrent
+    // restore (TOCTOU-safe). See [SessionLifecycleLock].
+    await ref.read(sessionLifecycleLockProvider).withSessionLock(() async {
+      final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+      session = await sessionNotifier.newSession(
+        orderId: orderId,
+        role: Role.buyer,
+      );
 
-    // Drop any stale grace timer/flag from a previous cycle on this order so
-    // it can't delete the session we just created (retake within 60s).
-    AbstractMostroNotifier.clearBondCancelDeletion(orderId);
+      // Drop any stale grace timer/flag from a previous cycle on this order so
+      // it can't delete the session we just created (retake within 60s).
+      AbstractMostroNotifier.clearBondCancelDeletion(orderId);
 
-    // Start 10s timeout cleanup timer for orphan session prevention
-    AbstractMostroNotifier.startSessionTimeoutCleanup(orderId, ref);
-    
-    await mostroService.takeSellOrder(
-      orderId,
-      amount,
-      lnAddress,
-    );
+      // Start 10s timeout cleanup timer for orphan session prevention
+      AbstractMostroNotifier.startSessionTimeoutCleanup(orderId, ref);
+
+      await mostroService.takeSellOrder(
+        orderId,
+        amount,
+        lnAddress,
+      );
+    });
   }
 
   Future<void> takeBuyOrder(String orderId, int? amount) async {
-    final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
-    session = await sessionNotifier.newSession(
-      orderId: orderId,
-      role: Role.seller,
-    );
+    // Serialize session creation + publish with the restore reset behind the
+    // shared session lock so the new session can't be wiped by a concurrent
+    // restore (TOCTOU-safe). See [SessionLifecycleLock].
+    await ref.read(sessionLifecycleLockProvider).withSessionLock(() async {
+      final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+      session = await sessionNotifier.newSession(
+        orderId: orderId,
+        role: Role.seller,
+      );
 
-    // Drop any stale grace timer/flag from a previous cycle on this order so
-    // it can't delete the session we just created (retake within 60s).
-    AbstractMostroNotifier.clearBondCancelDeletion(orderId);
+      // Drop any stale grace timer/flag from a previous cycle on this order so
+      // it can't delete the session we just created (retake within 60s).
+      AbstractMostroNotifier.clearBondCancelDeletion(orderId);
 
-    // Start 10s timeout cleanup timer for orphan session prevention
-    AbstractMostroNotifier.startSessionTimeoutCleanup(orderId, ref);
-    
-    await mostroService.takeBuyOrder(
-      orderId,
-      amount,
-    );
+      // Start 10s timeout cleanup timer for orphan session prevention
+      AbstractMostroNotifier.startSessionTimeoutCleanup(orderId, ref);
+
+      await mostroService.takeBuyOrder(
+        orderId,
+        amount,
+      );
+    });
   }
 
   Future<void> sendInvoice(

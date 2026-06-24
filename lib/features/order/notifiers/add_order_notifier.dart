@@ -5,7 +5,6 @@ import 'package:mostro_mobile/data/models.dart';
 import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/features/order/notifiers/abstract_mostro_notifier.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
-import 'package:mostro_mobile/features/restore/restore_manager.dart';
 import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/services/mostro_service.dart';
@@ -110,12 +109,10 @@ class AddOrderNotifier extends AbstractMostroNotifier {
 
     // A node-switch restore resets all sessions (RestoreService._clearAll).
     // Serialize the whole create critical section (session creation + publish)
-    // with the restore behind a shared lock so the new session cannot be wiped
-    // by an interleaving reset (TOCTOU-safe): while we hold the lock no reset
-    // runs, and if a restore is in progress we block here until it releases.
-    final release =
-        await ref.read(restoreServiceProvider).acquireSessionLock();
-    try {
+    // with the restore behind the shared session lock so the new session cannot
+    // be wiped by an interleaving reset (TOCTOU-safe): while we hold the lock no
+    // reset runs, and if a restore is in progress we block until it releases.
+    await ref.read(sessionLifecycleLockProvider).withSessionLock(() async {
       final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
       session = await sessionNotifier.newSession(
         requestId: requestId,
@@ -128,9 +125,7 @@ class AddOrderNotifier extends AbstractMostroNotifier {
 
       await mostroService.submitOrder(message);
       state = state.updateWith(message);
-    } finally {
-      release();
-    }
+    });
   }
 
   /// Reset notifier state for retry after out_of_range_sats_amount error
