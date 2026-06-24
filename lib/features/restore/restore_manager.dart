@@ -68,12 +68,17 @@ class RestoreService {
   /// create sessions (e.g. order creation).
   bool get isOperationInProgress => _operationInProgress;
 
-  /// Resolves when the in-flight restore/sync operation finishes, or immediately
-  /// if none is running. Callers that create sessions should await this first so
-  /// their session is not wiped by the restore's session reset. Safe against
-  /// hangs: every operation completes its completer in a `finally` block.
+  /// Resolves when no restore/sync operation is running. Callers that create
+  /// sessions should await this first so their session is not wiped by the
+  /// restore's session reset. Loops so that an operation starting while we wait
+  /// is also awaited. Safe against hangs: every operation completes its completer
+  /// in a `finally` block.
+  ///
+  /// Note: restore is only triggered from node-switch, mnemonic import, manual
+  /// restore and app-init sync — all mutually exclusive with order submission in
+  /// the UI — so a true cross-flow mutex is unnecessary here.
   Future<void> awaitOperationCompletion() async {
-    if (_operationInProgress && _operationCompleter != null) {
+    while (_operationInProgress && _operationCompleter != null) {
       await _operationCompleter!.future;
     }
   }
