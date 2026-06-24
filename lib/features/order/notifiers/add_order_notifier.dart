@@ -101,26 +101,34 @@ class AddOrderNotifier extends AbstractMostroNotifier {
   }
 
   Future<void> submitOrder(Order order) async {
-    // A node-switch restore/sync resets all sessions (RestoreService._clearAll).
-    // Creating the order while it runs would have its session wiped, orphaning
-    // the order on the daemon. Wait for any in-flight restore to finish first.
-    await ref.read(restoreServiceProvider).awaitOperationCompletion();
-
     final message = MostroMessage<Order>(
       action: Action.newOrder,
       id: null,
       requestId: requestId,
       payload: order,
     );
-    final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
-    session = await sessionNotifier.newSession(
-      requestId: requestId,
-      role: order.kind == OrderType.buy ? Role.buyer : Role.seller,
-    );
-    
-    // Start 10s timeout cleanup timer for create orders
-    AbstractMostroNotifier.startSessionTimeoutCleanupForRequestId(requestId, ref);
-    
+
+    // A node-switch restore resets all sessions (RestoreService._clearAll).
+    // Serialize session creation with the restore behind a shared lock so the
+    // new session cannot be wiped by an interleaving reset (TOCTOU-safe): while
+    // we hold the lock no reset runs, and if a restore is in progress we block
+    // here until it releases.
+    final release =
+        await ref.read(restoreServiceProvider).acquireSessionLock();
+    try {
+      final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+      session = await sessionNotifier.newSession(
+        requestId: requestId,
+        role: order.kind == OrderType.buy ? Role.buyer : Role.seller,
+      );
+
+      // Start 10s timeout cleanup timer for create orders
+      AbstractMostroNotifier.startSessionTimeoutCleanupForRequestId(
+          requestId, ref);
+    } finally {
+      release();
+    }
+
     await mostroService.submitOrder(message);
     state = state.updateWith(message);
   }

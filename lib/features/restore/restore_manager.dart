@@ -61,26 +61,24 @@ class RestoreService {
   bool _operationInProgress = false;
   Completer<bool>? _operationCompleter;
 
+  /// Tail of the session critical-section lock chain. See [acquireSessionLock].
+  Future<void> _sessionLockTail = Future.value();
+
   RestoreService(this.ref);
 
-  /// Whether a restore/sync operation that resets all sessions (via [_clearAll])
-  /// is currently running. Used to avoid racing the reset with user actions that
-  /// create sessions (e.g. order creation).
-  bool get isOperationInProgress => _operationInProgress;
-
-  /// Resolves when no restore/sync operation is running. Callers that create
-  /// sessions should await this first so their session is not wiped by the
-  /// restore's session reset. Loops so that an operation starting while we wait
-  /// is also awaited. Safe against hangs: every operation completes its completer
-  /// in a `finally` block.
+  /// Acquires the session critical-section lock, serializing the restore session
+  /// reset ([_clearAll] in [initRestoreProcess]) with session-creating flows
+  /// (e.g. order creation) so they never interleave. This closes the TOCTOU
+  /// window that a wait-only check would leave open: a caller holding the lock
+  /// is guaranteed no reset runs until it releases, and vice versa.
   ///
-  /// Note: restore is only triggered from node-switch, mnemonic import, manual
-  /// restore and app-init sync — all mutually exclusive with order submission in
-  /// the UI — so a true cross-flow mutex is unnecessary here.
-  Future<void> awaitOperationCompletion() async {
-    while (_operationInProgress && _operationCompleter != null) {
-      await _operationCompleter!.future;
-    }
+  /// Returns a release callback the caller MUST invoke in a `finally` block.
+  Future<void Function()> acquireSessionLock() async {
+    final previous = _sessionLockTail;
+    final completer = Completer<void>();
+    _sessionLockTail = completer.future;
+    await previous;
+    return () => completer.complete();
   }
 
   Future<void> importMnemonicAndRestore(String mnemonic) async {
@@ -917,6 +915,9 @@ class RestoreService {
 
     _operationInProgress = true;
     _operationCompleter = Completer<bool>();
+    // Hold the session lock for the whole restore so order creation cannot
+    // interleave with the session reset (and rebuild) below.
+    final releaseSessionLock = await acquireSessionLock();
     bool success = false;
     bool noHistoryFound = false;
     try {
@@ -1038,6 +1039,7 @@ class RestoreService {
           .read(restoreProgressProvider.notifier)
           .showError(errorKey); // overlay maps the key to a localized message
     } finally {
+      releaseSessionLock();
       // Cleanup: always cancel subscription and clear keys
       logger.i('Restore: cleaning up subscription and keys');
       await _tempSubscription?.cancel();
