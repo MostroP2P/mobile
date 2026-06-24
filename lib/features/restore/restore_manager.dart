@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:dart_nostr/nostr/core/key_pairs.dart';
 import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:dart_nostr/nostr/model/request/filter.dart';
@@ -24,7 +23,6 @@ import 'package:mostro_mobile/data/models/payload.dart';
 import 'package:mostro_mobile/data/models/peer.dart';
 import 'package:mostro_mobile/data/models/restore_response.dart';
 import 'package:mostro_mobile/data/models/session.dart';
-import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/restore/restore_progress_notifier.dart';
 import 'package:mostro_mobile/features/restore/restore_progress_state.dart';
@@ -153,45 +151,20 @@ class RestoreService {
     }
   }
 
-  /// Decrypts a restore response into its message map, reading the temp trade
-  /// key and node pubkey from the manager state. Delegates the transport branch
-  /// to the top-level [decodeRestoreMessage].
-  Future<Map<String, dynamic>> _decodeRestoreMessage(NostrEvent event) {
-    if (_tempTradeKey == null) {
-      throw Exception('Temp trade key not initialized');
-    }
-    return decodeRestoreMessage(
-      event,
-      _tempTradeKey!,
-      ref.read(settingsProvider).mostroPublicKey,
-    );
-  }
-
   Future<StreamSubscription<NostrEvent>> _createTempSubscription() async {
     //use temporary trade key 1 to subscribe to restore notifications
     if (_tempTradeKey == null) {
       throw Exception('Temp trade key not initialized');
     }
 
-    // Listen on both transports. The node info (kind 38385) that advertises
-    // protocol_version may not have loaded yet when restore starts, so we
-    // subscribe to v1 gift wrap (kind 1059) and v2 NIP-44 direct (kind 14)
-    // simultaneously rather than resolving a single transport — the node
-    // answers on whichever it speaks. (limit 0: only new events, no history.)
-    final mostroPubkey = ref.read(settingsProvider).mostroPublicKey;
-    final v1Filter = NostrFilter(
+    final filter = NostrFilter(
       kinds: [1059],
       p: [_tempTradeKey!.public],
-      limit: 0,
-    );
-    final v2Filter = NostrFilter(
-      kinds: [14],
-      authors: [mostroPubkey],
-      p: [_tempTradeKey!.public],
-      limit: 0,
+      limit:
+          0, //IMPORTANT:  limit 0 indicates we don't want historical events, only new ones https://nostrbook.dev/protocol/filter
     );
 
-    final request = NostrRequest(filters: [v1Filter, v2Filter]);
+    final request = NostrRequest(filters: [filter]);
     final stream = ref.read(nostrServiceProvider).subscribeToEvents(request);
 
     final subscription = stream.listen(
@@ -234,8 +207,7 @@ class RestoreService {
         'event may be rejected if node requires PoW',
       );
     }
-    final wrappedEvent = await mostroMessage.wrapForTransport(
-      protocolVersion: mostroInstance?.protocolVersion,
+    final wrappedEvent = await mostroMessage.wrap(
       tradeKey: _tempTradeKey!,
       recipientPubKey: settings.mostroPublicKey,
       masterKey: settings.fullPrivacyMode ? null : _masterKey,
@@ -252,7 +224,19 @@ class RestoreService {
   Future<({Map<String, int> ordersMap, List<RestoredDispute> disputes})>
   _extractRestoreData(NostrEvent event) async {
     try {
-      final messageData = await _decodeRestoreMessage(event);
+      if (_tempTradeKey == null) {
+        throw Exception('Temp trade key not initialized');
+      }
+
+      // Unwrap the gift wrap (kind 1059) to get the rumor
+      final rumor = await event.mostroUnWrap(_tempTradeKey!);
+
+      if (rumor.content == null || rumor.content!.isEmpty) {
+        throw Exception('Rumor content is empty');
+      }
+
+      final contentList = jsonDecode(rumor.content!) as List<dynamic>;
+      final messageData = contentList[0] as Map<String, dynamic>;
 
       // Check if Mostro returned cant-do (not found)
       if (messageData.containsKey('cant-do')) {
@@ -331,8 +315,7 @@ class RestoreService {
         'event may be rejected if node requires PoW',
       );
     }
-    final wrappedEvent = await mostroMessage.wrapForTransport(
-      protocolVersion: mostroInstance?.protocolVersion,
+    final wrappedEvent = await mostroMessage.wrap(
       tradeKey: _tempTradeKey!,
       recipientPubKey: settings.mostroPublicKey,
       masterKey: settings.fullPrivacyMode ? null : _masterKey,
@@ -350,7 +333,20 @@ class RestoreService {
         'Restore: extracting orders details from gift wrap event ${event.id}',
       );
 
-      final messageData = await _decodeRestoreMessage(event);
+      if (_tempTradeKey == null) {
+        throw Exception('Temp trade key not initialized');
+      }
+
+      // Unwrap the gift wrap (kind 1059) to get the rumor
+      final rumor = await event.mostroUnWrap(_tempTradeKey!);
+
+      if (rumor.content == null || rumor.content!.isEmpty) {
+        throw Exception('Rumor content is empty');
+      }
+
+      // Parse response format: [{"order": {...}}, null]
+      final contentList = jsonDecode(rumor.content!) as List<dynamic>;
+      final messageData = contentList[0] as Map<String, dynamic>;
 
       // Check if Mostro returned cant-do
       if (messageData.containsKey('cant-do')) {
@@ -412,8 +408,7 @@ class RestoreService {
         'event may be rejected if node requires PoW',
       );
     }
-    final wrappedEvent = await mostroMessage.wrapForTransport(
-      protocolVersion: mostroInstance?.protocolVersion,
+    final wrappedEvent = await mostroMessage.wrap(
       tradeKey: _tempTradeKey!,
       recipientPubKey: settings.mostroPublicKey,
       masterKey: settings.fullPrivacyMode ? null : _masterKey,
@@ -432,7 +427,18 @@ class RestoreService {
         'Restore: extracting last trade index from gift wrap event ${event.id}',
       );
 
-      final messageData = await _decodeRestoreMessage(event);
+      if (_tempTradeKey == null) {
+        throw Exception('Temp trade key not initialized');
+      }
+
+      final rumor = await event.mostroUnWrap(_tempTradeKey!);
+
+      if (rumor.content == null || rumor.content!.isEmpty) {
+        throw Exception('Rumor content is empty');
+      }
+
+      final contentList = jsonDecode(rumor.content!) as List<dynamic>;
+      final messageData = contentList[0] as Map<String, dynamic>;
 
       // Check if Mostro returned cant-do
       if (messageData.containsKey('cant-do')) {
@@ -1063,42 +1069,6 @@ class RestoreService {
     }
     return null;
   }
-}
-
-/// Decodes a restore response into its message map, handling both transports:
-/// v2 (kind 14, NIP-44 direct, decrypted straight to the tuple) and v1
-/// (kind 1059, gift wrap unwrapped to a rumor whose content is the tuple). Both
-/// converge on `tuple[0]`.
-///
-/// Top-level (not a private method) so the transport branch can be
-/// regression-tested without the full [RestoreService] / Riverpod orchestration.
-@visibleForTesting
-Future<Map<String, dynamic>> decodeRestoreMessage(
-  NostrEvent event,
-  NostrKeyPairs tempTradeKey,
-  String mostroPubkey,
-) async {
-  final String content;
-  if (event.kind == 14) {
-    content = await NostrUtils.decryptNIP44DirectEvent(
-      event,
-      tempTradeKey.private,
-      expectedAuthor: mostroPubkey,
-    );
-  } else {
-    final rumor = await event.mostroUnWrap(tempTradeKey);
-    content = rumor.content ?? '';
-  }
-
-  if (content.isEmpty) {
-    throw Exception('Restore message content is empty');
-  }
-
-  final contentList = jsonDecode(content) as List<dynamic>;
-  if (contentList.isEmpty) {
-    throw Exception('Restore message tuple is empty');
-  }
-  return contentList[0] as Map<String, dynamic>;
 }
 
 /// Thrown when Mostro responds with cant-do: invalid_trade_index to

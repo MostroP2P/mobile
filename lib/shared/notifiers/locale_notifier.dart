@@ -1,6 +1,6 @@
 import 'dart:ui' as ui;
 import 'package:flutter/widgets.dart';
-import 'package:flutter_riverpod/legacy.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Notifier that tracks system locale changes
 class LocaleNotifier extends StateNotifier<Locale> {

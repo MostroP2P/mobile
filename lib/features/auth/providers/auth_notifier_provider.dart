@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 import 'package:mostro_mobile/data/repositories/auth_repository.dart';
 import 'package:mostro_mobile/features/auth/notifiers/auth_notifier.dart';
 import 'package:mostro_mobile/features/auth/notifiers/auth_state.dart';

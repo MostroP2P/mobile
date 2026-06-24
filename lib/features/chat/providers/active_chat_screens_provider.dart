@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/legacy.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Tracks which chat screens are currently open in the foreground so that
 /// incoming chat events can suppress the in-app snackbar when the user is

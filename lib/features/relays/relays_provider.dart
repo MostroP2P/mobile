@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/legacy.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'relays_notifier.dart';
 import 'relay.dart';

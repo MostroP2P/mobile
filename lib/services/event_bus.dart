@@ -12,7 +12,7 @@ class EventBus {
   void dispose() => _controller.close();
 }
 
-final eventBusProvider = Provider.autoDispose<EventBus>((ref) {
+final eventBusProvider = AutoDisposeProvider<EventBus>((ref) {
   final bus = EventBus();
   ref.onDispose(bus.dispose);
   return bus;

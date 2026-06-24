@@ -18,10 +18,10 @@ during the migration window.
 > - **Reference client (CLI)**: `MostroP2P/mostro-cli` PRs #176, #177, #178 and
 >   its `docs/TRANSPORT_V2_SPEC.md`.
 >
-> **Status.** Living design specification. **Phase A (dual receive)** —
-> including `protocol_version` auto-detection and per-node transport resolution
-> on the receive path — is merged to `main`. **Phase B (dual send)** is
-> implemented in this branch. Phases C–D (§5) are pending.
+> **Status.** Living design specification. **Phase A (dual receive) is
+> implemented** in this branch, including `protocol_version` auto-detection and
+> per-node transport resolution on the receive path. The remaining phases (§5)
+> are pending.
 
 ---
 
@@ -304,22 +304,12 @@ unchanged.
   `version: 2`; computes the trade signature; computes the identity proof
   (domain-tagged string signed with the master key, `null` in full-privacy);
   NIP-44 encrypts the 3-tuple toward the node; emits a kind-`14` event **signed
-  by the trade key** with a `p` tag (the NIP-40 `expiration` tag is omitted; see
-  the note below).
-- Route **every** outbound Mostro send through the resolved transport via a
-  single `MostroMessage.wrapForTransport(protocolVersion: …)` entry point — not
-  just `MostroService.publishOrder`, but also the `RestoreManager` requests
-  (restore, order-details, last-trade-index) and
-  `DisputeRepository.createDispute`, so a v2 node never receives a stray v1 gift
-  wrap. **Preserve PoW** (`NostrUtils.mineProofOfWork`) for the first-contact
-  lane — the daemon may still require PoW on the kind-14 event id.
-- **Identity proof signature** mirrors `mostro-core`'s `transport.rs`: the
-  trade-key signature (tuple element 1) is the existing `MostroMessage.sign`
-  (SHA-256 hex digest then Schnorr), and the identity proof (element 2) is the
-  master key signing `mostro-transport-v2-identity:<tradePubkey>:<messageJSON>`
-  with the same scheme. Both are `null` in full-privacy mode.
-- The NIP-40 `expiration` tag is **omitted** (the daemon treats it as optional /
-  caller-supplied), avoiding any risk of a message expiring before processing.
+  by the trade key** with `p` and NIP-40 `expiration` tags.
+- Route `MostroService.publishOrder`
+  (`lib/services/mostro_service.dart:338-360`) through the resolved transport.
+  **Preserve PoW** (`NostrUtils.mineProofOfWork`,
+  `lib/shared/utils/nostr_utils.dart:564-630`) for the first-contact lane — the
+  daemon may still require PoW on the kind-14 event id.
 
 ### Phase C — Send-side wiring
 

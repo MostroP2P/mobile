@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:dart_nostr/dart_nostr.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mostro_mobile/core/config.dart';
@@ -29,10 +28,8 @@ void main() {
 
   group('MostroNodesNotifier', () {
     late MockSharedPreferencesAsync mockPrefs;
-    late ProviderContainer container;
-    late Ref ref;
+    late MockRef mockRef;
     late MockSettingsNotifier mockSettingsNotifier;
-    late MockNostrService mockNostrService;
     final trustedPubkey = Config.trustedMostroNodes.first['pubkey']!;
 
     Settings makeSettings({String? mostroPublicKey}) {
@@ -45,26 +42,20 @@ void main() {
 
     setUp(() {
       mockPrefs = MockSharedPreferencesAsync();
+      mockRef = MockRef();
       mockSettingsNotifier = MockSettingsNotifier();
-      mockNostrService = MockNostrService();
 
       when(mockPrefs.getString(any)).thenAnswer((_) async => null);
       when(mockPrefs.setString(any, any)).thenAnswer((_) async {});
 
       mockSettingsNotifier.state = makeSettings();
-
-      // Riverpod 3.x: Ref is sealed. Drive ref.read via a real container with
-      // overrides instead of stubbing the (now unmockable) Ref directly.
-      container = ProviderContainer(overrides: [
-        settingsProvider.overrideWith((ref) => mockSettingsNotifier),
-        nostrServiceProvider.overrideWithValue(mockNostrService),
-      ]);
-      addTearDown(container.dispose);
-      ref = createTestRef(container);
+      when(mockRef.read(settingsProvider)).thenReturn(mockSettingsNotifier.state);
+      when(mockRef.read(settingsProvider.notifier))
+          .thenReturn(mockSettingsNotifier);
     });
 
     MostroNodesNotifier createNotifier() {
-      return MostroNodesNotifier(mockPrefs, ref);
+      return MostroNodesNotifier(mockPrefs, mockRef);
     }
 
     test('init loads trusted nodes from Config', () async {
@@ -126,6 +117,8 @@ void main() {
       mockSettingsNotifier.state = makeSettings(
         mostroPublicKey: unknownPubkey,
       );
+      when(mockRef.read(settingsProvider))
+          .thenReturn(mockSettingsNotifier.state);
 
       final notifier = createNotifier();
       await notifier.init();
@@ -147,6 +140,8 @@ void main() {
       mockSettingsNotifier.state = makeSettings(
         mostroPublicKey: 'not-a-valid-hex-pubkey',
       );
+      when(mockRef.read(settingsProvider))
+          .thenReturn(mockSettingsNotifier.state);
 
       final notifier = createNotifier();
       await notifier.init();
@@ -164,6 +159,8 @@ void main() {
 
     test('init does not auto-import when pubkey is empty', () async {
       mockSettingsNotifier.state = makeSettings(mostroPublicKey: '');
+      when(mockRef.read(settingsProvider))
+          .thenReturn(mockSettingsNotifier.state);
 
       final notifier = createNotifier();
       await notifier.init();
@@ -182,6 +179,8 @@ void main() {
     test('selectedNode returns null for unmatched pubkey', () async {
       mockSettingsNotifier.state =
           makeSettings(mostroPublicKey: 'nonexistent_key_123456');
+      when(mockRef.read(settingsProvider))
+          .thenReturn(mockSettingsNotifier.state);
 
       final notifier = createNotifier();
       // Set state directly without init to avoid auto-import
@@ -286,6 +285,8 @@ void main() {
       mockSettingsNotifier.state = makeSettings(
         mostroPublicKey: customPubkey,
       );
+      when(mockRef.read(settingsProvider))
+          .thenReturn(mockSettingsNotifier.state);
 
       final notifier = createNotifier();
       await notifier.init();
@@ -395,6 +396,7 @@ void main() {
     });
 
     group('metadata fetching', () {
+      late MockNostrService mockNostrService;
       // Real keypair so events are properly signed and pass isVerified()
       final testKeyPair = NostrKeyPairs.generate();
 
@@ -409,6 +411,12 @@ void main() {
           createdAt: createdAt ?? DateTime(2025),
         );
       }
+
+      setUp(() {
+        mockNostrService = MockNostrService();
+        when(mockRef.read(nostrServiceProvider))
+            .thenReturn(mockNostrService);
+      });
 
       /// Helper to add a node with testKeyPair's pubkey to the notifier
       Future<MostroNodesNotifier> createNotifierWithTestNode() async {

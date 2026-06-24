@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';

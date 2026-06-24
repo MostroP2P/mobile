@@ -3,9 +3,8 @@ plugins {
     // START: FlutterFire Configuration
     id 'com.google.gms.google-services'
     // END: FlutterFire Configuration
-    // The Flutter Gradle Plugin must be applied after the Android Gradle plugin.
-    // Kotlin is provided by Flutter's built-in Kotlin support (KGP stays declared
-    // in settings.gradle with `apply false` so it remains on the classpath).
+    id "kotlin-android"
+    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id "dev.flutter.flutter-gradle-plugin"
 }
 
@@ -61,6 +60,9 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
 
+    kotlinOptions {
+        jvmTarget = "11"
+    }
 
     signingConfigs {
         if (hasKeystore) {
@@ -111,12 +113,6 @@ android {
 
 flutter {
     source = "../.."
-}
-
-kotlin {
-    compilerOptions {
-        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
-    }
 }
 
 // Minimal AndroidX conflict resolution - only fix the specific build error
