@@ -5,6 +5,7 @@ import 'package:mostro_mobile/data/models.dart';
 import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/features/order/notifiers/abstract_mostro_notifier.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
+import 'package:mostro_mobile/features/restore/restore_manager.dart';
 import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/services/mostro_service.dart';
@@ -100,6 +101,11 @@ class AddOrderNotifier extends AbstractMostroNotifier {
   }
 
   Future<void> submitOrder(Order order) async {
+    // A node-switch restore/sync resets all sessions (RestoreService._clearAll).
+    // Creating the order while it runs would have its session wiped, orphaning
+    // the order on the daemon. Wait for any in-flight restore to finish first.
+    await ref.read(restoreServiceProvider).awaitOperationCompletion();
+
     final message = MostroMessage<Order>(
       action: Action.newOrder,
       id: null,

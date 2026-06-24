@@ -63,6 +63,21 @@ class RestoreService {
 
   RestoreService(this.ref);
 
+  /// Whether a restore/sync operation that resets all sessions (via [_clearAll])
+  /// is currently running. Used to avoid racing the reset with user actions that
+  /// create sessions (e.g. order creation).
+  bool get isOperationInProgress => _operationInProgress;
+
+  /// Resolves when the in-flight restore/sync operation finishes, or immediately
+  /// if none is running. Callers that create sessions should await this first so
+  /// their session is not wiped by the restore's session reset. Safe against
+  /// hangs: every operation completes its completer in a `finally` block.
+  Future<void> awaitOperationCompletion() async {
+    if (_operationInProgress && _operationCompleter != null) {
+      await _operationCompleter!.future;
+    }
+  }
+
   Future<void> importMnemonicAndRestore(String mnemonic) async {
     logger.i('Restore: importing mnemonic');
 
