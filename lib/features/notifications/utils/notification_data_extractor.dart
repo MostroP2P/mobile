@@ -6,11 +6,12 @@ import 'package:mostro_mobile/data/models.dart';
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/shared/providers/legible_handle_provider.dart';
 import 'package:mostro_mobile/shared/providers.dart';
+import 'package:mostro_mobile/shared/utils/bond_slash_helpers.dart';
 
 class NotificationDataExtractor {
   /// Extract notification data from MostroMessage
   /// If ref is null, will use fallback methods for nickname resolution
-  static Future<NotificationData?> extractFromMostroMessage(MostroMessage event, Ref? ref, {Session? session}) async {
+  static Future<NotificationData?> extractFromMostroMessage(MostroMessage event, Ref? ref, {Session? session, Status? previousStatus, bool wasUserInitiatedCancel = false}) async {
     Map<String, dynamic> values = {};
     bool isTemporary = false;
     
@@ -148,8 +149,15 @@ class NotificationDataExtractor {
         break;
         
       case Action.canceled:
-        // Canceled orders don't generate persistent notifications
-        return null;
+        // Persist cancellations in notification history. Only attach
+        // previous_status (which drives the inactivity-specific message)
+        // when the cancel was NOT user-initiated; manual cancels in
+        // waiting-payment / waiting-buyer-invoice should fall back to the
+        // generic message instead of falsely blaming the counterparty.
+        if (!wasUserInitiatedCancel && previousStatus != null) {
+          values['previous_status'] = previousStatus.value;
+        }
+        break;
         
       case Action.cooperativeCancelInitiatedByYou:
       case Action.cooperativeCancelNoFiatByYou:
@@ -216,12 +224,28 @@ class NotificationDataExtractor {
         // SmallOrder carries the slashed bond amount and the order context.
         final order = event.getPayload<Order>();
         if (order == null) return null;
+        // The daemon sends the same bond-slashed notice for a timeout slash
+        // and a dispute-resolution slash; infer which from the order history
+        // (best-effort: defaults to timeout when history is unavailable).
+        var slashCause = BondSlashCause.timeout;
+        if (ref != null && event.id != null) {
+          try {
+            final messages = await ref
+                .read(mostroStorageProvider)
+                .getAllMessagesForOrderId(event.id!);
+            slashCause = bondSlashCause(messages);
+          } catch (e) {
+            logger.e('Failed to infer bond-slash cause for order ${event.id}',
+                error: e);
+          }
+        }
         values = {
           'amount': order.amount,
           'order_id': order.id,
           'fiat_code': order.fiatCode,
           'fiat_amount': order.fiatAmount,
           'payment_method': order.paymentMethod,
+          'slash_cause': slashCause.name,
         };
         break;
 

@@ -5,6 +5,7 @@ import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:dart_nostr/nostr/model/request/filter.dart';
 import 'package:dart_nostr/nostr/model/request/request.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
@@ -118,6 +119,50 @@ class RestoreService {
     } catch (e) {
       logger.w('Restore: cleanup error', error: e);
     }
+  }
+
+  /// Ensures the app is actually connected to the freshly selected node before
+  /// issuing restore requests. Since the move to bootstrap relay discovery
+  /// (#610) the relay list is reset on instance switch and the node's relays
+  /// are rediscovered asynchronously via kind 10002, so firing the request
+  /// immediately races relay connectivity and times out.
+  ///
+  /// Engages the bootstrap relays right away (instead of waiting for the
+  /// periodic relay watchdog) and waits for the node's info event (kind 38385),
+  /// which proves we are connected to a relay the node publishes on. Falls back
+  /// to a best-effort attempt with a live-relay floor if the info event does not
+  /// arrive within the discovery window.
+  Future<void> _waitForNodeConnectivity(String mostroPubkey) async {
+    final nostrService = ref.read(nostrServiceProvider);
+
+    try {
+      await nostrService.ensureBootstrapConnectivity();
+    } catch (e, stackTrace) {
+      logger.w('Restore: failed to engage bootstrap relays',
+          error: e, stackTrace: stackTrace);
+    }
+
+    final orderRepo = ref.read(orderRepositoryProvider);
+    const pollInterval = Duration(milliseconds: 250);
+    final maxWait = Config.relayDiscoveryTimeout + const Duration(seconds: 4);
+    final start = DateTime.now();
+
+    while (DateTime.now().difference(start) < maxWait) {
+      final instance = orderRepo.mostroInstance;
+      if (instance != null && instance.pubkey == mostroPubkey) {
+        logger.i(
+          'Restore: node $mostroPubkey reachable (info event received)',
+        );
+        return;
+      }
+      await Future.delayed(pollInterval);
+    }
+
+    logger.w(
+      'Restore: node info not received within ${maxWait.inSeconds}s; '
+      'proceeding on best-effort connectivity '
+      '(${nostrService.liveRelayCount} live relays)',
+    );
   }
 
   Future<NostrEvent> _waitForEvent(
@@ -889,6 +934,12 @@ class RestoreService {
       logger.i(
         'Restore: initialized temp trade key with pubkey ${_tempTradeKey!.public}',
       );
+
+      // Wait for connectivity to the freshly selected node before requesting.
+      // On instance switch the relay list is reset and the node's relays are
+      // rediscovered asynchronously (kind 10002), so issuing the request
+      // immediately races relay connectivity and times out.
+      await _waitForNodeConnectivity(settings.mostroPublicKey);
 
       // Subscribe to temporary notifications
       _tempSubscription = await _createTempSubscription();

@@ -16,7 +16,9 @@ import 'package:mostro_mobile/data/models/peer.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as mostro_action;
 import 'package:mostro_mobile/data/models/enums/role.dart';
+import 'package:mostro_mobile/data/models/enums/storage_keys.dart';
 import 'package:mostro_mobile/data/repositories/session_storage.dart';
+import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/features/key_manager/key_derivator.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager.dart';
 import 'package:mostro_mobile/features/key_manager/key_storage.dart';
@@ -198,7 +200,7 @@ Future<void> showLocalNotification(NostrEvent event) async {
 
 Future<MostroMessage?> _decryptAndProcessEvent(NostrEvent event) async {
   try {
-    if (event.kind != 4 && event.kind != 1059) {
+    if (event.kind != 4 && event.kind != 1059 && event.kind != 14) {
       return null;
     }
 
@@ -283,12 +285,29 @@ Future<MostroMessage?> _processAdminDm(NostrEvent event, Session session) async 
 
 /// Handle events matched by tradeKey (Mostro protocol + admin/dispute DMs)
 Future<MostroMessage?> _handleTradeKeyEvent(NostrEvent event, Session session) async {
-  final decryptedEvent = await event.unWrap(session.tradeKey.private);
-  if (decryptedEvent.content == null) {
+  // Transport branch (§5 Phase A): v1 gift wrap (kind 1059) yields an inner
+  // rumor whose content is the message tuple; v2 NIP-44 direct (kind 14)
+  // decrypts straight to the tuple. Both converge on jsonDecode below.
+  final String? content;
+  if (event.kind == 14) {
+    final mostroPubkey = await _loadMostroPubkey();
+    if (mostroPubkey == null) {
+      logger.w('No Mostro pubkey available, cannot decrypt kind-14 event');
+      return null;
+    }
+    content = await NostrUtils.decryptNIP44DirectEvent(
+      event,
+      session.tradeKey.private,
+      expectedAuthor: mostroPubkey,
+    );
+  } else {
+    content = (await event.unWrap(session.tradeKey.private)).content;
+  }
+  if (content == null) {
     return null;
   }
 
-  final result = jsonDecode(decryptedEvent.content!);
+  final result = jsonDecode(content);
   if (result is! List || result.isEmpty) {
     return null;
   }
@@ -425,6 +444,24 @@ Future<MostroMessage?> _handleP2PChatEvent(NostrEvent event, Session session) as
     );
   } catch (e) {
     logger.e('P2P chat decrypt error: $e');
+    return null;
+  }
+}
+
+/// Reads the connected Mostro node pubkey from persisted settings. Needed in
+/// the background isolate to verify the author of v2 (kind-14) replies, since
+/// there is no Riverpod settings provider available here.
+Future<String?> _loadMostroPubkey() async {
+  try {
+    final sharedPrefs = SharedPreferencesAsync();
+    final settingsJson =
+        await sharedPrefs.getString(SharedPreferencesKeys.appSettings.value);
+    if (settingsJson == null) {
+      return null;
+    }
+    return Settings.fromJson(jsonDecode(settingsJson)).mostroPublicKey;
+  } catch (e) {
+    logger.e('Failed to load Mostro pubkey in background: $e');
     return null;
   }
 }

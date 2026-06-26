@@ -1121,6 +1121,8 @@
     "notification_dispute_started_message": "Se ha iniciado una disputa",
     "notification_order_canceled_title": "Orden cancelada",
     "notification_order_canceled_message": "La orden ha sido cancelada",
+    "notification_order_canceled_by_seller_inactivity_message": "El vendedor no continuó la orden. La orden ha sido cancelada.",
+    "notification_order_canceled_by_buyer_inactivity_message": "El comprador no continuó la orden. La orden ha sido cancelada.",
     "notification_cooperative_cancel_initiated_by_you_title": "Cancelación solicitada",
     "notification_cooperative_cancel_initiated_by_you_message": "Solicitaste cancelar la orden, esperando confirmación del par",
     "notification_cooperative_cancel_initiated_by_peer_title": "Solicitud de cancelación",
@@ -1189,6 +1191,9 @@
     "notification_bond_slashed_title": "Bono anti-abuso perdido",
     "notification_bond_slashed_message": "Has perdido tu bono anti-abuso porque no respondiste dentro del tiempo establecido.",
     "notification_bond_slashed_detail": "Has perdido tu bono anti-abuso de {amount} sats por la orden {orderId}, de {fiatAmount} {fiatCode} y método de pago {paymentMethod}, porque no respondiste dentro del tiempo establecido.",
+    "notification_bond_slashed_dispute_message": "Has perdido tu bono anti-abuso por la resolución de la disputa de esta orden.",
+    "notification_bond_slashed_dispute_detail": "Has perdido tu bono anti-abuso de {amount} sats por la orden {orderId}, de {fiatAmount} {fiatCode} y método de pago {paymentMethod}, por la resolución de la disputa.",
+    "bondLostByDisputeNotice": "Perdiste el bono anti-abuso de {amount} sats de esta orden por la resolución de la disputa.",
     "notificationDelete": "Eliminar",
     "confirmDeleteNotification": "¿Estás seguro de que quieres eliminar esta notificación?",
     "confirmClearAll": "Esto eliminará permanentemente todas las notificaciones. Esta acción no se puede deshacer.",
@@ -1511,6 +1516,7 @@
     "nwcQuotaExceeded": "Cuota de gastos de la billetera excedida",
     "nwcRetryPayment": "Reintentar Pago",
     "nwcPayManually": "Pagar manualmente",
+    "nwcShowInvoice": "Mostrar factura",
     "nwcPreimageLabel": "Preimagen",
     "nwcGenerateWithWallet": "Generar con Billetera",
     "nwcInvoiceGenerating": "Generando factura...",
@@ -1638,5 +1644,43 @@
     "bondPayoutCompletedMessage": "Ya recibiste el pago de tu parte del bono anti-abuso.",
     "bondPayoutCompletedWithRating": "Ya recibiste el pago de tu parte del bono anti-abuso. Puedes calificar a tu contraparte.",
     "bondPayoutCloseButton": "CERRAR",
-    "errorLoadingBondPayout": "Error al cargar los datos del cobro"
+    "errorLoadingBondPayout": "Error al cargar los datos del cobro",
+    "antiAbuseBond": "Depósito anti-abuso",
+    "antiAbuseBondExplanation": "El depósito anti-abuso es un mecanismo opcional que algunos nodos de Mostro usan para hacer los intercambios más seguros. Al entrar en una operación pones en garantía una pequeña cantidad de sats que recuperas por completo si actúas de buena fe, pero que pierdes si intentas estafar a tu contraparte. Así el estafador arriesga su propio dinero, lo que desalienta el abuso.",
+    "bondStatusLabel": "Estado",
+    "bondStatusExplanation": "Si este nodo exige un depósito anti-abuso para operar. 'Deshabilitado' significa que no hace falta ninguno.",
+    "bondEnabled": "Habilitado",
+    "bondDisabled": "Deshabilitado",
+    "bondAppliesToLabel": "Aplica a",
+    "bondAppliesToExplanation": "Qué lado debe bloquear un depósito: takers, makers o ambos.",
+    "bondAppliesToTakers": "Takers",
+    "bondAppliesToMakers": "Makers",
+    "bondAppliesToBoth": "Makers y takers",
+    "bondAmountLabel": "Monto del depósito",
+    "bondAmountExplanation": "El tamaño del depósito: un porcentaje del monto de la orden, con un mínimo en sats. Se aplica el mayor de los dos.",
+    "bondAmountValue": "{percent}% del monto (mín. {min} sats)",
+    "@bondAmountValue": {
+        "placeholders": {
+            "percent": {
+                "type": "String"
+            },
+            "min": {
+                "type": "String"
+            }
+        }
+    },
+    "bondSlashOnTimeoutLabel": "Slash por timeout",
+    "bondSlashOnTimeoutExplanation": "Si tu depósito puede retenerse por no cumplir un plazo (por ejemplo, no pagar o no enviar una factura a tiempo). Si es 'No', solo se retiene por decisión de un resolutor de disputa.",
+    "bondNodeShareLabel": "Retención del nodo",
+    "bondNodeShareExplanation": "Si un depósito se retiene, la fracción que se queda el nodo. El resto se paga a la contraparte honesta.",
+    "bondClaimWindowLabel": "Ventana de reclamo",
+    "bondClaimWindowExplanation": "Si eres la parte honesta cuando un depósito se retiene, cuántos días tienes para reclamar tu parte antes de perderla.",
+    "bondClaimWindowValue": "{days, plural, =1{1 día} other{{days} días}}",
+    "@bondClaimWindowValue": {
+        "placeholders": {
+            "days": {
+                "type": "int"
+            }
+        }
+    }
 }

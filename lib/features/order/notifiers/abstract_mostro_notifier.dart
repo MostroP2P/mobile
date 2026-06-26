@@ -15,6 +15,7 @@ import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/shared/utils/bond_cancel_helpers.dart';
 import 'package:mostro_mobile/shared/utils/bond_payout_helpers.dart';
+import 'package:mostro_mobile/shared/utils/bond_slash_helpers.dart';
 
 class AbstractMostroNotifier extends StateNotifier<OrderState> {
   final String orderId;
@@ -32,16 +33,27 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
   // bond-slashed notice can still be received before the trade key is dropped.
   static final Map<String, Timer> _bondCancelDeletionTimers = {};
 
-  // Orders the user explicitly asked to cancel. A voluntary cancel returns the
-  // taker's bond (no slash, so no trailing bond-slashed), so its `canceled`
-  // response can delete the session immediately instead of deferring 60s.
+  // Orders the user explicitly asked to cancel. Serves two purposes: a
+  // voluntary cancel returns the taker's bond (no slash, so no trailing
+  // bond-slashed), letting its `canceled` response delete the session
+  // immediately instead of deferring 60s; and it lets the notification path
+  // distinguish a user cancel from a counterparty inactivity timeout, which
+  // uses the same Action.canceled. Consumed once per cancel in subscribe().
   static final Set<String> _userInitiatedCancels = <String>{};
 
   /// Marks an order as cancelled by the user, so the matching `canceled`
-  /// response is treated as a voluntary cancel (immediate session deletion).
+  /// response is treated as a voluntary cancel (immediate session deletion)
+  /// and notified as user-initiated rather than a counterparty timeout.
   @protected
   static void markUserInitiatedCancel(String orderId) {
     _userInitiatedCancels.add(orderId);
+  }
+
+  /// Clears the user-initiated cancel flag for [orderId]. Used to roll back
+  /// the marker when the outbound cancel request fails so a later, unrelated
+  /// Action.canceled is not misclassified as user-initiated.
+  static void unmarkUserInitiatedCancel(String orderId) {
+    _userInitiatedCancels.remove(orderId);
   }
 
   AbstractMostroNotifier(
@@ -84,6 +96,17 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
               // Cancel timer on ANY response from Mostro for this order
               cancelSessionTimeoutCleanup(orderId);
 
+              // Capture previous status before updating state, so downstream
+              // notification handlers can differentiate messages (e.g. show a
+              // counterparty-specific cancellation reason).
+              final previousStatus = state.status;
+
+              // Consume the user-initiated cancel flag (set by cancelOrder)
+              // so Action.canceled responses can be distinguished from
+              // counterparty inactivity timeouts, which use the same action.
+              final wasUserInitiatedCancel = msg.action == Action.canceled &&
+                  _userInitiatedCancels.remove(orderId);
+
               if (mounted) {
                 state = state.updateWith(msg);
               }
@@ -94,7 +117,9 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
                           .millisecondsSinceEpoch) {
                 logger.i(
                     'Message timestamp check passed, calling handleEvent for ${msg.action}');
-                unawaited(handleEvent(msg));
+                unawaited(handleEvent(msg,
+                    previousStatus: previousStatus,
+                    wasUserInitiatedCancel: wasUserInitiatedCancel));
               } else {
                 logger.w(
                     'Message timestamp check failed for ${msg.action}. Timestamp: ${msg.timestamp}, Current: ${DateTime.now().millisecondsSinceEpoch}, Threshold: ${DateTime.now().subtract(const Duration(seconds: 60)).millisecondsSinceEpoch}');
@@ -105,7 +130,10 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
                     msg.action == Action.disputeInitiatedByYou) {
                   logger.i(
                       'Processing dispute action ${msg.action} despite old timestamp (state update only)');
-                  unawaited(handleEvent(msg, bypassTimestampGate: true));
+                  unawaited(handleEvent(msg,
+                      bypassTimestampGate: true,
+                      previousStatus: previousStatus,
+                      wasUserInitiatedCancel: wasUserInitiatedCancel));
                 }
               }
             }
@@ -138,7 +166,9 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
   }
 
   Future<void> handleEvent(MostroMessage event,
-      {bool bypassTimestampGate = false}) async {
+      {bool bypassTimestampGate = false,
+      Status? previousStatus,
+      bool wasUserInitiatedCancel = false}) async {
     // Skip if we've already processed this exact event
     final eventKey = '${event.id}_${event.action}_${event.timestamp}';
     if (_processedEventIds.contains(eventKey)) {
@@ -159,7 +189,9 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
     // Extract notification data using the centralized extractor
     final notificationData =
         await NotificationDataExtractor.extractFromMostroMessage(event, ref,
-            session: session);
+            session: session,
+            previousStatus: previousStatus,
+            wasUserInitiatedCancel: wasUserInitiatedCancel);
 
     // Only notify for recent events; old disputes still update state below
     if (notificationData != null && (isRecent || !bypassTimestampGate)) {
@@ -209,9 +241,10 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
           // deletion only for a bonded order the user did NOT cancel itself;
           // otherwise delete immediately as before.
           final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
-          final userInitiated = _userInitiatedCancels.remove(orderId);
+          // The flag was already consumed in subscribe() and propagated here
+          // as wasUserInitiatedCancel; reuse it instead of removing again.
           if (shouldDeferBondCancelDeletion(
-            userInitiated: userInitiated,
+            userInitiated: wasUserInitiatedCancel,
             hadBond: await _orderHadBond(orderId),
           )) {
             _startBondCancelDeletion(orderId, ref);
@@ -221,12 +254,8 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
             logger.i('Session deleted for canceled order $orderId');
           }
 
-          // Show cancellation notification
-          if (isRecent || !bypassTimestampGate) {
-            final notifProvider =
-                ref.read(notificationActionsProvider.notifier);
-            notifProvider.showCustomMessage('orderCanceled');
-          }
+          // SnackBar + history entry are delivered via the centralized
+          // NotificationDataExtractor + notify() path above.
 
           // Navigate to main order book screen
           if (isRecent && !bypassTimestampGate) {
@@ -238,12 +267,31 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         break;
 
       case Action.bondSlashed:
-        // The forfeiture notification was already persisted at the top of
-        // handleEvent. The notice arrived, so cancel the deferred deletion
-        // and release the session now.
+        // Read history first; on failure leave the deferred timer intact as the
+        // fallback cleanup instead of stranding the session.
+        late final List<MostroMessage> bondSlashMessages;
+        try {
+          bondSlashMessages = await ref
+              .read(mostroStorageProvider)
+              .getAllMessagesForOrderId(orderId);
+        } catch (e) {
+          logger.e('Failed to read history for bond-slashed order $orderId',
+              error: e);
+          break;
+        }
+        // Delete only on a timeout slash (order returned to the book). A dispute
+        // slash is a terminal trade that stays in My Trades with its role intact.
         _bondCancelDeletionTimers.remove(orderId)?.cancel();
-        await ref.read(sessionNotifierProvider.notifier).deleteSession(orderId);
-        logger.i('Session deleted after bond-slashed for order $orderId');
+        if (bondSlashIsTimeout(bondSlashMessages)) {
+          await ref
+              .read(sessionNotifierProvider.notifier)
+              .deleteSession(orderId);
+          logger.i(
+              'Session deleted after timeout bond-slashed for order $orderId');
+        } else {
+          logger
+              .i('Dispute bond-slashed: keeping session for order $orderId');
+        }
         break;
 
       case Action.buyerTookOrder:

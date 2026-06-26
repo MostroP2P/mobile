@@ -1207,6 +1207,8 @@
     "notification_dispute_started_message": "A dispute has been initiated",
     "notification_order_canceled_title": "Order canceled",
     "notification_order_canceled_message": "The order has been canceled",
+    "notification_order_canceled_by_seller_inactivity_message": "The seller did not continue the order. The order has been cancelled.",
+    "notification_order_canceled_by_buyer_inactivity_message": "The buyer did not continue the order. The order has been cancelled.",
     "notification_cooperative_cancel_initiated_by_you_title": "Cancellation requested",
     "notification_cooperative_cancel_initiated_by_you_message": "You requested to cancel the order, waiting for peer confirmation",
     "notification_cooperative_cancel_initiated_by_peer_title": "Cancellation request",
@@ -1290,6 +1292,35 @@
                 "type": "String"
             },
             "paymentMethod": {
+                "type": "String"
+            }
+        }
+    },
+    "notification_bond_slashed_dispute_message": "You lost your anti-abuse bond due to the dispute resolution for this order.",
+    "notification_bond_slashed_dispute_detail": "You lost your anti-abuse bond of {amount} sats for order {orderId}, for {fiatAmount} {fiatCode} with payment method {paymentMethod}, due to the dispute resolution.",
+    "@notification_bond_slashed_dispute_detail": {
+        "placeholders": {
+            "amount": {
+                "type": "String"
+            },
+            "orderId": {
+                "type": "String"
+            },
+            "fiatAmount": {
+                "type": "String"
+            },
+            "fiatCode": {
+                "type": "String"
+            },
+            "paymentMethod": {
+                "type": "String"
+            }
+        }
+    },
+    "bondLostByDisputeNotice": "You lost the anti-abuse bond of {amount} sats for this order due to the dispute resolution.",
+    "@bondLostByDisputeNotice": {
+        "placeholders": {
+            "amount": {
                 "type": "String"
             }
         }
@@ -1555,6 +1586,7 @@
     "nwcQuotaExceeded": "Wallet spending quota exceeded",
     "nwcRetryPayment": "Retry Payment",
     "nwcPayManually": "Pay manually instead",
+    "nwcShowInvoice": "Show invoice",
     "nwcPreimageLabel": "Preimage",
     "nwcGenerateWithWallet": "Generate with Wallet",
     "nwcInvoiceGenerating": "Generating invoice...",
@@ -1682,5 +1714,43 @@
     "bondPayoutCompletedMessage": "You have received the payment of your share of the anti-abuse bond.",
     "bondPayoutCompletedWithRating": "You have received the payment of your share of the anti-abuse bond. You can rate your counterparty.",
     "bondPayoutCloseButton": "CLOSE",
-    "errorLoadingBondPayout": "Error loading payout data"
+    "errorLoadingBondPayout": "Error loading payout data",
+    "antiAbuseBond": "Anti-abuse bond",
+    "antiAbuseBondExplanation": "The anti-abuse bond is an optional mechanism some Mostro nodes use to make trades safer. When you enter a trade you put up a small amount of sats as collateral — fully refunded if you act in good faith, but lost if you try to cheat your counterparty. This puts the cheater's own money at risk, discouraging abuse.",
+    "bondStatusLabel": "Status",
+    "bondStatusExplanation": "Whether this node requires an anti-abuse bond to trade. 'Disabled' means no bond is needed.",
+    "bondEnabled": "Enabled",
+    "bondDisabled": "Disabled",
+    "bondAppliesToLabel": "Applies to",
+    "bondAppliesToExplanation": "Which side must lock a bond: takers, makers, or both.",
+    "bondAppliesToTakers": "Takers",
+    "bondAppliesToMakers": "Makers",
+    "bondAppliesToBoth": "Makers and takers",
+    "bondAmountLabel": "Bond amount",
+    "bondAmountExplanation": "The bond size: a percentage of the order amount, with a minimum floor in sats. The larger of the two applies.",
+    "bondAmountValue": "{percent}% of the order amount (min. {min} sats)",
+    "@bondAmountValue": {
+        "placeholders": {
+            "percent": {
+                "type": "String"
+            },
+            "min": {
+                "type": "String"
+            }
+        }
+    },
+    "bondSlashOnTimeoutLabel": "Slash on timeout",
+    "bondSlashOnTimeoutExplanation": "Whether your bond can be kept if you miss a deadline (for example, not paying or not providing an invoice in time). If 'No', a bond is only kept by a dispute resolver's decision.",
+    "bondNodeShareLabel": "Node share",
+    "bondNodeShareExplanation": "If a bond is kept, the fraction the node retains. The rest is paid to the honest counterparty.",
+    "bondClaimWindowLabel": "Claim window",
+    "bondClaimWindowExplanation": "If you are the honest party when a bond is kept, how many days you have to claim your share before it is forfeited.",
+    "bondClaimWindowValue": "{days, plural, =1{1 day} other{{days} days}}",
+    "@bondClaimWindowValue": {
+        "placeholders": {
+            "days": {
+                "type": "int"
+            }
+        }
+    }
 }

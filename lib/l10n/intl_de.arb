@@ -1207,6 +1207,8 @@
     "notification_dispute_started_message": "Ein Streitfall wurde eingeleitet",
     "notification_order_canceled_title": "Order abgebrochen",
     "notification_order_canceled_message": "Die Order wurde abgebrochen",
+    "notification_order_canceled_by_seller_inactivity_message": "Der Verkäufer hat die Order nicht fortgesetzt. Die Order wurde abgebrochen.",
+    "notification_order_canceled_by_buyer_inactivity_message": "Der Käufer hat die Order nicht fortgesetzt. Die Order wurde abgebrochen.",
     "notification_cooperative_cancel_initiated_by_you_title": "Stornierung angefordert",
     "notification_cooperative_cancel_initiated_by_you_message": "Du hast die Stornierung der Order angefordert; warte auf Bestätigung des Partners",
     "notification_cooperative_cancel_initiated_by_peer_title": "Stornierungsanfrage",
@@ -1275,6 +1277,9 @@
     "notification_bond_slashed_title": "Anti-Missbrauchs-Kaution verloren",
     "notification_bond_slashed_message": "Du hast deine Anti-Missbrauchs-Kaution verloren, weil du nicht rechtzeitig geantwortet hast.",
     "notification_bond_slashed_detail": "Du hast deine Anti-Missbrauchs-Kaution von {amount} Sats für die Bestellung {orderId}, über {fiatAmount} {fiatCode} mit Zahlungsmethode {paymentMethod}, verloren, weil du nicht rechtzeitig geantwortet hast.",
+    "notification_bond_slashed_dispute_message": "Du hast deine Anti-Missbrauchs-Kaution durch die Schlichtung der Streitigkeit dieser Bestellung verloren.",
+    "notification_bond_slashed_dispute_detail": "Du hast deine Anti-Missbrauchs-Kaution von {amount} Sats für die Bestellung {orderId}, über {fiatAmount} {fiatCode} mit Zahlungsmethode {paymentMethod}, durch die Schlichtung der Streitigkeit verloren.",
+    "bondLostByDisputeNotice": "Du hast die Anti-Missbrauchs-Kaution von {amount} Sats für diese Bestellung durch die Schlichtung der Streitigkeit verloren.",
     "notificationDelete": "Löschen",
     "confirmDeleteNotification": "Bist du sicher, dass du diese Benachrichtigung löschen möchtest?",
     "confirmClearAll": "Dies wird alle Benachrichtigungen dauerhaft löschen. Diese Aktion kann nicht rückgängig gemacht werden.",
@@ -1536,6 +1541,7 @@
     "nwcQuotaExceeded": "Ausgabenlimit der Wallet überschritten",
     "nwcRetryPayment": "Zahlung wiederholen",
     "nwcPayManually": "Stattdessen manuell zahlen",
+    "nwcShowInvoice": "Rechnung anzeigen",
     "nwcPreimageLabel": "Preimage",
     "nwcGenerateWithWallet": "Mit Wallet generieren",
     "nwcInvoiceGenerating": "Rechnung wird generiert...",
@@ -1663,5 +1669,43 @@
     "bondPayoutCompletedMessage": "Du hast die Auszahlung deines Anteils der Anti-Missbrauchs-Kaution erhalten.",
     "bondPayoutCompletedWithRating": "Du hast die Auszahlung deines Anteils der Anti-Missbrauchs-Kaution erhalten. Du kannst deinen Handelspartner bewerten.",
     "bondPayoutCloseButton": "SCHLIESSEN",
-    "errorLoadingBondPayout": "Fehler beim Laden der Auszahlungsdaten"
+    "errorLoadingBondPayout": "Fehler beim Laden der Auszahlungsdaten",
+    "antiAbuseBond": "Anti-Missbrauchs-Kaution",
+    "antiAbuseBondExplanation": "Die Anti-Missbrauchs-Kaution ist ein optionaler Mechanismus, den manche Mostro-Knoten nutzen, um Trades sicherer zu machen. Beim Einstieg in einen Trade hinterlegst du eine kleine Menge Sats als Sicherheit, die vollständig zurückerstattet wird, wenn du ehrlich handelst, aber verloren geht, wenn du versuchst, deine Gegenpartei zu betrügen. So riskiert der Betrüger sein eigenes Geld, was Missbrauch entgegenwirkt.",
+    "bondStatusLabel": "Status",
+    "bondStatusExplanation": "Ob dieser Knoten zum Handeln eine Anti-Missbrauchs-Kaution verlangt. 'Deaktiviert' bedeutet, dass keine nötig ist.",
+    "bondEnabled": "Aktiviert",
+    "bondDisabled": "Deaktiviert",
+    "bondAppliesToLabel": "Gilt für",
+    "bondAppliesToExplanation": "Welche Seite eine Kaution hinterlegen muss: Taker, Maker oder beide.",
+    "bondAppliesToTakers": "Taker",
+    "bondAppliesToMakers": "Maker",
+    "bondAppliesToBoth": "Maker und Taker",
+    "bondAmountLabel": "Kautionsbetrag",
+    "bondAmountExplanation": "Die Höhe der Kaution: ein Prozentsatz des Orderbetrags, mit einem Mindestbetrag in Sats. Es gilt der größere der beiden Werte.",
+    "bondAmountValue": "{percent}% des Betrags (min. {min} Sats)",
+    "@bondAmountValue": {
+        "placeholders": {
+            "percent": {
+                "type": "String"
+            },
+            "min": {
+                "type": "String"
+            }
+        }
+    },
+    "bondSlashOnTimeoutLabel": "Slash bei Timeout",
+    "bondSlashOnTimeoutExplanation": "Ob deine Kaution einbehalten werden kann, wenn du eine Frist verpasst (zum Beispiel nicht zahlst oder nicht rechtzeitig eine Rechnung lieferst). Bei 'Nein' wird sie nur durch die Entscheidung eines Streitschlichters einbehalten.",
+    "bondNodeShareLabel": "Knoten-Anteil",
+    "bondNodeShareExplanation": "Wenn eine Kaution einbehalten wird, der Anteil, den der Knoten behält. Der Rest wird an die ehrliche Gegenpartei gezahlt.",
+    "bondClaimWindowLabel": "Anspruchsfrist",
+    "bondClaimWindowExplanation": "Wenn du die ehrliche Partei bist, wenn eine Kaution einbehalten wird, wie viele Tage du hast, um deinen Anteil zu beanspruchen, bevor er verfällt.",
+    "bondClaimWindowValue": "{days, plural, =1{1 Tag} other{{days} Tage}}",
+    "@bondClaimWindowValue": {
+        "placeholders": {
+            "days": {
+                "type": "int"
+            }
+        }
+    }
 }

@@ -10,6 +10,7 @@ import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/shared/providers/legible_handle_provider.dart';
 import 'package:mostro_mobile/shared/utils/bond_payout_helpers.dart';
+import 'package:mostro_mobile/shared/utils/bond_slash_helpers.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 import 'package:mostro_mobile/shared/utils/text_formatting.dart';
 
@@ -294,6 +295,8 @@ class MostroMessageDetail extends ConsumerWidget {
         return _getCantDoMessage(context, ref);
       case actions.Action.addBondInvoice:
         return _getBondPayoutMessage(context, ref);
+      case actions.Action.bondSlashed:
+        return _getBondSlashedMessage(context, ref);
       default:
         return 'No message found for action ${tradeState.action}'; // This is a fallback message for developers
     }
@@ -309,6 +312,20 @@ class MostroMessageDetail extends ConsumerWidget {
       return S.of(context)!.addBondInvoiceMessage;
     }
     return S.of(context)!.addBondInvoiceSubmitLine(amount.toString());
+  }
+
+  String _getBondSlashedMessage(BuildContext context, WidgetRef ref) {
+    final historyAsync = ref.watch(mostroMessageHistoryProvider(orderId));
+    // The slashed amount is carried by the bond-slashed message itself; read it
+    // from history. Render nothing until the history loads to avoid flashing a
+    // stale amount. Only dispute slashes reach this screen — a timeout slash
+    // deletes the session.
+    final amount = historyAsync.maybeWhen(
+      data: (msgs) => slashedBondAmount(msgs),
+      orElse: () => null,
+    );
+    if (amount == null) return '';
+    return S.of(context)!.bondLostByDisputeNotice(amount.toString());
   }
 
   String _getCantDoMessage(BuildContext context, WidgetRef ref) {

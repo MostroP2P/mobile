@@ -1207,6 +1207,8 @@
     "notification_dispute_started_message": "Un différend a été initié",
     "notification_order_canceled_title": "Commande annulée",
     "notification_order_canceled_message": "La commande a été annulée",
+    "notification_order_canceled_by_seller_inactivity_message": "Le vendeur n'a pas poursuivi la commande. La commande a été annulée.",
+    "notification_order_canceled_by_buyer_inactivity_message": "L'acheteur n'a pas poursuivi la commande. La commande a été annulée.",
     "notification_cooperative_cancel_initiated_by_you_title": "Annulation demandée",
     "notification_cooperative_cancel_initiated_by_you_message": "Vous avez demandé d'annuler la commande, en attente de confirmation du pair",
     "notification_cooperative_cancel_initiated_by_peer_title": "Demande d'annulation",
@@ -1275,6 +1277,9 @@
     "notification_bond_slashed_title": "Dépôt anti-abus perdu",
     "notification_bond_slashed_message": "Vous avez perdu votre dépôt anti-abus car vous n'avez pas répondu dans le délai imparti.",
     "notification_bond_slashed_detail": "Vous avez perdu votre dépôt anti-abus de {amount} sats pour la commande {orderId}, de {fiatAmount} {fiatCode} avec le mode de paiement {paymentMethod}, car vous n'avez pas répondu dans le délai imparti.",
+    "notification_bond_slashed_dispute_message": "Vous avez perdu votre dépôt anti-abus en raison de la résolution du litige de cette commande.",
+    "notification_bond_slashed_dispute_detail": "Vous avez perdu votre dépôt anti-abus de {amount} sats pour la commande {orderId}, de {fiatAmount} {fiatCode} avec le mode de paiement {paymentMethod}, en raison de la résolution du litige.",
+    "bondLostByDisputeNotice": "Vous avez perdu le dépôt anti-abus de {amount} sats de cette commande en raison de la résolution du litige.",
     "notificationDelete": "Supprimer",
     "confirmDeleteNotification": "Êtes-vous sûr de vouloir supprimer cette notification ?",
     "confirmClearAll": "Ceci supprimera définitivement toutes les notifications. Cette action ne peut pas être annulée.",
@@ -1536,6 +1541,7 @@
     "nwcQuotaExceeded": "Quota de dépenses du portefeuille dépassé",
     "nwcRetryPayment": "Réessayer le paiement",
     "nwcPayManually": "Payer manuellement à la place",
+    "nwcShowInvoice": "Afficher la facture",
     "nwcPreimageLabel": "Preimage",
     "nwcGenerateWithWallet": "Générer avec le portefeuille",
     "nwcInvoiceGenerating": "Génération de facture...",
@@ -1663,5 +1669,43 @@
     "bondPayoutCompletedMessage": "Vous avez reçu le paiement de votre part du dépôt anti-abus.",
     "bondPayoutCompletedWithRating": "Vous avez reçu le paiement de votre part du dépôt anti-abus. Vous pouvez évaluer votre contrepartie.",
     "bondPayoutCloseButton": "FERMER",
-    "errorLoadingBondPayout": "Erreur lors du chargement des données de paiement"
+    "errorLoadingBondPayout": "Erreur lors du chargement des données de paiement",
+    "antiAbuseBond": "Dépôt anti-abus",
+    "antiAbuseBondExplanation": "Le dépôt anti-abus est un mécanisme optionnel que certains nœuds Mostro utilisent pour rendre les échanges plus sûrs. En entrant dans un échange, vous déposez une petite quantité de sats en garantie, intégralement remboursée si vous agissez de bonne foi, mais perdue si vous tentez d'escroquer votre contrepartie. Ainsi, l'escroc risque son propre argent, ce qui décourage les abus.",
+    "bondStatusLabel": "Statut",
+    "bondStatusExplanation": "Si ce nœud exige un dépôt anti-abus pour échanger. 'Désactivé' signifie qu'aucun dépôt n'est requis.",
+    "bondEnabled": "Activé",
+    "bondDisabled": "Désactivé",
+    "bondAppliesToLabel": "S'applique à",
+    "bondAppliesToExplanation": "Quel côté doit bloquer un dépôt : preneurs, créateurs ou les deux.",
+    "bondAppliesToTakers": "Preneurs",
+    "bondAppliesToMakers": "Créateurs",
+    "bondAppliesToBoth": "Créateurs et preneurs",
+    "bondAmountLabel": "Montant du dépôt",
+    "bondAmountExplanation": "La taille du dépôt : un pourcentage du montant de l'ordre, avec un minimum en sats. Le plus élevé des deux s'applique.",
+    "bondAmountValue": "{percent}% du montant (min. {min} sats)",
+    "@bondAmountValue": {
+        "placeholders": {
+            "percent": {
+                "type": "String"
+            },
+            "min": {
+                "type": "String"
+            }
+        }
+    },
+    "bondSlashOnTimeoutLabel": "Slash en cas de délai",
+    "bondSlashOnTimeoutExplanation": "Si votre dépôt peut être conservé en cas de délai non respecté (par exemple, ne pas payer ou ne pas fournir une facture à temps). Si 'Non', il n'est conservé que sur décision d'un médiateur de litige.",
+    "bondNodeShareLabel": "Part du nœud",
+    "bondNodeShareExplanation": "Si un dépôt est conservé, la fraction que le nœud retient. Le reste est versé à la contrepartie honnête.",
+    "bondClaimWindowLabel": "Délai de réclamation",
+    "bondClaimWindowExplanation": "Si vous êtes la partie honnête lorsqu'un dépôt est conservé, combien de jours vous avez pour réclamer votre part avant de la perdre.",
+    "bondClaimWindowValue": "{days, plural, =1{1 jour} other{{days} jours}}",
+    "@bondClaimWindowValue": {
+        "placeholders": {
+            "days": {
+                "type": "int"
+            }
+        }
+    }
 }

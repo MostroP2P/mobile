@@ -111,6 +111,21 @@ class NotificationMessageMapper {
         return 'notification_add_invoice_after_failure_message';
       }
     }
+    if (values != null && action == mostro.Action.canceled) {
+      final previousStatus = values['previous_status'];
+      if (previousStatus == 'waiting-payment') {
+        return 'notification_order_canceled_by_seller_inactivity_message';
+      }
+      if (previousStatus == 'waiting-buyer-invoice') {
+        return 'notification_order_canceled_by_buyer_inactivity_message';
+      }
+    }
+    // Same bond-slashed notice covers timeout and dispute slashes; pick the
+    // message variant from the cause inferred at notification creation.
+    if (action == mostro.Action.bondSlashed &&
+        values?['slash_cause'] == 'dispute') {
+      return 'notification_bond_slashed_dispute_message';
+    }
     // Fall back to normal message key
     return getMessageKey(action);
   }
@@ -338,6 +353,10 @@ class NotificationMessageMapper {
         return s.notification_order_canceled_title;
       case 'notification_order_canceled_message':
         return s.notification_order_canceled_message;
+      case 'notification_order_canceled_by_seller_inactivity_message':
+        return s.notification_order_canceled_by_seller_inactivity_message;
+      case 'notification_order_canceled_by_buyer_inactivity_message':
+        return s.notification_order_canceled_by_buyer_inactivity_message;
       case 'notification_cooperative_cancel_initiated_by_you_title':
         return s.notification_cooperative_cancel_initiated_by_you_title;
       case 'notification_cooperative_cancel_initiated_by_you_message':
@@ -368,6 +387,8 @@ class NotificationMessageMapper {
         return s.notification_bond_slashed_title;
       case 'notification_bond_slashed_message':
         return s.notification_bond_slashed_message;
+      case 'notification_bond_slashed_dispute_message':
+        return s.notification_bond_slashed_dispute_message;
       default:
         return key; // Fallback to key if not found
     }
