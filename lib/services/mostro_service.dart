@@ -141,6 +141,9 @@ class MostroService {
       // decrypts straight to the tuple. Both converge on jsonDecode below.
       String? content;
       String? decryptedId;
+      // Inner rumor's created_at is the real send time (outer gift wrap is
+      // NIP-59 randomized for privacy). Use it for timestamp anchoring below.
+      DateTime? innerCreatedAt;
       if (event.kind == 14) {
         content = await NostrUtils.decryptNIP44DirectEvent(
           event,
@@ -151,6 +154,7 @@ class MostroService {
         final decryptedEvent = await event.unWrap(privateKey);
         content = decryptedEvent.content;
         decryptedId = decryptedEvent.id;
+        innerCreatedAt = decryptedEvent.createdAt;
       }
 
       if (content == null) return;
@@ -191,6 +195,11 @@ class MostroService {
         logger.i('Restore: buffered live event ${event.id} for ${msg.action}');
         return;
       }
+
+      // Use inner rumor's created_at (real send time) — outer gift wrap is
+      // NIP-59 randomized. Historical events have old inner timestamps (sort
+      // below synthetics); live events have recent inner timestamps (gate passes).
+      msg.timestamp ??= innerCreatedAt?.millisecondsSinceEpoch;
 
       await messageStorage.addMessage(messageKey, msg);
       logger.i(
