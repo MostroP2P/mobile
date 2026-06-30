@@ -196,10 +196,12 @@ class MostroService {
         return;
       }
 
-      // Use inner rumor's created_at (real send time) — outer gift wrap is
-      // NIP-59 randomized. Historical events have old inner timestamps (sort
-      // below synthetics); live events have recent inner timestamps (gate passes).
-      msg.timestamp ??= innerCreatedAt?.millisecondsSinceEpoch;
+      // For v1 gift-wrap (kind 1059) use the inner rumor's created_at (real send
+      // time; outer wrap is NIP-59 randomized). For v2 NIP-44 direct (kind 14)
+      // innerCreatedAt is null, so fall back to event.createdAt which is the
+      // real send time (no NIP-59 randomization on kind 14).
+      msg.timestamp ??= innerCreatedAt?.millisecondsSinceEpoch ??
+          event.createdAt?.millisecondsSinceEpoch;
 
       await messageStorage.addMessage(messageKey, msg);
       logger.i(
