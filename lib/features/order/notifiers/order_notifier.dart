@@ -189,11 +189,20 @@ class OrderNotifier extends AbstractMostroNotifier {
   }
 
   Future<void> sendFiatSent() async {
-    await mostroService.sendFiatSent(orderId);
+    // Range orders prepare a child session for the remainder via
+    // _prepareChildOrderIfNeeded -> createChildOrderSession. Serialize that
+    // creation + publish with the restore reset behind the shared session lock
+    // so a concurrent restore can't wipe the child session (TOCTOU-safe).
+    await ref.read(sessionLifecycleLockProvider).withSessionLock(() async {
+      await mostroService.sendFiatSent(orderId);
+    });
   }
 
   Future<void> releaseOrder() async {
-    await mostroService.releaseOrder(orderId);
+    // Same child-session protection as sendFiatSent (range-order remainder).
+    await ref.read(sessionLifecycleLockProvider).withSessionLock(() async {
+      await mostroService.releaseOrder(orderId);
+    });
   }
 
   Future<void> disputeOrder() async {
