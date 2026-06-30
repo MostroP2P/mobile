@@ -219,7 +219,11 @@ class MostroService {
     final buffer = List<NostrEvent>.from(_restoreBuffer);
     _restoreBuffer.clear();
     logger.i('Restore: flushing ${buffer.length} buffered live events');
+    final eventStore = ref.read(eventStorageProvider);
     for (final event in buffer) {
+      // Remove the dedup entry so _onData can re-process the event now that
+      // restore is complete and synthetics have been written.
+      await eventStore.deleteItem(event.id!);
       await _onData(event);
     }
   }
