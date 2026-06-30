@@ -58,6 +58,7 @@ class RestoreService {
   NostrKeyPairs? _masterKey; // Master key pair used during restore process
   bool _operationInProgress = false;
   Completer<bool>? _operationCompleter;
+  int _restoreStartTime = 0;
 
   RestoreService(this.ref);
 
@@ -806,14 +807,12 @@ class RestoreService {
               id: orderDetail.id,
               action: action,
               payload: dispute,
-              timestamp:
-                  orderDetail.createdAt ??
-                  DateTime.now().millisecondsSinceEpoch,
+              timestamp: _restoreStartTime,
             );
 
             // Save dispute message to storage
             final disputeKey =
-                '${orderDetail.id}_restore_${action.value}_${DateTime.now().millisecondsSinceEpoch}';
+                '${orderDetail.id}_restore_${action.value}_$_restoreStartTime';
             await storage.addMessage(disputeKey, disputeMessage);
 
             // Update state with dispute message
@@ -848,14 +847,12 @@ class RestoreService {
               id: orderDetail.id,
               action: action,
               payload: order,
-              timestamp:
-                  orderDetail.createdAt ??
-                  DateTime.now().millisecondsSinceEpoch,
+              timestamp: _restoreStartTime,
             );
 
             // Save order message to storage
             final key =
-                '${orderDetail.id}_restore_${action.value}_${DateTime.now().millisecondsSinceEpoch}';
+                '${orderDetail.id}_restore_${action.value}_$_restoreStartTime';
             await storage.addMessage(key, mostroMessage);
 
             // Update state with order message
@@ -903,6 +900,7 @@ class RestoreService {
 
     _operationInProgress = true;
     _operationCompleter = Completer<bool>();
+    _restoreStartTime = DateTime.now().millisecondsSinceEpoch;
     bool success = false;
     bool noHistoryFound = false;
     try {

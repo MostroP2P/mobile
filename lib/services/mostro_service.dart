@@ -15,21 +15,22 @@ import 'package:mostro_mobile/features/order/providers/order_notifier_provider.d
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
+import 'package:mostro_mobile/features/restore/restore_mode_provider.dart';
 
 class MostroService {
   final Ref ref;
 
   Settings _settings;
   StreamSubscription<NostrEvent>? _ordersSubscription;
+  ProviderSubscription<bool>? _restoreListener;
+  final List<NostrEvent> _restoreBuffer = [];
 
   MostroService(this.ref) : _settings = ref.read(settingsProvider);
 
   void init() {
-    // Cancel any existing subscription to prevent leaks on re-init
     _ordersSubscription?.cancel();
+    _restoreListener?.close();
 
-    // Subscribe to the orders stream from SubscriptionManager
-    // The SubscriptionManager will automatically manage subscriptions based on SessionNotifier changes
     _ordersSubscription = ref
         .read(subscriptionManagerProvider)
         .orders
@@ -44,10 +45,18 @@ class MostroService {
           },
           cancelOnError: false,
         );
+
+    // Flush buffered live events when restore completes (success or error path)
+    _restoreListener = ref.listen<bool>(isRestoringProvider, (previous, next) {
+      if (previous == true && next == false) {
+        unawaited(_flushRestoreBuffer());
+      }
+    });
   }
 
   void dispose() {
     _ordersSubscription?.cancel();
+    _restoreListener?.close();
     logger.i('MostroService disposed');
   }
 
@@ -132,6 +141,9 @@ class MostroService {
       // decrypts straight to the tuple. Both converge on jsonDecode below.
       String? content;
       String? decryptedId;
+      // Inner rumor's created_at is the real send time (outer gift wrap is
+      // NIP-59 randomized for privacy). Use it for timestamp anchoring below.
+      DateTime? innerCreatedAt;
       if (event.kind == 14) {
         content = await NostrUtils.decryptNIP44DirectEvent(
           event,
@@ -142,6 +154,7 @@ class MostroService {
         final decryptedEvent = await event.unWrap(privateKey);
         content = decryptedEvent.content;
         decryptedId = decryptedEvent.id;
+        innerCreatedAt = decryptedEvent.createdAt;
       }
 
       if (content == null) return;
@@ -177,6 +190,19 @@ class MostroService {
           decryptedId ??
           event.id ??
           'msg_${DateTime.now().millisecondsSinceEpoch}';
+      if (ref.read(isRestoringProvider)) {
+        _restoreBuffer.add(event);
+        logger.i('Restore: buffered live event ${event.id} for ${msg.action}');
+        return;
+      }
+
+      // For v1 gift-wrap (kind 1059) use the inner rumor's created_at (real send
+      // time; outer wrap is NIP-59 randomized). For v2 NIP-44 direct (kind 14)
+      // innerCreatedAt is null, so fall back to event.createdAt which is the
+      // real send time (no NIP-59 randomization on kind 14).
+      msg.timestamp ??= innerCreatedAt?.millisecondsSinceEpoch ??
+          event.createdAt?.millisecondsSinceEpoch;
+
       await messageStorage.addMessage(messageKey, msg);
       logger.i(
         'Received DM, Event ID: ${decryptedId ?? event.id} with payload: $content',
@@ -185,6 +211,20 @@ class MostroService {
       await _maybeLinkChildOrder(msg, matchingSession);
     } catch (e) {
       logger.e('Error processing event', error: e);
+    }
+  }
+
+  Future<void> _flushRestoreBuffer() async {
+    if (_restoreBuffer.isEmpty) return;
+    final buffer = List<NostrEvent>.from(_restoreBuffer);
+    _restoreBuffer.clear();
+    logger.i('Restore: flushing ${buffer.length} buffered live events');
+    final eventStore = ref.read(eventStorageProvider);
+    for (final event in buffer) {
+      // Remove the dedup entry so _onData can re-process the event now that
+      // restore is complete and synthetics have been written.
+      await eventStore.deleteItem(event.id!);
+      await _onData(event);
     }
   }
 

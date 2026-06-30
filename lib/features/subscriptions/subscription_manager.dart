@@ -13,6 +13,7 @@ import 'package:mostro_mobile/features/subscriptions/subscription_type.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
+import 'package:mostro_mobile/features/restore/restore_mode_provider.dart';
 
 /// Manages Nostr subscriptions across different parts of the application.
 ///
@@ -181,6 +182,7 @@ class SubscriptionManager {
           return null;
         }
         final tradeKeys = sessions.map((s) => s.tradeKey.public).toList();
+        final restoreLimit = ref.read(isRestoringProvider) ? 0 : null;
         // Transport selected per node from its advertised protocol_version
         // (§2, §4.1). Tracked so the info-event listener can detect a change
         // and re-subscribe when the node info arrives after this subscription.
@@ -191,6 +193,7 @@ class SubscriptionManager {
             return NostrFilter(
               kinds: [1059],
               p: tradeKeys,
+              limit: restoreLimit,
             );
           case Transport.nip44:
             // v2 Mostro replies are kind 14 authored by the node and addressed
@@ -200,6 +203,7 @@ class SubscriptionManager {
               kinds: [14],
               authors: [ref.read(settingsProvider).mostroPublicKey],
               p: tradeKeys,
+              limit: restoreLimit,
             );
         }
       case SubscriptionType.chat:

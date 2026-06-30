@@ -62,7 +62,10 @@ RestoreService.importMnemonicAndRestore()
                 ▼
          restore(ordersMap, lastTradeIndex, ordersResponse, disputes)
           ├─ keyManager.setCurrentKeyIndex(lastTradeIndex + 1)
-          ├─ isRestoringProvider = true   (blocks MostroService._onData processing)
+          ├─ isRestoringProvider = true
+          │   ├─ SubscriptionManager: orders filter uses limit:0
+          │   │    → relay delivers NO historical events during restore window
+          │   └─ MostroService: any arriving event goes to _restoreBuffer
           │
           ├─ FOR EACH order in ordersIds:
           │   ├─ derive tradeKey from tradeIndex
@@ -75,24 +78,26 @@ RestoreService.importMnemonicAndRestore()
           │   │  )
           │   ├─ sessionNotifier.saveSession(session)
           │   │    └─ triggers SubscriptionManager._updateAllSubscriptions()
-          │   │         → relay REQ recreated for this tradeKey
+          │   │         → relay REQ with limit:0 (no historical replay)
           │   └─ if peer != null: chatRoomsProvider.subscribe()
           │
           ├─ Future.delayed(10 seconds)
-          │   └─ relay delivers historical gift-wrap events during this window;
-          │      MostroService._onData stores them in mostroStorage but
-          │      isRestoringProvider=true blocks state.updateWith()
-          │
-          ├─ storage.deleteAll()
-          │   └─ clears relay-replayed events that arrived during 10s window
-          │      (prevents stale events from overwriting restore messages)
+          │   └─ only genuinely live events can arrive (limit:0 blocks history);
+          │      MostroService buffers them in _restoreBuffer instead of storing
           │
           ├─ FOR EACH order in ordersResponse:
           │   ├─ build MostroMessage from OrderDetail + dispute state
-          │   ├─ storage.addMessage(key, message)
+          │   ├─ storage.addMessage(key, message)   ← authoritative synthetic state
           │   └─ notifier.updateStateFromMessage(message)
           │
-          └─ isRestoringProvider = false
+          ├─ isRestoringProvider = false
+          │   ├─ MostroService._restoreListener fires → _flushRestoreBuffer()
+          │   │    → buffered live events processed on top of synthetic state
+          │   └─ SubscriptionManager._restoreModeListener fires
+          │        → _updateAllSubscriptions() with limit:null
+          │             → relay backfill resumes normally; eventStorage dedup
+          │                discards already-seen events
+          └─ (done)
 ```
 
 ### Dispute Chat Subscription During Restore
@@ -191,39 +196,27 @@ case and degrade gracefully (e.g. strip the peer field and continue parsing).
 
 ### Issue 3 — Dispute State Not Persisted After Restore + App Kill
 
-#### Description
+**Status: Fixed** — `lib/services/mostro_service.dart`, `lib/features/subscriptions/subscription_manager.dart`
 
-After a successful restore, if the user force-kills the app and relaunches, disputed order
-state is not recovered. The orders either show an incorrect status or disappear from
-"My Trades". This does **not** happen for users who have never performed a restore.
+#### Root Cause
 
-#### Root Cause (Preliminary)
+During restore, `MostroService._onData` saved all relay-replayed historical gift-wrap events
+to `mostroStorage` with `DateTime.now()` timestamps — newer than the authoritative synthetic
+messages written by the restore process (which use `orderDetail.createdAt`). On the next
+app launch, `OrderNotifier.sync()` replayed messages in ascending timestamp order, ending on
+a stale relay event representing an earlier trade stage instead of the correct restored state.
 
-The normal (non-restore) app startup path relies on `mostroStorage` containing
-`MostroMessage` records that were received live from the relay. On restart,
-`OrderNotifier.sync()` reads all messages for each orderId from storage and reconstructs
-state by replaying them in timestamp order.
+#### Fix
 
-After restore, `restore_manager` calls `storage.deleteAll()` to clear relay-replayed events
-and then writes fresh `MostroMessage` records derived from `OrdersResponse`. These records
-are written with `orderDetail.createdAt` timestamps (original order creation time, which
-may be months old). On the next app start, `sync()` replays these messages correctly — but
-relay-replayed events that arrive after `isRestoringProvider = false` may be stored with
-`DateTime.now()` timestamps (see `MostroService._onData` timestamp behavior) and therefore
-sort after the restore messages in `watchLatestMessage` (DESC), causing `state.updateWith`
-to apply a stale relay event over the correct restored state.
+Two-part fix:
 
-Additionally, if the `Session` persisted to Sembast after restore does not include
-`adminPubkey` / `disputeId` (e.g. due to a serialization gap in `Session.toJson` /
-`Session.fromJson`), then on relaunch `adminSharedKey` will be null and dispute chat
-subscriptions will not start.
+1. **`SubscriptionManager`** passes `limit: 0` on the orders filter while `isRestoringProvider`
+   is true. Relays deliver only new events during the restore window — no historical replay.
 
-#### Scope
+2. **`MostroService._onData`** buffers any live event that arrives during restore into
+   `_restoreBuffer` instead of discarding it. A `ref.listen(isRestoringProvider)` in `init()`
+   flushes the buffer through normal `_onData` processing once restore completes, so live
+   events are applied on top of the synthetic messages written by the restore process.
 
-Out of scope for the current restore feature milestone. Tracked here for future resolution.
-
-#### Suspected Files
-
-- `lib/features/order/notifiers/abstract_mostro_notifier.dart` — `sync()` and `subscribe()` replay logic
-- `lib/services/mostro_service.dart` — timestamp assignment on relay-replayed events
-- `lib/data/models/session.dart` — `toJson()` / `fromJson()` for `adminPubkey` / `disputeId`
+This guarantees: historical events never arrive during restore (relay-side filter), live events
+are not lost (client-side buffer), and state on relaunch is always correct.

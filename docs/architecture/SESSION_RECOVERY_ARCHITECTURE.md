@@ -459,35 +459,29 @@ Action _getActionFromStatus(Status status, Role? userRole) {
 
 ### Restore Mode Protection
 
-**File**: `lib/features/restore/restore_manager.dart:466-468`
+**File**: `lib/features/restore/restore_manager.dart`
 
-During recovery, a global flag prevents processing of old messages:
+During recovery, a global flag is set to `true` before sessions are created and cleared after
+synthetic messages are written. It serves two purposes:
+
+1. **`MostroService._onData`** — skips `addMessage` to `mostroStorage` while restoring.
+   Event IDs are still registered in `eventStorage` for deduplication. This prevents
+   relay-replayed historical events (timestamped with `DateTime.now()`) from sorting after
+   the authoritative synthetic messages (timestamped with `orderDetail.createdAt`) and
+   corrupting state on the next app launch.
+
+2. **`AbstractMostroNotifier.subscribe()`** — skips `state.updateWith()` so that DB stream
+   emissions triggered by synthetic message writes do not double-apply state updates already
+   applied by `notifier.updateStateFromMessage()`.
 
 ```dart
-// Enable restore mode to block all old message processing
+// Enable restore mode
 ref.read(isRestoringProvider.notifier).state = true;
-_logger.i('Restore: enabled restore mode - blocking all old message processing');
-```
 
-**File**: `lib/services/mostro_service.dart:44-96`
+// ... 10s delay, synthetic messages written ...
 
-```dart
-bool _isRestorePayload(Map<String, dynamic> json) {
-  // Check if this is a restore-specific payload that should be ignored
-  // during normal operation
-  
-  final wrapper = json['restore'] ?? json['order'];
-  if (wrapper == null || wrapper is! Map<String, dynamic>) return false;
-  
-  final payload = wrapper['payload'];
-  if (payload == null || payload is! Map<String, dynamic>) return false;
-  
-  // Check for restore-specific fields
-  if (payload.containsKey('restore_data')) return true;
-  if (payload.containsKey('trade_index')) return true;
-  
-  return false;
-}
+// Disable restore mode
+ref.read(isRestoringProvider.notifier).state = false;
 ```
 
 ### Session Validation
