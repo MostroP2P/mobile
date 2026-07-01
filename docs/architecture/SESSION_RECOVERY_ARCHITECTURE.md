@@ -120,6 +120,40 @@ Future<void> saveSession(Session session) async {
 }
 ```
 
+### 5. Session Lifecycle Lock
+
+**Location**: `lib/shared/providers/session_lifecycle_lock_provider.dart`
+
+A shared async mutex (`SessionLifecycleLock`) that **serializes session-mutating
+critical sections so they never interleave**. It prevents an orphaned-session
+TOCTOU race: a node-switch restore resets all sessions (`_clearAll()` +
+rebuild), and if an order flow creates a session concurrently, the reset can wipe
+the just-created session while its order was already published — the session
+disappears from "My Trades" but the daemon still has the order.
+
+**Who acquires it:**
+
+- **Order flows** (session creation + the dependent publish, held together so the
+  pair is atomic w.r.t. the reset):
+  - `AddOrderNotifier.submitOrder`
+  - `OrderNotifier.takeSellOrder` / `takeBuyOrder`
+  - `OrderNotifier.sendFiatSent` / `releaseOrder` (range-order child session via
+    `_prepareChildOrderIfNeeded` → `createChildOrderSession`)
+- **Restore** holds the lock at a high level across `_clearAll()` + the rebuild
+  (`initRestoreProcess`, `syncTradeIndex`).
+
+**Why there is no deadlock:** the lock is non-reentrant. Restore rebuilds via
+`saveSession()`, which does **not** take the lock, and `newSession()` /
+`createChildOrderSession()` do not call each other. So while restore holds the
+lock, order flows queue behind it (bounded by restore timeouts) rather than
+deadlocking.
+
+**Known residual (deferred):** the lock releases after publish, not after the
+first daemon ack. A restore starting in that narrow window can still wipe a
+pending session before its response arrives. Tracked for a follow-up (restore
+should preserve pending/awaiting-ack sessions) rather than holding the lock
+across the network round-trip.
+
 ## Recovery Process Flow
 
 ### Stage 1: Mnemonic Import and Cleanup
@@ -151,7 +185,13 @@ Future<void> importMnemonicAndRestore(String mnemonic) async {
 
 **File**: `lib/features/restore/restore_manager.dart:116-141`
 
-Creates a temporary subscription using trade key index 1 to receive Mostro responses:
+Creates a temporary subscription using trade key index 1 to receive Mostro
+responses. To interoperate across the transport v2 migration it listens on
+**both** wire transports at once — v1 gift wrap (kind 1059) and v2 NIP-44 direct
+(kind 14) — because the node info (kind 38385) that advertises `protocol_version`
+may not have loaded yet when restore starts. The node answers on whichever
+transport it speaks; the v2 filter pins `authors = [mostroPubkey]` to disambiguate
+from NIP-17 chat (also kind 14). See `TRANSPORT_V2_MIGRATION.md`.
 
 ```dart
 Future<StreamSubscription<NostrEvent>> _createTempSubscription() async {
@@ -159,18 +199,30 @@ Future<StreamSubscription<NostrEvent>> _createTempSubscription() async {
     throw Exception('Temp trade key not initialized');
   }
 
-  final filter = NostrFilter(
+  final mostroPubkey = ref.read(settingsProvider).mostroPublicKey;
+  final v1Filter = NostrFilter(
     kinds: [1059],
     p: [_tempTradeKey!.public],
     limit: 0, // No historical events, only new ones
   );
+  final v2Filter = NostrFilter(
+    kinds: [14],
+    authors: [mostroPubkey],
+    p: [_tempTradeKey!.public],
+    limit: 0,
+  );
 
-  final request = NostrRequest(filters: [filter]);
+  final request = NostrRequest(filters: [v1Filter, v2Filter]);
   final stream = ref.read(nostrServiceProvider).subscribeToEvents(request);
-  
+
   return stream.listen(_handleTempSubscriptionsResponse);
 }
 ```
+
+The response is decoded by the top-level `decodeRestoreMessage(event, tempTradeKey,
+mostroPubkey)`, which branches on `event.kind`: kind 14 is NIP-44 decrypted (and
+the node signature verified) straight to the tuple, while kind 1059 is gift-wrap
+unwrapped to a rumor whose content is the tuple. Both converge on `tuple[0]`.
 
 ### Stage 3: Data Request Sequence
 

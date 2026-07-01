@@ -106,17 +106,26 @@ class AddOrderNotifier extends AbstractMostroNotifier {
       requestId: requestId,
       payload: order,
     );
-    final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
-    session = await sessionNotifier.newSession(
-      requestId: requestId,
-      role: order.kind == OrderType.buy ? Role.buyer : Role.seller,
-    );
-    
-    // Start 10s timeout cleanup timer for create orders
-    AbstractMostroNotifier.startSessionTimeoutCleanupForRequestId(requestId, ref);
-    
-    await mostroService.submitOrder(message);
-    state = state.updateWith(message);
+
+    // A node-switch restore resets all sessions (RestoreService._clearAll).
+    // Serialize the whole create critical section (session creation + publish)
+    // with the restore behind the shared session lock so the new session cannot
+    // be wiped by an interleaving reset (TOCTOU-safe): while we hold the lock no
+    // reset runs, and if a restore is in progress we block until it releases.
+    await ref.read(sessionLifecycleLockProvider).withSessionLock(() async {
+      final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+      session = await sessionNotifier.newSession(
+        requestId: requestId,
+        role: order.kind == OrderType.buy ? Role.buyer : Role.seller,
+      );
+
+      // Start 10s timeout cleanup timer for create orders
+      AbstractMostroNotifier.startSessionTimeoutCleanupForRequestId(
+          requestId, ref);
+
+      await mostroService.submitOrder(message);
+      state = state.updateWith(message);
+    });
   }
 
   /// Reset notifier state for retry after out_of_range_sats_amount error
