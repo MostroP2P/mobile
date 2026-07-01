@@ -113,7 +113,7 @@ natural home with no new fetch.
 | inner payload | 2-tuple `[message, sig?]` | 3-tuple `[message, tradeSig?, identityProof?]` |
 | identity proof | carried inside the seal | carried **inside** the NIP-44 ciphertext |
 | `message.version` | `1` | `2` |
-| expiration | none | NIP-40 `expiration` tag |
+| expiration | none | optional NIP-40 tag — **this client omits it** (§3.3, §5) |
 
 ### 3.1 The Mostro message (identical logical content)
 
@@ -177,8 +177,10 @@ This string becomes the rumor content, sealed and gift-wrapped by
 
 This entire 3-tuple JSON string is NIP-44 encrypted with `tradeKey.private` →
 `mostroPubkey` and placed in the `content` of a kind-`14` event that is **signed
-by the trade key**, carries a `["p", "<mostroPubkey>"]` tag and a NIP-40
-`["expiration", "<unix>"]` tag.
+by the trade key** and carries a `["p", "<mostroPubkey>"]` tag. The NIP-40
+`["expiration", "<unix>"]` tag is **optional and this client omits it** — the
+daemon manages its own expiration and accepts events with or without it (§5
+Phase B).
 
 ### 3.4 Kind 14 is overloaded — disambiguation
 
@@ -200,7 +202,7 @@ rumor (k1, NIP-44)                      NIP-44 encrypt tuple (tradeKey -> mostro
   -> seal (k13, NIP-44)                 wrap in k14 event:
     -> wrap (k1059, ephemeral author)     - author = trade key (SIGNED)
       - p tag = mostro pubkey             - p tag = mostro pubkey
-      - optional PoW (NIP-13)             - expiration tag (NIP-40)
+      - optional PoW (NIP-13)             - (no expiration tag; §3.3)
 publish                                   - optional PoW (NIP-13, first-contact)
                                         publish
 ```
@@ -318,8 +320,13 @@ unchanged.
   (SHA-256 hex digest then Schnorr), and the identity proof (element 2) is the
   master key signing `mostro-transport-v2-identity:<tradePubkey>:<messageJSON>`
   with the same scheme. Both are `null` in full-privacy mode.
-- The NIP-40 `expiration` tag is **omitted** (the daemon treats it as optional /
-  caller-supplied), avoiding any risk of a message expiring before processing.
+- The NIP-40 `expiration` tag is **omitted**. It is optional: `mostro-core`
+  supports it and the daemon accepts events with or without it (its receive path
+  does not validate expiration; it manages its own window). Reference clients
+  differ — the Rust app and `mostro-cli` also omit it, while `Mostrix` adds a
+  default 30-day window. This client omits it, avoiding any risk of a message
+  expiring before processing; adding a generous window later is a safe, optional
+  hygiene improvement.
 
 ### Phase C — Send-side wiring
 
@@ -363,6 +370,16 @@ unchanged.
   event id. Keep `mineProofOfWork` and the `maxPowDifficulty` guard.
 - **NIP-17 peer chat (also kind 14)** → not touched; disambiguated from Mostro
   v2 by `author = mostroPubkey` + `p` tag.
+- **Disputes now carry identity in reputation mode** →
+  `DisputeRepository.createDispute` passes the master key + key index through
+  `wrapForTransport`, so a reputation-mode dispute binds identity like every other
+  Mostro send. Previously disputes were always sent full-privacy-shaped
+  (`event.identity = trade key`), ignoring the user's privacy mode. This is a
+  deliberate change to the v1 dispute wire — the one exception to "v1
+  byte-for-byte unchanged" — and was confirmed accepted by the daemon on **both
+  v1 and v2**. The daemon does not require it (`check_trade_index` skips disputes;
+  `dispute_action` identifies the disputer by event sender), so full-privacy
+  disputes stay identity-less as before.
 
 ---
 
@@ -376,7 +393,7 @@ unchanged.
 
 ---
 
-**Last Updated**: 2026-06-17
+**Last Updated**: 2026-07-01
 **Related docs**: `NOSTR.md` (Nostr integration), `MULTI_MOSTRO_SUPPORT.md`
 (kind-38385 info-event parsing), `ANTI_ABUSE_BOND.md` (info-event tag parsing
 and PoW), `SESSION_AND_KEY_MANAGEMENT.md` (trade vs master keys).

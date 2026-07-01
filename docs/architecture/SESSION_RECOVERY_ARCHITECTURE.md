@@ -120,6 +120,40 @@ Future<void> saveSession(Session session) async {
 }
 ```
 
+### 5. Session Lifecycle Lock
+
+**Location**: `lib/shared/providers/session_lifecycle_lock_provider.dart`
+
+A shared async mutex (`SessionLifecycleLock`) that **serializes session-mutating
+critical sections so they never interleave**. It prevents an orphaned-session
+TOCTOU race: a node-switch restore resets all sessions (`_clearAll()` +
+rebuild), and if an order flow creates a session concurrently, the reset can wipe
+the just-created session while its order was already published — the session
+disappears from "My Trades" but the daemon still has the order.
+
+**Who acquires it:**
+
+- **Order flows** (session creation + the dependent publish, held together so the
+  pair is atomic w.r.t. the reset):
+  - `AddOrderNotifier.submitOrder`
+  - `OrderNotifier.takeSellOrder` / `takeBuyOrder`
+  - `OrderNotifier.sendFiatSent` / `releaseOrder` (range-order child session via
+    `_prepareChildOrderIfNeeded` → `createChildOrderSession`)
+- **Restore** holds the lock at a high level across `_clearAll()` + the rebuild
+  (`initRestoreProcess`, `syncTradeIndex`).
+
+**Why there is no deadlock:** the lock is non-reentrant. Restore rebuilds via
+`saveSession()`, which does **not** take the lock, and `newSession()` /
+`createChildOrderSession()` do not call each other. So while restore holds the
+lock, order flows queue behind it (bounded by restore timeouts) rather than
+deadlocking.
+
+**Known residual (deferred):** the lock releases after publish, not after the
+first daemon ack. A restore starting in that narrow window can still wipe a
+pending session before its response arrives. Tracked for a follow-up (restore
+should preserve pending/awaiting-ack sessions) rather than holding the lock
+across the network round-trip.
+
 ## Recovery Process Flow
 
 ### Stage 1: Mnemonic Import and Cleanup
