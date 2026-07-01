@@ -975,6 +975,8 @@
     "read": "Lesen",
     "technicalDetails": "Technische Details",
     "mostroDaemonVersion": "Mostro-Version",
+    "protocolVersion": "Protokollversion",
+    "protocolVersionExplanation": "Das Transportprotokoll dieses Knotens: 1 = NIP-59 Gift Wrap, 2 = NIP-44 Direktnachrichten. Die App erkennt dies automatisch und verwendet den passenden Transport.",
     "mostroCommitId": "Mostro Commit-ID",
     "orderExpiration": "Order-Ablaufzeit",
     "holdInvoiceExpiration": "Hold-Invoice Ablaufzeit",

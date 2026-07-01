@@ -18,10 +18,12 @@ during the migration window.
 > - **Reference client (CLI)**: `MostroP2P/mostro-cli` PRs #176, #177, #178 and
 >   its `docs/TRANSPORT_V2_SPEC.md`.
 >
-> **Status.** Living design specification. **Phase A (dual receive)** —
-> including `protocol_version` auto-detection and per-node transport resolution
-> on the receive path — is merged to `main`. **Phase B (dual send)** is
-> implemented in this branch. Phases C–D (§5) are pending.
+> **Status.** **Migration complete.** All phases (§5) are implemented and
+> merged: dual receive (A), dual send (B), per-node `protocol_version`
+> auto-detection and transport wiring (folded into A/B), the `version`-field
+> cleanup (C), and the test suite (D). The app speaks both transports and
+> selects per node; the v1 gift-wrap path is unchanged and the v2 NIP-44 path
+> engages automatically against a node advertising `protocol_version=2`.
 
 ---
 
@@ -233,16 +235,14 @@ this is the version-skew guard. The downgrade must be **logged explicitly** (at
 `warn`) so a misconfigured or unreachable node cannot silently leave the app in
 a degraded transport without anyone noticing.
 
-### 4.2 `version` field stops being a global constant
+### 4.2 `version` field is derived from the transport
 
-`Config.mostroVersion` is currently a hardcoded `1`
-(`lib/core/config.dart:56`) read by `MostroMessage.toJson()`
-(`lib/data/models/mostro_message.dart:30`). The message `version` must instead
-be **derived from the resolved `Transport`** (1 for `giftWrap`, 2 for `nip44` —
-decision #2). The cleanest seam is to pass the `Transport` (not a raw int) into
-the serialize/wrap path rather than reading a global, so the version number is
-always a function of the transport and a single `MostroMessage` can be wrapped
-for either transport without the two drifting apart.
+The global `Config.mostroVersion` constant has been **removed**. The message
+`version` is now a function of the wire transport: `MostroMessage.toJson({int?
+version})` defaults to `1` (gift wrap — used by storage, logging and the v1 send
+path), and `wrapNip44` passes `version: 2` explicitly. The same serialized
+message JSON is reused for the tuple, the trade signature and the identity-proof
+payload, so element 0, element 1 and element 2 can never drift apart.
 
 ### 4.3 Touch points (current v1 code → where v2 plugs in)
 
@@ -258,7 +258,7 @@ for either transport without the two drifting apart.
 | Background receive decrypt (unWrap → `result[0]`) | `lib/features/notifications/services/background_notification_service.dart:199-322` |
 | NIP-59 unwrap | `lib/shared/utils/nostr_utils.dart:383-443` |
 | Node info / `protocol_version` parse | `lib/features/mostro/mostro_instance.dart:119-251` |
-| Global `version` constant | `lib/core/config.dart:56` |
+| `version` derived from transport (no global constant) | `lib/data/models/mostro_message.dart` (`toJson`) |
 
 ---
 
@@ -328,25 +328,35 @@ unchanged.
   expiring before processing; adding a generous window later is a safe, optional
   hygiene improvement.
 
-### Phase C — Send-side wiring
+### Phase C — Wiring & finalization ✅
 
-> `protocol_version` parsing and per-node transport resolution already landed in
-> Phase A (receive). This phase only threads that same resolved transport into
-> the **send** path.
+> Send-side transport wiring landed with Phase B: every outbound Mostro send
+> already routes through `MostroMessage.wrapForTransport(protocolVersion: …)`,
+> and receive-side detection landed with Phase A. This phase finalized the
+> remaining loose ends.
 
-- Thread the resolved `Transport` (§4.1) into `MostroService.publishOrder` so
-  outbound messages use the v2 `wrap` from Phase B against a v2 node, while v1
-  nodes keep the gift-wrap path.
-- Reuse the version-skew guard from Phase A: degrade to v1 on an unsupported /
-  unreachable node, keeping the existing explicit downgrade logging.
+- Removed the global `Config.mostroVersion`; the message `version` is derived
+  from the transport (§4.2).
+- Extracted the transport → orders-filter mapping into the testable top-level
+  `buildOrdersFilter` (`subscription_manager.dart`).
+- The version-skew guard (`resolveTransport`) degrades to v1 on an unsupported
+  protocol version and logs it (§4.1).
 
-### Phase D — Tests
+### Phase D — Tests ✅
 
-- v2 `wrap` → `unwrap` round-trip: produces a kind-14 event authored by the
-  trade key; decodes back to the same `MostroMessage`.
-- `protocol_version` tag parse → transport mapping (including absent → v1).
-- Identity proof: present in normal mode, `null` in full-privacy; domain string
-  is exactly `mostro-transport-v2-identity:<tradePubkey>:<messageJSON>`.
+- v2 `wrap` → `unwrap` round-trip, reputation and full-privacy
+  (`test/data/mostro_message_nip44_test.dart`): produces a kind-14 event
+  authored by the trade key and decodes back to the same message; cryptographically
+  verifies the trade signature and the identity proof, including the exact domain
+  string `mostro-transport-v2-identity:<tradePubkey>:<messageJSON>` (`null` in
+  full-privacy).
+- `protocol_version` tag parse → transport mapping, including absent → v1
+  (`test/features/mostro/transport_test.dart`,
+  `test/features/mostro/mostro_instance_test.dart`).
+- Orders subscription filter is transport-aware
+  (`test/features/subscriptions/orders_filter_test.dart`).
+- Restore decode handles both transports and yields identical results
+  (`test/features/restore/restore_decode_test.dart`).
 - Regression: the v1 gift-wrap path is byte-for-byte unchanged (existing
   serialization tests stay green).
 
