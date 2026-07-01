@@ -98,13 +98,17 @@ class MostroMessage<T extends Payload> {
     return null;
   }
 
+  /// Wrapper key for the message envelope: 'restore' for restore and
+  /// last-trade-index actions, 'order' for everything else, as per protocol.
+  /// Single source of truth — it is load-bearing for the signature, so the
+  /// signed content must be identical across sign/serialize/wrapNip44.
+  String get _wrapperKey =>
+      action == Action.restore || action == Action.lastTradeIndex
+      ? 'restore'
+      : 'order';
+
   String sign(NostrKeyPairs keyPair, {int? version}) {
-    //IMPORTANT : Use 'restore' key for restore and last-trade-index actions, 'order' for everything else, as per protocol
-    final wrapperKey =
-        action == Action.restore || action == Action.lastTradeIndex
-        ? 'restore'
-        : 'order';
-    final message = {wrapperKey: toJson(version: version)};
+    final message = {_wrapperKey: toJson(version: version)};
     final serializedEvent = jsonEncode(message);
     return _mostroSign(serializedEvent, keyPair);
   }
@@ -120,12 +124,7 @@ class MostroMessage<T extends Payload> {
   }
 
   String serialize({NostrKeyPairs? keyPair, int? version}) {
-    //IMPORTANT : Use 'restore' key for restore and last-trade-index actions, 'order' for everything else, as per protocol
-    final wrapperKey =
-        action == Action.restore || action == Action.lastTradeIndex
-        ? 'restore'
-        : 'order';
-    final message = {wrapperKey: toJson(version: version)};
+    final message = {_wrapperKey: toJson(version: version)};
     final serializedEvent = jsonEncode(message);
     final signature =
         (keyPair != null) ? '"${sign(keyPair, version: version)}"' : null;
@@ -193,11 +192,7 @@ class MostroMessage<T extends Payload> {
   }) async {
     tradeIndex = keyIndex;
 
-    final wrapperKey =
-        action == Action.restore || action == Action.lastTradeIndex
-        ? 'restore'
-        : 'order';
-    final messageMap = {wrapperKey: toJson(version: 2)};
+    final messageMap = {_wrapperKey: toJson(version: 2)};
     final messageJson = jsonEncode(messageMap);
 
     // Reputation mode binds the identity; full privacy omits both signatures.
