@@ -952,6 +952,8 @@
     "read": "Leer",
     "technicalDetails": "Detalles Técnicos",
     "mostroDaemonVersion": "Versión de Mostro",
+    "protocolVersion": "Versión del Protocolo",
+    "protocolVersionExplanation": "El protocolo de transporte que habla este nodo: 1 = gift wrap NIP-59, 2 = mensajes directos NIP-44. La app lo detecta automáticamente y usa el transporte correspondiente.",
     "mostroCommitId": "ID de Commit Mostro",
     "orderExpiration": "Expiración de Orden",
     "holdInvoiceExpiration": "Expiración de Factura de Retención",
