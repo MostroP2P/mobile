@@ -264,9 +264,9 @@ payload, so element 0, element 1 and element 2 can never drift apart.
 
 ## 5. Implementation phases
 
-The phases below define the code work for **subsequent branches**; this
-document does not execute them. Each phase keeps the v1 path behaviourally
-unchanged.
+The phases below record the code work delivered across the migration branches
+(all now merged — see the status above). Each phase kept the v1 path
+behaviourally unchanged.
 
 ### Phase A — Dual receive (with receive-side auto-detection)
 
