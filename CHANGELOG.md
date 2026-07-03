@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.3.0] - 2026-07-03
+
+### Added
+- feat: finalize transport v2 migration (Phase C) (#637) (88a4967a)
+- feat: re-apply dual send for transport v2 (Phase B) without Riverpod 3.x (#632) (ac6e946b)
+- feat: add KES, MZN, TZS, UGX, ZAR, ZMW payment methods; expand NGN (#627) (9b275ec6)
+- feat(restore): wait for node connectivity before issuing restore requests (3ef51544)
+- feat: add MWK (Malawi Kwacha) payment methods (#625) (a7331501)
+- feat: add MWK (Malawi Kwacha) payment methods (#625) (0c3676df)
+- feat: add dual send for transport v2 (Phase B) (#624) (51539941)
+- feat: migrate to Riverpod 3.x (#613) (498d8d43)
+- feat(bond): cause-aware bond-slashed handling (dispute vs timeout) (#619) (fe3a897f)
+- feat(transport): implement protocol_version auto-detection and dual-receive for NIP-44 direct messages (Phase A) (d8d09fc9)
+- feat(transport): add dual-receive support for NIP-44 direct messages in background isolate (Phase A) (d28250d5)
+- feat(transport): add dual-receive support for NIP-44 direct messages (Phase A) (20f1b55c)
+
+### Documentation
+- docs: refine transport v2 migration spec with Transport enum and explicit downgrade logging (d020ac2d)
+- docs: fix markdown formatting in transport v2 migration spec (77949cde)
+- docs: add transport v2 migration specification for NIP-44 direct messages (37554a7d)
+
+### Changed
+- Update lib/features/relays/relays_notifier.dart (f3ab6134)
+- Revert "feat: migrate to Riverpod 3.x (#613)" (44556d64)
+- Revert "feat: add dual send for transport v2 (Phase B) (#624)" (c0a00cb5)
+- Revert "feat: add MWK (Malawi Kwacha) payment methods (#625)" (541ab7ea)
+- i18n(nwc): add nwcShowInvoice label and refresh balance button (#622) (0241894a)
+
+
 ## [v1.2.9] - 2026-06-16
 
 ### Added
