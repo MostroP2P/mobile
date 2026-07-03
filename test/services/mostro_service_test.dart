@@ -216,7 +216,7 @@ void main() {
 
       final messageContent = {
         'order': {
-          'version': Config.mostroVersion,
+          'version': 1,
           'id': orderId,
           'action': 'take-sell',
           'payload': {
@@ -277,7 +277,7 @@ void main() {
         userPubKey: userPubKey,
         messageContent: {
           'order': {
-            'version': Config.mostroVersion,
+            'version': 1,
             'id': orderId,
             'action': 'take-sell',
             'payload': {
@@ -337,7 +337,7 @@ void main() {
         userPubKey: userPubKey,
         messageContent: {
           'order': {
-            'version': Config.mostroVersion,
+            'version': 1,
             'id': orderId,
             'action': 'take-sell',
             'payload': {
@@ -385,9 +385,6 @@ void main() {
       when(mockNostrService.publishEvent(any))
           .thenAnswer((_) async => Future<void>.value());
 
-      when(mockNostrService.publishEvent(any))
-          .thenAnswer((_) async => Future.value());
-
       // Act
       await mostroService.takeSellOrder(orderId, 400, 'lnbc121314invoice');
 
@@ -395,7 +392,7 @@ void main() {
       // Simulate server-side verification
       final messageContent = {
         'order': {
-          'version': Config.mostroVersion,
+          'version': 1,
           'id': orderId,
           'action': 'take-sell',
           'payload': {

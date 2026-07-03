@@ -3,7 +3,6 @@ import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:dart_nostr/nostr/core/key_pairs.dart';
 import 'package:dart_nostr/nostr/model/event/event.dart';
-import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/payload.dart';
 import 'package:mostro_mobile/features/mostro/transport.dart';
@@ -28,7 +27,11 @@ class MostroMessage<T extends Payload> {
 
   Map<String, dynamic> toJson({int? version}) {
     Map<String, dynamic> json = {
-      'version': version ?? Config.mostroVersion,
+      // The message version is derived from the wire transport: 1 for gift wrap
+      // (the default here, used by storage/logging and the v1 send path) and 2
+      // for NIP-44 direct (passed explicitly by `wrapNip44`). See §4.2 of
+      // docs/architecture/TRANSPORT_V2_MIGRATION.md.
+      'version': version ?? 1,
       'request_id': requestId,
       'trade_index': tradeIndex,
     };

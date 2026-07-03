@@ -52,9 +52,6 @@ class Config {
   // Debug mode
   static bool get isDebug => !kReleaseMode;
 
-  // Mostro version
-  static int mostroVersion = 1;
-
   // Key derivation configuration
   static const String keyDerivationPath = "m/44'/1237'/38383'/0";
 

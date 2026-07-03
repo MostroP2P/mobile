@@ -975,6 +975,8 @@
     "read": "Read",
     "technicalDetails": "Technical Details",
     "mostroDaemonVersion": "Mostro Version",
+    "protocolVersion": "Protocol Version",
+    "protocolVersionExplanation": "The wire transport protocol this node speaks: 1 = NIP-59 gift wrap, 2 = NIP-44 direct messages. The app detects this automatically and uses the matching transport.",
     "mostroCommitId": "Mostro Commit ID",
     "orderExpiration": "Order Expiration",
     "holdInvoiceExpiration": "Hold Invoice Expiration",
