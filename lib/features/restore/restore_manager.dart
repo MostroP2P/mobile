@@ -62,6 +62,14 @@ class RestoreService {
   bool _operationInProgress = false;
   Completer<bool>? _operationCompleter;
 
+  // Single anchor timestamp for every synthetic message built by this restore
+  // run, captured once at the start of initRestoreProcess() (before restore
+  // mode is enabled). Ensures synthetic snapshots sort newer than pre-restore
+  // history yet older than any live event arriving during restore, regardless
+  // of the order's own (possibly stale) createdAt. Defaults to construction
+  // time as a safe fallback in case restore() is ever invoked directly.
+  int _restoreStartTime = DateTime.now().millisecondsSinceEpoch;
+
   RestoreService(this.ref);
 
   Future<void> importMnemonicAndRestore(String mnemonic) async {
@@ -797,18 +805,20 @@ class RestoreService {
             }
 
             // Create dispute message with Dispute payload (per Mostro protocol)
+            // Timestamp is the restore-start anchor (not orderDetail.createdAt,
+            // which reflects the order's original creation time, not this
+            // snapshot's currency) so it outranks pre-restore history while
+            // still sorting behind any live event arriving during restore.
             final disputeMessage = MostroMessage<Dispute>(
               id: orderDetail.id,
               action: action,
               payload: dispute,
-              timestamp:
-                  orderDetail.createdAt ??
-                  DateTime.now().millisecondsSinceEpoch,
+              timestamp: _restoreStartTime,
             );
 
             // Save dispute message to storage
             final disputeKey =
-                '${orderDetail.id}_restore_${action.value}_${DateTime.now().millisecondsSinceEpoch}';
+                '${orderDetail.id}_restore_${action.value}_$_restoreStartTime';
             await storage.addMessage(disputeKey, disputeMessage);
 
             // Update state with dispute message
@@ -839,18 +849,20 @@ class RestoreService {
             }
 
             // Create regular order message with Order payload
+            // Timestamp is the restore-start anchor (not orderDetail.createdAt,
+            // which reflects the order's original creation time, not this
+            // snapshot's currency) so it outranks pre-restore history while
+            // still sorting behind any live event arriving during restore.
             final mostroMessage = MostroMessage<Order>(
               id: orderDetail.id,
               action: action,
               payload: order,
-              timestamp:
-                  orderDetail.createdAt ??
-                  DateTime.now().millisecondsSinceEpoch,
+              timestamp: _restoreStartTime,
             );
 
             // Save order message to storage
             final key =
-                '${orderDetail.id}_restore_${action.value}_${DateTime.now().millisecondsSinceEpoch}';
+                '${orderDetail.id}_restore_${action.value}_$_restoreStartTime';
             await storage.addMessage(key, mostroMessage);
 
             // Update state with order message
@@ -898,6 +910,9 @@ class RestoreService {
 
     _operationInProgress = true;
     _operationCompleter = Completer<bool>();
+    // Snapshot the restore-start anchor before anything else, so every
+    // synthetic message this run produces shares one ordering timestamp.
+    _restoreStartTime = DateTime.now().millisecondsSinceEpoch;
     // Hold the shared session lock for the whole restore so order/take flows
     // cannot interleave with the session reset (and rebuild) below.
     final releaseSessionLock =

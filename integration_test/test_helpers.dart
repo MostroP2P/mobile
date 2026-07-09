@@ -315,11 +315,20 @@ class FakeMostroService implements MostroService {
 
   @override
   void updateSettings(Settings settings) {}
-    
+
   @override
   void dispose() {
     // TODO: implement dispose
   }
+
+  @override
+  Future<void> onDataForTesting(NostrEvent event) async {}
+
+  @override
+  Future<void> flushRestoreBufferForTesting() async {}
+
+  @override
+  Map<String, NostrEvent> get restoreBufferForTesting => {};
 }
 
 Future<void> pumpTestApp(WidgetTester tester) async {

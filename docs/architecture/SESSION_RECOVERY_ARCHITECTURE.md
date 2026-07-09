@@ -353,12 +353,14 @@ for (final orderDetail in ordersResponse.orders) {
     // ... other fields
   );
   
-  // Build synthetic MostroMessage
+  // Build synthetic MostroMessage. The ordering timestamp is the single
+  // restore-start anchor (_restoreStartTime), NOT orderDetail.createdAt —
+  // see "Restore-Time Live Event Buffering and Replay" below for why.
   final mostroMessage = MostroMessage<Order>(
     id: orderDetail.id,
     action: action,
     payload: order,
-    timestamp: orderDetail.createdAt ?? DateTime.now().millisecondsSinceEpoch,
+    timestamp: _restoreStartTime,
   );
   
   // Save message to storage and update state
@@ -511,36 +513,120 @@ Action _getActionFromStatus(Status status, Role? userRole) {
 
 ### Restore Mode Protection
 
-**File**: `lib/features/restore/restore_manager.dart:466-468`
+**File**: `lib/features/restore/restore_manager.dart`
 
-During recovery, a global flag prevents processing of old messages:
+During recovery, a global flag (`isRestoringProvider`) marks the window in
+which historical order/dispute state is being rebuilt from Mostro's restore
+response:
 
 ```dart
-// Enable restore mode to block all old message processing
+// Enable restore mode to block synthetic/live processing races
 ref.read(isRestoringProvider.notifier).state = true;
-_logger.i('Restore: enabled restore mode - blocking all old message processing');
+logger.i('Restore: enabled restore mode - blocking all old message processing');
 ```
 
-**File**: `lib/services/mostro_service.dart:44-96`
+`isRestoringProvider` is cleared on **both** the success path and the catch
+block of `restore()`, so the transition back to `false` is outcome-agnostic
+— see D3 below.
+
+**File**: `lib/services/mostro_service.dart`
 
 ```dart
 bool _isRestorePayload(Map<String, dynamic> json) {
   // Check if this is a restore-specific payload that should be ignored
   // during normal operation
-  
+
   final wrapper = json['restore'] ?? json['order'];
   if (wrapper == null || wrapper is! Map<String, dynamic>) return false;
-  
+
   final payload = wrapper['payload'];
   if (payload == null || payload is! Map<String, dynamic>) return false;
-  
+
   // Check for restore-specific fields
   if (payload.containsKey('restore_data')) return true;
   if (payload.containsKey('trade_index')) return true;
-  
+
   return false;
 }
 ```
+
+`_isRestorePayload` only recognizes the restore protocol's OWN response
+payloads (restore data, orders list, trade index) arriving on the temporary
+subscription — it has nothing to do with regular live order/dispute events
+addressed to the user's real sessions. Those are handled by the
+buffer-and-replay mechanism below.
+
+### Restore-Time Live Event Buffering and Replay
+
+**File**: `lib/services/mostro_service.dart`
+
+Fixes GitHub #584: previously, any live event (order update, dispute
+message) that arrived on the user's real sessions while a restore was in
+progress was either dropped outright or — in an earlier, buggy port of this
+fix — buffered too late (after the session-match check), so events for a
+session restore had not recreated yet were still lost. Live events are now
+buffered unconditionally while `isRestoringProvider` is true and replayed,
+in arrival order, once restore ends.
+
+**Architecture decisions**:
+
+- **D1 — Buffer check precedes session-match**: `_onData` checks
+  `isRestoringProvider` immediately after the dedup reserve, **before** the
+  `matchingSession == null` early return and before any decrypt. Restore
+  recreates sessions incrementally (one `saveSession()` call per order), so
+  an event addressed to a session that has not been recreated yet must still
+  be preserved, not dropped as "no matching session".
+- **D2 — Keyed buffer**: `_restoreBuffer` is a `Map<String, NostrEvent>`
+  keyed by `event.id`, which gives dedup-by-id (re-buffering the same id
+  keeps a single entry in its original arrival position — Dart `Map` is
+  insertion-ordered) as a defensive backstop behind the top-level
+  `eventStore.hasItem`/`putItem` dedup check.
+- **D3 — Outcome-agnostic flush trigger**: `MostroService.init()` registers
+  `ref.listen<bool>(isRestoringProvider, ...)` and flushes the buffer on any
+  `true → false` transition. This covers `RestoreService.restore()`'s
+  success path and its catch block identically — the flush does not need to
+  know why restore ended.
+- **D4 — Dedup entry cleared before replay**: `_flushRestoreBuffer()` calls
+  `eventStore.deleteItem(event.id)` immediately before replaying each event
+  through `_onData`, because `_onData` reserved that id when the event was
+  first buffered. Without this, the dedup check at the top of `_onData`
+  would silently drop the replay.
+- **D5 — Single restore-start anchor for synthetic messages**: synthetic
+  order/dispute messages built in `RestoreService.restore()` use one
+  timestamp, `_restoreStartTime` — captured once at the start of
+  `initRestoreProcess()`, before restore mode is enabled — instead of
+  `orderDetail.createdAt`. `createdAt` reflects when the order was
+  originally created, not when this snapshot was taken; for a long-lived
+  order, using it as the ordering timestamp would let intervening historical
+  replay outrank the current-state snapshot. The restore-start anchor sorts
+  newer than all pre-restore history yet older than any live event that
+  arrives during restore. The real creation time is still preserved in the
+  `Order`/`Dispute` payload for display; only the ordering timestamp
+  changes.
+
+**Target `_onData` control flow** (landmark-relative — decrypt, session-match,
+DM/restore-payload skips, and the timestamp fallback already existed; only
+the buffer check's *position*, relative to session-match, is new):
+
+```
+_onData(event):
+  1. if eventStore.hasItem(id): return                    // dedup check
+  2. eventStore.putItem(id, ...)                           // dedup reserve
+  3. if isRestoringProvider: buffer[id] = event; return    // <== reorder fix
+  4. matchingSession = ...; if null: return                // now AFTER buffer
+  5. decrypt (v1 gift-wrap unWrap / v2 NIP-44 direct)
+  6. jsonDecode; skip DM payloads; skip restore payloads
+  7. msg = MostroMessage.fromJson(...)
+  8. msg.timestamp ??= innerRumorCreatedAt ?? event.createdAt
+  9. messageStorage.addMessage(...); link child order if applicable
+```
+
+On flush, `isRestoringProvider` is `false`, so replayed events flow past
+step 3 straight to step 4 onward and receive their real protocol timestamp:
+the inner rumor's `created_at` for v1 gift wrap (canonical per NIP-59 — the
+outer wrap/seal timestamps are randomized for privacy), or the event's own
+`created_at` for v2 NIP-44 direct (kind 14 has no seal/rumor layer, so its
+own timestamp is already the real send time).
 
 ### Session Validation
 
@@ -718,8 +804,8 @@ sequenceDiagram
 
 ---
 
-**Last Modified**: November 25, 2025
-**Version**: 1.0.0
+**Last Modified**: July 8, 2026
+**Version**: 1.1.0
 **Author**: Architecture Documentation
 **Related Files**: 
 - `lib/features/restore/restore_manager.dart`

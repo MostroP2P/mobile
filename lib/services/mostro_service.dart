@@ -2,11 +2,13 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:collection/collection.dart';
 import 'package:dart_nostr/dart_nostr.dart';
+import 'package:flutter/foundation.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models.dart';
+import 'package:mostro_mobile/features/restore/restore_mode_provider.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_manager_provider.dart';
 import 'package:mostro_mobile/shared/providers.dart';
@@ -21,12 +23,19 @@ class MostroService {
 
   Settings _settings;
   StreamSubscription<NostrEvent>? _ordersSubscription;
+  ProviderSubscription<bool>? _restoreListener;
+
+  // Live events received while a restore is in progress are buffered here
+  // (keyed by event id, so re-delivery of the same id keeps a single entry
+  // in its original arrival position) and replayed once restore ends.
+  final Map<String, NostrEvent> _restoreBuffer = {};
 
   MostroService(this.ref) : _settings = ref.read(settingsProvider);
 
   void init() {
     // Cancel any existing subscription to prevent leaks on re-init
     _ordersSubscription?.cancel();
+    _restoreListener?.close();
 
     // Subscribe to the orders stream from SubscriptionManager
     // The SubscriptionManager will automatically manage subscriptions based on SessionNotifier changes
@@ -44,10 +53,20 @@ class MostroService {
           },
           cancelOnError: false,
         );
+
+    // Flush buffered live events once restore ends, regardless of outcome
+    // (RestoreService.restore() clears isRestoringProvider on both its
+    // success path and its catch block).
+    _restoreListener = ref.listen<bool>(isRestoringProvider, (previous, next) {
+      if (previous == true && next == false) {
+        unawaited(_flushRestoreBuffer());
+      }
+    });
   }
 
   void dispose() {
     _ordersSubscription?.cancel();
+    _restoreListener?.close();
     logger.i('MostroService disposed');
   }
 
@@ -116,6 +135,17 @@ class MostroService {
       'created_at': event.createdAt!.millisecondsSinceEpoch ~/ 1000,
     });
 
+    // Buffer live events while a restore is in progress. This runs BEFORE the
+    // session-match check below so events addressed to a session restore has
+    // not recreated yet are preserved instead of being dropped by "no
+    // matching session". Buffered events are replayed through _onData once
+    // restore completes (success or error path alike); see _flushRestoreBuffer.
+    if (ref.read(isRestoringProvider)) {
+      _restoreBuffer[event.id!] = event;
+      logger.i('Restore: buffered live event ${event.id}');
+      return;
+    }
+
     final sessions = ref.read(sessionNotifierProvider);
     final matchingSession = sessions.firstWhereOrNull(
       (s) => s.tradeKey.public == event.recipient,
@@ -132,6 +162,9 @@ class MostroService {
       // decrypts straight to the tuple. Both converge on jsonDecode below.
       String? content;
       String? decryptedId;
+      // Inner rumor's created_at is the real send time (outer gift wrap is
+      // NIP-59 randomized for privacy); used for timestamp anchoring below.
+      DateTime? innerCreatedAt;
       if (event.kind == 14) {
         content = await NostrUtils.decryptNIP44DirectEvent(
           event,
@@ -142,6 +175,7 @@ class MostroService {
         final decryptedEvent = await event.unWrap(privateKey);
         content = decryptedEvent.content;
         decryptedId = decryptedEvent.id;
+        innerCreatedAt = decryptedEvent.createdAt;
       }
 
       if (content == null) return;
@@ -169,6 +203,14 @@ class MostroService {
 
       final msg = MostroMessage.fromJson(result[0]);
 
+      // For v1 gift-wrap (kind 1059) use the inner rumor's created_at (real
+      // send time; the outer wrap is NIP-59 randomized). For v2 NIP-44 direct
+      // (kind 14) innerCreatedAt is null (no rumor layer), so fall back to
+      // event.createdAt, which is already the real send time.
+      msg.timestamp ??=
+          innerCreatedAt?.millisecondsSinceEpoch ??
+          event.createdAt?.millisecondsSinceEpoch;
+
       final messageStorage = ref.read(mostroStorageProvider);
 
       // Use the inner rumor id if available (v1), otherwise fall back to the
@@ -187,6 +229,31 @@ class MostroService {
       logger.e('Error processing event', error: e);
     }
   }
+
+  /// Replays every event buffered during restore through [_onData], in
+  /// arrival order, once restore has ended. Clears each event's dedup entry
+  /// immediately before replaying it, since [_onData] reserved that entry
+  /// when the event was first buffered.
+  Future<void> _flushRestoreBuffer() async {
+    if (_restoreBuffer.isEmpty) return;
+    final events = List<NostrEvent>.from(_restoreBuffer.values);
+    _restoreBuffer.clear();
+    logger.i('Restore: flushing ${events.length} buffered live events');
+    final eventStore = ref.read(eventStorageProvider);
+    for (final event in events) {
+      await eventStore.deleteItem(event.id!);
+      await _onData(event);
+    }
+  }
+
+  @visibleForTesting
+  Future<void> onDataForTesting(NostrEvent event) => _onData(event);
+
+  @visibleForTesting
+  Future<void> flushRestoreBufferForTesting() => _flushRestoreBuffer();
+
+  @visibleForTesting
+  Map<String, NostrEvent> get restoreBufferForTesting => _restoreBuffer;
 
   Future<void> _maybeLinkChildOrder(
     MostroMessage message,
