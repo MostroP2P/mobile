@@ -241,8 +241,12 @@ class MostroService {
     logger.i('Restore: flushing ${events.length} buffered live events');
     final eventStore = ref.read(eventStorageProvider);
     for (final event in events) {
-      await eventStore.deleteItem(event.id!);
-      await _onData(event);
+      try {
+        await eventStore.deleteItem(event.id!);
+        await _onData(event);
+      } catch (e) {
+        logger.e('Restore: failed to replay buffered event ${event.id}', error: e);
+      }
     }
   }
 
