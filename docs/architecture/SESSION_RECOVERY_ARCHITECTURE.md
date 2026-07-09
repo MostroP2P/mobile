@@ -608,7 +608,7 @@ in arrival order, once restore ends.
 DM/restore-payload skips, and the timestamp fallback already existed; only
 the buffer check's *position*, relative to session-match, is new):
 
-```
+```dart
 _onData(event):
   1. if eventStore.hasItem(id): return                    // dedup check
   2. eventStore.putItem(id, ...)                           // dedup reserve
