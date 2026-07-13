@@ -161,10 +161,10 @@ class OrderState {
     // If we got a dispute from the message payload, ensure it has the message timestamp
     // This is critical for correct sorting in the dispute list
     if (updatedDispute != null && message.getPayload<Dispute>() != null) {
-      // Use message timestamp if dispute doesn't have a createdAt or if message has a timestamp
-      // Note: Nostr timestamps are in seconds, so convert to milliseconds
+      // message.timestamp is already milliseconds everywhere it's set in this
+      // codebase; a pre-existing bug here re-multiplied it by 1000 again.
       if (message.timestamp != null) {
-        final tsMs = message.timestamp! * 1000;
+        final tsMs = message.timestamp!;
         if (updatedDispute.createdAt == null || 
             updatedDispute.createdAt!.millisecondsSinceEpoch != tsMs) {
           updatedDispute = updatedDispute.copyWith(
