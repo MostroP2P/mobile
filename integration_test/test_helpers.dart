@@ -325,6 +325,9 @@ class FakeMostroService implements MostroService {
   Future<void> onDataForTesting(NostrEvent event) async {}
 
   @override
+  Future<void> flushRestoreBuffer() async {}
+
+  @override
   Future<void> flushRestoreBufferForTesting() async {}
 
   @override

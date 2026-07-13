@@ -30,6 +30,10 @@ class MostroService {
   // in its original arrival position) and replayed once restore ends.
   final Map<String, NostrEvent> _restoreBuffer = {};
 
+  // Shared by the reactive listener and flushRestoreBuffer() so both await
+  // the same drain instead of racing.
+  Future<void>? _activeFlush;
+
   MostroService(this.ref) : _settings = ref.read(settingsProvider);
 
   void init() {
@@ -59,7 +63,7 @@ class MostroService {
     // success path and its catch block).
     _restoreListener = ref.listen<bool>(isRestoringProvider, (previous, next) {
       if (previous == true && next == false) {
-        unawaited(_flushRestoreBuffer());
+        unawaited(flushRestoreBuffer());
       }
     });
   }
@@ -249,6 +253,12 @@ class MostroService {
       }
     }
   }
+
+  // Awaitable flush for production callers. Idempotent when the buffer is empty.
+  Future<void> flushRestoreBuffer() =>
+      _activeFlush ??= _flushRestoreBuffer().whenComplete(() {
+        _activeFlush = null;
+      });
 
   @visibleForTesting
   Future<void> onDataForTesting(NostrEvent event) => _onData(event);

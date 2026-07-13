@@ -601,6 +601,10 @@ class RestoreService {
     OrdersResponse ordersResponse,
     List<RestoredDispute> disputes,
   ) async {
+    // Orders needing a fiat-sent recheck once the restore buffer drains.
+    final pendingReconciliation =
+        <({String orderId, MostroMessage message})>[];
+
     try {
       if (_masterKey == null) {
         throw Exception('Master key not initialized');
@@ -787,22 +791,7 @@ class RestoreService {
           );
 
           if (dispute != null) {
-            // For disputed orders, check if fiat was sent before the dispute
-            // so future cooperative cancel actions get remapped correctly
-            final disputeMessages = await storage.getAllMessagesForOrderId(
-              orderDetail.id,
-            );
-            final hadFiatSent = disputeMessages.any(
-              (m) =>
-                  m.action == Action.fiatSent ||
-                  m.action == Action.fiatSentOk,
-            );
-            if (hadFiatSent) {
-              notifier.setFiatWasSent();
-              logger.i(
-                'Restore: fiatWasSent=true for disputed order ${orderDetail.id}',
-              );
-            }
+            // Fiat-sent status is checked later, once the buffer has flushed.
 
             // Create dispute message with Dispute payload (per Mostro protocol)
             // Timestamp is the restore-start anchor (not orderDetail.createdAt,
@@ -823,30 +812,13 @@ class RestoreService {
 
             // Update state with dispute message
             notifier.updateStateFromMessage(disputeMessage);
+            pendingReconciliation
+                .add((orderId: orderDetail.id, message: disputeMessage));
             logger.i(
               'Restore: created dispute message for order ${orderDetail.id}',
             );
           } else {
-            // For cooperativelyCanceled orders, check message history to
-            // determine if fiat was sent before the cancel was initiated.
-            // This sets fiatWasSent so updateWith can remap to the correct
-            // semantic action variant.
-            if (order.status == Status.cooperativelyCanceled) {
-              final messages = await storage.getAllMessagesForOrderId(
-                orderDetail.id,
-              );
-              final hadFiatSent = messages.any(
-                (m) =>
-                    m.action == Action.fiatSent ||
-                    m.action == Action.fiatSentOk,
-              );
-              if (hadFiatSent) {
-                notifier.setFiatWasSent();
-                logger.i(
-                  'Restore: fiatWasSent=true for cooperativelyCanceled order ${orderDetail.id}',
-                );
-              }
-            }
+            // Fiat-sent status is checked later, once the buffer has flushed.
 
             // Create regular order message with Order payload
             // Timestamp is the restore-start anchor (not orderDetail.createdAt,
@@ -867,6 +839,10 @@ class RestoreService {
 
             // Update state with order message
             notifier.updateStateFromMessage(mostroMessage);
+            if (order.status == Status.cooperativelyCanceled) {
+              pendingReconciliation
+                  .add((orderId: orderDetail.id, message: mostroMessage));
+            }
           }
         } catch (e, stack) {
           logger.e(
@@ -889,8 +865,64 @@ class RestoreService {
       ref.read(isRestoringProvider.notifier).state = false;
       logger.e('Restore: error during restore', error: e, stackTrace: stack);
       rethrow;
+    } finally {
+      // Restore mode is already off here, so the flush's replayed events
+      // reach storage instead of re-buffering. Never let this throw — it
+      // would mask a real restore error being rethrown above.
+      try {
+        await ref.read(mostroServiceProvider).flushRestoreBuffer();
+        await _reconcileFiatSent(pendingReconciliation);
+      } catch (e, stack) {
+        logger.e(
+          'Restore: post-restore flush/reconciliation failed',
+          error: e,
+          stackTrace: stack,
+        );
+      }
     }
   }
+
+  // Rechecks fiat-sent status for orders deferred during the restore loop,
+  // now that the buffer has drained. Per-order failures are isolated, same
+  // as MostroService._flushRestoreBuffer.
+  Future<void> _reconcileFiatSent(
+    List<({String orderId, MostroMessage message})> pending,
+  ) async {
+    if (pending.isEmpty) return;
+    final storage = ref.read(mostroStorageProvider);
+    logger.i('Restore: reconciling fiat-sent status for ${pending.length} orders');
+    for (final entry in pending) {
+      try {
+        final messages =
+            await storage.getAllMessagesForOrderId(entry.orderId);
+        final hadFiatSent = messages.any(
+          (m) =>
+              m.action == Action.fiatSent || m.action == Action.fiatSentOk,
+        );
+        if (!hadFiatSent) continue;
+
+        final notifier =
+            ref.read(orderNotifierProvider(entry.orderId).notifier);
+        notifier.setFiatWasSent();
+        notifier.updateStateFromMessage(entry.message);
+        logger.i(
+          'Restore: reconciled fiatWasSent=true for order ${entry.orderId}',
+        );
+      } catch (e, stack) {
+        logger.e(
+          'Restore: fiat reconciliation failed for order ${entry.orderId}',
+          error: e,
+          stackTrace: stack,
+        );
+      }
+    }
+  }
+
+  @visibleForTesting
+  Future<void> reconcileFiatSentForTesting(
+    List<({String orderId, MostroMessage message})> pending,
+  ) =>
+      _reconcileFiatSent(pending);
 
   //Workflow:
   // 1. Clear existing data
