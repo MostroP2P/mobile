@@ -156,6 +156,10 @@ class MostroService {
     );
     if (matchingSession == null) {
       logger.w('No matching session found for recipient: ${event.recipient}');
+      // Undo the dedup reservation: this event was never actually
+      // processed, so a later retry (once the session exists) must not
+      // be silently dropped as "already seen".
+      await eventStore.deleteItem(event.id!);
       return;
     }
     final privateKey = matchingSession.tradeKey.private;
