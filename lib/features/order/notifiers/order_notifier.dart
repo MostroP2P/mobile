@@ -230,6 +230,18 @@ class OrderNotifier extends AbstractMostroNotifier {
     state = state.copyWith(fiatWasSent: true);
   }
 
+  // Corrects a stale no-fiat cooperative-cancel action after the fact,
+  // regardless of what set it (a restore snapshot or a live event that
+  // ran before setFiatWasSent()).
+  void upgradeCooperativeCancelToFiatSent() {
+    if (!mounted) return;
+    if (state.action == Action.cooperativeCancelNoFiatByYou) {
+      state = state.copyWith(action: Action.cooperativeCancelFiatSentByYou);
+    } else if (state.action == Action.cooperativeCancelNoFiatByPeer) {
+      state = state.copyWith(action: Action.cooperativeCancelFiatSentByPeer);
+    }
+  }
+
   /// Update dispute in state (used during restore)
   void updateDispute(Dispute dispute) {
     if (mounted) {

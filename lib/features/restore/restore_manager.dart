@@ -68,7 +68,17 @@ class RestoreService {
   // history yet older than any live event arriving during restore, regardless
   // of the order's own (possibly stale) createdAt. Defaults to construction
   // time as a safe fallback in case restore() is ever invoked directly.
-  int _restoreStartTime = DateTime.now().millisecondsSinceEpoch;
+  int _restoreStartTime =
+      _floorToPreviousSecond(DateTime.now().millisecondsSinceEpoch);
+
+  // Nostr timestamps are always whole seconds, never millisecond-precise;
+  // flooring the anchor to just before the current second guarantees it
+  // can never outrank a live event created in this same second.
+  static int _floorToPreviousSecond(int ms) => (ms ~/ 1000) * 1000 - 1;
+
+  @visibleForTesting
+  static int floorToPreviousSecondForTesting(int ms) =>
+      _floorToPreviousSecond(ms);
 
   RestoreService(this.ref);
 
@@ -602,8 +612,7 @@ class RestoreService {
     List<RestoredDispute> disputes,
   ) async {
     // Orders needing a fiat-sent recheck once the restore buffer drains.
-    final pendingReconciliation =
-        <({String orderId, MostroMessage message})>[];
+    final pendingReconciliation = <String>[];
 
     try {
       if (_masterKey == null) {
@@ -812,8 +821,7 @@ class RestoreService {
 
             // Update state with dispute message
             notifier.updateStateFromMessage(disputeMessage);
-            pendingReconciliation
-                .add((orderId: orderDetail.id, message: disputeMessage));
+            pendingReconciliation.add(orderDetail.id);
             logger.i(
               'Restore: created dispute message for order ${orderDetail.id}',
             );
@@ -840,8 +848,7 @@ class RestoreService {
             // Update state with order message
             notifier.updateStateFromMessage(mostroMessage);
             if (order.status == Status.cooperativelyCanceled) {
-              pendingReconciliation
-                  .add((orderId: orderDetail.id, message: mostroMessage));
+              pendingReconciliation.add(orderDetail.id);
             }
           }
         } catch (e, stack) {
@@ -885,32 +892,28 @@ class RestoreService {
   // Rechecks fiat-sent status for orders deferred during the restore loop,
   // now that the buffer has drained. Per-order failures are isolated, same
   // as MostroService._flushRestoreBuffer.
-  Future<void> _reconcileFiatSent(
-    List<({String orderId, MostroMessage message})> pending,
-  ) async {
+  Future<void> _reconcileFiatSent(List<String> pending) async {
     if (pending.isEmpty) return;
     final storage = ref.read(mostroStorageProvider);
     logger.i('Restore: reconciling fiat-sent status for ${pending.length} orders');
-    for (final entry in pending) {
+    for (final orderId in pending) {
       try {
-        final messages =
-            await storage.getAllMessagesForOrderId(entry.orderId);
+        final messages = await storage.getAllMessagesForOrderId(orderId);
         final hadFiatSent = messages.any(
           (m) =>
               m.action == Action.fiatSent || m.action == Action.fiatSentOk,
         );
         if (!hadFiatSent) continue;
 
-        final notifier =
-            ref.read(orderNotifierProvider(entry.orderId).notifier);
+        final notifier = ref.read(orderNotifierProvider(orderId).notifier);
         notifier.setFiatWasSent();
-        notifier.updateStateFromMessage(entry.message);
+        notifier.upgradeCooperativeCancelToFiatSent();
         logger.i(
-          'Restore: reconciled fiatWasSent=true for order ${entry.orderId}',
+          'Restore: reconciled fiatWasSent=true for order $orderId',
         );
       } catch (e, stack) {
         logger.e(
-          'Restore: fiat reconciliation failed for order ${entry.orderId}',
+          'Restore: fiat reconciliation failed for order $orderId',
           error: e,
           stackTrace: stack,
         );
@@ -919,9 +922,7 @@ class RestoreService {
   }
 
   @visibleForTesting
-  Future<void> reconcileFiatSentForTesting(
-    List<({String orderId, MostroMessage message})> pending,
-  ) =>
+  Future<void> reconcileFiatSentForTesting(List<String> pending) =>
       _reconcileFiatSent(pending);
 
   //Workflow:
@@ -944,7 +945,8 @@ class RestoreService {
     _operationCompleter = Completer<bool>();
     // Snapshot the restore-start anchor before anything else, so every
     // synthetic message this run produces shares one ordering timestamp.
-    _restoreStartTime = DateTime.now().millisecondsSinceEpoch;
+    _restoreStartTime =
+        _floorToPreviousSecond(DateTime.now().millisecondsSinceEpoch);
     // Hold the shared session lock for the whole restore so order/take flows
     // cannot interleave with the session reset (and rebuild) below.
     final releaseSessionLock =

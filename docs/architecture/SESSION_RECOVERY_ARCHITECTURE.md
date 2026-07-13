@@ -602,7 +602,21 @@ in arrival order, once restore ends.
   newer than all pre-restore history yet older than any live event that
   arrives during restore. The real creation time is still preserved in the
   `Order`/`Dispute` payload for display; only the ordering timestamp
-  changes.
+  changes. Real Nostr timestamps are always second-precision, never exact
+  to the millisecond, so `_restoreStartTime` is floored to just before the
+  current second (`_floorToPreviousSecond`) rather than used raw — otherwise
+  a live event created in the same second could sort older than the anchor
+  despite happening after it.
+- **D6 — Deferred fiat-sent classification, reconciled once after flush**:
+  `RestoreService.restore()` no longer checks `storage.getAllMessagesForOrderId()`
+  inline while building disputed/cooperativelyCanceled snapshots — the
+  confirming `fiatSent`/`fiatSentOk` message may still be sitting unflushed
+  in `MostroService._restoreBuffer` at that point. Affected orders are
+  tracked and rechecked once, in a `finally` block, after awaiting the new
+  public `MostroService.flushRestoreBuffer()` (single-flight guarded against
+  the existing reactive listener). The tracked snapshot is only replayed if
+  no stored message for that order is newer, so a buffered live update
+  flushed on the same pass is never overwritten by the stale snapshot.
 
 **Target `_onData` control flow** (landmark-relative — decrypt, session-match,
 DM/restore-payload skips, and the timestamp fallback already existed; only
