@@ -14,17 +14,26 @@ class MostroStorage extends BaseStorage<MostroMessage> {
   Future<void> addMessage(String key, MostroMessage message) async {
     final id = key;
     try {
-      if (await hasItem(id)) return;
-      // Add metadata for easier querying
-      final Map<String, dynamic> dbMap = message.toJson();
-      message.timestamp ??= DateTime.now().millisecondsSinceEpoch;
-      dbMap['timestamp'] = message.timestamp;
-      dbMap['receivedAt'] = message.receivedAt;
+      // The existence check and the write happen inside the same
+      // transaction so a concurrent addMessage for the same key (e.g. the
+      // same event redelivered by a second relay) can't slip past the
+      // check before the first call finishes writing.
+      final wrote = await db.transaction((txn) async {
+        if (await store.record(id).exists(txn)) return false;
+        // Add metadata for easier querying
+        final Map<String, dynamic> dbMap = message.toJson();
+        message.timestamp ??= DateTime.now().millisecondsSinceEpoch;
+        dbMap['timestamp'] = message.timestamp;
+        dbMap['receivedAt'] = message.receivedAt;
 
-      await store.record(id).put(db, dbMap);
-      logger.i(
-        'Saved message of type ${message.action} with order id ${message.id}',
-      );
+        await store.record(id).put(txn, dbMap);
+        return true;
+      });
+      if (wrote) {
+        logger.i(
+          'Saved message of type ${message.action} with order id ${message.id}',
+        );
+      }
     } catch (e, stack) {
       logger.e(
         'addMessage failed for $id',
