@@ -15,6 +15,7 @@ class MostroMessage<T extends Payload> {
   int? tradeIndex;
   T? _payload;
   int? timestamp;
+  int? receivedAt;
 
   MostroMessage({
     required this.action,
@@ -23,6 +24,7 @@ class MostroMessage<T extends Payload> {
     T? payload,
     this.tradeIndex,
     this.timestamp,
+    this.receivedAt,
   }) : _payload = payload;
 
   Map<String, dynamic> toJson({int? version}) {
@@ -46,6 +48,11 @@ class MostroMessage<T extends Payload> {
 
   factory MostroMessage.fromJson(Map<String, dynamic> json) {
     final timestamp = json['timestamp'];
+    // receivedAt is only present when reconstructing from a stored Sembast
+    // record (injected by MostroStorage.addMessage); live wire payloads and
+    // restore's synthetic messages never carry this key, so it parses as
+    // null for those.
+    final receivedAt = json['receivedAt'];
     // IMPORTANT : Use 'order', 'restore' or 'cant-do' key as per protocol
     json = json['order'] ?? json['restore'] ?? json['cant-do'] ?? json;
     final num requestId = json['request_id'] ?? 0;
@@ -59,6 +66,7 @@ class MostroMessage<T extends Payload> {
           ? Payload.fromJson(json['payload']) as T?
           : null,
       timestamp: timestamp,
+      receivedAt: receivedAt,
     );
   }
 

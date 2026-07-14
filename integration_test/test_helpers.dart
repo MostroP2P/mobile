@@ -322,7 +322,10 @@ class FakeMostroService implements MostroService {
   }
 
   @override
-  Future<void> onDataForTesting(NostrEvent event) async {}
+  Future<void> onDataForTesting(
+    NostrEvent event, {
+    int? bufferedReceivedAt,
+  }) async {}
 
   @override
   Future<void> flushRestoreBuffer() async {}
@@ -331,7 +334,8 @@ class FakeMostroService implements MostroService {
   Future<void> flushRestoreBufferForTesting() async {}
 
   @override
-  Map<String, NostrEvent> get restoreBufferForTesting => {};
+  Map<String, ({NostrEvent event, int receivedAtMs})>
+      get restoreBufferForTesting => {};
 }
 
 Future<void> pumpTestApp(WidgetTester tester) async {

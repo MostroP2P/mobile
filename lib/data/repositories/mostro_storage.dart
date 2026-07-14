@@ -19,6 +19,7 @@ class MostroStorage extends BaseStorage<MostroMessage> {
       final Map<String, dynamic> dbMap = message.toJson();
       message.timestamp ??= DateTime.now().millisecondsSinceEpoch;
       dbMap['timestamp'] = message.timestamp;
+      dbMap['receivedAt'] = message.receivedAt;
 
       await store.record(id).put(db, dbMap);
       logger.i(

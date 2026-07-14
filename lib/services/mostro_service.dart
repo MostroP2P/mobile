@@ -28,7 +28,12 @@ class MostroService {
   // Live events received while a restore is in progress are buffered here
   // (keyed by event id, so re-delivery of the same id keeps a single entry
   // in its original arrival position) and replayed once restore ends.
-  final Map<String, NostrEvent> _restoreBuffer = {};
+  // `receivedAtMs` is the TRUE original buffering time: it is preserved
+  // (never re-stamped) if the same event id is buffered again, so the
+  // eventual replay stamps the message with when it was first seen, not
+  // when the buffer happens to flush.
+  final Map<String, ({NostrEvent event, int receivedAtMs})> _restoreBuffer =
+      {};
 
   // Shared by the reactive listener and flushRestoreBuffer() so both await
   // the same drain instead of racing.
@@ -128,7 +133,7 @@ class MostroService {
     return false;
   }
 
-  Future<void> _onData(NostrEvent event) async {
+  Future<void> _onData(NostrEvent event, {int? bufferedReceivedAt}) async {
     final eventStore = ref.read(eventStorageProvider);
 
     if (await eventStore.hasItem(event.id!)) return;
@@ -145,7 +150,21 @@ class MostroService {
     // matching session". Buffered events are replayed through _onData once
     // restore completes (success or error path alike); see _flushRestoreBuffer.
     if (ref.read(isRestoringProvider)) {
-      _restoreBuffer[event.id!] = event;
+      // Preserve-if-present: only a genuinely first-time buffering of this
+      // event id stamps `now()`. Any redelivery (the dedup reservation is
+      // released right below, specifically to allow redelivery) must keep
+      // the original buffering instant.
+      final existing = _restoreBuffer[event.id!];
+      _restoreBuffer[event.id!] = (
+        event: event,
+        receivedAtMs:
+            existing?.receivedAtMs ?? DateTime.now().millisecondsSinceEpoch,
+      );
+      // Undo the dedup reservation: only the in-memory buffer holds this
+      // event now, and it does not survive process death. Releasing the
+      // reservation lets a later redelivery re-enter and flush normally
+      // instead of being dropped forever as "already seen".
+      await eventStore.deleteItem(event.id!);
       logger.i('Restore: buffered live event ${event.id}');
       return;
     }
@@ -219,6 +238,14 @@ class MostroService {
           innerCreatedAt?.millisecondsSinceEpoch ??
           event.createdAt?.millisecondsSinceEpoch;
 
+      // True client arrival time: for a live event this is "now"; for a
+      // replayed restore-buffered event it is the original buffering
+      // instant, threaded back in by _flushRestoreBuffer. Always an
+      // explicit overwrite (never `??=`) so a peer-supplied value parsed by
+      // MostroMessage.fromJson can never survive — see INVARIANT R3-005.
+      msg.receivedAt =
+          bufferedReceivedAt ?? DateTime.now().millisecondsSinceEpoch;
+
       final messageStorage = ref.read(mostroStorageProvider);
 
       // Use the inner rumor id if available (v1), otherwise fall back to the
@@ -244,16 +271,22 @@ class MostroService {
   /// when the event was first buffered.
   Future<void> _flushRestoreBuffer() async {
     if (_restoreBuffer.isEmpty) return;
-    final events = List<NostrEvent>.from(_restoreBuffer.values);
+    final entries =
+        List<({NostrEvent event, int receivedAtMs})>.from(
+      _restoreBuffer.values,
+    );
     _restoreBuffer.clear();
-    logger.i('Restore: flushing ${events.length} buffered live events');
+    logger.i('Restore: flushing ${entries.length} buffered live events');
     final eventStore = ref.read(eventStorageProvider);
-    for (final event in events) {
+    for (final entry in entries) {
       try {
-        await eventStore.deleteItem(event.id!);
-        await _onData(event);
+        await eventStore.deleteItem(entry.event.id!);
+        await _onData(entry.event, bufferedReceivedAt: entry.receivedAtMs);
       } catch (e) {
-        logger.e('Restore: failed to replay buffered event ${event.id}', error: e);
+        logger.e(
+          'Restore: failed to replay buffered event ${entry.event.id}',
+          error: e,
+        );
       }
     }
   }
@@ -265,13 +298,15 @@ class MostroService {
       });
 
   @visibleForTesting
-  Future<void> onDataForTesting(NostrEvent event) => _onData(event);
+  Future<void> onDataForTesting(NostrEvent event, {int? bufferedReceivedAt}) =>
+      _onData(event, bufferedReceivedAt: bufferedReceivedAt);
 
   @visibleForTesting
   Future<void> flushRestoreBufferForTesting() => _flushRestoreBuffer();
 
   @visibleForTesting
-  Map<String, NostrEvent> get restoreBufferForTesting => _restoreBuffer;
+  Map<String, ({NostrEvent event, int receivedAtMs})>
+      get restoreBufferForTesting => _restoreBuffer;
 
   Future<void> _maybeLinkChildOrder(
     MostroMessage message,
