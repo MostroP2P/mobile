@@ -110,19 +110,19 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
               if (mounted) {
                 state = state.updateWith(msg);
               }
-              if (msg.timestamp != null &&
-                  msg.timestamp! >
+              if (msg.receivedAt != null &&
+                  msg.receivedAt! >
                       DateTime.now()
                           .subtract(const Duration(seconds: 60))
                           .millisecondsSinceEpoch) {
                 logger.i(
-                    'Message timestamp check passed, calling handleEvent for ${msg.action}');
+                    'Message freshness check passed, calling handleEvent for ${msg.action}');
                 unawaited(handleEvent(msg,
                     previousStatus: previousStatus,
                     wasUserInitiatedCancel: wasUserInitiatedCancel));
               } else {
                 logger.w(
-                    'Message timestamp check failed for ${msg.action}. Timestamp: ${msg.timestamp}, Current: ${DateTime.now().millisecondsSinceEpoch}, Threshold: ${DateTime.now().subtract(const Duration(seconds: 60)).millisecondsSinceEpoch}');
+                    'Message freshness check failed for ${msg.action}. ReceivedAt: ${msg.receivedAt}, Current: ${DateTime.now().millisecondsSinceEpoch}, Threshold: ${DateTime.now().subtract(const Duration(seconds: 60)).millisecondsSinceEpoch}');
 
                 // Handle dispute actions even if timestamp is old, since they're critical for UI state
                 // but bypass navigation/notification side effects
@@ -180,8 +180,8 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
     final navProvider = ref.read(navigationProvider.notifier);
 
     // Check if this is a recent event for notification/navigation purposes
-    final isRecent = event.timestamp != null &&
-        event.timestamp! >
+    final isRecent = event.receivedAt != null &&
+        event.receivedAt! >
             DateTime.now()
                 .subtract(const Duration(seconds: 60))
                 .millisecondsSinceEpoch;
@@ -203,7 +203,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
       );
     } else if (notificationData != null && bypassTimestampGate) {
       logger.i(
-          'Skipping notification for old event: ${event.action} (timestamp: ${event.timestamp})');
+          'Skipping notification for old event: ${event.action} (receivedAt: ${event.receivedAt})');
     }
 
     /// Handle incoming events and update state accordingly
