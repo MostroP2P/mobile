@@ -45,12 +45,39 @@ class SessionStorage extends BaseStorage<Session> {
     return Session.fromJson(clone);
   }
 
+  /// Record-key prefix for pending range-order child sessions, which have no
+  /// orderId yet and are keyed by their trade public key instead.
+  static const String pendingChildKeyPrefix = 'pending-child:';
+
   Future<void> putSession(Session session) async {
     if (session.orderId == null) {
       throw ArgumentError('Cannot store a session with an empty orderId');
     }
     await putItem(session.orderId!, session);
   }
+
+  /// Persists a pending range-order child session (no orderId yet), keyed by
+  /// its trade public key. Persisting it matters for two reasons: the session
+  /// must survive an app kill between release and the child new-order message,
+  /// and the background isolate loads sessions from this store to decrypt
+  /// events addressed to the child trade key.
+  Future<void> putPendingChildSession(Session session) async {
+    if (session.orderId != null) {
+      throw ArgumentError(
+        'Pending child session must not have an orderId; use putSession',
+      );
+    }
+    if (session.parentOrderId == null) {
+      throw ArgumentError('Pending child session requires a parentOrderId');
+    }
+    await putItem('$pendingChildKeyPrefix${session.tradeKey.public}', session);
+  }
+
+  /// Removes the pending child session record for [tradeKeyPublic], if any.
+  /// Called once the child order id is known and the session is re-stored
+  /// under its orderId, or when an expired pending child is cleaned up.
+  Future<void> deletePendingChildSession(String tradeKeyPublic) =>
+      deleteItem('$pendingChildKeyPrefix$tradeKeyPublic');
 
   /// Shortcut to get a single session by its ID.
   Future<Session?> getSession(String sessionId) => getItem(sessionId);
