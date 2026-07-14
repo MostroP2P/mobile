@@ -348,6 +348,12 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     _pendingChildSessions[tradeKey.public] = session;
     _emitState();
 
+    // Register the child trade key with the push server right away: the child
+    // order can be taken as soon as mostrod publishes it, and without this
+    // mapping the push server cannot wake the device (FCM) for events
+    // addressed to the child trade key while the app is killed or dozing.
+    _registerPushToken(tradeKey.public);
+
     logger.i(
       'Prepared child session for parent order $parentOrderId using key index $keyIndex',
     );
@@ -373,6 +379,11 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     _sessions[childOrderId] = session;
     await _storage.putSession(session);
     _emitState();
+
+    // Retry the push registration on link in case the creation-time attempt
+    // failed (e.g. offline right after release). registerToken is idempotent
+    // server-side, so a duplicate call is harmless.
+    _registerPushToken(session.tradeKey.public);
 
     logger.i(
       'Linked child order $childOrderId to prepared session (parent: ${session.parentOrderId})',

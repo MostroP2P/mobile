@@ -16,6 +16,7 @@ import 'package:mostro_mobile/features/subscriptions/subscription_type.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription.dart';
 import 'package:mostro_mobile/services/mostro_service.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
+import 'package:mostro_mobile/services/push_notification_service.dart';
 import 'package:mostro_mobile/shared/notifiers/session_notifier.dart';
 import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/features/order/notifiers/order_notifier.dart';
@@ -50,6 +51,7 @@ import 'mocks.mocks.dart';
   EncryptedImageUploadService,
   BlossomDownloadService,
   ChatRoomNotifier,
+  PushNotificationService,
 ], customMocks: [
   // Spy mock used to verify SubscriptionManager calls (the hand-written
   // MockSubscriptionManager below keeps its name; this one has a distinct name).
