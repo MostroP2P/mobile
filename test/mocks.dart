@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/data/models/enums/role.dart';
+import 'package:mostro_mobile/data/repositories/event_storage.dart';
 import 'package:mostro_mobile/data/repositories/open_orders_repository.dart';
 import 'package:mostro_mobile/data/repositories/session_storage.dart';
 import 'package:mostro_mobile/data/repositories/mostro_storage.dart';
@@ -38,6 +39,7 @@ import 'mocks.mocks.dart';
   SessionStorage,
   KeyManager,
   MostroStorage,
+  EventStorage,
   Settings,
   Ref,
   ProviderSubscription,
