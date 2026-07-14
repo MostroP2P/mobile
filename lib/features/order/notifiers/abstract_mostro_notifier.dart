@@ -116,13 +116,13 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
                           .subtract(const Duration(seconds: 60))
                           .millisecondsSinceEpoch) {
                 logger.i(
-                    'Message freshness check passed, calling handleEvent for ${msg.action}');
+                    'Notification eligible for ${msg.action}: live event, calling handleEvent');
                 unawaited(handleEvent(msg,
                     previousStatus: previousStatus,
                     wasUserInitiatedCancel: wasUserInitiatedCancel));
               } else {
-                logger.w(
-                    'Message freshness check failed for ${msg.action}. ReceivedAt: ${msg.receivedAt}, Current: ${DateTime.now().millisecondsSinceEpoch}, Threshold: ${DateTime.now().subtract(const Duration(seconds: 60)).millisecondsSinceEpoch}');
+                logger.i(
+                    'Notification skipped for ${msg.action}: not a live event (receivedAt: ${msg.receivedAt})');
 
                 // Handle dispute actions even if timestamp is old, since they're critical for UI state
                 // but bypass navigation/notification side effects
