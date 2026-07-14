@@ -384,6 +384,13 @@ Future<MostroMessage?> _handleTradeKeyEvent(NostrEvent event, Session session) a
   final mostroMessage = MostroMessage.fromJson(result[0]);
   mostroMessage.timestamp = event.createdAt?.millisecondsSinceEpoch;
 
+  // If this is the new-order confirmation for a pending range-order child
+  // session, link it to the child order id right here. The foreground link
+  // (MostroService._maybeLinkChildOrder) never runs while the app is
+  // backgrounded or killed, and later events for the child order need the
+  // session stored under its orderId (e.g. role-gated notifications).
+  await _maybeLinkChildOrder(mostroMessage, session);
+
   // If this event transitions the order to Active, learn the counterpart's
   // tradeKey from the Order payload and persist it on the session so the
   // background service can immediately subscribe to P2P chat events.
@@ -393,6 +400,49 @@ Future<MostroMessage?> _handleTradeKeyEvent(NostrEvent event, Session session) a
   await _maybeUpdateSessionWithPeer(mostroMessage, session);
 
   return mostroMessage;
+}
+
+/// Links a pending range-order child session to its concrete child order id
+/// when the new-order confirmation arrives while the app is backgrounded.
+/// Mirrors MostroService._maybeLinkChildOrder for the background isolate:
+/// stores the session under its orderId and drops the pending record.
+Future<void> _maybeLinkChildOrder(
+  MostroMessage message,
+  Session session,
+) async {
+  if (message.action != mostro_action.Action.newOrder || message.id == null) {
+    return;
+  }
+  if (session.orderId != null || session.parentOrderId == null) {
+    return;
+  }
+
+  try {
+    session.orderId = message.id;
+
+    final db = await openMostroDatabase('mostro.db');
+    const secureStorage = FlutterSecureStorage();
+    final sharedPrefs = SharedPreferencesAsync();
+    final keyStorage = KeyStorage(
+      secureStorage: secureStorage,
+      sharedPrefs: sharedPrefs,
+    );
+    final keyDerivator = KeyDerivator("m/44'/1237'/38383'/0");
+    final keyManager = KeyManager(keyStorage, keyDerivator);
+    await keyManager.init();
+    final sessionStorage = SessionStorage(keyManager, db: db);
+    await sessionStorage.putSession(session);
+    await sessionStorage.deletePendingChildSession(session.tradeKey.public);
+
+    logger.i(
+      'Background linked child order ${message.id} to parent ${session.parentOrderId}',
+    );
+  } catch (e, stackTrace) {
+    logger.e(
+      'Failed to link child order in background: $e',
+      stackTrace: stackTrace,
+    );
+  }
 }
 
 /// Persists the peer on the given session when [message] is an action that
