@@ -847,7 +847,11 @@ class RestoreService {
             // key when the payout failed (mostro#754). Detect that substate and
             // replay `payment-failed` then `add-invoice` so the order lands on
             // `payment-failed` + `add-invoice` (the new-invoice prompt) instead.
+            // Seed replay timestamps from the order creation time so the
+            // reconstructed happy-path message keeps its historical ordering.
             List<Action> actionsToApply = [action];
+            int baseTimestamp =
+                orderDetail.createdAt ?? DateTime.now().millisecondsSinceEpoch;
             final orderSession = ref
                 .read(sessionNotifierProvider.notifier)
                 .getSessionByOrderId(orderDetail.id);
@@ -858,6 +862,18 @@ class RestoreService {
               );
               if (restoreHasFailedPayoutSignal(messages)) {
                 actionsToApply = [Action.paymentFailed, Action.addInvoice];
+                // Stamp the replayed pair after every message already in
+                // storage so a later OrderNotifier.sync() (which replays storage
+                // sorted by timestamp) applies them last and converges to
+                // payment-failed. Seeding from createdAt instead would let an
+                // older re-delivered `released`/`settled` replay after the pair
+                // and drag the buyer back to "paying sats", making the fix
+                // non-persistent across provider recreation or app restart.
+                baseTimestamp = messages.fold<int>(
+                      baseTimestamp,
+                      (max, m) => (m.timestamp ?? 0) > max ? m.timestamp! : max,
+                    ) +
+                    1;
                 logger.i(
                   'Restore: detected failed payout for order ${orderDetail.id}, '
                   'restoring payment-failed substate instead of "paying sats"',
@@ -869,8 +885,6 @@ class RestoreService {
             // When more than one action is replayed, stagger their timestamps so
             // a later sync() replays them in the same order and converges to the
             // same final state.
-            final baseTimestamp =
-                orderDetail.createdAt ?? DateTime.now().millisecondsSinceEpoch;
             for (var i = 0; i < actionsToApply.length; i++) {
               final replayAction = actionsToApply[i];
               final mostroMessage = MostroMessage<Order>(
@@ -1208,19 +1222,27 @@ Future<Map<String, dynamic>> decodeRestoreMessage(
 /// that Mostro reports as `settled-hold-invoice`. See issue #615.
 ///
 /// `settled-hold-invoice` is overloaded for the buyer: it covers both "hold
-/// settled, sats in flight" and "payout failed". The protocol distinguishes
-/// them only via the action, so the snapshot status alone cannot recover the
-/// failed substate. On restore the daemon re-sends `add-invoice` (and may also
-/// re-send `payment-failed`) to the buyer's trade key when the payout failed
-/// (mostro#754).
+/// settled, sats in flight" and "payout failed, awaiting a new invoice". The
+/// protocol distinguishes them only via the action, and `payment-failed` is a
+/// client-synthesized status that never travels on the wire, so the snapshot
+/// status alone cannot recover the failed substate.
 ///
-/// `payment-failed` only ever occurs after a failed payout, so it is a
-/// definitive signal on its own. `add-invoice` also appears early in the happy
-/// flow (waiting-buyer-invoice), so it is only treated as a failed-payout signal
-/// when it arrives after the hold was released/settled. Restore clears storage
-/// before re-subscribing, so in practice only freshly re-sent messages are
-/// present, but the ordering check keeps this correct even if the daemon
-/// re-sends the full message history.
+/// Invariant this relies on (mostro#754): on `restore-session` the daemon
+/// re-enqueues ONLY `add-invoice`, and only for orders flagged
+/// `failed_payment = true` in `settled-hold-invoice`. It does NOT re-send
+/// `payment-failed`, `released` or `settled`. Restore also clears local storage
+/// before re-subscribing. A bare `add-invoice` sitting in freshly cleared
+/// storage is therefore the daemon's targeted failed-payout prompt, which is
+/// why a lone `add-invoice` counts as a signal here. Requiring a preceding
+/// `payment-failed`/release for the single-message case would miss this re-send
+/// and reintroduce the money-at-risk regression of #615.
+///
+/// The ordering check keeps this correct if a relay additionally re-delivers
+/// the full historical stream: `add-invoice` also appears early in the happy
+/// flow (waiting-buyer-invoice), so it is trusted as a failed-payout signal
+/// only when no release/settle precedes it (the daemon's fresh re-send) or when
+/// it arrives after one. `payment-failed`, if ever present, is definitive on
+/// its own.
 bool restoreHasFailedPayoutSignal(List<MostroMessage> messages) {
   final sorted = [...messages]
     ..sort((a, b) => (a.timestamp ?? 0).compareTo(b.timestamp ?? 0));

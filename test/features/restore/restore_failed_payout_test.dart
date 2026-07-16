@@ -53,8 +53,12 @@ void main() {
       );
     });
 
-    test('returns true for a re-sent add-invoice (storage cleared on restore)',
-        () {
+    // Per mostro#754 the daemon re-sends ONLY a bare `add-invoice` (no
+    // `payment-failed`, no `released`) for a failed payout, and restore clears
+    // storage first, so a lone post-clear `add-invoice` is the failed-payout
+    // prompt and must be honored. Weakening this to require `payment-failed` or
+    // a preceding release would reintroduce the money-at-risk bug in #615.
+    test('lone re-sent add-invoice is a failed-payout signal (mostro#754)', () {
       expect(
         restoreHasFailedPayoutSignal([_msg(Action.addInvoice, timestamp: 1)]),
         isTrue,
