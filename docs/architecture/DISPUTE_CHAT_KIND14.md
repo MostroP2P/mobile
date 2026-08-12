@@ -64,7 +64,7 @@ reject a mismatch between inner and outer timestamps as a replay defense.
 NostrFilter(
   kinds: [14],
   authors: [chatKeys.sign.public],
-  since: DateTime.now().subtract(NostrEventExtensions.chatDefaultLookback), // 7 days
+  since: cursorSince ?? defaultLookback, // persisted per-conversation cursor
   limit: NostrEventExtensions.chatDefaultLimit, // 100
 )
 ```
@@ -72,10 +72,19 @@ NostrFilter(
 The spec requires filtering by `authors`, **never by `#p`**: a `#p` filter would let any
 third party flood the subscription with junk events tagged to the conversation pubkey.
 
-The `since` lookback and `limit` match the spec defaults (7 days / 100 events). A durable
-per-conversation `since` cursor (advanced only after accepting an event, clamped to the
-local clock) is a possible future refinement; on-disk history plus outer-id dedup already
-covers reconnection in practice.
+The backlog is bounded by a **durable per-conversation `since` cursor**
+(`DisputeChatCursorStore`, persisted in SharedPreferences), as the spec mandates:
+
+- The cursor advances **only after `chatUnwrap` accepts an event**, clamped to
+  `min(accepted_timestamp, local_now)` so a future-dated event within the skew tolerance
+  cannot suppress later messages.
+- Subscriptions use `cursor − 10 min` (overlap window) so an event late-delivered by a
+  slow relay is not filtered out forever; outer-id dedup absorbs the re-delivered tail.
+- Conversations with no accepted events yet fall back to the spec-default 7-day lookback
+  (`chatDefaultLookback`).
+- The grouped `SubscriptionManager` filter covers several conversations with one REQ, so
+  it uses the **earliest** cursor across sessions — wider than necessary for some
+  conversations, which dedup absorbs, but never narrower.
 
 Kind 14 is also used by transport-v2 Mostro protocol messages (user↔mostro). The two
 never collide: protocol events are authored by the Mostro pubkey and addressed to the
@@ -111,6 +120,7 @@ event id (`eventStore.hasItem`) and UI state by inner event id.
 | Envelope (`chatWrap`/`chatUnwrap`) | `lib/data/models/nostr_event.dart` |
 | Dispute chat notifier (subscribe/send/receive/history) | `lib/features/disputes/notifiers/dispute_chat_notifier.dart` |
 | Centralized `disputeChat` filter (also reused by background) | `lib/features/subscriptions/subscription_manager.dart` |
+| Durable `since` cursor (`DisputeChatCursorStore`) | `lib/services/dispute_chat_cursor_store.dart` |
 | Background push routing (`author == pub(K_sign)`) | `lib/features/notifications/services/background_notification_service.dart` |
 | Derivation + envelope tests (incl. official test vector) | `test/shared/utils/chat_keys_test.dart`, `test/data/models/nostr_event_chat_test.dart` |
 

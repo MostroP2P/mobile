@@ -10,6 +10,7 @@ import 'package:mostro_mobile/features/chat/providers/active_chat_screens_provid
 import 'package:mostro_mobile/features/notifications/providers/notifications_provider.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/chat/utils/message_type_helpers.dart';
+import 'package:mostro_mobile/services/dispute_chat_cursor_store.dart';
 import 'package:mostro_mobile/services/encrypted_image_upload_service.dart';
 import 'package:mostro_mobile/services/encrypted_file_upload_service.dart';
 import 'package:mostro_mobile/shared/mixins/media_cache_mixin.dart';
@@ -148,13 +149,21 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
     // filtering by authors, not #p, to prevent third-party flooding.
     final chatKeys = _getChatKeys(session);
     final nostrService = ref.read(nostrServiceProvider);
+
+    // Persisted per-conversation cursor (spec MUST); default lookback for
+    // conversations with no accepted events yet
+    final cursorSince =
+        await ref.read(disputeChatCursorStoreProvider).sinceFor(disputeId);
+    if (!mounted) return;
+    final since = cursorSince ??
+        DateTime.now().subtract(NostrEventExtensions.chatDefaultLookback);
+
     final request = NostrRequest(
       filters: [
         NostrFilter(
           kinds: [14],
           authors: [chatKeys.sign.public],
-          since: DateTime.now()
-              .subtract(NostrEventExtensions.chatDefaultLookback),
+          since: since,
           limit: NostrEventExtensions.chatDefaultLimit,
         ),
       ],
@@ -234,6 +243,14 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
         session.disputeChatAllowedSigners,
       );
       if (!mounted) return;
+
+      // Advance the persisted since cursor only after the event is accepted
+      // (clamped to the local clock inside the store)
+      unawaited(
+        ref
+            .read(disputeChatCursorStoreProvider)
+            .advance(disputeId, event.createdAt!),
+      );
 
       final messageText = unwrappedEvent.content ?? '';
       if (messageText.isEmpty) {

@@ -12,6 +12,7 @@ import 'package:mostro_mobile/features/mostro/transport.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_type.dart';
+import 'package:mostro_mobile/services/dispute_chat_cursor_store.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
@@ -211,16 +212,26 @@ class SubscriptionManager {
       case SubscriptionType.disputeChat:
         // Kind 14 chat envelope: filter by the K_sign authors derived from
         // each admin shared key (never by #p — third-party flooding)
-        final signKeys = sessions
-            .where((s) => s.adminSharedKey != null)
+        final disputeSessions =
+            sessions.where((s) => s.adminSharedKey != null).toList();
+        if (disputeSessions.isEmpty) return null;
+        final signKeys = disputeSessions
             .map((s) => ChatKeys.fromSharedKey(s.adminSharedKey!).sign.public)
             .toList();
-        if (signKeys.isEmpty) return null;
+        // Shared filter across conversations: earliest persisted cursor,
+        // falling back to the default lookback (wider window; dedup absorbs)
+        final cursorStore = ref.read(disputeChatCursorStoreProvider);
+        final defaultSince = DateTime.now()
+            .subtract(NostrEventExtensions.chatDefaultLookback);
+        final since = disputeSessions
+            .map((s) => s.disputeId == null
+                ? defaultSince
+                : (cursorStore.cachedSinceFor(s.disputeId!) ?? defaultSince))
+            .reduce((a, b) => a.isBefore(b) ? a : b);
         return NostrFilter(
           kinds: [14],
           authors: signKeys,
-          since: DateTime.now()
-              .subtract(NostrEventExtensions.chatDefaultLookback),
+          since: since,
           limit: NostrEventExtensions.chatDefaultLimit,
         );
       case SubscriptionType.relayList:
