@@ -29,7 +29,9 @@ import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/generated/l10n_de.dart';
 import 'package:mostro_mobile/generated/l10n_en.dart';
 import 'package:mostro_mobile/generated/l10n_es.dart';
+import 'package:mostro_mobile/generated/l10n_fr.dart';
 import 'package:mostro_mobile/generated/l10n_it.dart';
+import 'package:mostro_mobile/generated/l10n_pt.dart';
 import 'package:mostro_mobile/background/background.dart' as bg;
 import 'package:mostro_mobile/shared/providers/mostro_database_provider.dart';
 
@@ -498,9 +500,11 @@ Future<NotificationText> _getLocalizedNotificationText(mostro_action.Action acti
       'es' => SEs(),
       'it' => SIt(),
       'de' => SDe(),
+      'fr' => SFr(),
+      'pt' => SPt(),
       _ => SEn(),
     };
-    
+
     final title = NotificationMessageMapper.getLocalizedTitleWithInstance(localizations, action);
     final body = NotificationMessageMapper.getLocalizedMessageWithInstance(localizations, action, values: values);
     
@@ -527,9 +531,11 @@ String? _getExpandedText(Map<String, dynamic> values) {
     'es' => SEs(),
     'it' => SIt(),
     'de' => SDe(),
+    'fr' => SFr(),
+    'pt' => SPt(),
     _ => SEn(),
   };
-  
+
   // Contact buyer/seller information
   if (values.containsKey('buyer_npub') && values['buyer_npub'] != null) {
     details.add('${localizations.notificationBuyer}: ${values['buyer_npub']}');

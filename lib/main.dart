@@ -136,6 +136,12 @@ void _initializeTimeAgoLocalization() {
   // Set German locale for timeago
   timeago.setLocaleMessages('de', timeago.DeMessages());
 
+  // Set French locale for timeago
+  timeago.setLocaleMessages('fr', timeago.FrMessages());
+
+  // Set Portuguese locale for timeago
+  timeago.setLocaleMessages('pt', timeago.PtBrMessages());
+
   // English is already the default, no need to set it
 }
 
