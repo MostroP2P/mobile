@@ -72,7 +72,11 @@ jobs:
             artifact-path: build/macos/Build/Products/Release
             artifact-name: macos.zip
             package-command: zip -r
-          - os: windows-latest
+          # Pinned to windows-2022: windows-latest (windows-2025) ships only
+          # Visual Studio 2026, which Flutter 3.32.2 cannot use (CMake fails
+          # with "Visual Studio 16 2019 could not find any instance").
+          # Revisit when upgrading Flutter to a version that supports VS 2026.
+          - os: windows-2022
             platform: windows
             build-command: flutter build windows --release
             artifact-path: build/windows/x64/runner/Release
@@ -205,6 +209,9 @@ jobs:
   publish:
     name: Publish desktop assets to release
     needs: [build-desktop, setup-version]
+    # Run even if some platform builds failed, so successful builds are still
+    # attached to the release (fail-fast is disabled in the build matrix).
+    if: ${{ !cancelled() && needs.setup-version.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Download all desktop artifacts
