@@ -71,7 +71,7 @@ class SubscriptionManager {
           final sessions = ref.read(sessionNotifierProvider);
           if (sessions.isEmpty) return;
           logger.i('Orders transport changed to $newTransport, re-subscribing');
-          _updateSubscription(SubscriptionType.orders, sessions);
+          unawaited(_updateSubscription(SubscriptionType.orders, sessions));
         },
         onError: (error, stackTrace) {
           logger.e('Error in mostro instance listener',
@@ -140,7 +140,7 @@ class SubscriptionManager {
     }
 
     for (final type in SubscriptionType.values) {
-      _updateSubscription(type, sessions);
+      unawaited(_updateSubscription(type, sessions));
     }
   }
 
@@ -150,7 +150,8 @@ class SubscriptionManager {
     }
   }
 
-  void _updateSubscription(SubscriptionType type, List<Session> sessions) {
+  Future<void> _updateSubscription(
+      SubscriptionType type, List<Session> sessions) async {
     if (sessions.isEmpty) {
       logger.i('No sessions for $type subscription');
       unsubscribeByType(type);
@@ -158,6 +159,17 @@ class SubscriptionManager {
     }
 
     try {
+      // Pre-warm persisted cursors so the dispute chat filter — built
+      // synchronously and later persisted for the background service —
+      // sees durable state even on a cold start
+      if (type == SubscriptionType.disputeChat) {
+        final disputeIds = sessions
+            .where((s) => s.adminSharedKey != null)
+            .map((s) => s.disputeId)
+            .whereType<String>();
+        await ref.read(disputeChatCursorStoreProvider).warmUp(disputeIds);
+      }
+
       final filter = _createFilterForType(type, sessions);
       if (filter == null) {
         return;

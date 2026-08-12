@@ -64,7 +64,7 @@ reject a mismatch between inner and outer timestamps as a replay defense.
 NostrFilter(
   kinds: [14],
   authors: [chatKeys.sign.public],
-  since: cursorSince ?? defaultLookback, // persisted per-conversation cursor
+  since: cursorSince ?? chatDefaultLookback, // persisted per-conversation cursor
   limit: NostrEventExtensions.chatDefaultLimit, // 100
 )
 ```
@@ -84,7 +84,10 @@ The backlog is bounded by a **durable per-conversation `since` cursor**
   (`chatDefaultLookback`).
 - The grouped `SubscriptionManager` filter covers several conversations with one REQ, so
   it uses the **earliest** cursor across sessions — wider than necessary for some
-  conversations, which dedup absorbs, but never narrower.
+  conversations, which dedup absorbs, but never narrower. Persisted cursors are
+  **warmed up from storage before the filter is built**, so a cold start (and the
+  background filters persisted from it) uses the durable cursor, not the default
+  lookback.
 
 Kind 14 is also used by transport-v2 Mostro protocol messages (user↔mostro). The two
 never collide: protocol events are authored by the Mostro pubkey and addressed to the

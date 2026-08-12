@@ -20,6 +20,10 @@ class DisputeChatCursorStore {
   final SharedPreferencesAsync _prefs;
   final Map<String, DateTime> _cache = {};
 
+  /// Per-dispute chain serializing advance() so concurrent calls cannot
+  /// interleave their read-compare-write and regress the cursor.
+  final Map<String, Future<void>> _advanceQueue = {};
+
   DisputeChatCursorStore(this._prefs);
 
   /// Clamp an accepted event timestamp to the local clock.
@@ -46,14 +50,35 @@ class DisputeChatCursorStore {
   }
 
   /// Synchronous variant for call sites that build filters synchronously.
-  /// Returns null when the cursor is not in memory yet — falling back to
-  /// the default lookback is wider, so no events are missed.
+  /// Returns null when the cursor is not in memory yet — call [warmUp]
+  /// first so persisted cursors are visible after a cold start.
   DateTime? cachedSinceFor(String disputeId) =>
       _cache[disputeId]?.subtract(cursorOverlap);
 
+  /// Load the persisted cursors for the given conversations into the
+  /// in-memory cache, so synchronous filter builders see durable state.
+  Future<void> warmUp(Iterable<String> disputeIds) async {
+    for (final disputeId in disputeIds) {
+      await cursorFor(disputeId);
+    }
+  }
+
   /// Advance the cursor after an accepted event. Monotonic (never moves
-  /// backward) and clamped to the local clock.
+  /// backward), clamped to the local clock, and serialized per dispute.
   Future<void> advance(
+    String disputeId,
+    DateTime accepted, {
+    DateTime? now,
+  }) {
+    final previous = _advanceQueue[disputeId] ?? Future.value();
+    final next = previous
+        .catchError((_) {})
+        .then((_) => _advanceSerialized(disputeId, accepted, now: now));
+    _advanceQueue[disputeId] = next;
+    return next;
+  }
+
+  Future<void> _advanceSerialized(
     String disputeId,
     DateTime accepted, {
     DateTime? now,

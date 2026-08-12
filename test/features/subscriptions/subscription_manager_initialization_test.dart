@@ -81,7 +81,7 @@ void main() {
         reason: 'Comment explaining the relay preservation fix must exist');
       
       // Verify proper sequence: filter check happens before unsubscribe within the method
-      final updateMethodIndex = content.indexOf('void _updateSubscription(SubscriptionType type, List<Session> sessions)');
+      final updateMethodIndex = content.indexOf('Future<void> _updateSubscription(');
       final filterCheckIndex = content.indexOf('if (filter == null)', updateMethodIndex);
       final unsubscribeAfterCheckIndex = content.indexOf('unsubscribeByType(type);', filterCheckIndex);
       

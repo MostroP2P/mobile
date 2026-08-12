@@ -94,6 +94,45 @@ void main() {
       );
     });
 
+    test('concurrent out-of-order advances keep the newer timestamp',
+        () async {
+      final newer = now.subtract(const Duration(minutes: 1));
+      final older = now.subtract(const Duration(hours: 2));
+
+      // Both calls start before either completes; serialization must
+      // prevent the older timestamp from overwriting the newer one
+      await Future.wait([
+        store.advance(disputeId, newer, now: now),
+        store.advance(disputeId, older, now: now),
+      ]);
+
+      expect(await store.cursorFor(disputeId), equals(newer));
+      expect(store.cachedSinceFor(disputeId),
+          equals(newer.subtract(DisputeChatCursorStore.cursorOverlap)));
+    });
+
+    test('warmUp loads persisted cursors into a cold cache', () async {
+      final accepted = now.subtract(const Duration(minutes: 5));
+      await store.advance(disputeId, accepted, now: now);
+
+      // Fresh instance simulates a cold start: cache empty, prefs populated
+      final coldStore = DisputeChatCursorStore(prefs);
+      expect(coldStore.cachedSinceFor(disputeId), isNull);
+
+      await coldStore.warmUp([disputeId, 'unknown-dispute']);
+
+      final since = coldStore.cachedSinceFor(disputeId);
+      expect(since, isNotNull);
+      expect(
+        since!.millisecondsSinceEpoch ~/ 1000,
+        equals(accepted
+            .subtract(DisputeChatCursorStore.cursorOverlap)
+            .millisecondsSinceEpoch ~/
+            1000),
+      );
+      expect(coldStore.cachedSinceFor('unknown-dispute'), isNull);
+    });
+
     test('conversations track independent cursors', () async {
       final a = now.subtract(const Duration(minutes: 5));
       final b = now.subtract(const Duration(hours: 3));
