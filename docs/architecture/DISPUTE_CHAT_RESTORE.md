@@ -97,8 +97,9 @@ RestoreService.importMnemonicAndRestore()
 
 ### Dispute Chat Subscription During Restore
 
-`DisputeChatNotifier` subscribes to kind 1059 events addressed to the `adminSharedKey` — an
-ECDH keypair derived from `tradeKey` and the solver's public key.
+`DisputeChatNotifier` subscribes to kind 14 chat events authored by `pub(K_sign)` — a key
+HKDF-derived from the `adminSharedKey` ECDH secret (`tradeKey × solver pubkey`). See
+`DISPUTE_CHAT_KIND14.md` for the envelope and derivation details.
 
 For this to work post-restore, `Session.adminSharedKey` must be non-null at the time the
 dispute chat provider is first accessed. The restore flow guarantees this by passing

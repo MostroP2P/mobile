@@ -4,6 +4,11 @@ This document describes how the peer-to-peer chat between trading parties works 
 
 For the **protocol specification** (NIP-59, ECDH, event format), see the [Mostro P2P Chat protocol](https://mostro.network/protocol/chat.html) ([source](https://github.com/MostroP2P/protocol)).
 
+> **Note:** P2P peer chat still uses the legacy 1-layer gift wrap (kind 1059) described
+> below. The spec's newer kind-14 chat envelope is already used by the **dispute chat**
+> (see `DISPUTE_CHAT_KIND14.md`); migrating P2P chat to it is pending and should reuse the
+> same `ChatKeys` / `chatWrap` / `chatUnwrap` primitives.
+
 ---
 
 ## Components

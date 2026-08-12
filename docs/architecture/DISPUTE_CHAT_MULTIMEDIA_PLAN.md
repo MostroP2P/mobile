@@ -8,11 +8,11 @@ The app has two chat systems that share encryption, upload, and rendering infras
 
 | | P2P Chat (User-User) | Dispute Chat (User-Admin) |
 |-|----------------------|--------------------------|
-| **Encryption** | `p2pWrap()` with ECDH shared key | `p2pWrap()` with admin ECDH shared key |
-| **Key field** | `session.sharedKey` | `session.adminSharedKey` |
-| **Routing (`p` tag)** | Shared key pubkey | Admin shared key pubkey |
+| **Encryption** | `p2pWrap()` with ECDH shared key (legacy gift wrap) | `chatWrap()` kind-14 envelope with keys derived from admin ECDH shared key |
+| **Key field** | `session.sharedKey` | `session.adminSharedKey` (HKDF → K_conv/K_sign via `ChatKeys`) |
+| **Wire event** | Kind 1059, `p` tag = shared key pubkey | Kind 14, author = `pub(K_sign)`, `p` tag = `pub(K_conv)` |
 | **Message model** | `NostrEvent` | `DisputeChatMessage(NostrEvent)` with pending/error state |
-| **Storage** | Gift wrap events (encrypted) on disk | Gift wrap events (encrypted) on disk |
+| **Storage** | Gift wrap events (encrypted) on disk | Outer kind-14 events (encrypted) on disk; pre-migration 1059 history still readable |
 | **Multimedia** | Images + files via Blossom | Images + files via Blossom |
 | **Notifier** | `ChatRoomNotifier` | `DisputeChatNotifier` |
 | **Message bubble** | `MessageBubble` | `DisputeMessageBubble` |
@@ -20,14 +20,21 @@ The app has two chat systems that share encryption, upload, and rendering infras
 
 ## Encryption
 
-Both chats use NIP-59 gift wrap with 1-layer `p2pWrap`/`p2pUnwrap`:
+Both chats derive their key material the same way, but use different envelopes:
 
 1. **Key computation:** `ECDH(tradeKey.private, peerPubkey)` produces a shared key
-2. **Sending:** Inner event (kind 1, plain text or JSON) wrapped via `p2pWrap(tradeKey, sharedKey.public)`
-3. **Receiving:** Gift wrap (kind 1059) unwrapped via `event.p2pUnwrap(sharedKey)`
-4. **Storage:** Gift wrap event stored encrypted on disk; unwrapped on load
+2. **P2P chat (legacy gift wrap):** inner event (kind 1) wrapped via
+   `p2pWrap(tradeKey, sharedKey.public)`, received as kind 1059 and unwrapped via
+   `event.p2pUnwrap(sharedKey)`
+3. **Dispute chat (kind-14 envelope):** the ECDH secret is HKDF-expanded into
+   K_conv/K_sign (`ChatKeys.fromSharedKey`); messages are wrapped via
+   `chatWrap(chatKeys)` and unwrapped via `chatUnwrap(chatKeys, allowedSigners)`.
+   See `DISPUTE_CHAT_KIND14.md` for the full wire format and validation rules.
+4. **Storage:** the encrypted outer event is stored on disk and unwrapped on load
 
 For disputes, the "peer" is the admin. The shared key is computed when the admin takes the dispute (`session.setAdminPeer(adminPubkey)`). A session can have both `sharedKey` (P2P peer) and `adminSharedKey` (admin) simultaneously.
+
+Multimedia encryption is envelope-independent: attachment keys are the raw ECDH secret bytes (`NostrUtils.sharedKeyToBytes`), so the pipeline below applies unchanged to both chats.
 
 ## Multimedia Pipeline
 
