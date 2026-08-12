@@ -14,6 +14,7 @@ import 'package:mostro_mobile/features/subscriptions/subscription_type.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
+import 'package:mostro_mobile/shared/utils/chat_keys.dart';
 
 /// Manages Nostr subscriptions across different parts of the application.
 ///
@@ -207,14 +208,16 @@ class SubscriptionManager {
               .toList(),
         );
       case SubscriptionType.disputeChat:
-        final adminKeys = sessions
-            .where((s) => s.adminSharedKey?.public != null)
-            .map((s) => s.adminSharedKey!.public)
+        // Kind 14 chat envelope: filter by the K_sign authors derived from
+        // each admin shared key (never by #p — third-party flooding)
+        final signKeys = sessions
+            .where((s) => s.adminSharedKey != null)
+            .map((s) => ChatKeys.fromSharedKey(s.adminSharedKey!).sign.public)
             .toList();
-        if (adminKeys.isEmpty) return null;
+        if (signKeys.isEmpty) return null;
         return NostrFilter(
-          kinds: [1059],
-          p: adminKeys,
+          kinds: [14],
+          authors: signKeys,
         );
       case SubscriptionType.relayList:
         // Relay list subscriptions are handled separately via subscribeToMostroRelayList
