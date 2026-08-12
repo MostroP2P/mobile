@@ -264,11 +264,10 @@ Future<MostroMessage?> _processAdminDm(
   ChatKeys chatKeys,
 ) async {
   try {
-    final allowedSigners = [
-      session.tradeKey.public,
-      if (session.adminPubkey != null) session.adminPubkey!,
-    ];
-    final unwrapped = await event.chatUnwrap(chatKeys, allowedSigners);
+    final unwrapped = await event.chatUnwrap(
+      chatKeys,
+      session.disputeChatAllowedSigners,
+    );
     if (unwrapped.content == null || unwrapped.content!.isEmpty) {
       return null;
     }

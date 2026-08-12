@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/core/models/relay_list_event.dart';
+import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/features/mostro/transport.dart';
@@ -218,6 +219,9 @@ class SubscriptionManager {
         return NostrFilter(
           kinds: [14],
           authors: signKeys,
+          since: DateTime.now()
+              .subtract(NostrEventExtensions.chatDefaultLookback),
+          limit: NostrEventExtensions.chatDefaultLimit,
         );
       case SubscriptionType.relayList:
         // Relay list subscriptions are handled separately via subscribeToMostroRelayList

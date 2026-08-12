@@ -23,9 +23,9 @@ The app has two chat systems that share encryption, upload, and rendering infras
 Both chats derive their key material the same way, but use different envelopes:
 
 1. **Key computation:** `ECDH(tradeKey.private, peerPubkey)` produces a shared key
-2. **P2P chat (legacy gift wrap):** inner event (kind 1) wrapped via
-   `p2pWrap(tradeKey, sharedKey.public)`, received as kind 1059 and unwrapped via
-   `event.p2pUnwrap(sharedKey)`
+2. **P2P chat (legacy gift wrap):** uses the raw ECDH shared key directly — inner
+   event (kind 1) wrapped via `p2pWrap(tradeKey, sharedKey.public)`, received as
+   kind 1059 and unwrapped via `event.p2pUnwrap(sharedKey)`
 3. **Dispute chat (kind-14 envelope):** the ECDH secret is HKDF-expanded into
    K_conv/K_sign (`ChatKeys.fromSharedKey`); messages are wrapped via
    `chatWrap(chatKeys)` and unwrapped via `chatUnwrap(chatKeys, allowedSigners)`.

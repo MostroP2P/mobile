@@ -204,6 +204,13 @@ class Session {
   String? get adminPubkey => _adminPubkey;
   NostrKeyPairs? get adminSharedKey => _adminSharedKey;
 
+  /// Inner event signers accepted in the dispute chat conversation.
+  /// adminPubkey is always set when adminSharedKey is (see setAdminPeer).
+  List<String> get disputeChatAllowedSigners => [
+        tradeKey.public,
+        if (_adminPubkey != null) _adminPubkey!,
+      ];
+
   /// Compute and store the admin shared key via ECDH
   void setAdminPeer(String adminPubkey) {
     if (adminPubkey.isEmpty || adminPubkey.length != 64) {

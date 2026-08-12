@@ -358,6 +358,13 @@ extension NostrEventExtensions on NostrEvent {
   /// content, enforced before decrypting. Spec default: 64 KiB.
   static const chatMaxContentBytes = 64 * 1024;
 
+  /// Mostro chat envelope (kind 14): default subscription lookback window,
+  /// matching the spec default (7 days).
+  static const chatDefaultLookback = Duration(days: 7);
+
+  /// Mostro chat envelope (kind 14): default subscription event limit.
+  static const chatDefaultLimit = 100;
+
   /// Mostro chat: wrap this signed kind 1 event into a kind 14 envelope
   /// signed by `K_sign`, NIP-44 self-encrypted under `K_conv`.
   /// Supersedes the gift wrap (p2pWrap) for dispute and peer chat.
@@ -466,7 +473,14 @@ extension NostrEventExtensions on NostrEvent {
     if (decoded is! Map<String, dynamic>) {
       throw Exception('Malformed inner chat event');
     }
-    final inner = NostrEventExtensions.fromMap(decoded);
+    // fromMap casts fields without null checks; normalize a missing-field
+    // TypeError into the same Exception as malformed JSON
+    final NostrEvent inner;
+    try {
+      inner = NostrEventExtensions.fromMap(decoded);
+    } catch (e) {
+      throw Exception('Malformed inner chat event: $e');
+    }
 
     // 8. Inner id and signature (sender authentication)
     _verifyEventIntegrity(inner, 'inner');

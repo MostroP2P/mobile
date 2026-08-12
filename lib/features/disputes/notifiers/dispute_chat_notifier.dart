@@ -106,11 +106,6 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
     return _chatKeys!;
   }
 
-  /// Inner event signers accepted in this conversation.
-  List<String> _allowedSigners(Session session) => [
-        session.tradeKey.public,
-        if (session.adminPubkey != null) session.adminPubkey!,
-      ];
 
   /// Initialize the dispute chat by loading historical messages and subscribing to new events
   Future<void> initialize() async {
@@ -158,6 +153,9 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
         NostrFilter(
           kinds: [14],
           authors: [chatKeys.sign.public],
+          since: DateTime.now()
+              .subtract(NostrEventExtensions.chatDefaultLookback),
+          limit: NostrEventExtensions.chatDefaultLimit,
         ),
       ],
     );
@@ -233,7 +231,7 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
       // conversation party (trade key or admin pubkey)
       final unwrappedEvent = await event.chatUnwrap(
         chatKeys,
-        _allowedSigners(session),
+        session.disputeChatAllowedSigners,
       );
       if (!mounted) return;
 
@@ -347,7 +345,7 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
           if (storedEvent.kind == 14) {
             unwrappedEvent = await storedEvent.chatUnwrap(
               _getChatKeys(session),
-              _allowedSigners(session),
+              session.disputeChatAllowedSigners,
             );
           } else {
             if (session.adminSharedKey!.public != storedEvent.recipient) {

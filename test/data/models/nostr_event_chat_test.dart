@@ -236,6 +236,32 @@ void main() {
       );
     });
 
+    test('rejects an inner payload missing required fields as Exception',
+        () async {
+      final encrypted = await NostrUtils.encryptNIP44(
+        '{"kind": 1, "content": "no id, sig, pubkey or tags"}',
+        chatKeys.conv.private,
+        chatKeys.conv.public,
+      );
+      final wrapped = NostrEvent.fromPartialData(
+        kind: 14,
+        content: encrypted,
+        keyPairs: chatKeys.sign,
+        tags: [
+          ["p", chatKeys.conv.public],
+        ],
+      );
+
+      await expectLater(
+        wrapped.chatUnwrap(chatKeys, allowedSigners),
+        throwsA(
+          predicate((e) =>
+              e is Exception &&
+              e.toString().contains('Malformed inner chat event')),
+        ),
+      );
+    });
+
     test('rejects an inner event signed by a non-party key', () async {
       final inner = buildInner(stranger, 'not a party');
       final wrapped = await inner.chatWrap(chatKeys);

@@ -2,7 +2,9 @@
 
 > Wire format, key derivation, and client rules for the user↔admin dispute chat.
 > Replaces the legacy 1-layer gift wrap (kind 1059) previously used for dispute chat.
-> Protocol spec: https://mostro.network/protocol/chat.html
+> Protocol spec: https://mostro.network/protocol/chat.html (envelope, key derivation,
+> test vector) and https://mostro.network/protocol/dispute_chat.html (per-party admin
+> keys and dispute flow)
 
 ## Overview
 
@@ -62,11 +64,18 @@ reject a mismatch between inner and outer timestamps as a replay defense.
 NostrFilter(
   kinds: [14],
   authors: [chatKeys.sign.public],
+  since: DateTime.now().subtract(NostrEventExtensions.chatDefaultLookback), // 7 days
+  limit: NostrEventExtensions.chatDefaultLimit, // 100
 )
 ```
 
 The spec requires filtering by `authors`, **never by `#p`**: a `#p` filter would let any
 third party flood the subscription with junk events tagged to the conversation pubkey.
+
+The `since` lookback and `limit` match the spec defaults (7 days / 100 events). A durable
+per-conversation `since` cursor (advanced only after accepting an event, clamped to the
+local clock) is a possible future refinement; on-disk history plus outer-id dedup already
+covers reconnection in practice.
 
 Kind 14 is also used by transport-v2 Mostro protocol messages (user↔mostro). The two
 never collide: protocol events are authored by the Mostro pubkey and addressed to the

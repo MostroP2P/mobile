@@ -23,13 +23,13 @@ The Mostro Mobile app is built on top of the Nostr protocol to provide a decentr
 - **Privacy**: Advanced encryption ensures trade communications remain private
 - **Censorship Resistance**: Multiple relay support prevents single points of failure
 - **Key Rotation**: Unique keys for each trade prevent transaction linking
-- **End-to-End Encryption**: All trade communications are NIP-44 encrypted — via NIP-59 gift wraps (protocol v1, P2P chat) or direct kind-14 envelopes (protocol v2, dispute chat)
+- **End-to-End Encryption**: All trade communications are NIP-44 encrypted. The envelope depends on the channel: user↔Mostro protocol messages follow the node's advertised `protocol_version` (NIP-59 gift wraps on v1, direct kind-14 events on v2), P2P peer chat uses legacy NIP-59 gift wraps, and dispute chat uses the kind-14 chat envelope — the latter two independently of the node's transport version
 
 ## Architecture
 
 ### High-Level Components
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                    Mostro Mobile App                        │
 ├─────────────────────────────────────────────────────────────┤
@@ -92,7 +92,7 @@ Implements the Mostro protocol specifics on top of Nostr:
 The app implements a sophisticated key management system following BIP-32 and NIP-06 standards:
 
 #### Master Key Generation
-```
+```text
 BIP-39 Mnemonic (12/24 words)
         ↓
 BIP-32 Seed (512 bits)
@@ -192,7 +192,7 @@ final subscription = await nostrService.subscribeToEvents(filters);
 The app implements a three-layer encryption system for all private communications:
 
 #### Layer Structure
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                     Kind 1059 Event                        │
 │                   (Wrapper Event)                          │
@@ -282,7 +282,7 @@ final orderFilters = [
 The app implements a comprehensive state machine for order lifecycle management:
 
 #### Order States
-```
+```text
 Pending → Waiting Payment → Active → Fiat Sent → Success
     ↓                         ↓           ↓
  Canceled               Canceled    Canceled
