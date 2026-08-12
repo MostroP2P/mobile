@@ -14,6 +14,7 @@ class LanguageSelector extends ConsumerWidget {
     'it': 'italian',
     'fr': 'french',
     'de': 'german',
+    'pt': 'portuguese',
   };
 
   @override
@@ -28,7 +29,11 @@ class LanguageSelector extends ConsumerWidget {
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String?>(
-          value: currentLanguage,
+          // Fall back to system default when the stored language is unknown
+          // (e.g. preferences written by a build that supported more languages)
+          value: _languageKeys.containsKey(currentLanguage)
+              ? currentLanguage
+              : null,
           isExpanded: true,
           dropdownColor: AppTheme.dark1,
           style: const TextStyle(color: AppTheme.cream1),
@@ -85,6 +90,8 @@ class LanguageSelector extends ConsumerWidget {
         return S.of(context)!.french;
       case 'german':
         return S.of(context)!.german;
+      case 'portuguese':
+        return S.of(context)!.portuguese;
       default:
         return key;
     }
