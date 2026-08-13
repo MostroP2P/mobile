@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.3.1] - 2026-08-13
+
+### Added
+- feat: add complete Portuguese (pt) translation (68b7e018)
+
+### Fixed
+- fix: restore desktop release binaries by pinning Windows runner (#644) (cd309ef6)
+- fix: guard language selector against unknown stored language codes (19bc22e4)
+- fix: switch to blossom servers that accept encrypted chat attachments and retain blobs indefinitely (fb8e7e66)
+- fix: register push token for range-order child trade keys (#640) (35df5742)
+- fix(invoice): make Add Lightning Invoice screen scrollable so Submit stays reachable with keyboard open (3f661129)
+
+
 ## [v1.3.0] - 2026-07-03
 
 ### Added
