@@ -10,9 +10,11 @@ import 'package:mostro_mobile/features/chat/providers/active_chat_screens_provid
 import 'package:mostro_mobile/features/notifications/providers/notifications_provider.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/chat/utils/message_type_helpers.dart';
+import 'package:mostro_mobile/services/dispute_chat_cursor_store.dart';
 import 'package:mostro_mobile/services/encrypted_image_upload_service.dart';
 import 'package:mostro_mobile/services/encrypted_file_upload_service.dart';
 import 'package:mostro_mobile/shared/mixins/media_cache_mixin.dart';
+import 'package:mostro_mobile/shared/utils/chat_keys.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
@@ -74,8 +76,9 @@ class DisputeChatState {
 }
 
 /// Notifier for dispute chat messages
-/// Uses shared key encryption (p2pWrap/p2pUnwrap) with admin via ECDH.
-/// Stores gift wrap events (encrypted) on disk, same pattern as P2P chat.
+/// Uses the Mostro chat kind-14 envelope (chatWrap/chatUnwrap) with keys
+/// derived from the admin ECDH shared secret.
+/// Stores the encrypted outer events on disk, same pattern as P2P chat.
 class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCacheMixin {
   static final EncryptedImageUploadService _imageUploadService =
       EncryptedImageUploadService();
@@ -89,7 +92,21 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
   ProviderSubscription<dynamic>? _sessionListener;
   bool _isInitialized = false;
 
+  ChatKeys? _chatKeys;
+  String? _chatKeysSource;
+
   DisputeChatNotifier(this.disputeId, this.ref) : super(const DisputeChatState());
+
+  /// Derive (and cache) the K_conv/K_sign pair from the admin shared key.
+  ChatKeys _getChatKeys(Session session) {
+    final shared = session.adminSharedKey!;
+    if (_chatKeys == null || _chatKeysSource != shared.public) {
+      _chatKeys = ChatKeys.fromSharedKey(shared);
+      _chatKeysSource = shared.public;
+    }
+    return _chatKeys!;
+  }
+
 
   /// Initialize the dispute chat by loading historical messages and subscribing to new events
   Future<void> initialize() async {
@@ -128,19 +145,32 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
       _subscription = null;
     }
 
-    // Subscribe to kind 1059 (Gift Wrap) events routed to admin shared key
+    // Subscribe to kind 14 chat events authored by K_sign. The spec requires
+    // filtering by authors, not #p, to prevent third-party flooding.
+    final chatKeys = _getChatKeys(session);
     final nostrService = ref.read(nostrServiceProvider);
+
+    // Persisted per-conversation cursor (spec MUST); default lookback for
+    // conversations with no accepted events yet
+    final cursorSince =
+        await ref.read(disputeChatCursorStoreProvider).sinceFor(disputeId);
+    if (!mounted) return;
+    final since = cursorSince ??
+        DateTime.now().subtract(NostrEventExtensions.chatDefaultLookback);
+
     final request = NostrRequest(
       filters: [
         NostrFilter(
-          kinds: [1059],
-          p: [session.adminSharedKey!.public],
+          kinds: [14],
+          authors: [chatKeys.sign.public],
+          since: since,
+          limit: NostrEventExtensions.chatDefaultLimit,
         ),
       ],
     );
 
     _subscription = nostrService.subscribeToEvents(request).listen(_onChatEvent);
-    logger.i('Subscribed to kind 1059 via admin shared key for dispute: $disputeId');
+    logger.i('Subscribed to kind 14 chat via K_sign for dispute: $disputeId');
   }
 
   /// Listen for session changes and subscribe when admin shared key is ready
@@ -170,31 +200,26 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
     );
   }
 
-  /// Handle incoming chat events via p2pUnwrap.
-  /// Stores the gift wrap event (encrypted) to disk, then unwraps for display.
+  /// Handle incoming chat events via chatUnwrap.
+  /// Stores the outer event (encrypted) to disk, then unwraps for display.
   void _onChatEvent(NostrEvent event) async {
     try {
-      if (!mounted || event.kind != 1059) return;
+      if (!mounted || event.kind != 14) return;
 
       final session = _getSessionForDispute();
       if (session == null || session.adminSharedKey == null) return;
 
-      // Verify p tag matches admin shared key
-      final pTag = event.tags?.firstWhere(
-        (tag) => tag.isNotEmpty && tag[0] == 'p',
-        orElse: () => [],
-      ) ?? [];
-      if (pTag.isEmpty || pTag.length < 2 || pTag[1] != session.adminSharedKey!.public) {
-        return;
-      }
+      // Cheap pre-filter; chatUnwrap re-checks this among the spec checks
+      final chatKeys = _getChatKeys(session);
+      if (event.pubkey != chatKeys.sign.public) return;
 
-      // Check for duplicate gift wrap events
+      // Check for duplicate outer events (relay re-deliveries)
       final wrapperEventId = event.id;
       if (wrapperEventId == null) return;
       final eventStore = ref.read(eventStorageProvider);
       if (await eventStore.hasItem(wrapperEventId)) return;
 
-      // Store the gift wrap event (encrypted) to disk — same pattern as P2P chat
+      // Store the outer event (encrypted) to disk — same pattern as P2P chat
       await eventStore.putItem(
         wrapperEventId,
         {
@@ -211,12 +236,21 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
       );
       if (!mounted) return;
 
-      // Unwrap using admin shared key (1-layer p2p decryption)
-      final unwrappedEvent = await event.p2pUnwrap(session.adminSharedKey!);
+      // Unwrap and authenticate: the inner event must be signed by a
+      // conversation party (trade key or admin pubkey)
+      final unwrappedEvent = await event.chatUnwrap(
+        chatKeys,
+        session.disputeChatAllowedSigners,
+      );
       if (!mounted) return;
 
-      // SECURITY: The ECDH shared key IS the authentication.
-      // If p2pUnwrap succeeded, the sender holds the admin's private key.
+      // Advance the persisted since cursor only after the event is accepted
+      // (clamped to the local clock inside the store)
+      unawaited(
+        ref
+            .read(disputeChatCursorStoreProvider)
+            .advance(disputeId, event.createdAt!),
+      );
 
       final messageText = unwrappedEvent.content ?? '';
       if (messageText.isEmpty) {
@@ -266,7 +300,8 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
   }
 
   /// Load historical messages from storage.
-  /// Reconstructs gift wrap events and unwraps them with adminSharedKey.
+  /// Reconstructs stored outer events and unwraps them: kind 14 via
+  /// chatUnwrap, legacy kind 1059 (pre-migration) via p2pUnwrap.
   Future<void> _loadHistoricalMessages() async {
     try {
       if (!mounted) return;
@@ -310,7 +345,7 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
             continue;
           }
 
-          // Reconstruct the gift wrap NostrEvent from stored data
+          // Reconstruct the outer NostrEvent from stored data
           final storedEvent = NostrEventExtensions.fromMap({
             'id': eventData['id'],
             'created_at': eventData['created_at'],
@@ -321,13 +356,20 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
             'tags': eventData['tags'],
           });
 
-          // Verify p tag matches our admin shared key
-          if (session.adminSharedKey!.public != storedEvent.recipient) {
-            continue;
+          // Decrypt and unwrap: kind 14 envelope, or legacy gift wrap
+          // stored before the kind-14 migration
+          final NostrEvent unwrappedEvent;
+          if (storedEvent.kind == 14) {
+            unwrappedEvent = await storedEvent.chatUnwrap(
+              _getChatKeys(session),
+              session.disputeChatAllowedSigners,
+            );
+          } else {
+            if (session.adminSharedKey!.public != storedEvent.recipient) {
+              continue;
+            }
+            unwrappedEvent = await storedEvent.p2pUnwrap(session.adminSharedKey!);
           }
-
-          // Decrypt and unwrap the message
-          final unwrappedEvent = await storedEvent.p2pUnwrap(session.adminSharedKey!);
           if (!mounted) return;
           // Fire-and-forget: pre-download media without blocking history load
           unawaited(_processMessageContent(unwrappedEvent));
@@ -350,8 +392,8 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
     }
   }
 
-  /// Send a message in the dispute chat using p2pWrap with admin shared key.
-  /// Stores the gift wrap event (encrypted) on success.
+  /// Send a message in the dispute chat using the kind-14 chat envelope.
+  /// Stores the outer event (encrypted) on success.
   Future<void> sendMessage(String text) async {
     if (!mounted) return;
 
@@ -366,14 +408,12 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
       return;
     }
 
-    // Create rumor (kind 1) with plain text content FIRST to get real event ID
+    // Create the inner event (kind 1, no tags per the chat spec) FIRST to
+    // get the real event ID used for optimistic UI and echo deduplication
     final rumor = NostrEvent.fromPartialData(
       keyPairs: session.tradeKey,
       content: text,
       kind: 1,
-      tags: [
-        ["p", session.adminSharedKey!.public],
-      ],
     );
 
     final rumorId = rumor.id;
@@ -393,11 +433,8 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
       deduped.sort((a, b) => a.timestamp.compareTo(b.timestamp));
       state = state.copyWith(messages: deduped, error: null);
 
-      // Wrap using p2pWrap (1-layer, shared key routing)
-      final wrappedEvent = await rumor.p2pWrap(
-        session.tradeKey,
-        session.adminSharedKey!.public,
-      );
+      // Wrap into the kind-14 envelope (signed by K_sign, encrypted with K_conv)
+      final wrappedEvent = await rumor.chatWrap(_getChatKeys(session));
       if (!mounted) return;
 
       // Publish to network
@@ -412,7 +449,7 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
         return;
       }
 
-      // On success: store the gift wrap event (encrypted) to disk
+      // On success: store the outer event (encrypted) to disk
       final eventStore = ref.read(eventStorageProvider);
       await eventStore.putItem(
         wrappedEvent.id!,

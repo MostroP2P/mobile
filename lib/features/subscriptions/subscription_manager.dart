@@ -5,15 +5,18 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/core/models/relay_list_event.dart';
+import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/features/mostro/transport.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_type.dart';
+import 'package:mostro_mobile/services/dispute_chat_cursor_store.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
+import 'package:mostro_mobile/shared/utils/chat_keys.dart';
 
 /// Manages Nostr subscriptions across different parts of the application.
 ///
@@ -68,7 +71,7 @@ class SubscriptionManager {
           final sessions = ref.read(sessionNotifierProvider);
           if (sessions.isEmpty) return;
           logger.i('Orders transport changed to $newTransport, re-subscribing');
-          _updateSubscription(SubscriptionType.orders, sessions);
+          unawaited(_updateSubscription(SubscriptionType.orders, sessions));
         },
         onError: (error, stackTrace) {
           logger.e('Error in mostro instance listener',
@@ -137,7 +140,7 @@ class SubscriptionManager {
     }
 
     for (final type in SubscriptionType.values) {
-      _updateSubscription(type, sessions);
+      unawaited(_updateSubscription(type, sessions));
     }
   }
 
@@ -147,7 +150,8 @@ class SubscriptionManager {
     }
   }
 
-  void _updateSubscription(SubscriptionType type, List<Session> sessions) {
+  Future<void> _updateSubscription(
+      SubscriptionType type, List<Session> sessions) async {
     if (sessions.isEmpty) {
       logger.i('No sessions for $type subscription');
       unsubscribeByType(type);
@@ -155,6 +159,17 @@ class SubscriptionManager {
     }
 
     try {
+      // Pre-warm persisted cursors so the dispute chat filter — built
+      // synchronously and later persisted for the background service —
+      // sees durable state even on a cold start
+      if (type == SubscriptionType.disputeChat) {
+        final disputeIds = sessions
+            .where((s) => s.adminSharedKey != null)
+            .map((s) => s.disputeId)
+            .whereType<String>();
+        await ref.read(disputeChatCursorStoreProvider).warmUp(disputeIds);
+      }
+
       final filter = _createFilterForType(type, sessions);
       if (filter == null) {
         return;
@@ -207,14 +222,29 @@ class SubscriptionManager {
               .toList(),
         );
       case SubscriptionType.disputeChat:
-        final adminKeys = sessions
-            .where((s) => s.adminSharedKey?.public != null)
-            .map((s) => s.adminSharedKey!.public)
+        // Kind 14 chat envelope: filter by the K_sign authors derived from
+        // each admin shared key (never by #p — third-party flooding)
+        final disputeSessions =
+            sessions.where((s) => s.adminSharedKey != null).toList();
+        if (disputeSessions.isEmpty) return null;
+        final signKeys = disputeSessions
+            .map((s) => ChatKeys.fromSharedKey(s.adminSharedKey!).sign.public)
             .toList();
-        if (adminKeys.isEmpty) return null;
+        // Shared filter across conversations: earliest persisted cursor,
+        // falling back to the default lookback (wider window; dedup absorbs)
+        final cursorStore = ref.read(disputeChatCursorStoreProvider);
+        final defaultSince = DateTime.now()
+            .subtract(NostrEventExtensions.chatDefaultLookback);
+        final since = disputeSessions
+            .map((s) => s.disputeId == null
+                ? defaultSince
+                : (cursorStore.cachedSinceFor(s.disputeId!) ?? defaultSince))
+            .reduce((a, b) => a.isBefore(b) ? a : b);
         return NostrFilter(
-          kinds: [1059],
-          p: adminKeys,
+          kinds: [14],
+          authors: signKeys,
+          since: since,
+          limit: NostrEventExtensions.chatDefaultLimit,
         );
       case SubscriptionType.relayList:
         // Relay list subscriptions are handled separately via subscribeToMostroRelayList

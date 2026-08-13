@@ -23,13 +23,13 @@ The Mostro Mobile app is built on top of the Nostr protocol to provide a decentr
 - **Privacy**: Advanced encryption ensures trade communications remain private
 - **Censorship Resistance**: Multiple relay support prevents single points of failure
 - **Key Rotation**: Unique keys for each trade prevent transaction linking
-- **End-to-End Encryption**: All trade communications use NIP-59 gift wrapping
+- **End-to-End Encryption**: All trade communications are NIP-44 encrypted. The envelope depends on the channel: user↔Mostro protocol messages follow the node's advertised `protocol_version` (NIP-59 gift wraps on v1, direct kind-14 events on v2), P2P peer chat uses legacy NIP-59 gift wraps, and dispute chat uses the kind-14 chat envelope — the latter two independently of the node's transport version
 
 ## Architecture
 
 ### High-Level Components
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                    Mostro Mobile App                        │
 ├─────────────────────────────────────────────────────────────┤
@@ -92,7 +92,7 @@ Implements the Mostro protocol specifics on top of Nostr:
 The app implements a sophisticated key management system following BIP-32 and NIP-06 standards:
 
 #### Master Key Generation
-```
+```text
 BIP-39 Mnemonic (12/24 words)
         ↓
 BIP-32 Seed (512 bits)
@@ -192,7 +192,7 @@ final subscription = await nostrService.subscribeToEvents(filters);
 The app implements a three-layer encryption system for all private communications:
 
 #### Layer Structure
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                     Kind 1059 Event                        │
 │                   (Wrapper Event)                          │
@@ -235,10 +235,17 @@ The app implements a three-layer encryption system for all private communication
 - **Market Discovery**: Browse available trades
 - **Order Metadata**: Trade parameters and requirements
 
-#### Chat Messages (Kind 1059)
+#### P2P Chat Messages (Kind 1059)
 - **Peer-to-Peer**: Direct communication between traders
-- **Admin Communication**: Support and dispute resolution
+- **Envelope**: Legacy 1-layer gift wrap (`p2pWrap`/`p2pUnwrap`) addressed to the ECDH shared pubkey
 - **Real-time**: Live chat during active trades
+
+#### Dispute Chat Messages (Kind 14)
+- **Admin Communication**: Support and dispute resolution with the assigned solver
+- **Envelope**: Kind-14 chat envelope signed by `K_sign`, NIP-44 encrypted under `K_conv`
+  (both HKDF-derived from the admin ECDH shared secret)
+- **Subscription**: By `authors = [pub(K_sign)]`, never by `#p` (flood resistance)
+- **Details**: See `DISPUTE_CHAT_KIND14.md`
 
 ### Event Filtering and Subscription
 
@@ -275,7 +282,7 @@ final orderFilters = [
 The app implements a comprehensive state machine for order lifecycle management:
 
 #### Order States
-```
+```text
 Pending → Waiting Payment → Active → Fiat Sent → Success
     ↓                         ↓           ↓
  Canceled               Canceled    Canceled

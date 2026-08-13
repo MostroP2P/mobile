@@ -3,6 +3,7 @@ import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/data/models/range_amount.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/rating.dart';
+import 'package:mostro_mobile/shared/utils/chat_keys.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:dart_nostr/dart_nostr.dart';
@@ -346,6 +347,190 @@ extension NostrEventExtensions on NostrEvent {
       return innerEvent;
     } catch (e) {
       throw Exception('Failed to unwrap P2P chat message: $e');
+    }
+  }
+
+  /// Mostro chat envelope (kind 14): tolerated clock skew in seconds between
+  /// inner/outer timestamps and against the local clock. Spec default: 60.
+  static const chatMaxClockSkewSecs = 60;
+
+  /// Mostro chat envelope (kind 14): upper bound on the encrypted outer
+  /// content, enforced before decrypting. Spec default: 64 KiB.
+  static const chatMaxContentBytes = 64 * 1024;
+
+  /// Mostro chat envelope (kind 14): default subscription lookback window,
+  /// matching the spec default (7 days).
+  static const chatDefaultLookback = Duration(days: 7);
+
+  /// Mostro chat envelope (kind 14): default subscription event limit.
+  static const chatDefaultLimit = 100;
+
+  /// Mostro chat: wrap this signed kind 1 event into a kind 14 envelope
+  /// signed by `K_sign`, NIP-44 self-encrypted under `K_conv`.
+  /// Supersedes the gift wrap (p2pWrap) for dispute and peer chat.
+  ///
+  /// The outer event shares this event's timestamp (recipients reject a
+  /// mismatch) and carries exactly one `p` tag = pub(K_conv).
+  /// Spec: https://mostro.network/protocol/chat.html
+  Future<NostrEvent> chatWrap(ChatKeys chatKeys) async {
+    if (kind != 1) {
+      throw ArgumentError('Expected kind 1 event for chat, got: $kind');
+    }
+
+    if (content == null || content!.isEmpty) {
+      throw ArgumentError('Message content is empty');
+    }
+
+    if (id == null || sig == null) {
+      throw ArgumentError('Inner chat event must be signed');
+    }
+
+    // NIP-44 self-encryption: K_conv is both sides of the key exchange
+    final encryptedContent = await NostrUtils.encryptNIP44(
+      jsonEncode(toMap()),
+      chatKeys.conv.private,
+      chatKeys.conv.public,
+    );
+
+    return NostrEvent.fromPartialData(
+      kind: 14,
+      content: encryptedContent,
+      keyPairs: chatKeys.sign,
+      tags: [
+        ["p", chatKeys.conv.public],
+      ],
+      createdAt: createdAt,
+    );
+  }
+
+  /// Mostro chat: unwrap a kind 14 envelope signed by `K_sign` and return
+  /// the verified inner kind 1 event.
+  ///
+  /// Runs the mandatory spec checks cheapest-first. [allowedSigners] are the
+  /// accepted inner pubkeys (trade key + admin pubkey for dispute chat).
+  /// The caller still owns rate limiting and duplicate detection.
+  /// [now] overrides the local clock for testing.
+  Future<NostrEvent> chatUnwrap(
+    ChatKeys chatKeys,
+    List<String> allowedSigners, {
+    DateTime? now,
+  }) async {
+    // 1-2. Outer author and kind
+    if (pubkey != chatKeys.sign.public) {
+      throw Exception(
+        'Outer event is not authored by the conversation signing key',
+      );
+    }
+
+    if (kind != 14) {
+      throw Exception('Expected kind 14 chat event, got: $kind');
+    }
+
+    // 3. Exactly one p tag equal to pub(K_conv)
+    final pTags =
+        (tags ?? []).where((t) => t.isNotEmpty && t[0] == 'p').toList();
+    if (pTags.length != 1 ||
+        pTags[0].length < 2 ||
+        pTags[0][1] != chatKeys.conv.public) {
+      throw Exception(
+        'Outer event must carry exactly one p tag for this conversation',
+      );
+    }
+
+    // 4. Absolute timestamp bound against the local clock
+    final localNow = now ?? DateTime.now();
+    if (createdAt == null ||
+        createdAt!.isAfter(
+          localNow.add(const Duration(seconds: chatMaxClockSkewSecs)),
+        )) {
+      throw Exception('Outer event is dated too far in the future');
+    }
+
+    // 5. Size bound before any crypto
+    if (content == null || content!.isEmpty) {
+      throw Exception('Chat event content is empty');
+    }
+    if (utf8.encode(content!).length > chatMaxContentBytes) {
+      throw Exception('Encrypted payload exceeds the accepted size');
+    }
+
+    // 6. Outer id and signature
+    _verifyEventIntegrity(this, 'outer');
+
+    // 7. Decrypt (NIP-44 self-decryption under K_conv)
+    final decrypted = await NostrUtils.decryptNIP44(
+      content!,
+      chatKeys.conv.private,
+      chatKeys.conv.public,
+    );
+
+    final dynamic decoded;
+    try {
+      decoded = jsonDecode(decrypted);
+    } catch (e) {
+      throw Exception('Malformed inner chat event: $e');
+    }
+    if (decoded is! Map<String, dynamic>) {
+      throw Exception('Malformed inner chat event');
+    }
+    // fromMap casts fields without null checks; normalize a missing-field
+    // TypeError into the same Exception as malformed JSON
+    final NostrEvent inner;
+    try {
+      inner = NostrEventExtensions.fromMap(decoded);
+    } catch (e) {
+      throw Exception('Malformed inner chat event: $e');
+    }
+
+    // 8. Inner id and signature (sender authentication)
+    _verifyEventIntegrity(inner, 'inner');
+
+    // 9. Inner signer allowlist
+    if (!allowedSigners.contains(inner.pubkey)) {
+      throw Exception(
+        'Inner event is signed by a key that is not a party to this conversation',
+      );
+    }
+
+    // 10. Inner kind
+    if (inner.kind != 1) {
+      throw Exception('Inner chat event is not a kind 1 text note');
+    }
+
+    // 11. Relative timestamp bound (stale re-wrap defense)
+    final skew = (inner.createdAt!.millisecondsSinceEpoch ~/ 1000 -
+            createdAt!.millisecondsSinceEpoch ~/ 1000)
+        .abs();
+    if (skew > chatMaxClockSkewSecs) {
+      throw Exception('Inner and outer timestamps disagree');
+    }
+
+    return inner;
+  }
+
+  /// Verify that an event's id matches its content and its signature is
+  /// valid — both required, since a BIP-340 signature only covers the id.
+  static void _verifyEventIntegrity(NostrEvent event, String label) {
+    if (event.id == null ||
+        event.sig == null ||
+        event.kind == null ||
+        event.createdAt == null) {
+      throw Exception('The $label chat event is not properly signed');
+    }
+
+    final expectedId = NostrEvent.getEventId(
+      kind: event.kind!,
+      content: event.content ?? '',
+      createdAt: event.createdAt!,
+      tags: event.tags ?? [],
+      pubkey: event.pubkey,
+    );
+    if (expectedId != event.id) {
+      throw Exception('The $label chat event id does not match its content');
+    }
+
+    if (!NostrKeyPairs.verify(event.pubkey, event.id!, event.sig!)) {
+      throw Exception('Invalid $label chat event signature');
     }
   }
 
