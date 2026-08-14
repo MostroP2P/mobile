@@ -13,7 +13,9 @@ class OrderNotifier extends AbstractMostroNotifier {
   late final MostroService mostroService;
   ProviderSubscription<AsyncValue<List<NostrEvent>>>? _publicEventsSubscription;
   bool _isSyncing = false; // Only for sync() method
-  
+  bool _hydrated = false; // First sync() has completed
+  bool _resyncRequested = false; // A sync() was asked for while one was running
+
   OrderNotifier(super.orderId, super.ref) {
     mostroService = ref.read(mostroServiceProvider);
     sync();
@@ -35,8 +37,23 @@ class OrderNotifier extends AbstractMostroNotifier {
         wasUserInitiatedCancel: wasUserInitiatedCancel);
   }
 
+  /// Replays the persisted history when a resolution was rejected only because
+  /// startup had not loaded its dispute yet. Once hydrated, a rejection is the
+  /// correct outcome and no replay is needed — which also keeps forged
+  /// resolutions from each costing a full storage read.
+  @override
+  void onAdminResolutionRejected(MostroMessage message) {
+    if (_hydrated) return;
+    logger.i(
+        'Re-syncing order $orderId: ${message.action} arrived before hydration completed');
+    sync();
+  }
+
   Future<void> sync() async {
-    if (_isSyncing) return;
+    if (_isSyncing) {
+      _resyncRequested = true;
+      return;
+    }
 
     try {
       _isSyncing = true;
@@ -81,6 +98,11 @@ class OrderNotifier extends AbstractMostroNotifier {
       );
     } finally {
       _isSyncing = false;
+      _hydrated = true;
+      if (_resyncRequested) {
+        _resyncRequested = false;
+        sync();
+      }
     }
   }
 

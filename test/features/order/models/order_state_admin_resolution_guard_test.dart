@@ -127,6 +127,40 @@ void main() {
           reason: 'the tracked dispute id must survive the wire payload');
     });
 
+    test('a bare dispute message is not evidence for the resolution behind it',
+        () {
+      // Two-step forgery: Action.dispute maps to Status.dispute without
+      // carrying a Dispute, so the status alone must not authorize what
+      // follows it.
+      final disputed =
+          _stateWithoutDispute().updateWith(_message(Action.dispute));
+
+      expect(disputed.status, equals(Status.dispute));
+      expect(disputed.dispute, isNull);
+
+      for (final action in [Action.adminCanceled, Action.adminSettled]) {
+        final resolved = disputed.updateWith(_message(action));
+
+        expect(resolved.status, equals(Status.dispute),
+            reason: '$action must not be applied on a status-only dispute');
+        expect(resolved.dispute, isNull);
+      }
+    });
+
+    test('dispute status without a tracked dispute object is not evidence', () {
+      final state = OrderState(
+        status: Status.dispute,
+        action: Action.disputeInitiatedByPeer,
+        order: _testOrder(status: Status.dispute),
+        dispute: null,
+      );
+
+      final updated = state.updateWith(_message(Action.adminSettled));
+
+      expect(updated.status, equals(Status.dispute),
+          reason: 'only a tracked Dispute object authorizes a resolution');
+    });
+
     test('admin-settled payload alone cannot fabricate a settled dispute', () {
       final state = _stateWithoutDispute();
 
@@ -262,22 +296,5 @@ void main() {
       expect(updated.dispute!.adminPubkey, equals(_adminPubkey));
     });
 
-    test(
-        'admin resolution applies when the order is already in dispute status '
-        'even without a local dispute object', () {
-      // Cold start / partial sync: the order is known to be disputed but the
-      // dispute object was never persisted locally.
-      final state = OrderState(
-        status: Status.dispute,
-        action: Action.disputeInitiatedByPeer,
-        order: _testOrder(status: Status.dispute),
-        dispute: null,
-      );
-
-      final updated = state.updateWith(_message(Action.adminSettled));
-
-      expect(updated.status, equals(Status.settledByAdmin),
-          reason: 'dispute status is itself dispute evidence');
-    });
   });
 }
