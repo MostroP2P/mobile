@@ -107,9 +107,24 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
               final wasUserInitiatedCancel = msg.action == Action.canceled &&
                   _userInitiatedCancels.remove(orderId);
 
+              // Evaluated before the state update, which is what consumes the
+              // dispute evidence this depends on.
+              final rejectedAdminAction =
+                  state.rejectsAdminDisputeAction(msg.action);
+
               if (mounted) {
                 state = state.updateWith(msg);
               }
+
+              // The state change was dropped; its side effects must go with it.
+              // Otherwise a forged admin resolution still reaches the user as a
+              // notification and a jump to the trade detail.
+              if (rejectedAdminAction) {
+                logger.w(
+                    'Dropping side effects for rejected ${msg.action} on order $orderId');
+                return;
+              }
+
               if (msg.timestamp != null &&
                   msg.timestamp! >
                       DateTime.now()
