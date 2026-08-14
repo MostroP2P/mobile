@@ -672,6 +672,16 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         }
         break;
 
+      // Mirrors adminSettled: an admin resolution is terminal but keeps its
+      // session, so the user retains the record of how the dispute ended.
+      // Deliberately not routed through the Action.canceled cleanup, which
+      // deletes the session and would erase that record.
+      case Action.adminCanceled:
+        if (isRecent && !bypassTimestampGate) {
+          navProvider.go('/trade_detail/$orderId');
+        }
+        break;
+
       case Action.cantDo:
         final cantDo = event.getPayload<CantDo>();
 

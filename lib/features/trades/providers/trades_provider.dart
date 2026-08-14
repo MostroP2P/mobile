@@ -13,6 +13,18 @@ import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 // Status filter provider - holds the currently selected status filter
 final statusFilterProvider = StateProvider<Status?>((ref) => null);
 
+/// Whether an order's status belongs under the selected filter.
+///
+/// The picker offers no separate "canceled by admin" entry, so orders resolved
+/// by an admin cancelation stay under "canceled" instead of dropping out of
+/// every filter. The distinction is surfaced in the trade detail.
+bool matchesStatusFilter(Status status, Status filter) {
+  if (filter == Status.canceled) {
+    return status == Status.canceled || status == Status.canceledByAdmin;
+  }
+  return status == filter;
+}
+
 // New provider that properly handles synthetic status filtering by checking OrderState
 final filteredTradesWithOrderStateProvider =
     Provider<AsyncValue<List<NostrEvent>>>((ref) {
@@ -59,10 +71,10 @@ final filteredTradesWithOrderStateProvider =
 
           final orderState = orderStates[order.orderId!];
           if (orderState != null) {
-            return orderState.status == selectedStatusFilter;
+            return matchesStatusFilter(orderState.status, selectedStatusFilter);
           } else {
             // Fallback to raw status comparison if OrderState not available
-            return order.status == selectedStatusFilter;
+            return matchesStatusFilter(order.status, selectedStatusFilter);
           }
         });
       }
