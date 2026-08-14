@@ -160,12 +160,32 @@ void main() {
 
       final updated = state.updateWith(_message(Action.adminCanceled));
 
-      // Status contract revisited in the admin-canceled session handling change.
-      expect(updated.status, equals(Status.canceled));
+      expect(updated.status, equals(Status.canceledByAdmin),
+          reason: 'an admin cancelation is its own terminal state');
       expect(updated.action, equals(Action.adminCanceled));
       expect(updated.dispute, isNotNull);
       expect(updated.dispute!.status, equals('seller-refunded'));
       expect(updated.dispute!.action, equals('admin-canceled'));
+    });
+
+    test('admin-canceled is distinguishable from a plain cancelation', () {
+      final adminCanceled =
+          _stateWithDispute().updateWith(_message(Action.adminCanceled));
+      final plainCanceled =
+          _stateWithoutDispute().updateWith(_message(Action.canceled));
+
+      expect(adminCanceled.status, equals(Status.canceledByAdmin));
+      expect(plainCanceled.status, equals(Status.canceled));
+      expect(adminCanceled.status, isNot(equals(plainCanceled.status)),
+          reason: 'the user must be able to tell an admin resolution apart '
+              'from a cancelation by either party');
+    });
+
+    test('admin-canceled keeps a terminal status', () {
+      final updated =
+          _stateWithDispute().updateWith(_message(Action.adminCanceled));
+
+      expect(updated.status.isTerminal, isTrue);
     });
 
     test('admin-took-dispute assigns the admin on an existing dispute', () {

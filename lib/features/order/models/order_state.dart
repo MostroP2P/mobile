@@ -390,11 +390,16 @@ class OrderState {
       // Actions that should set status to canceled
       case Action.canceled:
       case Action.cancel:
-      case Action.adminCanceled:
-      case Action.adminCancel:
       case Action.cooperativeCancelAccepted:
       case Action.holdInvoicePaymentCanceled:
         return Status.canceled;
+
+      // A dispute resolved by cancelation is its own terminal state: it keeps
+      // the admin resolution visible to the user and out of the plain-cancel
+      // cleanup paths, which are built around Action.canceled.
+      case Action.adminCanceled:
+      case Action.adminCancel:
+        return Status.canceledByAdmin;
 
       // Actions that should set status to cooperatively canceled (pending cancellation)
       case Action.cooperativeCancelInitiatedByYou:
