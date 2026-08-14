@@ -105,41 +105,93 @@ void main() {
   });
 
   // The wording is a security property, not a copy detail: a locale that
-  // reverts to asserting receipt puts those users back where they started.
-  group('every locale asks the buyer to confirm rather than asserting receipt',
+  // reverts to asserting fund movement puts those users back where they
+  // started.
+  group('localized resolutions attribute the outcome instead of asserting it',
       () {
-    // (wallet, verb of confirmation, phrase unique to the old wording that
-    // announced the order as already completed).
-    const cases = {
-      'en': ('Check your wallet', 'confirm', 'completed successfully'),
-      'es': ('Revisa tu billetera', 'confirmar', 'se completó exitosamente'),
-      'it': ('Controlla il tuo wallet', 'confermare', 'completato con successo'),
-      'pt': ('Verifique sua carteira', 'confirmar', 'concluída com sucesso'),
-      'de': ('Überprüfe deine Wallet', 'bestätigen', 'erfolgreich abgeschlossen'),
-      'fr': ('Vérifiez votre portefeuille', 'confirmer', 'terminée avec succès'),
+    // (admin attribution, wallet, verb of confirmation, phrase unique to the
+    // old wording that announced the order as already completed).
+    const locales = {
+      'en': ('admin', 'Check your wallet', 'confirm', 'completed successfully'),
+      'es': (
+        'administrador',
+        'Revisa tu billetera',
+        'confirmar',
+        'se completó exitosamente'
+      ),
+      'it': (
+        'amministratore',
+        'Controlla il tuo wallet',
+        'confermare',
+        'completato con successo'
+      ),
+      'pt': (
+        'administrador',
+        'Verifique sua carteira',
+        'confirmar',
+        'concluída com sucesso'
+      ),
+      'de': (
+        'Administrator',
+        'Überprüfe deine Wallet',
+        'bestätigen',
+        'erfolgreich abgeschlossen'
+      ),
+      'fr': (
+        'administrateur',
+        'Vérifiez votre portefeuille',
+        'confirmer',
+        'terminée avec succès'
+      ),
     };
 
-    cases.forEach((code, expectations) {
-      final (wallet, confirms, oldWording) = expectations;
+    /// The variants where the user is the one owed money. Only these may talk
+    /// about the wallet, and they must ask rather than announce.
+    const awaitingFunds = [
+      ('admin-settled', UserRole.buyer),
+      ('admin-canceled', UserRole.seller),
+    ];
+    const notAwaitingFunds = [
+      ('admin-settled', UserRole.seller),
+      ('admin-canceled', UserRole.buyer),
+    ];
+
+    locales.forEach((code, expectations) {
+      final (adminWord, wallet, confirms, oldWording) = expectations;
 
       testWidgets(code, (tester) async {
-        await tester.pumpWidget(
-          _wrap(
-            _resolved(action: 'admin-settled', userRole: UserRole.buyer),
-            locale: Locale(code),
-          ),
-        );
-        await tester.pumpAndSettle();
+        Future<String> render(String action, UserRole role) async {
+          await tester.pumpWidget(
+            _wrap(
+              _resolved(action: action, userRole: role),
+              locale: Locale(code),
+            ),
+          );
+          await tester.pumpAndSettle();
+          return _renderedText(tester);
+        }
 
-        final rendered = _renderedText(tester);
+        for (final (action, role) in [...awaitingFunds, ...notAwaitingFunds]) {
+          final rendered = await render(action, role);
 
-        expect(rendered, contains(wallet),
-            reason: '$code must point the user at their wallet');
-        expect(rendered, contains(confirms),
-            reason: '$code must ask the user to confirm, not announce receipt');
-        expect(rendered, isNot(contains(oldWording)),
-            reason: '$code must not go back to stating the order as settled '
-                'fact');
+          expect(rendered, contains(adminWord),
+              reason: '$code/$action/${role.name} must attribute the outcome '
+                  'to the admin who decided it');
+          expect(rendered, isNot(contains(oldWording)),
+              reason: '$code/$action/${role.name} must not go back to stating '
+                  'the order as settled fact');
+        }
+
+        for (final (action, role) in awaitingFunds) {
+          final rendered = await render(action, role);
+
+          expect(rendered, contains(wallet),
+              reason: '$code/$action/${role.name} must point the user at '
+                  'their wallet');
+          expect(rendered, contains(confirms),
+              reason: '$code/$action/${role.name} must ask the user to '
+                  'confirm, not announce receipt');
+        }
       });
     });
   });
