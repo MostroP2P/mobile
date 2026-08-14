@@ -111,17 +111,23 @@ class OrderState {
 
   /// Whether local state corroborates that a dispute exists for this order.
   ///
-  /// The incoming payload deliberately does not count: taking an
-  /// attacker-supplied Dispute as its own justification is the vector this
-  /// guards against. An already-resolved dispute is not re-resolved either,
-  /// which blocks replaying an authentic resolution onto a later state.
+  /// Evidence is the tracked [Dispute] object and nothing else. In particular
+  /// [Status.dispute] does not qualify: any action mapping to that status sets
+  /// it without carrying a dispute, so accepting it would let a bare
+  /// `dispute` message stand in as the evidence for the `admin-*` message
+  /// right behind it.
+  ///
+  /// The incoming payload does not count either — taking an attacker-supplied
+  /// Dispute as its own justification is the vector this guards against. An
+  /// already-resolved dispute is not re-resolved, which blocks replaying an
+  /// authentic resolution onto a later state.
   bool get _acceptsAdminDisputeAction {
-    final localDisputeStatus = dispute?.status?.toLowerCase();
-    if (localDisputeStatus != null &&
-        _terminalDisputeStatuses.contains(localDisputeStatus)) {
-      return false;
-    }
-    return dispute != null || status == Status.dispute;
+    final localDispute = dispute;
+    if (localDispute == null) return false;
+
+    final localDisputeStatus = localDispute.status?.toLowerCase();
+    return localDisputeStatus == null ||
+        !_terminalDisputeStatuses.contains(localDisputeStatus);
   }
 
   /// Whether [updateWith] would drop this action for lack of dispute evidence.

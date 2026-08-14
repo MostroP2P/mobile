@@ -122,6 +122,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
               if (rejectedAdminAction) {
                 logger.w(
                     'Dropping side effects for rejected ${msg.action} on order $orderId');
+                onAdminResolutionRejected(msg);
                 return;
               }
 
@@ -179,6 +180,16 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
           values: values ?? {}, orderId: orderId, eventId: eventId);
     }
   }
+
+  /// Called when an admin resolution was dropped for lack of dispute evidence.
+  ///
+  /// The rejection is decided from in-memory state, which during startup may
+  /// not yet hold the dispute this resolution belongs to. Subclasses that
+  /// hydrate from storage override this to replay the persisted history, where
+  /// the dispute and the resolution are applied in order. Replaying is safe:
+  /// the guard runs on every message of the replay, so a resolution with no
+  /// dispute ahead of it in the history is still rejected.
+  void onAdminResolutionRejected(MostroMessage message) {}
 
   Future<void> handleEvent(MostroMessage event,
       {bool bypassTimestampGate = false,

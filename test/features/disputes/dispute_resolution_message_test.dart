@@ -11,8 +11,10 @@ import 'package:mostro_mobile/generated/l10n.dart';
 /// attribute the outcome to the admin and ask the user to confirm, rather than
 /// state that funds moved.
 
-Widget _wrap(DisputeData dispute) => ProviderScope(
+Widget _wrap(DisputeData dispute, {Locale locale = const Locale('en')}) =>
+    ProviderScope(
       child: MaterialApp(
+        locale: locale,
         localizationsDelegates: const [
           S.delegate,
           GlobalMaterialLocalizations.delegate,
@@ -100,5 +102,45 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(_renderedText(tester), isNot(contains('seller was refunded')));
+  });
+
+  // The wording is a security property, not a copy detail: a locale that
+  // reverts to asserting receipt puts those users back where they started.
+  group('every locale asks the buyer to confirm rather than asserting receipt',
+      () {
+    // (wallet, verb of confirmation, phrase unique to the old wording that
+    // announced the order as already completed).
+    const cases = {
+      'en': ('Check your wallet', 'confirm', 'completed successfully'),
+      'es': ('Revisa tu billetera', 'confirmar', 'se completó exitosamente'),
+      'it': ('Controlla il tuo wallet', 'confermare', 'completato con successo'),
+      'pt': ('Verifique sua carteira', 'confirmar', 'concluída com sucesso'),
+      'de': ('Überprüfe deine Wallet', 'bestätigen', 'erfolgreich abgeschlossen'),
+      'fr': ('Vérifiez votre portefeuille', 'confirmer', 'terminée avec succès'),
+    };
+
+    cases.forEach((code, expectations) {
+      final (wallet, confirms, oldWording) = expectations;
+
+      testWidgets(code, (tester) async {
+        await tester.pumpWidget(
+          _wrap(
+            _resolved(action: 'admin-settled', userRole: UserRole.buyer),
+            locale: Locale(code),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final rendered = _renderedText(tester);
+
+        expect(rendered, contains(wallet),
+            reason: '$code must point the user at their wallet');
+        expect(rendered, contains(confirms),
+            reason: '$code must ask the user to confirm, not announce receipt');
+        expect(rendered, isNot(contains(oldWording)),
+            reason: '$code must not go back to stating the order as settled '
+                'fact');
+      });
+    });
   });
 }
