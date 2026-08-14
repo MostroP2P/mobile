@@ -142,6 +142,64 @@ void main() {
     });
   });
 
+  group('Rejected resolutions are reported so side effects can be dropped', () {
+    test('reports rejection for admin actions with no dispute evidence', () {
+      final state = _stateWithoutDispute();
+
+      expect(state.rejectsAdminDisputeAction(Action.adminCanceled), isTrue);
+      expect(state.rejectsAdminDisputeAction(Action.adminSettled), isTrue);
+      expect(state.rejectsAdminDisputeAction(Action.adminTookDispute), isTrue);
+    });
+
+    test('reports no rejection when a dispute is under review', () {
+      final state = _stateWithDispute();
+
+      expect(state.rejectsAdminDisputeAction(Action.adminCanceled), isFalse);
+      expect(state.rejectsAdminDisputeAction(Action.adminSettled), isFalse);
+    });
+
+    test('reports rejection once the dispute is already resolved', () {
+      final state = _stateWithDispute(disputeStatus: 'resolved');
+
+      expect(state.rejectsAdminDisputeAction(Action.adminSettled), isTrue,
+          reason: 'replaying a resolution onto a settled dispute is rejected');
+    });
+
+    test('never reports rejection for non-admin actions', () {
+      final state = _stateWithoutDispute();
+
+      expect(state.rejectsAdminDisputeAction(Action.fiatSentOk), isFalse);
+      expect(state.rejectsAdminDisputeAction(Action.canceled), isFalse);
+      expect(state.rejectsAdminDisputeAction(Action.release), isFalse);
+    });
+
+    test('agrees with what updateWith actually does', () {
+      // The predicate drives side-effect suppression, so it must not diverge
+      // from the state machine it is meant to describe.
+      final states = [
+        _stateWithoutDispute(),
+        _stateWithDispute(),
+        _stateWithDispute(disputeStatus: 'resolved'),
+        _stateWithDispute(disputeStatus: 'seller-refunded'),
+      ];
+      const adminActions = [
+        Action.adminCanceled,
+        Action.adminSettled,
+        Action.adminTookDispute,
+      ];
+
+      for (final state in states) {
+        for (final action in adminActions) {
+          final rejected = state.rejectsAdminDisputeAction(action);
+          final unchanged = identical(state.updateWith(_message(action)), state);
+          expect(rejected, equals(unchanged),
+              reason: 'predicate and updateWith disagree for $action on '
+                  '${state.status}/${state.dispute?.status}');
+        }
+      }
+    });
+  });
+
   group('Legitimate admin resolutions still apply', () {
     test('admin-settled resolves an existing in-progress dispute', () {
       final state = _stateWithDispute();

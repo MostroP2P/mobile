@@ -124,6 +124,14 @@ class OrderState {
     return dispute != null || status == Status.dispute;
   }
 
+  /// Whether [updateWith] would drop this action for lack of dispute evidence.
+  ///
+  /// Callers use this to suppress the message's side effects too. A rejected
+  /// resolution that still raises a notification or navigates would hand the
+  /// attacker the user-visible half of the forgery.
+  bool rejectsAdminDisputeAction(Action action) =>
+      _isAdminDisputeAction(action) && !_acceptsAdminDisputeAction;
+
   OrderState updateWith(MostroMessage message) {
     logger.i('Updating OrderState with Action: ${message.action}');
 
