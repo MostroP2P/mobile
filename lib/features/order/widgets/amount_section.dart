@@ -1,3 +1,5 @@
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
@@ -210,20 +212,21 @@ class _AmountSectionState extends State<AmountSection> {
               // Min amount input
               Expanded(
                 flex: _showSecondInput ? 2 : 1,
-                child: TextFormField(
-                  key: const Key('minAmountField'),
-                  controller: _minAmountController,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    border: InputBorder.none,
-                    hintText: S.of(context)!.enterAmountHint,
-                    hintStyle: const TextStyle(color: Colors.grey),
-                  ),
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  validator: _validateMinAmount,
-                  onChanged: (_) => _notifyAmountChanged(),
-                ),
+                child: AutomationId(AutomationIds.orderCreateFiatAmount,
+                    child: TextFormField(
+                      key: const Key('minAmountField'),
+                      controller: _minAmountController,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        border: InputBorder.none,
+                        hintText: S.of(context)!.enterAmountHint,
+                        hintStyle: const TextStyle(color: Colors.grey),
+                      ),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      validator: _validateMinAmount,
+                      onChanged: (_) => _notifyAmountChanged(),
+                    )),
               ),
 
               // "to" label and max amount input (shown after first digit)
@@ -237,20 +240,23 @@ class _AmountSectionState extends State<AmountSection> {
                 ),
                 Expanded(
                   flex: 2,
-                  child: TextFormField(
-                    key: const Key('maxAmountField'),
-                    controller: _maxAmountController,
-                    focusNode: _maxAmountFocusNode,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      border: InputBorder.none,
-                      hintText: S.of(context)!.maxAmount,
-                      hintStyle: const TextStyle(color: Colors.grey),
-                    ),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    validator: _validateMaxAmount,
-                  ),
+                  child: AutomationId(AutomationIds.orderCreateFiatAmountMax,
+                      child: TextFormField(
+                        key: const Key('maxAmountField'),
+                        controller: _maxAmountController,
+                        focusNode: _maxAmountFocusNode,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          border: InputBorder.none,
+                          hintText: S.of(context)!.maxAmount,
+                          hintStyle: const TextStyle(color: Colors.grey),
+                        ),
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly
+                        ],
+                        validator: _validateMaxAmount,
+                      )),
                 ),
               ],
             ],

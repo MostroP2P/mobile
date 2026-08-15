@@ -1,3 +1,4 @@
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -62,6 +63,13 @@ class BottomNavBar extends ConsumerWidget {
     );
   }
 
+  /// Stable automation identifier per tab (see `AutomationIds`).
+  static String _navIdentifier(int index) => switch (index) {
+        0 => AutomationIds.navOrderBook,
+        1 => AutomationIds.navTrades,
+        _ => AutomationIds.navChat,
+      };
+
   Widget _buildNavItem(
       BuildContext context, IconData icon, String label, int index,
       {int? notificationCount}) {
@@ -72,6 +80,7 @@ class BottomNavBar extends ConsumerWidget {
 
     return Expanded(
       child: Semantics(
+        identifier: _navIdentifier(index),
         button: true,
         enabled: true,
         label: S.of(context)!.navigateToLabel(label),

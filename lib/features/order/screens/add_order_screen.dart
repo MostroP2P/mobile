@@ -1,3 +1,5 @@
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -90,7 +92,8 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
     _fixedPriceRangeErrorTimer?.cancel();
     _scrollController.dispose();
     _lightningAddressController.dispose();
-    _customPaymentMethodController.removeListener(_onCustomPaymentMethodChanged);
+    _customPaymentMethodController
+        .removeListener(_onCustomPaymentMethodChanged);
     _customPaymentMethodController.dispose();
     _satsAmountController.dispose();
     super.dispose();
@@ -199,29 +202,29 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
     if (satsAmount < minAllowed) {
       return fiatLimits.isDisplayable
           ? S.of(context)!.fiatAmountTooLowRange(
-              fiatLimits.minFiat.toString(),
-              fiatLimits.maxFiat.toString(),
-              selectedFiatCode,
-              minAllowed.toString(),
-              maxAllowed.toString(),
-            )
+                fiatLimits.minFiat.toString(),
+                fiatLimits.maxFiat.toString(),
+                selectedFiatCode,
+                minAllowed.toString(),
+                maxAllowed.toString(),
+              )
           : S.of(context)!.fiatAmountTooLow(
-              minAllowed.toString(),
-              maxAllowed.toString(),
-            );
+                minAllowed.toString(),
+                maxAllowed.toString(),
+              );
     } else {
       return fiatLimits.isDisplayable
           ? S.of(context)!.fiatAmountTooHighRange(
-              fiatLimits.minFiat.toString(),
-              fiatLimits.maxFiat.toString(),
-              selectedFiatCode,
-              minAllowed.toString(),
-              maxAllowed.toString(),
-            )
+                fiatLimits.minFiat.toString(),
+                fiatLimits.maxFiat.toString(),
+                selectedFiatCode,
+                minAllowed.toString(),
+                maxAllowed.toString(),
+              )
           : S.of(context)!.fiatAmountTooHigh(
-              minAllowed.toString(),
-              maxAllowed.toString(),
-            );
+                minAllowed.toString(),
+                maxAllowed.toString(),
+              );
     }
   }
 
@@ -373,31 +376,38 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
                                 color: AppTheme.yellow, size: 18),
                             iconBackgroundColor:
                                 AppTheme.yellow.withValues(alpha: 0.3),
-                            child: TextFormField(
-                              controller: _satsAmountController,
-                              style: const TextStyle(color: Colors.white),
-                              decoration: InputDecoration(
-                                border: InputBorder.none,
-                                hintText: S.of(context)!.enterSatsAmount,
-                                hintStyle: const TextStyle(color: Colors.grey),
-                              ),
-                              keyboardType: TextInputType.number,
-                              validator: (value) {
-                                if (!_marketRate &&
-                                    (value == null || value.isEmpty)) {
-                                  return S.of(context)!.pleaseEnterSatsAmount;
-                                }
-                                if (!_marketRate &&
-                                    !RegExp(r'^[0-9]+$').hasMatch(value!)) {
-                                  return S.of(context)!.pleaseEnterNumbersOnly;
-                                }
-                                return null;
-                              },
-                              // Restricting input to numbers only
-                              inputFormatters: [
-                                FilteringTextInputFormatter.digitsOnly,
-                              ],
-                            ),
+                            child: AutomationId(
+                                AutomationIds.orderCreateSatsAmount,
+                                child: TextFormField(
+                                  controller: _satsAmountController,
+                                  style: const TextStyle(color: Colors.white),
+                                  decoration: InputDecoration(
+                                    border: InputBorder.none,
+                                    hintText: S.of(context)!.enterSatsAmount,
+                                    hintStyle:
+                                        const TextStyle(color: Colors.grey),
+                                  ),
+                                  keyboardType: TextInputType.number,
+                                  validator: (value) {
+                                    if (!_marketRate &&
+                                        (value == null || value.isEmpty)) {
+                                      return S
+                                          .of(context)!
+                                          .pleaseEnterSatsAmount;
+                                    }
+                                    if (!_marketRate &&
+                                        !RegExp(r'^[0-9]+$').hasMatch(value!)) {
+                                      return S
+                                          .of(context)!
+                                          .pleaseEnterNumbersOnly;
+                                    }
+                                    return null;
+                                  },
+                                  // Restricting input to numbers only
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.digitsOnly,
+                                  ],
+                                )),
                           ),
                         ],
                         const SizedBox(height: 16),

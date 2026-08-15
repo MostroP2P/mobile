@@ -1,3 +1,5 @@
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
@@ -137,26 +139,29 @@ class _CurrencySelectionDialogWidgetState
                               final isSelected =
                                   code == widget.currentSelection;
 
-                              return ListTile(
-                                key: Key('currency_$code'),
-                                leading: Text(
-                                  currency.emoji.isNotEmpty
-                                      ? currency.emoji
-                                      : '🏳️',
-                                  style: const TextStyle(fontSize: 20),
-                                ),
-                                title: Text(
-                                  '$code - ${currency.name}',
-                                  style: const TextStyle(color: Colors.white),
-                                ),
-                                trailing: isSelected
-                                    ? const Icon(Icons.check,
-                                        color: AppTheme.mostroGreen)
-                                    : null,
-                                onTap: () {
-                                  Navigator.of(context).pop(code);
-                                },
-                              );
+                              return AutomationId(
+                                  AutomationIds.orderCreateCurrencyOption(code),
+                                  child: ListTile(
+                                    key: Key('currency_$code'),
+                                    leading: Text(
+                                      currency.emoji.isNotEmpty
+                                          ? currency.emoji
+                                          : '🏳️',
+                                      style: const TextStyle(fontSize: 20),
+                                    ),
+                                    title: Text(
+                                      '$code - ${currency.name}',
+                                      style:
+                                          const TextStyle(color: Colors.white),
+                                    ),
+                                    trailing: isSelected
+                                        ? const Icon(Icons.check,
+                                            color: AppTheme.mostroGreen)
+                                        : null,
+                                    onTap: () {
+                                      Navigator.of(context).pop(code);
+                                    },
+                                  ));
                             },
                           );
                   },

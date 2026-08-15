@@ -1,3 +1,5 @@
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -722,85 +724,89 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const SizedBox(height: 16),
             Material(
               color: Colors.transparent,
-              child: InkWell(
-                onTap: () => MostroNodeSelector.show(context),
-                borderRadius: BorderRadius.circular(8),
-                child: Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: AppTheme.backgroundInput,
+              child: AutomationId(AutomationIds.settingsMostroNode,
+                  merge: false,
+                  child: InkWell(
+                    onTap: () => MostroNodeSelector.show(context),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.1),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      if (selectedNode != null) ...[
-                        MostroNodeAvatar(node: selectedNode),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
+                    child: Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: AppTheme.backgroundInput,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.1),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          if (selectedNode != null) ...[
+                            MostroNodeAvatar(node: selectedNode),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Flexible(
-                                    child: Text(
-                                      selectedNode.displayName,
-                                      style: const TextStyle(
-                                        color: AppTheme.textPrimary,
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w500,
+                                  Row(
+                                    children: [
+                                      Flexible(
+                                        child: Text(
+                                          selectedNode.displayName,
+                                          style: const TextStyle(
+                                            color: AppTheme.textPrimary,
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
                                       ),
-                                      overflow: TextOverflow.ellipsis,
+                                      if (selectedNode.isTrusted) ...[
+                                        const SizedBox(width: 8),
+                                        const TrustedBadge(),
+                                      ],
+                                    ],
+                                  ),
+                                  const SizedBox(height: 2),
+                                  AutomationId(
+                                      AutomationIds.settingsMostroNodePubkey,
+                                      child: Text(
+                                        selectedNode.pubkey,
+                                        style: const TextStyle(
+                                          color: AppTheme.textSecondary,
+                                          fontSize: 12,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      )),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    S.of(context)!.tapToSelectNode,
+                                    style: const TextStyle(
+                                      color: AppTheme.textSecondary,
+                                      fontSize: 11,
                                     ),
                                   ),
-                                  if (selectedNode.isTrusted) ...[
-                                    const SizedBox(width: 8),
-                                    const TrustedBadge(),
-                                  ],
                                 ],
                               ),
-                              const SizedBox(height: 2),
-                              Text(
-                                selectedNode.pubkey,
-                                style: const TextStyle(
-                                  color: AppTheme.textSecondary,
-                                  fontSize: 12,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                S.of(context)!.tapToSelectNode,
-                                style: const TextStyle(
-                                  color: AppTheme.textSecondary,
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ] else
-                        Expanded(
-                          child: Text(
-                            S.of(context)!.selectMostroNode,
-                            style: const TextStyle(
-                              color: AppTheme.textSecondary,
-                              fontSize: 15,
                             ),
+                          ] else
+                            Expanded(
+                              child: Text(
+                                S.of(context)!.selectMostroNode,
+                                style: const TextStyle(
+                                  color: AppTheme.textSecondary,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ),
+                          const Icon(
+                            Icons.arrow_drop_down,
+                            color: AppTheme.textSecondary,
                           ),
-                        ),
-                      const Icon(
-                        Icons.arrow_drop_down,
-                        color: AppTheme.textSecondary,
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-              ),
+                    ),
+                  )),
             ),
             Container(
               margin: const EdgeInsets.only(top: 16),

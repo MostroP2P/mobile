@@ -1,3 +1,5 @@
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
 import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -53,145 +55,143 @@ class TradesListItem extends ConsumerWidget {
         ? trade.orderType == OrderType.buy
         : trade.orderType == OrderType.sell;
 
-    return GestureDetector(
-      onTap: () {
-        context.push('/trade_detail/${trade.orderId}');
-      },
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-        decoration: BoxDecoration(
-
-          color: AppTheme.dark1,
-
-          borderRadius: BorderRadius.circular(12.0),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Left side - Trade info
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // First row: Buy/Sell Bitcoin text (full width)
-                    Text(
-                      isBuying
-                          ? S.of(context)!.buyingBitcoin
-                          : S.of(context)!.sellingBitcoin,
-                      style: const TextStyle(
-                        color: AppTheme.textPrimary,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    // Second row: Status and role chips + Premium/Discount
-                    Row(
+    return AutomationId(AutomationIds.tradesItem(trade.orderId ?? ''),
+        merge: false,
+        child: GestureDetector(
+          onTap: () {
+            context.push('/trade_detail/${trade.orderId}');
+          },
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            decoration: BoxDecoration(
+              color: AppTheme.dark1,
+              borderRadius: BorderRadius.circular(12.0),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Left side - Trade info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildStatusChip(
-                          context,
-                          orderState.status,
-                          bondBadgeLabel: bondBadgeLabel,
+                        // First row: Buy/Sell Bitcoin text (full width)
+                        Text(
+                          isBuying
+                              ? S.of(context)!.buyingBitcoin
+                              : S.of(context)!.sellingBitcoin,
+                          style: const TextStyle(
+                            color: AppTheme.textPrimary,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                        const SizedBox(width: 8),
-                        _buildRoleChip(context, isCreator),
-                        const Spacer(),
-                        // Show premium/discount if different from zero
-                        if (trade.premium != null && trade.premium != '0')
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color:
-                                  double.tryParse(trade.premium!) != null &&
-                                          double.parse(trade.premium!) > 0
-                                      ? AppTheme.premiumPositiveChip
-                                      : AppTheme.premiumNegativeChip,
-                              borderRadius: BorderRadius.circular(8),
+                        const SizedBox(height: 8),
+                        // Second row: Status and role chips + Premium/Discount
+                        Row(
+                          children: [
+                            _buildStatusChip(
+                              context,
+                              orderState.status,
+                              bondBadgeLabel: bondBadgeLabel,
                             ),
-                            child: Text(
-                              '${double.tryParse(trade.premium!) != null && double.parse(trade.premium!) > 0 ? '+' : ''}${trade.premium}%',
+                            const SizedBox(width: 8),
+                            _buildRoleChip(context, isCreator),
+                            const Spacer(),
+                            // Show premium/discount if different from zero
+                            if (trade.premium != null && trade.premium != '0')
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color:
+                                      double.tryParse(trade.premium!) != null &&
+                                              double.parse(trade.premium!) > 0
+                                          ? AppTheme.premiumPositiveChip
+                                          : AppTheme.premiumNegativeChip,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  '${double.tryParse(trade.premium!) != null && double.parse(trade.premium!) > 0 ? '+' : ''}${trade.premium}%',
+                                  style: const TextStyle(
+                                    color: AppTheme.textPrimary,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        // Third row: Flag + Amount and currency
+                        Row(
+                          children: [
+                            Text(
+                              CurrencyUtils.getFlagFromCurrencyData(
+                                  trade.currency ?? '', currencyData),
                               style: const TextStyle(
-                                color: AppTheme.textPrimary,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w500,
+                                fontSize: 16,
                               ),
                             ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    // Third row: Flag + Amount and currency
-                    Row(
-                      children: [
-                        Text(
-                          CurrencyUtils.getFlagFromCurrencyData(
-                              trade.currency ?? '', currencyData),
-                          style: const TextStyle(
-                            fontSize: 16,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Flexible(
-                          child: Text(
-                            trade.fiatAmount.maximum != null &&
-                                    trade.fiatAmount.maximum !=
-                                        trade.fiatAmount.minimum
-                                ? '${trade.fiatAmount.minimum} - ${trade.fiatAmount.maximum} ${trade.currency ?? ''}'
-                                : '${trade.fiatAmount.minimum} ${trade.currency ?? ''}',
-                            style: const TextStyle(
-                              color: AppTheme.textPrimary,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                trade.fiatAmount.maximum != null &&
+                                        trade.fiatAmount.maximum !=
+                                            trade.fiatAmount.minimum
+                                    ? '${trade.fiatAmount.minimum} - ${trade.fiatAmount.maximum} ${trade.currency ?? ''}'
+                                    : '${trade.fiatAmount.minimum} ${trade.currency ?? ''}',
+                                style: const TextStyle(
+                                  color: AppTheme.textPrimary,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                          ],
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
+                        const SizedBox(height: 4),
 
-                    trade.paymentMethods.isNotEmpty
-                        ? Text(
-                            trade.paymentMethods.join(', '),
-                            style: const TextStyle(
-                              color: AppTheme.secondaryText,
-                              fontSize: 14,
-                            ),
-                          )
-                        : Text(
-                            S.of(context)!.bankTransfer,
-                            style: const TextStyle(
-                              color: AppTheme.secondaryText,
-                              fontSize: 14,
-                            ),
-                          ),
-                  ],
-                ),
+                        trade.paymentMethods.isNotEmpty
+                            ? Text(
+                                trade.paymentMethods.join(', '),
+                                style: const TextStyle(
+                                  color: AppTheme.secondaryText,
+                                  fontSize: 14,
+                                ),
+                              )
+                            : Text(
+                                S.of(context)!.bankTransfer,
+                                style: const TextStyle(
+                                  color: AppTheme.secondaryText,
+                                  fontSize: 14,
+                                ),
+                              ),
+                      ],
+                    ),
+                  ),
+                  // Right side - Arrow icon
+                  const Icon(
+                    Icons.chevron_right,
+                    color: AppTheme.textPrimary,
+                    size: 24,
+                  ),
+                ],
               ),
-              // Right side - Arrow icon
-              const Icon(
-                Icons.chevron_right,
-                color: AppTheme.textPrimary,
-                size: 24,
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
-    );
+        ));
   }
 
   Widget _buildRoleChip(BuildContext context, bool isCreator) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-
         color: isCreator ? AppTheme.createdByYouChip : AppTheme.takenByYouChip,
         borderRadius: BorderRadius.circular(12),
-
       ),
       child: Text(
         isCreator ? S.of(context)!.createdByYou : S.of(context)!.takenByYou,
@@ -214,8 +214,7 @@ class TradesListItem extends ConsumerWidget {
     String label;
 
     if (bondBadgeLabel != null) {
-      backgroundColor =
-          AppTheme.statusPendingBackground.withValues(alpha: 0.6);
+      backgroundColor = AppTheme.statusPendingBackground.withValues(alpha: 0.6);
       textColor = AppTheme.statusPendingText;
       label = bondBadgeLabel;
       return Container(
@@ -237,7 +236,6 @@ class TradesListItem extends ConsumerWidget {
 
     switch (status) {
       case Status.active:
-
         backgroundColor =
             AppTheme.statusActiveBackground.withValues(alpha: 0.3);
         textColor = AppTheme.statusActiveText;
@@ -337,20 +335,23 @@ class TradesListItem extends ConsumerWidget {
         break;
     }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: textColor,
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
+    return AutomationId(AutomationIds.tradesItemStatus,
+        merge: false,
+        label: status.value,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: textColor,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ));
   }
 }

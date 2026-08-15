@@ -1,3 +1,5 @@
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -68,7 +70,7 @@ class MostroAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final bool showBackButton;
   final bool showDrawerButton;
   final List<Widget>? actions;
-  
+
   const MostroAppBar({
     super.key,
     this.title,
@@ -84,37 +86,40 @@ class MostroAppBar extends ConsumerWidget implements PreferredSizeWidget {
     if (showBackButton) {
       leading = Padding(
         padding: const EdgeInsets.only(left: 16.0),
-        child: IconButton(
-          icon: const HeroIcon(
-            HeroIcons.arrowLeft,
-            style: HeroIconStyle.outline,
-            color: AppTheme.cream1,
-            size: 28,
-          ),
-          onPressed: () => context.pop(),
-        ),
+        child: AutomationId(AutomationIds.appBarBack,
+            child: IconButton(
+              icon: const HeroIcon(
+                HeroIcons.arrowLeft,
+                style: HeroIconStyle.outline,
+                color: AppTheme.cream1,
+                size: 28,
+              ),
+              onPressed: () => context.pop(),
+            )),
       );
     } else if (showDrawerButton) {
       leading = Padding(
         padding: const EdgeInsets.only(left: 16.0),
-        child: IconButton(
-          icon: const HeroIcon(
-            HeroIcons.bars3,
-            style: HeroIconStyle.outline,
-            color: AppTheme.cream1,
-            size: 28,
-          ),
-          onPressed: () => ref.read(drawerProvider.notifier).toggleDrawer(),
-        ),
+        child: AutomationId(AutomationIds.appBarDrawer,
+            child: IconButton(
+              icon: const HeroIcon(
+                HeroIcons.bars3,
+                style: HeroIconStyle.outline,
+                color: AppTheme.cream1,
+                size: 28,
+              ),
+              onPressed: () => ref.read(drawerProvider.notifier).toggleDrawer(),
+            )),
       );
     }
-    
+
     // Use provided actions or default to just notification bell
-    List<Widget> appBarActions = actions ?? [
-      const NotificationBellWidget(),
-      const SizedBox(width: 16),
-    ];
-    
+    List<Widget> appBarActions = actions ??
+        [
+          const NotificationBellWidget(),
+          const SizedBox(width: 16),
+        ];
+
     return AppBar(
       backgroundColor: AppTheme.backgroundDark,
       elevation: 0,

@@ -1,3 +1,5 @@
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -127,6 +129,13 @@ class CustomDrawerOverlay extends ConsumerWidget {
     );
   }
 
+  /// Stable automation identifier per drawer destination.
+  static String _drawerIdentifier(String route) => switch (route) {
+        '/key_management' => AutomationIds.drawerAccount,
+        '/settings' => AutomationIds.drawerSettings,
+        _ => AutomationIds.drawerAbout,
+      };
+
   Widget _buildMenuItem(
     BuildContext context,
     WidgetRef ref, {
@@ -134,24 +143,27 @@ class CustomDrawerOverlay extends ConsumerWidget {
     required String title,
     required String route,
   }) {
-    return ListTile(
-      dense: true,
-      leading: Icon(
-        icon,
-        color: AppTheme.cream1,
-        size: 22,
-      ),
-      title: Text(
-        title,
-        style: AppTheme.theme.textTheme.bodyLarge?.copyWith(
+    return AutomationId(
+      _drawerIdentifier(route),
+      child: ListTile(
+        dense: true,
+        leading: Icon(
+          icon,
           color: AppTheme.cream1,
-          fontWeight: FontWeight.w500,
+          size: 22,
         ),
+        title: Text(
+          title,
+          style: AppTheme.theme.textTheme.bodyLarge?.copyWith(
+            color: AppTheme.cream1,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        onTap: () {
+          ref.read(drawerProvider.notifier).closeDrawer();
+          context.push(route);
+        },
       ),
-      onTap: () {
-        ref.read(drawerProvider.notifier).closeDrawer();
-        context.push(route);
-      },
     );
   }
 }

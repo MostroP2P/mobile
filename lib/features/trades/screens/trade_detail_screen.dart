@@ -1,3 +1,5 @@
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
 import 'package:circular_countdown/circular_countdown.dart';
 import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter/material.dart';
@@ -455,28 +457,29 @@ class TradeDetailScreen extends ConsumerWidget {
                           ),
                         ),
                       ),
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.of(dialogContext).pop(true);
-                          ref
-                              .read(orderNotifierProvider(orderId).notifier)
-                              .releaseOrder();
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.activeColor,
-                          foregroundColor: Colors.black,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: Text(
-                          S.of(context)!.yes,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
+                      AutomationId(AutomationIds.tradeReleaseConfirm,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.of(dialogContext).pop(true);
+                              ref
+                                  .read(orderNotifierProvider(orderId).notifier)
+                                  .releaseOrder();
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.activeColor,
+                              foregroundColor: Colors.black,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: Text(
+                              S.of(context)!.yes,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          )),
                     ],
                   ),
                 );
@@ -605,18 +608,19 @@ class TradeDetailScreen extends ConsumerWidget {
     Key? key,
     MostroReactiveButtonController? controller,
   }) {
-    return MostroReactiveButton(
-      key: key,
-      label: label,
-      buttonStyle: ButtonStyleType.raised,
-      orderId: orderId,
-      action: action,
-      backgroundColor: backgroundColor,
-      onPressed: onPressed ?? () {}, // Provide empty function when null
-      showSuccessIndicator: true,
-      timeout: const Duration(seconds: 10),
-      controller: controller,
-    );
+    return AutomationId(AutomationIds.tradeAction(action.name),
+        child: MostroReactiveButton(
+          key: key,
+          label: label,
+          buttonStyle: ButtonStyleType.raised,
+          orderId: orderId,
+          action: action,
+          backgroundColor: backgroundColor,
+          onPressed: onPressed ?? () {}, // Provide empty function when null
+          showSuccessIndicator: true,
+          timeout: const Duration(seconds: 10),
+          controller: controller,
+        ));
   }
 
   Widget _buildCancelButton(
@@ -626,183 +630,190 @@ class TradeDetailScreen extends ConsumerWidget {
     String cancelMessage,
     actions.Action action,
   ) {
-    return ElevatedButton(
-      onPressed: () async {
-        final result = await showDialog<bool>(
-          context: context,
-          builder: (dialogContext) => AlertDialog(
-            backgroundColor: AppTheme.backgroundCard,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
-            ),
-            title: Text(
-              S.of(context)!.cancelTradeDialogTitle,
-              style: const TextStyle(
-                color: AppTheme.textPrimary,
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            content: Text(
-              cancelMessage,
-              style: const TextStyle(
-                color: AppTheme.textSecondary,
-                fontSize: 14,
-                height: 1.5,
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(false),
-                child: Text(
-                  S.of(context)!.no,
+    return AutomationId(AutomationIds.tradeCancel,
+        child: ElevatedButton(
+          onPressed: () async {
+            final result = await showDialog<bool>(
+              context: context,
+              builder: (dialogContext) => AlertDialog(
+                backgroundColor: AppTheme.backgroundCard,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                ),
+                title: Text(
+                  S.of(context)!.cancelTradeDialogTitle,
+                  style: const TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                content: Text(
+                  cancelMessage,
                   style: const TextStyle(
                     color: AppTheme.textSecondary,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                    height: 1.5,
                   ),
-                  textAlign: TextAlign.center,
                 ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(false),
+                    child: Text(
+                      S.of(context)!.no,
+                      style: const TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  AutomationId(AutomationIds.tradeCancelConfirm,
+                      child: AutomationId(AutomationIds.tradeDisputeConfirm,
+                          child: ElevatedButton(
+                            onPressed: () =>
+                                Navigator.of(dialogContext).pop(true),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.activeColor,
+                              foregroundColor: Colors.black,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 12),
+                            ),
+                            child: Text(
+                              S.of(context)!.yes,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ))),
+                ],
               ),
-              const SizedBox(width: 12),
-              ElevatedButton(
-                onPressed: () => Navigator.of(dialogContext).pop(true),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.activeColor,
-                  foregroundColor: Colors.black,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                ),
-                child: Text(
-                  S.of(context)!.yes,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ],
-          ),
-        );
+            );
 
-        // Only proceed with cancellation if user confirmed
-        if (result == true) {
-          ref.read(orderNotifierProvider(orderId).notifier).cancelOrder();
-        }
-      },
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppTheme.red1,
-        foregroundColor: Colors.white,
-      ),
-      child: Text(buttonText),
-    );
+            // Only proceed with cancellation if user confirmed
+            if (result == true) {
+              ref.read(orderNotifierProvider(orderId).notifier).cancelOrder();
+            }
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppTheme.red1,
+            foregroundColor: Colors.white,
+          ),
+          child: Text(buttonText),
+        ));
   }
 
   Widget _buildDisputeButton(
     BuildContext context,
     WidgetRef ref,
   ) {
-    return ElevatedButton(
-      onPressed: () async {
-        final result = await showDialog<bool>(
-          context: context,
-          builder: (dialogContext) => AlertDialog(
-            backgroundColor: AppTheme.backgroundCard,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
-            ),
-            title: Text(
-              S.of(context)!.disputeTradeDialogTitle,
-              style: const TextStyle(
-                color: AppTheme.textPrimary,
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            content: Text(
-              S.of(context)!.disputeTradeDialogContent,
-              style: const TextStyle(
-                color: AppTheme.textSecondary,
-                fontSize: 14,
-                height: 1.5,
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(false),
-                child: Text(
-                  S.of(context)!.no,
-                  style: const TextStyle(
-                    color: AppTheme.textSecondary,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
+    return AutomationId(AutomationIds.tradeDispute,
+        child: ElevatedButton(
+          onPressed: () async {
+            final result = await showDialog<bool>(
+              context: context,
+              builder: (dialogContext) => AlertDialog(
+                backgroundColor: AppTheme.backgroundCard,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
                 ),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.of(dialogContext).pop(true),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.activeColor,
-                  foregroundColor: Colors.black,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: Text(
-                  S.of(context)!.yes,
+                title: Text(
+                  S.of(context)!.disputeTradeDialogTitle,
                   style: const TextStyle(
-                    fontSize: 16,
+                    color: AppTheme.textPrimary,
+                    fontSize: 18,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
+                content: Text(
+                  S.of(context)!.disputeTradeDialogContent,
+                  style: const TextStyle(
+                    color: AppTheme.textSecondary,
+                    fontSize: 14,
+                    height: 1.5,
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(false),
+                    child: Text(
+                      S.of(context)!.no,
+                      style: const TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(true),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.activeColor,
+                      foregroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: Text(
+                      S.of(context)!.yes,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            );
+
+            // Only proceed with dispute if user confirmed
+            if (result == true) {
+              try {
+                // Create dispute using the repository
+                final repository = ref.read(disputeRepositoryProvider);
+                final success = await repository.createDispute(orderId);
+
+                if (success && context.mounted) {
+                  SnackBarHelper.showTopSnackBar(
+                    context,
+                    S.of(context)!.disputeCreatedSuccessfully,
+                    backgroundColor: AppTheme.mostroGreen,
+                  );
+                } else if (context.mounted) {
+                  SnackBarHelper.showTopSnackBar(
+                    context,
+                    S.of(context)!.disputeCreationFailed,
+                    backgroundColor: AppTheme.red1,
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  SnackBarHelper.showTopSnackBar(
+                    context,
+                    S
+                        .of(context)!
+                        .disputeCreationErrorWithMessage(e.toString()),
+                    backgroundColor: AppTheme.red1,
+                  );
+                }
+              }
+            }
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppTheme.red1,
+            foregroundColor: Colors.white,
           ),
-        );
-
-        // Only proceed with dispute if user confirmed
-        if (result == true) {
-          try {
-            // Create dispute using the repository
-            final repository = ref.read(disputeRepositoryProvider);
-            final success = await repository.createDispute(orderId);
-
-            if (success && context.mounted) {
-              SnackBarHelper.showTopSnackBar(
-                context,
-                S.of(context)!.disputeCreatedSuccessfully,
-                backgroundColor: AppTheme.mostroGreen,
-              );
-            } else if (context.mounted) {
-              SnackBarHelper.showTopSnackBar(
-                context,
-                S.of(context)!.disputeCreationFailed,
-                backgroundColor: AppTheme.red1,
-              );
-            }
-          } catch (e) {
-            if (context.mounted) {
-              SnackBarHelper.showTopSnackBar(
-                context,
-                S.of(context)!.disputeCreationErrorWithMessage(e.toString()),
-                backgroundColor: AppTheme.red1,
-              );
-            }
-          }
-        }
-      },
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppTheme.red1,
-        foregroundColor: Colors.white,
-      ),
-      child: Text(S.of(context)!.disputeButton),
-    );
+          child: Text(S.of(context)!.disputeButton),
+        ));
   }
 
   Widget _buildContactButton(BuildContext context) {

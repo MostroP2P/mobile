@@ -1,3 +1,5 @@
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -36,7 +38,8 @@ class _PayLightningInvoiceScreenState
 
     final nwcState = ref.watch(nwcProvider);
     final isNwcConnected = nwcState.status == NwcStatus.connected;
-    final showNwcPayment = isNwcConnected && !_manualMode && lnInvoice.isNotEmpty;
+    final showNwcPayment =
+        isNwcConnected && !_manualMode && lnInvoice.isNotEmpty;
 
     return Scaffold(
       backgroundColor: AppTheme.dark1,
@@ -55,11 +58,11 @@ class _PayLightningInvoiceScreenState
               // NWC auto-payment flow
               Text(
                 S.of(context)!.payInvoiceToContinue(
-                  sats.toString(),
-                  fiatCode,
-                  fiatAmount,
-                  widget.orderId,
-                ),
+                      sats.toString(),
+                      fiatCode,
+                      fiatAmount,
+                      widget.orderId,
+                    ),
                 style: const TextStyle(color: AppTheme.cream1, fontSize: 18),
                 textAlign: TextAlign.center,
               ),
@@ -80,17 +83,18 @@ class _PayLightningInvoiceScreenState
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  ElevatedButton(
-                    onPressed: () async {
-                      context.go('/');
-                      await orderNotifier.cancelOrder();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: Colors.red,
-                    ),
-                    child: Text(S.of(context)!.cancel),
-                  ),
+                  AutomationId(AutomationIds.payCancel,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          context.go('/');
+                          await orderNotifier.cancelOrder();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          backgroundColor: Colors.red,
+                        ),
+                        child: Text(S.of(context)!.cancel),
+                      )),
                 ],
               ),
             ] else ...[

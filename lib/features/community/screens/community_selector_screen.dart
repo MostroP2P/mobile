@@ -1,3 +1,5 @@
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -153,70 +155,74 @@ class _CommunitySelectorScreenState
                   ),
                   const SizedBox(height: 12),
                   // Use custom node
-                  TextButton(
-                    onPressed:
-                        _isSelecting ? null : () => _onUseCustomNode(context),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.settings,
-                          size: 18,
-                          color: AppTheme.textSecondary,
+                  AutomationId(AutomationIds.communityCustomNode,
+                      child: TextButton(
+                        onPressed: _isSelecting
+                            ? null
+                            : () => _onUseCustomNode(context),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.settings,
+                              size: 18,
+                              color: AppTheme.textSecondary,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              S.of(context)!.useCustomNode,
+                              style: const TextStyle(
+                                color: AppTheme.textSecondary,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          S.of(context)!.useCustomNode,
+                      )),
+                  const SizedBox(height: 8),
+                  // Confirm button
+                  if (_selectedPubkey != null)
+                    AutomationId(AutomationIds.communityDone,
+                        child: ElevatedButton(
+                          onPressed:
+                              _isSelecting ? null : () => _onConfirm(context),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.activeColor,
+                            foregroundColor: Colors.black,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                          child: _isSelecting
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.black,
+                                  ),
+                                )
+                              : Text(
+                                  S.of(context)!.done,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                        )),
+                  // Skip button
+                  AutomationId(AutomationIds.communitySkip,
+                      child: TextButton(
+                        onPressed: _isSelecting ? null : () => _onSkip(context),
+                        child: Text(
+                          S.of(context)!.skipForNow,
                           style: const TextStyle(
                             color: AppTheme.textSecondary,
                             fontSize: 14,
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  // Confirm button
-                  if (_selectedPubkey != null)
-                    ElevatedButton(
-                      onPressed:
-                          _isSelecting ? null : () => _onConfirm(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.activeColor,
-                        foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
-                      child: _isSelecting
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.black,
-                              ),
-                            )
-                          : Text(
-                              S.of(context)!.done,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                    ),
-                  // Skip button
-                  TextButton(
-                    onPressed: _isSelecting ? null : () => _onSkip(context),
-                    child: Text(
-                      S.of(context)!.skipForNow,
-                      style: const TextStyle(
-                        color: AppTheme.textSecondary,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
+                      )),
                   SizedBox(
                     height: MediaQuery.of(context).viewPadding.bottom + 8,
                   ),

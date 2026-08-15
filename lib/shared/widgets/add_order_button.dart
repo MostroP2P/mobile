@@ -1,3 +1,5 @@
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
@@ -76,25 +78,27 @@ class _AddOrderButtonState extends State<AddOrderButton>
                       child: Stack(
                         alignment: Alignment.centerLeft,
                         children: [
-                          ElevatedButton.icon(
-                            key: const Key('buyButton'),
-                            onPressed: _isMenuOpen
-                                ? () => _navigateToCreateOrder(context, 'buy')
-                                : null,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.buyColor,
-                              foregroundColor: Colors.black,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 10),
-                            ),
-                            icon: const SizedBox(width: 16, height: 16),
-                            label: Text(S.of(context)!.buy,
-                                style:
-                                    const TextStyle(fontWeight: FontWeight.bold)),
-                          ),
+                          AutomationId(AutomationIds.orderAddBuy,
+                              child: ElevatedButton.icon(
+                                key: const Key('buyButton'),
+                                onPressed: _isMenuOpen
+                                    ? () =>
+                                        _navigateToCreateOrder(context, 'buy')
+                                    : null,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.buyColor,
+                                  foregroundColor: Colors.black,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 10),
+                                ),
+                                icon: const SizedBox(width: 16, height: 16),
+                                label: Text(S.of(context)!.buy,
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold)),
+                              )),
                           if (_isMenuOpen)
                             const Positioned(
                               left: 12,
@@ -109,25 +113,27 @@ class _AddOrderButtonState extends State<AddOrderButton>
                       child: Stack(
                         alignment: Alignment.centerLeft,
                         children: [
-                          ElevatedButton.icon(
-                            key: const Key('sellButton'),
-                            onPressed: _isMenuOpen
-                                ? () => _navigateToCreateOrder(context, 'sell')
-                                : null,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.sellColor,
-                              foregroundColor: Colors.black,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 10),
-                            ),
-                            icon: const SizedBox(width: 16, height: 16),
-                            label: Text(S.of(context)!.sell,
-                                style:
-                                    const TextStyle(fontWeight: FontWeight.bold)),
-                          ),
+                          AutomationId(AutomationIds.orderAddSell,
+                              child: ElevatedButton.icon(
+                                key: const Key('sellButton'),
+                                onPressed: _isMenuOpen
+                                    ? () =>
+                                        _navigateToCreateOrder(context, 'sell')
+                                    : null,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.sellColor,
+                                  foregroundColor: Colors.black,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 10),
+                                ),
+                                icon: const SizedBox(width: 16, height: 16),
+                                label: Text(S.of(context)!.sell,
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold)),
+                              )),
                           if (_isMenuOpen)
                             const Positioned(
                               left: 12,
@@ -142,27 +148,28 @@ class _AddOrderButtonState extends State<AddOrderButton>
               ),
             ),
           ),
-          FloatingActionButton(
-            key: const Key('addOrderButton'),
-            onPressed: _toggleMenu,
-            backgroundColor:
-                _isMenuOpen ? Colors.grey.shade700 : AppTheme.activeColor,
-            elevation: 6,
-            shape: const CircleBorder(),
-            child: AnimatedBuilder(
-              animation: _animationController,
-              builder: (context, child) {
-                return Transform.rotate(
-                  angle: _animationController.value * 0.785 * 2,
-                  child: Icon(
-                    _isMenuOpen ? Icons.close : Icons.add,
-                    color: Colors.black,
-                    size: 24,
-                  ),
-                );
-              },
-            ),
-          ),
+          AutomationId(AutomationIds.orderAddFab,
+              child: FloatingActionButton(
+                key: const Key('addOrderButton'),
+                onPressed: _toggleMenu,
+                backgroundColor:
+                    _isMenuOpen ? Colors.grey.shade700 : AppTheme.activeColor,
+                elevation: 6,
+                shape: const CircleBorder(),
+                child: AnimatedBuilder(
+                  animation: _animationController,
+                  builder: (context, child) {
+                    return Transform.rotate(
+                      angle: _animationController.value * 0.785 * 2,
+                      child: Icon(
+                        _isMenuOpen ? Icons.close : Icons.add,
+                        color: Colors.black,
+                        size: 24,
+                      ),
+                    );
+                  },
+                ),
+              )),
         ],
       ),
     );

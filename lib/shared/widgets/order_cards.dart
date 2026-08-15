@@ -1,3 +1,5 @@
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -28,13 +30,11 @@ class OrderAmountCard extends ConsumerWidget {
   });
 
   @override
-
   Widget build(BuildContext context, WidgetRef ref) {
     final currencyData = ref.watch(currencyCodesProvider).asData?.value;
     final currencyFlag =
         CurrencyUtils.getFlagFromCurrencyData(currency, currencyData);
     final amountString = '$amount $currencyFlag';
-
 
     return CustomCard(
       padding: const EdgeInsets.all(16),
@@ -52,11 +52,12 @@ class OrderAmountCard extends ConsumerWidget {
           const SizedBox(height: 8),
           Row(
             children: [
-
               Flexible(
                 child: RichText(
                   text: TextSpan(
-                    text: S.of(context)!.forAmountWithCurrency(amountString, currency),
+                    text: S
+                        .of(context)!
+                        .forAmountWithCurrency(amountString, currency),
                     style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 16,
@@ -71,7 +72,6 @@ class OrderAmountCard extends ConsumerWidget {
                           ),
                         ),
                     ],
-
                   ),
                   softWrap: true,
                   maxLines: 2,
@@ -215,13 +215,14 @@ class OrderIdCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: Text(
-                  orderId,
-                  style: const TextStyle(
-                    color: AppTheme.mostroGreen,
-                    fontSize: 14,
-                  ),
-                ),
+                child: AutomationId(AutomationIds.orderId,
+                    child: Text(
+                      orderId,
+                      style: const TextStyle(
+                        color: AppTheme.mostroGreen,
+                        fontSize: 14,
+                      ),
+                    )),
               ),
               IconButton(
                 icon: const Icon(

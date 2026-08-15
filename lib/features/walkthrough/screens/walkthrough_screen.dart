@@ -1,3 +1,5 @@
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
 import 'package:flutter/material.dart';
 import 'package:introduction_screen/introduction_screen.dart';
 import 'package:go_router/go_router.dart';
@@ -178,7 +180,7 @@ class _WalkthroughScreenState extends ConsumerState<WalkthroughScreen> {
   @override
   Widget build(BuildContext context) {
     final firstRunState = ref.watch(firstRunProvider);
-    
+
     return firstRunState.when(
       data: (isFirstRun) {
         // If this is not the first run, redirect to home
@@ -190,7 +192,7 @@ class _WalkthroughScreenState extends ConsumerState<WalkthroughScreen> {
           });
           return const SizedBox.shrink();
         }
-        
+
         // Show walkthrough for first run
         final theme = Theme.of(context);
         return SafeArea(
@@ -200,11 +202,15 @@ class _WalkthroughScreenState extends ConsumerState<WalkthroughScreen> {
             onSkip: () => _onIntroEnd(context),
             showSkipButton: true,
             showBackButton: true,
-            back: const Icon(Icons.arrow_back),
-            skip: Text(S.of(context)!.skip),
-            next: const Icon(Icons.arrow_forward),
-            done: Text(S.of(context)!.done,
-                style: const TextStyle(fontWeight: FontWeight.w600)),
+            back: const AutomationId(AutomationIds.onboardingBack,
+                child: Icon(Icons.arrow_back)),
+            skip: AutomationId(AutomationIds.onboardingSkip,
+                child: Text(S.of(context)!.skip)),
+            next: const AutomationId(AutomationIds.onboardingNext,
+                child: Icon(Icons.arrow_forward)),
+            done: AutomationId(AutomationIds.onboardingDone,
+                child: Text(S.of(context)!.done,
+                    style: const TextStyle(fontWeight: FontWeight.w600))),
             dotsDecorator: DotsDecorator(
               activeColor: theme.primaryColor,
               size: const Size(8, 8),

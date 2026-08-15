@@ -20,6 +20,7 @@ import 'package:mostro_mobile/features/community/providers/community_selector_pr
 import 'package:mostro_mobile/features/walkthrough/providers/first_run_provider.dart';
 import 'package:mostro_mobile/features/restore/restore_overlay.dart';
 import 'package:mostro_mobile/shared/widgets/nwc_notification_listener.dart';
+import 'package:mostro_mobile/shared/widgets/test_environment_banner.dart';
 
 class MostroApp extends ConsumerStatefulWidget {
   const MostroApp({super.key});
@@ -175,7 +176,8 @@ class _MostroAppState extends ConsumerState<MostroApp> {
             if (!mounted) return;
             if (payload != null && payload.isNotEmpty) {
               final route = resolveNotificationRoute(payload);
-              debugPrint('App launched from notification tap, navigating to: $route');
+              debugPrint(
+                  'App launched from notification tap, navigating to: $route');
               _router!.push(route);
             }
           });
@@ -188,11 +190,13 @@ class _MostroAppState extends ConsumerState<MostroApp> {
           routerConfig: _router!,
           builder: (context, child) {
             return NwcNotificationListener(
-              child: Stack(
-                children: [
-                  if (child != null) child,
-                  const RestoreOverlay(),
-                ],
+              child: TestEnvironmentBanner(
+                child: Stack(
+                  children: [
+                    if (child != null) child,
+                    const RestoreOverlay(),
+                  ],
+                ),
               ),
             );
           },

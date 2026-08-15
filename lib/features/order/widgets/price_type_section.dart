@@ -1,3 +1,5 @@
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
 import 'package:flutter/material.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/order/widgets/form_section.dart';
@@ -55,11 +57,12 @@ class PriceTypeSection extends StatelessWidget {
                       fontSize: 14,
                     ),
                   ),
-                  MostroSwitch(
-                    key: const Key('fixedSwitch'),
-                    value: isMarketRate,
-                    onChanged: onToggle,
-                  ),
+                  AutomationId(AutomationIds.orderCreatePriceType,
+                      child: MostroSwitch(
+                        key: const Key('fixedSwitch'),
+                        value: isMarketRate,
+                        onChanged: onToggle,
+                      )),
                 ],
               ),
             ],

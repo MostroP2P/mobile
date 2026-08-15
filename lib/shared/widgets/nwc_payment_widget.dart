@@ -1,3 +1,5 @@
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -176,8 +178,8 @@ class _NwcPaymentWidgetState extends ConsumerState<NwcPaymentWidget> {
     // Show the "Show invoice" fallback whenever the user is not actively
     // paying or already done, so they can always pay from another wallet
     // (e.g. when the NWC wallet has insufficient balance).
-    final showFallback = _status == NwcPaymentStatus.idle ||
-        _status == NwcPaymentStatus.failed;
+    final showFallback =
+        _status == NwcPaymentStatus.idle || _status == NwcPaymentStatus.failed;
 
     return Column(
       children: [
@@ -268,22 +270,24 @@ class _NwcPaymentWidgetState extends ConsumerState<NwcPaymentWidget> {
         SizedBox(
           width: double.infinity,
           height: 56,
-          child: ElevatedButton.icon(
-            onPressed: hasEnoughBalance ? _payWithWallet : null,
-            icon: const Icon(LucideIcons.wallet, size: 20),
-            label: Text(
-              S.of(context)!.payWithWallet,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.mostroGreen,
-              foregroundColor: Colors.black,
-              disabledBackgroundColor: Colors.grey.shade700,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
+          child: AutomationId(AutomationIds.payNwc,
+              child: ElevatedButton.icon(
+                onPressed: hasEnoughBalance ? _payWithWallet : null,
+                icon: const Icon(LucideIcons.wallet, size: 20),
+                label: Text(
+                  S.of(context)!.payWithWallet,
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.mostroGreen,
+                  foregroundColor: Colors.black,
+                  disabledBackgroundColor: Colors.grey.shade700,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              )),
         ),
         if (balanceSats != null) ...[
           const SizedBox(height: 8),

@@ -1,3 +1,5 @@
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
 import 'package:flutter/material.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as nostr_action;
@@ -24,37 +26,40 @@ class ActionButtons extends StatelessWidget {
         Expanded(
           child: SizedBox(
             height: 48,
-            child: ElevatedButton(
-              onPressed: onCancel,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.backgroundCard,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 0),
-              ),
-              child: Text(S.of(context)!.cancel),
-            ),
+            child: AutomationId(AutomationIds.orderCreateCancel,
+                child: ElevatedButton(
+                  onPressed: onCancel,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.backgroundCard,
+                    foregroundColor: Colors.white,
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 12, horizontal: 0),
+                  ),
+                  child: Text(S.of(context)!.cancel),
+                )),
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: SizedBox(
             height: 48,
-            child: MostroReactiveButton(
-              key: const Key('submitOrderButton'),
-              label: S.of(context)!.submit,
-              buttonStyle: ButtonStyleType.raised,
-              orderId: currentRequestId?.toString() ?? '',
-              action: nostr_action.Action.newOrder,
-              onPressed: onSubmit,
-              timeout: const Duration(seconds: 10),
-              showSuccessIndicator:
-                  onSubmit != null, // Only show success indicator when enabled
-              backgroundColor: onSubmit != null
-                  ? AppTheme.purpleButton
-                  : AppTheme.backgroundInactive,
-              foregroundColor:
-                  onSubmit != null ? Colors.white : AppTheme.textInactive,
-            ),
+            child: AutomationId(AutomationIds.orderCreateSubmit,
+                child: MostroReactiveButton(
+                  key: const Key('submitOrderButton'),
+                  label: S.of(context)!.submit,
+                  buttonStyle: ButtonStyleType.raised,
+                  orderId: currentRequestId?.toString() ?? '',
+                  action: nostr_action.Action.newOrder,
+                  onPressed: onSubmit,
+                  timeout: const Duration(seconds: 10),
+                  showSuccessIndicator: onSubmit !=
+                      null, // Only show success indicator when enabled
+                  backgroundColor: onSubmit != null
+                      ? AppTheme.purpleButton
+                      : AppTheme.backgroundInactive,
+                  foregroundColor:
+                      onSubmit != null ? Colors.white : AppTheme.textInactive,
+                )),
           ),
         ),
       ],
