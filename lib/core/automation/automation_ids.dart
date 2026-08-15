@@ -121,6 +121,8 @@ class AutomationIds {
   static const String invoiceCancel = 'invoice.cancel';
   static const String invoiceNwcGenerate = 'invoice.nwc.generate';
   static const String invoiceNwcConfirm = 'invoice.nwc.confirm';
+  static const String invoiceNwcText = 'invoice.nwc.text';
+  static const String payInvoiceText = 'pay.invoice.text';
   static const String payNwc = 'pay.nwc';
   static const String payCancel = 'pay.cancel';
 }

@@ -269,15 +269,18 @@ class _NwcInvoiceWidgetState extends ConsumerState<NwcInvoiceWidget> {
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            _truncateInvoice(_generatedInvoice),
-            style: TextStyle(
-              color: AppTheme.cream1.withAlpha(102),
-              fontSize: 11,
-              fontFamily: 'monospace',
-            ),
-            textAlign: TextAlign.center,
-          ),
+          AutomationId(AutomationIds.invoiceNwcText,
+              merge: false,
+              label: _generatedInvoice ?? '',
+              child: Text(
+                _truncateInvoice(_generatedInvoice),
+                style: TextStyle(
+                  color: AppTheme.cream1.withAlpha(102),
+                  fontSize: 11,
+                  fontFamily: 'monospace',
+                ),
+                textAlign: TextAlign.center,
+              )),
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,

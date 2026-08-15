@@ -67,6 +67,8 @@ listed below disappears, is renamed, or stops being namespaced.
 | `trade.release.confirm`, `trade.cancel.confirm`, `trade.dispute.confirm` | trade | Confirmation dialogs. |
 | `invoice.text`, `invoice.submit`, `invoice.cancel` | invoice | Buyer invoice entry. |
 | `invoice.nwc.generate`, `invoice.nwc.confirm` | invoice | Generate the buyer invoice with the connected wallet and confirm it. |
+| `invoice.nwc.text` | invoice | Read-only generated buyer invoice (label = bolt11). |
+| `pay.invoice.text` | payment | Read-only invoice being paid (label = bolt11); invisible readout for correlation. |
 | `pay.nwc` | payment | Pay the displayed invoice with the connected wallet. |
 | `pay.cancel` | payment | Cancel the order from the pay-invoice screen. |
 

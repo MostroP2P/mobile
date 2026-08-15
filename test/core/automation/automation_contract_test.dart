@@ -100,6 +100,8 @@ const List<String> staticIds = [
   AutomationIds.invoiceCancel,
   AutomationIds.invoiceNwcGenerate,
   AutomationIds.invoiceNwcConfirm,
+  AutomationIds.invoiceNwcText,
+  AutomationIds.payInvoiceText,
   AutomationIds.payNwc,
   AutomationIds.payCancel,
 ];

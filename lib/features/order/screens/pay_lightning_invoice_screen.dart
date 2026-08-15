@@ -67,6 +67,15 @@ class _PayLightningInvoiceScreenState
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
+              // Automation readout: the invoice being paid, so a black-box
+              // driver can correlate the payment by hash without reading the
+              // QR code. Invisible; screen readers get the invoice string.
+              AutomationId(
+                AutomationIds.payInvoiceText,
+                merge: false,
+                label: lnInvoice,
+                child: const SizedBox(width: 1, height: 1),
+              ),
               NwcPaymentWidget(
                 lnInvoice: lnInvoice,
                 sats: sats,
