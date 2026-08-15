@@ -18,15 +18,22 @@ enum SyncCompletion {
 /// recovery available, otherwise an admin resolution rejected during startup
 /// — before its dispute was loaded — is never revisited.
 ///
-/// A pending replay is always honoured rather than capped. Capping it would
-/// mean declaring a history hydrated while knowing a queued resolution may be
-/// missing from it, which disables recovery for every later resolution too.
-/// The chain is self-limiting instead: each replay needs a fresh rejection
-/// arriving while the pass runs, and ends as soon as one pass sees none.
+/// `maxChainedResyncs` bounds how many replays may be chained. Exhausting it
+/// yields [SyncCompletion.unhydrated]: the pass neither claims a history it
+/// knows may be missing the queued resolution, nor schedules yet another full
+/// read. Recovery stays available because the notifier is still unhydrated, so
+/// a later rejection can ask for a fresh pass — one read per message, rather
+/// than a replay loop that rejected messages alone could keep running.
 SyncCompletion resolveSyncCompletion({
   required bool succeeded,
   required bool resyncRequested,
+  required int resyncAttempts,
+  required int maxChainedResyncs,
 }) {
-  if (resyncRequested) return SyncCompletion.replay;
+  if (resyncRequested) {
+    return resyncAttempts < maxChainedResyncs
+        ? SyncCompletion.replay
+        : SyncCompletion.unhydrated;
+  }
   return succeeded ? SyncCompletion.hydrated : SyncCompletion.unhydrated;
 }
