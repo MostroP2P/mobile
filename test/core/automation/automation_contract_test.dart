@@ -176,7 +176,8 @@ void main() {
       expect(data.flagsCollection.isFocused.toString(), contains('isTrue'));
       expect(data.hasAction(SemanticsAction.setText), isTrue);
 
-      tester.binding.rootPipelineOwner.semanticsOwner!
+      // ignore: deprecated_member_use
+      tester.binding.pipelineOwner.semanticsOwner!
           .performAction(node.id, SemanticsAction.setText, 'ws://10.0.2.2:7000');
       await tester.pump();
       expect(controller.text, 'ws://10.0.2.2:7000');
