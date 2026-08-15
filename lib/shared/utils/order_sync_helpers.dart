@@ -18,16 +18,15 @@ enum SyncCompletion {
 /// recovery available, otherwise an admin resolution rejected during startup
 /// — before its dispute was loaded — is never revisited.
 ///
-/// `maxChainedResyncs` bounds the replay chain so a stream of rejected
-/// resolutions cannot keep queueing full history reads.
+/// A pending replay is always honoured rather than capped. Capping it would
+/// mean declaring a history hydrated while knowing a queued resolution may be
+/// missing from it, which disables recovery for every later resolution too.
+/// The chain is self-limiting instead: each replay needs a fresh rejection
+/// arriving while the pass runs, and ends as soon as one pass sees none.
 SyncCompletion resolveSyncCompletion({
   required bool succeeded,
   required bool resyncRequested,
-  required int resyncAttempts,
-  required int maxChainedResyncs,
 }) {
-  if (resyncRequested && resyncAttempts < maxChainedResyncs) {
-    return SyncCompletion.replay;
-  }
+  if (resyncRequested) return SyncCompletion.replay;
   return succeeded ? SyncCompletion.hydrated : SyncCompletion.unhydrated;
 }

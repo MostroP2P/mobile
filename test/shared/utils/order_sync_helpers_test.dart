@@ -5,18 +5,13 @@ import 'package:mostro_mobile/shared/utils/order_sync_helpers.dart';
 /// Claiming it after a failed read leaves an admin resolution that was rejected
 /// during startup permanently dropped, since nothing triggers another replay.
 
-const _maxChained = 3;
-
 SyncCompletion _resolve({
   required bool succeeded,
   bool resyncRequested = false,
-  int resyncAttempts = 0,
 }) =>
     resolveSyncCompletion(
       succeeded: succeeded,
       resyncRequested: resyncRequested,
-      resyncAttempts: resyncAttempts,
-      maxChainedResyncs: _maxChained,
     );
 
 void main() {
@@ -41,31 +36,14 @@ void main() {
           equals(SyncCompletion.replay));
     });
 
-    test('replays are bounded', () {
-      expect(
-          _resolve(
-              succeeded: true,
-              resyncRequested: true,
-              resyncAttempts: _maxChained),
-          equals(SyncCompletion.hydrated),
-          reason: 'a successful pass hydrates once the budget is spent');
-
-      expect(
-          _resolve(
-              succeeded: false,
-              resyncRequested: true,
-              resyncAttempts: _maxChained),
-          equals(SyncCompletion.unhydrated),
-          reason: 'an exhausted budget must not hydrate on a failed read');
-    });
-
-    test('the last chained attempt still replays', () {
-      expect(
-          _resolve(
-              succeeded: true,
-              resyncRequested: true,
-              resyncAttempts: _maxChained - 1),
-          equals(SyncCompletion.replay));
+    test('a pending replay is never traded for hydration', () {
+      // Declaring a history hydrated while a queued resolution may be missing
+      // from it disables recovery for every later resolution as well.
+      for (final succeeded in [true, false]) {
+        expect(_resolve(succeeded: succeeded, resyncRequested: true),
+            equals(SyncCompletion.replay),
+            reason: 'a queued replay outranks the outcome of this pass');
+      }
     });
   });
 }
