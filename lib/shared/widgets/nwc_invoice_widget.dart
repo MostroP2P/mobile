@@ -1,3 +1,5 @@
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -5,7 +7,8 @@ import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/wallet/providers/nwc_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
-import 'package:mostro_mobile/services/nwc/nwc_exceptions.dart' show NwcResponseException, NwcTimeoutException, NwcErrorCode;
+import 'package:mostro_mobile/services/nwc/nwc_exceptions.dart'
+    show NwcResponseException, NwcTimeoutException, NwcErrorCode;
 
 /// Invoice generation status for the NWC auto-invoice flow.
 enum NwcInvoiceStatus {
@@ -163,21 +166,23 @@ class _NwcInvoiceWidgetState extends ConsumerState<NwcInvoiceWidget> {
         SizedBox(
           width: double.infinity,
           height: 56,
-          child: ElevatedButton.icon(
-            onPressed: _generateInvoice,
-            icon: const Icon(LucideIcons.wallet, size: 20),
-            label: Text(
-              S.of(context)!.nwcGenerateWithWallet,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.mostroGreen,
-              foregroundColor: Colors.black,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
+          child: AutomationId(AutomationIds.invoiceNwcGenerate,
+              child: ElevatedButton.icon(
+                onPressed: _generateInvoice,
+                icon: const Icon(LucideIcons.wallet, size: 20),
+                label: Text(
+                  S.of(context)!.nwcGenerateWithWallet,
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.mostroGreen,
+                  foregroundColor: Colors.black,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              )),
         ),
         const SizedBox(height: 8),
         Text(
@@ -277,25 +282,26 @@ class _NwcInvoiceWidgetState extends ConsumerState<NwcInvoiceWidget> {
           SizedBox(
             width: double.infinity,
             height: 48,
-            child: ElevatedButton(
-              onPressed: _generatedInvoice != null
-                  ? () => widget.onInvoiceConfirmed(_generatedInvoice!)
-                  : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.mostroGreen,
-                foregroundColor: Colors.black,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: Text(
-                S.of(context)!.nwcConfirmInvoice,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
+            child: AutomationId(AutomationIds.invoiceNwcConfirm,
+                child: ElevatedButton(
+                  onPressed: _generatedInvoice != null
+                      ? () => widget.onInvoiceConfirmed(_generatedInvoice!)
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.mostroGreen,
+                    foregroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text(
+                    S.of(context)!.nwcConfirmInvoice,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                )),
           ),
         ],
       ),

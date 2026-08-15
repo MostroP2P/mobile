@@ -75,6 +75,8 @@ class AutomationIds {
   static const String walletSettingsDisconnect = 'wallet.settings.disconnect';
 
   // Order book and creation
+  static const String orderBookTabBuy = 'order.book.tab.buy';
+  static const String orderBookTabSell = 'order.book.tab.sell';
   static const String orderAddFab = 'order.add.fab';
   static const String orderAddBuy = 'order.add.buy';
   static const String orderAddSell = 'order.add.sell';
@@ -117,6 +119,8 @@ class AutomationIds {
   static const String invoiceText = 'invoice.text';
   static const String invoiceSubmit = 'invoice.submit';
   static const String invoiceCancel = 'invoice.cancel';
+  static const String invoiceNwcGenerate = 'invoice.nwc.generate';
+  static const String invoiceNwcConfirm = 'invoice.nwc.confirm';
   static const String payNwc = 'pay.nwc';
   static const String payCancel = 'pay.cancel';
 }

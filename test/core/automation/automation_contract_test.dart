@@ -63,6 +63,8 @@ const List<String> staticIds = [
   AutomationIds.walletConnection,
   AutomationIds.walletSettingsConnect,
   AutomationIds.walletSettingsDisconnect,
+  AutomationIds.orderBookTabBuy,
+  AutomationIds.orderBookTabSell,
   AutomationIds.orderAddFab,
   AutomationIds.orderAddBuy,
   AutomationIds.orderAddSell,
@@ -96,6 +98,8 @@ const List<String> staticIds = [
   AutomationIds.invoiceText,
   AutomationIds.invoiceSubmit,
   AutomationIds.invoiceCancel,
+  AutomationIds.invoiceNwcGenerate,
+  AutomationIds.invoiceNwcConfirm,
   AutomationIds.payNwc,
   AutomationIds.payCancel,
 ];

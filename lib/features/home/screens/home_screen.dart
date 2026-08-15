@@ -1,3 +1,5 @@
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:heroicons/heroicons.dart';
@@ -160,31 +162,35 @@ class HomeScreen extends ConsumerWidget {
     Color activeColor,
   ) {
     return Expanded(
-      child: InkWell(
-        onTap: () => ref.read(homeOrderTypeProvider.notifier).state = type,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(
-                color: isActive ? activeColor : Colors.transparent,
-                width: 3.0, // Thicker line
+      child: AutomationId(
+          type == OrderType.buy
+              ? AutomationIds.orderBookTabBuy
+              : AutomationIds.orderBookTabSell,
+          child: InkWell(
+            onTap: () => ref.read(homeOrderTypeProvider.notifier).state = type,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(
+                    color: isActive ? activeColor : Colors.transparent,
+                    width: 3.0, // Thicker line
+                  ),
+                ),
+              ),
+              child: Text(
+                text,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: isActive ? activeColor : AppTheme.textInactive,
+                  fontWeight: FontWeight.w600, // Semi-bold
+                  fontSize: 15,
+                  letterSpacing: 0.5, // Letter spacing
+                  fontFamily: 'Roboto', // Assuming Roboto as font
+                ),
               ),
             ),
-          ),
-          child: Text(
-            text,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: isActive ? activeColor : AppTheme.textInactive,
-              fontWeight: FontWeight.w600, // Semi-bold
-              fontSize: 15,
-              letterSpacing: 0.5, // Letter spacing
-              fontFamily: 'Roboto', // Assuming Roboto as font
-            ),
-          ),
-        ),
-      ),
+          )),
     );
   }
 
@@ -227,7 +233,8 @@ class HomeScreen extends ConsumerWidget {
               splashColor: AppTheme.activeColor.withValues(alpha: 0.3),
               highlightColor: AppTheme.activeColor.withValues(alpha: 0.15),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -254,7 +261,9 @@ class HomeScreen extends ConsumerWidget {
                       color: Colors.white.withValues(alpha: 0.2),
                     ),
                     Text(
-                      S.of(context)!.offersCount(filteredOrders.length.toString()),
+                      S
+                          .of(context)!
+                          .offersCount(filteredOrders.length.toString()),
                       style: const TextStyle(
                         color: Colors.grey,
                         fontSize: 12,

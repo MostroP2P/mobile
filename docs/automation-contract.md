@@ -52,6 +52,7 @@ listed below disappears, is renamed, or stops being namespaced.
 | `wallet.nwc.uri`, `wallet.nwc.connect` | wallet | NWC URI input (secret) and connect action. |
 | `wallet.connection` | wallet | State readout; label is `connected` or `disconnected`. |
 | `wallet.settings.connect`, `wallet.settings.disconnect` | wallet | Open the connect screen / disconnect the wallet from wallet settings. |
+| `order.book.tab.buy`, `order.book.tab.sell` | order book | Switch the book between buy and sell offers. |
 | `order.add.fab`, `order.add.buy`, `order.add.sell` | order book | Open the create-order menu and pick a side. |
 | `order.book.item.<orderId>` | order book | Opens the order (take screen or trade detail). |
 | `order.create.currency`, `order.create.currency.<CODE>` | create order | Currency picker and its options. |
@@ -65,6 +66,7 @@ listed below disappears, is renamed, or stops being namespaced.
 | `trade.<action>` (`trade.payInvoice`, `trade.addInvoice`, `trade.fiatSent`, `trade.release`, `trade.takeSell`, `trade.takeBuy`, `trade.rate`, `trade.cancel`, `trade.dispute`, ...) | trade | Trade action buttons named after the protocol action. |
 | `trade.release.confirm`, `trade.cancel.confirm`, `trade.dispute.confirm` | trade | Confirmation dialogs. |
 | `invoice.text`, `invoice.submit`, `invoice.cancel` | invoice | Buyer invoice entry. |
+| `invoice.nwc.generate`, `invoice.nwc.confirm` | invoice | Generate the buyer invoice with the connected wallet and confirm it. |
 | `pay.nwc` | payment | Pay the displayed invoice with the connected wallet. |
 | `pay.cancel` | payment | Cancel the order from the pay-invoice screen. |
 
