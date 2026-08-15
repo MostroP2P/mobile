@@ -101,6 +101,10 @@ class AutomationIds {
   static String tradesItem(String orderId) => 'trades.item.$orderId';
   static const String tradesItemStatus = 'trades.item.status';
   static String tradeAction(String action) => 'trade.$action';
+  static const String tradePayInvoice = 'trade.payInvoice';
+  static const String tradeAddInvoice = 'trade.addInvoice';
+  static const String tradeTakeSell = 'trade.takeSell';
+  static const String tradeTakeBuy = 'trade.takeBuy';
   static const String tradeFiatSent = 'trade.fiatSent';
   static const String tradeRelease = 'trade.release';
   static const String tradeReleaseConfirm = 'trade.release.confirm';

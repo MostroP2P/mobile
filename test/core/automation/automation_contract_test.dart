@@ -82,6 +82,10 @@ const List<String> staticIds = [
   AutomationIds.orderId,
   AutomationIds.orderStatus,
   AutomationIds.tradesItemStatus,
+  AutomationIds.tradePayInvoice,
+  AutomationIds.tradeAddInvoice,
+  AutomationIds.tradeTakeSell,
+  AutomationIds.tradeTakeBuy,
   AutomationIds.tradeFiatSent,
   AutomationIds.tradeRelease,
   AutomationIds.tradeReleaseConfirm,
@@ -125,6 +129,8 @@ void main() {
       expect(AutomationIds.tradesItem('o1'), 'trades.item.o1');
       expect(AutomationIds.tradeAction('fiatSent'), AutomationIds.tradeFiatSent);
       expect(AutomationIds.tradeAction('release'), AutomationIds.tradeRelease);
+      expect(AutomationIds.tradeAction('payInvoice'), AutomationIds.tradePayInvoice);
+      expect(AutomationIds.tradeAction('takeSell'), AutomationIds.tradeTakeSell);
       expect(AutomationIds.orderCreateCurrencyOption('USD'), 'order.create.currency.USD');
     });
   });
