@@ -16,11 +16,6 @@ class OrderNotifier extends AbstractMostroNotifier {
   bool _isSyncing = false; // Only for sync() method
   bool _hydrated = false; // A sync() has read the history successfully
   bool _resyncRequested = false; // A sync() was asked for while one was running
-  int _resyncAttempts = 0;
-
-  /// Bounds the replay chain so a stream of rejected resolutions during
-  /// startup cannot keep queueing full history reads.
-  static const _maxChainedResyncs = 3;
 
   OrderNotifier(super.orderId, super.ref) {
     mostroService = ref.read(mostroServiceProvider);
@@ -111,14 +106,11 @@ class OrderNotifier extends AbstractMostroNotifier {
       final completion = resolveSyncCompletion(
         succeeded: succeeded,
         resyncRequested: _resyncRequested,
-        resyncAttempts: _resyncAttempts,
-        maxChainedResyncs: _maxChainedResyncs,
       );
       _resyncRequested = false;
 
       switch (completion) {
         case SyncCompletion.replay:
-          _resyncAttempts++;
           sync();
         case SyncCompletion.hydrated:
           _hydrated = true;
