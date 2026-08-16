@@ -230,7 +230,61 @@ flutter format .
 # Run tests
 flutter test
 flutter test integration_test/
+
+# Run tests and produce a coverage report
+flutter test --coverage
+dart run tool/coverage_report.dart
 ```
+
+## 🧪 Test Coverage
+
+**Current line coverage: 33.00% (6,498 of 19,689 lines), across 952 tests.**
+
+The figure counts every non-generated file under `lib/`. Generated sources
+(`lib/generated/**`, `*.g.dart`, `*.freezed.dart`, `*.mocks.dart`) are excluded
+because `build_runner` re-creates them on every build; counting them would
+distort the number.
+
+### Checking coverage yourself
+
+```bash
+flutter pub get
+dart run build_runner build -d      # generates mocks and localization
+flutter test --coverage             # writes coverage/lcov.info
+dart run tool/coverage_report.dart  # prints the summary
+```
+
+`tool/coverage_report.dart` reads `coverage/lcov.info` and prints total line
+coverage, the number of files measured, and any `lib/` file that no test ever
+loaded. Those untouched files are reported explicitly instead of being dropped
+from the denominator, which is what a plain `lcov` summary would do.
+
+Useful flags:
+
+```bash
+# List the files with the most uncovered lines
+dart run tool/coverage_report.dart --top 20
+
+# Fail with a non-zero exit code below a threshold (handy in CI)
+dart run tool/coverage_report.dart --min 33
+```
+
+For an annotated HTML report, `lcov` works on the same file:
+
+```bash
+genhtml coverage/lcov.info -o coverage/html && open coverage/html/index.html
+```
+
+### What is and is not covered
+
+- **Well covered**: protocol models and payloads, enums, the order state
+  machine (`MostroFSM`, `OrderState`), relay models, shared utilities, and most
+  presentational widgets plus the settings, logs and wallet screens.
+- **Thin or uncovered**: `main.dart` and platform bootstrap, background and
+  push-notification services, Firebase glue, the restore manager, and the
+  long-lived Nostr/subscription notifiers. These need a live relay, a platform
+  channel, or a substantial mocking harness, so they are exercised by
+  `integration_test/` rather than by unit tests.
 
 ### Code Quality
 This project maintains **zero Flutter analyze issues** and follows modern Flutter best practices:
