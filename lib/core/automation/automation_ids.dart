@@ -31,6 +31,8 @@ class AutomationIds {
   static const String onboardingSkip = 'onboarding.walkthrough.skip';
   static const String onboardingNext = 'onboarding.walkthrough.next';
   static const String onboardingDone = 'onboarding.walkthrough.done';
+  static const String communityNoticeAccept =
+      'onboarding.community.notice.accept';
   static const String communityCustomNode = 'onboarding.community.custom_node';
   static const String communityDone = 'onboarding.community.done';
   static const String communitySkip = 'onboarding.community.skip';
@@ -40,6 +42,7 @@ class AutomationIds {
   // Key management
   static const String keysGenerate = 'keys.generate';
   static const String keysGenerateConfirm = 'keys.generate.confirm';
+  static const String keysGenerateCancel = 'keys.generate.cancel';
   static const String keysImport = 'keys.import';
   static const String keysImportMnemonic = 'keys.import.mnemonic';
   static const String keysImportConfirm = 'keys.import.confirm';

@@ -46,9 +46,12 @@ class _CommunitySelectorScreenState
           child: Text(S.of(ctx)!.communityDisclaimerBody),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(S.of(ctx)!.communityDisclaimerAccept),
+          AutomationId(
+            AutomationIds.communityNoticeAccept,
+            child: TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text(S.of(ctx)!.communityDisclaimerAccept),
+            ),
           ),
         ],
       ),

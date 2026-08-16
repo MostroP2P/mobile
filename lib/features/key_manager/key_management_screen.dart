@@ -791,20 +791,25 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
             ),
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text(
-                S.of(context)!.cancel,
-                style: const TextStyle(
-                  color: AppTheme.textSecondary,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
+            AutomationId(
+              AutomationIds.keysGenerateCancel,
+              child: TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: Text(
+                  S.of(context)!.cancel,
+                  style: const TextStyle(
+                    color: AppTheme.textSecondary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
               ),
             ),
             const SizedBox(width: 12),
-            ElevatedButton(
+            AutomationId(
+              AutomationIds.keysGenerateConfirm,
+              child: ElevatedButton(
               onPressed: () {
                 Navigator.of(dialogContext).pop();
                 _generateNewMasterKey();
@@ -825,6 +830,7 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                   fontWeight: FontWeight.w500,
                 ),
                 textAlign: TextAlign.center,
+              ),
               ),
             ),
           ],
