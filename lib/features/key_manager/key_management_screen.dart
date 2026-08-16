@@ -137,12 +137,15 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: const HeroIcon(
-            HeroIcons.arrowLeft,
-            color: AppTheme.textPrimary,
+        leading: AutomationId(
+          AutomationIds.appBarBack,
+          child: IconButton(
+            icon: const HeroIcon(
+              HeroIcons.arrowLeft,
+              color: AppTheme.textPrimary,
+            ),
+            onPressed: () => context.pop(),
           ),
-          onPressed: () => context.pop(),
         ),
         title: Text(
           S.of(context)!.account,
