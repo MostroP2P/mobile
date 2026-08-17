@@ -112,7 +112,7 @@ void _initializeRelaySynchronization(ProviderContainer container) {
     container.read(relaysProvider);
   } catch (e) {
     // Log error but don't crash app if relay sync initialization fails
-    debugPrint('Failed to initialize relay synchronization: $e');
+    logger.e('Failed to initialize relay synchronization', error: e);
   }
 }
 
@@ -142,9 +142,9 @@ void _initializePushNotificationIntegration(
       return container.read(settingsProvider).mostroPublicKey;
     };
 
-    debugPrint('Push notification integration initialized');
+    logger.i('Push notification integration initialized');
   } catch (e) {
-    debugPrint('Failed to initialize push notification integration: $e');
+    logger.e('Failed to initialize push notification integration', error: e);
   }
 }
 
@@ -183,8 +183,7 @@ Future<_PushServices?> _initializeFirebaseMessaging(
   try {
     // Skip Firebase initialization on Linux (not supported)
     if (!kIsWeb && Platform.isLinux) {
-      debugPrint(
-          'Firebase not supported on Linux - skipping FCM initialization');
+      logger.i('Firebase not supported on Linux - skipping FCM initialization');
       return null;
     }
 
@@ -204,7 +203,7 @@ Future<_PushServices?> _initializeFirebaseMessaging(
     return _PushServices(fcmService: fcmService, pushService: pushService);
   } catch (e) {
     // Log error but don't crash app if FCM initialization fails
-    debugPrint('Failed to initialize Firebase Cloud Messaging: $e');
+    logger.e('Failed to initialize Firebase Cloud Messaging', error: e);
     return null;
   }
 }

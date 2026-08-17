@@ -52,16 +52,17 @@ listed below disappears, is renamed, or stops being namespaced.
 | `drawer.account`, `drawer.settings`, `drawer.about` | shell | Drawer destinations. |
 | `onboarding.walkthrough.{back,skip,next,done}` | onboarding | Walkthrough controls; `done`/`skip` mark first run complete. |
 | `onboarding.community.card.<pubkey>` | onboarding | Selects that community/node. |
+| `onboarding.community.notice.accept` | onboarding | Accepts the legal notice raised on first launch. |
 | `onboarding.community.custom_node` | onboarding | Opens the custom-node dialog. |
 | `onboarding.community.done`, `onboarding.community.skip` | onboarding | Confirm selection / skip. |
 | `keys.public_key` | account | Read-only npub of the current account (label = npub). |
-| `keys.generate`, `keys.generate.confirm` | account | Generate a new identity. |
+| `keys.generate`, `keys.generate.confirm`, `keys.generate.cancel` | account | Generate a new identity; confirm or dismiss the dialog. |
 | `keys.import`, `keys.import.mnemonic`, `keys.import.confirm`, `keys.import.cancel` | account | Import a mnemonic; the field is a secret input and is never logged. |
 | `keys.seed.reveal`, `keys.seed.text` | account | Reveal / display the seed phrase (sensitive; automation never records it). |
 | `settings.mostro_node`, `settings.mostro_node.pubkey` | settings | Opens the node selector; read-only pubkey of the selected node. |
 | `settings.wallet` | settings | Wallet status card; opens wallet settings. |
 | `settings.relays.add`, `settings.relays.add.url`, `settings.relays.add.confirm`, `settings.relays.add.cancel` | relays | Add a relay through the dialog. |
-| `settings.relays.item.<url>`, `settings.relays.item.delete` | relays | Relay row and its delete control. |
+| `settings.relays.item.<url>`, `settings.relays.item.<url>.delete` | relays | Relay row and its delete control. `<url>` is the relay URL with trailing slashes removed, so one relay never carries two identifiers. |
 | `node.add_custom`, `node.custom.pubkey`, `node.custom.name`, `node.custom.confirm`, `node.custom.cancel`, `node.item.<pubkey>` | mostro node | Custom node dialog and node rows. |
 | `wallet.nwc.uri`, `wallet.nwc.connect` | wallet | NWC URI input (secret) and connect action. |
 | `wallet.connection` | wallet | State readout; label is `connected` or `disconnected`. |
@@ -106,8 +107,10 @@ When enabled:
 - the local relay seed list (`MORTSOM_RELAYS`) becomes the user relays on the
   first launch of a fresh install, before any subscription starts;
 - relay discovery never falls back to the public bootstrap relays
-  (`Config.discoveryRelays`); a disconnected local relay produces a test
-  failure, not public-network traffic;
+  (`Config.bootstrapRelays`): `Config.discoveryRelays` resolves to the seed
+  list instead, so a disconnected local relay produces a test failure, not
+  public-network traffic. A build that arms the test environment without
+  `MORTSOM_RELAYS` fails at startup rather than starting with no relay;
 - plain `ws://` relays on private addresses are accepted by the add-relay
   validation;
 - a red `TEST ENVIRONMENT · Mortsom` banner (`env.marker`) is shown on every

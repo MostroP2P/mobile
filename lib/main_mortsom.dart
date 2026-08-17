@@ -18,6 +18,15 @@ import 'package:mostro_mobile/core/test_environment.dart';
 
 Future<void> main() async {
   TestEnvironment.arm();
+  // Without a seed list `Config.discoveryRelays` is empty and relay init
+  // fails on an assertion deep inside dart_nostr, which reads as an opaque
+  // startup crash rather than the build mistake it is.
+  if (TestEnvironment.seedRelays.isEmpty) {
+    throw StateError(
+      'The Mortsom build requires --dart-define=MORTSOM_TEST_ENV=true and '
+      '--dart-define=MORTSOM_RELAYS=<ws://host:port>[,...]',
+    );
+  }
   // UiAutomator2 acts as an accessibility service, but make the semantics
   // tree unconditional so identifiers exist from the first frame.
   WidgetsFlutterBinding.ensureInitialized();

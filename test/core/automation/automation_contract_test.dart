@@ -52,7 +52,6 @@ const List<String> staticIds = [
   AutomationIds.settingsRelaysAddUrl,
   AutomationIds.settingsRelaysAddConfirm,
   AutomationIds.settingsRelaysAddCancel,
-  AutomationIds.settingsRelayDelete,
   AutomationIds.nodeAddCustom,
   AutomationIds.nodeCustomPubkey,
   AutomationIds.nodeCustomName,
@@ -134,6 +133,14 @@ void main() {
       expect(AutomationIds.nodeItem('abc'), 'node.item.abc');
       expect(AutomationIds.settingsRelayItem('ws://x'),
           'settings.relays.item.ws://x');
+      // One relay, one identifier: the trailing slash must not fork it, and
+      // each delete control is keyed by its own relay.
+      expect(AutomationIds.settingsRelayItem('ws://x/'),
+          AutomationIds.settingsRelayItem('ws://x'));
+      expect(AutomationIds.settingsRelayDelete('ws://x/'),
+          'settings.relays.item.ws://x.delete');
+      expect(AutomationIds.settingsRelayDelete('ws://y'),
+          isNot(AutomationIds.settingsRelayDelete('ws://x')));
       expect(AutomationIds.orderBookItem('o1'), 'order.book.item.o1');
       expect(AutomationIds.tradesItem('o1'), 'trades.item.o1');
       expect(
@@ -152,14 +159,15 @@ void main() {
     tearDown(TestEnvironment.disarm);
 
     test('is disabled unless armed and compiled with the define', () {
+      // Stated against the compile-time define rather than a fixed false, so
+      // the suite is correct whether or not it carries MORTSOM_TEST_ENV.
       expect(TestEnvironment.enabled, isFalse);
       TestEnvironment.arm();
-      // Tests never carry MORTSOM_TEST_ENV, so arming alone must not enable it.
       expect(TestEnvironment.enabled, TestEnvironment.defineEnabled);
-      expect(TestEnvironment.defineEnabled, isFalse);
-      expect(TestEnvironment.seedRelays, isEmpty);
-      expect(TestEnvironment.disableBootstrapFallback, isFalse);
-      expect(TestEnvironment.allowInsecureRelays, isFalse);
+      expect(TestEnvironment.disableBootstrapFallback,
+          TestEnvironment.defineEnabled);
+      expect(
+          TestEnvironment.allowInsecureRelays, TestEnvironment.defineEnabled);
     });
 
     test('parses relay lists', () {
@@ -206,9 +214,11 @@ void main() {
         ),
       );
 
-      // ignore: deprecated_member_use
-      tester.binding.pipelineOwner.semanticsOwner!.performAction(
-          node.id, SemanticsAction.setText, 'ws://10.0.2.2:7000');
+      tester.semantics.performAction(
+        find.semantics.byPredicate((n) => n.identifier == 'demo.field'),
+        SemanticsAction.setText,
+        args: 'ws://10.0.2.2:7000',
+      );
       await tester.pump();
       expect(controller.text, 'ws://10.0.2.2:7000');
     });
