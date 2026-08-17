@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 
 /// Attaches a stable automation identifier to a control.
 ///
+/// Prefer the [AutomationIdExtension.withAutomationId] extension over using
+/// this widget directly: it applies at the end of the expression instead of
+/// wrapping it, so adding an identifier does not re-indent the subtree.
+///
 /// The identifier is exposed as the Android accessibility `resource-id`
 /// (Flutter `Semantics.identifier`), which black-box drivers locate without
 /// depending on localized labels. By default the wrapped subtree is merged
@@ -47,4 +51,28 @@ class AutomationId extends StatelessWidget {
     );
     return merge ? MergeSemantics(child: node) : node;
   }
+}
+
+/// Attaches an automation identifier without wrapping the expression.
+///
+/// This is the preferred way to name a control:
+///
+/// ```dart
+/// ElevatedButton(
+///   onPressed: _submit,
+///   child: Text(S.of(context)!.confirm),
+/// ).withAutomationId(AutomationIds.orderConfirm)
+/// ```
+///
+/// The semantics are identical to building an [AutomationId] around the
+/// widget; the difference is that the identifier reads as a property of the
+/// control rather than as an extra level of nesting.
+extension AutomationIdExtension on Widget {
+  /// Names this control with [id] for black-box UI automation.
+  ///
+  /// Pass `merge: false` for a row or card holding several independent
+  /// controls, in which case [label] may carry the business state the
+  /// harness asserts on. See `docs/automation-contract.md`.
+  Widget withAutomationId(String id, {bool merge = true, String? label}) =>
+      AutomationId(id, merge: merge, label: label, child: this);
 }

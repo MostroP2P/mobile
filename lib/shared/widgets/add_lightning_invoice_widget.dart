@@ -1,7 +1,7 @@
-import 'package:mostro_mobile/core/automation/automation_ids.dart';
-import 'package:mostro_mobile/core/automation/automation_id.dart';
 import 'package:flutter/material.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
 class AddLightningInvoiceWidget extends StatefulWidget {
@@ -57,66 +57,63 @@ class _AddLightningInvoiceWidgetState extends State<AddLightningInvoiceWidget> {
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
             ),
-            child: AutomationId(AutomationIds.invoiceText,
-                child: TextFormField(
-                  key: const Key('invoiceTextField'),
-                  controller: widget.controller,
-                  style: const TextStyle(color: AppTheme.textPrimary),
-                  decoration: InputDecoration(
-                    labelText: S.of(context)!.lightningInvoice,
-                    labelStyle: const TextStyle(color: AppTheme.textSecondary),
-                    hintText: S.of(context)!.enterInvoiceHere,
-                    hintStyle: const TextStyle(color: AppTheme.textSecondary),
-                    border: InputBorder.none,
-                    contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    alignLabelWithHint: true,
-                  ),
-                  maxLines: 6,
-                )),
+            child: TextFormField(
+              key: const Key('invoiceTextField'),
+              controller: widget.controller,
+              style: const TextStyle(color: AppTheme.textPrimary),
+              decoration: InputDecoration(
+                labelText: S.of(context)!.lightningInvoice,
+                labelStyle: const TextStyle(color: AppTheme.textSecondary),
+                hintText: S.of(context)!.enterInvoiceHere,
+                hintStyle: const TextStyle(color: AppTheme.textSecondary),
+                border: InputBorder.none,
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                alignLabelWithHint: true,
+              ),
+              maxLines: 6,
+            ).withAutomationId(AutomationIds.invoiceText),
           ),
           const SizedBox(height: 16),
           Row(
             children: [
               Expanded(
-                child: AutomationId(AutomationIds.invoiceCancel,
-                    child: TextButton(
-                      key: const Key('cancelInvoiceButton'),
-                      onPressed: widget.onCancel,
-                      child: Text(
-                        S.of(context)!.cancel,
-                        style: const TextStyle(
-                          color: AppTheme.textSecondary,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    )),
+                child: TextButton(
+                  key: const Key('cancelInvoiceButton'),
+                  onPressed: widget.onCancel,
+                  child: Text(
+                    S.of(context)!.cancel,
+                    style: const TextStyle(
+                      color: AppTheme.textSecondary,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ).withAutomationId(AutomationIds.invoiceCancel),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: AutomationId(AutomationIds.invoiceSubmit,
-                    child: ElevatedButton(
-                      key: const Key('submitInvoiceButton'),
-                      onPressed: widget.onSubmit,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.activeColor,
-                        foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 12),
-                      ),
-                      child: Text(
-                        S.of(context)!.submit,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    )),
+                child: ElevatedButton(
+                  key: const Key('submitInvoiceButton'),
+                  onPressed: widget.onSubmit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.activeColor,
+                    foregroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 12),
+                  ),
+                  child: Text(
+                    S.of(context)!.submit,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ).withAutomationId(AutomationIds.invoiceSubmit),
               ),
             ],
           ),

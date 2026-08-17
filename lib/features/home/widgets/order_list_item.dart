@@ -1,11 +1,11 @@
-import 'package:mostro_mobile/core/automation/automation_ids.dart';
-import 'package:mostro_mobile/core/automation/automation_id.dart';
 import 'package:collection/collection.dart';
 import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
@@ -65,246 +65,243 @@ class OrderListItem extends ConsumerWidget {
       child: Material(
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(20),
-        child: AutomationId(AutomationIds.orderBookItem(order.orderId ?? ''),
-            merge: false,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(20),
-              onTap: () {
-                final sessions = ref.watch(sessionNotifierProvider);
-                final session = sessions
-                    .firstWhereOrNull((s) => s.orderId == order.orderId);
-                if (session != null && session.role != null) {
-                  context.push('/trade_detail/${session.orderId}');
-                  return;
-                }
-                order.orderType == OrderType.buy
-                    ? context.push('/take_buy/${order.orderId}')
-                    : context.push('/take_sell/${order.orderId}');
-              },
-              highlightColor: Colors.white.withValues(alpha: 0.05),
-              splashColor: Colors.white.withValues(alpha: 0.03),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // First row: "SELLING" label and timestamp
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        // SELLING/BUYING label with more contrast
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: AppTheme.backgroundCard,
-                            borderRadius: BorderRadius.circular(14),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.6),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                                spreadRadius: -1,
-                              ),
-                              BoxShadow(
-                                color: Colors.white.withValues(alpha: 0.08),
-                                blurRadius: 1,
-                                offset: const Offset(0, -1),
-                                spreadRadius: 0,
-                              ),
-                            ],
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () {
+            final sessions = ref.watch(sessionNotifierProvider);
+            final session =
+                sessions.firstWhereOrNull((s) => s.orderId == order.orderId);
+            if (session != null && session.role != null) {
+              context.push('/trade_detail/${session.orderId}');
+              return;
+            }
+            order.orderType == OrderType.buy
+                ? context.push('/take_buy/${order.orderId}')
+                : context.push('/take_sell/${order.orderId}');
+          },
+          highlightColor: Colors.white.withValues(alpha: 0.05),
+          splashColor: Colors.white.withValues(alpha: 0.03),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // First row: "SELLING" label and timestamp
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // SELLING/BUYING label with more contrast
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppTheme.backgroundCard,
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.6),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                            spreadRadius: -1,
                           ),
-                          child: Text(
-                            orderLabel,
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                            ),
+                          BoxShadow(
+                            color: Colors.white.withValues(alpha: 0.08),
+                            blurRadius: 1,
+                            offset: const Offset(0, -1),
+                            spreadRadius: 0,
                           ),
+                        ],
+                      ),
+                      child: Text(
+                        orderLabel,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
                         ),
+                      ),
+                    ),
 
-                        // Timestamp
+                    // Timestamp
+                    Text(
+                      order.timeAgoWithLocale(
+                              Localizations.localeOf(context).languageCode) ??
+                          S.of(context)!.hoursAgo('9'),
+                      style: const TextStyle(
+                        color: Colors.white60,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Second row: Amount and currency with flag and percentage (if not fixed)
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        // Large amount with more contrast
                         Text(
-                          order.timeAgoWithLocale(
-                                  Localizations.localeOf(context)
-                                      .languageCode) ??
-                              S.of(context)!.hoursAgo('9'),
+                          order.fiatAmount.toString(),
                           style: const TextStyle(
-                            color: Colors.white60,
-                            fontSize: 14,
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            height: 1.1,
                           ),
                         ),
+                        const SizedBox(width: 8),
+
+                        // Currency code and flag
+                        Text(
+                          '${order.currency ?? "CUP"} ',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            color: Colors.white,
+                          ),
+                        ),
+                        Text(
+                          () {
+                            final String currencyCode = order.currency ?? 'CUP';
+                            return CurrencyUtils.getFlagFromCurrencyData(
+                                currencyCode, currencyData);
+                          }(),
+                          style: const TextStyle(fontSize: 18),
+                        ),
+                        const SizedBox(width: 4),
                       ],
                     ),
-                  ),
 
-                  // Second row: Amount and currency with flag and percentage (if not fixed)
-                  Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.baseline,
-                          textBaseline: TextBaseline.alphabetic,
-                          children: [
-                            // Large amount with more contrast
-                            Text(
-                              order.fiatAmount.toString(),
-                              style: const TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                height: 1.1,
+                    // Display sats amount for all orders (simplified)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: isFixedOrder
+                          ? Text(
+                              S.of(context)!.forSats(order.amount!),
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.white70,
+                                fontWeight: FontWeight.w500,
                               ),
-                            ),
-                            const SizedBox(width: 8),
-
-                            // Currency code and flag
-                            Text(
-                              '${order.currency ?? "CUP"} ',
-                              style: const TextStyle(
-                                fontSize: 18,
-                                color: Colors.white,
-                              ),
-                            ),
-                            Text(
-                              () {
-                                final String currencyCode =
-                                    order.currency ?? 'CUP';
-                                return CurrencyUtils.getFlagFromCurrencyData(
-                                    currencyCode, currencyData);
-                              }(),
-                              style: const TextStyle(fontSize: 18),
-                            ),
-                            const SizedBox(width: 4),
-                          ],
-                        ),
-
-                        // Display sats amount for all orders (simplified)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 4),
-                          child: isFixedOrder
+                            )
+                          : premiumValue == 0
                               ? Text(
-                                  S.of(context)!.forSats(order.amount!),
+                                  S.of(context)!.marketPrice,
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: Colors.white70,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 )
-                              : premiumValue == 0
-                                  ? Text(
-                                      S.of(context)!.marketPrice,
+                              : Row(
+                                  children: [
+                                    Text(
+                                      '${S.of(context)!.marketPrice} ',
                                       style: TextStyle(
                                         fontSize: 14,
                                         color: Colors.white70,
                                         fontWeight: FontWeight.w500,
                                       ),
-                                    )
-                                  : Row(
-                                      children: [
-                                        Text(
-                                          '${S.of(context)!.marketPrice} ',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            color: Colors.white70,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                        Text(
-                                          premiumText,
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            color: premiumColor,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ],
                                     ),
-                        ),
-                      ],
+                                    Text(
+                                      premiumText,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: premiumColor,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                     ),
-                  ),
-
-                  // Third row: Payment method
-                  Container(
-                    margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 12, horizontal: 14),
-                    decoration: BoxDecoration(
-                      color: AppTheme.backgroundCard,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.7),
-                          blurRadius: 6,
-                          offset: const Offset(0, 3),
-                          spreadRadius: -2,
-                        ),
-                        BoxShadow(
-                          color: Colors.white.withValues(alpha: 0.08),
-                          blurRadius: 1,
-                          offset: const Offset(0, -1),
-                          spreadRadius: 0,
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        // Emoji for payment method
-                        const Text(
-                          '💳 ', // Default emoji
-                          style: TextStyle(fontSize: 16),
-                        ),
-                        Expanded(
-                          child: Text(
-                            order.paymentMethods.isNotEmpty
-                                ? order.paymentMethods.join(', ')
-                                : 'tm',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Fourth row: Rating with stars
-                  Container(
-                    margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 12, horizontal: 14),
-                    decoration: BoxDecoration(
-                      color: AppTheme.backgroundCard,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.7),
-                          blurRadius: 6,
-                          offset: const Offset(0, 3),
-                          spreadRadius: -2,
-                        ),
-                        BoxShadow(
-                          color: Colors.white.withValues(alpha: 0.08),
-                          blurRadius: 1,
-                          offset: const Offset(0, -1),
-                          spreadRadius: 0,
-                        ),
-                      ],
-                    ),
-                    child: _buildRatingRow(context, order),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            )),
+
+              // Third row: Payment method
+              Container(
+                margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+                decoration: BoxDecoration(
+                  color: AppTheme.backgroundCard,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.7),
+                      blurRadius: 6,
+                      offset: const Offset(0, 3),
+                      spreadRadius: -2,
+                    ),
+                    BoxShadow(
+                      color: Colors.white.withValues(alpha: 0.08),
+                      blurRadius: 1,
+                      offset: const Offset(0, -1),
+                      spreadRadius: 0,
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    // Emoji for payment method
+                    const Text(
+                      '💳 ', // Default emoji
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    Expanded(
+                      child: Text(
+                        order.paymentMethods.isNotEmpty
+                            ? order.paymentMethods.join(', ')
+                            : 'tm',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Fourth row: Rating with stars
+              Container(
+                margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                padding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+                decoration: BoxDecoration(
+                  color: AppTheme.backgroundCard,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.7),
+                      blurRadius: 6,
+                      offset: const Offset(0, 3),
+                      spreadRadius: -2,
+                    ),
+                    BoxShadow(
+                      color: Colors.white.withValues(alpha: 0.08),
+                      blurRadius: 1,
+                      offset: const Offset(0, -1),
+                      spreadRadius: 0,
+                    ),
+                  ],
+                ),
+                child: _buildRatingRow(context, order),
+              ),
+            ],
+          ),
+        ).withAutomationId(AutomationIds.orderBookItem(order.orderId ?? ''),
+            merge: false),
       ),
     );
   }

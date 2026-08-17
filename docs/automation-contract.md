@@ -12,11 +12,25 @@ owners.
 
 Every actionable control and business-critical state carries a stable
 identifier from `lib/core/automation/automation_ids.dart`, attached with the
-`AutomationId` widget (`lib/core/automation/automation_id.dart`). Flutter
-exposes it as `Semantics.identifier`, which Android surfaces as the
+`.withAutomationId()` extension (`lib/core/automation/automation_id.dart`).
+Flutter exposes it as `Semantics.identifier`, which Android surfaces as the
 accessibility `resource-id`; drivers locate it with a UiAutomator
 `resourceId("<id>")` selector. Identifiers are namespaced
 `<area>.<screen-or-flow>.<control>` and never localized.
+
+The extension applies at the end of the expression rather than wrapping it,
+so naming a control neither re-indents its subtree nor adds a level of
+nesting to `build()`:
+
+```dart
+ElevatedButton(
+  onPressed: _submit,
+  child: Text(S.of(context)!.confirm),
+).withAutomationId(AutomationIds.orderConfirm)
+```
+
+It builds the `AutomationId` widget underneath; reach for that widget
+directly only where an extension call cannot be expressed.
 
 Two modes exist:
 
@@ -108,7 +122,7 @@ automation, never compiled in and never logged.
 
 ## 3. Changing the contract
 
-1. Update `AutomationIds` and the widget, and this table, in one change.
+1. Update `AutomationIds`, the call site, and this table, in one change.
 2. Keep `flutter test test/core/automation` green; add the identifier to the
    contract test list.
 3. Notify the automation owners; Mortsom's adapter contract tests pin the

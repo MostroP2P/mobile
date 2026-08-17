@@ -1,5 +1,3 @@
-import 'package:mostro_mobile/core/automation/automation_ids.dart';
-import 'package:mostro_mobile/core/automation/automation_id.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/key_manager/import_mnemonic_dialog.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
@@ -137,16 +137,13 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: AutomationId(
-          AutomationIds.appBarBack,
-          child: IconButton(
-            icon: const HeroIcon(
-              HeroIcons.arrowLeft,
-              color: AppTheme.textPrimary,
-            ),
-            onPressed: () => context.pop(),
+        leading: IconButton(
+          icon: const HeroIcon(
+            HeroIcons.arrowLeft,
+            color: AppTheme.textPrimary,
           ),
-        ),
+          onPressed: () => context.pop(),
+        ).withAutomationId(AutomationIds.appBarBack),
         title: Text(
           S.of(context)!.account,
           style: const TextStyle(
@@ -237,17 +234,14 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
             const Icon(LucideIcons.user, color: AppTheme.activeColor, size: 20),
             const SizedBox(width: 8),
             Expanded(
-              child: AutomationId(
-                AutomationIds.keysPublicKey,
-                child: SelectableText(
-                  npub,
-                  style: const TextStyle(
-                    color: AppTheme.textPrimary,
-                    fontSize: 12,
-                    fontFamily: 'monospace',
-                  ),
+              child: SelectableText(
+                npub,
+                style: const TextStyle(
+                  color: AppTheme.textPrimary,
+                  fontSize: 12,
+                  fontFamily: 'monospace',
                 ),
-              ),
+              ).withAutomationId(AutomationIds.keysPublicKey),
             ),
           ],
         ),
@@ -321,54 +315,52 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
               ),
               child: Column(
                 children: [
-                  AutomationId(AutomationIds.keysSeedText,
-                      child: SelectableText(
-                        _showSecretWords
-                            ? _mnemonic ?? ''
-                            : _mnemonic != null
-                                ? _maskSeedPhrase(_mnemonic!)
-                                : '',
-                        style: const TextStyle(
-                          color: AppTheme.textPrimary,
-                          fontSize: 14,
-                          fontFamily: 'monospace',
-                        ),
-                      )),
+                  SelectableText(
+                    _showSecretWords
+                        ? _mnemonic ?? ''
+                        : _mnemonic != null
+                            ? _maskSeedPhrase(_mnemonic!)
+                            : '',
+                    style: const TextStyle(
+                      color: AppTheme.textPrimary,
+                      fontSize: 14,
+                      fontFamily: 'monospace',
+                    ),
+                  ).withAutomationId(AutomationIds.keysSeedText),
                   const SizedBox(height: 12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      AutomationId(AutomationIds.keysSeedReveal,
-                          child: TextButton.icon(
-                            onPressed: () {
-                              setState(() {
-                                _showSecretWords = !_showSecretWords;
-                              });
-                              // Dismiss backup reminder when user views seed phrase
-                              if (_showSecretWords) {
-                                ref
-                                    .read(backupReminderProvider.notifier)
-                                    .dismissBackupReminder();
-                              }
-                            },
-                            icon: Icon(
-                              _showSecretWords
-                                  ? LucideIcons.eyeOff
-                                  : LucideIcons.eye,
-                              size: 16,
-                              color: AppTheme.activeColor,
-                            ),
-                            label: Text(
-                              _showSecretWords
-                                  ? S.of(context)!.hide
-                                  : S.of(context)!.show,
-                              style: const TextStyle(
-                                color: AppTheme.activeColor,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          )),
+                      TextButton.icon(
+                        onPressed: () {
+                          setState(() {
+                            _showSecretWords = !_showSecretWords;
+                          });
+                          // Dismiss backup reminder when user views seed phrase
+                          if (_showSecretWords) {
+                            ref
+                                .read(backupReminderProvider.notifier)
+                                .dismissBackupReminder();
+                          }
+                        },
+                        icon: Icon(
+                          _showSecretWords
+                              ? LucideIcons.eyeOff
+                              : LucideIcons.eye,
+                          size: 16,
+                          color: AppTheme.activeColor,
+                        ),
+                        label: Text(
+                          _showSecretWords
+                              ? S.of(context)!.hide
+                              : S.of(context)!.show,
+                          style: const TextStyle(
+                            color: AppTheme.activeColor,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ).withAutomationId(AutomationIds.keysSeedReveal),
                     ],
                   ),
                 ],
@@ -555,77 +547,75 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
   Widget _buildGenerateNewUserButton(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      child: AutomationId(AutomationIds.keysGenerate,
-          child: ElevatedButton(
-            onPressed: () => _showGenerateNewUserDialog(context),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.activeColor,
-              foregroundColor: Colors.black,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+      child: ElevatedButton(
+        onPressed: () => _showGenerateNewUserDialog(context),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppTheme.activeColor,
+          foregroundColor: Colors.black,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              LucideIcons.userPlus,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                S.of(context)!.generateNewUser,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+                overflow: TextOverflow.visible,
+                softWrap: true,
               ),
-              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  LucideIcons.userPlus,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    S.of(context)!.generateNewUser,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    overflow: TextOverflow.visible,
-                    softWrap: true,
-                  ),
-                ),
-              ],
-            ),
-          )),
+          ],
+        ),
+      ).withAutomationId(AutomationIds.keysGenerate),
     );
   }
 
   Widget _buildImportUserButton(BuildContext context) {
-    return AutomationId(AutomationIds.keysImport,
-        child: OutlinedButton(
-          onPressed: () => _showImportMnemonicDialog(context),
-          style: OutlinedButton.styleFrom(
-            side: const BorderSide(color: AppTheme.activeColor),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            padding: const EdgeInsets.symmetric(vertical: 16),
+    return OutlinedButton(
+      onPressed: () => _showImportMnemonicDialog(context),
+      style: OutlinedButton.styleFrom(
+        side: const BorderSide(color: AppTheme.activeColor),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 16),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            LucideIcons.download,
+            size: 20,
+            color: AppTheme.activeColor,
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                LucideIcons.download,
-                size: 20,
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              S.of(context)!.importMostroUser,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
                 color: AppTheme.activeColor,
               ),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  S.of(context)!.importMostroUser,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: AppTheme.activeColor,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
-        ));
+        ],
+      ),
+    ).withAutomationId(AutomationIds.keysImport);
   }
 
   Widget _buildRefreshUserButton(BuildContext context) {
@@ -794,25 +784,20 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
             ),
           ),
           actions: [
-            AutomationId(
-              AutomationIds.keysGenerateCancel,
-              child: TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(),
-                child: Text(
-                  S.of(context)!.cancel,
-                  style: const TextStyle(
-                    color: AppTheme.textSecondary,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  textAlign: TextAlign.center,
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(
+                S.of(context)!.cancel,
+                style: const TextStyle(
+                  color: AppTheme.textSecondary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
                 ),
+                textAlign: TextAlign.center,
               ),
-            ),
+            ).withAutomationId(AutomationIds.keysGenerateCancel),
             const SizedBox(width: 12),
-            AutomationId(
-              AutomationIds.keysGenerateConfirm,
-              child: ElevatedButton(
+            ElevatedButton(
               onPressed: () {
                 Navigator.of(dialogContext).pop();
                 _generateNewMasterKey();
@@ -834,8 +819,7 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                 ),
                 textAlign: TextAlign.center,
               ),
-              ),
-            ),
+            ).withAutomationId(AutomationIds.keysGenerateConfirm),
           ],
         );
       },

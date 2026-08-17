@@ -1,11 +1,11 @@
-import 'package:mostro_mobile/core/automation/automation_ids.dart';
-import 'package:mostro_mobile/core/automation/automation_id.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/features/mostro/mostro_nodes_provider.dart';
 import 'package:mostro_mobile/features/mostro/widgets/mostro_node_avatar.dart';
 import 'package:mostro_mobile/features/mostro/widgets/mostro_node_selector.dart';
@@ -724,89 +724,87 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const SizedBox(height: 16),
             Material(
               color: Colors.transparent,
-              child: AutomationId(AutomationIds.settingsMostroNode,
-                  merge: false,
-                  child: InkWell(
-                    onTap: () => MostroNodeSelector.show(context),
+              child: InkWell(
+                onTap: () => MostroNodeSelector.show(context),
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppTheme.backgroundInput,
                     borderRadius: BorderRadius.circular(8),
-                    child: Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: AppTheme.backgroundInput,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.1),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          if (selectedNode != null) ...[
-                            MostroNodeAvatar(node: selectedNode),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.1),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      if (selectedNode != null) ...[
+                        MostroNodeAvatar(node: selectedNode),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
                                 children: [
-                                  Row(
-                                    children: [
-                                      Flexible(
-                                        child: Text(
-                                          selectedNode.displayName,
-                                          style: const TextStyle(
-                                            color: AppTheme.textPrimary,
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
+                                  Flexible(
+                                    child: Text(
+                                      selectedNode.displayName,
+                                      style: const TextStyle(
+                                        color: AppTheme.textPrimary,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w500,
                                       ),
-                                      if (selectedNode.isTrusted) ...[
-                                        const SizedBox(width: 8),
-                                        const TrustedBadge(),
-                                      ],
-                                    ],
-                                  ),
-                                  const SizedBox(height: 2),
-                                  AutomationId(
-                                      AutomationIds.settingsMostroNodePubkey,
-                                      child: Text(
-                                        selectedNode.pubkey,
-                                        style: const TextStyle(
-                                          color: AppTheme.textSecondary,
-                                          fontSize: 12,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      )),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    S.of(context)!.tapToSelectNode,
-                                    style: const TextStyle(
-                                      color: AppTheme.textSecondary,
-                                      fontSize: 11,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
+                                  if (selectedNode.isTrusted) ...[
+                                    const SizedBox(width: 8),
+                                    const TrustedBadge(),
+                                  ],
                                 ],
                               ),
-                            ),
-                          ] else
-                            Expanded(
-                              child: Text(
-                                S.of(context)!.selectMostroNode,
+                              const SizedBox(height: 2),
+                              Text(
+                                selectedNode.pubkey,
                                 style: const TextStyle(
                                   color: AppTheme.textSecondary,
-                                  fontSize: 15,
+                                  fontSize: 12,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ).withAutomationId(
+                                  AutomationIds.settingsMostroNodePubkey),
+                              const SizedBox(height: 2),
+                              Text(
+                                S.of(context)!.tapToSelectNode,
+                                style: const TextStyle(
+                                  color: AppTheme.textSecondary,
+                                  fontSize: 11,
                                 ),
                               ),
-                            ),
-                          const Icon(
-                            Icons.arrow_drop_down,
-                            color: AppTheme.textSecondary,
+                            ],
                           ),
-                        ],
+                        ),
+                      ] else
+                        Expanded(
+                          child: Text(
+                            S.of(context)!.selectMostroNode,
+                            style: const TextStyle(
+                              color: AppTheme.textSecondary,
+                              fontSize: 15,
+                            ),
+                          ),
+                        ),
+                      const Icon(
+                        Icons.arrow_drop_down,
+                        color: AppTheme.textSecondary,
                       ),
-                    ),
-                  )),
+                    ],
+                  ),
+                ),
+              ).withAutomationId(AutomationIds.settingsMostroNode,
+                  merge: false),
             ),
             Container(
               margin: const EdgeInsets.only(top: 16),

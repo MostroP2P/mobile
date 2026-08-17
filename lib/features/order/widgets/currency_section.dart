@@ -1,8 +1,8 @@
-import 'package:mostro_mobile/core/automation/automation_ids.dart';
-import 'package:mostro_mobile/core/automation/automation_id.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/features/order/widgets/form_section.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
@@ -47,41 +47,38 @@ class CurrencySection extends ConsumerWidget {
             }
           }
 
-          return AutomationId(AutomationIds.orderCreateCurrency,
-              child: InkWell(
-                key: const Key('fiatCodeDropdown'),
-                onTap: () async {
-                  final selectedCode = await CurrencySelectionDialog.show(
-                    context,
-                    ref,
-                    currentSelection: selectedFiatCode,
-                  );
-                  if (selectedCode != null) {
-                    ref.read(selectedFiatCodeProvider.notifier).state =
-                        selectedCode;
-                    onCurrencySelected();
-                  }
-                },
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          return InkWell(
+            key: const Key('fiatCodeDropdown'),
+            onTap: () async {
+              final selectedCode = await CurrencySelectionDialog.show(
+                context,
+                ref,
+                currentSelection: selectedFiatCode,
+              );
+              if (selectedCode != null) {
+                ref.read(selectedFiatCodeProvider.notifier).state =
+                    selectedCode;
+                onCurrencySelected();
+              }
+            },
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  key: Key('currency_${selectedFiatCode ?? 'none'}'),
                   children: [
-                    Row(
-                      key: Key('currency_${selectedFiatCode ?? 'none'}'),
-                      children: [
-                        Text(flag, style: const TextStyle(fontSize: 18)),
-                        const SizedBox(width: 8),
-                        Text(
-                          displayCode.isNotEmpty
-                              ? '$displayCode - $name'
-                              : name,
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                      ],
+                    Text(flag, style: const TextStyle(fontSize: 18)),
+                    const SizedBox(width: 8),
+                    Text(
+                      displayCode.isNotEmpty ? '$displayCode - $name' : name,
+                      style: const TextStyle(color: Colors.white),
                     ),
-                    const Icon(Icons.keyboard_arrow_down, color: Colors.white),
                   ],
                 ),
-              ));
+                const Icon(Icons.keyboard_arrow_down, color: Colors.white),
+              ],
+            ),
+          ).withAutomationId(AutomationIds.orderCreateCurrency);
         },
       ),
     );

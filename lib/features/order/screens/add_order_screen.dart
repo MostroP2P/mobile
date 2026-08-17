@@ -1,5 +1,3 @@
-import 'package:mostro_mobile/core/automation/automation_ids.dart';
-import 'package:mostro_mobile/core/automation/automation_id.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -7,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
@@ -376,38 +376,32 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
                                 color: AppTheme.yellow, size: 18),
                             iconBackgroundColor:
                                 AppTheme.yellow.withValues(alpha: 0.3),
-                            child: AutomationId(
-                                AutomationIds.orderCreateSatsAmount,
-                                child: TextFormField(
-                                  controller: _satsAmountController,
-                                  style: const TextStyle(color: Colors.white),
-                                  decoration: InputDecoration(
-                                    border: InputBorder.none,
-                                    hintText: S.of(context)!.enterSatsAmount,
-                                    hintStyle:
-                                        const TextStyle(color: Colors.grey),
-                                  ),
-                                  keyboardType: TextInputType.number,
-                                  validator: (value) {
-                                    if (!_marketRate &&
-                                        (value == null || value.isEmpty)) {
-                                      return S
-                                          .of(context)!
-                                          .pleaseEnterSatsAmount;
-                                    }
-                                    if (!_marketRate &&
-                                        !RegExp(r'^[0-9]+$').hasMatch(value!)) {
-                                      return S
-                                          .of(context)!
-                                          .pleaseEnterNumbersOnly;
-                                    }
-                                    return null;
-                                  },
-                                  // Restricting input to numbers only
-                                  inputFormatters: [
-                                    FilteringTextInputFormatter.digitsOnly,
-                                  ],
-                                )),
+                            child: TextFormField(
+                              controller: _satsAmountController,
+                              style: const TextStyle(color: Colors.white),
+                              decoration: InputDecoration(
+                                border: InputBorder.none,
+                                hintText: S.of(context)!.enterSatsAmount,
+                                hintStyle: const TextStyle(color: Colors.grey),
+                              ),
+                              keyboardType: TextInputType.number,
+                              validator: (value) {
+                                if (!_marketRate &&
+                                    (value == null || value.isEmpty)) {
+                                  return S.of(context)!.pleaseEnterSatsAmount;
+                                }
+                                if (!_marketRate &&
+                                    !RegExp(r'^[0-9]+$').hasMatch(value!)) {
+                                  return S.of(context)!.pleaseEnterNumbersOnly;
+                                }
+                                return null;
+                              },
+                              // Restricting input to numbers only
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                              ],
+                            ).withAutomationId(
+                                AutomationIds.orderCreateSatsAmount),
                           ),
                         ],
                         const SizedBox(height: 16),

@@ -1,11 +1,11 @@
-import 'package:mostro_mobile/core/automation/automation_ids.dart';
-import 'package:mostro_mobile/core/automation/automation_id.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/features/wallet/providers/nwc_provider.dart';
 import 'package:mostro_mobile/services/nwc/nwc_connection.dart';
 import 'package:mostro_mobile/services/nwc/nwc_exceptions.dart';
@@ -134,39 +134,38 @@ class _ConnectWalletScreenState extends ConsumerState<ConnectWalletScreen> {
                               : Colors.white.withValues(alpha: 0.1),
                         ),
                       ),
-                      child: AutomationId(AutomationIds.walletNwcUri,
-                          child: TextFormField(
-                            controller: _uriController,
-                            style: const TextStyle(
-                              color: AppTheme.textPrimary,
-                              fontSize: 14,
+                      child: TextFormField(
+                        controller: _uriController,
+                        style: const TextStyle(
+                          color: AppTheme.textPrimary,
+                          fontSize: 14,
+                        ),
+                        maxLines: 3,
+                        onChanged: (_) {
+                          if (_validationError != null) {
+                            setState(() => _validationError = null);
+                          }
+                        },
+                        decoration: InputDecoration(
+                          border: InputBorder.none,
+                          hintText: 'nostr+walletconnect://...',
+                          hintStyle: const TextStyle(
+                            color: AppTheme.textSecondary,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          suffixIcon: IconButton(
+                            icon: const Icon(
+                              LucideIcons.scanLine,
+                              color: AppTheme.activeColor,
                             ),
-                            maxLines: 3,
-                            onChanged: (_) {
-                              if (_validationError != null) {
-                                setState(() => _validationError = null);
-                              }
-                            },
-                            decoration: InputDecoration(
-                              border: InputBorder.none,
-                              hintText: 'nostr+walletconnect://...',
-                              hintStyle: const TextStyle(
-                                color: AppTheme.textSecondary,
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                              suffixIcon: IconButton(
-                                icon: const Icon(
-                                  LucideIcons.scanLine,
-                                  color: AppTheme.activeColor,
-                                ),
-                                onPressed: () => _openQrScanner(context),
-                                tooltip: S.of(context)!.scanQrCode,
-                              ),
-                            ),
-                          )),
+                            onPressed: () => _openQrScanner(context),
+                            tooltip: S.of(context)!.scanQrCode,
+                          ),
+                        ),
+                      ).withAutomationId(AutomationIds.walletNwcUri),
                     ),
 
                     // Validation error
@@ -186,33 +185,32 @@ class _ConnectWalletScreenState extends ConsumerState<ConnectWalletScreen> {
                     // Connect button
                     SizedBox(
                       width: double.infinity,
-                      child: AutomationId(AutomationIds.walletNwcConnect,
-                          child: ElevatedButton.icon(
-                            onPressed: _isConnecting ? null : _onConnect,
-                            icon: _isConnecting
-                                ? const SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white,
-                                    ),
-                                  )
-                                : const Icon(LucideIcons.plug, size: 18),
-                            label: Text(
-                              _isConnecting
-                                  ? S.of(context)!.connecting
-                                  : S.of(context)!.connectWallet,
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.activeColor,
-                              foregroundColor: Colors.black,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                          )),
+                      child: ElevatedButton.icon(
+                        onPressed: _isConnecting ? null : _onConnect,
+                        icon: _isConnecting
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(LucideIcons.plug, size: 18),
+                        label: Text(
+                          _isConnecting
+                              ? S.of(context)!.connecting
+                              : S.of(context)!.connectWallet,
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.activeColor,
+                          foregroundColor: Colors.black,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ).withAutomationId(AutomationIds.walletNwcConnect),
                     ),
                   ],
                 ),

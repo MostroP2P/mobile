@@ -1,9 +1,9 @@
-import 'package:mostro_mobile/core/automation/automation_ids.dart';
-import 'package:mostro_mobile/core/automation/automation_id.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/features/home/providers/home_order_providers.dart';
 import 'package:mostro_mobile/features/home/widgets/order_list_item.dart';
@@ -162,35 +162,33 @@ class HomeScreen extends ConsumerWidget {
     Color activeColor,
   ) {
     return Expanded(
-      child: AutomationId(
-          type == OrderType.buy
-              ? AutomationIds.orderBookTabBuy
-              : AutomationIds.orderBookTabSell,
-          child: InkWell(
-            onTap: () => ref.read(homeOrderTypeProvider.notifier).state = type,
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: isActive ? activeColor : Colors.transparent,
-                    width: 3.0, // Thicker line
-                  ),
-                ),
-              ),
-              child: Text(
-                text,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: isActive ? activeColor : AppTheme.textInactive,
-                  fontWeight: FontWeight.w600, // Semi-bold
-                  fontSize: 15,
-                  letterSpacing: 0.5, // Letter spacing
-                  fontFamily: 'Roboto', // Assuming Roboto as font
-                ),
+      child: InkWell(
+        onTap: () => ref.read(homeOrderTypeProvider.notifier).state = type,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: isActive ? activeColor : Colors.transparent,
+                width: 3.0, // Thicker line
               ),
             ),
-          )),
+          ),
+          child: Text(
+            text,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: isActive ? activeColor : AppTheme.textInactive,
+              fontWeight: FontWeight.w600, // Semi-bold
+              fontSize: 15,
+              letterSpacing: 0.5, // Letter spacing
+              fontFamily: 'Roboto', // Assuming Roboto as font
+            ),
+          ),
+        ),
+      ).withAutomationId(type == OrderType.buy
+          ? AutomationIds.orderBookTabBuy
+          : AutomationIds.orderBookTabSell),
     );
   }
 

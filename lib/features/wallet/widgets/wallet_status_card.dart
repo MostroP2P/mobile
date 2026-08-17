@@ -1,10 +1,10 @@
-import 'package:mostro_mobile/core/automation/automation_ids.dart';
-import 'package:mostro_mobile/core/automation/automation_id.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/features/wallet/providers/nwc_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
@@ -63,73 +63,68 @@ class WalletStatusCard extends ConsumerWidget {
             const SizedBox(height: 16),
             Material(
               color: Colors.transparent,
-              child: AutomationId(AutomationIds.settingsWallet,
-                  merge: false,
-                  child: InkWell(
-                    onTap: () => context.push('/wallet_settings'),
+              child: InkWell(
+                onTap: () => context.push('/wallet_settings'),
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.backgroundInput,
                     borderRadius: BorderRadius.circular(8),
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppTheme.backgroundInput,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.1),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.1),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        isConnected ? LucideIcons.check : LucideIcons.plug,
+                        color:
+                            isConnected ? Colors.green : AppTheme.textSecondary,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              isConnected
+                                  ? (nwcState.walletAlias ??
+                                      S.of(context)!.walletConnected)
+                                  : S.of(context)!.walletDisconnected,
+                              style: const TextStyle(
+                                color: AppTheme.textPrimary,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ).withAutomationId(AutomationIds.walletConnection,
+                                merge: false,
+                                label:
+                                    isConnected ? 'connected' : 'disconnected'),
+                            if (isConnected &&
+                                nwcState.balanceSats != null) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                '⚡ ${_formatSats(nwcState.balanceSats!)} ${S.of(context)!.sats}',
+                                style: const TextStyle(
+                                  color: AppTheme.textSecondary,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                       ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            isConnected ? LucideIcons.check : LucideIcons.plug,
-                            color: isConnected
-                                ? Colors.green
-                                : AppTheme.textSecondary,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                AutomationId(AutomationIds.walletConnection,
-                                    merge: false,
-                                    label: isConnected
-                                        ? 'connected'
-                                        : 'disconnected',
-                                    child: Text(
-                                      isConnected
-                                          ? (nwcState.walletAlias ??
-                                              S.of(context)!.walletConnected)
-                                          : S.of(context)!.walletDisconnected,
-                                      style: const TextStyle(
-                                        color: AppTheme.textPrimary,
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    )),
-                                if (isConnected &&
-                                    nwcState.balanceSats != null) ...[
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '⚡ ${_formatSats(nwcState.balanceSats!)} ${S.of(context)!.sats}',
-                                    style: const TextStyle(
-                                      color: AppTheme.textSecondary,
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                          const Icon(
-                            Icons.chevron_right,
-                            color: AppTheme.textSecondary,
-                            size: 20,
-                          ),
-                        ],
+                      const Icon(
+                        Icons.chevron_right,
+                        color: AppTheme.textSecondary,
+                        size: 20,
                       ),
-                    ),
-                  )),
+                    ],
+                  ),
+                ),
+              ).withAutomationId(AutomationIds.settingsWallet, merge: false),
             ),
           ],
         ),

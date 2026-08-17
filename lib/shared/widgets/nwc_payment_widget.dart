@@ -1,9 +1,9 @@
-import 'package:mostro_mobile/core/automation/automation_ids.dart';
-import 'package:mostro_mobile/core/automation/automation_id.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/features/wallet/providers/nwc_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
@@ -270,24 +270,22 @@ class _NwcPaymentWidgetState extends ConsumerState<NwcPaymentWidget> {
         SizedBox(
           width: double.infinity,
           height: 56,
-          child: AutomationId(AutomationIds.payNwc,
-              child: ElevatedButton.icon(
-                onPressed: hasEnoughBalance ? _payWithWallet : null,
-                icon: const Icon(LucideIcons.wallet, size: 20),
-                label: Text(
-                  S.of(context)!.payWithWallet,
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.w600),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.mostroGreen,
-                  foregroundColor: Colors.black,
-                  disabledBackgroundColor: Colors.grey.shade700,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              )),
+          child: ElevatedButton.icon(
+            onPressed: hasEnoughBalance ? _payWithWallet : null,
+            icon: const Icon(LucideIcons.wallet, size: 20),
+            label: Text(
+              S.of(context)!.payWithWallet,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.mostroGreen,
+              foregroundColor: Colors.black,
+              disabledBackgroundColor: Colors.grey.shade700,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ).withAutomationId(AutomationIds.payNwc),
         ),
         if (balanceSats != null) ...[
           const SizedBox(height: 8),

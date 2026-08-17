@@ -1,9 +1,9 @@
-import 'package:mostro_mobile/core/automation/automation_ids.dart';
-import 'package:mostro_mobile/core/automation/automation_id.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
 import 'package:mostro_mobile/features/wallet/providers/nwc_provider.dart';
@@ -70,12 +70,10 @@ class _PayLightningInvoiceScreenState
               // Automation readout: the invoice being paid, so a black-box
               // driver can correlate the payment by hash without reading the
               // QR code. Invisible; screen readers get the invoice string.
-              AutomationId(
-                AutomationIds.payInvoiceText,
-                merge: false,
-                label: lnInvoice,
-                child: const SizedBox(width: 1, height: 1),
-              ),
+              const SizedBox(width: 1, height: 1).withAutomationId(
+                  AutomationIds.payInvoiceText,
+                  merge: false,
+                  label: lnInvoice),
               NwcPaymentWidget(
                 lnInvoice: lnInvoice,
                 sats: sats,
@@ -92,18 +90,17 @@ class _PayLightningInvoiceScreenState
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  AutomationId(AutomationIds.payCancel,
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          context.go('/');
-                          await orderNotifier.cancelOrder();
-                        },
-                        style: ElevatedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          backgroundColor: Colors.red,
-                        ),
-                        child: Text(S.of(context)!.cancel),
-                      )),
+                  ElevatedButton(
+                    onPressed: () async {
+                      context.go('/');
+                      await orderNotifier.cancelOrder();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.red,
+                    ),
+                    child: Text(S.of(context)!.cancel),
+                  ).withAutomationId(AutomationIds.payCancel),
                 ],
               ),
             ] else ...[

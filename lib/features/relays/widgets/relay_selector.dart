@@ -1,8 +1,8 @@
-import 'package:mostro_mobile/core/automation/automation_ids.dart';
-import 'package:mostro_mobile/core/automation/automation_id.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/features/relays/relay.dart';
 import 'package:mostro_mobile/features/relays/relays_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
@@ -69,30 +69,29 @@ class RelaySelector extends ConsumerWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            AutomationId(AutomationIds.settingsRelaysAdd,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    await showAddDialog(context, ref);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.activeColor,
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                  ),
-                  child: Text(
-                    S.of(context)!.addRelay,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                  ),
-                )),
+            ElevatedButton(
+              onPressed: () async {
+                await showAddDialog(context, ref);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.activeColor,
+                foregroundColor: Colors.black,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+              ),
+              child: Text(
+                S.of(context)!.addRelay,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+            ).withAutomationId(AutomationIds.settingsRelaysAdd),
           ],
         ),
       ],
@@ -101,51 +100,49 @@ class RelaySelector extends ConsumerWidget {
 
   Widget _buildRelayItem(
       BuildContext context, WidgetRef ref, MostroRelayInfo relayInfo) {
-    return AutomationId(AutomationIds.settingsRelayItem(relayInfo.url),
-        merge: false,
-        child: Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          decoration: BoxDecoration(
-            color: AppTheme.dark1,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      decoration: BoxDecoration(
+        color: AppTheme.dark1,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+      ),
+      child: Row(
+        children: [
+          // Status dot - green if active, grey if inactive
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: relayInfo.isActive ? AppTheme.activeColor : Colors.grey,
+              borderRadius: BorderRadius.circular(4),
+            ),
           ),
-          child: Row(
-            children: [
-              // Status dot - green if active, grey if inactive
-              Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color:
-                      relayInfo.isActive ? AppTheme.activeColor : Colors.grey,
-                  borderRadius: BorderRadius.circular(4),
-                ),
+          const SizedBox(width: 12),
+
+          // Relay URL
+          Expanded(
+            child: Text(
+              relayInfo.url,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
               ),
-              const SizedBox(width: 12),
-
-              // Relay URL
-              Expanded(
-                child: Text(
-                  relayInfo.url,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-
-              const SizedBox(width: 12),
-
-              // Control - Switch for Mostro/default relays, Delete button for user relays
-              relayInfo.source == RelaySource.user
-                  ? _buildDeleteButton(context, ref, relayInfo)
-                  : _buildRelaySwitch(context, ref, relayInfo),
-            ],
+            ),
           ),
-        ));
+
+          const SizedBox(width: 12),
+
+          // Control - Switch for Mostro/default relays, Delete button for user relays
+          relayInfo.source == RelaySource.user
+              ? _buildDeleteButton(context, ref, relayInfo)
+              : _buildRelaySwitch(context, ref, relayInfo),
+        ],
+      ),
+    ).withAutomationId(AutomationIds.settingsRelayItem(relayInfo.url),
+        merge: false);
   }
 
   Widget _buildDeleteButton(
@@ -156,17 +153,16 @@ class RelaySelector extends ConsumerWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          AutomationId(AutomationIds.settingsRelayDelete,
-              child: GestureDetector(
-                onTap: () async {
-                  await _showDeleteUserRelayDialog(context, ref, relayInfo);
-                },
-                child: const Icon(
-                  Icons.delete,
-                  color: Colors.white,
-                  size: 24,
-                ),
-              )),
+          GestureDetector(
+            onTap: () async {
+              await _showDeleteUserRelayDialog(context, ref, relayInfo);
+            },
+            child: const Icon(
+              Icons.delete,
+              color: Colors.white,
+              size: 24,
+            ),
+          ).withAutomationId(AutomationIds.settingsRelayDelete),
         ],
       ),
     );
@@ -358,28 +354,26 @@ class RelaySelector extends ConsumerWidget {
                         border: Border.all(
                             color: Colors.white.withValues(alpha: 0.1)),
                       ),
-                      child: AutomationId(AutomationIds.settingsRelaysAddUrl,
-                          child: TextField(
-                            controller: textController,
-                            enabled: !isLoading,
-                            style: const TextStyle(color: AppTheme.textPrimary),
-                            decoration: InputDecoration(
-                              labelText:
-                                  S.of(context)!.addRelayDialogPlaceholder,
-                              labelStyle: const TextStyle(
-                                  color: AppTheme.textSecondary),
-                              border: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 8),
-                              hintText:
-                                  'relay.example.com or wss://relay.example.com',
-                              hintStyle: const TextStyle(
-                                  color: AppTheme.textSecondary),
-                              errorText: errorMessage,
-                              errorStyle: const TextStyle(color: Colors.red),
-                            ),
-                            autofocus: true,
-                          )),
+                      child: TextField(
+                        controller: textController,
+                        enabled: !isLoading,
+                        style: const TextStyle(color: AppTheme.textPrimary),
+                        decoration: InputDecoration(
+                          labelText: S.of(context)!.addRelayDialogPlaceholder,
+                          labelStyle:
+                              const TextStyle(color: AppTheme.textSecondary),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                          hintText:
+                              'relay.example.com or wss://relay.example.com',
+                          hintStyle:
+                              const TextStyle(color: AppTheme.textSecondary),
+                          errorText: errorMessage,
+                          errorStyle: const TextStyle(color: Colors.red),
+                        ),
+                        autofocus: true,
+                      ).withAutomationId(AutomationIds.settingsRelaysAddUrl),
                     ),
                     if (isLoading) ...[
                       const SizedBox(height: 16),
@@ -408,96 +402,92 @@ class RelaySelector extends ConsumerWidget {
               ),
               actions: [
                 if (!isLoading) ...[
-                  AutomationId(AutomationIds.settingsRelaysAddCancel,
-                      child: TextButton(
-                        onPressed: () => Navigator.of(dialogContext).pop(),
-                        child: Text(
-                          S.of(context)!.addRelayDialogCancel,
-                          style: const TextStyle(
-                            color: AppTheme.textSecondary,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      )),
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                    child: Text(
+                      S.of(context)!.addRelayDialogCancel,
+                      style: const TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ).withAutomationId(AutomationIds.settingsRelaysAddCancel),
                   const SizedBox(width: 12),
                 ],
-                AutomationId(AutomationIds.settingsRelaysAddConfirm,
-                    child: ElevatedButton(
-                      onPressed: isLoading
-                          ? null
-                          : () async {
-                              final input = textController.text.trim();
-                              if (input.isEmpty) return;
+                ElevatedButton(
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          final input = textController.text.trim();
+                          if (input.isEmpty) return;
 
-                              // Capture context values before async operations
-                              final localizations = S.of(context)!;
-                              final navigator = Navigator.of(dialogContext);
+                          // Capture context values before async operations
+                          final localizations = S.of(context)!;
+                          final navigator = Navigator.of(dialogContext);
 
-                              setState(() {
-                                isLoading = true;
-                                errorMessage = null;
-                              });
+                          setState(() {
+                            isLoading = true;
+                            errorMessage = null;
+                          });
 
-                              try {
-                                final result = await relaysNotifier
-                                    .addRelayWithSmartValidation(
-                                  input,
-                                  errorOnlySecure:
-                                      localizations.addRelayErrorOnlySecure,
-                                  errorNoHttp:
-                                      localizations.addRelayErrorNoHttp,
-                                  errorInvalidDomain:
-                                      localizations.addRelayErrorInvalidDomain,
-                                  errorAlreadyExists:
-                                      localizations.addRelayErrorAlreadyExists,
-                                  errorNotValid:
-                                      localizations.addRelayErrorNotValid,
+                          try {
+                            final result = await relaysNotifier
+                                .addRelayWithSmartValidation(
+                              input,
+                              errorOnlySecure:
+                                  localizations.addRelayErrorOnlySecure,
+                              errorNoHttp: localizations.addRelayErrorNoHttp,
+                              errorInvalidDomain:
+                                  localizations.addRelayErrorInvalidDomain,
+                              errorAlreadyExists:
+                                  localizations.addRelayErrorAlreadyExists,
+                              errorNotValid:
+                                  localizations.addRelayErrorNotValid,
+                            );
+
+                            if (result.success) {
+                              navigator.pop();
+                              if (context.mounted) {
+                                SnackBarHelper.showTopSnackBar(
+                                  context,
+                                  localizations.addRelaySuccessMessage(
+                                      result.normalizedUrl!),
+                                  backgroundColor: Colors.green,
                                 );
-
-                                if (result.success) {
-                                  navigator.pop();
-                                  if (context.mounted) {
-                                    SnackBarHelper.showTopSnackBar(
-                                      context,
-                                      localizations.addRelaySuccessMessage(
-                                          result.normalizedUrl!),
-                                      backgroundColor: Colors.green,
-                                    );
-                                  }
-                                } else {
-                                  setState(() {
-                                    errorMessage = result.error;
-                                    isLoading = false;
-                                  });
-                                }
-                              } catch (e) {
-                                setState(() {
-                                  errorMessage =
-                                      localizations.addRelayErrorGeneric;
-                                  isLoading = false;
-                                });
                               }
-                            },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.activeColor,
-                        foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 12),
-                      ),
-                      child: Text(
-                        S.of(context)!.addRelayDialogAdd,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    )),
+                            } else {
+                              setState(() {
+                                errorMessage = result.error;
+                                isLoading = false;
+                              });
+                            }
+                          } catch (e) {
+                            setState(() {
+                              errorMessage = localizations.addRelayErrorGeneric;
+                              isLoading = false;
+                            });
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.activeColor,
+                    foregroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 12),
+                  ),
+                  child: Text(
+                    S.of(context)!.addRelayDialogAdd,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ).withAutomationId(AutomationIds.settingsRelaysAddConfirm),
               ],
             );
           },

@@ -1,10 +1,10 @@
-import 'package:mostro_mobile/core/automation/automation_ids.dart';
-import 'package:mostro_mobile/core/automation/automation_id.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/core/config/communities.dart';
 import 'package:mostro_mobile/features/community/community.dart';
 import 'package:mostro_mobile/features/community/providers/community_selector_provider.dart';
@@ -46,13 +46,10 @@ class _CommunitySelectorScreenState
           child: Text(S.of(ctx)!.communityDisclaimerBody),
         ),
         actions: [
-          AutomationId(
-            AutomationIds.communityNoticeAccept,
-            child: TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: Text(S.of(ctx)!.communityDisclaimerAccept),
-            ),
-          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(S.of(ctx)!.communityDisclaimerAccept),
+          ).withAutomationId(AutomationIds.communityNoticeAccept),
         ],
       ),
     );
@@ -158,74 +155,70 @@ class _CommunitySelectorScreenState
                   ),
                   const SizedBox(height: 12),
                   // Use custom node
-                  AutomationId(AutomationIds.communityCustomNode,
-                      child: TextButton(
-                        onPressed: _isSelecting
-                            ? null
-                            : () => _onUseCustomNode(context),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.settings,
-                              size: 18,
-                              color: AppTheme.textSecondary,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              S.of(context)!.useCustomNode,
-                              style: const TextStyle(
-                                color: AppTheme.textSecondary,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
+                  TextButton(
+                    onPressed:
+                        _isSelecting ? null : () => _onUseCustomNode(context),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.settings,
+                          size: 18,
+                          color: AppTheme.textSecondary,
                         ),
-                      )),
-                  const SizedBox(height: 8),
-                  // Confirm button
-                  if (_selectedPubkey != null)
-                    AutomationId(AutomationIds.communityDone,
-                        child: ElevatedButton(
-                          onPressed:
-                              _isSelecting ? null : () => _onConfirm(context),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.activeColor,
-                            foregroundColor: Colors.black,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                          ),
-                          child: _isSelecting
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.black,
-                                  ),
-                                )
-                              : Text(
-                                  S.of(context)!.done,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                        )),
-                  // Skip button
-                  AutomationId(AutomationIds.communitySkip,
-                      child: TextButton(
-                        onPressed: _isSelecting ? null : () => _onSkip(context),
-                        child: Text(
-                          S.of(context)!.skipForNow,
+                        const SizedBox(width: 8),
+                        Text(
+                          S.of(context)!.useCustomNode,
                           style: const TextStyle(
                             color: AppTheme.textSecondary,
                             fontSize: 14,
                           ),
                         ),
-                      )),
+                      ],
+                    ),
+                  ).withAutomationId(AutomationIds.communityCustomNode),
+                  const SizedBox(height: 8),
+                  // Confirm button
+                  if (_selectedPubkey != null)
+                    ElevatedButton(
+                      onPressed:
+                          _isSelecting ? null : () => _onConfirm(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.activeColor,
+                        foregroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      child: _isSelecting
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.black,
+                              ),
+                            )
+                          : Text(
+                              S.of(context)!.done,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                    ).withAutomationId(AutomationIds.communityDone),
+                  // Skip button
+                  TextButton(
+                    onPressed: _isSelecting ? null : () => _onSkip(context),
+                    child: Text(
+                      S.of(context)!.skipForNow,
+                      style: const TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ).withAutomationId(AutomationIds.communitySkip),
                   SizedBox(
                     height: MediaQuery.of(context).viewPadding.bottom + 8,
                   ),

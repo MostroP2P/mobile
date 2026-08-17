@@ -1,7 +1,7 @@
-import 'package:mostro_mobile/core/automation/automation_ids.dart';
-import 'package:mostro_mobile/core/automation/automation_id.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/features/order/providers/payment_methods_provider.dart';
 import 'package:mostro_mobile/features/order/widgets/form_section.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
@@ -47,17 +47,16 @@ class PaymentMethodsSection extends ConsumerWidget {
       iconBackgroundColor: AppTheme.mostroGreen.withValues(alpha: 0.3),
       extraContent: Padding(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-        child: AutomationId(AutomationIds.orderCreatePaymentMethod,
-            child: TextField(
-              key: const Key('paymentMethodField'),
-              controller: customController,
-              style: const TextStyle(color: Colors.white, fontSize: 15),
-              decoration: InputDecoration(
-                border: InputBorder.none,
-                hintText: S.of(context)!.enterCustomPaymentMethod,
-                hintStyle: TextStyle(color: Colors.grey, fontSize: 13),
-              ),
-            )),
+        child: TextField(
+          key: const Key('paymentMethodField'),
+          controller: customController,
+          style: const TextStyle(color: Colors.white, fontSize: 15),
+          decoration: InputDecoration(
+            border: InputBorder.none,
+            hintText: S.of(context)!.enterCustomPaymentMethod,
+            hintStyle: TextStyle(color: Colors.grey, fontSize: 13),
+          ),
+        ).withAutomationId(AutomationIds.orderCreatePaymentMethod),
       ),
       child: paymentMethodsData.when(
         loading: () => Text(S.of(context)!.loadingPaymentMethods,

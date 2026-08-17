@@ -1,11 +1,11 @@
-import 'package:mostro_mobile/core/automation/automation_ids.dart';
-import 'package:mostro_mobile/core/automation/automation_id.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/features/wallet/providers/nwc_provider.dart';
 import 'package:mostro_mobile/features/wallet/widgets/wallet_balance_widget.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
@@ -176,20 +176,19 @@ class WalletSettingsScreen extends ConsumerWidget {
         // Disconnect Button
         SizedBox(
           width: double.infinity,
-          child: AutomationId(AutomationIds.walletSettingsDisconnect,
-              child: OutlinedButton.icon(
-                onPressed: () => _showDisconnectConfirm(context, ref),
-                icon: const Icon(LucideIcons.unplug, size: 18),
-                label: Text(S.of(context)!.disconnectWallet),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.redAccent,
-                  side: const BorderSide(color: Colors.redAccent),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              )),
+          child: OutlinedButton.icon(
+            onPressed: () => _showDisconnectConfirm(context, ref),
+            icon: const Icon(LucideIcons.unplug, size: 18),
+            label: Text(S.of(context)!.disconnectWallet),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.redAccent,
+              side: const BorderSide(color: Colors.redAccent),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ).withAutomationId(AutomationIds.walletSettingsDisconnect),
         ),
       ],
     );
@@ -292,20 +291,19 @@ class WalletSettingsScreen extends ConsumerWidget {
                 const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,
-                  child: AutomationId(AutomationIds.walletSettingsConnect,
-                      child: ElevatedButton.icon(
-                        onPressed: () => context.push('/connect_wallet'),
-                        icon: const Icon(LucideIcons.plug, size: 18),
-                        label: Text(S.of(context)!.connectWallet),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.activeColor,
-                          foregroundColor: Colors.black,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      )),
+                  child: ElevatedButton.icon(
+                    onPressed: () => context.push('/connect_wallet'),
+                    icon: const Icon(LucideIcons.plug, size: 18),
+                    label: Text(S.of(context)!.connectWallet),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.activeColor,
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ).withAutomationId(AutomationIds.walletSettingsConnect),
                 ),
               ],
             ),

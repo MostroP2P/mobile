@@ -1,8 +1,8 @@
-import 'package:mostro_mobile/core/automation/automation_ids.dart';
-import 'package:mostro_mobile/core/automation/automation_id.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/features/mostro/mostro_node.dart';
 import 'package:mostro_mobile/features/mostro/mostro_nodes_provider.dart';
 import 'package:mostro_mobile/features/mostro/widgets/add_custom_node_dialog.dart';
@@ -125,30 +125,29 @@ class _MostroNodeSelectorState extends ConsumerState<MostroNodeSelector> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      AutomationId(AutomationIds.nodeAddCustom,
-                          child: ElevatedButton(
-                            onPressed: _isSwitching
-                                ? null
-                                : () => AddCustomNodeDialog.show(context, ref),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.activeColor,
-                              foregroundColor: Colors.black,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                            ),
-                            child: Text(
-                              S.of(context)!.addCustomNode,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
-                              ),
-                            ),
-                          )),
+                      ElevatedButton(
+                        onPressed: _isSwitching
+                            ? null
+                            : () => AddCustomNodeDialog.show(context, ref),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.activeColor,
+                          foregroundColor: Colors.black,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                        ),
+                        child: Text(
+                          S.of(context)!.addCustomNode,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ).withAutomationId(AutomationIds.nodeAddCustom),
                     ],
                   ),
                   SizedBox(
@@ -187,115 +186,111 @@ class _MostroNodeSelectorState extends ConsumerState<MostroNodeSelector> {
       margin: const EdgeInsets.only(bottom: 8),
       child: Material(
         color: Colors.transparent,
-        child: AutomationId(AutomationIds.nodeItem(node.pubkey),
-            merge: false,
-            child: InkWell(
-              onTap:
-                  (_isSwitching || isSelected) ? null : () => _onNodeTap(node),
+        child: InkWell(
+          onTap: (_isSwitching || isSelected) ? null : () => _onNodeTap(node),
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? AppTheme.activeColor.withValues(alpha: 0.1)
+                  : AppTheme.backgroundCard,
               borderRadius: BorderRadius.circular(12),
-              child: Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? AppTheme.activeColor.withValues(alpha: 0.1)
-                      : AppTheme.backgroundCard,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isSelected
-                        ? AppTheme.activeColor.withValues(alpha: 0.4)
-                        : Colors.white.withValues(alpha: 0.1),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    // Avatar
-                    MostroNodeAvatar(node: node),
-                    const SizedBox(width: 12),
-                    // Name + pubkey
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+              border: Border.all(
+                color: isSelected
+                    ? AppTheme.activeColor.withValues(alpha: 0.4)
+                    : Colors.white.withValues(alpha: 0.1),
+              ),
+            ),
+            child: Row(
+              children: [
+                // Avatar
+                MostroNodeAvatar(node: node),
+                const SizedBox(width: 12),
+                // Name + pubkey
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
                         children: [
-                          Row(
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  node.displayName,
-                                  style: const TextStyle(
-                                    color: AppTheme.textPrimary,
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              if (node.isTrusted) ...[
-                                const SizedBox(width: 8),
-                                const TrustedBadge(),
-                              ],
-                            ],
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            node.pubkey,
-                            style: const TextStyle(
-                              color: AppTheme.textSecondary,
-                              fontSize: 12,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          if (node.about != null && node.about!.isNotEmpty) ...[
-                            const SizedBox(height: 4),
-                            Text(
-                              node.about!.length > 128
-                                  ? '${node.about!.substring(0, 128)}...'
-                                  : node.about!,
+                          Flexible(
+                            child: Text(
+                              node.displayName,
                               style: const TextStyle(
-                                color: AppTheme.textSecondary,
-                                fontSize: 12,
+                                color: AppTheme.textPrimary,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
                               ),
-                              maxLines: 3,
                               overflow: TextOverflow.ellipsis,
                             ),
+                          ),
+                          if (node.isTrusted) ...[
+                            const SizedBox(width: 8),
+                            const TrustedBadge(),
                           ],
                         ],
                       ),
-                    ),
-                    // Trailing: checkmark, loading, or delete
-                    if (isLoading)
-                      const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(AppTheme.cream1),
-                        ),
-                      )
-                    else if (isSelected)
-                      const Icon(
-                        Icons.check_circle,
-                        color: AppTheme.activeColor,
-                        size: 22,
-                      )
-                    else if (isCustom)
-                      IconButton(
-                        onPressed:
-                            _isSwitching ? null : () => _onDeleteNode(node),
-                        tooltip: S.of(context)!.deleteCustomNodeTitle,
-                        icon: const Icon(
-                          Icons.delete_outline,
+                      const SizedBox(height: 2),
+                      Text(
+                        node.pubkey,
+                        style: const TextStyle(
                           color: AppTheme.textSecondary,
-                          size: 20,
+                          fontSize: 12,
                         ),
-                        constraints: const BoxConstraints(),
-                        padding: const EdgeInsets.all(4),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                  ],
+                      if (node.about != null && node.about!.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          node.about!.length > 128
+                              ? '${node.about!.substring(0, 128)}...'
+                              : node.about!,
+                          style: const TextStyle(
+                            color: AppTheme.textSecondary,
+                            fontSize: 12,
+                          ),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
-              ),
-            )),
+                // Trailing: checkmark, loading, or delete
+                if (isLoading)
+                  const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(AppTheme.cream1),
+                    ),
+                  )
+                else if (isSelected)
+                  const Icon(
+                    Icons.check_circle,
+                    color: AppTheme.activeColor,
+                    size: 22,
+                  )
+                else if (isCustom)
+                  IconButton(
+                    onPressed: _isSwitching ? null : () => _onDeleteNode(node),
+                    tooltip: S.of(context)!.deleteCustomNodeTitle,
+                    icon: const Icon(
+                      Icons.delete_outline,
+                      color: AppTheme.textSecondary,
+                      size: 20,
+                    ),
+                    constraints: const BoxConstraints(),
+                    padding: const EdgeInsets.all(4),
+                  ),
+              ],
+            ),
+          ),
+        ).withAutomationId(AutomationIds.nodeItem(node.pubkey), merge: false),
       ),
     );
   }

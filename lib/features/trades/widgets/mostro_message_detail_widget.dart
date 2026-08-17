@@ -1,7 +1,7 @@
-import 'package:mostro_mobile/core/automation/automation_ids.dart';
-import 'package:mostro_mobile/core/automation/automation_id.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models.dart';
 import 'package:mostro_mobile/features/order/models/order_state.dart';
@@ -45,16 +45,14 @@ class MostroMessageDetail extends ConsumerWidget {
                   text: formatTextWithBoldUsernames(actionText, context),
                 ),
                 const SizedBox(height: 16),
-                AutomationId(AutomationIds.orderStatus,
-                    merge: false,
-                    label: orderState.status.value,
-                    child: Text(
-                      _getLocalizedStatus(context, orderState.status),
-                      style: TextStyle(
-                        color: Colors.grey[400],
-                        fontSize: 12,
-                      ),
-                    )),
+                Text(
+                  _getLocalizedStatus(context, orderState.status),
+                  style: TextStyle(
+                    color: Colors.grey[400],
+                    fontSize: 12,
+                  ),
+                ).withAutomationId(AutomationIds.orderStatus,
+                    merge: false, label: orderState.status.value),
               ],
             ),
           ),

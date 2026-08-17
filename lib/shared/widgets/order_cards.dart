@@ -1,9 +1,9 @@
-import 'package:mostro_mobile/core/automation/automation_ids.dart';
-import 'package:mostro_mobile/core/automation/automation_id.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
@@ -215,14 +215,13 @@ class OrderIdCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: AutomationId(AutomationIds.orderId,
-                    child: Text(
-                      orderId,
-                      style: const TextStyle(
-                        color: AppTheme.mostroGreen,
-                        fontSize: 14,
-                      ),
-                    )),
+                child: Text(
+                  orderId,
+                  style: const TextStyle(
+                    color: AppTheme.mostroGreen,
+                    fontSize: 14,
+                  ),
+                ).withAutomationId(AutomationIds.orderId),
               ),
               IconButton(
                 icon: const Icon(
