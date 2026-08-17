@@ -197,6 +197,16 @@ class HomeScreen extends ConsumerWidget {
 
   Widget _buildFilterButton(BuildContext context, WidgetRef ref) {
     final filteredOrders = ref.watch(filteredOrdersProvider);
+    final activeFilterCount = ref.watch(activeFilterCountProvider);
+    final hasFilters = activeFilterCount > 0;
+
+    // When filters are active the pill is highlighted so the user can tell at a
+    // glance that the offers list is being narrowed down.
+    final foregroundColor =
+        hasFilters ? AppTheme.mostroGreen : Colors.white70;
+    final dividerColor = hasFilters
+        ? AppTheme.mostroGreen.withValues(alpha: 0.4)
+        : Colors.white.withValues(alpha: 0.2);
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
@@ -205,9 +215,15 @@ class HomeScreen extends ConsumerWidget {
         alignment: Alignment.centerLeft,
         child: Container(
           decoration: BoxDecoration(
-            color: AppTheme.backgroundInput,
+            color: hasFilters
+                ? AppTheme.mostroGreen.withValues(alpha: 0.12)
+                : AppTheme.backgroundInput,
             borderRadius: BorderRadius.circular(30),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+            border: Border.all(
+              color: hasFilters
+                  ? AppTheme.mostroGreen.withValues(alpha: 0.6)
+                  : Colors.white.withValues(alpha: 0.05),
+            ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.2),
@@ -219,65 +235,131 @@ class HomeScreen extends ConsumerWidget {
           child: Material(
             color: Colors.transparent,
             borderRadius: BorderRadius.circular(30),
-            child: InkWell(
-              onTap: () {
-                showDialog<void>(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return const Dialog(
-                      child: OrderFilter(),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                InkWell(
+                  onTap: () {
+                    showDialog<void>(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return const Dialog(
+                          child: OrderFilter(),
+                        );
+                      },
                     );
                   },
-                );
-              },
+                  borderRadius: BorderRadius.circular(30),
+                  splashColor: AppTheme.activeColor.withValues(alpha: 0.3),
+                  highlightColor: AppTheme.activeColor.withValues(alpha: 0.15),
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      left: 16,
+                      right: hasFilters ? 8 : 16,
+                      top: 12,
+                      bottom: 12,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        HeroIcon(
+                          HeroIcons.funnel,
+                          style: hasFilters
+                              ? HeroIconStyle.solid
+                              : HeroIconStyle.outline,
+                          color: foregroundColor,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          hasFilters
+                              ? S
+                                  .of(context)!
+                                  .filterWithCount(activeFilterCount.toString())
+                              : S.of(context)!.filter,
+                          style: TextStyle(
+                            color: foregroundColor,
+                            fontSize: 13,
+                            fontWeight:
+                                hasFilters ? FontWeight.w600 : FontWeight.w500,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 8),
+                          height: 16,
+                          width: 1,
+                          color: dividerColor,
+                        ),
+                        Text(
+                          S
+                              .of(context)!
+                              .offersCount(filteredOrders.length.toString()),
+                          style: const TextStyle(
+                            color: Colors.grey,
+                            fontSize: 12,
+                            fontWeight: FontWeight.normal,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                if (hasFilters)
+                  _buildClearFiltersButton(context, ref, dividerColor),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Quick "clear all filters" action shown inside the filter pill.
+  ///
+  /// It sits outside the pill's main [InkWell] so tapping it resets the filters
+  /// without also opening the filter dialog.
+  Widget _buildClearFiltersButton(
+    BuildContext context,
+    WidgetRef ref,
+    Color dividerColor,
+  ) {
+    final label = S.of(context)!.clearFilters;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          height: 16,
+          width: 1,
+          color: dividerColor,
+        ),
+        Semantics(
+          button: true,
+          label: label,
+          child: Tooltip(
+            message: label,
+            child: InkWell(
+              onTap: () => clearAllOrderFilters(ref.read),
               borderRadius: BorderRadius.circular(30),
-              splashColor: AppTheme.activeColor.withValues(alpha: 0.3),
-              highlightColor: AppTheme.activeColor.withValues(alpha: 0.15),
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const HeroIcon(
-                      HeroIcons.funnel,
-                      style: HeroIconStyle.outline,
-                      color: Colors.white70,
-                      size: 18,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      S.of(context)!.filter,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 8),
-                      height: 16,
-                      width: 1,
-                      color: Colors.white.withValues(alpha: 0.2),
-                    ),
-                    Text(
-                      S
-                          .of(context)!
-                          .offersCount(filteredOrders.length.toString()),
-                      style: const TextStyle(
-                        color: Colors.grey,
-                        fontSize: 12,
-                        fontWeight: FontWeight.normal,
-                      ),
-                    ),
-                  ],
+              splashColor: AppTheme.mostroGreen.withValues(alpha: 0.3),
+              highlightColor: AppTheme.mostroGreen.withValues(alpha: 0.15),
+              child: const SizedBox(
+                width: 40,
+                height: 40,
+                child: Center(
+                  child: HeroIcon(
+                    HeroIcons.xMark,
+                    style: HeroIconStyle.outline,
+                    color: AppTheme.mostroGreen,
+                    size: 16,
+                  ),
                 ),
               ),
             ),
           ),
         ),
-      ),
+      ],
     );
   }
 }
