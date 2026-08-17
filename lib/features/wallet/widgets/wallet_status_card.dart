@@ -124,7 +124,7 @@ class WalletStatusCard extends ConsumerWidget {
                     ],
                   ),
                 ),
-              ).withAutomationId(AutomationIds.settingsWallet, merge: false),
+              ).withAutomationId(AutomationIds.settingsWallet),
             ),
           ],
         ),

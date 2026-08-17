@@ -180,8 +180,7 @@ class TradesListItem extends ConsumerWidget {
           ),
         ),
       ),
-    ).withAutomationId(AutomationIds.tradesItem(trade.orderId ?? ''),
-        merge: false);
+    ).withAutomationId(AutomationIds.tradesItem(trade.orderId ?? ''));
   }
 
   Widget _buildRoleChip(BuildContext context, bool isCreator) {

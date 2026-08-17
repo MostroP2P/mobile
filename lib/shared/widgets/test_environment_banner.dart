@@ -15,17 +15,22 @@ class TestEnvironmentBanner extends StatelessWidget {
     if (!TestEnvironment.enabled) {
       return child;
     }
-    return Directionality(
+    // Only the banner is pinned to LTR. Wrapping the stack would force the
+    // application under test into LTR as well, so an RTL locale would not
+    // exercise the layout it ships with. The stack still needs an explicit
+    // direction for `Positioned` to resolve left/right.
+    return Stack(
       textDirection: TextDirection.ltr,
-      child: Stack(
-        children: [
-          child,
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: SafeArea(
-              bottom: false,
+      children: [
+        child,
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: SafeArea(
+            bottom: false,
+            child: Directionality(
+              textDirection: TextDirection.ltr,
               child: Semantics(
                 identifier: AutomationIds.envMarker,
                 label: TestEnvironment.markerLabel,
@@ -49,8 +54,8 @@ class TestEnvironmentBanner extends StatelessWidget {
               ),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

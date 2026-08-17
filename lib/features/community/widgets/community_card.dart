@@ -182,7 +182,10 @@ class CommunityCard extends StatelessWidget {
           ],
         ),
       ),
-    ).withAutomationId(AutomationIds.communityCard(community.pubkey));
+      // Container mode: the card holds its own tap plus one per social link,
+      // and merging would collapse those independent actions into one node.
+    ).withAutomationId(AutomationIds.communityCard(community.pubkey),
+        merge: false);
   }
 
   Widget _buildCurrencyTag(String label) {
